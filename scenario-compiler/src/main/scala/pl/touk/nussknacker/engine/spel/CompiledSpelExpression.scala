@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.data.Validated.Valid
+import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
 import org.springframework.expression._
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
@@ -9,26 +8,13 @@ import org.springframework.expression.spel._
 import org.springframework.expression.spel.ast.SpelNodeImpl
 import pl.touk.nussknacker.engine.api.{Context, TemplateEvaluationResult, TemplateRenderedPart}
 import pl.touk.nussknacker.engine.api.TemplateRenderedPart.{RenderedLiteral, RenderedSubExpression}
-import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypingResult}
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
-import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
-import pl.touk.nussknacker.engine.expression.{IndexBasedTextRange, NullExpression}
-import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
-import pl.touk.nussknacker.engine.graph.expression.{Expression => GraphExpression}
+import pl.touk.nussknacker.engine.expression.NullExpression
+import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.SpelExpressionUnderlyingParserError
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
-import pl.touk.nussknacker.engine.spel.parser.{
-  ExceptionWithExpressionTextRange,
-  ExpressionWithTextRange,
-  NuSpelExpressionParser
-}
+import pl.touk.nussknacker.engine.spel.parser.ExpressionWithTextRange
 
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.control.NonFatal
@@ -47,12 +33,12 @@ import scala.util.control.NonFatal
  * - unless Expression is marked @volatile multiple threads might parse it on their own,
  * - performance problem might occur if the ClassCastException is thrown often (e. g. for consecutive calls to getValue)
  */
-class SpelExpression(
+class CompiledSpelExpression(
     override val original: String,
     reparseFunction: () => ValidatedNel[SpelExpressionParseError, ExpressionWithTextRange],
     initiallyParsedExpression: ExpressionWithTextRange,
     expectedReturnType: TypingResult,
-    flavour: Flavour,
+    flavour: SpelFlavour,
     evaluationContextPreparer: EvaluationContextPreparer
 ) extends CompiledExpression
     with LazyLogging {
@@ -150,9 +136,9 @@ class SpelExpression(
 
   private def getValueDependingOnFlavourAndResultType[T](context: EvaluationContext): T = {
     flavour match {
-      case SpelExpressionParser.Standard =>
+      case SpelFlavour.Standard =>
         parsed.getExpression.getValue(context, expectedClass).asInstanceOf[T]
-      case SpelExpressionParser.Template =>
+      case SpelFlavour.Template =>
         val parts            = renderTemplateExpressionParts(context)
         val evaluationResult = TemplateEvaluationResult(parts)
         if (expectedReturnType == Typed[TemplateEvaluationResult]) {
@@ -213,199 +199,3 @@ class SpelExpressionEvaluationException(val expression: String, cause: Throwable
       s"Expression [$expression] evaluation failed, message: ${cause.getMessage}",
       cause = cause
     )
-
-class SpelExpressionParser(
-    immediateCompileParser: NuSpelExpressionParser,
-    typer: Typer,
-    dictRegistry: DictRegistry,
-    enableSpelForceCompile: Boolean,
-    flavour: Flavour,
-    prepareEvaluationContext: EvaluationContextPreparer
-) extends ExpressionParser {
-
-  import pl.touk.nussknacker.engine.spel.SpelExpressionParser._
-
-  override final val languageId: Language = flavour.languageId
-
-  override def parse(
-      original: String,
-      ctx: ValidationContext,
-      expectedType: TypingResult
-  ): ValidatedNel[ExpressionParseError, TypedExpression] = {
-    val optionalNullExpression = if (flavour != Template) handleBlankExpressionAsNullExpression(original) else None
-    optionalNullExpression.getOrElse {
-      parseSpelExpressionUsingImmediateCompileConfiguration(original)
-        .andThen { parsed =>
-          typer
-            .typeExpression(parsed, ctx, flavour)
-            .map((parsed, _))
-            .leftMap(_.map(_.toParseError(original)))
-        }
-        .andThen { case (parsed, collectedTypingResult) =>
-          validateResultTypeIfNeeded(collectedTypingResult, expectedType)
-            .map(_ => (parsed, collectedTypingResult))
-        }
-        .map { case (parsed, collectedTypingResult) =>
-          TypedExpression(
-            createExpression(
-              original = original,
-              initiallyParsedExpression = parsed,
-              expectedType = expectedType
-            ),
-            collectedTypingResult.typingInfo
-          )
-        }
-    }
-  }
-
-  private def parseSpelExpressionUsingImmediateCompileConfiguration(
-      original: String
-  ): ValidatedNel[SpelExpressionParseError, ExpressionWithTextRange] = {
-    Validated
-      .catchNonFatal(immediateCompileParser.parseExpression(original, flavour.parserContext.orNull))
-      .leftMap { ex =>
-        val textRangeOpt = Option(ex)
-          .collect {
-            case ex: ExceptionWithExpressionTextRange =>
-              ex.getExpressionTextRange
-            case ex: ParseException =>
-              IndexBasedTextRange(ex.getPosition, ex.getPosition + 1)
-          }
-          .map(_.toCoordinatesBasedTextRange(original))
-        val message = Option(ex)
-          .collect {
-            case ex: SpelParseException =>
-              ex.getMessageCode match {
-                case SpelMessage.MORE_INPUT =>
-                  // This message sounds better than "After parsing a valid expression, there is still more data in the expression: ''{0}''"
-                  "Unexpected text"
-                case _ => messageWithoutExpressionAndErrorCodeIndicator(ex)
-              }
-            case ex: ParseException =>
-              ex.getSimpleMessage
-          }
-          .getOrElse(ex.getMessage)
-        NonEmptyList.of(
-          SpelExpressionUnderlyingParserError(message, textRangeOpt)
-        )
-      }
-  }
-
-  private def validateResultTypeIfNeeded(
-      collected: CollectedTypingResult,
-      expectedType: TypingResult,
-  ): ValidatedNel[ExpressionParseError, Unit] = {
-    if (expectedType == Typed[SpelExpressionRepr] || expectedType == Typed[TemplateEvaluationResult]) {
-      Valid(())
-    } else {
-      ExpressionParser.validateResultTypeMatchExpectedType(collected.finalResult.typingResult, expectedType)
-    }
-  }
-
-  // SpEL adds:
-  // - Expression [<expression>]: prefix - see ExpressionException.toDetailedString
-  // - EL1001E: prefix - (error code indicator), see SpelMessage.formatMessage
-  // We remove both things to make messages more human-readable
-  // To avoid first prefix we call getSimpleMessage instead of getMessage.
-  private def messageWithoutExpressionAndErrorCodeIndicator(ex: SpelParseException) =
-    ex.getSimpleMessage.replaceFirst("^EL\\d{4}E?: ", "")
-
-  private def createExpression(
-      original: String,
-      initiallyParsedExpression: ExpressionWithTextRange,
-      expectedType: TypingResult
-  ) = {
-    val expr =
-      new SpelExpression(
-        original = original,
-        // We should consider using parser with compilation off for reparse
-        reparseFunction = () => parseSpelExpressionUsingImmediateCompileConfiguration(original),
-        initiallyParsedExpression = initiallyParsedExpression,
-        expectedReturnType = expectedType,
-        flavour = flavour,
-        evaluationContextPreparer = prepareEvaluationContext
-      )
-    if (enableSpelForceCompile) {
-      expr.forceCompile()
-    }
-    expr
-  }
-
-  def typingDictLabels =
-    new SpelExpressionParser(
-      immediateCompileParser,
-      typer.withDictTyper(new LabelsDictTyper(dictRegistry)),
-      dictRegistry,
-      enableSpelForceCompile,
-      flavour,
-      prepareEvaluationContext
-    )
-
-  def withTyper(modify: Typer => Typer): SpelExpressionParser = {
-    new SpelExpressionParser(
-      immediateCompileParser,
-      modify(typer),
-      dictRegistry,
-      enableSpelForceCompile,
-      flavour,
-      prepareEvaluationContext
-    )
-  }
-
-}
-
-object SpelExpressionParser extends LazyLogging {
-
-  sealed abstract class Flavour(val languageId: Language, val parserContext: Option[ParserContext])
-  object Standard extends Flavour(GraphExpression.Language.Spel, None)
-  // TODO: should we enable other prefixes/suffixes?
-  object Template extends Flavour(GraphExpression.Language.SpelTemplate, Some(ParserContext.TEMPLATE_EXPRESSION))
-
-  def default(
-      classLoader: ClassLoader,
-      expressionConfig: ExpressionConfigDefinition,
-      dictRegistry: DictRegistry,
-      enableSpelForceCompile: Boolean,
-      flavour: Flavour,
-      classDefinitionSet: ClassDefinitionSet,
-  ): SpelExpressionParser = {
-
-    // we have to pass classloader, because default contextClassLoader can be sth different than we expect...
-    val immediateCompileParser = new NuSpelExpressionParser(
-      createSpelParserConfiguration(classLoader)
-    )
-    val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig, classDefinitionSet)
-    val typer = Typer.default(
-      classLoader,
-      expressionConfig,
-      new KeysDictTyper(dictRegistry),
-      classDefinitionSet,
-      absentVariableReferenceAllowed = false
-    )
-    new SpelExpressionParser(
-      immediateCompileParser,
-      typer,
-      dictRegistry,
-      enableSpelForceCompile,
-      flavour,
-      evaluationContextPreparer
-    )
-  }
-
-  private def createSpelParserConfiguration(classLoader: ClassLoader) = {
-    val autoGrowNullReferences = false
-    val autoGrowCollections    = false
-    val maximumAutoGrowSize    = Integer.MAX_VALUE
-    val maximumExpressionLength =
-      Integer.MAX_VALUE // By default, it is limited to 10_000 (DEFAULT_MAX_EXPRESSION_LENGTH)
-    new SpelParserConfiguration(
-      SpelCompilerMode.IMMEDIATE,
-      classLoader,
-      autoGrowNullReferences,
-      autoGrowCollections,
-      maximumAutoGrowSize,
-      maximumExpressionLength
-    )
-  }
-
-}

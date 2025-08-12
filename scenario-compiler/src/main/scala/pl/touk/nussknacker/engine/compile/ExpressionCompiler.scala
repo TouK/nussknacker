@@ -35,7 +35,7 @@ import pl.touk.nussknacker.engine.language.dictWithLabel.DictKeyWithLabelExpress
 import pl.touk.nussknacker.engine.language.json.{JsonParser, JsonTemplateParser}
 import pl.touk.nussknacker.engine.language.tabularDataDefinition.TabularDataDefinitionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
+import pl.touk.nussknacker.engine.spel.SpelFlavour
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -94,7 +94,7 @@ object ExpressionCompiler {
       classDefinitionSet: ClassDefinitionSet,
       expressionEvaluator: ExpressionEvaluator
   ): ExpressionCompiler = {
-    def spelParser(flavour: Flavour) =
+    def spelParser(flavour: SpelFlavour) =
       SpelExpressionParser.default(
         classLoader,
         expressionConfig,
@@ -104,8 +104,8 @@ object ExpressionCompiler {
         classDefinitionSet
       )
 
-    val spelStandardParser = spelParser(SpelExpressionParser.Standard)
-    val spelTemplateParser = spelParser(SpelExpressionParser.Template)
+    val spelStandardParser = spelParser(SpelFlavour.Standard)
+    val spelTemplateParser = spelParser(SpelFlavour.Template)
     val defaultParsers =
       Seq(
         spelStandardParser,
