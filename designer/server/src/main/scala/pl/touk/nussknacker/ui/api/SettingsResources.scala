@@ -120,7 +120,7 @@ object TopTabType extends Enumeration {
     // Deprecated: use accessTokenInQuery.enabled setting instead
     addAccessTokenInQueryParam: Option[Boolean],
     accessTokenInQuery: Option[AccessTokenInQueryTabSettings] = Some(AccessTokenInQueryTabSettings()),
-    currentLocationInQuery: Option[CurrentLocationInQueryTabSettings] = Some(CurrentLocationInQueryTabSettings()),
+    currentLocationInQuery: Option[CurrentLocationInQueryTabSettings],
     spacerBefore: Option[Boolean] = Some(false)
 )
 
@@ -132,8 +132,8 @@ object TopTabType extends Enumeration {
 )
 
 @JsonCodec final case class CurrentLocationInQueryTabSettings(
-    enabled: Boolean = false,
-    parameterName: Option[String] = Some("location")
+    enabled: Boolean,
+    parameterName: String,
 )
 
 @JsonCodec final case class ToggleFeaturesOptions(
