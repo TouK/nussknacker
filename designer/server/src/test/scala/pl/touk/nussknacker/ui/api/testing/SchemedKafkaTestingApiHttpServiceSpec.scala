@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.docker.{WithKafkaContainer, WithSchemaRegistryContainer}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaConfig, UnspecializedTopicName}
-import pl.touk.nussknacker.engine.schemedkafka.helpers.SimpleKafkaAvroSerializer
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.test.{
@@ -78,11 +78,11 @@ class SchemedKafkaTestingApiHttpServiceSpec
     .noDefault()
     .endRecord()
 
+  private var sourceTopicAvroSchemaId: SchemaId = _
+
   private lazy val schemaRegistryClient = new CachedSchemaRegistryClient(hostSchemaRegistryUrl, 10)
 
   private lazy val kafkaClient = new KafkaClient(hostKafkaAddress, getClass.getSimpleName)
-
-  private lazy val avroValueSerializer = new SimpleKafkaAvroSerializer(schemaRegistryClient, isKey = false)
 
   override protected def beforeAll(): Unit = {
     kafkaClient.createTopic(sourceTopicName, partitions = 1)
@@ -96,9 +96,11 @@ class SchemedKafkaTestingApiHttpServiceSpec
     kafkaClient.shutdown()
   }
 
-  private def registerSourceSchema(): Int = {
+  private def registerSourceSchema(): Unit = {
     val subject = ConfluentUtils.topicSubject(new UnspecializedTopicName(sourceTopicName), isKey = false)
-    schemaRegistryClient.register(subject, ConfluentUtils.convertToAvroSchema(sourceTopicAvroSchema))
+    sourceTopicAvroSchemaId = SchemaId.fromInt(
+      schemaRegistryClient.register(subject, ConfluentUtils.convertToAvroSchema(sourceTopicAvroSchema))
+    )
   }
 
   // tests logic
@@ -359,7 +361,7 @@ class SchemedKafkaTestingApiHttpServiceSpec
             .sendRawMessage(
               topic = sourceTopicName,
               key = null,
-              content = avroValueSerializer.serialize(sourceTopicName, sampleAvroRecord),
+              content = ConfluentUtils.serializeContainerToBytesArray(sampleAvroRecord, sourceTopicAvroSchemaId),
               timestamp = givenTimestamp
             )
             .futureValue
