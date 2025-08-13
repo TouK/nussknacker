@@ -977,20 +977,20 @@
           }
         }
       ],
-      "canBeLong": [
+      "canBeInteger": [
         {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "canBeLong",
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "canBeInteger": [
+      "canBeLong": [
         {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -1116,26 +1116,6 @@
           }
         }
       ],
-      "toLong": [
-        {
-          "description": "Convert the value to Long or throw exception in case of failure",
-          "name": "toLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toLongOrNull": [
-        {
-          "description": "Convert the value to Long or null in case of failure",
-          "name": "toLongOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
       "toInteger": [
         {
           "description": "Convert the value to Integer or throw exception in case of failure",
@@ -1153,6 +1133,26 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
           }
         }
       ],
@@ -1487,20 +1487,20 @@
           }
         }
       ],
-      "canBeLong": [
+      "canBeInteger": [
         {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "canBeLong",
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "canBeInteger": [
+      "canBeLong": [
         {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -1642,26 +1642,6 @@
           }
         }
       ],
-      "toLong": [
-        {
-          "description": "Convert the value to Long or throw exception in case of failure",
-          "name": "toLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toLongOrNull": [
-        {
-          "description": "Convert the value to Long or null in case of failure",
-          "name": "toLongOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
       "toInteger": [
         {
           "description": "Convert the value to Integer or throw exception in case of failure",
@@ -1679,6 +1659,26 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
           }
         }
       ],
@@ -2012,20 +2012,20 @@
           }
         }
       ],
-      "canBeLong": [
+      "canBeInteger": [
         {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "canBeLong",
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "canBeInteger": [
+      "canBeLong": [
         {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -2187,26 +2187,6 @@
           }
         }
       ],
-      "toLong": [
-        {
-          "description": "Convert the value to Long or throw exception in case of failure",
-          "name": "toLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toLongOrNull": [
-        {
-          "description": "Convert the value to Long or null in case of failure",
-          "name": "toLongOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
       "toInteger": [
         {
           "description": "Convert the value to Integer or throw exception in case of failure",
@@ -2224,6 +2204,26 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
           }
         }
       ],
@@ -3882,20 +3882,20 @@
           }
         }
       ],
-      "canBeLong": [
+      "canBeInteger": [
         {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "canBeLong",
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "canBeInteger": [
+      "canBeLong": [
         {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -4001,26 +4001,6 @@
           }
         }
       ],
-      "toLong": [
-        {
-          "description": "Convert the value to Long or throw exception in case of failure",
-          "name": "toLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toLongOrNull": [
-        {
-          "description": "Convert the value to Long or null in case of failure",
-          "name": "toLongOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
       "toInteger": [
         {
           "description": "Convert the value to Integer or throw exception in case of failure",
@@ -4038,6 +4018,26 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
           }
         }
       ],
@@ -4114,6 +4114,16 @@
           }
         }
       ],
+      "canBeInteger": [
+        {
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "canBeList": [
         {
           "description": "Check whether can be convert to a list",
@@ -4130,16 +4140,6 @@
         {
           "description": "Check whether the value can be convert to a Long",
           "name": "canBeLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "canBeInteger": [
-        {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -4232,6 +4232,26 @@
           }
         }
       ],
+      "toInteger": [
+        {
+          "description": "Convert the value to Integer or throw exception in case of failure",
+          "name": "toInteger",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toIntegerOrNull": [
+        {
+          "description": "Convert the value to Integer or null in case of failure",
+          "name": "toIntegerOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
       "toList": [
         {
           "description": "Convert to a list or throw exception in case of failure",
@@ -4293,26 +4313,6 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toInteger": [
-        {
-          "description": "Convert the value to Integer or throw exception in case of failure",
-          "name": "toInteger",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
-      "toIntegerOrNull": [
-        {
-          "description": "Convert the value to Integer or null in case of failure",
-          "name": "toIntegerOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Integer"}
           }
         }
       ],
@@ -4444,20 +4444,20 @@
           }
         }
       ],
-      "canBeLong": [
+      "canBeInteger": [
         {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "canBeLong",
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "canBeInteger": [
+      "canBeLong": [
         {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -4583,26 +4583,6 @@
           }
         }
       ],
-      "toLong": [
-        {
-          "description": "Convert the value to Long or throw exception in case of failure",
-          "name": "toLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toLongOrNull": [
-        {
-          "description": "Convert the value to Long or null in case of failure",
-          "name": "toLongOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
       "toInteger": [
         {
           "description": "Convert the value to Integer or throw exception in case of failure",
@@ -4620,6 +4600,26 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
           }
         }
       ],
@@ -4872,20 +4872,20 @@
           }
         }
       ],
-      "canBeLong": [
+      "canBeInteger": [
         {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "canBeLong",
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "canBeInteger": [
+      "canBeLong": [
         {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -5335,26 +5335,6 @@
           }
         }
       ],
-      "toLong": [
-        {
-          "description": "Convert the value to Long or throw exception in case of failure",
-          "name": "toLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toLongOrNull": [
-        {
-          "description": "Convert the value to Long or null in case of failure",
-          "name": "toLongOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
       "toInteger": [
         {
           "description": "Convert the value to Integer or throw exception in case of failure",
@@ -5372,6 +5352,26 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
           }
         }
       ],
@@ -5589,20 +5589,20 @@
           }
         }
       ],
-      "canBeLong": [
+      "canBeInteger": [
         {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "canBeLong",
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "canBeInteger": [
+      "canBeLong": [
         {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -6151,26 +6151,6 @@
           }
         }
       ],
-      "toLong": [
-        {
-          "description": "Convert the value to Long or throw exception in case of failure",
-          "name": "toLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toLongOrNull": [
-        {
-          "description": "Convert the value to Long or null in case of failure",
-          "name": "toLongOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
       "toInteger": [
         {
           "description": "Convert the value to Integer or throw exception in case of failure",
@@ -6188,6 +6168,26 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
           }
         }
       ],
@@ -6489,20 +6489,20 @@
           }
         }
       ],
-      "canBeLong": [
+      "canBeInteger": [
         {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "canBeLong",
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "canBeInteger": [
+      "canBeLong": [
         {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -6987,26 +6987,6 @@
           }
         }
       ],
-      "toLong": [
-        {
-          "description": "Convert the value to Long or throw exception in case of failure",
-          "name": "toLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toLongOrNull": [
-        {
-          "description": "Convert the value to Long or null in case of failure",
-          "name": "toLongOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
       "toInteger": [
         {
           "description": "Convert the value to Integer or throw exception in case of failure",
@@ -7024,6 +7004,26 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
           }
         }
       ],
@@ -15008,7 +15008,7 @@
           "name": "valueOf",
           "signature": {
             "noVarArgs": [
-              {"name": "name", "refClazz": {"refClazzName": "java.lang.String"}}
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
             ],
             "result": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.TariffType"}
           }
@@ -16035,7 +16035,7 @@
           "name": "valueOf",
           "signature": {
             "noVarArgs": [
-              {"name": "name", "refClazz": {"refClazzName": "java.lang.String"}}
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
             ],
             "result": {"refClazzName": "pl.touk.sample.JavaSampleEnum"}
           }
