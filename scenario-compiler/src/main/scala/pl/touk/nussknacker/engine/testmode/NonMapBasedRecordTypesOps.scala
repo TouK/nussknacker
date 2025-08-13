@@ -23,7 +23,12 @@ object NonMapBasedRecordTypesOps {
     def toMapBasedRecordTypes: SingleTypingResult = single match {
       case record @ TypedObjectTypingResult(fields, runtimeObjType, _)
           if runtimeObjType.klass == classOf[JMap[String @unchecked, _]] =>
-        record.copy(fields = fields.mapValuesNow(_.toMapBasedRecordTypes))
+        val newFields = fields.mapValuesNow(_.toMapBasedRecordTypes)
+        // We don't want to change record if fields wasn't changed - see InputMeta.withType
+        if (newFields != fields)
+          record.copy(fields = newFields)
+        else
+          record
       case TypedObjectTypingResult(fields, _, _) =>
         Typed.record(fields.mapValuesNow(_.toMapBasedRecordTypes).toList)
       case dict @ TypedDict(_, valueType)                  => dict.copy(valueType = valueType.toMapBasedRecordTypes)
