@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.engine.flink.test.docker
 
 import com.dimafeng.testcontainers.KafkaContainer
-import com.typesafe.scalalogging.{LazyLogging, StrictLogging}
 import org.scalatest.Suite
 import org.testcontainers.utility.DockerImageName
 import pl.touk.nussknacker.test.containers.WithDockerContainers
 
 import java.util.Arrays.asList
 
-trait WithKafkaContainer extends WithDockerContainers { self: Suite with StrictLogging =>
+trait WithKafkaContainer { self: Suite with WithDockerContainers =>
 
-  private val kafkaNetworkAlias = "kafka"
+  protected val kafkaNetworkAlias = "kafka"
 
   protected val kafkaContainer: KafkaContainer =
     KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.4.0")).configure { self =>

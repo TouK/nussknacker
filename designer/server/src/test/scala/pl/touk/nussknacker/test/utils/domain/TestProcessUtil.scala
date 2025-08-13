@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.test.utils.domain
 
-import io.circe.{Encoder, Json}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.{
   ProcessAction,
@@ -31,9 +30,6 @@ object TestProcessUtil {
 
   def toCanonical(scenarioGraph: ScenarioGraph, processName: ProcessName): CanonicalProcess =
     CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processName)
-
-  def toJson(scenario: CanonicalProcess): Json =
-    Encoder[ScenarioGraph].apply(scenario.toScenarioGraph)
 
   def createScenarioEntity(
       name: String,

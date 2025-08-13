@@ -2160,6 +2160,7 @@ lazy val designer = (project in file("designer/server"))
     flinkTestUtils                    % Test,
     developmentTestsDeploymentManager % Test,
     kafkaComponentsUtils              % Test,
+    kafkaTestUtils                    % Test,
     componentsApi                     % "test->test"
   )
 

@@ -11,21 +11,18 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.livedata.DataRecord
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ContextVariables}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestCommonFormatJsonRecord
-import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaListMap
 
-import java.util.{Map => JMap}
 import scala.jdk.CollectionConverters._
 
 object CommonTestDataFormatStubbedSourcePreparer {
 
-  import NonMapBasedRecordTypesHandler._
+  import pl.touk.nussknacker.engine.testmode.NonMapBasedRecordTypesOps._
 
   def prepareSubbedSource(
       testRecords: NonEmptyList[(ScenarioTestCommonFormatJsonRecord, Int)],
@@ -112,41 +109,6 @@ object CommonTestDataFormatStubbedSourcePreparer {
         ("variables", TypeInformationDetection.instance.forVariables(sourceOutputValidationContext.localVariables)),
         ("timestamp", TypeInformation.of(classOf[Option[String]]))
       )
-
-  }
-
-  private object NonMapBasedRecordTypesHandler {
-
-    implicit class TypingResultExt(typingResult: TypingResult) {
-
-      def toMapBasedRecordTypes: TypingResult = typingResult match {
-        case union: TypedUnion          => Typed(union.possibleTypes.map(_.toMapBasedRecordTypes))
-        case TypedNull                  => TypedNull
-        case single: SingleTypingResult => single.toMapBasedRecordTypes
-        case unknown: Unknown           => unknown
-      }
-
-    }
-
-    private implicit class SingleTypingResultExt(single: SingleTypingResult) {
-
-      def toMapBasedRecordTypes: SingleTypingResult = single match {
-        case record @ TypedObjectTypingResult(fields, runtimeObjType, _)
-            if runtimeObjType.klass == classOf[JMap[String @unchecked, _]] =>
-          record.copy(fields = fields.mapValuesNow(_.toMapBasedRecordTypes))
-        case TypedObjectTypingResult(fields, _, _) =>
-          Typed.record(fields.mapValuesNow(_.toMapBasedRecordTypes).toList)
-        case dict @ TypedDict(_, valueType)                  => dict.copy(valueType = valueType.toMapBasedRecordTypes)
-        case tagged @ TypedTaggedValue(underlying, _)        => tagged.copy(underlying.toMapBasedRecordTypes)
-        case withValue @ TypedObjectWithValue(underlying, _) => withValue.copy(underlying.toMapBasedRecordTypes)
-        case clazz: TypedClass                               => clazz.toMapBasedRecordTypes
-      }
-
-    }
-
-    private implicit class TypedClassExt(clazz: TypedClass) {
-      def toMapBasedRecordTypes: TypedClass = clazz.copy(params = clazz.params.map(_.toMapBasedRecordTypes))
-    }
 
   }
 

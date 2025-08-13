@@ -4,7 +4,7 @@ import com.dimafeng.testcontainers._
 import com.typesafe.config.{Config, ConfigValueFactory}
 import com.typesafe.config.ConfigValueFactory.fromMap
 import com.typesafe.scalalogging.StrictLogging
-import io.circe.{Decoder, Encoder, Json, JsonObject}
+import io.circe.{Decoder, Json, JsonObject}
 import io.circe.parser._
 import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.`given`
@@ -13,12 +13,12 @@ import org.apache.kafka.clients.admin.NewTopic
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
-import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.json.decoders.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.flink.test.docker.WithKafkaContainer
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
@@ -41,7 +41,6 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.Scen
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 
 import java.util.{Collections, UUID}
-import java.util.Arrays.asList
 import scala.jdk.CollectionConverters._
 
 class SchemalessKafkaJsonTypeTests
@@ -54,30 +53,17 @@ class SchemalessKafkaJsonTypeTests
     with WithAdHocTestsLogic
     with WithAdHocInvalidParametersTestsLogic
     with WithDockerContainers
+    with WithKafkaContainer
     with ForAllTestContainer
     with StrictLogging
     with NuRestAssureExtensions {
 
-  private val kafkaContainerAlias = "kafka"
-
-  protected val kafkaContainer: KafkaContainer =
-    KafkaContainer().configure { self =>
-      self.setNetwork(network)
-      self.setNetworkAliases(asList(kafkaContainerAlias))
-      self.setPortBindings(List("8070:9093").asJava)
-    }
-
-  private val schemaRegistryContainer: SchemaRegistryContainer =
-    SchemaRegistryContainer(network, kafkaContainerAlias).configure { self =>
-      self.setPortBindings(List("8069:8081").asJava)
-    }
-
   private lazy val defaultKafkaConfig: KafkaConfig = KafkaConfig(
-    kafkaProperties = Some(Map("bootstrap.servers" -> kafkaContainer.bootstrapServers)),
+    kafkaProperties = Some(Map("bootstrap.servers" -> hostKafkaAddress)),
     kafkaEspProperties = None,
   )
 
-  override val container: Container = MultipleContainers(kafkaContainer, schemaRegistryContainer)
+  override val container: Container = kafkaContainer
 
   private val validJson = """|{
                              |  "input": {
@@ -478,7 +464,7 @@ class SchemalessKafkaJsonTypeTests
         .basicAuthAllPermUser()
         .jsonBody(
           testDataGenerationRequest(
-            Encoder[ScenarioGraph].apply(exampleScenario.toScenarioGraph).toString(),
+            exampleScenario.toScenarioGraph.asJson.spaces2,
             numberOfSamples = 3
           )
         )
@@ -545,7 +531,7 @@ class SchemalessKafkaJsonTypeTests
     .withoutPath("scenarioTypes.streaming.modelConfig.components.kafka.disabled")
     .withValue(
       "scenarioTypes.streaming.modelConfig.components.kafka.config.kafkaProperties",
-      fromMap(Map("bootstrap.servers" -> "localhost:8070", "schema.registry.url" -> "http://localhost:8069").asJava)
+      fromMap(Map("bootstrap.servers" -> hostKafkaAddress).asJava)
     )
     .withValue(
       "scenarioTypes.streaming.modelConfig.components.kafka.config.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource",
