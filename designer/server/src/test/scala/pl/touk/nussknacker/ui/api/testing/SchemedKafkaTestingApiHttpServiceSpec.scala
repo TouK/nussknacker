@@ -182,7 +182,7 @@ class SchemedKafkaTestingApiHttpServiceSpec
        |      {
        |        "name": "$InputVariablesParameterName",
        |        "typ": {
-       |          "display": "Record{input: Record{name: String}, inputMeta: Record{headers: Map[String,String], key: String, leaderEpoch: Integer, offset: Long, partition: Integer, timestamp: Long, timestampType: TimestampType, topic: String}}",
+       |          "display": "Record{input: Record{name: String}, inputMeta: InputMeta[String]}",
        |          "type": "TypedObjectTypingResult",
        |          "fields": {
        |            "input": {
@@ -213,7 +213,7 @@ class SchemedKafkaTestingApiHttpServiceSpec
        |              ]
        |            },
        |            "inputMeta": {
-       |              "display": "Record{headers: Map[String,String], key: String, leaderEpoch: Integer, offset: Long, partition: Integer, timestamp: Long, timestampType: TimestampType, topic: String}",
+       |              "display": "InputMeta[String]",
        |              "type": "TypedObjectTypingResult",
        |              "fields": {
        |                "timestamp": {
