@@ -579,7 +579,9 @@ export class Graph extends React.Component<Props> {
 
     highlightNode = (nodeId: NodeId, className: string): void => {
         const cell = this.graph.getCell(nodeId);
-        cell?.toFront();
+        if (!isStickyNoteElement(cell)) {
+            cell?.toFront();
+        }
         this.#highlightCell(cell, className);
     };
 
@@ -758,10 +760,6 @@ export class Graph extends React.Component<Props> {
                         this.handleInjectBetweenNodes(cellView.model, cellBelow);
                     }
                     batchGroupBy.end(group);
-                }
-                if (isStickyNoteElement(cellView.model)) {
-                    this.changeLayoutIfNeeded();
-                } else {
                     cellView.model.toFront();
                 }
             })

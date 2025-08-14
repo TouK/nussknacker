@@ -21,19 +21,32 @@ export const StickyNoteElement = (defaults?: StickyNoteDefaults, protoProps?: St
 
 export const StickyNoteElementView = dia.ElementView.extend({
     events: {
-        "click .sticky-note-markdown-editor": "stopPropagation",
         "keydown textarea": "selectAll",
-        "focusout .sticky-note-markdown-editor": "onChange",
-        "dblclick .sticky-note-content": "showEditor",
-        "mouseover .sticky-note-content": "stopPropagation",
+        dblclick: "showEditor",
+        mouseover: "stopPropagation",
+        "click .sticky-note-markdown-editor": "stopPropagation",
+        "mouseenter .sticky-note-markdown-editor": "stopPropagation",
+        "mouseup .sticky-note-markdown-editor": "stopPropagation",
+        "mouseout .sticky-note-markdown-editor": "stopPropagation",
+        "mouseleave .sticky-note-markdown-editor": "stopPropagation",
     },
 
-    render: function () {
-        // eslint-disable-next-line prefer-rest-params
-        dia.ElementView.prototype.render.apply(this, arguments);
-        this.model.toBack();
+    remove: function (...args) {
+        dia.ElementView.prototype.remove.apply(this, ...args);
+        this.stopListening();
+        document.removeEventListener("click", this.onClickedOutside, true);
+        document.removeEventListener("click", this.onEscapePress, true);
+    },
 
+    render: function (...args) {
+        dia.ElementView.prototype.render.apply(this, args);
+        this.model.toBack();
+        this.listenTo(this.model, "change:position", this.changePosition);
         return this;
+    },
+
+    changePosition: function () {
+        this.model.toBack();
     },
 
     stopPropagation: function (evt) {
@@ -42,9 +55,31 @@ export const StickyNoteElementView = dia.ElementView.extend({
 
     showEditor: function (evt) {
         evt.stopPropagation();
+        this.model.toFront();
         this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/disabled`, false);
-        evt.currentTarget.querySelector("textarea").focus({ preventScroll: true });
+        const textarea = evt.currentTarget.querySelector("textarea");
+        textarea.focus({ preventScroll: true });
         evt.currentTarget.querySelector(".sticky-note-markdown").style.display = "none";
+
+        this.onClickedOutside = (event) => {
+            const isClickedOutside = !this.el.contains(event.target);
+            if (isClickedOutside) {
+                this.hideEditor({ target: textarea });
+                document.removeEventListener("click", this.onClickedOutside);
+                document.removeEventListener("keydown", this.onEscapePress);
+            }
+        };
+
+        this.onEscapePress = (event) => {
+            if (event.key === "Escape") {
+                this.hideEditor({ target: textarea });
+                document.removeEventListener("click", this.onClickedOutside);
+                document.removeEventListener("keydown", this.onEscapePress);
+            }
+        };
+
+        document.addEventListener("click", this.onClickedOutside, true);
+        document.addEventListener("keydown", this.onEscapePress, true);
     },
 
     selectAll: function (evt) {
@@ -56,10 +91,11 @@ export const StickyNoteElementView = dia.ElementView.extend({
         }
     },
 
-    onChange: function (evt) {
+    hideEditor: function (evt) {
+        this.model.toBack();
         this.model.trigger(Events.CELL_CONTENT_UPDATED, this.model, evt.target.value);
         this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/value`, evt.target.value);
         this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/disabled`, true);
-        evt.currentTarget.parentElement.querySelector(".sticky-note-markdown").style.display = "block";
+        this.el.querySelector(".sticky-note-markdown").style.display = "block";
     },
 });
