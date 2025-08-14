@@ -304,10 +304,92 @@ class SchemedKafkaTestingApiHttpServiceSpec
        |              "params": []
        |            },
        |            {
-       |              "display": "Unknown",
-       |              "type": "Unknown",
-       |              "refClazzName": "java.lang.Object",
-       |              "params": []
+       |              "display": "Record{headers: Map[String,String], key: String, leaderEpoch: Integer, name: String, offset: Long, partition: Integer, timestamp: Long, timestampType: TimestampType, topic: String}",
+       |              "type": "TypedObjectTypingResult",
+       |              "fields": {
+       |                "name": {
+       |                  "display": "String",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.String",
+       |                  "params": []
+       |                },
+       |                "timestamp": {
+       |                  "display": "Long",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.Long",
+       |                  "params": []
+       |                },
+       |                "partition": {
+       |                  "display": "Integer",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.Integer",
+       |                  "params": []
+       |                },
+       |                "timestampType": {
+       |                  "display": "TimestampType",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "org.apache.kafka.common.record.TimestampType",
+       |                  "params": []
+       |                },
+       |                "key": {
+       |                  "display": "String",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.String",
+       |                  "params": []
+       |                },
+       |                "offset": {
+       |                  "display": "Long",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.Long",
+       |                  "params": []
+       |                },
+       |                "leaderEpoch": {
+       |                  "display": "Integer",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.Integer",
+       |                  "params": []
+       |                },
+       |                "topic": {
+       |                  "display": "String",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.String",
+       |                  "params": []
+       |                },
+       |                "headers": {
+       |                  "display": "Map[String,String]",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.util.Map",
+       |                  "params": [
+       |                    {
+       |                      "display": "String",
+       |                      "type": "TypedClass",
+       |                      "refClazzName": "java.lang.String",
+       |                      "params": []
+       |                    },
+       |                    {
+       |                      "display": "String",
+       |                      "type": "TypedClass",
+       |                      "refClazzName": "java.lang.String",
+       |                      "params": []
+       |                    }
+       |                  ]
+       |                }
+       |              },
+       |              "refClazzName": "java.util.Map",
+       |              "params": [
+       |                {
+       |                  "display": "Unknown",
+       |                  "type": "Unknown",
+       |                  "refClazzName": "java.lang.Object",
+       |                  "params": []
+       |                },
+       |                {
+       |                  "display": "Unknown",
+       |                  "type": "Unknown",
+       |                  "refClazzName": "java.lang.Object",
+       |                  "params": []
+       |                }
+       |              ]
        |            }
        |          ]
        |        },
