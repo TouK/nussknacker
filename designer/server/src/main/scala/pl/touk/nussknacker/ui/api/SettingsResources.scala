@@ -120,6 +120,7 @@ object TopTabType extends Enumeration {
     // Deprecated: use accessTokenInQuery.enabled setting instead
     addAccessTokenInQueryParam: Option[Boolean],
     accessTokenInQuery: Option[AccessTokenInQueryTabSettings] = Some(AccessTokenInQueryTabSettings()),
+    currentLocationInQuery: Option[CurrentLocationInQueryTabSettings],
     spacerBefore: Option[Boolean] = Some(false)
 )
 
@@ -128,6 +129,11 @@ object TopTabType extends Enumeration {
     // The default parameter name is consistent with parameter name used by Grafana:
     // https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/jwt/?plcmt=learn-nav#url-login
     parameterName: Option[String] = Some("auth_token")
+)
+
+@JsonCodec final case class CurrentLocationInQueryTabSettings(
+    enabled: Boolean,
+    parameterName: String,
 )
 
 @JsonCodec final case class ToggleFeaturesOptions(
