@@ -2,10 +2,10 @@ package pl.touk.nussknacker.engine.definition.component.parameter.validator
 
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
-import pl.touk.nussknacker.engine.api.{Context, ContextId, CustomMetaData, JobData, MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, JobData, NodeId}
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.{CompileTimeEvaluableValueValidator, Validator}
+import pl.touk.nussknacker.engine.api.definition.Validator
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator.variableName
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -24,14 +24,13 @@ case class ValidationExpressionParameterValidator(
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] =
-    CompileTimeEvaluableValueValidator // validation expression validation requires the value of the expression to be known
-      .isValid(paramName, expression, value, label)
-      .andThen { _ =>
-        value match {
-          case None | Some(null) => valid(())
-          case Some(v)           => validateValue(paramName, v)
-        }
-      }
+    value match {
+      // The expression may have dynamic value and may not be known when running compilation/validation.
+      // In that case it is not possible to apply validation during validation/compilation.
+      // Perhaps there should be a warning displayed in such situation, but at the moment it is not possible to return it.
+      case None | Some(null) => valid(())
+      case Some(v)           => validateValue(paramName, v)
+    }
 
   private def validateValue(paramName: ParameterName, value: Any)(
       implicit nodeId: NodeId
