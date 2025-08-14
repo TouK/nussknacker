@@ -15008,7 +15008,7 @@
           "name": "valueOf",
           "signature": {
             "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
+              {"name": "name", "refClazz": {"refClazzName": "java.lang.String"}}
             ],
             "result": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.TariffType"}
           }
@@ -16035,7 +16035,7 @@
           "name": "valueOf",
           "signature": {
             "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
+              {"name": "name", "refClazz": {"refClazzName": "java.lang.String"}}
             ],
             "result": {"refClazzName": "pl.touk.sample.JavaSampleEnum"}
           }
