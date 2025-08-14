@@ -6,35 +6,34 @@ object geo extends GeoUtils
 
 trait GeoUtils extends HideToString {
 
+  import GeoUtils._
+
   @Documentation(description =
-    "Calculate distance in km between two points (with decimal coordinates), using haversine algorithm"
+    "Calculate distance in kilometers between two points (with decimal coordinates), using the Haversine formula"
   )
   def distanceInKm(
-      @ParamName("first point latitude") currentLat: Number,
-      @ParamName("first point longitude") currentLon: Number,
-      @ParamName("second point latitude") otherLat: Number,
-      @ParamName("first point longitude") otherLon: Number
-  ): Double =
-    distanceInKm(toPoint(currentLat, currentLon), toPoint(otherLat, otherLon))
-
-  @Documentation(description =
-    "Calculate distance in km between two points (with decimal coordinates), using haversine algorithm"
-  )
-  // https://rosettacode.org/wiki/Haversine_formula#Scala
-  def distanceInKm(@ParamName("first point") current: Point, @ParamName("second point") other: Point): Double = {
-    val dLat = (current.lat - other.lat).toRadians
-    val dLon = (current.lon - other.lon).toRadians
-
+      @ParamName("latitude1") latitude1: Number,
+      @ParamName("longitude1") longitude1: Number,
+      @ParamName("latitude2") latitude2: Number,
+      @ParamName("longitude2") longitude2: Number
+  ): Double = {
+    // https://rosettacode.org/wiki/Haversine_formula#Scala
     import scala.math._
 
-    val a = pow(sin(dLat / 2), 2) + pow(sin(dLon / 2), 2) * cos(current.lon.toRadians) * cos(other.lat.toRadians)
-    val c = 2 * asin(sqrt(a))
-    val R = 6372.8
-    c * R
-  }
+    val dLat = (latitude1.doubleValue() - latitude2.doubleValue()).toRadians
+    val dLon = (longitude1.doubleValue() - longitude2.doubleValue()).toRadians
 
-  def toPoint(lat: Number, lon: Number): Point = Point(lat.doubleValue(), lon.doubleValue())
+    val a = pow(sin(dLat / 2), 2) + pow(sin(dLon / 2), 2) * cos(latitude1.doubleValue().toRadians) * cos(
+      latitude2.doubleValue().toRadians
+    )
+    val c = 2 * asin(sqrt(a))
+    c * EarthMeanRadius
+  }
 
 }
 
-case class Point(lat: Double, lon: Double)
+private object GeoUtils {
+  // 6371 is recommended by the International Union of Geodesy and Geophysics,
+  // it minimizes the RMS relative error between the great circle and geodesic distance
+  private val EarthMeanRadius: Long = 6371
+}
