@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder.
   UnexpectedVariableInTestRecordError
 }
 
-class CommonTestDataFormatVariablesDecoder(sourceOutputValidationContext: ValidationContext, sourceId: NodeId) {
+class CommonTestDataFormatVariablesDecoder(sourceOutputValidationContext: ValidationContext, sourceNodeId: NodeId) {
 
   def decode(
       jsonVariables: Map[String, Json],
@@ -19,7 +19,7 @@ class CommonTestDataFormatVariablesDecoder(sourceOutputValidationContext: Valida
     jsonVariables.map { case (variableName, jsonVariable) =>
       val variableType = sourceOutputValidationContext
         .get(variableName)
-        .getOrElse(throw UnexpectedVariableInTestRecordError(variableName, sourceId, testRecordIndex))
+        .getOrElse(throw UnexpectedVariableInTestRecordError(variableName, sourceNodeId, testRecordIndex))
       val decodedVariable = FromJsonTypingResultBasedDecoder
         .decodeValue(variableType, HCursor.fromJson(jsonVariable))
         .fold(
@@ -29,7 +29,7 @@ class CommonTestDataFormatVariablesDecoder(sourceOutputValidationContext: Valida
               variableType,
               jsonVariable,
               err,
-              sourceId,
+              sourceNodeId,
               testRecordIndex
             ),
           identity
