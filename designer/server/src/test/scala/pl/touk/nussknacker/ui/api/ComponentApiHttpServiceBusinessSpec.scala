@@ -131,6 +131,9 @@ class ComponentApiHttpServiceBusinessSpec
     "builtin-record-variable",
     "builtin-split",
     "builtin-variable",
+    "dead-end",
+    "decision-table",
+    "for-each",
     "streaming-custom-additionalvariable",
     "streaming-custom-aggregate-session",
     "streaming-custom-aggregate-sliding",
@@ -138,11 +141,13 @@ class ComponentApiHttpServiceBusinessSpec
     "streaming-custom-constantstatetransformer",
     "streaming-custom-constantstatetransformerlongvalue",
     "streaming-custom-customfilter",
+    "streaming-custom-delay",
     "streaming-custom-enrichwithadditionaldata",
     "streaming-custom-full-outer-join",
     "streaming-custom-hidevariables",
     "streaming-custom-lastvariablewithfilter",
     "streaming-custom-nonereturntypetransformer",
+    "streaming-custom-previousvalue",
     "streaming-custom-sendcommunication",
     "streaming-custom-simpletypescustomnode",
     "streaming-custom-single-side-join",
@@ -197,6 +202,7 @@ class ComponentApiHttpServiceBusinessSpec
     "streaming-source-kafka-transaction-no-test-timestamp-assigner",
     "streaming-source-onesource",
     "streaming-source-sql-source",
+    "union"
   )
 
   implicit class ExtractRootKey[T <: ValidatableResponse](validatableResponse: T) {

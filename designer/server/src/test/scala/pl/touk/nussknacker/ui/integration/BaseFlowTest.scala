@@ -38,7 +38,6 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessi
 import pl.touk.nussknacker.test.mock.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.ScenarioToJsonHelper.{ScenarioGraphToJson, ScenarioToJson}
-import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeValidationRequest
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
@@ -435,7 +434,7 @@ class BaseFlowTest
         .multipartBody(
           sttpPrepareMultiParts(
             "testData"      -> testDataContent,
-            "scenarioGraph" -> toJson(process).noSpaces
+            "scenarioGraph" -> process.toScenarioGraph.asJson.noSpaces
           )()
         )
         .auth

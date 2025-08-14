@@ -24,7 +24,6 @@ import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
-import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
@@ -190,7 +189,7 @@ trait ScenarioTestingApiHttpServiceSpec
           .multipartBody(
             sttpPrepareMultiParts(
               "testData"      -> testDataJson,
-              "scenarioGraph" -> toJson(exampleScenario).noSpaces
+              "scenarioGraph" -> exampleScenario.toScenarioGraph.asJson.noSpaces
             )()
           )
           .auth

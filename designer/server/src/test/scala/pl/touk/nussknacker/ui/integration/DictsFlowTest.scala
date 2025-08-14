@@ -21,7 +21,6 @@ import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithDesignerConf
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.utils.domain.ScenarioToJsonHelper.ScenarioToJson
-import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
@@ -196,7 +195,7 @@ class DictsFlowTest
       quickRequest
         .post(uri"$nuDesignerHttpAddress/api/processesExport/${process.name}")
         .contentType(MediaType.ApplicationJson)
-        .body(toJson(process).noSpaces)
+        .body(process.toScenarioGraph.asJson.noSpaces)
         .auth
         .basic("admin", "admin")
     )
@@ -275,7 +274,7 @@ class DictsFlowTest
         .multipartBody(
           sttpPrepareMultiParts(
             "testData"      -> """[{"sourceId":"source","variables":{"input":["field1","field2"]}}]""",
-            "scenarioGraph" -> toJson(process).noSpaces
+            "scenarioGraph" -> process.toScenarioGraph.asJson.noSpaces
           )()
         )
         .auth

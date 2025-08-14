@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.ui.api.testing
 
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Encoder
+import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValuesProvided}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -246,6 +245,6 @@ class FragmentScenarioTestingApiHttpServiceSpec
     .fragmentOutput("fragmentEnd", "output", "out" -> "'hola'".spel)
 
   private def canonicalGraphStr(canonical: CanonicalProcess) =
-    Encoder[ScenarioGraph].apply(canonical.toScenarioGraph).toString()
+    canonical.toScenarioGraph.asJson.spaces2
 
 }

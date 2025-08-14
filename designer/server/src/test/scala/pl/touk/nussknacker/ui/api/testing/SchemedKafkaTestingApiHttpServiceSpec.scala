@@ -1,49 +1,41 @@
 package pl.touk.nussknacker.ui.api.testing
 
-import com.dimafeng.testcontainers._
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.dimafeng.testcontainers.{Container, ForAllTestContainer, MultipleContainers}
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromMap
-import com.typesafe.scalalogging.StrictLogging
-import io.circe.{Decoder, Json, JsonObject}
-import io.circe.parser._
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
+import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import org.apache.kafka.clients.admin.NewTopic
+import org.apache.avro.SchemaBuilder
+import org.apache.avro.generic.GenericRecordBuilder
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
-import pl.touk.nussknacker.engine.api.json.decoders.TypingResultDecoder
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.api.validation.ValidationMode
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.flink.test.docker.WithKafkaContainer
+import pl.touk.nussknacker.engine.flink.test.docker.{WithKafkaContainer, WithSchemaRegistryContainer}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypes
+import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaConfig, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   PatientScalaFutures,
   RestAssuredVerboseLoggingIfValidationFails
 }
-import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
 import pl.touk.nussknacker.test.containers.WithDockerContainers
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts.UsersBasicAuth
-import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 
-import java.util.{Collections, UUID}
 import scala.jdk.CollectionConverters._
 
-class SchemalessKafkaJsonTypeTests
+class SchemedKafkaTestingApiHttpServiceSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithSimplifiedDesignerConfig
@@ -51,54 +43,67 @@ class SchemalessKafkaJsonTypeTests
     with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures
     with WithAdHocTestsLogic
-    with WithAdHocInvalidParametersTestsLogic
     with WithDockerContainers
     with WithKafkaContainer
+    with WithSchemaRegistryContainer
     with ForAllTestContainer
-    with StrictLogging
-    with NuRestAssureExtensions {
+    with LazyLogging
+    with NuRestAssureExtensions
+    with Matchers {
+
+  // boostrap logic
+
+  override val container: Container = MultipleContainers(kafkaContainer, schemaRegistryContainer)
 
   private lazy val defaultKafkaConfig: KafkaConfig = KafkaConfig(
     kafkaProperties = Some(Map("bootstrap.servers" -> hostKafkaAddress)),
     kafkaEspProperties = None,
   )
 
-  override val container: Container = kafkaContainer
+  override def designerRawConfig: Config = super.designerRawConfig
+    .withoutPath("scenarioTypes.streaming.modelConfig.components.kafka.disabled")
+    .withValue(
+      "scenarioTypes.streaming.modelConfig.components.kafka.config.kafkaProperties",
+      fromMap(Map("bootstrap.servers" -> hostKafkaAddress, "schema.registry.url" -> hostSchemaRegistryUrl).asJava)
+    )
 
-  private val validJson = """|{
-                             |  "input": {
-                             |    "name": "FooBar"
-                             |  },
-                             |  "inputMeta": {
-                             |    "key" : "",
-                             |    "topic" : "",
-                             |    "partition" : 0,
-                             |    "offset" : 0,
-                             |    "timestamp" : 0,
-                             |    "timestampType" : "NO_TIMESTAMP_TYPE",
-                             |    "headers" : {
-                             |      "field" : ""
-                             |    },
-                             |    "leaderEpoch" : 0
-                             |  }
-                             |}""".stripMargin
+  private val sourceTopicName = "source-topic"
 
-  private val invalidJson = """|{
-                               |  "products": [
-                               |    {"id": 1, "name": "Laptop", "price": 120a0.00},
-                               |    {"id": 2, "name": "Smartphone", "price": 800.50},
-                               |    {"id": 3, "name": "Tablet", "price": 450.75}
-                               |  ]
-                               |}""".stripMargin
+  private val sourceTopicAvroSchema = SchemaBuilder
+    .record("SampleRecord")
+    .fields()
+    .name("name")
+    .`type`()
+    .stringType()
+    .noDefault()
+    .endRecord()
 
-  private val sourceTopicName = "someInputTopic"
+  private var sourceTopicAvroSchemaId: SchemaId = _
 
-  private val sinkTopicName = "someOutputTopic"
+  private lazy val schemaRegistryClient = new CachedSchemaRegistryClient(hostSchemaRegistryUrl, 10)
 
-  private val variablesNodeName = "vars"
-  private val nameVariable      = "name"
-  private val ageVariable       = "age"
-  private val isAdultVariable   = "isAdult"
+  private lazy val kafkaClient = new KafkaClient(hostKafkaAddress, getClass.getSimpleName)
+
+  override protected def beforeAll(): Unit = {
+    kafkaClient.createTopic(sourceTopicName, partitions = 1)
+    registerSourceSchema()
+    super.beforeAll()
+  }
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    schemaRegistryClient.close()
+    kafkaClient.shutdown()
+  }
+
+  private def registerSourceSchema(): Unit = {
+    val subject = ConfluentUtils.topicSubject(new UnspecializedTopicName(sourceTopicName), isKey = false)
+    sourceTopicAvroSchemaId = SchemaId.fromInt(
+      schemaRegistryClient.register(subject, ConfluentUtils.convertToAvroSchema(sourceTopicAvroSchema))
+    )
+  }
+
+  // tests logic
 
   override protected val exampleScenarioSourceId: String = "start"
 
@@ -109,47 +114,70 @@ class SchemalessKafkaJsonTypeTests
       .source(
         exampleScenarioSourceId,
         "kafka",
-        "Topic"        -> s"'$sourceTopicName'".spel,
-        "Content type" -> "'JSON'".spel,
-        "Data sample"  -> Expression.json("{\"name\": \"Tom\"}")
+        "Topic"          -> s"'$sourceTopicName'".spel,
+        "Schema version" -> "'latest'".spel
       )
       // We add filtering logic to ensure that types are correctly verified during testing
       .filter("filter", "#input.name != 'asdf'".spel)
-      .emptySink(
-        "end",
-        "kafka",
-        "Key"                   -> "".spel,
-        "Raw editor"            -> "true".spel,
-        "Value"                 -> "#input".spel,
-        "Topic"                 -> s"'$sinkTopicName'".spel,
-        "Content type"          -> "'JSON'".spel,
-        "Value validation mode" -> s"'${ValidationMode.lax.name}'".spel
-      )
+      .emptySink("end", "dead-end")
   }
+
+  private val sampleAvroRecord =
+    new GenericRecordBuilder(sourceTopicAvroSchema)
+      .set("name", "Foo")
+      .build()
+
+  private val givenTimestamp = 123
+
+  protected def expectedTestDataJson: String =
+    s"""[
+      |  {
+      |    "sourceId": "$exampleScenarioSourceId",
+      |    "variables": {
+      |      "input": {
+      |        "name": "Foo"
+      |      },
+      |      "inputMeta": {
+      |        "timestamp": $givenTimestamp,
+      |        "partition": 0,
+      |        "timestampType": "CREATE_TIME",
+      |        "key": null,
+      |        "offset": 0,
+      |        "leaderEpoch": 0,
+      |        "topic": "$sourceTopicName",
+      |        "headers": {}
+      |      }
+      |    },
+      |    "timestamp": $givenTimestamp
+      |  }
+      |]""".stripMargin
+
+  private val validJson =
+    """{
+      |  "input": {
+      |    "name": "FooBar"
+      |  },
+      |  "inputMeta": {
+      |    "key" : "",
+      |    "topic" : "",
+      |    "partition" : 0,
+      |    "offset" : 0,
+      |    "timestamp" : 0,
+      |    "timestampType" : "NO_TIMESTAMP_TYPE",
+      |    "headers" : {
+      |      "field" : ""
+      |    },
+      |    "leaderEpoch" : 0
+      |  }
+      |}""".stripMargin
 
   override protected val validParameters: TestSourceParameters =
     TestSourceParameters(exampleScenarioSourceId, Map(InputVariablesParameterName -> Expression.json(validJson)))
 
-  override protected val invalidParameters: TestSourceParameters =
-    TestSourceParameters(exampleScenarioSourceId, Map(InputVariablesParameterName -> Expression.json(invalidJson)))
-
-  override protected val expectedValidationErrorsOnInvalidParametersJson: String =
-    s"""
-       |[
-       |  {
-       |    "typ": "ExpressionParserCompilationError",
-       |    "message": "expected } or , got 'a0.00}...'",
-       |    "description": "There is problem with expression in field [$InputVariablesParameterName] - it could not be parsed.",
-       |    "fieldName": "$InputVariablesParameterName",
-       |    "errorType": "SaveAllowed",
-       |    "details": {"start":{"column":44,"row":2},"end":{"column":45,"row":2},"type":"CoordinatesBasedTextRange"}
-       |  }
-       |]""".stripMargin
-
-  override protected def expectedTestParametersJson: String = {
+  override protected def expectedTestParametersJson: String =
     s"""[
        |  {
-       |    "sourceId": "start",
+       |    "sourceId": "$exampleScenarioSourceId",
        |    "parameters": [
        |      {
        |        "name": "$InputVariablesParameterName",
@@ -378,7 +406,7 @@ class SchemalessKafkaJsonTypeTests
        |        "variablesToHide": [],
        |        "branchParam": false,
        |        "hintText": null,
-       |        "label": "$InputVariablesParameterName",
+       |        "label": "Input variables",
        |        "requiredParam": true,
        |        "category": "Standard",
        |        "changesCanReloadParameters": false,
@@ -387,24 +415,16 @@ class SchemalessKafkaJsonTypeTests
        |    ]
        |  }
        |]""".stripMargin
-  }
 
-  override protected def beforeAll(): Unit = {
-    super.beforeAll()
-    createKafkaTopics()
-  }
-
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-    MockableDeploymentManager.clean()
+  "The endpoint for adhoc test parameters should" - {
+    "return test parameters" in {
+      shouldProperlyGetTestParameters()
+    }
   }
 
   "The endpoint for adhoc validate should" - {
     "return no errors on valid parameters" in {
       shouldValidateParametersProperly()
-    }
-    "return errors if passed parameter is not valid" in {
-      shouldReturnErrorsForInvalidParameters()
     }
   }
 
@@ -414,162 +434,55 @@ class SchemalessKafkaJsonTypeTests
     }
   }
 
-  "The endpoint for adhoc test parameters should" - {
-    "return test parameters" in {
-      shouldProperlyGetTestParameters()
-    }
-  }
-
-  "The endpoint for process validation should" - {
-    "validate scenario properly with Json data and return proper typing" in {
-      val typedJsonDataSamples = List("{}", "[]", "null").map(getScenarioWithDataSample)
-      typedJsonDataSamples.foreach { scenarioWithEmptyDataSample =>
-        val request =
-          ScenarioValidationRequest(
-            scenarioWithEmptyDataSample.name,
-            scenarioWithEmptyDataSample.toScenarioGraph
-          ).asJson.toString()
-
-        val response = given()
-          .applicationState {
-            createSavedScenario(scenarioWithEmptyDataSample)
-          }
-          .when()
-          .basicAuthAllPermUser()
-          .jsonBody(request)
-          .post(s"$nuDesignerHttpAddress/api/processValidation/${scenarioWithEmptyDataSample.name}")
-          .getBody
-          .asString()
-
-        val typingResult = getTypingResultFromValidationResponse(response)
-        typingResult("input") shouldBe Typed.json
-        typingResult(variablesNodeName) match {
-          case TypedObjectTypingResult(fields, _, _) =>
-            fields(nameVariable) shouldBe Typed.json
-            fields(ageVariable) shouldBe Typed.typedClass[Int]
-            fields(isAdultVariable) shouldBe Typed.typedClass[Boolean]
-          case _ => fail
-        }
-      }
-    }
-  }
-
   "The endpoint for test data generation should" - {
-    "return error if no live data available" in {
+    "generate test data" in {
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
+          kafkaClient
+            .sendRawMessage(
+              topic = sourceTopicName,
+              key = null,
+              content = ConfluentUtils.serializeContainerToBytesArray(sampleAvroRecord, sourceTopicAvroSchemaId),
+              timestamp = givenTimestamp
+            )
+            .futureValue
         }
         .when()
         .basicAuthAllPermUser()
         .jsonBody(
           testDataGenerationRequest(
             exampleScenario.toScenarioGraph.asJson.spaces2,
-            numberOfSamples = 3
+            numberOfSamples = 1
           )
         )
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generatedTestData")
         .Then()
-        .statusCode(404)
-        .equalsPlainBody(
-          "No live test data available. Please ensure that the storage used by source contains at least one data sample"
-        )
+        .statusCode(200)
+        .equalsJsonBody(expectedTestDataJson)
     }
   }
 
-  "The endpoint for test with live data should" - {
-    "return error if no live data available" in {
+  "The endpoint for running tests from file should" - {
+    "properly parse file and run tests" in {
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
         }
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(
-          ScenarioTestValidationRequest(
-            testData = ScenarioTestData.WithLiveData(10),
-            scenarioGraph = exampleScenario.toScenarioGraph
-          ).asJson.toString()
-        )
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
-        .Then()
-        .statusCode(404)
-        .equalsPlainBody(
-          "No live test data available. Please ensure that the storage used by source contains at least one data sample"
-        )
-    }
-  }
-
-  "The endpoint for test with custom test data should" - {
-    "perform a test on given data" in {
-      given()
-        .applicationState {
-          createSavedScenario(exampleScenario)
-        }
-        .when()
-        .basicAuthAllPermUser()
-        .multiPart(
-          "scenarioGraph",
-          exampleScenario.toScenarioGraph.asJson.spaces2,
-          "application/json"
-        )
-        .multiPart(
-          "testData",
-          s"""[
-             |  { "sourceId":"$exampleScenarioSourceId","variables": { "input": {"name": "Foo"} } }
-             |]""".stripMargin,
-          "application/json"
-        )
+        .multiPart("testData", expectedTestDataJson)
+        .multiPart("scenarioGraph", exampleScenario.toScenarioGraph.asJson.noSpaces)
         .post(s"$nuDesignerHttpAddress/api/processManagement/test/${exampleScenario.name}")
         .Then()
         .statusCode(200)
-        .body(s"counts.$exampleScenarioSourceId.all", equalTo(1))
+        .body(
+          s"counts.$exampleScenarioSourceId.all",
+          equalTo(1),
+          "counts.end.all",
+          equalTo(1)
+        )
     }
-  }
-
-  override def designerRawConfig: Config = super.designerRawConfig
-    .withoutPath("scenarioTypes.streaming.modelConfig.components.kafka.disabled")
-    .withValue(
-      "scenarioTypes.streaming.modelConfig.components.kafka.config.kafkaProperties",
-      fromMap(Map("bootstrap.servers" -> hostKafkaAddress).asJava)
-    )
-    .withValue(
-      "scenarioTypes.streaming.modelConfig.components.kafka.config.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource",
-      ConfigValueFactory.fromAnyRef(true)
-    )
-
-  private def createKafkaTopics(): Unit = {
-    val sourceTopic = new NewTopic(sourceTopicName, Collections.emptyMap())
-    val sinkTopic   = new NewTopic(sinkTopicName, Collections.emptyMap())
-    KafkaUtils.usingAdminClient(defaultKafkaConfig) {
-      _.createTopics(List(sourceTopic, sinkTopic).asJava)
-    }
-  }
-
-  private def getTypingResultFromValidationResponse(jsonString: String): Map[String, TypingResult] = {
-    val decoder                                             = new TypingResultDecoder(getClass.getClassLoader.loadClass)
-    implicit val typingResultDecoder: Decoder[TypingResult] = decoder.decodeTypingResults
-
-    val parsed = for {
-      json        <- parse(jsonString)
-      nodeResults <- json.hcursor.downField("nodeResults").as[JsonObject]
-    } yield {
-      nodeResults.toMap.flatMap { case (_, nodeJson) =>
-        val cursor = nodeJson.hcursor.downField("variableTypes")
-        cursor.keys.getOrElse(Nil).map { key =>
-          key -> cursor.downField(key).focus.getOrElse(Json.Null)
-        }
-      }
-    }
-
-    parsed
-      .getOrElse(throw new IllegalStateException("Could not parse validation response"))
-      .map { case (name, jsonValue) =>
-        val result = typingResultDecoder
-          .decodeJson(jsonValue)
-          .getOrElse(throw new IllegalStateException("Could not parse typing result"))
-        name -> result
-      }
   }
 
   private def testDataGenerationRequest(
@@ -580,35 +493,5 @@ class SchemalessKafkaJsonTypeTests
        |  "scenarioGraph": $scenarioGraphStr,
        |  "numberOfSamples": $numberOfSamples
        |}""".stripMargin
-
-  private def getScenarioWithDataSample(dataSample: String) =
-    ScenarioBuilder
-      .streaming(UUID.randomUUID().toString)
-      .parallelism(1)
-      .additionalFields(properties = Map("environment" -> "someNotEmptyString"))
-      .source(
-        "start",
-        "kafka",
-        KafkaUniversalComponentTransformer.topicParamName.value       -> s"'$sourceTopicName'".spel,
-        KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.JSON.toString}'".spel,
-        KafkaUniversalComponentTransformer.dataSampleParamName.value  -> Expression.json(dataSample)
-      )
-      .buildVariable(
-        "bv1",
-        variablesNodeName,
-        nameVariable    -> "#input[0]['name']".spel,
-        ageVariable     -> "#input[0]['age'].toInteger()".spel,
-        isAdultVariable -> "#input[0]['age'].toInteger() >= 18".spel
-      )
-      .emptySink(
-        "end",
-        "kafka",
-        KafkaUniversalComponentTransformer.sinkKeyParamName.value            -> "".spel,
-        KafkaUniversalComponentTransformer.sinkRawEditorParamName.value      -> "true".spel,
-        KafkaUniversalComponentTransformer.sinkValueParamName.value          -> "#input".spel,
-        KafkaUniversalComponentTransformer.topicParamName.value              -> s"'$sinkTopicName'".spel,
-        KafkaUniversalComponentTransformer.contentTypeParamName.value        -> s"'${ContentTypes.JSON.toString}'".spel,
-        KafkaUniversalComponentTransformer.sinkValidationModeParamName.value -> s"'${ValidationMode.lax.name}'".spel
-      )
 
 }

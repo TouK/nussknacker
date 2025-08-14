@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
-import pl.touk.nussknacker.engine.api.{JobData, VariableConstants}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.Source
@@ -94,7 +94,7 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
             val source   = getSourceById(sourceId)
             val recordsFromSourceSpecificTestDataFormat: List[Input] =
               testDataPreparer.prepareRecordsForTest(source, scenarioTestRecords)
-            val recordsFromCommonTestDataFormat = decodeCommonFormatRecords(scenarioTestRecords)
+            val recordsFromCommonTestDataFormat = decodeCommonFormatRecords(scenarioTestRecords, nodeId)
             (recordsFromSourceSpecificTestDataFormat ++ recordsFromCommonTestDataFormat)
               .map(record => sourceId -> record)
           }
@@ -115,7 +115,7 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
   }
 
   // We currently have a limited support for "common" test data format for Lite engine. See inline comments for details
-  private def decodeCommonFormatRecords(scenarioTestRecords: List[ScenarioTestRecord]) = {
+  private def decodeCommonFormatRecords(scenarioTestRecords: List[ScenarioTestRecord], sourceNodeId: NodeId) = {
     val commonFormatRecords = scenarioTestRecords.zipWithIndex.collect {
       case (record: ScenarioTestCommonFormatJsonRecord, index) => (record, index)
     }
@@ -124,22 +124,17 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
         "Common format test records in input test data were found. Will be used experimental test records decoding mechanism"
       )
     }
+    // For test data encoding will be used FromJsonSimpleDecoder instead of FromJsonSchemaBasedDecoder. It doesn't handle some types properly.
+    // To make it work correctly, we should redesign Lite compilation approach to pass here source's output ValidationContext
+    val validationContext = ValidationContext.empty.withVariableUnsafe(VariableConstants.InputVariableName, Unknown)
+    val decoder           = new CommonTestDataFormatVariablesDecoder(validationContext, sourceNodeId)
     commonFormatRecords.map { case (record, testRecordIndex) =>
       // It will work only when in test data there is only one "input" variable and. To make it work for other cases, we should redesign ScenarioInputBatch
       assume(
         record.variables.keySet == Set(VariableConstants.InputVariableName),
         s"Test record should contain '${VariableConstants.InputVariableName}' variable"
       )
-      CommonTestDataFormatVariablesDecoder
-        .decode(
-          record.variables,
-          // For test data encoding will be used FromJsonSimpleDecoder instead of FromJsonSchemaBasedDecoder. It doesn't handle some types properly.
-          // To make it work correctly, we should redesign Lite compilation approach to pass here source's output ValidationContext
-          ValidationContext.empty.withVariableUnsafe(VariableConstants.InputVariableName, Unknown),
-          record.sourceId,
-          testRecordIndex
-        )(VariableConstants.InputVariableName)
-        .asInstanceOf[Input]
+      decoder.decode(record.variables, testRecordIndex)(VariableConstants.InputVariableName).asInstanceOf[Input]
     }
   }
 
