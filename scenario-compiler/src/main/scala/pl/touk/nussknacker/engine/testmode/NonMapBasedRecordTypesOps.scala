@@ -9,6 +9,7 @@ object NonMapBasedRecordTypesOps {
 
   implicit class TypingResultExt(typingResult: TypingResult) {
 
+    // This method translates nom-Map-based record types (e.g. based on GenericRecord or Row) into Map-based records
     def toMapBasedRecordTypes: TypingResult = typingResult match {
       case union: TypedUnion          => Typed(union.possibleTypes.map(_.toMapBasedRecordTypes))
       case TypedNull                  => TypedNull
@@ -31,10 +32,18 @@ object NonMapBasedRecordTypesOps {
           record
       case TypedObjectTypingResult(fields, _, _) =>
         Typed.record(fields.mapValuesNow(_.toMapBasedRecordTypes).toList)
-      case dict @ TypedDict(_, valueType)                  => dict.copy(valueType = valueType.toMapBasedRecordTypes)
-      case tagged @ TypedTaggedValue(underlying, _)        => tagged.copy(underlying.toMapBasedRecordTypes)
-      case withValue @ TypedObjectWithValue(underlying, _) => withValue.copy(underlying.toMapBasedRecordTypes)
-      case clazz: TypedClass                               => clazz.toMapBasedRecordTypes
+      case dict @ TypedDict(_, valueType)           => dict.copy(valueType = valueType.toMapBasedRecordTypes)
+      case tagged @ TypedTaggedValue(underlying, _) => tagged.copy(underlying.toMapBasedRecordTypes)
+      case withValue @ TypedObjectWithValue(underlying, _) =>
+        val newUnderlying = underlying.toMapBasedRecordTypes
+        if (newUnderlying != underlying) {
+          throw new IllegalArgumentException(
+            "Translation of types with value containing nom-Map-based record to Map-based-record types is not allowed"
+          )
+        } else {
+          withValue
+        }
+      case clazz: TypedClass => clazz.toMapBasedRecordTypes
     }
 
   }

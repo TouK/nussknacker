@@ -74,9 +74,8 @@ class CommonDataFormatHandler(modelData: ModelData) extends TestDataFormatHandle
       validOutputValidationContext <- sourceCompilationResult.validationContext.toEither.leftMap(errors =>
         ParametersDefinitionError.SourcesCompilationError(NonEmptyList.one(sourceId -> errors))
       )
-      recordTypeBasedOnOutputValidationContext = Typed
-        .record(validOutputValidationContext.localVariables)
-        .toMapBasedRecordTypes
+      validationContextWithMapBasedRecordTypes = validOutputValidationContext.mapTypes(_.toMapBasedRecordTypes)
+      recordTypeBasedOnOutputValidationContext = Typed.record(validationContextWithMapBasedRecordTypes.localVariables)
       singleInputVariablesParameter = Parameter(InputVariablesParameterName, recordTypeBasedOnOutputValidationContext)
         .copy(editors = List(JsonParameterEditor))
     } yield List(singleInputVariablesParameter)

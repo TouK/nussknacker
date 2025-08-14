@@ -26,19 +26,16 @@ object CommonTestDataFormatStubbedSourcePreparer {
 
   def prepareSubbedSource(
       testRecords: NonEmptyList[(ScenarioTestCommonFormatJsonRecord, Int)],
-      sourceOutputValidationContext: ValidationContext
+      sourceOutputValidationContext: ValidationContext,
+      sourceId: NodeId
   ): FlinkSource = {
     // We change record type because for now, we can't decode non-Map records from json - see FromJsonTypingResultBasedDecoder for details
-    val outputValidationContextWithRecordsAsMaps = sourceOutputValidationContext.mapTypes(_.toMapBasedRecordTypes)
+    val outputValidationContextWithRecordsAsMaps =
+      sourceOutputValidationContext.mapTypes(_.withoutValue.toMapBasedRecordTypes)
+    val decoder = new CommonTestDataFormatVariablesDecoder(outputValidationContextWithRecordsAsMaps, sourceId)
 
     val decodedRecords = testRecords.map { case (record, testRecordIndex) =>
-      val decodedVariables =
-        CommonTestDataFormatVariablesDecoder.decode(
-          record.variables,
-          outputValidationContextWithRecordsAsMaps,
-          record.sourceId,
-          testRecordIndex
-        )
+      val decodedVariables = decoder.decode(record.variables, testRecordIndex)
       DataRecord(decodedVariables, record.timestamp)
     }
 

@@ -5,20 +5,21 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder.{
+  TestRecordVariableDecodingError,
+  UnexpectedVariableInTestRecordError
+}
 
-object CommonTestDataFormatVariablesDecoder {
+class CommonTestDataFormatVariablesDecoder(sourceOutputValidationContext: ValidationContext, sourceId: NodeId) {
 
   def decode(
       jsonVariables: Map[String, Json],
-      sourceOutputValidationContext: ValidationContext,
-      sourceId: NodeId,
       testRecordIndex: Int
   ): Map[String, Any] = {
     jsonVariables.map { case (variableName, jsonVariable) =>
       val variableType = sourceOutputValidationContext
         .get(variableName)
         .getOrElse(throw UnexpectedVariableInTestRecordError(variableName, sourceId, testRecordIndex))
-        .withoutValue
       val decodedVariable = FromJsonTypingResultBasedDecoder
         .decodeValue(variableType, HCursor.fromJson(jsonVariable))
         .fold(
@@ -36,6 +37,10 @@ object CommonTestDataFormatVariablesDecoder {
       variableName -> decodedVariable
     }
   }
+
+}
+
+object CommonTestDataFormatVariablesDecoder {
 
   sealed abstract class TestRecordVariablesDecodingError(message: String, cause: Exception)
       extends Exception(message, cause) {

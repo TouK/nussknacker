@@ -220,7 +220,8 @@ class TestFlinkProcessCompilerDataFactory(
           )
           val stubbedSource = CommonTestDataFormatStubbedSourcePreparer.prepareSubbedSource(
             commonFormatRecordsNel,
-            outputValidationContext
+            outputValidationContext,
+            compilationDependencies.nodeId
           )
           recoverOutputValidationContextIfNeeded(
             originalSourceWasWrappedInContextTransformation,
