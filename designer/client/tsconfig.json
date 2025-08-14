@@ -29,6 +29,7 @@
         },
         "typeRoots": ["node_modules/@types", "types/@remote", "types"]
     },
+    "include": ["src/**/*", "node_modules/@hello-pangea/dnd/src/**/*"],
     "exclude": ["node_modules", ".federated-types", "cypress", "./cypress.config.ts"],
     "ts-node": {
         "compilerOptions": {
