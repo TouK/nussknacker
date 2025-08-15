@@ -37,7 +37,7 @@ class NussknackerAppFactory(
       domainServices <- DomainServices.create(designerConfigLoader, alreadyLoadedConfig, infrastructureServices)
       customHttpServiceProvidersWithDependencies <- CustomHttpServiceProvidersLoader.loadCustomHttpServiceProviders(
         alreadyLoadedConfig,
-        None,
+        Some(domainServices),
       )(infrastructureServices.executionContextWithIORuntime)
       _ = initMetrics(
         infrastructureServices.metricsRegistry,
