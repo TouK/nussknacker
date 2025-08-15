@@ -8,6 +8,7 @@ import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.factory.{DomainServices, InfrastructureServices}
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, AuthManager}
+import pl.touk.nussknacker.ui.server.CustomHttpServiceProvidersLoader.CustomHttpServiceProviders
 import pl.touk.nussknacker.ui.server.PekkoRoutesFactory.PekkoRoutes
 import pl.touk.nussknacker.ui.util._
 
@@ -16,7 +17,8 @@ object PekkoHttpBasedRouteFactory {
   def createRoute(
       designerConfig: DesignerConfig,
       infrastructureServices: InfrastructureServices,
-      domainServices: DomainServices
+      domainServices: DomainServices,
+      customHttpServiceProviders: CustomHttpServiceProviders
   ): Resource[IO, Route] = {
     import infrastructureServices._
     val authenticationResources =
@@ -27,36 +29,32 @@ object PekkoHttpBasedRouteFactory {
       )(executionContextWithIORuntime)
     val authManager = new AuthManager(authenticationResources)(executionContextWithIORuntime)
 
-    for {
-      customHttpServiceProviders <- CustomHttpServiceProvidersLoader.loadCustomHttpServiceProviders(
-        designerConfig,
-        domainServices,
-      )
-      pekkoRoutes = PekkoRoutesFactory.createRoutes(
-        designerConfig,
-        infrastructureServices,
-        domainServices,
-        authenticationResources,
-        customHttpServiceProviders.pekko
-      )
-      nuDesignerApi = TapirHttpServiceFactory.createHttpService(
-        designerConfig,
-        infrastructureServices,
-        domainServices,
-        authManager,
-        customHttpServiceProviders.tapir
-      )
+    val pekkoRoutes = PekkoRoutesFactory.createRoutes(
+      designerConfig,
+      infrastructureServices,
+      domainServices,
+      authenticationResources,
+      customHttpServiceProviders.pekko
+    )
+    val nuDesignerApi = TapirHttpServiceFactory.createHttpService(
+      designerConfig,
+      infrastructureServices,
+      domainServices,
+      authManager,
+      customHttpServiceProviders.tapir
+    )
 
-      pekkoHttpServerInterpreter = new NuPekkoHttpServerInterpreterForTapirPurposes()
+    val pekkoHttpServerInterpreter = new NuPekkoHttpServerInterpreterForTapirPurposes()
 
-      appRoute = createAppRoute(
+    Resource.pure(
+      createAppRoute(
         designerConfig = designerConfig,
         authManager = authManager,
         tapirRelatedRoutes = pekkoHttpServerInterpreter.toRoute(nuDesignerApi.allEndpoints) :: Nil,
         pekkoRoutes = pekkoRoutes,
         developmentMode = designerConfig.development
       )
-    } yield appRoute
+    )
   }
 
   private def createAppRoute(

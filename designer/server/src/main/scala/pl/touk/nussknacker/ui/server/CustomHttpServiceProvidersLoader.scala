@@ -21,7 +21,7 @@ object CustomHttpServiceProvidersLoader {
 
   def loadCustomHttpServiceProviders(
       designerConfig: DesignerConfig,
-      domainServices: DomainServices,
+      domainServices: Option[DomainServices],
   )(
       implicit executionContext: ExecutionContext
   ): Resource[IO, CustomHttpServiceProviders] = for {
@@ -55,13 +55,23 @@ object CustomHttpServiceProvidersLoader {
   private def createHttpServiceProviders(
       customHttpServiceProviderFactories: List[CustomHttpServiceProviderFactory],
       designerConfig: DesignerConfig,
-      domainServices: DomainServices,
+      domainServicesOpt: Option[DomainServices],
   )(implicit executionContext: ExecutionContext): Resource[IO, CustomHttpServiceProviders] = {
-    lazy val nussknackerServices = new NussknackerServicesForCustomHttpService(
-      new ProcessServiceBasedScenarioServiceAdapter(domainServices.processService),
-    )
+    lazy val nussknackerServices = domainServicesOpt.map { domainServices =>
+      new NussknackerServicesForCustomHttpService(
+        new ProcessServiceBasedScenarioServiceAdapter(domainServices.processService),
+      )
+    }
     customHttpServiceProviderFactories
-      .traverse { factory => factory.create(designerConfig.rawConfig, nussknackerServices).map(factory.name -> _) }
+      .filter { factory =>
+        domainServicesOpt match {
+          case Some(_) => factory.requiresNussknackerServices
+          case None    => !factory.requiresNussknackerServices
+        }
+      }
+      .traverse { factory =>
+        factory.create(designerConfig.rawConfig, nussknackerServices.orNull).map(factory.name -> _)
+      }
       .map { namedProviders =>
         namedProviders.foldLeft(CustomHttpServiceProviders(Map.empty, Map.empty)) {
           case (acc, (name, provider: PekkoCustomHttpServiceProvider)) =>

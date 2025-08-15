@@ -13,4 +13,6 @@ trait CustomHttpServiceProviderFactory {
       services: NussknackerServicesForCustomHttpService,
   ): Resource[IO, CustomHttpServiceProvider]
 
+  def requiresNussknackerServices: Boolean = true
+
 }

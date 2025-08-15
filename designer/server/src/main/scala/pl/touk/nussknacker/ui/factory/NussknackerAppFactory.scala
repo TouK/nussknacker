@@ -8,7 +8,12 @@ import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHand
 import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.server.{NussknackerHttpServer, PekkoHttpBasedRouteFactory}
+import pl.touk.nussknacker.ui.server.{
+  CustomHttpServiceProvidersLoader,
+  NussknackerHttpServer,
+  PekkoHttpBasedRouteFactory
+}
+import pl.touk.nussknacker.ui.server.CustomHttpServiceProvidersLoader.CustomHttpServiceProviders
 
 import java.time.Clock
 import scala.concurrent.Future
@@ -25,17 +30,30 @@ class NussknackerAppFactory(
       alreadyLoadedConfig <- Resource.eval(designerConfigLoader.loadDesignerConfig())
 
       infrastructureServices <- InfrastructureServices.create(clock, alreadyLoadedConfig)
-      domainServices         <- DomainServices.create(designerConfigLoader, alreadyLoadedConfig, infrastructureServices)
+      customHttpServiceProvidersWithoutDependencies <- CustomHttpServiceProvidersLoader.loadCustomHttpServiceProviders(
+        alreadyLoadedConfig,
+        None,
+      )(infrastructureServices.executionContextWithIORuntime)
+      domainServices <- DomainServices.create(designerConfigLoader, alreadyLoadedConfig, infrastructureServices)
+      customHttpServiceProvidersWithDependencies <- CustomHttpServiceProvidersLoader.loadCustomHttpServiceProviders(
+        alreadyLoadedConfig,
+        None,
+      )(infrastructureServices.executionContextWithIORuntime)
       _ = initMetrics(
         infrastructureServices.metricsRegistry,
         alreadyLoadedConfig,
         domainServices.futureProcessRepository
       )
-
       route <- PekkoHttpBasedRouteFactory.createRoute(
         designerConfig = alreadyLoadedConfig,
         infrastructureServices = infrastructureServices,
-        domainServices = domainServices
+        domainServices = domainServices,
+        customHttpServiceProviders = CustomHttpServiceProviders(
+          tapir =
+            customHttpServiceProvidersWithoutDependencies.tapir ++ customHttpServiceProvidersWithDependencies.tapir,
+          pekko =
+            customHttpServiceProvidersWithoutDependencies.pekko ++ customHttpServiceProvidersWithDependencies.pekko,
+        )
       )
       _ <- new NussknackerHttpServer(infrastructureServices, alreadyLoadedConfig).start(route)
       _ <- startJmxReporter(infrastructureServices.metricsRegistry)
