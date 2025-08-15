@@ -11,8 +11,9 @@ import pl.touk.nussknacker.ui.customhttpservice.{
   PekkoCustomHttpServiceProvider,
   TapirCustomHttpServiceProvider
 }
+import pl.touk.nussknacker.ui.customhttpservice.CustomHttpServiceProviderFactory.CustomHttpServiceProviderCreator
 import pl.touk.nussknacker.ui.customhttpservice.TapirCustomHttpServiceProvider.CustomHttpServiceServerEndpointDefinition
-import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
+import pl.touk.nussknacker.ui.customhttpservice.services.{NussknackerDomainServices, NussknackerInfrastructureServices}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import sttp.model.StatusCode.UnprocessableEntity
 import sttp.tapir.derevo.schema
@@ -22,11 +23,11 @@ class TestCustomHttpServiceProviderFactory extends CustomHttpServiceProviderFact
 
   override def name: String = "testProvider"
 
-  override def create(
-      config: Config,
-      services: NussknackerServicesForCustomHttpService
-  ): Resource[IO, CustomHttpServiceProvider] =
-    Resource.pure(TestCustomHttpServiceProvider)
+  override def creator: CustomHttpServiceProviderCreator =
+    new CustomHttpServiceProviderCreator.WithoutDependencies {
+      override def create(config: Config): Resource[IO, CustomHttpServiceProvider] =
+        Resource.pure(TestCustomHttpServiceProvider)
+    }
 
 }
 
@@ -43,11 +44,14 @@ class SecondTestCustomHttpServiceProviderFactory extends CustomHttpServiceProvid
 
   override def name: String = "secondTestProvider"
 
-  override def create(
-      config: Config,
-      services: NussknackerServicesForCustomHttpService
-  ): Resource[IO, CustomHttpServiceProvider] =
-    Resource.pure(TestCustomHttpServiceProvider)
+  override def creator: CustomHttpServiceProviderCreator =
+    new CustomHttpServiceProviderCreator.WithInfrastructureDependencies {
+      override def create(
+          config: Config,
+          nussknackerInfrastructureServices: NussknackerInfrastructureServices,
+      ): Resource[IO, CustomHttpServiceProvider] =
+        Resource.pure(TestCustomHttpServiceProvider)
+    }
 
 }
 
@@ -135,10 +139,14 @@ class TapirTestCustomHttpServiceProviderFactory extends CustomHttpServiceProvide
 
   override def name: String = "tapirTestProvider"
 
-  override def create(
-      config: Config,
-      services: NussknackerServicesForCustomHttpService
-  ): Resource[IO, CustomHttpServiceProvider] =
-    Resource.pure(new TestTapirCustomHttpServiceProvider)
+  override def creator: CustomHttpServiceProviderCreator =
+    new CustomHttpServiceProviderCreator.WithInfrastructureAndDomainDependencies {
+      override def create(
+          config: Config,
+          infrastructureServices: NussknackerInfrastructureServices,
+          domainServices: NussknackerDomainServices,
+      ): Resource[IO, CustomHttpServiceProvider] =
+        Resource.pure(new TestTapirCustomHttpServiceProvider)
+    }
 
 }

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.factory
 
 import cats.effect.{IO, Resource}
+import cats.implicits.catsSyntaxSemigroup
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
@@ -8,7 +9,12 @@ import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHand
 import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.server.{NussknackerHttpServer, PekkoHttpBasedRouteFactory}
+import pl.touk.nussknacker.ui.server.{
+  CustomHttpServiceProvidersLoader,
+  NussknackerHttpServer,
+  PekkoHttpBasedRouteFactory
+}
+import pl.touk.nussknacker.ui.server.CustomHttpServiceProvidersLoader.CustomHttpServiceLoadingMode
 
 import java.time.Clock
 import scala.concurrent.Future
@@ -23,19 +29,41 @@ class NussknackerAppFactory(
       _ <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
 
       alreadyLoadedConfig <- Resource.eval(designerConfigLoader.loadDesignerConfig())
-
+      customHttpServicesProvidersWithoutDependencies <-
+        CustomHttpServiceProvidersLoader
+          .loadCustomHttpServiceProviders(
+            alreadyLoadedConfig,
+            CustomHttpServiceLoadingMode.LoadServicesWithoutDependencies,
+          )
       infrastructureServices <- InfrastructureServices.create(clock, alreadyLoadedConfig)
-      domainServices         <- DomainServices.create(designerConfigLoader, alreadyLoadedConfig, infrastructureServices)
+      customHttpServiceProvidersWithInfrastructureDependencies <-
+        CustomHttpServiceProvidersLoader
+          .loadCustomHttpServiceProviders(
+            alreadyLoadedConfig,
+            CustomHttpServiceLoadingMode.LoadServicesWithInfrastructureDependencies(infrastructureServices),
+          )
+      domainServices <- DomainServices.create(designerConfigLoader, alreadyLoadedConfig, infrastructureServices)
+      customHttpServiceProvidersWithInfrastructureAndDomainDependencies <-
+        CustomHttpServiceProvidersLoader
+          .loadCustomHttpServiceProviders(
+            alreadyLoadedConfig,
+            CustomHttpServiceLoadingMode.LoadServicesWithInfrastructureAndDomainDependencies(
+              infrastructureServices,
+              domainServices,
+            ),
+          )
       _ = initMetrics(
         infrastructureServices.metricsRegistry,
         alreadyLoadedConfig,
         domainServices.futureProcessRepository
       )
-
       route <- PekkoHttpBasedRouteFactory.createRoute(
         designerConfig = alreadyLoadedConfig,
         infrastructureServices = infrastructureServices,
-        domainServices = domainServices
+        domainServices = domainServices,
+        customHttpServiceProviders = customHttpServicesProvidersWithoutDependencies |+|
+          customHttpServiceProvidersWithInfrastructureDependencies |+|
+          customHttpServiceProvidersWithInfrastructureAndDomainDependencies
       )
       _ <- new NussknackerHttpServer(infrastructureServices, alreadyLoadedConfig).start(route)
       _ <- startJmxReporter(infrastructureServices.metricsRegistry)
