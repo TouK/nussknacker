@@ -23,6 +23,8 @@ import type { Position } from "css-box-model";
 import { useRef } from "react";
 import { useCallback, useMemo } from "use-memo-one";
 
+import type { PendingPromise } from "../../../common/PendingPromise";
+
 // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
 export const primaryButton = 0;
 export const sloppyClickThreshold = 5;
@@ -51,17 +53,19 @@ type Phase = Idle | Pending | Dragging;
 const idle: Idle = { type: "IDLE" };
 
 interface GetCaptureArgs {
+    before: () => Promise<void>;
     cancel: () => void;
     completed: () => void;
     getPhase: () => Phase;
     setPhase: (phase: Phase) => void;
 }
 
-function getCaptureBindings({ cancel, completed, getPhase, setPhase }: GetCaptureArgs): AnyEventBinding[] {
+function getCaptureBindings({ cancel, completed, getPhase, setPhase, before }: GetCaptureArgs): AnyEventBinding[] {
     return [
         {
             eventName: "mousemove",
-            fn: (event: MouseEvent) => {
+            fn: async (event: MouseEvent) => {
+                await before();
                 const { button, clientX, clientY } = event;
                 if (button !== primaryButton) {
                     return;
@@ -198,7 +202,11 @@ function getCaptureBindings({ cancel, completed, getPhase, setPhase }: GetCaptur
     ];
 }
 
-export default function useMouseSensor(api: SensorAPI) {
+export default function useMouseSensor(
+    api: SensorAPI,
+    delayPromiseGetter: (draggableId: DraggableId) => PendingPromise<{ end: PendingPromise<void> }>,
+) {
+    const pendingPromise = useRef<PendingPromise<{ end: PendingPromise<void> }>>();
     const phaseRef = useRef<Phase>(idle);
     const unbindEventsRef = useRef<() => void>(noop);
 
@@ -225,6 +233,8 @@ export default function useMouseSensor(api: SensorAPI) {
                 if (!draggableId) {
                     return;
                 }
+
+                pendingPromise.current = delayPromiseGetter(draggableId);
 
                 const actions: PreDragActions | null = api.tryGetLock(
                     draggableId,
@@ -317,7 +327,13 @@ export default function useMouseSensor(api: SensorAPI) {
         listenForCapture();
     }, [listenForCapture]);
 
+    const before = useCallback(async () => {
+        await pendingPromise.current;
+    }, []);
+
     const cancel = useCallback(() => {
+        pendingPromise.current?.then(({ end }) => end.resolve());
+        pendingPromise.current?.reject();
         const phase: Phase = phaseRef.current;
         stop();
         if (phase.type === "DRAGGING") {
@@ -332,6 +348,7 @@ export default function useMouseSensor(api: SensorAPI) {
         function bindCapturingEvents() {
             const options = { capture: true, passive: false };
             const bindings: AnyEventBinding[] = getCaptureBindings({
+                before,
                 cancel,
                 completed: stop,
                 getPhase: () => phaseRef.current,
@@ -342,7 +359,7 @@ export default function useMouseSensor(api: SensorAPI) {
 
             unbindEventsRef.current = bindEvents(window, bindings, options);
         },
-        [cancel, stop],
+        [before, cancel, stop],
     );
 
     const startPendingDrag = useCallback(

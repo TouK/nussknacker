@@ -19,6 +19,8 @@ import supportedPageVisibilityEventName from "@hello-pangea/dnd/src/view/use-sen
 import { useRef } from "react";
 import { useCallback, useMemo } from "use-memo-one";
 
+import type { PendingPromise } from "../../../common/PendingPromise";
+
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 function noop() {}
 
@@ -137,13 +139,17 @@ function getDraggingBindings(actions: SnapDragActions, stop: () => void): AnyEve
     ];
 }
 
-export default function useKeyboardSensor(api: SensorAPI) {
+export default function useKeyboardSensor(
+    api: SensorAPI,
+    delayPromiseGetter: (draggableId: DraggableId) => PendingPromise<{ end: PendingPromise<void> }>,
+) {
+    const pendingPromise = useRef<PendingPromise<{ end: PendingPromise<void> }>>();
     const unbindEventsRef = useRef<() => void>(noop);
 
     const startCaptureBinding: KeyboardEventBinding = useMemo(
         () => ({
             eventName: "keydown",
-            fn: function onKeyDown(event: KeyboardEvent) {
+            fn: async function onKeyDown(event: KeyboardEvent) {
                 // Event already used
                 if (event.defaultPrevented) {
                     return;
@@ -159,6 +165,9 @@ export default function useKeyboardSensor(api: SensorAPI) {
                 if (!draggableId) {
                     return;
                 }
+
+                pendingPromise.current = delayPromiseGetter(draggableId);
+                await pendingPromise.current;
 
                 const preDrag: PreDragActions | null = api.tryGetLock(
                     draggableId,
@@ -179,6 +188,9 @@ export default function useKeyboardSensor(api: SensorAPI) {
 
                 // There is no pending period for a keyboard drag
                 // We can lift immediately
+                await new Promise<void>((resolve) => {
+                    requestAnimationFrame(() => resolve());
+                });
                 const actions: SnapDragActions = preDrag.snapLift();
 
                 // unbind this listener
@@ -188,6 +200,9 @@ export default function useKeyboardSensor(api: SensorAPI) {
                 function stop() {
                     invariant(isCapturing, "Cannot stop capturing a keyboard drag when not capturing");
                     isCapturing = false;
+
+                    pendingPromise.current?.then(({ end }) => end.resolve());
+                    pendingPromise.current?.reject();
 
                     // unbind dragging bindings
                     unbindEventsRef.current();

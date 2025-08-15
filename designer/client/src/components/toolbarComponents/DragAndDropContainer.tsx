@@ -1,12 +1,16 @@
-import type { OnDragEndResponder, OnDragStartResponder } from "@hello-pangea/dnd";
+import type { OnDragEndResponder, OnDragStartResponder, SensorAPI } from "@hello-pangea/dnd";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { alpha, GlobalStyles, useTheme } from "@mui/material";
 import type { PropsWithChildren } from "react";
+import { useMemo } from "react";
 import React, { useCallback, useState } from "react";
 
 import type { ToolbarPosition } from "../../actions/nk/toolbars";
+import { PendingPromise } from "../../common/PendingPromise";
 import { EventTrackingSelector, EventTrackingType, useEventTracking } from "../../containers/event-tracking";
 import { SIDEBAR_WIDTH } from "../../stylesheets/variables";
+import getKeyboardSensor from "./sensors/use-keyboard-sensor";
+import getMouseSensor from "./sensors/use-mouse-sensor";
 import { DRAGGABLE_LIST_CLASSNAME, DRAGGING_FROM_CLASSNAME, DRAGGING_OVER_CLASSNAME, DROPPABLE_CLASSNAME } from "./ToolbarsContainer";
 
 type Props = PropsWithChildren<{
@@ -41,8 +45,37 @@ export function DragAndDropContainer({ children, onMove }: Props) {
 
     const theme = useTheme();
 
+    const { mouseSensor, keyboardSensor } = useMemo(() => {
+        const delayPromiseGetter = (draggableId: string) => {
+            setDraggableId(draggableId);
+            const pendingPromise = PendingPromise.withTimeout<{ end: PendingPromise<void> }>(1000);
+            pendingPromise.catch(() => setDraggableId(null));
+            pendingPromise.then(
+                (res) => console.log("resolved", res),
+                () => console.log("rejected"),
+            );
+            setTimeout(() => {
+                const endPromise = new PendingPromise<void>();
+                endPromise.then(() => setDraggableId(null));
+                pendingPromise.resolve({ end: endPromise });
+            }, 500);
+            return pendingPromise;
+        };
+        return {
+            mouseSensor: (api: SensorAPI) => getMouseSensor(api, delayPromiseGetter),
+            keyboardSensor: (api: SensorAPI) => getKeyboardSensor(api, delayPromiseGetter),
+        };
+    }, []);
+
     return (
-        <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
+        <DragDropContext
+            sensors={[mouseSensor, keyboardSensor]}
+            onBeforeDragStart={console.log}
+            onBeforeCapture={console.warn}
+            onDragEnd={onDragEnd}
+            onDragStart={onDragStart}
+            enableDefaultSensors={false}
+        >
             <GlobalStyles
                 styles={{
                     [`.${DRAGGABLE_LIST_CLASSNAME}`]: {
