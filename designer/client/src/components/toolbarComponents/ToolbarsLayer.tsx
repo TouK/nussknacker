@@ -122,13 +122,14 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
                             gridArea: "top",
                             opacity: showFloatingToolbar ? 0 : 1,
                             transition: theme.transitions.create("opacity", { delay: showFloatingToolbar ? 0 : 250 }),
+                            px: 5,
                         })}
                         availableToolbars={availableToolbars}
                         side={ToolbarsSide.CenterTop}
                     />
 
                     <StyledToolbarsContainer
-                        sx={{ gridArea: "bottom" }}
+                        sx={{ gridArea: "bottom", px: 5 }}
                         availableToolbars={availableToolbars}
                         side={ToolbarsSide.CenterBottom}
                     />

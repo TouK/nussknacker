@@ -4,6 +4,7 @@ import { alpha, GlobalStyles, useTheme } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import { useMemo } from "react";
 import React, { useCallback, useState } from "react";
+import { useDebouncedValue } from "rooks";
 
 import type { ToolbarPosition } from "../../actions/nk/toolbars";
 import { PendingPromise } from "../../common/PendingPromise";
@@ -22,13 +23,20 @@ export const TOOLBAR_DRAGGABLE_TYPE = "TOOLBAR";
 export const DraggableIdContext = React.createContext<string | null>(null);
 
 export function DragAndDropContainer({ children, onMove }: Props) {
+    const animationDelay = 200;
     const [draggableId, setDraggableId] = useState<string | null>(null);
+    const [debouncedDraggableId, immediatelySetDraggableId] = useDebouncedValue(draggableId, animationDelay);
+    const clearDraggableId = useCallback(() => {
+        setDraggableId(null);
+        immediatelySetDraggableId(null);
+    }, [immediatelySetDraggableId]);
+
     const { trackEvent } = useEventTracking();
 
     const onDragEnd: OnDragEndResponder = useCallback(
         (result) => {
             trackEvent({ selector: EventTrackingSelector.ToolbarPanel, event: EventTrackingType.Move });
-            setDraggableId(null);
+            clearDraggableId();
             const { destination, type, reason, source } = result;
             if (reason === "DROP" && type === TOOLBAR_DRAGGABLE_TYPE && destination) {
                 const from: ToolbarPosition = [source.droppableId, source.index];
@@ -36,7 +44,7 @@ export function DragAndDropContainer({ children, onMove }: Props) {
                 onMove(from, to);
             }
         },
-        [onMove, trackEvent],
+        [clearDraggableId, onMove, trackEvent],
     );
 
     const onDragStart: OnDragStartResponder = useCallback(({ draggableId }) => {
@@ -48,30 +56,27 @@ export function DragAndDropContainer({ children, onMove }: Props) {
     const { mouseSensor, keyboardSensor } = useMemo(() => {
         const delayPromiseGetter = (draggableId: string) => {
             setDraggableId(draggableId);
-            const pendingPromise = PendingPromise.withTimeout<{ end: PendingPromise<void> }>(1000);
-            pendingPromise.catch(() => setDraggableId(null));
-            pendingPromise.then(
-                (res) => console.log("resolved", res),
-                () => console.log("rejected"),
-            );
+            const delayPromise = new PendingPromise<{ end: PendingPromise<void> }>();
+            delayPromise.catch(() => clearDraggableId());
             setTimeout(() => {
                 const endPromise = new PendingPromise<void>();
-                endPromise.then(() => setDraggableId(null));
-                pendingPromise.resolve({ end: endPromise });
-            }, 500);
-            return pendingPromise;
+                endPromise.then(() => clearDraggableId());
+                delayPromise.resolve({ end: endPromise });
+            }, animationDelay);
+            return delayPromise;
         };
         return {
             mouseSensor: (api: SensorAPI) => getMouseSensor(api, delayPromiseGetter),
             keyboardSensor: (api: SensorAPI) => getKeyboardSensor(api, delayPromiseGetter),
         };
-    }, []);
+    }, [clearDraggableId, animationDelay]);
 
     return (
         <DragDropContext
-            sensors={[mouseSensor, keyboardSensor]}
-            onBeforeDragStart={console.log}
-            onBeforeCapture={console.warn}
+            sensors={[
+                mouseSensor,
+                // keyboardSensor
+            ]}
             onDragEnd={onDragEnd}
             onDragStart={onDragStart}
             enableDefaultSensors={false}
@@ -91,7 +96,7 @@ export function DragAndDropContainer({ children, onMove }: Props) {
                     [`.${DROPPABLE_CLASSNAME}`]: {
                         [`.${DRAGGABLE_LIST_CLASSNAME}::after`]: {
                             content: draggableId ? "''" : null,
-                            transition: theme.transitions.create(["all"], { duration: theme.transitions.duration.standard }),
+                            transition: theme.transitions.create("all", { duration: theme.transitions.duration.standard }),
                             position: "absolute",
                             top: 0,
                             left: 0,
@@ -113,7 +118,7 @@ export function DragAndDropContainer({ children, onMove }: Props) {
                     },
                 }}
             />
-            <DraggableIdContext.Provider value={draggableId}>{children}</DraggableIdContext.Provider>
+            <DraggableIdContext.Provider value={debouncedDraggableId}>{children}</DraggableIdContext.Provider>
         </DragDropContext>
     );
 }

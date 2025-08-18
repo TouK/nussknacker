@@ -65,7 +65,6 @@ function getCaptureBindings({ cancel, completed, getPhase, setPhase, before }: G
         {
             eventName: "mousemove",
             fn: async (event: MouseEvent) => {
-                await before();
                 const { button, clientX, clientY } = event;
                 if (button !== primaryButton) {
                     return;
@@ -98,13 +97,16 @@ function getCaptureBindings({ cancel, completed, getPhase, setPhase, before }: G
                 // preventing default as we are using this event
                 event.preventDefault();
 
-                // Lifting at the current point to prevent the draggable item from
-                // jumping by the sloppyClickThreshold
-                const actions: FluidDragActions = phase.actions.fluidLift(point);
+                await before();
+                requestAnimationFrame(() => {
+                    // Lifting at the current point to prevent the draggable item from
+                    // jumping by the sloppyClickThreshold
+                    const actions: FluidDragActions = phase.actions.fluidLift(point);
 
-                setPhase({
-                    type: "DRAGGING",
-                    actions,
+                    setPhase({
+                        type: "DRAGGING",
+                        actions,
+                    });
                 });
             },
         },
@@ -202,11 +204,12 @@ function getCaptureBindings({ cancel, completed, getPhase, setPhase, before }: G
     ];
 }
 
+// Original @hello-pangea/dnd sensor with delay
 export default function useMouseSensor(
     api: SensorAPI,
     delayPromiseGetter: (draggableId: DraggableId) => PendingPromise<{ end: PendingPromise<void> }>,
 ) {
-    const pendingPromise = useRef<PendingPromise<{ end: PendingPromise<void> }>>();
+    const delayPromise = useRef<PendingPromise<{ end: PendingPromise<void> }>>();
     const phaseRef = useRef<Phase>(idle);
     const unbindEventsRef = useRef<() => void>(noop);
 
@@ -234,7 +237,7 @@ export default function useMouseSensor(
                     return;
                 }
 
-                pendingPromise.current = delayPromiseGetter(draggableId);
+                delayPromise.current = delayPromiseGetter(draggableId);
 
                 const actions: PreDragActions | null = api.tryGetLock(
                     draggableId,
@@ -328,12 +331,11 @@ export default function useMouseSensor(
     }, [listenForCapture]);
 
     const before = useCallback(async () => {
-        await pendingPromise.current;
+        await delayPromise.current;
     }, []);
 
     const cancel = useCallback(() => {
-        pendingPromise.current?.then(({ end }) => end.resolve());
-        pendingPromise.current?.reject();
+        delayPromise.current?.then(({ end }) => end.resolve());
         const phase: Phase = phaseRef.current;
         stop();
         if (phase.type === "DRAGGING") {

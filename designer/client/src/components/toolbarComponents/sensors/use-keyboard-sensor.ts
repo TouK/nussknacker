@@ -139,11 +139,12 @@ function getDraggingBindings(actions: SnapDragActions, stop: () => void): AnyEve
     ];
 }
 
+// Original @hello-pangea/dnd sensor with delay
 export default function useKeyboardSensor(
     api: SensorAPI,
     delayPromiseGetter: (draggableId: DraggableId) => PendingPromise<{ end: PendingPromise<void> }>,
 ) {
-    const pendingPromise = useRef<PendingPromise<{ end: PendingPromise<void> }>>();
+    const delayPromise = useRef<PendingPromise<{ end: PendingPromise<void> }>>();
     const unbindEventsRef = useRef<() => void>(noop);
 
     const startCaptureBinding: KeyboardEventBinding = useMemo(
@@ -166,8 +167,8 @@ export default function useKeyboardSensor(
                     return;
                 }
 
-                pendingPromise.current = delayPromiseGetter(draggableId);
-                await pendingPromise.current;
+                delayPromise.current = delayPromiseGetter(draggableId);
+                await delayPromise.current;
 
                 const preDrag: PreDragActions | null = api.tryGetLock(
                     draggableId,
@@ -201,8 +202,7 @@ export default function useKeyboardSensor(
                     invariant(isCapturing, "Cannot stop capturing a keyboard drag when not capturing");
                     isCapturing = false;
 
-                    pendingPromise.current?.then(({ end }) => end.resolve());
-                    pendingPromise.current?.reject();
+                    delayPromise.current?.then(({ end }) => end.resolve());
 
                     // unbind dragging bindings
                     unbindEventsRef.current();
