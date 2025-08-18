@@ -2,10 +2,10 @@ import type { Theme } from "@mui/material";
 import type { shapes } from "jointjs";
 import { dia, elementTools } from "jointjs";
 
-import type { StickyNoteNodeType } from "../../../types";
+import type { StickyNoteNodeType } from "../../../../types";
+import { stickyNoteAdvancedAttributes, stickyNoteAdvancedResizeTool } from "./advancedStickyNoteConfig";
+import { stickyNoteBasicAttributes, stickyNoteBasicResizeTool } from "./basicStickyNoteConfig";
 import { MARKDOWN_EDITOR_NAME, STICKY_NOTE_CONSTRAINTS, StickyNoteShape } from "./stickyNote";
-import { stickyNoteAdvancedAttributes, stickyNoteAdvancedResizeTool } from "./stickyNote/advancedStickyNoteConfig";
-import { stickyNoteBasicAttributes, stickyNoteBasicResizeTool } from "./stickyNote/basicStickyNoteConfig";
 
 export type ModelWithTool = {
     model: shapes.devs.Model;

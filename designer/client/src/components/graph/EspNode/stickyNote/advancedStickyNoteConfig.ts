@@ -10,7 +10,7 @@ import { stickyNoteIcon } from "../../../toolbars/creator/ComponentIcon";
 import { Events } from "../../types";
 import { StickyNoteType } from "../../utils/stickyNotesUtils";
 import { CONTENT_PADDING } from "../esp";
-import { MARKDOWN_EDITOR_NAME, STICKY_NOTE_CONSTRAINTS, stickyNotePath } from "../stickyNote";
+import { MARKDOWN_EDITOR_NAME, STICKY_NOTE_CONSTRAINTS, stickyNotePath } from "./stickyNote";
 
 export const STICKY_NOTE_ADVANCED_CONSTRAINTS = {
     DEFAULT_WIDTH: 180,

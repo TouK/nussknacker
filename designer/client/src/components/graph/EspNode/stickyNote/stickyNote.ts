@@ -4,10 +4,10 @@ import { dia } from "jointjs";
 import { shapes, util } from "jointjs";
 import { marked } from "marked";
 
-import type { NodeValidationError, StickyNoteNodeType } from "../../../types";
-import { StickyNoteElement } from "../StickyNoteElement";
-import { stickyNoteAdvancedBorder, stickyNoteAdvancedDefaultDeps } from "./stickyNote/advancedStickyNoteConfig";
-import { stickyNoteBasicBorder, stickyNoteBasicIcon, stickyNoteBasicDefaultDeps } from "./stickyNote/basicStickyNoteConfig";
+import type { NodeValidationError, StickyNoteNodeType } from "../../../../types";
+import { StickyNoteElement } from "../../StickyNoteElement";
+import { stickyNoteAdvancedBorder, stickyNoteAdvancedDefaultDeps } from "./advancedStickyNoteConfig";
+import { stickyNoteBasicBorder, stickyNoteBasicIcon, stickyNoteBasicDefaultDeps } from "./basicStickyNoteConfig";
 
 import MarkupNodeJSON = dia.MarkupNodeJSON;
 

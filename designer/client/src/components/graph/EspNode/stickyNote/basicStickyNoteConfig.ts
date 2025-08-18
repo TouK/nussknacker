@@ -10,7 +10,7 @@ import { stickyNoteIcon } from "../../../toolbars/creator/ComponentIcon";
 import { Events } from "../../types";
 import { StickyNoteType } from "../../utils/stickyNotesUtils";
 import { CONTENT_PADDING } from "../esp";
-import { MARKDOWN_EDITOR_NAME, STICKY_NOTE_CONSTRAINTS, stickyNotePath } from "../stickyNote";
+import { MARKDOWN_EDITOR_NAME, STICKY_NOTE_CONSTRAINTS, stickyNotePath } from "./stickyNote";
 
 export const STICKY_NOTE_BASIC_CONSTRAINTS = {
     DEFAULT_WIDTH: 300,
@@ -233,7 +233,7 @@ export const basicNoteModel: StickyNoteNodeType = {
     color: DEFAULT_COLOR,
 };
 
-export const basicNoteOffset = { dx: DEFAULT_WIDTH * -0.8, dy: DEFAULT_HEIGHT * -0.5 };
+export const basicNoteOffset = { dx: DEFAULT_WIDTH * -0.8, dy: DEFAULT_HEIGHT * -0.12 };
 
 export const StickyNoteElementBasic = dia.ElementView.extend({
     events: {
