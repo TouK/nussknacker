@@ -60,53 +60,10 @@ object CustomHttpServiceProvidersLoader extends LazyLogging {
   ): Resource[IO, CustomHttpServiceProviders] = {
     customHttpServiceProviderFactories
       .traverse { factory =>
-        val created: Option[Resource[IO, CustomHttpServiceProvider]] = loadingMode match {
-          case LoadServicesWithoutDependencies =>
-            factory.creator match {
-              case c: WithoutDependencies =>
-                logger.info(s"Creating custom HTTP service ${factory.name} (without Nu dependencies)")
-                Some(c.create(designerConfig.rawConfig))
-              case _ =>
-                None
-            }
-          case mode: LoadServicesWithInfrastructureDependencies =>
-            factory.creator match {
-              case c: WithInfrastructureDependencies =>
-                logger.info(s"Creating custom HTTP service ${factory.name} (with Nu infrastructure dependencies)")
-                Some(
-                  c.create(
-                    config = designerConfig.rawConfig,
-                    infrastructureServices = nuInfrastructureServices(mode.infrastructureServices)
-                  )
-                )
-              case _ =>
-                None
-            }
-          case mode: LoadServicesWithInfrastructureAndDomainDependencies =>
-            factory.creator match {
-              case c: WithInfrastructureAndDomainDependencies =>
-                logger.info(
-                  s"Creating custom HTTP service ${factory.name} (with Nu infrastructure and domain dependencies)"
-                )
-                Some(
-                  c.create(
-                    config = designerConfig.rawConfig,
-                    infrastructureServices = nuInfrastructureServices(mode.infrastructureServices),
-                    domainServices = nuDomainServices(mode.domainServices)(
-                      mode.infrastructureServices.executionContextWithIORuntime
-                    )
-                  )
-                )
-              case _ =>
-                None
-            }
+        createCustomHttpServiceProvider(designerConfig, factory, loadingMode) match {
+          case Some(provider) => provider.map(Some(factory.name, _))
+          case None           => Resource.pure[IO, Option[(String, CustomHttpServiceProvider)]](None)
         }
-        val result: Resource[IO, Option[(String, CustomHttpServiceProvider)]] =
-          created.map(p => factory.name -> p) match {
-            case Some((name, resource)) => resource.map(Some(name, _))
-            case None                   => Resource.pure(None)
-          }
-        result
       }
       .map(_.flatten.toMap)
       .map { namedProviders =>
@@ -116,6 +73,52 @@ object CustomHttpServiceProvidersLoader extends LazyLogging {
           case (acc, (name, provider: TapirCustomHttpServiceProvider)) =>
             acc.copy(tapir = acc.tapir + (name -> provider))
         }
+      }
+  }
+
+  private def createCustomHttpServiceProvider(
+      designerConfig: DesignerConfig,
+      factory: CustomHttpServiceProviderFactory,
+      loadingMode: CustomHttpServiceLoadingMode,
+  ): Option[Resource[IO, CustomHttpServiceProvider]] = loadingMode match {
+    case LoadServicesWithoutDependencies =>
+      factory.creator match {
+        case c: WithoutDependencies =>
+          logger.info(s"Creating custom HTTP service ${factory.name} (without Nu dependencies)")
+          Some(c.create(designerConfig.rawConfig))
+        case _ =>
+          None
+      }
+    case mode: LoadServicesWithInfrastructureDependencies =>
+      factory.creator match {
+        case c: WithInfrastructureDependencies =>
+          logger.info(s"Creating custom HTTP service ${factory.name} (with Nu infrastructure dependencies)")
+          Some(
+            c.create(
+              config = designerConfig.rawConfig,
+              infrastructureServices = nuInfrastructureServices(mode.infrastructureServices)
+            )
+          )
+        case _ =>
+          None
+      }
+    case mode: LoadServicesWithInfrastructureAndDomainDependencies =>
+      factory.creator match {
+        case c: WithInfrastructureAndDomainDependencies =>
+          logger.info(
+            s"Creating custom HTTP service ${factory.name} (with Nu infrastructure and domain dependencies)"
+          )
+          Some(
+            c.create(
+              config = designerConfig.rawConfig,
+              infrastructureServices = nuInfrastructureServices(mode.infrastructureServices),
+              domainServices = nuDomainServices(mode.domainServices)(
+                mode.infrastructureServices.executionContextWithIORuntime
+              )
+            )
+          )
+        case _ =>
+          None
       }
   }
 
