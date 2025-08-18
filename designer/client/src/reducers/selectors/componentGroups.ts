@@ -7,7 +7,7 @@ import type { ComponentGroup } from "../../types";
 import { appendAdditionalCreators } from "./appendAdditionalCreators";
 import { appendFragmentCreator } from "./appendFragmentCreator";
 import { appendStickyNotes } from "./appendStickyNotes";
-import { getScenarioGraph, isFragment, isPristine } from "./graph";
+import { getScenarioGraph, isFragment } from "./graph";
 import { getAdditionalComponents } from "./isCloudInstance";
 import { getStickyNotesSettings } from "./settings";
 import { getUserSettings } from "./userSettings";
@@ -29,6 +29,6 @@ export const getComponentGroupsExtender = createSelector(
         compactFlow(
             userSettings["node.showFragmentCreator"] && appendFragmentCreator(isFragment),
             userSettings["cloud.showIntegrationsCreators"] && appendAdditionalCreators(additionalComponents),
-            appendStickyNotes(stickyNotesSettings, stickyNotesCount),
+            appendStickyNotes(stickyNotesSettings, stickyNotesCount, userSettings["node.advancedStickyNotes"]),
         ),
 );

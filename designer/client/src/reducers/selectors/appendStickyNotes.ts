@@ -5,8 +5,13 @@ import { stickyNoteComponentGroup } from "../../components/toolbars/creator/Stic
 import type { ComponentGroup } from "../../types";
 
 export const appendStickyNotes = curryRight(
-    (groups: ComponentGroup[], stickyNotesSettings: StickyNotesSettings, stickyNotesCount: number) => {
+    (
+        groups: ComponentGroup[],
+        stickyNotesSettings: StickyNotesSettings,
+        stickyNotesCount: number,
+        areAdvancedStickyNotesEnabled: boolean,
+    ) => {
         if (!stickyNotesSettings?.enabled) return groups;
-        return groups.concat(stickyNoteComponentGroup(stickyNotesSettings, stickyNotesCount));
+        return groups.concat(stickyNoteComponentGroup(stickyNotesSettings, stickyNotesCount, areAdvancedStickyNotesEnabled));
     },
 );

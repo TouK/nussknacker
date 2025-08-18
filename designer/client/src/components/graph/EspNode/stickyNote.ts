@@ -4,36 +4,22 @@ import { dia } from "jointjs";
 import { shapes, util } from "jointjs";
 import { marked } from "marked";
 
-import { getBorderColor } from "../../../containers/theme/helpers";
 import type { NodeValidationError, StickyNoteNodeType } from "../../../types";
 import { StickyNoteElement } from "../StickyNoteElement";
+import { stickyNoteAdvancedBorder, stickyNoteAdvancedDefaultDeps } from "./stickyNote/advancedStickyNoteConfig";
+import { stickyNoteBasicBorder, stickyNoteBasicIcon, stickyNoteBasicDefaultDeps } from "./stickyNote/basicStickyNoteConfig";
 
 import MarkupNodeJSON = dia.MarkupNodeJSON;
 
 export const STICKY_NOTE_CONSTRAINTS = {
     MIN_WIDTH: 100,
     MAX_WIDTH: 3000,
-    DEFAULT_WIDTH: 180,
     MIN_HEIGHT: 100,
     MAX_HEIGHT: 3000,
-    DEFAULT_HEIGHT: 130,
+    CONTENT_PADDING: 5,
 } as const;
 
-export const CONTENT_PADDING = 5;
-export const STICKY_NOTE_DEFAULT_COLOR = "#4D3B00";
 export const MARKDOWN_EDITOR_NAME = "markdown-editor";
-
-const border: dia.MarkupNodeJSON = {
-    selector: "border",
-    tagName: "path",
-    className: "body",
-    attributes: {
-        width: STICKY_NOTE_CONSTRAINTS.DEFAULT_WIDTH,
-        height: STICKY_NOTE_CONSTRAINTS.DEFAULT_HEIGHT,
-        strokeWidth: 1,
-        fill: "none",
-    },
-};
 
 const body: dia.MarkupNodeJSON = {
     selector: "body",
@@ -99,48 +85,26 @@ const foreignObject = (stickyNote: StickyNoteNodeType): MarkupNodeJSON => {
 
 export const stickyNotePath = "M 0 0 L 19 0 L 19 19 L 0 19 L 0 0";
 
-const defaults = (theme: Theme) =>
+const defaults = (theme: Theme, areAdvancedStickyNotesEnabled: boolean) =>
     util.defaultsDeep(
-        {
-            size: {
-                width: STICKY_NOTE_CONSTRAINTS.DEFAULT_WIDTH,
-                height: STICKY_NOTE_CONSTRAINTS.DEFAULT_HEIGHT,
-            },
-            attrs: {
-                body: {
-                    refD: stickyNotePath,
-                    strokeWidth: 2,
-                    fill: "#eae672",
-                    filter: {
-                        name: "dropShadow",
-                        args: {
-                            dx: 1,
-                            dy: 1,
-                            blur: 5,
-                            opacity: 0.4,
-                        },
-                    },
-                },
-                foreignObject: {
-                    width: STICKY_NOTE_CONSTRAINTS.DEFAULT_WIDTH,
-                    height: STICKY_NOTE_CONSTRAINTS.DEFAULT_HEIGHT - CONTENT_PADDING * 4,
-                    y: CONTENT_PADDING * 4,
-                    fill: getBorderColor(theme),
-                },
-                border: {
-                    refD: stickyNotePath,
-                    stroke: getBorderColor(theme),
-                },
-            },
-        },
+        areAdvancedStickyNotesEnabled ? stickyNoteAdvancedDefaultDeps(theme) : stickyNoteBasicDefaultDeps(theme),
         shapes.devs.Model.prototype.defaults,
     );
 
-const protoProps = (theme: Theme, stickyNote: StickyNoteNodeType) => {
+const protoProps = (stickyNote: StickyNoteNodeType, areAdvancedStickyNotesEnabled: boolean) => {
+    const markup = [body, areAdvancedStickyNotesEnabled ? stickyNoteAdvancedBorder : stickyNoteBasicBorder, foreignObject(stickyNote)];
+
+    if (!areAdvancedStickyNotesEnabled) {
+        markup.push(stickyNoteBasicIcon);
+    }
+
     return {
-        markup: [body, border, foreignObject(stickyNote)],
+        markup,
     };
 };
 
-export const StickyNoteShape = (theme: Theme, stickyNote: StickyNoteNodeType) =>
-    StickyNoteElement(defaults(theme), protoProps(theme, stickyNote)) as typeof shapes.devs.Model;
+export const StickyNoteShape = (theme: Theme, stickyNote: StickyNoteNodeType, areAdvancedStickyNotesEnabled: boolean) =>
+    StickyNoteElement(
+        defaults(theme, areAdvancedStickyNotesEnabled),
+        protoProps(stickyNote, areAdvancedStickyNotesEnabled),
+    ) as typeof shapes.devs.Model;

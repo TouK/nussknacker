@@ -2,110 +2,33 @@ import type { Theme } from "@mui/material";
 import type { shapes } from "jointjs";
 import { dia, elementTools } from "jointjs";
 
-import { getStickyNoteBackgroundColor } from "../../../containers/theme/helpers";
 import type { StickyNoteNodeType } from "../../../types";
-import { Events } from "../types";
 import { MARKDOWN_EDITOR_NAME, STICKY_NOTE_CONSTRAINTS, StickyNoteShape } from "./stickyNote";
+import { stickyNoteAdvancedAttributes, stickyNoteAdvancedResizeTool } from "./stickyNote/advancedStickyNoteConfig";
+import { stickyNoteBasicAttributes, stickyNoteBasicResizeTool } from "./stickyNote/basicStickyNoteConfig";
 
 export type ModelWithTool = {
     model: shapes.devs.Model;
     tools: dia.ToolsView;
 };
 
-export function makeStickyNoteElement(theme: Theme): (stickyNote: StickyNoteNodeType) => ModelWithTool {
+export function makeStickyNoteElement(
+    theme: Theme,
+    areAdvancedStickyNotesEnabled: boolean,
+): (stickyNote: StickyNoteNodeType) => ModelWithTool {
     return (stickyNote: StickyNoteNodeType) => {
-        const attributes: shapes.devs.ModelAttributes = {
-            id: stickyNote.id,
-            attrs: {
-                size: {
-                    width: stickyNote.dimensions.width,
-                    height: stickyNote.dimensions.height,
-                },
-                body: {
-                    fill: getStickyNoteBackgroundColor(theme, stickyNote.color).main,
-                    opacity: 1,
-                },
-                foreignObject: {
-                    width: stickyNote.dimensions.width,
-                    height: stickyNote.dimensions.height,
-                    color: theme.palette.getContrastText(getStickyNoteBackgroundColor(theme, stickyNote.color).main),
-                    y: 0,
-                },
-                border: {
-                    stroke: getStickyNoteBackgroundColor(theme, stickyNote.color).light,
-                    strokeWidth: 1,
-                },
-            },
-            nodeData: {
-                id: stickyNote.id,
-            },
-            definitionToCompare: {
-                width: stickyNote.dimensions.width,
-                height: stickyNote.dimensions.height,
-                color: stickyNote.color,
-                content: stickyNote.content,
-                errors: stickyNote.errors,
-            },
-            rankDir: "R",
-        };
+        const attributes: shapes.devs.ModelAttributes = areAdvancedStickyNotesEnabled
+            ? stickyNoteAdvancedAttributes(stickyNote, theme)
+            : stickyNoteBasicAttributes(stickyNote, theme);
 
-        const ThemedStickyNoteShape = StickyNoteShape(theme, stickyNote);
+        const ThemedStickyNoteShape = StickyNoteShape(theme, stickyNote, areAdvancedStickyNotesEnabled);
         const stickyNoteModel = new ThemedStickyNoteShape(attributes);
 
-        const ResizeTool = elementTools.Control.extend({
-            children: [
-                {
-                    tagName: "path",
-                    selector: "handle",
-                    attributes: {
-                        d: "M 4 0 L 4 4 L 0 4 L 0 5 L 5 5 L 5 0 L 4 0",
-                        stroke: getStickyNoteBackgroundColor(theme, stickyNote.color).light,
-                        cursor: "se-resize",
-                    },
-                },
-                {
-                    tagName: "rect",
-                    selector: "extras",
-                    attributes: {
-                        "pointer-events": "none",
-                        fill: "none",
-                        stroke: getStickyNoteBackgroundColor(theme, stickyNote.color).light,
-                        "stroke-dasharray": "2,3",
-                        rx: 6,
-                        ry: 6,
-                    },
-                },
-            ],
-            documentEvents: {
-                mousemove: "onPointerMove",
-                touchmove: "onPointerMove",
-                mouseup: "onPointerUpCustom",
-                touchend: "onPointerUpCustom",
-                touchcancel: "onPointerUp",
-            },
-            getPosition: function (view) {
-                const model = view.model;
-                const { width, height } = model.size();
-                return { x: width, y: height };
-            },
-            setPosition: function (view, coordinates) {
-                const model = view.model;
-                model.resize(
-                    Math.max(
-                        Math.min(STICKY_NOTE_CONSTRAINTS.MAX_WIDTH, Math.round(coordinates.x - 10)),
-                        STICKY_NOTE_CONSTRAINTS.MIN_WIDTH,
-                    ),
-                    Math.max(
-                        Math.min(STICKY_NOTE_CONSTRAINTS.MAX_HEIGHT, Math.round(coordinates.y - 10)),
-                        STICKY_NOTE_CONSTRAINTS.MIN_HEIGHT,
-                    ),
-                );
-            },
-            onPointerUpCustom: function (evt: dia.Event) {
-                this.onPointerUp(evt);
-                stickyNoteModel.trigger(Events.CELL_RESIZED, stickyNoteModel);
-            },
-        });
+        const ResizeTool = elementTools.Control.extend(
+            areAdvancedStickyNotesEnabled
+                ? stickyNoteAdvancedResizeTool(stickyNote, theme, stickyNoteModel)
+                : stickyNoteBasicResizeTool(stickyNote, theme, stickyNoteModel),
+        );
 
         const tools: dia.ToolsView = new dia.ToolsView({
             tools: [

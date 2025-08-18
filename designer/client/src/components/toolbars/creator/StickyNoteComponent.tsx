@@ -1,25 +1,20 @@
 import type { StickyNotesSettings } from "../../../actions/nk";
-import type { ComponentGroup, NodeType, StickyNoteNodeType } from "../../../types";
-import { STICKY_NOTE_CONSTRAINTS, STICKY_NOTE_DEFAULT_COLOR } from "../../graph/EspNode/stickyNote";
+import type { ComponentGroup } from "../../../types";
+import { advancedNoteModel } from "../../graph/EspNode/stickyNote/advancedStickyNoteConfig";
+import { basicNoteModel } from "../../graph/EspNode/stickyNote/basicStickyNoteConfig";
 import { StickyNoteType } from "../../graph/utils/stickyNotesUtils";
 
-const dimensions = { width: STICKY_NOTE_CONSTRAINTS.DEFAULT_WIDTH, height: STICKY_NOTE_CONSTRAINTS.DEFAULT_HEIGHT };
-const noteModel: StickyNoteNodeType = {
-    id: "StickyNoteToAdd",
-    type: StickyNoteType,
-    isDisabled: false,
-    content: "#### ✏️ Double click to edit",
-    dimensions: dimensions,
-    color: STICKY_NOTE_DEFAULT_COLOR,
-};
-
-export const stickyNoteComponentGroup = (stickyNotesSetting: StickyNotesSettings, stickyNotesCount: number) => {
+export const stickyNoteComponentGroup = (
+    stickyNotesSetting: StickyNotesSettings,
+    stickyNotesCount: number,
+    areAdvancedStickyNotesEnabled: boolean,
+) => {
     const disabled = stickyNotesSetting.maxNotesCount && stickyNotesCount >= stickyNotesSetting.maxNotesCount;
     return [
         {
             components: [
                 {
-                    node: noteModel as NodeType,
+                    node: areAdvancedStickyNotesEnabled ? advancedNoteModel : basicNoteModel,
                     label: "Sticky Note",
                     componentId: StickyNoteType + (disabled ? "_disabled" : ""),
                     disabled: () => disabled,

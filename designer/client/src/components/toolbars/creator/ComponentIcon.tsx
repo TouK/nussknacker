@@ -6,6 +6,7 @@ import ProcessUtils from "../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType, ProcessDefinitionData } from "../../../types";
+import { StickyNoteType } from "../../graph/utils/stickyNotesUtils";
 import { InlineSvg } from "../../SvgDiv";
 import { Icon } from "./Icon";
 
@@ -22,6 +23,11 @@ const preloadBeImage = memoize((src: string): string | null => {
     document.body.appendChild(div);
     return `#${id}`;
 });
+
+export const stickyNoteIconSrc = `/assets/components/${StickyNoteType}.svg`;
+export function stickyNoteIcon(): string | null {
+    return preloadBeImage(stickyNoteIconSrc);
+}
 
 export function getComponentIconSrc(node: NodeType, { components }: ProcessDefinitionData): string | null {
     // missing type means that node is the fake properties component

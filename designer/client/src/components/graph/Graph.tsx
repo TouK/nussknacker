@@ -68,14 +68,6 @@ type Props = GraphProps & {
     stickyNoteSetErrors?: typeof stickyNoteSetErrors;
 };
 
-export const nuGraphNamespace = {
-    ...shapes,
-    stickyNote: {
-        StickyNoteElement,
-        StickyNoteElementView,
-    },
-};
-
 function handleActionOnLongPress<T extends dia.CellView>(
     shortPressAction: ((cellView: T, event: dia.Event) => void) | null,
     longPressAction: (cellView: T, event: dia.Event) => void,
@@ -148,10 +140,18 @@ export class Graph extends React.Component<Props> {
         right: 0,
     };
     private lastHoveredCell: dia.Cell;
+    private readonly nuGraphNamespace: Record<string, any>;
 
     constructor(props: Props) {
         super(props);
-        this.graph = new dia.Graph({}, { cellNamespace: nuGraphNamespace });
+        this.nuGraphNamespace = {
+            ...shapes,
+            stickyNote: {
+                StickyNoteElement,
+                StickyNoteElementView: StickyNoteElementView(props.userSettings),
+            },
+        };
+        this.graph = new dia.Graph({}, { cellNamespace: this.nuGraphNamespace });
         this.bindNodeRemove();
         this.bindNodesMoving();
     }
@@ -188,7 +188,7 @@ export class Graph extends React.Component<Props> {
             model: this.graph,
             el: this.getEspGraphRef(),
             validateConnection: this.twoWayValidateConnection,
-            cellViewNamespace: nuGraphNamespace,
+            cellViewNamespace: this.nuGraphNamespace,
             validateMagnet: this.validateMagnet,
             interactive: (cellView: dia.CellView) => {
                 const { model } = cellView;
@@ -303,7 +303,7 @@ export class Graph extends React.Component<Props> {
         const { theme } = this.props;
 
         this.redrawing = true;
-        applyCellChanges(this.processGraphPaper, scenarioGraph, processDefinitionData, theme);
+        applyCellChanges(this.processGraphPaper, scenarioGraph, processDefinitionData, theme, this.props.userSettings);
 
         if (isEmpty(layout)) {
             if (scenarioGraph.nodes.length > 0) {
