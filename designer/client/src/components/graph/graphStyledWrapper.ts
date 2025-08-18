@@ -101,10 +101,8 @@ export const getShadow = (color = `red`, size = 2, size2 = 2 * size) => {
     return `drop-shadow(${size}px ${size}px ${size2}px ${color}) drop-shadow(${size}px -${size}px ${size2}px ${color}) drop-shadow(-${size}px ${size}px ${size2}px ${color}) drop-shadow(-${size}px -${size}px ${size2}px ${color})`;
 };
 
-export const GraphStyledWrapper = styled("div")(({ theme }) => {
+export const GraphStyledWrapper = styled("div")<{ areAdvancedStickyNotesEnabled: boolean }>(({ theme, areAdvancedStickyNotesEnabled }) => {
     const dropAllowedColor = theme.palette.warning.main;
-    const [settings] = useUserSettings();
-    const areAdvancedStickyNotesEnabled = settings["node.advancedStickyNotes"];
 
     return css([
         {

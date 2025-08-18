@@ -3,7 +3,6 @@ import { alpha } from "@mui/material";
 import { dia } from "jointjs";
 import type { shapes } from "jointjs";
 import type { CSSProperties } from "react";
-import type { FocusEvent } from "react";
 
 import { getBorderColor } from "../../../../containers/theme/helpers";
 import type { StickyNoteNodeType } from "../../../../types";
@@ -265,11 +264,14 @@ export const StickyNoteElementBasic = dia.ElementView.extend({
         }
     },
 
-    onChange: function (evt: FocusEvent<HTMLTextAreaElement>) {
-        this.model.trigger(Events.CELL_CONTENT_UPDATED, this.model, evt.target.value);
-        this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/value`, evt.target.value);
+    onChange: function (evt: FocusEvent) {
+        const target = evt.target as HTMLTextAreaElement;
+        const currentTarget = evt.currentTarget as HTMLTextAreaElement;
+
+        this.model.trigger(Events.CELL_CONTENT_UPDATED, this.model, target.value);
+        this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/value`, target.value);
         this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/disabled`, true);
-        const markdownElement = (evt.currentTarget.parentElement as HTMLElement).querySelector(".sticky-note-markdown") as HTMLElement;
+        const markdownElement = (currentTarget.parentElement as HTMLElement).querySelector(".sticky-note-markdown") as HTMLElement;
         markdownElement.style.display = "block";
     },
 });

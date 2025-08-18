@@ -235,7 +235,18 @@ export const advancedNoteOffset = { dx: DEFAULT_WIDTH * -0.5, dy: DEFAULT_HEIGHT
 
 export const overrideAdvancedStickyNoteColorToDefault = (stickyNote: NodeType) => ({ ...stickyNote, color: DEFAULT_COLOR });
 
-export const stickyNoteElementAdvanced: typeof dia.ElementView = dia.ElementView.extend({
+interface StickyNoteElementAdvanced extends dia.ElementView {
+    _editorTextarea?: HTMLTextAreaElement;
+    hideEditorOnClickedOutside: (event: MouseEvent) => void;
+    hideEditorOnEscapePress: (event: KeyboardEvent) => void;
+    changePosition: () => void;
+    // stopPropagation: (evt: Event) => void;
+    showEditor: (evt: Event) => void;
+    selectAll: (evt: KeyboardEvent) => void;
+    hideEditor: (evt: { target: HTMLTextAreaElement }) => void;
+}
+
+export const stickyNoteElementAdvanced: new () => StickyNoteElementAdvanced = dia.ElementView.extend({
     events: {
         "keydown textarea": "selectAll",
         dblclick: "showEditor",
@@ -247,65 +258,67 @@ export const stickyNoteElementAdvanced: typeof dia.ElementView = dia.ElementView
         "mouseleave .sticky-note-markdown-editor": "stopPropagation",
     },
 
-    remove: function (...args: unknown[]): void {
+    remove: function (this: StickyNoteElementAdvanced, ...args: unknown[]): void {
         dia.ElementView.prototype.remove.apply(this, args);
         this.stopListening();
-        document.removeEventListener("click", this.onClickedOutside, true);
-        document.removeEventListener("keydown", this.onEscapePress, true);
+
+        if (this.hideEditorOnClickedOutside) {
+            document.removeEventListener("click", this.hideEditorOnClickedOutside, true);
+        }
+
+        if (this.hideEditorOnEscapePress) {
+            document.removeEventListener("keydown", this.hideEditorOnEscapePress, true);
+        }
     },
 
-    render: function (...args: unknown[]): typeof dia.ElementView {
+    render: function (this: StickyNoteElementAdvanced, ...args: unknown[]) {
         dia.ElementView.prototype.render.apply(this, args);
         this.model.toBack();
         this.listenTo(this.model, "change:position", this.changePosition);
         return this;
     },
 
-    changePosition: function (): void {
+    changePosition: function (this: StickyNoteElementAdvanced): void {
         this.model.toBack();
     },
 
-    stopPropagation: function (evt: Event): void {
+    stopPropagation: function (this: StickyNoteElementAdvanced, evt: Event): void {
         evt.stopPropagation();
     },
 
-    showEditor: function (evt: Event): void {
+    showEditor: function (this: StickyNoteElementAdvanced, evt: Event): void {
         evt.stopPropagation();
         this.model.toFront();
         this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/disabled`, false);
-        const textarea = (evt.currentTarget as HTMLElement).querySelector("textarea") as HTMLTextAreaElement;
-        textarea.focus({ preventScroll: true });
+        this._editorTextarea = (evt.currentTarget as HTMLElement).querySelector("textarea") as HTMLTextAreaElement;
+        this._editorTextarea.focus({ preventScroll: true });
         ((evt.currentTarget as HTMLElement).querySelector(".sticky-note-markdown") as HTMLElement).style.display = "none";
 
-        this.onClickedOutside = (event: MouseEvent): void => {
-            const isClickedOutside = !this.el.contains(event.target as Node);
-            if (isClickedOutside) {
-                this.hideEditor({ target: textarea });
-                document.removeEventListener("click", this.onClickedOutside);
-                document.removeEventListener("keydown", this.onEscapePress);
-            }
-        };
-
-        this.onEscapePress = (event: KeyboardEvent): void => {
-            if (event.key === "Escape") {
-                this.hideEditor({ target: textarea });
-                document.removeEventListener("click", this.onClickedOutside);
-                document.removeEventListener("keydown", this.onEscapePress);
-            }
-        };
-
-        document.addEventListener("click", this.onClickedOutside, true);
-        document.addEventListener("keydown", this.onEscapePress, true);
+        document.addEventListener("click", this.hideEditorOnClickedOutside.bind(this), true);
+        document.addEventListener("keydown", this.hideEditorOnEscapePress.bind(this), true);
     },
 
-    selectAll: function (evt: KeyboardEvent): void {
+    hideEditorOnClickedOutside: function (this: StickyNoteElementAdvanced, event: MouseEvent): void {
+        const isClickedOutside = !this.el.contains(event.target as Node);
+        if (isClickedOutside) {
+            this.hideEditor({ target: this._editorTextarea });
+        }
+    },
+
+    hideEditorOnEscapePress: function (this: StickyNoteElementAdvanced, event: KeyboardEvent): void {
+        if (event.key === "Escape") {
+            this.hideEditor({ target: this._editorTextarea });
+        }
+    },
+
+    selectAll: function (this: StickyNoteElementAdvanced, evt: KeyboardEvent): void {
         if (evt.code === "KeyA" && (evt.ctrlKey || evt.metaKey)) {
             evt.preventDefault();
             (evt.target as HTMLTextAreaElement).select();
         }
     },
 
-    hideEditor: function (evt: { target: HTMLTextAreaElement }): void {
+    hideEditor: function (this: StickyNoteElementAdvanced, evt: { target: HTMLTextAreaElement }): void {
         this.model.toBack();
         this.model.trigger(Events.CELL_CONTENT_UPDATED, this.model, evt.target.value);
         this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/value`, evt.target.value);
