@@ -410,7 +410,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         user = ScenarioUser(None, UserName("Nussknacker"), None, None),
         date = now.plusSeconds(1),
         scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = now.plusSeconds(1),
+        dateFinished = Some(now.plusSeconds(1)),
         scheduleName = "schedule1",
         scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
         createdAt = now.plusSeconds(1),
@@ -424,7 +424,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         user = ScenarioUser(None, UserName("Nussknacker"), None, None),
         date = now.plusSeconds(2),
         scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = now.plusSeconds(2),
+        dateFinished = Some(now.plusSeconds(2)),
         scheduleName = "schedule1",
         scheduledExecutionStatus = ScheduledExecutionStatus.DeploymentWillBeRetried,
         createdAt = now.plusSeconds(2),
@@ -438,7 +438,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         user = ScenarioUser(None, UserName("Nussknacker"), None, None),
         date = now.plusSeconds(3),
         scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = now.plusSeconds(3),
+        dateFinished = Some(now.plusSeconds(3)),
         scheduleName = "schedule1",
         scheduledExecutionStatus = ScheduledExecutionStatus.Failed,
         createdAt = now.plusSeconds(3),
@@ -452,10 +452,24 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         user = ScenarioUser(None, UserName("Nussknacker"), None, None),
         date = now.plusSeconds(4),
         scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = now.plusSeconds(4),
+        dateFinished = Some(now.plusSeconds(4)),
         scheduleName = "schedule1",
         scheduledExecutionStatus = ScheduledExecutionStatus.DeploymentFailed,
         createdAt = now.plusSeconds(4),
+        retriesLeft = None,
+        nextRetryAt = None,
+      )
+
+      val activity5 = ScenarioActivity.PerformedScheduledExecution(
+        scenarioId = ScenarioId(processId.value),
+        scenarioActivityId = ScenarioActivityId.random,
+        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
+        date = now.plusSeconds(5),
+        scenarioVersionId = Some(ScenarioVersionId(1)),
+        dateFinished = None,
+        scheduleName = "schedule1",
+        scheduledExecutionStatus = ScheduledExecutionStatus.InProgress,
+        createdAt = now.plusSeconds(5),
         retriesLeft = None,
         nextRetryAt = None,
       )
@@ -464,6 +478,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
       dbioValue(scenarioActivityRepository.addActivity(activity2))
       dbioValue(scenarioActivityRepository.addActivity(activity3))
       dbioValue(scenarioActivityRepository.addActivity(activity4))
+      dbioValue(scenarioActivityRepository.addActivity(activity5))
 
       given()
         .when()
@@ -508,7 +523,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                |                },
                |                {
                |                    "name": "finished",
-               |                    "value": "${toStringWith6DigitsOfMillis(activity1.dateFinished)}",
+               |                    "value": "${toStringWith6DigitsOfMillis(activity1.dateFinished.get)}",
                |                    "isDate": true
                |                }
                |            ],
@@ -536,7 +551,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                |                },
                |                {
                |                    "name": "finished",
-               |                    "value": "${toStringWith6DigitsOfMillis(activity2.dateFinished)}",
+               |                    "value": "${toStringWith6DigitsOfMillis(activity2.dateFinished.get)}",
                |                    "isDate": true
                |                },
                |                {
@@ -573,7 +588,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                |                },
                |                {
                |                    "name": "finished",
-               |                    "value": "${toStringWith6DigitsOfMillis(activity3.dateFinished)}",
+               |                    "value": "${toStringWith6DigitsOfMillis(activity3.dateFinished.get)}",
                |                    "isDate": true
                |                }
                |            ],
@@ -601,7 +616,30 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                |                },
                |                {
                |                    "name": "finished",
-               |                    "value": "${toStringWith6DigitsOfMillis(activity4.dateFinished)}",
+               |                    "value": "${toStringWith6DigitsOfMillis(activity4.dateFinished.get)}",
+               |                    "isDate": true
+               |                }
+               |            ],
+               |            "type": "PERFORMED_SCHEDULED_EXECUTION"
+               |        },
+               |        {
+               |            "id": "${regexes.looseUuidRegex}",
+               |            "user": "Nussknacker",
+               |            "date": "${regexes.zuluDateRegex}",
+               |            "scenarioVersionId": 1,
+               |            "additionalFields": [
+               |                {
+               |                    "name": "status",
+               |                    "value": "Data processing in progress"
+               |                },
+               |                {
+               |                    "name": "created",
+               |                    "value": "${activity5.createdAt}",
+               |                    "isDate": true
+               |                },
+               |                {
+               |                    "name": "started",
+               |                    "value": "${toStringWith6DigitsOfMillis(activity5.date)}",
                |                    "isDate": true
                |                }
                |            ],
@@ -626,7 +664,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         user = ScenarioUser(None, UserName("Nussknacker"), None, None),
         date = now,
         scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = now,
+        dateFinished = Some(now),
         scheduleName = "schedule1",
         scheduledExecutionStatus = ScheduledExecutionStatus.DeploymentWillBeRetried,
         createdAt = nowWithOffset,

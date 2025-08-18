@@ -4133,9 +4133,6 @@ paths:
                       - name: started
                         value: '2024-01-17T14:21:17Z'
                         isDate: true
-                      - name: finished
-                        value: '2024-01-17T14:21:17Z'
-                        isDate: true
                       - name: errorMessage
                         value: Execution error occurred
                       type: PERFORMED_SINGLE_EXECUTION
@@ -4154,10 +4151,21 @@ paths:
                       - name: started
                         value: '2024-01-17T14:21:17Z'
                         isDate: true
-                      - name: finished
+                      type: PERFORMED_SINGLE_EXECUTION
+                    - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersionId: 1
+                      additionalFields:
+                      - name: status
+                        value: Data processing in progress
+                      - name: created
+                        value: '2024-01-17T13:21:17Z'
+                        isDate: true
+                      - name: started
                         value: '2024-01-17T14:21:17Z'
                         isDate: true
-                      type: PERFORMED_SINGLE_EXECUTION
+                      type: PERFORMED_SCHEDULED_EXECUTION
                     - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
                       user: some user
                       date: '2024-01-17T14:21:17Z'

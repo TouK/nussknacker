@@ -111,6 +111,8 @@ final case class Environment(name: String) extends AnyVal
 sealed trait ScheduledExecutionStatus extends EnumEntry with UpperSnakecase
 
 object ScheduledExecutionStatus extends Enum[ScheduledExecutionStatus] {
+  case object InProgress extends ScheduledExecutionStatus
+
   case object Finished extends ScheduledExecutionStatus
 
   case object Failed extends ScheduledExecutionStatus
@@ -134,7 +136,7 @@ sealed trait DeploymentRelatedActivity extends ScenarioActivity {
   def result: DeploymentResult
 }
 
-sealed trait SchedulingRelatedActivity extends DeploymentRelatedActivity
+sealed trait SchedulingRelatedActivity extends ScenarioActivity
 
 sealed trait DeploymentResult {
   def dateFinished: Instant
@@ -312,21 +314,12 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       scheduledExecutionStatus: ScheduledExecutionStatus,
-      dateFinished: Instant,
+      dateFinished: Option[Instant],
       scheduleName: String,
       createdAt: Instant,
       nextRetryAt: Option[Instant],
       retriesLeft: Option[Int],
-  ) extends SchedulingRelatedActivity {
-
-    override def result: DeploymentResult = scheduledExecutionStatus match {
-      case ScheduledExecutionStatus.Finished                => DeploymentResult.Success(dateFinished)
-      case ScheduledExecutionStatus.Failed                  => DeploymentResult.Failure(dateFinished, None)
-      case ScheduledExecutionStatus.DeploymentWillBeRetried => DeploymentResult.Failure(dateFinished, None)
-      case ScheduledExecutionStatus.DeploymentFailed        => DeploymentResult.Failure(dateFinished, None)
-    }
-
-  }
+  ) extends SchedulingRelatedActivity
 
   // Technical
 

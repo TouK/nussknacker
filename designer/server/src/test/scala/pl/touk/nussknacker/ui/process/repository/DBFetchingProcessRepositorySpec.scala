@@ -329,7 +329,7 @@ class DBFetchingProcessRepositorySpec
 
   // The PerformedScheduledExecution activity is not tested in integration tests, so a unit tests for database read/write is added here.
   // (the scheduling mechanism is tested in an isolated way, using mocks, in package pl.touk.nussknacker.ui.process.periodic package
-  test("save and read ScenarioActivity.PerformedScheduledExecution") {
+  test("save and read ScenarioActivity.PerformedScheduledExecution for finished execution") {
     val processName = ProcessName("proc1")
     val newScenario = ScenarioBuilder
       .streaming(processName.value)
@@ -352,7 +352,7 @@ class DBFetchingProcessRepositorySpec
             date = now,
             scenarioVersionId = Some(ScenarioVersionId(1)),
             scheduledExecutionStatus = ScheduledExecutionStatus.Failed,
-            dateFinished = nowPlusSecond,
+            dateFinished = Some(nowPlusSecond),
             scheduleName = "schedule1",
             createdAt = now,
             nextRetryAt = None,
@@ -372,7 +372,58 @@ class DBFetchingProcessRepositorySpec
       date = activities(1).date,
       scenarioVersionId = Some(ScenarioVersionId(1)),
       scheduledExecutionStatus = ScheduledExecutionStatus.Failed,
-      dateFinished = nowPlusSecond.truncatedTo(ChronoUnit.MICROS),
+      dateFinished = Some(nowPlusSecond.truncatedTo(ChronoUnit.MICROS)),
+      scheduleName = "schedule1",
+      createdAt = now,
+      nextRetryAt = None,
+      retriesLeft = None,
+    )
+  }
+
+  test("save and read ScenarioActivity.PerformedScheduledExecution for in-progress execution") {
+    val processName = ProcessName("proc1")
+    val newScenario = ScenarioBuilder
+      .streaming(processName.value)
+      .source("source1", "source")
+      .emptySink("sink1", "sink")
+
+    val processId = saveProcess(newScenario).get.processId
+
+    val scenarioActivityId = ScenarioActivityId.random
+    val now                = Instant.now()
+    val nowPlusSecond      = Instant.now().plusSeconds(1)
+
+    dbioRunner
+      .run(
+        activityRepository.addActivity(
+          ScenarioActivity.PerformedScheduledExecution(
+            scenarioId = ScenarioId(processId.value),
+            scenarioActivityId = scenarioActivityId,
+            user = user.scenarioUser,
+            date = now,
+            scenarioVersionId = Some(ScenarioVersionId(1)),
+            scheduledExecutionStatus = ScheduledExecutionStatus.InProgress,
+            dateFinished = Some(nowPlusSecond),
+            scheduleName = "schedule1",
+            createdAt = now,
+            nextRetryAt = None,
+            retriesLeft = None,
+          )
+        )
+      )
+      .futureValue
+
+    val activities = dbioRunner.run(activityRepository.findActivities(processId)).futureValue
+
+    activities.size shouldBe 2
+    activities(1) shouldBe ScenarioActivity.PerformedScheduledExecution(
+      scenarioId = ScenarioId(processId.value),
+      scenarioActivityId = scenarioActivityId,
+      user = user.scenarioUser,
+      date = activities(1).date,
+      scenarioVersionId = Some(ScenarioVersionId(1)),
+      scheduledExecutionStatus = ScheduledExecutionStatus.InProgress,
+      dateFinished = Some(nowPlusSecond.truncatedTo(ChronoUnit.MICROS)),
       scheduleName = "schedule1",
       createdAt = now,
       nextRetryAt = None,

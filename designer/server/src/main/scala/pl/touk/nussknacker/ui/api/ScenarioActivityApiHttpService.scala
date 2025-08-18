@@ -473,7 +473,6 @@ class ScenarioActivityApiHttpService(
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
-          dateFinished = result.dateFinished,
           errorMessage = result match {
             case DeploymentResult.Success(_)               => None
             case DeploymentResult.Failure(_, errorMessage) => errorMessage

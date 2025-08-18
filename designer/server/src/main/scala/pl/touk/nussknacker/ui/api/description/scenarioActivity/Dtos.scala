@@ -681,7 +681,6 @@ object Dtos {
         date: Instant,
         scenarioVersionId: Option[Long],
         comment: ScenarioActivityComment,
-        dateFinished: Instant,
         errorMessage: Option[String],
     ): ScenarioActivity = {
       val humanReadableStatus = "Data processing started"
@@ -696,7 +695,6 @@ object Dtos {
         additionalFields = List(
           Some(AdditionalField("status", humanReadableStatus)),
           Some(AdditionalField("started", format(date), isDate = Some(true))),
-          Some(AdditionalField("finished", format(dateFinished), isDate = Some(true))),
           errorMessage.map(e => AdditionalField("errorMessage", e)),
         ).flatten
       )
@@ -707,13 +705,14 @@ object Dtos {
         user: String,
         date: Instant,
         scenarioVersionId: Option[Long],
-        dateFinished: Instant,
+        dateFinished: Option[Instant],
         scheduledExecutionStatus: ScheduledExecutionStatus,
         createdAt: Instant,
         nextRetryAt: Option[Instant],
         retriesLeft: Option[Int],
     ): ScenarioActivity = {
       val humanReadableStatus = scheduledExecutionStatus match {
+        case ScheduledExecutionStatus.InProgress              => "Data processing in progress"
         case ScheduledExecutionStatus.Finished                => "Data processing finished"
         case ScheduledExecutionStatus.Failed                  => "Data processing failed"
         case ScheduledExecutionStatus.DeploymentWillBeRetried => "Deployment will be retried"
@@ -731,7 +730,7 @@ object Dtos {
           Some(AdditionalField("status", humanReadableStatus)),
           Some(AdditionalField("created", format(createdAt), isDate = Some(true))),
           Some(AdditionalField("started", format(date), isDate = Some(true))),
-          Some(AdditionalField("finished", format(dateFinished), isDate = Some(true))),
+          dateFinished.map(df => AdditionalField("finished", format(df), isDate = Some(true))),
           retriesLeft.map(rl => AdditionalField("retriesLeft", rl.toString)),
           nextRetryAt.map(nra => AdditionalField("nextRetryAt", format(nra), isDate = Some(true))),
         ).flatten

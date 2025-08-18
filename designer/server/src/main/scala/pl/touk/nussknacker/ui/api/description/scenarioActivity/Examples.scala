@@ -184,7 +184,6 @@ object Examples {
             lastModifiedBy = "some user",
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           ),
-          dateFinished = Instant.parse("2024-01-17T14:21:17Z"),
           errorMessage = Some("Execution error occurred"),
         ),
         ScenarioActivity.forPerformedSingleExecution(
@@ -197,7 +196,6 @@ object Examples {
             lastModifiedBy = "some user",
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           ),
-          dateFinished = Instant.parse("2024-01-17T14:21:17Z"),
           errorMessage = None,
         ),
         ScenarioActivity.forPerformedScheduledExecution(
@@ -205,7 +203,18 @@ object Examples {
           user = "some user",
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersionId = Some(1),
-          dateFinished = Instant.parse("2024-01-17T14:21:17Z"),
+          dateFinished = None,
+          scheduledExecutionStatus = ScheduledExecutionStatus.InProgress,
+          createdAt = Instant.parse("2024-01-17T13:21:17Z"),
+          retriesLeft = None,
+          nextRetryAt = None,
+        ),
+        ScenarioActivity.forPerformedScheduledExecution(
+          id = UUID.fromString("9b27797e-aa03-42ba-8406-d0ae8005a883"),
+          user = "some user",
+          date = Instant.parse("2024-01-17T14:21:17Z"),
+          scenarioVersionId = Some(1),
+          dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
           scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
           createdAt = Instant.parse("2024-01-17T13:21:17Z"),
           retriesLeft = None,
@@ -216,7 +225,7 @@ object Examples {
           user = "some user",
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersionId = Some(1),
-          dateFinished = Instant.parse("2024-01-17T14:21:17Z"),
+          dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
           scheduledExecutionStatus = ScheduledExecutionStatus.DeploymentWillBeRetried,
           createdAt = Instant.parse("2024-01-17T13:21:17Z"),
           retriesLeft = Some(1),

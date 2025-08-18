@@ -919,7 +919,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           scheduledExecutionStatus <- additionalPropertyFromEntity(entity, "status").flatMap(
             ScheduledExecutionStatus.withNameEither(_).left.map(_.getMessage)
           )
-          dateFinished <- entity.finishedAt.toRight("Missing finishedAt field").map(_.toInstant)
+          dateFinished = entity.finishedAt.map(_.toInstant)
           createdAt <- additionalPropertyFromEntity(entity, "createdAt").map(
             parseInstantWithFallbackForImportedActivities(entity)
           )

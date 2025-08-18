@@ -33,8 +33,12 @@ object ScenarioActivityUtils {
 
     def dateFinishedOpt: Option[Instant] = {
       scenarioActivity match {
-        case activity: DeploymentRelatedActivity => Some(activity.result.dateFinished)
-        case _                                   => None
+        case activity: ScenarioActivity.PerformedScheduledExecution =>
+          activity.dateFinished
+        case activity: DeploymentRelatedActivity =>
+          Some(activity.result.dateFinished)
+        case _ =>
+          None
       }
     }
 

@@ -491,21 +491,19 @@ class PeriodicProcessService(
         processVersion,
       )
     } yield externalDeploymentId
-    deploymentAction
-      .flatMap { externalDeploymentId =>
-        logger.info("Scenario has been deployed {} for deployment id {}", deploymentWithJarData, id)
-        // TODO: add externalDeploymentId??
-        periodicProcessesRepository
-          .markDeployed(id)
-          .run
-          .flatMap(_ => periodicProcessesRepository.findProcessData(id).run)
-          .flatMap(afterChange => handleEvent(DeployedEvent(afterChange.toDetails, externalDeploymentId)))
-      }
-      // We can recover since deployment actor watches only future completion.
-      .recoverWith { case exception =>
-        logger.error(s"Scenario deployment ${deployment.display} failed", exception)
-        handleFailedDeployment(deployment, None)
-      }
+    (
+      for {
+        externalDeploymentId <- deploymentAction
+        _ = logger.info("Scenario has been deployed {} for deployment id {}", deploymentWithJarData, id)
+        _           <- periodicProcessesRepository.markDeployed(id).run
+        afterChange <- periodicProcessesRepository.findProcessData(id).run
+        _           <- handleEvent(DeployedEvent(afterChange.toDetails, externalDeploymentId))
+        _           <- addScenarioActivity(afterChange)
+      } yield ()
+    ).recoverWith { case exception => // We can recover since deployment actor watches only future completion.
+      logger.error(s"Scenario deployment ${deployment.display} failed", exception)
+      handleFailedDeployment(deployment, None)
+    }
   }
 
   // TODO: allow access to DB in listener?
@@ -691,7 +689,7 @@ class PeriodicProcessService(
         scenarioId = ScenarioId(deployment.periodicProcess.deploymentData.processId.value),
         scenarioActivityId = ScenarioActivityId.random,
         user = ScenarioUser.internalNuUser,
-        date = metadata.dateDeployed.getOrElse(metadata.dateFinished),
+        date = metadata.dateDeployed.getOrElse(metadata.dateCreated),
         scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.deploymentData.versionId)),
         scheduledExecutionStatus = metadata.status,
         dateFinished = metadata.dateFinished,
@@ -705,13 +703,13 @@ class PeriodicProcessService(
 
   private def scheduledExecutionStatusAndDateFinished(
       entity: PeriodicProcessDeployment,
-  ): Option[FinishedScheduledExecutionMetadata] = {
+  ): Option[ScheduledExecutionMetadata] = {
     for {
       status <- entity.state.status match {
         case PeriodicProcessDeploymentStatus.Scheduled =>
           None
         case PeriodicProcessDeploymentStatus.Deployed =>
-          None
+          Some(ScheduledExecutionStatus.InProgress)
         case PeriodicProcessDeploymentStatus.Finished =>
           Some(ScheduledExecutionStatus.Finished)
         case PeriodicProcessDeploymentStatus.Failed =>
@@ -723,8 +721,8 @@ class PeriodicProcessService(
       }
       dateCreated  = instantAtSystemDefaultZone(entity.createdAt)
       dateDeployed = entity.state.deployedAt.map(instantAtSystemDefaultZone)
-      dateFinished <- entity.state.completedAt.map(instantAtSystemDefaultZone)
-    } yield FinishedScheduledExecutionMetadata(
+      dateFinished = entity.state.completedAt.map(instantAtSystemDefaultZone)
+    } yield ScheduledExecutionMetadata(
       status = status,
       dateCreated = dateCreated,
       dateDeployed = dateDeployed,
@@ -919,11 +917,11 @@ object PeriodicProcessService {
 
   }
 
-  private final case class FinishedScheduledExecutionMetadata(
+  private final case class ScheduledExecutionMetadata(
       status: ScheduledExecutionStatus,
       dateCreated: Instant,
       dateDeployed: Option[Instant],
-      dateFinished: Instant,
+      dateFinished: Option[Instant],
   )
 
 }
