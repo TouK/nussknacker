@@ -39,7 +39,7 @@ export interface ActionMetadata {
     icon: string;
 }
 
-export type ActivityAdditionalFields = { name: string; value: string };
+export type ActivityAdditionalFields = { name: string; value: string; isDate?: boolean };
 
 export type ActivityCommentContentStatus = "AVAILABLE" | "NOT_AVAILABLE";
 

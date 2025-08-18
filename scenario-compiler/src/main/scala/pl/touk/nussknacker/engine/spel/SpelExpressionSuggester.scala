@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.spel
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
-import org.springframework.expression.common.TemplateParserContext
 import org.springframework.expression.spel.{SpelNode, SpelParserConfiguration}
 import org.springframework.expression.spel.ast._
 import org.springframework.expression.spel.standard.{SpelExpression => SpringSpelExpression}
@@ -19,7 +18,7 @@ import pl.touk.nussknacker.engine.extension.CastOrConversionExt
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.JsonTemplate
-import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
+import pl.touk.nussknacker.engine.spel.SpelTyper.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.{RichSpelNode, SpelNodeId}
 import pl.touk.nussknacker.engine.spel.parser.NuSpelExpressionParser
 import pl.touk.nussknacker.engine.util.CaretPosition2d
@@ -29,7 +28,7 @@ import pl.touk.nussknacker.engine.util.classes.Extensions.{ClassesExtensions, Cl
 import scala.collection.compat.immutable.LazyList
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.OptionConverters.RichOptional
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 class SpelExpressionSuggester(
     expressionConfig: ExpressionConfigDefinition,
@@ -40,7 +39,7 @@ class SpelExpressionSuggester(
   private val successfulNil = Future.successful[List[ExpressionSuggestion]](Nil)
 
   private val typer =
-    Typer.default(
+    SpelTyper.default(
       classLoader,
       expressionConfig,
       new LabelsDictTyper(uiDictServices.dictRegistry),
@@ -375,7 +374,7 @@ class SpelExpressionSuggester(
           ExpressionSuggestion(
             c.resultTypeClass.simpleName(),
             c.typingFunction(invocationTargetTyping).getOrElse(c.typingResult),
-            false,
+            fromClass = false,
             None,
             Nil
           )
@@ -444,7 +443,7 @@ class SpelExpressionSuggester(
 
 }
 
-private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
+private class NuSpelNodeParser(typer: SpelTyper) extends LazyLogging {
   private val parser = new NuSpelExpressionParser(new SpelParserConfiguration)
 
   def parse(
@@ -453,28 +452,31 @@ private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
       position: Int,
       validationContext: ValidationContext
   ): Try[Option[NuSpelNode]] = {
-    val rawExpression = language match {
-      case Language.Spel                        => Try(parser.parseExpression(input, null))
-      case Language.SpelTemplate | JsonTemplate => Try(parser.parseExpression(input, new TemplateParserContext()))
+    val flavourTry = language match {
+      case Language.Spel                        => Success(SpelFlavour.Standard)
+      case Language.SpelTemplate | JsonTemplate => Success(SpelFlavour.Template)
       case Language.DictKeyWithLabel | Language.TabularDataDefinition | Language.Json =>
         Failure(new IllegalArgumentException(s"Language $language is not supported"))
     }
-    rawExpression
-      .map { parsedExpressions =>
-        val astTypingResults =
-          typer.typeExpressionWithTextRange(parsedExpressions, validationContext)._2.intermediateResults
-        parsedExpressions.findSubexpressionByPosition(position).toScala.flatMap { expressionWithTextRange =>
-          expressionWithTextRange.getExpression match {
-            case springExpression: SpringSpelExpression =>
-              Some(createNuSpelNode(springExpression.getAST, astTypingResults, expressionWithTextRange.getTextRange))
-            case _ => None
-          }
+    (for {
+      flavour           <- flavourTry
+      parsedExpressions <- Try(parser.parseExpression(input, flavour.parserContext.orNull))
+      astTypingResults = typer
+        .typeExpressionWithTextRange(parsedExpressions, validationContext, flavour)
+        ._2
+        .intermediateResults
+      subExpressionOpt = parsedExpressions.findSubexpressionByPosition(position).toScala
+      spelNodeOpt = subExpressionOpt.flatMap { expressionWithTextRange =>
+        expressionWithTextRange.getExpression match {
+          case springExpression: SpringSpelExpression =>
+            Some(createNuSpelNode(springExpression.getAST, astTypingResults, expressionWithTextRange.getTextRange))
+          case _ => None
         }
       }
-      .recoverWith { case e =>
-        logger.debug(s"Failed to parse $language expression: $input, error: ${e.getMessage}")
-        Failure(e)
-      }
+    } yield spelNodeOpt).recoverWith { case e =>
+      logger.debug(s"Failed to parse $language expression: $input, error: ${e.getMessage}")
+      Failure(e)
+    }
   }
 
   private def createNuSpelNode(

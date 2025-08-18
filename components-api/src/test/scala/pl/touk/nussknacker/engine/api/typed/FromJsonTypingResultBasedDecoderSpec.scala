@@ -10,7 +10,7 @@ import org.scalatest.prop.Tables.Table
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.util.json.SampleEnum
+import pl.touk.nussknacker.engine.util.json.{SampleEnum, SampleEnumWithToStringOverridden}
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
 import scala.jdk.CollectionConverters._
@@ -135,6 +135,17 @@ class FromJsonTypingResultBasedDecoderSpec
     val encodedJson = ToJsonEncoder.default.encodeUnsafe(givenValue)
     encodedJson shouldEqual Json.fromString("DOLOR")
     val decodedValue = FromJsonTypingResultBasedDecoder.decodeValue(Typed[SampleEnum], encodedJson.hcursor).rightValue
+    decodedValue shouldBe givenValue
+  }
+
+  // This test demonstrates how kafka TimestampType is handled
+  test("should decode enum class with toString overridden") {
+    val givenValue  = SampleEnumWithToStringOverridden.DOLOR
+    val encodedJson = ToJsonEncoder.default.encodeUnsafe(givenValue)
+    encodedJson shouldEqual Json.fromString("DOLOR")
+    val decodedValue = FromJsonTypingResultBasedDecoder
+      .decodeValue(Typed[SampleEnumWithToStringOverridden], encodedJson.hcursor)
+      .rightValue
     decodedValue shouldBe givenValue
   }
 

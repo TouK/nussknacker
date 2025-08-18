@@ -57,6 +57,7 @@ object InputMeta {
     */
   def withType(keyTypingResult: TypingResult): TypingResult = {
     // TODO: exclude non-key parameters to trait BaseKafkaInputMetaVariables and use it in TypesInformationExtractor.mandatoryClasses
+    // TODO: add displayStrategy similar to this in Unknown type instead of extending case class
     new TypedObjectTypingResult(
       ListMap(
         keyParameterName           -> keyTypingResult,

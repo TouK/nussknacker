@@ -278,10 +278,6 @@ object SpelExpressionTypingError {
     override def message: String = "Wrong part types"
   }
 
-  case class ExpressionTypeError(expected: TypingResult, found: TypingResult) extends SpelExpressionTypingError {
-    override def message: String = s"Bad expression type, expected: ${expected.display}, found: ${found.display}"
-  }
-
 }
 
 sealed trait SpelExpressionParseError extends ExpressionParseError

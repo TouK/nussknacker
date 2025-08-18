@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
+import pl.touk.nussknacker.engine.spel.SpelFlavour
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
@@ -36,7 +37,7 @@ trait BaseSpelSpec {
     ModelDefinitionBuilder.emptyExpressionConfig,
     new SimpleDictRegistry(Map.empty),
     enableSpelForceCompile = false,
-    SpelExpressionParser.Standard,
+    SpelFlavour.Standard,
     classDefinitions,
   )
 

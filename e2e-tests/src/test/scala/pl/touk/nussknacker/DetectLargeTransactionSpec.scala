@@ -77,7 +77,7 @@ class DetectLargeTransactionSpec
              |                "pretty": {
              |                  "timestamp": "${regexes.decimalRegex}",
              |                  "partition": 0,
-             |                  "timestampType": "CreateTime",
+             |                  "timestampType": "CREATE_TIME",
              |                  "key": "",
              |                  "offset": 0,
              |                  "leaderEpoch": 0,
@@ -108,7 +108,7 @@ class DetectLargeTransactionSpec
              |                "pretty": {
              |                  "timestamp": "${regexes.decimalRegex}",
              |                  "partition": 0,
-             |                  "timestampType": "CreateTime",
+             |                  "timestampType": "CREATE_TIME",
              |                  "key": "",
              |                  "offset": 1,
              |                  "leaderEpoch": 0,
@@ -139,7 +139,7 @@ class DetectLargeTransactionSpec
              |                "pretty": {
              |                  "timestamp": "${regexes.decimalRegex}",
              |                  "partition": 0,
-             |                  "timestampType": "CreateTime",
+             |                  "timestampType": "CREATE_TIME",
              |                  "key": "",
              |                  "offset": 2,
              |                  "leaderEpoch": 0,
@@ -178,7 +178,7 @@ class DetectLargeTransactionSpec
              |                "pretty": {
              |                  "timestamp": "${regexes.decimalRegex}",
              |                  "partition": 0,
-             |                  "timestampType": "CreateTime",
+             |                  "timestampType": "CREATE_TIME",
              |                  "key": "",
              |                  "offset": 3,
              |                  "leaderEpoch": 0,
@@ -209,7 +209,7 @@ class DetectLargeTransactionSpec
              |                "pretty": {
              |                  "timestamp": "${regexes.decimalRegex}",
              |                  "partition": 0,
-             |                  "timestampType": "CreateTime",
+             |                  "timestampType": "CREATE_TIME",
              |                  "key": "",
              |                  "offset": 4,
              |                  "leaderEpoch": 0,
@@ -240,7 +240,7 @@ class DetectLargeTransactionSpec
              |                "pretty": {
              |                  "timestamp": "${regexes.decimalRegex}",
              |                  "partition": 0,
-             |                  "timestampType": "CreateTime",
+             |                  "timestampType": "CREATE_TIME",
              |                  "key": "",
              |                  "offset": 5,
              |                  "leaderEpoch": 0,
@@ -279,7 +279,7 @@ class DetectLargeTransactionSpec
              |                "pretty": {
              |                  "timestamp": "${regexes.decimalRegex}",
              |                  "partition": 0,
-             |                  "timestampType": "CreateTime",
+             |                  "timestampType": "CREATE_TIME",
              |                  "key": "",
              |                  "offset": 0,
              |                  "leaderEpoch": 0,
@@ -310,7 +310,7 @@ class DetectLargeTransactionSpec
              |                "pretty": {
              |                  "timestamp": "${regexes.decimalRegex}",
              |                  "partition": 0,
-             |                  "timestampType": "CreateTime",
+             |                  "timestampType": "CREATE_TIME",
              |                  "key": "",
              |                  "offset": 1,
              |                  "leaderEpoch": 0,
@@ -341,7 +341,7 @@ class DetectLargeTransactionSpec
              |                "pretty": {
              |                  "timestamp": "${regexes.decimalRegex}",
              |                  "partition": 0,
-             |                  "timestampType": "CreateTime",
+             |                  "timestampType": "CREATE_TIME",
              |                  "key": "",
              |                  "offset": 2,
              |                  "leaderEpoch": 0,
@@ -372,7 +372,7 @@ class DetectLargeTransactionSpec
              |                "pretty": {
              |                  "timestamp": "${regexes.decimalRegex}",
              |                  "partition": 0,
-             |                  "timestampType": "CreateTime",
+             |                  "timestampType": "CREATE_TIME",
              |                  "key": "",
              |                  "offset": 3,
              |                  "leaderEpoch": 0,
@@ -403,7 +403,7 @@ class DetectLargeTransactionSpec
              |                "pretty": {
              |                  "timestamp": "${regexes.decimalRegex}",
              |                  "partition": 0,
-             |                  "timestampType": "CreateTime",
+             |                  "timestampType": "CREATE_TIME",
              |                  "key": "",
              |                  "offset": 4,
              |                  "leaderEpoch": 0,
@@ -434,7 +434,7 @@ class DetectLargeTransactionSpec
              |                "pretty": {
              |                  "timestamp": "${regexes.decimalRegex}",
              |                  "partition": 0,
-             |                  "timestampType": "CreateTime",
+             |                  "timestampType": "CREATE_TIME",
              |                  "key": "",
              |                  "offset": 5,
              |                  "leaderEpoch": 0,

@@ -31,6 +31,8 @@ import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatSerDe.De
 
 class CommonDataFormatHandler(modelData: ModelData) extends TestDataFormatHandler {
 
+  import pl.touk.nussknacker.engine.testmode.NonMapBasedRecordTypesOps._
+
   override val serDe: TestDataFormatSerDe = CommonDataFormatSerDe
 
   private val toJsonEncoder = new StrictToJsonEncoder(modelData.modelClassLoader)
@@ -72,7 +74,8 @@ class CommonDataFormatHandler(modelData: ModelData) extends TestDataFormatHandle
       validOutputValidationContext <- sourceCompilationResult.validationContext.toEither.leftMap(errors =>
         ParametersDefinitionError.SourcesCompilationError(NonEmptyList.one(sourceId -> errors))
       )
-      recordTypeBasedOnOutputValidationContext = Typed.record(validOutputValidationContext.localVariables)
+      validationContextWithMapBasedRecordTypes = validOutputValidationContext.mapTypes(_.toMapBasedRecordTypes)
+      recordTypeBasedOnOutputValidationContext = Typed.record(validationContextWithMapBasedRecordTypes.localVariables)
       singleInputVariablesParameter = Parameter(InputVariablesParameterName, recordTypeBasedOnOutputValidationContext)
         .copy(editors = List(JsonParameterEditor))
     } yield List(singleInputVariablesParameter)

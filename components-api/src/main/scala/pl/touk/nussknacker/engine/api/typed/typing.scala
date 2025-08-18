@@ -99,14 +99,21 @@ object typing {
         .sequence
         .map(fieldValues => Map(fieldValues: _*).asJava)
 
-    override def withoutValue: TypedObjectTypingResult =
-      Typed.record(
-        fields.map { case (fieldName, fieldType) =>
-          fieldName -> fieldType.withoutValue
-        },
-        runtimeObjType.withoutValue,
-        additionalInfo
-      )
+    override def withoutValue: TypedObjectTypingResult = {
+      val newFields = fields.map { case (fieldName, fieldType) =>
+        fieldName -> fieldType.withoutValue
+      }
+      val newRuntimeObjType = runtimeObjType.withoutValue
+      // We don't want to change record if fields wasn't changed - see InputMeta.withType
+      if (newFields == fields && newRuntimeObjType == runtimeObjType) {
+        this
+      } else {
+        copy(
+          fields = newFields,
+          runtimeObjType = newRuntimeObjType
+        )
+      }
+    }
 
     override def display: String =
       fields.map { case (name, typ) => s"$name: ${typ.display}" }.toList.sorted.mkString("Record{", ", ", "}")

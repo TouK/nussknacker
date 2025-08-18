@@ -104,9 +104,13 @@ export const ActivityItem = forwardRef(
                         )}
 
                         {activity.additionalFields.map((additionalField, index) => {
-                            const additionalFieldText = additionalField.name
-                                ? `${humanizeString(additionalField.name)}: ${additionalField.value}`
+                            const additionalFieldValueText = additionalField.isDate
+                                ? formatDateTime(additionalField.value)
                                 : additionalField.value;
+
+                            const additionalFieldText = additionalField.name
+                                ? `${humanizeString(additionalField.name)}: ${additionalFieldValueText}`
+                                : additionalFieldValueText;
 
                             return (
                                 <Typography component={SearchHighlighter} highlights={[searchQuery]} key={index} variant={"overline"}>

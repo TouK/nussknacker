@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.json.{JsonSchemaBuilder, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Standard
+import pl.touk.nussknacker.engine.spel.SpelFlavour
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
@@ -24,7 +24,7 @@ class SpelExpressionSchemedSpec extends AnyFunSuite with Matchers with Validated
     ModelDefinitionBuilder.emptyExpressionConfig,
     new SimpleDictRegistry(Map.empty),
     enableSpelForceCompile = false,
-    Standard,
+    SpelFlavour.Standard,
     ClassDefinitionTestUtils.createDefinitionForClasses(classOf[GenericRecord])
   )
 

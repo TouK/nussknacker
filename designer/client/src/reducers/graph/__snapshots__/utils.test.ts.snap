@@ -46,7 +46,7 @@ exports[`GraphUtils prepareNewNodesWithLayout should update union output express
         "expression": "'value'",
         "language": "spel",
       },
-      "varName": "variable_1_copy_1_var_name_1",
+      "varName": "varName1",
     },
     {
       "additionalFields": {
@@ -63,7 +63,7 @@ exports[`GraphUtils prepareNewNodesWithLayout should update union output express
         "expression": "'value'",
         "language": "spel",
       },
-      "varName": "variable_2_copy_1_var_name_2",
+      "varName": "varName2",
     },
     {
       "additionalFields": {
@@ -102,7 +102,7 @@ exports[`GraphUtils prepareNewNodesWithLayout should update union output express
       "id": "union (copy 1)",
       "label": "union",
       "nodeType": "union",
-      "outputVar": "union_copy_1_output_var",
+      "outputVar": "outputVar",
       "parameters": [],
       "type": "Join",
     },

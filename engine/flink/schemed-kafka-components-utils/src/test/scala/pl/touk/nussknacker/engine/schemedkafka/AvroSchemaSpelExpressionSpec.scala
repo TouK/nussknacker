@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Standard
+import pl.touk.nussknacker.engine.spel.SpelFlavour
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 
 import java.time.{Instant, LocalDate, LocalTime}
@@ -238,7 +238,7 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
         ModelDefinitionBuilder.emptyExpressionConfig,
         new SimpleDictRegistry(Map(dictId -> EmbeddedDictDefinition(Map("key1" -> "value1")))),
         enableSpelForceCompile = true,
-        Standard,
+        SpelFlavour.Standard,
         ClassDefinitionTestUtils.createDefinitionForClasses(classOf[EnumSymbol])
       )
       .parse(expr, validationCtx, Typed.fromDetailedType[T])

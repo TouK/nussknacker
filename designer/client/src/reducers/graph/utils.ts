@@ -69,27 +69,36 @@ export function prepareNewNodesWithLayout(
     return {
         nodes: newNodesWithPositions.map(({ node }) =>
             mapValues(node, (value, key) => {
+                // adjust var names - only for new nodes
+                if (!isCopy) {
+                    switch (key) {
+                        case "ref":
+                            if (!value.outputVariableNames) return value;
+                            return {
+                                ...value,
+                                outputVariableNames: mapValues(value.outputVariableNames, (v, k) =>
+                                    snakeCase(`${idMapping[node.id]} ${k}`),
+                                ),
+                            };
+                        case "output":
+                        case "varName":
+                        case "outputVar":
+                            return snakeCase(`${idMapping[node.id]} ${value}`);
+                    }
+                }
+
+                // adjust node names
                 switch (key) {
                     case "id":
                         return idMapping[value];
-                    case "ref":
-                        if (!value.outputVariableNames) return value;
-                        return {
-                            ...value,
-                            outputVariableNames: mapValues(value.outputVariableNames, (v, k) => snakeCase(`${idMapping[node.id]} ${k}`)),
-                        };
                     case "branchParameters":
                         return value?.map((parameter) => ({
                             ...parameter,
                             branchId: idMapping[parameter.branchId],
                         }));
-                    case "output":
-                    case "varName":
-                    case "outputVar":
-                        return snakeCase(`${idMapping[node.id]} ${value}`);
-                    default:
-                        return value;
                 }
+
+                return value;
             }),
         ),
         layout: newNodesWithPositions.map(({ position, node }) => ({

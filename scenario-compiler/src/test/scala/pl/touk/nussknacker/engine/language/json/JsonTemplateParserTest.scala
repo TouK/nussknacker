@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 import pl.touk.nussknacker.engine.language.json.JsonParsingFailureToExpressionParseErrorConverter.JsonParseError
 import pl.touk.nussknacker.engine.language.json.JsonTemplateParser.JsonTemplateDecodingException
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
+import pl.touk.nussknacker.engine.spel.SpelFlavour
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
@@ -34,7 +35,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
     ModelDefinitionBuilder.emptyExpressionConfig,
     new SimpleDictRegistry(Map.empty),
     enableSpelForceCompile = false,
-    SpelExpressionParser.Template,
+    SpelFlavour.Template,
     ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions,
   )
 
@@ -43,7 +44,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
     ModelDefinitionBuilder.emptyExpressionConfig,
     new SimpleDictRegistry(Map.empty),
     enableSpelForceCompile = false,
-    SpelExpressionParser.Standard,
+    SpelFlavour.Standard,
     ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions,
   )
 

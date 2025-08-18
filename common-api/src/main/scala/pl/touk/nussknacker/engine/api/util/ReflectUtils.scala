@@ -38,4 +38,14 @@ object ReflectUtils {
     }
   }
 
+  object JavaEnumConstants {
+
+    def unapply(clazz: Class[_]): Option[List[Enum[_]]] =
+      Option(clazz)
+        .filter(_.isEnum)
+        .map(_.asInstanceOf[Class[Enum[_]]])
+        .map(_.getEnumConstants.toList)
+
+  }
+
 }

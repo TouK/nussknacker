@@ -310,6 +310,7 @@ class DefinitionResourcesSpec
           "custom-enrichWithAdditionalData",
           "custom-full-outer-join",
           "custom-single-side-join",
+          "custom-union",
           "custom-union-memo",
           "custom-unionWithEditors",
         )
