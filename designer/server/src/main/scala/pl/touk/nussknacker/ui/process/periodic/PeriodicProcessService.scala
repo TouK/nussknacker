@@ -689,7 +689,7 @@ class PeriodicProcessService(
         scenarioId = ScenarioId(deployment.periodicProcess.deploymentData.processId.value),
         scenarioActivityId = ScenarioActivityId.random,
         user = ScenarioUser.internalNuUser,
-        date = metadata.dateDeployed.getOrElse(metadata.dateCreated),
+        date = metadata.dateDeployed.orElse(metadata.dateFinished).getOrElse(metadata.dateCreated),
         scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.deploymentData.versionId)),
         scheduledExecutionStatus = metadata.status,
         dateFinished = metadata.dateFinished,

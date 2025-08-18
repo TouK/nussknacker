@@ -275,7 +275,9 @@ class PeriodicProcessServiceIntegrationTest
     inactiveStates.firstScheduleData.latestDeployments.head.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
 
     val activities = f.scenarioActivityRepository.getActivities.filter(_.scenarioId.value == processIdWithName.id.value)
-    val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
+    val firstActivity  = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
+    val secondActivity = activities(1).asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
+    val thirdActivity  = activities(2).asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     activities shouldBe List(
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(processIdWithName.id.value),
@@ -283,10 +285,36 @@ class PeriodicProcessServiceIntegrationTest
         user = ScenarioUser(None, UserName("Nussknacker"), None, None),
         date = firstActivity.date,
         scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = firstActivity.dateFinished,
+        dateFinished = None,
+        scheduleName = "[default]",
+        scheduledExecutionStatus = ScheduledExecutionStatus.InProgress,
+        createdAt = firstActivity.createdAt,
+        retriesLeft = None,
+        nextRetryAt = None
+      ),
+      ScenarioActivity.PerformedScheduledExecution(
+        scenarioId = ScenarioId(processIdWithName.id.value),
+        scenarioActivityId = secondActivity.scenarioActivityId,
+        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
+        date = secondActivity.date,
+        scenarioVersionId = Some(ScenarioVersionId(1)),
+        dateFinished = None,
+        scheduleName = "[default]",
+        scheduledExecutionStatus = ScheduledExecutionStatus.InProgress,
+        createdAt = secondActivity.createdAt,
+        retriesLeft = None,
+        nextRetryAt = None
+      ),
+      ScenarioActivity.PerformedScheduledExecution(
+        scenarioId = ScenarioId(processIdWithName.id.value),
+        scenarioActivityId = thirdActivity.scenarioActivityId,
+        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
+        date = thirdActivity.date,
+        scenarioVersionId = Some(ScenarioVersionId(1)),
+        dateFinished = thirdActivity.dateFinished,
         scheduleName = "[default]",
         scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
-        createdAt = firstActivity.createdAt,
+        createdAt = thirdActivity.createdAt,
         retriesLeft = None,
         nextRetryAt = None
       ),
@@ -558,11 +586,16 @@ class PeriodicProcessServiceIntegrationTest
     toDeployAfterFinish should have length 1
     toDeployAfterFinish.head.scheduleName.value.value shouldBe secondSchedule
 
-    val firstActivity = eventually {
-      val result = f.scenarioActivityRepository.getActivities.filter(_.scenarioId.value == processIdWithName.id.value)
-      result should not be empty
-      result.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
+    val activities = eventually {
+      val result =
+        f.scenarioActivityRepository.getActivities
+          .filter(_.scenarioId.value == processIdWithName.id.value)
+          .collect { case activity: ScenarioActivity.PerformedScheduledExecution => activity }
+      result.size shouldBe 2
+      result
     }
+    val firstActivity  = activities.head
+    val secondActivity = activities(1)
     firstActivity shouldBe
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(processIdWithName.id.value),
@@ -570,10 +603,24 @@ class PeriodicProcessServiceIntegrationTest
         user = ScenarioUser(None, UserName("Nussknacker"), None, None),
         date = firstActivity.date,
         scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = firstActivity.dateFinished,
+        dateFinished = None,
+        scheduleName = "schedule1",
+        scheduledExecutionStatus = ScheduledExecutionStatus.InProgress,
+        createdAt = firstActivity.createdAt,
+        retriesLeft = None,
+        nextRetryAt = None
+      )
+    secondActivity shouldBe
+      ScenarioActivity.PerformedScheduledExecution(
+        scenarioId = ScenarioId(processIdWithName.id.value),
+        scenarioActivityId = secondActivity.scenarioActivityId,
+        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
+        date = secondActivity.date,
+        scenarioVersionId = Some(ScenarioVersionId(1)),
+        dateFinished = secondActivity.dateFinished,
         scheduleName = "schedule1",
         scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
-        createdAt = firstActivity.createdAt,
+        createdAt = secondActivity.createdAt,
         retriesLeft = None,
         nextRetryAt = None
       )
@@ -583,33 +630,61 @@ class PeriodicProcessServiceIntegrationTest
     val processIdWithName = handleMultipleOneTimeSchedules(f)
 
     val activities = f.scenarioActivityRepository.getActivities.filter(_.scenarioId.value == processIdWithName.id.value)
-    val performedActivities = activities.map(_.asInstanceOf[ScenarioActivity.PerformedScheduledExecution])
-    val schedule1Activity   = performedActivities.find(_.scheduleName == "schedule1").get
-    val schedule2Activity   = performedActivities.find(_.scheduleName == "schedule2").get
+    val performedActivities     = activities.map(_.asInstanceOf[ScenarioActivity.PerformedScheduledExecution])
+    val firstSchedule1Activity  = performedActivities.filter(_.scheduleName == "schedule1").head
+    val secondSchedule1Activity = performedActivities.filter(_.scheduleName == "schedule1")(1)
+    val firstSchedule2Activity  = performedActivities.filter(_.scheduleName == "schedule2").head
+    val secondSchedule2Activity = performedActivities.filter(_.scheduleName == "schedule2")(1)
     activities should contain theSameElementsAs List(
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(processIdWithName.id.value),
-        scenarioActivityId = schedule1Activity.scenarioActivityId,
+        scenarioActivityId = firstSchedule1Activity.scenarioActivityId,
         user = ScenarioUser(None, UserName("Nussknacker"), None, None),
-        date = schedule1Activity.date,
+        date = firstSchedule1Activity.date,
         scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = schedule1Activity.dateFinished,
+        dateFinished = None,
         scheduleName = "schedule1",
-        scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
-        createdAt = schedule1Activity.createdAt,
+        scheduledExecutionStatus = ScheduledExecutionStatus.InProgress,
+        createdAt = firstSchedule1Activity.createdAt,
         retriesLeft = None,
         nextRetryAt = None
       ),
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(processIdWithName.id.value),
-        scenarioActivityId = schedule2Activity.scenarioActivityId,
+        scenarioActivityId = secondSchedule1Activity.scenarioActivityId,
         user = ScenarioUser(None, UserName("Nussknacker"), None, None),
-        date = schedule2Activity.date,
+        date = secondSchedule1Activity.date,
         scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = schedule2Activity.dateFinished,
+        dateFinished = secondSchedule1Activity.dateFinished,
+        scheduleName = "schedule1",
+        scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
+        createdAt = secondSchedule1Activity.createdAt,
+        retriesLeft = None,
+        nextRetryAt = None
+      ),
+      ScenarioActivity.PerformedScheduledExecution(
+        scenarioId = ScenarioId(processIdWithName.id.value),
+        scenarioActivityId = firstSchedule2Activity.scenarioActivityId,
+        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
+        date = firstSchedule2Activity.date,
+        scenarioVersionId = Some(ScenarioVersionId(1)),
+        dateFinished = None,
+        scheduleName = "schedule2",
+        scheduledExecutionStatus = ScheduledExecutionStatus.InProgress,
+        createdAt = firstSchedule2Activity.createdAt,
+        retriesLeft = None,
+        nextRetryAt = None
+      ),
+      ScenarioActivity.PerformedScheduledExecution(
+        scenarioId = ScenarioId(processIdWithName.id.value),
+        scenarioActivityId = secondSchedule2Activity.scenarioActivityId,
+        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
+        date = secondSchedule2Activity.date,
+        scenarioVersionId = Some(ScenarioVersionId(1)),
+        dateFinished = secondSchedule2Activity.dateFinished,
         scheduleName = "schedule2",
         scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
-        createdAt = schedule2Activity.createdAt,
+        createdAt = secondSchedule2Activity.createdAt,
         retriesLeft = None,
         nextRetryAt = None
       ),
