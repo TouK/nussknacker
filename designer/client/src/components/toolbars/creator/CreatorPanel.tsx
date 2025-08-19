@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { isDynamic } from "../../../actions/nk/ui/panelSide";
 import { useUserSettings } from "../../../common/userSettings";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
-import { NodeCreationHandler } from "../../../containers/NodeCreationHandler";
+import { useNodeCreationHandler } from "../../../containers/NodeCreationHandler";
 import { getAdditionalComponents } from "../../../reducers/cloudData";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
@@ -91,6 +91,8 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
         [dispatch, side],
     );
 
+    useNodeCreationHandler({ panelSide: side, when: isDynamic(side) });
+
     return (
         <ToolbarWrapper {...props} title={t("panels.creator.title", "Creator panel")} onExpand={() => searchRef.current?.focus()}>
             <SearchInputWithIcon
@@ -130,7 +132,6 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
                     closeHandler(item);
                 }}
             />
-            {isDynamic(side) ? <NodeCreationHandler panelSide={side} /> : null}
         </ToolbarWrapper>
     );
 }

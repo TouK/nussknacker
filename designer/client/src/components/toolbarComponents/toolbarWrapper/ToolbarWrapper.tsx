@@ -43,15 +43,15 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
         [dispatch, id, toolbarsConfigId],
     );
 
-    const [isCollapsedLocal, setIsCollapsedLocal] = useState(isCollapsedStored);
+    const [isCollapsedLocal, setIsCollapsedLocal] = useState(isCollapsible && isCollapsedStored);
 
     const toggleCollapsed = useCallback(() => {
         setIsCollapsedLocal((s) => isCollapsible && !s);
     }, [isCollapsible]);
 
     useEffect(() => {
-        setIsCollapsedLocal(isCollapsedStored);
-    }, [isCollapsedStored]);
+        setIsCollapsedLocal(isCollapsible && isCollapsedStored);
+    }, [isCollapsible, isCollapsedStored]);
 
     return children ? (
         <Panel
