@@ -1,12 +1,17 @@
-import type { OnDragEndResponder, OnDragStartResponder } from "@hello-pangea/dnd";
+import type { OnDragEndResponder, OnDragStartResponder, SensorAPI } from "@hello-pangea/dnd";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { alpha, GlobalStyles, useTheme } from "@mui/material";
 import type { PropsWithChildren } from "react";
+import { useMemo } from "react";
 import React, { useCallback, useState } from "react";
+import { useDebouncedValue } from "rooks";
 
 import type { ToolbarPosition } from "../../actions/nk/toolbars";
+import { PendingPromise } from "../../common/PendingPromise";
 import { EventTrackingSelector, EventTrackingType, useEventTracking } from "../../containers/event-tracking";
 import { SIDEBAR_WIDTH } from "../../stylesheets/variables";
+import getKeyboardSensor from "./sensors/use-keyboard-sensor";
+import getMouseSensor from "./sensors/use-mouse-sensor";
 import { DRAGGABLE_LIST_CLASSNAME, DRAGGING_FROM_CLASSNAME, DRAGGING_OVER_CLASSNAME, DROPPABLE_CLASSNAME } from "./ToolbarsContainer";
 
 type Props = PropsWithChildren<{
@@ -18,13 +23,20 @@ export const TOOLBAR_DRAGGABLE_TYPE = "TOOLBAR";
 export const DraggableIdContext = React.createContext<string | null>(null);
 
 export function DragAndDropContainer({ children, onMove }: Props) {
+    const animationDelay = 200;
     const [draggableId, setDraggableId] = useState<string | null>(null);
+    const [debouncedDraggableId, immediatelySetDraggableId] = useDebouncedValue(draggableId, animationDelay);
+    const clearDraggableId = useCallback(() => {
+        setDraggableId(null);
+        immediatelySetDraggableId(null);
+    }, [immediatelySetDraggableId]);
+
     const { trackEvent } = useEventTracking();
 
     const onDragEnd: OnDragEndResponder = useCallback(
         (result) => {
             trackEvent({ selector: EventTrackingSelector.ToolbarPanel, event: EventTrackingType.Move });
-            setDraggableId(null);
+            clearDraggableId();
             const { destination, type, reason, source } = result;
             if (reason === "DROP" && type === TOOLBAR_DRAGGABLE_TYPE && destination) {
                 const from: ToolbarPosition = [source.droppableId, source.index];
@@ -32,7 +44,7 @@ export function DragAndDropContainer({ children, onMove }: Props) {
                 onMove(from, to);
             }
         },
-        [onMove, trackEvent],
+        [clearDraggableId, onMove, trackEvent],
     );
 
     const onDragStart: OnDragStartResponder = useCallback(({ draggableId }) => {
@@ -41,8 +53,34 @@ export function DragAndDropContainer({ children, onMove }: Props) {
 
     const theme = useTheme();
 
+    const { mouseSensor, keyboardSensor } = useMemo(() => {
+        const delayPromiseGetter = (draggableId: string) => {
+            setDraggableId(draggableId);
+            const delayPromise = new PendingPromise<{ end: PendingPromise<void> }>();
+            delayPromise.catch(() => clearDraggableId());
+            setTimeout(() => {
+                const endPromise = new PendingPromise<void>();
+                endPromise.then(() => clearDraggableId());
+                delayPromise.resolve({ end: endPromise });
+            }, animationDelay);
+            return delayPromise;
+        };
+        return {
+            mouseSensor: (api: SensorAPI) => getMouseSensor(api, delayPromiseGetter),
+            keyboardSensor: (api: SensorAPI) => getKeyboardSensor(api, delayPromiseGetter),
+        };
+    }, [clearDraggableId, animationDelay]);
+
     return (
-        <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
+        <DragDropContext
+            sensors={[
+                mouseSensor,
+                // keyboardSensor
+            ]}
+            onDragEnd={onDragEnd}
+            onDragStart={onDragStart}
+            enableDefaultSensors={false}
+        >
             <GlobalStyles
                 styles={{
                     [`.${DRAGGABLE_LIST_CLASSNAME}`]: {
@@ -58,7 +96,7 @@ export function DragAndDropContainer({ children, onMove }: Props) {
                     [`.${DROPPABLE_CLASSNAME}`]: {
                         [`.${DRAGGABLE_LIST_CLASSNAME}::after`]: {
                             content: draggableId ? "''" : null,
-                            transition: theme.transitions.create(["all"], { duration: theme.transitions.duration.standard }),
+                            transition: theme.transitions.create("all", { duration: theme.transitions.duration.standard }),
                             position: "absolute",
                             top: 0,
                             left: 0,
@@ -80,7 +118,7 @@ export function DragAndDropContainer({ children, onMove }: Props) {
                     },
                 }}
             />
-            <DraggableIdContext.Provider value={draggableId}>{children}</DraggableIdContext.Provider>
+            <DraggableIdContext.Provider value={debouncedDraggableId}>{children}</DraggableIdContext.Provider>
         </DragDropContext>
     );
 }

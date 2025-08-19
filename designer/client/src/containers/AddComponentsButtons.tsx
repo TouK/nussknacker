@@ -1,6 +1,9 @@
-import { AddBoxOutlined } from "@mui/icons-material";
-import { Box, Fade, IconButton } from "@mui/material";
+import { AddBox } from "@mui/icons-material";
+import { Fade, IconButton } from "@mui/material";
+import { OverridableComponent } from "@mui/material/OverridableComponent";
+import type SvgIcon from "@mui/material/SvgIcon/SvgIcon";
 import React from "react";
+import { useDragLayer } from "react-dnd";
 import { useTranslation } from "react-i18next";
 
 import { PanelSide } from "../actions/nk/ui/panelSide";
@@ -13,7 +16,7 @@ import { getToolbarsConfig } from "../reducers/selectors/toolbars";
 import { ToolbarsSide } from "../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../store/storeHelpers";
 
-function OpenButton({ sourceOnly }: { sourceOnly?: boolean }) {
+function OpenButton({ sourceOnly, Icon = AddBox }: { sourceOnly?: boolean; Icon?: typeof SvgIcon }) {
     const { t } = useTranslation();
     const title = sourceOnly ? t("panels.creator.openSelectFirst", "add source node") : t("panels.creator.openSelect", "add new node");
     const graphGetter = useGraph();
@@ -36,17 +39,17 @@ function OpenButton({ sourceOnly }: { sourceOnly?: boolean }) {
                 });
             }}
             disableFocusRipple
-            color="inherit"
+            color="primary"
             size="small"
             disableRipple={sourceOnly}
             disableTouchRipple={sourceOnly}
             sx={{
                 borderRadius: 0,
                 zoom: sourceOnly ? 3 : 1,
-                opacity: sourceOnly ? 0.2 : 1,
+                opacity: sourceOnly ? 0.15 : 1,
             }}
         >
-            <AddBoxOutlined fontSize="large" />
+            <Icon fontSize="large" />
         </IconButton>
     );
 }
@@ -54,6 +57,8 @@ function OpenButton({ sourceOnly }: { sourceOnly?: boolean }) {
 export const AddComponentsButtons = () => {
     const scenario = useAppSelector(getScenario);
     const toolbars = useAppSelector(getToolbarsConfig);
+
+    const isDragging = useDragLayer((monitor) => monitor.isDragging());
 
     if (!toolbars[ToolbarsSide.RightDynamic]?.find((t) => ["creator-panel", "creator-panel-dynamic"].includes(t.id))) {
         return null;
@@ -64,22 +69,20 @@ export const AddComponentsButtons = () => {
             <Overlay gridArea="right" gridRow="top">
                 <OpenButton />
             </Overlay>
-            <Overlay
-                gridRow="top/span 2"
-                gridColumn="left/right"
-                sx={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    alignContent: "center",
-                    justifyContent: "center",
-                }}
-            >
-                <Fade in={!scenario.scenarioGraph.nodes.length} unmountOnExit mountOnEnter>
-                    <Box>
-                        <OpenButton sourceOnly />
-                    </Box>
-                </Fade>
-            </Overlay>
+            <Fade in={!scenario.scenarioGraph.nodes.length && !isDragging} unmountOnExit mountOnEnter>
+                <Overlay
+                    gridRow="top/span 2"
+                    gridColumn="left/right"
+                    sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        alignContent: "center",
+                        justifyContent: "center",
+                    }}
+                >
+                    <OpenButton sourceOnly />
+                </Overlay>
+            </Fade>
         </>
     );
 };
