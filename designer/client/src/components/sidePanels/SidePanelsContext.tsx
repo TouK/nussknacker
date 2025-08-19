@@ -42,7 +42,7 @@ function getPanelToolbarsSides(side: PanelSide) {
 }
 
 function getIsEmpty(side: PanelSide, positions) {
-    return getPanelToolbarsSides(side).every((s) => !positions[s]?.filter(Boolean).length);
+    return getPanelToolbarsSides(side).every((s) => !positions?.[s]?.filter(Boolean).length);
 }
 
 function useSideState(configId: string, side: PanelSide): SideState {
