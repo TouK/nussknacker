@@ -51,7 +51,7 @@ const initialState: SettingsState = {
     processDefinitionData: {
         edgesForNodes: [],
     },
-    processToolbarsConfiguration: null,
+    processToolbarsConfiguration: { id: null },
 };
 
 export function reducer(state: SettingsState = initialState, action: Action): SettingsState {
