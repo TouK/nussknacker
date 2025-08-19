@@ -15,7 +15,6 @@ import { NodeDetailsFallback } from "./NodeDetailsContent/NodeDetailsFallback";
 import { Sink } from "./sink";
 import { Source } from "./source";
 import { Split } from "./split";
-import { StickyNote } from "./stickyNote";
 import { Switch } from "./switch";
 import { useNodeTypeDetailsContentLogic } from "./useNodeTypeDetailsContentLogic";
 import Variable from "./Variable";
@@ -227,17 +226,6 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
         case "Split":
             return (
                 <Split
-                    errors={errors}
-                    isEditMode={isEditMode}
-                    node={node}
-                    renderFieldLabel={renderFieldLabel}
-                    setProperty={setProperty}
-                    showValidation={showValidation}
-                />
-            );
-        case "StickyNoteNode":
-            return (
-                <StickyNote
                     errors={errors}
                     isEditMode={isEditMode}
                     node={node}

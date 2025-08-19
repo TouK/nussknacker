@@ -21,6 +21,7 @@ import {
     toggleSelection,
 } from "../../actions/nk";
 import type { ThunkAction } from "../../actions/reduxTypes";
+import { useUserSettings } from "../../common/userSettings";
 import HttpService from "../../http/HttpService";
 import { createUniqueName } from "../../reducers/graph/utils";
 import { fetchScenarios, getScenariosNames } from "../../reducers/scenarios";
@@ -32,10 +33,13 @@ import { DndTypes } from "../DndTypes";
 import type { Scenario } from "../Process/types";
 import { jsonToFileInFormData } from "./createFragment";
 import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
+import { advancedNoteOffset } from "./EspNode/stickyNote/advancedStickyNoteConfig";
+import { basicNoteOffset } from "./EspNode/stickyNote/basicStickyNoteConfig";
 import type { Graph } from "./Graph";
 import GraphWrapped from "./GraphWrapped";
 import NodeUtils from "./NodeUtils";
 import { setDraggedOver } from "./utils/dragHelpers";
+import { StickyNoteType } from "./utils/stickyNotesUtils";
 
 export type ElementDropResult = {
     item: NodeType;
@@ -52,6 +56,8 @@ export const ProcessGraph = forwardRef<
     const scenario = useAppSelector(getScenario);
     const processCounts = useAppSelector(getProcessCounts);
     const layout = useAppSelector(getLayout);
+    const [settings] = useUserSettings();
+    const areAdvancedStickyNotesEnabled = settings["node.advancedStickyNotes"];
 
     const graph = useRef<Graph>();
     useImperativeHandle(forwardedRef, () => graph.current);
@@ -63,7 +69,10 @@ export const ProcessGraph = forwardRef<
             const paper = graph.current.processGraphPaper;
             const relOffset = paper.clientToLocalPoint(clientOffset);
             // to make node horizontally aligned
-            const nodeInputRelOffset = relOffset.offset(RECT_WIDTH * -0.8, RECT_HEIGHT * -0.5);
+            const nodeInputRelOffset =
+                item.type === StickyNoteType
+                    ? relOffset.offset(...Object.values(areAdvancedStickyNotesEnabled ? advancedNoteOffset : basicNoteOffset))
+                    : relOffset.offset(RECT_WIDTH * -0.8, RECT_HEIGHT * -0.5);
             graph.current.addNode(item, mapValues(nodeInputRelOffset, Math.round));
             setDraggedOver(graph.current.graph);
             return {

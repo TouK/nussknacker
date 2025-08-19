@@ -22,7 +22,6 @@ import type { Scenario } from "../Process/types";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
 import { getDefaultLinkCreator } from "./EspNode/link";
-import { getNeighbors } from "./getNeighbors";
 import {
     applyCellChanges,
     calcLayout,
@@ -67,14 +66,6 @@ type Props = GraphProps & {
     handleStatisticsEvent: (event: TrackEventParams) => void;
     stickyNoteUpdated?: typeof stickyNoteUpdated;
     stickyNoteSetErrors?: typeof stickyNoteSetErrors;
-};
-
-export const nuGraphNamespace = {
-    ...shapes,
-    stickyNote: {
-        StickyNoteElement,
-        StickyNoteElementView,
-    },
 };
 
 function handleActionOnLongPress<T extends dia.CellView>(
@@ -149,10 +140,18 @@ export class Graph extends React.Component<Props> {
         right: 0,
     };
     private lastHoveredCell: dia.Cell;
+    private readonly nuGraphNamespace: Record<string, any>;
 
     constructor(props: Props) {
         super(props);
-        this.graph = new dia.Graph({}, { cellNamespace: nuGraphNamespace });
+        this.nuGraphNamespace = {
+            ...shapes,
+            stickyNote: {
+                StickyNoteElement,
+                StickyNoteElementView: StickyNoteElementView(props.userSettings),
+            },
+        };
+        this.graph = new dia.Graph({}, { cellNamespace: this.nuGraphNamespace });
         this.bindNodeRemove();
         this.bindNodesMoving();
     }
@@ -189,7 +188,7 @@ export class Graph extends React.Component<Props> {
             model: this.graph,
             el: this.getEspGraphRef(),
             validateConnection: this.twoWayValidateConnection,
-            cellViewNamespace: nuGraphNamespace,
+            cellViewNamespace: this.nuGraphNamespace,
             validateMagnet: this.validateMagnet,
             interactive: (cellView: dia.CellView) => {
                 const { model } = cellView;
@@ -304,7 +303,7 @@ export class Graph extends React.Component<Props> {
         const { theme } = this.props;
 
         this.redrawing = true;
-        applyCellChanges(this.processGraphPaper, scenarioGraph, processDefinitionData, theme);
+        applyCellChanges(this.processGraphPaper, scenarioGraph, processDefinitionData, theme, this.props.userSettings);
 
         if (isEmpty(layout)) {
             if (scenarioGraph.nodes.length > 0) {
@@ -580,7 +579,9 @@ export class Graph extends React.Component<Props> {
 
     highlightNode = (nodeId: NodeId, className: string): void => {
         const cell = this.graph.getCell(nodeId);
-        cell?.toFront();
+        if (!isStickyNoteElement(cell)) {
+            cell?.toFront();
+        }
         this.#highlightCell(cell, className);
     };
 
@@ -759,9 +760,8 @@ export class Graph extends React.Component<Props> {
                         this.handleInjectBetweenNodes(cellView.model, cellBelow);
                     }
                     batchGroupBy.end(group);
+                    cellView.model.toFront();
                 }
-                cellView.model.toFront();
-                if (isStickyNoteElement(cellView.model)) this.changeLayoutIfNeeded();
             })
             .on(Events.LINK_CONNECT, (linkView: dia.LinkView, evt: dia.Event, targetView: dia.CellView, targetMagnet: SVGElement) => {
                 if (this.props.isFragment === true) return;

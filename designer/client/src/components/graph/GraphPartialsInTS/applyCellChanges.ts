@@ -4,10 +4,12 @@ import type { dia } from "jointjs";
 import { flatMap, groupBy, isEqual } from "lodash";
 import { partition } from "lodash";
 
+import type { UserSettings } from "../../../reducers/userSettings";
 import type { ScenarioGraph, ProcessDefinitionData } from "../../../types";
 import { makeElement, makeLink } from "../EspNode";
-import type { ModelWithTool } from "../EspNode/stickyNoteElements";
-import { makeStickyNoteElement } from "../EspNode/stickyNoteElements";
+import { overrideAdvancedStickyNoteColorToDefault } from "../EspNode/stickyNote/advancedStickyNoteConfig";
+import type { ModelWithTool } from "../EspNode/stickyNote/stickyNoteElements";
+import { makeStickyNoteElement } from "../EspNode/stickyNote/stickyNoteElements";
 import NodeUtils from "../NodeUtils";
 import { StickyNoteType } from "../utils/stickyNotesUtils";
 import { isEdgeConnected } from "./EdgeUtils";
@@ -18,8 +20,10 @@ export function applyCellChanges(
     scenarioGraph: ScenarioGraph,
     processDefinitionData: ProcessDefinitionData,
     theme: Theme,
+    userSettings: UserSettings,
 ): void {
     const graph = paper.model;
+    const areAdvancedStickyNotesEnabled = userSettings["node.advancedStickyNotes"];
 
     const [stickyNoteElements, scenarioNodeElements] = partition(
         NodeUtils.nodesFromScenarioGraph(scenarioGraph),
@@ -27,7 +31,9 @@ export function applyCellChanges(
     );
 
     const nodeElements = scenarioNodeElements.map(makeElement(processDefinitionData, theme));
-    const stickyNotesModelsWithTools: ModelWithTool[] = stickyNoteElements.map(makeStickyNoteElement(theme));
+    const stickyNotesModelsWithTools: ModelWithTool[] = stickyNoteElements
+        .map((stickyNote) => (areAdvancedStickyNotesEnabled ? overrideAdvancedStickyNoteColorToDefault(stickyNote) : stickyNote))
+        .map(makeStickyNoteElement(theme, areAdvancedStickyNotesEnabled));
     const stickyNotesModels = stickyNotesModelsWithTools.map((a) => a.model);
 
     const edges = NodeUtils.edgesFromScenarioGraph(scenarioGraph);

@@ -2,10 +2,14 @@ import { css, cx } from "@emotion/css";
 import { alpha, useTheme } from "@mui/material";
 import React from "react";
 
-import { getBorderColor, getStickyNoteBackgroundColor } from "../containers/theme/helpers";
-import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize } from "./graph/EspNode/esp";
-import { STICKY_NOTE_CONSTRAINTS, STICKY_NOTE_DEFAULT_COLOR } from "./graph/EspNode/stickyNote";
-import { PreloadedIcon, stickyNoteIconSrc } from "./toolbars/creator/ComponentIcon";
+import { useUserSettings } from "../common/userSettings";
+import { getBorderColor } from "../containers/theme/helpers";
+import { BORDER_RADIUS } from "./graph/EspNode/esp";
+import {
+    getStickyNoteAdvancedBackgroundColor,
+    STICKY_NOTE_ADVANCED_CONSTRAINTS,
+} from "./graph/EspNode/stickyNote/advancedStickyNoteConfig";
+import { getStickyNoteBasicBackgroundColor, STICKY_NOTE_BASIC_CONSTRAINTS } from "./graph/EspNode/stickyNote/basicStickyNoteConfig";
 
 const PREVIEW_SCALE = 0.9;
 const ACTIVE_ROTATION = 2;
@@ -16,11 +20,20 @@ export function StickyNotePreview({ isActive, isOver }: { isActive?: boolean; is
     const scale = isOver ? 1 : PREVIEW_SCALE;
     const rotation = isActive ? (isOver ? -ACTIVE_ROTATION : ACTIVE_ROTATION) : 0;
     const finalScale = isActive ? 1 : INACTIVE_SCALE;
+    const [settings] = useUserSettings();
+    const areAdvancedStickyNotesEnabled = settings["node.advancedStickyNotes"];
+
+    const { DEFAULT_COLOR, DEFAULT_HEIGHT, DEFAULT_WIDTH } = areAdvancedStickyNotesEnabled
+        ? STICKY_NOTE_ADVANCED_CONSTRAINTS
+        : STICKY_NOTE_BASIC_CONSTRAINTS;
+    const backgroundColor = areAdvancedStickyNotesEnabled
+        ? getStickyNoteAdvancedBackgroundColor(theme, DEFAULT_COLOR)
+        : getStickyNoteBasicBackgroundColor(theme, DEFAULT_COLOR);
 
     const nodeStyles = css({
         position: "relative",
-        width: STICKY_NOTE_CONSTRAINTS.DEFAULT_WIDTH,
-        height: STICKY_NOTE_CONSTRAINTS.DEFAULT_HEIGHT,
+        width: DEFAULT_WIDTH,
+        height: DEFAULT_HEIGHT,
         borderRadius: BORDER_RADIUS,
         boxSizing: "content-box",
         display: "inline-flex",
@@ -35,29 +48,10 @@ export function StickyNotePreview({ isActive, isOver }: { isActive?: boolean; is
     });
 
     const colors = css({
-        opacity: 0.5,
+        opacity: 0.8,
         borderColor: getBorderColor(theme),
-        backgroundColor: getStickyNoteBackgroundColor(theme, STICKY_NOTE_DEFAULT_COLOR).main,
+        backgroundColor: backgroundColor.main,
     });
 
-    const imageStyles = css({
-        padding: iconSize / 2 - CONTENT_PADDING / 2,
-        margin: CONTENT_PADDING / 2,
-        borderRadius: BORDER_RADIUS,
-        width: iconBackgroundSize / 2,
-        height: iconBackgroundSize / 2,
-        color: theme.palette.common.black,
-        "> svg": {
-            height: iconSize,
-            width: iconSize,
-        },
-    });
-
-    return (
-        <div className={cx(colors, nodeStyles)}>
-            <div className={cx(imageStyles, colors)}>
-                <PreloadedIcon src={stickyNoteIconSrc} />
-            </div>
-        </div>
-    );
+    return <div className={cx(colors, nodeStyles)}></div>;
 }

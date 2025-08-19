@@ -30,12 +30,13 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
     const { trackEvent } = useEventTracking();
     const graphRef = useRef<Graph>();
     const ref = useForkRef(graphRef, forwardedRef);
+    const areAdvancedStickyNotesEnabled = userSettings["node.advancedStickyNotes"];
 
     usePortMagnetToggle(graphRef);
 
     return (
         <>
-            <GraphStyledWrapper>
+            <GraphStyledWrapper areAdvancedStickyNotesEnabled={areAdvancedStickyNotesEnabled}>
                 <Graph
                     {...props}
                     ref={ref}

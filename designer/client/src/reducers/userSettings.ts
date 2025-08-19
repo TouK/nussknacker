@@ -16,6 +16,7 @@ type SettingsNames =
     | "node.showGenerateEndpointButton"
     | "node.showSendRequestButton"
     | "node.showMockFieldOnEnrichers"
+    | "node.advancedStickyNotes"
     | "cloud.showIntegrationsCreators"
     | "debug.nodesAsJson"
     | "debug.forceDisableModals"
@@ -45,6 +46,7 @@ const getDefaultUserSettings = (): UserSettings => ({
     "node.showSendRequestButton": getInitialUserFlag("node.showSendRequestButton"),
     "node.autoApply": getInitialUserFlag("node.autoApply"),
     "node.showMockFieldOnEnrichers": getInitialUserFlag("node.showMockFieldOnEnrichers"),
+    "node.advancedStickyNotes": getInitialUserFlag("node.advancedStickyNotes"),
     "cloud.showIntegrationsCreators": getInitialUserFlag("cloud.showIntegrationsCreators"),
     "debug.nodesAsJson": getInitialUserFlag("debug.nodesAsJson"),
     "debug.forceDisableModals": getInitialUserFlag("debug.forceDisableModals"),

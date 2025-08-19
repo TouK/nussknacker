@@ -3,7 +3,10 @@ import { alpha, css, styled } from "@mui/material";
 import { blend } from "@mui/system";
 import type { CSSProperties } from "react";
 
+import { useUserSettings } from "../../common/userSettings";
 import { blendLighten, getNodeBorderColor } from "../../containers/theme/helpers";
+import { stickyNotesAdvancedStyles } from "./EspNode/stickyNote/advancedStickyNoteConfig";
+import { stickyNotesBasicStyles } from "./EspNode/stickyNote/basicStickyNoteConfig";
 
 const nodeHighlight = (strokeColor: CSSProperties["color"], backgroundFill: CSSProperties["color"]) =>
     css({
@@ -90,17 +93,23 @@ const nodeStyles = (theme: Theme) => {
     });
 };
 
+const stickyNotesStyles = (theme: Theme, areAdvancedStickyNotesEnabled: boolean) => {
+    return css(areAdvancedStickyNotesEnabled ? stickyNotesAdvancedStyles(theme) : stickyNotesBasicStyles(theme));
+};
+
 export const getShadow = (color = `red`, size = 2, size2 = 2 * size) => {
     return `drop-shadow(${size}px ${size}px ${size2}px ${color}) drop-shadow(${size}px -${size}px ${size2}px ${color}) drop-shadow(-${size}px ${size}px ${size2}px ${color}) drop-shadow(-${size}px -${size}px ${size2}px ${color})`;
 };
 
-export const GraphStyledWrapper = styled("div")(({ theme }) => {
+export const GraphStyledWrapper = styled("div")<{ areAdvancedStickyNotesEnabled: boolean }>(({ theme, areAdvancedStickyNotesEnabled }) => {
     const dropAllowedColor = theme.palette.warning.main;
+
     return css([
         {
             color: theme.palette.common.white,
         },
         nodeStyles(theme),
+        stickyNotesStyles(theme, areAdvancedStickyNotesEnabled),
         {
             ".element": {
                 cursor: "pointer",
@@ -216,51 +225,6 @@ export const GraphStyledWrapper = styled("div")(({ theme }) => {
                 ".body .joint-port-body .background": {
                     transition: "all 0.25s ease-in",
                 },
-            },
-            ".sticky-note-markdown": {
-                width: "100%",
-                height: "100%",
-                paddingLeft: "10px",
-                paddingRight: "10px",
-            },
-            ".sticky-note-markdown-editor": {
-                paddingLeft: theme.spacing(1),
-                paddingRight: theme.spacing(1),
-                backgroundColor: alpha(theme.palette.common.white, 0.3),
-                color: theme.palette.common.black,
-                fontFamily: theme.typography.fontFamily,
-                fontSize: theme.typography.body1.fontSize,
-                resize: "none",
-                width: "100%",
-                height: "100%",
-                borderStyle: "none",
-                borderColor: "Transparent",
-                whiteSpace: "pre-line",
-                overflow: "hidden",
-            },
-            ".sticky-note-markdown-editor:focus": {
-                outline: "none",
-                boxShadow: `0 0 0 2px ${theme.palette.primary.main}`,
-            },
-            ".sticky-note-content": {
-                width: "100%",
-                height: "100%",
-            },
-            ".joint-sticky-note-remove-tool > circle": {
-                fill: "#ca344c",
-            },
-            ".sticky-note-errors": {
-                fontFamily: theme.typography.fontFamily,
-                fontSize: theme.typography.body1.fontSize,
-                color: theme.palette.text.primary,
-            },
-            ".sticky-note-error": {
-                backgroundColor: theme.palette.error.main,
-                marginTop: "5px",
-                padding: "0px 5px",
-            },
-            ".sticky-note-markdown-editor:disabled": {
-                display: "none",
             },
         },
     ]);
