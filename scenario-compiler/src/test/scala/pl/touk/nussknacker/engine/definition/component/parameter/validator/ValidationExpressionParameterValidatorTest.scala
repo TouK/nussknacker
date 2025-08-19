@@ -30,7 +30,6 @@ class ValidationExpressionParameterValidatorTest extends AnyFunSuite with TableD
       Table(
         ("validationExpression", "paramName", "inputExpression", "value", "isValid"),
         ("#value > 10", "param", "", Some(null), true),
-        ("#value > 10", "param", "#input.foo", None, false),
         ("#value > 10", "param", "-14", Some(-14), false),
         (
           "#value.toLowerCase() == \"left\" || #value.toLowerCase() == \"right\"",
@@ -45,6 +44,9 @@ class ValidationExpressionParameterValidatorTest extends AnyFunSuite with TableD
         ("#ADD.add(#value, 3) > 10", "param", "7", Some(7), false),
         ("#value == #meta.processName.toLowerCase", "param", "fooprocess", Some("fooprocess"), true),
         ("#value == #meta.processName.toLowerCase", "param", "bar_baz", Some("bar_baz"), false),
+        // It is impossible to apply validation on dynamic value, isValid=true is returned in that case, see ValidationExpressionParameterValidator
+        ("#value > 10", "param", "#input.foo", None, true),
+        ("#value == #meta.processName.toLowerCase", "param", "bar_baz", None, true),
       )
     ) { (validationExpression, paramName, inputExpression, value, isValid) =>
       ValidationExpressionParameterValidator(

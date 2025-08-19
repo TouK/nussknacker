@@ -1602,7 +1602,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test(
-    "ValidationExpressionParameterValidator fails if expression value is not compile-time evaluable"
+    "ValidationExpressionParameterValidator should not fail if expression value is not compile-time evaluable"
   ) {
     val process = processWithService(
       LocalDateTimeParameterService.serviceId,
@@ -1632,20 +1632,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern {
-      case Some(
-            List(
-              NodeValidationError(
-                "CompileTimeEvaluableParameterNotEvaluated",
-                "This field's value has to be evaluable at deployment time",
-                "Please provide a value that is evaluable at deployment time",
-                Some("localDateTimeParam"),
-                NodeValidationErrorType.SaveAllowed,
-                None
-              )
-            )
-          ) =>
-    }
+    result.errors.invalidNodes.get("custom") should matchPattern { case None => }
     result.warnings shouldBe ValidationWarnings.success
   }
 

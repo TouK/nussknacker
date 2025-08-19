@@ -26,6 +26,10 @@ export type BaseTabData = {
         enabled: boolean;
         parameterName: string;
     };
+    currentLocationInQuery?: {
+        enabled: boolean;
+        parameterName: string;
+    };
 };
 
 export type DynamicTabData = BaseTabData & {
