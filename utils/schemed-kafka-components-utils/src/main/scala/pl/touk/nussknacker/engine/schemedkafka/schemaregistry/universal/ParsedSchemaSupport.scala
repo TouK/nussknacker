@@ -284,11 +284,12 @@ class JsonTypingResultSchemaSupport(typingResult: TypingResult) extends Universa
 
 }
 
-object NoSchemaJsonSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
+object NoSchemaJsonSupport extends UniversalSchemaSupport {
 
   private final val jsonSupport = JsonSchemaSupport
 
-  override def payloadDeserializer: UniversalSchemaPayloadDeserializer = jsonSupport.payloadDeserializer
+  override val payloadDeserializer: UniversalSchemaPayloadDeserializer =
+    NoSchemaJsonPayloadDeserializer
 
   override def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, isKey: Boolean): Serializer[Any] =
     jsonSupport.serializer(schemaOpt, c, isKey)
