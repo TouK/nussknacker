@@ -15,9 +15,15 @@ export function alignFragmentWithSchema(processDefinitionData: ProcessDefinition
         // In this case, there was an error, which is why we need to iterate through all groups.
         .flatMap((componentGroups) => componentGroups.components)
         .find((obj) => obj?.node?.ref?.id === fragmentId);
-    const fragmentSchemaParameters = fragmentSchema.node.ref.parameters;
-    const mergedParameters = fragmentSchemaParameters.map(
-        (param) => fragmentNode.ref.parameters.find((nodeParam) => nodeParam.name === param.name) || param,
-    );
-    return fp.set("ref.parameters", mergedParameters, fragmentNode);
+
+    if (fragmentSchema) {
+        const fragmentSchemaParameters = fragmentSchema.node.ref.parameters;
+        const mergedParameters = fragmentSchemaParameters.map(
+            (param) => fragmentNode.ref.parameters.find((nodeParam) => nodeParam.name === param.name) || param,
+        );
+        return fp.set("ref.parameters", mergedParameters, fragmentNode);
+    } else {
+        // There are some cases when the fragment does not exist (is archived, or a scenario using that fragment was imported)
+        return fragmentNode;
+    }
 }
