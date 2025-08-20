@@ -178,7 +178,7 @@ const StyledToolbarsContainer = styled(ToolbarsContainer)(({ theme, side }) => {
                     minWidth: 100,
                     "&>*": {
                         display: "flex",
-                        alignItems: "flex-start",
+                        alignItems: "stretch",
                         "&>*": {
                             display: "flex",
                             pointerEvents: "all",

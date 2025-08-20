@@ -87,7 +87,6 @@ export function DragAndDropContainer({ children, onMove }: Props) {
                         minHeight: draggableId ? "1em" : null,
                         minWidth: SIDEBAR_WIDTH,
                         position: "relative",
-                        // backgroundColor: theme.palette.background.paper,
                     },
                 }}
             />
