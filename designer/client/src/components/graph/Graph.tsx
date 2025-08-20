@@ -625,7 +625,9 @@ export class Graph extends React.Component<Props> {
 
     //needed for proper switch/filter label handling
     showLabelOnHover(model: dia.Cell): dia.Cell {
-        model.toFront();
+        if (isModelElement(model)) {
+            model.toFront();
+        }
         return model;
     }
 
@@ -762,6 +764,8 @@ export class Graph extends React.Component<Props> {
                     batchGroupBy.end(group);
                     cellView.model.toFront();
                 }
+
+                if (isStickyNoteElement(cellView.model)) this.changeLayoutIfNeeded();
             })
             .on(Events.LINK_CONNECT, (linkView: dia.LinkView, evt: dia.Event, targetView: dia.CellView, targetMagnet: SVGElement) => {
                 if (this.props.isFragment === true) return;

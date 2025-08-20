@@ -91,12 +91,12 @@ export const stickyNoteAdvancedResizeTool = (stickyNote: StickyNoteNodeType, the
         touchend: "onPointerUpCustom",
         touchcancel: "onPointerUp",
     },
-    getPosition: function (view) {
+    getPosition: function (view: dia.ElementView) {
         const model = view.model;
         const { width, height } = model.size();
         return { x: width, y: height };
     },
-    setPosition: function (view, coordinates) {
+    setPosition: function (view: dia.ElementView, coordinates: { x: number; y: number }) {
         const model = view.model;
         model.resize(
             Math.max(Math.min(STICKY_NOTE_CONSTRAINTS.MAX_WIDTH, Math.round(coordinates.x - 10)), STICKY_NOTE_CONSTRAINTS.MIN_WIDTH),
