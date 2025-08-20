@@ -106,6 +106,12 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
 
             <SidePanelsContextProvider configId={configId}>
                 <OverlayGrid9 sx={{ overflow: "hidden" }}>
+                    <OverlayGrid9 gridRow="top/span 3" gridColumn="center" m={0.5} position="relative">
+                        {children}
+                        <Box component={SidePanelToggleButton} type={PanelSide.Left} gridArea="bottom/left" />
+                        <Box component={SidePanelToggleButton} type={PanelSide.Right} gridArea="bottom/right" />
+                    </OverlayGrid9>
+
                     <Box gridArea="left" component={SidePanel} side={PanelSide.Left}>
                         <SideToolbars availableToolbars={availableToolbars} side={ToolbarsSide.LeftTop} />
                         <SideToolbars availableToolbars={availableToolbars} side={ToolbarsSide.LeftBottom} />
@@ -116,21 +122,14 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
                             gridArea: "top",
                             opacity: showFloatingToolbar ? 0 : 1,
                             transition: theme.transitions.create("opacity", { delay: showFloatingToolbar ? 0 : 250 }),
+                            px: 5,
                         })}
                         availableToolbars={availableToolbars}
                         side={ToolbarsSide.CenterTop}
                     />
 
-                    <OverlayGrid9 gridArea="body" m={0.5}>
-                        <OverlayGrid9 gridRow="top/span 2" gridColumn="left/right" position="relative">
-                            {children}
-                        </OverlayGrid9>
-                        <Box component={SidePanelToggleButton} type={PanelSide.Left} gridArea="bottom/left" />
-                        <Box component={SidePanelToggleButton} type={PanelSide.Right} gridArea="bottom/right" />
-                    </OverlayGrid9>
-
                     <StyledToolbarsContainer
-                        sx={{ gridArea: "bottom" }}
+                        sx={{ gridArea: "bottom", px: 5 }}
                         availableToolbars={availableToolbars}
                         side={ToolbarsSide.CenterBottom}
                     />
@@ -178,7 +177,12 @@ const StyledToolbarsContainer = styled(ToolbarsContainer)(({ theme, side }) => {
                     gap: 1,
                     minWidth: 100,
                     "&>*": {
-                        pointerEvents: "all",
+                        display: "flex",
+                        alignItems: "flex-start",
+                        "&>*": {
+                            display: "flex",
+                            pointerEvents: "all",
+                        },
                     },
                 },
             };

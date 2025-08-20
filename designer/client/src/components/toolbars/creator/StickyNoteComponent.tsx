@@ -1,3 +1,5 @@
+import i18next from "i18next";
+
 import type { StickyNotesSettings } from "../../../actions/nk";
 import type { ComponentGroup } from "../../../types";
 import { advancedNoteModel } from "../../graph/EspNode/stickyNote/advancedStickyNoteConfig";
@@ -15,7 +17,7 @@ export const stickyNoteComponentGroup = (
             components: [
                 {
                     node: areAdvancedStickyNotesEnabled ? advancedNoteModel : basicNoteModel,
-                    label: "Sticky Note",
+                    label: i18next.t("panels.creator.stickyNotes.componentLabel", "Sticky Note"),
                     componentId: StickyNoteType + (disabled ? "_disabled" : ""),
                     disabled: () => disabled,
                     tooltip: disabled
@@ -23,7 +25,7 @@ export const stickyNoteComponentGroup = (
                         : null,
                 },
             ],
-            name: "Misc",
+            name: i18next.t("panels.creator.stickyNotes.componentGroupName", "Misc"),
         } as ComponentGroup,
     ];
 };

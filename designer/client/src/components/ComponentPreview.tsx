@@ -1,11 +1,10 @@
 import { css, cx } from "@emotion/css";
 import { alpha, styled, useTheme } from "@mui/material";
 import { blend } from "@mui/system";
-import React from "react";
+import React, { useCallback } from "react";
 import { usePreviousDifferent } from "rooks";
 
 import { blendLighten, getBorderColor } from "../containers/theme/helpers";
-import type { RootState } from "../reducers";
 import { getIdMapping } from "../reducers/graph/utils";
 import { getNodes } from "../reducers/selectors/graph";
 import { useAppSelector } from "../store/storeHelpers";
@@ -87,13 +86,14 @@ export function ComponentPreview({ node, isActive, isOver }: ComponentPreviewPro
 
     const colors = isOver ? nodeColorsHover : nodeColors;
 
-    const getId = useAppSelector((s: RootState) => {
-        const nodes = getNodes(s);
-        return (id: string) => {
+    const nodes = useAppSelector(getNodes);
+    const getId = useCallback(
+        (id: string) => {
             const idMapping = getIdMapping(nodes, [{ id }]);
             return idMapping[id];
-        };
-    });
+        },
+        [nodes],
+    );
 
     const id = usePreviousDifferent(getId(node?.id));
 

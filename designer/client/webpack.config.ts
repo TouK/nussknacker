@@ -1,6 +1,4 @@
 /* eslint-disable i18next/no-literal-string */
-import path from "path";
-
 import ReactRefreshWebpackPlugin from "@pmmmwh/react-refresh-webpack-plugin";
 import PreloadWebpackPlugin from "@vue/preload-webpack-plugin";
 import autoprefixer from "autoprefixer";
@@ -9,6 +7,7 @@ import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
 import HtmlWebpackHarddiskPlugin from "html-webpack-harddisk-plugin";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import MomentLocalesPlugin from "moment-locales-webpack-plugin";
+import path from "path";
 import postcss_move_props_to_bg_image_query from "postcss-move-props-to-bg-image-query";
 import type { Configuration } from "webpack";
 import webpack from "webpack";
@@ -214,7 +213,7 @@ const config: Configuration = {
             },
             {
                 test: /\.[tj]sx?$/,
-                exclude: /node_modules/,
+                exclude: /node_modules\/(?!@hello-pangea\/dnd\/src)/,
                 use: ["babel-loader"],
             },
             {
