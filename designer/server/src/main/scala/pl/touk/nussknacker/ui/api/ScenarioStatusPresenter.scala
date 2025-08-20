@@ -1,18 +1,15 @@
 package pl.touk.nussknacker.ui.api
 
-import pl.touk.nussknacker.engine.api.deployment.{NoAttributesStateStatus, StateStatus}
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
-import pl.touk.nussknacker.restmodel.scenariodetails.{
-  ScenarioStatusDetailsDto,
-  ScenarioStatusDto,
-  ScenarioStatusNameWrapperDto,
-  ScenarioWithDetails
-}
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioStatusDetailsDto, ScenarioStatusDto, ScenarioWithDetails}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
-import pl.touk.nussknacker.ui.process.periodic.{PeriodicProcessService, PeriodicStateStatus}
+import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+
+import scala.annotation.tailrec
 
 class ScenarioStatusPresenter(dispatcher: DeploymentManagerDispatcher) {
 
@@ -42,10 +39,14 @@ class ScenarioStatusPresenter(dispatcher: DeploymentManagerDispatcher) {
     )
   }
 
+  @tailrec
   private def toDto(scenarioStatus: StateStatus): ScenarioStatusDetailsDto = scenarioStatus match {
     case SimpleStateStatus.Running(version, startedAt) =>
       ScenarioStatusDetailsDto.Running(version.value.toString, startedAt)
-    case other => ScenarioStatusDetailsDto.NoAttributesStatus(other.name)
+    case PeriodicProcessService.PeriodicScenarioStatus(_, _, mergedStatus) =>
+      toDto(mergedStatus)
+    case other =>
+      ScenarioStatusDetailsDto.NoAttributesStatus(other.name)
   }
 
 }
