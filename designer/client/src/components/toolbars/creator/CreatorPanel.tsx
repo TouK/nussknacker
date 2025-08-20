@@ -84,7 +84,7 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
 
     const { componentGroups } = useAppSelector(getProcessDefinitionData);
 
-    const closeHandler = useCallback(
+    const onComponentSelect = useCallback(
         (node?: NodeType) => {
             dispatch(selectComponent(side, node, lastActionRef.current?.data.fromPoint, lastActionRef.current?.data.withEdge));
         },
@@ -128,9 +128,7 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
                         {...props}
                     />
                 )}
-                onSelect={(item) => {
-                    closeHandler(item);
-                }}
+                onSelect={onComponentSelect}
             />
         </ToolbarWrapper>
     );

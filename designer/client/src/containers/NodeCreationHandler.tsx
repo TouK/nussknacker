@@ -108,40 +108,39 @@ export function useNodeCreationHandler({ panelSide, when = true }: { panelSide: 
 
     const { isOpened, toggleCollapse, ref } = useSidePanel(panelSide);
 
-    useEffect(
-        () =>
-            dispatch(
-                addListenerTyped("CLOSE_NODE_SELECTOR", ({ data: { node, onPoint, side, edge } }, api) => {
-                    if (side !== panelSide) return;
-                    toggleCollapse();
+    useEffect(() => {
+        if (!when) return;
+        return dispatch(
+            addListenerTyped("CLOSE_NODE_SELECTOR", ({ data: { node, onPoint, side, edge } }, api) => {
+                if (side !== panelSide) return;
+                toggleCollapse();
 
-                    if (!node) return;
+                if (!node) return;
 
-                    const graph = graphGetter();
-                    const paper = graph.processGraphPaper;
+                const graph = graphGetter();
+                const paper = graph.processGraphPaper;
 
-                    const position: g.Point = findFreeSpaceForNode(paper, onPoint);
+                const position: g.Point = findFreeSpaceForNode(paper, onPoint);
 
-                    if (graph.isFragmentCreator(node)) {
-                        return graph.createFragment(position, edge);
-                    }
+                if (graph.isFragmentCreator(node)) {
+                    return graph.createFragment(position, edge);
+                }
 
-                    api.dispatch(
-                        nodesWithEdgesAdded(
-                            [
-                                {
-                                    node,
-                                    position,
-                                },
-                            ],
-                            [edge].filter(Boolean),
-                            false,
-                        ),
-                    );
-                }),
-            ),
-        [dispatch, graphGetter, panelSide, toggleCollapse],
-    );
+                api.dispatch(
+                    nodesWithEdgesAdded(
+                        [
+                            {
+                                node,
+                                position,
+                            },
+                        ],
+                        [edge].filter(Boolean),
+                        false,
+                    ),
+                );
+            }),
+        );
+    }, [dispatch, graphGetter, panelSide, toggleCollapse, when]);
 
     useOutsideInteraction(ref, () => dispatch(closeNodeSelector(panelSide)), isOpened && when);
     useKey("Escape", () => dispatch(closeNodeSelector(panelSide)), { when: isOpened && when });
