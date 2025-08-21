@@ -4,7 +4,7 @@ import { useState } from "react";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { setPerformedTestType } from "../../../actions/nk/displayTestResults";
+import { testScenarioWithEventsData } from "../../../actions/nk/displayTestResults";
 import { getTestCapabilities } from "../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { WindowKind } from "../../../windowManager";
@@ -15,7 +15,7 @@ import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeD
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
 import { EventsTable } from "./EventsTable";
 import type { TestingContextState } from "./TestingContext";
-import { TestingContext, useTestingContext, useTestingState } from "./TestingContext";
+import { TestingContext, useTestingState } from "./TestingContext";
 
 type DocsLink = {
     url: string;
@@ -41,15 +41,14 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
         meta: { viewParams },
         kind,
     } = data;
-    const { isValid, action, testType } = useTestingContext();
     const dispatch = useAppDispatch();
     const testCapabilities = useAppSelector(getTestCapabilities);
     const defaultParameter = testCapabilities.testWithParameters.sourceParameters[0];
     const [events, setEvents] = useState([
         {
-            source: defaultParameter.sourceId,
-            timestamp: "",
-            events: testCapabilities.testWithParameters.sourceParameters[0].parameters[0].defaultValue.expression,
+            sourceId: defaultParameter.sourceId,
+            timestamp: undefined,
+            variables: testCapabilities.testWithParameters.sourceParameters[0].parameters[0].defaultValue.expression,
         },
     ]);
     const sourceOptions = testCapabilities.testWithParameters.sourceParameters.flatMap((sourceParameter) => sourceParameter.sourceId);
@@ -60,13 +59,12 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
             {
                 title: t("testingForm.testButton.label", "Test"),
                 action: () => {
-                    dispatch(setPerformedTestType(testType));
-                    return action();
+                    dispatch(testScenarioWithEventsData(events));
+                    close();
                 },
-                disabled: !isValid,
             },
         ],
-        [action, close, dispatch, isValid, t, testType],
+        [close, dispatch, events, t],
     );
 
     return (

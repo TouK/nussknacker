@@ -924,6 +924,30 @@ class HttpService {
         return promise;
     }
 
+    testScenarioWithEventsData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, testData: any) {
+        const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
+
+        const data = new FormData();
+        data.append("testData", new Blob([JSON.stringify(testData)], { type: "application/json" }));
+        data.append("scenarioGraph", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
+
+        const promise = api.post<ResultsWithCountsDto>(`/processManagement/test/${encodeURIComponent(scenarioName)}`, data, {
+            params: {
+                skipResultsPerTransition: this.#skipResultsPerTransition,
+            },
+        });
+        promise.catch((error: AxiosError) =>
+            this.#addError(
+                i18next.t("notification.error.failedToTest", "Failed to test due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
     testScenario(
         processName: string,
         scenarioGraph: ScenarioGraph,

@@ -1,3 +1,4 @@
+import { cloneDeep } from "lodash";
 import type { ProcessName } from "src/components/Process/types";
 
 import type { TestType } from "../../components/modals/Testing/useTestOptions";
@@ -37,6 +38,22 @@ export function testScenarioWithGeneratedData(testSampleSize: string): ThunkActi
             type: "WITH_LIVE_DATA",
             numberOfSamples: parseInt(testSampleSize),
         }).then(({ data }) => ({
+            testResults: data,
+        })),
+    );
+}
+
+export function testScenarioWithEventsData(events: any): ThunkAction {
+    return wrapWithTestAction((scenarioName, scenarioGraph) =>
+        HttpService.testScenarioWithEventsData(
+            scenarioName,
+            scenarioGraph,
+            cloneDeep(events).map((event) => {
+                event.variables = JSON.parse(event.variables);
+
+                return event;
+            }),
+        ).then(({ data }) => ({
             testResults: data,
         })),
     );

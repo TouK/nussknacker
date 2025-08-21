@@ -99,6 +99,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                 isResizable: true,
                 isModal: true,
                 kind: WindowKind.scenarioTest,
+                minWidth: 1200,
                 meta: {
                     storeAction: testingState.handleSetAction,
                     viewParams: {

@@ -11,18 +11,15 @@ import { Sizer } from "../../graph/node-modal/editors/expression/Table/Sizer";
 import { useTableTheme } from "../../graph/node-modal/editors/expression/Table/tableTheme";
 import "@glideapps/glide-data-grid/dist/index.css";
 
-// Remove separate CustomCell import block and redefine isSourceSelectCell without any cast
-// Custom source select cell types (top-level to keep stable for hooks)
-
 type SourceSelectCellData = { kind: "source-select-cell"; value: string; options: string[] };
 type SourceSelectCell = CustomCell<SourceSelectCellData>;
 const isSourceSelectCell = (cell: GridCell): cell is SourceSelectCell =>
     cell.kind === GridCellKind.Custom && (cell as SourceSelectCell).data?.kind === "source-select-cell";
 
 export interface EventRow {
-    source: string;
+    sourceId: string;
     timestamp: string;
-    events: string; // JSON string
+    variables: string; // JSON string
 }
 
 interface EventsTableProps {
@@ -55,7 +52,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChang
     const tableColumns = useMemo<GridColumn[]>(
         () => [
             {
-                id: "source",
+                id: "sourceId",
                 title: "Source",
                 width: 150,
                 hasMenu: false,
@@ -67,7 +64,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChang
                 hasMenu: false,
             },
             {
-                id: "events",
+                id: "variables",
                 title: "Events",
                 width: 300,
                 grow: 1,
@@ -145,8 +142,8 @@ export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChang
                 return {
                     kind: GridCellKind.Custom,
                     allowOverlay: true,
-                    copyData: rowData.source || "",
-                    data: { kind: "source-select-cell", value: rowData.source || "", options: sourceOptions },
+                    copyData: rowData.sourceId || "",
+                    data: { kind: "source-select-cell", value: rowData.sourceId || "", options: sourceOptions },
                     readonly: false,
                 } as SourceSelectCell;
             }
@@ -162,8 +159,8 @@ export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChang
                 case 2:
                     return {
                         kind: GridCellKind.Text,
-                        displayData: JSON.stringify(JSON.parse(rowData.events)) || "",
-                        data: rowData.events || "",
+                        displayData: JSON.stringify(JSON.parse(rowData.variables)) || "",
+                        data: rowData.variables || "",
                         allowOverlay: true,
                         readonly: false,
                     };
@@ -179,7 +176,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChang
             const newData = [...data];
             newValues.forEach(({ location, value }) => {
                 const [col, row] = location;
-                while (newData.length <= row) newData.push({ source: "", timestamp: "", events: "" });
+                while (newData.length <= row) newData.push({ sourceId: "", timestamp: "", variables: "" });
                 let cellValue: string;
                 if (isSourceSelectCell(value)) {
                     cellValue = value.data.value;
@@ -189,13 +186,13 @@ export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChang
                 }
                 switch (col) {
                     case 0:
-                        newData[row].source = cellValue;
+                        newData[row].sourceId = cellValue;
                         break;
                     case 1:
                         newData[row].timestamp = cellValue;
                         break;
                     case 2:
-                        newData[row].events = cellValue;
+                        newData[row].variables = cellValue;
                         break;
                 }
             });
@@ -205,7 +202,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChang
     );
 
     const appendRow = useCallback(() => {
-        onDataChange([...data, { source: "", timestamp: "", events: "" }]);
+        onDataChange([...data, { sourceId: "", timestamp: "", variables: "" }]);
     }, [data, onDataChange]);
 
     const deleteRows = useCallback(
@@ -290,7 +287,6 @@ export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChang
                     getRowThemeOverride={getRowThemeOverride}
                     trailingRowOptions={{
                         sticky: true,
-                        hint: "Click to add a new row...",
                     }}
                 />
                 <CellMenu anchorPosition={cellMenuData?.position} onClose={closeCellMenu}>
