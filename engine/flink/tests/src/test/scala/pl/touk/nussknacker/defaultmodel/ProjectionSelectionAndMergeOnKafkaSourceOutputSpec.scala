@@ -86,7 +86,7 @@ class ProjectionSelectionAndMergeOnKafkaSourceOutputSpec
     val sendResult = sendAsJson(inputMessage, topicConfig.input).futureValue
     logger.info(s"Messages sent successful: $sendResult")
 
-    run(buildScenario(topicConfig, variableExpression)) {
+    testScenarioRunner.withRunningScenario(buildScenario(topicConfig, variableExpression)) { _ =>
       val consumer = kafkaClient.createConsumer()
       val result   = consumer.consumeWithJson[Json](topicConfig.output.name).take(1).head
       result.message() shouldEqual parseJson(expectedOutputMessage)

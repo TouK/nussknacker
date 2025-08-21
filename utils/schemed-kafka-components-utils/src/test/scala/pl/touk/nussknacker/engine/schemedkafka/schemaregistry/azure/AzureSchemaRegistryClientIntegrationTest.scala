@@ -9,7 +9,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.kafka.{
-  KafkaConfig,
+  KafkaComponentsConfig,
   KafkaUtils,
   SchemaRegistryCacheConfig,
   SchemaRegistryClientKafkaConfig,
@@ -107,8 +107,8 @@ class AzureSchemaRegistryClientIntegrationTest
   }
 
   private def registerTopic(topicName: UnspecializedTopicName): Unit = {
-    val kafkaConfig = KafkaConfig(Some(schemaRegistryConfig.kafkaProperties), None)
-    KafkaUtils.usingAdminClient(kafkaConfig) {
+    val kafkaComponentsConfig = KafkaComponentsConfig(schemaRegistryConfig.kafkaProperties, None)
+    KafkaUtils.usingAdminClient(kafkaComponentsConfig) {
       _.createTopics(Collections.singletonList[NewTopic](new NewTopic(topicName.name, Collections.emptyMap())))
     }
   }

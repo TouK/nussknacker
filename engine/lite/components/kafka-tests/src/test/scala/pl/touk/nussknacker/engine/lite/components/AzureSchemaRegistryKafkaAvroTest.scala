@@ -15,7 +15,7 @@ import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, KafkaUtils, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider.KafkaUniversalName
 import pl.touk.nussknacker.engine.lite.util.test.{KafkaAvroConsumerRecord, KafkaConsumerRecord}
@@ -59,29 +59,31 @@ class AzureSchemaRegistryKafkaAvroTest
     Option(System.getenv("AZURE_EVENT_HUBS_SHARED_ACCESS_KEY")).getOrElse("unknown")
 
   // See https://nussknacker.io/documentation/cloud/azure/#setting-up-nussknacker-cloud
-  private val config = ConfigFactory.parseString(s"""
-       | kafka {
-       |   kafkaProperties {
-       |     "bootstrap.servers"  : "$eventHubsNamespace.servicebus.windows.net:9093"
-       |     "security.protocol"  : "SASL_SSL"
-       |     "sasl.mechanism"     : "PLAIN"
-       |     "sasl.jaas.config"   : "org.apache.kafka.common.security.plain.PlainLoginModule required username=\\"$$ConnectionString\\" password=\\"Endpoint=sb://$eventHubsNamespace.servicebus.windows.net/;SharedAccessKeyName=$eventHubsSharedAccessKeyName;SharedAccessKey=$eventHubsSharedAccessKey\\";"
-       |     "schema.registry.url": "https://$eventHubsNamespace.servicebus.windows.net"
-       |     "schema.group"       : "test-group"
-       |   }
-       | }
-       |""".stripMargin)
+  private val modelConfig = ConfigFactory.parseString(
+    s"""{
+       |  kafka {
+       |    kafkaProperties {
+       |      "bootstrap.servers"  : "$eventHubsNamespace.servicebus.windows.net:9093"
+       |      "security.protocol"  : "SASL_SSL"
+       |      "sasl.mechanism"     : "PLAIN"
+       |      "sasl.jaas.config"   : "org.apache.kafka.common.security.plain.PlainLoginModule required username=\\"$$ConnectionString\\" password=\\"Endpoint=sb://$eventHubsNamespace.servicebus.windows.net/;SharedAccessKeyName=$eventHubsSharedAccessKeyName;SharedAccessKey=$eventHubsSharedAccessKey\\";"
+       |      "schema.registry.url": "https://$eventHubsNamespace.servicebus.windows.net"
+       |      "schema.group"       : "test-group"
+       |    }
+       |  }
+       |}""".stripMargin
+  )
 
-  private val kafkaConfig = KafkaConfig.parseConfig(config)
+  private val kafkaComponentsConfig = KafkaComponentsConfig.parseConfigNestedAtKafkaKey(modelConfig)
 
   private val testRunner =
     TestScenarioRunner
-      .kafkaLiteBased(config)
+      .kafkaLiteBased(modelConfig)
       .withSchemaRegistryClientFactory(schemaRegistryClientFactory)
       .build()
 
   private val schemaRegistryClient =
-    schemaRegistryClientFactory.create(kafkaConfig.schemaRegistryClientKafkaConfig)
+    schemaRegistryClientFactory.create(kafkaComponentsConfig.schemaRegistryClientKafkaConfig)
 
   test("round-trip Avro serialization using Azure Schema Registry") {
     val (
@@ -125,7 +127,7 @@ class AzureSchemaRegistryKafkaAvroTest
     registerTopic(List(inputTopic, outputTopic).map(_.toUnspecialized))
 
     val jsonPayloadTestRunner = TestScenarioRunner
-      .kafkaLiteBased(config.withValue("kafka.avroAsJsonSerialization", fromAnyRef(true)))
+      .kafkaLiteBased(modelConfig.withValue("kafka.avroAsJsonSerialization", fromAnyRef(true)))
       .withSchemaRegistryClientFactory(schemaRegistryClientFactory)
       .build()
 
@@ -297,7 +299,7 @@ class AzureSchemaRegistryKafkaAvroTest
   private def registerTopic(topicNames: List[UnspecializedTopicName], retries: Int = 3): Unit = {
     import scala.jdk.CollectionConverters._
     logger.info(s"Register topics ${topicNames.map(_.name).mkString(",")}, retries = $retries")
-    KafkaUtils.usingAdminClient(kafkaConfig) { admin =>
+    KafkaUtils.usingAdminClient(kafkaComponentsConfig) { admin =>
       val existingTopics     = admin.listTopics().names().get().asScala.toList.map(UnspecializedTopicName.apply)
       val (toSkip, toCreate) = topicNames.partition(existingTopics.contains)
       logger.info(s"Skip existing topics: ${toSkip.map(_.name).mkString(",")}")

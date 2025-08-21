@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 
 import scala.concurrent.duration._
 
-class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest with StrictLogging {
+class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with FlinkKafkaDockerSpec with StrictLogging {
 
   override protected def useMiniClusterForDeployment: Boolean = false
 

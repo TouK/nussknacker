@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, OutputVariableNameValue}
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory, TopicName}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -30,6 +31,8 @@ class KafkaJsonSchemalessSourceFactorySpec
     with ValidatedValuesDetailedMessage {
 
   type KafkaSource = SourceFactory with KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
+
+  override protected val kafkaComponentsConfigPrefix: String = "components.kafka.config"
 
   private val schemaRegistryClientProvider = MockSchemaRegistryClientHolder.registerSchemaRegistryClient()
 
@@ -207,9 +210,9 @@ class KafkaJsonSchemalessSourceFactorySpec
   private lazy val universalSourceFactory: KafkaSource = {
     new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
-      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig),
-      testModelConfig,
-      kafkaConfig,
+      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaComponentsConfig),
+      kafkaComponentsConfig,
+      NamingStrategy.Disabled,
       new FlinkKafkaSourceImplFactory
     )
   }

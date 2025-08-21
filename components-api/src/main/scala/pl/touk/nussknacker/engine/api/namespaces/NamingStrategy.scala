@@ -22,9 +22,9 @@ final case class NamingStrategy(namespace: Option[Namespace]) {
 }
 
 object NamingStrategy {
-  private val defaultNamespaceSeparator = "_"
-  private val namespacePath             = "namespace"
-  private val namespaceSeparatorPath    = "namespaceSeparator"
+  val defaultNamespaceSeparator      = "_"
+  private val namespacePath          = "namespace"
+  private val namespaceSeparatorPath = "namespaceSeparator"
 
   val Disabled: NamingStrategy = NamingStrategy(None)
 

@@ -5,7 +5,7 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.generic.GenericContainer
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Serializer
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.kafka.serialization.DelegatingKafkaSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
@@ -21,14 +21,14 @@ object AzureAvroSerializerFactory {
 
   def createSerializer(
       schemaRegistryClient: AzureSchemaRegistryClient,
-      kafkaConfig: KafkaConfig,
+      kafkaComponentsConfig: KafkaComponentsConfig,
       avroSchemaOpt: Option[AvroSchema],
       isKey: Boolean
   ): Serializer[Any] = {
-    if (kafkaConfig.avroAsJsonSerialization.contains(true)) {
-      createJsonPayloadSerializer(schemaRegistryClient, kafkaConfig, avroSchemaOpt, isKey)
+    if (kafkaComponentsConfig.avroAsJsonSerialization.contains(true)) {
+      createJsonPayloadSerializer(schemaRegistryClient, kafkaComponentsConfig, avroSchemaOpt, isKey)
     } else {
-      createAvroPayloadSerializer(kafkaConfig, avroSchemaOpt, isKey)
+      createAvroPayloadSerializer(kafkaComponentsConfig, avroSchemaOpt)
     }
   }
 
@@ -37,13 +37,13 @@ object AzureAvroSerializerFactory {
   // without copying almost all classes. Encoder is created in com.azure.data.schemaregistry.apacheavro.AvroSerializer
   private def createJsonPayloadSerializer(
       schemaRegistryClient: AzureSchemaRegistryClient,
-      kafkaConfig: KafkaConfig,
+      kafkaComponentsConfig: KafkaComponentsConfig,
       avroSchemaOpt: Option[AvroSchema],
       isKey: Boolean
   ) = {
     val confluentClient = new DefaultConfluentSchemaRegistryClient(null)
     new ConfluentJsonPayloadKafkaSerializer(
-      kafkaConfig,
+      kafkaComponentsConfig,
       confluentClient,
       new DefaultAvroSchemaEvolution,
       avroSchemaOpt,
@@ -66,9 +66,8 @@ object AzureAvroSerializerFactory {
   }
 
   private def createAvroPayloadSerializer(
-      kafkaConfig: KafkaConfig,
-      avroSchemaOpt: Option[AvroSchema],
-      isKey: Boolean
+      kafkaComponentsConfig: KafkaComponentsConfig,
+      avroSchemaOpt: Option[AvroSchema]
   ) = {
     val azureSerializer = new KafkaAvroSerializer[Any]
     val serializer = avroSchemaOpt
@@ -84,7 +83,8 @@ object AzureAvroSerializerFactory {
           }
         }
       } getOrElse azureSerializer
-    val adjustedConfig = AzureConfigurationFactory.adjustConfig(kafkaConfig.kafkaProperties.getOrElse(Map.empty))
+    val adjustedConfig =
+      AzureConfigurationFactory.adjustConfig(kafkaComponentsConfig.kafkaProperties)
     serializer.configure(adjustedConfig.asJava, false)
     serializer
   }

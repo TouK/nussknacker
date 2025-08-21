@@ -43,7 +43,7 @@ class FinkExactlyOnceItSpec
     val sendResult = sendAsJson(inputOutputMessage, topicConfig.input).futureValue
     logger.info(s"Messages sent successful: $sendResult")
 
-    run(buildScenario(topicConfig)) {
+    testScenarioRunner.withRunningScenario(buildScenario(topicConfig)) { _ =>
       val consumer = kafkaClient.createConsumer()
       val result   = consumer.consumeWithJson[Json](topicConfig.output.name).take(1).head
       result.message() shouldEqual parseJson(inputOutputMessage)

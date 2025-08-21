@@ -4,16 +4,21 @@ import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.TopicName
-import pl.touk.nussknacker.engine.kafka.{CachingKafkaAdminClient, KafkaConfig, KafkaUtils, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.{
+  CachingKafkaAdminClient,
+  KafkaComponentsConfig,
+  KafkaUtils,
+  UnspecializedTopicName
+}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
 
 object CachedTopicsExistenceValidator {
 
-  def apply(kafkaConfig: KafkaConfig): CachedTopicsExistenceValidator = {
+  def apply(kafkaComponentsConfig: KafkaComponentsConfig): CachedTopicsExistenceValidator = {
     new CachedTopicsExistenceValidator(
-      kafkaConfig.topicsExistenceValidationConfig.enabled,
-      KafkaUtils.createCachingAdminClient(kafkaConfig)
+      kafkaComponentsConfig.topicsExistenceValidationConfig.enabled,
+      KafkaUtils.createCachingAdminClient(kafkaComponentsConfig)
     )
   }
 

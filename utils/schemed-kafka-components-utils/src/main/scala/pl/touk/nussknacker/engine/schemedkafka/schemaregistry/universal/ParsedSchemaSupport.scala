@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.json.{JsonSchemaBasedParameter, JsonTemplateFromJsonSchemaDeterminer}
 import pl.touk.nussknacker.engine.json.encode.{JsonSchemaOutputValidator, ToJsonSchemaBasedEncoder}
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.kafka.serialization.CharSequenceSerializer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{inputParamName, sinkValueParamName}
 import pl.touk.nussknacker.engine.schemedkafka.encode._
@@ -57,13 +57,13 @@ sealed trait ParsedSchemaSupport[+S <: ParsedSchema] extends UniversalSchemaSupp
 
 }
 
-class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[AvroSchema] {
+class AvroSchemaSupport(kafkaComponentsConfig: KafkaComponentsConfig) extends ParsedSchemaSupport[AvroSchema] {
 
   override val payloadDeserializer: UniversalSchemaPayloadDeserializer = {
-    if (kafkaConfig.avroAsJsonSerialization.contains(true)) {
+    if (kafkaComponentsConfig.avroAsJsonSerialization.contains(true)) {
       JsonPayloadDeserializer
     } else {
-      AvroPayloadDeserializer(kafkaConfig)
+      AvroPayloadDeserializer(kafkaComponentsConfig)
     }
   }
 
@@ -73,18 +73,19 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
       isKey: Boolean
   ): Serializer[Any] = {
     client match {
-      case confluentClient: ConfluentSchemaRegistryClient if kafkaConfig.avroAsJsonSerialization.contains(true) =>
+      case confluentClient: ConfluentSchemaRegistryClient
+          if kafkaComponentsConfig.avroAsJsonSerialization.contains(true) =>
         new ConfluentJsonPayloadKafkaSerializer(
-          kafkaConfig,
+          kafkaComponentsConfig,
           confluentClient,
           new DefaultAvroSchemaEvolution,
           schemaOpt.map(_.cast()),
           isKey = isKey
         )
       case confluentClient: ConfluentSchemaRegistryClient =>
-        ConfluentKafkaAvroSerializer(kafkaConfig, confluentClient, schemaOpt.map(_.cast()), isKey = isKey)
+        ConfluentKafkaAvroSerializer(kafkaComponentsConfig, confluentClient, schemaOpt.map(_.cast()), isKey = isKey)
       case azureClient: AzureSchemaRegistryClient =>
-        AzureAvroSerializerFactory.createSerializer(azureClient, kafkaConfig, schemaOpt.map(_.cast()), isKey)
+        AzureAvroSerializerFactory.createSerializer(azureClient, kafkaComponentsConfig, schemaOpt.map(_.cast()), isKey)
       case _ =>
         throw new IllegalArgumentException(
           s"Not supported schema registry client: ${client.getClass}. " +
@@ -103,7 +104,7 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
   }
 
   override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport = {
-    if (kafkaConfig.avroAsJsonSerialization.contains(true)) {
+    if (kafkaComponentsConfig.avroAsJsonSerialization.contains(true)) {
       JsonPayloadRecordFormatterSupport
     } else {
       // We pass None to schema, because message readers should not do schema evolution.

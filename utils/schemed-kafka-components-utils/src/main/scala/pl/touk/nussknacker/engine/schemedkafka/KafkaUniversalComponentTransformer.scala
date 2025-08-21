@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.Writer
-import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -10,10 +9,16 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue.nullFixedValue
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.{
+  KafkaComponentsConfig,
+  KafkaComponentsUtils,
+  PreparedKafkaTopic,
+  UnspecializedTopicName
+}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName._
 import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
@@ -44,18 +49,18 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
 
   def schemaRegistryClientFactory: SchemaRegistryClientFactory
 
-  def modelConfig: ModelConfig
+  def namingStrategy: NamingStrategy
 
-  def kafkaConfig: KafkaConfig
+  def kafkaComponentsConfig: KafkaComponentsConfig
 
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
-    schemaRegistryClientFactory.create(kafkaConfig)
+    schemaRegistryClientFactory.create(kafkaComponentsConfig)
 
-  @transient protected lazy val cachedTopicsExistenceValidator = CachedTopicsExistenceValidator(kafkaConfig)
+  @transient protected lazy val cachedTopicsExistenceValidator = CachedTopicsExistenceValidator(kafkaComponentsConfig)
 
   @transient protected lazy val topicSelectionStrategy: TopicSelectionStrategy = {
-    if (kafkaConfig.showTopicsWithoutSchema) {
-      AllNonHiddenTopicsSelectionStrategy(schemaRegistryClient, kafkaConfig)
+    if (kafkaComponentsConfig.showTopicsWithoutSchema) {
+      AllNonHiddenTopicsSelectionStrategy(schemaRegistryClient, kafkaComponentsConfig)
     } else {
       new TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient)
     }
@@ -63,7 +68,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
 
   @transient protected lazy val schemaSupportDispatcher: UniversalSchemaSupportDispatcher =
     UniversalSchemaSupportDispatcher(
-      kafkaConfig
+      kafkaComponentsConfig
     )
 
   protected def getTopicParam(
@@ -91,7 +96,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
               // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
               // TODO: add addNullOption feature flag to FixedValuesParameterEditor
               nullFixedValue +: topics
-                .flatMap(topic => modelConfig.namingStrategy.decodeName(topic.name))
+                .flatMap(topic => namingStrategy.decodeName(topic.name))
                 .sorted
                 .map(v => FixedExpressionValue(s"'$v'", v))
             )
@@ -105,7 +110,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   )(implicit nodeId: NodeId): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
     if (schemaRegistryClient.isTopicWithSchema(
         preparedTopic.prepared.topicName.toUnspecialized.name,
-        kafkaConfig
+        kafkaComponentsConfig
       )) {
       val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared.toUnspecialized, isKey = false)
       (versions match {
@@ -151,7 +156,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
     prepareTopic(params.extractDeclaredParamUnsafe(topicParamName))
 
   protected def prepareTopic(topicString: String): PreparedKafkaTopic[TN] =
-    KafkaComponentsUtils.prepareKafkaTopic(topicFrom(topicString), modelConfig)
+    KafkaComponentsUtils.prepareKafkaTopic(topicFrom(topicString), namingStrategy)
 
   protected def topicFrom(value: String): TN
 

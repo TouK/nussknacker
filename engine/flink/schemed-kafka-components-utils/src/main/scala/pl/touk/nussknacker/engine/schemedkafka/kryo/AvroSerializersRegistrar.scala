@@ -8,7 +8,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.java.typeutils.AvroUtils
 import pl.touk.nussknacker.engine.api.component.ComponentProviderConfig
 import pl.touk.nussknacker.engine.flink.api.serialization.SerializersRegistrar
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.kryo.SchemaIdBasedAvroGenericRecordSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
@@ -20,7 +20,7 @@ class AvroSerializersRegistrar extends SerializersRegistrar with LazyLogging {
   override def register(modelConfig: Config, executionConfig: ExecutionConfig): Unit = {
     logger.debug("Registering default avro serializers")
     registerAvroSerializers(executionConfig)
-    val resolvedKafkaConfig = resolveConfig(modelConfig)
+    val resolvedKafkaConfig = resolveKafkaComponentsConfig(modelConfig)
     registerGenericRecordSchemaIdSerializationForGlobalKafkaConfigIfNeed(resolvedKafkaConfig, executionConfig)
   }
 
@@ -32,7 +32,7 @@ class AvroSerializersRegistrar extends SerializersRegistrar with LazyLogging {
     )
   }
 
-  private def resolveConfig(modelConfig: Config): Option[KafkaConfig] = {
+  private def resolveKafkaComponentsConfig(modelConfig: Config): Option[KafkaComponentsConfig] = {
     val componentsConfig = modelConfig.getAs[Map[String, ComponentProviderConfig]]("components").getOrElse(Map.empty)
     val componentsKafkaConfigs = componentsConfig.toList
       .filter { case (name, config) =>
@@ -41,34 +41,34 @@ class AvroSerializersRegistrar extends SerializersRegistrar with LazyLogging {
       }
       .filterNot(_._2.disabled)
       .map { case (name, config) =>
-        name -> KafkaConfig.parseConfig(config.config, "config")
+        name -> KafkaComponentsConfig.parseConfigNestedAtConfigKey(config.config)
       }
     componentsKafkaConfigs match {
-      case (componentName, kafkaConfig) :: Nil =>
+      case (componentName, parsedComponentsConfig) :: Nil =>
         logger.debug(s"Found one enabled kafka component: $componentName")
-        Some(kafkaConfig)
-      case Nil =>
-        val configOpt = KafkaConfig.parseConfigOpt(modelConfig)
-        configOpt.foreach(_ => logger.debug(s"No kafka components found, but model root kafka config found"))
-        configOpt
-      case _ => None // mechanism would be disabled in case if there is more than one kafka component enabled
+        Some(parsedComponentsConfig)
+      case _ =>
+        None // the mechanism would be disabled in case if there is more than one kafka component enabled
     }
   }
 
   // It registers GenericRecordSchemaIdSerialization only for first kafka component config
-  // If you want to register GenericRecordSchemaIdSerialization for other kafka config you need to invoke
+  // If you want to register GenericRecordSchemaIdSerialization for other kafka component config you need to invoke
   // `AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed` directly
   private def registerGenericRecordSchemaIdSerializationForGlobalKafkaConfigIfNeed(
-      componentKafkaConfig: Option[KafkaConfig],
+      kafkaComponentsConfigOpt: Option[KafkaComponentsConfig],
       executionConfig: ExecutionConfig
   ): Unit = {
-    componentKafkaConfig.foreach { kafkaConfig =>
-      val autoRegister = kafkaConfig.kafkaEspProperties
+    kafkaComponentsConfigOpt.foreach { kafkaComponentsConfig =>
+      val autoRegister = kafkaComponentsConfig.kafkaEspProperties
         .flatMap(_.get(AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty).map(_.toBoolean))
         .getOrElse(true)
       logger.debug(s"Auto registering SchemaIdBasedAvroGenericRecordSerializer: $autoRegister")
       if (autoRegister) {
-        AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(executionConfig, kafkaConfig)
+        AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(
+          executionConfig,
+          kafkaComponentsConfig
+        )
       }
     }
   }
@@ -80,18 +80,30 @@ object AvroSerializersRegistrar extends LazyLogging {
   // This property is mainly for testing purpose. You can use it to skip GenericRecordSchemaIdSerialization registration
   val autoRegisterRecordSchemaIdSerializationProperty = "autoRegisterRecordSchemaIdSerialization"
 
-  def registerGenericRecordSchemaIdSerializationIfNeed(config: ExecutionConfig, kafkaConfig: KafkaConfig): Unit = {
-    registerGenericRecordSchemaIdSerializationIfNeed(config, UniversalSchemaRegistryClientFactory, kafkaConfig)
+  def registerGenericRecordSchemaIdSerializationIfNeed(
+      config: ExecutionConfig,
+      kafkaComponentsConfig: KafkaComponentsConfig
+  ): Unit = {
+    registerGenericRecordSchemaIdSerializationIfNeed(
+      config,
+      UniversalSchemaRegistryClientFactory,
+      kafkaComponentsConfig
+    )
   }
 
   def registerGenericRecordSchemaIdSerializationIfNeed(
       config: ExecutionConfig,
       schemaRegistryClientFactory: SchemaRegistryClientFactory,
-      kafkaConfig: KafkaConfig
+      kafkaComponentsConfig: KafkaComponentsConfig
   ): Unit = {
-    if (GenericRecordSchemaIdSerializationSupport.schemaIdSerializationEnabled(kafkaConfig)) {
-      logger.debug("Registering SchemaIdBasedAvroGenericRecordSerializer")
-      SchemaIdBasedAvroGenericRecordSerializer.registrar(schemaRegistryClientFactory, kafkaConfig).registerIn(config)
+    if (GenericRecordSchemaIdSerializationSupport.schemaIdSerializationEnabled(kafkaComponentsConfig)) {
+      logger.debug(
+        s"Registering SchemaIdBasedAvroGenericRecordSerializer using schema registry client factory [$schemaRegistryClientFactory] " +
+          s"and KafkaComponentsConfig including boostrap.servers [${kafkaComponentsConfig.kafkaBootstrapServers}]"
+      )
+      SchemaIdBasedAvroGenericRecordSerializer
+        .registrar(schemaRegistryClientFactory, kafkaComponentsConfig.schemaRegistryClientKafkaConfig)
+        .registerIn(config)
     } else {
       logger.debug("Skipping SchemaIdBasedAvroGenericRecordSerializer registration")
     }

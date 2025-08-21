@@ -28,6 +28,8 @@ class UniversalSourceJsonSchemaLiteTest
 
   import LiteKafkaComponentProvider._
 
+  override protected val kafkaComponentsConfigPrefix: String = "kafka"
+
   private val schema = JsonSchemaBuilder.parseSchema("""{
       |  "type": "object",
       |  "properties": {

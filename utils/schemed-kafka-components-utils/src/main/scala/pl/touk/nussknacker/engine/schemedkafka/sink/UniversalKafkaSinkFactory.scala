@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.schemedkafka.sink
 import cats.data.{NonEmptyList, ValidatedNel}
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
-import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.ModelConfig.JsonLikeValuesEnteringMode
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.api.Params.ParamExtractionResult
@@ -17,11 +16,12 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue
 }
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.{
   KafkaUniversalComponentTransformer,
@@ -62,8 +62,9 @@ object UniversalKafkaSinkFactory {
 class UniversalKafkaSinkFactory(
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
     val schemaBasedMessagesSerdeProvider: UniversalSchemaBasedSerdeProvider,
-    val modelConfig: ModelConfig,
-    val kafkaConfig: KafkaConfig,
+    val kafkaComponentsConfig: KafkaComponentsConfig,
+    val namingStrategy: NamingStrategy,
+    jsonLikeValuesEnteringMode: JsonLikeValuesEnteringMode,
     implProvider: UniversalKafkaSinkImplFactory
 ) extends KafkaUniversalComponentTransformer[Sink, TopicName.ForSink]
     with SinkFactory {
@@ -165,7 +166,7 @@ class UniversalKafkaSinkFactory(
   private def handleSinkValueForSchemedTopic(
       context: ValidationContext,
   )(implicit nodeId: NodeId): ContextTransformationDefinition = {
-    modelConfig.jsonLikeValuesEnteringMode match {
+    jsonLikeValuesEnteringMode match {
       case JsonLikeValuesEnteringMode.DynamicForms =>
         handleDynamicFormParameters(context)
       case JsonLikeValuesEnteringMode.SingleJsonTemplateParameter =>
@@ -369,7 +370,7 @@ class UniversalKafkaSinkFactory(
     )
 
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"
-    val validationMode = modelConfig.jsonLikeValuesEnteringMode match {
+    val validationMode = jsonLikeValuesEnteringMode match {
       case JsonLikeValuesEnteringMode.DynamicForms =>
         params.extractParam[Boolean](sinkRawEditorParamName) match {
           case ParamExtractionResult.Value(true) =>
@@ -403,7 +404,7 @@ class UniversalKafkaSinkFactory(
       preparedTopic,
       key,
       valueLazyParam,
-      kafkaConfig,
+      kafkaComponentsConfig,
       serializationSchema,
       clientId,
       finalState.schema,

@@ -28,6 +28,8 @@ class UniversalSourceAvroSchemaLiteTest
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._
 
+  override protected val kafkaComponentsConfigPrefix: String = "kafka"
+
   private val inputTopic  = TopicName.ForSource("input")
   private val outputTopic = TopicName.ForSink("output")
 

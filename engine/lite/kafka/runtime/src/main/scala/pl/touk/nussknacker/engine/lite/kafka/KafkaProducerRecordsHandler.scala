@@ -24,7 +24,7 @@ object KafkaProducerRecordsHandler extends LazyLogging {
     val shouldProcessRecordsInTransactions = engineConfig.kafkaTransactionsEnabled.getOrElse {
       // Event hubs doesn't support transactional producers for now - it causes error on KafkaProducer.initTransactions()
       // see https://github.com/Azure/azure-event-hubs-for-kafka/issues/209#issuecomment-1412041269
-      !engineConfig.kafka.kafkaBootstrapServers.exists(isAzureEventHubsBootstrapServersUrl)
+      !isAzureEventHubsBootstrapServersUrl(engineConfig.kafka.kafkaBootstrapServers)
     }
     if (shouldProcessRecordsInTransactions) {
       logger.info("Kafka transactions enabled")

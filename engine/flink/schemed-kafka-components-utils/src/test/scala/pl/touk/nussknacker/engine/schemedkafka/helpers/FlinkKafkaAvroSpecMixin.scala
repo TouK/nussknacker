@@ -3,13 +3,11 @@ package pl.touk.nussknacker.engine.schemedkafka.helpers
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.Assertion
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelConfig.JsonLikeValuesEnteringMode
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
@@ -22,22 +20,13 @@ import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory, TestDataGe
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.graph.expression
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
-import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{
-  ProcessSettingsPreparer,
-  UnoptimizedSerializationPreparer
-}
-import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ExistingSchemaVersion,
   LatestSchemaVersion,
@@ -48,11 +37,10 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.Universa
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory
 import pl.touk.nussknacker.engine.schemedkafka.sink.flink.FlinkKafkaUniversalSinkImplFactory
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
-import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.{NuScalaTestAssertions, VeryPatientScalaFutures}
 
-trait KafkaAvroSpecMixin
+trait FlinkKafkaAvroSpecMixin
     extends AnyFunSuite
     with KafkaWithSchemaRegistryOperations
     with FlinkSpec
@@ -67,42 +55,25 @@ trait KafkaAvroSpecMixin
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  protected var modelData: ModelData = _
+  override protected val kafkaComponentsConfigPrefix: String = "components.kafka.config"
+
+  protected var testScenarioRunner: FlinkTestScenarioRunner = _
 
   protected def schemaRegistryClientFactory: SchemaRegistryClientFactory
-
-  protected def executionConfigPreparerChain(modelData: LocalModelData): ExecutionConfigPreparer =
-    ExecutionConfigPreparer.chain(
-      ProcessSettingsPreparer(modelData),
-      new UnoptimizedSerializationPreparer(modelData),
-      new ExecutionConfigPreparer {
-
-        override def prepareExecutionConfig(
-            config: ExecutionConfig
-        )(jobData: JobData, deploymentData: DeploymentData): Unit = {
-          AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(
-            config,
-            schemaRegistryClientFactory,
-            kafkaConfig
-          )
-        }
-
-      }
-    )
 
   protected lazy val metaData: MetaData = MetaData("mock-id", StreamMetaData())
 
   protected lazy val nodeId: NodeId = NodeId("mock-node-id")
 
   protected def universalSourceFactory(useStringForKey: Boolean): KafkaSource = {
-    val kafkaConfigWithCorrectUseStringForKey = kafkaConfig.copy(useStringForKey = useStringForKey)
+    val kafkaConfigWithCorrectUseStringForKey = kafkaComponentsConfig.copy(useStringForKey = useStringForKey)
     val universalPayload =
       UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfigWithCorrectUseStringForKey)
     new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       universalPayload,
-      testModelConfig,
       kafkaConfigWithCorrectUseStringForKey,
+      namingStrategy,
       new FlinkKafkaSourceImplFactory
     )
   }
@@ -110,12 +81,13 @@ trait KafkaAvroSpecMixin
   protected def universalSinkFactory(
       jsonLikeValuesEnteringMode: JsonLikeValuesEnteringMode
   ): UniversalKafkaSinkFactory = {
-    val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
+    val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaComponentsConfig)
     new UniversalKafkaSinkFactory(
       schemaRegistryClientFactory,
       universalPayload,
-      testModelConfig.copy(jsonLikeValuesEnteringMode = jsonLikeValuesEnteringMode),
-      kafkaConfig,
+      kafkaComponentsConfig,
+      namingStrategy,
+      jsonLikeValuesEnteringMode,
       FlinkKafkaUniversalSinkImplFactory
     )
   }
@@ -209,16 +181,9 @@ trait KafkaAvroSpecMixin
     events.foreach(obj => pushMessage(obj, topic.input))
     kafkaClient.createTopic(topic.output.name, partitions = 1)
 
-    run(process) {
+    testScenarioRunner.withRunningScenario(process) { _ =>
       consumeAndVerifyMessages(topic.output, expected)
       additionalVerificationBeforeScenarioCancel
-    }
-  }
-
-  protected def run(process: CanonicalProcess)(action: => Unit): Unit = {
-    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
-      val executionResult = new FlinkScenarioUnitTestJob(modelData).run(process, env)
-      flinkMiniCluster.withRunningJob(executionResult.getJobID)(action)
     }
   }
 

@@ -26,12 +26,16 @@ import scala.util.{Failure, Try}
 object Serializers extends LazyLogging {
   private val SerialVersionUIDFieldName = "serialVersionUID"
 
-  def registerSerializers(modelData: ModelData, config: ExecutionConfig): Unit = {
+  def registerSerializers(
+      modelData: ModelData,
+      extraSerializersRegistrars: List[SerializersRegistrar],
+      config: ExecutionConfig
+  ): Unit = {
     (implicitly[SerializerRegistrar[CaseClassSerializer]] ::
       implicitly[SerializerRegistrar[SpelHack]] ::
       implicitly[SerializerRegistrar[SpelMapHack]] :: Nil).foreach(_.registerIn(config))
-    ScalaServiceLoader
-      .load[SerializersRegistrar](getClass.getClassLoader)
+    (ScalaServiceLoader
+      .load[SerializersRegistrar](getClass.getClassLoader) ++ extraSerializersRegistrars)
       .foreach(_.register(modelData.modelConfig.underlyingConfig, config))
     TimeSerializers.addDefaultSerializers(config)
   }

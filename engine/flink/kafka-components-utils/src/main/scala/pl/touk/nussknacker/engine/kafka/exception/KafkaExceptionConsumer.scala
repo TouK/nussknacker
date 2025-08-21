@@ -9,7 +9,12 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
-import pl.touk.nussknacker.engine.kafka.{DefaultProducerCreator, KafkaConfig, KafkaProducerCreator, KafkaUtils}
+import pl.touk.nussknacker.engine.kafka.{
+  DefaultProducerCreator,
+  KafkaComponentsConfig,
+  KafkaProducerCreator,
+  KafkaUtils
+}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sharedproducer.WithSharedKafkaProducer
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
@@ -22,11 +27,12 @@ class KafkaExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
   import net.ceedubs.ficus.Ficus._
 
   override def create(metaData: MetaData, exceptionHandlerConfig: Config): FlinkEspExceptionConsumer = {
-    val kafkaConfig           = KafkaConfig.parseConfig(exceptionHandlerConfig)
+    // TODO: Use a dedicated class for config
+    val kafkaComponentsConfig = KafkaComponentsConfig.parseConfig(exceptionHandlerConfig.getConfig("kafka"))
     val consumerConfig        = exceptionHandlerConfig.rootAs[KafkaExceptionConsumerConfig]
-    val producerCreator       = kafkaProducerCreator(kafkaConfig)
+    val producerCreator       = kafkaProducerCreator(kafkaComponentsConfig)
     val serializationSchema   = createSerializationSchema(metaData, consumerConfig)
-    val errorTopicInitializer = new DefaultKafkaErrorTopicInitializer(kafkaConfig, consumerConfig)
+    val errorTopicInitializer = new DefaultKafkaErrorTopicInitializer(kafkaComponentsConfig, consumerConfig)
     if (consumerConfig.useSharedProducer) {
       SharedProducerKafkaExceptionConsumer(metaData, serializationSchema, producerCreator, errorTopicInitializer)
     } else {
@@ -41,8 +47,10 @@ class KafkaExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
     new KafkaJsonExceptionSerializationSchema(metaData, consumerConfig)
 
   // visible for testing
-  private[exception] def kafkaProducerCreator(kafkaConfig: KafkaConfig): KafkaProducerCreator.Binary =
-    DefaultProducerCreator(kafkaConfig)
+  private[exception] def kafkaProducerCreator(
+      kafkaComponentsConfig: KafkaComponentsConfig
+  ): KafkaProducerCreator.Binary =
+    DefaultProducerCreator(kafkaComponentsConfig)
 
   override def name: String = "Kafka"
 

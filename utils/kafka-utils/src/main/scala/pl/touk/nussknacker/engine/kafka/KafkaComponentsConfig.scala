@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.kafka
 import com.typesafe.config.Config
 import enumeratum.{Enum, EnumEntry}
 import pl.touk.nussknacker.engine.kafka.IdlenessConfig.DefaultDuration
-import pl.touk.nussknacker.engine.kafka.KafkaConfig._
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig._
 
 import scala.collection.immutable
 import scala.concurrent.duration._
@@ -14,9 +14,10 @@ case class SchemaRegistryClientKafkaConfig(
     avroAsJsonSerialization: Option[Boolean]
 )
 
-case class KafkaConfig(
-    kafkaProperties: Option[Map[String, String]],
-    kafkaEspProperties: Option[Map[String, String]],
+case class KafkaComponentsConfig(
+    kafkaProperties: Map[String, String],
+    // TODO: Replace this map with normal fields
+    kafkaEspProperties: Option[Map[String, String]] = None,
     consumerGroupNamingStrategy: Option[ConsumerGroupNamingStrategy.Value] = None,
     // Probably better place for this flag would be configParameters inside global parameters but
     // for easier usage in AbstractConfluentKafkaAvroDeserializer and ConfluentKafkaAvroDeserializerFactory it is placed here
@@ -29,15 +30,21 @@ case class KafkaConfig(
     useStringForKey: Boolean = true,
     schemaRegistryCacheConfig: SchemaRegistryCacheConfig = SchemaRegistryCacheConfig(),
     avroAsJsonSerialization: Option[Boolean] = None,
-    kafkaAddress: Option[String] = None,
     idleTimeout: Option[IdlenessConfig] = None,
     sinkDeliveryGuarantee: Option[SinkDeliveryGuarantee.Value] = None,
     showTopicsWithoutSchema: Boolean = true,
     kafkaAdminConfig: KafkaAdminConfig = KafkaAdminConfig(),
+    useDataSampleParamForSchemalessJsonTopicBasedKafkaSource: Boolean = false,
 ) {
 
-  def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(
-    kafkaProperties.getOrElse(Map.empty),
+  val kafkaBootstrapServers: String = kafkaProperties
+    .getOrElse(
+      "bootstrap.servers",
+      throw new IllegalArgumentException("No bootstrap.servers configured in kafkaProperties")
+    )
+
+  def schemaRegistryClientKafkaConfig: SchemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(
+    kafkaProperties,
     schemaRegistryCacheConfig,
     avroAsJsonSerialization
   )
@@ -60,11 +67,6 @@ case class KafkaConfig(
     }
   }
 
-  def kafkaBootstrapServers: Option[String] = kafkaProperties
-    .getOrElse(Map.empty)
-    .get("bootstrap.servers")
-    .orElse(kafkaAddress)
-
 }
 
 object ConsumerGroupNamingStrategy extends Enumeration {
@@ -73,23 +75,28 @@ object ConsumerGroupNamingStrategy extends Enumeration {
   val ProcessIdNodeId: ConsumerGroupNamingStrategy.Value = Value("processId-nodeId")
 }
 
-object KafkaConfig {
+object KafkaComponentsConfig {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
 
-  val DefaultGlobalKafkaConfigPath                              = "kafka"
   val DefaultOffsetResetStrategyPath                            = "defaultOffsetResetStrategy"
   val DefaultMaxOutOfOrdernessMillisPath                        = "defaultMaxOutOfOrdernessMillis"
   val DefaultMaxOutOfOrdernessMillisDefault: java.time.Duration = java.time.Duration.ofMillis(60000)
 
-  def parseConfigOpt(config: Config, path: String = DefaultGlobalKafkaConfigPath): Option[KafkaConfig] = {
-    config.getAs[KafkaConfig](path)
+  def parseConfig(config: Config): KafkaComponentsConfig = {
+    config.as[KafkaComponentsConfig]
   }
 
-  def parseConfig(config: Config, path: String = DefaultGlobalKafkaConfigPath): KafkaConfig = {
-    config.as[KafkaConfig](path)
+  // Flink engine has kafka components config nested in componentConfig.config
+  def parseConfigNestedAtConfigKey(config: Config): KafkaComponentsConfig = {
+    config.as[KafkaComponentsConfig]("config")
+  }
+
+  // Lite engine has kafka components config nested in modelConfig.kafka
+  def parseConfigNestedAtKafkaKey(config: Config): KafkaComponentsConfig = {
+    config.as[KafkaComponentsConfig]("kafka")
   }
 
 }

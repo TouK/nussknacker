@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry
 
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryClientKafkaConfig}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, SchemaRegistryClientKafkaConfig}
 
 trait SchemaRegistryClientFactory extends Serializable {
 
   type SchemaRegistryClientT <: SchemaRegistryClient
-  def create(config: KafkaConfig): SchemaRegistryClientT = create(config.schemaRegistryClientKafkaConfig)
+  def create(config: KafkaComponentsConfig): SchemaRegistryClientT = create(config.schemaRegistryClientKafkaConfig)
 
   def create(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT
 }

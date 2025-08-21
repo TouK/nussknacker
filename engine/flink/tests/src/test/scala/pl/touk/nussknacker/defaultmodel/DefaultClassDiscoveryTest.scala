@@ -11,13 +11,23 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 class DefaultClassDiscoveryTest extends ClassDiscoveryBaseTest {
 
   protected override val model: LocalModelData = {
-    val config = ConfigFactory.parseString("config {}")
+    val kafkaComponentsConfig =
+      ConfigFactory.parseString(
+        """config {
+          |  kafkaProperties {
+          |    "bootstrap.servers": "dummy:9092"
+          |  }
+          |}""".stripMargin
+      )
     val components =
       FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components :::
         new FlinkKafkaComponentProvider()
-          .create(config, ComponentDependencies(ModelConfig.parse(ConfigFactory.empty()), designerDbRef = None))
+          .create(
+            kafkaComponentsConfig,
+            ComponentDependencies(ModelConfig.parse(ConfigFactory.empty()), designerDbRef = None)
+          )
 
-    LocalModelData(config, components, configCreator = new DefaultConfigCreator)
+    LocalModelData(ConfigFactory.empty(), components, configCreator = new DefaultConfigCreator)
   }
 
   protected override val outputResource = "/extractedTypes/defaultModel.json"
