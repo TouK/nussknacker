@@ -1,19 +1,21 @@
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import type { ElementType, ReactElement } from "react";
+import { useState } from "react";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { setPerformedTestType } from "../../../actions/nk/displayTestResults";
-import { useAppDispatch } from "../../../store/storeHelpers";
+import { getTestCapabilities } from "../../../reducers/selectors/graph";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { WindowKind } from "../../../windowManager";
 import { WindowContent } from "../../../windowManager";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
+import { EventsTable } from "./EventsTable";
 import type { TestingContextState } from "./TestingContext";
 import { TestingContext, useTestingContext, useTestingState } from "./TestingContext";
-import { TestingForm } from "./TestingForm";
 
 type DocsLink = {
     url: string;
@@ -41,6 +43,16 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
     } = data;
     const { isValid, action, testType } = useTestingContext();
     const dispatch = useAppDispatch();
+    const testCapabilities = useAppSelector(getTestCapabilities);
+    const defaultParameter = testCapabilities.testWithParameters.sourceParameters[0];
+    const [events, setEvents] = useState([
+        {
+            source: defaultParameter.sourceId,
+            timestamp: "",
+            events: testCapabilities.testWithParameters.sourceParameters[0].parameters[0].defaultValue.expression,
+        },
+    ]);
+    const sourceOptions = testCapabilities.testWithParameters.sourceParameters.flatMap((sourceParameter) => sourceParameter.sourceId);
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [
@@ -65,7 +77,14 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
             buttons={buttons}
         >
             <ContentSize>
-                <TestingForm testingData={props.data} closeDialog={close} />
+                <EventsTable
+                    sourceOptions={sourceOptions}
+                    sourceParameters={testCapabilities.testWithParameters.sourceParameters}
+                    data={events}
+                    onDataChange={(data) => {
+                        setEvents(data);
+                    }}
+                />
             </ContentSize>
         </WindowContent>
     );

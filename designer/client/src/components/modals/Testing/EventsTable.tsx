@@ -5,6 +5,7 @@ import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/interna
 import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
+import type { TestFormParameters } from "../../../common/TestResultUtils";
 import { CellMenu, DeleteRowMenuItem } from "../../graph/node-modal/editors/expression/Table/CellMenu";
 import { Sizer } from "../../graph/node-modal/editors/expression/Table/Sizer";
 import { useTableTheme } from "../../graph/node-modal/editors/expression/Table/tableTheme";
@@ -29,6 +30,7 @@ interface EventsTableProps {
     onDataChange: (data: EventRow[]) => void;
     sourceOptions: string[];
     className?: string;
+    sourceParameters: TestFormParameters[];
 }
 
 const emptySelection = {
@@ -66,7 +68,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChang
             },
             {
                 id: "events",
-                title: "Events (JSON)",
+                title: "Events",
                 width: 300,
                 grow: 1,
                 hasMenu: false,
@@ -160,7 +162,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChang
                 case 2:
                     return {
                         kind: GridCellKind.Text,
-                        displayData: rowData.events || "",
+                        displayData: JSON.stringify(JSON.parse(rowData.events)) || "",
                         data: rowData.events || "",
                         allowOverlay: true,
                         readonly: false,
@@ -183,7 +185,6 @@ export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChang
                     cellValue = value.data.value;
                 } else {
                     // EditableGridCell .data holds raw value
-                    // @ts-expect-error accessing generic grid cell data
                     cellValue = value.data?.toString?.() ?? "";
                 }
                 switch (col) {
