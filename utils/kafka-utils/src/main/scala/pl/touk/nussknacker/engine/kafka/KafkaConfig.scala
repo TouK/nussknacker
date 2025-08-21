@@ -34,6 +34,7 @@ case class KafkaConfig(
     sinkDeliveryGuarantee: Option[SinkDeliveryGuarantee.Value] = None,
     showTopicsWithoutSchema: Boolean = true,
     kafkaAdminConfig: KafkaAdminConfig = KafkaAdminConfig(),
+    useDataSampleParamForSchemalessJsonTopicBasedKafkaSource: Boolean = false
 ) {
 
   def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(

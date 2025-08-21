@@ -52,8 +52,8 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
         new UniversalKafkaSourceFactory(
           schemaRegistryClientFactory,
           universalSerdeProvider,
-          componentDependencies.modelConfig,
           kafkaConfig,
+          componentDependencies.modelConfig.namingStrategy,
           new LiteKafkaSourceImplFactory
         )
       ).withRelativeDocs(universal(ComponentType.Source)),
@@ -62,8 +62,9 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
         new UniversalKafkaSinkFactory(
           schemaRegistryClientFactory,
           universalSerdeProvider,
-          componentDependencies.modelConfig,
           kafkaConfig,
+          componentDependencies.modelConfig.namingStrategy,
+          componentDependencies.modelConfig.jsonLikeValuesEnteringMode,
           LiteKafkaUniversalSinkImplFactory
         )
       ).withRelativeDocs(universal(ComponentType.Sink))

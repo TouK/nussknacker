@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.kafka
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.ModelConfig
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
@@ -19,9 +19,9 @@ object KafkaComponentsUtils extends KafkaUtils {
 
   def prepareKafkaTopic[T <: TopicName](
       topic: T,
-      modelConfig: ModelConfig
+      namingStrategy: NamingStrategy
   ): PreparedKafkaTopic[T] = {
-    val doPrepareName: String => String = (name: String) => modelConfig.namingStrategy.prepareName(name)
+    val doPrepareName: String => String = (name: String) => namingStrategy.prepareName(name)
     (topic match {
       case TopicName.ForSource(name) =>
         PreparedKafkaTopic(TopicName.ForSource(name), TopicName.ForSource(doPrepareName(name)))

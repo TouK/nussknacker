@@ -47,7 +47,7 @@ abstract class BaseKafkaSinkFactory(
 
   protected def createSink(topic: TopicName.ForSink, value: LazyParameter[AnyRef], processMetaData: MetaData): Sink = {
     val kafkaConfig   = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
-    val preparedTopic = KafkaComponentsUtils.prepareKafkaTopic(topic, modelConfig)
+    val preparedTopic = KafkaComponentsUtils.prepareKafkaTopic(topic, modelConfig.namingStrategy)
     KafkaComponentsUtils.validateTopicsExistence(NonEmptyList.one(preparedTopic), kafkaConfig)
     val serializationSchema = serializationSchemaFactory.create(preparedTopic.prepared, kafkaConfig)
     val clientId            = s"${processMetaData.name}-${preparedTopic.prepared}"

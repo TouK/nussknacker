@@ -101,8 +101,8 @@ trait KafkaAvroSpecMixin
     new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       universalPayload,
-      testModelConfig,
       kafkaConfigWithCorrectUseStringForKey,
+      namingStrategy,
       new FlinkKafkaSourceImplFactory
     )
   }
@@ -114,8 +114,9 @@ trait KafkaAvroSpecMixin
     new UniversalKafkaSinkFactory(
       schemaRegistryClientFactory,
       universalPayload,
-      testModelConfig.copy(jsonLikeValuesEnteringMode = jsonLikeValuesEnteringMode),
       kafkaConfig,
+      namingStrategy,
+      jsonLikeValuesEnteringMode,
       FlinkKafkaUniversalSinkImplFactory
     )
   }

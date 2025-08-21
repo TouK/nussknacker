@@ -4,6 +4,8 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.avro.Schema
 import org.scalatest.OptionValues
+import pl.touk.nussknacker.engine.ModelConfig
+import pl.touk.nussknacker.engine.api.namespaces.{Namespace, NamingStrategy}
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroNamespacedSpec.sinkForInputMetaResultsHolder
@@ -27,20 +29,24 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
       .withValue("namespace", fromAnyRef(namespace))
   }
 
+  override protected def namingStrategy: NamingStrategy = NamingStrategy(
+    Some(Namespace(namespace, NamingStrategy.defaultNamespaceSeparator))
+  )
+
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
   override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
     MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
 
-  private lazy val creator: KafkaAvroTestProcessConfigCreator =
-    new KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder) {
-      override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
-        MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
-    }
+  private lazy val provider: KafkaAvroTestComponentProvider =
+    new KafkaAvroTestComponentProvider(
+      MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient),
+      sinkForInputMetaResultsHolder
+    )
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    modelData = LocalModelData(modelConfig, List.empty, configCreator = creator)
+    modelData = LocalModelData(modelConfig, provider.createComponents(ModelConfig.parse(config)))
   }
 
   test("should read event in the same version as source requires and save it in the same version") {

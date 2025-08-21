@@ -6,8 +6,10 @@ import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.{ModelConfig, ModelData}
+import pl.touk.nussknacker.engine.ModelConfig.JsonLikeValuesEnteringMode
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.GraphBuilder
@@ -54,8 +56,9 @@ class KafkaUniversalSinkExceptionHandlingSpec
     val kafkaComponent = new UniversalKafkaSinkFactory(
       schemaRegistryClientFactory,
       universalProvider,
-      ModelConfig.parse(modelConfig),
       kafkaConfig,
+      NamingStrategy.Disabled,
+      JsonLikeValuesEnteringMode.DynamicForms,
       FlinkKafkaUniversalSinkImplFactory
     )
 

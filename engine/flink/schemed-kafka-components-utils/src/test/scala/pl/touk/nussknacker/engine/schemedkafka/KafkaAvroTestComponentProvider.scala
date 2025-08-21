@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka
 
 import pl.touk.nussknacker.engine.ModelConfig
-import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.process.helpers.{SinkForType, TestResultsHolder}
@@ -13,19 +12,19 @@ import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory
 import pl.touk.nussknacker.engine.schemedkafka.sink.flink.FlinkKafkaUniversalSinkImplFactory
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
 
-abstract class KafkaAvroTestProcessConfigCreator(
+// FIXME abr: use FlinkKafkaComponentProvider instead
+class KafkaAvroTestComponentProvider(
+    schemaRegistryClientFactory: SchemaRegistryClientFactory,
     sinkForInputMetaResultsHolder: => TestResultsHolder[java.util.Map[String @unchecked, _]]
-) extends EmptyProcessConfigCreator {
+) {
 
-  override def sourceFactories(
-      modelConfig: ModelConfig
-  ): Map[String, WithCategories[SourceFactory]] = {
+  def createComponents(modelConfig: ModelConfig): List[ComponentDefinition] = {
     val kafkaConfig = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
     val universalSourceFactory = new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig),
-      modelConfig,
       kafkaConfig,
+      modelConfig.namingStrategy,
       new FlinkKafkaSourceImplFactory
     )
 
@@ -33,47 +32,33 @@ abstract class KafkaAvroTestProcessConfigCreator(
     val avroGenericSourceFactoryWithKeySchemaSupport = new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfigWithKeySchemaSupport),
-      modelConfig,
       kafkaConfigWithKeySchemaSupport,
+      modelConfig.namingStrategy,
       new FlinkKafkaSourceImplFactory
     )
-
-    Map(
-      "kafka"           -> defaultCategory(universalSourceFactory),
-      "kafka-key-value" -> defaultCategory(avroGenericSourceFactoryWithKeySchemaSupport)
-    )
-  }
-
-  override def customStreamTransformers(
-      modelConfig: ModelConfig
-  ): Map[String, WithCategories[CustomStreamTransformer]] = {
-    Map("extractAndTransformTimestamp" -> defaultCategory(ExtractAndTransformTimestamp))
-  }
-
-  override def sinkFactories(
-      modelConfig: ModelConfig
-  ): Map[String, WithCategories[SinkFactory]] = {
-    val kafkaConfig      = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
     val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
 
-    Map(
-      "kafka" -> defaultCategory(
+    List(
+      ComponentDefinition("kafka", universalSourceFactory),
+      ComponentDefinition(
+        "kafka",
         new UniversalKafkaSinkFactory(
           schemaRegistryClientFactory,
           universalPayload,
-          modelConfig,
           kafkaConfig,
+          modelConfig.namingStrategy,
+          modelConfig.jsonLikeValuesEnteringMode,
           FlinkKafkaUniversalSinkImplFactory
         )
       ),
-      "sinkForInputMeta" -> defaultCategory(
+      // non-productional
+      ComponentDefinition("kafka-key-value", avroGenericSourceFactoryWithKeySchemaSupport),
+      ComponentDefinition(
+        "sinkForInputMeta",
         SinkForType[java.util.Map[String @unchecked, _]](sinkForInputMetaResultsHolder)
-      )
+      ),
+      ComponentDefinition("extractAndTransformTimestamp", ExtractAndTransformTimestamp)
     )
   }
-
-  protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "TestAvro")
-
-  protected def schemaRegistryClientFactory: SchemaRegistryClientFactory
 
 }

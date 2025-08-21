@@ -4,8 +4,8 @@ import io.circe.generic.JsonCodec
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{Assertion, BeforeAndAfter}
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
-import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -36,12 +36,10 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
 
   import KafkaAvroIntegrationMockSchemaRegistry._
 
-  private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator(
+  private lazy val provider: KafkaAvroTestComponentProvider = new KafkaAvroTestComponentProvider(
+    MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient),
     sinkForInputMetaResultsHolder
-  ) {
-    override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
-      MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
-  }
+  )
 
   protected val paymentSchemas: List[Schema]  = List(PaymentV1.schema, PaymentV2.schema)
   protected val payment2Schemas: List[Schema] = List(PaymentV1.schema, PaymentV2.schema, PaymentNotCompatible.schema)
@@ -53,7 +51,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    modelData = LocalModelData(modelConfig, List.empty, configCreator = creator)
+    modelData = LocalModelData(modelConfig, provider.createComponents(ModelConfig.parse(config)))
   }
 
   before {

@@ -4,6 +4,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaJsonPayloadIntegrationSpec.sinkForInputMetaResultsHolder
@@ -22,11 +23,11 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
 
   import KafkaAvroIntegrationMockSchemaRegistry._
 
-  private lazy val creator: KafkaAvroTestProcessConfigCreator =
-    new KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder) {
-      override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
-        MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
-    }
+  private lazy val provider: KafkaAvroTestComponentProvider =
+    new KafkaAvroTestComponentProvider(
+      MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient),
+      sinkForInputMetaResultsHolder
+    )
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
@@ -40,11 +41,10 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
+    val finalModelConfig = modelConfig.withValue("kafka.avroAsJsonSerialization", fromAnyRef(true))
     modelData = LocalModelData(
-      modelConfig
-        .withValue("kafka.avroAsJsonSerialization", fromAnyRef(true)),
-      List.empty,
-      configCreator = creator,
+      finalModelConfig,
+      provider.createComponents(ModelConfig.parse(finalModelConfig)),
     )
   }
 

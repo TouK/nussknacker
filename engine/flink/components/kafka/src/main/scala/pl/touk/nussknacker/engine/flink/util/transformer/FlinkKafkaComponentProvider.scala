@@ -53,8 +53,8 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
         new UniversalKafkaSourceFactory(
           schemaRegistryClientFactory,
           universalSerdeProvider,
-          finalModelConfig,
           kafkaConfig,
+          finalModelConfig.namingStrategy,
           new FlinkKafkaSourceImplFactory
         )
       ).withRelativeDocs(universal(ComponentType.Source)),
@@ -63,8 +63,9 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
         new UniversalKafkaSinkFactory(
           schemaRegistryClientFactory,
           universalSerdeProvider,
-          finalModelConfig,
           kafkaConfig,
+          finalModelConfig.namingStrategy,
+          finalModelConfig.jsonLikeValuesEnteringMode,
           FlinkKafkaUniversalSinkImplFactory
         )
       ).withRelativeDocs(universal(ComponentType.Sink))

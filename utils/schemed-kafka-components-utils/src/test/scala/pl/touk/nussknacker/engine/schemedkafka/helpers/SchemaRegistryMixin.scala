@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.helpers
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.funsuite.AnyFunSuite
-import pl.touk.nussknacker.engine.ModelConfig
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 import pl.touk.nussknacker.test.{KafkaConfigProperties, WithModelConfig}
 
@@ -23,8 +23,8 @@ trait SchemaRegistryMixin
       .withValue(s"kafka.kafkaEspProperties.autoRegisterRecordSchemaIdSerialization", fromAnyRef(false))
   }
 
-  protected lazy val testModelConfig: ModelConfig = ModelConfig.parse(modelConfig)
-
   protected lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(modelConfig)
+
+  protected def namingStrategy: NamingStrategy = NamingStrategy.Disabled
 
 }
