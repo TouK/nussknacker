@@ -53,7 +53,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    modelData = LocalModelData(config, List.empty, configCreator = creator)
+    modelData = LocalModelData(modelConfig, List.empty, configCreator = creator)
   }
 
   before {

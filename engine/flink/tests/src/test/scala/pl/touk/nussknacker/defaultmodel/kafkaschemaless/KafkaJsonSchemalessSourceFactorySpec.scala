@@ -20,12 +20,12 @@ import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
-import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, WithConfig}
+import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, WithModelConfig}
 
 class KafkaJsonSchemalessSourceFactorySpec
     extends AnyFunSuite
     with Matchers
-    with WithConfig
+    with WithModelConfig
     with SchemaRegistryMixin
     with ValidatedValuesDetailedMessage {
 

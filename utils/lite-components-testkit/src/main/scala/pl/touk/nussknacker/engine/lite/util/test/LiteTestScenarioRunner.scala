@@ -27,8 +27,13 @@ object LiteTestScenarioRunner {
 
   implicit class LiteTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
 
-    def liteBased(config: Config = ConfigFactory.load()): LiteTestScenarioRunnerBuilder = {
-      LiteTestScenarioRunnerBuilder(List.empty, Map.empty, config, testRuntimeMode = false)
+    def liteBased(modelConfig: Config = ConfigFactory.load()): LiteTestScenarioRunnerBuilder = {
+      LiteTestScenarioRunnerBuilder(
+        components = List.empty,
+        globalVariables = Map.empty,
+        modelConfig = modelConfig,
+        testRuntimeMode = false
+      )
     }
 
   }
@@ -38,7 +43,7 @@ object LiteTestScenarioRunner {
 case class LiteTestScenarioRunnerBuilder(
     components: List[ComponentDefinition],
     globalVariables: Map[String, AnyRef],
-    config: Config,
+    modelConfig: Config,
     testRuntimeMode: Boolean
 ) extends TestScenarioRunnerBuilder[LiteTestScenarioRunner, LiteTestScenarioRunnerBuilder] {
 
@@ -56,7 +61,7 @@ case class LiteTestScenarioRunnerBuilder(
     copy(testRuntimeMode = true)
 
   override def build(): LiteTestScenarioRunner =
-    new LiteTestScenarioRunner(components, globalVariables, config, runtimeMode(testRuntimeMode))
+    new LiteTestScenarioRunner(components, globalVariables, modelConfig, runtimeMode(testRuntimeMode))
 
 }
 

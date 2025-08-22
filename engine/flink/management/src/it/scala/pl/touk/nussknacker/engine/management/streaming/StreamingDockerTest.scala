@@ -45,7 +45,7 @@ trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matcher
 
   protected lazy val deploymentManager: DeploymentManager =
     FlinkDeploymentManagerProviderHelper.createDeploymentManager(
-      ConfigWithUnresolvedVersion(config),
+      ConfigWithUnresolvedVersion(rawProcessingTypeConfig),
       deploymentManagerClassLoader
     )
 

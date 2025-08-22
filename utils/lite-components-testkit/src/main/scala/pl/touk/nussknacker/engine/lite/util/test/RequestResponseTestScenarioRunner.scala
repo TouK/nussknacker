@@ -29,8 +29,15 @@ object RequestResponseTestScenarioRunner {
 
   implicit class LiteKafkaTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
 
-    def requestResponseBased(baseConfig: Config = ConfigFactory.load()): RequestResponseTestScenarioRunnerBuilder = {
-      RequestResponseTestScenarioRunnerBuilder(Nil, Map.empty, baseConfig, testRuntimeMode = false)
+    def requestResponseBased(
+        modelConfig: Config = ConfigFactory.load()
+    ): RequestResponseTestScenarioRunnerBuilder = {
+      RequestResponseTestScenarioRunnerBuilder(
+        components = Nil,
+        globalVariables = Map.empty,
+        modelConfig = modelConfig,
+        testRuntimeMode = false
+      )
     }
 
   }
@@ -52,7 +59,7 @@ object RequestResponseTestScenarioRunner {
 class RequestResponseTestScenarioRunner(
     components: List[ComponentDefinition],
     globalVariables: Map[String, AnyRef],
-    config: Config,
+    modelConfig: Config,
     runtimeMode: RuntimeMode
 ) extends TestScenarioRunner {
 
@@ -62,18 +69,18 @@ class RequestResponseTestScenarioRunner(
   )(run: (HttpRequest => Either[NonEmptyList[ErrorType], Json]) => T): ValidatedNel[ProcessCompilationError, T] = {
     TestScenarioCollectorHandler.withHandler(runtimeMode) { testScenarioCollectorHandler =>
       val modelData = ModelWithTestExtensions(
-        config,
+        modelConfig,
         LiteBaseComponentProvider.Components :::
           RequestResponseComponentProvider.Components :::
           components,
         globalVariables
       )
       RequestResponseInterpreter[Id](
-        scenario,
-        ProcessVersion.empty,
-        nodesDeploymentData,
-        LiteEngineRuntimeContextPreparer.noOp,
-        modelData,
+        process = scenario,
+        processVersion = ProcessVersion.empty,
+        nodesDeploymentData = nodesDeploymentData,
+        context = LiteEngineRuntimeContextPreparer.noOp,
+        modelData = modelData,
         additionalListeners = Nil,
         resultCollector = testScenarioCollectorHandler.resultCollector,
         runtimeMode = runtimeMode
@@ -97,7 +104,7 @@ class RequestResponseTestScenarioRunner(
 case class RequestResponseTestScenarioRunnerBuilder(
     components: List[ComponentDefinition],
     globalVariables: Map[String, AnyRef],
-    config: Config,
+    modelConfig: Config,
     testRuntimeMode: Boolean
 ) extends TestScenarioRunnerBuilder[RequestResponseTestScenarioRunner, RequestResponseTestScenarioRunnerBuilder] {
 
@@ -120,7 +127,7 @@ case class RequestResponseTestScenarioRunnerBuilder(
     new RequestResponseTestScenarioRunner(
       components,
       globalVariables,
-      config,
+      modelConfig,
       runtimeMode(testRuntimeMode)
     )
 

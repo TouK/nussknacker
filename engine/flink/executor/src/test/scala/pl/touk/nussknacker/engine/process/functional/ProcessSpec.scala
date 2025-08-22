@@ -330,7 +330,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       )
 
       val runId = UUID.randomUUID().toString
-      val cfg   = RecordingExceptionConsumerProvider.configWithProvider(config, consumerId = runId)
+      val cfg   = RecordingExceptionConsumerProvider.configWithProvider(modelConfig, consumerId = runId)
       processInvoker.invokeWithSampleData(scenarioToUse, data, cfg)
 
       val exception = RecordingExceptionConsumer.exceptionsFor(runId).loneElement

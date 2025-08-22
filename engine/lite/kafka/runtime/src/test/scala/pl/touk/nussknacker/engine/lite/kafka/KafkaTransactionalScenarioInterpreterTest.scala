@@ -316,12 +316,16 @@ class KafkaTransactionalScenarioInterpreterTest
     }
   }
 
-  private def runScenarioWithoutErrors[T](fixture: FixtureParam, scenario: CanonicalProcess, config: Config = config)(
+  private def runScenarioWithoutErrors[T](
+      fixture: FixtureParam,
+      scenario: CanonicalProcess,
+      modelConfig: Config = modelConfig
+  )(
       action: => T
   ): T = {
     val jobData          = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
     val liteKafkaJobData = LiteKafkaJobData(tasksCount = 1)
-    val configToUse      = adjustConfig(fixture.errorTopic, config)
+    val configToUse      = adjustModelConfig(fixture.errorTopic, modelConfig)
     val modelDataToUse   = modelData(configToUse)
     val interpreter = ScenarioInterpreterFactory
       .createInterpreter[Future, Input, Output](scenario, jobData, NodesDeploymentData.empty, modelDataToUse)
@@ -348,7 +352,7 @@ class KafkaTransactionalScenarioInterpreterTest
       TestComponentProvider.Components ::: LiteBaseComponentProvider.Components
     )
 
-  private def adjustConfig(errorTopic: String, config: Config) = config
+  private def adjustModelConfig(errorTopic: String, config: Config) = config
     .withValue("kafka.\"auto.offset.reset\"", fromAnyRef("earliest"))
     .withValue("exceptionHandlingConfig.topic", fromAnyRef(errorTopic))
     .withValue("waitAfterFailureDelay", fromAnyRef("1 millis"))

@@ -44,8 +44,8 @@ object LiteKafkaTestScenarioRunner {
 
   implicit class LiteKafkaTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
 
-    def kafkaLiteBased(baseConfig: Config = ConfigFactory.load()): LiteKafkaTestScenarioRunnerBuilder = {
-      val config = baseConfig.withFallback(
+    def kafkaLiteBased(baseModelConfig: Config = ConfigFactory.load()): LiteKafkaTestScenarioRunnerBuilder = {
+      val modelConfig = baseModelConfig.withFallback(
         ConfigFactory
           .empty()
           .withValue(KafkaConfigProperties.bootstrapServersProperty(), ConfigValueFactory.fromAnyRef("kafka:666"))
@@ -54,10 +54,10 @@ object LiteKafkaTestScenarioRunner {
       )
       val schemaRegistryClient = new MockSchemaRegistryClient
       LiteKafkaTestScenarioRunnerBuilder(
-        List.empty,
-        Map.empty,
-        config,
-        MockSchemaRegistryClientFactory.confluentBased(schemaRegistryClient),
+        components = List.empty,
+        globalVariables = Map.empty,
+        modelConfig = modelConfig,
+        schemaRegistryClientFactor = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryClient),
         testRuntimeMode = false
       )
     }
@@ -69,7 +69,7 @@ object LiteKafkaTestScenarioRunner {
 case class LiteKafkaTestScenarioRunnerBuilder(
     components: List[ComponentDefinition],
     globalVariables: Map[String, AnyRef],
-    config: Config,
+    modelConfig: Config,
     schemaRegistryClientFactor: SchemaRegistryClientFactoryWithRegistration,
     testRuntimeMode: Boolean
 ) extends TestScenarioRunnerBuilder[LiteKafkaTestScenarioRunner, LiteKafkaTestScenarioRunnerBuilder] {
@@ -93,11 +93,11 @@ case class LiteKafkaTestScenarioRunnerBuilder(
     copy(schemaRegistryClientFactor = schemaRegistryClientFactor)
 
   override def build(): LiteKafkaTestScenarioRunner = {
-    val modelConfig                   = ModelConfig.parse(config)
+    val parsedModelConfig             = ModelConfig.parse(modelConfig)
     val mockedKafkaComponentsProvider = new LiteKafkaComponentProvider(schemaRegistryClientFactor)
     val mockedKafkaComponents =
-      mockedKafkaComponentsProvider.create(config, ComponentDependencies(modelConfig, designerDbRef = None))
-    val schemaRegistryClient = schemaRegistryClientFactor.create(KafkaConfig.parseConfig(config))
+      mockedKafkaComponentsProvider.create(modelConfig, ComponentDependencies(parsedModelConfig, designerDbRef = None))
+    val schemaRegistryClient = schemaRegistryClientFactor.create(KafkaConfig.parseConfig(modelConfig))
     val serde = schemaRegistryClient match {
       case _: ConfluentSchemaRegistryClient => ConfluentKafkaAvroElementSerde
       case _: AzureSchemaRegistryClient     => AzureKafkaAvroElementSerde
@@ -110,7 +110,7 @@ case class LiteKafkaTestScenarioRunnerBuilder(
     new LiteKafkaTestScenarioRunner(
       mockedKafkaComponents ++ components,
       globalVariables,
-      config,
+      modelConfig,
       schemaRegistryClient,
       runtimeMode(testRuntimeMode),
       serde

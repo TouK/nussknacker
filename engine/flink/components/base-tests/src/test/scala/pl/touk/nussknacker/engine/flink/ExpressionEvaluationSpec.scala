@@ -63,7 +63,7 @@ class ExpressionEvaluationSpec extends AnyFunSuite with FlinkSpec with Matchers 
 
   private def runScenario(scenario: CanonicalProcess, data: List[String]) = {
     TestScenarioRunner
-      .flinkBased(config, flinkMiniCluster)
+      .flinkBased(modelConfig, flinkMiniCluster)
       .build()
       .runWithData[String, String](scenario, data)
   }

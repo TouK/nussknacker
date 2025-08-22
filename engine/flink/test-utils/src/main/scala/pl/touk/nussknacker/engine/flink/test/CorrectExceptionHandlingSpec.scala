@@ -37,7 +37,7 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
       val executionResult = runScenario(
         env,
-        LocalModelData(config, sourceComponentDefinition :: components),
+        LocalModelData(modelConfig, sourceComponentDefinition :: components),
         scenario
       )
       flinkMiniCluster.waitForJobIsFinished(executionResult.getJobID)
