@@ -49,10 +49,10 @@ object LiteKafkaTestScenarioRunner {
         ConfigFactory
           .empty()
           .withValue(
-            KafkaConfigProperties.bootstrapServersPropertyNestedAtPath(),
+            KafkaConfigProperties.bootstrapServersProperty("kafka"),
             ConfigValueFactory.fromAnyRef("kafka:666")
           )
-          .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("schema-registry:666"))
+          .withValue(KafkaConfigProperties.property("kafka", "schema.registry.url"), fromAnyRef("schema-registry:666"))
           .withValue("kafka.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
       )
       val schemaRegistryClient = new MockSchemaRegistryClient

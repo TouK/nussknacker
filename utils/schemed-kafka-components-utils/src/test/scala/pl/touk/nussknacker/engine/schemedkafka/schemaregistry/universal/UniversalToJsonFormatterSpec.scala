@@ -23,9 +23,9 @@ class UniversalToJsonFormatterSpec extends AnyFunSuite with Matchers with Option
 
   private lazy val rawKafkaConfig = ConfigFactory
     .empty()
-    .withValue(KafkaConfigProperties.bootstrapServersProperty, fromAnyRef("kafka_should_not_be_used:9092"))
+    .withValue("bootstrap.servers", fromAnyRef("kafka_should_not_be_used:9092"))
     .withValue(
-      KafkaConfigProperties.property(None, "schema.registry.url"),
+      """"schema.registry.url"""",
       fromAnyRef("schema_registry_should_not_be_used:8081")
     )
     .withValue("avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(false))

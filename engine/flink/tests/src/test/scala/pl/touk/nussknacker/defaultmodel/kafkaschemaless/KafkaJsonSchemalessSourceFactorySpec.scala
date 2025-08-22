@@ -32,6 +32,8 @@ class KafkaJsonSchemalessSourceFactorySpec
 
   type KafkaSource = SourceFactory with KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
 
+  override protected val kafkaComponentsConfigPrefix: String = "components.kafka.config"
+
   private val schemaRegistryClientProvider = MockSchemaRegistryClientHolder.registerSchemaRegistryClient()
 
   override def schemaRegistryClient: SchemaRegistryClient = schemaRegistryClientProvider.schemaRegistryClient

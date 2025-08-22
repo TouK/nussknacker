@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroPayloadIntegrationSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.schemedkafka.helpers.FlinkKafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.nio.charset.StandardCharsets
 
-class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
+class KafkaAvroPayloadIntegrationSpec extends FlinkKafkaAvroSpecMixin with BeforeAndAfter {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -36,10 +36,8 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
 
   import KafkaAvroIntegrationMockSchemaRegistry._
 
-  private lazy val provider: KafkaAvroTestComponentProvider = new KafkaAvroTestComponentProvider(
-    MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient),
-    sinkForInputMetaResultsHolder
-  )
+  private lazy val provider: TestFlinkKafkaComponentProvider =
+    new TestFlinkKafkaComponentProvider(schemaRegistryClientFactory, sinkForInputMetaResultsHolder)
 
   protected val paymentSchemas: List[Schema]  = List(PaymentV1.schema, PaymentV2.schema)
   protected val payment2Schemas: List[Schema] = List(PaymentV1.schema, PaymentV2.schema, PaymentNotCompatible.schema)

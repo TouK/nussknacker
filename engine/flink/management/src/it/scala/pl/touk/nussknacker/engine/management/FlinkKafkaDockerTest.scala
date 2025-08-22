@@ -1,18 +1,17 @@
 package pl.touk.nussknacker.engine.management
 
 import com.dimafeng.testcontainers._
-import com.typesafe.config.{Config, ConfigValueFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.config.{Config, ConfigValueFactory}
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.{BeforeAndAfterAll, Suite}
-import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.deployment.User
 import pl.touk.nussknacker.engine.flink.test.docker.{WithFlinkContainers, WithKafkaContainer}
-import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, KafkaConfigProperties, WithModelConfig}
+import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, KafkaConfigProperties}
 
 import scala.jdk.CollectionConverters._
 
-trait DockerTest
+trait FlinkKafkaDockerTest
 // BeforeAndAfterAll is required even if it is not used directly here - without this, we access mapped ports before containers initialization
     extends BeforeAndAfterAll
     with ForAllTestContainer
@@ -35,7 +34,7 @@ trait DockerTest
       .resolveProcessingTypeConfig(config)
       .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(modelClassPath.asJava))
       .withValue("modelConfig.enableObjectReuse", fromAnyRef(false))
-      .withValue(KafkaConfigProperties.property(Some("modelConfig.kafka"), "auto.offset.reset"), fromAnyRef("earliest"))
+      .withValue(KafkaConfigProperties.property("modelConfig.components.kafka.config", "auto.offset.reset"), fromAnyRef("earliest"))
       .withValue("category", fromAnyRef("Category1"))
       .withValue(
         "modelConfig.kafka.topicsExistenceValidationConfig.enabled",
@@ -49,14 +48,14 @@ trait DockerTest
           fromAnyRef(savepointDir.resolve("savepoint").toFile.toURI.toString)
         )
         .withValue(
-          KafkaConfigProperties.bootstrapServersPropertyNestedAtPath("modelConfig.kafka"),
+          KafkaConfigProperties.bootstrapServersProperty("modelConfig.components.kafka.config"),
           fromAnyRef(hostKafkaAddress)
         )
     } else {
       baseConfig
         .withValue("deploymentConfig.restUrl", fromAnyRef(jobManagerRestUrl))
         .withValue(
-          KafkaConfigProperties.bootstrapServersPropertyNestedAtPath("modelConfig.kafka"),
+          KafkaConfigProperties.bootstrapServersProperty("modelConfig.components.kafka.config"),
           fromAnyRef(dockerKafkaAddress)
         )
     }

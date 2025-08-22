@@ -8,14 +8,14 @@ import pl.touk.nussknacker.engine.schemedkafka.{
   TopicsMatchingPatternWithExistingSubjectsSelectionStrategy,
   TopicsWithExistingSubjectSelectionStrategy
 }
-import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.schemedkafka.helpers.FlinkKafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
 
 import java.util.regex.Pattern
 
-class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
+class TopicSelectionStrategySpec extends FlinkKafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
 
   import KafkaAvroSourceMockSchemaRegistry._
 

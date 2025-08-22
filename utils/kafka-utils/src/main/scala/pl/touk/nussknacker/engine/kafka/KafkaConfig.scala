@@ -35,7 +35,8 @@ case class KafkaConfig(
     sinkDeliveryGuarantee: Option[SinkDeliveryGuarantee.Value] = None,
     showTopicsWithoutSchema: Boolean = true,
     kafkaAdminConfig: KafkaAdminConfig = KafkaAdminConfig(),
-    useDataSampleParamForSchemalessJsonTopicBasedKafkaSource: Boolean = false
+    useDataSampleParamForSchemalessJsonTopicBasedKafkaSource: Boolean = false,
+    disableNamespace: Boolean = false
 ) {
 
   def schemaRegistryClientKafkaConfig: SchemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(
@@ -83,27 +84,23 @@ object KafkaConfig {
 
   val empty: KafkaConfig = KafkaConfig(kafkaProperties = None, kafkaEspProperties = None)
 
-  val DefaultGlobalKafkaConfigPath                              = "kafka"
   val DefaultOffsetResetStrategyPath                            = "defaultOffsetResetStrategy"
   val DefaultMaxOutOfOrdernessMillisPath                        = "defaultMaxOutOfOrdernessMillis"
   val DefaultMaxOutOfOrdernessMillisDefault: java.time.Duration = java.time.Duration.ofMillis(60000)
-
-  // FIXME abr: remove
-  def parseConfigNestedAtKafkaKeyOpt(config: Config): Option[KafkaConfig] = {
-    config.getAs[KafkaConfig](DefaultGlobalKafkaConfigPath)
-  }
 
   // FIXME abr: use it everywhere + add parseConfigOpt getOrElse parseConfigNestedAtConfigKey legacy variant
   def parseConfig(config: Config): KafkaConfig = {
     config.as[KafkaConfig]
   }
 
+  // Flink engine has kafka components config nested in componentConfig.config
   def parseConfigNestedAtConfigKey(config: Config): KafkaConfig = {
     config.as[KafkaConfig]("config")
   }
 
+  // Lite engine has kafka components config nested in modelConfig.kafka
   def parseConfigNestedAtKafkaKey(config: Config): KafkaConfig = {
-    config.as[KafkaConfig](DefaultGlobalKafkaConfigPath)
+    config.as[KafkaConfig]("kafka")
   }
 
 }

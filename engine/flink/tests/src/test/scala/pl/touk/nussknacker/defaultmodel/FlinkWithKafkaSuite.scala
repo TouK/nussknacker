@@ -127,11 +127,11 @@ abstract class FlinkWithKafkaSuite
     val config = ConfigFactory
       .empty()
       .withValue(
-        KafkaConfigProperties.bootstrapServersPropertyNestedAtPath("config"),
+        KafkaConfigProperties.bootstrapServersProperty("config"),
         fromAnyRef(kafkaServer.bootstrapServers)
       )
       .withValue(
-        KafkaConfigProperties.property(Some("config"), "auto.offset.reset"),
+        KafkaConfigProperties.property("config", "auto.offset.reset"),
         fromAnyRef("earliest")
       )
       .withValue("config.avroAsJsonSerialization", fromAnyRef(avroAsJsonSerialization))
@@ -145,7 +145,7 @@ abstract class FlinkWithKafkaSuite
   }
 
   protected def maybeAddSchemaRegistryUrl(config: Config): Config = config.withValue(
-    KafkaConfigProperties.property(Some("config"), "schema.registry.url"),
+    KafkaConfigProperties.property("config", "schema.registry.url"),
     fromAnyRef("not_used")
   )
 

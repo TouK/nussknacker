@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.namespaces.{Namespace, NamingStrategy}
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroNamespacedSpec.sinkForInputMetaResultsHolder
-import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.schemedkafka.helpers.FlinkKafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
+class KafkaAvroNamespacedSpec extends FlinkKafkaAvroSpecMixin with OptionValues {
 
   import KafkaAvroNamespacedMockSchemaRegistry._
 
@@ -38,11 +38,8 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
   override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
     MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
 
-  private lazy val provider: KafkaAvroTestComponentProvider =
-    new KafkaAvroTestComponentProvider(
-      MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient),
-      sinkForInputMetaResultsHolder
-    )
+  private lazy val provider: TestFlinkKafkaComponentProvider =
+    new TestFlinkKafkaComponentProvider(schemaRegistryClientFactory, sinkForInputMetaResultsHolder)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

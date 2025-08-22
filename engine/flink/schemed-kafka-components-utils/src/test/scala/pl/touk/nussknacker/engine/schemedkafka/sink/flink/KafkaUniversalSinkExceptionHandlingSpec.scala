@@ -37,6 +37,8 @@ class KafkaUniversalSinkExceptionHandlingSpec
     with KafkaAvroSinkSpecMixin
     with CorrectExceptionHandlingSpec {
 
+  override protected val kafkaComponentsConfigPrefix: String = "components.kafka.config"
+
   private val topic = TopicName.ForSink("topic1")
 
   override protected def schemaRegistryClient: SchemaRegistryClient = schemaRegistryMockClient
@@ -51,7 +53,7 @@ class KafkaUniversalSinkExceptionHandlingSpec
     registerSchema(topic.toUnspecialized, FullNameV1.schema, isKey = false)
 
     val schemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
-    val kafkaConfig                 = KafkaConfig.parseConfigNestedAtKafkaKey(modelConfig)
+    val kafkaConfig                 = KafkaConfig.parseConfig(modelConfig.getConfig(kafkaComponentsConfigPrefix))
     val universalProvider           = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
     val kafkaComponent = new UniversalKafkaSinkFactory(
       schemaRegistryClientFactory,

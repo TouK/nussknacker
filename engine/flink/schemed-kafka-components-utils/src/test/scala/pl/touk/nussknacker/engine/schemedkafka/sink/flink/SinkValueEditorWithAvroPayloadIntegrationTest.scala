@@ -8,10 +8,10 @@ import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
-import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, KafkaAvroTestComponentProvider}
+import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, TestFlinkKafkaComponentProvider}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.encode.ToAvroSchemaBasedEncoder
-import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.schemedkafka.helpers.FlinkKafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.TestSchemaWithRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
@@ -20,16 +20,13 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import scala.jdk.CollectionConverters._
 
-class SinkValueEditorWithAvroPayloadIntegrationTest extends KafkaAvroSpecMixin with BeforeAndAfter {
+class SinkValueEditorWithAvroPayloadIntegrationTest extends FlinkKafkaAvroSpecMixin with BeforeAndAfter {
   import SinkValueEditorWithAvroPayloadIntegrationTest._
 
   private var topicConfigs: Map[String, TopicConfig] = Map.empty
 
-  private lazy val provider: KafkaAvroTestComponentProvider =
-    new KafkaAvroTestComponentProvider(
-      MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient),
-      sinkForInputMetaResultsHolder
-    )
+  private lazy val provider: TestFlinkKafkaComponentProvider =
+    new TestFlinkKafkaComponentProvider(schemaRegistryClientFactory, sinkForInputMetaResultsHolder)
 
   override protected def schemaRegistryClient: SchemaRegistryClient = schemaRegistryMockClient
 

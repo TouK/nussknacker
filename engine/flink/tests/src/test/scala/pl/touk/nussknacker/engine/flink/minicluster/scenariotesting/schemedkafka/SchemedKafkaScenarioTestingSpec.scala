@@ -25,11 +25,11 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
-import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroTestComponentProvider
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
   schemaVersionParamName,
   topicParamName
 }
+import pl.touk.nussknacker.engine.schemedkafka.TestFlinkKafkaComponentProvider
 import pl.touk.nussknacker.engine.schemedkafka.schema.{Address, Company}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
@@ -57,29 +57,29 @@ class SchemedKafkaScenarioTestingSpec
   private implicit val ec: ExecutionContext = ExecutionContext.global
   private implicit val ioRuntime: IORuntime = IORuntime.global
 
-  private val provider: KafkaAvroTestComponentProvider =
-    new KafkaAvroTestComponentProvider(
+  private val provider: TestFlinkKafkaComponentProvider =
+    new TestFlinkKafkaComponentProvider(
       MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient),
       sinkForInputMetaResultsHolder
     )
 
-  private val config = ConfigFactory
+  private val modelConfig = ConfigFactory
     .empty()
     .withValue(
-      KafkaConfigProperties.bootstrapServersPropertyNestedAtPath(),
+      KafkaConfigProperties.bootstrapServersProperty("components.kafka.config"),
       fromAnyRef("kafka_should_not_be_used:9092")
     )
     .withValue(
-      KafkaConfigProperties.property("schema.registry.url"),
+      KafkaConfigProperties.property("components.kafka.config", "schema.registry.url"),
       fromAnyRef("schema_registry_should_not_be_used:8081")
     )
-    .withValue("kafka.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
-    .withValue("kafka.avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(false))
+    .withValue("components.kafka.config.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
+    .withValue("components.kafka.config.avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(false))
 
   private val modelData =
     LocalModelData(
-      config,
-      provider.createComponents(ModelConfig.parse(config)),
+      modelConfig,
+      provider.createComponents(ModelConfig.parse(modelConfig)),
       modelClassLoader = ModelClassLoader.flinkWorkAroundEmptyClassloader
     )
 

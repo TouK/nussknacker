@@ -31,6 +31,8 @@ class UniversalKafkaDeserializerTest
 
   import MockSchemaRegistry._
 
+  override protected val kafkaComponentsConfigPrefix: String = "components.kafka.config"
+
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 
   private val confluentSchemaRegistryClient = new DefaultConfluentSchemaRegistryClient(

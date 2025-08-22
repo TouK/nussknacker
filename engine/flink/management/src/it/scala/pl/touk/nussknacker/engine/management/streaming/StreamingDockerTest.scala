@@ -16,11 +16,11 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.classloader.DeploymentManagersClassLoaderFactory
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.kafka.KafkaClient
-import pl.touk.nussknacker.engine.management.DockerTest
+import pl.touk.nussknacker.engine.management.FlinkKafkaDockerTest
 
 import java.util.UUID
 
-trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matchers with OptionValues {
+trait StreamingDockerTest extends FlinkKafkaDockerTest with BeforeAndAfterAll with Matchers with OptionValues {
   // Warning: we need StrictLogging capability instead of LazyLogging because with LazyLogging we had a deadlock during kafkaClient allocation
   self: Suite with StrictLogging =>
 

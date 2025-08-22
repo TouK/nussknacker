@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaJsonPayloadIntegrationSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.helpers.{
-  KafkaAvroSpecMixin,
+  FlinkKafkaAvroSpecMixin,
   SimpleKafkaJsonDeserializer,
   SimpleKafkaJsonSerializer
 }
@@ -19,15 +19,12 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.M
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixin with BeforeAndAfter {
+class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with FlinkKafkaAvroSpecMixin with BeforeAndAfter {
 
   import KafkaAvroIntegrationMockSchemaRegistry._
 
-  private lazy val provider: KafkaAvroTestComponentProvider =
-    new KafkaAvroTestComponentProvider(
-      MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient),
-      sinkForInputMetaResultsHolder
-    )
+  private lazy val provider: TestFlinkKafkaComponentProvider =
+    new TestFlinkKafkaComponentProvider(schemaRegistryClientFactory, sinkForInputMetaResultsHolder)
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
@@ -41,7 +38,8 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val finalModelConfig = modelConfig.withValue("kafka.avroAsJsonSerialization", fromAnyRef(true))
+    val finalModelConfig =
+      modelConfig.withValue(s"$kafkaComponentsConfigPrefix.avroAsJsonSerialization", fromAnyRef(true))
     modelData = LocalModelData(
       finalModelConfig,
       provider.createComponents(ModelConfig.parse(finalModelConfig)),
