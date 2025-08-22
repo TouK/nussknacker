@@ -46,7 +46,12 @@ const emptyGraphState: GraphState = {
     testFormParameters: null,
     selectionState: [],
     processCounts: {},
-    testResults: null,
+    testing: {
+        testResults: null,
+        testResultsLoading: false,
+        testData: null,
+        testingEventParameters: null,
+    },
 };
 
 export function updateValidationResult(state: GraphState, action: { validationResult: ValidationResult }): ValidationResult {
@@ -103,7 +108,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "TEST_RESULTS_LOADING": {
             return {
                 ...state,
-                testResultsLoading: true,
+                testing: {
+                    ...state.testing,
+                    testResultsLoading: true,
+                },
             };
         }
         case "UPDATE_IMPORTED_PROCESS": {
@@ -374,19 +382,31 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 ...state,
                 visibleDataType: VisibleDataType.test,
                 testResults: action.testResults,
-                testData: {
-                    ...state.testData,
-                    [action.testData?.sourceId]: action.testData?.parameterExpressions,
+                testing: {
+                    ...state.testing,
+                    testData: {
+                        ...state.testing.testData,
+                        [action.testData?.sourceId]: action.testData?.parameterExpressions,
+                    },
+                    testResultsLoading: false,
                 },
                 scenarioLoading: false,
-                testResultsLoading: false,
+            };
+        }
+        case "SET_TESTING_EVENTS_PARAMETERS": {
+            return {
+                ...state,
+                testing: {
+                    ...state.testing,
+                    testingEventParameters: action.testingEventsParameters,
+                },
             };
         }
         case "SET_TEST_DATA": {
             return {
                 ...state,
                 testData: {
-                    ...state.testData,
+                    ...state.testing.testData,
                     [action.testData?.sourceId]: action.testData?.parameterExpressions,
                 },
             };

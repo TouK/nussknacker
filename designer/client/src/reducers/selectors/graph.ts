@@ -29,6 +29,8 @@ export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scena
     },
 });
 
+export const getTesting = createSelector(getGraph, (g) => g.testing);
+
 export const getNodes = createSelector(getScenarioGraph, (g) => g.nodes);
 
 export const getScenarioLabels = createSelector(getGraph, (g) => g.scenario.labels);
@@ -101,11 +103,12 @@ export const isArchivePossible = createSelector(
 );
 export const getTestCapabilities = createSelector(getGraph, (g) => g.testCapabilities);
 export const getTestType = createSelector(getGraph, (g) => g.testType);
+export const getTestingEventParameters = createSelector(getTesting, (g) => g.testingEventParameters);
 export const getPerformedTestType = createSelector(getGraph, (g) => g.performedTestType);
 export const getTestParameters = createSelector(getGraph, (g) => g.testFormParameters || ([] as TestFormParameters[]));
-export const getTestResults = createSelector(getGraph, (g) => g.testResults);
-export const getTestResultsLoading = createSelector(getGraph, (g) => g.testResultsLoading);
-export const getTestData = createSelector(getGraph, (g) => g.testData || ({} as TestData));
+export const getTestResults = createSelector(getTesting, (g) => g.testResults);
+export const getTestResultsLoading = createSelector(getTesting, (g) => g.testResultsLoading);
+export const getTestData = createSelector(getTesting, (g) => g.testData || ({} as TestData));
 export const getProcessCountsRefresh = createSelector(getGraph, (g) => g.processCountsRefresh || null);
 export const getProcessCounts = createSelector(getGraph, (g): ProcessCounts => g.processCounts || ({} as ProcessCounts));
 export const getIsTestingMode = createSelector(

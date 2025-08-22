@@ -16,16 +16,16 @@ type SourceSelectCell = CustomCell<SourceSelectCellData>;
 const isSourceSelectCell = (cell: GridCell): cell is SourceSelectCell =>
     cell.kind === GridCellKind.Custom && (cell as SourceSelectCell).data?.kind === "source-select-cell";
 
-export interface EventRow {
+export interface TestingEventParameters {
     sourceId: string;
     timestamp?: string; // allow undefined during creation
     variables: string; // JSON string
 }
 
 interface EventsTableProps {
-    data?: EventRow[];
-    onDataChange: (data: EventRow[]) => void;
-    defaultEvent: EventRow;
+    data?: TestingEventParameters[];
+    onDataChange: (data: TestingEventParameters[]) => void;
+    defaultEvent: TestingEventParameters;
     sourceOptions: string[];
     className?: string;
     sourceParameters: TestFormParameters[];
@@ -36,7 +36,7 @@ const emptySelection = {
     rows: CompactSelection.empty(),
 };
 
-export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChange, sourceOptions, className, defaultEvent }) => {
+export const TestingEventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChange, sourceOptions, className, defaultEvent }) => {
     const tableTheme = useTableTheme();
     const [selection, setSelection] = useState<GridSelection>(emptySelection);
     const [hasFocus, setHasFocus] = useState(false);
@@ -187,10 +187,10 @@ export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChang
         (newValues: readonly (EditListItem | { location: Item; value: SourceSelectCell })[]) => {
             if (!newValues.length) return;
             // Build a map of row index -> updated row (immutable)
-            const rowUpdates: Record<number, EventRow> = {};
+            const rowUpdates: Record<number, TestingEventParameters> = {};
             newValues.forEach(({ location, value }) => {
                 const [col, row] = location;
-                const base: EventRow = rowUpdates[row] || { ...data[row] } || { sourceId: "", timestamp: "", variables: "" };
+                const base: TestingEventParameters = rowUpdates[row] || { ...data[row] } || { sourceId: "", timestamp: "", variables: "" };
                 let cellValue: string;
                 if (isSourceSelectCell(value)) {
                     cellValue = value.data.value;
@@ -212,7 +212,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChang
                 }
             });
             const maxRow = Math.max(...Object.keys(rowUpdates).map(Number));
-            const next: EventRow[] = [];
+            const next: TestingEventParameters[] = [];
             for (let r = 0; r < Math.max(data.length, maxRow + 1); r++) {
                 if (rowUpdates[r]) {
                     next[r] = rowUpdates[r];

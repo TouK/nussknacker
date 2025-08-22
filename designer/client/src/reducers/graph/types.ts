@@ -1,6 +1,7 @@
 import type { Layout, RefreshData } from "../../actions/nk";
 import type { PerformedTestType } from "../../actions/nk/displayTestResults";
 import type { TestCapabilities, TestFormParameters } from "../../common/TestResultUtils";
+import type { TestingEventParameters } from "../../components/modals/Testing/TestingEventsTable";
 import type { Scenario } from "../../components/Process/types";
 import type { SourceWithParametersTest } from "../../http/HttpService";
 import type { ProcessCounts, TestResultsDto } from "../../http/resultsWithCountsDto";
@@ -21,13 +22,15 @@ export type GraphState = {
     selectionState?: string[];
     layout: Layout;
     testCapabilities?: TestCapabilities;
-    testType?: string;
     performedTestType?: PerformedTestType;
     testFormParameters?: TestFormParameters[];
     visibleDataType?: VisibleDataType | null;
-    testResults: TestResultsDto;
-    testResultsLoading?: boolean;
-    testData?: TestData;
+    testing: {
+        testResults: TestResultsDto;
+        testResultsLoading?: boolean;
+        testData?: TestData;
+        testingEventParameters?: TestingEventParameters[];
+    };
     processCountsRefresh?: RefreshData;
     processCounts: ProcessCounts;
 };

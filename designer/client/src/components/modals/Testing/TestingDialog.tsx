@@ -13,10 +13,10 @@ import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
-import type { EventRow } from "./EventsTable";
-import { EventsTable } from "./EventsTable";
 import type { TestingContextState } from "./TestingContext";
 import { TestingContext, useTestingState } from "./TestingContext";
+import type { TestingEventParameters } from "./TestingEventsTable";
+import { TestingEventsTable } from "./TestingEventsTable";
 
 type DocsLink = {
     url: string;
@@ -54,7 +54,7 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
         [defaultParameter.sourceId, testCapabilities.testWithParameters.sourceParameters],
     );
 
-    const [events, setEvents] = useState<EventRow[]>([defaultEvent]);
+    const [events, setEvents] = useState<TestingEventParameters[]>([defaultEvent]);
     const sourceOptions = testCapabilities.testWithParameters.sourceParameters.flatMap((sourceParameter) => sourceParameter.sourceId);
 
     const buttons: WindowButtonProps[] = useMemo(
@@ -83,7 +83,7 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
             buttons={buttons}
         >
             <ContentSize>
-                <EventsTable
+                <TestingEventsTable
                     sourceOptions={sourceOptions}
                     sourceParameters={testCapabilities.testWithParameters.sourceParameters}
                     data={events}

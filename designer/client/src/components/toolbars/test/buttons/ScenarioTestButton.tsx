@@ -2,12 +2,13 @@ import { alpha } from "@mui/material";
 import React, { useCallback, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { updateTestType } from "../../../../actions/nk/displayTestResults";
+import { testScenarioWithEventsData, updateTestType } from "../../../../actions/nk/displayTestResults";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
 import {
     getPerformedTestType,
     getTestCapabilities,
+    getTestingEventParameters,
     getTestResultsLoading,
     isLatestProcessVersion,
 } from "../../../../reducers/selectors/graph";
@@ -43,6 +44,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { disabled, name, title, titleOverride, docs, markdownContent, type } = props;
     const { t } = useTranslation();
     const { open } = useWindows();
+    const testingEventsParameters = useAppSelector(getTestingEventParameters);
 
     const testingState = useTestingButtonContext();
 
@@ -88,8 +90,8 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const dispatch = useAppDispatch();
     const openDialog = useCallback(
         (preset?: Preset) => {
-            if (preset?.value === RERUN_PREVIOUS) {
-                testingState.action();
+            if (testingEventsParameters && preset?.label !== "Run a new test") {
+                dispatch(testScenarioWithEventsData(testingEventsParameters));
                 return;
             }
             dispatch(updateTestType(preset?.value));
@@ -111,7 +113,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                 },
             });
         },
-        [dispatch, docs, markdownContent, open, t, testingState],
+        [dispatch, docs, markdownContent, open, t, testingEventsParameters, testingState.handleSetAction],
     );
 
     const { variant } = useContext(ToolbarButtonsContext);
@@ -134,7 +136,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     return (
         <ToolbarButton
             name={
-                preset?.value === RERUN_PREVIOUS
+                testingEventsParameters
                     ? t("panels.actions.scenarioTest.button.nameAlt", "Rerun test")
                     : name || t("panels.actions.scenarioTest.button.name", "Test")
             }

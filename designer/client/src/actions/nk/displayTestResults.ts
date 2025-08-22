@@ -1,6 +1,7 @@
 import { cloneDeep } from "lodash";
 import type { ProcessName } from "src/components/Process/types";
 
+import type { TestingEventParameters } from "../../components/modals/Testing/TestingEventsTable";
 import type { TestType } from "../../components/modals/Testing/useTestOptions";
 import type { SourceWithParametersTest } from "../../http/HttpService";
 import HttpService from "../../http/HttpService";
@@ -43,18 +44,19 @@ export function testScenarioWithGeneratedData(testSampleSize: string): ThunkActi
     );
 }
 
-export function testScenarioWithEventsData(events: any): ThunkAction {
+export function testScenarioWithEventsData(testingEventsParameters: TestingEventParameters[]): ThunkAction {
     return wrapWithTestAction((scenarioName, scenarioGraph) =>
         HttpService.testScenarioWithEventsData(
             scenarioName,
             scenarioGraph,
-            cloneDeep(events).map((event) => {
+            cloneDeep(testingEventsParameters).map((event) => {
                 event.variables = JSON.parse(event.variables);
 
                 return event;
             }),
         ).then(({ data }) => ({
             testResults: data,
+            testingEventsParameters: testingEventsParameters,
         })),
     );
 }
@@ -70,6 +72,7 @@ export type TestsActions =
           type: "DISPLAY_TEST_RESULTS_DETAILS";
           testResults: TestResultsDto;
           testData?: SourceWithParametersTest;
+          testingEventParameters?: TestingEventParameters[];
       }
     | {
           type: "UPDATE_TEST_TYPE";
@@ -82,6 +85,10 @@ export type TestsActions =
     | {
           type: "SET_PERFORMED_TEST_TYPE";
           performedTestType: PerformedTestType;
+      }
+    | {
+          type: "SET_TESTING_EVENTS_PARAMETERS";
+          testingEventsParameters: TestingEventParameters[];
       };
 
 function wrapWithTestAction(
@@ -91,6 +98,7 @@ function wrapWithTestAction(
     ) => Promise<{
         testResults: ResultsWithCountsDto;
         testData?: SourceWithParametersTest;
+        testingEventsParameters?: TestingEventParameters[];
     }>,
 ): ThunkAction {
     return (dispatch, getState) => {
@@ -99,7 +107,9 @@ function wrapWithTestAction(
         const scenarioGraph = getScenarioGraph(state);
         const processName = getProcessName(state);
         fn(processName, scenarioGraph)
-            .then(({ testResults, testData }) => dispatch(displayTestResults(testResults, testData)))
+            .then(({ testResults, testData, testingEventsParameters }) =>
+                dispatch(displayTestResults(testResults, testData, testingEventsParameters)),
+            )
             .catch(() => dispatch({ type: "TEST_RESULTS_FAILED" }));
     };
 }
@@ -112,6 +122,13 @@ export function displayTestResultsDetails(testResults: TestResultsDto, testData?
     };
 }
 
+export function setTestingEventsParameters(testingEventsParameters: TestingEventParameters[]): Action {
+    return {
+        type: "SET_TESTING_EVENTS_PARAMETERS",
+        testingEventsParameters,
+    };
+}
+
 export function updateTestType(testType: string): Action {
     return {
         type: "UPDATE_TEST_TYPE",
@@ -119,18 +136,17 @@ export function updateTestType(testType: string): Action {
     };
 }
 
-export function setPerformedTestType(performedTestType: PerformedTestType): Action {
-    return {
-        type: "SET_PERFORMED_TEST_TYPE",
-        performedTestType,
-    };
-}
-
-function displayTestResults({ counts, results }: ResultsWithCountsDto, testData?: SourceWithParametersTest): ThunkAction {
+function displayTestResults(
+    { counts, results }: ResultsWithCountsDto,
+    testData?: SourceWithParametersTest,
+    testingEventsParameters?: TestingEventParameters[],
+): ThunkAction {
     return (dispatch) => {
         dispatch(displayProcessCounts(counts));
         dispatch(displayTestResultsDetails(results, testData));
-        dispatch(setPerformedTestType("rerunPrevious"));
+        if (testingEventsParameters) {
+            dispatch(setTestingEventsParameters(testingEventsParameters));
+        }
     };
 }
 
