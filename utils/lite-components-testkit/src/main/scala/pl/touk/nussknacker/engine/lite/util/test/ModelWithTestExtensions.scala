@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 object ModelWithTestExtensions {
 
   def apply(
-      config: Config,
+      modelConfig: Config,
       components: List[ComponentDefinition],
       extraGlobalVariables: Map[String, AnyRef]
   ): ModelData = {
@@ -26,7 +26,7 @@ object ModelWithTestExtensions {
       }
     }
 
-    LocalModelData(config, components = components, configCreator)
+    LocalModelData(modelConfig, components = components, configCreator)
   }
 
 }

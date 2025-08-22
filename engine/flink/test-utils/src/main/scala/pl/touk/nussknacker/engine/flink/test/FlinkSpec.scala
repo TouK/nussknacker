@@ -6,11 +6,11 @@ import org.apache.flink.configuration.Configuration
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 import pl.touk.nussknacker.engine.flink.minicluster.{FlinkMiniClusterFactory, FlinkMiniClusterWithServices}
-import pl.touk.nussknacker.test.WithConfig
+import pl.touk.nussknacker.test.WithModelConfig
 
 import java.util.UUID
 
-trait FlinkSpec extends BeforeAndAfterAll with BeforeAndAfter with WithConfig { self: Suite =>
+trait FlinkSpec extends BeforeAndAfterAll with BeforeAndAfter with WithModelConfig { self: Suite =>
 
   /**
     * Used to check consumed errors: RecordingExceptionConsumer.dataFor(runId)
@@ -27,9 +27,9 @@ trait FlinkSpec extends BeforeAndAfterAll with BeforeAndAfter with WithConfig { 
     )
   }
 
-  override protected def resolveConfig(config: Config): Config =
+  override protected def resolveModelConfig(config: Config): Config =
     RecordingExceptionConsumerProvider
-      .configWithProvider(super.resolveConfig(config), runId)
+      .configWithProvider(super.resolveModelConfig(config), runId)
       .withValue(
         "checkpointConfig.checkpointInterval",
         fromAnyRef("1s")

@@ -60,16 +60,16 @@ class KafkaExceptionConsumerSpec
   ): KafkaExceptionInfo = {
     val topicName = s"$scenarioName.errors"
 
-    val configWithExceptionHandler = config
+    val modelConfigWithExceptionHandler = modelConfig
       .withValue("exceptionHandler.type", fromAnyRef("Kafka"))
       .withValue("exceptionHandler.topic", fromAnyRef(topicName))
       .withValue("exceptionHandler.maxMessageBytes", fromAnyRef(maxMessageBytes))
       .withValue("exceptionHandler.includeInputEvent", fromAnyRef(true))
       .withValue("exceptionHandler.additionalParams.configurableKey", fromAnyRef("sampleValue"))
-      .withValue("exceptionHandler.kafka", config.getConfig("kafka").root())
+      .withValue("exceptionHandler.kafka", modelConfig.getConfig("kafka").root())
 
     val modelData = LocalModelData(
-      configWithExceptionHandler,
+      modelConfigWithExceptionHandler,
       List(
         ComponentDefinition(
           "source",

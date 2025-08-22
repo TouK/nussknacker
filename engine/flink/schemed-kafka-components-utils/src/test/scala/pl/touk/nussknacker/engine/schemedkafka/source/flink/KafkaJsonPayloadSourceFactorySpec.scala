@@ -19,8 +19,8 @@ class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   override protected def valueSerializer: Serializer[Any] = SimpleKafkaJsonSerializer
 
-  override def resolveConfig(config: Config): Config =
-    super.resolveConfig(config).withValue("kafka.avroAsJsonSerialization", fromAnyRef(true))
+  override def resolveModelConfig(config: Config): Config =
+    super.resolveModelConfig(config).withValue("kafka.avroAsJsonSerialization", fromAnyRef(true))
 
   test("should read generated generic record in v1 with null key") {
     val givenValue = FullNameV1.record

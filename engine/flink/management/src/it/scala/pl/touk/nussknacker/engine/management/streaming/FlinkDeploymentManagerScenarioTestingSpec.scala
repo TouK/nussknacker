@@ -15,8 +15,8 @@ import pl.touk.nussknacker.engine.api.deployment.DMTestScenarioCommand
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestSourceSpecificFormatJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
-import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures, WithConfig}
+import pl.touk.nussknacker.engine.management.WithProcessingTypeConfig
+import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures}
 
 import java.util.UUID
 import scala.concurrent.Await
@@ -27,16 +27,14 @@ class FlinkDeploymentManagerScenarioTestingSpec
     extends AnyFlatSpec
     with Matchers
     with VeryPatientScalaFutures
-    with WithConfig
+    with WithProcessingTypeConfig
     with BeforeAndAfterAll {
 
   private val classPath: List[String] = TestModelClassPaths.scalaClasspath
 
-  override protected val configFilename: Option[String] = Some("application.conf")
-
-  override def resolveConfig(config: Config): Config = {
+  override def resolveProcessingTypeConfig(config: Config): Config = {
     super
-      .resolveConfig(config)
+      .resolveProcessingTypeConfig(config)
       .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://dummy:1234"))
       .withValue(
         KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"),
@@ -52,7 +50,7 @@ class FlinkDeploymentManagerScenarioTestingSpec
 
   private lazy val (deploymentManager, releaseDeploymentMangerResources) =
     FlinkDeploymentManagerProviderHelper
-      .createDeploymentManager(ConfigWithUnresolvedVersion(config))
+      .createDeploymentManager(ConfigWithUnresolvedVersion(rawProcessingTypeConfig))
       .allocated
       .unsafeRunSync()
 

@@ -226,7 +226,7 @@ class UniversalCrossSourceLiteTest
 
   private def createRunner =
     TestScenarioRunner
-      .kafkaLiteBased(resolveConfig(ConfigFactory.empty()))
+      .kafkaLiteBased(resolveModelConfig(ConfigFactory.empty()))
       .build()
 
 }

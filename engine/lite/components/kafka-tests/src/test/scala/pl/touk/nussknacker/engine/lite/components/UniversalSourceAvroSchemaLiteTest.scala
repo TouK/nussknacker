@@ -65,7 +65,7 @@ class UniversalSourceAvroSchemaLiteTest
 
   test("should read data with json payload on avro schema based topic") {
     // Given
-    val config = resolveConfig(ConfigFactory.load())
+    val config = resolveModelConfig(ConfigFactory.load())
       .withValue("kafka.avroAsJsonSerialization", fromAnyRef(true))
     val runner = TestScenarioRunner.kafkaLiteBased(config).build()
     runner.registerAvroSchema(inputTopic.toUnspecialized, schema)

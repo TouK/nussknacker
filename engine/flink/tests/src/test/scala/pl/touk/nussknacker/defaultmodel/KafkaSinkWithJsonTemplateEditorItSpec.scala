@@ -22,9 +22,9 @@ class KafkaSinkWithJsonTemplateEditorItSpec extends FlinkWithKafkaSuite with Pat
 
   import SampleSchemas._
 
-  override def resolveConfig(config: Config): Config = {
+  override def resolveModelConfig(config: Config): Config = {
     super
-      .resolveConfig(config)
+      .resolveModelConfig(config)
       .withValue("jsonLikeValuesEnteringMode", ConfigValueFactory.fromAnyRef("SingleJsonTemplateParameter"))
   }
 

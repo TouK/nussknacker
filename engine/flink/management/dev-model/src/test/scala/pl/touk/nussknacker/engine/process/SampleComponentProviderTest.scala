@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matchers {
 
-  override protected lazy val config: Config = ConfigFactory.empty()
+  override protected lazy val modelConfig: Config = ConfigFactory.empty()
 
   test("detects component service") {
     val process =

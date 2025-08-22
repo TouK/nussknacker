@@ -30,7 +30,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
     def invokeWithSampleData(
         process: CanonicalProcess,
         data: List[SimpleRecord],
-        config: Config = config
+        modelConfig: Config = modelConfig
     ): Unit = {
       val defaultComponents = ProcessTestHelpers.prepareComponents(data)
       ProcessTestHelpers.logServiceResultsHolder.clear()
@@ -41,7 +41,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
       ProcessTestHelpers.optionalEndingCustomResultsHolder.clear()
       flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
         val modelData = LocalModelData(
-          config,
+          modelConfig,
           defaultComponents,
           configCreator = ProcessTestHelpersConfigCreator
         )

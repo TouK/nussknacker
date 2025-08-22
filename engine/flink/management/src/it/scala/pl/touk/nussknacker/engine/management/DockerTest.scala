@@ -8,7 +8,7 @@ import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.deployment.User
 import pl.touk.nussknacker.engine.flink.test.docker.{WithFlinkContainers, WithKafkaContainer}
-import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, KafkaConfigProperties, WithConfig}
+import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, KafkaConfigProperties, WithModelConfig}
 
 import scala.jdk.CollectionConverters._
 
@@ -18,7 +18,7 @@ trait DockerTest
     with ForAllTestContainer
     with WithFlinkContainers
     with WithKafkaContainer
-    with WithConfig
+    with WithProcessingTypeConfig
     with ExtremelyPatientScalaFutures {
   self: Suite with StrictLogging =>
 
@@ -30,11 +30,9 @@ trait DockerTest
     (kafkaContainer: LazyContainer[_]) :: (if (useMiniClusterForDeployment) Nil else flinkContainers): _*
   )
 
-  override protected val configFilename: Option[String] = Some("application.conf")
-
-  override def resolveConfig(config: Config): Config = {
+  override def resolveProcessingTypeConfig(config: Config): Config = {
     val baseConfig = super
-      .resolveConfig(config)
+      .resolveProcessingTypeConfig(config)
       .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(modelClassPath.asJava))
       .withValue("modelConfig.enableObjectReuse", fromAnyRef(false))
       .withValue(KafkaConfigProperties.property("modelConfig.kafka", "auto.offset.reset"), fromAnyRef("earliest"))
@@ -57,8 +55,6 @@ trait DockerTest
         .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), fromAnyRef(dockerKafkaAddress))
     }
   }
-
-  def processingTypeConfig: ProcessingTypeConfig = ProcessingTypeConfig.read(ConfigWithUnresolvedVersion(config))
 
   protected def modelClassPath: List[String]
 

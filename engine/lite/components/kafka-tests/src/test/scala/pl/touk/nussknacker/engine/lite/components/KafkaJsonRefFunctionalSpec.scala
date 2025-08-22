@@ -25,7 +25,7 @@ class KafkaJsonRefFunctionalSpec extends AnyFunSuite with KafkaSpec with Matcher
 
   private lazy val runner =
     TestScenarioRunner
-      .kafkaLiteBased(resolveConfig(ConfigFactory.empty()))
+      .kafkaLiteBased(resolveModelConfig(ConfigFactory.empty()))
       .build()
 
   test("filled record after empty record with schema using refs") {

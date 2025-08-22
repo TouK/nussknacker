@@ -21,9 +21,9 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
 
   import KafkaAvroNamespacedMockSchemaRegistry._
 
-  override protected def resolveConfig(config: Config): Config = {
+  override protected def resolveModelConfig(config: Config): Config = {
     super
-      .resolveConfig(config)
+      .resolveModelConfig(config)
       .withValue("namespace", fromAnyRef(namespace))
   }
 
@@ -40,7 +40,7 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    modelData = LocalModelData(config, List.empty, configCreator = creator)
+    modelData = LocalModelData(modelConfig, List.empty, configCreator = creator)
   }
 
   test("should read event in the same version as source requires and save it in the same version") {
