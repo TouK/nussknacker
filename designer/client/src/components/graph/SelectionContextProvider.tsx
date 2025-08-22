@@ -102,7 +102,14 @@ function useClipboardPermission(): boolean | string {
         };
     }, []);
 
-    return state === "prompt" || content;
+    return useMemo(() => {
+        if (!clipboardPermission.current) {
+            // "The clipboard-read and clipboard-write permissions are not supported (and not planned to be supported) by Firefox or Safari."
+            // https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API
+            return true;
+        }
+        return state === "prompt" || content;
+    }, [content, state]);
 }
 
 const SelectionContext = createContext<UserActions>(null);
