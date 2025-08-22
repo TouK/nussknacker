@@ -75,6 +75,7 @@ function getCaptureBindings({ cancel, completed, getPhase, setPhase, before }: G
                     y: clientY,
                 };
 
+                await before();
                 const phase: Phase = getPhase();
 
                 // Already dragging
@@ -97,16 +98,13 @@ function getCaptureBindings({ cancel, completed, getPhase, setPhase, before }: G
                 // preventing default as we are using this event
                 event.preventDefault();
 
-                await before();
-                requestAnimationFrame(() => {
-                    // Lifting at the current point to prevent the draggable item from
-                    // jumping by the sloppyClickThreshold
-                    const actions: FluidDragActions = phase.actions.fluidLift(point);
+                // Lifting at the current point to prevent the draggable item from
+                // jumping by the sloppyClickThreshold
+                const actions: FluidDragActions = phase.actions.fluidLift(point);
 
-                    setPhase({
-                        type: "DRAGGING",
-                        actions,
-                    });
+                setPhase({
+                    type: "DRAGGING",
+                    actions,
                 });
             },
         },
@@ -213,60 +211,73 @@ export default function useMouseSensor(
     const phaseRef = useRef<Phase>(idle);
     const unbindEventsRef = useRef<() => void>(noop);
 
-    const startCaptureBinding: MouseEventBinding = useMemo(
-        () => ({
-            eventName: "mousedown",
-            fn: function onMouseDown(event: MouseEvent) {
-                // Event already used
-                if (event.defaultPrevented) {
-                    return;
-                }
-                // only starting a drag if dragging with the primary mouse button
-                if (event.button !== primaryButton) {
-                    return;
-                }
+    const startCaptureBinding: MouseEventBinding[] = useMemo(
+        () => [
+            {
+                eventName: "mousedown",
+                fn: async function onMouseDown(event: MouseEvent) {
+                    // Event already used
+                    if (event.defaultPrevented) {
+                        return;
+                    }
+                    // only starting a drag if dragging with the primary mouse button
+                    if (event.button !== primaryButton) {
+                        return;
+                    }
 
-                // Do not start a drag if any modifier key is pressed
-                if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
-                    return;
-                }
+                    // Do not start a drag if any modifier key is pressed
+                    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+                        return;
+                    }
 
-                const draggableId: DraggableId | null = api.findClosestDraggableId(event);
+                    const draggableId: DraggableId | null = api.findClosestDraggableId(event);
 
-                if (!draggableId) {
-                    return;
-                }
+                    if (!draggableId) {
+                        return;
+                    }
 
-                delayPromise.current = delayPromiseGetter(draggableId);
+                    const actions: PreDragActions | null = api.tryGetLock(
+                        draggableId,
+                        // stop is defined later
+                        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+                        stop,
+                        { sourceEvent: event },
+                    );
 
-                const actions: PreDragActions | null = api.tryGetLock(
-                    draggableId,
-                    // stop is defined later
+                    if (!actions) {
+                        return;
+                    }
+
+                    delayPromise.current = delayPromiseGetter(draggableId);
+                    delayPromise.current.catch(() => {
+                        if (actions.isActive()) {
+                            actions.abort();
+                        }
+                    });
+
+                    // consuming the event
+                    event.preventDefault();
+
+                    const point: Position = {
+                        x: event.clientX,
+                        y: event.clientY,
+                    };
+
+                    // unbind this listener
+                    unbindEventsRef.current();
+                    // using this function before it is defined as their is a circular usage pattern
                     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-                    stop,
-                    { sourceEvent: event },
-                );
 
-                if (!actions) {
-                    return;
-                }
-
-                // consuming the event
-                event.preventDefault();
-
-                const point: Position = {
-                    x: event.clientX,
-                    y: event.clientY,
-                };
-
-                // unbind this listener
-                unbindEventsRef.current();
-                // using this function before it is defined as their is a circular usage pattern
-                // eslint-disable-next-line @typescript-eslint/no-use-before-define
-
-                startPendingDrag(actions, point);
+                    startPendingDrag(actions, point);
+                },
             },
-        }),
+            {
+                eventName: "mouseup",
+                fn: async (event: MouseEvent) => {
+                    delayPromise.current?.reject("mouseup");
+                },
+            },
+        ],
         // not including startPendingDrag as it is not defined initially
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [api],
@@ -313,13 +324,21 @@ export default function useMouseSensor(
                 capture: true,
             };
 
-            unbindEventsRef.current = bindEvents(window, [preventForcePressBinding, startCaptureBinding], options);
+            unbindEventsRef.current = bindEvents(window, [preventForcePressBinding, ...startCaptureBinding], options);
         },
         [preventForcePressBinding, startCaptureBinding],
     );
 
     const stop = useCallback(() => {
         const current: Phase = phaseRef.current;
+        if (delayPromise.current) {
+            delayPromise.current
+                .then(({ end }) => end.resolve())
+                .catch((e) => {
+                    return;
+                });
+            delayPromise.current.reject("stop");
+        }
         if (current.type === "IDLE") {
             return;
         }
@@ -335,7 +354,6 @@ export default function useMouseSensor(
     }, []);
 
     const cancel = useCallback(() => {
-        delayPromise.current?.then(({ end }) => end.resolve());
         const phase: Phase = phaseRef.current;
         stop();
         if (phase.type === "DRAGGING") {

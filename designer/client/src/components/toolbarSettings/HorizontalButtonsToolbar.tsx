@@ -6,7 +6,7 @@ import { useDragHandler } from "../common/dndItems/DragHandle";
 import { ButtonsVariant, ToolbarButtons } from "../toolbarComponents/toolbarButtons";
 import type { ToolbarConfig } from "./types";
 
-type Props = PropsWithChildren;
+type Props = PropsWithChildren<unknown>;
 
 export const HorizontalToolbar = ({ children }: Props) => {
     const handleProps = useDragHandler();
@@ -14,7 +14,7 @@ export const HorizontalToolbar = ({ children }: Props) => {
         <Stack
             direction="row"
             sx={(theme) => ({
-                alignItems: "center",
+                alignItems: "normal",
                 position: "relative",
                 "::before": {
                     content: '""',

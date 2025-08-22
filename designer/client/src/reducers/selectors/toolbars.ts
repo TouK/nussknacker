@@ -2,13 +2,11 @@ import { createSelector } from "reselect";
 
 import { ButtonsVariant } from "../../components/toolbarComponents/toolbarButtons";
 import { BuiltinButtonTypes } from "../../components/toolbarSettings/buttons";
-import { fallbackToolbarsConfig } from "../../components/toolbarSettings/fallbackToolbarsConfig";
 import type { ToolbarsConfig } from "../../components/toolbarSettings/types";
 import type { WithId } from "../../types/common";
 import type { RootState } from "../index";
 import type { ToolbarsState, ToolbarsStates } from "../toolbars";
 import { ToolbarsSide } from "../toolbars";
-import { isArchived, isFragment } from "./graph";
 import { getSettings } from "./settings";
 
 const getToolbarsState = (state: RootState): ToolbarsStates => state.toolbars || {};
@@ -26,9 +24,8 @@ const appendDefaultToolbars = ({ topRight = [], bottomRight = [], ...toolbars }:
     ],
 });
 
-export const getToolbarsConfig = createSelector(getSettings, isFragment, isArchived, (settings, fragment, archived) => {
-    const toolbars = settings?.processToolbarsConfiguration || fallbackToolbarsConfig(fragment, archived);
-    return appendDefaultToolbars(toolbars);
+export const getToolbarsConfig = createSelector(getSettings, (settings) => {
+    return appendDefaultToolbars(settings?.processToolbarsConfiguration);
 });
 
 export const getToolbarsConfigId = createSelector(getToolbarsConfig, getToolbarsState, (c, t) => c?.id || t?.currentConfigId);

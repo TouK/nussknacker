@@ -10,6 +10,7 @@ export const PanelHeader = styled("div")<{ color?: string }>(({ color, theme }) 
     justifyContent: "space-between",
     padding: theme.spacing(0.25, 0.5),
     flexGrow: 0,
+    transition: theme.transitions.create("all", { easing: "ease-in-out" }),
     ":focus": {
         background: theme.palette.action.focus,
     },

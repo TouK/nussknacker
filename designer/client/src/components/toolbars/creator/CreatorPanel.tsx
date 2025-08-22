@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { isDynamic } from "../../../actions/nk/ui/panelSide";
 import { useUserSettings } from "../../../common/userSettings";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
-import { NodeCreationHandler } from "../../../containers/NodeCreationHandler";
+import { useNodeCreationHandler } from "../../../containers/NodeCreationHandler";
 import { getAdditionalComponents } from "../../../reducers/cloudData";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
@@ -84,12 +84,14 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
 
     const { componentGroups } = useAppSelector(getProcessDefinitionData);
 
-    const closeHandler = useCallback(
+    const onComponentSelect = useCallback(
         (node?: NodeType) => {
             dispatch(selectComponent(side, node, lastActionRef.current?.data.fromPoint, lastActionRef.current?.data.withEdge));
         },
         [dispatch, side],
     );
+
+    useNodeCreationHandler({ panelSide: side, when: isDynamic(side) });
 
     return (
         <ToolbarWrapper {...props} title={t("panels.creator.title", "Creator panel")} onExpand={() => searchRef.current?.focus()}>
@@ -126,11 +128,8 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
                         {...props}
                     />
                 )}
-                onSelect={(item) => {
-                    closeHandler(item);
-                }}
+                onSelect={onComponentSelect}
             />
-            {isDynamic(side) ? <NodeCreationHandler panelSide={side} /> : null}
         </ToolbarWrapper>
     );
 }

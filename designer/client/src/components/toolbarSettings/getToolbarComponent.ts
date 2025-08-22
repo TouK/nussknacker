@@ -42,6 +42,10 @@ export function getToolbarComponent(config?: ToolbarConfig): ComponentType<Toolb
 }
 
 export function getToolbarHorizontalComponent(config?: ToolbarConfig): ComponentType<ToolbarPanelProps> | null {
-    if (config?.buttons?.length) return HorizontalButtonsToolbar;
-    return null;
+    switch (config?.id) {
+        default: {
+            if (config?.buttons?.length) return HorizontalButtonsToolbar;
+            return null;
+        }
+    }
 }
