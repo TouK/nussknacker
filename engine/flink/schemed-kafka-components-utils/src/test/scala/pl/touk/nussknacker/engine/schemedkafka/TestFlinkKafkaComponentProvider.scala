@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.process.helpers.{SinkForType, TestResultsHolder}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.ExtractAndTransformTimestamp
@@ -33,9 +33,9 @@ class TestFlinkKafkaComponentProvider(
   }
 
   private def createTestComponents(modelConfig: ModelConfig) = {
-    val kafkaConfig =
-      KafkaConfig.parseConfig(modelConfig.underlyingConfig.getConfig("components.kafka.config"))
-    val kafkaConfigWithKeySchemaSupport = kafkaConfig.copy(useStringForKey = false)
+    val kafkaComponentsConfig =
+      KafkaComponentsConfig.parseConfig(modelConfig.underlyingConfig.getConfig("components.kafka.config"))
+    val kafkaConfigWithKeySchemaSupport = kafkaComponentsConfig.copy(useStringForKey = false)
     val universalSourceFactoryWithKeySchemaSupport = new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfigWithKeySchemaSupport),
@@ -43,7 +43,7 @@ class TestFlinkKafkaComponentProvider(
       modelConfig.namingStrategy,
       new FlinkKafkaSourceImplFactory
     )
-    val testComponents = List(
+    List(
       ComponentDefinition("kafka-key-value", universalSourceFactoryWithKeySchemaSupport),
       ComponentDefinition(
         "sinkForInputMeta",
@@ -51,8 +51,6 @@ class TestFlinkKafkaComponentProvider(
       ),
       ComponentDefinition("extractAndTransformTimestamp", ExtractAndTransformTimestamp)
     )
-
-    testComponents
   }
 
 }

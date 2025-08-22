@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.source._
@@ -47,7 +47,7 @@ import pl.touk.nussknacker.engine.schemedkafka.typed.TypingResultFromJsonSampleT
 class UniversalKafkaSourceFactory(
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
     val schemaBasedMessagesSerdeProvider: UniversalSchemaBasedSerdeProvider,
-    val kafkaConfig: KafkaConfig,
+    val kafkaComponentsConfig: KafkaComponentsConfig,
     val namingStrategy: NamingStrategy,
     protected val implProvider: KafkaSourceImplFactory[Any, Any],
 ) extends KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
@@ -168,7 +168,7 @@ class UniversalKafkaSourceFactory(
       parameters: List[(ParameterName, DefinedParameter)],
       errors: List[ProcessCompilationError]
   )(implicit nodeId: NodeId): FinalResults = {
-    val keyValidationResult = if (kafkaConfig.useStringForKey) {
+    val keyValidationResult = if (kafkaComponentsConfig.useStringForKey) {
       Valid((None, Typed[String]))
     } else {
       determineSchemaAndType(
@@ -256,7 +256,7 @@ class UniversalKafkaSourceFactory(
       dependencies,
       finalState.get,
       NonEmptyList.one(preparedTopic),
-      kafkaConfig,
+      kafkaComponentsConfig,
       deserializationSchema,
       recordFormatter,
       kafkaContextInitializer,
@@ -326,7 +326,7 @@ class UniversalKafkaSourceFactory(
           (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) :: Nil,
           _
         )
-        if contentType == ContentTypes.JSON.toString && kafkaConfig.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource =>
+        if contentType == ContentTypes.JSON.toString && kafkaComponentsConfig.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource =>
       val dataSampleParam = getJsonDataSampleParam
       NextParameters(parameters = dataSampleParam.createParameter() :: nextParams)
     case TransformationStep(

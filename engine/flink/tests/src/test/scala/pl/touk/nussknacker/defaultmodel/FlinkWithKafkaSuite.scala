@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.transformer.{FlinkBaseComponentProvider, FlinkKafkaComponentProvider}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, KafkaSpec}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{
@@ -64,6 +64,8 @@ abstract class FlinkWithKafkaSuite
     with WithModelConfig
     with Matchers
     with WithKafkaComponentsConfig {
+
+  override protected val kafkaComponentsConfigPrefix: String = "components.kafka.config"
 
   private lazy val creator: DefaultConfigCreator = new TestDefaultConfigCreator
 
@@ -114,7 +116,7 @@ abstract class FlinkWithKafkaSuite
           AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(
             config,
             schemaRegistryClientProvider.schemaRegistryClientFactory,
-            kafkaConfig
+            parsedKafkaComponentsConfig
           )
         }
       }
@@ -149,7 +151,8 @@ abstract class FlinkWithKafkaSuite
     fromAnyRef("not_used")
   )
 
-  lazy val kafkaConfig: KafkaConfig                   = KafkaConfig.parseConfigNestedAtConfigKey(modelConfig)
+  lazy val parsedKafkaComponentsConfig: KafkaComponentsConfig =
+    KafkaComponentsConfig.parseConfig(modelConfig.getConfig(kafkaComponentsConfigPrefix))
   protected val avroEncoder: ToAvroSchemaBasedEncoder = ToAvroSchemaBasedEncoder(ValidationMode.strict)
 
   protected val givenNotMatchingAvroObj: GenericData.Record = avroEncoder.encodeRecordOrError(

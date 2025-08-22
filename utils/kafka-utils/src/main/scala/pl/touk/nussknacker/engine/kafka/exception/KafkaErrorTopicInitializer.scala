@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.kafka.exception
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.admin.{DescribeTopicsOptions, ListTopicsOptions, NewTopic}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, KafkaUtils}
 
 import java.{lang, util}
 import java.util.{Collections, Optional}
@@ -15,8 +15,10 @@ trait KafkaErrorTopicInitializer {
   def init(): Unit
 }
 
-class DefaultKafkaErrorTopicInitializer(kafkaConfig: KafkaConfig, exceptionHandlerConfig: KafkaExceptionConsumerConfig)
-    extends KafkaErrorTopicInitializer
+class DefaultKafkaErrorTopicInitializer(
+    kafkaComponentsConfig: KafkaComponentsConfig,
+    exceptionHandlerConfig: KafkaExceptionConsumerConfig
+) extends KafkaErrorTopicInitializer
     with LazyLogging {
 
   private val timeoutSeconds = 5
@@ -24,7 +26,7 @@ class DefaultKafkaErrorTopicInitializer(kafkaConfig: KafkaConfig, exceptionHandl
   val topicName: String = exceptionHandlerConfig.topic
 
   def init(): Unit = {
-    KafkaUtils.usingAdminClient(kafkaConfig) { admin =>
+    KafkaUtils.usingAdminClient(kafkaComponentsConfig) { admin =>
       val topicNames = admin
         .listTopics(new ListTopicsOptions().timeoutMs(timeoutSeconds * 1000))
         .names()

@@ -7,7 +7,7 @@ import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
 import org.apache.flink.core.memory.{DataInputDeserializer, DataOutputSerializer}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{GenericRecordWithSchemaId, SchemaId}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.kryo.SchemaIdBasedAvroGenericRecordSerializerSpec.schema
@@ -16,12 +16,12 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSche
 class SchemaIdBasedAvroGenericRecordSerializerSpec extends AnyFunSuite with Matchers {
 
   test("should be able to duplicate serializer after use") {
-    val config = KafkaConfig(Some(Map("bootstrap.servers" -> "dummy:9092")), None, None)
+    val config = KafkaComponentsConfig(Some(Map("bootstrap.servers" -> "dummy:9092")), None, None)
     val factory =
       MockSchemaRegistryClientFactory.confluentBased(SchemaIdBasedAvroGenericRecordSerializerSpec.schemaRegistryClient)
 
     val ec = new ExecutionConfig
-    SchemaIdBasedAvroGenericRecordSerializer.registrar(factory, config).registerIn(ec)
+    SchemaIdBasedAvroGenericRecordSerializer.registrar(factory, config.schemaRegistryClientKafkaConfig).registerIn(ec)
 
     val kryoS = new KryoSerializer(classOf[GenericRecordWithSchemaId], ec)
     checkSerializationRoundTrip(kryoS)

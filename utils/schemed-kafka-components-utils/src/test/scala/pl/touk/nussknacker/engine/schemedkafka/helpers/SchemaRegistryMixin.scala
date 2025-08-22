@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, KafkaSpec}
 import pl.touk.nussknacker.test.{KafkaConfigProperties, WithModelConfig}
 
 trait SchemaRegistryMixin
@@ -12,8 +12,6 @@ trait SchemaRegistryMixin
     with KafkaSpec
     with KafkaWithSchemaRegistryOperations
     with WithModelConfig {
-
-  protected def kafkaComponentsConfigPrefix: String
 
   override protected def resolveModelConfig(config: Config): Config = {
     super
@@ -34,8 +32,8 @@ trait SchemaRegistryMixin
       )
   }
 
-  protected lazy val kafkaConfig: KafkaConfig =
-    KafkaConfig.parseConfig(modelConfig.getConfig(kafkaComponentsConfigPrefix))
+  protected lazy val kafkaComponentsConfig: KafkaComponentsConfig =
+    KafkaComponentsConfig.parseConfig(modelConfig.getConfig(kafkaComponentsConfigPrefix))
 
   protected def namingStrategy: NamingStrategy = NamingStrategy.Disabled
 

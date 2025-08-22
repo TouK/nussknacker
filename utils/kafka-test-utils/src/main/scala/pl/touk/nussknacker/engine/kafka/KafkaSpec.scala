@@ -11,15 +11,20 @@ trait KafkaSpec extends BeforeAndAfterAll with WithModelConfig { self: Suite =>
   var kafkaClient: KafkaClient              = _
   val kafkaBrokerConfig                     = Map.empty[String, String]
 
+  protected def kafkaComponentsConfigPrefix: String
+
   override protected def resolveModelConfig(config: Config): Config =
     super
       .resolveModelConfig(config)
       .withValue(
-        KafkaConfigProperties.bootstrapServersProperty("components.kafka.config"),
+        KafkaConfigProperties.bootstrapServersProperty(kafkaComponentsConfigPrefix),
         fromAnyRef(kafkaServer.bootstrapServers)
       )
       // For tests we want to read from the beginning...
-      .withValue(KafkaConfigProperties.property("components.kafka.config", "auto.offset.reset"), fromAnyRef("earliest"))
+      .withValue(
+        KafkaConfigProperties.property(kafkaComponentsConfigPrefix, "auto.offset.reset"),
+        fromAnyRef("earliest")
+      )
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

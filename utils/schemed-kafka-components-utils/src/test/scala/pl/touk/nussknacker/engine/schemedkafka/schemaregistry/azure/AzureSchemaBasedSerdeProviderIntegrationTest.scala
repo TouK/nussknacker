@@ -8,7 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.process.TopicName
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
   UniversalSchemaBasedSerdeProvider,
@@ -29,7 +29,7 @@ class AzureSchemaBasedSerdeProviderIntegrationTest extends AnyFunSuite with Opti
       "schema.group"          -> "test-group",
       "auto.register.schemas" -> "true",
     )
-    val kafkaConfig = KafkaConfig(
+    val kafkaComponentsConfig = KafkaComponentsConfig(
       Some(config),
       None,
       avroKryoGenericRecordSchemaIdSerialization = Some(false),
@@ -50,8 +50,9 @@ class AzureSchemaBasedSerdeProviderIntegrationTest extends AnyFunSuite with Opti
     val record = new GenericRecordBuilder(schema)
       .set("a", "aValue")
       .build()
-    val key             = "sample-key"
-    val serdeProvider   = UniversalSchemaBasedSerdeProvider.create(UniversalSchemaRegistryClientFactory, kafkaConfig)
+    val key = "sample-key"
+    val serdeProvider =
+      UniversalSchemaBasedSerdeProvider.create(UniversalSchemaRegistryClientFactory, kafkaComponentsConfig)
     val valueSchemaData = RuntimeSchemaData(schema, None).toParsedSchemaData
     val pr = serdeProvider.serializationSchemaFactory
       // TODO: we should check if schema name matches our topic-schema name matching convention in the serializer

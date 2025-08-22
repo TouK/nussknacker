@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.serialization
 
 import pl.touk.nussknacker.engine.api.process.TopicName
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 
 /**
   * Factory class for KeyedSerializationSchema. It is extracted for purpose when for creation
@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
   * @tparam T type of serialized object
   */
 trait KafkaSerializationSchemaFactory[T] extends Serializable {
-  def create(topic: TopicName.ForSink, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T]
+  def create(topic: TopicName.ForSink, kafkaComponentsConfig: KafkaComponentsConfig): KafkaSerializationSchema[T]
 }
 
 /**
@@ -23,6 +23,10 @@ trait KafkaSerializationSchemaFactory[T] extends Serializable {
 case class FixedKafkaSerializationSchemaFactory[T](deserializationSchema: String => KafkaSerializationSchema[T])
     extends KafkaSerializationSchemaFactory[T] {
 
-  override def create(topic: TopicName.ForSink, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T] =
+  override def create(
+      topic: TopicName.ForSink,
+      kafkaComponentsConfig: KafkaComponentsConfig
+  ): KafkaSerializationSchema[T] =
     deserializationSchema(topic.name)
+
 }

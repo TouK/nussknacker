@@ -13,7 +13,12 @@ import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.{
+  KafkaComponentsConfig,
+  KafkaComponentsUtils,
+  PreparedKafkaTopic,
+  UnspecializedTopicName
+}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName._
 import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
@@ -46,16 +51,16 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
 
   def namingStrategy: NamingStrategy
 
-  def kafkaConfig: KafkaConfig
+  def kafkaComponentsConfig: KafkaComponentsConfig
 
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
-    schemaRegistryClientFactory.create(kafkaConfig)
+    schemaRegistryClientFactory.create(kafkaComponentsConfig)
 
-  @transient protected lazy val cachedTopicsExistenceValidator = CachedTopicsExistenceValidator(kafkaConfig)
+  @transient protected lazy val cachedTopicsExistenceValidator = CachedTopicsExistenceValidator(kafkaComponentsConfig)
 
   @transient protected lazy val topicSelectionStrategy: TopicSelectionStrategy = {
-    if (kafkaConfig.showTopicsWithoutSchema) {
-      AllNonHiddenTopicsSelectionStrategy(schemaRegistryClient, kafkaConfig)
+    if (kafkaComponentsConfig.showTopicsWithoutSchema) {
+      AllNonHiddenTopicsSelectionStrategy(schemaRegistryClient, kafkaComponentsConfig)
     } else {
       new TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient)
     }
@@ -63,7 +68,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
 
   @transient protected lazy val schemaSupportDispatcher: UniversalSchemaSupportDispatcher =
     UniversalSchemaSupportDispatcher(
-      kafkaConfig
+      kafkaComponentsConfig
     )
 
   protected def getTopicParam(
@@ -105,7 +110,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   )(implicit nodeId: NodeId): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
     if (schemaRegistryClient.isTopicWithSchema(
         preparedTopic.prepared.topicName.toUnspecialized.name,
-        kafkaConfig
+        kafkaComponentsConfig
       )) {
       val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared.toUnspecialized, isKey = false)
       (versions match {

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
@@ -25,7 +25,7 @@ class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
       dependencies: List[NodeDependencyValue],
       finalState: Any,
       preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
-      kafkaConfig: KafkaConfig,
+      kafkaComponentsConfig: KafkaComponentsConfig,
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
       formatter: UniversalToJsonFormatter[K, V],
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
@@ -37,7 +37,7 @@ class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
       deserializationSchema,
       TypedNodeDependency[NodeId].extract(dependencies),
       preparedTopics,
-      kafkaConfig,
+      kafkaComponentsConfig,
       formatter,
       testParametersInfo
     )
@@ -50,7 +50,7 @@ class LiteKafkaSourceImpl[K, V](
     deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
     val nodeId: NodeId,
     preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
-    val kafkaConfig: KafkaConfig,
+    val kafkaComponentsConfig: KafkaComponentsConfig,
     val formatter: UniversalToJsonFormatter[K, V],
     testParametersInfo: KafkaTestParametersInfo
 ) extends LiteKafkaSource
@@ -62,14 +62,14 @@ class LiteKafkaSourceImpl[K, V](
 
   override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): ContextVariables = {
     val deserialized = deserializationSchema.deserialize(record)
-    // TODO: what about other properties based on kafkaConfig?
+    // TODO: what about other properties based on kafkaComponentsConfig?
     val initializerVariables = contextInitializer.convertToInitialVariables(deserialized)
     ContextVariables(
       initializerVariables.variables + (VariableConstants.EventTimestampVariableName -> record.timestamp())
     )
   }
 
-  override def generateTestData(size: Int): TestData = formatter.generateTestData(topics, size, kafkaConfig)
+  override def generateTestData(size: Int): TestData = formatter.generateTestData(topics, size, kafkaComponentsConfig)
 
   // We don't use passed deserializationSchema, as in lite tests deserialization is done after parsing test data
   // (see difference with Flink implementation)

@@ -16,10 +16,11 @@ trait KafkaProducerCreator[K, V] {
   def createProducer(clientId: String): Producer[K, V]
 }
 
-case class DefaultProducerCreator[K, V](kafkaConfig: KafkaConfig) extends KafkaProducerCreator[K, V] {
+case class DefaultProducerCreator[K, V](kafkaComponentsConfig: KafkaComponentsConfig)
+    extends KafkaProducerCreator[K, V] {
 
   override def createProducer(clientId: String): Producer[K, V] = {
-    new KafkaProducer[K, V](KafkaUtils.toProducerProperties(kafkaConfig, clientId))
+    new KafkaProducer[K, V](KafkaUtils.toProducerProperties(kafkaComponentsConfig, clientId))
   }
 
 }

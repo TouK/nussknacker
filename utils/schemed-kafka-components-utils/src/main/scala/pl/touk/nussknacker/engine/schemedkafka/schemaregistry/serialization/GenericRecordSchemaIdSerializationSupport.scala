@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.generic.GenericData
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.GenericRecordWithSchemaId
 
@@ -24,12 +24,12 @@ class GenericRecordSchemaIdSerializationSupport(schemaIdSerializationEnabled: Bo
 
 object GenericRecordSchemaIdSerializationSupport extends LazyLogging {
 
-  def apply(kafkaConfig: KafkaConfig): GenericRecordSchemaIdSerializationSupport = {
-    new GenericRecordSchemaIdSerializationSupport(schemaIdSerializationEnabled(kafkaConfig))
+  def apply(kafkaComponentsConfig: KafkaComponentsConfig): GenericRecordSchemaIdSerializationSupport = {
+    new GenericRecordSchemaIdSerializationSupport(schemaIdSerializationEnabled(kafkaComponentsConfig))
   }
 
-  def schemaIdSerializationEnabled(kafkaConfig: KafkaConfig): Boolean = {
-    val result = Option(kafkaConfig)
+  def schemaIdSerializationEnabled(kafkaComponentsConfig: KafkaComponentsConfig): Boolean = {
+    val result = Option(kafkaComponentsConfig)
       .flatMap(_.avroKryoGenericRecordSchemaIdSerialization)
       .getOrElse(true)
     logger.debug(s"schemaIdSerializationEnabled: $result")

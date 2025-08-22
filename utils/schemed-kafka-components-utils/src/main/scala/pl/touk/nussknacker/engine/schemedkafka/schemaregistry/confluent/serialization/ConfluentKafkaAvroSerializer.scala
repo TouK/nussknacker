@@ -4,7 +4,7 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Serializer
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
@@ -16,7 +16,7 @@ import scala.jdk.CollectionConverters._
   * This is Kafka Avro Serializer class. All events will be serialized to provided schema.
   */
 class ConfluentKafkaAvroSerializer(
-    kafkaConfig: KafkaConfig,
+    kafkaComponentsConfig: KafkaComponentsConfig,
     confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
     schemaEvolutionHandler: AvroSchemaEvolution,
     avroSchemaOpt: Option[AvroSchema],
@@ -26,7 +26,7 @@ class ConfluentKafkaAvroSerializer(
 
   schemaRegistry = confluentSchemaRegistryClient.client
 
-  configure(kafkaConfig.kafkaProperties.getOrElse(Map.empty).asJava, _isKey)
+  configure(kafkaComponentsConfig.kafkaProperties.getOrElse(Map.empty).asJava, _isKey)
 
   override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {
     val avroConfig = new KafkaAvroSerializerConfig(configs)
@@ -51,13 +51,13 @@ class ConfluentKafkaAvroSerializer(
 object ConfluentKafkaAvroSerializer {
 
   def apply(
-      kafkaConfig: KafkaConfig,
+      kafkaComponentsConfig: KafkaComponentsConfig,
       schemaRegistryClient: ConfluentSchemaRegistryClient,
       avroSchemaOpt: Option[AvroSchema],
       isKey: Boolean
   ): ConfluentKafkaAvroSerializer = {
     new ConfluentKafkaAvroSerializer(
-      kafkaConfig,
+      kafkaComponentsConfig,
       schemaRegistryClient,
       new DefaultAvroSchemaEvolution,
       avroSchemaOpt,

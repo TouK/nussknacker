@@ -6,7 +6,7 @@ import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.internals.{RecordHeader, RecordHeaders}
 import org.apache.kafka.common.record.TimestampType
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 
 import java.util.{Objects, Optional}
 import scala.annotation.nowarn
@@ -207,7 +207,7 @@ class ConsumerRecordSerializer[K, V](val keySerializer: TypeSerializer[K], val v
 object ConsumerRecordTypeInfo {
 
   // TODO: Creating TypeInformation for Avro / Json Schema is difficult because of schema evolution, therefore we rely on Kryo, e.g. serializer for GenericRecordWithSchemaId
-  def apply[K, V](config: KafkaConfig): TypeInformation[ConsumerRecord[K, V]] = {
+  def apply[K, V](config: KafkaComponentsConfig): TypeInformation[ConsumerRecord[K, V]] = {
     val keyTypeInfo =
       if (config.useStringForKey) {
         Types.STRING.asInstanceOf[TypeInformation[K]]

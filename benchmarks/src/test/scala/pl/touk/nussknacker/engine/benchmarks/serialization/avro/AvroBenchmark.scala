@@ -5,7 +5,11 @@ import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.benchmarks.serialization.SerializationBenchmarkSetup
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.{
+  KafkaComponentsConfig,
+  SchemaRegistryCacheConfig,
+  SchemaRegistryClientKafkaConfig
+}
 import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
@@ -35,7 +39,11 @@ class AvroBenchmark {
       val factory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
       val registrar = SchemaIdBasedAvroGenericRecordSerializer.registrar(
         factory,
-        KafkaConfig(Some(Map("bootstrap.servers" -> "fooKafkaAddress")), None)
+        SchemaRegistryClientKafkaConfig(
+          Map("bootstrap.servers" -> "fooKafkaAddress"),
+          SchemaRegistryCacheConfig(),
+          None
+        )
       )
       registrar.registerIn(config)
     }

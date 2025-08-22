@@ -5,7 +5,7 @@ import com.esotericsoftware.kryo.io.{Input, Output}
 import org.apache.avro.generic.GenericData
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import pl.touk.nussknacker.engine.flink.api.serialization.InstanceBasedKryoSerializerRegistrar
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryClientKafkaConfig}
+import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schema.DatumReaderWriterMixin
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
@@ -24,12 +24,12 @@ object SchemaIdBasedAvroGenericRecordSerializer {
   //         - KryoSerializer.defaultSerializers is a LinkedHashMap<Class<?>, ExecutionConfig.SerializableSerializer<?>>
   //         - SerializableSerializer has equals method not implemented (so it checks reference equality)
   @nowarn("cat=deprecation")
-  def registrar(schemaRegistryClientFactory: SchemaRegistryClientFactory, kafkaConfig: KafkaConfig) = {
+  def registrar(
+      schemaRegistryClientFactory: SchemaRegistryClientFactory,
+      schemaRegistryClientConfig: SchemaRegistryClientKafkaConfig
+  ) = {
     new InstanceBasedKryoSerializerRegistrar(
-      new SchemaIdBasedAvroGenericRecordSerializer(
-        schemaRegistryClientFactory,
-        kafkaConfig.schemaRegistryClientKafkaConfig
-      ),
+      new SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory, schemaRegistryClientConfig),
       classOf[GenericRecordWithSchemaId]
     )
   }

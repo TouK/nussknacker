@@ -210,8 +210,8 @@ class KafkaJsonSchemalessSourceFactorySpec
   private lazy val universalSourceFactory: KafkaSource = {
     new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
-      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig),
-      kafkaConfig,
+      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaComponentsConfig),
+      kafkaComponentsConfig,
       NamingStrategy.Disabled,
       new FlinkKafkaSourceImplFactory
     )

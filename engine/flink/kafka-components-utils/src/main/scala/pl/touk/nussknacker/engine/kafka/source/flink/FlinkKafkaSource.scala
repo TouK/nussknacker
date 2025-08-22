@@ -51,10 +51,9 @@ import java.util.Properties
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
-// TODO: rename to just FlinkKafkaSource
-class FlinkConsumerRecordBasedKafkaSource[K, V](
+class FlinkKafkaSource[K, V](
     preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
-    protected override val kafkaConfig: KafkaConfig,
+    protected override val kafkaComponentsConfig: KafkaComponentsConfig,
     protected override val deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],
     protected override val formatter: UniversalToJsonFormatter[K, V],
     override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
@@ -69,7 +68,7 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
     with LazyLogging
     with KafkaLiveDataProvider[K, V] {
 
-  private val typeInformation = ConsumerRecordTypeInfo[K, V](kafkaConfig)
+  private val typeInformation = ConsumerRecordTypeInfo[K, V](kafkaComponentsConfig)
 
   @nowarn("cat=deprecation")
   override def sourceStream(
@@ -87,7 +86,8 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
 
   protected lazy val topics: NonEmptyList[TopicName.ForSource] = preparedTopics.map(_.prepared)
 
-  private val defaultOffsetResetStrategy = kafkaConfig.defaultOffsetResetStrategy.getOrElse(OffsetResetStrategy.None)
+  private val defaultOffsetResetStrategy =
+    kafkaComponentsConfig.defaultOffsetResetStrategy.getOrElse(OffsetResetStrategy.None)
 
   override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, StaticParameterConfig]] = {
     Map(
@@ -145,14 +145,14 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
         .map(OffsetResetStrategy.withName)
         .getOrElse(defaultOffsetResetStrategy)
     logger.info(
-      s"Flink source for scenario ${flinkNodeContext.jobData.processVersion.processName.value} for node ${flinkNodeContext.nodeId} defaultOffsetResetStrategy=${kafkaConfig.defaultOffsetResetStrategy}, offsetResetStrategy=${offsetResetStrategy}"
+      s"Flink source for scenario ${flinkNodeContext.jobData.processVersion.processName.value} for node ${flinkNodeContext.nodeId} defaultOffsetResetStrategy=${kafkaComponentsConfig.defaultOffsetResetStrategy}, offsetResetStrategy=${offsetResetStrategy}"
     )
 
     offsetResetStrategy match {
       case OffsetResetStrategy.ToLatest =>
-        topics.toList.foreach(t => KafkaUtils.setOffsetToLatest(t.name, consumerGroupId, kafkaConfig))
+        topics.toList.foreach(t => KafkaUtils.setOffsetToLatest(t.name, consumerGroupId, kafkaComponentsConfig))
       case OffsetResetStrategy.ToEarliest =>
-        topics.toList.foreach(t => KafkaUtils.setOffsetToEarliest(t.name, consumerGroupId, kafkaConfig))
+        topics.toList.foreach(t => KafkaUtils.setOffsetToEarliest(t.name, consumerGroupId, kafkaComponentsConfig))
       case OffsetResetStrategy.None =>
         ()
     }
@@ -168,7 +168,7 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
     new FlinkKafkaConsumerHandlingExceptions[ConsumerRecord[K, V]](
       topics.map(_.name).toList.asJava,
       FlinkSerializationSchemaConversions.wrapToFlinkDeserializationSchema(deserializationSchema, typeInformation),
-      KafkaUtils.toConsumerProperties(kafkaConfig, Some(consumerGroupId)),
+      KafkaUtils.toConsumerProperties(kafkaComponentsConfig, Some(consumerGroupId)),
       flinkNodeContext.exceptionHandlerPreparer,
       flinkNodeContext.convertToEngineRuntimeContext,
       NodeId(flinkNodeContext.nodeId)
@@ -194,13 +194,13 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
     Some(
       StandardTimestampWatermarkHandler.boundedOutOfOrderness(
         extract = None,
-        maxOutOfOrderness = kafkaConfig.defaultMaxOutOfOrdernessMillis,
-        idlenessTimeoutDuration = kafkaConfig.idleTimeoutDuration
+        maxOutOfOrderness = kafkaComponentsConfig.defaultMaxOutOfOrdernessMillis,
+        idlenessTimeoutDuration = kafkaComponentsConfig.idleTimeoutDuration
       )
     )
 
   override def generateTestData(maxNumberOfRecords: Int): TestData =
-    formatter.generateTestData(topics, maxNumberOfRecords, kafkaConfig)
+    formatter.generateTestData(topics, maxNumberOfRecords, kafkaComponentsConfig)
 
   override def testParametersDefinition: List[Parameter] = testParametersInfo.parametersDefinition
 
@@ -225,7 +225,7 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
   }
 
   private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = {
-    val baseName = ConsumerGroupDeterminer(kafkaConfig).consumerGroup(nodeContext)
+    val baseName = ConsumerGroupDeterminer(kafkaComponentsConfig).consumerGroup(nodeContext)
     namingStrategy.prepareName(baseName)
   }
 
