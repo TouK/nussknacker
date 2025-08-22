@@ -18,13 +18,14 @@ const isSourceSelectCell = (cell: GridCell): cell is SourceSelectCell =>
 
 export interface EventRow {
     sourceId: string;
-    timestamp: string;
+    timestamp?: string; // allow undefined during creation
     variables: string; // JSON string
 }
 
 interface EventsTableProps {
     data?: EventRow[];
     onDataChange: (data: EventRow[]) => void;
+    defaultEvent: EventRow;
     sourceOptions: string[];
     className?: string;
     sourceParameters: TestFormParameters[];
@@ -35,7 +36,7 @@ const emptySelection = {
     rows: CompactSelection.empty(),
 };
 
-export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChange, sourceOptions, className }) => {
+export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChange, sourceOptions, className, defaultEvent }) => {
     const tableTheme = useTableTheme();
     const [selection, setSelection] = useState<GridSelection>(emptySelection);
     const [hasFocus, setHasFocus] = useState(false);
@@ -156,14 +157,25 @@ export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChang
                         allowOverlay: true,
                         readonly: false,
                     };
-                case 2:
+                case 2: {
+                    let display = rowData.variables || "";
+                    // Try to pretty print JSON; fall back to raw text if parse fails
+                    try {
+                        if (rowData.variables) {
+                            const parsed = JSON.parse(rowData.variables);
+                            display = JSON.stringify(parsed); // single-line to keep cell compact
+                        }
+                    } catch (_) {
+                        // ignore parsing errors; treat as plain text
+                    }
                     return {
                         kind: GridCellKind.Text,
-                        displayData: JSON.stringify(JSON.parse(rowData.variables)) || "",
+                        displayData: display,
                         data: rowData.variables || "",
                         allowOverlay: true,
                         readonly: false,
                     };
+                }
                 default:
                     return { kind: GridCellKind.Text, displayData: "", data: "", allowOverlay: true, readonly: false };
             }
@@ -173,37 +185,52 @@ export const EventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChang
 
     const onCellsEdited: DataEditorProps["onCellsEdited"] = useCallback(
         (newValues: readonly (EditListItem | { location: Item; value: SourceSelectCell })[]) => {
-            const newData = [...data];
+            if (!newValues.length) return;
+            // Build a map of row index -> updated row (immutable)
+            const rowUpdates: Record<number, EventRow> = {};
             newValues.forEach(({ location, value }) => {
                 const [col, row] = location;
-                while (newData.length <= row) newData.push({ sourceId: "", timestamp: "", variables: "" });
+                const base: EventRow = rowUpdates[row] || { ...data[row] } || { sourceId: "", timestamp: "", variables: "" };
                 let cellValue: string;
                 if (isSourceSelectCell(value)) {
                     cellValue = value.data.value;
                 } else {
-                    // EditableGridCell .data holds raw value
                     cellValue = value.data?.toString?.() ?? "";
                 }
                 switch (col) {
                     case 0:
-                        newData[row].sourceId = cellValue;
+                        rowUpdates[row] = { ...base, sourceId: cellValue };
                         break;
                     case 1:
-                        newData[row].timestamp = cellValue;
+                        rowUpdates[row] = { ...base, timestamp: cellValue };
                         break;
                     case 2:
-                        newData[row].variables = cellValue;
+                        rowUpdates[row] = { ...base, variables: cellValue };
                         break;
+                    default:
+                        rowUpdates[row] = base;
                 }
             });
-            onDataChange(newData);
+            const maxRow = Math.max(...Object.keys(rowUpdates).map(Number));
+            const next: EventRow[] = [];
+            for (let r = 0; r < Math.max(data.length, maxRow + 1); r++) {
+                if (rowUpdates[r]) {
+                    next[r] = rowUpdates[r];
+                } else if (data[r]) {
+                    next[r] = data[r];
+                } else {
+                    next[r] = { sourceId: "", timestamp: "", variables: "" };
+                }
+            }
+            onDataChange(next);
         },
         [data, onDataChange],
     );
 
     const appendRow = useCallback(() => {
-        onDataChange([...data, { sourceId: "", timestamp: "", variables: "" }]);
-    }, [data, onDataChange]);
+        // clone defaultEvent to avoid sharing the same object reference
+        onDataChange([...data, { ...defaultEvent }]);
+    }, [data, defaultEvent, onDataChange]);
 
     const deleteRows = useCallback(
         (rowIndexes: number[]) => {

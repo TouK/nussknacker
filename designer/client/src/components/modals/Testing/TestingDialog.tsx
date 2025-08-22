@@ -13,6 +13,7 @@ import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
+import type { EventRow } from "./EventsTable";
 import { EventsTable } from "./EventsTable";
 import type { TestingContextState } from "./TestingContext";
 import { TestingContext, useTestingState } from "./TestingContext";
@@ -44,13 +45,16 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
     const dispatch = useAppDispatch();
     const testCapabilities = useAppSelector(getTestCapabilities);
     const defaultParameter = testCapabilities.testWithParameters.sourceParameters[0];
-    const [events, setEvents] = useState([
-        {
+    const defaultEvent = useMemo(
+        () => ({
             sourceId: defaultParameter.sourceId,
             timestamp: undefined,
             variables: testCapabilities.testWithParameters.sourceParameters[0].parameters[0].defaultValue.expression,
-        },
-    ]);
+        }),
+        [defaultParameter.sourceId, testCapabilities.testWithParameters.sourceParameters],
+    );
+
+    const [events, setEvents] = useState<EventRow[]>([defaultEvent]);
     const sourceOptions = testCapabilities.testWithParameters.sourceParameters.flatMap((sourceParameter) => sourceParameter.sourceId);
 
     const buttons: WindowButtonProps[] = useMemo(
@@ -59,8 +63,12 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
             {
                 title: t("testingForm.testButton.label", "Test"),
                 action: () => {
-                    dispatch(testScenarioWithEventsData(events));
-                    close();
+                    try {
+                        dispatch(testScenarioWithEventsData(events));
+                        close();
+                    } catch (e) {
+                        console.error(e.message);
+                    }
                 },
             },
         ],
@@ -82,6 +90,7 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
                     onDataChange={(data) => {
                         setEvents(data);
                     }}
+                    defaultEvent={defaultEvent}
                 />
             </ContentSize>
         </WindowContent>
