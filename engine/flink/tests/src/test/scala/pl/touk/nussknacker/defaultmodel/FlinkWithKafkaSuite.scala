@@ -127,11 +127,11 @@ abstract class FlinkWithKafkaSuite
     val config = ConfigFactory
       .empty()
       .withValue(
-        KafkaConfigProperties.bootstrapServersProperty("config"),
+        KafkaConfigProperties.bootstrapServersPropertyNestedAtPath("config"),
         fromAnyRef(kafkaServer.bootstrapServers)
       )
       .withValue(
-        KafkaConfigProperties.property("config", "auto.offset.reset"),
+        KafkaConfigProperties.property(Some("config"), "auto.offset.reset"),
         fromAnyRef("earliest")
       )
       .withValue("config.avroAsJsonSerialization", fromAnyRef(avroAsJsonSerialization))
@@ -145,11 +145,11 @@ abstract class FlinkWithKafkaSuite
   }
 
   protected def maybeAddSchemaRegistryUrl(config: Config): Config = config.withValue(
-    KafkaConfigProperties.property("config", "schema.registry.url"),
+    KafkaConfigProperties.property(Some("config"), "schema.registry.url"),
     fromAnyRef("not_used")
   )
 
-  lazy val kafkaConfig: KafkaConfig                   = KafkaConfig.parseConfig(modelConfig, "config")
+  lazy val kafkaConfig: KafkaConfig                   = KafkaConfig.parseConfigNestedAtConfigKey(modelConfig)
   protected val avroEncoder: ToAvroSchemaBasedEncoder = ToAvroSchemaBasedEncoder(ValidationMode.strict)
 
   protected val givenNotMatchingAvroObj: GenericData.Record = avroEncoder.encodeRecordOrError(

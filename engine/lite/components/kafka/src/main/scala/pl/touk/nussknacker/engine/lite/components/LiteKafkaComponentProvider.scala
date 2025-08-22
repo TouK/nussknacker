@@ -42,7 +42,7 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
     import docsConfig._
     def universal(componentType: ComponentType) = s"DataSourcesAndSinks#kafka-$componentType"
 
-    val kafkaConfig = KafkaConfig.parseConfig(componentDependencies.modelConfig.underlyingConfig)
+    val kafkaConfig = KafkaConfig.parseConfigNestedAtKafkaKey(componentDependencies.modelConfig.underlyingConfig)
     validateConfiguration(kafkaConfig)
     val universalSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
 

@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 class KafkaConfigSpec extends AnyFunSuite with Matchers {
 
   test("parse config") {
-    val typesafeConfig = ConfigFactory.parseString("""kafka {
+    val typesafeConfig = ConfigFactory.parseString("""{
         |  kafkaProperties {
         |    "bootstrap.servers": "localhost:9092"
         |    "auto.offset.reset": latest
@@ -19,7 +19,7 @@ class KafkaConfigSpec extends AnyFunSuite with Matchers {
   }
 
   test("parse legacy config") {
-    val typesafeConfig = ConfigFactory.parseString("""kafka {
+    val typesafeConfig = ConfigFactory.parseString("""{
         |  kafkaAddress: "localhost:9092"
         |  kafkaProperties {
         |    "auto.offset.reset": latest
@@ -31,7 +31,7 @@ class KafkaConfigSpec extends AnyFunSuite with Matchers {
   }
 
   test("parse config with topicExistenceValidation") {
-    val typesafeConfig = ConfigFactory.parseString("""kafka {
+    val typesafeConfig = ConfigFactory.parseString("""{
         |  kafkaProperties {
         |    "bootstrap.servers": "localhost:9092"
         |    "auto.offset.reset": latest

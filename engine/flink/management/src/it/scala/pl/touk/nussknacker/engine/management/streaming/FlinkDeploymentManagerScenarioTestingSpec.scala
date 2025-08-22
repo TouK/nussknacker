@@ -37,7 +37,7 @@ class FlinkDeploymentManagerScenarioTestingSpec
       .resolveProcessingTypeConfig(config)
       .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://dummy:1234"))
       .withValue(
-        KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"),
+        KafkaConfigProperties.bootstrapServersPropertyNestedAtPath("modelConfig.kafka"),
         ConfigValueFactory.fromAnyRef("kafka:1234")
       )
       .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))

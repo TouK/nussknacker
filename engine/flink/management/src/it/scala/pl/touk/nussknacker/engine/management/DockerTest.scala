@@ -35,7 +35,7 @@ trait DockerTest
       .resolveProcessingTypeConfig(config)
       .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(modelClassPath.asJava))
       .withValue("modelConfig.enableObjectReuse", fromAnyRef(false))
-      .withValue(KafkaConfigProperties.property("modelConfig.kafka", "auto.offset.reset"), fromAnyRef("earliest"))
+      .withValue(KafkaConfigProperties.property(Some("modelConfig.kafka"), "auto.offset.reset"), fromAnyRef("earliest"))
       .withValue("category", fromAnyRef("Category1"))
       .withValue(
         "modelConfig.kafka.topicsExistenceValidationConfig.enabled",
@@ -48,11 +48,17 @@ trait DockerTest
           "deploymentConfig.miniCluster.config.\"execution.checkpointing.savepoint-dir\"",
           fromAnyRef(savepointDir.resolve("savepoint").toFile.toURI.toString)
         )
-        .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), fromAnyRef(hostKafkaAddress))
+        .withValue(
+          KafkaConfigProperties.bootstrapServersPropertyNestedAtPath("modelConfig.kafka"),
+          fromAnyRef(hostKafkaAddress)
+        )
     } else {
       baseConfig
         .withValue("deploymentConfig.restUrl", fromAnyRef(jobManagerRestUrl))
-        .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), fromAnyRef(dockerKafkaAddress))
+        .withValue(
+          KafkaConfigProperties.bootstrapServersPropertyNestedAtPath("modelConfig.kafka"),
+          fromAnyRef(dockerKafkaAddress)
+        )
     }
   }
 

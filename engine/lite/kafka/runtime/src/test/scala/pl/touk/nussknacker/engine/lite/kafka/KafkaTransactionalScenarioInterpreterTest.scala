@@ -235,7 +235,7 @@ class KafkaTransactionalScenarioInterpreterTest
     val scenario: CanonicalProcess = passThroughScenario(fixture)
 
     val configWithFakeAddress = ConfigFactory.parseMap(
-      Collections.singletonMap(KafkaConfigProperties.bootstrapServersProperty(), "not_exist.pl:9092")
+      Collections.singletonMap(KafkaConfigProperties.bootstrapServersPropertyNestedAtPath(), "not_exist.pl:9092")
     )
     runScenarioWithoutErrors(fixture, scenario, configWithFakeAddress) {
       // TODO: figure out how to wait for starting thread pool?

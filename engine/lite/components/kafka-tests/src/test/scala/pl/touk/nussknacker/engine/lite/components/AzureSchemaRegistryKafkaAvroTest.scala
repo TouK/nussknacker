@@ -59,24 +59,26 @@ class AzureSchemaRegistryKafkaAvroTest
     Option(System.getenv("AZURE_EVENT_HUBS_SHARED_ACCESS_KEY")).getOrElse("unknown")
 
   // See https://nussknacker.io/documentation/cloud/azure/#setting-up-nussknacker-cloud
-  private val config = ConfigFactory.parseString(s"""
-       | kafka {
-       |   kafkaProperties {
-       |     "bootstrap.servers"  : "$eventHubsNamespace.servicebus.windows.net:9093"
-       |     "security.protocol"  : "SASL_SSL"
-       |     "sasl.mechanism"     : "PLAIN"
-       |     "sasl.jaas.config"   : "org.apache.kafka.common.security.plain.PlainLoginModule required username=\\"$$ConnectionString\\" password=\\"Endpoint=sb://$eventHubsNamespace.servicebus.windows.net/;SharedAccessKeyName=$eventHubsSharedAccessKeyName;SharedAccessKey=$eventHubsSharedAccessKey\\";"
-       |     "schema.registry.url": "https://$eventHubsNamespace.servicebus.windows.net"
-       |     "schema.group"       : "test-group"
-       |   }
-       | }
-       |""".stripMargin)
+  private val modelConfig = ConfigFactory.parseString(
+    s"""{
+       |  kafka {
+       |    kafkaProperties {
+       |      "bootstrap.servers"  : "$eventHubsNamespace.servicebus.windows.net:9093"
+       |      "security.protocol"  : "SASL_SSL"
+       |      "sasl.mechanism"     : "PLAIN"
+       |      "sasl.jaas.config"   : "org.apache.kafka.common.security.plain.PlainLoginModule required username=\\"$$ConnectionString\\" password=\\"Endpoint=sb://$eventHubsNamespace.servicebus.windows.net/;SharedAccessKeyName=$eventHubsSharedAccessKeyName;SharedAccessKey=$eventHubsSharedAccessKey\\";"
+       |      "schema.registry.url": "https://$eventHubsNamespace.servicebus.windows.net"
+       |      "schema.group"       : "test-group"
+       |    }
+       |  }
+       |}""".stripMargin
+  )
 
-  private val kafkaConfig = KafkaConfig.parseConfig(config)
+  private val kafkaConfig = KafkaConfig.parseConfigNestedAtKafkaKey(modelConfig)
 
   private val testRunner =
     TestScenarioRunner
-      .kafkaLiteBased(config)
+      .kafkaLiteBased(modelConfig)
       .withSchemaRegistryClientFactory(schemaRegistryClientFactory)
       .build()
 
@@ -125,7 +127,7 @@ class AzureSchemaRegistryKafkaAvroTest
     registerTopic(List(inputTopic, outputTopic).map(_.toUnspecialized))
 
     val jsonPayloadTestRunner = TestScenarioRunner
-      .kafkaLiteBased(config.withValue("kafka.avroAsJsonSerialization", fromAnyRef(true)))
+      .kafkaLiteBased(modelConfig.withValue("kafka.avroAsJsonSerialization", fromAnyRef(true)))
       .withSchemaRegistryClientFactory(schemaRegistryClientFactory)
       .build()
 

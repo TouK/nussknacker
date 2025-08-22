@@ -19,7 +19,7 @@ class KafkaAvroTestComponentProvider(
 ) {
 
   def createComponents(modelConfig: ModelConfig): List[ComponentDefinition] = {
-    val kafkaConfig = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+    val kafkaConfig = KafkaConfig.parseConfigNestedAtKafkaKey(modelConfig.underlyingConfig)
     val universalSourceFactory = new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig),

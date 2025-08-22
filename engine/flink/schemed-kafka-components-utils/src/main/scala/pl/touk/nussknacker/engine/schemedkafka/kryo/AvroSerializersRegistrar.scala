@@ -41,14 +41,14 @@ class AvroSerializersRegistrar extends SerializersRegistrar with LazyLogging {
       }
       .filterNot(_._2.disabled)
       .map { case (name, config) =>
-        name -> KafkaConfig.parseConfig(config.config, "config")
+        name -> KafkaConfig.parseConfigNestedAtConfigKey(config.config)
       }
     componentsKafkaConfigs match {
       case (componentName, kafkaConfig) :: Nil =>
         logger.debug(s"Found one enabled kafka component: $componentName")
         Some(kafkaConfig)
       case Nil =>
-        val configOpt = KafkaConfig.parseConfigOpt(modelConfig)
+        val configOpt = KafkaConfig.parseConfigNestedAtKafkaKeyOpt(modelConfig)
         configOpt.foreach(_ => logger.debug(s"No kafka components found, but model root kafka config found"))
         configOpt
       case _ => None // mechanism would be disabled in case if there is more than one kafka component enabled

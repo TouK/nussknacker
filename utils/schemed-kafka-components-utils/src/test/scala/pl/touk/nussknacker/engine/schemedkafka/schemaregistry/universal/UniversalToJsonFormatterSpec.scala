@@ -21,16 +21,16 @@ import java.util.Optional
 
 class UniversalToJsonFormatterSpec extends AnyFunSuite with Matchers with OptionValues {
 
-  private lazy val config = ConfigFactory
+  private lazy val rawKafkaConfig = ConfigFactory
     .empty()
-    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("kafka_should_not_be_used:9092"))
+    .withValue(KafkaConfigProperties.bootstrapServersProperty, fromAnyRef("kafka_should_not_be_used:9092"))
     .withValue(
-      KafkaConfigProperties.property("schema.registry.url"),
+      KafkaConfigProperties.property(None, "schema.registry.url"),
       fromAnyRef("schema_registry_should_not_be_used:8081")
     )
-    .withValue("kafka.avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(false))
+    .withValue("avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(false))
 
-  private val kafkaConfig = KafkaConfig.parseConfig(config)
+  private val kafkaConfig = KafkaConfig.parseConfig(rawKafkaConfig)
 
   private val schemaRegistryMockClient: MockSchemaRegistryClient = new MockSchemaRegistryClient
 

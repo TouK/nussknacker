@@ -4,10 +4,14 @@ object KafkaConfigProperties {
 
   private val defaultPrefix = "kafka"
 
-  def bootstrapServersProperty(prefix: String = defaultPrefix): String = property(prefix, "bootstrap.servers")
+  val bootstrapServersProperty: String = property(None, "bootstrap.servers")
+  def bootstrapServersPropertyNestedAtPath(prefix: String = defaultPrefix): String =
+    property(Some(prefix), "bootstrap.servers")
 
-  def property(prefix: String, key: String): String = s"""$prefix.kafkaProperties.${escapeeKeyIfNeeded(key)}"""
-  def property(key: String): String                 = property(defaultPrefix, key)
+  def property(key: String): String = property(Some(defaultPrefix), key)
+  // FIXME abr: remove prefix
+  def property(prefix: Option[String], key: String): String =
+    (prefix.toList ::: "kafkaProperties" :: escapeeKeyIfNeeded(key) :: Nil).mkString(".")
 
   private def escapeeKeyIfNeeded(key: String) = if (key.contains(".")) s""""$key"""" else key
 }

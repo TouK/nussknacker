@@ -65,7 +65,10 @@ class SchemedKafkaScenarioTestingSpec
 
   private val config = ConfigFactory
     .empty()
-    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("kafka_should_not_be_used:9092"))
+    .withValue(
+      KafkaConfigProperties.bootstrapServersPropertyNestedAtPath(),
+      fromAnyRef("kafka_should_not_be_used:9092")
+    )
     .withValue(
       KafkaConfigProperties.property("schema.registry.url"),
       fromAnyRef("schema_registry_should_not_be_used:8081")

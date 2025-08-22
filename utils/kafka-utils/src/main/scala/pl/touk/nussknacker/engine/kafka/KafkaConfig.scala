@@ -14,6 +14,7 @@ case class SchemaRegistryClientKafkaConfig(
     avroAsJsonSerialization: Option[Boolean]
 )
 
+// FIXME abr: rename to KafkaComponentsConfig
 case class KafkaConfig(
     kafkaProperties: Option[Map[String, String]],
     kafkaEspProperties: Option[Map[String, String]],
@@ -37,7 +38,7 @@ case class KafkaConfig(
     useDataSampleParamForSchemalessJsonTopicBasedKafkaSource: Boolean = false
 ) {
 
-  def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(
+  def schemaRegistryClientKafkaConfig: SchemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(
     kafkaProperties.getOrElse(Map.empty),
     schemaRegistryCacheConfig,
     avroAsJsonSerialization
@@ -80,17 +81,29 @@ object KafkaConfig {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
 
+  val empty: KafkaConfig = KafkaConfig(kafkaProperties = None, kafkaEspProperties = None)
+
   val DefaultGlobalKafkaConfigPath                              = "kafka"
   val DefaultOffsetResetStrategyPath                            = "defaultOffsetResetStrategy"
   val DefaultMaxOutOfOrdernessMillisPath                        = "defaultMaxOutOfOrdernessMillis"
   val DefaultMaxOutOfOrdernessMillisDefault: java.time.Duration = java.time.Duration.ofMillis(60000)
 
-  def parseConfigOpt(config: Config, path: String = DefaultGlobalKafkaConfigPath): Option[KafkaConfig] = {
-    config.getAs[KafkaConfig](path)
+  // FIXME abr: remove
+  def parseConfigNestedAtKafkaKeyOpt(config: Config): Option[KafkaConfig] = {
+    config.getAs[KafkaConfig](DefaultGlobalKafkaConfigPath)
   }
 
-  def parseConfig(config: Config, path: String = DefaultGlobalKafkaConfigPath): KafkaConfig = {
-    config.as[KafkaConfig](path)
+  // FIXME abr: use it everywhere + add parseConfigOpt getOrElse parseConfigNestedAtConfigKey legacy variant
+  def parseConfig(config: Config): KafkaConfig = {
+    config.as[KafkaConfig]
+  }
+
+  def parseConfigNestedAtConfigKey(config: Config): KafkaConfig = {
+    config.as[KafkaConfig]("config")
+  }
+
+  def parseConfigNestedAtKafkaKey(config: Config): KafkaConfig = {
+    config.as[KafkaConfig](DefaultGlobalKafkaConfigPath)
   }
 
 }

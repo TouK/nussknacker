@@ -25,7 +25,7 @@ class FinkExactlyOnceItSpec
 
   override def kafkaComponentsConfig: Config = super.kafkaComponentsConfig
     .withValue("config.sinkDeliveryGuarantee", fromAnyRef("EXACTLY_ONCE"))
-    .withValue(KafkaConfigProperties.property("config", "isolation.level"), fromAnyRef("read_committed"))
+    .withValue(KafkaConfigProperties.property(Some("config"), "isolation.level"), fromAnyRef("read_committed"))
 
   private val inputOutputMessage =
     """

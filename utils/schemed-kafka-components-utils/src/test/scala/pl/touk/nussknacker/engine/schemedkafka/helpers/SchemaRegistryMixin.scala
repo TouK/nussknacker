@@ -16,14 +16,14 @@ trait SchemaRegistryMixin
   override protected def resolveModelConfig(config: Config): Config = {
     super
       .resolveModelConfig(config)
-      .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef(kafkaServer.bootstrapServers))
+      .withValue(KafkaConfigProperties.bootstrapServersPropertyNestedAtPath(), fromAnyRef(kafkaServer.bootstrapServers))
       // schema.registry.url have to be defined even for MockSchemaRegistryClient
       .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("not_used"))
       // we turn off auto registration to do it on our own passing mocked schema registry client // meaningful only in Flink tests
       .withValue(s"kafka.kafkaEspProperties.autoRegisterRecordSchemaIdSerialization", fromAnyRef(false))
   }
 
-  protected lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(modelConfig)
+  protected lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfigNestedAtKafkaKey(modelConfig)
 
   protected def namingStrategy: NamingStrategy = NamingStrategy.Disabled
 

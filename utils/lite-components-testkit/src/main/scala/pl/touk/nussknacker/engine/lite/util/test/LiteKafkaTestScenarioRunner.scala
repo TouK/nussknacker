@@ -48,7 +48,10 @@ object LiteKafkaTestScenarioRunner {
       val modelConfig = baseModelConfig.withFallback(
         ConfigFactory
           .empty()
-          .withValue(KafkaConfigProperties.bootstrapServersProperty(), ConfigValueFactory.fromAnyRef("kafka:666"))
+          .withValue(
+            KafkaConfigProperties.bootstrapServersPropertyNestedAtPath(),
+            ConfigValueFactory.fromAnyRef("kafka:666")
+          )
           .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("schema-registry:666"))
           .withValue("kafka.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
       )
@@ -97,7 +100,7 @@ case class LiteKafkaTestScenarioRunnerBuilder(
     val mockedKafkaComponentsProvider = new LiteKafkaComponentProvider(schemaRegistryClientFactor)
     val mockedKafkaComponents =
       mockedKafkaComponentsProvider.create(modelConfig, ComponentDependencies(parsedModelConfig, designerDbRef = None))
-    val schemaRegistryClient = schemaRegistryClientFactor.create(KafkaConfig.parseConfig(modelConfig))
+    val schemaRegistryClient = schemaRegistryClientFactor.create(KafkaConfig.parseConfigNestedAtKafkaKey(modelConfig))
     val serde = schemaRegistryClient match {
       case _: ConfluentSchemaRegistryClient => ConfluentKafkaAvroElementSerde
       case _: AzureSchemaRegistryClient     => AzureKafkaAvroElementSerde
@@ -136,7 +139,7 @@ class LiteKafkaTestScenarioRunner(
 
   private val delegate: LiteTestScenarioRunner =
     new LiteTestScenarioRunner(components, globalVariables, config, runtimeMode)
-  private val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
+  private val kafkaConfig: KafkaConfig = KafkaConfig.parseConfigNestedAtKafkaKey(config)
   private val keyStringDeserializer    = new StringDeserializer
 
   def runWithStringData(

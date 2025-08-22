@@ -22,7 +22,7 @@ class KafkaExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
   import net.ceedubs.ficus.Ficus._
 
   override def create(metaData: MetaData, exceptionHandlerConfig: Config): FlinkEspExceptionConsumer = {
-    val kafkaConfig           = KafkaConfig.parseConfig(exceptionHandlerConfig)
+    val kafkaConfig           = KafkaConfig.parseConfigNestedAtKafkaKey(exceptionHandlerConfig)
     val consumerConfig        = exceptionHandlerConfig.rootAs[KafkaExceptionConsumerConfig]
     val producerCreator       = kafkaProducerCreator(kafkaConfig)
     val serializationSchema   = createSerializationSchema(metaData, consumerConfig)
