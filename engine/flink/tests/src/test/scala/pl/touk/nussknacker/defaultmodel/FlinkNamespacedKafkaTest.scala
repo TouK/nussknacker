@@ -20,9 +20,11 @@ abstract class BaseFlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
   protected val inputTopic  = TopicName.ForSource("input")
   protected val outputTopic = TopicName.ForSink("output")
 
-  override lazy val modelConfig: Config = ConfigFactory
-    .load()
-    .withValue("namespace", fromAnyRef(namespaceName))
+  override protected def resolveModelConfig(config: Config): Config = {
+    super
+      .resolveModelConfig(config)
+      .withValue("namespace", fromAnyRef(namespaceName))
+  }
 
   private val inputSchema = new JsonSchema(
     """{

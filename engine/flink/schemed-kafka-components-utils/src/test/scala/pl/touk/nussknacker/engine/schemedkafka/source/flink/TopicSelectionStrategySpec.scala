@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.schemedkafka.{
   TopicsMatchingPatternWithExistingSubjectsSelectionStrategy,
@@ -23,7 +23,7 @@ class TopicSelectionStrategySpec extends FlinkKafkaAvroSpecMixin with KafkaAvroS
 
   override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = factory
 
-  private lazy val confluentClient = schemaRegistryClientFactory.create(kafkaConfig)
+  private lazy val confluentClient = schemaRegistryClientFactory.create(kafkaComponentsConfig)
 
   test("all topic strategy test") {
     val strategy = new TopicsWithExistingSubjectSelectionStrategy(confluentClient)
@@ -52,8 +52,8 @@ class TopicSelectionStrategySpec extends FlinkKafkaAvroSpecMixin with KafkaAvroS
   test("show how to override topic selection strategy") {
     new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
-      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig),
-      kafkaConfig,
+      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaComponentsConfig),
+      kafkaComponentsConfig,
       NamingStrategy.Disabled,
       new FlinkKafkaSourceImplFactory
     ) {

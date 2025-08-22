@@ -5,7 +5,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.header.internals.RecordHeaders
 import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.api.process.TopicName
-import pl.touk.nussknacker.engine.kafka.{serialization, KafkaConfig}
+import pl.touk.nussknacker.engine.kafka.{serialization, KafkaComponentsConfig}
 import pl.touk.nussknacker.engine.kafka.serialization.{CharSequenceSerializer, KafkaProducerHelper}
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets
 
 class UniversalKafkaSerializationSchemaFactory(
     schemaRegistryClientFactory: SchemaRegistryClientFactory,
-    kafkaConfig: KafkaConfig
+    kafkaComponentsConfig: KafkaComponentsConfig
 ) extends Serializable {
 
   def create(
@@ -26,7 +26,7 @@ class UniversalKafkaSerializationSchemaFactory(
   ): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
     new serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] {
       private lazy val keySerializer   = new CharSequenceSerializer
-      private lazy val valueSerializer = createValueSerializer(valueSchemaData, kafkaConfig)
+      private lazy val valueSerializer = createValueSerializer(valueSchemaData, kafkaComponentsConfig)
 
       override def serialize(
           element: KeyedValue[AnyRef, AnyRef],
@@ -45,11 +45,11 @@ class UniversalKafkaSerializationSchemaFactory(
 
   private def createValueSerializer(
       schemaData: RuntimeSchemaData[ParsedSchema],
-      kafkaConfig: KafkaConfig
+      kafkaComponentsConfig: KafkaComponentsConfig
   ): Serializer[Any] = {
-    val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
+    val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaComponentsConfig)
     val schema               = schemaData.schema
-    UniversalSchemaSupportDispatcher(kafkaConfig)
+    UniversalSchemaSupportDispatcher(kafkaComponentsConfig)
       .forSchemaType(schema.schemaType())
       .serializer(Some(schema), schemaRegistryClient, isKey = false)
   }

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.kafka.generic
 
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.process.{Sink, TopicName}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkImplFactory
 import pl.touk.nussknacker.engine.kafka.sink.flink.FlinkKafkaSink
@@ -15,11 +15,11 @@ object sinks {
     override def prepareSink(
         topic: PreparedKafkaTopic[TopicName.ForSink],
         value: LazyParameter[AnyRef],
-        kafkaConfig: KafkaConfig,
+        kafkaComponentsConfig: KafkaComponentsConfig,
         serializationSchema: KafkaSerializationSchema[AnyRef],
         clientId: String
     ): Sink =
-      new FlinkKafkaSink(topic, value, kafkaConfig, serializationSchema, clientId)
+      new FlinkKafkaSink(topic, value, kafkaComponentsConfig, serializationSchema, clientId)
 
   }
 

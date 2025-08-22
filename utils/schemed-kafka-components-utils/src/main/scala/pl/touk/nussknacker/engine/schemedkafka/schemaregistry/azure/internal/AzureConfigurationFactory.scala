@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.internal
 
 import com.azure.core.util.{Configuration, ConfigurationBuilder}
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 
 // This class enrich Azure properties with our properties from kafka configuration to be possible to tweak some
 // parameters. Caveat: It wasn's tested intensively, from my observation most of properties can't be configured this

@@ -46,6 +46,8 @@ class KafkaTransactionalScenarioInterpreterTest
 
   import KafkaTransactionalScenarioInterpreter._
 
+  override protected val kafkaComponentsConfigPrefix: String = "kafka"
+
   private val metricRegistry = new MetricRegistry
   private val preparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 

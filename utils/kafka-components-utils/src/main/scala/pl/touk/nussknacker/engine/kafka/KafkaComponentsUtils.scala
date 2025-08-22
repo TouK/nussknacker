@@ -10,9 +10,9 @@ object KafkaComponentsUtils extends KafkaUtils {
 
   def validateTopicsExistence[T <: TopicName: TopicValidationType](
       topics: NonEmptyList[PreparedKafkaTopic[T]],
-      kafkaConfig: KafkaConfig
+      kafkaComponentsConfig: KafkaComponentsConfig
   ): Unit = {
-    CachedTopicsExistenceValidator(kafkaConfig)
+    CachedTopicsExistenceValidator(kafkaComponentsConfig)
       .validateTopics(topics.map(_.prepared))
       .valueOr(err => throw err)
   }

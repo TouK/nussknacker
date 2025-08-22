@@ -17,7 +17,7 @@ class KafkaUtilsSpec extends AnyFunSuite {
 
   // This test can be removed when code in Nu will start using KafkaSource
   test("test KafkaSource creation with defaults set by KafkaUtils") {
-    val properties = KafkaUtils.toConsumerProperties(KafkaConfig.empty, None)
+    val properties = KafkaUtils.toConsumerProperties(KafkaComponentsConfig.empty, None)
 
     def createSource(): Unit = {
       KafkaSource
@@ -41,7 +41,7 @@ class KafkaUtilsSpec extends AnyFunSuite {
   // This test can be removed when code in Nu will start using KafkaSource.
   // It's here to make sure that we would be safe if Flink made KafkaSink's sanity checks as strict as in KafkaSource
   test("test KafkaSink creation with defaults set by KafkaUtils") {
-    val properties = KafkaUtils.toProducerProperties(KafkaConfig.empty, clientId = "test")
+    val properties = KafkaUtils.toProducerProperties(KafkaComponentsConfig.empty, clientId = "test")
 
     def createSink(): Unit = {
       KafkaSink

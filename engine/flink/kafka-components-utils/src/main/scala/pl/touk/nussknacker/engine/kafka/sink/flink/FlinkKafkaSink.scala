@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkLazyParameterFunctionHelper
 }
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 
 import java.nio.charset.StandardCharsets
@@ -19,7 +19,7 @@ import scala.annotation.nowarn
 class FlinkKafkaSink(
     topic: PreparedKafkaTopic[TopicName.ForSink],
     value: LazyParameter[AnyRef],
-    kafkaConfig: KafkaConfig,
+    kafkaComponentsConfig: KafkaComponentsConfig,
     serializationSchema: KafkaSerializationSchema[AnyRef],
     clientId: String
 ) extends BasicFlinkSink
@@ -34,7 +34,7 @@ class FlinkKafkaSink(
 
   @nowarn("cat=deprecation")
   override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[AnyRef] =
-    PartitionByKeyFlinkKafkaProducer(kafkaConfig, topic.prepared, serializationSchema, clientId)
+    PartitionByKeyFlinkKafkaProducer(kafkaComponentsConfig, topic.prepared, serializationSchema, clientId)
 
   override def prepareTestValueFunction: AnyRef => String =
     value =>

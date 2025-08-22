@@ -5,7 +5,12 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.common.KafkaException
 import org.apache.kafka.common.errors.TimeoutException
 import pl.touk.nussknacker.engine.api.util.ExceptionUtils
-import pl.touk.nussknacker.engine.kafka.{CachingKafkaAdminClient, KafkaConfig, KafkaUtils, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.{
+  CachingKafkaAdminClient,
+  KafkaComponentsConfig,
+  KafkaUtils,
+  UnspecializedTopicName
+}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClient, SchemaRegistryError}
 
 import java.util.regex.Pattern
@@ -26,8 +31,16 @@ class TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient: SchemaReg
 }
 
 object AllNonHiddenTopicsSelectionStrategy {
-  def apply(schemaRegistryClient: SchemaRegistryClient, kafkaConfig: KafkaConfig): AllNonHiddenTopicsSelectionStrategy =
-    new AllNonHiddenTopicsSelectionStrategy(schemaRegistryClient, KafkaUtils.createCachingAdminClient(kafkaConfig))
+
+  def apply(
+      schemaRegistryClient: SchemaRegistryClient,
+      kafkaComponentsConfig: KafkaComponentsConfig
+  ): AllNonHiddenTopicsSelectionStrategy =
+    new AllNonHiddenTopicsSelectionStrategy(
+      schemaRegistryClient,
+      KafkaUtils.createCachingAdminClient(kafkaComponentsConfig)
+    )
+
 }
 
 class AllNonHiddenTopicsSelectionStrategy(

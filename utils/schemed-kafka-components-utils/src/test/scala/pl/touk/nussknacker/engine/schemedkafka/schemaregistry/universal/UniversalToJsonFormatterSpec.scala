@@ -10,7 +10,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaRecordUtils, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, KafkaRecordUtils, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload.ValueSchemaIdHeaderName
@@ -30,7 +30,7 @@ class UniversalToJsonFormatterSpec extends AnyFunSuite with Matchers with Option
     )
     .withValue("avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(false))
 
-  private val kafkaConfig = KafkaConfig.parseConfig(rawKafkaConfig)
+  private val kafkaComponentsConfig = KafkaComponentsConfig.parseConfig(rawKafkaConfig)
 
   private val schemaRegistryMockClient: MockSchemaRegistryClient = new MockSchemaRegistryClient
 
@@ -39,9 +39,9 @@ class UniversalToJsonFormatterSpec extends AnyFunSuite with Matchers with Option
     val serdeProvider =
       UniversalSchemaBasedSerdeProvider.create(
         schemaRegistryFactory,
-        kafkaConfig
+        kafkaComponentsConfig
       )
-    serdeProvider.recordFormatterFactory.create(schemaRegistryFactory.create(kafkaConfig))
+    serdeProvider.recordFormatterFactory.create(schemaRegistryFactory.create(kafkaComponentsConfig))
   }
 
   test("json record formatting should work without schema") {

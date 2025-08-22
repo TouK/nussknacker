@@ -5,7 +5,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.process.{Sink, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
@@ -19,13 +19,13 @@ object LiteKafkaUniversalSinkImplFactory extends UniversalKafkaSinkImplFactory {
       preparedTopic: PreparedKafkaTopic[TopicName.ForSink],
       keyParam: LazyParameter[AnyRef],
       valueParam: LazyParameter[AnyRef],
-      kafkaConfig: KafkaConfig,
+      kafkaComponentsConfig: KafkaComponentsConfig,
       serializationSchema: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]],
       clientId: String,
       schema: RuntimeSchemaData[ParsedSchema],
       validationMode: ValidationMode
   ): Sink = {
-    lazy val encode = UniversalSchemaSupportDispatcher(kafkaConfig)
+    lazy val encode = UniversalSchemaSupportDispatcher(kafkaComponentsConfig)
       .forSchemaType(schema.schema.schemaType())
       .formValueEncoder(schema.schema, validationMode)
 

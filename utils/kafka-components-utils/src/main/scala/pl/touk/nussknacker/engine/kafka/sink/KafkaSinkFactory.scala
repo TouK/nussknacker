@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, TopicName}
-import pl.touk.nussknacker.engine.kafka.{serialization, KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.kafka.{serialization, KafkaComponentsConfig, KafkaComponentsUtils, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.serialization.{
   FixedKafkaSerializationSchemaFactory,
   KafkaSerializationSchema,
@@ -46,12 +46,12 @@ abstract class BaseKafkaSinkFactory(
 ) extends SinkFactory {
 
   protected def createSink(topic: TopicName.ForSink, value: LazyParameter[AnyRef], processMetaData: MetaData): Sink = {
-    val kafkaConfig   = KafkaConfig.parseConfig(modelConfig.underlyingConfig.getConfig("kafka"))
-    val preparedTopic = KafkaComponentsUtils.prepareKafkaTopic(topic, modelConfig.namingStrategy)
-    KafkaComponentsUtils.validateTopicsExistence(NonEmptyList.one(preparedTopic), kafkaConfig)
-    val serializationSchema = serializationSchemaFactory.create(preparedTopic.prepared, kafkaConfig)
+    val kafkaComponentsConfig = KafkaComponentsConfig.parseConfig(modelConfig.underlyingConfig.getConfig("kafka"))
+    val preparedTopic         = KafkaComponentsUtils.prepareKafkaTopic(topic, modelConfig.namingStrategy)
+    KafkaComponentsUtils.validateTopicsExistence(NonEmptyList.one(preparedTopic), kafkaComponentsConfig)
+    val serializationSchema = serializationSchemaFactory.create(preparedTopic.prepared, kafkaComponentsConfig)
     val clientId            = s"${processMetaData.name}-${preparedTopic.prepared}"
-    implProvider.prepareSink(preparedTopic, value, kafkaConfig, serializationSchema, clientId)
+    implProvider.prepareSink(preparedTopic, value, kafkaComponentsConfig, serializationSchema, clientId)
   }
 
 }
@@ -62,7 +62,7 @@ trait KafkaSinkImplFactory {
   def prepareSink(
       topic: PreparedKafkaTopic[TopicName.ForSink],
       value: LazyParameter[AnyRef],
-      kafkaConfig: KafkaConfig,
+      kafkaComponentsConfig: KafkaComponentsConfig,
       serializationSchema: KafkaSerializationSchema[AnyRef],
       clientId: String
   ): Sink

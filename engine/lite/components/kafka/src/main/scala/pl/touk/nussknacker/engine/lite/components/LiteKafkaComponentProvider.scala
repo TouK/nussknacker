@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.component.{
   NussknackerVersion
 }
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
   UniversalSchemaBasedSerdeProvider,
@@ -42,9 +42,11 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
     import docsConfig._
     def universal(componentType: ComponentType) = s"DataSourcesAndSinks#kafka-$componentType"
 
-    val kafkaConfig = KafkaConfig.parseConfigNestedAtKafkaKey(componentDependencies.modelConfig.underlyingConfig)
-    validateConfiguration(kafkaConfig)
-    val universalSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
+    val kafkaComponentsConfig =
+      KafkaComponentsConfig.parseConfigNestedAtKafkaKey(componentDependencies.modelConfig.underlyingConfig)
+    validateConfiguration(kafkaComponentsConfig)
+    val universalSerdeProvider =
+      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaComponentsConfig)
 
     List(
       ComponentDefinition(
@@ -52,7 +54,7 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
         new UniversalKafkaSourceFactory(
           schemaRegistryClientFactory,
           universalSerdeProvider,
-          kafkaConfig,
+          kafkaComponentsConfig,
           componentDependencies.modelConfig.namingStrategy,
           new LiteKafkaSourceImplFactory
         )
@@ -62,7 +64,7 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
         new UniversalKafkaSinkFactory(
           schemaRegistryClientFactory,
           universalSerdeProvider,
-          kafkaConfig,
+          kafkaComponentsConfig,
           componentDependencies.modelConfig.namingStrategy,
           componentDependencies.modelConfig.jsonLikeValuesEnteringMode,
           LiteKafkaUniversalSinkImplFactory
@@ -75,14 +77,14 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
 
   override def isAutoLoaded: Boolean = true
 
-  private def validateConfiguration(kafkaConfig: KafkaConfig): Unit = {
-    if (kafkaConfig.idleTimeout.isDefined) {
+  private def validateConfiguration(kafkaComponentsConfig: KafkaComponentsConfig): Unit = {
+    if (kafkaComponentsConfig.idleTimeout.isDefined) {
       throw new IllegalArgumentException(
         "Idleness is a Flink specific feature and is not supported in Lite Kafka sources. " +
           "Please remove the idleness config from your Lite Kafka sources config."
       )
     }
-    if (kafkaConfig.sinkDeliveryGuarantee.isDefined) {
+    if (kafkaComponentsConfig.sinkDeliveryGuarantee.isDefined) {
       throw new IllegalArgumentException(
         "SinkDeliveryGuarantee is a Flink specific feature and is not supported in Lite Kafka config. " +
           "Please remove the sinkDeliveryGuarantee property from your Lite Kafka config."

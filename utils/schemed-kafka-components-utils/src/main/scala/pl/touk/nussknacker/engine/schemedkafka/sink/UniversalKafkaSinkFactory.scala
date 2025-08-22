@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.{
   KafkaUniversalComponentTransformer,
@@ -62,7 +62,7 @@ object UniversalKafkaSinkFactory {
 class UniversalKafkaSinkFactory(
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
     val schemaBasedMessagesSerdeProvider: UniversalSchemaBasedSerdeProvider,
-    val kafkaConfig: KafkaConfig,
+    val kafkaComponentsConfig: KafkaComponentsConfig,
     val namingStrategy: NamingStrategy,
     jsonLikeValuesEnteringMode: JsonLikeValuesEnteringMode,
     implProvider: UniversalKafkaSinkImplFactory
@@ -404,7 +404,7 @@ class UniversalKafkaSinkFactory(
       preparedTopic,
       key,
       valueLazyParam,
-      kafkaConfig,
+      kafkaComponentsConfig,
       serializationSchema,
       clientId,
       finalState.schema,

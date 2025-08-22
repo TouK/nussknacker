@@ -20,7 +20,7 @@ class ConsumerGroupDeterminer(consumerGroupNamingStrategy: ConsumerGroupNamingSt
 
 object ConsumerGroupDeterminer {
 
-  def apply(config: KafkaConfig): ConsumerGroupDeterminer =
+  def apply(config: KafkaComponentsConfig): ConsumerGroupDeterminer =
     new ConsumerGroupDeterminer(
       config.consumerGroupNamingStrategy.getOrElse(ConsumerGroupNamingStrategy.ProcessIdNodeId)
     )

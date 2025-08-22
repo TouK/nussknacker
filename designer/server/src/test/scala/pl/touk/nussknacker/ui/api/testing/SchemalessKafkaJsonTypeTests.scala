@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.docker.WithKafkaContainer
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypes
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
@@ -58,7 +58,7 @@ class SchemalessKafkaJsonTypeTests
     with StrictLogging
     with NuRestAssureExtensions {
 
-  private lazy val defaultKafkaConfig: KafkaConfig = KafkaConfig(
+  private lazy val defaultKafkaConfig: KafkaComponentsConfig = KafkaComponentsConfig(
     kafkaProperties = Some(Map("bootstrap.servers" -> hostKafkaAddress)),
     kafkaEspProperties = None,
   )

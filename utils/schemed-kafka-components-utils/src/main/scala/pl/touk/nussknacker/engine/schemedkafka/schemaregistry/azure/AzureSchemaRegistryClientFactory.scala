@@ -105,7 +105,7 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
   }
 
   override def getAllTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
-    val topics        = fetchTopics(KafkaConfig(Some(config.kafkaProperties), None))
+    val topics        = fetchTopics(KafkaComponentsConfig(Some(config.kafkaProperties), None))
     val matchStrategy = SchemaNameTopicMatchStrategy(topics)
     getAllFullSchemaNames.map(matchStrategy.getAllMatchingTopics(_, isKey = false))
   }
@@ -117,9 +117,9 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
     getOneMatchingSchemaName(topicName, isKey).andThen(getVersions)
   }
 
-  private def fetchTopics(kafkaConfig: KafkaConfig) = {
+  private def fetchTopics(kafkaComponentsConfig: KafkaComponentsConfig) = {
     KafkaUtils
-      .usingAdminClient(kafkaConfig) { admin =>
+      .usingAdminClient(kafkaComponentsConfig) { admin =>
         admin.listTopics().names().get().asScala.toList
       }
       .map(UnspecializedTopicName.apply)

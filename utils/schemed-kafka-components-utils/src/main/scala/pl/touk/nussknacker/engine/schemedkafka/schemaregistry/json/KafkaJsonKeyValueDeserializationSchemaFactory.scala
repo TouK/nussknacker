@@ -4,13 +4,13 @@ import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 
 import java.nio.charset.StandardCharsets
 
-class KafkaJsonKeyValueDeserializationSchemaFactory(override protected val kafkaConfig: KafkaConfig)
+class KafkaJsonKeyValueDeserializationSchemaFactory(override protected val kafkaComponentsConfig: KafkaComponentsConfig)
     extends KafkaSchemaBasedKeyValueDeserializationSchemaFactory {
 
   override protected def createKeyDeserializer[K](

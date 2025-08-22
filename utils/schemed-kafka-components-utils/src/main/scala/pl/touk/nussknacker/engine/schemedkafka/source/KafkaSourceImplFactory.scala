@@ -18,7 +18,7 @@ trait KafkaSourceImplFactory[K, V] {
       dependencies: List[NodeDependencyValue],
       finalState: Any,
       preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
-      kafkaConfig: KafkaConfig,
+      kafkaComponentsConfig: KafkaComponentsConfig,
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
       formatter: UniversalToJsonFormatter[K, V],
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],

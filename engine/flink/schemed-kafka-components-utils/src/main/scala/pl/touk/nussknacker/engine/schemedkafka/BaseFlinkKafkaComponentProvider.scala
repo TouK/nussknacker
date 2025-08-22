@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.ModelConfig.JsonLikeValuesEnteringMode
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentType}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
@@ -26,10 +26,10 @@ trait BaseFlinkKafkaComponentProvider {
       modelNamingStrategy: NamingStrategy,
       jsonLikeValuesEnteringMode: JsonLikeValuesEnteringMode
   ): List[ComponentDefinition] = {
-    val kafkaConfig = KafkaConfig.parseConfigNestedAtConfigKey(componentProviderConfig)
-    val namingStrategy =
-      if (kafkaConfig.disableNamespace) NamingStrategy.Disabled else modelNamingStrategy
-    val universalSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
+    val kafkaComponentsConfig = KafkaComponentsConfig.parseConfigNestedAtConfigKey(componentProviderConfig)
+    val namingStrategy = namingStrategyWithDisabledNamespacingIfApplicable(componentProviderConfig, modelNamingStrategy)
+    val universalSerdeProvider =
+      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaComponentsConfig)
 
     val docsConfig = DocsConfig(componentProviderConfig)
     import docsConfig._
@@ -41,7 +41,7 @@ trait BaseFlinkKafkaComponentProvider {
         new UniversalKafkaSourceFactory(
           schemaRegistryClientFactory,
           universalSerdeProvider,
-          kafkaConfig,
+          kafkaComponentsConfig,
           namingStrategy,
           new FlinkKafkaSourceImplFactory
         )
@@ -51,13 +51,28 @@ trait BaseFlinkKafkaComponentProvider {
         new UniversalKafkaSinkFactory(
           schemaRegistryClientFactory,
           universalSerdeProvider,
-          kafkaConfig,
+          kafkaComponentsConfig,
           namingStrategy,
           jsonLikeValuesEnteringMode,
           FlinkKafkaUniversalSinkImplFactory
         )
       ).withRelativeDocs(universal(ComponentType.Sink))
     )
+  }
+
+  // Currently, all kafka components config is nested inside "config" key, disableNamespace is the only config
+  // property on the top level. TODO: unify it
+  private def namingStrategyWithDisabledNamespacingIfApplicable(
+      componentProviderConfig: Config,
+      modelNamingStrategy: NamingStrategy
+  ): NamingStrategy = {
+    val disableNamespacePath = "disableNamespace"
+    if (componentProviderConfig
+        .hasPath(disableNamespacePath) && componentProviderConfig.getBoolean(disableNamespacePath)) {
+      NamingStrategy.Disabled
+    } else {
+      modelNamingStrategy
+    }
   }
 
 }
