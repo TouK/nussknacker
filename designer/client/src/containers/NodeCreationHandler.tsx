@@ -32,11 +32,13 @@ export const findFreeSpaceForNode = (paper: dia.Paper, plainPoint: g.PlainPoint)
     return rect.topLeft().snapToGrid(1, 1);
 };
 
-export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
+export function useNodeCreationHandler({ panelSide, when = true }: { panelSide: PanelSide; when?: boolean }) {
     const dispatch = useAppDispatch();
     const graphGetter = useGraph();
 
     useEffect(() => {
+        if (!when) return;
+
         const paper = graphGetter()?.processGraphPaper;
         if (!paper) return;
 
@@ -102,47 +104,44 @@ export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
             paper.off(null, null, context);
             paper.options.linkPinning = false;
         };
-    }, [dispatch, graphGetter, panelSide]);
+    }, [when, dispatch, graphGetter, panelSide]);
 
     const { isOpened, toggleCollapse, ref } = useSidePanel(panelSide);
 
-    useEffect(
-        () =>
-            dispatch(
-                addListenerTyped("CLOSE_NODE_SELECTOR", ({ data: { node, onPoint, side, edge } }, api) => {
-                    if (side !== panelSide) return;
-                    toggleCollapse();
+    useEffect(() => {
+        if (!when) return;
+        return dispatch(
+            addListenerTyped("CLOSE_NODE_SELECTOR", ({ data: { node, onPoint, side, edge } }, api) => {
+                if (side !== panelSide) return;
+                toggleCollapse();
 
-                    if (!node) return;
+                if (!node) return;
 
-                    const graph = graphGetter();
-                    const paper = graph.processGraphPaper;
+                const graph = graphGetter();
+                const paper = graph.processGraphPaper;
 
-                    const position: g.Point = findFreeSpaceForNode(paper, onPoint);
+                const position: g.Point = findFreeSpaceForNode(paper, onPoint);
 
-                    if (graph.isFragmentCreator(node)) {
-                        return graph.createFragment(position, edge);
-                    }
+                if (graph.isFragmentCreator(node)) {
+                    return graph.createFragment(position, edge);
+                }
 
-                    api.dispatch(
-                        nodesWithEdgesAdded(
-                            [
-                                {
-                                    node,
-                                    position,
-                                },
-                            ],
-                            [edge].filter(Boolean),
-                            false,
-                        ),
-                    );
-                }),
-            ),
-        [dispatch, graphGetter, panelSide, toggleCollapse],
-    );
+                api.dispatch(
+                    nodesWithEdgesAdded(
+                        [
+                            {
+                                node,
+                                position,
+                            },
+                        ],
+                        [edge].filter(Boolean),
+                        false,
+                    ),
+                );
+            }),
+        );
+    }, [dispatch, graphGetter, panelSide, toggleCollapse, when]);
 
-    useOutsideInteraction(ref, () => dispatch(closeNodeSelector(panelSide)), isOpened);
-    useKey("Escape", () => dispatch(closeNodeSelector(panelSide)), { when: isOpened });
-
-    return null;
+    useOutsideInteraction(ref, () => dispatch(closeNodeSelector(panelSide)), isOpened && when);
+    useKey("Escape", () => dispatch(closeNodeSelector(panelSide)), { when: isOpened && when });
 }

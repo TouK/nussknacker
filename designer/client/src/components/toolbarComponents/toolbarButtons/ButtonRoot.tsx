@@ -63,7 +63,6 @@ export const ButtonRoot = forwardRef<HTMLButtonElement, Omit<ToolbarButtonProps,
                 >
                     <Badge color="warning" overlap={"circular"} variant={showIndicator && variant === ButtonsVariant.xs ? "dot" : null}>
                         <Icon
-                            title={title}
                             className={"toolbarButton-Icon"}
                             sx={
                                 [ButtonsVariant.menu].includes(variant)

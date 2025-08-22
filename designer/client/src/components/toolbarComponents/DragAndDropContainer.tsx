@@ -23,9 +23,9 @@ export const TOOLBAR_DRAGGABLE_TYPE = "TOOLBAR";
 export const DraggableIdContext = React.createContext<string | null>(null);
 
 export function DragAndDropContainer({ children, onMove }: Props) {
-    const animationDelay = 200;
+    const animationDelay = 500;
     const [draggableId, setDraggableId] = useState<string | null>(null);
-    const [debouncedDraggableId, immediatelySetDraggableId] = useDebouncedValue(draggableId, animationDelay);
+    const [debouncedDraggableId, immediatelySetDraggableId] = useDebouncedValue(draggableId, animationDelay / 4);
     const clearDraggableId = useCallback(() => {
         setDraggableId(null);
         immediatelySetDraggableId(null);
@@ -73,10 +73,7 @@ export function DragAndDropContainer({ children, onMove }: Props) {
 
     return (
         <DragDropContext
-            sensors={[
-                mouseSensor,
-                // keyboardSensor
-            ]}
+            sensors={[mouseSensor, keyboardSensor]}
             onDragEnd={onDragEnd}
             onDragStart={onDragStart}
             enableDefaultSensors={false}
@@ -87,7 +84,6 @@ export function DragAndDropContainer({ children, onMove }: Props) {
                         minHeight: draggableId ? "1em" : null,
                         minWidth: SIDEBAR_WIDTH,
                         position: "relative",
-                        // backgroundColor: theme.palette.background.paper,
                     },
                 }}
             />
