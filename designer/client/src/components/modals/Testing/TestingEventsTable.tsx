@@ -1,4 +1,3 @@
-// File: 'designer/client/src/components/modals/Testing/TestingEventsTable.tsx'
 import { css, cx } from "@emotion/css";
 import type { DataEditorProps, DataEditorRef, GridCell, GridColumn, GridSelection, Item, EditListItem } from "@glideapps/glide-data-grid";
 import DataEditor, { CompactSelection, GridCellKind, type CustomCell, type CustomRenderer, drawTextCell } from "@glideapps/glide-data-grid";
@@ -13,6 +12,7 @@ import { CellMenu, DeleteRowMenuItem } from "../../graph/node-modal/editors/expr
 import { Sizer } from "../../graph/node-modal/editors/expression/Table/Sizer";
 import { useTableTheme } from "../../graph/node-modal/editors/expression/Table/tableTheme";
 import "@glideapps/glide-data-grid/dist/index.css";
+import { TypeSelect } from "../../graph/node-modal/fragment-input-definition/TypeSelect";
 import { nodeInput } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 
 type DateCellData = { kind: "date-cell"; value: string };
@@ -66,35 +66,35 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({ data = [], onDa
                 return true;
             },
             provideEditor: () => ({
-                editor: ({ value, onChange, target }) => (
-                    <select
-                        autoFocus
-                        style={{
-                            minWidth: target.width,
-                            minHeight: target.height,
-                            padding: 0,
-                            outline: 0,
-                            width: target.width,
-                            height: target.height,
-                            background: "transparent",
-                        }}
-                        value={value.data.value}
-                        onChange={(e) =>
-                            onChange({
-                                ...value,
-                                copyData: e.target.value,
-                                data: { ...value.data, value: e.target.value },
-                            })
-                        }
-                    >
-                        <option value="" />
-                        {value.data.options.map((o) => (
-                            <option key={o} value={o}>
-                                {o}
-                            </option>
-                        ))}
-                    </select>
-                ),
+                editor: ({ value, onChange, target }) => {
+                    console.log(value.data.options);
+                    return (
+                        <div
+                            style={{
+                                width: target.width,
+                                height: target.height,
+                                display: "flex",
+                                alignItems: "center",
+                                padding: 0,
+                            }}
+                        >
+                            <TypeSelect
+                                autoFocus
+                                menuIsOpen
+                                value={{ value: value.data.value, label: value.data.value }}
+                                options={value.data.options.map((option) => ({ value: option, label: option }))}
+                                onChange={(v) =>
+                                    onChange({
+                                        ...value,
+                                        copyData: v ?? "",
+                                        data: { ...value.data, value: v ?? "" },
+                                    })
+                                }
+                                style={{ width: "100%" }}
+                            />
+                        </div>
+                    );
+                },
                 deletedValue: (v) => ({ ...v, copyData: "", data: { ...v.data, value: "" } }),
             }),
         }),
@@ -129,7 +129,6 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({ data = [], onDa
                                 inputProps={{
                                     className: cx([nodeInput]),
                                 }}
-                                // Use the unified display format; disable separate time format
                                 dateFormat={displayFormat}
                                 timeFormat={false}
                                 onChange={(m) => {

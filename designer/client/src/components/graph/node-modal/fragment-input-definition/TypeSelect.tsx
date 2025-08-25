@@ -42,6 +42,7 @@ interface RowSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "o
     value: Option;
     placeholder?: string;
     fieldErrors?: FieldError[];
+    menuIsOpen?: boolean;
 }
 
 export function TypeSelect({
@@ -53,6 +54,7 @@ export function TypeSelect({
     onBlur,
     placeholder,
     fieldErrors = [],
+    menuIsOpen = false,
     ...props
 }: RowSelectProps): JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
@@ -64,6 +66,7 @@ export function TypeSelect({
     return (
         <NodeValue marked={isMarked} onKeyDown={preventEsc} sx={{ width: "100%" }}>
             <CreatableSelect
+                menuIsOpen={menuIsOpen || undefined} // We need to pass undefined in case of false, to not handle menu state in a controlled manner
                 id={props.id}
                 aria-label={"type-select"}
                 className={cx(`${nodeValue}`, props.className)}
