@@ -1,6 +1,6 @@
 import { Box, styled, Typography } from "@mui/material";
 import { useWindowManager } from "@touk/window-manager";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import NuIcon from "../../../assets/img/nussknacker-logo-icon.svg";
@@ -26,25 +26,13 @@ function convertViewportUnitToPixels(unitString: string): number {
     }
 }
 
-const ASSISTANT_BUTTON = {
-    right: 12,
-    bottom: 8,
-    width: 75,
-    height: 75,
-};
-
 const StyledAiAssistantButton = styled(Box, {
     shouldForwardProp: (propName: string) => !["isOpenedAiAssistantDialog"].includes(propName),
 })<{ isOpenedAiAssistantDialog: boolean }>(({ theme, isOpenedAiAssistantDialog }) => {
     return {
-        position: "fixed",
-        bottom: ASSISTANT_BUTTON.bottom,
-        right: ASSISTANT_BUTTON.right,
         padding: theme.spacing(2),
         background: blendDarken(theme.palette.primary.main, 0.6),
         cursor: "pointer",
-        width: ASSISTANT_BUTTON.width,
-        height: ASSISTANT_BUTTON.height,
         borderRadius: "50%",
         display: "flex",
         flexDirection: "column",
@@ -63,10 +51,13 @@ export const AiAssistantButton = () => {
     const featureSettings = useAppSelector(getFeatureSettings);
     const openedAiAssistantDialog = useMemo(() => windows.find((window) => window.id === AI_ASSISTANT_MODAL_ID), [windows]);
 
+    const buttonRef = useRef<HTMLElement>(null);
     const handleClick = useCallback(() => {
         if (openedAiAssistantDialog) {
             close(AI_ASSISTANT_MODAL_ID);
         } else {
+            const buttonBox = buttonRef.current.getBoundingClientRect();
+
             open({
                 id: AI_ASSISTANT_MODAL_ID,
                 isModal: false,
@@ -74,8 +65,8 @@ export const AiAssistantButton = () => {
                 title: "AI Assistant",
                 isResizable: true,
                 layoutData: {
-                    right: ASSISTANT_BUTTON.right,
-                    bottom: ASSISTANT_BUTTON.bottom + ASSISTANT_BUTTON.height + 20,
+                    right: window.innerWidth - buttonBox.right,
+                    bottom: window.innerHeight - buttonBox.top + 20,
                     width: convertViewportUnitToPixels("35vw"),
                     minWidth: 500,
                     height: convertViewportUnitToPixels("80vh"),
@@ -91,10 +82,18 @@ export const AiAssistantButton = () => {
 
     return (
         <StyledAiAssistantButton
+            ref={buttonRef}
             id="ai-assistant-button"
             role="button"
             onClick={handleClick}
             isOpenedAiAssistantDialog={Boolean(openedAiAssistantDialog)}
+            sx={{
+                position: "fixed",
+                bottom: 8,
+                right: 12,
+                width: 75,
+                height: 75,
+            }}
         >
             <NuIcon />
             <Typography component="span" variant={"overline"} fontWeight={"bold"} pt={0.5}>
