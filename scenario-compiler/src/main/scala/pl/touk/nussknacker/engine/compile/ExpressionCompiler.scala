@@ -300,7 +300,9 @@ class ExpressionCompiler(
     val incompatibleChangeToParameterDefinitionDetected: ValidatedNel[PartSubGraphCompilationError, Expression] =
       invalidNel(IncompatibleParameterDefinitionModification(paramName, expression.language, editors, nodeId.id))
 
-    def spelExpressionForDictKeyWithLabelExpression(expression: Expression) = {
+    def spelExpressionForDictKeyWithLabelExpression(
+        expression: Expression
+    ): ValidatedNel[PartSubGraphCompilationError, Expression] = {
       DictKeyWithLabelExpressionParser.parseDictKeyWithLabelExpression(expression.expression) match {
         case Valid(DictKeyWithLabelExpression(key, label)) =>
           val rawValue = label.getOrElse(key)
@@ -310,11 +312,20 @@ class ExpressionCompiler(
       }
     }
 
-    def spelExpressionForFixedList(expression: Expression, allowed: List[String]) = {
-      if (allowed.contains(expression.expression)) {
-        Valid(Expression.spel(s"'${expression.expression}'"))
-      } else {
-        incompatibleChangeToParameterDefinitionDetected
+    def spelExpressionForFixedList(
+        expression: Expression,
+        allowed: List[String]
+    ): ValidatedNel[PartSubGraphCompilationError, Expression] = {
+      DictKeyWithLabelExpressionParser.parseDictKeyWithLabelExpression(expression.expression) match {
+        case Valid(DictKeyWithLabelExpression(key, label)) =>
+          if (allowed.contains(expression.expression)) {
+            val rawValue = label.getOrElse(key)
+            Valid(Expression.spel(s"'$rawValue'"))
+          } else {
+            incompatibleChangeToParameterDefinitionDetected
+          }
+        case Invalid(_) =>
+          incompatibleChangeToParameterDefinitionDetected
       }
     }
 
