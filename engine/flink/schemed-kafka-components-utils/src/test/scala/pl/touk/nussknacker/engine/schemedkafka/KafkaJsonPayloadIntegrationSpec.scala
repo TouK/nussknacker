@@ -41,7 +41,7 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     modelData = LocalModelData(
-      config
+      modelConfig
         .withValue("kafka.avroAsJsonSerialization", fromAnyRef(true)),
       List.empty,
       configCreator = creator,

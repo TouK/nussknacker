@@ -19,7 +19,7 @@ trait FunctionalTestMixin extends KafkaSpec { self: Suite =>
 
   protected lazy val runner: LiteKafkaTestScenarioRunner =
     TestScenarioRunner
-      .kafkaLiteBased(resolveConfig(ConfigFactory.empty()))
+      .kafkaLiteBased(resolveModelConfig(ConfigFactory.empty()))
       .build()
 
   protected val sourceName = "my-source"

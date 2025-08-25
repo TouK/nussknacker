@@ -98,7 +98,7 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
     kafkaClient.createTopic(inputTopic.name, partitions = 1)
     kafkaClient.createTopic(outputTopic.name, partitions = 1)
 
-    val configToUse = config
+    val configToUse = modelConfig
       .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors"))
 
     val kafkaComponentProviderConfig = ConfigFactory
@@ -119,7 +119,10 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
 
     val kafkaComponents =
       new MockLiteKafkaComponentProvider()
-        .create(kafkaComponentProviderConfig, ComponentDependencies(ModelConfig.parse(config), designerDbRef = None))
+        .create(
+          kafkaComponentProviderConfig,
+          ComponentDependencies(ModelConfig.parse(modelConfig), designerDbRef = None)
+        )
 
     val modelData = LocalModelData(configToUse, kafkaComponents)
     wrapInFailingLoader {

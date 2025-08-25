@@ -49,7 +49,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSche
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestRunId
 import pl.touk.nussknacker.engine.util.LoggingListener
-import pl.touk.nussknacker.test.{KafkaConfigProperties, WithConfig}
+import pl.touk.nussknacker.test.{KafkaConfigProperties, WithModelConfig}
 
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.ConcurrentHashMap
@@ -61,7 +61,7 @@ abstract class FlinkWithKafkaSuite
     with KafkaSpec
     with BeforeAndAfterAll
     with BeforeAndAfter
-    with WithConfig
+    with WithModelConfig
     with Matchers
     with WithKafkaComponentsConfig {
 
@@ -82,11 +82,11 @@ abstract class FlinkWithKafkaSuite
     valueDeserializer = new KafkaAvroDeserializer(schemaRegistryMockClient)
     val components =
       createFinkKafkaComponentProvider(schemaRegistryClientProvider)
-        .create(kafkaComponentsConfig, ComponentDependencies(ModelConfig.parse(config), designerDbRef = None)) :::
+        .create(kafkaComponentsConfig, ComponentDependencies(ModelConfig.parse(modelConfig), designerDbRef = None)) :::
         FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components :::
         additionalComponents
     val modelData =
-      LocalModelData(config, components, configCreator = creator)
+      LocalModelData(modelConfig, components, configCreator = creator)
     registrar = FlinkProcessRegistrar(
       new FlinkProcessCompilerDataFactory(modelData, DeploymentData.empty, List.empty),
       FlinkJobConfig.parse(modelData.modelConfig),
@@ -149,7 +149,7 @@ abstract class FlinkWithKafkaSuite
     fromAnyRef("not_used")
   )
 
-  lazy val kafkaConfig: KafkaConfig                   = KafkaConfig.parseConfig(config, "config")
+  lazy val kafkaConfig: KafkaConfig                   = KafkaConfig.parseConfig(modelConfig, "config")
   protected val avroEncoder: ToAvroSchemaBasedEncoder = ToAvroSchemaBasedEncoder(ValidationMode.strict)
 
   protected val givenNotMatchingAvroObj: GenericData.Record = avroEncoder.encodeRecordOrError(

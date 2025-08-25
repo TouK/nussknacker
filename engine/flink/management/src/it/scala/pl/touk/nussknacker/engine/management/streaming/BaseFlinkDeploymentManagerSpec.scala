@@ -36,8 +36,8 @@ class RemoteFlinkDeploymentManagerSpec extends BaseFlinkDeploymentManagerSpec {
 class MiniClusterFlinkDeploymentManagerSpec extends BaseFlinkDeploymentManagerSpec {
   override protected def useMiniClusterForDeployment: Boolean = true
 
-  override def resolveConfig(config: Config): Config = {
-    super.resolveConfig(config).withValue("modelConfig.liveDataPreview.enabled", fromAnyRef(true))
+  override def resolveProcessingTypeConfig(config: Config): Config = {
+    super.resolveProcessingTypeConfig(config).withValue("modelConfig.liveDataPreview.enabled", fromAnyRef(true))
   }
 
 }

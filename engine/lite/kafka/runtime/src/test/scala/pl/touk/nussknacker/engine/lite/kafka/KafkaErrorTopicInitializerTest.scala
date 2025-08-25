@@ -16,7 +16,7 @@ import scala.util.Random
 class KafkaErrorTopicInitializerTest extends AnyFunSuite with KafkaSpec with Matchers with PatientScalaFutures {
 
   private def initializer(topic: String): KafkaErrorTopicInitializer = {
-    val engineConfig = config
+    val engineConfig = modelConfig
       .withValue("exceptionHandlingConfig.topic", fromAnyRef(topic))
       .as[KafkaInterpreterConfig]
     new DefaultKafkaErrorTopicInitializer(engineConfig.kafka, engineConfig.exceptionHandlingConfig)

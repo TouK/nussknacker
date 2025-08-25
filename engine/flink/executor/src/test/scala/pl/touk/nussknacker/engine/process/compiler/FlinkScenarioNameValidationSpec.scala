@@ -24,7 +24,7 @@ class FlinkScenarioNameValidationSpec extends AnyFunSuite with Matchers with Pro
         .emptySink("emptySink", "monitor")
 
     val components = ProcessTestHelpers.prepareComponents(List.empty)
-    val modelData  = LocalModelData(config, components, configCreator = ProcessTestHelpersConfigCreator)
+    val modelData  = LocalModelData(modelConfig, components, configCreator = ProcessTestHelpersConfigCreator)
     val jobData: JobData =
       JobData(
         processWithInvalidName.metaData,

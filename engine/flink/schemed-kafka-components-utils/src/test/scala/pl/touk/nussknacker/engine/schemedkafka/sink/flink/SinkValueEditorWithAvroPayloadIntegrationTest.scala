@@ -42,7 +42,7 @@ class SinkValueEditorWithAvroPayloadIntegrationTest extends KafkaAvroSpecMixin w
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    modelData = LocalModelData(config, List.empty, configCreator = processConfigCreator)
+    modelData = LocalModelData(modelConfig, List.empty, configCreator = processConfigCreator)
     topicSchemas.foreach { case (topicName, schema) =>
       topicConfigs = topicConfigs + (topicName -> createAndRegisterTopicConfig(topicName, schema))
     }

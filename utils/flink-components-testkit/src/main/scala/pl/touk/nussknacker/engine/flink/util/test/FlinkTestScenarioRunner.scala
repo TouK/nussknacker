@@ -286,14 +286,14 @@ object FlinkTestScenarioRunner {
   implicit class FlinkTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
 
     def flinkBased(
-        config: Config,
+        modelConfig: Config,
         flinkMiniClusterWithServices: FlinkMiniClusterWithServices
     ): FlinkTestScenarioRunnerBuilder = {
       FlinkTestScenarioRunnerBuilder(
-        List.empty,
-        Map.empty,
-        config,
-        flinkMiniClusterWithServices,
+        components = List.empty,
+        globalVariables = Map.empty,
+        modelConfig = modelConfig,
+        flinkMiniClusterWithServices = flinkMiniClusterWithServices,
         testRuntimeMode = false
       )
     }
@@ -305,7 +305,7 @@ object FlinkTestScenarioRunner {
 case class FlinkTestScenarioRunnerBuilder(
     components: List[ComponentDefinition],
     globalVariables: Map[String, AnyRef],
-    config: Config,
+    modelConfig: Config,
     flinkMiniClusterWithServices: FlinkMiniClusterWithServices,
     testRuntimeMode: Boolean
 ) extends TestScenarioRunnerBuilder[FlinkTestScenarioRunner, FlinkTestScenarioRunnerBuilder] {
@@ -325,13 +325,13 @@ case class FlinkTestScenarioRunnerBuilder(
     copy(testRuntimeMode = true)
 
   def withExecutionMode(mode: ExecutionMode): FlinkTestScenarioRunnerBuilder =
-    copy(config = config.withValue("executionMode", ConfigValueFactory.fromAnyRef(mode.toString)))
+    copy(modelConfig = modelConfig.withValue("executionMode", ConfigValueFactory.fromAnyRef(mode.toString)))
 
   override def build() =
     new FlinkTestScenarioRunner(
       components,
       globalVariables,
-      config,
+      modelConfig,
       flinkMiniClusterWithServices,
       runtimeMode(testRuntimeMode)
     )
