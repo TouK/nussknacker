@@ -28,7 +28,7 @@ import pl.touk.nussknacker.engine.expression.parse.{
   TypedExpression
 }
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
-import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.{DictKeyWithLabelExpression, Expression}
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.DictKeyWithLabel
 import pl.touk.nussknacker.engine.language.dictWithLabel.DictKeyWithLabelExpressionParser
@@ -300,6 +300,24 @@ class ExpressionCompiler(
     val incompatibleChangeToParameterDefinitionDetected: ValidatedNel[PartSubGraphCompilationError, Expression] =
       invalidNel(IncompatibleParameterDefinitionModification(paramName, expression.language, editors, nodeId.id))
 
+    def spelExpressionForDictKeyWithLabelExpression(expression: Expression) = {
+      DictKeyWithLabelExpressionParser.parseDictKeyWithLabelExpression(expression.expression) match {
+        case Valid(DictKeyWithLabelExpression(key, label)) =>
+          val rawValue = label.getOrElse(key)
+          Valid(Expression.spel(s"'$rawValue'"))
+        case Invalid(_) =>
+          incompatibleChangeToParameterDefinitionDetected
+      }
+    }
+
+    def spelExpressionForFixedList(expression: Expression, allowed: List[String]) = {
+      if (allowed.contains(expression.expression)) {
+        Valid(Expression.spel(s"'${expression.expression}'"))
+      } else {
+        incompatibleChangeToParameterDefinitionDetected
+      }
+    }
+
     def validateAndSubstitute(expression: Expression): ValidatedNel[PartSubGraphCompilationError, Expression] = {
       editors match {
         case DictParameterEditor(dictId) :: Nil if isDictKeyWithLabel(expression) =>
@@ -310,8 +328,26 @@ class ExpressionCompiler(
           if (expression.expression.isBlank) Valid(expression) else substitute(dictId)
         case DictParameterEditor(_) :: Nil if !isDictKeyWithLabel(expression) =>
           incompatibleChangeToParameterDefinitionDetected
-        case _ if isDictKeyWithLabel(expression) => incompatibleChangeToParameterDefinitionDetected
-        case _                                   => Valid(expression)
+        case editors if isDictKeyWithLabel(expression) =>
+          val resultsForEditors = editors.map {
+            case SpelParameterEditor =>
+              spelExpressionForDictKeyWithLabelExpression(expression)
+            case SpelTemplateParameterEditor =>
+              spelExpressionForDictKeyWithLabelExpression(expression)
+            case FixedValuesParameterEditor(possibleValues) =>
+              spelExpressionForFixedList(expression, possibleValues.map(_.expression))
+            case FixedValuesWithIconParameterEditor(possibleValues) =>
+              spelExpressionForFixedList(expression, possibleValues.map(_.expression))
+            case FixedValuesWithRadioParameterEditor(possibleValues) =>
+              spelExpressionForFixedList(expression, possibleValues.map(_.expression))
+            case _ =>
+              incompatibleChangeToParameterDefinitionDetected
+          }
+          resultsForEditors
+            .collectFirst { case v @ Validated.Valid(_) => v }
+            .getOrElse(incompatibleChangeToParameterDefinitionDetected)
+        case _ =>
+          Valid(expression)
       }
     }
     validateAndSubstitute(expression)
