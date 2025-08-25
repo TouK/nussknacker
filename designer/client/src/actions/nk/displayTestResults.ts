@@ -1,4 +1,5 @@
 import { cloneDeep } from "lodash";
+import moment from "moment";
 import type { ProcessName } from "src/components/Process/types";
 
 import type { TestingEventParameters } from "../../components/modals/Testing/TestingEventsTable";
@@ -48,6 +49,10 @@ export function testScenarioWithEventsData(testingEventsParameters: TestingEvent
             scenarioGraph,
             cloneDeep(testingEventsParameters).map((event) => {
                 event.variables = JSON.parse(event.variables);
+                if (event.timestamp) {
+                    const m = moment(event.timestamp);
+                    event.timestamp = m.isValid() ? String(m.valueOf()) : undefined;
+                }
 
                 return event;
             }),
