@@ -132,12 +132,12 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
 
     testScenarioRunner.withRunningScenario(
       stateCompatibilityProcess(inputTopicConfig.input, outputTopicConfig.output)
-    ) { jobId =>
+    ) { fixture =>
       verifyOutputEvent(outputTopicConfig.output, input = event1, previousInput = event1)
 
       val savepointLocation = eventually {
         flinkMiniCluster.miniCluster
-          .triggerSavepoint(jobId, savepointDir.toString, false, SavepointFormatType.DEFAULT)
+          .triggerSavepoint(fixture.jobId, savepointDir.toString, false, SavepointFormatType.DEFAULT)
           .get()
       }
 
@@ -159,10 +159,10 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
     testScenarioRunner.withRunningScenario(
       process1,
       SavepointRestoreSettings.forPath(existingSavepointLocation.toString, allowNonRestoredState)
-    ) { jobId =>
+    ) { fixture =>
       sendAvro(givenNotMatchingAvroObj, inputTopicConfig.input).futureValue
 
-      flinkMiniCluster.checkJobIsNotFailing(jobId)
+      flinkMiniCluster.checkJobIsNotFailing(fixture.jobId)
       verifyOutputEvent(outputTopicConfig.output, input = event2, previousInput = event1)
     }
   }

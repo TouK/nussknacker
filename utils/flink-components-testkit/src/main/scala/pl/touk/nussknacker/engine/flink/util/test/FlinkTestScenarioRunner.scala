@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.minicluster.MiniClusterJobStatusCheckingOps._
 import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.ScenarioVerificationFixture
 import pl.touk.nussknacker.engine.flink.util.test.TestResultSinkFactory.Output
 import pl.touk.nussknacker.engine.flink.util.test.testComponents._
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
@@ -193,7 +194,7 @@ class FlinkTestScenarioRunner(
       savepointRestoreSettings: SavepointRestoreSettings = SavepointRestoreSettings.none(),
       nodesData: NodesDeploymentData = NodesDeploymentData.empty,
       labels: List[String] = List.empty
-  )(f: JobID => R): R = {
+  )(f: ScenarioVerificationFixture => R): R = {
     val modelData = LocalModelData(
       inputConfig = config,
       // We can't just pass extra components here because we don't want Flink to serialize them.
@@ -202,7 +203,7 @@ class FlinkTestScenarioRunner(
       configCreator = new DefaultConfigCreator
     )
     Using.resource(
-      TestExtensionsHolder.registerTestExtensions(components, Nil, globalVariables)
+      TestExtensionsHolder.registerTestExtensions(components, testResultSinkComponentCreator :: Nil, globalVariables)
     ) { testExtensionsHolder =>
       flinkMiniClusterWithServices.withDetachedStreamExecutionEnvironment { env =>
         TestScenarioCollectorHandler.withHandler(runtimeMode) { testScenarioCollectorHandler =>
@@ -243,7 +244,7 @@ class FlinkTestScenarioRunner(
             ) {
               Future {
                 blocking {
-                  f(jobExecutionResult.getJobID)
+                  f(new ScenarioVerificationFixture(jobExecutionResult.getJobID, testExtensionsHolder.runId))
                 }
               }
             }
@@ -369,6 +370,17 @@ object FlinkTestScenarioRunner {
         flinkMiniClusterWithServices = flinkMiniClusterWithServices,
         testRuntimeMode = false
       )
+    }
+
+  }
+
+  class ScenarioVerificationFixture(val jobId: JobID, runId: TestRunId) {
+
+    def testResults: Seq[AnyRef] = TestResultSinkFactory.extractOutputFor(runId) match {
+      case Output.NotAvailable =>
+        List.empty
+      case Output.Available(results) =>
+        results.toList
     }
 
   }
