@@ -1,7 +1,7 @@
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import type { ElementType, ReactElement } from "react";
 import { useState } from "react";
-import React, { useCallback, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { testScenarioWithEventsData } from "../../../actions/nk/displayTestResults";
@@ -13,8 +13,6 @@ import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
-import type { TestingContextState } from "./TestingContext";
-import { TestingContext, useTestingState } from "./TestingContext";
 import type { TestingEventParameters } from "./TestingEventsTable";
 import { TestingEventsTable } from "./TestingEventsTable";
 
@@ -32,7 +30,6 @@ export type TestingViewParams = {
 
 export interface TestingData {
     viewParams: TestingViewParams;
-    storeAction: TestingContextState["handleSetAction"];
 }
 
 function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): ReactElement {
@@ -96,34 +93,4 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
         </WindowContent>
     );
 }
-
-const TestingDialogWithProvider = (props: WindowContentProps<WindowKind, TestingData>) => {
-    const { storeAction } = props.data.meta;
-    const { handleSetAction: _handleSetAction, ...context } = useTestingState();
-
-    const handleSetAction = useCallback<typeof _handleSetAction>(
-        (action) => {
-            const nextAction = () => {
-                storeAction(nextAction);
-                action();
-            };
-            _handleSetAction(nextAction);
-        },
-        [_handleSetAction, storeAction],
-    );
-
-    const value = useMemo(
-        () => ({
-            ...context,
-            handleSetAction,
-        }),
-        [context, handleSetAction],
-    );
-
-    return (
-        <TestingContext.Provider value={value}>
-            <TestingDialog {...props} />
-        </TestingContext.Provider>
-    );
-};
-export default TestingDialogWithProvider;
+export default TestingDialog;

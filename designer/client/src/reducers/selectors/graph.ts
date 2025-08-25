@@ -102,7 +102,6 @@ export const isArchivePossible = createSelector(
     (state, isFragment) => isFragment || ProcessStateUtils.canArchive(state),
 );
 export const getTestCapabilities = createSelector(getGraph, (g) => g.testCapabilities);
-export const getTestType = createSelector(getGraph, (g) => g.testType);
 export const getTestingEventParameters = createSelector(getTesting, (g) => g.testingEventParameters);
 export const getPerformedTestType = createSelector(getGraph, (g) => g.performedTestType);
 export const getTestParameters = createSelector(getGraph, (g) => g.testFormParameters || ([] as TestFormParameters[]));

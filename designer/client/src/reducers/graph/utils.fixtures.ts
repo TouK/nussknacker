@@ -685,7 +685,9 @@ export const state: GraphState = {
     },
     testFormParameters: [],
     processCounts: {},
-    testResults: null,
+    testing: {
+        testResults: null,
+    },
 };
 
 export const nodesWithPositions: NodesWithPositions = [

@@ -21,7 +21,6 @@ import type { TestingData, TestingViewParams } from "../../../modals/Testing/Tes
 import { ButtonsVariant, ToolbarButton, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer";
 import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
-import { useTestingButtonContext } from "./TestButtonContext";
 
 export type ScenarioTestButtonProps = {
     type: CustomButtonTypes.scenarioTest;
@@ -32,7 +31,8 @@ export type ScenarioTestButtonProps = {
     markdownContent?: TestingViewParams["markdownContent"];
 };
 
-const RERUN_PREVIOUS = "rerunPrevious";
+const RUN_NEW_TEST = "reNewTest";
+const RERUN_LAST_TEST = "rerunLastTest";
 
 type Preset = {
     value: string;
@@ -45,27 +45,25 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { t } = useTranslation();
     const { open } = useWindows();
     const testingEventsParameters = useAppSelector(getTestingEventParameters);
+    const dispatch = useAppDispatch();
 
-    const testingState = useTestingButtonContext();
+    const handleRerunLastTest = useCallback(() => {
+        return dispatch(testScenarioWithEventsData(testingEventsParameters));
+    }, [dispatch, testingEventsParameters]);
 
     const presets: Preset[] = useMemo(() => {
-        const retest = {
-            label: t("testingForm.retest.menu.label", "Rerun last test"),
-            value: RERUN_PREVIOUS,
-            isDisabled: !testingState.action,
-        };
-
-        const options = testingState.options
-            .filter((o) => !o.disabled)
-            .slice(0, 1)
-            .map(({ value, menuLabel = t("testingForm.test.menu.label", "Run a new test"), disabled }) => ({
-                value,
-                label: menuLabel,
-                isDisabled: disabled,
-            }));
-
-        return [...options, retest];
-    }, [t, testingState.action, testingState.options]);
+        return [
+            {
+                label: t("testingForm.test.menu.label", "Run a new test"),
+                value: RUN_NEW_TEST,
+            },
+            {
+                label: t("testingForm.retest.menu.label", "Rerun last test"),
+                value: RERUN_LAST_TEST,
+                isDisabled: !testingEventsParameters,
+            },
+        ];
+    }, [t, testingEventsParameters]);
 
     const performedTestType = useAppSelector(getPerformedTestType);
     const isLoading = useAppSelector(getTestResultsLoading);
@@ -87,14 +85,12 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
 
     const hasPendingChanges = useAppSelector(getHasPendingChanges);
 
-    const dispatch = useAppDispatch();
     const openDialog = useCallback(
         (preset?: Preset) => {
-            if (testingEventsParameters && preset?.label !== "Run a new test") {
-                dispatch(testScenarioWithEventsData(testingEventsParameters));
+            if (preset?.value === RERUN_LAST_TEST) {
+                handleRerunLastTest();
                 return;
             }
-            dispatch(updateTestType(preset?.value));
             open<TestingData>({
                 id: "scenarioTest",
                 title: t("dialog.title.scenarioTest", "Scenario test"),
@@ -104,7 +100,6 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                 minWidth: 1200,
                 minHeight: 600,
                 meta: {
-                    storeAction: testingState.handleSetAction,
                     viewParams: {
                         Icon: TestingIcon,
                         docs,
@@ -113,7 +108,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                 },
             });
         },
-        [dispatch, docs, markdownContent, open, t, testingEventsParameters, testingState.handleSetAction],
+        [docs, handleRerunLastTest, markdownContent, open, t],
     );
 
     const { variant } = useContext(ToolbarButtonsContext);
