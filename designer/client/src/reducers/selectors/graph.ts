@@ -103,7 +103,6 @@ export const isArchivePossible = createSelector(
 );
 export const getTestCapabilities = createSelector(getGraph, (g) => g.testCapabilities);
 export const getTestingEventParameters = createSelector(getTesting, (g) => g.testingEventParameters);
-export const getPerformedTestType = createSelector(getGraph, (g) => g.performedTestType);
 export const getTestParameters = createSelector(getGraph, (g) => g.testFormParameters || ([] as TestFormParameters[]));
 export const getTestResults = createSelector(getTesting, (g) => g.testResults);
 export const getTestResultsLoading = createSelector(getTesting, (g) => g.testResultsLoading);

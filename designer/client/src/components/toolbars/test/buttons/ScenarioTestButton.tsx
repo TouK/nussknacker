@@ -2,11 +2,10 @@ import { alpha } from "@mui/material";
 import React, { useCallback, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { testScenarioWithEventsData, updateTestType } from "../../../../actions/nk/displayTestResults";
+import { testScenarioWithEventsData } from "../../../../actions/nk/displayTestResults";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
 import {
-    getPerformedTestType,
     getTestCapabilities,
     getTestingEventParameters,
     getTestResultsLoading,
@@ -65,12 +64,11 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
         ];
     }, [t, testingEventsParameters]);
 
-    const performedTestType = useAppSelector(getPerformedTestType);
     const isLoading = useAppSelector(getTestResultsLoading);
 
-    const preset = useMemo(() => {
-        return presets.find((p) => p.value === performedTestType);
-    }, [performedTestType, presets]);
+    const presetActionOnButtonClick = useMemo(() => {
+        return testingEventsParameters ? presets[1] : presets[0];
+    }, [presets, testingEventsParameters]);
 
     // Availability of adhoc testing
     const adhocTestIsAvailable = useAdhocTestingAvailability(disabled);
@@ -172,10 +170,10 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
             }}
             isLoading={isLoading}
             disabled={!atLeastOneTypeOfTestIsAvailable || hasPendingChanges || isLoading}
-            onClick={() => openDialog(preset)}
+            onClick={() => openDialog(presetActionOnButtonClick)}
             type={type}
             presets={presets}
-            selected={preset}
+            selected={presetActionOnButtonClick}
             onPresetChange={(value) => openDialog(value)}
         />
     );

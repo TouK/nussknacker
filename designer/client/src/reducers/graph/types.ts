@@ -1,5 +1,4 @@
 import type { Layout, RefreshData } from "../../actions/nk";
-import type { PerformedTestType } from "../../actions/nk/displayTestResults";
 import type { TestCapabilities, TestFormParameters } from "../../common/TestResultUtils";
 import type { TestingEventParameters } from "../../components/modals/Testing/TestingEventsTable";
 import type { Scenario } from "../../components/Process/types";
@@ -22,7 +21,6 @@ export type GraphState = {
     selectionState?: string[];
     layout: Layout;
     testCapabilities?: TestCapabilities;
-    performedTestType?: PerformedTestType;
     testFormParameters?: TestFormParameters[];
     visibleDataType?: VisibleDataType | null;
     testing: {

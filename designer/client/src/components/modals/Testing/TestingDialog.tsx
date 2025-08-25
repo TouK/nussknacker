@@ -5,7 +5,7 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { testScenarioWithEventsData } from "../../../actions/nk/displayTestResults";
-import { getTestCapabilities } from "../../../reducers/selectors/graph";
+import { getTestCapabilities, getTestingEventParameters } from "../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { WindowKind } from "../../../windowManager";
 import { WindowContent } from "../../../windowManager";
@@ -50,8 +50,9 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
         }),
         [defaultParameter.sourceId, testCapabilities.testWithParameters.sourceParameters],
     );
+    const testingEventsParameters = useAppSelector(getTestingEventParameters);
 
-    const [events, setEvents] = useState<TestingEventParameters[]>([defaultEvent]);
+    const [events, setEvents] = useState<TestingEventParameters[]>(testingEventsParameters || [defaultEvent]);
     const sourceOptions = testCapabilities.testWithParameters.sourceParameters.flatMap((sourceParameter) => sourceParameter.sourceId);
 
     const buttons: WindowButtonProps[] = useMemo(

@@ -143,12 +143,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 testType: action.testType,
             };
         }
-        case "SET_PERFORMED_TEST_TYPE": {
-            return {
-                ...state,
-                performedTestType: action.performedTestType,
-            };
-        }
         case "DISPLAY_PROCESS": {
             const scenario = addStickyNotesToNodes(action.scenario);
             return {
@@ -177,8 +171,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "TEST_RESULTS_FAILED": {
             return {
                 ...state,
-                testResultsLoading: false,
-                performedTestType: "rerunPrevious",
+                testing: {
+                    ...state.testing,
+                    testResultsLoading: false,
+                },
             };
         }
         case "LOADING_FAILED": {
@@ -357,9 +353,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 visibleDataType: VisibleDataType.counts,
-                testResults: null,
                 processCounts: action.processCounts,
                 processCountsRefresh: action.refresh,
+                testing: {
+                    ...state.testing,
+                    testResults: null,
+                },
             };
         }
         case "FETCH_LIVE_DATA": {
@@ -372,16 +371,18 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 visibleDataType: VisibleDataType.live,
-                testResults: action.results?.results || null,
                 processCounts: action.results?.counts || {},
                 processCountsRefresh: null,
+                testing: {
+                    ...state.testing,
+                    testResults: action.results?.results || null,
+                },
             };
         }
         case "DISPLAY_TEST_RESULTS_DETAILS": {
             return {
                 ...state,
                 visibleDataType: VisibleDataType.test,
-                testResults: action.testResults,
                 testing: {
                     ...state.testing,
                     testData: {
@@ -389,6 +390,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                         [action.testData?.sourceId]: action.testData?.parameterExpressions,
                     },
                     testResultsLoading: false,
+                    testResults: action.testResults,
                 },
                 scenarioLoading: false,
             };
@@ -415,9 +417,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 visibleDataType: null,
-                testResults: null,
                 processCounts: null,
                 processCountsRefresh: null,
+                testing: {
+                    ...state.testing,
+                    testResults: null,
+                },
             };
         }
         default:

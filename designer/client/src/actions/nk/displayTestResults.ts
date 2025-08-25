@@ -2,7 +2,6 @@ import { cloneDeep } from "lodash";
 import type { ProcessName } from "src/components/Process/types";
 
 import type { TestingEventParameters } from "../../components/modals/Testing/TestingEventsTable";
-import type { TestType } from "../../components/modals/Testing/useTestOptions";
 import type { SourceWithParametersTest } from "../../http/HttpService";
 import HttpService from "../../http/HttpService";
 import type { ResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
@@ -10,8 +9,6 @@ import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph
 import type { ScenarioGraph } from "../../types";
 import type { Action, ThunkAction } from "../reduxTypes";
 import { displayProcessCounts } from "./displayProcessCounts";
-
-export type PerformedTestType = TestType | "rerunPrevious";
 
 export function testProcessFromFile(testDataFile: File): ThunkAction {
     return wrapWithTestAction((processName, scenarioGraph) =>
@@ -83,10 +80,6 @@ export type TestsActions =
           testData: SourceWithParametersTest;
       }
     | {
-          type: "SET_PERFORMED_TEST_TYPE";
-          performedTestType: PerformedTestType;
-      }
-    | {
           type: "SET_TESTING_EVENTS_PARAMETERS";
           testingEventsParameters: TestingEventParameters[];
       };
@@ -126,13 +119,6 @@ export function setTestingEventsParameters(testingEventsParameters: TestingEvent
     return {
         type: "SET_TESTING_EVENTS_PARAMETERS",
         testingEventsParameters,
-    };
-}
-
-export function updateTestType(testType: string): Action {
-    return {
-        type: "UPDATE_TEST_TYPE",
-        testType,
     };
 }
 
