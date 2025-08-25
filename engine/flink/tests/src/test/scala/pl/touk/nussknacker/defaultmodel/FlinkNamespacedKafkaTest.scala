@@ -93,7 +93,7 @@ abstract class BaseFlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
         KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> s"true".spel,
       )
 
-    run(process) {
+    testScenarioRunner.withRunningScenario(process) { _ =>
       val processed =
         kafkaClient
           .createConsumer()

@@ -6,6 +6,7 @@ import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkTestScenarioRunnerExt
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaJsonPayloadIntegrationSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.helpers.{
@@ -17,14 +18,11 @@ import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 
 class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with FlinkKafkaAvroSpecMixin with BeforeAndAfter {
 
   import KafkaAvroIntegrationMockSchemaRegistry._
-
-  private lazy val provider: TestFlinkKafkaComponentProvider =
-    new TestFlinkKafkaComponentProvider(schemaRegistryClientFactory, sinkForInputMetaResultsHolder)
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
@@ -40,10 +38,14 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with FlinkKafkaAvroSpe
     super.beforeAll()
     val finalModelConfig =
       modelConfig.withValue(s"$kafkaComponentsConfigPrefix.avroAsJsonSerialization", fromAnyRef(true))
-    modelData = LocalModelData(
-      finalModelConfig,
-      provider.createComponents(ModelConfig.parse(finalModelConfig)),
-    )
+
+    val components = new TestFlinkKafkaComponentProvider(schemaRegistryClientFactory, sinkForInputMetaResultsHolder)
+      .createComponents(ModelConfig.parse(finalModelConfig))
+
+    testScenarioRunner = TestScenarioRunner
+      .flinkBased(finalModelConfig, flinkMiniCluster)
+      .withExtraComponents(components)
+      .build()
   }
 
   test("should read and write json of generic record via avro schema") {

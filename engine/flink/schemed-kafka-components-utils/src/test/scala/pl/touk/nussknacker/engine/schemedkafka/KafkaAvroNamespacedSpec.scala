@@ -3,13 +3,16 @@ package pl.touk.nussknacker.engine.schemedkafka
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.avro.Schema
+import org.apache.flink.api.common.ExecutionConfig
 import org.scalatest.OptionValues
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.namespaces.{Namespace, NamingStrategy}
 import pl.touk.nussknacker.engine.api.process.TopicName
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkTestScenarioRunnerExt
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroNamespacedSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.helpers.FlinkKafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
@@ -17,7 +20,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
   MockSchemaRegistryClient
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 
 class KafkaAvroNamespacedSpec extends FlinkKafkaAvroSpecMixin with OptionValues {
 
@@ -38,12 +41,22 @@ class KafkaAvroNamespacedSpec extends FlinkKafkaAvroSpecMixin with OptionValues 
   override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
     MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
 
-  private lazy val provider: TestFlinkKafkaComponentProvider =
-    new TestFlinkKafkaComponentProvider(schemaRegistryClientFactory, sinkForInputMetaResultsHolder)
-
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    modelData = LocalModelData(modelConfig, provider.createComponents(ModelConfig.parse(modelConfig)))
+    val components = new TestFlinkKafkaComponentProvider(schemaRegistryClientFactory, sinkForInputMetaResultsHolder)
+      .createComponents(ModelConfig.parse(modelConfig))
+
+    testScenarioRunner = TestScenarioRunner
+      .flinkBased(modelConfig, flinkMiniCluster)
+      .withExtraComponents(components)
+      .withExtraSerializersRegistrars(List((_: Config, executionConfig: ExecutionConfig) => {
+        AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(
+          executionConfig,
+          schemaRegistryClientFactory,
+          kafkaComponentsConfig
+        )
+      }))
+      .build()
   }
 
   test("should read event in the same version as source requires and save it in the same version") {

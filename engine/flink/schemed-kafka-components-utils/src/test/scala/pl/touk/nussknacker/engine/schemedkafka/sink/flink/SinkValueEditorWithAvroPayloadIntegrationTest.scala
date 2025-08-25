@@ -1,22 +1,26 @@
 package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 
+import com.typesafe.config.Config
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.{AvroRuntimeException, Schema}
+import org.apache.flink.api.common.ExecutionConfig
 import org.scalatest.BeforeAndAfter
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkTestScenarioRunnerExt
 import pl.touk.nussknacker.engine.graph.expression
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, TestFlinkKafkaComponentProvider}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.encode.ToAvroSchemaBasedEncoder
 import pl.touk.nussknacker.engine.schemedkafka.helpers.FlinkKafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schema.TestSchemaWithRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
-import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 
 import scala.jdk.CollectionConverters._
 
@@ -25,9 +29,6 @@ class SinkValueEditorWithAvroPayloadIntegrationTest extends FlinkKafkaAvroSpecMi
 
   private var topicConfigs: Map[String, TopicConfig] = Map.empty
 
-  private lazy val provider: TestFlinkKafkaComponentProvider =
-    new TestFlinkKafkaComponentProvider(schemaRegistryClientFactory, sinkForInputMetaResultsHolder)
-
   override protected def schemaRegistryClient: SchemaRegistryClient = schemaRegistryMockClient
 
   override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
@@ -35,7 +36,22 @@ class SinkValueEditorWithAvroPayloadIntegrationTest extends FlinkKafkaAvroSpecMi
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    modelData = LocalModelData(modelConfig, provider.createComponents(ModelConfig.parse(modelConfig)))
+
+    val components = new TestFlinkKafkaComponentProvider(schemaRegistryClientFactory, sinkForInputMetaResultsHolder)
+      .createComponents(ModelConfig.parse(modelConfig))
+
+    testScenarioRunner = TestScenarioRunner
+      .flinkBased(modelConfig, flinkMiniCluster)
+      .withExtraComponents(components)
+      .withExtraSerializersRegistrars(List((_: Config, executionConfig: ExecutionConfig) => {
+        AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(
+          executionConfig,
+          schemaRegistryClientFactory,
+          kafkaComponentsConfig
+        )
+      }))
+      .build()
+
     topicSchemas.foreach { case (topicName, schema) =>
       topicConfigs = topicConfigs + (topicName -> createAndRegisterTopicConfig(topicName, schema))
     }

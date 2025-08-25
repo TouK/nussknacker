@@ -976,7 +976,7 @@ lazy val flinkSchemedKafkaComponentsUtils = (project in flink("schemed-kafka-com
     componentsUtils             % Provided,
     kafkaTestUtils              % Test,
     flinkTestUtils              % Test,
-    flinkExecutor               % Test,
+    flinkComponentsTestkit      % Test
   )
 
 lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils"))

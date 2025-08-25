@@ -3,17 +3,13 @@ package pl.touk.nussknacker.defaultmodel
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import io.confluent.kafka.schemaregistry.json.JsonSchema
-import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.core.execution.SavepointFormatType
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.defaultmodel.SampleSchemas.RecordSchemaV1
 import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{InputEvent, OutputEvent}
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
@@ -132,22 +128,21 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
     val inputTopicConfig  = createAndRegisterAvroTopicConfig(inTopic, RecordSchemaV1)
     val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1)
 
-    sendAvro(givenMatchingAvroObj, inputTopicConfig.input)
+    sendAvro(givenMatchingAvroObj, inputTopicConfig.input).futureValue
 
-    run(
-      stateCompatibilityProcess(inputTopicConfig.input, outputTopicConfig.output),
-      { jobExecutionResult =>
-        verifyOutputEvent(outputTopicConfig.output, input = event1, previousInput = event1)
+    testScenarioRunner.withRunningScenario(
+      stateCompatibilityProcess(inputTopicConfig.input, outputTopicConfig.output)
+    ) { jobId =>
+      verifyOutputEvent(outputTopicConfig.output, input = event1, previousInput = event1)
 
-        val savepointLocation = eventually {
-          flinkMiniCluster.miniCluster
-            .triggerSavepoint(jobExecutionResult.getJobID, savepointDir.toString, false, SavepointFormatType.DEFAULT)
-            .get()
-        }
-
-        saveSnapshot(savepointLocation)
+      val savepointLocation = eventually {
+        flinkMiniCluster.miniCluster
+          .triggerSavepoint(jobId, savepointDir.toString, false, SavepointFormatType.DEFAULT)
+          .get()
       }
-    )
+
+      saveSnapshot(savepointLocation)
+    }
   }
 
   test("should restore from snapshot") {
@@ -156,23 +151,19 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
 
     val existingSavepointLocation = Files.list(savepointDir).iterator().asScala.toList.head
     val process1                  = stateCompatibilityProcess(inputTopicConfig.input, outputTopicConfig.output)
-    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
-      registrar.register(env, process1, ProcessVersion.empty, DeploymentData.empty)
-      val streamGraph           = env.getStreamGraph
-      val allowNonRestoredState = false
-      streamGraph.setSavepointRestoreSettings(
-        SavepointRestoreSettings.forPath(existingSavepointLocation.toString, allowNonRestoredState)
-      )
-      // Send one artificial message to mimic offsets saved in savepoint from the above test because kafka commit cannot be performed.
-      sendAvro(givenMatchingAvroObj, inputTopicConfig.input).futureValue
 
-      val jobExecutionResult = env.execute(streamGraph)
-      flinkMiniCluster.withRunningJob(jobExecutionResult.getJobID) {
-        sendAvro(givenNotMatchingAvroObj, inputTopicConfig.input).futureValue
+    // Send one artificial message to mimic offsets saved in savepoint from the above test because kafka commit cannot be performed.
+    sendAvro(givenMatchingAvroObj, inputTopicConfig.input).futureValue
 
-        flinkMiniCluster.checkJobIsNotFailing(jobExecutionResult.getJobID)
-        verifyOutputEvent(outputTopicConfig.output, input = event2, previousInput = event1)
-      }
+    val allowNonRestoredState = false
+    testScenarioRunner.withRunningScenario(
+      process1,
+      SavepointRestoreSettings.forPath(existingSavepointLocation.toString, allowNonRestoredState)
+    ) { jobId =>
+      sendAvro(givenNotMatchingAvroObj, inputTopicConfig.input).futureValue
+
+      flinkMiniCluster.checkJobIsNotFailing(jobId)
+      verifyOutputEvent(outputTopicConfig.output, input = event2, previousInput = event1)
     }
   }
 
@@ -188,14 +179,6 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
     val versionedSavepointPath = savepointDir.resolve(savepointName)
     Files.move(savepointPath, versionedSavepointPath)
     logger.info("Saved savepoint in: '{}'", versionedSavepointPath)
-  }
-
-  private def run(process: CanonicalProcess, action: JobExecutionResult => Unit): Unit = {
-    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
-      registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
-      val executionResult = env.execute(process.name.value)
-      flinkMiniCluster.withRunningJob(executionResult.getJobID)(action(executionResult))
-    }
   }
 
 }

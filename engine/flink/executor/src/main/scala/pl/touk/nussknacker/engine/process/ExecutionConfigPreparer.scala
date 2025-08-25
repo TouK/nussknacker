@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
+import pl.touk.nussknacker.engine.flink.api.serialization.SerializersRegistrar
 import pl.touk.nussknacker.engine.flink.api.typeinformation.FlinkTypeInfoRegistrar
 import pl.touk.nussknacker.engine.process.util.Serializers
 
@@ -26,14 +27,23 @@ object ExecutionConfigPreparer extends LazyLogging {
    * This is the default chain po ExecutionConfigPreparers that should be used in production code
    */
   def defaultChain(modelData: ModelData): ExecutionConfigPreparer =
-    chain(ProcessSettingsPreparer(modelData), new SerializationPreparer(modelData))
+    chain(
+      ProcessSettingsPreparer(modelData),
+      new SerializationPreparer(modelData, extraSerializersRegistrars = List.empty)
+    )
 
   /**
    * This chain is similar to default one but enableObjectReuse flag from config is omitted and instead of this re-usage is hardcoded to false.
    * This chain is better choice for tests purpose when will be better to check if serialization of messages works correctly.
    */
-  def unOptimizedChain(modelData: ModelData): ExecutionConfigPreparer =
-    chain(ProcessSettingsPreparer(modelData), new UnoptimizedSerializationPreparer(modelData))
+  def unOptimizedChain(
+      modelData: ModelData,
+      extraSerializersRegistrars: List[SerializersRegistrar]
+  ): ExecutionConfigPreparer =
+    chain(
+      ProcessSettingsPreparer(modelData),
+      new UnoptimizedSerializationPreparer(modelData, extraSerializersRegistrars)
+    )
 
   def chain(configPreparers: ExecutionConfigPreparer*): ExecutionConfigPreparer = {
     new ExecutionConfigPreparer {
@@ -76,7 +86,8 @@ object ExecutionConfigPreparer extends LazyLogging {
 
   }
 
-  class SerializationPreparer(modelData: ModelData) extends ExecutionConfigPreparer {
+  class SerializationPreparer(modelData: ModelData, extraSerializersRegistrars: List[SerializersRegistrar])
+      extends ExecutionConfigPreparer {
 
     protected def enableObjectReuse: Boolean =
       modelData.modelConfig.underlyingConfig.getOrElse[Boolean]("enableObjectReuse", true)
@@ -85,7 +96,7 @@ object ExecutionConfigPreparer extends LazyLogging {
         config: ExecutionConfig
     )(jobData: JobData, deploymentData: DeploymentData): Unit = {
       FlinkTypeInfoRegistrar.ensureTypeInfosAreRegistered()
-      Serializers.registerSerializers(modelData, config)
+      Serializers.registerSerializers(modelData, extraSerializersRegistrars, config)
       if (enableObjectReuse) {
         config.enableObjectReuse()
         logger.debug("Object reuse enabled")
@@ -94,7 +105,8 @@ object ExecutionConfigPreparer extends LazyLogging {
 
   }
 
-  class UnoptimizedSerializationPreparer(modelData: ModelData) extends SerializationPreparer(modelData) {
+  class UnoptimizedSerializationPreparer(modelData: ModelData, extraSerializersRegistrars: List[SerializersRegistrar])
+      extends SerializationPreparer(modelData, extraSerializersRegistrars) {
     override protected def enableObjectReuse: Boolean = false
   }
 
