@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.{
 
 import javax.validation.constraints.NotBlank
 
+// TODO: Remove this sample sink, it uses the configuration of kafka components delivered by FlinkKafkaComponentProvider (components.kafka.config)
 class KafkaSinkFactory(
     serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef],
     modelConfig: ModelConfig,
@@ -46,9 +47,9 @@ abstract class BaseKafkaSinkFactory(
 ) extends SinkFactory {
 
   protected def createSink(topic: TopicName.ForSink, value: LazyParameter[AnyRef], processMetaData: MetaData): Sink = {
-    val kafkaComponentsConfig = KafkaComponentsConfig.parseConfig(modelConfig.underlyingConfig.getConfig("kafka"))
-    val preparedTopic         = KafkaComponentsUtils.prepareKafkaTopic(topic, modelConfig.namingStrategy)
-    KafkaComponentsUtils.validateTopicsExistence(NonEmptyList.one(preparedTopic), kafkaComponentsConfig)
+    val kafkaComponentsConfig =
+      KafkaComponentsConfig.parseConfig(modelConfig.underlyingConfig.getConfig("components.kafka.config"))
+    val preparedTopic       = KafkaComponentsUtils.prepareKafkaTopic(topic, modelConfig.namingStrategy)
     val serializationSchema = serializationSchemaFactory.create(preparedTopic.prepared, kafkaComponentsConfig)
     val clientId            = s"${processMetaData.name}-${preparedTopic.prepared}"
     implProvider.prepareSink(preparedTopic, value, kafkaComponentsConfig, serializationSchema, clientId)

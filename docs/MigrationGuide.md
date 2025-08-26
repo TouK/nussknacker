@@ -38,6 +38,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `topicsExistenceValidationConfig.validatorConfig.topicsFetchCacheTtl` -> `kafkaAdminConfig.cacheConfig.topicsExpirationTime`
     * `topicsExistenceValidationConfig.validatorConfig.adminClientTimeout` -> `kafkaAdminConfig.clientTimeout`
     * `topicsWithoutSchemaFetchTimeout` -> `kafkaAdminConfig.clientTimeout`
+* [#8523](https://github.com/TouK/nussknacker/pull/8523) Kafka components configuration changes:
+  * Configuration of kafka components via legacy `modelConfig.kafka` entry is not supported for Flink engine. Use `modelConfig.components.kafka.config` instead.
+  * Configuration of kafka bootstrap servers via legacy `kafkaAddress` is not supported anymore. Use `kafkaProperties."bootstrap.servers"` instead
 
 ### REST API changes
 
@@ -160,6 +163,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `highPriority` become a method instead of parameter
   * `ToJsonEncoder.encode` method now returns `Validated` and is available only for `StrictToJsonEncoder`
   * `ToJsonEncoder.encodeUnsafe` method behave as the previous `ToJsonEncoder.encode` (errors are thrown as Exceptions)
+* [#8523](https://github.com/TouK/nussknacker/pull/8523) Kafka components configuration changes:
+  * `KafkaConfig` was renamed to `KafkaComponentsConfig`
+  * `KafkaComponentsConfig.kafkaProperties` is mandatory now
+  * `KafkaComponentsConfig.kafkaAddress` was removed
 
 ### Other changes
 

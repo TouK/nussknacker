@@ -25,12 +25,13 @@ class AzureSchemaBasedSerdeProviderIntegrationTest extends AnyFunSuite with Opti
   test("serialization round-trip") {
     val eventHubsNamespace = Option(System.getenv("AZURE_EVENT_HUBS_NAMESPACE")).getOrElse("nu-cloud")
     val config = Map(
+      "bootstrap.servers"     -> "dummy:9092",
       "schema.registry.url"   -> s"https://$eventHubsNamespace.servicebus.windows.net",
       "schema.group"          -> "test-group",
       "auto.register.schemas" -> "true",
     )
     val kafkaComponentsConfig = KafkaComponentsConfig(
-      Some(config),
+      config,
       None,
       avroKryoGenericRecordSchemaIdSerialization = Some(false),
       showTopicsWithoutSchema = false,

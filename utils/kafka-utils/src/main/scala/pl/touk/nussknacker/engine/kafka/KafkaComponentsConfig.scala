@@ -15,8 +15,9 @@ case class SchemaRegistryClientKafkaConfig(
 )
 
 case class KafkaComponentsConfig(
-    kafkaProperties: Option[Map[String, String]],
-    kafkaEspProperties: Option[Map[String, String]],
+    kafkaProperties: Map[String, String],
+    // TODO: Replace this map with normal fields
+    kafkaEspProperties: Option[Map[String, String]] = None,
     consumerGroupNamingStrategy: Option[ConsumerGroupNamingStrategy.Value] = None,
     // Probably better place for this flag would be configParameters inside global parameters but
     // for easier usage in AbstractConfluentKafkaAvroDeserializer and ConfluentKafkaAvroDeserializerFactory it is placed here
@@ -29,7 +30,6 @@ case class KafkaComponentsConfig(
     useStringForKey: Boolean = true,
     schemaRegistryCacheConfig: SchemaRegistryCacheConfig = SchemaRegistryCacheConfig(),
     avroAsJsonSerialization: Option[Boolean] = None,
-    kafkaAddress: Option[String] = None,
     idleTimeout: Option[IdlenessConfig] = None,
     sinkDeliveryGuarantee: Option[SinkDeliveryGuarantee.Value] = None,
     showTopicsWithoutSchema: Boolean = true,
@@ -37,8 +37,14 @@ case class KafkaComponentsConfig(
     useDataSampleParamForSchemalessJsonTopicBasedKafkaSource: Boolean = false,
 ) {
 
+  val kafkaBootstrapServers: String = kafkaProperties
+    .getOrElse(
+      "bootstrap.servers",
+      throw new IllegalArgumentException("No bootstrap.servers configured in kafkaProperties")
+    )
+
   def schemaRegistryClientKafkaConfig: SchemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(
-    kafkaProperties.getOrElse(Map.empty),
+    kafkaProperties,
     schemaRegistryCacheConfig,
     avroAsJsonSerialization
   )
@@ -61,11 +67,6 @@ case class KafkaComponentsConfig(
     }
   }
 
-  def kafkaBootstrapServers: Option[String] = kafkaProperties
-    .getOrElse(Map.empty)
-    .get("bootstrap.servers")
-    .orElse(kafkaAddress)
-
 }
 
 object ConsumerGroupNamingStrategy extends Enumeration {
@@ -79,8 +80,6 @@ object KafkaComponentsConfig {
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
-
-  val empty: KafkaComponentsConfig = KafkaComponentsConfig(kafkaProperties = None, kafkaEspProperties = None)
 
   val DefaultOffsetResetStrategyPath                            = "defaultOffsetResetStrategy"
   val DefaultMaxOutOfOrdernessMillisPath                        = "defaultMaxOutOfOrdernessMillis"

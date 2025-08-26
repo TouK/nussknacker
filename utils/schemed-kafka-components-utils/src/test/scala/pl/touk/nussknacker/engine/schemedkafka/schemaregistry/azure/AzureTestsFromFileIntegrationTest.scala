@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.{Schema, SchemaBuilder}
-import org.apache.avro.generic.{GenericRecord, GenericRecordBuilder}
+import org.apache.avro.generic.GenericRecordBuilder
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.Header
 import org.apache.kafka.common.header.internals.RecordHeaders
@@ -37,10 +37,14 @@ class AzureTestsFromFileIntegrationTest
   private val eventHubsNamespace = Option(System.getenv("AZURE_EVENT_HUBS_NAMESPACE")).getOrElse("nu-cloud")
 
   private val schemaRegistryConfigMap =
-    Map("schema.registry.url" -> s"https://$eventHubsNamespace.servicebus.windows.net", "schema.group" -> "test-group")
+    Map(
+      "bootstrap.servers"   -> "dummy:9092",
+      "schema.registry.url" -> s"https://$eventHubsNamespace.servicebus.windows.net",
+      "schema.group"        -> "test-group"
+    )
 
   private val kafkaComponentsConfig =
-    KafkaComponentsConfig(Some(schemaRegistryConfigMap), None, showTopicsWithoutSchema = false)
+    KafkaComponentsConfig(schemaRegistryConfigMap, None, showTopicsWithoutSchema = false)
 
   test("test from file round-trip") {
     val schemaRegistryClient =

@@ -127,7 +127,7 @@ abstract class BaseCachedTopicsExistenceValidatorTest(kafkaAutoCreateEnabled: Bo
       }
 
   lazy val defaultKafkaConfig: KafkaComponentsConfig = KafkaComponentsConfig(
-    kafkaProperties = Some(Map("bootstrap.servers" -> container.bootstrapServers)),
+    kafkaProperties = Map("bootstrap.servers" -> container.bootstrapServers),
     kafkaEspProperties = None,
     consumerGroupNamingStrategy = None,
     avroKryoGenericRecordSchemaIdSerialization = None,

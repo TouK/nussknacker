@@ -14,19 +14,7 @@ class KafkaComponentsConfigSpec extends AnyFunSuite with Matchers {
         |  }
         |}""".stripMargin)
     val expectedConfig =
-      KafkaComponentsConfig(Some(Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest")), None, None)
-    KafkaComponentsConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
-  }
-
-  test("parse legacy config") {
-    val typesafeConfig = ConfigFactory.parseString("""{
-        |  kafkaAddress: "localhost:9092"
-        |  kafkaProperties {
-        |    "auto.offset.reset": latest
-        |  }
-        |}""".stripMargin)
-    val expectedConfig =
-      KafkaComponentsConfig(Some(Map("auto.offset.reset" -> "latest")), None, None, kafkaAddress = Some("localhost:9092"))
+      KafkaComponentsConfig(Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest"), None, None)
     KafkaComponentsConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
   }
 
@@ -41,7 +29,7 @@ class KafkaComponentsConfigSpec extends AnyFunSuite with Matchers {
         |  }
         |}""".stripMargin)
     val expectedConfig = KafkaComponentsConfig(
-      kafkaProperties = Some(Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest")),
+      kafkaProperties = Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest"),
       kafkaEspProperties = None,
       consumerGroupNamingStrategy = None,
       avroKryoGenericRecordSchemaIdSerialization = None,

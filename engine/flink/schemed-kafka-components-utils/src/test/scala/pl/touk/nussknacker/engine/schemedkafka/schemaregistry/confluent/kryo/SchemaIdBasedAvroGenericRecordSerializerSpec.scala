@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSche
 class SchemaIdBasedAvroGenericRecordSerializerSpec extends AnyFunSuite with Matchers {
 
   test("should be able to duplicate serializer after use") {
-    val config = KafkaComponentsConfig(Some(Map("bootstrap.servers" -> "dummy:9092")), None, None)
+    val config = KafkaComponentsConfig(Map("bootstrap.servers" -> "dummy:9092"), None, None)
     val factory =
       MockSchemaRegistryClientFactory.confluentBased(SchemaIdBasedAvroGenericRecordSerializerSpec.schemaRegistryClient)
 

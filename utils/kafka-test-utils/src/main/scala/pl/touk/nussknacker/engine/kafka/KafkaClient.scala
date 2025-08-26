@@ -27,7 +27,7 @@ class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
   private val consumers = collection.mutable.HashSet[KafkaConsumer[Array[Byte], Array[Byte]]]()
 
   private lazy val adminClient =
-    KafkaUtils.createKafkaAdminClient(KafkaComponentsConfig(Some(Map("bootstrap.servers" -> kafkaAddress)), None))
+    KafkaUtils.createKafkaAdminClient(KafkaComponentsConfig(Map("bootstrap.servers" -> kafkaAddress)))
 
   def createTopic(name: String, partitions: Int = 5): Unit = {
     adminClient.createTopics(Collections.singletonList(new NewTopic(name, partitions, 1: Short))).all().get()

@@ -94,10 +94,7 @@ trait KafkaUtils extends LazyLogging {
   ): Properties = {
     val props = new Properties()
     defaults.forEach((k, v) => props.put(k, v))
-    kafkaComponentsConfig.kafkaAddress.foreach { kafkaAddress =>
-      props.put("bootstrap.servers", kafkaAddress)
-    }
-    kafkaComponentsConfig.kafkaProperties.getOrElse(Map.empty).foreach { case (k, v) =>
+    kafkaComponentsConfig.kafkaProperties.foreach { case (k, v) =>
       props.put(k, v)
     }
     props
@@ -176,7 +173,7 @@ trait KafkaUtils extends LazyLogging {
   }
 
   private def readTimeoutForTempConsumer(config: KafkaComponentsConfig): Long =
-    config.kafkaProperties.flatMap(_.get("session.timeout.ms").map(_.toLong)).getOrElse(defaultTimeoutMillis)
+    config.kafkaProperties.get("session.timeout.ms").map(_.toLong).getOrElse(defaultTimeoutMillis)
 
   private def setOffsetToLatest(topic: String, consumer: KafkaConsumer[_, _]): Unit = {
     val partitions = consumer.partitionsFor(topic).asScala.map { partition =>

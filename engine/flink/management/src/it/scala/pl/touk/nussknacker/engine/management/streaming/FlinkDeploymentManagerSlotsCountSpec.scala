@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.management.FlinkSlotsChecker.{NotEnoughSlotsEx
 class FlinkDeploymentManagerSlotsCountSpec
     extends AnyFunSuite
     with Matchers
-    with StreamingDockerTest
+    with FlinkKafkaDockerSpec
     with StrictLogging {
 
   override protected def useMiniClusterForDeployment: Boolean = false

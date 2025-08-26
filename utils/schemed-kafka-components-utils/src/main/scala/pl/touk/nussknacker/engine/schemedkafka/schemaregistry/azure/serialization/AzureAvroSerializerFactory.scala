@@ -84,7 +84,7 @@ object AzureAvroSerializerFactory {
         }
       } getOrElse azureSerializer
     val adjustedConfig =
-      AzureConfigurationFactory.adjustConfig(kafkaComponentsConfig.kafkaProperties.getOrElse(Map.empty))
+      AzureConfigurationFactory.adjustConfig(kafkaComponentsConfig.kafkaProperties)
     serializer.configure(adjustedConfig.asJava, false)
     serializer
   }

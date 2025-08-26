@@ -97,16 +97,10 @@ object AvroSerializersRegistrar extends LazyLogging {
       kafkaComponentsConfig: KafkaComponentsConfig
   ): Unit = {
     if (GenericRecordSchemaIdSerializationSupport.schemaIdSerializationEnabled(kafkaComponentsConfig)) {
-      if (logger.underlying.isTraceEnabled) {
-        logger.trace(
-          s"Registering SchemaIdBasedAvroGenericRecordSerializer using schema registry client factory: $schemaRegistryClientFactory " +
-            s"and config: ${kafkaComponentsConfig.schemaRegistryClientKafkaConfig}"
-        )
-      } else {
-        logger.debug(
-          s"Registering SchemaIdBasedAvroGenericRecordSerializer using schema registry client factory: $schemaRegistryClientFactory"
-        )
-      }
+      logger.debug(
+        s"Registering SchemaIdBasedAvroGenericRecordSerializer using schema registry client factory [$schemaRegistryClientFactory] " +
+          s"and KafkaComponentsConfig including boostrap.servers [${kafkaComponentsConfig.kafkaBootstrapServers}]"
+      )
       SchemaIdBasedAvroGenericRecordSerializer
         .registrar(schemaRegistryClientFactory, kafkaComponentsConfig.schemaRegistryClientKafkaConfig)
         .registerIn(config)

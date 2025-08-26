@@ -59,7 +59,7 @@ class SchemalessKafkaJsonTypeTests
     with NuRestAssureExtensions {
 
   private lazy val defaultKafkaConfig: KafkaComponentsConfig = KafkaComponentsConfig(
-    kafkaProperties = Some(Map("bootstrap.servers" -> hostKafkaAddress)),
+    kafkaProperties = Map("bootstrap.servers" -> hostKafkaAddress),
     kafkaEspProperties = None,
   )
 

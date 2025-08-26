@@ -107,7 +107,7 @@ class AzureSchemaRegistryClientIntegrationTest
   }
 
   private def registerTopic(topicName: UnspecializedTopicName): Unit = {
-    val kafkaComponentsConfig = KafkaComponentsConfig(Some(schemaRegistryConfig.kafkaProperties), None)
+    val kafkaComponentsConfig = KafkaComponentsConfig(schemaRegistryConfig.kafkaProperties, None)
     KafkaUtils.usingAdminClient(kafkaComponentsConfig) {
       _.createTopics(Collections.singletonList[NewTopic](new NewTopic(topicName.name, Collections.emptyMap())))
     }

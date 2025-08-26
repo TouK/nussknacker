@@ -55,11 +55,6 @@ class SchemedKafkaTestingApiHttpServiceSpec
 
   override val container: Container = MultipleContainers(kafkaContainer, schemaRegistryContainer)
 
-  private lazy val defaultKafkaConfig: KafkaComponentsConfig = KafkaComponentsConfig(
-    kafkaProperties = Some(Map("bootstrap.servers" -> hostKafkaAddress)),
-    kafkaEspProperties = None,
-  )
-
   override def designerRawConfig: Config = super.designerRawConfig
     .withoutPath("scenarioTypes.streaming.modelConfig.components.kafka.disabled")
     .withValue(
