@@ -7,14 +7,50 @@ interface Props {
     onCommit: () => void;
     onCancel: () => void;
     style?: React.CSSProperties;
+    autoOpen?: boolean; // new optional flag
 }
 
-export const TestingEventsTableDropdown: React.FC<Props> = ({ value, options, onValueChange, onCommit, onCancel, style }) => {
+export const TestingEventsTableDropdown: React.FC<Props> = ({
+    value,
+    options,
+    onValueChange,
+    onCommit,
+    onCancel,
+    style,
+    autoOpen = true,
+}) => {
     const selectRef = useRef<HTMLSelectElement>(null);
+    const openedRef = useRef(false);
 
     useEffect(() => {
-        selectRef.current?.focus();
-    }, []);
+        const el = selectRef.current;
+        if (!el) return;
+        el.focus();
+        if (!autoOpen || openedRef.current) return;
+        openedRef.current = true;
+        const tryOpen = () => {
+            try {
+                // Experimental API in some browsers
+                (el as any).showPicker?.();
+            } catch {
+                /* ignore */
+            }
+            // Fallback: synthesize user interaction events
+            try {
+                const down = new MouseEvent("mousedown", { bubbles: true, cancelable: true, view: window });
+                el.dispatchEvent(down);
+                const up = new MouseEvent("mouseup", { bubbles: true, cancelable: true, view: window });
+                el.dispatchEvent(up);
+                const click = new MouseEvent("click", { bubbles: true, cancelable: true, view: window });
+                el.dispatchEvent(click);
+            } catch {
+                /* ignore */
+            }
+        };
+        // Delay to ensure element is attached and overlay positioned
+        const id = window.setTimeout(tryOpen, 0);
+        return () => window.clearTimeout(id);
+    }, [autoOpen]);
 
     const handleKey = useCallback(
         (e: React.KeyboardEvent) => {
