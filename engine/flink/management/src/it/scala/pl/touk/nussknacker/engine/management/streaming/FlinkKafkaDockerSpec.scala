@@ -73,7 +73,9 @@ trait FlinkKafkaDockerSpec
           fromAnyRef(hostKafkaAddress)
         )
     } else {
-      logger.debug(s"Using Flink from docker - setting restUrl to $jobManagerRestUrl and bootstrap.servers to $dockerKafkaAddress")
+      logger.debug(
+        s"Using Flink from docker - setting restUrl to $jobManagerRestUrl and bootstrap.servers to $dockerKafkaAddress"
+      )
       baseConfig
         .withValue("deploymentConfig.restUrl", fromAnyRef(jobManagerRestUrl))
         .withValue(

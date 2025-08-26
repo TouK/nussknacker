@@ -14,7 +14,13 @@ object StatefulSampleProcess {
       .parallelism(parallelism)
       .source("state", "oneSource")
       .customNode("stateful", "stateVar", "stateful", "groupBy" -> "#input".spel)
-      .emptySink("end", "kafka-string", "Topic" -> s"'output-$name'".spel, "Value" -> "#stateVar".spel)
+      .emptySink(
+        "end",
+        "kafka",
+        "Topic"        -> s"'output-$name'".spel,
+        "Value"        -> "#stateVar.toString".spel,
+        "Content type" -> "'PLAIN'".spel
+      )
   }
 
   def prepareProcessStringWithStringState(name: ProcessName): CanonicalProcess = {
@@ -22,7 +28,13 @@ object StatefulSampleProcess {
       .streaming(name.value)
       .source("state", "oneSource")
       .customNode("stateful", "stateVar", "constantStateTransformer")
-      .emptySink("end", "kafka-string", "Topic" -> s"'output-$name'".spel, "Value" -> "#stateVar".spel)
+      .emptySink(
+        "end",
+        "kafka",
+        "Topic"        -> s"'output-$name'".spel,
+        "Value"        -> "#stateVar".spel,
+        "Content type" -> "'PLAIN'".spel
+      )
   }
 
   def processWithAggregator(name: ProcessName, aggregatorExpression: String): CanonicalProcess = ScenarioBuilder
@@ -40,14 +52,26 @@ object StatefulSampleProcess {
     )
     // Add enricher to force creating async operator which buffers elements emitted by aggregation. These elements can be incompatible.
     .enricher("enricher", "output", "paramService", "param" -> "'a'".spel)
-    .emptySink("end", "kafka-string", "Topic" -> s"'output-$name'".spel, "Value" -> "'test'".spel)
+    .emptySink(
+      "end",
+      "kafka",
+      "Topic"        -> s"'output-$name'".spel,
+      "Value"        -> "'test'".spel,
+      "Content type" -> "'PLAIN'".spel
+    )
 
   def prepareProcessWithLongState(name: ProcessName): CanonicalProcess = {
     ScenarioBuilder
       .streaming(name.value)
       .source("state", "oneSource")
       .customNode("stateful", "stateVar", "constantStateTransformerLongValue")
-      .emptySink("end", "kafka-string", "Topic" -> s"'output-$name'".spel, "Value" -> "#stateVar".spel)
+      .emptySink(
+        "end",
+        "kafka",
+        "Topic"        -> s"'output-$name'".spel,
+        "Value"        -> "#stateVar".spel,
+        "Content type" -> "'PLAIN'".spel
+      )
   }
 
 }

@@ -39,8 +39,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `topicsExistenceValidationConfig.validatorConfig.adminClientTimeout` -> `kafkaAdminConfig.clientTimeout`
     * `topicsWithoutSchemaFetchTimeout` -> `kafkaAdminConfig.clientTimeout`
 * [#8523](https://github.com/TouK/nussknacker/pull/8523) Kafka components configuration changes:
-  * Configuration of kafka components via legacy `modelConfig.kafka` entry is not supported for Flink engine. Use `modelConfig.components.kafka.config` instead.
-  * Configuration of kafka bootstrap servers via legacy `kafkaAddress` is not supported anymore. Use `kafkaProperties."bootstrap.servers"` instead
+  * Configuration of Kafka components via legacy `modelConfig.kafka` entry is not supported for Flink engine. Use `modelConfig.components.kafka.config` instead.
+  * Configuration of Kafka bootstrap servers via legacy `kafkaAddress` is not supported anymore. Use `kafkaProperties."bootstrap.servers"` instead
 
 ### REST API changes
 
