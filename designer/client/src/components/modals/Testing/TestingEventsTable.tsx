@@ -41,7 +41,14 @@ interface EventsTableProps {
 const emptySelection: GridSelection = { columns: CompactSelection.empty(), rows: CompactSelection.empty() };
 const displayFormat = "YYYY-MM-DDTHH:mm:ss[Z]";
 
-export const TestingEventsTable: React.FC<EventsTableProps> = ({ data = [], onDataChange, sourceOptions, className, defaultEvent }) => {
+export const TestingEventsTable: React.FC<EventsTableProps> = ({
+    data = [],
+    onDataChange,
+    sourceOptions,
+    className,
+    defaultEvent,
+    sourceParameters,
+}) => {
     const tableTheme = useTableTheme();
     const [selection, setSelection] = useState<GridSelection>(emptySelection);
     const [hasFocus, setHasFocus] = useState(false);
@@ -121,6 +128,27 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({ data = [], onDa
         [],
     );
 
+    const defaultVariablesBySourceId = useMemo(() => {
+        const map: Record<string, string> = {};
+        sourceParameters?.forEach((sp) => {
+            const obj: Record<string, any> = {};
+            sp.parameters?.forEach((p) => {
+                const expr = p?.defaultValue?.expression ?? "";
+                try {
+                    obj[p.name] = JSON.parse(expr);
+                } catch {
+                    obj[p.name] = expr;
+                }
+            });
+            try {
+                map[sp.sourceId] = JSON.stringify(obj);
+            } catch {
+                map[sp.sourceId] = "";
+            }
+        });
+        return map;
+    }, [sourceParameters]);
+
     const getCellContent = useCallback(
         ([col, row]: Item): GridCell => {
             const rowData = data[row];
@@ -167,12 +195,23 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({ data = [], onDa
             const rowUpdates: Record<number, TestingEventParameters> = {};
             changes.forEach(({ location, value }) => {
                 const [col, row] = location;
-                const base = rowUpdates[row] || { ...(data[row] || { sourceId: "", timestamp: "", variables: "" }) };
+                const prevRow = data[row];
+                const base = rowUpdates[row] || { ...(prevRow || { sourceId: "", timestamp: "", variables: "" }) };
                 const cellValue =
                     isSourceSelectCell(value) || isDateCell(value) ? value.data.value : (value as any).data?.toString?.() ?? "";
-                if (col === 0) rowUpdates[row] = { ...base, sourceId: cellValue };
-                else if (col === 1) rowUpdates[row] = { ...base, timestamp: cellValue };
-                else if (col === 2) rowUpdates[row] = { ...base, variables: cellValue };
+                if (col === 0) {
+                    if (prevRow?.sourceId !== cellValue) {
+                        // source changed -> reset variables
+                        const resetVars = cellValue ? defaultVariablesBySourceId[cellValue] ?? "" : "";
+                        rowUpdates[row] = { ...base, sourceId: cellValue, variables: resetVars };
+                    } else {
+                        rowUpdates[row] = { ...base, sourceId: cellValue };
+                    }
+                } else if (col === 1) {
+                    rowUpdates[row] = { ...base, timestamp: cellValue };
+                } else if (col === 2) {
+                    rowUpdates[row] = { ...base, variables: cellValue };
+                }
             });
             const maxRow = Math.max(...Object.keys(rowUpdates).map(Number));
             const next: TestingEventParameters[] = [];
@@ -183,7 +222,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({ data = [], onDa
             }
             onDataChange(next);
         },
-        [data, onDataChange],
+        [data, onDataChange, defaultVariablesBySourceId],
     );
 
     const appendRow = useCallback(() => onDataChange([...data, { ...defaultEvent }]), [data, defaultEvent, onDataChange]);
