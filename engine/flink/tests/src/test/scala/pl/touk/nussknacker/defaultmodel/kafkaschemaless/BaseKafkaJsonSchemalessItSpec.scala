@@ -23,6 +23,8 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
     "age"    -> Json.fromInt(30),
   )
 
+  private val sampleString = "foobar"
+
   override def kafkaComponentsConfig: Config = {
     super.kafkaComponentsConfig
       .withValue("config.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource", ConfigValueFactory.fromAnyRef(true))
@@ -192,7 +194,7 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
     kafkaClient.sendRawMessage(
       inputTopic,
       Array.empty,
-      jsonRecord.toString().getBytes,
+      sampleString.getBytes,
       timestamp = Instant.now.toEpochMilli
     )
     val scenario =
@@ -217,11 +219,9 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
     run(scenario) {
       val outputRecord = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic).take(1).head
 
-      val parsedOutput = parser
-        .parse(new String(outputRecord.value(), StandardCharsets.UTF_8))
-        .fold(throw _, identity)
+      val parsedOutput = new String(outputRecord.value(), StandardCharsets.UTF_8)
 
-      parsedOutput shouldBe jsonRecord
+      parsedOutput shouldBe sampleString
     }
   }
 

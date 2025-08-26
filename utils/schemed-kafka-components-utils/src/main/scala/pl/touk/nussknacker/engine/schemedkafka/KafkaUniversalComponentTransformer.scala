@@ -119,8 +119,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
     } else {
       val contentTypesValues = List(
         FixedExpressionValue(s"'${ContentTypes.JSON}'", s"${ContentTypes.JSON}"),
-        // TODO: Remove comment once plain is working correctly
-        // FixedExpressionValue(s"'${ContentTypes.PLAIN}'", s"${ContentTypes.PLAIN}")
+        FixedExpressionValue(s"'${ContentTypes.PLAIN}'", s"${ContentTypes.PLAIN}")
       )
 
       Writer[List[ProcessCompilationError], List[FixedExpressionValue]](Nil, contentTypesValues).map(contentTypes =>

@@ -309,7 +309,7 @@ class UniversalKafkaSinkFactory(
       validationMode: ValidationMode,
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SingleSchemaBasedParameter] = {
     schemaSupportDispatcher
-      .forSchemaType(schemaData.schema.schemaType())
+      .forParsedSchema(schemaData.schema)
       .extractSingleParameterForSink(
         schema = schemaData.schema,
         validationMode = validationMode,
@@ -321,7 +321,7 @@ class UniversalKafkaSinkFactory(
       schemaData: RuntimeSchemaData[ParsedSchema],
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
     schemaSupportDispatcher
-      .forSchemaType(schemaData.schema.schemaType())
+      .forParsedSchema(schemaData.schema)
       .extractDynamicParametersForSink(
         schema = schemaData.schema,
         restrictedParamNames = restrictedParamNames

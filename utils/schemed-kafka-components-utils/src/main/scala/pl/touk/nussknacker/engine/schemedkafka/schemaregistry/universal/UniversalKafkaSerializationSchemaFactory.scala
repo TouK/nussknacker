@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.{serialization, KafkaConfig}
 import pl.touk.nussknacker.engine.kafka.serialization.{CharSequenceSerializer, KafkaProducerHelper}
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ContentTypesSchemas, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload.ValueSchemaIdHeaderName
 import pl.touk.nussknacker.engine.util.KeyedValue
 
@@ -50,7 +50,7 @@ class UniversalKafkaSerializationSchemaFactory(
     val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
     val schema               = schemaData.schema
     UniversalSchemaSupportDispatcher(kafkaConfig)
-      .forSchemaType(schema.schemaType())
+      .forParsedSchema(schema)
       .serializer(Some(schema), schemaRegistryClient, isKey = false)
   }
 

@@ -29,8 +29,9 @@ class UniversalSchemaSupportDispatcher private (kafkaConfig: KafkaConfig) {
 
   def forParsedSchema(parsedSchema: ParsedSchema): UniversalSchemaSupport = parsedSchema match {
     // For ad hoc tests we want to present the user with json editor when topic has no schema and content type Json was selected
-    case ContentTypesSchemas.schemaForJson => NoSchemaJsonSupport
-    case _                                 => forSchemaType(parsedSchema.schemaType())
+    case ContentTypesSchemas.schemaForJson  => NoSchemaJsonSupport
+    case ContentTypesSchemas.schemaForPlain => NoSchemaPlainSupport
+    case _                                  => forSchemaType(parsedSchema.schemaType())
   }
 
 }
