@@ -12,8 +12,8 @@ import { CellMenu, DeleteRowMenuItem } from "../../graph/node-modal/editors/expr
 import { Sizer } from "../../graph/node-modal/editors/expression/Table/Sizer";
 import { useTableTheme } from "../../graph/node-modal/editors/expression/Table/tableTheme";
 import "@glideapps/glide-data-grid/dist/index.css";
-import { TypeSelect } from "../../graph/node-modal/fragment-input-definition/TypeSelect";
 import { nodeInput } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import TestingEventsTableSourceEditor from "./TestingEventsTableSourceEditor";
 
 type DateCellData = { kind: "date-cell"; value: string };
 type DateCell = CustomCell<DateCellData>;
@@ -66,35 +66,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({ data = [], onDa
                 return true;
             },
             provideEditor: () => ({
-                editor: ({ value, onChange, target }) => {
-                    console.log(value.data.options);
-                    return (
-                        <div
-                            style={{
-                                width: target.width,
-                                height: target.height,
-                                display: "flex",
-                                alignItems: "center",
-                                padding: 0,
-                            }}
-                        >
-                            <TypeSelect
-                                autoFocus
-                                menuIsOpen
-                                value={{ value: value.data.value, label: value.data.value }}
-                                options={value.data.options.map((option) => ({ value: option, label: option }))}
-                                onChange={(v) =>
-                                    onChange({
-                                        ...value,
-                                        copyData: v ?? "",
-                                        data: { ...value.data, value: v ?? "" },
-                                    })
-                                }
-                                style={{ width: "100%" }}
-                            />
-                        </div>
-                    );
-                },
+                editor: TestingEventsTableSourceEditor as any,
                 deletedValue: (v) => ({ ...v, copyData: "", data: { ...v.data, value: "" } }),
             }),
         }),
@@ -173,8 +145,8 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({ data = [], onDa
                 let display = rowData.variables || "";
                 try {
                     if (rowData.variables) display = JSON.stringify(JSON.parse(rowData.variables));
-                } catch (e) {
-                    console.error(e.message);
+                } catch {
+                    /* ignore */
                 }
                 return {
                     kind: GridCellKind.Text,
