@@ -277,6 +277,7 @@ description: Stay informed with detailed changelogs covering new features, impro
        }
      }
   ```
+* [#8534](https://github.com/TouK/nussknacker/pull/8534) Kafka components: Added support for "PLAIN" Content type for topics without schema 
 * [#8352](https://github.com/TouK/nussknacker/pull/8352) Updated dependencies:
   * Caffeine Cache 3.1.8 -> 3.2.1
   * Cats Effect 3.5.4 -> 3.5.7

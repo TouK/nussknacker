@@ -26,7 +26,7 @@ object LiteKafkaUniversalSinkImplFactory extends UniversalKafkaSinkImplFactory {
       validationMode: ValidationMode
   ): Sink = {
     lazy val encode = UniversalSchemaSupportDispatcher(kafkaConfig)
-      .forSchemaType(schema.schema.schemaType())
+      .forParsedSchema(schema.schema)
       .formValueEncoder(schema.schema, validationMode)
 
     new LazyParamSink[ProducerRecord[Array[Byte], Array[Byte]]] {

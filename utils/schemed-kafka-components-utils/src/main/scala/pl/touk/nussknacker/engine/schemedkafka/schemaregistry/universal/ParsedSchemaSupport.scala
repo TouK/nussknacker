@@ -14,7 +14,8 @@ import pl.touk.nussknacker.engine.api.definition.{
   JsonParameterEditor,
   JsonTemplateParameterEditor,
   Parameter,
-  SpelParameterEditor
+  SpelParameterEditor,
+  SpelTemplateParameterEditor
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -23,6 +24,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.json.{JsonSchemaBasedParameter, JsonTemplateFromJsonSchemaDeterminer}
 import pl.touk.nussknacker.engine.json.encode.{JsonSchemaOutputValidator, ToJsonSchemaBasedEncoder}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.serialization.CharSequenceSerializer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{inputParamName, sinkValueParamName}
 import pl.touk.nussknacker.engine.schemedkafka.encode._
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroSchemaBasedParameter, DefaultAvroSchemaEvolution}
@@ -36,11 +38,16 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.ConfluentJsonPayloadKafkaSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AvroMessageReader
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.JsonSchemaSupport.defaultJsonTemplateFor
 import pl.touk.nussknacker.engine.schemedkafka.typed.{
   AvroSchemaTypeDefinitionExtractor,
   AvroSchemaTypeDefinitionExtractorWithUnderlyingMap
 }
-import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SingleSchemaBasedParameter}
+import pl.touk.nussknacker.engine.util.parameters.{
+  SchemaBasedParameter,
+  SingleSchemaBasedParameter,
+  TypingResultValidator
+}
 
 sealed trait ParsedSchemaSupport[+S <: ParsedSchema] extends UniversalSchemaSupport {
 
@@ -282,5 +289,45 @@ object NoSchemaJsonSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
       )
     )
   }
+
+}
+
+object NoSchemaPlainSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
+
+  override def payloadDeserializer: UniversalSchemaPayloadDeserializer = PlainTextPayloadDeserializer
+
+  override def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, isKey: Boolean): Serializer[Any] =
+    (new CharSequenceSerializer).asInstanceOf[Serializer[Any]]
+
+  override def typeDefinition(schema: ParsedSchema): TypingResult = Typed[String]
+
+  override def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = a => a.asInstanceOf[AnyRef]
+
+  override def extractSingleParameterForSink(
+      schema: ParsedSchema,
+      validationMode: ValidationMode,
+      rawParameter: Parameter
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SingleSchemaBasedParameter] = Valid(
+    SingleSchemaBasedParameter(
+      rawParameter.copy(
+        typ = Typed[String]
+      ),
+      TypingResultValidator.emptyValidator
+    )
+  )
+
+  // Below methods shouldn't be applicable
+  override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =
+    JsonSchemaSupport.recordFormatterSupport(schemaRegistryClient)
+
+  override def extractDynamicParametersForSink(schema: ParsedSchema, restrictedParamNames: Set[ParameterName])(
+      implicit nodeId: NodeId
+  ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
+    JsonSchemaSupport.extractDynamicParametersForSink(schema, restrictedParamNames)
+
+  override def extractParameterForTests(schema: ParsedSchema)(
+      implicit nodeId: NodeId
+  ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
+    JsonSchemaSupport.extractParameterForTests(schema)
 
 }

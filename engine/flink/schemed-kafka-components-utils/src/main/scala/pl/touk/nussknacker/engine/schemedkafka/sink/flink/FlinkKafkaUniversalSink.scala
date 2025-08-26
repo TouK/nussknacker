@@ -86,7 +86,7 @@ class FlinkKafkaUniversalSink(
     override def open(openContext: OpenContext): Unit = {
       super.open(openContext)
       encodeRecord = schemaSupportDispatcher
-        .forSchemaType(schema.getParsedSchema.schemaType())
+        .forParsedSchema(schema.getParsedSchema)
         .formValueEncoder(schema.getParsedSchema, validationMode)
     }
 

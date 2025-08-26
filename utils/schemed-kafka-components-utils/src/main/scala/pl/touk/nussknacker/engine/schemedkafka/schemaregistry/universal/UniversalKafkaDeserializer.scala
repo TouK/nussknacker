@@ -62,7 +62,7 @@ class UniversalKafkaDeserializer[T](
       new RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](writerSchema), Some(writerSchemaId.value))
 
     schemaSupportDispatcher
-      .forSchemaType(writerSchema.schemaType())
+      .forParsedSchema(writerSchema)
       .payloadDeserializer
       .deserialize(readerSchemaDataOpt, writerSchemaData, writerSchemaId.buffer)
       .asInstanceOf[T]

@@ -66,7 +66,7 @@ public final class NkSerializableParsedSchema<T extends ParsedSchema> implements
                 oos.writeObject(((AvroSchema) schema).rawSchema().toString(false));
             } else if (schema instanceof OpenAPIJsonSchema) {
                 oos.writeByte(jsonSchemaType);
-                oos.writeObject(((OpenAPIJsonSchema) schema).rawSchema().toString());
+                oos.writeObject(((OpenAPIJsonSchema) schema).schemaString());
             } else {
                 throw new IllegalStateException("Shouldn't happen. Unsupported schema type: " + schema.schemaType());
             }

@@ -90,26 +90,30 @@ class UniversalKafkaSourceFactory(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) :: _,
           _
-        ) =>
+        ) if contentType == ContentTypes.JSON.toString =>
       val preparedTopic = prepareTopic(topic)
-      val valueValidationResult = if (contentType.equals(ContentTypes.JSON.toString)) {
-        Valid(
-          (
-            Some(runtimeDataForJsonSchema),
-            // This is the type after it leaves source
-            Typed.json
-          )
-        )
-      } else {
-        Valid(
-          (
-            Some(runtimeDataForPlainSchema),
-            // This is the type after it leaves source
-            Unknown
-          )
-        )
-      }
-      prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
+      prepareSourceFinalResults(
+        preparedTopic,
+        Valid((Some(runtimeDataForJsonSchema), Typed.json)),
+        context,
+        dependencies,
+        step.parameters,
+        Nil
+      )
+    case step @ TransformationStep(
+          (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
+          (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) :: _,
+          _
+        ) if contentType == ContentTypes.PLAIN.toString =>
+      val preparedTopic = prepareTopic(topic)
+      prepareSourceFinalResults(
+        preparedTopic,
+        Valid((Some(runtimeDataForPlainSchema), Typed[String])),
+        context,
+        dependencies,
+        step.parameters,
+        Nil
+      )
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (`schemaVersionParamName`, DefinedEagerParameter(version: String, _)) :: _,
@@ -152,7 +156,7 @@ class UniversalKafkaSourceFactory(
         val schemaData =
           RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](withMetadata.schema), Some(withMetadata.id))
         val schema = schemaData.schema
-        (Some(schemaData), schemaSupportDispatcher.forSchemaType(schema.schemaType()).typeDefinition(schema))
+        (Some(schemaData), schemaSupportDispatcher.forParsedSchema(schema).typeDefinition(schema))
       }
       .leftMap(error => CustomNodeError(error.getMessage, paramName))
   }
@@ -359,6 +363,7 @@ class UniversalKafkaSourceFactory(
       )
   }
 
+  // TODO: ADT allowing to pass either information about schema or about ContentType
   private def runtimeDataForPlainSchema = {
     RuntimeSchemaData[ParsedSchema](
       new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForPlain),
