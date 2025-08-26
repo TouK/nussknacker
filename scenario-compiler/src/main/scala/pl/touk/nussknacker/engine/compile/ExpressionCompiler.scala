@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.{IorNel, NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{invalid, invalidNel, valid, Invalid, Valid}
 import cats.instances.list._
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
@@ -125,7 +126,7 @@ class ExpressionCompiler(
     expressionParsers: Map[Language, ExpressionParser],
     dictRegistry: DictRegistry,
     expressionEvaluator: ExpressionEvaluator
-) {
+) extends LazyLogging {
 
   // used only for services and fragments - in places where component is an Executor instead of a factory
   // that creates Executor
@@ -306,6 +307,7 @@ class ExpressionCompiler(
       DictKeyWithLabelExpressionParser.parseDictKeyWithLabelExpression(expression.expression) match {
         case Valid(DictKeyWithLabelExpression(key, label)) =>
           val rawValue = label.getOrElse(key)
+          logger.info(s"Using raw value with quotes ('$rawValue') as value of $expression for editors $editors ")
           Valid(Expression.spel(s"'$rawValue'"))
         case Invalid(_) =>
           incompatibleChangeToParameterDefinitionDetected
@@ -318,10 +320,16 @@ class ExpressionCompiler(
     ): ValidatedNel[PartSubGraphCompilationError, Expression] = {
       DictKeyWithLabelExpressionParser.parseDictKeyWithLabelExpression(expression.expression) match {
         case Valid(DictKeyWithLabelExpression(key, label)) =>
-          if (allowed.contains(expression.expression)) {
+          val rawValue       = label.getOrElse(key)
+          val quotedRawValue = s"'$rawValue'"
+          logger.info(s"${allowed.contains(rawValue)} ${allowed.contains(quotedRawValue)}")
+          val condition = allowed.contains(rawValue) || allowed.contains(quotedRawValue)
+          if (condition) {
             val rawValue = label.getOrElse(key)
+            logger.info(s"Using raw value with quotes ('$rawValue') as value of $expression for editors $editors")
             Valid(Expression.spel(s"'$rawValue'"))
           } else {
+            logger.info(s"Cannot use expression $expression for editors $editors, allowed: $allowed")
             incompatibleChangeToParameterDefinitionDetected
           }
         case Invalid(_) =>
