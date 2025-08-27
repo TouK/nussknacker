@@ -1,8 +1,7 @@
-import { cloneDeep } from "lodash";
-import moment from "moment";
 import type { ProcessName } from "src/components/Process/types";
 
 import type { TestingEventParameters } from "../../components/modals/Testing/TestingEventsTable";
+import { mapEventsToRunTestsFormat } from "../../components/modals/Testing/utils";
 import type { SourceWithParametersTest } from "../../http/HttpService";
 import HttpService from "../../http/HttpService";
 import type { ResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
@@ -44,22 +43,12 @@ export function testScenarioWithGeneratedData(testSampleSize: string): ThunkActi
 
 export function testScenarioWithEventsData(testingEventsParameters: TestingEventParameters[]): ThunkAction {
     return wrapWithTestAction((scenarioName, scenarioGraph) =>
-        HttpService.testScenarioWithEventsData(
-            scenarioName,
-            scenarioGraph,
-            cloneDeep(testingEventsParameters).map((event) => {
-                event.variables = JSON.parse(event.variables);
-                if (event.timestamp) {
-                    const m = moment(event.timestamp);
-                    event.timestamp = m.isValid() ? String(m.valueOf()) : undefined;
-                }
-
-                return event;
+        HttpService.testScenarioWithEventsData(scenarioName, scenarioGraph, testingEventsParameters.map(mapEventsToRunTestsFormat)).then(
+            ({ data }) => ({
+                testResults: data,
+                testingEventsParameters: testingEventsParameters,
             }),
-        ).then(({ data }) => ({
-            testResults: data,
-            testingEventsParameters: testingEventsParameters,
-        })),
+        ),
     );
 }
 

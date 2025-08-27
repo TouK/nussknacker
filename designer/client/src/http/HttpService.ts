@@ -969,9 +969,32 @@ class HttpService {
 
         promise.catch((error: AxiosError) =>
             this.#addError(
-                i18next.t("notification.error.failedTovalidateScenarioWithEventsData", "Failed to validate due to: {{axiosError}}", {
+                i18next.t("notification.error.failedValidateTestDataWithEventsData", "Failed to validate due to: {{axiosError}}", {
                     axiosError: handleAxiosError(error),
                 }),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
+    generatedTestData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph) {
+        const sanitizedScenarioGraph = this.#sanitizeScenarioGraph(scenarioGraph);
+        const promise = api.post<TestingEventParameters[]>(`/scenarioTesting/${encodeURIComponent(scenarioName)}/generatedTestData`, {
+            scenarioGraph: sanitizedScenarioGraph,
+            numberOfSamples: 10,
+        });
+
+        promise.catch((error: AxiosError) =>
+            this.#addError(
+                i18next.t(
+                    "notification.error.failedTovalidateScenarioWithEventsData",
+                    "Failed to generated test data due to: {{axiosError}}",
+                    {
+                        axiosError: handleAxiosError(error),
+                    },
+                ),
                 error,
                 true,
             ),

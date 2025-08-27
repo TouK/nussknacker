@@ -1,5 +1,6 @@
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import type { ElementType, ReactElement } from "react";
+import { useCallback } from "react";
 import { useState } from "react";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,6 +18,7 @@ import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeD
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
 import type { TestingEventParameters } from "./TestingEventsTable";
 import { TestingEventsTable } from "./TestingEventsTable";
+import { mapGeneratedTestingDataToTableFormat } from "./utils";
 
 type DocsLink = {
     url: string;
@@ -59,9 +61,19 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
     const [events, setEvents] = useState<TestingEventParameters[]>(testingEventsParameters || [defaultEvent]);
     const [cellErrors, setCellErrors] = useState<CellError[]>([]);
     const sourceOptions = testCapabilities.testWithParameters.sourceParameters.flatMap((sourceParameter) => sourceParameter.sourceId);
+    const handleGenerateTestData = useCallback(async () => {
+        const { data } = await HttpService.generatedTestData(scenarioName, scenarioGraph);
+
+        setEvents(data.map(mapGeneratedTestingDataToTableFormat));
+    }, [scenarioGraph, scenarioName]);
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [
+            {
+                title: t("testingForm.cancelButton.label", "Generate test Data"),
+                action: handleGenerateTestData,
+                classname: LoadingButtonTypes.tertiaryButton,
+            },
             { title: t("testingForm.cancelButton.label", "Cancel"), action: () => close(), classname: LoadingButtonTypes.secondaryButton },
             {
                 disabled: cellErrors.length > 0,
@@ -76,7 +88,7 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
                 },
             },
         ],
-        [cellErrors.length, close, dispatch, events, t],
+        [cellErrors.length, close, dispatch, events, handleGenerateTestData, t],
     );
 
     const validateEditedRow = React.useCallback(
@@ -87,7 +99,7 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
                     const newErrors: CellError[] = data.validationErrors.map((validationError) => ({
                         errorMessage: validationError.message,
                         columnName: "Events",
-                        x: 2,
+                        x: 2, // Events column has static position
                         y: rowIndex,
                     }));
                     if (!newErrors.length) return withoutRow;
