@@ -5,11 +5,13 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { testScenarioWithEventsData } from "../../../actions/nk/displayTestResults";
-import { getTestCapabilities, getTestingEventParameters } from "../../../reducers/selectors/graph";
+import HttpService from "../../../http/HttpService";
+import { getProcessName, getScenarioGraph, getTestCapabilities, getTestingEventParameters } from "../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { WindowKind } from "../../../windowManager";
 import { WindowContent } from "../../../windowManager";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
+import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
@@ -51,14 +53,18 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
         [defaultParameter.sourceId, testCapabilities.testWithParameters.sourceParameters],
     );
     const testingEventsParameters = useAppSelector(getTestingEventParameters);
+    const scenarioName = useAppSelector(getProcessName);
+    const scenarioGraph = useAppSelector(getScenarioGraph);
 
     const [events, setEvents] = useState<TestingEventParameters[]>(testingEventsParameters || [defaultEvent]);
+    const [cellErrors, setCellErrors] = useState<CellError[]>([]);
     const sourceOptions = testCapabilities.testWithParameters.sourceParameters.flatMap((sourceParameter) => sourceParameter.sourceId);
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("testingForm.cancelButton.label", "Cancel"), action: () => close(), classname: LoadingButtonTypes.secondaryButton },
             {
+                disabled: cellErrors.length > 0,
                 title: t("testingForm.testButton.label", "Test"),
                 action: () => {
                     try {
@@ -70,8 +76,69 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
                 },
             },
         ],
-        [close, dispatch, events, t],
+        [cellErrors.length, close, dispatch, events, t],
     );
+
+    const validateEditedRow = React.useCallback(
+        (rowIndex: number, row: TestingEventParameters) => {
+            HttpService.validateTestDataWithEventsData(scenarioName, scenarioGraph, row.variables).then(({ data }) =>
+                setCellErrors((prev) => {
+                    const withoutRow = prev.filter((e) => e.y !== rowIndex || e.columnName !== "Events");
+                    const newErrors: CellError[] = data.validationErrors.map((validationError) => ({
+                        errorMessage: validationError.message,
+                        columnName: "Events",
+                        x: 2,
+                        y: rowIndex,
+                    }));
+                    if (!newErrors.length) return withoutRow;
+                    return [...withoutRow, ...newErrors];
+                }),
+            );
+        },
+        [scenarioName, scenarioGraph],
+    );
+
+    const handleRowUpdated = React.useCallback(
+        (rowIndex: number, row: TestingEventParameters) => {
+            setEvents((prev) => {
+                const next = [...prev];
+                if (rowIndex >= next.length) {
+                    for (let i = next.length; i <= rowIndex; i++) {
+                        next[i] = { sourceId: "", timestamp: undefined, variables: "" } as TestingEventParameters;
+                    }
+                }
+                next[rowIndex] = row;
+                return next;
+            });
+            validateEditedRow(rowIndex, row);
+        },
+        [validateEditedRow],
+    );
+
+    const handleRowAdded = React.useCallback((rowIndex: number, row: TestingEventParameters) => {
+        setEvents((prev) => {
+            const next = [...prev];
+            if (rowIndex === next.length) next.push(row);
+            else next.splice(rowIndex, 0, row);
+            return next;
+        });
+        setCellErrors((prev) => prev.map((e) => (e.y >= rowIndex ? { ...e, y: e.y + 1 } : e)));
+    }, []);
+
+    const handleRowsDeleted = React.useCallback((deletedRows: number[]) => {
+        if (!deletedRows.length) return;
+        const deletedSet = new Set(deletedRows);
+        const sorted = [...deletedRows].sort((a, b) => a - b);
+        setEvents((prev) => prev.filter((_, i) => !deletedSet.has(i)));
+        setCellErrors((prev) =>
+            prev
+                .filter((e) => !deletedSet.has(e.y))
+                .map((e) => {
+                    const shift = sorted.reduce((acc, r) => (r < e.y ? acc + 1 : acc), 0);
+                    return shift ? { ...e, y: e.y - shift } : e;
+                }),
+        );
+    }, []);
 
     return (
         <WindowContent
@@ -85,9 +152,10 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
                     sourceOptions={sourceOptions}
                     sourceParameters={testCapabilities.testWithParameters.sourceParameters}
                     data={events}
-                    onDataChange={(data) => {
-                        setEvents(data);
-                    }}
+                    cellErrors={cellErrors}
+                    onRowUpdated={handleRowUpdated}
+                    onRowAdded={handleRowAdded}
+                    onRowsDeleted={handleRowsDeleted}
                     defaultEvent={defaultEvent}
                 />
             </ContentSize>

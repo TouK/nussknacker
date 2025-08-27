@@ -25,27 +25,18 @@ const StyledTooltip = styled(({ className, ...props }: Omit<TooltipProps, "child
     };
 });
 
-export function useErrorHighlights(fieldErrors: FieldError[], columns: DataColumn[], tableRef: React.MutableRefObject<DataEditorRef>) {
+export interface CellError {
+    columnName: string;
+    errorMessage: string;
+    x: number;
+    y: number;
+}
+
+export function useErrorHighlights(cellErrors: CellError[], tableRef: React.MutableRefObject<DataEditorRef>) {
     const { palette } = useTheme();
     const positionRef = useRef<DOMRectInit>();
     const [tooltipMessage, setTooltipMessage] = useState<string>(null);
     const [tooltipOpen, setTooltipOpen] = useState<boolean>(null);
-
-    const cellErrors = useMemo(
-        () =>
-            fieldErrors.flatMap(
-                (e) =>
-                    e.details.type === "TabularDataDefinitionParserErrorDetails" &&
-                    e.details?.cellErrors
-                        ?.map(({ rowIndex, ...e }) => ({
-                            ...e,
-                            x: columns.findIndex((c) => c.name === e.columnName),
-                            y: rowIndex,
-                        }))
-                        .filter((e) => e?.x >= 0),
-            ),
-        [columns, fieldErrors],
-    );
 
     const getErrorForCell = useCallback(
         ([col, row]: readonly [number, number] = [-1, -1]) => cellErrors.find(({ x, y }) => x === col && y === row),

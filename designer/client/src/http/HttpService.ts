@@ -7,7 +7,7 @@ import i18next from "i18next";
 import type { Moment } from "moment";
 
 import type { ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
-import type { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
+import type { GenericValidationData, GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
 import api from "../api";
 import type { UserData } from "../common/models/User";
 import SystemUtils, { AUTHORIZATION_HEADER_NAMESPACE } from "../common/SystemUtils";
@@ -16,6 +16,7 @@ import type { CaretPosition2d, ExpressionSuggestion } from "../components/graph/
 import type { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
 import { extractStickyNotesFromNodes } from "../components/graph/utils/stickyNotesUtils";
 import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
+import type { TestingEventParameters } from "../components/modals/Testing/TestingEventsTable";
 import type { ProcessName, ProcessStateType, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
 import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../components/toolbars/activities/types";
 import { ActivityTypesRelatedToExecutions } from "../components/toolbars/activities/types";
@@ -23,7 +24,6 @@ import type {
     ScenarioActionResultDeploySuccess,
     ScenarioActionResult,
     ScenarioActionUnhandledError,
-    ScenarioActionValidationError,
     ScenarioActionResultSuccess,
 } from "../components/toolbars/scenarioActions/buttons/types";
 import { ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
@@ -924,7 +924,7 @@ class HttpService {
         return promise;
     }
 
-    testScenarioWithEventsData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, testData: any) {
+    testScenarioWithEventsData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, testData: TestingEventParameters[]) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
 
         const data = new FormData();
@@ -938,7 +938,38 @@ class HttpService {
         });
         promise.catch((error: AxiosError) =>
             this.#addError(
-                i18next.t("notification.error.failedToTest", "Failed to test due to: {{axiosError}}", {
+                i18next.t("notification.error.failedToTestScenarioWithEventsData", "Failed to test due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
+    validateTestDataWithEventsData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, expression: string) {
+        const sanitizedScenarioGraph = this.#sanitizeScenarioGraph(scenarioGraph);
+
+        const promise = api.post<GenericValidationData>(`/scenarioTesting/${encodeURIComponent(scenarioName)}/validate`, {
+            scenarioGraph: sanitizedScenarioGraph,
+            testData: {
+                type: "WITH_PARAMETERS",
+                sourceParameters: {
+                    sourceId: "Event Generator",
+                    parameterExpressions: {
+                        "Input variables": {
+                            language: "json",
+                            expression,
+                        },
+                    },
+                },
+            },
+        });
+
+        promise.catch((error: AxiosError) =>
+            this.#addError(
+                i18next.t("notification.error.failedTovalidateScenarioWithEventsData", "Failed to validate due to: {{axiosError}}", {
                     axiosError: handleAxiosError(error),
                 }),
                 error,
