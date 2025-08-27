@@ -19,16 +19,16 @@ const filterEventsByContainer =
         }
     };
 
-export function useDocumentListeners(listeners: DocumentListeners): void {
+export function useDocumentListeners(listeners: DocumentListeners, rootEl: EventTarget = document): void {
     const filterByRoot = useMemo(() => filterEventsByContainer(document.getElementById("root")), []);
     useEffect(() => {
         const entries = Object.entries(listeners).map(([type, listener]) => {
             if (listener) {
                 const wrapped = filterByRoot(listener);
-                document.addEventListener(type, wrapped);
-                return () => document.removeEventListener(type, wrapped);
+                rootEl.addEventListener(type, wrapped);
+                return () => rootEl.removeEventListener(type, wrapped);
             }
         });
         return () => entries.forEach((unbind) => unbind());
-    }, [filterByRoot, listeners]);
+    }, [filterByRoot, listeners, rootEl]);
 }

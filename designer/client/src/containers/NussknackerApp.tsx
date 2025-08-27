@@ -3,7 +3,6 @@ import { isEmpty } from "lodash";
 import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import React from "react";
 import { DndProvider } from "react-dnd-multi-backend";
-import { Outlet } from "react-router-dom";
 
 import { AiAssistantButton } from "../components/aiAssistant/components/AiAssistantButton";
 import { MenuBar } from "../components/MenuBar";
@@ -14,6 +13,7 @@ import { WindowManager } from "../windowManager";
 import { ConnectionErrorProvider } from "./connectionErrorProvider";
 import { useRegisterTrackingEvents } from "./event-tracking";
 import { useErrorRegister } from "./event-tracking/use-error-register";
+import { MainOutlet } from "./MainOutlet";
 import { Notifications } from "./Notifications";
 import { useAnonymousStatistics } from "./useAnonymousStatistics";
 
@@ -50,9 +50,7 @@ export function NussknackerApp() {
                         })}
                     >
                         <MenuBar />
-                        <main className={css({ overflow: "auto" })}>
-                            <Outlet />
-                        </main>
+                        <MainOutlet />
                     </div>
                     <AiAssistantButton />
                 </WindowManager>

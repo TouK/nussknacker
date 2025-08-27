@@ -61,9 +61,14 @@
             }
         ],
         "react/prop-types": "off",
-        "react-hooks/exhaustive-deps": "error",
+        "react-hooks/exhaustive-deps": [
+            "error",
+            {
+                "additionalHooks": "(useDrop|useDrag)"
+            }
+        ],
         "import/order": [
-      "error",
+            "error",
             {
                 "groups": ["builtin", "external", ["internal", "parent", "sibling", "index"]],
                 "newlines-between": "always",
@@ -74,14 +79,14 @@
             }
         ],
         "no-restricted-syntax": [
-      "error",
+            "error",
             {
                 "selector": "ImportNamespaceSpecifier",
                 "message": "Wildcard imports are not allowed."
             }
         ],
         "@typescript-eslint/consistent-type-imports": [
-      "error",
+            "error",
             {
                 "prefer": "type-imports",
                 "disallowTypeAnnotations": false
