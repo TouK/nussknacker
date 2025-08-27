@@ -133,6 +133,11 @@ class MigrationApiHttpServiceSecuritySpec
     }
     "impersonating user has permission to impersonate should" - {
       "allow migration for impersonated user with appropriate permissions" in {
+        saveFragment(
+          scenarioName = ProcessName(sampleFragmentWithDict.name.value),
+          scenarioGraph = sampleFragmentWithDict.toScenarioGraph,
+          category = Category1
+        )(succeed)
         given()
           .applicationState(
             createSavedScenario(exampleScenario, Category1)
