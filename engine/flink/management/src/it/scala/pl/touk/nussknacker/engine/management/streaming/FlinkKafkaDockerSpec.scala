@@ -87,7 +87,7 @@ trait FlinkKafkaDockerSpec
         // We have to turn on this flag, because DM is created locally, and during scenario state verification,
         // it can't connect to Kafka at dockerKafkaAddress which is in docker network.
         .withValue(
-          s"$kafkaComponentsConfigPrefix.allowUseNotSuggestedTopic",
+          s"$kafkaComponentsConfigPrefix.allowNotSuggestedTopicUsage",
           ConfigValueFactory.fromAnyRef("true")
         )
     }

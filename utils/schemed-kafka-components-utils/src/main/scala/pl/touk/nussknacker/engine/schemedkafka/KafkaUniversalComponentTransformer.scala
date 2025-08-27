@@ -96,7 +96,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
         .map(v => FixedExpressionValue(s"'$v'", v))
     )
     val editors = {
-      if (kafkaComponentsConfig.allowUseNotSuggestedTopic) {
+      if (kafkaComponentsConfig.allowNotSuggestedTopicUsage) {
         // This construction also disables validation that value is one of available fixed values
         fixedValueParamEditor :: SpelTemplateParameterEditor :: Nil
       } else {

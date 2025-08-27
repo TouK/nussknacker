@@ -33,7 +33,7 @@ case class KafkaComponentsConfig(
     idleTimeout: Option[IdlenessConfig] = None,
     sinkDeliveryGuarantee: Option[SinkDeliveryGuarantee.Value] = None,
     showTopicsWithoutSchema: Boolean = true,
-    allowUseNotSuggestedTopic: Boolean = false,
+    allowNotSuggestedTopicUsage: Boolean = false,
     kafkaAdminConfig: KafkaAdminConfig = KafkaAdminConfig(),
     useDataSampleParamForSchemalessJsonTopicBasedKafkaSource: Boolean = false,
 ) {
