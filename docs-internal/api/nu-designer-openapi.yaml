@@ -5741,6 +5741,7 @@ components:
       title: ErrorDetails
       oneOf:
       - $ref: '#/components/schemas/CoordinatesBasedTextRange'
+      - $ref: '#/components/schemas/IncompatibleParameterDefinitionErrorDetails'
       - $ref: '#/components/schemas/TabularDataDefinitionParserErrorDetails'
     ExceptionResult_Json:
       title: ExceptionResult_Json
@@ -6050,6 +6051,24 @@ components:
           uniqueItems: true
           items:
             type: string
+    IncompatibleParameterDefinitionErrorDetails:
+      title: IncompatibleParameterDefinitionErrorDetails
+      type: object
+      required:
+      - paramName
+      - language
+      - nodeId
+      properties:
+        paramName:
+          type: string
+        language:
+          type: string
+        parameterEditors:
+          type: array
+          items:
+            type: object
+        nodeId:
+          type: string
     InvalidScenario:
       title: InvalidScenario
       type: object
