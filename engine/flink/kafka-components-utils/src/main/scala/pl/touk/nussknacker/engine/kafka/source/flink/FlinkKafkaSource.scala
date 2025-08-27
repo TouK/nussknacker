@@ -2,13 +2,14 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
-import org.apache.flink.streaming.api.datastream.DataStreamSource
+import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumerBase}
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId}
 import pl.touk.nussknacker.engine.api.component.StaticParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesWithRadioParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
@@ -22,18 +23,15 @@ import pl.touk.nussknacker.engine.api.process.{
 }
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
-import pl.touk.nussknacker.engine.flink.api.process.{
-  FlinkCustomNodeContext,
-  FlinkSourceTestSupport,
-  StandardFlinkSource,
-  StandardFlinkSourceFunctionUtils
-}
+import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   StandardTimestampWatermarkHandler,
   TimestampWatermarkHandler
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
+import pl.touk.nussknacker.engine.flink.context.FlinkEventTimeRuntimeHandler
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.FlinkDeserializationSchemaWrapper
@@ -46,6 +44,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalToJsonFormatter
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
+import java.lang.{Long => JLong}
 import java.util
 import java.util.Properties
 import scala.annotation.nowarn
@@ -58,8 +57,10 @@ class FlinkKafkaSource[K, V](
     protected override val formatter: UniversalToJsonFormatter[K, V],
     override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
     testParametersInfo: KafkaTestParametersInfo,
-    namingStrategy: NamingStrategy
-) extends StandardFlinkSource[ConsumerRecord[K, V]]
+    namingStrategy: NamingStrategy,
+    eventTimeParameter: LazyParameter[JLong]
+) extends FlinkSource
+    with ExplicitUidInOperatorsSupport
     with Serializable
     with FlinkSourceTestSupport[ConsumerRecord[K, V]]
     with TestDataGenerator
@@ -70,8 +71,53 @@ class FlinkKafkaSource[K, V](
 
   private val typeInformation = ConsumerRecordTypeInfo[K, V](kafkaComponentsConfig)
 
+  override def contextStream(
+      env: StreamExecutionEnvironment,
+      flinkNodeContext: FlinkCustomNodeContext
+  ): DataStream[Context] = {
+    val streamOfRaw = sourceStream(env, flinkNodeContext)
+    // 1. set UID and override source name
+    val rawSourceWithUid = sourceWithUidAndName(streamOfRaw, flinkNodeContext)
+
+    // 2. initialize Context, compute event time and spool Context to the stream
+    rawSourceWithUid
+      .map(
+        new FlinkEventTimeRuntimeHandler.ContextInitializingFunction(
+          contextInitializer,
+          flinkNodeContext.nodeId,
+          flinkNodeContext.convertToEngineRuntimeContext,
+          eventTimeParameter,
+          flinkNodeContext.lazyParameterHelper
+        ),
+        FlinkEventTimeRuntimeHandler.contextInitializingFunctionOutputTypeInfo(
+          flinkNodeContext.asOneOutputContext
+        )
+      )
+      // 3. assign timestamp and watermarks
+      .assignTimestampsAndWatermarks(
+        FlinkEventTimeRuntimeHandler.watermarkStrategy(
+          kafkaComponentsConfig.defaultMaxOutOfOrdernessMillis,
+          kafkaComponentsConfig.idleTimeoutDuration
+        )
+      )
+  }
+
+  private def sourceWithUidAndName[T](
+      streamOfRaw: DataStream[T],
+      flinkNodeContext: FlinkCustomNodeContext
+  ): DataStream[T] = {
+    streamOfRaw match {
+      case singleOut: SingleOutputStreamOperator[_] =>
+        setUidToNodeIdIfNeed[T](
+          flinkNodeContext,
+          singleOut.name(flinkNodeContext.nodeId)
+        )
+      case _ => streamOfRaw
+    }
+  }
+
   @nowarn("cat=deprecation")
-  override def sourceStream(
+  private def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSource[ConsumerRecord[K, V]] = {
@@ -187,15 +233,6 @@ class FlinkKafkaSource[K, V](
     Some(
       StandardTimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]](
         (_.timestamp()): SimpleSerializableTimestampAssigner[ConsumerRecord[K, V]]
-      )
-    )
-
-  override def timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] =
-    Some(
-      StandardTimestampWatermarkHandler.boundedOutOfOrderness(
-        extract = None,
-        maxOutOfOrderness = kafkaComponentsConfig.defaultMaxOutOfOrdernessMillis,
-        idlenessTimeoutDuration = kafkaComponentsConfig.idleTimeoutDuration
       )
     )
 
