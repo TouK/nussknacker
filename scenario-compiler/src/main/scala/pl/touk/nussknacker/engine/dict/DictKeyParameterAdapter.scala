@@ -106,7 +106,7 @@ object DictKeyParameterAdapter extends LazyLogging {
     }
 
     def adapt(expression: Expression): ValidatedNel[PartSubGraphCompilationError, Expression] = {
-      editors.iterator
+      editors
         .collectFirst {
           case SpelParameterEditor =>
             spelExpressionForDictKeyWithLabelExpression(expression)
@@ -119,9 +119,7 @@ object DictKeyParameterAdapter extends LazyLogging {
           case FixedValuesWithRadioParameterEditor(possibleValues) =>
             spelExpressionForFixedList(expression, possibleValues.map(_.expression))
         }
-        .collect { case v @ Validated.Valid(_) =>
-          v
-        }
+        .collect { case v @ Validated.Valid(_) => v }
         .getOrElse(incompatibleChangeToParameterDefinitionDetected)
     }
     adapt(expression)

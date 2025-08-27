@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.{IorNel, NonEmptyList, Validated, ValidatedNel}
-import cats.data.Validated.{invalid, invalidNel, valid, Valid}
+import cats.data.Validated.{invalid, invalidNel, valid, Invalid, Valid}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
