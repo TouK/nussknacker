@@ -412,8 +412,8 @@ class K8sDeploymentManagerKafkaTest
   private val modelData: LocalModelData = LocalModelData(
     ConfigFactory.empty
       // e.g. when we want to run Designer locally with some proxy?
-      .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("localhost:19092"))
-      .withValue(KafkaConfigProperties.property("auto.offset.reset"), fromAnyRef("earliest"))
+      .withValue(KafkaConfigProperties.bootstrapServersProperty("kafka"), fromAnyRef("localhost:19092"))
+      .withValue(KafkaConfigProperties.property("kafka", "auto.offset.reset"), fromAnyRef("earliest"))
       .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors")),
     List.empty
   )

@@ -5,17 +5,20 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.process.TopicName
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{EmptySchemaRegistry, SchemaRegistryClient}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.{AvroMessageFormatter, AvroMessageReader}
 import pl.touk.nussknacker.engine.util.Implicits._
 
 import java.nio.charset.StandardCharsets
 
-class RecordFormatterSupportDispatcher(kafkaConfig: KafkaConfig, schemaRegistryClient: SchemaRegistryClient) {
+class RecordFormatterSupportDispatcher(
+    kafkaComponentsConfig: KafkaComponentsConfig,
+    schemaRegistryClient: SchemaRegistryClient
+) {
 
   private val supportBySchemaType = {
-    val supportBySchemaType = UniversalSchemaSupportDispatcher(kafkaConfig).supportBySchemaType
+    val supportBySchemaType = UniversalSchemaSupportDispatcher(kafkaComponentsConfig).supportBySchemaType
     (
       // To format avro messages you need schema registry, so for EmptySchemaRegistry there is no need to construct avro formatter
       if (schemaRegistryClient == EmptySchemaRegistry)

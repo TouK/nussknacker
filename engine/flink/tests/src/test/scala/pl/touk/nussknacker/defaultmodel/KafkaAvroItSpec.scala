@@ -89,7 +89,9 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
     sendAvro(givenNotMatchingAvroObj, topicConfig.input)
     sendAvro(givenMatchingAvroObj, topicConfig.input, timestamp = timeAgo)
 
-    run(avroProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.lax)) {
+    testScenarioRunner.withRunningScenario(
+      avroProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.lax)
+    ) { _ =>
       val processed = kafkaClient.createConsumer().consumeWithConsumerRecord(topicConfig.output.name).take(1).head
       processed.timestamp shouldBe timeAgo
       valueDeserializer.deserialize(
@@ -103,7 +105,7 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
     val topicConfig = createAndRegisterAvroTopicConfig("read-save-scratch", RecordSchemaV1)
     sendAvro(givenMatchingAvroObj, topicConfig.input)
 
-    run(avroFromScratchProcess(topicConfig, ExistingSchemaVersion(1))) {
+    testScenarioRunner.withRunningScenario(avroFromScratchProcess(topicConfig, ExistingSchemaVersion(1))) { _ =>
       val processed = consumeOneAvroMessage(topicConfig.output)
       processed shouldEqual givenMatchingAvroObj
     }
@@ -118,7 +120,7 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
 
     sendAvro(givenMatchingAvroObj, topicConfig.input)
 
-    run(avroProcess(topicConfig, ExistingSchemaVersion(2))) {
+    testScenarioRunner.withRunningScenario(avroProcess(topicConfig, ExistingSchemaVersion(2))) { _ =>
       val processed = consumeOneAvroMessage(topicConfig.output)
       processed shouldEqual result
     }
@@ -131,7 +133,9 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
     val converted = GenericData.get().deepCopy(RecordSchemaV2, givenMatchingAvroObjV2)
     converted.put("middle", null)
 
-    run(avroProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.lax)) {
+    testScenarioRunner.withRunningScenario(
+      avroProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.lax)
+    ) { _ =>
       val processed = consumeOneAvroMessage(topicConfig.output)
       processed shouldEqual converted
     }
@@ -144,7 +148,7 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
     sendAvro(givenSecondMatchingAvroObj, secondTopicConfig.input)
 
     assertThrows[Exception] {
-      run(avroProcess(topicConfig, ExistingSchemaVersion(1))) {
+      testScenarioRunner.withRunningScenario(avroProcess(topicConfig, ExistingSchemaVersion(1))) { _ =>
         val processed = consumeOneAvroMessage(topicConfig.output)
         processed shouldEqual givenSecondMatchingAvroObj
       }

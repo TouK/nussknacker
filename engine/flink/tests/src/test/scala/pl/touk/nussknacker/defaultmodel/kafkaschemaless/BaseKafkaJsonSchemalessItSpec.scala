@@ -58,7 +58,7 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
           KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.JSON.toString}'".spel,
         )
 
-    run(scenario) {
+    testScenarioRunner.withRunningScenario(scenario) { _ =>
       val outputRecord = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic).take(1).head
       val parsedOutput = parser
         .parse(new String(outputRecord.value(), StandardCharsets.UTF_8))
@@ -103,7 +103,7 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
             KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.JSON.toString}'".spel,
           )
 
-      run(scenario) {
+      testScenarioRunner.withRunningScenario(scenario) { _ =>
         val outputRecord = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic).take(1).head
 
         val parsedOutput = parser
@@ -162,7 +162,7 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
           KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.JSON.toString}'".spel,
         )
 
-    run(scenario) {
+    testScenarioRunner.withRunningScenario(scenario) { _ =>
       val outputRecord = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic).take(1).head
       val parsedOutput = parser
         .parse(new String(outputRecord.value(), StandardCharsets.UTF_8))
@@ -216,7 +216,7 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
           KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.PLAIN.toString}'".spel,
         )
 
-    run(scenario) {
+    testScenarioRunner.withRunningScenario(scenario) { _ =>
       val outputRecord = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic).take(1).head
 
       val parsedOutput = new String(outputRecord.value(), StandardCharsets.UTF_8)

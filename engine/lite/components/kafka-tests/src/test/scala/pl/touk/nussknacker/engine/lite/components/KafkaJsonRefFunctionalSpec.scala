@@ -23,6 +23,8 @@ import scala.jdk.CollectionConverters._
 
 class KafkaJsonRefFunctionalSpec extends AnyFunSuite with KafkaSpec with Matchers with ValidatedValuesDetailedMessage {
 
+  override protected val kafkaComponentsConfigPrefix: String = "kafka"
+
   private lazy val runner =
     TestScenarioRunner
       .kafkaLiteBased(resolveModelConfig(ConfigFactory.empty()))

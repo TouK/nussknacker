@@ -30,11 +30,11 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
 
 class RemoteFlinkDeploymentManagerSpec extends BaseFlinkDeploymentManagerSpec {
-  override protected def useMiniClusterForDeployment: Boolean = false
+  override protected val useMiniClusterForDeployment: Boolean = false
 }
 
 class MiniClusterFlinkDeploymentManagerSpec extends BaseFlinkDeploymentManagerSpec {
-  override protected def useMiniClusterForDeployment: Boolean = true
+  override protected val useMiniClusterForDeployment: Boolean = true
 
   override def resolveProcessingTypeConfig(config: Config): Config = {
     super.resolveProcessingTypeConfig(config).withValue("modelConfig.liveDataPreview.enabled", fromAnyRef(true))
@@ -42,7 +42,11 @@ class MiniClusterFlinkDeploymentManagerSpec extends BaseFlinkDeploymentManagerSp
 
 }
 
-trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with StreamingDockerTest with StrictLogging {
+trait BaseFlinkDeploymentManagerSpec
+    extends AnyFunSuiteLike
+    with Matchers
+    with FlinkKafkaDockerSpec
+    with StrictLogging {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 

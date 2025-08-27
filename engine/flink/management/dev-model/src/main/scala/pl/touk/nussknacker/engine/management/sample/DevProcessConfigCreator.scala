@@ -17,14 +17,11 @@ import pl.touk.nussknacker.engine.api.process.WithCategories.anyCategory
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{ReturningClassInstanceSource, ReturningTestCaseClass}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.kafka.generic.sinks.FlinkKafkaSinkImplFactory
-import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
-import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.management.sample.dict._
 import pl.touk.nussknacker.engine.management.sample.dto.ConstantState
 import pl.touk.nussknacker.engine.management.sample.global.{ConfigTypedGlobalVariable, GenericHelperFunction}
 import pl.touk.nussknacker.engine.management.sample.service._
-import pl.touk.nussknacker.engine.management.sample.sink.LiteDeadEndSink
+import pl.touk.nussknacker.engine.management.sample.sink.{DummyKafkaSinkFactory, LiteDeadEndSink}
 import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
@@ -69,13 +66,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "monitor"           -> categories(SinkFactory.noParam(EmptySink)),
       "dead-end-lite"     -> categories(SinkFactory.noParam(LiteDeadEndSink)),
       "communicationSink" -> categories(DynamicParametersSink),
-      "kafka-string" -> all(
-        new KafkaSinkFactory(
-          new SimpleSerializationSchema[AnyRef](_, String.valueOf),
-          modelConfig,
-          FlinkKafkaSinkImplFactory
-        )
-      )
+      "kafka-string"      -> all(DummyKafkaSinkFactory)
     )
   }
 

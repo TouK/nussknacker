@@ -19,22 +19,22 @@ import pl.touk.nussknacker.engine.util.ListUtil
 import java.nio.charset.StandardCharsets
 
 class UniversalToJsonFormatterFactory(
-    kafkaConfig: KafkaConfig,
+    kafkaComponentsConfig: KafkaComponentsConfig,
     createSchemaIdFromMessageExtractor: SchemaRegistryClient => SchemaIdFromMessageExtractor,
     deserializationSchemaFactory: KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 ) extends Serializable {
 
   def create(schemaRegistryClient: SchemaRegistryClient): UniversalToJsonFormatter[Any, Any] = {
-    val formatterSupportDispatcher   = new RecordFormatterSupportDispatcher(kafkaConfig, schemaRegistryClient)
+    val formatterSupportDispatcher   = new RecordFormatterSupportDispatcher(kafkaComponentsConfig, schemaRegistryClient)
     val schemaIdFromMessageExtractor = createSchemaIdFromMessageExtractor(schemaRegistryClient)
     // prepare KafkaDeserializationSchema based on given key and value schema (without schema evolution - we want format test-data exactly the same way, it was sent to kafka)
     val kafkaSourceDeserializationSchema =
       deserializationSchemaFactory.create[Any, Any](keySchemaDataOpt = None, valueSchemaDataOpt = None)
     val jsonPayloadToJsonDeserializationSchema =
-      new KafkaJsonKeyValueDeserializationSchemaFactory(kafkaConfig)
+      new KafkaJsonKeyValueDeserializationSchemaFactory(kafkaComponentsConfig)
         .create[Any, Any](keySchemaDataOpt = None, valueSchemaDataOpt = None)
     new UniversalToJsonFormatter(
-      kafkaConfig,
+      kafkaComponentsConfig,
       schemaRegistryClient,
       formatterSupportDispatcher,
       kafkaSourceDeserializationSchema,
@@ -51,7 +51,7 @@ class UniversalToJsonFormatterFactory(
  * and in reading of these data.
  */
 class UniversalToJsonFormatter[K, V](
-    kafkaConfig: KafkaConfig,
+    kafkaComponentsConfig: KafkaComponentsConfig,
     schemaRegistryClient: SchemaRegistryClient,
     recordFormatterSupportDispatcher: RecordFormatterSupportDispatcher,
     schemaBasedDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
@@ -63,8 +63,12 @@ class UniversalToJsonFormatter[K, V](
 
   import SchemaBasedSerializableConsumerRecord._
 
-  def generateTestData(topics: NonEmptyList[TopicName.ForSource], size: Int, kafkaConfig: KafkaConfig): TestData = {
-    val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
+  def generateTestData(
+      topics: NonEmptyList[TopicName.ForSource],
+      size: Int,
+      kafkaComponentsConfig: KafkaComponentsConfig
+  ): TestData = {
+    val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaComponentsConfig))
     val merged             = ListUtil.mergeLists(listsFromAllTopics.toList, size)
     prepareGeneratedTestData(merged)
   }
@@ -89,7 +93,7 @@ class UniversalToJsonFormatter[K, V](
    * Step 3: Encode event's data with schema id's with derived encoder.
    */
   private def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Json = {
-    val keySchemaIdOpt = if (kafkaConfig.useStringForKey) {
+    val keySchemaIdOpt = if (kafkaComponentsConfig.useStringForKey) {
       None
     } else {
       schemaIdFromMessageExtractor.getSchemaId(record.headers(), record.key(), isKey = true).map(_.value)
@@ -137,7 +141,7 @@ class UniversalToJsonFormatter[K, V](
     val record = decodeJsonUnsafe(testRecord.json)(consumerRecordDecoder)
 
     def serializeKeyValue(keyOpt: Option[Json], value: Json): (Array[Byte], Array[Byte]) = {
-      val keyBytes = if (kafkaConfig.useStringForKey) {
+      val keyBytes = if (kafkaComponentsConfig.useStringForKey) {
         keyOpt match {
           // we handle strings this way because we want to keep result value compact and JString is formatted in quotes
           case Some(j) if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
@@ -153,7 +157,7 @@ class UniversalToJsonFormatter[K, V](
 
       if (schemaRegistryClient.isTopicWithSchema(
           topic.name,
-          kafkaConfig
+          kafkaComponentsConfig
         )) {
         val valueSchemaOpt = record.valueSchemaId.map(schemaRegistryClient.getSchemaById).map(_.schema)
         val valueBytes     = readValueMessage(valueSchemaOpt, topic, value)

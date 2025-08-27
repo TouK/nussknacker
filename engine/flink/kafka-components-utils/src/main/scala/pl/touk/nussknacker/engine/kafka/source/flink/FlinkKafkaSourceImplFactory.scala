@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source, TopicName}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalToJsonFormatter
@@ -20,16 +20,16 @@ class FlinkKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] wit
       dependencies: List[NodeDependencyValue],
       finalState: Any,
       preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
-      kafkaConfig: KafkaConfig,
+      kafkaComponentsConfig: KafkaComponentsConfig,
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
       formatter: UniversalToJsonFormatter[K, V],
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
       testParametersInfo: KafkaTestParametersInfo,
       namingStrategy: NamingStrategy
   ): Source =
-    new FlinkConsumerRecordBasedKafkaSource[K, V](
+    new FlinkKafkaSource[K, V](
       preparedTopics,
-      kafkaConfig,
+      kafkaComponentsConfig,
       deserializationSchema,
       formatter,
       contextInitializer,

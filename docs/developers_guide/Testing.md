@@ -98,7 +98,7 @@ val testScenarioRunner = TestScenarioRunner
       .build()
 ```
 
-### Running scenario with data
+### Running scenario with data - synchronous approach
 
 Scenario can be run with data via `.runWithData` method. This call synchronously executes scenario inside runner with data being passed to input source.
 
@@ -121,6 +121,24 @@ runner.registerAvroSchema("sinkTopic", sinkSchema)
 val genericRecord = new GenericRecordBuilder(sourceSchema).set("field", "value").build()
 val input = KafkaAvroConsumerRecord("sourceTopic", genericRecord, sourceSchemaId)
 runner.runWithAvroData(scenario, List(input))
+```
+
+### Running scenario with data - asynchronous approach
+
+For more complex test cases, it is possible to use asynchronous approach that start scenario and wait until custom verification code is finished.
+This approach is currently available only for Flink engine. Example code:
+
+```scala
+val testScenarioRunner = TestScenarioRunner
+  .flinkBased(resolvedConfig, flinkMiniCluster)
+  .build()
+
+testScenarioRunner.withRunningScenario(scenario) { verificationFixture =>
+  // custom verification code e.g.:
+  val emittedRecord = eventually {
+    fixture.testResults.size should be > 1
+  }
+}
 ```
 
 ### Retrieving results

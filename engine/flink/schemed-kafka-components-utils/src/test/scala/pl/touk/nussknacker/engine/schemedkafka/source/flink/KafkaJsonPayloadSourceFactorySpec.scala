@@ -4,11 +4,11 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.kafka.common.serialization.Serializer
-import pl.touk.nussknacker.engine.schemedkafka.helpers.{KafkaAvroSpecMixin, SimpleKafkaJsonSerializer}
+import pl.touk.nussknacker.engine.schemedkafka.helpers.{FlinkKafkaAvroSpecMixin, SimpleKafkaJsonSerializer}
 import pl.touk.nussknacker.engine.schemedkafka.schema.{FullNameV1, FullNameV2}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory}
 
-class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
+class KafkaJsonPayloadSourceFactorySpec extends FlinkKafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
   import KafkaAvroSourceMockSchemaRegistry._
 
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
@@ -20,7 +20,7 @@ class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   override protected def valueSerializer: Serializer[Any] = SimpleKafkaJsonSerializer
 
   override def resolveModelConfig(config: Config): Config =
-    super.resolveModelConfig(config).withValue("kafka.avroAsJsonSerialization", fromAnyRef(true))
+    super.resolveModelConfig(config).withValue("components.kafka.config.avroAsJsonSerialization", fromAnyRef(true))
 
   test("should read generated generic record in v1 with null key") {
     val givenValue = FullNameV1.record

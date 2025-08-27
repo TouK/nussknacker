@@ -29,6 +29,8 @@ class KafkaExceptionConsumerSpec
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 
+  override protected val kafkaComponentsConfigPrefix: String = "components.kafka.config"
+
   test("should record errors on topic") {
     val message = runTest(s"testProcess-shortString", stringVariable = "'short string'".spel)
 
@@ -66,7 +68,7 @@ class KafkaExceptionConsumerSpec
       .withValue("exceptionHandler.maxMessageBytes", fromAnyRef(maxMessageBytes))
       .withValue("exceptionHandler.includeInputEvent", fromAnyRef(true))
       .withValue("exceptionHandler.additionalParams.configurableKey", fromAnyRef("sampleValue"))
-      .withValue("exceptionHandler.kafka", modelConfig.getConfig("kafka").root())
+      .withValue("exceptionHandler.kafka", modelConfig.getConfig("components.kafka.config").root())
 
     val modelData = LocalModelData(
       modelConfigWithExceptionHandler,

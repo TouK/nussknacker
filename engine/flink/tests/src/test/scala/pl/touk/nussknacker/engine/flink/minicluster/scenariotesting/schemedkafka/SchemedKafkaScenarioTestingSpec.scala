@@ -7,12 +7,11 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import io.circe.Json._
 import org.apache.avro.Schema
-import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{BeforeAndAfterAll, LoneElement, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.ContextId
-import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestSourceSpecificFormatJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -24,16 +23,15 @@ import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyCo
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
-import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
-import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroTestProcessConfigCreator
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
   schemaVersionParamName,
   topicParamName
 }
+import pl.touk.nussknacker.engine.schemedkafka.TestFlinkKafkaComponentProvider
 import pl.touk.nussknacker.engine.schemedkafka.schema.{Address, Company}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClientFactory, SchemaVersionOption}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -43,7 +41,6 @@ import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties, VeryPatientScalaFutures}
 
 import java.time.Instant
-import java.util.Collections
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 
@@ -60,27 +57,29 @@ class SchemedKafkaScenarioTestingSpec
   private implicit val ec: ExecutionContext = ExecutionContext.global
   private implicit val ioRuntime: IORuntime = IORuntime.global
 
-  private val creator: KafkaAvroTestProcessConfigCreator =
-    new KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder) {
-      override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
-        MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
-    }
+  private val provider: TestFlinkKafkaComponentProvider =
+    new TestFlinkKafkaComponentProvider(
+      MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient),
+      sinkForInputMetaResultsHolder
+    )
 
-  private val config = ConfigFactory
+  private val modelConfig = ConfigFactory
     .empty()
-    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("kafka_should_not_be_used:9092"))
     .withValue(
-      KafkaConfigProperties.property("schema.registry.url"),
+      KafkaConfigProperties.bootstrapServersProperty("components.kafka.config"),
+      fromAnyRef("kafka_should_not_be_used:9092")
+    )
+    .withValue(
+      KafkaConfigProperties.property("components.kafka.config", "schema.registry.url"),
       fromAnyRef("schema_registry_should_not_be_used:8081")
     )
-    .withValue("kafka.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
-    .withValue("kafka.avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(false))
+    .withValue("components.kafka.config.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
+    .withValue("components.kafka.config.avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(false))
 
   private val modelData =
     LocalModelData(
-      config,
-      List.empty,
-      configCreator = creator,
+      modelConfig,
+      provider.createComponents(ModelConfig.parse(modelConfig)),
       modelClassLoader = ModelClassLoader.flinkWorkAroundEmptyClassloader
     )
 

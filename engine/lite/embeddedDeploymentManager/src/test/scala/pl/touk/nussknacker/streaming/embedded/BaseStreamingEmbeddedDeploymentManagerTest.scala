@@ -35,6 +35,8 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
     with Matchers
     with VeryPatientScalaFutures {
 
+  override protected val kafkaComponentsConfigPrefix: String = "kafka"
+
   override protected def schemaRegistryClient: SchemaRegistryClient = MockSchemaRegistry.schemaRegistryMockClient
 
   sealed case class FixtureParam(

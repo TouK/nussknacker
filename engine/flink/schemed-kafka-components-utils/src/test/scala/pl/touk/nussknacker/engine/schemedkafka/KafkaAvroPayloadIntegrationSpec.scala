@@ -1,21 +1,25 @@
 package pl.touk.nussknacker.engine.schemedkafka
 
+import com.typesafe.config.Config
 import io.circe.generic.JsonCodec
 import org.apache.avro.{AvroRuntimeException, Schema}
+import org.apache.flink.api.common.ExecutionConfig
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{Assertion, BeforeAndAfter}
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
-import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkTestScenarioRunnerExt
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroPayloadIntegrationSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.schemedkafka.helpers.FlinkKafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
@@ -23,11 +27,11 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
   MockSchemaRegistryClient
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 
 import java.nio.charset.StandardCharsets
 
-class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
+class KafkaAvroPayloadIntegrationSpec extends FlinkKafkaAvroSpecMixin with BeforeAndAfter {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -35,13 +39,6 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
   import scala.jdk.CollectionConverters._
 
   import KafkaAvroIntegrationMockSchemaRegistry._
-
-  private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator(
-    sinkForInputMetaResultsHolder
-  ) {
-    override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
-      MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
-  }
 
   protected val paymentSchemas: List[Schema]  = List(PaymentV1.schema, PaymentV2.schema)
   protected val payment2Schemas: List[Schema] = List(PaymentV1.schema, PaymentV2.schema, PaymentNotCompatible.schema)
@@ -53,7 +50,21 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    modelData = LocalModelData(modelConfig, List.empty, configCreator = creator)
+
+    val components = new TestFlinkKafkaComponentProvider(schemaRegistryClientFactory, sinkForInputMetaResultsHolder)
+      .createComponents(ModelConfig.parse(modelConfig))
+
+    testScenarioRunner = TestScenarioRunner
+      .flinkBased(modelConfig, flinkMiniCluster)
+      .withExtraComponents(components)
+      .withExtraSerializersRegistrars(List((_: Config, executionConfig: ExecutionConfig) => {
+        AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(
+          executionConfig,
+          schemaRegistryClientFactory,
+          kafkaComponentsConfig
+        )
+      }))
+      .build()
   }
 
   before {
@@ -315,7 +326,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
 
     pushMessage(LongFieldV1.record, topicConfig.input)
     kafkaClient.createTopic(topicConfig.output.name)
-    run(process) {
+    testScenarioRunner.withRunningScenario(process) { _ =>
       val message = kafkaClient.createConsumer().consumeWithConsumerRecord(topicConfig.output.name).take(1).head
       message.timestamp() shouldBe timeToSetInProcess
       message.timestampType() shouldBe TimestampType.CREATE_TIME
@@ -350,7 +361,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     val timePassedThroughKafka = System.currentTimeMillis() - 120000L
     pushMessage(LongFieldV1.encodeData(-1000L), topicConfig.input, timestamp = timePassedThroughKafka)
     kafkaClient.createTopic(topicConfig.output.name)
-    run(process) {
+    testScenarioRunner.withRunningScenario(process) { _ =>
       consumeAndVerifyMessages(topicConfig.output, List(LongFieldV1.encodeData(timePassedThroughKafka)))
     }
   }
@@ -384,7 +395,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     pushMessage(FullNameV1.record, topicConfig.input)
     kafkaClient.createTopic(topicConfig.output.name, partitions = 1)
 
-    run(process) {
+    testScenarioRunner.withRunningScenario(process) { _ =>
       val consumer = kafkaClient.createConsumer()
       val consumed = consumer.consumeWithJson[String](topicConfig.output.name).take(1).head
       consumed.key() shouldEqual FullNameV1.BaseFirst
@@ -401,7 +412,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     pushMessage(FullNameV1.record, topicConfig.input)
     kafkaClient.createTopic(topicConfig.output.name, partitions = 1)
 
-    run(process) {
+    testScenarioRunner.withRunningScenario(process) { _ =>
       val result = kafkaClient.createConsumer().consumeWithConsumerRecord(topicConfig.output.name).take(1).head
       result.key() shouldEqual null
     }
@@ -432,7 +443,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     val serializedValue = valueSerializer.serialize(topicConfig.input.name, Product.record)
     kafkaClient.sendRawMessage(topicConfig.input.name, serializedKey, serializedValue).futureValue
 
-    run(process) {
+    testScenarioRunner.withRunningScenario(process) { _ =>
       consumeAndVerifyMessages(topicConfig.output, List(Product.record))
       verifyInputMeta("""{"id":"lorem","field":"ipsum"}""", topicConfig.input, 0, 0L)
     }
@@ -454,7 +465,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     pushMessageWithKey(FullNameV1.record, Product.record, topicConfig.input.name)
     kafkaClient.createTopic(topicConfig.output.name, partitions = 1)
 
-    run(process) {
+    testScenarioRunner.withRunningScenario(process) { _ =>
       consumeAndVerifyMessages(topicConfig.output, List(Product.record))
 
       // Here process uses key-and-value deserialization in a source with metadata.

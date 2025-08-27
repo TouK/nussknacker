@@ -52,6 +52,8 @@ class LiteKafkaUniversalJsonFunctionalTest
   import LiteKafkaComponentProvider._
   import SpecialSpELElement._
 
+  override protected val kafkaComponentsConfigPrefix: String = "kafka"
+
   private val lax          = List(ValidationMode.lax)
   private val strict       = List(ValidationMode.strict)
   private val strictAndLax = ValidationMode.values

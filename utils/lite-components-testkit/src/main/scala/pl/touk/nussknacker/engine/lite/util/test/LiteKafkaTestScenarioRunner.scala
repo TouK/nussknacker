@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.{ModelConfig, ModelDependencies, RuntimeMode}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentDependencies}
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider
 import pl.touk.nussknacker.engine.lite.util.test.confluent.{AzureKafkaAvroElementSerde, ConfluentKafkaAvroElementSerde}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
@@ -48,8 +48,11 @@ object LiteKafkaTestScenarioRunner {
       val modelConfig = baseModelConfig.withFallback(
         ConfigFactory
           .empty()
-          .withValue(KafkaConfigProperties.bootstrapServersProperty(), ConfigValueFactory.fromAnyRef("kafka:666"))
-          .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("schema-registry:666"))
+          .withValue(
+            KafkaConfigProperties.bootstrapServersProperty("kafka"),
+            ConfigValueFactory.fromAnyRef("kafka:666")
+          )
+          .withValue(KafkaConfigProperties.property("kafka", "schema.registry.url"), fromAnyRef("schema-registry:666"))
           .withValue("kafka.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
       )
       val schemaRegistryClient = new MockSchemaRegistryClient
@@ -97,7 +100,8 @@ case class LiteKafkaTestScenarioRunnerBuilder(
     val mockedKafkaComponentsProvider = new LiteKafkaComponentProvider(schemaRegistryClientFactor)
     val mockedKafkaComponents =
       mockedKafkaComponentsProvider.create(modelConfig, ComponentDependencies(parsedModelConfig, designerDbRef = None))
-    val schemaRegistryClient = schemaRegistryClientFactor.create(KafkaConfig.parseConfig(modelConfig))
+    val schemaRegistryClient =
+      schemaRegistryClientFactor.create(KafkaComponentsConfig.parseConfigNestedAtKafkaKey(modelConfig))
     val serde = schemaRegistryClient match {
       case _: ConfluentSchemaRegistryClient => ConfluentKafkaAvroElementSerde
       case _: AzureSchemaRegistryClient     => AzureKafkaAvroElementSerde
@@ -136,8 +140,8 @@ class LiteKafkaTestScenarioRunner(
 
   private val delegate: LiteTestScenarioRunner =
     new LiteTestScenarioRunner(components, globalVariables, config, runtimeMode)
-  private val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
-  private val keyStringDeserializer    = new StringDeserializer
+  private val kafkaComponentsConfig: KafkaComponentsConfig = KafkaComponentsConfig.parseConfigNestedAtKafkaKey(config)
+  private val keyStringDeserializer                        = new StringDeserializer
 
   def runWithStringData(
       scenario: CanonicalProcess,
@@ -222,7 +226,7 @@ class LiteKafkaTestScenarioRunner(
 
   // We pass headers because they can be mutated by serde
   private def deserializeAvroKey[T](topic: String, payload: Array[Byte], headers: Headers) =
-    if (kafkaConfig.useStringForKey) {
+    if (kafkaComponentsConfig.useStringForKey) {
       keyStringDeserializer.deserialize(topic, payload).asInstanceOf[T]
     } else {
       deserializeAvroData[T](payload, headers, isKey = true)

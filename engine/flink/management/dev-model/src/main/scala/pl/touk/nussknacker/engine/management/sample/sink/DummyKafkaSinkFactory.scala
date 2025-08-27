@@ -1,0 +1,39 @@
+package pl.touk.nussknacker.engine.management.sample.sink
+
+import org.apache.flink.api.common.functions.FlatMapFunction
+import org.apache.flink.streaming.api.functions.sink.{DiscardingSink, SinkFunction}
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
+import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
+import pl.touk.nussknacker.engine.flink.api.process.{
+  BasicFlinkSink,
+  FlinkCustomNodeContext,
+  FlinkLazyParameterFunctionHelper
+}
+
+import javax.validation.constraints.NotBlank
+import scala.annotation.nowarn
+
+object DummyKafkaSinkFactory extends SinkFactory {
+
+  @MethodToInvoke
+  def create(
+      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR)
+      @Editor(`type` = EditorType.SPEL_EDITOR)
+      @ParamName("Topic") @NotBlank topic: String,
+      @ParamName("Value") value: LazyParameter[AnyRef]
+  ): Sink = new BasicFlinkSink {
+
+    override type Value = AnyRef
+
+    override def valueFunction(
+        helper: FlinkLazyParameterFunctionHelper
+    ): FlatMapFunction[Context, ValueWithContext[Value]] =
+      helper.lazyMapFunction(value)
+
+    @nowarn("cat=deprecation")
+    override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[Value] =
+      new DiscardingSink[AnyRef]
+  }
+
+}

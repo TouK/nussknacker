@@ -29,7 +29,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
   schemaVersionParamName,
   topicParamName
 }
-import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.schemedkafka.helpers.FlinkKafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ExistingSchemaVersion,
@@ -44,7 +44,7 @@ import java.nio.charset.StandardCharsets
 import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 
-class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
+class KafkaAvroPayloadSourceFactorySpec extends FlinkKafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
 
   import KafkaAvroSourceMockSchemaRegistry._
 

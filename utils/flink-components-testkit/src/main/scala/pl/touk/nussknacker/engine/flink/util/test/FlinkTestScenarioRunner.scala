@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.{Config, ConfigValueFactory}
+import org.apache.flink.api.common.JobID
 import org.apache.flink.api.connector.source.Boundedness
+import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.scalatest.concurrent.ScalaFutures.{convertScalaFuture, scaled, PatienceConfig}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
@@ -13,11 +15,13 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.{FlinkBaseUnboundedComponentProvider, FlinkScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.flink.api.serialization.SerializersRegistrar
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.minicluster.MiniClusterJobStatusCheckingOps._
 import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.ScenarioVerificationFixture
 import pl.touk.nussknacker.engine.flink.util.test.TestResultSinkFactory.Output
 import pl.touk.nussknacker.engine.flink.util.test.testComponents._
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
@@ -31,6 +35,7 @@ import pl.touk.nussknacker.engine.util.test._
 import pl.touk.nussknacker.engine.util.test.TestScenarioCollectorHandler.TestScenarioCollectorHandler
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResultUnit}
 
+import scala.concurrent.{blocking, Future}
 import scala.concurrent.duration.DurationInt
 import scala.reflect.ClassTag
 import scala.util.Using
@@ -72,9 +77,10 @@ private object testComponents {
 }
 
 class FlinkTestScenarioRunner(
-    val components: List[ComponentDefinition],
-    val globalVariables: Map[String, AnyRef],
-    val config: Config,
+    components: List[ComponentDefinition],
+    serializersRegistrars: List[SerializersRegistrar],
+    globalVariables: Map[String, AnyRef],
+    config: Config,
     flinkMiniClusterWithServices: FlinkMiniClusterWithServices,
     runtimeMode: RuntimeMode,
 ) extends ClassBasedTestScenarioRunner {
@@ -183,6 +189,73 @@ class FlinkTestScenarioRunner(
     }
   }
 
+  def withRunningScenario[R](
+      scenario: CanonicalProcess,
+      savepointRestoreSettings: SavepointRestoreSettings = SavepointRestoreSettings.none(),
+      nodesData: NodesDeploymentData = NodesDeploymentData.empty,
+      labels: List[String] = List.empty
+  )(f: ScenarioVerificationFixture => R): R = {
+    val modelData = LocalModelData(
+      inputConfig = config,
+      // We can't just pass extra components here because we don't want Flink to serialize them.
+      // We also don't want user to make them serializable
+      components = FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components,
+      configCreator = new DefaultConfigCreator
+    )
+    Using.resource(
+      TestExtensionsHolder.registerTestExtensions(components, testResultSinkComponentCreator :: Nil, globalVariables)
+    ) { testExtensionsHolder =>
+      flinkMiniClusterWithServices.withDetachedStreamExecutionEnvironment { env =>
+        TestScenarioCollectorHandler.withHandler(runtimeMode) { testScenarioCollectorHandler =>
+          val compilerFactory =
+            FlinkProcessCompilerDataFactoryWithTestComponents(
+              testExtensionsHolder,
+              testScenarioCollectorHandler.resultsCollectingListener,
+              modelData,
+              runtimeMode,
+              nodesData
+            )
+
+          val processVersion = ProcessVersion.empty.copy(
+            processName = scenario.metaData.name,
+            labels = labels
+          )
+
+          val registrar = FlinkProcessRegistrar(
+            compilerFactory,
+            FlinkJobConfig.parse(modelData.modelConfig),
+            ExecutionConfigPreparer.unOptimizedChain(modelData, serializersRegistrars),
+          )
+          registrar.register(
+            env,
+            scenario,
+            processVersion,
+            DeploymentData.empty.copy(nodesData = nodesData),
+            testScenarioCollectorHandler.resultCollector
+          )
+          val streamGraph = env.getStreamGraph
+          streamGraph.setSavepointRestoreSettings(savepointRestoreSettings)
+
+          val jobExecutionResult = env.execute(streamGraph)
+          flinkMiniClusterWithServices
+            .withRunningJob(jobExecutionResult.getJobID)(
+              WaitForJobStatusRetryPolicy,
+              Some(WaitForJobStatusRetryPolicy)
+            ) {
+              Future {
+                blocking {
+                  f(new ScenarioVerificationFixture(jobExecutionResult.getJobID, testExtensionsHolder.runId))
+                }
+              }
+            }
+            .futureValue
+            .toTry
+            .get
+        }
+      }
+    }
+  }
+
   private def run[OUTPUT](
       scenario: CanonicalProcess,
       nodesData: NodesDeploymentData,
@@ -227,7 +300,7 @@ class FlinkTestScenarioRunner(
               val registrar = FlinkProcessRegistrar(
                 compilerFactory,
                 FlinkJobConfig.parse(modelData.modelConfig),
-                ExecutionConfigPreparer.unOptimizedChain(modelData)
+                ExecutionConfigPreparer.unOptimizedChain(modelData, serializersRegistrars)
               )
 
               registrar.register(
@@ -291,6 +364,7 @@ object FlinkTestScenarioRunner {
     ): FlinkTestScenarioRunnerBuilder = {
       FlinkTestScenarioRunnerBuilder(
         components = List.empty,
+        serializersRegistrars = List.empty,
         globalVariables = Map.empty,
         modelConfig = modelConfig,
         flinkMiniClusterWithServices = flinkMiniClusterWithServices,
@@ -300,10 +374,22 @@ object FlinkTestScenarioRunner {
 
   }
 
+  class ScenarioVerificationFixture(val jobId: JobID, runId: TestRunId) {
+
+    def testResults: Seq[AnyRef] = TestResultSinkFactory.extractOutputFor(runId) match {
+      case Output.NotAvailable =>
+        List.empty
+      case Output.Available(results) =>
+        results.toList
+    }
+
+  }
+
 }
 
 case class FlinkTestScenarioRunnerBuilder(
     components: List[ComponentDefinition],
+    serializersRegistrars: List[SerializersRegistrar],
     globalVariables: Map[String, AnyRef],
     modelConfig: Config,
     flinkMiniClusterWithServices: FlinkMiniClusterWithServices,
@@ -315,6 +401,11 @@ case class FlinkTestScenarioRunnerBuilder(
   override def withExtraComponents(components: List[ComponentDefinition]): FlinkTestScenarioRunnerBuilder = {
     copy(components = components)
   }
+
+  def withExtraSerializersRegistrars(
+      serializersRegistrars: List[SerializersRegistrar]
+  ): FlinkTestScenarioRunnerBuilder =
+    copy(serializersRegistrars = serializersRegistrars)
 
   override def withExtraGlobalVariables(
       globalVariables: Map[String, AnyRef]
@@ -330,6 +421,7 @@ case class FlinkTestScenarioRunnerBuilder(
   override def build() =
     new FlinkTestScenarioRunner(
       components,
+      serializersRegistrars,
       globalVariables,
       modelConfig,
       flinkMiniClusterWithServices,

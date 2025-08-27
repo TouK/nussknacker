@@ -1,16 +1,25 @@
 package pl.touk.nussknacker.engine.kafka
 
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 
 import scala.collection.mutable
 
 object KafkaAdminCachesFactory extends KafkaAdminCachesFactory
 
-class KafkaAdminCachesFactory {
-  @transient private lazy val caches: mutable.Map[KafkaConfig, KafkaAdminCaches] = mutable.Map()
+class KafkaAdminCachesFactory extends LazyLogging {
+  @transient private lazy val caches: mutable.Map[KafkaComponentsConfig, KafkaAdminCaches] = mutable.Map()
 
-  def createOrRetrieve(kafkaConfig: KafkaConfig): KafkaAdminCaches = synchronized {
-    caches.getOrElseUpdate(kafkaConfig, new KafkaAdminCaches(kafkaConfig.kafkaAdminConfig.cacheConfig))
+  def createOrRetrieve(kafkaComponentsConfig: KafkaComponentsConfig): KafkaAdminCaches = synchronized {
+    caches.getOrElseUpdate(
+      kafkaComponentsConfig, {
+        logger.debug(
+          s"Creating KafkaAdminCaches with config [${kafkaComponentsConfig.kafkaAdminConfig.cacheConfig}] " +
+            s"for kafkaComponentsConfig including boostrap.servers [${kafkaComponentsConfig.kafkaBootstrapServers}]"
+        )
+        new KafkaAdminCaches(kafkaComponentsConfig.kafkaAdminConfig.cacheConfig)
+      }
+    )
   }
 
 }

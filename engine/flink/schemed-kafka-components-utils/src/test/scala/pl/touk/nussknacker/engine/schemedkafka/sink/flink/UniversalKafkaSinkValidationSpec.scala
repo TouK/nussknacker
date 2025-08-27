@@ -31,14 +31,14 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.schemedkafka.helpers.FlinkKafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.{FullNameV1, PaymentV1}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpecMixin {
+class UniversalKafkaSinkValidationSpec extends FlinkKafkaAvroSpecMixin with KafkaAvroSinkSpecMixin {
 
   import pl.touk.nussknacker.test.LiteralSpELImplicits._
 

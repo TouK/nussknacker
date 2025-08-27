@@ -86,13 +86,13 @@ class KafkaSinkWithJsonTemplateEditorItSpec extends FlinkWithKafkaSuite with Pat
 
     sendAsJson("""{ "any": "schema" }""", inputTopic).futureValue
 
-    run(
+    testScenarioRunner.withRunningScenario(
       scenarioWithDefaultSinkValue(
         inputTopic = inputTopic.name,
         outputTopic = outputTopic.name,
         validationMode = ValidationMode.strict
       )
-    ) {
+    ) { _ =>
       val expectedMessage = avroEncoder.encodeOrError(
         Map(
           "first"     -> "Jan",
@@ -144,14 +144,14 @@ class KafkaSinkWithJsonTemplateEditorItSpec extends FlinkWithKafkaSuite with Pat
            |""".stripMargin
       }
 
-    run(
+    testScenarioRunner.withRunningScenario(
       scenario(
         inputTopic = inputTopic.name,
         outputTopic = outputTopic.name,
         sinkValue = sinkValue,
         validationMode = ValidationMode.strict
       )
-    ) {
+    ) { _ =>
       val expectedMessage = avroEncoder.encodeOrError(
         Map(
           "first"     -> "Jan",
@@ -179,13 +179,13 @@ class KafkaSinkWithJsonTemplateEditorItSpec extends FlinkWithKafkaSuite with Pat
 
     sendAsJson("""{ "any": "schema" }""", inputTopic).futureValue
 
-    run(
+    testScenarioRunner.withRunningScenario(
       scenarioWithDefaultSinkValue(
         inputTopic = inputTopic.name,
         outputTopic = outputTopic.name,
         validationMode = ValidationMode.strict
       )
-    ) {
+    ) { _ =>
       val expectedMessage =
         io.circe.parser
           .parse(
@@ -244,14 +244,14 @@ class KafkaSinkWithJsonTemplateEditorItSpec extends FlinkWithKafkaSuite with Pat
            |""".stripMargin
       }
 
-    run(
+    testScenarioRunner.withRunningScenario(
       scenario(
         inputTopic = inputTopic.name,
         outputTopic = outputTopic.name,
         sinkValue = sinkValue,
         validationMode = ValidationMode.strict
       )
-    ) {
+    ) { _ =>
       val expectedMessage =
         io.circe.parser
           .parse(

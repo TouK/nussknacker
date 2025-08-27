@@ -18,8 +18,10 @@ class LiteKafkaComponentProviderSpec extends AnyFunSuite with MockitoSugar with 
   val sut: LiteKafkaComponentProvider = new LiteKafkaComponentProvider(schemaRegistryClientFactory)
 
   test("should create kafka components from configuration") {
-    val emptyConfig = ConfigFactory.empty()
-    val result = sut.create(emptyConfig, ComponentDependencies(ModelConfig.parse(emptyConfig), designerDbRef = None))
+    val config = ConfigFactory
+      .empty()
+      .withValue("kafka.kafkaProperties.\"bootstrap.servers\"", fromAnyRef("dummy:9092"))
+    val result = sut.create(ConfigFactory.empty, ComponentDependencies(ModelConfig.parse(config), designerDbRef = None))
 
     result.map(_.name).distinct shouldBe List("kafka")
     result.map(_.component.getClass.getSimpleName) shouldBe
@@ -29,10 +31,11 @@ class LiteKafkaComponentProviderSpec extends AnyFunSuite with MockitoSugar with 
   test("should throw exception if idleness is passed in configuration") {
     val config = ConfigFactory
       .empty()
+      .withValue("kafka.kafkaProperties.\"bootstrap.servers\"", fromAnyRef("dummy:9092"))
       .withValue("kafka.idleTimeout", fromMap(Map("enabled" -> "true", "duration" -> "3 seconds").asJava))
 
     val ex = intercept[IllegalArgumentException](
-      sut.create(config, ComponentDependencies(ModelConfig.parse(config), designerDbRef = None))
+      sut.create(ConfigFactory.empty, ComponentDependencies(ModelConfig.parse(config), designerDbRef = None))
     )
 
     ex.getMessage shouldBe "Idleness is a Flink specific feature and is not supported in Lite Kafka sources. " +
@@ -42,10 +45,11 @@ class LiteKafkaComponentProviderSpec extends AnyFunSuite with MockitoSugar with 
   test("should throw exception if sinkDeliveryGuarantee is passed in configuration") {
     val config = ConfigFactory
       .empty()
+      .withValue("kafka.kafkaProperties.\"bootstrap.servers\"", fromAnyRef("dummy:9092"))
       .withValue("kafka.sinkDeliveryGuarantee", fromAnyRef("EXACTLY_ONCE"))
 
     val ex = intercept[IllegalArgumentException](
-      sut.create(config, ComponentDependencies(ModelConfig.parse(config), designerDbRef = None))
+      sut.create(ConfigFactory.empty, ComponentDependencies(ModelConfig.parse(config), designerDbRef = None))
     )
 
     ex.getMessage shouldBe "SinkDeliveryGuarantee is a Flink specific feature and is not supported in Lite Kafka " +

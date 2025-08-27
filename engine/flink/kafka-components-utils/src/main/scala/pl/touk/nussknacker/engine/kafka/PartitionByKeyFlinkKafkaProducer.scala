@@ -11,15 +11,15 @@ import scala.annotation.nowarn
 object PartitionByKeyFlinkKafkaProducer {
 
   def apply[T](
-      config: KafkaConfig,
+      kafkaComponentsConfig: KafkaComponentsConfig,
       topic: TopicName.ForSink,
       serializationSchema: serialization.KafkaSerializationSchema[T],
       clientId: String
   ): FlinkKafkaProducer[T] = {
-    val props = KafkaUtils.toProducerProperties(config, clientId)
+    val props = KafkaUtils.toProducerProperties(kafkaComponentsConfig, clientId)
     // we set default to 10min, as FlinkKafkaProducer logs warn if not set
     props.putIfAbsent(ProducerConfig.TRANSACTION_TIMEOUT_CONFIG, "600000")
-    val semantic = config.sinkDeliveryGuarantee match {
+    val semantic = kafkaComponentsConfig.sinkDeliveryGuarantee match {
       case Some(value) =>
         value match {
           case SinkDeliveryGuarantee.ExactlyOnce => FlinkKafkaProducer.Semantic.EXACTLY_ONCE
