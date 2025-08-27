@@ -14,7 +14,8 @@ class KafkaAdminCachesFactory extends LazyLogging {
     caches.getOrElseUpdate(
       kafkaComponentsConfig, {
         logger.debug(
-          s"Creating KafkaAdminCaches for kafkaComponentsConfig including boostrap.servers [${kafkaComponentsConfig.kafkaBootstrapServers}]"
+          s"Creating KafkaAdminCaches with config [${kafkaComponentsConfig.kafkaAdminConfig.cacheConfig}] " +
+            s"for kafkaComponentsConfig including boostrap.servers [${kafkaComponentsConfig.kafkaBootstrapServers}]"
         )
         new KafkaAdminCaches(kafkaComponentsConfig.kafkaAdminConfig.cacheConfig)
       }

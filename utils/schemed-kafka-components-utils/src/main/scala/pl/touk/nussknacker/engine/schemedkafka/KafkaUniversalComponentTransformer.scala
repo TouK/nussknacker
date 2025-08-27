@@ -87,21 +87,26 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   }
 
   private def getTopicParam(topics: List[UnspecializedTopicName]) = {
+    val fixedValueParamEditor = FixedValuesParameterEditor(
+      // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
+      // TODO: add addNullOption feature flag to FixedValuesParameterEditor
+      nullFixedValue +: topics
+        .flatMap(topic => namingStrategy.decodeName(topic.name))
+        .sorted
+        .map(v => FixedExpressionValue(s"'$v'", v))
+    )
+    val editors = {
+      if (kafkaComponentsConfig.allowUseNotSuggestedTopic) {
+        // This construction also disables validation that value is one of available fixed values
+        fixedValueParamEditor :: SpelTemplateParameterEditor :: Nil
+      } else {
+        fixedValueParamEditor :: Nil
+      }
+    }
     ParameterDeclaration
       .mandatory[String](topicParamName)
       .withCreator(
-        modify = _.copy(editors =
-          List(
-            FixedValuesParameterEditor(
-              // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
-              // TODO: add addNullOption feature flag to FixedValuesParameterEditor
-              nullFixedValue +: topics
-                .flatMap(topic => namingStrategy.decodeName(topic.name))
-                .sorted
-                .map(v => FixedExpressionValue(s"'$v'", v))
-            )
-          )
-        )
+        modify = _.copy(editors = editors)
       )
   }
 

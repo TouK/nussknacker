@@ -60,11 +60,17 @@ class AllNonHiddenTopicsSelectionStrategy(
           .filterNot(topic => topic.name.startsWith("_"))
           .toList
       } catch {
-        // In some tests we pass dummy kafka address, so when we try to get topics from kafka it fails
+        // In some tests, we pass a dummy kafka address, so when we try to get topics from kafka, it fails
         case err if ExceptionUtils.unwrapCommonWrappingExceptions(err).isInstanceOf[TimeoutException] =>
+          logger.error(
+            s"TimeoutException while getting topics. Empty list of topics will be returned for ${getClass.getName}"
+          )
           List.empty
         case ex: KafkaException =>
-          logger.error("Kafka exception while getting topics", ex)
+          logger.error(
+            s"Kafka exception while getting topics. Empty list of topics will be returned for ${getClass.getName}",
+            ex
+          )
           List.empty
       }
     }

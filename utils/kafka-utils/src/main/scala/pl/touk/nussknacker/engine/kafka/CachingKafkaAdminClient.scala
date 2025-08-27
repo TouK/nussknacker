@@ -14,12 +14,6 @@ class CachingKafkaAdminClient(
     usingKafkaAdminClient: UsingKafkaAdminClient
 ) extends LazyLogging {
 
-  def getOrFetchTopics: Set[UnspecializedTopicName] = {
-    caches.topicsCache.getOrCreate {
-      fetchFreshTopics
-    }
-  }
-
   def getCachedTopics: Option[Set[UnspecializedTopicName]] = {
     caches.topicsCache.get()
   }

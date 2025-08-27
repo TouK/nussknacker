@@ -46,18 +46,20 @@ trait FlinkKafkaDockerSpec
     (kafkaContainer: LazyContainer[_]) :: (if (useMiniClusterForDeployment) Nil else flinkContainers): _*
   )
 
+  protected val kafkaComponentsConfigPrefix = "modelConfig.components.kafka.config"
+
   override def resolveProcessingTypeConfig(config: Config): Config = {
     val baseConfig = super
       .resolveProcessingTypeConfig(config)
       .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(modelClassPath.asJava))
       .withValue("modelConfig.enableObjectReuse", fromAnyRef(false))
       .withValue(
-        KafkaConfigProperties.property("modelConfig.components.kafka.config", "auto.offset.reset"),
+        KafkaConfigProperties.property(kafkaComponentsConfigPrefix, "auto.offset.reset"),
         fromAnyRef("earliest")
       )
       .withValue("category", fromAnyRef("Category1"))
       .withValue(
-        "modelConfig.components.kafka.topicsExistenceValidationConfig.enabled",
+        s"$kafkaComponentsConfigPrefix.topicsExistenceValidationConfig.enabled",
         ConfigValueFactory.fromAnyRef("false")
       )
     if (useMiniClusterForDeployment) {
@@ -81,6 +83,12 @@ trait FlinkKafkaDockerSpec
         .withValue(
           KafkaConfigProperties.bootstrapServersProperty("modelConfig.components.kafka.config"),
           fromAnyRef(dockerKafkaAddress)
+        )
+        // We have to turn on this flag, because DM is created locally, and during scenario state verification,
+        // it can't connect to Kafka at dockerKafkaAddress which is in docker network.
+        .withValue(
+          s"$kafkaComponentsConfigPrefix.allowUseNotSuggestedTopic",
+          ConfigValueFactory.fromAnyRef("true")
         )
     }
   }

@@ -36,7 +36,11 @@ class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
     Await.result(
       retry.Pause(10, 1.second)(Timer.default)(
         Future {
-          topic(name)
+          val topicDescriptionOpt = topic(name)
+          logger.debug(
+            s"Topic [$name] ${topicDescriptionOpt.map(s"exists. Description: " + _).getOrElse("doesn't exist")}"
+          )
+          topicDescriptionOpt
         }
       ),
       timeout
