@@ -3,7 +3,10 @@ package pl.touk.nussknacker.restmodel.validation
 import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
+  ErrorDetails,
+  IncompatibleParameterDefinitionErrorDetails
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -278,13 +281,14 @@ object PrettyValidationErrors {
           description = message,
           paramName = Some(paramName)
         )
-      case IncompatibleParameterDefinitionModification(paramName, language, parameterEditor, _) =>
+      case IncompatibleParameterDefinitionModification(paramName, language, parameterEditors, nodeId) =>
         node(
           message =
             "There was an incompatible change to the component's parameter definition. Please choose a new valid value",
           description =
-            s"Incompatible change to the parameter's definition detected. $parameterEditor editor doesn't support '$language' language",
-          paramName = Some(paramName)
+            s"Incompatible change to the parameter's definition detected. None of editors $parameterEditors supports '$language' language",
+          paramName = Some(paramName),
+          details = Some(IncompatibleParameterDefinitionErrorDetails(paramName, language, parameterEditors, nodeId)),
         )
     }
   }

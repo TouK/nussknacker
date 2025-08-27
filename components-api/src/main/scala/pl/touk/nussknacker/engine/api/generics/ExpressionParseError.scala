@@ -3,8 +3,11 @@ package pl.touk.nussknacker.engine.api.generics
 import io.circe.{Codec, Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
+import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 import scala.util.Try
 
@@ -40,6 +43,13 @@ object ExpressionParseError {
     )
     Codec.forProduct2("name", "aType")(ColumnDefinition.apply)(cd => (cd.name, cd.aType))
   }
+
+  final case class IncompatibleParameterDefinitionErrorDetails(
+      paramName: ParameterName,
+      language: Language,
+      parameterEditors: List[ParameterEditor],
+      nodeId: String,
+  ) extends ErrorDetails
 
 }
 
