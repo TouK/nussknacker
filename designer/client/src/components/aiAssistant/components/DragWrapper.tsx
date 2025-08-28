@@ -125,7 +125,7 @@ function DragWrapper({ children, className, onClick, snap = 50 }: DragWrapperPro
                 clearTimeout(dragTimeout.current);
                 onClick?.(event);
             }}
-            data-originalPosition={startingPos.containsPoint(translation) ? true : undefined}
+            data-originalposition={startingPos.containsPoint(translation) ? true : undefined}
         >
             {children}
         </Box>
