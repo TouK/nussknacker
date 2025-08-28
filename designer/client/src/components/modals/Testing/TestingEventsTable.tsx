@@ -32,6 +32,12 @@ export interface TestingEventParameters {
     variables: string;
 }
 
+export interface TestingEventParametersRequestData {
+    sourceId: string;
+    timestamp?: string;
+    variables: Record<string, unknown>;
+}
+
 interface EventsTableProps {
     data?: TestingEventParameters[];
     onRowUpdated: (rowIndex: number, row: TestingEventParameters) => void;
@@ -288,7 +294,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                     onCellsEdited={onCellEdited}
                     onRowAppended={onCellAdded}
                     rowMarkers="clickable-number"
-                    rows={Math.max(data.length, 1)}
+                    rows={data.length}
                     smoothScrollX
                     smoothScrollY
                     theme={tableTheme}
@@ -296,7 +302,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                     gridSelection={hasFocus ? selection : emptySelection}
                     onCellContextMenu={onDataEditorCellContextMenu}
                     getRowThemeOverride={getRowThemeOverride}
-                    trailingRowOptions={{ sticky: true }}
+                    trailingRowOptions={{ sticky: true, hint: "Add row" }}
                     highlightRegions={highlightRegions()}
                     onGridSelectionChange={(selection) => {
                         setSelection(selection);

@@ -16,7 +16,7 @@ import type { CaretPosition2d, ExpressionSuggestion } from "../components/graph/
 import type { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
 import { extractStickyNotesFromNodes } from "../components/graph/utils/stickyNotesUtils";
 import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
-import type { TestingEventParameters } from "../components/modals/Testing/TestingEventsTable";
+import type { TestingEventParameters, TestingEventParametersRequestData } from "../components/modals/Testing/TestingEventsTable";
 import type { ProcessName, ProcessStateType, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
 import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../components/toolbars/activities/types";
 import { ActivityTypesRelatedToExecutions } from "../components/toolbars/activities/types";
@@ -924,7 +924,7 @@ class HttpService {
         return promise;
     }
 
-    testScenarioWithEventsData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, testData: TestingEventParameters[]) {
+    testScenarioWithEventsData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, testData: TestingEventParametersRequestData[]) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
 
         const data = new FormData();

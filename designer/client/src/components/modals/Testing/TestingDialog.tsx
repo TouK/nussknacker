@@ -58,7 +58,7 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
     const scenarioName = useAppSelector(getProcessName);
     const scenarioGraph = useAppSelector(getScenarioGraph);
 
-    const [events, setEvents] = useState<TestingEventParameters[]>(testingEventsParameters || [defaultEvent]);
+    const [events, setEvents] = useState<TestingEventParameters[]>(testingEventsParameters || []);
     const [cellErrors, setCellErrors] = useState<CellError[]>([]);
     const sourceOptions = testCapabilities.testWithParameters.sourceParameters.flatMap((sourceParameter) => sourceParameter.sourceId);
     const handleGenerateTestData = useCallback(async () => {
@@ -67,6 +67,7 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
         setEvents(data.map(mapGeneratedTestingDataToTableFormat));
     }, [scenarioGraph, scenarioName]);
 
+    const disableTestButton = events.length === 0 || cellErrors.length > 0;
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             {
@@ -76,7 +77,7 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
             },
             { title: t("testingForm.cancelButton.label", "Cancel"), action: () => close(), classname: LoadingButtonTypes.secondaryButton },
             {
-                disabled: cellErrors.length > 0,
+                disabled: disableTestButton,
                 title: t("testingForm.testButton.label", "Test"),
                 action: () => {
                     try {
@@ -88,7 +89,7 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
                 },
             },
         ],
-        [cellErrors.length, close, dispatch, events, handleGenerateTestData, t],
+        [close, disableTestButton, dispatch, events, handleGenerateTestData, t],
     );
 
     const validateEditedRow = React.useCallback(
