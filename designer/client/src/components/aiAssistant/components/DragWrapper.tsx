@@ -2,7 +2,7 @@ import { Box, styled } from "@mui/material";
 import { g } from "jointjs";
 import type { MouseEventHandler, PropsWithChildren } from "react";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { useDocumentEventListener } from "rooks";
+import { useDebounce, useDocumentEventListener, useOnWindowResize } from "rooks";
 
 type DragWrapperProps = PropsWithChildren<{
     className?: string;
@@ -58,7 +58,8 @@ function DragWrapper({ children, className, onClick, snap = 50 }: DragWrapperPro
     const moved = useRef(false);
 
     const startingPos = useMemo(() => new g.Ellipse({ x: 0, y: 0 }, snap, snap), [snap]);
-    const { elementRef, snapToBorder } = useSnapToBorder(snap);
+    const { elementRef, snapToBorder: _snapToBorder } = useSnapToBorder(snap);
+    const snapToBorder = useDebounce(() => setTranslation(_snapToBorder), 150);
 
     const pointerdown = useCallback(
         (event: React.PointerEvent<HTMLElement>) => {
@@ -91,11 +92,12 @@ function DragWrapper({ children, className, onClick, snap = 50 }: DragWrapperPro
         clearTimeout(dragTimeout.current);
         setIsDragging((dragging.current = false));
         document.body.style.userSelect = "";
-        setTranslation(snapToBorder);
+        snapToBorder();
     }, [snapToBorder]);
 
     useDocumentEventListener("pointermove", pointermove);
     useDocumentEventListener("pointerup", pointerup);
+    useOnWindowResize(snapToBorder);
 
     return (
         <Box
