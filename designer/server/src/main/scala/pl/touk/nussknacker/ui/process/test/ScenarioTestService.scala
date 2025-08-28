@@ -360,8 +360,21 @@ class ScenarioTestService(
         val testDataResultApproxByteSize = RamUsageEstimator.sizeOf(testResults)
         Either.cond(
           testDataResultApproxByteSize <= definedResultsMaxBytes,
-          (),
-          PerformTestError.TestResultsSizeExceededError(testDataResultApproxByteSize, definedResultsMaxBytes)
+          (), {
+            logger.whenDebugEnabled {
+              val fieldSizes = testResults.getClass.getDeclaredFields
+                .map { field =>
+                  field.setAccessible(true)
+                  val fieldSize = RamUsageEstimator.sizeOf(field.get(testResults))
+                  s"${field.getName}=$fieldSize"
+                }
+                .mkString(", ")
+              logger.debug(
+                s"Test results are too big: $testDataResultApproxByteSize > $definedResultsMaxBytes; $fieldSizes"
+              )
+            }
+            PerformTestError.TestResultsSizeExceededError(testDataResultApproxByteSize, definedResultsMaxBytes)
+          }
         )
       }
       .getOrElse(Right(()))
