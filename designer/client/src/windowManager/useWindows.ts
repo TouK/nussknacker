@@ -9,7 +9,7 @@ import type { ConfirmDialogData } from "../components/modals/GenericConfirmDialo
 import type { InfoDialogData } from "../components/modals/GenericInfoDialog";
 import type { Scenario } from "../components/Process/types";
 import { getWindowsIdMapping } from "../reducers/selectors/getWindowsIdMapping";
-import type { AppState} from "../store/storeHelpers";
+import type { AppState } from "../store/storeHelpers";
 import { useAppSelector } from "../store/storeHelpers";
 import type { NodeType } from "../types";
 import { WindowKind } from "./WindowKind";
