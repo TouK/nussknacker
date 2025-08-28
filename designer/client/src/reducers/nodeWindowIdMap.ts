@@ -13,11 +13,12 @@ export function nodeWindowIdMap(state = {}, action: Action): Record<NodeId, stri
             return {
                 ...state,
                 [action.nodeId]: undefined,
+                [state[action.nodeId]]: undefined,
             };
         case "EDIT_NODE":
             return {
                 ...state,
-                [action.before.id]: undefined,
+                [action.before.id]: action.after.id,
                 [action.after.id]: state[action.before.id],
             };
     }
