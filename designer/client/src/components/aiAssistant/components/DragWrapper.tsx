@@ -12,7 +12,7 @@ type DragWrapperProps = PropsWithChildren<{
 
 const { setTimeout, clearTimeout } = window; // types fix
 
-function getTranslate({ x, y }: g.PlainPoint): string {
+function getTranslateTransform({ x, y }: g.PlainPoint): string {
     return `translate(${x}px, ${y}px)`;
 }
 
@@ -23,22 +23,25 @@ function getViewport(): g.Rect {
 function useSnapToBorder(snap: number) {
     const elementRef = useRef<HTMLElement>(null);
     const snapToBorder = useCallback(
-        (pos: g.PlainPoint) => {
-            if (!elementRef.current) return pos;
+        (translation: g.PlainPoint) => {
+            if (!elementRef.current) return translation;
 
-            const rect = new g.Rect(elementRef.current.getBoundingClientRect());
-            const originalPos = rect.center().translate(-pos.x, -pos.y);
             const viewport = getViewport();
             const corners = [viewport.topLeft(), viewport.topRight(), viewport.bottomLeft(), viewport.bottomRight()];
-            const dist = originalPos.chooseClosest(corners).difference(originalPos);
-            const borders = viewport.clone().inflate(-Math.abs(dist.x), -Math.abs(dist.y));
-            const containsRect = borders.clone().inflate(-snap).containsRect(rect);
 
-            if (containsRect) return pos;
+            const elRect = new g.Rect(elementRef.current.getBoundingClientRect());
+            const rawElPos = elRect.center().translate(-translation.x, -translation.y);
+            const initialDistance = rawElPos.chooseClosest(corners).difference(rawElPos);
+            const borders = viewport.clone().inflate(-Math.abs(initialDistance.x), -Math.abs(initialDistance.y));
 
-            const corner = rect.center().chooseClosest(corners);
-            const adhereToRect = borders.pointNearestToPoint(corner.distance(rect.center()) <= snap * 2.5 ? corner : rect.center());
-            return adhereToRect.difference(originalPos);
+            const triggerRect = borders.clone().inflate(-snap);
+            if (triggerRect.containsRect(elRect)) return translation;
+
+            const closestCorner = elRect.center().chooseClosest(corners);
+            const adhereToRect = borders.pointNearestToPoint(
+                closestCorner.distance(elRect.center()) <= snap * 2.5 ? closestCorner : elRect.center(),
+            );
+            return adhereToRect.difference(rawElPos);
         },
         [snap],
     );
@@ -47,7 +50,7 @@ function useSnapToBorder(snap: number) {
 }
 
 function DragWrapper({ children, className, onClick, snap = 50 }: DragWrapperProps) {
-    const [pos, setPos] = useState({ x: 0, y: 0 });
+    const [translation, setTranslation] = useState({ x: 0, y: 0 });
     const offsetRef = useRef({ x: 0, y: 0 });
     const dragTimeout = useRef(0);
     const dragging = useRef(false);
@@ -65,34 +68,31 @@ function DragWrapper({ children, className, onClick, snap = 50 }: DragWrapperPro
             dragTimeout.current = setTimeout(() => {
                 setIsDragging((dragging.current = true));
                 offsetRef.current = {
-                    x: event.clientX - pos.x,
-                    y: event.clientY - pos.y,
+                    x: event.clientX - translation.x,
+                    y: event.clientY - translation.y,
                 };
                 document.body.style.userSelect = "none";
             }, 150);
         },
-        [pos.x, pos.y],
+        [translation.x, translation.y],
     );
 
     const pointermove = useCallback((event: PointerEvent) => {
         if (!dragging.current) return;
         clearTimeout(dragTimeout.current);
         moved.current = true;
-        setPos({
+        setTranslation({
             x: event.clientX - offsetRef.current.x,
             y: event.clientY - offsetRef.current.y,
         });
     }, []);
 
-    const pointerup = useCallback(
-        (event: PointerEvent) => {
-            clearTimeout(dragTimeout.current);
-            setIsDragging((dragging.current = false));
-            document.body.style.userSelect = "";
-            setPos(snapToBorder);
-        },
-        [snapToBorder],
-    );
+    const pointerup = useCallback(() => {
+        clearTimeout(dragTimeout.current);
+        setIsDragging((dragging.current = false));
+        document.body.style.userSelect = "";
+        setTranslation(snapToBorder);
+    }, [snapToBorder]);
 
     useDocumentEventListener("pointermove", pointermove);
     useDocumentEventListener("pointerup", pointerup);
@@ -102,7 +102,7 @@ function DragWrapper({ children, className, onClick, snap = 50 }: DragWrapperPro
             className={className}
             ref={elementRef}
             style={{
-                transform: getTranslate(pos),
+                transform: getTranslateTransform(translation),
             }}
             sx={(theme) => ({
                 transition: isDragging
@@ -123,7 +123,7 @@ function DragWrapper({ children, className, onClick, snap = 50 }: DragWrapperPro
                 clearTimeout(dragTimeout.current);
                 onClick?.(event);
             }}
-            data-still={startingPos.containsPoint(pos) ? true : undefined}
+            data-originalPosition={startingPos.containsPoint(translation) ? true : undefined}
         >
             {children}
         </Box>

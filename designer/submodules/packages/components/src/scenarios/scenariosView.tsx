@@ -39,10 +39,10 @@ function useAssistantButtonAdjustment(inView: boolean): CSSProperties {
 
     const adjustPosition = useCallback(() => {
         const assistantButton = document.getElementById("ai-assistant-button");
-        setPaddingBottom(assistantButton?.parentElement.hasAttribute("data-still") ? assistantButton.offsetHeight : 0);
+        setPaddingBottom(assistantButton?.parentElement.hasAttribute("data-originalPosition") ? assistantButton.offsetHeight : 0);
     }, []);
 
-    const [ref] = useMutationObserverRef(adjustPosition, { attributes: true, attributeFilter: ["data-still"], subtree: true });
+    const [ref] = useMutationObserverRef(adjustPosition, { attributes: true, attributeFilter: ["data-originalPosition"], subtree: true });
 
     useEffect(() => {
         if (inView) {
