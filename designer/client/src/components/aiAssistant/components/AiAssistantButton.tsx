@@ -1,6 +1,6 @@
 import { Box, styled, Typography } from "@mui/material";
 import { useWindowManager } from "@touk/window-manager";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import NuIcon from "../../../assets/img/nussknacker-logo-icon.svg";
@@ -8,6 +8,7 @@ import { blendDarken } from "../../../containers/theme/helpers";
 import { getFeatureSettings } from "../../../reducers/selectors/settings";
 import { useAppSelector } from "../../../store/storeHelpers";
 import { useWindows, WindowKind } from "../../../windowManager";
+import DragWrapper from "./DragWrapper";
 
 function convertViewportUnitToPixels(unitString: string): number {
     const trimmed = unitString.trim();
@@ -25,34 +26,24 @@ function convertViewportUnitToPixels(unitString: string): number {
         throw new Error("Unsupported unit. Use 'vw' or 'vh'.");
     }
 }
-
-const ASSISTANT_BUTTON = {
-    right: 12,
-    bottom: 8,
+// TODO: use Fab
+const StyledAiAssistantButton = styled(Box)(({ theme }) => ({
     width: 75,
     height: 75,
-};
-
-const StyledAiAssistantButton = styled(Box, {
-    shouldForwardProp: (propName: string) => !["isOpenedAiAssistantDialog"].includes(propName),
-})<{ isOpenedAiAssistantDialog: boolean }>(({ theme, isOpenedAiAssistantDialog }) => {
-    return {
-        position: "fixed",
-        bottom: ASSISTANT_BUTTON.bottom,
-        right: ASSISTANT_BUTTON.right,
-        padding: theme.spacing(2),
-        background: blendDarken(theme.palette.primary.main, 0.6),
-        cursor: "pointer",
-        width: ASSISTANT_BUTTON.width,
-        height: ASSISTANT_BUTTON.height,
-        borderRadius: "50%",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: isOpenedAiAssistantDialog ? theme.zIndex.modal : theme.zIndex.modal + 1, // In case of modal full screen we want to hide button to not overlap other elements
-    };
-});
+    padding: theme.spacing(2),
+    background: blendDarken(theme.palette.primary.main, 0.6),
+    cursor: "pointer",
+    borderRadius: "50%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    userSelect: "none",
+    boxShadow: theme.shadows[6],
+    "&:active": {
+        boxShadow: theme.shadows[12],
+    },
+}));
 
 export const AI_ASSISTANT_MODAL_ID = "AI_ASSISTANT";
 
@@ -61,12 +52,14 @@ export const AiAssistantButton = () => {
     const { open } = useWindows();
     const { windows, close } = useWindowManager();
     const featureSettings = useAppSelector(getFeatureSettings);
-    const openedAiAssistantDialog = useMemo(() => windows.find((window) => window.id === AI_ASSISTANT_MODAL_ID), [windows]);
+    const openedAiAssistantDialog = useMemo(() => Boolean(windows.find((window) => window.id === AI_ASSISTANT_MODAL_ID)), [windows]);
 
+    const buttonRef = useRef<HTMLElement>(null);
     const handleClick = useCallback(() => {
         if (openedAiAssistantDialog) {
             close(AI_ASSISTANT_MODAL_ID);
         } else {
+            const buttonBox = buttonRef.current.getBoundingClientRect();
             open({
                 id: AI_ASSISTANT_MODAL_ID,
                 isModal: false,
@@ -74,10 +67,11 @@ export const AiAssistantButton = () => {
                 title: "AI Assistant",
                 isResizable: true,
                 layoutData: {
-                    right: ASSISTANT_BUTTON.right,
-                    bottom: ASSISTANT_BUTTON.bottom + ASSISTANT_BUTTON.height + 20,
+                    right: window.innerWidth - buttonBox.right,
+                    bottom: window.innerHeight - buttonBox.top,
                     width: convertViewportUnitToPixels("35vw"),
                     minWidth: 500,
+                    minHeight: 200,
                     height: convertViewportUnitToPixels("80vh"),
                     zIndex: 2,
                 },
@@ -90,16 +84,21 @@ export const AiAssistantButton = () => {
     }
 
     return (
-        <StyledAiAssistantButton
-            id="ai-assistant-button"
-            role="button"
+        <DragWrapper
+            sx={(theme) => ({
+                position: "fixed",
+                bottom: 8,
+                right: 12,
+                zIndex: openedAiAssistantDialog ? theme.zIndex.modal - 10 : theme.zIndex.modal, // In case of modal full screen we want to hide button to not overlap other elements
+            })}
             onClick={handleClick}
-            isOpenedAiAssistantDialog={Boolean(openedAiAssistantDialog)}
         >
-            <NuIcon />
-            <Typography component="span" variant={"overline"} fontWeight={"bold"} pt={0.5}>
-                {t("aiAssistant.buttonText", "Assistant")}
-            </Typography>
-        </StyledAiAssistantButton>
+            <StyledAiAssistantButton ref={buttonRef} id="ai-assistant-button" role="button">
+                <NuIcon />
+                <Typography component="span" variant={"overline"} fontWeight={"bold"} pt={0.5}>
+                    {t("aiAssistant.buttonText", "Assistant")}
+                </Typography>
+            </StyledAiAssistantButton>
+        </DragWrapper>
     );
 };

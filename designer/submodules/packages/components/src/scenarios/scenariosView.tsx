@@ -1,27 +1,29 @@
-import React, { PropsWithChildren } from "react";
-import { FiltersContextProvider } from "../common";
-import { useScenariosWithStatus } from "./useScenariosQuery";
-import { ScenariosFiltersModel } from "./filters/scenariosFiltersModel";
-import { FiltersPart } from "./filters";
 import { Avatar, Button, SpeedDial, SpeedDialAction, SpeedDialIcon, Stack, styled } from "@mui/material";
-import { useInViewRef } from "rooks";
-import { TablePart } from "./list/tablePart";
+import type { CSSProperties, PropsWithChildren } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { useInViewRef, useMutationObserverRef } from "rooks";
+
+import FragmentIcon from "../assets/icons/fragment.svg";
+import ScanarioIcon from "../assets/icons/scenario.svg";
+import { FiltersContextProvider } from "../common";
+import { FiltersPart } from "./filters";
+import type { ScenariosFiltersModel } from "./filters/scenariosFiltersModel";
 import { ListPart } from "./list/listPart";
+import { TablePart } from "./list/tablePart";
+import { useScenariosWithStatus } from "./useScenariosQuery";
 
 const StyledSpeedDial = styled(SpeedDial)(({ theme }) => {
-    const aiAssistantExists = Boolean(document.getElementById("ai-assistant-button"));
-
-    const additionalBottomPositionWhenAssistantExist = aiAssistantExists ? 10 : 0;
     return {
         position: "fixed",
-        bottom: theme.spacing(2 + additionalBottomPositionWhenAssistantExist),
+        transition: theme.transitions.create("padding-bottom"),
+        bottom: theme.spacing(2),
         right: theme.spacing(2),
         [theme.breakpoints.down("xl")]: {
-            bottom: theme.spacing(1.5 + additionalBottomPositionWhenAssistantExist),
+            bottom: theme.spacing(1.5),
             right: theme.spacing(1.5),
         },
         [theme.breakpoints.down("md")]: {
-            bottom: theme.spacing(2 + additionalBottomPositionWhenAssistantExist),
+            bottom: theme.spacing(2),
             right: theme.spacing(4),
         },
     };
@@ -32,8 +34,40 @@ export interface ActionsProps {
     addFragment?: () => void;
 }
 
+function useAssistantButtonAdjustment(inView: boolean): CSSProperties {
+    const [paddingBottom, setPaddingBottom] = useState(0);
+
+    const adjustPosition = useCallback(() => {
+        const assistantButton = document.getElementById("ai-assistant-button");
+        setPaddingBottom(assistantButton?.parentElement.hasAttribute("data-originalPosition") ? assistantButton.offsetHeight : 0);
+    }, []);
+
+    const [ref] = useMutationObserverRef(adjustPosition, { attributes: true, attributeFilter: ["data-originalPosition"], subtree: true });
+
+    useEffect(() => {
+        if (inView) {
+            ref(null);
+        } else {
+            ref(document.getElementById("ai-assistant-button")?.parentElement);
+            adjustPosition();
+        }
+    }, [adjustPosition, inView, ref]);
+
+    return { paddingBottom };
+}
+
+const ActionAvatar = styled(Avatar)(({ theme }) => ({
+    color: theme.palette.getContrastText(theme.palette.grey["800"]),
+    bgcolor: theme.palette.grey["800"],
+    "& > svg": {
+        width: "1em",
+        height: "1em",
+    },
+}));
+
 function Actions({ addScenario, addFragment }: ActionsProps): JSX.Element {
     const [ref, inView] = useInViewRef();
+    const { paddingBottom } = useAssistantButtonAdjustment(inView);
 
     if (!addScenario && !addFragment) {
         return null;
@@ -53,19 +87,27 @@ function Actions({ addScenario, addFragment }: ActionsProps): JSX.Element {
                     </Button>
                 )}
             </Stack>
-            <StyledSpeedDial ariaLabel="Create new..." icon={<SpeedDialIcon />} TransitionProps={{ in: !inView }}>
+            <StyledSpeedDial ariaLabel="Create new..." icon={<SpeedDialIcon />} TransitionProps={{ in: !inView }} style={{ paddingBottom }}>
                 {addFragment && (
                     <SpeedDialAction
                         tooltipTitle={"New fragment"}
                         onClick={addFragment}
-                        icon={<Avatar sx={{ bgcolor: "grey.800" }}>F</Avatar>}
+                        icon={
+                            <ActionAvatar>
+                                <FragmentIcon />
+                            </ActionAvatar>
+                        }
                     />
                 )}
                 {addScenario && (
                     <SpeedDialAction
                         tooltipTitle={"New scenario"}
                         onClick={addScenario}
-                        icon={<Avatar sx={{ bgcolor: "grey.800" }}>S</Avatar>}
+                        icon={
+                            <ActionAvatar>
+                                <ScanarioIcon />
+                            </ActionAvatar>
+                        }
                     />
                 )}
                 x
