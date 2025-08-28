@@ -7,12 +7,46 @@ import { useDocumentEventListener } from "rooks";
 type DragWrapperProps = PropsWithChildren<{
     className?: string;
     onClick?: MouseEventHandler<HTMLElement>;
-    snapRadius?: number;
+    snap?: number;
 }>;
 
 const { setTimeout, clearTimeout } = window; // types fix
 
-function DragWrapper({ children, className, onClick, snapRadius }: DragWrapperProps) {
+function getTranslate({ x, y }: g.PlainPoint): string {
+    return `translate(${x}px, ${y}px)`;
+}
+
+function getViewport(): g.Rect {
+    return new g.Rect(0, 0, window.innerWidth, window.innerHeight);
+}
+
+function useSnapToBorder(snap: number) {
+    const elementRef = useRef<HTMLElement>(null);
+    const snapToBorder = useCallback(
+        (pos: g.PlainPoint) => {
+            if (!elementRef.current) return pos;
+
+            const rect = new g.Rect(elementRef.current.getBoundingClientRect());
+            const originalPos = rect.center().translate(-pos.x, -pos.y);
+            const viewport = getViewport();
+            const corners = [viewport.topLeft(), viewport.topRight(), viewport.bottomLeft(), viewport.bottomRight()];
+            const dist = originalPos.chooseClosest(corners).difference(originalPos);
+            const borders = viewport.clone().inflate(-Math.abs(dist.x), -Math.abs(dist.y));
+            const containsRect = borders.clone().inflate(-snap).containsRect(rect);
+
+            if (containsRect) return pos;
+
+            const corner = rect.center().chooseClosest(corners);
+            const adhereToRect = borders.pointNearestToPoint(corner.distance(rect.center()) <= snap * 2.5 ? corner : rect.center());
+            return adhereToRect.difference(originalPos);
+        },
+        [snap],
+    );
+
+    return { elementRef, snapToBorder };
+}
+
+function DragWrapper({ children, className, onClick, snap = 50 }: DragWrapperProps) {
     const [pos, setPos] = useState({ x: 0, y: 0 });
     const offsetRef = useRef({ x: 0, y: 0 });
     const dragTimeout = useRef(0);
@@ -20,7 +54,8 @@ function DragWrapper({ children, className, onClick, snapRadius }: DragWrapperPr
     const [isDragging, setIsDragging] = useState(false);
     const moved = useRef(false);
 
-    const startingPos = useMemo(() => new g.Ellipse({ x: 0, y: 0 }, snapRadius || 100, snapRadius || 100), [snapRadius]);
+    const startingPos = useMemo(() => new g.Ellipse({ x: 0, y: 0 }, snap, snap), [snap]);
+    const { elementRef, snapToBorder } = useSnapToBorder(snap);
 
     const pointerdown = useCallback(
         (event: React.PointerEvent<HTMLElement>) => {
@@ -49,11 +84,15 @@ function DragWrapper({ children, className, onClick, snapRadius }: DragWrapperPr
         });
     }, []);
 
-    const pointerup = useCallback((event: PointerEvent) => {
-        clearTimeout(dragTimeout.current);
-        setIsDragging((dragging.current = false));
-        document.body.style.userSelect = "";
-    }, []);
+    const pointerup = useCallback(
+        (event: PointerEvent) => {
+            clearTimeout(dragTimeout.current);
+            setIsDragging((dragging.current = false));
+            document.body.style.userSelect = "";
+            setPos(snapToBorder);
+        },
+        [snapToBorder],
+    );
 
     useDocumentEventListener("pointermove", pointermove);
     useDocumentEventListener("pointerup", pointerup);
@@ -61,15 +100,17 @@ function DragWrapper({ children, className, onClick, snapRadius }: DragWrapperPr
     return (
         <Box
             className={className}
+            ref={elementRef}
             style={{
-                transform: startingPos.containsPoint(pos)
-                    ? `translate(${startingPos.center().x}px, ${startingPos.center().y}px)`
-                    : `translate(${pos.x}px, ${pos.y}px)`,
+                transform: getTranslate(pos),
             }}
             sx={(theme) => ({
-                transition: startingPos.containsPoint(pos)
-                    ? theme.transitions.create("transform", { duration: theme.transitions.duration.shortest })
-                    : null,
+                transition: isDragging
+                    ? null
+                    : theme.transitions.create("transform", {
+                          duration: theme.transitions.duration.enteringScreen,
+                          easing: "cubic-bezier(.4,0,0,1.25)",
+                      }),
                 pointerEvents: "none",
                 "&>*": {
                     cursor: isDragging ? "grabbing" : null,
