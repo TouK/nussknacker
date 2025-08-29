@@ -4,8 +4,10 @@ import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 
 import { getLoggedUserId } from "../reducers/selectors/settings";
-import { persistor, store } from "./configureStore";
+import { setupStore } from "./configureStore";
 import { waitForFirstValue } from "./waitForFirstValue";
+
+const { store, persistor } = setupStore();
 
 export const StoreProvider = ({ children }: PropsWithChildren<unknown>): JSX.Element => (
     <Provider store={store}>

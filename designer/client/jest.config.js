@@ -17,7 +17,7 @@ module.exports = {
         "@fontsource/roboto-mono": "<rootDir>/node_modules/jest-css-modules",
         "color-alpha": "<rootDir>/__mocks__/color-alpha.ts",
     },
-    testMatch: ["**/*test.[tj]s?(x)"],
+    testMatch: ["**/*[.-]test.[tj]s?(x)"],
     snapshotSerializers: ["@emotion/jest/serializer"],
     setupFilesAfterEnv: ["<rootDir>/jest-setup.js"],
     transformIgnorePatterns: ["<rootDir>/node_modules/(?!react-cron-generator)/.*"],

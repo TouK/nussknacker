@@ -2,10 +2,10 @@ import type { ListenerEffectAPI } from "@reduxjs/toolkit";
 import { addListener } from "@reduxjs/toolkit";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { store } from "./configureStore";
+import type { setupStore } from "./configureStore";
 
-export type AppDispatch = typeof store.dispatch;
-export type AppState = ReturnType<typeof store.getState>;
+export type AppDispatch = ReturnType<typeof setupStore>["store"]["dispatch"];
+export type AppState = ReturnType<ReturnType<typeof setupStore>["store"]["getState"]>;
 
 export const useAppDispatch = useDispatch.withTypes<AppDispatch>();
 export const useAppSelector = useSelector.withTypes<AppState>();
