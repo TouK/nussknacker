@@ -74,7 +74,7 @@ export interface Expression {
 }
 
 export type PropertiesType = {
-    name: string;
+    name?: string;
     additionalFields: ProcessAdditionalFields;
 };
 
