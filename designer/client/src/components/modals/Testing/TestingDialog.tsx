@@ -43,53 +43,38 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
         meta: { viewParams },
         kind,
     } = data;
+
     const dispatch = useAppDispatch();
     const testCapabilities = useAppSelector(getTestCapabilities);
-    const defaultParameter = testCapabilities.testWithParameters.sourceParameters[0];
-    const defaultEvent = useMemo(
-        () => ({
-            sourceId: defaultParameter.sourceId,
-            timestamp: undefined,
-            variables: testCapabilities.testWithParameters.sourceParameters[0].parameters[0].defaultValue.expression,
-        }),
-        [defaultParameter.sourceId, testCapabilities.testWithParameters.sourceParameters],
-    );
     const testingEventsParameters = useAppSelector(getTestingEventParameters);
     const scenarioName = useAppSelector(getProcessName);
     const scenarioGraph = useAppSelector(getScenarioGraph);
 
+    const defaultParameter = testCapabilities.testWithParameters.sourceParameters[0];
+
+    const defaultEvent = useMemo(
+        () =>
+            defaultParameter
+                ? {
+                      sourceId: defaultParameter.sourceId,
+                      timestamp: undefined,
+                      variables: defaultParameter.parameters[0].defaultValue.expression,
+                  }
+                : { sourceId: undefined, timestamp: undefined, variables: undefined },
+        [defaultParameter],
+    );
+
     const [events, setEvents] = useState<TestingEventParameters[]>(testingEventsParameters || []);
     const [cellErrors, setCellErrors] = useState<CellError[]>([]);
-    const sourceOptions = testCapabilities.testWithParameters.sourceParameters.flatMap((sourceParameter) => sourceParameter.sourceId);
+
     const handleGenerateTestData = useCallback(async () => {
         const { data } = await HttpService.generatedTestData(scenarioName, scenarioGraph);
-
         setEvents(data.map(mapGeneratedTestingDataToTableFormat));
     }, [scenarioGraph, scenarioName]);
 
-    const disableTestButton = events.length === 0 || cellErrors.length > 0;
-    const buttons: WindowButtonProps[] = useMemo(
-        () => [
-            {
-                title: t("testingForm.cancelButton.label", "Generate test Data"),
-                action: handleGenerateTestData,
-                classname: LoadingButtonTypes.tertiaryButton,
-            },
-            { title: t("testingForm.cancelButton.label", "Cancel"), action: () => close(), classname: LoadingButtonTypes.secondaryButton },
-            {
-                disabled: disableTestButton,
-                title: t("testingForm.testButton.label", "Test"),
-                action: () => {
-                    try {
-                        dispatch(testScenarioWithEventsData(events));
-                        close();
-                    } catch (e) {
-                        console.error(e.message);
-                    }
-                },
-            },
-        ],
-        [close, disableTestButton, dispatch, events, handleGenerateTestData, t],
+    const sourceOptions = useMemo(
+        () => testCapabilities.testWithParameters.sourceParameters.flatMap((sourceParameter) => sourceParameter.sourceId),
+        [testCapabilities.testWithParameters.sourceParameters],
     );
 
     const validateEditedRow = React.useCallback(
@@ -152,6 +137,31 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
                 }),
         );
     }, []);
+
+    const disableTestButton = events.length === 0 || cellErrors.length > 0;
+    const buttons: WindowButtonProps[] = useMemo(
+        () => [
+            {
+                title: t("testingForm.cancelButton.label", "Generate test Data"),
+                action: handleGenerateTestData,
+                classname: LoadingButtonTypes.tertiaryButton,
+            },
+            { title: t("testingForm.cancelButton.label", "Cancel"), action: () => close(), classname: LoadingButtonTypes.secondaryButton },
+            {
+                disabled: disableTestButton,
+                title: t("testingForm.testButton.label", "Test"),
+                action: () => {
+                    try {
+                        dispatch(testScenarioWithEventsData(events));
+                        close();
+                    } catch (e) {
+                        console.error(e.message);
+                    }
+                },
+            },
+        ],
+        [close, disableTestButton, dispatch, events, handleGenerateTestData, t],
+    );
 
     return (
         <WindowContent

@@ -31,10 +31,10 @@ export function Sizer({ overflowY, offsetParent, ...props }: SizerProps) {
             sx={{
                 overflow: "hidden",
                 boxSizing: "border-box",
+                minHeight: 100,
                 ...props.sx,
                 flex: 1,
                 position: "relative",
-                minHeight: 100,
                 maxHeight: overflowY ? "unset" : height * 0.8,
             }}
             ref={refCallback}

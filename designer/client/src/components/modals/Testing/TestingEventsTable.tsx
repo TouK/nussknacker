@@ -16,6 +16,7 @@ import { useTableTheme } from "../../graph/node-modal/editors/expression/Table/t
 import { nodeInput } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import TestingEventsTableSourceEditor from "./TestingEventsTableSourceEditor";
 import "@glideapps/glide-data-grid/dist/index.css";
+import { buildDefaultVariablesMap } from "./utils";
 
 type DateCellData = { kind: "date-cell"; value: string };
 type DateCell = CustomCell<DateCellData>;
@@ -141,26 +142,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
         [],
     );
 
-    const defaultVariablesBySourceId = useMemo(() => {
-        const map: Record<string, string> = {};
-        sourceParameters?.forEach((sp) => {
-            const obj: Record<string, any> = {};
-            sp.parameters?.forEach((p) => {
-                const expr = p?.defaultValue?.expression ?? "";
-                try {
-                    obj[p.name] = JSON.parse(expr);
-                } catch {
-                    obj[p.name] = expr;
-                }
-            });
-            try {
-                map[sp.sourceId] = JSON.stringify(obj);
-            } catch {
-                map[sp.sourceId] = "";
-            }
-        });
-        return map;
-    }, [sourceParameters]);
+    const defaultVariablesBySourceId = useMemo(() => buildDefaultVariablesMap(sourceParameters), [sourceParameters]);
 
     const getCellContent = useCallback(
         ([col, row]: Item): GridCell => {
@@ -183,12 +165,9 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                     readonly: false,
                 } as DateCell;
             if (col === 2) {
-                let display = rowData.variables || "";
-                try {
-                    if (rowData.variables) display = JSON.stringify(JSON.parse(rowData.variables));
-                } catch {
-                    /* ignore */
-                }
+                const raw = rowData.variables || "";
+                const display = formatEventVariablesForDisplay(raw);
+
                 return {
                     kind: GridCellKind.Text,
                     displayData: display,
@@ -268,7 +247,6 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
         (row) => ({ bgCell: row >= data.length ? tableTheme.bgCellMedium : tableTheme.bgCell }),
         [data.length, tableTheme.bgCell, tableTheme.bgCellMedium],
     );
-    const overrideStyles = css({ "& .gdg-growing-entry": { minHeight: "100px !important" } });
 
     return (
         <>
@@ -277,7 +255,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                 overflowY={false}
                 data-testid="events-table-container"
                 className={className}
-                sx={{ border: "1px solid", borderColor: tableTheme.borderColor }}
+                sx={{ border: "1px solid", borderColor: tableTheme.borderColor, minHeight: "60px", ml: 1 }}
                 onFocus={() => setHasFocus(true)}
                 onBlur={(e) => {
                     if (e.currentTarget.contains(e.relatedTarget)) return;
@@ -286,7 +264,6 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
             >
                 <DataEditor
                     ref={ref}
-                    className={overrideStyles}
                     columns={tableColumns}
                     getCellContent={getCellContent}
                     customRenderers={useMemo(() => [sourceSelectRenderer, dateRenderer], [sourceSelectRenderer, dateRenderer])}
