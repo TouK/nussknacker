@@ -6,6 +6,7 @@ import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.flink.api.common.ExecutionConfig
 import org.scalatest.BeforeAndAfter
+import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkTestScenarioRunnerExt
@@ -24,7 +25,10 @@ import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 
 import scala.jdk.CollectionConverters._
 
-class SinkValueEditorWithAvroPayloadIntegrationTest extends FlinkKafkaAvroSpecMixin with BeforeAndAfter {
+class SinkValueEditorWithAvroPayloadIntegrationTest
+    extends AnyFunSuite
+    with FlinkKafkaAvroSpecMixin
+    with BeforeAndAfter {
   import SinkValueEditorWithAvroPayloadIntegrationTest._
 
   private var topicConfigs: Map[String, TopicConfig] = Map.empty

@@ -5,8 +5,8 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.avro.Schema
 import org.apache.flink.api.common.ExecutionConfig
 import org.scalatest.OptionValues
+import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelConfig
-import pl.touk.nussknacker.engine.api.namespaces.{Namespace, NamingStrategy}
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkTestScenarioRunnerExt
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 
-class KafkaAvroNamespacedSpec extends FlinkKafkaAvroSpecMixin with OptionValues {
+class KafkaAvroNamespacedSpec extends AnyFunSuite with FlinkKafkaAvroSpecMixin with OptionValues {
 
   import KafkaAvroNamespacedMockSchemaRegistry._
 
@@ -31,10 +31,6 @@ class KafkaAvroNamespacedSpec extends FlinkKafkaAvroSpecMixin with OptionValues 
       .resolveModelConfig(config)
       .withValue("namespace", fromAnyRef(namespace))
   }
-
-  override protected def namingStrategy: NamingStrategy = NamingStrategy(
-    Some(Namespace(namespace, NamingStrategy.defaultNamespaceSeparator))
-  )
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 

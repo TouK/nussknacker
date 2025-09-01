@@ -26,6 +26,9 @@ trait KafkaSpec extends BeforeAndAfterAll with WithModelConfig { self: Suite =>
         fromAnyRef("earliest")
       )
 
+  protected final lazy val kafkaComponentsConfig: KafkaComponentsConfig =
+    KafkaComponentsConfig.parseConfig(modelConfig.getConfig(kafkaComponentsConfigPrefix))
+
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     AvailablePortFinder.withAvailablePortsBlocked(2) {

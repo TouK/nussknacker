@@ -6,6 +6,7 @@ import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{Assertion, BeforeAndAfter}
+import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.process.TopicName
@@ -31,7 +32,7 @@ import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 
 import java.nio.charset.StandardCharsets
 
-class KafkaAvroPayloadIntegrationSpec extends FlinkKafkaAvroSpecMixin with BeforeAndAfter {
+class KafkaAvroPayloadIntegrationSpec extends AnyFunSuite with FlinkKafkaAvroSpecMixin with BeforeAndAfter {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -320,7 +321,7 @@ class KafkaAvroPayloadIntegrationSpec extends FlinkKafkaAvroSpecMixin with Befor
         schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
         sinkKeyParamName.value            -> "".spel,
         sinkRawEditorParamName.value      -> "true".spel,
-        sinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
+        sinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'".spel,
         sinkValueParamName.value          -> s"{field: #extractedTimestamp}".spel
       )
 
@@ -353,7 +354,7 @@ class KafkaAvroPayloadIntegrationSpec extends FlinkKafkaAvroSpecMixin with Befor
         schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
         sinkKeyParamName.value            -> "".spel,
         sinkRawEditorParamName.value      -> "true".spel,
-        sinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
+        sinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'".spel,
         sinkValueParamName.value          -> s"{field: #extractedTimestamp}".spel
       )
 

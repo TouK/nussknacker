@@ -2,10 +2,13 @@ package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
 import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.generic.{GenericData, GenericRecord}
+import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
@@ -29,7 +32,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
   schemaVersionParamName,
   topicParamName
 }
-import pl.touk.nussknacker.engine.schemedkafka.helpers.FlinkKafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.schemedkafka.helpers.{KafkaSchemaRegistryMixin, KafkaSourceSpecificTestDataMixin}
 import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ExistingSchemaVersion,
@@ -39,18 +42,29 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
 }
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
 import java.nio.charset.StandardCharsets
 import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 
-class KafkaAvroPayloadSourceFactorySpec extends FlinkKafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
+class KafkaAvroPayloadSourceFactorySpec
+    extends AnyFunSuite
+    with KafkaSchemaRegistryMixin
+    with KafkaSourceSpecificTestDataMixin
+    with WithMockSchemaRegistryWithSampleSchemasRegistered
+    with LazyLogging {
+
+  override protected def resolveModelConfig(config: Config): Config =
+    super
+      .resolveModelConfig(config)
+      .withValue(s"$kafkaComponentsConfigPrefix.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
 
   import KafkaAvroSourceMockSchemaRegistry._
 
-  override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
-
   override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = factory
+
+  override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 
   test("should read generated generic record in v1 with null key") {
     val givenObj = FullNameV1.createRecord("Jan", "Kowalski")
@@ -118,18 +132,13 @@ class KafkaAvroPayloadSourceFactorySpec extends FlinkKafkaAvroSpecMixin with Kaf
   }
 
   test("should return validation errors when schema doesn't exist") {
-    val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
-
-    readLastMessageAndVerify(
+    compileSource(
       universalSourceFactory(useStringForKey = true),
-      "fake-topic",
-      ExistingSchemaVersion(1),
-      null,
-      givenObj
+      prepareNodeParameters("fake-topic", ExistingSchemaVersion(1))
     ) should matchPattern {
       case Invalid(
             NonEmptyList(
-              CustomNodeError(_, "Schema subject doesn't exist.", _),
+              InvalidPropertyFixedValue(`topicParamName`, _, "'fake-topic'", _, _),
               _
             )
           ) =>
@@ -138,22 +147,13 @@ class KafkaAvroPayloadSourceFactorySpec extends FlinkKafkaAvroSpecMixin with Kaf
   }
 
   test("should return validation errors when schema version doesn't exist") {
-    val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
-
-    readLastMessageAndVerify(
+    compileSource(
       universalSourceFactory(useStringForKey = true),
-      RecordTopic.name,
-      ExistingSchemaVersion(3),
-      null,
-      givenObj
+      prepareNodeParameters(RecordTopic.name, ExistingSchemaVersion(3))
     ) should matchPattern {
       case Invalid(
             NonEmptyList(
-              CustomNodeError(
-                _,
-                "Schema version doesn't exist.",
-                _
-              ),
+              InvalidPropertyFixedValue(`schemaVersionParamName`, _, "'3'", _, _),
               _
             )
           ) =>
@@ -194,13 +194,11 @@ class KafkaAvroPayloadSourceFactorySpec extends FlinkKafkaAvroSpecMixin with Kaf
     val serializedValue = valueSerializer.serialize(IntTopicWithKey.name, givenObj)
     kafkaClient.sendRawMessage(IntTopicWithKey.name, serializedKey, serializedValue, Some(0))
 
-    readLastMessageAndVerify(
+    val compiledSource = compileSource(
       universalSourceFactory(useStringForKey = true),
-      IntTopicWithKey.name,
-      ExistingSchemaVersion(1),
-      new String(serializedKey, StandardCharsets.UTF_8),
-      givenObj
-    )
+      prepareNodeParameters(IntTopicWithKey.name, ExistingSchemaVersion(1))
+    ).validValue
+    readLastMessageAndVerify(compiledSource, new String(serializedKey, StandardCharsets.UTF_8), givenObj)
   }
 
   test("should read object with invalid defaults") {
@@ -224,13 +222,12 @@ class KafkaAvroPayloadSourceFactorySpec extends FlinkKafkaAvroSpecMixin with Kaf
     val wrappedObj   = new NonRecordContainer(ArrayOfIntsSchema, arrayOfInts)
     pushMessageWithKey(null, wrappedObj, topic.name, useStringForKey = true)
 
-    readLastMessageAndVerify(
-      universalSourceFactory(useStringForKey = true),
-      topic.name,
-      ExistingSchemaVersion(2),
-      null,
-      arrayOfLongs
-    )
+    val compiledSource =
+      compileSource(
+        universalSourceFactory(useStringForKey = true),
+        prepareNodeParameters(topic.name, ExistingSchemaVersion(2))
+      ).validValue
+    readLastMessageAndVerify(compiledSource, null, arrayOfLongs)
   }
 
   test("should read array of records on top level") {
@@ -242,13 +239,12 @@ class KafkaAvroPayloadSourceFactorySpec extends FlinkKafkaAvroSpecMixin with Kaf
     val wrappedObj       = new NonRecordContainer(ArrayOfRecordsV1Schema, arrayOfRecordsV1)
     pushMessageWithKey(null, wrappedObj, topic.name, useStringForKey = true)
 
-    readLastMessageAndVerify(
-      universalSourceFactory(useStringForKey = true),
-      topic.name,
-      ExistingSchemaVersion(2),
-      null,
-      arrayOfRecordsV2
-    )
+    val compiledSource =
+      compileSource(
+        universalSourceFactory(useStringForKey = true),
+        prepareNodeParameters(topic.name, ExistingSchemaVersion(2))
+      ).validValue
+    readLastMessageAndVerify(compiledSource, null, arrayOfRecordsV2)
   }
 
   test("should read last generated key-value object, simple type") {

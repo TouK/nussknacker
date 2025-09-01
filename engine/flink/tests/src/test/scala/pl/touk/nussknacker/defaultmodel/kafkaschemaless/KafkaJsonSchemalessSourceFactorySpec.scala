@@ -1,45 +1,94 @@
 package pl.touk.nussknacker.defaultmodel.kafkaschemaless
 
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.Validated.Valid
+import cats.data.ValidatedNel
+import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistryClientHolder
-import pl.touk.nussknacker.engine.api.{Context, NodeId}
+import pl.touk.nussknacker.engine.{RuntimeMode, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, OutputVariableNameValue}
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory, TopicName}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
+import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
+import pl.touk.nussknacker.engine.graph.node.{Source => SourceNode}
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
-import pl.touk.nussknacker.engine.language.json.JsonParser
+import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
-import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaSchemaRegistryMixin
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
+import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
+import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, WithModelConfig}
 
 class KafkaJsonSchemalessSourceFactorySpec
     extends AnyFunSuite
     with Matchers
     with WithModelConfig
-    with SchemaRegistryMixin
+    with KafkaSchemaRegistryMixin
     with ValidatedValuesDetailedMessage {
 
-  type KafkaSource = SourceFactory with KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
+  override protected val kafkaComponentsConfigPrefix: String = "not-important"
 
-  override protected val kafkaComponentsConfigPrefix: String = "components.kafka.config"
+  override protected def resolveModelConfig(config: Config): Config = {
+    super
+      .resolveModelConfig(config)
+      .withValue(
+        s"$kafkaComponentsConfigPrefix.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource",
+        fromAnyRef(true)
+      )
+  }
 
   private val schemaRegistryClientProvider = MockSchemaRegistryClientHolder.registerSchemaRegistryClient()
 
   override def schemaRegistryClient: SchemaRegistryClient = schemaRegistryClientProvider.schemaRegistryClient
 
-  private val inputNodeId             = NodeId("input")
+  private lazy val nodeCompiler = {
+    val sourceFactory = new UniversalKafkaSourceFactory(
+      schemaRegistryClientProvider.schemaRegistryClientFactory,
+      UniversalSchemaBasedSerdeProvider
+        .create(schemaRegistryClientProvider.schemaRegistryClientFactory, kafkaComponentsConfig),
+      kafkaComponentsConfig,
+      NamingStrategy.Disabled,
+      new FlinkKafkaSourceImplFactory
+    )
+    val modelData = LocalModelData(ConfigFactory.empty(), List(ComponentDefinition("kafka", sourceFactory)))
+    new NodeCompiler(
+      definitions = modelData.modelDefinition,
+      fragmentDefinitionExtractor = new FragmentParametersDefinitionExtractor(
+        modelData.modelClassLoader,
+        modelData.modelDefinitionWithClasses.classDefinitions,
+        modelData.modelConfig.globalParametersConfig
+      ),
+      expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper,
+      classLoader = modelData.modelClassLoader,
+      listeners = Seq.empty,
+      resultCollector = ProductionServiceInvocationCollector,
+      runtimeMode = RuntimeMode.Live,
+      nodesDeploymentData = NodesDeploymentData.empty,
+      nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
+    )
+  }
+
+  private val sampleTopic = "topicName"
+
   private val dataSampleParameterName = ParameterName("Data sample")
+
+  override protected def beforeAll(): Unit = {
+    super.beforeAll()
+    kafkaClient.createTopic(sampleTopic, 1)
+  }
 
   test("Should handle an empty object data sample") {
     val dataSample = "{}"
@@ -163,58 +212,29 @@ class KafkaJsonSchemalessSourceFactorySpec
   private def typingResultForDataSample(
       dataSample: String,
   ): ValidatedNel[ProcessCompilationError, TypingResult] = {
-    val outputName = "dummy"
-    val dataSampleParam: DefinedEagerParameter = JsonParser
-      .parse(dataSample, ValidationContext.empty, Unknown)
-      .map { typedExpression =>
-        DefinedEagerParameter(
-          typedExpression.expression.evaluate(Context.dummy, Map.empty),
-          typedExpression.returnType
-        )
-      }
-      .validValue
     val params =
-      List[(ParameterName, DefinedEagerParameter)](
-        KafkaUniversalComponentTransformer.topicParamName       -> DefinedEagerParameter("topicName", Typed[String]),
-        KafkaUniversalComponentTransformer.contentTypeParamName -> DefinedEagerParameter("JSON", Typed[String]),
-        dataSampleParameterName                                 -> dataSampleParam
+      List[NodeParameter](
+        NodeParameter(KafkaUniversalComponentTransformer.topicParamName, s"'$sampleTopic'".spel),
+        NodeParameter(KafkaUniversalComponentTransformer.contentTypeParamName, "'JSON'".spel),
+        NodeParameter(dataSampleParameterName, dataSample.jsonExpression)
       )
-    validateParamsAndGetValidationContext(universalSourceFactory, params, outputName)
-      .map(_.localVariables.getOrElse(outputName, throw new IllegalStateException(s"Missing variable $outputName")))
+    validateParamsAndGetValidationContext(params)
+      .map(_.localVariables.getOrElse("input", throw new IllegalStateException(s"Missing input variable")))
   }
 
-  private def validateParamsAndGetValidationContext(
-      sourceFactory: KafkaSource,
-      parameters: List[(ParameterName, DefinedEagerParameter)],
-      outputName: String
-  ): Validated[NonEmptyList[ProcessCompilationError], ValidationContext] = {
-    implicit val nodeId: NodeId = inputNodeId
-    val definition = sourceFactory.contextTransformation(ValidationContext(), List(OutputVariableNameValue(outputName)))
-    val stepResult = definition(sourceFactory.TransformationStep(parameters, None))
-    stepResult match {
-      case sourceFactory.FinalResults(_, Nil, state) =>
-        state.get
-          .asInstanceOf[UniversalKafkaSourceFactory.ImplementationUniversalKafkaSourceFactoryState]
-          .contextInitializer
-          .validationContext(ValidationContext.empty)
-      case result: sourceFactory.FinalResults =>
-        Invalid(NonEmptyList.fromListUnsafe(result.errors))
-      case other =>
-        Invalid(NonEmptyList.one(CustomNodeError(s"Unexpected result of contextTransformation: $other", None)))
+  protected def validateParamsAndGetValidationContext(
+      nodeParameters: List[NodeParameter]
+  ): ValidatedNel[ProcessCompilationError, ValidationContext] = {
+    val compilationResult = nodeCompiler
+      .compileSource(SourceNode("mock-id", SourceRef("kafka", nodeParameters)))(
+        new ScenarioCompilationDependencies(
+          JobData(MetaData("mock-id", StreamMetaData()), ProcessVersion.empty),
+          EngineScenarioCompilationDependencies.empty
+        )
+      )
+    compilationResult.compiledObject.andThen { _ =>
+      compilationResult.validationContext
     }
-  }
-
-  private lazy val schemaRegistryClientFactory: SchemaRegistryClientFactory =
-    schemaRegistryClientProvider.schemaRegistryClientFactory
-
-  private lazy val universalSourceFactory: KafkaSource = {
-    new UniversalKafkaSourceFactory(
-      schemaRegistryClientFactory,
-      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaComponentsConfig),
-      kafkaComponentsConfig,
-      NamingStrategy.Disabled,
-      new FlinkKafkaSourceImplFactory
-    )
   }
 
 }

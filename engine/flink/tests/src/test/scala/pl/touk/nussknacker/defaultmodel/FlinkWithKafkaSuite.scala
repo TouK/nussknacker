@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.defaultmodel
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkTestScenarioRunnerExt
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkKafkaComponentProvider
-import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, KafkaSpec}
+import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.encode.ToAvroSchemaBasedEncoder
@@ -51,8 +51,7 @@ abstract class FlinkWithKafkaSuite
     with BeforeAndAfterAll
     with BeforeAndAfter
     with WithModelConfig
-    with Matchers
-    with WithKafkaComponentsConfig {
+    with Matchers {
 
   override protected val kafkaComponentsConfigPrefix: String = "components.kafka.config"
 
@@ -71,7 +70,10 @@ abstract class FlinkWithKafkaSuite
     valueDeserializer = new KafkaAvroDeserializer(schemaRegistryMockClient)
     val components =
       createFinkKafkaComponentProvider(schemaRegistryClientProvider)
-        .create(kafkaComponentsConfig, ComponentDependencies(ModelConfig.parse(modelConfig), designerDbRef = None)) :::
+        .create(
+          modelConfig.getConfig(kafkaComponentsConfigPrefix),
+          ComponentDependencies(ModelConfig.parse(modelConfig), designerDbRef = None)
+        ) :::
         additionalComponents
     testScenarioRunner = TestScenarioRunner
       .flinkBased(modelConfig, flinkMiniCluster)
@@ -80,7 +82,7 @@ abstract class FlinkWithKafkaSuite
         AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(
           executionConfig,
           schemaRegistryClientProvider.schemaRegistryClientFactory,
-          parsedKafkaComponentsConfig
+          kafkaComponentsConfig
         )
       }))
       .build()
@@ -94,34 +96,24 @@ abstract class FlinkWithKafkaSuite
 
   protected def avroAsJsonSerialization = false
 
-  override def kafkaComponentsConfig: Config = {
-    val config = ConfigFactory
-      .empty()
-      .withValue(
-        KafkaConfigProperties.bootstrapServersProperty("config"),
-        fromAnyRef(kafkaServer.bootstrapServers)
-      )
-      .withValue(
-        KafkaConfigProperties.property("config", "auto.offset.reset"),
-        fromAnyRef("earliest")
-      )
-      .withValue("config.avroAsJsonSerialization", fromAnyRef(avroAsJsonSerialization))
-      .withValue("config.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
+  override protected def resolveModelConfig(config: Config): Config = {
+    val baseModelConfig = super
+      .resolveModelConfig(config)
+      .withValue(s"$kafkaComponentsConfigPrefix.avroAsJsonSerialization", fromAnyRef(avroAsJsonSerialization))
+      .withValue(s"$kafkaComponentsConfigPrefix.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
       // we turn off auto registration to do it on our own passing mocked schema registry client
       .withValue(
-        s"config.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}",
+        s"$kafkaComponentsConfigPrefix.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}",
         fromAnyRef(false)
       )
-    maybeAddSchemaRegistryUrl(config)
+    maybeAddSchemaRegistryUrl(baseModelConfig)
   }
 
   protected def maybeAddSchemaRegistryUrl(config: Config): Config = config.withValue(
-    KafkaConfigProperties.property("config", "schema.registry.url"),
+    KafkaConfigProperties.property(kafkaComponentsConfigPrefix, "schema.registry.url"),
     fromAnyRef("not_used")
   )
 
-  lazy val parsedKafkaComponentsConfig: KafkaComponentsConfig =
-    KafkaComponentsConfig.parseConfig(modelConfig.getConfig(kafkaComponentsConfigPrefix))
   protected val avroEncoder: ToAvroSchemaBasedEncoder = ToAvroSchemaBasedEncoder(ValidationMode.strict)
 
   protected val givenNotMatchingAvroObj: GenericData.Record = avroEncoder.encodeRecordOrError(
@@ -299,8 +291,4 @@ object SampleSchemas {
 
   val ThirdRecordSchema: Schema = AvroUtils.parseSchema(ThirdRecordSchemaStringV1)
 
-}
-
-trait WithKafkaComponentsConfig {
-  def kafkaComponentsConfig: Config
 }

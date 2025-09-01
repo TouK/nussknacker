@@ -25,10 +25,13 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
 
   private val sampleString = "foobar"
 
-  override def kafkaComponentsConfig: Config = {
-    super.kafkaComponentsConfig
-      .withValue("config.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource", ConfigValueFactory.fromAnyRef(true))
-  }
+  override protected def resolveModelConfig(config: Config): Config =
+    super
+      .resolveModelConfig(config)
+      .withValue(
+        s"$kafkaComponentsConfig.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource",
+        ConfigValueFactory.fromAnyRef(true)
+      )
 
   def shouldRoundTripJsonMessageWithoutProvidedSchema(): Unit = {
 
