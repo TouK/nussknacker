@@ -47,7 +47,7 @@ interface EventsTableProps {
 const emptySelection: GridSelection = { columns: CompactSelection.empty(), rows: CompactSelection.empty() };
 const tableColumns: GridColumn[] = [
     { id: "sourceId", title: "Source", width: 150, hasMenu: false },
-    { id: "variables", title: "Events", width: 300, grow: 1, hasMenu: false },
+    { id: "variables", title: "Input variables", width: 300, grow: 1, hasMenu: false },
 ];
 
 export const TestingEventsTable: React.FC<EventsTableProps> = ({
