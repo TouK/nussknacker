@@ -1,5 +1,3 @@
-import moment from "moment/moment";
-
 import type { TestFormParameters } from "../../../common/TestResultUtils";
 import type { TestingEventParameters } from "./TestingEventsTable";
 
@@ -12,18 +10,9 @@ export const mapEventsToRunTestsFormat = (event: TestingEventParameters) => {
         parsedVariables = event.variables;
     }
 
-    let epochString: string | undefined;
-    if (event.timestamp) {
-        const m = moment(event.timestamp);
-        if (m.isValid()) {
-            epochString = String(m.valueOf());
-        }
-    }
-
     return {
         sourceId: event.sourceId,
         variables: parsedVariables,
-        timestamp: epochString,
     };
 };
 

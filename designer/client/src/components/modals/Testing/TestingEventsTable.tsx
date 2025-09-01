@@ -1,9 +1,9 @@
 import { cx } from "@emotion/css";
 import type { DataEditorProps, DataEditorRef, GridCell, GridSelection, Item, EditListItem } from "@glideapps/glide-data-grid";
 import DataEditor, { CompactSelection, GridCellKind, type CustomCell, type CustomRenderer, drawTextCell } from "@glideapps/glide-data-grid";
+import type { GridColumn } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
 import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
 import type { PopoverPosition } from "@mui/material/Popover/Popover";
-import moment from "moment";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
 import type { TestFormParameters } from "../../../common/TestResultUtils";
@@ -13,14 +13,9 @@ import { useErrorHighlights } from "../../graph/node-modal/editors/expression/Ta
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import { Sizer } from "../../graph/node-modal/editors/expression/Table/Sizer";
 import { useTableTheme } from "../../graph/node-modal/editors/expression/Table/tableTheme";
-import { nodeInput } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import TestingEventsTableSourceEditor from "./TestingEventsTableSourceEditor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { buildDefaultVariablesMap, formatEventVariablesForDisplay } from "./utils";
-
-type DateCellData = { kind: "date-cell"; value: string };
-type DateCell = CustomCell<DateCellData>;
-const isDateCell = (c: GridCell): c is DateCell => c.kind === GridCellKind.Custom && (c as DateCell).data?.kind === "date-cell";
 
 type SourceSelectCellData = { kind: "source-select-cell"; value: string; options: string[] };
 type SourceSelectCell = CustomCell<SourceSelectCellData>;
@@ -29,13 +24,11 @@ const isSourceSelectCell = (c: GridCell): c is SourceSelectCell =>
 
 export interface TestingEventParameters {
     sourceId: string;
-    timestamp?: string;
     variables: string;
 }
 
 export interface TestingEventParametersRequestData {
     sourceId: string;
-    timestamp?: string;
     variables: unknown;
 }
 
@@ -52,10 +45,8 @@ interface EventsTableProps {
 }
 
 const emptySelection: GridSelection = { columns: CompactSelection.empty(), rows: CompactSelection.empty() };
-const displayFormat = "YYYY-MM-DDTHH:mm:ss[Z]";
-const tableColumns = [
+const tableColumns: GridColumn[] = [
     { id: "sourceId", title: "Source", width: 150, hasMenu: false },
-    { id: "timestamp", title: "Timestamp", width: 200, hasMenu: false },
     { id: "variables", title: "Events", width: 300, grow: 1, hasMenu: false },
 ];
 
@@ -94,54 +85,6 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
         [],
     );
 
-    const dateRenderer = useMemo<CustomRenderer<DateCell>>(
-        () => ({
-            kind: GridCellKind.Custom,
-            isMatch: isDateCell,
-            draw: (args, cell) => {
-                const m = moment(cell.data.value).utc();
-                const text = m.isValid() ? m.format(displayFormat) : "";
-                drawTextCell(args, text, cell.contentAlign);
-                return true;
-            },
-            provideEditor: () => ({
-                editor: ({ value, onChange, target }) => {
-                    const mVal = value.data.value ? moment(value.data.value).utc() : undefined;
-                    return (
-                        <div
-                            style={{
-                                width: target.width,
-                                height: target.height,
-                                display: "flex",
-                                alignItems: "center",
-                            }}
-                        >
-                            <DTPicker
-                                open={true}
-                                value={mVal}
-                                inputProps={{
-                                    className: cx([nodeInput]),
-                                }}
-                                dateFormat={displayFormat}
-                                timeFormat={false}
-                                onChange={(m) => {
-                                    const iso = moment.isMoment(m) && m.isValid() ? m.utc().toISOString() : "";
-                                    onChange({
-                                        ...value,
-                                        copyData: iso,
-                                        data: { ...value.data, value: iso },
-                                    });
-                                }}
-                            />
-                        </div>
-                    );
-                },
-                deletedValue: (v) => ({ ...v, copyData: "", data: { ...v.data, value: "" } }),
-            }),
-        }),
-        [],
-    );
-
     const defaultVariablesBySourceId = useMemo(() => buildDefaultVariablesMap(sourceParameters), [sourceParameters]);
 
     const getCellContent = useCallback(
@@ -156,15 +99,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                     data: { kind: "source-select-cell", value: rowData.sourceId || "", options: sourceOptions },
                     readonly: false,
                 } as SourceSelectCell;
-            if (col === 1)
-                return {
-                    kind: GridCellKind.Custom,
-                    allowOverlay: true,
-                    copyData: rowData.timestamp || "",
-                    data: { kind: "date-cell", value: rowData.timestamp || "" },
-                    readonly: false,
-                } as DateCell;
-            if (col === 2) {
+            if (col === 1) {
                 const raw = rowData.variables || "";
                 const display = formatEventVariablesForDisplay(raw);
 
@@ -182,14 +117,13 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
     );
 
     const buildRowUpdates = useCallback(
-        (changes: readonly (EditListItem | { location: Item; value: SourceSelectCell | DateCell })[]) => {
+        (changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[]) => {
             const rowUpdates: Record<number, TestingEventParameters> = {};
             changes.forEach(({ location, value }) => {
                 const [col, row] = location;
                 const prevRow = data[row];
                 const base = rowUpdates[row] || { ...(prevRow || { sourceId: "", timestamp: "", variables: "" }) };
-                const cellValue =
-                    isSourceSelectCell(value) || isDateCell(value) ? value.data.value : (value as any).data?.toString?.() ?? "";
+                const cellValue = isSourceSelectCell(value) ? value.data.value : (value as any).data?.toString?.() ?? "";
                 if (col === 0) {
                     if (prevRow?.sourceId !== cellValue) {
                         const resetVars = cellValue ? defaultVariablesBySourceId[cellValue] ?? "" : "";
@@ -198,8 +132,6 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                         rowUpdates[row] = { ...base, sourceId: cellValue };
                     }
                 } else if (col === 1) {
-                    rowUpdates[row] = { ...base, timestamp: cellValue };
-                } else if (col === 2) {
                     rowUpdates[row] = { ...base, variables: cellValue };
                 }
             });
@@ -266,7 +198,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                     ref={ref}
                     columns={tableColumns}
                     getCellContent={getCellContent}
-                    customRenderers={useMemo(() => [sourceSelectRenderer, dateRenderer], [sourceSelectRenderer, dateRenderer])}
+                    customRenderers={useMemo(() => [sourceSelectRenderer], [sourceSelectRenderer])}
                     getCellsForSelection
                     onCellsEdited={onCellEdited}
                     onRowAppended={onCellAdded}
