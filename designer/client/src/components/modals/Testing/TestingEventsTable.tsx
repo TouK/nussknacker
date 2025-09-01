@@ -1,13 +1,13 @@
-import { cx } from "@emotion/css";
 import type { DataEditorProps, DataEditorRef, GridCell, GridSelection, Item, EditListItem } from "@glideapps/glide-data-grid";
 import DataEditor, { CompactSelection, GridCellKind, type CustomCell, type CustomRenderer, drawTextCell } from "@glideapps/glide-data-grid";
 import type { GridColumn } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
 import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
+import { Box, FormLabel } from "@mui/material";
 import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import type { TestFormParameters } from "../../../common/TestResultUtils";
-import { DTPicker } from "../../common/DTPicker";
 import { CellMenu, DeleteRowMenuItem } from "../../graph/node-modal/editors/expression/Table/CellMenu";
 import { useErrorHighlights } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
@@ -61,6 +61,8 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
     sourceParameters,
     cellErrors,
 }) => {
+    const { t } = useTranslation();
+
     const tableTheme = useTableTheme();
     const [selection, setSelection] = useState<GridSelection>(emptySelection);
     const [hasFocus, setHasFocus] = useState(false);
@@ -181,13 +183,14 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
     );
 
     return (
-        <>
+        <Box display={"flex"} flexDirection={"column"} ml={1}>
+            <FormLabel sx={{ mb: 1 }}>{t("testingDialog.label.inputData", "Input data")}</FormLabel>
             <Sizer
                 offsetParent={`[data-testid="window"] section`}
                 overflowY={false}
                 data-testid="events-table-container"
                 className={className}
-                sx={{ border: "1px solid", borderColor: tableTheme.borderColor, minHeight: "60px", ml: 1 }}
+                sx={{ border: "1px solid", borderColor: tableTheme.borderColor, minHeight: "60px" }}
                 onFocus={() => setHasFocus(true)}
                 onBlur={(e) => {
                     if (e.currentTarget.contains(e.relatedTarget)) return;
@@ -240,6 +243,6 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                 </CellMenu>
             </Sizer>
             {tooltipElement}
-        </>
+        </Box>
     );
 };
