@@ -18,7 +18,6 @@ interface EditorProps {
     target: { width: number; height: number };
 }
 
-// Full editor logic (selection + commit/cancel) extracted from TestingEventsTable
 export const TestingEventsTableSourceEditor: React.FC<EditorProps> = ({ value, onChange, onFinishedEditing, target }) => {
     const originalValueRef = useRef(value.data.value ?? "");
     const currentValueRef = useRef(value.data.value ?? "");

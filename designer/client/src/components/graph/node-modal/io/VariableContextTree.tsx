@@ -94,7 +94,6 @@ export const VariableContextTree = memo(function ValuesContextTree({
     const { availableContexts, hiddenAvailableContexts, setContext, inputVariables, transitionNodesIds, selectedContextCache } =
         useVariableContext(direction);
 
-    console.log("availableContexts", availableContexts);
     const isContextHighlighted = useNewlyAddedContexts(availableContexts);
 
     const { t } = useTranslation();
