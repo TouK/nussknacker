@@ -27,7 +27,7 @@ object DictKeyParameterAdapter extends LazyLogging {
       parameterToAdaptForExpressionOpt match {
         case Some(parameterToAdapt) =>
           logger.info(
-            s"Found DictKeyWithLabel parameter [${parameterToAdapt.paramName.value}] in node [${parameterToAdapt.nodeId}] that needs to be adapted to editors [${parameterToAdapt.parameterEditors.mkString(",")}]"
+            s"Found parameter [${parameterToAdapt.paramName.value}] in node [${parameterToAdapt.nodeId}] that needs to be adapted to editors [${parameterToAdapt.parameterEditors.mkString(",")}]"
           )
           adaptDictKeyExpressionToAvailableEditors(
             original,
@@ -123,7 +123,7 @@ object DictKeyParameterAdapter extends LazyLogging {
 
               matchingAllowedValue match {
                 case Some(matchingValue) =>
-                  val adapted = Expression.spel(s"'$matchingValue'")
+                  val adapted = Expression.spel(matchingValue)
                   logger.info(
                     s"Value of expression [$expression] is adapted to [$adapted] for editors [${editors.mkString(", ")}]"
                   )

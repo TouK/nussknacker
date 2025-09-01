@@ -77,9 +77,18 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
   def createSavedScenario(
       scenario: CanonicalProcess,
       category: String,
+      processingType: String,
+      isFragment: Boolean,
+  ): ProcessId = {
+    saveAndGetId(scenario, category, processingType, isFragment).futureValue
+  }
+
+  def createSavedScenario(
+      scenario: CanonicalProcess,
+      category: String,
       isFragment: Boolean
   ): ProcessId = {
-    saveAndGetId(scenario, category, isFragment).futureValue
+    saveAndGetId(scenario, category, processingTypeBy(category), isFragment).futureValue
   }
 
   def createDeployedExampleScenario(scenarioName: ProcessName, category: String, isFragment: Boolean): ProcessId = {
@@ -169,12 +178,13 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
   ): Future[ProcessId] = {
     val validScenario = ProcessTestData.sampleScenario
     val withNameSet   = validScenario.withProcessName(scenarioName)
-    saveAndGetId(withNameSet, category, isFragment)
+    saveAndGetId(withNameSet, category, processingTypeBy(category), isFragment)
   }
 
   private def saveAndGetId(
       scenario: CanonicalProcess,
       category: String,
+      processingType: String,
       isFragment: Boolean
   ): Future[ProcessId] = {
     val scenarioName = scenario.name
@@ -182,7 +192,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
       scenarioName,
       category,
       scenario,
-      processingTypeBy(category),
+      processingType,
       isFragment,
     )
     for {

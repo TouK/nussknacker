@@ -46,7 +46,6 @@ object ExpressionParseError {
 
   final case class IncompatibleParameterDefinitionErrorDetails(
       paramName: ParameterName,
-      language: Language,
       parameterEditors: List[ParameterEditor],
       nodeId: String,
   ) extends ErrorDetails

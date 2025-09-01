@@ -6056,12 +6056,9 @@ components:
       type: object
       required:
       - paramName
-      - language
       - nodeId
       properties:
         paramName:
-          type: string
-        language:
           type: string
         parameterEditors:
           type: array

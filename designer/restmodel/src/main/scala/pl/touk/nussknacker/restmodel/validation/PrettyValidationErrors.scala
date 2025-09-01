@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   DateTimeParameterEditor,
   DictParameterEditor,
   DurationParameterEditor,
+  FixedExpressionValue,
   FixedValuesParameterEditor,
   FixedValuesWithIconParameterEditor,
   FixedValuesWithRadioParameterEditor,
@@ -31,6 +32,7 @@ import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.TabularDataDefinition
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
@@ -206,8 +208,8 @@ object PrettyValidationErrors {
         )
       case MissingRequiredProperty(paramName, label, _) => missingRequiredProperty(typ, paramName.value, label)
       case UnknownProperty(paramName, _)                => unknownProperty(typ, paramName.value)
-      case InvalidPropertyFixedValue(paramName, label, value, values, _) =>
-        invalidPropertyFixedValue(typ, paramName.value, label, value, values)
+      case InvalidPropertyFixedValue(paramName, label, value, values, nodeId) =>
+        invalidPropertyFixedValue(typ, paramName.value, label, value, values, nodeId)
       case CustomNodeError(_, message, paramName) =>
         NodeValidationError(typ, message, message, paramName.map(_.value), NodeValidationErrorType.SaveAllowed, None)
       case e: DuplicateFragmentOutputNames =>
@@ -309,7 +311,7 @@ object PrettyValidationErrors {
           description =
             s"Incompatible change to the parameter's definition detected. None of editors $parameterEditors supports '$language' language",
           paramName = Some(paramName),
-          details = Some(IncompatibleParameterDefinitionErrorDetails(paramName, language, parameterEditors, nodeId)),
+          details = Some(IncompatibleParameterDefinitionErrorDetails(paramName, parameterEditors, nodeId)),
         )
     }
   }
@@ -341,7 +343,8 @@ object PrettyValidationErrors {
       propertyName: String,
       label: Option[String],
       value: String,
-      values: List[String]
+      values: List[FixedExpressionValue],
+      nodeId: String,
   ) = {
     val labelText = getLabel(label)
     NodeValidationError(
@@ -350,7 +353,13 @@ object PrettyValidationErrors {
       description = s"Expected one of ${values.mkString(", ")}, got: $value.",
       fieldName = Some(propertyName),
       errorType = NodeValidationErrorType.SaveAllowed,
-      details = None
+      details = Some(
+        IncompatibleParameterDefinitionErrorDetails(
+          ParameterName(propertyName),
+          List(FixedValuesParameterEditor(values)),
+          nodeId
+        )
+      ),
     )
   }
 
