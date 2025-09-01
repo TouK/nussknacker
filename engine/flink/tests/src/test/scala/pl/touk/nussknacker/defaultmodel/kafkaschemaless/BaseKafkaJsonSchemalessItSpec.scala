@@ -29,7 +29,7 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
     super
       .resolveModelConfig(config)
       .withValue(
-        s"$kafkaComponentsConfig.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource",
+        s"$kafkaComponentsConfigPrefix.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource",
         ConfigValueFactory.fromAnyRef(true)
       )
 

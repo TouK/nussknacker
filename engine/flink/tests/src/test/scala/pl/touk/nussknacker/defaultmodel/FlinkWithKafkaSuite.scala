@@ -71,7 +71,7 @@ abstract class FlinkWithKafkaSuite
     val components =
       createFinkKafkaComponentProvider(schemaRegistryClientProvider)
         .create(
-          modelConfig.getConfig(kafkaComponentsConfigPrefix),
+          modelConfig.getConfig("components.kafka"),
           ComponentDependencies(ModelConfig.parse(modelConfig), designerDbRef = None)
         ) :::
         additionalComponents
