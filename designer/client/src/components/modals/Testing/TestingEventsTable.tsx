@@ -214,7 +214,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                     gridSelection={hasFocus ? selection : emptySelection}
                     onCellContextMenu={onDataEditorCellContextMenu}
                     getRowThemeOverride={getRowThemeOverride}
-                    trailingRowOptions={{ sticky: true, hint: "Add row" }}
+                    trailingRowOptions={{ sticky: true, hint: "Add record" }}
                     highlightRegions={highlightRegions()}
                     onGridSelectionChange={(selection) => {
                         setSelection(selection);
