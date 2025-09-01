@@ -172,7 +172,7 @@ class MigrationService(
     dictionaryParametersToAdapt match {
       case Some(parametersToAdapt) =>
         val process         = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
-        val modifiedProcess = DictKeyParameterAdapter.adaptDictKeyParameters(process, parametersToAdapt.toList)
+        val modifiedProcess = DictKeyParameterAdapter.adaptParameters(process, parametersToAdapt.toList)
         val resolver        = processResolver.forProcessingTypeUnsafe(processingType)
         val modifiedScenarioGraph = resolver
           .validateAndReverseResolve(

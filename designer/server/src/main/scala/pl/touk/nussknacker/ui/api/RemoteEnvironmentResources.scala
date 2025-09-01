@@ -79,6 +79,8 @@ class RemoteEnvironmentResources(
               withProcess(
                 processIdWithName,
                 version,
+                // Scenario validation is needed in order to validate and resolve
+                // dictionaries before sending migration request to remote environment.
                 GetScenarioWithDetailsOptions.withScenarioGraph.withValidation,
                 details =>
                   {

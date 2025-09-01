@@ -3,6 +3,27 @@ package pl.touk.nussknacker.restmodel.validation
 import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.definition.{
+  BoolParameterEditor,
+  CronParameterEditor,
+  DateParameterEditor,
+  DateTimeParameterEditor,
+  DictParameterEditor,
+  DurationParameterEditor,
+  FixedValuesParameterEditor,
+  FixedValuesWithIconParameterEditor,
+  FixedValuesWithRadioParameterEditor,
+  JsonParameterEditor,
+  JsonTemplateParameterEditor,
+  ParameterEditor,
+  PeriodParameterEditor,
+  SpelParameterEditor,
+  SpelTemplateParameterEditor,
+  SqlParameterEditor,
+  TabularTypedDataEditor,
+  TextareaParameterEditor,
+  TimeParameterEditor
+}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
   ErrorDetails,
   IncompatibleParameterDefinitionErrorDetails
@@ -284,7 +305,7 @@ object PrettyValidationErrors {
       case IncompatibleParameterDefinitionModification(paramName, language, parameterEditors, nodeId) =>
         node(
           message =
-            "There was an incompatible change to the component's parameter definition. Please choose a new valid value",
+            s"There is an incompatible parameter [${paramName.value}] in component [$nodeId]. Its value cannot be used for target editors [${parameterEditors.mkString(", ")}] ",
           description =
             s"Incompatible change to the parameter's definition detected. None of editors $parameterEditors supports '$language' language",
           paramName = Some(paramName),

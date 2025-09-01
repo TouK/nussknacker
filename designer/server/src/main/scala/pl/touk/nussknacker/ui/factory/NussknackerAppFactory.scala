@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHand
 import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.server.{CustomInitializerLoader, NussknackerHttpServer, PekkoHttpBasedRouteFactory}
+import pl.touk.nussknacker.ui.server.{NussknackerHttpServer, PekkoHttpBasedRouteFactory}
 
 import java.time.Clock
 import scala.concurrent.Future
@@ -25,8 +25,7 @@ class NussknackerAppFactory(
       alreadyLoadedConfig <- Resource.eval(designerConfigLoader.loadDesignerConfig())
 
       infrastructureServices <- InfrastructureServices.create(clock, alreadyLoadedConfig)
-      _              <- CustomInitializerLoader.loadCustomInitializer(alreadyLoadedConfig, infrastructureServices)
-      domainServices <- DomainServices.create(designerConfigLoader, alreadyLoadedConfig, infrastructureServices)
+      domainServices         <- DomainServices.create(designerConfigLoader, alreadyLoadedConfig, infrastructureServices)
       _ = initMetrics(
         infrastructureServices.metricsRegistry,
         alreadyLoadedConfig,
