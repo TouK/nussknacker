@@ -4,7 +4,7 @@ import type { TestFormParameters } from "../../../common/TestResultUtils";
 import type { TestingEventParameters } from "./TestingEventsTable";
 
 export const mapEventsToRunTestsFormat = (event: TestingEventParameters) => {
-    let parsedVariables: Record<string, unknown> | string;
+    let parsedVariables: unknown;
     try {
         parsedVariables = JSON.parse(event.variables);
     } catch {
@@ -48,11 +48,11 @@ export function buildDefaultVariablesMap(sourceParameters?: TestFormParameters[]
     if (!sourceParameters) return defaultsBySourceId;
 
     for (const sourceParameter of sourceParameters) {
-        const values: Record<string, unknown> = {};
+        let values: unknown = {};
         const params = sourceParameter?.parameters ?? [];
         for (const param of params) {
             const expr = param?.defaultValue?.expression ?? "";
-            values[param.name] = safeParseExpression(expr);
+            values = safeParseExpression(expr);
         }
 
         try {
@@ -71,7 +71,10 @@ export const formatEventVariablesForDisplay = (raw?: string): string => {
     if (typeof raw !== "string") return String(raw);
     try {
         const parsed = JSON.parse(raw);
-        return typeof parsed === "object" && parsed !== null ? JSON.stringify(parsed, null, 2) : String(parsed);
+        if (typeof parsed === "object" && parsed !== null) {
+            return JSON.stringify(parsed);
+        }
+        return String(parsed);
     } catch {
         return raw.trim();
     }

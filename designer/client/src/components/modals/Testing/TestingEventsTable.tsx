@@ -1,4 +1,4 @@
-import { css, cx } from "@emotion/css";
+import { cx } from "@emotion/css";
 import type { DataEditorProps, DataEditorRef, GridCell, GridSelection, Item, EditListItem } from "@glideapps/glide-data-grid";
 import DataEditor, { CompactSelection, GridCellKind, type CustomCell, type CustomRenderer, drawTextCell } from "@glideapps/glide-data-grid";
 import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
@@ -36,7 +36,7 @@ export interface TestingEventParameters {
 export interface TestingEventParametersRequestData {
     sourceId: string;
     timestamp?: string;
-    variables: Record<string, unknown>;
+    variables: unknown;
 }
 
 interface EventsTableProps {
