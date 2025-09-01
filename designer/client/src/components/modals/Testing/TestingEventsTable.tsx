@@ -16,7 +16,7 @@ import { useTableTheme } from "../../graph/node-modal/editors/expression/Table/t
 import { nodeInput } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import TestingEventsTableSourceEditor from "./TestingEventsTableSourceEditor";
 import "@glideapps/glide-data-grid/dist/index.css";
-import { buildDefaultVariablesMap } from "./utils";
+import { buildDefaultVariablesMap, formatEventVariablesForDisplay } from "./utils";
 
 type DateCellData = { kind: "date-cell"; value: string };
 type DateCell = CustomCell<DateCellData>;

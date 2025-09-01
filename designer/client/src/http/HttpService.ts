@@ -989,7 +989,7 @@ class HttpService {
         promise.catch((error: AxiosError) =>
             this.#addError(
                 i18next.t(
-                    "notification.error.failedTovalidateScenarioWithEventsData",
+                    "notification.error.failedToValidateScenarioWithEventsData",
                     "Failed to generated test data due to: {{axiosError}}",
                     {
                         axiosError: handleAxiosError(error),

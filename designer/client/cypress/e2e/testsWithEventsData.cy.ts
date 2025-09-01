@@ -12,7 +12,7 @@ describe("test with events data", () => {
     });
 
     afterEach(() => {
-        // cy.deleteAllTestProcesses({ filter: seed });
+        cy.deleteAllTestProcesses({ filter: seed });
     });
 
     //TODO: Test sometimes failed because glide data grid elements overlap each other
