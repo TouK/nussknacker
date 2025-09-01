@@ -2,21 +2,32 @@ package pl.touk.nussknacker.defaultmodel.kafkaschemaless
 
 import com.typesafe.config.{Config, ConfigValueFactory}
 import io.circe.{parser, Json}
-import pl.touk.nussknacker.defaultmodel.FlinkWithKafkaSuite
+import pl.touk.nussknacker.defaultmodel.{DefaultConfigCreator, FlinkWithKafkaSuite, MockSchemaRegistryClientHolder}
+import pl.touk.nussknacker.engine.ModelConfig
+import pl.touk.nussknacker.engine.api.component.ComponentDependencies
 import pl.touk.nussknacker.engine.api.process.TopicName.ForSource
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
+import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
+import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
+import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypes
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
+import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.engine.testmode.TestProcess.ExceptionResult
+import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 
-abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
+abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite with PatientScalaFutures {
 
   private val jsonRecord = Json.obj(
     "first"  -> Json.fromString("Jan"),
@@ -272,5 +283,33 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
       }
     }
   }
+
+  // todo: mby it can be embedded into test runner
+  private def withScenarioRunning(
+      canonicalProcess: CanonicalProcess
+  )(actionToInvokeWithScenarioRunning: ResultsCollectingListener[Any] => Unit): Unit =
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val schemaRegistryClientProvider = MockSchemaRegistryClientHolder.registerSchemaRegistryClient()
+      schemaRegistryMockClient = schemaRegistryClientProvider.schemaRegistryClient
+      val components =
+        createFinkKafkaComponentProvider(schemaRegistryClientProvider)
+          .create(
+            kafkaComponentsConfig,
+            ComponentDependencies(ModelConfig.parse(modelConfig), designerDbRef = None)
+          ) :::
+          FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components :::
+          additionalComponents
+      val modelData = LocalModelData(
+        inputConfig = modelConfig,
+        components = components,
+        configCreator = new DefaultConfigCreator
+      )
+      val modelWithCollectingListener =
+        modelData.copy(configCreator = new ConfigCreatorWithCollectingListener(collectingListener))
+      flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+        val executionResult = new FlinkScenarioUnitTestJob(modelWithCollectingListener).run(canonicalProcess, env)
+        flinkMiniCluster.withRunningJob(executionResult.getJobID)(actionToInvokeWithScenarioRunning(collectingListener))
+      }
+    }
 
 }

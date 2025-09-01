@@ -103,6 +103,7 @@ class UniversalKafkaSourceFactory(
       prepareSourceFinalResults(
         preparedTopic,
         Valid((Some(runtimeDataForJsonSchema), Typed.json)),
+        None,
         context,
         dependencies,
         step.parameters,
@@ -117,6 +118,7 @@ class UniversalKafkaSourceFactory(
       prepareSourceFinalResults(
         preparedTopic,
         Valid((Some(runtimeDataForPlainSchema), Typed[String])),
+        None,
         context,
         dependencies,
         step.parameters,
