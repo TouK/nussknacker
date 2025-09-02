@@ -14,10 +14,10 @@ export const AppendRowButton = ({ handleGenerateTestData }: Props) => {
     const { t } = useTranslation();
     const [recordsToAppend, setRecordsToAppend] = useState(10);
     return (
-        <Box display={"flex"} justifyContent={"flex-start"}>
+        <Box display={"flex"} justifyContent={"flex-start"} mt={2}>
             <Box display={"flex"} justifyContent={"center"} alignItems={"center"} gap={0.5}>
                 <StyledLoadingButton
-                    sx={{ ml: 1, mr: 2, fontSize: "14px" }}
+                    sx={{ mr: 2, fontSize: "14px" }}
                     title={t("testingDialog.appendRecordsButton", "Append from live data")}
                     action={() => handleGenerateTestData(recordsToAppend)}
                 />

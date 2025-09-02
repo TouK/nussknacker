@@ -188,7 +188,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                 overflowY={false}
                 data-testid="events-table-container"
                 className={className}
-                sx={{ border: "1px solid", borderColor: tableTheme.borderColor, minHeight: "60px" }}
+                sx={{ border: "1px solid", borderColor: tableTheme.borderColor }}
                 onFocus={() => setHasFocus(true)}
                 onBlur={(e) => {
                     if (e.currentTarget.contains(e.relatedTarget)) return;
@@ -209,6 +209,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                     smoothScrollY
                     theme={tableTheme}
                     width="100%"
+                    height={"65vh"}
                     gridSelection={hasFocus ? selection : emptySelection}
                     onCellContextMenu={onDataEditorCellContextMenu}
                     getRowThemeOverride={getRowThemeOverride}

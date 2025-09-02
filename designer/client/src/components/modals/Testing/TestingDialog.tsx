@@ -1,4 +1,4 @@
-import { Box, FormLabel } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import type { ElementType, ReactElement } from "react";
 import React, { useCallback, useMemo, useState } from "react";
@@ -168,24 +168,27 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
             subheader={<NodeDocs name={viewParams.docs?.label} href={viewParams.docs?.url} />}
             buttons={buttons}
         >
-            <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }} pl={1}>
-                <Box display={"flex"} justifyContent={"space-between"} alignItems={"flex-end"} px={1} pt={2}>
-                    <FormLabel>{t("testingDialog.label.inputDataRecords", "Input data records")}</FormLabel>
+            <ContentSize>
+                <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }} pl={1}>
+                    <Typography mt={0} variant={"h3"}>
+                        {t("testingDialog.label.inputDataRecords", "Input data records")}
+                    </Typography>
+                    <Box display={"flex"} sx={{ padding: "2.5px" }}>
+                        <TestingEventsTable
+                            sourceOptions={sourceOptions}
+                            sourceParameters={testCapabilities.testWithParameters.sourceParameters}
+                            data={events}
+                            cellErrors={cellErrors}
+                            onRowUpdated={handleRowUpdated}
+                            onRowAdded={handleRowAdded}
+                            onRowsDeleted={handleRowsDeleted}
+                            defaultEvent={defaultEvent}
+                        />
+                    </Box>
+
+                    <AppendRowButton handleGenerateTestData={handleGenerateTestData} />
                 </Box>
-                <ContentSize>
-                    <TestingEventsTable
-                        sourceOptions={sourceOptions}
-                        sourceParameters={testCapabilities.testWithParameters.sourceParameters}
-                        data={events}
-                        cellErrors={cellErrors}
-                        onRowUpdated={handleRowUpdated}
-                        onRowAdded={handleRowAdded}
-                        onRowsDeleted={handleRowsDeleted}
-                        defaultEvent={defaultEvent}
-                    />
-                </ContentSize>
-                <AppendRowButton handleGenerateTestData={handleGenerateTestData} />
-            </Box>
+            </ContentSize>
         </WindowContent>
     );
 }

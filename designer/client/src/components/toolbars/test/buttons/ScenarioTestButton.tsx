@@ -96,7 +96,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                 isModal: true,
                 kind: WindowKind.scenarioTest,
                 minWidth: 1200,
-                minHeight: 600,
+                minHeight: 700,
                 meta: {
                     viewParams: {
                         Icon: TestingIcon,
