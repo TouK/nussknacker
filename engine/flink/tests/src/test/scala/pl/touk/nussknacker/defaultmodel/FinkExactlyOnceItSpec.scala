@@ -25,7 +25,7 @@ class FinkExactlyOnceItSpec extends FlinkWithKafkaSuite with PatientScalaFutures
       .withValue(s"$kafkaComponentsConfigPrefix.sinkDeliveryGuarantee", fromAnyRef("EXACTLY_ONCE"))
       .withValue(
         KafkaConfigProperties.property(kafkaComponentsConfigPrefix, "isolation.level"),
-        fromAnyRef("EXACTLY_ONCE")
+        fromAnyRef("read_committed")
       )
 
   private val inputOutputMessage =
