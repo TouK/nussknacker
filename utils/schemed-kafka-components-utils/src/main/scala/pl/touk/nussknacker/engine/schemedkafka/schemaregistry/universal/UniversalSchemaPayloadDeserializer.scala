@@ -4,11 +4,11 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
 import org.apache.avro.io.DecoderFactory
-import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import org.json.JSONTokener
 import pl.touk.nussknacker.engine.api.json.decoders.{FromJsonSimpleDecoder, FromJsonTypingResultBasedDecoder}
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroRecordDeserializer, DatumReaderWriterMixin}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
@@ -111,8 +111,11 @@ class JsonTypingResultPayloadDeserializer(typingResult: TypingResult) extends Un
       writerSchemaData: RuntimeSchemaData[ParsedSchema],
       buffer: ByteBuffer
   ): Any = {
-    val jsonSchema =
-      expectedSchemaData.getOrElse(writerSchemaData).asInstanceOf[RuntimeSchemaData[OpenAPIJsonSchema]].schema
+    val jsonSchema: OpenAPIJsonSchema =
+      expectedSchemaData
+        .getOrElse(writerSchemaData)
+        .schema
+        .asInstanceOf[OpenAPIJsonSchema]
 
     val bytes = new Array[Byte](buffer.remaining())
     buffer.get(bytes)

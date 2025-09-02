@@ -241,7 +241,7 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite with Pa
     }
   }
 
-  def shouldThrowIfJsonMessageCannotBeDeserializedBasedOnTheInferredDataSampleType(): Unit = {
+  def shouldDropEventsBasedOnTheInferredDataSampleType(): Unit = {
     def assertDecodingFailureException(e: ExceptionResult[Any])(value: String) = {
       e.nodeId shouldBe Some("start")
       e.throwable shouldBe a[CustomNodeValidationException]
