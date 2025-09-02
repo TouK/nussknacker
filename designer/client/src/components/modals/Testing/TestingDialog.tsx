@@ -173,7 +173,7 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
                     <Typography mt={0} variant={"h3"}>
                         {t("testingDialog.label.inputDataRecords", "Input data records")}
                     </Typography>
-                    <Box display={"flex"} sx={{ padding: "2.5px" }}>
+                    <Box display={"flex"} sx={(theme) => ({ padding: theme.spacing(2) })}>
                         <TestingEventsTable
                             sourceOptions={sourceOptions}
                             sourceParameters={testCapabilities.testWithParameters.sourceParameters}
