@@ -28,7 +28,7 @@ class KafkaJsonSchemalessNoSchemaRegistryItSpec extends BaseKafkaJsonSchemalessI
   }
 
   test("should throw if json message cannot be deserialized based on the inferred data sample type") {
-    shouldThrowIfJsonMessageCannotBeDeserializedBasedOnTheInferredDataSampleType()
+    shouldDropEventsBasedOnTheInferredDataSampleType()
   }
 
 }
