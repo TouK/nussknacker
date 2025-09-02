@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.embedded.EmbeddedDeploymentManager
 import pl.touk.nussknacker.engine.embedded.streaming.StreamingDeploymentStrategy
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
+import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaSchemaRegistryMixin
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.test.{FailingContextClassloader, VeryPatientScalaFutures}
@@ -31,7 +31,7 @@ import scala.jdk.CollectionConverters._
 
 trait BaseStreamingEmbeddedDeploymentManagerTest
     extends AnyFunSuite
-    with SchemaRegistryMixin
+    with KafkaSchemaRegistryMixin
     with Matchers
     with VeryPatientScalaFutures {
 

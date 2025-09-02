@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClie
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientBuilder
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 
-trait KafkaAvroSourceSpecMixin {
+trait WithMockSchemaRegistryWithSampleSchemasRegistered {
 
   object KafkaAvroSourceMockSchemaRegistry {
 

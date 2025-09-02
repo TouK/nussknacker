@@ -148,8 +148,11 @@ class FlinkNamespacedKafkaTest extends BaseFlinkNamespacedKafkaTest {
 
 class FlinkDisabledNamespacedKafkaTest extends BaseFlinkNamespacedKafkaTest {
 
-  override def kafkaComponentsConfig: Config =
-    super.kafkaComponentsConfig.withValue("disableNamespace", fromAnyRef(true))
+  override protected def resolveModelConfig(config: Config): Config =
+    super
+      .resolveModelConfig(config)
+      // We can't use kafkaComponentsConfigPrefix because this one flag is on top, "kafka" level, see notice in BaseFlinkKafkaComponentProvider
+      .withValue(s"components.kafka.disableNamespace", fromAnyRef(true))
 
   test("should send message to topic without appended namespace when namespace is disabled for used kafka topic") {
     runTest(

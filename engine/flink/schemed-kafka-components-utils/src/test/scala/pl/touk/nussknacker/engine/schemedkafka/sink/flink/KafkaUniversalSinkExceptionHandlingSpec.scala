@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTo
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
+import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaSchemaRegistryMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.FullNameV1
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
   MockSchemaRegistryClientFactory,
@@ -33,8 +33,7 @@ class KafkaUniversalSinkExceptionHandlingSpec
     extends AnyFunSuite
     with FlinkSpec
     with Matchers
-    with SchemaRegistryMixin
-    with KafkaAvroSinkSpecMixin
+    with KafkaSchemaRegistryMixin
     with CorrectExceptionHandlingSpec {
 
   override protected val kafkaComponentsConfigPrefix: String = "components.kafka.config"

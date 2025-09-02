@@ -13,8 +13,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 class ProjectionSelectionAndMergeOnKafkaSourceOutputSpec
     extends FlinkWithKafkaSuite
     with PatientScalaFutures
-    with LazyLogging
-    with WithKafkaComponentsConfig {
+    with LazyLogging {
 
   override val avroAsJsonSerialization: Boolean = true
 
