@@ -43,7 +43,7 @@ class EventGeneratorSourceFactorySpec
 
     testScenarioRunner.withRunningScenario(scenario) { fixture =>
       eventually {
-        fixture.testResults shouldBe List(input)
+        fixture.testSinkResults shouldBe List(input)
       }
     }
 
@@ -63,7 +63,7 @@ class EventGeneratorSourceFactorySpec
 
     testScenarioRunner.withRunningScenario(scenario) { fixture =>
       eventually {
-        val emittedResults = fixture.testResults
+        val emittedResults = fixture.testSinkResults
         emittedResults.size should be > 1
         emittedResults.distinct.size shouldBe emittedResults.size
       }
@@ -102,7 +102,7 @@ class EventGeneratorSourceFactorySpec
 
     testScenarioRunner.withRunningScenario(scenario) { fixture =>
       val emittedRecord = eventually {
-        val emittedResults = fixture.testResults
+        val emittedResults = fixture.testSinkResults
         emittedResults.size should be > 1
         emittedResults.head
       }
@@ -176,7 +176,7 @@ class EventGeneratorSourceFactorySpec
 
     testScenarioRunner.withRunningScenario(scenario) { fixture =>
       val emittedRecord = eventually {
-        val emittedResults = fixture.testResults
+        val emittedResults = fixture.testSinkResults
         emittedResults.size should be > 1
         emittedResults.head
       }
