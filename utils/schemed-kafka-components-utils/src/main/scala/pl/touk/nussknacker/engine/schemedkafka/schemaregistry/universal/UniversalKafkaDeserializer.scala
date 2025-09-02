@@ -20,6 +20,9 @@ class UniversalKafkaDeserializer[T](
 
   private val schemaSupportDispatcher = UniversalSchemaSupportDispatcher(kafkaComponentsConfig)
 
+  private val deserializerBasedOnDataSampleOpt = dataSampleTypingResult
+    .map(new JsonTypingResultSchemaSupport(_).payloadDeserializer)
+
   override def deserialize(topic: String, data: Array[Byte]): T = {
     throw new IllegalAccessException(
       s"Operation not supported. ${this.getClass.getSimpleName} requires kafka headers to perform deserialization."
@@ -63,12 +66,9 @@ class UniversalKafkaDeserializer[T](
     val writerSchemaData =
       new RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](writerSchema), Some(writerSchemaId.value))
 
-    val payloadDeserializer = dataSampleTypingResult match {
-      case Some(typingResult) =>
-        schemaSupportDispatcher.forTypingResult(typingResult).payloadDeserializer
-      case None =>
-        schemaSupportDispatcher.forParsedSchema(writerSchema).payloadDeserializer
-    }
+    val payloadDeserializer = deserializerBasedOnDataSampleOpt.getOrElse(
+      schemaSupportDispatcher.forParsedSchema(writerSchema).payloadDeserializer
+    )
 
     payloadDeserializer
       .deserialize(readerSchemaDataOpt, writerSchemaData, writerSchemaId.buffer)
