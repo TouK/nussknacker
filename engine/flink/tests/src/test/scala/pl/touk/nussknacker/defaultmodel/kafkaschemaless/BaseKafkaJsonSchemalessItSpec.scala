@@ -239,7 +239,7 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite with Pa
   }
 
   def shouldDropEventsBasedOnTheInferredDataSampleType(): Unit = {
-    def assertDecodingFailureException(e: ExceptionResult[Any])(value: String) = {
+    def assertDecodingFailureException(e: ExceptionResult[_])(value: String) = {
       e.nodeId shouldBe Some("start")
       e.throwable shouldBe a[CustomNodeValidationException]
       e.throwable.getMessage shouldBe s"DecodingFailure at : Got value '$value' with wrong type, expecting object"
@@ -268,13 +268,13 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite with Pa
         .customNode("foo", "previousOutput", "previousValue", "Key" -> "''".spel, "Value" -> "''".spel)
         .emptySink("stop", "dead-end")
 
-    withScenarioRunning(scenario) { collectingListener =>
+    testScenarioRunner.withRunningScenario(scenario) { fixture =>
       sendAsJson("[YOUR JSON]", ForSource(inputTopic), Instant.now.toEpochMilli)
       sendAsJson("\"name\"", ForSource(inputTopic), Instant.now.toEpochMilli)
       sendAsJson("123456", ForSource(inputTopic), Instant.now.toEpochMilli)
 
       eventually {
-        val exceptions = collectingListener.results.exceptions
+        val exceptions = fixture.exceptions
         exceptions.size should be(3)
 
         assertDecodingFailureException(exceptions(0))("[\"YOUR JSON\"]")
@@ -283,33 +283,5 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite with Pa
       }
     }
   }
-
-  // todo: mby it can be embedded into test runner
-  private def withScenarioRunning(
-      canonicalProcess: CanonicalProcess
-  )(actionToInvokeWithScenarioRunning: ResultsCollectingListener[Any] => Unit): Unit =
-    ResultsCollectingListenerHolder.withListener { collectingListener =>
-      val schemaRegistryClientProvider = MockSchemaRegistryClientHolder.registerSchemaRegistryClient()
-      schemaRegistryMockClient = schemaRegistryClientProvider.schemaRegistryClient
-      val components =
-        createFinkKafkaComponentProvider(schemaRegistryClientProvider)
-          .create(
-            kafkaComponentsConfig,
-            ComponentDependencies(ModelConfig.parse(modelConfig), designerDbRef = None)
-          ) :::
-          FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components :::
-          additionalComponents
-      val modelData = LocalModelData(
-        inputConfig = modelConfig,
-        components = components,
-        configCreator = new DefaultConfigCreator
-      )
-      val modelWithCollectingListener =
-        modelData.copy(configCreator = new ConfigCreatorWithCollectingListener(collectingListener))
-      flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
-        val executionResult = new FlinkScenarioUnitTestJob(modelWithCollectingListener).run(canonicalProcess, env)
-        flinkMiniCluster.withRunningJob(executionResult.getJobID)(actionToInvokeWithScenarioRunning(collectingListener))
-      }
-    }
 
 }

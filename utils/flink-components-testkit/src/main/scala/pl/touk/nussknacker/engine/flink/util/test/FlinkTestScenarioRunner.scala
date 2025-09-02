@@ -30,7 +30,8 @@ import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConf
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode.ExecutionMode
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.testmode.TestRunId
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestProcess, TestRunId}
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.test._
 import pl.touk.nussknacker.engine.util.test.TestScenarioCollectorHandler.TestScenarioCollectorHandler
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResultUnit}
@@ -244,7 +245,13 @@ class FlinkTestScenarioRunner(
             ) {
               Future {
                 blocking {
-                  f(new ScenarioVerificationFixture(jobExecutionResult.getJobID, testExtensionsHolder.runId))
+                  f(
+                    new ScenarioVerificationFixture(
+                      jobExecutionResult.getJobID,
+                      testExtensionsHolder.runId,
+                      testScenarioCollectorHandler.resultsCollectingListener
+                    )
+                  )
                 }
               }
             }
@@ -374,14 +381,20 @@ object FlinkTestScenarioRunner {
 
   }
 
-  class ScenarioVerificationFixture(val jobId: JobID, runId: TestRunId) {
+  class ScenarioVerificationFixture(
+      val jobId: JobID,
+      runId: TestRunId,
+      private val testResultsCollectionHandler: ResultsCollectingListener[_]
+  ) {
 
-    def testResults: Seq[AnyRef] = TestResultSinkFactory.extractOutputFor(runId) match {
+    def testSinkResults: Seq[AnyRef] = TestResultSinkFactory.extractOutputFor(runId) match {
       case Output.NotAvailable =>
         List.empty
       case Output.Available(results) =>
         results.toList
     }
+
+    def exceptions: List[TestProcess.ExceptionResult[_]] = testResultsCollectionHandler.results.exceptions
 
   }
 
