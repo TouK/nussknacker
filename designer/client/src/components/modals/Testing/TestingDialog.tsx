@@ -84,11 +84,11 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
         (rowIndex: number, row: TestingEventParameters) => {
             HttpService.validateTestDataWithEventsData(scenarioName, scenarioGraph, row.variables).then(({ data }) =>
                 setCellErrors((prev) => {
-                    const withoutRow = prev.filter((e) => e.y !== rowIndex || e.columnName !== "Events");
+                    const withoutRow = prev.filter((e) => e.y !== rowIndex || e.columnName !== "variables");
                     const newErrors: CellError[] = data.validationErrors.map((validationError) => ({
                         errorMessage: validationError.message,
-                        columnName: "Events",
-                        x: 2, // Events column has static position
+                        columnName: "variables",
+                        x: 1, // Input variables column has static position
                         y: rowIndex,
                     }));
                     if (!newErrors.length) return withoutRow;
