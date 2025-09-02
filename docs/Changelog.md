@@ -255,6 +255,9 @@ description: Stay informed with detailed changelogs covering new features, impro
      }
   ```
   * This setting is optional. If not specified, the default editors remain `SpelTemplateParameterEditor` and `SpelParameterEditor` (no change in behavior).
+* [#8366](https://github.com/TouK/nussknacker/pull/8366) Spring and SpEL upgraded 5.2.23.RELEASE -> 6.2.9.
+  * [Safe navigation operator ?.](https://docs.spring.io/spring-framework/reference/core/expressions/language-ref/operator-safe-navigation.html)
+    is supported for collections, maps and strings.
 * [#8375](https://github.com/TouK/nussknacker/pull/8375) Explicit definition of expression language for default parameter values in component configuration
   * Default value expressions must now explicitly define the expression language using the language field. 
   * If no language is specified, the expression will be interpreted as a SPeL expression by default.
