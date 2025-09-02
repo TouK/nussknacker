@@ -979,11 +979,11 @@ class HttpService {
         return promise;
     }
 
-    generatedTestData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph) {
+    generatedTestData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, numberOfSamples = 10) {
         const sanitizedScenarioGraph = this.#sanitizeScenarioGraph(scenarioGraph);
         const promise = api.post<TestingEventParameters[]>(`/scenarioTesting/${encodeURIComponent(scenarioName)}/generatedTestData`, {
             scenarioGraph: sanitizedScenarioGraph,
-            numberOfSamples: 10,
+            numberOfSamples,
         });
 
         promise.catch((error: AxiosError) =>

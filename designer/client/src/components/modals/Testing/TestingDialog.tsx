@@ -1,8 +1,7 @@
+import { Box, FormLabel } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import type { ElementType, ReactElement } from "react";
-import { useCallback } from "react";
-import { useState } from "react";
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { testScenarioWithEventsData } from "../../../actions/nk/displayTestResults";
@@ -16,6 +15,7 @@ import type { CellError } from "../../graph/node-modal/editors/expression/Table/
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
+import { AppendRowButton } from "./AppendRowButton";
 import type { TestingEventParameters } from "./TestingEventsTable";
 import { TestingEventsTable } from "./TestingEventsTable";
 import { mapGeneratedTestingDataToTableFormat } from "./utils";
@@ -67,10 +67,13 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
     const [events, setEvents] = useState<TestingEventParameters[]>(testingEventsParameters || []);
     const [cellErrors, setCellErrors] = useState<CellError[]>([]);
 
-    const handleGenerateTestData = useCallback(async () => {
-        const { data } = await HttpService.generatedTestData(scenarioName, scenarioGraph);
-        setEvents(data.map(mapGeneratedTestingDataToTableFormat));
-    }, [scenarioGraph, scenarioName]);
+    const handleGenerateTestData = useCallback(
+        async (numberOfSamples: number) => {
+            const { data } = await HttpService.generatedTestData(scenarioName, scenarioGraph, numberOfSamples);
+            setEvents((prevState) => [...prevState, ...data.map(mapGeneratedTestingDataToTableFormat)]);
+        },
+        [scenarioGraph, scenarioName],
+    );
 
     const sourceOptions = useMemo(
         () => testCapabilities.testWithParameters.sourceParameters.flatMap((sourceParameter) => sourceParameter.sourceId),
@@ -141,11 +144,6 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
     const disableTestButton = events.length === 0 || cellErrors.length > 0;
     const buttons: WindowButtonProps[] = useMemo(
         () => [
-            {
-                title: t("testingForm.cancelButton.label", "Generate test Data"),
-                action: handleGenerateTestData,
-                classname: LoadingButtonTypes.tertiaryButton,
-            },
             { title: t("testingForm.cancelButton.label", "Cancel"), action: () => close(), classname: LoadingButtonTypes.secondaryButton },
             {
                 disabled: disableTestButton,
@@ -160,7 +158,7 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
                 },
             },
         ],
-        [close, disableTestButton, dispatch, events, handleGenerateTestData, t],
+        [close, disableTestButton, dispatch, events, t],
     );
 
     return (
@@ -170,18 +168,24 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
             subheader={<NodeDocs name={viewParams.docs?.label} href={viewParams.docs?.url} />}
             buttons={buttons}
         >
-            <ContentSize>
-                <TestingEventsTable
-                    sourceOptions={sourceOptions}
-                    sourceParameters={testCapabilities.testWithParameters.sourceParameters}
-                    data={events}
-                    cellErrors={cellErrors}
-                    onRowUpdated={handleRowUpdated}
-                    onRowAdded={handleRowAdded}
-                    onRowsDeleted={handleRowsDeleted}
-                    defaultEvent={defaultEvent}
-                />
-            </ContentSize>
+            <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }} pl={1}>
+                <Box display={"flex"} justifyContent={"space-between"} alignItems={"flex-end"} px={1} pt={2}>
+                    <FormLabel>{t("testingDialog.label.inputDataRecords", "Input data records")}</FormLabel>
+                </Box>
+                <ContentSize>
+                    <TestingEventsTable
+                        sourceOptions={sourceOptions}
+                        sourceParameters={testCapabilities.testWithParameters.sourceParameters}
+                        data={events}
+                        cellErrors={cellErrors}
+                        onRowUpdated={handleRowUpdated}
+                        onRowAdded={handleRowAdded}
+                        onRowsDeleted={handleRowsDeleted}
+                        defaultEvent={defaultEvent}
+                    />
+                </ContentSize>
+                <AppendRowButton handleGenerateTestData={handleGenerateTestData} />
+            </Box>
         </WindowContent>
     );
 }

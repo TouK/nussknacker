@@ -8,6 +8,7 @@ import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { TestFormParameters } from "../../../common/TestResultUtils";
+import { LoadingButton } from "../../../windowManager/LoadingButton";
 import { CellMenu, DeleteRowMenuItem } from "../../graph/node-modal/editors/expression/Table/CellMenu";
 import { useErrorHighlights } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
@@ -61,8 +62,6 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
     sourceParameters,
     cellErrors,
 }) => {
-    const { t } = useTranslation();
-
     const tableTheme = useTableTheme();
     const [selection, setSelection] = useState<GridSelection>(emptySelection);
     const [hasFocus, setHasFocus] = useState(false);
@@ -183,8 +182,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
     );
 
     return (
-        <Box display={"flex"} flexDirection={"column"} ml={1}>
-            <FormLabel sx={{ mb: 1 }}>{t("testingDialog.label.inputData", "Input data")}</FormLabel>
+        <>
             <Sizer
                 offsetParent={`[data-testid="window"] section`}
                 overflowY={false}
@@ -243,6 +241,6 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                 </CellMenu>
             </Sizer>
             {tooltipElement}
-        </Box>
+        </>
     );
 };
