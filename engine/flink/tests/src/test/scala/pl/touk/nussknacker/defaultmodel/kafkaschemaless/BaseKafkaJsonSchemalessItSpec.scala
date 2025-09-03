@@ -277,7 +277,7 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite with Pa
       sendAsJson("123456", ForSource(inputTopic), Instant.now.toEpochMilli)
 
       eventually {
-        val exceptions = fixture.exceptions
+        val exceptions = fixture.errors
         exceptions.size should be(3)
 
         assertDecodingFailureException(exceptions(0))("[\"YOUR JSON\"]")
