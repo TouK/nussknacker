@@ -394,7 +394,7 @@ object FlinkTestScenarioRunner {
         results.toList
     }
 
-    def exceptions: List[TestProcess.ExceptionResult[_]] = testResultsCollectionHandler.results.exceptions
+    def errors: List[TestProcess.ExceptionResult[_]] = testResultsCollectionHandler.results.exceptions
 
   }
 

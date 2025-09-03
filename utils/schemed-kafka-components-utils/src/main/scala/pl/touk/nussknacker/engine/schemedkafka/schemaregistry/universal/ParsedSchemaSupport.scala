@@ -247,43 +247,6 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
 
 }
 
-class JsonTypingResultSchemaSupport(typingResult: TypingResult) extends UniversalSchemaSupport {
-  private final val jsonSupport = JsonSchemaSupport
-
-  override val payloadDeserializer: UniversalSchemaPayloadDeserializer =
-    new JsonTypingResultPayloadDeserializer(typingResult)
-
-  override def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, isKey: Boolean): Serializer[Any] =
-    jsonSupport.serializer(schemaOpt, c, isKey)
-
-  override def typeDefinition(schema: ParsedSchema): TypingResult =
-    jsonSupport.typeDefinition(schema)
-
-  override def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef =
-    jsonSupport.formValueEncoder(schema, mode)
-
-  override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =
-    jsonSupport.recordFormatterSupport(schemaRegistryClient)
-
-  override def extractSingleParameterForSink(
-      schema: ParsedSchema,
-      validationMode: ValidationMode,
-      rawParameter: Parameter
-  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SingleSchemaBasedParameter] =
-    jsonSupport.extractSingleParameterForSink(schema, validationMode, rawParameter)
-
-  override def extractDynamicParametersForSink(schema: ParsedSchema, restrictedParamNames: Set[ParameterName])(
-      implicit nodeId: NodeId
-  ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    jsonSupport.extractDynamicParametersForSink(schema, restrictedParamNames)
-
-  override def extractParameterForTests(schema: ParsedSchema)(
-      implicit nodeId: NodeId
-  ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    jsonSupport.extractParameterForTests(schema)
-
-}
-
 object NoSchemaJsonSupport extends UniversalSchemaSupport {
 
   private final val jsonSupport = JsonSchemaSupport
