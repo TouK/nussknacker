@@ -21,7 +21,7 @@ class UniversalKafkaDeserializer[T](
   private val schemaSupportDispatcher = UniversalSchemaSupportDispatcher(kafkaComponentsConfig)
 
   private val deserializerBasedOnDataSampleOpt = dataSampleTypingResult
-    .map(new JsonTypingResultSchemaSupport(_).payloadDeserializer)
+    .map(new JsonTypingResultPayloadDeserializer(_))
 
   override def deserialize(topic: String, data: Array[Byte]): T = {
     throw new IllegalAccessException(
