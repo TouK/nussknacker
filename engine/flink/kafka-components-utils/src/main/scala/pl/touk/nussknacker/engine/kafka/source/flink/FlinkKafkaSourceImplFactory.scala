@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalToJsonFormatter
 import pl.touk.nussknacker.engine.schemedkafka.source.KafkaSourceImplFactory
+import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyOptions
 
 import java.time.Instant
 
@@ -27,7 +28,7 @@ class FlinkKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] wit
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
       testParametersInfo: KafkaTestParametersInfo,
       namingStrategy: NamingStrategy,
-      eventTimeParameter: LazyParameter[Instant]
+      watermarkStrategyOptions: WatermarkStrategyOptions
   ): Source =
     new FlinkKafkaSource[K, V](
       preparedTopics,
@@ -37,7 +38,7 @@ class FlinkKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] wit
       contextInitializer,
       testParametersInfo,
       namingStrategy,
-      eventTimeParameter
+      watermarkStrategyOptions
     )
 
 }

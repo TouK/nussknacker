@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalToJsonFormatter
 import pl.touk.nussknacker.engine.schemedkafka.source.KafkaSourceImplFactory
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
+import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyOptions
 
 import java.time.Instant
 
@@ -32,7 +33,8 @@ class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
       testParametersInfo: KafkaTestParametersInfo,
       namingStrategy: NamingStrategy,
-      eventTimeParameter: LazyParameter[Instant]
+      // This options are not handled TODO we should either not present these parameters or add the support for them
+      watermarkStrategyOptions: WatermarkStrategyOptions
   ): Source = {
     new LiteKafkaSourceImpl(
       contextInitializer,

@@ -8,7 +8,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumerBase}
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId}
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.component.StaticParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesWithRadioParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
@@ -30,7 +30,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   TimestampWatermarkHandler
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
-import pl.touk.nussknacker.engine.flink.context.FlinkEventTimeRuntimeHandler
+import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.FlinkDeserializationSchemaWrapper
@@ -42,8 +42,8 @@ import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.{
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.inputParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalToJsonFormatter
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
+import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyOptions
 
-import java.time.Instant
 import java.util
 import java.util.Properties
 import scala.annotation.nowarn
@@ -57,7 +57,7 @@ class FlinkKafkaSource[K, V](
     override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
     testParametersInfo: KafkaTestParametersInfo,
     namingStrategy: NamingStrategy,
-    eventTimeParameter: LazyParameter[Instant]
+    watermarkStrategyOptions: WatermarkStrategyOptions
 ) extends FlinkSource
     with ExplicitUidInOperatorsSupport
     with Serializable
@@ -81,23 +81,20 @@ class FlinkKafkaSource[K, V](
     // 2. initialize Context, compute event time and spool Context to the stream
     rawSourceWithUid
       .map(
-        new FlinkEventTimeRuntimeHandler.ContextInitializingFunction(
+        new FlinkWatermarkStrategyRuntimeHandler.ContextInitializingFunction(
           contextInitializer,
           flinkNodeContext.nodeId,
           flinkNodeContext.convertToEngineRuntimeContext,
-          eventTimeParameter,
+          watermarkStrategyOptions.eventTimeLazyParam,
           flinkNodeContext.lazyParameterHelper
         ),
-        FlinkEventTimeRuntimeHandler.contextInitializingFunctionOutputTypeInfo(
+        FlinkWatermarkStrategyRuntimeHandler.contextInitializingFunctionOutputTypeInfo(
           flinkNodeContext.asOneOutputContext
         )
       )
       // 3. assign timestamp and watermarks
       .assignTimestampsAndWatermarks(
-        FlinkEventTimeRuntimeHandler.watermarkStrategy(
-          kafkaComponentsConfig.defaultMaxOutOfOrdernessMillis,
-          kafkaComponentsConfig.idleTimeoutDuration
-        )
+        FlinkWatermarkStrategyRuntimeHandler.watermarkStrategy(watermarkStrategyOptions)
       )
   }
 

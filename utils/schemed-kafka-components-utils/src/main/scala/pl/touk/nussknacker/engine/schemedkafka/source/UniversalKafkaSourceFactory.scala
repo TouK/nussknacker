@@ -10,7 +10,7 @@ import org.apache.avro.generic.GenericRecord
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
-import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.api.Params.ParamExtractionResult
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -44,10 +44,8 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
 }
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory._
 import pl.touk.nussknacker.engine.schemedkafka.typed.TypingResultFromJsonSampleTypeDeterminer
-import pl.touk.nussknacker.engine.util.eventtime.EventTimeValidationHandler
-import pl.touk.nussknacker.engine.util.eventtime.EventTimeValidationHandler.eventTimeParamName
-
-import java.time.Instant
+import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
+import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyValidationHandler
 
 /**
   * This is universal kafka source - it will handle both avro and json
@@ -60,14 +58,27 @@ class UniversalKafkaSourceFactory(
     val namingStrategy: NamingStrategy,
     protected val implProvider: KafkaSourceImplFactory[Any, Any],
 ) extends KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
-    with EventTimeValidationHandler
+    with WatermarkStrategyValidationHandler
     with SourceFactory
     with WithExplicitTypesToExtract
     with UnboundedStreamComponent {
 
   override type State = UniversalKafkaSourceFactoryState
 
-  override def typesToExtract: List[TypedClass] =
+  override protected val eventTimeDefaultValueExpression: Expression = "#inputMeta.timestamp".spel
+
+  override protected val maxOutOfOrdernessDefaultValueExpression: Expression = {
+    val seconds = kafkaComponentsConfig.defaultMaxOutOfOrdernessMillis.toSeconds
+    s"T(java.time.Duration).parse('PT${seconds}S')".spel
+  }
+
+  override protected val idlenessDefaultValueExpression: Expression =
+    kafkaComponentsConfig.idleTimeoutDuration
+      .map(_.toSeconds)
+      .map(seconds => s"T(java.time.Duration).parse('PT${seconds}S')".spel)
+      .getOrElse("".spel)
+
+  override val typesToExtract: List[TypedClass] =
     Typed.typedClass[GenericRecord] :: Typed.typedClass[TimestampType] :: Nil
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
@@ -77,7 +88,7 @@ class UniversalKafkaSourceFactory(
       schemaParamStep(Nil) orElse
       afterSchemaParamStep(paramsDeterminedAfterSchema) orElse
       nextSteps(context, dependencies) orElse
-      eventTimeStep(context, dependencies)
+      watermarkStrategyParametersStep(context, dependencies)
 
   protected def nextSteps(inputContext: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
@@ -97,9 +108,9 @@ class UniversalKafkaSourceFactory(
       )
       val validFinalState = prepareFinalState(preparedTopic, valueValidationResult, dependencies, step.parameters)
       NextParameters(
-        prepareEventTimeParameter(outputValidationOrEmpty(inputContext, validFinalState)) :: Nil,
+        prepareWatermarkStrategyParameters(outputValidationOrEmpty(inputContext, validFinalState)),
         state = Some(
-          BeforeEventTimeStepKafkaSourceFactoryState(validFinalState)
+          BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState(validFinalState)
         )
       )
     case step @ TransformationStep(
@@ -112,8 +123,8 @@ class UniversalKafkaSourceFactory(
       val validFinalState       = prepareFinalState(preparedTopic, valueValidationResult, dependencies, step.parameters)
 
       NextParameters(
-        prepareEventTimeParameter(outputValidationOrEmpty(inputContext, validFinalState)) :: Nil,
-        state = Some(BeforeEventTimeStepKafkaSourceFactoryState(validFinalState))
+        prepareWatermarkStrategyParameters(outputValidationOrEmpty(inputContext, validFinalState)),
+        state = Some(BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState(validFinalState))
       )
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
@@ -124,8 +135,8 @@ class UniversalKafkaSourceFactory(
       val valueValidationResult = Valid((Some(runtimeDataForPlainSchema), Typed[String]))
       val validFinalState       = prepareFinalState(preparedTopic, valueValidationResult, dependencies, step.parameters)
       NextParameters(
-        prepareEventTimeParameter(outputValidationOrEmpty(inputContext, validFinalState)) :: Nil,
-        state = Some(BeforeEventTimeStepKafkaSourceFactoryState(validFinalState))
+        prepareWatermarkStrategyParameters(outputValidationOrEmpty(inputContext, validFinalState)),
+        state = Some(BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState(validFinalState))
       )
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
@@ -148,8 +159,8 @@ class UniversalKafkaSourceFactory(
       val validFinalState = prepareFinalState(preparedTopic, valueValidationResult, dependencies, step.parameters)
 
       NextParameters(
-        prepareEventTimeParameter(outputValidationOrEmpty(inputContext, validFinalState)) :: Nil,
-        state = Some(BeforeEventTimeStepKafkaSourceFactoryState(validFinalState))
+        prepareWatermarkStrategyParameters(outputValidationOrEmpty(inputContext, validFinalState)),
+        state = Some(BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState(validFinalState))
       )
     case step @ TransformationStep((`topicParamName`, _) :: (`schemaVersionParamName`, _) :: Nil, _) =>
       // Edge case - for some reason Topic/Version is not defined, e.g. when topic or version does not match DefinedEagerParameter(String, _):
@@ -192,11 +203,11 @@ class UniversalKafkaSourceFactory(
       state: Option[UniversalKafkaSourceFactoryState]
   )(implicit nodeId: NodeId): TransformationStepResult = {
     state match {
-      case Some(BeforeEventTimeStepKafkaSourceFactoryState(validFinalState)) =>
+      case Some(BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState(validFinalState)) =>
         prepareSourceFinalResults(validFinalState, inputContext, dependencies, parameters)
       case _ =>
         throw new IllegalStateException(
-          s"Illegal state: $state. Expected state class is: ${classOf[BeforeEventTimeStepKafkaSourceFactoryState].getSimpleName}"
+          s"Illegal state: $state. Expected state class is: ${classOf[BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState].getSimpleName}"
         )
     }
   }
@@ -317,7 +328,7 @@ class UniversalKafkaSourceFactory(
       kafkaContextInitializer,
       prepareKafkaTestParametersInfo(valueSchemaUsedInRuntime, preparedTopic.original, defaultValuesForTestParameters),
       namingStrategy,
-      params.extractDeclaredParamUnsafe[LazyParameter[Instant]](eventTimeParamName)
+      extractWatermarkStrategyOptions(params)
     )
   }
 
@@ -439,7 +450,7 @@ object UniversalKafkaSourceFactory {
 
   sealed trait UniversalKafkaSourceFactoryState
 
-  case class BeforeEventTimeStepKafkaSourceFactoryState(
+  private case class BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState(
       validFinalState: ValidatedNel[ProcessCompilationError, ImplementationUniversalKafkaSourceFactoryState]
   ) extends UniversalKafkaSourceFactoryState
 
