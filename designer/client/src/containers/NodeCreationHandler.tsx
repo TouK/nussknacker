@@ -1,3 +1,4 @@
+import type { dia } from "jointjs";
 import { g } from "jointjs";
 import { useEffect } from "react";
 import { useKey } from "rooks";
@@ -109,10 +110,8 @@ export function useNodeCreationHandler({ panelSide, when = true }: { panelSide: 
     useEffect(() => {
         if (!when) return;
         return dispatch(
-            addListenerTyped("CLOSE_NODE_SELECTOR", ({ data: { node, onPoint, side, edge } }, api) => {
-                if (side !== panelSide) return;
-                toggleCollapse();
-
+            addListenerTyped("CLOSE_NODE_SELECTOR", ({ data: { node, side } }, api) => {
+                if (side === panelSide) toggleCollapse();
                 if (!node) return;
             }),
         );
