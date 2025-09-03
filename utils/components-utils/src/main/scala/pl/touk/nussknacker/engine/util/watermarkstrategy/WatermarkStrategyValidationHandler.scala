@@ -8,7 +8,13 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
-import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableProvidedInRuntime, Parameter, ParameterCategory}
+import pl.touk.nussknacker.engine.api.definition.{
+  AdditionalVariableProvidedInRuntime,
+  DurationParameterEditor,
+  Parameter,
+  ParameterCategory,
+  SpelParameterEditor
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
@@ -20,6 +26,7 @@ import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyValida
 }
 
 import java.time.{Duration, Instant}
+import java.time.temporal.ChronoUnit
 
 object WatermarkStrategyValidationHandler {
 
@@ -50,6 +57,10 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
     Parameter
       .optional[Duration](maxOutOfOrdernessParamName)
       .copy(
+        editors = List(
+          DurationParameterEditor(List(ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS)),
+          SpelParameterEditor
+        ),
         defaultValue = Some(maxOutOfOrdernessDefaultValueExpression),
         hintText = Some("The time period after which late events will be discarded"),
         category = ParameterCategory.Advanced
@@ -59,6 +70,10 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
     Parameter
       .optional[Duration](idlenessParamName)
       .copy(
+        editors = List(
+          DurationParameterEditor(List(ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS)),
+          SpelParameterEditor
+        ),
         defaultValue = Some(idlenessDefaultValueExpression),
         hintText = Some("The time period after which a lack of events marks a stream as idle"),
         category = ParameterCategory.Advanced
