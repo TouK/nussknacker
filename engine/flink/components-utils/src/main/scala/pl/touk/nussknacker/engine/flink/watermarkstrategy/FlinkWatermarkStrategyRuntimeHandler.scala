@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.context
+package pl.touk.nussknacker.engine.flink.watermarkstrategy
 
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
 import org.apache.flink.api.common.functions.{OpenContext, RichMapFunction, RuntimeContext}
@@ -10,10 +10,11 @@ import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, Engine
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.FlinkLazyParameterFunctionHelper
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyOptions
 
 import java.time.{Duration, Instant}
 
-object FlinkEventTimeRuntimeHandler {
+object FlinkWatermarkStrategyRuntimeHandler {
 
   // TODO: rename this hidden variable to human readable name and make it available for user during typing as well
   private val EventTimeVariableName = "$eventTime"
@@ -22,7 +23,7 @@ object FlinkEventTimeRuntimeHandler {
       contextInitializer: ContextInitializer[Raw],
       nodeId: String,
       convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
-      eventTimeParameter: LazyParameter[Instant],
+      eventTimeLazyParam: LazyParameter[Instant],
       lazyParamHelper: FlinkLazyParameterFunctionHelper
   ) extends RichMapFunction[Raw, Context] {
 
@@ -32,7 +33,9 @@ object FlinkEventTimeRuntimeHandler {
 
     override def open(openContext: OpenContext): Unit = {
       contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId)
-      eventTimeFun = lazyParamHelper.createInterpreter(getRuntimeContext).toEvaluateFunction(eventTimeParameter)
+      eventTimeFun = lazyParamHelper
+        .createInterpreter(getRuntimeContext)
+        .toEvaluateFunction(eventTimeLazyParam)
     }
 
     override def map(input: Raw): Context = {
@@ -53,14 +56,12 @@ object FlinkEventTimeRuntimeHandler {
     )
 
   // TODO: use this WatermarkStrategy also in scenario testing mechanism, when common format is used
-  def watermarkStrategy(
-      maxOutOfOrderness: Duration,
-      idleTimeoutDurationOpt: Option[Duration]
-  ): WatermarkStrategy[Context] = {
-    // TODO: make whole WatermarkStrategy (not only timestamp assigner) configurable by user
+  def watermarkStrategy(watermarkStrategyOptions: WatermarkStrategyOptions): WatermarkStrategy[Context] = {
     val strategyWithLateness =
-      WatermarkStrategy.forBoundedOutOfOrderness[Context](maxOutOfOrderness)
-    val strategyWithOptIdleness = idleTimeoutDurationOpt match {
+      WatermarkStrategy.forBoundedOutOfOrderness[Context](
+        watermarkStrategyOptions.maxOutOfOrderness.getOrElse(Duration.ZERO)
+      )
+    val strategyWithOptIdleness = watermarkStrategyOptions.idleTimeout match {
       case Some(duration) => strategyWithLateness.withIdleness(duration)
       case None           => strategyWithLateness
     }

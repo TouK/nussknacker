@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalToJsonFormatter
+import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyOptions
 
 import java.time.Instant
 
@@ -26,7 +27,7 @@ trait KafkaSourceImplFactory[K, V] {
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
       testParametersInfo: KafkaTestParametersInfo,
       namingStrategy: NamingStrategy,
-      eventTimeParameter: LazyParameter[Instant]
+      watermarkStrategyOptions: WatermarkStrategyOptions
   ): Source
 
 }
