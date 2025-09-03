@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalToJsonFormatter
 
-import java.lang.{Long => JLong}
+import java.time.Instant
 
 trait KafkaSourceImplFactory[K, V] {
 
@@ -26,7 +26,7 @@ trait KafkaSourceImplFactory[K, V] {
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
       testParametersInfo: KafkaTestParametersInfo,
       namingStrategy: NamingStrategy,
-      eventTimeParameter: LazyParameter[JLong]
+      eventTimeParameter: LazyParameter[Instant]
   ): Source
 
 }

@@ -11,8 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.FlinkLazyParameterFunctionHelper
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
-import java.lang.{Long => JLong}
-import java.time.Duration
+import java.time.{Duration, Instant}
 
 object FlinkEventTimeRuntimeHandler {
 
@@ -23,13 +22,13 @@ object FlinkEventTimeRuntimeHandler {
       contextInitializer: ContextInitializer[Raw],
       nodeId: String,
       convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
-      eventTimeParameter: LazyParameter[JLong],
+      eventTimeParameter: LazyParameter[Instant],
       lazyParamHelper: FlinkLazyParameterFunctionHelper
   ) extends RichMapFunction[Raw, Context] {
 
     private var contextIdGenerator: ContextIdGenerator = _
 
-    private var eventTimeFun: Context => JLong = _
+    private var eventTimeFun: Context => Instant = _
 
     override def open(openContext: OpenContext): Unit = {
       contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId)
@@ -40,7 +39,8 @@ object FlinkEventTimeRuntimeHandler {
       val contextVariables = contextInitializer.convertToInitialVariables(input).variables
       val baseContext = Context(contextIdGenerator.nextContextId())
         .withVariables(contextVariables)
-      baseContext.withVariable(EventTimeVariableName, eventTimeFun(baseContext))
+      val eventTimeValue = eventTimeFun(baseContext)
+      baseContext.withVariable(EventTimeVariableName, eventTimeValue)
     }
 
   }
@@ -49,7 +49,7 @@ object FlinkEventTimeRuntimeHandler {
       sourceOutputValidationContext: ValidationContext
   ): TypeInformation[Context] =
     TypeInformationDetection.instance.forContext(
-      sourceOutputValidationContext.withVariableUnsafe(EventTimeVariableName, Typed[JLong])
+      sourceOutputValidationContext.withVariableUnsafe(EventTimeVariableName, Typed[Instant])
     )
 
   // TODO: use this WatermarkStrategy also in scenario testing mechanism, when common format is used
@@ -70,12 +70,14 @@ object FlinkEventTimeRuntimeHandler {
   private object EventTimeTimestampAssigner extends SerializableTimestampAssigner[Context] {
 
     override def extractTimestamp(context: Context, recordTimestamp: Long): Long =
-      context.getOrElse[Long](
-        EventTimeVariableName,
-        throw new IllegalStateException(
-          s"$EventTimeVariableName variable is not available. Probably ${classOf[ContextInitializingFunction[_]].getSimpleName} wasn't used"
+      context
+        .getOrElse[Instant](
+          EventTimeVariableName,
+          throw new IllegalStateException(
+            s"$EventTimeVariableName variable is not available. Probably ${classOf[ContextInitializingFunction[_]].getSimpleName} wasn't used"
+          )
         )
-      )
+        .toEpochMilli
 
   }
 

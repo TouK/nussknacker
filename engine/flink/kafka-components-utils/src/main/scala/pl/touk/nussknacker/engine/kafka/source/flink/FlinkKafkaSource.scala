@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -44,7 +43,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalToJsonFormatter
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
-import java.lang.{Long => JLong}
+import java.time.Instant
 import java.util
 import java.util.Properties
 import scala.annotation.nowarn
@@ -58,7 +57,7 @@ class FlinkKafkaSource[K, V](
     override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
     testParametersInfo: KafkaTestParametersInfo,
     namingStrategy: NamingStrategy,
-    eventTimeParameter: LazyParameter[JLong]
+    eventTimeParameter: LazyParameter[Instant]
 ) extends FlinkSource
     with ExplicitUidInOperatorsSupport
     with Serializable
