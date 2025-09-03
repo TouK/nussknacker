@@ -1543,7 +1543,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
-  test("should be able to handle spel type conversions") {
+  test("should be able to handle spel type conversions from string value") {
     parse[String]("T(java.text.NumberFormat).getNumberInstance('PL').format(12.34)", ctx).validExpression
       .evaluateSync[String](ctx) shouldBe "12,34"
     parse[Locale]("'PL'", ctx).validExpression.expression.evaluateSync[Locale](ctx) shouldBe
@@ -1554,7 +1554,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       LocalDate.parse("2007-12-03")
   }
 
-  test("shouldn't allow invalid spel type conversions") {
+  test("shouldn't allow invalid spel type conversions from string value") {
     inside(parse[LocalDate]("'qwerty'")) { case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
       error.message shouldBe s"Bad expression type, expected: LocalDate, found: String(qwerty)"
     }
@@ -1578,6 +1578,45 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     inside(parse[Charset]("'qwerty'")) { case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
       error.message shouldBe s"Bad expression type, expected: Charset, found: String(qwerty)"
     }
+  }
+
+  test("should be able to handle spel type conversions between date types") {
+    parse[Instant]("123L", ctx).validExpression.expression.evaluateSync[Instant](ctx) shouldBe
+      Instant.ofEpochMilli(123L)
+    parse[Instant](
+      "T(java.time.ZonedDateTime).of(2025, 1, 1, 0, 0, 0, 0, T(java.time.ZoneOffset).UTC)",
+      ctx
+    ).validExpression.expression.evaluateSync[Instant](ctx) shouldBe
+      ZonedDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC).toInstant
+    parse[Instant](
+      "T(java.time.OffsetDateTime).of(2025, 1, 1, 0, 0, 0, 0, T(java.time.ZoneOffset).UTC)",
+      ctx
+    ).validExpression.expression.evaluateSync[Instant](ctx) shouldBe
+      OffsetDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC).toInstant
+
+    parse[OffsetDateTime](
+      "T(java.time.ZonedDateTime).of(2025, 1, 1, 0, 0, 0, 0, T(java.time.ZoneOffset).UTC)",
+      ctx
+    ).validExpression.expression.evaluateSync[OffsetDateTime](ctx) shouldBe
+      ZonedDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC).toOffsetDateTime
+
+    parse[LocalDateTime](
+      "T(java.time.ZonedDateTime).of(2025, 1, 1, 0, 0, 0, 0, T(java.time.ZoneOffset).UTC)",
+      ctx
+    ).validExpression.expression.evaluateSync[LocalDateTime](ctx) shouldBe
+      ZonedDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC).toLocalDateTime
+    parse[LocalDateTime](
+      "T(java.time.OffsetDateTime).of(2025, 1, 1, 0, 0, 0, 0, T(java.time.ZoneOffset).UTC)",
+      ctx
+    ).validExpression.expression.evaluateSync[LocalDateTime](ctx) shouldBe
+      OffsetDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC).toLocalDateTime
+
+    parse[LocalDate]("T(java.time.LocalDateTime).of(2025, 1, 1, 0, 0, 0, 0)", ctx).validExpression.expression
+      .evaluateSync[LocalDate](ctx) shouldBe
+      LocalDateTime.of(2025, 1, 1, 0, 0, 0, 0).toLocalDate
+    parse[ChronoLocalDate]("T(java.time.LocalDateTime).of(2025, 1, 1, 0, 0, 0, 0)", ctx).validExpression.expression
+      .evaluateSync[ChronoLocalDate](ctx) shouldBe
+      LocalDateTime.of(2025, 1, 1, 0, 0, 0, 0).toLocalDate
   }
 
   test("comparison of generic type with not generic type") {

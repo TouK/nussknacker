@@ -5,7 +5,7 @@ import org.springframework.core.convert.converter.{ConditionalConverter, Convert
 import org.springframework.core.convert.support.GenericConversionService
 import org.springframework.util.NumberUtils
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
-import pl.touk.nussknacker.engine.api.typed.TypeConversionHandler.{stringConversions, StringConversion}
+import pl.touk.nussknacker.engine.api.typed.TypeConversionHandler.{allSimpleTypesConversions, SimpleTypeConversion}
 
 /**
   * This class creates SpEL's ConversionService. We don't use DefaultConversionService because it has some conversions
@@ -21,8 +21,8 @@ class DefaultSpelConversionsProvider extends SpelConversionsProvider {
     val service = new GenericConversionService
     service.addConverterFactory(new NumberToNumberConverterFactory())
 
-    stringConversions.foreach { case conversion @ StringConversion(convert) =>
-      service.addConverter(classOf[String], conversion.klass, (source: String) => convert(source))
+    allSimpleTypesConversions.foreach { case conversion: SimpleTypeConversion[_, _] =>
+      service.addConverter(conversion.sourceClass, conversion.targetClass, from => conversion.convert(from))
     }
 
     // This is used only to prevent errors when calling function with

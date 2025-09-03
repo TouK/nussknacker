@@ -22,7 +22,7 @@ import scala.util.Try
   */
 private[engine] object TypeConversionHandler {
 
-  private val mapConvertableClassNames = List(AvroIndexedRecordClassName, FlinkTableApiRowClassName)
+  private val toMapConvertibleClassNames = List(AvroIndexedRecordClassName, FlinkTableApiRowClassName)
 
   /**
     * java.math.BigDecimal is quite often returned as a wrapper for all kind of numbers (floating and without floating point).
@@ -31,48 +31,64 @@ private[engine] object TypeConversionHandler {
     * Be default we will be loose.
     */
   // TODO: Add feature flag: strictBigDecimalChecking (default false?)
-  private val ConversionFromClassesForDecimals =
+  private val toDecimalConvertibleClasses =
     StandardTypesClasses.DecimalNumbersOrderedFromWidestToNarrowest.toSet + BigDecimalClass
 
-  case class StringConversion[T: ClassTag](convert: String => T) {
-
-    def klass: Class[T] = {
-      val cl = classTag[T].runtimeClass.asInstanceOf[Class[T]]
-      cl
-    }
-
-    def canConvert(value: String, to: TypedClass): Boolean = {
-      ClassUtils.isAssignable(to.klass, klass, true) && Try(
-        convert(value)
-      ).isSuccess
-    }
-
-  }
-
-  val stringConversions: List[StringConversion[_]] = List(
-    StringConversion(ZoneOffset.of),
-    StringConversion(ZoneId.of),
-    StringConversion((source: String) => {
+  private val fromLiteralStringValueConversions: List[SimpleTypeConversion[String, _]] = List(
+    new FromLiteralStringValueConversion(ZoneOffset.of),
+    new FromLiteralStringValueConversion(ZoneId.of),
+    new FromLiteralStringValueConversion((source: String) => {
       val locale = StringUtils.parseLocale(source)
       assert(LocaleUtils.isAvailableLocale(locale)) // without this check even "qwerty" is considered a Locale
       locale
     }),
-    StringConversion(Charset.forName),
-    StringConversion(Currency.getInstance),
-    StringConversion[UUID]((source: String) =>
+    new FromLiteralStringValueConversion(Charset.forName),
+    new FromLiteralStringValueConversion(Currency.getInstance),
+    new FromLiteralStringValueConversion[UUID]((source: String) =>
       if (StringUtils.hasLength(source)) UUID.fromString(source.trim) else null
     ),
-    StringConversion(LocalTime.parse),
-    StringConversion(LocalDate.parse),
-    StringConversion(LocalDateTime.parse),
-    StringConversion[ChronoLocalDate](LocalDate.parse),
-    StringConversion[ChronoLocalDateTime[_]](LocalDateTime.parse),
-    StringConversion[ZonedDateTime](ZonedDateTime.parse),
-    StringConversion[OffsetDateTime](OffsetDateTime.parse),
-    StringConversion[Instant](Instant.parse),
-    StringConversion[Period](Period.parse),
-    StringConversion[Duration](Duration.parse),
+    new FromLiteralStringValueConversion(LocalTime.parse),
+    new FromLiteralStringValueConversion(LocalDate.parse),
+    new FromLiteralStringValueConversion(LocalDateTime.parse),
+    // SpEL GenericConversionService need a specific class, so we need both conversions for LocalDate/LocalDateTime and for Chrono*
+    new FromLiteralStringValueConversion[ChronoLocalDate](LocalDate.parse),
+    new FromLiteralStringValueConversion[ChronoLocalDateTime[_]](LocalDateTime.parse),
+    new FromLiteralStringValueConversion[ZonedDateTime](ZonedDateTime.parse),
+    new FromLiteralStringValueConversion[OffsetDateTime](OffsetDateTime.parse),
+    new FromLiteralStringValueConversion[Instant](Instant.parse),
+    new FromLiteralStringValueConversion[Period](Period.parse),
+    new FromLiteralStringValueConversion[Duration](Duration.parse),
   )
+
+  private val dateTypesConversions: List[SimpleTypeConversion[_, _]] = List(
+    // to Instant
+    new SimpleTypeConversion[java.lang.Long, Instant](millis => Instant.ofEpochMilli(millis)),
+    new SimpleTypeConversion[ZonedDateTime, Instant](_.toInstant),
+    new SimpleTypeConversion[OffsetDateTime, Instant](_.toInstant),
+    // to OffsetDateTime
+    new SimpleTypeConversion[ZonedDateTime, OffsetDateTime](_.toOffsetDateTime),
+    // to LocalDateTime
+    new SimpleTypeConversion[ZonedDateTime, LocalDateTime](_.toLocalDateTime),
+    new SimpleTypeConversion[OffsetDateTime, LocalDateTime](_.toLocalDateTime),
+    // SpEL GenericConversionService need a specific class, so we need both conversions for LocalDate/LocalDateTime and for Chrono*
+    new SimpleTypeConversion[ZonedDateTime, ChronoLocalDateTime[_]](_.toLocalDateTime),
+    new SimpleTypeConversion[OffsetDateTime, ChronoLocalDateTime[_]](_.toLocalDateTime),
+    // to LocalDate
+    new SimpleTypeConversion[LocalDateTime, LocalDate](_.toLocalDate),
+    new SimpleTypeConversion[ZonedDateTime, LocalDate](_.toLocalDate),
+    new SimpleTypeConversion[OffsetDateTime, LocalDate](_.toLocalDate),
+    // SpEL GenericConversionService need a specific class, so we need both conversions for LocalDate/LocalDateTime and for Chrono*
+    new SimpleTypeConversion[LocalDateTime, ChronoLocalDate](_.toLocalDate),
+    new SimpleTypeConversion[ZonedDateTime, ChronoLocalDate](_.toLocalDate),
+    new SimpleTypeConversion[OffsetDateTime, ChronoLocalDate](_.toLocalDate),
+    // to LocalTime
+    new SimpleTypeConversion[LocalDateTime, LocalTime](_.toLocalTime),
+    new SimpleTypeConversion[ZonedDateTime, LocalTime](_.toLocalTime),
+    new SimpleTypeConversion[OffsetDateTime, LocalTime](_.toLocalTime),
+  )
+
+  val allSimpleTypesConversions: List[SimpleTypeConversion[_, _]] =
+    fromLiteralStringValueConversions ::: dateTypesConversions
 
   def canBeConverted(from: SingleTypingResult, to: TypedClass)(
       implicit conversionStrategy: NonEmptyConversionStrategy
@@ -93,6 +109,7 @@ private[engine] object TypeConversionHandler {
       case Strict => None
       case Loose =>
         Option.when(handleStringToValueClassConversions(from, to))(to) orElse
+          Option.when(handleDateTypesConversions(from.runtimeObjType, to))(to) orElse
           handleArrayToListConversions(from.runtimeObjType, to) orElse
           handleMapConversions(from, to)
     }
@@ -115,9 +132,9 @@ private[engine] object TypeConversionHandler {
     // We can't check precision here so we need to be loose here
     if (StandardTypesClasses
         .isFloatingPointNumber(boxedSuperclassCandidate) || boxedSuperclassCandidate == BigDecimalClass) {
-      ClassUtils.isAssignable(boxedGivenClass, NumberClass, true)
+      ClassUtils.isAssignable(boxedGivenClass, NumberClass)
     } else if (StandardTypesClasses.isDecimalNumber(boxedSuperclassCandidate)) {
-      ConversionFromClassesForDecimals.exists(ClassUtils.isAssignable(boxedGivenClass, _, true))
+      toDecimalConvertibleClasses.exists(ClassUtils.isAssignable(boxedGivenClass, _))
     } else {
       false
     }
@@ -136,9 +153,13 @@ private[engine] object TypeConversionHandler {
   ): Boolean =
     from match {
       case TypedObjectWithValue(_, str: String) =>
-        stringConversions.exists(_.canConvert(str, to))
+        fromLiteralStringValueConversions.exists(_.canConvertValue(str, to))
       case _ => false
     }
+
+  private def handleDateTypesConversions(from: SingleTypingResult, to: TypedClass): Boolean = {
+    dateTypesConversions.exists(_.canConvert(from.runtimeObjType, to))
+  }
 
   // See pl.touk.nussknacker.engine.spel.internal.ArrayToListConverter
   private def handleArrayToListConversions(from: TypedClass, to: TypedClass): Option[SingleTypingResult] = {
@@ -168,7 +189,7 @@ private[engine] object TypeConversionHandler {
         lazy val indexedRecordValueType = superTypeOfTypes(fromFields.values)
 
         Option.when(
-          mapConvertableClassNames.exists(className =>
+          toMapConvertibleClassNames.exists(className =>
             AssignabilityUtil.isAssignableToLoadableClass(fromRuntimeObjClass, className)
           ) &&
             AssignabilityDeterminer.isAssignable(Typed[String], mapKeyParam).isValid &&
@@ -178,6 +199,33 @@ private[engine] object TypeConversionHandler {
         )
       case _ => None
     }
+
+  private class FromLiteralStringValueConversion[To: ClassTag](converter: String => To)
+      extends SimpleTypeConversion[String, To](converter) {
+
+    override def canConvertValue(value: String, to: TypedClass): Boolean = {
+      super.canConvertValue(value, to) && Try(converter(value)).isSuccess
+    }
+
+  }
+
+  class SimpleTypeConversion[From: ClassTag, To: ClassTag](val convert: From => To) {
+
+    val sourceClass: Class[From] =
+      classTag[From].runtimeClass.asInstanceOf[Class[From]]
+
+    val targetClass: Class[To] =
+      classTag[To].runtimeClass.asInstanceOf[Class[To]]
+
+    def canConvertValue(value: From, to: TypedClass): Boolean = {
+      ClassUtils.isAssignable(to.klass, targetClass)
+    }
+
+    def canConvert(from: TypedClass, to: TypedClass): Boolean = {
+      ClassUtils.isAssignable(from.klass, sourceClass) && ClassUtils.isAssignable(to.klass, targetClass)
+    }
+
+  }
 
 }
 
