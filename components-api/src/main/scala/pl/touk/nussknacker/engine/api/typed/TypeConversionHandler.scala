@@ -34,7 +34,7 @@ private[engine] object TypeConversionHandler {
   private val toDecimalConvertibleClasses =
     StandardTypesClasses.DecimalNumbersOrderedFromWidestToNarrowest.toSet + BigDecimalClass
 
-  private val fromLiteralStringValueConversions: List[SimpleTypeConversion[String, _]] = List(
+  private val fromLiteralStringValueConversions: List[FromLiteralStringValueConversion[_]] = List(
     new FromLiteralStringValueConversion(ZoneOffset.of),
     new FromLiteralStringValueConversion(ZoneId.of),
     new FromLiteralStringValueConversion((source: String) => {
@@ -203,8 +203,8 @@ private[engine] object TypeConversionHandler {
   private class FromLiteralStringValueConversion[To: ClassTag](converter: String => To)
       extends SimpleTypeConversion[String, To](converter) {
 
-    override def canConvertValue(value: String, to: TypedClass): Boolean = {
-      super.canConvertValue(value, to) && Try(converter(value)).isSuccess
+    def canConvertValue(value: String, to: TypedClass): Boolean = {
+      ClassUtils.isAssignable(to.klass, targetClass) && Try(converter(value)).isSuccess
     }
 
   }
@@ -216,10 +216,6 @@ private[engine] object TypeConversionHandler {
 
     val targetClass: Class[To] =
       classTag[To].runtimeClass.asInstanceOf[Class[To]]
-
-    def canConvertValue(value: From, to: TypedClass): Boolean = {
-      ClassUtils.isAssignable(to.klass, targetClass)
-    }
 
     def canConvert(from: TypedClass, to: TypedClass): Boolean = {
       ClassUtils.isAssignable(from.klass, sourceClass) && ClassUtils.isAssignable(to.klass, targetClass)
