@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 import { getNeighbors } from "../components/graph/getNeighbors";
 import { useGraph } from "../components/graph/GraphContext";
-import { isModelElement } from "../components/graph/GraphPartialsInTS";
+import { isModelOrStickyNote } from "../components/graph/GraphPartialsInTS";
 import { Events } from "../components/graph/types";
 
 const frameStream = stream<DOMHighResTimeStamp, unknown>((emitter) => {
@@ -32,8 +32,8 @@ export function PanToNodes() {
         const { graph, viewport, processGraphPaper: paper, fit } = instance;
 
         const addSubscription = fromEvents(graph, Events.ADD, (cell: dia.Cell) => cell)
-            .filter(isModelElement)
-            .bufferBy(frameStream.skip(5))
+            .filter(isModelOrStickyNote)
+            .bufferBy(frameStream.bufferWithCount(5))
             .filter((cells) => cells.length > 0)
             .observe((cells) => {
                 const viewBox = viewport.clone().inflate(viewport.width * -0.2, viewport.height * -0.2);
@@ -45,8 +45,8 @@ export function PanToNodes() {
             });
 
         const removeSubscription = fromEvents(graph, Events.REMOVE, (cell: dia.Cell) => cell)
-            .filter(isModelElement)
-            .bufferBy(frameStream.skip(5))
+            .filter(isModelOrStickyNote)
+            .bufferBy(frameStream.bufferWithCount(5))
             .filter((cells) => cells.length > 0)
             .observe(() => {
                 const viewBox = viewport.clone().inflate(viewport.width * -0.25, viewport.height * -0.25);

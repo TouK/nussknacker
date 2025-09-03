@@ -110,7 +110,7 @@ export function nodesDisconnected(from: NodeId, to: NodeId): ThunkAction {
 export function injectNode(node: NodeType, edge: Edge): ThunkAction {
     return async (dispatch, getState) => {
         const state = getState();
-        const scenarioGraph = getScenarioGraph(state);
+        let scenarioGraph = getScenarioGraph(state);
         const processDefinitionData = getProcessDefinitionData(state);
 
         if (!canInjectNode(scenarioGraph, edge.from, node.id, edge.to, processDefinitionData)) return;
@@ -124,6 +124,7 @@ export function injectNode(node: NodeType, edge: Edge): ThunkAction {
             to: edge.to,
         });
 
+        scenarioGraph = getScenarioGraph(getState());
         const inputs = NodeUtils.nodeInputs(node.id, scenarioGraph);
         if (from && NodeUtils.canHaveMoreInputs(node, inputs, processDefinitionData)) {
             dispatch({
@@ -194,15 +195,22 @@ export function stickyNoteSetErrors(stickyNoteErrors: Record<string, NodeValidat
     };
 }
 
-export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edges: Edge[], isCopy = true): ThunkAction {
+type Options = { isCopy?: boolean; dryRun?: boolean };
+export function nodesWithEdgesAdded(
+    nodesWithPositions: NodesWithPositions,
+    edges: Edge[],
+    { isCopy = true, dryRun = false }: Options = {},
+): ThunkAction<Promise<NodeType[]>> {
     return async (dispatch, getState) => {
         const state = getState();
         const processDefinitionData = getProcessDefinitionData(state);
         const scenarioGraph = getScenarioGraph(state);
         const { nodes, layout, idMapping } = prepareNewNodesWithLayout(scenarioGraph.nodes, nodesWithPositions, isCopy);
 
+        if (dryRun) return nodes;
+
         batchGroupBy.startOrExtend();
-        dispatch({
+        await dispatch({
             type: "NODES_WITH_EDGES_ADDED",
             nodes,
             layout,
@@ -211,6 +219,7 @@ export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edge
             processDefinitionData,
         });
         dispatch(layoutChanged());
+        return nodes;
     };
 }
 

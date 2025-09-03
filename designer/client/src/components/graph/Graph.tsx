@@ -309,12 +309,13 @@ export class Graph extends React.Component<Props> {
         });
 
         this.graph.on(Events.ADD, (cell: dia.Element) => {
-            if (!isModelElement(cell)) return;
-            setTimeout(() => {
+            if (!isModelOrStickyNote(cell)) return;
+            // wait for cell.position update
+            requestAnimationFrame(() => {
                 const point = findFreeSpaceForNode(this.processGraphPaper, cell.position(), cell);
                 cell.position(point.x, point.y);
                 this.changeLayoutIfNeeded();
-            }, 0);
+            });
         });
 
         this.fit();
@@ -627,7 +628,7 @@ export class Graph extends React.Component<Props> {
                     x,
                     y,
                 });
-                if (isModelElement(cell)) {
+                if (isModelOrStickyNote(cell)) {
                     const p = cell.position();
                     cell.position(p.x - x, p.y - y);
                 }
@@ -702,15 +703,16 @@ export class Graph extends React.Component<Props> {
                     batchGroupBy.startOrExtend();
                     this.changeLayoutIfNeeded();
                     const nodeData = getNodeData(cellView.model, scenarioGraph);
+                    const offset = cellView.model.position().snapToGrid(1, 1).toJSON();
                     if (isModelElement(cellBelow)) {
                         dispatch(moveNodeReplace(nodeData, getNodeData(cellBelow, scenarioGraph)));
                     } else if (cellBelow?.isLink()) {
-                        dispatch(moveNodeInject(nodeData, cellBelow.attributes.edgeData, cellView.model.position()));
+                        dispatch(moveNodeInject(nodeData, cellBelow.attributes.edgeData, offset));
                     } else {
-                        dispatch(moveNodePlain(nodeData, cellView.model.position()));
+                        dispatch(moveNodePlain(nodeData, offset));
                     }
+                    cellView.model.toFront();
                 }
-                cellView.model.toFront();
                 if (isStickyNoteElement(cellView.model)) this.changeLayoutIfNeeded();
             })
             .on(Events.LINK_CONNECT, (linkView: dia.LinkView, evt: dia.Event, targetView: dia.CellView, targetMagnet: SVGElement) => {
@@ -749,13 +751,13 @@ export class Graph extends React.Component<Props> {
         const invalidNodeIds = [...invalidNodeKeys, ...validationErrors.globalErrors.flatMap((e) => e.nodeIds), ...invalidFragmentNodes];
 
         if (this.props.isFragment !== true) {
-            const stickyNotes: Record<string, NodeValidationError[]> = elements
-                .filter((n) => isStickyNoteElement(n))
-                .reduce((acc, user) => {
-                    acc[user.id.toString()] = validationErrors?.invalidNodes[user.id.toString()] ?? [];
-                    return acc;
-                }, {});
-            if (Object.keys(stickyNotes).length > 0) this.props.dispatch(stickyNoteSetErrors(stickyNotes));
+            const notes = elements.filter((el) => isModelOrStickyNote(el));
+            if (notes.length > 0) {
+                const stickyNotesErrors: Record<string, NodeValidationError[]> = Object.fromEntries(
+                    notes.map(({ id }) => id.toString()).map((id) => [id, validationErrors?.invalidNodes[id]]),
+                );
+                this.props.dispatch(stickyNoteSetErrors(stickyNotesErrors));
+            }
         }
 
         // fast indicator for loose nodes, faster than async validation

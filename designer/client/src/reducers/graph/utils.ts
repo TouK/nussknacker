@@ -1,9 +1,11 @@
+import { produce } from "immer";
 import type { Dictionary } from "lodash";
 import { cloneDeep, mapValues, reject, snakeCase, zipObject } from "lodash";
 
 import type { Layout, NodePosition, NodesWithPositions } from "../../actions/nk";
 import ProcessUtils from "../../common/ProcessUtils";
 import { ExpressionLang } from "../../components/graph/node-modal/editors/expression/types";
+import { replaceValue } from "../../components/graph/node-modal/replaceValue";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { deleteNode } from "../../components/graph/utils/graphUtils";
 import type { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData } from "../../types";
@@ -67,44 +69,33 @@ export function prepareNewNodesWithLayout(
         isCopy,
     );
     return {
-        nodes: newNodesWithPositions.map(({ node }) =>
-            mapValues(node, (value, key) => {
+        nodes: newNodesWithPositions.map(({ node, position }) =>
+            produce(node, (draft) => {
                 // adjust var names - only for new nodes
                 if (!isCopy) {
-                    switch (key) {
-                        case "ref":
-                            if (!value.outputVariableNames) return value;
-                            return {
-                                ...value,
-                                outputVariableNames: mapValues(value.outputVariableNames, (v, k) =>
-                                    snakeCase(`${idMapping[node.id]} ${k}`),
-                                ),
-                            };
-                        case "output":
-                        case "varName":
-                        case "outputVar":
-                            return snakeCase(`${idMapping[node.id]} ${value}`);
-                    }
+                    replaceValue(draft, "ref.outputVariableNames", (value) =>
+                        mapValues(value, (v, k) => snakeCase(`${idMapping[draft.id]} ${k}`)),
+                    );
+                    replaceValue(draft, "output", (value) => snakeCase(`${idMapping[draft.id]} ${value}`));
+                    replaceValue(draft, "varName", (value) => snakeCase(`${idMapping[draft.id]} ${value}`));
+                    replaceValue(draft, "outputName", (value) => snakeCase(`${idMapping[draft.id]} ${value}`));
                 }
-
-                // adjust node names
-                switch (key) {
-                    case "id":
-                        return idMapping[value];
-                    case "branchParameters":
-                        return value?.map((parameter) => ({
-                            ...parameter,
-                            branchId: idMapping[parameter.branchId],
-                        }));
-                }
-
-                return value;
+                replaceValue(draft, "id", (value) => idMapping[value]);
+                replaceValue(draft, "branchParameters", (value) =>
+                    value?.map((parameter) => ({
+                        ...parameter,
+                        branchId: idMapping[parameter.branchId],
+                    })),
+                );
+                replaceValue(node, "additionalFields.layoutData", () => position, false);
             }),
         ),
-        layout: newNodesWithPositions.map(({ position, node }) => ({
-            id: idMapping[node.id],
-            position,
-        })),
+        layout: newNodesWithPositions
+            .filter(({ position }) => Boolean(position))
+            .map(({ position, node }) => ({
+                id: idMapping[node.id],
+                position,
+            })),
         idMapping,
     };
 }

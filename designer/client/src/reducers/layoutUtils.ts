@@ -12,6 +12,7 @@ export function fromMeta(scenarioGraph: ScenarioGraph): Layout {
 
 export const nodes: Reducer<NodeType[]> = (nodes, action) => {
     switch (action.type) {
+        case "LAYOUT_RELOADED":
         case "LAYOUT_CHANGED":
             return nodes?.map((node) => {
                 const layoutData = action.layout.find(({ id }) => id === node.id)?.position || null;

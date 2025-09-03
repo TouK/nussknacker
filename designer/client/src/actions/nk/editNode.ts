@@ -6,6 +6,7 @@ import { replaceNodeData } from "../../components/graph/node-modal/NodeSwitcherU
 import NodeUtils from "../../components/graph/NodeUtils";
 import type { Scenario } from "../../components/Process/types";
 import HttpService from "../../http/HttpService";
+import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { updateAfterNodeDelete } from "../../reducers/graph/utils";
 import { isFragmentCreator } from "../../reducers/selectors/appendFragmentCreator";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
@@ -18,6 +19,7 @@ import { injectNode, nodesWithEdgesAdded } from "./node";
 
 function replaceNode(before: NodeType, after: NodeType): ThunkAction {
     return async (dispatch, getState) => {
+        batchGroupBy.startOrExtend();
         const state = getState();
         const graph = getGraph(state);
         const { scenario } = before.id === after.id ? graph : updateAfterNodeDelete(graph, after.id);
@@ -32,15 +34,15 @@ function replaceNode(before: NodeType, after: NodeType): ThunkAction {
     };
 }
 
-function addNodeWithEdgeAction(node: NodeType, position: g.PlainPoint, edge?: Edge): ThunkAction<Promise<NodeType>> {
+function addNodeWithEdgeAction(node: NodeType, position: g.PlainPoint, edge?: Edge, dryRun = false): ThunkAction<Promise<NodeType>> {
     return async (dispatch, getState) => {
         if (isFragmentCreator(node, getProcessDefinitionData(getState()))) {
             node = await dispatch(createFragment());
         }
         if (!NodeUtils.isAvailable(node, getProcessDefinitionData(getState()))) return;
 
-        await dispatch(nodesWithEdgesAdded([{ node, position }], [edge], false));
-        return node;
+        const [addedNode] = await dispatch(nodesWithEdgesAdded([{ node, position }], [edge], { isCopy: false, dryRun }));
+        return addedNode;
     };
 }
 
@@ -91,21 +93,21 @@ export function editNode(scenarioBefore: Scenario, before: NodeType, after: Node
 }
 
 export function addNodePlain(node: NodeType, offset: g.PlainPoint): ThunkAction {
-    return async (dispatch, getState) => {
+    return async (dispatch) => {
         await dispatch({ type: "ADD_NODE_PLAIN", node, offset });
         await dispatch(addNodeWithEdgeAction(node, offset));
     };
 }
 
 export function addNodeConnected(node: NodeType, edge: Omit<Edge, "from"> | Omit<Edge, "to">, offset: g.PlainPoint): ThunkAction {
-    return async (dispatch, getState) => {
+    return async (dispatch) => {
         await dispatch({ type: "ADD_NODE_CONNECTED", node, edge, offset });
         await dispatch(addNodeWithEdgeAction(node, offset, edge as Edge));
     };
 }
 
 export function addNodeInject(node: NodeType, edge: Edge, offset: g.PlainPoint): ThunkAction {
-    return async (dispatch, getState) => {
+    return async (dispatch) => {
         await dispatch({ type: "ADD_NODE_INJECT", node, edge, offset });
         const addedNode = await dispatch(addNodeWithEdgeAction(node, offset));
         await dispatch(injectNode(addedNode, edge));
@@ -113,42 +115,42 @@ export function addNodeInject(node: NodeType, edge: Edge, offset: g.PlainPoint):
 }
 
 export function addNodeReplace(node: NodeType, old: NodeType): ThunkAction {
-    return async (dispatch, getState) => {
+    return async (dispatch) => {
         await dispatch({ type: "ADD_NODE_REPLACE", node, old });
-        const addedNode = await dispatch(addNodeWithEdgeAction(node, { x: -1000, y: -1000 }));
+        const addedNode = await dispatch(addNodeWithEdgeAction(node, old.additionalFields.layoutData, null, true));
         await dispatch(replaceNode(old, addedNode));
     };
 }
 
 export function addNodeMultiple(nodes: NodeType[], edges: Edge[], offset: g.PlainPoint): ThunkAction {
-    return async (dispatch, getState) => {
+    return async (dispatch) => {
         await dispatch({ type: "ADD_NODE_MULTIPLE", nodes, edges, offset });
         dispatch(nodesWithEdgesAdded(calcNodesOffset(nodes, offset), edges));
     };
 }
 
 export function moveNodePlain(node: NodeType, offset: g.PlainPoint): ThunkAction {
-    return async (dispatch, getState) => {
+    return async (dispatch) => {
         await dispatch({ type: "MOVE_NODE_PLAIN", node, offset });
     };
 }
 
 export function moveNodeInject(node: NodeType, edge: Edge, offset: g.PlainPoint): ThunkAction {
-    return async (dispatch, getState) => {
+    return async (dispatch) => {
         await dispatch({ type: "MOVE_NODE_INJECT", node, edge, offset });
         await dispatch(injectNode(node, edge));
     };
 }
 
 export function moveNodeReplace(node: NodeType, old: NodeType): ThunkAction {
-    return async (dispatch, getState) => {
+    return async (dispatch) => {
         await dispatch({ type: "MOVE_NODE_REPLACE", node, old });
         await dispatch(replaceNode(old, node));
     };
 }
 
 export function editScenarioLabels(scenarioLabels: string[]): ThunkAction {
-    return (dispatch, getState) => {
+    return (dispatch) => {
         dispatch({ type: "EDIT_LABELS", labels: scenarioLabels });
     };
 }
