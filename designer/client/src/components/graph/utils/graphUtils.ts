@@ -73,28 +73,27 @@ export function cleanupNodeInputEdges(scenarioGraph: ScenarioGraph, before: Node
 export function replaceNodeOutputEdges(
     scenarioGraph: ScenarioGraph,
     processDefinitionData: ProcessDefinitionData,
-    edgesAfter: Edge[],
+    changedEdges: Edge[],
     nodeId: NodeType["id"],
 ): ScenarioGraph {
-    const edgesBefore = scenarioGraph.edges.filter(({ from }) => from === nodeId);
+    const outputEdgesBefore = scenarioGraph.edges.filter(({ from }) => from === nodeId);
 
-    if (isEqual(edgesBefore, edgesAfter)) return scenarioGraph;
+    if (isEqual(outputEdgesBefore, changedEdges)) return scenarioGraph;
 
-    const oldTargets = new Set(edgesBefore.map((e) => e.to));
-    const newTargets = new Set(edgesAfter.map((e) => e.to));
-    return {
-        ...scenarioGraph,
-        edges: scenarioGraph.edges.filter(({ from }) => !(from === nodeId)).concat(edgesAfter),
-        nodes: scenarioGraph.nodes.map((node) => {
-            if (newTargets.has(node.id)) {
-                return enrichNodeWithProcessDependentData(node, processDefinitionData, edgesAfter);
-            }
-            if (oldTargets.has(node.id)) {
-                return removeBranchParameter(node, nodeId);
-            }
-            return node;
-        }),
-    };
+    const oldTargets = new Set(outputEdgesBefore.map((e) => e.to));
+    const newTargets = new Set(changedEdges.map((e) => e.to));
+    const edges = scenarioGraph.edges.filter(({ from }) => !(from === nodeId)).concat(changedEdges);
+    const nodes = scenarioGraph.nodes.map((node) => {
+        if (newTargets.has(node.id)) {
+            const inputEdgesAfter = edges.filter((e) => e.to === node.id);
+            return enrichNodeWithProcessDependentData(node, processDefinitionData, inputEdgesAfter);
+        }
+        if (oldTargets.has(node.id)) {
+            return removeBranchParameter(node, nodeId);
+        }
+        return node;
+    });
+    return { ...scenarioGraph, edges, nodes };
 }
 
 export function deleteNode(scenarioGraph: ScenarioGraph, nodeId: NodeId): ScenarioGraph {
