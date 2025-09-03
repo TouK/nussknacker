@@ -47,7 +47,7 @@ import pl.touk.nussknacker.engine.schemedkafka.typed.TypingResultFromJsonSampleT
 import pl.touk.nussknacker.engine.util.eventtime.EventTimeValidationHandler
 import pl.touk.nussknacker.engine.util.eventtime.EventTimeValidationHandler.eventTimeParamName
 
-import java.lang.{Long => JLong}
+import java.time.Instant
 
 /**
   * This is universal kafka source - it will handle both avro and json
@@ -317,7 +317,7 @@ class UniversalKafkaSourceFactory(
       kafkaContextInitializer,
       prepareKafkaTestParametersInfo(valueSchemaUsedInRuntime, preparedTopic.original, defaultValuesForTestParameters),
       namingStrategy,
-      params.extractDeclaredParamUnsafe[LazyParameter[JLong]](eventTimeParamName)
+      params.extractDeclaredParamUnsafe[LazyParameter[Instant]](eventTimeParamName)
     )
   }
 

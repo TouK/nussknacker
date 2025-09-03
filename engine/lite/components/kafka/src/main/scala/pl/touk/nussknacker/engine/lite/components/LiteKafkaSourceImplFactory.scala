@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.Universa
 import pl.touk.nussknacker.engine.schemedkafka.source.KafkaSourceImplFactory
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
-import java.lang.{Long => JLong}
+import java.time.Instant
 
 class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
 
@@ -32,7 +32,7 @@ class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
       testParametersInfo: KafkaTestParametersInfo,
       namingStrategy: NamingStrategy,
-      eventTimeParameter: LazyParameter[JLong]
+      eventTimeParameter: LazyParameter[Instant]
   ): Source = {
     new LiteKafkaSourceImpl(
       contextInitializer,
