@@ -22,6 +22,7 @@ import org.springframework.expression.ParserContext;
 import org.springframework.expression.common.LiteralExpression;
 import org.springframework.expression.spel.SpelParseException;
 import org.springframework.expression.spel.SpelParserConfiguration;
+import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
 import pl.touk.nussknacker.engine.expression.IndexBasedTextRange;
@@ -48,11 +49,15 @@ public class NuSpelExpressionParser {
     private final SpelExpressionParser underlyingParser;
 
     public NuSpelExpressionParser() {
-        this.underlyingParser = new SpelExpressionParser(new SpelParserConfiguration());
+        this.underlyingParser = new SpelExpressionParser(new NuSpelParserConfiguration());
     }
 
     public NuSpelExpressionParser(SpelParserConfiguration configuration) {
         this.underlyingParser = new SpelExpressionParser(configuration);
+    }
+
+    public SpelExpression parseRaw(String expressionString) throws ParseException {
+        return doParseExpression(expressionString, null);
     }
 
     public ExpressionWithTextRange parseExpression(String expressionString) throws ParseException {
@@ -239,7 +244,7 @@ public class NuSpelExpressionParser {
     }
 
     // It returns AST nodes with position local to spel expression
-    private Expression doParseExpression(String expressionString, IndexBasedTextRange expressionTextRange) throws ParseException {
+    private SpelExpression doParseExpression(String expressionString, IndexBasedTextRange expressionTextRange) throws ParseException {
         try {
             return underlyingParser.parseRaw(expressionString);
         } catch (ParseException exception) {

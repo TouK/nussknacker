@@ -6,13 +6,14 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.expression.{ExpressionSubstitution, ExpressionSubstitutionsCollector}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.ast
+import pl.touk.nussknacker.engine.spel.parser.NuSpelExpressionParser
 
 class SpelSubstitutionsCollector(typeForNode: SpelNode => Option[TypingResult], replacingStrategy: ReplacingStrategy)
     extends ExpressionSubstitutionsCollector {
 
   import ast.SpelAst._
 
-  private lazy val parser = new org.springframework.expression.spel.standard.SpelExpressionParser
+  private lazy val parser = new NuSpelExpressionParser()
 
   override def collectSubstitutions(expression: Expression): List[ExpressionSubstitution] = {
     // TODO: handle other languages, especially spel template

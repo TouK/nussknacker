@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.spel
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
-import org.springframework.expression.spel.{SpelNode, SpelParserConfiguration}
+import org.springframework.expression.spel.SpelNode
 import org.springframework.expression.spel.ast._
 import org.springframework.expression.spel.standard.{SpelExpression => SpringSpelExpression}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -444,7 +444,7 @@ class SpelExpressionSuggester(
 }
 
 private class NuSpelNodeParser(typer: SpelTyper) extends LazyLogging {
-  private val parser = new NuSpelExpressionParser(new SpelParserConfiguration)
+  private val parser = new NuSpelExpressionParser()
 
   def parse(
       input: String,

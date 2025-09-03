@@ -4,7 +4,7 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
 import org.springframework.expression.ParseException
-import org.springframework.expression.spel.{SpelCompilerMode, SpelMessage, SpelParseException, SpelParserConfiguration}
+import org.springframework.expression.spel.{SpelCompilerMode, SpelMessage, SpelParseException}
 import pl.touk.nussknacker.engine.api.TemplateEvaluationResult
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
@@ -21,7 +21,8 @@ import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.spel.parser.{
   ExceptionWithExpressionTextRange,
   ExpressionWithTextRange,
-  NuSpelExpressionParser
+  NuSpelExpressionParser,
+  NuSpelParserConfiguration
 }
 
 class SpelExpressionParser(
@@ -176,7 +177,7 @@ object SpelExpressionParser extends LazyLogging {
 
     // we have to pass classloader, because default contextClassLoader can be sth different than we expect...
     val immediateCompileParser = new NuSpelExpressionParser(
-      createSpelParserConfiguration(classLoader)
+      new NuSpelParserConfiguration(SpelCompilerMode.IMMEDIATE, classLoader)
     )
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig, classDefinitionSet)
     val typer = SpelTyper.default(
@@ -193,22 +194,6 @@ object SpelExpressionParser extends LazyLogging {
       enableSpelForceCompile,
       flavour,
       evaluationContextPreparer
-    )
-  }
-
-  private def createSpelParserConfiguration(classLoader: ClassLoader) = {
-    val autoGrowNullReferences = false
-    val autoGrowCollections    = false
-    val maximumAutoGrowSize    = Integer.MAX_VALUE
-    val maximumExpressionLength =
-      Integer.MAX_VALUE // By default, it is limited to 10_000 (DEFAULT_MAX_EXPRESSION_LENGTH)
-    new SpelParserConfiguration(
-      SpelCompilerMode.IMMEDIATE,
-      classLoader,
-      autoGrowNullReferences,
-      autoGrowCollections,
-      maximumAutoGrowSize,
-      maximumExpressionLength
     )
   }
 
