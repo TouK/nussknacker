@@ -92,7 +92,7 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
             const offset = point || intendedCoords.current;
             const edge = currentEdge || intendedConnecion.current;
 
-            dispatch(selectComponent(side, node, offset, intendedConnecion.current));
+            dispatch(selectComponent(side, node));
 
             dispatch((dispatch) => {
                 if (currentNode) {

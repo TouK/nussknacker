@@ -703,7 +703,7 @@ export class Graph extends React.Component<Props> {
                     batchGroupBy.startOrExtend();
                     this.changeLayoutIfNeeded();
                     const nodeData = getNodeData(cellView.model, scenarioGraph);
-                    const offset = cellView.model.position().snapToGrid(1, 1).toJSON();
+                    const offset = cellView.model.position();
                     if (isModelElement(cellBelow)) {
                         dispatch(moveNodeReplace(nodeData, getNodeData(cellBelow, scenarioGraph)));
                     } else if (cellBelow?.isLink()) {
