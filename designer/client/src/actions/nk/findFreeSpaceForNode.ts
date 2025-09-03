@@ -13,7 +13,7 @@ function countCellsInArea(paper: dia.Paper, area: g.Rect, self?: dia.Cell): numb
     return paper.model.findModelsInArea(area).filter((c) => c !== self).length;
 }
 
-function findFreeSpace(
+export function findFreeSpaceForNode(
     paper: dia.Paper,
     plainPoint: g.PlainPoint,
     self?: dia.Cell,
@@ -21,11 +21,7 @@ function findFreeSpace(
 ): g.Point {
     const rect = new g.Rect(plainPoint.x, plainPoint.y, options.width, options.height);
     if (countCellsInArea(paper, rect.clone().inflate(2), self)) {
-        return findFreeSpace(paper, rect.offset(options.dx).topLeft(), self, options);
+        return findFreeSpaceForNode(paper, rect.offset(options.dx).topLeft(), self, options);
     }
     return rect.topLeft();
 }
-
-export const findFreeSpaceForNode = (paper: dia.Paper, plainPoint: g.PlainPoint, self?: dia.Cell): g.PlainPoint => {
-    return findFreeSpace(paper, plainPoint, self).snapToGrid(1, 1).toJSON();
-};
