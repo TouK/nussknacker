@@ -110,6 +110,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                     data: rowData.variables || "",
                     allowOverlay: true,
                     readonly: false,
+                    allowWrapping: true,
                 };
             }
             return { kind: GridCellKind.Text, displayData: "", data: "", allowOverlay: true, readonly: false };
@@ -235,6 +236,11 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                     onItemHovered={toggleTooltip}
                     drawCell={drawCell}
                     onRowMoved={handleRowReorder}
+                    rowHeight={(rowHeight) => {
+                        if (rowHeight >= data.length) return 35;
+
+                        return 70;
+                    }}
                 />
                 <CellMenu anchorPosition={cellMenuData.position} onClose={closeCellMenu}>
                     {cellMenuData.row !== undefined && cellMenuData.row >= 0 && (

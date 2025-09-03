@@ -1,3 +1,5 @@
+import _ from "lodash";
+
 import type { TestFormParameters } from "../../../common/TestResultUtils";
 import type { TestingEventParameters } from "./TestingEventsTable";
 
@@ -58,12 +60,58 @@ export function buildDefaultVariablesMap(sourceParameters?: TestFormParameters[]
 export const formatEventVariablesForDisplay = (raw?: string): string => {
     if (!raw) return "";
     if (typeof raw !== "string") return String(raw);
+
     try {
         const parsed = JSON.parse(raw);
-        if (typeof parsed === "object" && parsed !== null) {
-            return JSON.stringify(parsed);
+
+        if (parsed === null || (!_.isPlainObject(parsed) && !Array.isArray(parsed))) {
+            // primitive value
+            return String(parsed);
         }
-        return String(parsed);
+
+        const entries: string[] = [];
+
+        const traverse = (value: unknown, path: string) => {
+            if (_.isString(value) || typeof value === "number" || typeof value === "boolean" || value === null) {
+                const key = path === "" ? "$" : path;
+                entries.push(`${key}=${String(value)}`);
+                return;
+            }
+
+            if (Array.isArray(value)) {
+                value.forEach((v, idx) => {
+                    const seg = path === "" ? `${idx}` : `${path}.${idx}`;
+                    traverse(v, seg);
+                });
+                return;
+            }
+
+            if (_.isPlainObject(value)) {
+                for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+                    const seg = path === "" ? k : `${path}.${k}`;
+                    traverse(v, seg);
+                }
+                return;
+            }
+
+            // fallback: coerce to string
+            const key = path === "" ? "$" : path;
+            entries.push(`${key}=${String(value)}`);
+        };
+
+        traverse(parsed, "");
+
+        if (entries.length === 0) return JSON.stringify(parsed);
+
+        // sort entries by key (before the '=') alphabetically
+        entries.sort((a, b) => {
+            const ka = a.split("=")[0];
+            const kb = b.split("=")[0];
+            return ka.localeCompare(kb);
+        });
+
+        // join with ';' as requested
+        return entries.join("; ");
     } catch {
         return raw.trim();
     }
