@@ -63,6 +63,7 @@ private[engine] object TypeConversionHandler {
   private val dateTypesConversions: List[SimpleTypeConversion[_, _]] = List(
     // to Instant
     new SimpleTypeConversion[java.lang.Long, Instant](millis => Instant.ofEpochMilli(millis)),
+    new SimpleTypeConversion[java.lang.Integer, Instant](millis => Instant.ofEpochMilli(millis.longValue())),
     new SimpleTypeConversion[ZonedDateTime, Instant](_.toInstant),
     new SimpleTypeConversion[OffsetDateTime, Instant](_.toInstant),
     // to OffsetDateTime
@@ -73,18 +74,6 @@ private[engine] object TypeConversionHandler {
     // SpEL GenericConversionService need a specific class, so we need both conversions for LocalDate/LocalDateTime and for Chrono*
     new SimpleTypeConversion[ZonedDateTime, ChronoLocalDateTime[_]](_.toLocalDateTime),
     new SimpleTypeConversion[OffsetDateTime, ChronoLocalDateTime[_]](_.toLocalDateTime),
-    // to LocalDate
-    new SimpleTypeConversion[LocalDateTime, LocalDate](_.toLocalDate),
-    new SimpleTypeConversion[ZonedDateTime, LocalDate](_.toLocalDate),
-    new SimpleTypeConversion[OffsetDateTime, LocalDate](_.toLocalDate),
-    // SpEL GenericConversionService need a specific class, so we need both conversions for LocalDate/LocalDateTime and for Chrono*
-    new SimpleTypeConversion[LocalDateTime, ChronoLocalDate](_.toLocalDate),
-    new SimpleTypeConversion[ZonedDateTime, ChronoLocalDate](_.toLocalDate),
-    new SimpleTypeConversion[OffsetDateTime, ChronoLocalDate](_.toLocalDate),
-    // to LocalTime
-    new SimpleTypeConversion[LocalDateTime, LocalTime](_.toLocalTime),
-    new SimpleTypeConversion[ZonedDateTime, LocalTime](_.toLocalTime),
-    new SimpleTypeConversion[OffsetDateTime, LocalTime](_.toLocalTime),
   )
 
   val allSimpleTypesConversions: List[SimpleTypeConversion[_, _]] =

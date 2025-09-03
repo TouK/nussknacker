@@ -76,7 +76,7 @@ import java.lang.{
 import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
 import java.nio.charset.{Charset, StandardCharsets}
 import java.time._
-import java.time.chrono.ChronoLocalDate
+import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.util
 import java.util.{Collections, Currency, List => JList, Locale, Map => JMap, Optional, UUID}
 import java.util.concurrent.Executors
@@ -1583,6 +1583,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("should be able to handle spel type conversions between date types") {
     parse[Instant]("123L", ctx).validExpression.expression.evaluateSync[Instant](ctx) shouldBe
       Instant.ofEpochMilli(123L)
+    parse[Instant]("123", ctx).validExpression.expression.evaluateSync[Instant](ctx) shouldBe
+      Instant.ofEpochMilli(123)
     parse[Instant](
       "T(java.time.ZonedDateTime).of(2025, 1, 1, 0, 0, 0, 0, T(java.time.ZoneOffset).UTC)",
       ctx
@@ -1610,13 +1612,11 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       ctx
     ).validExpression.expression.evaluateSync[LocalDateTime](ctx) shouldBe
       OffsetDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC).toLocalDateTime
-
-    parse[LocalDate]("T(java.time.LocalDateTime).of(2025, 1, 1, 0, 0, 0, 0)", ctx).validExpression.expression
-      .evaluateSync[LocalDate](ctx) shouldBe
-      LocalDateTime.of(2025, 1, 1, 0, 0, 0, 0).toLocalDate
-    parse[ChronoLocalDate]("T(java.time.LocalDateTime).of(2025, 1, 1, 0, 0, 0, 0)", ctx).validExpression.expression
-      .evaluateSync[ChronoLocalDate](ctx) shouldBe
-      LocalDateTime.of(2025, 1, 1, 0, 0, 0, 0).toLocalDate
+    parse[ChronoLocalDateTime[_]](
+      "T(java.time.OffsetDateTime).of(2025, 1, 1, 0, 0, 0, 0, T(java.time.ZoneOffset).UTC)",
+      ctx
+    ).validExpression.expression.evaluateSync[ChronoLocalDateTime[_]](ctx) shouldBe
+      OffsetDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC).toLocalDateTime
   }
 
   test("comparison of generic type with not generic type") {
