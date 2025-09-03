@@ -1,14 +1,12 @@
 import type { DataEditorProps, DataEditorRef, GridCell, GridSelection, Item, EditListItem } from "@glideapps/glide-data-grid";
 import DataEditor, { CompactSelection, GridCellKind, type CustomCell, type CustomRenderer, drawTextCell } from "@glideapps/glide-data-grid";
+import type { ProvideEditorComponent } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
 import type { GridColumn } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
 import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
-import { Box, FormLabel } from "@mui/material";
 import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
 
 import type { TestFormParameters } from "../../../common/TestResultUtils";
-import { LoadingButton } from "../../../windowManager/LoadingButton";
 import { CellMenu, DeleteRowMenuItem } from "../../graph/node-modal/editors/expression/Table/CellMenu";
 import { useErrorHighlights } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
@@ -38,6 +36,7 @@ interface EventsTableProps {
     onRowUpdated: (rowIndex: number, row: TestingEventParameters) => void;
     onRowAdded: (rowIndex: number, row: TestingEventParameters) => void;
     onRowsDeleted: (deletedRows: number[]) => void;
+    onRowMoved: (fromIndex: number, toIndex: number) => void;
     defaultEvent: TestingEventParameters;
     sourceOptions: string[];
     className?: string;
@@ -56,6 +55,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
     onRowUpdated,
     onRowAdded,
     onRowsDeleted,
+    onRowMoved,
     sourceOptions,
     className,
     defaultEvent,
@@ -79,8 +79,8 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                 return true;
             },
             provideEditor: () => ({
-                editor: TestingEventsTableSourceEditor as any,
-                deletedValue: (v) => ({ ...v, copyData: "", data: { ...v.data, value: "" } }),
+                editor: TestingEventsTableSourceEditor as ProvideEditorComponent<SourceSelectCell>,
+                deletedValue: (v) => ({ ...v, copyData: "", data: { ...(v as unknown as SourceSelectCell).data, value: "" } }),
             }),
         }),
         [],
@@ -181,6 +181,19 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
         [data.length, tableTheme.bgCell, tableTheme.bgCellMedium],
     );
 
+    const handleRowReorder = useCallback(
+        (fromIndex: number, toIndex: number) => {
+            const isDropAtFooter = toIndex === data.length;
+            const isDropToTheSamePlace = fromIndex === toIndex;
+
+            if (isDropAtFooter || isDropToTheSamePlace) return;
+
+            onRowMoved(fromIndex, toIndex);
+            clearSelection();
+        },
+        [data.length, onRowMoved, clearSelection],
+    );
+
     return (
         <>
             <Sizer
@@ -221,6 +234,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                     }}
                     onItemHovered={toggleTooltip}
                     drawCell={drawCell}
+                    onRowMoved={handleRowReorder}
                 />
                 <CellMenu anchorPosition={cellMenuData.position} onClose={closeCellMenu}>
                     {cellMenuData.row !== undefined && cellMenuData.row >= 0 && (

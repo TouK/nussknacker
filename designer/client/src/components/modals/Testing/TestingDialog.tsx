@@ -141,6 +141,16 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
         );
     }, []);
 
+    const handleRowMoved = React.useCallback((fromIndex: number, toIndex: number) => {
+        setEvents((prev) => {
+            if (!prev || fromIndex < 0 || toIndex < 0 || fromIndex >= prev.length || toIndex > prev.length) return prev;
+            const next = [...prev];
+            const [moved] = next.splice(fromIndex, 1);
+            next.splice(toIndex, 0, moved);
+            return next;
+        });
+    }, []);
+
     const disableTestButton = events.length === 0 || cellErrors.length > 0;
     const buttons: WindowButtonProps[] = useMemo(
         () => [
@@ -182,6 +192,7 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
                             onRowUpdated={handleRowUpdated}
                             onRowAdded={handleRowAdded}
                             onRowsDeleted={handleRowsDeleted}
+                            onRowMoved={handleRowMoved}
                             defaultEvent={defaultEvent}
                         />
                     </Box>
