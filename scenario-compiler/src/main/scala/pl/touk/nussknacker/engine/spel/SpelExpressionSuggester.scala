@@ -444,7 +444,7 @@ class SpelExpressionSuggester(
 }
 
 private class NuSpelNodeParser(typer: SpelTyper) extends LazyLogging {
-  private val parser = new NuSpelExpressionParser(new SpelParserConfiguration)
+  private val parser = NuSpelExpressionParser.interpreted()
 
   def parse(
       input: String,

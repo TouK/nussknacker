@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.definition.component.parameter.validator
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.springframework.expression.spel.standard.SpelExpressionParser
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
@@ -14,6 +13,7 @@ import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
+import pl.touk.nussknacker.engine.spel.parser.NuSpelExpressionParser
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
@@ -77,7 +77,7 @@ private class TestSpelExpression(expression: String) extends CompiledExpression 
       )
       .prepareEvaluationContext(ctx, globals)
 
-    new SpelExpressionParser().parseRaw(expression).getValue(evaluationContext).asInstanceOf[T]
+    NuSpelExpressionParser.interpreted().parseRaw(expression).getValue(evaluationContext).asInstanceOf[T]
   }
 
 }

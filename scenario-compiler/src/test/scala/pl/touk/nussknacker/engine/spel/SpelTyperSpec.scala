@@ -1,17 +1,20 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.common.TemplateParserContext
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.IndexBasedTextRange
-import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.MissingObjectError.{NoPropertyError, NoPropertyTypeError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.MissingObjectError.{
+  NoPropertyError,
+  NoPropertyTypeError
+}
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.SpelExpressionTypingError
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.UnsupportedOperationError.MapWithExpressionKeysError
 import pl.touk.nussknacker.engine.spel.SpelTyper.TypingResultWithContext
@@ -24,9 +27,9 @@ import scala.jdk.CollectionConverters._
 
 class SpelTyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
-  private implicit val defaultTyper: SpelTyper   = buildTyper()
-  private val dynamicAccessTyper: SpelTyper      = buildTyper(dynamicPropertyAccessAllowed = true)
-  private val parser: NuSpelExpressionParser = new NuSpelExpressionParser()
+  private implicit val defaultTyper: SpelTyper = buildTyper()
+  private val dynamicAccessTyper: SpelTyper    = buildTyper(dynamicPropertyAccessAllowed = true)
+  private val parser: NuSpelExpressionParser   = NuSpelExpressionParser.interpreted()
 
   test("not allow maps with keys other than strings") {
     typeExpression("{1L: 'foo'}") shouldBe Invalid(
