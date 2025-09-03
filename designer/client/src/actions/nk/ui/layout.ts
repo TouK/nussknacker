@@ -8,6 +8,12 @@ export type Position = {
     x: number;
     y: number;
 };
+
+export const snapToInt = ({ x, y }: Position): Position => ({
+    x: Math.round(x),
+    y: Math.round(y),
+});
+
 export type NodePosition = {
     id: NodeId;
     position: Position;
@@ -17,8 +23,10 @@ export type LayoutActions = { type: "LAYOUT" } | { type: "LAYOUT_CHANGED"; layou
 
 export function layoutChanged(layout?: Layout): ThunkAction {
     return (dispatch, getState) => {
-        const newLayout = sortBy(layout || [], (e) => e.id);
-        const oldLayout = sortBy(getLayout(getState()) || [], (e) => e.id);
+        const oldLayout = getLayout(getState());
+        const newLayout = sortBy(layout || [], (e) => e.id)
+            .map(({ id, position }) => ({ id, position: snapToInt(position) }))
+            .filter(({ id, position }) => id && position);
 
         if (newLayout.length < 1 || isEqual(newLayout, oldLayout)) {
             return dispatch({ type: "LAYOUT_RELOADED", layout: oldLayout });
