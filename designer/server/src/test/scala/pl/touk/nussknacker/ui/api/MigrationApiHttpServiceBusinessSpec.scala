@@ -260,8 +260,9 @@ class MigrationApiHttpServiceBusinessSpec
           expectedError = "Property param1 has invalid value"
         )
       }
-      "adapt spel value in source to dict expression in target" in {
-        testAdaptingParameter(
+      // todo: perhaps we should allow adapting spel value to dictionary value in the future
+      "cannot adapt spel value in source to dict expression in target" in {
+        testAdaptingParameterNotPossible(
           sourceExpression = Expression.spel("'Black'"),
           targetEditor = Some(
             ValueInputWithDictEditor(
@@ -269,7 +270,8 @@ class MigrationApiHttpServiceBusinessSpec
               allowOtherValue = false
             )
           ),
-          expectedParameterJsonPart = """[{"name":"param1","expression":{"language":"spel","expression":"'abc'"}}]"""
+          expectedError =
+            """There is an incompatible parameter [param1] in component [fragmentWithConfigurableParameterEditor]. Its value cannot be used for target editors [DictParameterEditor(rgb)]"""
         )
       }
     }

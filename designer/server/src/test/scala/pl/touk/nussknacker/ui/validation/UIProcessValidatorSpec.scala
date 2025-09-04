@@ -1109,7 +1109,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               _,
               Some("subParam1"),
               NodeValidationErrorType.SaveAllowed,
-              None
+              _
             )
           ) =>
     }
@@ -1879,7 +1879,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               _,
               Some("numberOfThreads"),
               NodeValidationErrorType.SaveAllowed,
-              None
+              _
             )
           ) =>
     }
