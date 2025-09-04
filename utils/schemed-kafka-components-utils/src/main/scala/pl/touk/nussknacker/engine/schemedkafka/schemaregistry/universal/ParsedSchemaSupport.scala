@@ -252,7 +252,7 @@ object NoSchemaJsonSupport extends UniversalSchemaSupport {
   private final val jsonSupport = JsonSchemaSupport
 
   override val payloadDeserializer: UniversalSchemaPayloadDeserializer =
-    NoSchemaJsonPayloadDeserializer
+    JsonSchemalessPayloadDeserializer
 
   override def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, isKey: Boolean): Serializer[Any] =
     jsonSupport.serializer(schemaOpt, c, isKey)
