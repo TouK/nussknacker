@@ -69,7 +69,7 @@ object JsonPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
     val avroSchema = writerSchemaData.schema.rawSchema().asInstanceOf[Schema]
     val bytes      = new Array[Byte](buffer.remaining())
     buffer.get(bytes)
-    JsonPayloadToAvroConverter.convert(buffer.array(), avroSchema)
+    JsonPayloadToAvroConverter.convert(bytes, avroSchema)
   }
 
 }
