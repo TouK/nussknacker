@@ -5,12 +5,8 @@ import { loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/run-off-schedule.svg";
 import HttpService from "../../../../http/HttpService";
 import type { RootState } from "../../../../reducers";
-import {
-    getProcessName,
-    isRunOffSchedulePossible,
-    isRunOffScheduleVisible,
-    isValidationResultPresent,
-} from "../../../../reducers/selectors/graph";
+import { getProcessName, isRunOffScheduleVisible } from "../../../../reducers/selectors/graph";
+import { isRunOffSchedulePossible, isValidationResultPresent } from "../../../../reducers/selectors/graph2";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getProcessState } from "../../../../reducers/selectors/scenarioState";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";

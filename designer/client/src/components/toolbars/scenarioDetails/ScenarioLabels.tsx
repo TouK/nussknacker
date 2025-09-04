@@ -18,7 +18,8 @@ import { useTranslation } from "react-i18next";
 
 import { editScenarioLabels } from "../../../actions/nk";
 import HttpService from "../../../http/HttpService";
-import { getScenarioLabels, getScenarioLabelsErrors } from "../../../reducers/selectors/graph";
+import { getScenarioLabels } from "../../../reducers/selectors/graph";
+import { getScenarioLabelsErrors } from "../../../reducers/selectors/graph2";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { selectStyled } from "../../../stylesheets/SelectStyled";
 import type { ScenarioLabelValidationError } from "../../Labels/types";

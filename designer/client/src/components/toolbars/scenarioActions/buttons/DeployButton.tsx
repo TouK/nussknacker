@@ -7,15 +7,8 @@ import Icon from "../../../../assets/img/toolbarButtons/deploy.svg";
 import { useUserSettings } from "../../../../common/userSettings";
 import type { NodesDeploymentData, ScenarioGraphSource } from "../../../../http/HttpService";
 import HttpService from "../../../../http/HttpService";
-import {
-    getProcessName,
-    getProcessVersionId,
-    getScenarioGraphSource,
-    hasError,
-    isDeployPossible,
-    isDeployVisible,
-    isValidationResultPresent,
-} from "../../../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId, getScenarioGraphSource, isDeployVisible } from "../../../../reducers/selectors/graph";
+import { hasError, isDeployPossible, isValidationResultPresent } from "../../../../reducers/selectors/graph2";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getIsDeploying } from "../../../../reducers/selectors/scenarioState";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
