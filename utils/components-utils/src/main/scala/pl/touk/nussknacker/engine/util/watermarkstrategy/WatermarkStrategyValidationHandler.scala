@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.flinkdocs.FlinkDocumentationUrl
 import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyValidationHandler.{
   eventTimeParamName,
   idlenessParamName,
@@ -50,7 +51,10 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
       isLazyParameter = true,
       additionalVariables = outputValidationContext.localVariables.mapValuesNow(AdditionalVariableProvidedInRuntime(_)),
       defaultValue = Some(eventTimeDefaultValueExpression),
-      hintText = Some("An expression that determines the event time to be used in stateful stream processing"),
+      hintText = Some(
+        s"An expression that determines the Event Time to be used in stateful stream processing. " +
+          s"For more information on how Event Time is handled in Flink, and why it is important, see [Flink documentation](${FlinkDocumentationUrl.forCurrentFlinkVersion("concepts/time/#introduction")})"
+      ),
       category = ParameterCategory.Advanced
     )
 
@@ -63,7 +67,10 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
           SpelParameterEditor
         ),
         defaultValue = Some(maxOutOfOrdernessDefaultValueExpression),
-        hintText = Some("The time period after which late events will be discarded"),
+        hintText = Some(
+          s"The maximum amount of time an element is allowed to be late before being ignored when computing the result for time-based stream transformations. " +
+            s"To read more about this mechanism see [Flink documentation](${FlinkDocumentationUrl.forCurrentFlinkVersion("dev/datastream/event-time/built_in/#fixed-amount-of-lateness")})"
+        ),
         category = ParameterCategory.Advanced
       )
 
@@ -76,7 +83,10 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
           SpelParameterEditor
         ),
         defaultValue = Some(idlenessDefaultValueExpression),
-        hintText = Some("The time period after which a lack of events marks a stream as idle"),
+        hintText = Some(
+          s"The time period after which $splitName is marked as idle if no events are received from it. " +
+            s"To read more about this mechanism see [Flink documentation](${FlinkDocumentationUrl.forCurrentFlinkVersion("dev/datastream/event-time/generating_watermarks/#dealing-with-idle-sources")})"
+        ),
         category = ParameterCategory.Advanced
       )
 
@@ -85,6 +95,8 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
   protected def maxOutOfOrdernessDefaultValueExpression: Expression = "T(java.time.Duration).parse('PT10S')".spel
 
   protected def idlenessDefaultValueExpression: Expression = "".spel
+
+  protected def splitName = "split/partition/shard"
 
   protected def watermarkStrategyParametersStep(
       inputContext: ValidationContext,

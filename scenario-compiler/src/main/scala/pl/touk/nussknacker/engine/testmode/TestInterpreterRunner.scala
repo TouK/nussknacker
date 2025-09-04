@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.testmode
 
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.DisplayJson
-import pl.touk.nussknacker.engine.api.json.encoders.{LooseToJsonEncoder, ToJsonEncoder}
+import pl.touk.nussknacker.engine.api.json.encoders.LooseToJsonEncoder
 
 object TestInterpreterRunner {
 

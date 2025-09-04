@@ -78,6 +78,8 @@ class UniversalKafkaSourceFactory(
       .map(seconds => s"T(java.time.Duration).parse('PT${seconds}S')".spel)
       .getOrElse("".spel)
 
+  override protected val splitName: String = "partition"
+
   override val typesToExtract: List[TypedClass] =
     Typed.typedClass[GenericRecord] :: Typed.typedClass[TimestampType] :: Nil
 
