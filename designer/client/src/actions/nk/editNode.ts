@@ -47,21 +47,17 @@ function addNodeWithEdgeAction(node: NodeType, position: g.PlainPoint, edge?: Ed
 }
 
 function calcNodesOffset(nodes: NodeType[], offset: g.PlainPoint) {
-    function calculatePastedNodePosition(node, pasteX, minNodeX, pasteY, minNodeY) {
-        const currentNodePosition = node.additionalFields.layoutData;
-        const pasteNodePosition = { x: currentNodePosition.x + pasteX, y: currentNodePosition.y + pasteY };
-        return {
-            x: pasteNodePosition.x - minNodeX,
-            y: pasteNodePosition.y - minNodeY,
-        };
-    }
-
-    const minNodeX: number = min(nodes.map((node) => node.additionalFields.layoutData.x));
-    const minNodeY: number = min(nodes.map((node) => node.additionalFields.layoutData.y));
+    const delta = {
+        x: offset.x - min(nodes.map((node) => node.additionalFields.layoutData.x)),
+        y: offset.y - min(nodes.map((node) => node.additionalFields.layoutData.y)),
+    };
 
     return nodes.map((node) => ({
         node,
-        position: calculatePastedNodePosition(node, offset.x, minNodeX, offset.y, minNodeY),
+        position: {
+            x: node.additionalFields.layoutData.x + delta.x,
+            y: node.additionalFields.layoutData.y + delta.y,
+        },
     }));
 }
 
