@@ -5,8 +5,8 @@ import TreeView from "react-treeview";
 
 import { toggleToolboxGroup } from "../../../actions/nk/toolbars";
 import { getClosedComponentGroups, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
-import type { ComponentGroup, NodeType } from "../../../types";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
+import type { ComponentGroup, NodeType } from "../../../types";
 import Tool from "./Tool";
 
 function isEmptyComponentGroup(componentGroup: ComponentGroup) {

@@ -1,4 +1,13 @@
-import type { DataEditorProps, DataEditorRef, GridCell, GridSelection, Item, EditListItem } from "@glideapps/glide-data-grid";
+import type {
+    DataEditorProps,
+    DataEditorRef,
+    GridCell,
+    GridSelection,
+    Item,
+    EditListItem,
+    BaseDrawArgs,
+    Theme,
+} from "@glideapps/glide-data-grid";
 import DataEditor, { CompactSelection, GridCellKind, type CustomCell, type CustomRenderer, drawTextCell } from "@glideapps/glide-data-grid";
 import type { ProvideEditorComponent } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
 import type { GridColumn } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
@@ -12,14 +21,29 @@ import { useErrorHighlights } from "../../graph/node-modal/editors/expression/Ta
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import { Sizer } from "../../graph/node-modal/editors/expression/Table/Sizer";
 import { useTableTheme } from "../../graph/node-modal/editors/expression/Table/tableTheme";
+import {
+    DEFAULT_ROW_HEADER,
+    drawTextWithBoldSegments,
+    formatEventVariablesForDisplay,
+    getRowLines,
+    LINE_HEIGHT,
+    paddingX,
+    paddingY,
+    SPLIT_SEPARATOR,
+} from "./drawText";
 import TestingEventsTableSourceEditor from "./TestingEventsTableSourceEditor";
 import "@glideapps/glide-data-grid/dist/index.css";
-import { buildDefaultVariablesMap, formatEventVariablesForDisplay } from "./utils";
+import { buildDefaultVariablesMap } from "./utils";
 
 type SourceSelectCellData = { kind: "source-select-cell"; value: string; options: string[] };
 type SourceSelectCell = CustomCell<SourceSelectCellData>;
 const isSourceSelectCell = (c: GridCell): c is SourceSelectCell =>
     c.kind === GridCellKind.Custom && (c as SourceSelectCell).data?.kind === "source-select-cell";
+
+type VariablesCellData = { kind: "variables-cell"; value: string; options: string[] };
+type VariablesCell = CustomCell<VariablesCellData>;
+const isVariablesCell = (c: GridCell): c is VariablesCell =>
+    c.kind === GridCellKind.Custom && (c as VariablesCell).data?.kind === "variables-cell";
 
 export interface TestingEventParameters {
     sourceId: string;
@@ -86,6 +110,21 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
         [],
     );
 
+    const variablesRenderer = useMemo<CustomRenderer<VariablesCell>>(
+        () => ({
+            kind: GridCellKind.Custom,
+            isMatch: isVariablesCell,
+            draw: (args, cell) => {
+                drawTextWithBoldSegments(args.ctx, cell.data.value, args.rect, args.theme);
+            },
+            provideEditor: () => ({
+                editor: () => <input />, // Simplified editor type
+                deletedValue: (v) => ({ ...v, copyData: "", data: { ...(v as VariablesCell).data, value: "" } }),
+            }),
+        }),
+        [],
+    );
+
     const defaultVariablesBySourceId = useMemo(() => buildDefaultVariablesMap(sourceParameters), [sourceParameters]);
 
     const getCellContent = useCallback(
@@ -102,15 +141,13 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                 } as SourceSelectCell;
             if (col === 1) {
                 const raw = rowData.variables || "";
-                const display = formatEventVariablesForDisplay(raw);
 
                 return {
-                    kind: GridCellKind.Text,
-                    displayData: display,
-                    data: rowData.variables || "",
+                    kind: GridCellKind.Custom,
                     allowOverlay: true,
+                    copyData: rowData.variables || "",
+                    data: { kind: "variables-cell", value: raw, options: sourceOptions },
                     readonly: false,
-                    allowWrapping: true,
                 };
             }
             return { kind: GridCellKind.Text, displayData: "", data: "", allowOverlay: true, readonly: false };
@@ -195,6 +232,23 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
         [data.length, onRowMoved, clearSelection],
     );
 
+    const getRowHeight = useCallback(
+        (rowIndex: number) => {
+            if (rowIndex >= data.length || !rowWidthRef?.current) return DEFAULT_ROW_HEADER;
+
+            const rowLines = getRowLines(
+                data[rowIndex]?.variables ? formatEventVariablesForDisplay(data[rowIndex].variables).split(SPLIT_SEPARATOR) : [],
+                rowWidthRef.current - paddingX,
+            );
+
+            const linesCount = rowLines.length + 1;
+            return linesCount * LINE_HEIGHT * dataEditorThemeRef.current.lineHeight + paddingY;
+        },
+        [data],
+    );
+
+    const rowWidthRef = useRef<number>(null);
+    const dataEditorThemeRef = useRef<Theme>(null);
     return (
         <>
             <Sizer
@@ -213,7 +267,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                     ref={ref}
                     columns={tableColumns}
                     getCellContent={getCellContent}
-                    customRenderers={useMemo(() => [sourceSelectRenderer], [sourceSelectRenderer])}
+                    customRenderers={useMemo(() => [sourceSelectRenderer, variablesRenderer], [sourceSelectRenderer, variablesRenderer])}
                     getCellsForSelection
                     onCellsEdited={onCellEdited}
                     onRowAppended={onCellAdded}
@@ -235,12 +289,25 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                     }}
                     onItemHovered={toggleTooltip}
                     drawCell={drawCell}
-                    onRowMoved={handleRowReorder}
-                    rowHeight={(rowHeight) => {
-                        if (rowHeight >= data.length) return 35;
+                    drawHeader={(args) => {
+                        const { columnIndex, theme } = args;
 
-                        return 70;
+                        dataEditorThemeRef.current = theme;
+                        const isVariablesColumn = columnIndex === 1;
+
+                        if (isVariablesColumn) {
+                            rowWidthRef.current = args.rect.width;
+                        }
+
+                        const col = tableColumns[columnIndex];
+                        if (!col) return undefined;
+
+                        drawTextCell(args as unknown as BaseDrawArgs, col.title);
+
+                        return undefined;
                     }}
+                    rowHeight={getRowHeight}
+                    onRowMoved={handleRowReorder}
                 />
                 <CellMenu anchorPosition={cellMenuData.position} onClose={closeCellMenu}>
                     {cellMenuData.row !== undefined && cellMenuData.row >= 0 && (
