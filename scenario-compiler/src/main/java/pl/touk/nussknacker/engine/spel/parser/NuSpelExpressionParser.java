@@ -26,7 +26,6 @@ import org.springframework.expression.spel.SpelParserConfiguration;
 import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 import pl.touk.nussknacker.engine.expression.IndexBasedTextRange;
 
 import java.util.ArrayDeque;
@@ -58,9 +57,7 @@ public class NuSpelExpressionParser {
         this.underlyingParser = new SpelExpressionParser(configuration);
     }
 
-    // From org.springframework.expression.spel.standard.SpelExpressionParser
     public SpelExpression parseRaw(String expressionString) throws ParseException {
-        Assert.hasText(expressionString, "'expressionString' must not be null or blank");
         return doParseExpression(expressionString, null);
     }
 

@@ -14,6 +14,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import org.springframework.expression.spel.SpelParserConfiguration
 import org.springframework.util.{NumberUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.{
   Context,
@@ -141,7 +142,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     .withVariable("processHelper", SampleGlobalObject)
     .withVariable("javaClassWithVarargs", new JavaClassWithVarargs)
 
-  val maxSpelExpressionLimit = 10000
+  val maxSpelExpressionLimit = SpelParserConfiguration.DEFAULT_MAX_EXPRESSION_LENGTH
 
   private def bigExpression(stringVar: String, length: Int): String = {
     val builder = new StringBuilder()
