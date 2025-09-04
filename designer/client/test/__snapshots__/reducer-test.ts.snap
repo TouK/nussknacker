@@ -1,189 +1,13 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Nodes added should add multiple nodes with unique id 1`] = `
-{
-  "additionalFields": {
-    "layoutData": {
-      "x": 10,
-      "y": 20,
-    },
-  },
-  "id": "kafka-transaction (copy 1)",
-  "output": "output",
-  "service": {
-    "id": "paramService",
-    "parameters": [
-      {
-        "expression": {
-          "expression": "'3434'",
-          "language": "spel",
-        },
-        "name": "param",
-      },
-    ],
-  },
-  "type": "Enricher",
-}
-`;
-
-exports[`Nodes added should add multiple nodes with unique id 2`] = `
-{
-  "additionalFields": {
-    "layoutData": {
-      "x": 10,
-      "y": 20,
-    },
-  },
-  "id": "kafka-transaction (copy 2)",
-  "output": "output",
-  "service": {
-    "id": "paramService",
-    "parameters": [
-      {
-        "expression": {
-          "expression": "'3434'",
-          "language": "spel",
-        },
-        "name": "param",
-      },
-    ],
-  },
-  "type": "Enricher",
-}
-`;
-
-exports[`Nodes added should add multiple nodes with unique id 3`] = `
-{
-  "additionalFields": {
-    "layoutData": {
-      "x": 10,
-      "y": 20,
-    },
-  },
-  "id": "filter (copy 2)",
-  "output": "output",
-  "service": {
-    "id": "paramService",
-    "parameters": [
-      {
-        "expression": {
-          "expression": "'3434'",
-          "language": "spel",
-        },
-        "name": "param",
-      },
-    ],
-  },
-  "type": "Enricher",
-}
-`;
-
-exports[`Nodes added should add nodes with edges 1`] = `
-{
-  "additionalFields": {
-    "layoutData": {
-      "x": 10,
-      "y": 20,
-    },
-  },
-  "id": "newNode",
-  "output": "output",
-  "service": {
-    "id": "paramService",
-    "parameters": [
-      {
-        "expression": {
-          "expression": "'3434'",
-          "language": "spel",
-        },
-        "name": "param",
-      },
-    ],
-  },
-  "type": "Enricher",
-}
-`;
-
-exports[`Nodes added should add nodes with edges 2`] = `
-{
-  "additionalFields": {
-    "layoutData": {
-      "x": 10,
-      "y": 20,
-    },
-  },
-  "id": "kafka-transaction (copy 1)",
-  "output": "output",
-  "service": {
-    "id": "paramService",
-    "parameters": [
-      {
-        "expression": {
-          "expression": "'3434'",
-          "language": "spel",
-        },
-        "name": "param",
-      },
-    ],
-  },
-  "type": "Enricher",
-}
-`;
-
-exports[`Nodes added should add single node 1`] = `
-{
-  "additionalFields": {
-    "layoutData": {
-      "x": 10,
-      "y": 20,
-    },
-  },
-  "id": "Enricher ID",
-  "output": "enricher_id_output",
-  "service": {
-    "id": "paramService",
-    "parameters": [
-      {
-        "expression": {
-          "expression": "'3434'",
-          "language": "spel",
-        },
-        "name": "param",
-      },
-    ],
-  },
-  "type": "Enricher",
-}
-`;
-
-exports[`Nodes added should add single node with unique id 1`] = `
-{
-  "additionalFields": {
-    "layoutData": {
-      "x": 10,
-      "y": 20,
-    },
-  },
-  "id": "kafka-transaction 1",
-  "output": "kafka_transaction_1_output",
-  "service": {
-    "id": "paramService",
-    "parameters": [
-      {
-        "expression": {
-          "expression": "'3434'",
-          "language": "spel",
-        },
-        "name": "param",
-      },
-    ],
-  },
-  "type": "Enricher",
-}
-`;
-
 exports[`Store Nodes added should add multiple nodes with unique id 1`] = `
 {
+  "additionalFields": {
+    "layoutData": {
+      "x": 10,
+      "y": 20,
+    },
+  },
   "id": "kafka-transaction (copy 1)",
   "output": "output",
   "service": {
@@ -204,6 +28,12 @@ exports[`Store Nodes added should add multiple nodes with unique id 1`] = `
 
 exports[`Store Nodes added should add multiple nodes with unique id 2`] = `
 {
+  "additionalFields": {
+    "layoutData": {
+      "x": 10,
+      "y": 20,
+    },
+  },
   "id": "kafka-transaction (copy 2)",
   "output": "output",
   "service": {
@@ -224,6 +54,12 @@ exports[`Store Nodes added should add multiple nodes with unique id 2`] = `
 
 exports[`Store Nodes added should add multiple nodes with unique id 3`] = `
 {
+  "additionalFields": {
+    "layoutData": {
+      "x": 10,
+      "y": 20,
+    },
+  },
   "id": "filter (copy 2)",
   "output": "output",
   "service": {
@@ -244,6 +80,12 @@ exports[`Store Nodes added should add multiple nodes with unique id 3`] = `
 
 exports[`Store Nodes added should add nodes with edges 1`] = `
 {
+  "additionalFields": {
+    "layoutData": {
+      "x": 10,
+      "y": 20,
+    },
+  },
   "id": "newNode",
   "output": "output",
   "service": {
@@ -264,6 +106,12 @@ exports[`Store Nodes added should add nodes with edges 1`] = `
 
 exports[`Store Nodes added should add nodes with edges 2`] = `
 {
+  "additionalFields": {
+    "layoutData": {
+      "x": 10,
+      "y": 20,
+    },
+  },
   "id": "kafka-transaction (copy 1)",
   "output": "output",
   "service": {
@@ -284,6 +132,12 @@ exports[`Store Nodes added should add nodes with edges 2`] = `
 
 exports[`Store Nodes added should add single node 1`] = `
 {
+  "additionalFields": {
+    "layoutData": {
+      "x": 10,
+      "y": 20,
+    },
+  },
   "id": "Enricher ID",
   "output": "enricher_id_output",
   "service": {
@@ -304,6 +158,12 @@ exports[`Store Nodes added should add single node 1`] = `
 
 exports[`Store Nodes added should add single node with unique id 1`] = `
 {
+  "additionalFields": {
+    "layoutData": {
+      "x": 10,
+      "y": 20,
+    },
+  },
   "id": "kafka-transaction 1",
   "output": "kafka_transaction_1_output",
   "service": {
