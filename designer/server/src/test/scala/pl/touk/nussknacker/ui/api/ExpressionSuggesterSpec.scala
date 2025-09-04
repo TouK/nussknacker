@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import org.springframework.expression.spel.SpelParserConfiguration
 import pl.touk.nussknacker.engine.api.{Documentation, VariableConstants}
 import pl.touk.nussknacker.engine.api.dict.{DictInstance, UiDictServices}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
@@ -908,6 +909,11 @@ class ExpressionSuggesterSpec
       getSuggestion.refClazz shouldBe expectedTypingResult
     }
 
+  }
+
+  test("should work with long expressions") {
+    val longString = "'" + " ".padTo(SpelParserConfiguration.DEFAULT_MAX_EXPRESSION_LENGTH, ' ') + "abcd'."
+    spelSuggestionsFor(longString, column = longString.length) should not be empty
   }
 
   private def suggestions(

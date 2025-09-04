@@ -7,6 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.spel.parser.NuSpelExpressionParser
 
 class AvroDefaultExpressionDeterminerTest extends AnyFunSuite with Matchers {
 
@@ -91,8 +92,8 @@ class AvroDefaultExpressionDeterminerTest extends AnyFunSuite with Matchers {
   }
 
   private def evaluate(expression: Expression): AnyRef = {
-    val parser = new org.springframework.expression.spel.standard.SpelExpressionParser
-    parser.parseExpression(expression.expression).getValue()
+    val parser = NuSpelExpressionParser.interpreted()
+    parser.parseExpression(expression.expression).getExpression.getValue()
   }
 
   private def getField(name: String): Schema.Field =

@@ -20,13 +20,19 @@ import org.springframework.expression.Expression;
 import org.springframework.expression.ParseException;
 import org.springframework.expression.ParserContext;
 import org.springframework.expression.common.LiteralExpression;
+import org.springframework.expression.spel.SpelCompilerMode;
 import org.springframework.expression.spel.SpelParseException;
 import org.springframework.expression.spel.SpelParserConfiguration;
+import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
 import pl.touk.nussknacker.engine.expression.IndexBasedTextRange;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * ATTENTION
@@ -47,12 +53,12 @@ public class NuSpelExpressionParser {
 
     private final SpelExpressionParser underlyingParser;
 
-    public NuSpelExpressionParser() {
-        this.underlyingParser = new SpelExpressionParser(new SpelParserConfiguration());
+    private NuSpelExpressionParser(SpelParserConfiguration configuration) {
+        this.underlyingParser = new SpelExpressionParser(configuration);
     }
 
-    public NuSpelExpressionParser(SpelParserConfiguration configuration) {
-        this.underlyingParser = new SpelExpressionParser(configuration);
+    public SpelExpression parseRaw(String expressionString) throws ParseException {
+        return doParseExpression(expressionString, null);
     }
 
     public ExpressionWithTextRange parseExpression(String expressionString) throws ParseException {
@@ -239,7 +245,7 @@ public class NuSpelExpressionParser {
     }
 
     // It returns AST nodes with position local to spel expression
-    private Expression doParseExpression(String expressionString, IndexBasedTextRange expressionTextRange) throws ParseException {
+    private SpelExpression doParseExpression(String expressionString, IndexBasedTextRange expressionTextRange) throws ParseException {
         try {
             return underlyingParser.parseRaw(expressionString);
         } catch (ParseException exception) {
@@ -310,4 +316,28 @@ public class NuSpelExpressionParser {
         }
     }
 
+    public static NuSpelExpressionParser immediate(ClassLoader classLoader) {
+        Objects.requireNonNull(classLoader);
+        return new NuSpelExpressionParser(createSpelParserConfiguration(SpelCompilerMode.IMMEDIATE, classLoader));
+    }
+
+    public static NuSpelExpressionParser interpreted() {
+        return new NuSpelExpressionParser(createSpelParserConfiguration(null, null));
+    }
+
+    private static SpelParserConfiguration createSpelParserConfiguration(@Nullable SpelCompilerMode spelCompilerMode,
+                                                                         @Nullable ClassLoader classLoader) {
+        final var autoGrowNullReferences = false;
+        final var autoGrowCollections    = false;
+        final var maximumAutoGrowSize    = Integer.MAX_VALUE;
+        final var maximumExpressionLength = Integer.MAX_VALUE; // By default, it is limited to 10_000 (DEFAULT_MAX_EXPRESSION_LENGTH)
+        return new SpelParserConfiguration(
+                spelCompilerMode,
+                classLoader,
+                autoGrowNullReferences,
+                autoGrowCollections,
+                maximumAutoGrowSize,
+                maximumExpressionLength
+        );
+    }
 }
