@@ -1,20 +1,21 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
+import io.circe.parser
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
 import org.apache.avro.io.DecoderFactory
-import org.json.JSONTokener
-import pl.touk.nussknacker.engine.api.json.decoders.{FromJsonSimpleDecoder, FromJsonTypingResultBasedDecoder}
+import org.everit.json.schema.EmptySchema
+import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroRecordDeserializer, DatumReaderWriterMixin}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadToAvroConverter
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
-import pl.touk.nussknacker.engine.util.json.JsonSchemaUtils
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
@@ -104,39 +105,29 @@ object PlainTextPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
 }
 
 class JsonTypingResultPayloadDeserializer(typingResult: TypingResult) extends UniversalSchemaPayloadDeserializer {
-  import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
 
   override def deserialize(
       expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]],
       writerSchemaData: RuntimeSchemaData[ParsedSchema],
       buffer: ByteBuffer
   ): Any = {
-    val jsonSchema: OpenAPIJsonSchema =
-      expectedSchemaData
-        .getOrElse(writerSchemaData)
-        .schema
-        .asInstanceOf[OpenAPIJsonSchema]
-
     val bytes = new Array[Byte](buffer.remaining())
     buffer.get(bytes)
     val string = new String(bytes, StandardCharsets.UTF_8)
 
-    val inputJson = new JSONTokener(string).nextValue()
-    val validatedJson = jsonSchema
-      .rawSchema()
-      .validateData(inputJson)
-      .valueOr(errorMsg => throw CustomNodeValidationException(errorMsg, None))
-
-    val circeJson = JsonSchemaUtils.jsonToCirce(validatedJson)
-
-    FromJsonTypingResultBasedDecoder
-      .decodeValue(typingResult, circeJson.hcursor)
-      .fold(e => throw CustomNodeValidationException(e.getMessage(), None), identity)
+    parser
+      .parse(string)
+      .flatMap(json =>
+        FromJsonTypingResultBasedDecoder
+          .decodeValue(typingResult, json.hcursor)
+      )
+      .fold(e => throw CustomNodeValidationException(e.getMessage, None), identity)
   }
 
 }
 
-object NoSchemaJsonPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
+object JsonSchemalessPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
+  private val jsonDeserializer = new CirceJsonDeserializer(EmptySchema.INSTANCE)
 
   override def deserialize(
       expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]],
@@ -144,13 +135,7 @@ object NoSchemaJsonPayloadDeserializer extends UniversalSchemaPayloadDeserialize
       buffer: ByteBuffer
   ): Any = {
     val bytes = new Array[Byte](buffer.remaining())
-    buffer.get(bytes)
-    val string = new String(bytes, StandardCharsets.UTF_8)
-
-    val inputJson = new JSONTokener(string).nextValue()
-    val circeJson = JsonSchemaUtils.jsonToCirce(inputJson)
-
-    FromJsonSimpleDecoder.jsonToAny(circeJson)
+    jsonDeserializer.deserialize(bytes)
   }
 
 }
