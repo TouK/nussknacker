@@ -1,16 +1,8 @@
 import { ContentCopy, Done } from "@mui/icons-material";
-import { IconButton, styled } from "@mui/material";
 import React from "react";
 
 import { InfoTooltip } from "../../components/graph/node-modal/editors/InfoTooltip";
-
-export const StyledIconButton = styled(IconButton)(({ theme }) => ({
-    color: theme.palette.common.white,
-    padding: theme.spacing(0.5),
-    "&:hover": {
-        backgroundColor: theme.palette.action.hover,
-    },
-}));
+import { StyledIconButton } from "./StyledIconButton";
 
 interface Props {
     isCopied: boolean;

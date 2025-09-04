@@ -3,7 +3,8 @@ import type { TooltipProps } from "@mui/material/Tooltip/Tooltip";
 import type { PropsWithChildren } from "react";
 import React from "react";
 
-import { StyledInfoChildrenWrapper, StyledInfoMarkdown } from "./StyledInfo";
+import { StyledInfoChildrenWrapper } from "./StyledInfo";
+import { StyledInfoMarkdown } from "./StyledInfoMarkdown";
 import { useTooltip } from "./useTooltip";
 
 interface Props {

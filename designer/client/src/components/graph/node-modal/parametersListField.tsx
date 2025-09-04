@@ -2,7 +2,8 @@ import { Box } from "@mui/material";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
-import { CopyIconButton, useCopyClipboard } from "../../../common/copyToClipboard";
+import { CopyIconButton } from "../../../common/copyToClipboard/CopyIconButton";
+import { useCopyClipboard } from "../../../common/copyToClipboard/useCopyToClipboard";
 import { useUserSettings } from "../../../common/userSettings";
 import { getIsRunning } from "../../../reducers/selectors/scenarioState";
 import { useAppSelector } from "../../../store/storeHelpers";
