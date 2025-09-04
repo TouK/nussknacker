@@ -137,7 +137,7 @@ case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) exte
     expression.expression match {
       case e if e.isBlank          => valid(())
       case e if values.contains(e) => valid(())
-      case e => invalid(InvalidPropertyFixedValue(paramName, label, e, possibleValues.map(_.expression)))
+      case e                       => invalid(InvalidPropertyFixedValue(paramName, label, e, possibleValues))
     }
   }
 

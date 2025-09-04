@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.canonicalgraph
 
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
@@ -135,7 +136,7 @@ trait ExpressionRewriter {
     }
 
   private def rewriteFields(list: List[Field])(implicit metaData: MetaData, nodeId: NodeId): List[Field] =
-    list.map(f => f.copy(expression = rewriteExpressionInternal(f.expression, f.name)))
+    list.map(f => f.copy(expression = rewriteExpressionInternal(f.expression, f.name, None)))
 
   private def rewriteBranchParameters(
       list: List[BranchParameters]
@@ -143,7 +144,9 @@ trait ExpressionRewriter {
     list.map(bp =>
       bp.copy(
         parameters = bp.parameters.map(p =>
-          p.copy(expression = rewriteExpressionInternal(p.expression, branchParameterExpressionId(p.name, bp.branchId)))
+          p.copy(expression =
+            rewriteExpressionInternal(p.expression, branchParameterExpressionId(p.name, bp.branchId), Some(p.name))
+          )
         )
       )
     )
@@ -151,17 +154,18 @@ trait ExpressionRewriter {
   private def rewriteParameters(
       list: List[NodeParameter]
   )(implicit metaData: MetaData, nodeId: NodeId): List[NodeParameter] =
-    list.map(p => p.copy(expression = rewriteExpressionInternal(p.expression, p.name.value)))
+    list.map(p => p.copy(expression = rewriteExpressionInternal(p.expression, p.name.value, Some(p.name))))
 
   private def rewriteDefaultExpressionInternal(e: Expression)(implicit metaData: MetaData, nodeId: NodeId): Expression =
-    rewriteExpressionInternal(e, DefaultExpressionIdParamName.value)
+    rewriteExpressionInternal(e, DefaultExpressionIdParamName.value, None)
 
   private def rewriteExpressionInternal(
       e: Expression,
-      expressionId: String
+      expressionId: String,
+      parameterName: Option[ParameterName],
   )(implicit metaData: MetaData, nodeId: NodeId): Expression = {
     try {
-      rewriteExpression(e)(ExpressionIdWithMetaData(metaData, NodeExpressionId(nodeId, expressionId)))
+      rewriteExpression(e)(ExpressionIdWithMetaData(metaData, NodeExpressionId(nodeId, expressionId), parameterName))
     } catch {
       case NonFatal(ex) =>
         throw new IllegalArgumentException(
@@ -177,4 +181,8 @@ trait ExpressionRewriter {
 
 }
 
-case class ExpressionIdWithMetaData(metaData: MetaData, expressionId: NodeExpressionId)
+case class ExpressionIdWithMetaData(
+    metaData: MetaData,
+    expressionId: NodeExpressionId,
+    parameterName: Option[ParameterName]
+)
