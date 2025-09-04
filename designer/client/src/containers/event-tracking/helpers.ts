@@ -1,8 +1,8 @@
 import { BuiltinButtonTypes } from "../../components/toolbarSettings/buttons/BuiltinButtonTypes";
 import { CustomButtonTypes } from "../../components/toolbarSettings/buttons/CustomButtonTypes";
+import type { EventTrackingSelectorType, EventTrackingType } from "./event-tracking-selector";
+import { EventTrackingSelector } from "./event-tracking-selector";
 import type { TrackEventParams } from "./use-event-tracking";
-import type { EventTrackingSelectorType, EventTrackingType } from "./use-register-tracking-events";
-import { EventTrackingSelector } from "./use-register-tracking-events";
 
 const selectorName = "data-selector";
 

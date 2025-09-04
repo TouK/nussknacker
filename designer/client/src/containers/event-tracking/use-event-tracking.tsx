@@ -4,8 +4,8 @@ import { useCallback, useMemo } from "react";
 import httpService from "../../http/HttpService";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { useAppSelector } from "../../store/storeHelpers";
+import type { EventTrackingSelectorType, EventTrackingType } from "./event-tracking-selector";
 import { getEventStatisticName } from "./helpers";
-import type { EventTrackingSelectorType, EventTrackingType } from "./use-register-tracking-events";
 
 export type TrackEventParams = { selector: EventTrackingSelectorType; event: EventTrackingType };
 
