@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.expression
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.springframework.expression.spel.SpelParserConfiguration
 import org.springframework.expression.spel.ast._
 import pl.touk.nussknacker.engine.spel.ast.{
   OptionallyTypedNode,
@@ -48,6 +49,14 @@ class ExpressionSubstitutorSpec extends AnyFunSuite with Matchers {
     val result = replace(expression, replacementPF)
 
     result shouldEqual "#foo.barbar != #foo.bazbaz"
+  }
+
+  test("very long expressions") {
+    val expression = s"#foo == '${"x".padTo(SpelParserConfiguration.DEFAULT_MAX_EXPRESSION_LENGTH, "x")}'"
+
+    val result = replace(expression, PartialFunction.empty)
+
+    result shouldEqual expression
   }
 
   private def replace(expression: String, replacementPF: PartialFunction[List[TypedTreeLevel], String]) = {
