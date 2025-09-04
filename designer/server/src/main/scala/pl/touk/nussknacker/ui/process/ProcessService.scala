@@ -362,6 +362,7 @@ class DBProcessService(
           canonical,
           entity.toEngineProcessVersion,
           entity.isFragment,
+          removeDictLabels = false,
         )
       },
       parameters

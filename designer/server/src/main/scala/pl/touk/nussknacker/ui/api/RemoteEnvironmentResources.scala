@@ -66,6 +66,7 @@ class RemoteEnvironmentResources(
                 withProcess(
                   processIdWithName,
                   version,
+                  GetScenarioWithDetailsOptions.withScenarioGraph,
                   details =>
                     remoteEnvironment.compare(details.scenarioGraphUnsafe, processIdWithName.name, Some(otherVersion))
                 )
@@ -78,6 +79,9 @@ class RemoteEnvironmentResources(
               withProcess(
                 processIdWithName,
                 version,
+                // Scenario validation is needed in order to validate and resolve
+                // dictionaries before sending migration request to remote environment.
+                GetScenarioWithDetailsOptions.withScenarioGraph.withValidation,
                 details =>
                   {
                     for {
@@ -138,14 +142,11 @@ class RemoteEnvironmentResources(
   private def withProcess[T: Encoder](
       processIdWithName: ProcessIdWithName,
       version: VersionId,
-      fun: ScenarioWithDetails => Future[Either[NuDesignerError, T]]
+      fetchOptions: GetScenarioWithDetailsOptions,
+      fun: ScenarioWithDetails => Future[Either[NuDesignerError, T]],
   )(implicit user: LoggedUser) = {
     processService
-      .getProcessWithDetails(
-        processIdWithName,
-        version,
-        GetScenarioWithDetailsOptions.withScenarioGraph
-      )
+      .getProcessWithDetails(processIdWithName, version, fetchOptions)
       .flatMap(fun)
       .map(NuDesignerErrorToHttp.toResponseEither[T])
   }

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
+import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, FixedExpressionValue}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext.LiveRuntime
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -316,15 +316,15 @@ class KafkaAvroPayloadSourceFactorySpec
         "'terefere'",
         List(
           "",
-          "'testArrayOfNumbersTopic'",
-          "'testArrayOfRecordsTopic'",
-          "'testAvroIntTopic1NoKey'",
-          "'testAvroIntTopic1WithKey'",
-          "'testAvroInvalidDefaultsTopic1'",
-          "'testAvroRecordTopic1'",
-          "'testAvroRecordTopic1WithKey'",
-          "'testPaymentDateTopic'"
-        ),
+          "testArrayOfNumbersTopic",
+          "testArrayOfRecordsTopic",
+          "testAvroIntTopic1NoKey",
+          "testAvroIntTopic1WithKey",
+          "testAvroInvalidDefaultsTopic1",
+          "testAvroRecordTopic1",
+          "testAvroRecordTopic1WithKey",
+          "testPaymentDateTopic"
+        ).map(fixedExpressionValue),
         "id"
       ) :: Nil
     result.outputContext shouldBe ValidationContext(
@@ -345,7 +345,7 @@ class KafkaAvroPayloadSourceFactorySpec
       paramName = schemaVersionParamName,
       label = None,
       value = "'12345'",
-      values = List("'latest'", "'1'", "'2'"),
+      values = List(FixedExpressionValue(s"'latest'", "Latest version")) ++ List("1", "2").map(fixedExpressionValue),
       nodeId = "id"
     ) :: Nil
     result.outputContext shouldBe ValidationContext(
@@ -400,6 +400,11 @@ class KafkaAvroPayloadSourceFactorySpec
       )
       .toOption
       .get
+  }
+
+  private def fixedExpressionValue(value: String) = {
+    if (value == "") FixedExpressionValue("", "")
+    else FixedExpressionValue(s"'$value'", value)
   }
 
 }

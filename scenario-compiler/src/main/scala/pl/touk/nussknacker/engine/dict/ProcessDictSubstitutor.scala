@@ -32,7 +32,7 @@ class ProcessDictSubstitutor(
         ExpressionTypingInfo,
         ReplacingStrategy
     ) => Option[ExpressionSubstitutionsCollector],
-    isReverse: Boolean
+    removeLabels: Boolean,
 ) extends LazyLogging {
 
   def substitute(
@@ -46,10 +46,10 @@ class ProcessDictSubstitutor(
       val optionalExpressionTypingInfo = nodeTypingInfo.get(nodeExpressionId.expressionId)
 
       if (expr.language == Expression.Language.DictKeyWithLabel && !expr.expression.isBlank) {
-        if (isReverse)
-          addLabelToDictKeyExpression(process, expr, optionalExpressionTypingInfo, nodeExpressionId)
+        if (removeLabels)
+          removeLabelFromDictKeyExpression(process, expr, nodeExpressionId)
         else
-          removeLabelFromDictKeyExpression(process, expr, nodeExpressionId) // no need to keep label in BE
+          addLabelToDictKeyExpression(process, expr, optionalExpressionTypingInfo, nodeExpressionId)
       } else
         substituteExpression(process, expr, optionalExpressionTypingInfo, nodeExpressionId)
     }
@@ -109,11 +109,11 @@ class ProcessDictSubstitutor(
     expr.copy(expression = substitutedExpression)
   }
 
-  def reversed: ProcessDictSubstitutor = new ProcessDictSubstitutor(
-    dictRegistry,
-    new KeyToLabelReplacingStrategy(dictRegistry),
-    prepareSubstitutionsCollector,
-    isReverse = true
+  def reversed(removeLabels: Boolean): ProcessDictSubstitutor = new ProcessDictSubstitutor(
+    dictRegistry = dictRegistry,
+    replacingStrategy = new KeyToLabelReplacingStrategy(dictRegistry),
+    prepareSubstitutionsCollector = prepareSubstitutionsCollector,
+    removeLabels = removeLabels
   )
 
 }
@@ -125,7 +125,7 @@ object ProcessDictSubstitutor extends LazyLogging {
       dictRegistry,
       new LabelToKeyReplacingStrategy(dictRegistry),
       prepareSubstitutionsCollector,
-      isReverse = false
+      removeLabels = true
     )
   }
 
