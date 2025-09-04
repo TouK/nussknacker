@@ -2,7 +2,7 @@
 import { isEmpty, set } from "lodash";
 import { v4 as uuid4 } from "uuid";
 
-import api from "../api";
+import api, { setToken } from "../api";
 import { PendingPromise } from "./PendingPromise";
 
 class SystemUtils {
@@ -77,4 +77,11 @@ class SystemUtils {
 }
 
 export const AUTHORIZATION_HEADER_NAMESPACE = SystemUtils.AUTHORIZATION_HEADER_NAMESPACE;
-export default new SystemUtils();
+
+const systemUtils = new SystemUtils();
+
+export default systemUtils;
+
+if (systemUtils.hasAccessToken()) {
+    setToken(AUTHORIZATION_HEADER_NAMESPACE, systemUtils.authorizationToken());
+}

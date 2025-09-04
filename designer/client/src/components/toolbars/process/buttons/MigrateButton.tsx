@@ -6,7 +6,8 @@ import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities
 import Icon from "../../../../assets/img/toolbarButtons/migrate.svg";
 import DialogMessages from "../../../../common/DialogMessages";
 import HttpService from "../../../../http/HttpService";
-import { getProcessName, getProcessVersionId, isMigrationPossible } from "../../../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId } from "../../../../reducers/selectors/graph";
+import { isMigrationPossible } from "../../../../reducers/selectors/graph2";
 import { getFeatureSettings, getTargetEnvironmentId } from "../../../../reducers/selectors/settings";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager";

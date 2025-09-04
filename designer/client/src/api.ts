@@ -1,12 +1,11 @@
 import axios from "axios";
 
-import SystemUtils, { AUTHORIZATION_HEADER_NAMESPACE } from "./common/SystemUtils";
 import { API_URL } from "./config";
 
 const headers = {};
 
-if (SystemUtils.hasAccessToken()) {
-    headers[AUTHORIZATION_HEADER_NAMESPACE] = SystemUtils.authorizationToken();
+export function setToken(name: string, token: string) {
+    headers[name] = token;
 }
 
 export default axios.create({

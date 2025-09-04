@@ -2,6 +2,7 @@ import type { PropsWithChildren, ReactElement } from "react";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
+import { createSelector } from "reselect";
 import { useDebounceFn } from "rooks";
 
 import {
@@ -23,12 +24,14 @@ import { useInterval } from "../../containers/Interval";
 import { useDocumentListeners } from "../../containers/useDocumentListeners";
 import { getGraphLocked, getHistoryCounts } from "../../reducers/selectors/getHistory";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
-import { canModifySelectedNodes, getSelection, getSelectionState } from "../../reducers/selectors/graph";
+import { canModifySelectedNodes, getScenarioGraph, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import NodeUtils from "./NodeUtils";
 
 const hasTextSelection = () => !!window.getSelection().toString();
+
+export const getSelection = createSelector(getSelectionState, getScenarioGraph, (s, p) => NodeUtils.getAllNodesByIdWithEdges(s, p));
 
 type UserAction = ((e: Event) => unknown) | null;
 
