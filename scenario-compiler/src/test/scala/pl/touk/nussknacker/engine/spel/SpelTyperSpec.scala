@@ -5,6 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.common.TemplateParserContext
+import org.springframework.expression.spel.SpelParserConfiguration
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
@@ -198,6 +199,12 @@ class SpelTyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetail
     typeExpression("{a: 5, b: 10}[4]").invalidValue.toList should matchPattern {
       case NoPropertyTypeError(_, _) :: Nil =>
     }
+  }
+
+  test("works with very long expressions") {
+    val longString = " ".padTo(SpelParserConfiguration.DEFAULT_MAX_EXPRESSION_LENGTH, ' ') + "abcd"
+    typeExpression(s"'$longString'").validValue.finalResult.typingResult shouldBe
+      TypedObjectWithValue(Typed.typedClass[String], longString)
   }
 
   private def buildTyper(dynamicPropertyAccessAllowed: Boolean = false) = new SpelTyper(
