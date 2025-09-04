@@ -201,7 +201,7 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
               _,
               Some(_),
               NodeValidationErrorType.SaveAllowed,
-              None
+              _
             ),
             NodeValidationError(
               "MissingRequiredProperty",
@@ -232,7 +232,7 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
               _,
               Some(_),
               NodeValidationErrorType.SaveAllowed,
-              None
+              _
             ),
             NodeValidationError(
               "MissingRequiredProperty",
