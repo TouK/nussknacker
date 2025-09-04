@@ -45,11 +45,12 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
     eventTimeParameter :: maxOutOfOrdernessParameter :: idlenessParameter :: Nil
   }
 
-  protected def prepareEventTimeParameter(outputValidationContext: ValidationContext): Parameter =
+  private def prepareEventTimeParameter(outputValidationContext: ValidationContext): Parameter =
     Parameter[Instant](eventTimeParamName).copy(
       isLazyParameter = true,
       additionalVariables = outputValidationContext.localVariables.mapValuesNow(AdditionalVariableProvidedInRuntime(_)),
       defaultValue = Some(eventTimeDefaultValueExpression),
+      hintText = Some("An expression that determines the event time to be used in stateful stream processing"),
       category = ParameterCategory.Advanced
     )
 
