@@ -61,9 +61,12 @@ class FlinkKafkaSource[K, V](
 ) extends FlinkSource
     with ExplicitUidInOperatorsSupport
     with Serializable
+    // These mixins below are for scenario testing mechanism using source-specific test data format
     with FlinkSourceTestSupport[ConsumerRecord[K, V]]
     with TestDataGenerator
     with TestWithParametersSupport[ConsumerRecord[K, V]]
+    with CustomizableContextInitializerSource[ConsumerRecord[K, V]]
+    // end
     with WithActionParametersSupport
     with LazyLogging
     with KafkaLiveDataProvider[K, V] {
