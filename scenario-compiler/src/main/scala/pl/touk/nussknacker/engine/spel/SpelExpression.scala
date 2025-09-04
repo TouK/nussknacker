@@ -366,9 +366,7 @@ object SpelExpressionParser extends LazyLogging {
   ): SpelExpressionParser = {
 
     // we have to pass classloader, because default contextClassLoader can be sth different than we expect...
-    val immediateCompileParser = new NuSpelExpressionParser(
-      createSpelParserConfiguration(classLoader)
-    )
+    val immediateCompileParser    = NuSpelExpressionParser.immediate(classLoader)
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig, classDefinitionSet)
     val validator = new SpelExpressionValidator(
       Typer.default(
@@ -386,22 +384,6 @@ object SpelExpressionParser extends LazyLogging {
       enableSpelForceCompile,
       flavour,
       evaluationContextPreparer
-    )
-  }
-
-  private def createSpelParserConfiguration(classLoader: ClassLoader) = {
-    val autoGrowNullReferences = false
-    val autoGrowCollections    = false
-    val maximumAutoGrowSize    = Integer.MAX_VALUE
-    val maximumExpressionLength =
-      Integer.MAX_VALUE // By default, it is limited to 10_000 (DEFAULT_MAX_EXPRESSION_LENGTH)
-    new SpelParserConfiguration(
-      SpelCompilerMode.IMMEDIATE,
-      classLoader,
-      autoGrowNullReferences,
-      autoGrowCollections,
-      maximumAutoGrowSize,
-      maximumExpressionLength
     )
   }
 
