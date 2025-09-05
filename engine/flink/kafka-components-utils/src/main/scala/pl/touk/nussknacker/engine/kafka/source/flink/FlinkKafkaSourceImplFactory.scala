@@ -2,16 +2,18 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 
 import cats.data.NonEmptyList
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.Params
+import pl.touk.nussknacker.engine.api.{LazyParameter, Params}
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source, TopicName}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalToJsonFormatter
 import pl.touk.nussknacker.engine.schemedkafka.source.KafkaSourceImplFactory
+import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyOptions
+
+import java.time.Instant
 
 class FlinkKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] with Serializable {
 
@@ -25,7 +27,8 @@ class FlinkKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] wit
       formatter: UniversalToJsonFormatter[K, V],
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
       testParametersInfo: KafkaTestParametersInfo,
-      namingStrategy: NamingStrategy
+      namingStrategy: NamingStrategy,
+      watermarkStrategyOptions: WatermarkStrategyOptions
   ): Source =
     new FlinkKafkaSource[K, V](
       preparedTopics,
@@ -34,7 +37,8 @@ class FlinkKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] wit
       formatter,
       contextInitializer,
       testParametersInfo,
-      namingStrategy
+      namingStrategy,
+      watermarkStrategyOptions
     )
 
 }

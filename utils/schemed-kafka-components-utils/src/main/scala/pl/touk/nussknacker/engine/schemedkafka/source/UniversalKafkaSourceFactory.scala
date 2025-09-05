@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.schemedkafka.source
 
-import cats.data.{NonEmptyList, Validated}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.Valid
+import cats.implicits.catsSyntaxTuple2Semigroupal
 import io.circe.Json
 import io.circe.syntax._
 import io.confluent.kafka.schemaregistry.ParsedSchema
@@ -14,7 +15,11 @@ import pl.touk.nussknacker.engine.api.Params.ParamExtractionResult
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{
+  DefinedEagerParameter,
+  DefinedSingleParameter,
+  NodeDependencyValue
+}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -39,6 +44,8 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
 }
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory._
 import pl.touk.nussknacker.engine.schemedkafka.typed.TypingResultFromJsonSampleTypeDeterminer
+import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
+import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyValidationHandler
 
 /**
   * This is universal kafka source - it will handle both avro and json
@@ -51,13 +58,29 @@ class UniversalKafkaSourceFactory(
     val namingStrategy: NamingStrategy,
     protected val implProvider: KafkaSourceImplFactory[Any, Any],
 ) extends KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
+    with WatermarkStrategyValidationHandler
     with SourceFactory
     with WithExplicitTypesToExtract
     with UnboundedStreamComponent {
 
   override type State = UniversalKafkaSourceFactoryState
 
-  override def typesToExtract: List[TypedClass] =
+  override protected val eventTimeDefaultValueExpression: Expression = "#inputMeta.timestamp".spel
+
+  override protected val maxOutOfOrdernessDefaultValueExpression: Expression = {
+    val seconds = kafkaComponentsConfig.defaultMaxOutOfOrdernessMillis.toSeconds
+    s"T(java.time.Duration).parse('PT${seconds}S')".spel
+  }
+
+  override protected val idlenessDefaultValueExpression: Expression =
+    kafkaComponentsConfig.idleTimeoutDuration
+      .map(_.toSeconds)
+      .map(seconds => s"T(java.time.Duration).parse('PT${seconds}S')".spel)
+      .getOrElse("".spel)
+
+  override protected val splitName: String = "partition"
+
+  override val typesToExtract: List[TypedClass] =
     Typed.typedClass[GenericRecord] :: Typed.typedClass[TimestampType] :: Nil
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
@@ -66,15 +89,16 @@ class UniversalKafkaSourceFactory(
     topicParamStep orElse
       schemaParamStep(Nil) orElse
       afterSchemaParamStep(paramsDeterminedAfterSchema) orElse
-      nextSteps(context, dependencies)
+      nextSteps(context, dependencies) orElse
+      watermarkStrategyParametersStep(context, dependencies)
 
-  protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+  protected def nextSteps(inputContext: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) ::
-          (`dataSampleParamName`, DefinedEagerParameter(_, typingResult)) :: _,
+          (`dataSampleParamName`, DefinedEagerParameter(_, typingResult)) :: Nil,
           _
         ) if contentType == ContentTypes.JSON.toString =>
       val preparedTopic = prepareTopic(topic)
@@ -84,38 +108,41 @@ class UniversalKafkaSourceFactory(
           TypingResultFromJsonSampleTypeDeterminer(typingResult)
         )
       )
-      prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
+      val validFinalState = prepareFinalState(preparedTopic, valueValidationResult, dependencies, step.parameters)
+      NextParameters(
+        prepareWatermarkStrategyParameters(outputValidationOrEmpty(inputContext, validFinalState)),
+        state = Some(
+          BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState(validFinalState)
+        )
+      )
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
-          (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) :: _,
+          (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) :: Nil,
           _
         ) if contentType == ContentTypes.JSON.toString =>
-      val preparedTopic = prepareTopic(topic)
-      prepareSourceFinalResults(
-        preparedTopic,
-        Valid((Some(runtimeDataForJsonSchema), Typed.json)),
-        context,
-        dependencies,
-        step.parameters,
-        Nil
+      val preparedTopic         = prepareTopic(topic)
+      val valueValidationResult = Valid((Some(runtimeDataForJsonSchema), Typed.json))
+      val validFinalState       = prepareFinalState(preparedTopic, valueValidationResult, dependencies, step.parameters)
+
+      NextParameters(
+        prepareWatermarkStrategyParameters(outputValidationOrEmpty(inputContext, validFinalState)),
+        state = Some(BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState(validFinalState))
       )
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
-          (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) :: _,
+          (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) :: Nil,
           _
         ) if contentType == ContentTypes.PLAIN.toString =>
-      val preparedTopic = prepareTopic(topic)
-      prepareSourceFinalResults(
-        preparedTopic,
-        Valid((Some(runtimeDataForPlainSchema), Typed[String])),
-        context,
-        dependencies,
-        step.parameters,
-        Nil
+      val preparedTopic         = prepareTopic(topic)
+      val valueValidationResult = Valid((Some(runtimeDataForPlainSchema), Typed[String]))
+      val validFinalState       = prepareFinalState(preparedTopic, valueValidationResult, dependencies, step.parameters)
+      NextParameters(
+        prepareWatermarkStrategyParameters(outputValidationOrEmpty(inputContext, validFinalState)),
+        state = Some(BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState(validFinalState))
       )
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
-          (`schemaVersionParamName`, DefinedEagerParameter(version: String, _)) :: _,
+          (`schemaVersionParamName`, DefinedEagerParameter(version: String, _)) :: Nil,
           state
         ) =>
       val preparedTopic = prepareTopic(topic)
@@ -131,14 +158,25 @@ class UniversalKafkaSourceFactory(
               Some(schemaVersionParamName)
             )
         }
+      val validFinalState = prepareFinalState(preparedTopic, valueValidationResult, dependencies, step.parameters)
 
-      prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
-    case step @ TransformationStep((`topicParamName`, _) :: (`schemaVersionParamName`, _) :: _, _) =>
+      NextParameters(
+        prepareWatermarkStrategyParameters(outputValidationOrEmpty(inputContext, validFinalState)),
+        state = Some(BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState(validFinalState))
+      )
+    case step @ TransformationStep((`topicParamName`, _) :: (`schemaVersionParamName`, _) :: Nil, _) =>
       // Edge case - for some reason Topic/Version is not defined, e.g. when topic or version does not match DefinedEagerParameter(String, _):
       // 1. FailedToDefineParameter
       // 2. not resolved as a valid String
       // Those errors are identified by parameter validation and handled elsewhere, hence empty list of errors.
-      prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
+      prepareSourceFinalErrors(inputContext, dependencies, step.parameters, errors = Nil)
+  }
+
+  private def outputValidationOrEmpty(
+      inputContext: ValidationContext,
+      validFinalState: ValidatedNel[ProcessCompilationError, ImplementationUniversalKafkaSourceFactoryState]
+  )(implicit nodeId: NodeId) = {
+    validFinalState.andThen(_.contextInitializer.validationContext(inputContext)).getOrElse(ValidationContext.empty)
   }
 
   protected def determineSchemaAndType(
@@ -160,18 +198,31 @@ class UniversalKafkaSourceFactory(
       .leftMap(error => CustomNodeError(error.getMessage, paramName))
   }
 
-  // Source specific FinalResults
-  protected def prepareSourceFinalResults(
+  override protected def resultAfterEventTimeParam(
+      inputContext: ValidationContext,
+      dependencies: List[NodeDependencyValue],
+      parameters: List[(ParameterName, DefinedSingleParameter)],
+      state: Option[UniversalKafkaSourceFactoryState]
+  )(implicit nodeId: NodeId): TransformationStepResult = {
+    state match {
+      case Some(BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState(validFinalState)) =>
+        prepareSourceFinalResults(validFinalState, inputContext, dependencies, parameters)
+      case _ =>
+        throw new IllegalStateException(
+          s"Illegal state: $state. Expected state class is: ${classOf[BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState].getSimpleName}"
+        )
+    }
+  }
+
+  private def prepareFinalState(
       preparedTopic: PreparedKafkaTopic[TopicName.ForSource],
       valueValidationResult: Validated[
         ProcessCompilationError,
         (Option[RuntimeSchemaData[ParsedSchema]], TypingResult)
       ],
-      context: ValidationContext,
       dependencies: List[NodeDependencyValue],
-      parameters: List[(ParameterName, DefinedParameter)],
-      errors: List[ProcessCompilationError]
-  )(implicit nodeId: NodeId): FinalResults = {
+      parameters: List[(ParameterName, DefinedParameter)]
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ImplementationUniversalKafkaSourceFactoryState] = {
     val keyValidationResult = if (kafkaComponentsConfig.useStringForKey) {
       Valid((None, Typed[String]))
     } else {
@@ -182,21 +233,34 @@ class UniversalKafkaSourceFactory(
         Some(topicParamName)
       )
     }
-
-    (keyValidationResult, valueValidationResult) match {
-      case (Valid((keyRuntimeSchema, keyType)), Valid((valueRuntimeSchema, valueType))) =>
+    (keyValidationResult.toValidatedNel, valueValidationResult.toValidatedNel).mapN {
+      case ((keyRuntimeSchema, keyType), (valueRuntimeSchema, valueType)) =>
         val finalInitializer = prepareContextInitializer(dependencies, parameters, keyType, valueType)
-        val finalState =
-          ImplementationUniversalKafkaSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
-        FinalResults.forValidation(context, errors, Some(finalState))(finalInitializer.validationContext)
-      case _ =>
+        ImplementationUniversalKafkaSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
+    }
+  }
+
+  // Source specific FinalResults
+  protected def prepareSourceFinalResults(
+      validFinalState: ValidatedNel[ProcessCompilationError, ImplementationUniversalKafkaSourceFactoryState],
+      inputContext: ValidationContext,
+      dependencies: List[NodeDependencyValue],
+      parameters: List[(ParameterName, DefinedParameter)],
+  )(implicit nodeId: NodeId): FinalResults = {
+    validFinalState
+      .map { finalState =>
+        FinalResults.forValidation(inputContext, List.empty, Some(finalState))(
+          finalState.contextInitializer.validationContext
+        )
+      }
+      .valueOr { errors =>
         prepareSourceFinalErrors(
-          context = context,
+          context = inputContext,
           dependencies = dependencies,
           parameters = parameters,
-          errors = keyValidationResult.swap.toList ++ valueValidationResult.swap.toList
+          errors = errors.toList
         )
-    }
+      }
   }
 
   // Source specific FinalResults with errors
@@ -265,7 +329,8 @@ class UniversalKafkaSourceFactory(
       recordFormatter,
       kafkaContextInitializer,
       prepareKafkaTestParametersInfo(valueSchemaUsedInRuntime, preparedTopic.original, defaultValuesForTestParameters),
-      namingStrategy
+      namingStrategy,
+      extractWatermarkStrategyOptions(params)
     )
   }
 
@@ -387,12 +452,17 @@ object UniversalKafkaSourceFactory {
 
   sealed trait UniversalKafkaSourceFactoryState
 
+  private case class BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState(
+      validFinalState: ValidatedNel[ProcessCompilationError, ImplementationUniversalKafkaSourceFactoryState]
+  ) extends UniversalKafkaSourceFactoryState
+
   case class ImplementationUniversalKafkaSourceFactoryState(
       keySchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       valueSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       contextInitializer: ContextInitializer[ConsumerRecord[Any, Any]]
   ) extends UniversalKafkaSourceFactoryState
 
+  // Used by external project
   case class PrecalculatedValueSchemaUniversalKafkaSourceFactoryState(
       valueValidationResult: Validated[ProcessCompilationError, (Option[RuntimeSchemaData[ParsedSchema]], TypingResult)]
   ) extends UniversalKafkaSourceFactoryState

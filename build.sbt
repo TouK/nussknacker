@@ -1635,8 +1635,9 @@ lazy val commonApi = (project in file("common-api"))
 lazy val buildInfoSettings = Seq(
   buildInfoKeys    := Seq[BuildInfoKey](name, version),
   buildInfoKeys ++= Seq[BuildInfoKey](
-    "buildTime" -> java.time.LocalDateTime.now().toString,
-    "gitCommit" -> git.gitHeadCommit.value.getOrElse("")
+    "buildTime"    -> java.time.LocalDateTime.now().toString,
+    "gitCommit"    -> git.gitHeadCommit.value.getOrElse(""),
+    "flinkVersion" -> flinkV
   ),
   buildInfoPackage := "pl.touk.nussknacker.engine.version",
   buildInfoOptions ++= Seq(BuildInfoOption.ToMap)

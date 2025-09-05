@@ -280,6 +280,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8534](https://github.com/TouK/nussknacker/pull/8534) Kafka components: Added support for "PLAIN" Content type for topics without schema 
 * [#8523](https://github.com/TouK/nussknacker/pull/8523) `FlinkTestScenarioRunner`: added asynchronous method allowing scenario testing on Flink engine (`withRunningScenario`) 
 * [#8555](https://github.com/TouK/nussknacker/pull/8555) SpEL: Added implicit conversions between various date types e.g. `Long` -> `Instant`, `OffsetDateTime` -> `LocalDateTime` etc. 
+* [#8540](https://github.com/TouK/nussknacker/pull/8540) Kafka source: Added advanced parameters allowing a user to specify watermark strategy (`Event time`, `Max out-of-orderness`, `Idleness`)  
 * [#8352](https://github.com/TouK/nussknacker/pull/8352) Updated dependencies:
   * Caffeine Cache 3.1.8 -> 3.2.1
   * Cats Effect 3.5.4 -> 3.5.7
