@@ -1,15 +1,13 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
-import io.circe.parser
+import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
 import org.apache.avro.io.DecoderFactory
-import org.everit.json.schema.EmptySchema
+import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
-import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroRecordDeserializer, DatumReaderWriterMixin}
@@ -113,29 +111,17 @@ class JsonTypingResultPayloadDeserializer(typingResult: TypingResult) extends Un
   ): Any = {
     val bytes = new Array[Byte](buffer.remaining())
     buffer.get(bytes)
-    val string = new String(bytes, StandardCharsets.UTF_8)
 
-    parser
-      .parse(string)
+    CirceUtil
+      .decodeJson[Json](bytes)
       .flatMap(json =>
         FromJsonTypingResultBasedDecoder
           .decodeValue(typingResult, json.hcursor)
       )
-      .fold(e => throw CustomNodeValidationException(e.getMessage, None), identity)
+      .fold(ex => throw new PayloadDeserializationException(ex), identity)
   }
 
 }
 
-object JsonSchemalessPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
-  private val jsonDeserializer = new CirceJsonDeserializer(EmptySchema.INSTANCE)
-
-  override def deserialize(
-      expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]],
-      writerSchemaData: RuntimeSchemaData[ParsedSchema],
-      buffer: ByteBuffer
-  ): Any = {
-    val bytes = new Array[Byte](buffer.remaining())
-    jsonDeserializer.deserialize(bytes)
-  }
-
-}
+final class PayloadDeserializationException(cause: Exception)
+    extends RuntimeException(s"Exception during payload deserialization: ${cause.getMessage}", cause)
