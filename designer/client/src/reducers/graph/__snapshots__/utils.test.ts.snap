@@ -35,8 +35,8 @@ exports[`GraphUtils prepareNewNodesWithLayout should update union output express
       "additionalFields": {
         "description": null,
         "layoutData": {
-          "x": 0,
-          "y": 720,
+          "x": 350,
+          "y": 859,
         },
       },
       "id": "variable 1 (copy 1)",
@@ -52,8 +52,8 @@ exports[`GraphUtils prepareNewNodesWithLayout should update union output express
       "additionalFields": {
         "description": null,
         "layoutData": {
-          "x": 360,
-          "y": 720,
+          "x": 710,
+          "y": 859,
         },
       },
       "id": "variable 2 (copy 1)",
@@ -69,8 +69,8 @@ exports[`GraphUtils prepareNewNodesWithLayout should update union output express
       "additionalFields": {
         "description": null,
         "layoutData": {
-          "x": 180,
-          "y": 900,
+          "x": 530,
+          "y": 1039,
         },
       },
       "branchParameters": [

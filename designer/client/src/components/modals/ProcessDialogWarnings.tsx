@@ -2,7 +2,7 @@ import WarningIcon from "@mui/icons-material/Warning";
 import { Typography } from "@mui/material";
 import React from "react";
 
-import { hasWarnings } from "../../reducers/selectors/graph";
+import { hasWarnings } from "../../reducers/selectors/graph2";
 import { useAppSelector } from "../../store/storeHelpers";
 import { IconWithLabel } from "../tips/IconWithLabel";
 

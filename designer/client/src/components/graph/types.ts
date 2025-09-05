@@ -1,33 +1,10 @@
-import type {
-    editNode,
-    injectNode,
-    Layout,
-    layoutChanged,
-    nodeAdded,
-    nodesConnected,
-    nodesDisconnected,
-    nodesWithEdgesAdded,
-    replaceNode,
-    resetSelection,
-    toggleSelection,
-} from "../../actions/nk";
+import type { Layout } from "../../actions/nk";
 import type { ProcessCounts } from "../../http/resultsWithCountsDto";
 import type { Capabilities } from "../../reducers/selectors/other";
-import type { NodeType } from "../../types";
+import type { AppDispatch } from "../../store/storeHelpers";
 import type { Scenario } from "../Process/types";
 
 type ScenarioGraphProps = {
-    nodesConnected: typeof nodesConnected;
-    nodesDisconnected: typeof nodesDisconnected;
-    layoutChanged: typeof layoutChanged;
-    injectNode: typeof injectNode;
-    editNode: typeof editNode;
-    replaceNode: typeof replaceNode;
-    nodeAdded: typeof nodeAdded;
-    nodesWithEdgesAdded: typeof nodesWithEdgesAdded;
-    resetSelection: typeof resetSelection;
-    toggleSelection: typeof toggleSelection;
-
     scenario: Scenario;
     divId: string;
     nodeIdPrefixForFragmentTests?: string;
@@ -41,7 +18,7 @@ type ScenarioGraphProps = {
     isFragment?: false | null;
 
     connectDropTarget;
-    createFragment?: (callback: (node: NodeType) => void) => void;
+    dispatch: AppDispatch;
 };
 
 type FragmentGraphProps = {

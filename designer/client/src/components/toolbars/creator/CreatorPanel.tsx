@@ -1,9 +1,11 @@
 import type { ModuleUrl } from "@touk/federated-component";
+import type { g } from "jointjs";
 import { isEmpty } from "lodash";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 
+import { addNodeConnected, addNodeInject, addNodePlain, addNodeReplace } from "../../../actions/nk";
 import { isDynamic } from "../../../actions/nk/ui/panelSide";
 import { useUserSettings } from "../../../common/userSettings";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
@@ -11,9 +13,8 @@ import { useNodeCreationHandler } from "../../../containers/NodeCreationHandler"
 import { getAdditionalComponents } from "../../../reducers/cloudData";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
-import type { ActionOfType } from "../../../store/storeHelpers";
 import { addListenerTyped, useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
-import type { NodeType } from "../../../types";
+import type { Edge, NodeType } from "../../../types";
 import { RemoteComponent } from "../../RemoteComponent";
 import { useSidePanel } from "../../sidePanels/SidePanelsContext";
 import { SearchIcon } from "../../table/SearchFilter";
@@ -61,14 +62,16 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
 
     const { isOpened, toggleCollapse, side } = useSidePanel();
 
-    const lastActionRef = useRef<ActionOfType<"OPEN_NODE_SELECTOR">>();
+    const intendedCoords = useRef<g.PlainPoint>(null);
+    const intendedConnecion = useRef<Edge>(null);
     useEffect(
         () =>
             dispatch(
                 addListenerTyped("OPEN_NODE_SELECTOR", (action) => {
                     const { data } = action;
                     if (data.side !== side) return;
-                    lastActionRef.current = action;
+                    intendedCoords.current = data.fromPoint;
+                    intendedConnecion.current = data.withEdge;
                     setFilters(data.filters || []);
                     setTextFilter("");
                     if (!isOpened) {
@@ -84,9 +87,29 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
 
     const { componentGroups } = useAppSelector(getProcessDefinitionData);
 
-    const onComponentSelect = useCallback(
-        (node?: NodeType) => {
-            dispatch(selectComponent(side, node, lastActionRef.current?.data.fromPoint, lastActionRef.current?.data.withEdge));
+    const selectHandler = useCallback(
+        (node?: NodeType, point?: g.PlainPoint, currentNode?: NodeType, currentEdge?: Edge) => {
+            const offset = point || intendedCoords.current;
+            const edge = currentEdge || intendedConnecion.current;
+
+            dispatch(selectComponent(side, node));
+
+            dispatch((dispatch) => {
+                if (currentNode) {
+                    return dispatch(addNodeReplace(node, currentNode));
+                }
+                if (edge?.from && edge?.to) {
+                    return dispatch(addNodeInject(node, edge, offset));
+                }
+                if (edge) {
+                    return dispatch(addNodeConnected(node, edge, offset));
+                }
+                return dispatch(addNodePlain(node, offset));
+            });
+
+            intendedCoords.current = null;
+            intendedConnecion.current = null;
+            searchRef.current.blur();
         },
         [dispatch, side],
     );
@@ -128,7 +151,21 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
                         {...props}
                     />
                 )}
-                onSelect={onComponentSelect}
+                toolSelect={{
+                    onClick: (item) => {
+                        if (!isDynamic(side)) return;
+                        selectHandler(item);
+                    },
+                    onDragEnd: (item, monitor) => {
+                        if (!monitor.didDrop()) return;
+                        const { offset, currentNode, currentEdge } = monitor.getDropResult();
+                        selectHandler(item, offset, currentNode, currentEdge);
+                    },
+                    onEnter: (item) => {
+                        if (!searchRef.current.hasFocus) return;
+                        selectHandler(item);
+                    },
+                }}
             />
         </ToolbarWrapper>
     );

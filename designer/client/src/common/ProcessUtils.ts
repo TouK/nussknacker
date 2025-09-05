@@ -187,7 +187,7 @@ class ProcessUtils {
     };
 
     extractComponentDefinition = (node: NodeType, components?: Record<string, ComponentDefinition>): ComponentDefinition | null => {
-        return node.type == StickyNoteType ? StickyNoteDefinition : components?.[this.determineComponentId(node)];
+        return node?.type == StickyNoteType ? StickyNoteDefinition : components?.[this.determineComponentId(node)];
     };
 
     determineComponentId = (node?: NodeType): string | null => {

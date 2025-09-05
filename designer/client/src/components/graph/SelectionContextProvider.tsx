@@ -1,16 +1,16 @@
-import { min } from "lodash";
 import type { PropsWithChildren, ReactElement } from "react";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
+import { createSelector } from "reselect";
 import { useDebounceFn } from "rooks";
 
 import {
+    addNodeMultiple,
     copySelection,
     cutSelection,
     deleteNodes,
     deleteSelection,
-    nodesWithEdgesAdded,
     pasteSelection,
     resetSelection,
     selectAll,
@@ -24,12 +24,14 @@ import { useInterval } from "../../containers/Interval";
 import { useDocumentListeners } from "../../containers/useDocumentListeners";
 import { getGraphLocked, getHistoryCounts } from "../../reducers/selectors/getHistory";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
-import { canModifySelectedNodes, getSelection, getSelectionState } from "../../reducers/selectors/graph";
+import { canModifySelectedNodes, getScenarioGraph, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import NodeUtils from "./NodeUtils";
 
 const hasTextSelection = () => !!window.getSelection().toString();
+
+export const getSelection = createSelector(getSelectionState, getScenarioGraph, (s, p) => NodeUtils.getAllNodesByIdWithEdges(s, p));
 
 type UserAction = ((e: Event) => unknown) | null;
 
@@ -187,26 +189,10 @@ export default function SelectionContextProvider(
 
     const parse = useClipboardParse();
 
-    function calculatePastedNodePosition(node, pasteX, minNodeX, pasteY, minNodeY) {
-        const currentNodePosition = node.additionalFields.layoutData;
-        const pasteNodePosition = { x: currentNodePosition.x + pasteX, y: currentNodePosition.y + pasteY };
-        return {
-            x: pasteNodePosition.x - minNodeX,
-            y: pasteNodePosition.y - minNodeY,
-        };
-    }
-
     const [parseInsertNodes] = useDebounceFn((clipboardText) => {
         const selection = parse(clipboardText);
         if (selection) {
-            const { x, y } = props.pastePosition();
-            const minNodeX: number = min(selection.nodes.map((node) => node.additionalFields.layoutData.x));
-            const minNodeY: number = min(selection.nodes.map((node) => node.additionalFields.layoutData.y));
-            const nodesWithPositions = selection.nodes.map((node) => ({
-                node,
-                position: calculatePastedNodePosition(node, x, minNodeX, y, minNodeY),
-            }));
-            dispatch(nodesWithEdgesAdded(nodesWithPositions, selection.edges));
+            dispatch(addNodeMultiple(selection.nodes, selection.edges, props.pastePosition()));
         } else {
             dispatch(error(t("userActions.paste.failed", "Cannot paste content from clipboard")));
         }

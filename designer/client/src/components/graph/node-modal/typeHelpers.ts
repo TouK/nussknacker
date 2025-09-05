@@ -41,3 +41,10 @@ type _PathValue<T, P extends string> = P extends `${infer Key}.${infer Rest}`
     : never;
 
 export type PathValue<T, P extends string> = _PathValue<T, NormalizePath<P>>;
+
+export function normalizePathString<P extends string>(path: P): NormalizePath<P> {
+    if (path.match(/\[]./) || path.match(/\.\[\d+]/g) || path.includes(".#")) {
+        throw "Invalid path: " + path;
+    }
+    return path.replace(/\[(\d+)]/g, ".$1").replace(/\[]$/g, "") as NormalizePath<P>;
+}

@@ -2,7 +2,7 @@ import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 import Icon from "../../../../assets/img/toolbarButtons/properties.svg";
-import { hasError, hasPropertiesErrors } from "../../../../reducers/selectors/graph";
+import { hasError, hasPropertiesErrors } from "../../../../reducers/selectors/graph2";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";

@@ -1,9 +1,11 @@
 import { isEmpty } from "lodash";
 import React, { useMemo, useState } from "react";
+import { createSelector } from "reselect";
 
-import { getProcessNodesIds } from "../../../reducers/selectors/graph";
+import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeOrPropertiesType, NodeType, NodeValidationError } from "../../../types";
+import NodeUtils from "../NodeUtils";
 import Field, { FieldType } from "./editors/field/Field";
 import { extendErrors, getValidationErrorsForField, uniqueScenarioValueValidator } from "./editors/Validators";
 import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableStyled";
@@ -33,6 +35,8 @@ export function applyIdFromFakeName({ id, ...editedNode }: EditedNode): NodeType
     delete editedNode[FAKE_NAME_PROP_NAME];
     return { ...editedNode, id: name ?? id };
 }
+
+export const getProcessNodesIds = createSelector(getScenarioGraph, (p) => NodeUtils.nodesFromScenarioGraph(p).map((n) => n.id));
 
 export function IdField({ isEditMode, node, renderFieldLabel, setProperty, showValidation, errors }: IdFieldProps): JSX.Element {
     const nodes = useAppSelector(getProcessNodesIds);

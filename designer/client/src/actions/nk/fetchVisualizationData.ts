@@ -2,7 +2,6 @@ import type { ProcessName } from "../../components/Process/types";
 import HttpService from "../../http/HttpService";
 import type { ThunkAction } from "../reduxTypes";
 import { loadProcessToolbarsConfiguration } from "./loadProcessToolbarsConfiguration";
-import { displayTestCapabilities } from "./process";
 import { fetchProcessDefinition } from "./processDefinitionData";
 
 // This function is responsible for the initial fetching of scenario visualization

@@ -1,6 +1,4 @@
 export type ActionTypes =
-    | "LAYOUT_CHANGED"
-    | "LAYOUT"
     | "LOGGED_USER"
     | "UI_SETTINGS"
     | "AVAILABLE_QUERY_STATES"

@@ -7,15 +7,8 @@ import Icon from "../../../../assets/img/toolbarButtons/redeploy.svg";
 import { useUserSettings } from "../../../../common/userSettings";
 import type { NodesDeploymentData, ScenarioGraphSource } from "../../../../http/HttpService";
 import HttpService from "../../../../http/HttpService";
-import {
-    getProcessName,
-    getProcessVersionId,
-    getScenarioGraphSource,
-    hasError,
-    isRedeployPossible,
-    isRedeployVisible,
-    isValidationResultPresent,
-} from "../../../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId, getScenarioGraphSource, isRedeployVisible } from "../../../../reducers/selectors/graph";
+import { hasError, isRedeployPossible, isValidationResultPresent } from "../../../../reducers/selectors/graph2";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getIsRedeploying } from "../../../../reducers/selectors/scenarioState";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
