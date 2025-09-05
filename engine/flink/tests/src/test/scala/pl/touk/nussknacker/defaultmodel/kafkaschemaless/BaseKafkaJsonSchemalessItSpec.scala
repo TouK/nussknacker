@@ -1,26 +1,16 @@
 package pl.touk.nussknacker.defaultmodel.kafkaschemaless
 
 import com.typesafe.config.{Config, ConfigValueFactory}
-import io.circe.{parser, Json}
-import pl.touk.nussknacker.defaultmodel.{DefaultConfigCreator, FlinkWithKafkaSuite, MockSchemaRegistryClientHolder}
-import pl.touk.nussknacker.engine.ModelConfig
-import pl.touk.nussknacker.engine.api.component.ComponentDependencies
+import io.circe.{parser, Json, ParsingFailure}
+import pl.touk.nussknacker.defaultmodel.FlinkWithKafkaSuite
 import pl.touk.nussknacker.engine.api.process.TopicName.ForSource
-import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
-import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
-import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
-import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
-import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypes
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.PayloadDeserializationException
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
-import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.engine.testmode.TestProcess.ExceptionResult
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -242,10 +232,10 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite with Pa
   }
 
   def shouldDropEventsBasedOnTheInferredDataSampleType(): Unit = {
-    def assertDecodingFailureException(e: ExceptionResult[_])(value: String) = {
+    def assertDecodingFailureException(e: ExceptionResult[_])(exceptionMessageSuffix: String) = {
       e.nodeId shouldBe Some("start")
-      e.throwable shouldBe a[CustomNodeValidationException]
-      e.throwable.getMessage shouldBe s"DecodingFailure at : Got value '$value' with wrong type, expecting object"
+      e.throwable shouldBe a[PayloadDeserializationException]
+      e.throwable.getMessage shouldBe s"Exception during payload deserialization: $exceptionMessageSuffix"
     }
 
     val dataSampleJson = Json.obj(
@@ -280,9 +270,13 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite with Pa
         val exceptions = fixture.errors
         exceptions.size should be(3)
 
-        assertDecodingFailureException(exceptions(0))("[\"YOUR JSON\"]")
-        assertDecodingFailureException(exceptions(1))("\"name\"")
-        assertDecodingFailureException(exceptions(2))("123456")
+        assertDecodingFailureException(exceptions(0))("expected json value got 'YOUR J...' (line 1, column 2)")
+        assertDecodingFailureException(exceptions(1))(
+          "DecodingFailure at : Got value '\"name\"' with wrong type, expecting object"
+        )
+        assertDecodingFailureException(exceptions(2))(
+          "DecodingFailure at : Got value '123456' with wrong type, expecting object"
+        )
       }
     }
   }

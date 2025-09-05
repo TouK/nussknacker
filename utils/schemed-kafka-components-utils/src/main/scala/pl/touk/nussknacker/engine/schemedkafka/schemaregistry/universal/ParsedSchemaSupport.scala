@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   SpelTemplateParameterEditor
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.json.{JsonSchemaBasedParameter, JsonTemplateFromJsonSchemaDeterminer}
@@ -252,7 +252,7 @@ object NoSchemaJsonSupport extends UniversalSchemaSupport {
   private final val jsonSupport = JsonSchemaSupport
 
   override val payloadDeserializer: UniversalSchemaPayloadDeserializer =
-    JsonSchemalessPayloadDeserializer
+    new JsonTypingResultPayloadDeserializer(Unknown)
 
   override def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, isKey: Boolean): Serializer[Any] =
     jsonSupport.serializer(schemaOpt, c, isKey)
