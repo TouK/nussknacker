@@ -3,28 +3,7 @@ package pl.touk.nussknacker.restmodel.validation
 import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.{
-  BoolParameterEditor,
-  CronParameterEditor,
-  DateParameterEditor,
-  DateTimeParameterEditor,
-  DictParameterEditor,
-  DurationParameterEditor,
-  FixedExpressionValue,
-  FixedValuesParameterEditor,
-  FixedValuesWithIconParameterEditor,
-  FixedValuesWithRadioParameterEditor,
-  JsonParameterEditor,
-  JsonTemplateParameterEditor,
-  ParameterEditor,
-  PeriodParameterEditor,
-  SpelParameterEditor,
-  SpelTemplateParameterEditor,
-  SqlParameterEditor,
-  TabularTypedDataEditor,
-  TextareaParameterEditor,
-  TimeParameterEditor
-}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
   ErrorDetails,
   IncompatibleParameterDefinitionErrorDetails
@@ -32,7 +11,6 @@ import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language.TabularDataDefinition
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
