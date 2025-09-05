@@ -31,6 +31,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler
+import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler.ContextWithEventTime
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.FlinkDeserializationSchemaWrapper
@@ -81,7 +82,7 @@ class FlinkKafkaSource[K, V](
     // 1. set UID and override source name
     val rawSourceWithUid = sourceWithUidAndName(streamOfRaw, flinkNodeContext)
 
-    // 2. initialize Context, compute event time and spool Context to the stream
+    // 2. initialize Context and compute event time
     rawSourceWithUid
       .map(
         new FlinkWatermarkStrategyRuntimeHandler.ContextInitializingFunction(
@@ -99,6 +100,8 @@ class FlinkKafkaSource[K, V](
       .assignTimestampsAndWatermarks(
         FlinkWatermarkStrategyRuntimeHandler.watermarkStrategy(watermarkStrategyOptions)
       )
+      // 4. unwrap context
+      .map((ctxWithEventTime: ContextWithEventTime) => ctxWithEventTime.context, flinkNodeContext.contextTypeInfo)
   }
 
   private def sourceWithUidAndName[T](

@@ -7,17 +7,14 @@ import pl.touk.nussknacker.engine.api.{Context, LazyParameter}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.ContextInitializer
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.FlinkLazyParameterFunctionHelper
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
 import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyOptions
 
 import java.time.{Duration, Instant}
 
 object FlinkWatermarkStrategyRuntimeHandler {
-
-  // TODO: rename this hidden variable to human readable name and make it available for user during typing as well
-  private val EventTimeVariableName = "$eventTime"
 
   class ContextInitializingFunction[Raw](
       contextInitializer: ContextInitializer[Raw],
@@ -25,7 +22,7 @@ object FlinkWatermarkStrategyRuntimeHandler {
       convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
       eventTimeLazyParam: LazyParameter[Instant],
       lazyParamHelper: FlinkLazyParameterFunctionHelper
-  ) extends RichMapFunction[Raw, Context] {
+  ) extends RichMapFunction[Raw, ContextWithEventTime] {
 
     private var contextIdGenerator: ContextIdGenerator = _
 
@@ -38,27 +35,29 @@ object FlinkWatermarkStrategyRuntimeHandler {
         .toEvaluateFunction(eventTimeLazyParam)
     }
 
-    override def map(input: Raw): Context = {
+    override def map(input: Raw): ContextWithEventTime = {
       val contextVariables = contextInitializer.convertToInitialVariables(input).variables
-      val baseContext = Context(contextIdGenerator.nextContextId())
+      val context = Context(contextIdGenerator.nextContextId())
         .withVariables(contextVariables)
-      val eventTimeValue = eventTimeFun(baseContext)
-      baseContext.withVariable(EventTimeVariableName, eventTimeValue)
+      val eventTimeValue = eventTimeFun(context)
+      ContextWithEventTime(context, eventTimeValue)
     }
 
   }
 
   def contextInitializingFunctionOutputTypeInfo(
       sourceOutputValidationContext: ValidationContext
-  ): TypeInformation[Context] =
-    TypeInformationDetection.instance.forContext(
-      sourceOutputValidationContext.withVariableUnsafe(EventTimeVariableName, Typed[Instant])
+  ): TypeInformation[ContextWithEventTime] = {
+    ConcreteCaseClassTypeInfo[ContextWithEventTime](
+      "context"   -> TypeInformationDetection.instance.forContext(sourceOutputValidationContext),
+      "eventTime" -> TypeInformation.of(classOf[Instant])
     )
+  }
 
   // TODO: use this WatermarkStrategy also in scenario testing mechanism, when common format is used
-  def watermarkStrategy(watermarkStrategyOptions: WatermarkStrategyOptions): WatermarkStrategy[Context] = {
+  def watermarkStrategy(watermarkStrategyOptions: WatermarkStrategyOptions): WatermarkStrategy[ContextWithEventTime] = {
     val strategyWithLateness =
-      WatermarkStrategy.forBoundedOutOfOrderness[Context](
+      WatermarkStrategy.forBoundedOutOfOrderness[ContextWithEventTime](
         watermarkStrategyOptions.maxOutOfOrderness.getOrElse(Duration.ZERO)
       )
     val strategyWithOptIdleness = watermarkStrategyOptions.idleTimeout match {
@@ -68,18 +67,13 @@ object FlinkWatermarkStrategyRuntimeHandler {
     strategyWithOptIdleness.withTimestampAssigner(EventTimeTimestampAssigner)
   }
 
-  private object EventTimeTimestampAssigner extends SerializableTimestampAssigner[Context] {
+  private object EventTimeTimestampAssigner extends SerializableTimestampAssigner[ContextWithEventTime] {
 
-    override def extractTimestamp(context: Context, recordTimestamp: Long): Long =
-      context
-        .getOrElse[Instant](
-          EventTimeVariableName,
-          throw new IllegalStateException(
-            s"$EventTimeVariableName variable is not available. Probably ${classOf[ContextInitializingFunction[_]].getSimpleName} wasn't used"
-          )
-        )
-        .toEpochMilli
+    override def extractTimestamp(context: ContextWithEventTime, recordTimestamp: Long): Long =
+      context.eventTime.toEpochMilli
 
   }
+
+  case class ContextWithEventTime(context: Context, eventTime: Instant)
 
 }
