@@ -1,64 +1,45 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
-import cats.data.Validated.Valid
-import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.{HCursor, Json}
-import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
-import org.apache.flink.api.common.functions.MapFunction
+import org.apache.flink.api.common.functions.OpenContext
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.util.Collector
-import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.VariableConstants.InputVariableName
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.context.transformation.{
-  DefinedLazyParameter,
-  NodeDependencyValue,
-  SingleInputDynamicComponent
-}
-import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedLazyParameter, DefinedSingleParameter, NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.ParameterCategory.Advanced
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.livedata.{DataRecord, DataRecords, LiveDataProvider}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
+import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
-  StandardTimestampWatermarkHandler,
-  TimestampWatermarkHandler
-}
-import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler
+import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler.ContextWithEventTime
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
-import pl.touk.nussknacker.engine.util.TimestampUtils
+import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyValidationHandler
 
 import java.time.Duration
 import java.time.temporal.ChronoUnit
-import java.util
 import scala.annotation.nowarn
-import scala.jdk.CollectionConverters._
 
 object EventGeneratorSourceFactory
-    extends EventGeneratorSourceFactory(
-      new StandardTimestampWatermarkHandler[ValueWithContext[AnyRef]](
-        WatermarkStrategy
-          .forMonotonousTimestamps()
-          .withTimestampAssigner(
-            new MapAscendingTimestampExtractor(MapAscendingTimestampExtractor.DefaultTimestampField)
-          )
-      )
-    )
-
-class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHandler[ValueWithContext[AnyRef]])
     extends SourceFactory
     with SingleInputDynamicComponent[FlinkSource]
-    with UnboundedStreamComponent {
+    with UnboundedStreamComponent
+    with WatermarkStrategyValidationHandler {
 
   override type State = Nothing
 
@@ -105,9 +86,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       )
     )
 
-  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
-      implicit nodeId: NodeId
-  ): ContextTransformationDefinition = {
+  private val standardParametersStep: ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       NextParameters(
         List(scheduleParameterDeclaration, countParameterDeclaration, valueParameterDeclaration).map(
@@ -121,7 +100,36 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
           Nil,
           _
         ) =>
-      FinalResults(ValidationContext.empty.withVariableUnsafe(InputVariableName, valueType))
+      val outputValidationContext = prepareOutputValidationContext(valueType)
+      NextParameters(prepareWatermarkStrategyParameters(outputValidationContext))
+  }
+
+  override protected def eventTimeDefaultValueExpression: Expression = "#DATE.now".spel
+
+  override def contextTransformation(inputContext: ValidationContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): ContextTransformationDefinition =
+    standardParametersStep orElse watermarkStrategyParametersStep(inputContext, dependencies)
+
+  override protected def resultAfterWatermarkStrategyParameters(
+      inputContext: ValidationContext,
+      dependencies: List[NodeDependencyValue],
+      parameters: List[(ParameterName, DefinedSingleParameter)],
+      state: Option[Nothing]
+  )(implicit nodeId: NodeId): TransformationStepResult = {
+    val valueType = parameters
+      .collectFirst { case (`valueParameterName`, DefinedLazyParameter(valueType)) =>
+        valueType
+      }
+      .getOrElse(
+        throw new IllegalStateException(s"Missing $valueParameterName after watermark strategy parameters: $parameters")
+      )
+    val outputValidationContext = prepareOutputValidationContext(valueType)
+    FinalResults(outputValidationContext)
+  }
+
+  private def prepareOutputValidationContext(valueType: typing.TypingResult) = {
+    ValidationContext.empty.withVariableUnsafe(InputVariableName, valueType)
   }
 
   @nowarn("cat=deprecation")
@@ -130,12 +138,12 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       dependencies: List[NodeDependencyValue],
       finalState: Option[Nothing]
   ): FlinkSource = {
-    val schedule = scheduleParameterDeclaration.extractValueUnsafe(params)
-    val count    = countParameterDeclaration.extractValue(params).getOrElse(1)
-    val value    = valueParameterDeclaration.extractValueUnsafe(params)
+    val schedule                 = scheduleParameterDeclaration.extractValueUnsafe(params)
+    val count                    = countParameterDeclaration.extractValue(params).getOrElse(1)
+    val value                    = valueParameterDeclaration.extractValueUnsafe(params)
+    val watermarkStrategyOptions = extractWatermarkStrategyOptions(params)
 
     new FlinkSource
-      with BaseFlinkSource
       with ExplicitUidInOperatorsSupport
       with ReturningType
       with FlinkSourceTestSupport[AnyRef]
@@ -157,48 +165,52 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       ): DataStream[Context] = {
         // Without this local variable, flatMap function is not serializable
         val localCount = count
-        val streamOfRaw =
-          env
-            .addSource(new PeriodicFunction(schedule))
-            .flatMap(
-              (_: Unit, out: Collector[String]) => {
-                // This empty String is a dummy value. It has to exist for each event, but its value is completely ignored.
-                // The type is not important too, it just has to be serializable by Flink.
-                // For each of those dummy values, a new Context will be created.
-                (1 to localCount).foreach(_ => out.collect(""))
-              },
-              TypeInformationDetection.instance.forClass[String]
+        env
+          .addSource(new PeriodicFunction(schedule))
+          .flatMap(
+            (_: Unit, out: Collector[Boolean]) => {
+              // This 'true' is a dummy value. It has to exist for each event, but its value is completely ignored.
+              // The type is not important too, it just has to be serializable by Flink.
+              // For each of those dummy values, a new Context will be created.
+              (1 to localCount).foreach(_ => out.collect(true))
+            },
+            TypeInformation.of(classOf[Boolean])
+          )
+          .flatMap(
+            new FlinkWatermarkStrategyRuntimeHandler.ContextInitializingFunction[Boolean](
+              flinkNodeContext.nodeId,
+              flinkNodeContext.convertToEngineRuntimeContext,
+              watermarkStrategyOptions.eventTimeLazyParam,
+              flinkNodeContext.lazyParameterHelper
+            ) {
+              private var valueFun: Context => AnyRef = _
+
+              override def open(openContext: OpenContext): Unit = {
+                super.open(openContext)
+                valueFun = flinkNodeContext.lazyParameterHelper
+                  .createInterpreter(getRuntimeContext)
+                  .toEvaluateFunction(value)
+              }
+
+              override protected def sourceOutputVariables(
+                  input: Boolean,
+                  initialContext: Context
+              ): ContextVariables = {
+                ContextVariables(
+                  Map(
+                    InputVariableName -> valueFun(initialContext)
+                  )
+                )
+              }
+            },
+            FlinkWatermarkStrategyRuntimeHandler.contextInitializingFunctionOutputTypeInfo(
+              flinkNodeContext.asOneOutputContext
             )
-            .map(
-              new FlinkContextInitializingFunction[String](
-                contextInitializer,
-                flinkNodeContext.nodeId,
-                flinkNodeContext.convertToEngineRuntimeContext
-              ),
-              flinkNodeContext.contextTypeInfo
-            )
-            .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(value))
-
-        val rawSourceWithUidAndTimestamp = sourceWithUidAndTimestamp(
-          streamOfRaw,
-          flinkNodeContext,
-          Some(customTimestampAssigner),
-        )
-
-        rawSourceWithUidAndTimestamp.map(new ContextWithInputVariable)
-      }
-
-      // This is a custom ContextInitializer, which initializes Context ignoring input.
-      // It is required, because in EventGenerator we first initialize Context, and only then generate input.
-      private def contextInitializer[T]: ContextInitializer[T] = new ContextInitializer[T] {
-        override def convertToInitialVariables(raw: T): ContextVariables = {
-          ContextVariables(Map.empty)
-        }
-
-        override def validationContext(
-            context: ValidationContext
-        )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] =
-          Valid(context)
+          )
+          .assignTimestampsAndWatermarks(
+            FlinkWatermarkStrategyRuntimeHandler.watermarkStrategy(watermarkStrategyOptions)
+          )
+          .map((ctxWithEventTime: ContextWithEventTime) => ctxWithEventTime.context, flinkNodeContext.contextTypeInfo)
       }
 
       override val returnType: typing.TypingResult = value.returnType
@@ -206,10 +218,9 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       override def fetchLiveData(maxNumberOfRecords: Int): DataRecords = {
         val records = List.fill(maxNumberOfRecords)(generateSample())
         DataRecords(records.map { record =>
-          val timestamp = MapAscendingTimestampExtractor.default.extractTimestampFromRecord(record)
           DataRecord(
             variables = Map(VariableConstants.InputVariableName -> record),
-            timestamp = timestamp
+            timestamp = None
           )
         })
       }
@@ -262,37 +273,5 @@ class PeriodicFunction(period: Duration) extends SourceFunction[Unit] {
   override def cancel(): Unit = {
     isRunning = false
   }
-
-}
-
-class MapAscendingTimestampExtractor(timestampField: String)
-    extends SerializableTimestampAssigner[ValueWithContext[AnyRef]] {
-
-  override def extractTimestamp(valueWithContext: ValueWithContext[AnyRef], recordTimestamp: Long): Long = {
-    val value = valueWithContext.value
-    extractTimestampFromRecord(value) getOrElse System.currentTimeMillis()
-  }
-
-  def extractTimestampFromRecord(value: AnyRef): Option[Long] = {
-    for {
-      javaMap <- value match {
-        case m: util.Map[String @unchecked, AnyRef @unchecked] => Some(m)
-        case _                                                 => None
-      }
-      timestampFieldValue <- javaMap.asScala.get(timestampField)
-      timestampMillis     <- TimestampUtils.supportedTypeToMillis.lift(timestampFieldValue)
-    } yield timestampMillis
-  }
-
-}
-
-class ContextWithInputVariable extends MapFunction[ValueWithContext[AnyRef], Context] with Serializable {
-  override def map(vwc: ValueWithContext[AnyRef]): Context = vwc.context.withVariable(InputVariableName, vwc.value)
-}
-
-object MapAscendingTimestampExtractor {
-  val DefaultTimestampField = "timestamp"
-
-  val default = new MapAscendingTimestampExtractor(DefaultTimestampField)
 
 }

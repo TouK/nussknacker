@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.lite.components.requestresponse
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import io.circe.Json
-import io.circe.Json.{arr, fromInt, fromString, obj, Null}
+import io.circe.Json.{Null, arr, fromInt, fromString, obj}
 import io.circe.syntax.EncoderOps
 import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest}
 import org.everit.json.schema.{NumberSchema, Schema, StringSchema}
@@ -11,11 +11,9 @@ import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  CustomNodeError,
-  ExpressionParserCompilationError
-}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, ExpressionParserCompilationError}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -139,7 +137,7 @@ class LiteRequestResponseFunctionalTest
     result should matchPattern {
       case Invalid(
             NonEmptyList(
-              ExpressionParserCompilationError(message, `sinkName`, Some(ParameterName("field")), _, _),
+              ExpressionParserCompilationError(message, NodeId(`sinkName`), Some(ParameterName("field")), _, _),
               Nil
             )
           ) if message.startsWith("Bad expression type") =>
@@ -344,7 +342,7 @@ class LiteRequestResponseFunctionalTest
   test("validate pattern properties on sink in editor mode") {
     def invalidTypeInEditorMode(fieldName: String, error: String): Invalid[NonEmptyList[CustomNodeError]] = {
       val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil, Nil)
-      Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(ParameterName(fieldName)))))
+      Invalid(NonEmptyList.one(CustomNodeError(NodeId(sinkName), finalMessage, Some(ParameterName(fieldName)))))
     }
     val objectWithNestedPatternPropertiesSchema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
@@ -555,7 +553,7 @@ class LiteRequestResponseFunctionalTest
       rangeTypeError
     )
     Invalid(
-      NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(JsonRequestResponseSink.SinkRawValueParamName)))
+      NonEmptyList.one(CustomNodeError(NodeId(sinkName), finalMessage, Some(JsonRequestResponseSink.SinkRawValueParamName)))
     )
   }
 

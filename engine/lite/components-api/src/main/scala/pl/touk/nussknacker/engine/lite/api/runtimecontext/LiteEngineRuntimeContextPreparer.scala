@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.lite.api.runtimecontext
 
-import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext, IncContextIdGenerator}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.util.metrics.{MetricsProviderForScenario, NoOpMetricsProviderForScenario}
 
 object LiteEngineRuntimeContextPreparer {
@@ -26,7 +26,7 @@ case class LiteEngineRuntimeContext(jobData: JobData, metricsProvider: MetricsPr
     extends EngineRuntimeContext
     with AutoCloseable {
 
-  override def contextIdGenerator(nodeId: String): ContextIdGenerator = {
+  override def contextIdGenerator(nodeId: NodeId): ContextIdGenerator = {
     // We hardcode this taskId=0 instead of passing the real one. Currently, the information about the taskId is not available in this place. In the future it might change.
     IncContextIdGenerator.withProcessIdNodeIdPrefix(jobData, nodeId, taskId = 0)
   }

@@ -33,7 +33,7 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
   private val context = Context(ContextId.dummy, variables, None)
 
   private val exception = NuExceptionInfo(
-    Some(NodeComponentInfo("nodeId", ComponentType.Service, "componentName")),
+    Some(NodeComponentInfo(NodeId("nodeId"), ComponentType.Service, "componentName")),
     new Exception("mess"),
     context,
     "input1",

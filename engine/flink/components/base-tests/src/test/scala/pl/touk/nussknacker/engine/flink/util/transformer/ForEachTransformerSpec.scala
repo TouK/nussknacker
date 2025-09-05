@@ -6,7 +6,7 @@ import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
-import pl.touk.nussknacker.engine.api.{ContextId, ContextIdPathPart, JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{ContextId, ContextIdPathPart, JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.process._
@@ -56,18 +56,18 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
       val results = collectTestResults(model, testScenario, collectingListener)
       extractContextIds(results) shouldBe List(
         ContextId(
-          scenarioId = "forEachProcess",
-          originatingNodeId = "start",
+          scenarioName = ProcessName("forEachProcess"),
+          originatingNodeId = NodeId("start"),
           taskId = 0,
           index = 0,
-          path = List(ContextIdPathPart("for-each", "0"))
+          path = List(ContextIdPathPart(NodeId("for-each"), "0"))
         ),
         ContextId(
-          scenarioId = "forEachProcess",
-          originatingNodeId = "start",
+          scenarioName = ProcessName("forEachProcess"),
+          originatingNodeId = NodeId("start"),
           taskId = 0,
           index = 0,
-          path = List(ContextIdPathPart("for-each", "1"))
+          path = List(ContextIdPathPart(NodeId("for-each"), "1"))
         ),
       )
     }
@@ -137,11 +137,11 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
   }
 
   private def extractResultValues(results: TestProcess.TestResults[_]): List[String] = results
-    .nodeResults(sinkId)
+    .nodeResults(NodeId(sinkId))
     .map(_.variableTyped(resultVariableName).get.asInstanceOf[String])
 
   private def extractContextIds(results: TestProcess.TestResults[_]): List[ContextId] =
-    results.nodeResults(forEachNodeResultId).map(_.id)
+    results.nodeResults(NodeId(forEachNodeResultId)).map(_.id)
 
   private def runScenario(model: LocalModelData, testScenario: CanonicalProcess): Unit = {
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>

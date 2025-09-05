@@ -157,14 +157,14 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
         label = None,
         value = "'tereferer'",
         values = List("", s"'$exampleAvroTopic'", s"'$exampleJsonTopic'", s"'$fullnameTopic'"),
-        nodeId = sinkNodeId.id
+        nodeId = sinkNodeId
       ),
       InvalidPropertyFixedValue(
         paramName = schemaVersionParamName,
         label = None,
         value = "'1'",
         values = List("'latest'"),
-        nodeId = sinkNodeId.id
+        nodeId = sinkNodeId
       )
     )
   }
@@ -184,7 +184,7 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
       label = None,
       value = "'343543'",
       values = List("'latest'", "'1'", "'2'", "'3'", "'4'"),
-      nodeId = sinkNodeId.id
+      nodeId = sinkNodeId
     ) :: Nil
   }
 
@@ -199,7 +199,7 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
     )(defaultUniversalSinkFactory)
 
     result.errors shouldBe CustomNodeError(
-      sinkNodeId.id,
+      sinkNodeId,
       "Provided value does not match scenario output - errors:\nIncorrect type: actual: 'String()' expected: 'Record{id: String, amount: Double, currency: EnumSymbol[PLN | EUR | GBP | USD] | String, company: Record{name: String, address: Record{street: String, city: String}}, products: List[Record{id: String, name: String, price: Double}], vat: Integer | Null}'.",
       Some(sinkValueParamName)
     ) :: Nil
@@ -214,7 +214,7 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
         "Field: Topic is mandatory and can not be empty",
         "Please fill field for this parameter",
         topicParamName,
-        sinkNodeId.id
+        sinkNodeId
       )
     )
   }
@@ -277,7 +277,7 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
 
     laxValidationResult.errors shouldBe List(
       CustomNodeError(
-        "id",
+        NodeId("id"),
         "Provided value does not match scenario output - errors:\nIncorrect type: path 'bytesField' actual: 'String' expected: 'ByteBuffer'.",
         Some(sinkValueParamName)
       )
@@ -336,7 +336,7 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
 
     result.errors shouldBe List(
       CustomNodeError(
-        "id",
+        NodeId("id"),
         "Provided value does not match scenario output - errors:\nIncorrect type: path 'bytesField' actual: 'String' expected: 'ByteBuffer', path 'logicalTimestamp' actual: 'Integer' expected: 'Instant | Long'.",
         Some(sinkValueParamName)
       )
@@ -352,7 +352,7 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
 
     laxValidationResult.errors shouldBe List(
       CustomNodeError(
-        "id",
+        NodeId("id"),
         "Provided value does not match scenario output - errors:\nIncorrect type: path 'bytesField' actual: 'String' expected: 'ByteBuffer', path 'logicalTimestamp' actual: 'Integer' expected: 'Instant | Long'.",
         Some(sinkValueParamName)
       )
@@ -404,7 +404,7 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
       sinkValueParamName
     )
     result.errors shouldBe CustomNodeError(
-      sinkNodeId.id,
+      sinkNodeId,
       "Provided value does not match scenario output - errors:\nIncorrect type: path 'logicalDate' actual: 'String' expected: 'LocalDate | LocalDate', path 'logicalTimestamp' actual: 'String' expected: 'ZonedDateTime | LocalDateTime'.",
       Some(sinkValueParamName)
     ) :: Nil
@@ -423,7 +423,7 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
 
     laxValidationResult.errors shouldBe List(
       CustomNodeError(
-        "id",
+        NodeId("id"),
         "Provided value does not match scenario output - errors:\nIncorrect type: path 'logicalDate' actual: 'String' expected: 'LocalDate | LocalDate', path 'logicalTimestamp' actual: 'String' expected: 'ZonedDateTime | LocalDateTime'.",
         Some(sinkValueParamName)
       )
@@ -478,7 +478,7 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
     sinkValueParameter.defaultValue shouldBe Some(expectedDefaultValue)
 
     result.errors shouldBe CustomNodeError(
-      sinkNodeId.id,
+      sinkNodeId,
       "Provided value does not match scenario output - errors:\nIncorrect type: path 'logicalDate' actual: 'String' expected: 'LocalDate | LocalDate', path 'logicalTimestamp' actual: 'String' expected: 'ZonedDateTime | LocalDateTime'.",
       Some(sinkValueParamName)
     ) :: Nil
@@ -493,7 +493,7 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
 
     laxValidationResult.errors shouldBe List(
       CustomNodeError(
-        "id",
+        NodeId("id"),
         "Provided value does not match scenario output - errors:\nIncorrect type: path 'logicalDate' actual: 'String' expected: 'LocalDate | LocalDate', path 'logicalTimestamp' actual: 'String' expected: 'ZonedDateTime | LocalDateTime'.",
         Some(sinkValueParamName)
       )

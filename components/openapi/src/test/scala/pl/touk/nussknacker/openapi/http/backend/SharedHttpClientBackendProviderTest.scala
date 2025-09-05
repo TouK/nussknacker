@@ -8,7 +8,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessAdditionalFields, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessAdditionalFields, ProcessVersion}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.util.metrics.MetricsProviderForScenario
 import pl.touk.nussknacker.http.backend.DefaultHttpClientConfig
@@ -52,7 +52,7 @@ class SharedHttpClientBackendProviderTest
       ProcessVersion.empty
     )
     override def metricsProvider: MetricsProviderForScenario            = ???
-    override def contextIdGenerator(nodeId: String): ContextIdGenerator = ???
+    override def contextIdGenerator(nodeId: NodeId): ContextIdGenerator = ???
   }
 
   test("should throw exception on every localhost address if localhost is not allowed") {

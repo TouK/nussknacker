@@ -8,6 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.ModelConfig
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentDependencies}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -16,11 +17,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.FlinkTableOpsComponentProvider
 import pl.touk.nussknacker.engine.flink.table.SpelValues._
-import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationTest.{
-  buildMultipleAggregationsScenario,
-  AggregationParameters,
-  TestRecord
-}
+import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationTest.{AggregationParameters, TestRecord, buildMultipleAggregationsScenario}
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
@@ -97,7 +94,7 @@ class TableAggregationTest
       Boundedness.BOUNDED
     )
     result.invalidValue.toList.loneElement should matchPattern {
-      case CustomNodeError("agg0", _, Some(ParameterName("groupBy"))) =>
+      case CustomNodeError(NodeId("agg0"), _, Some(ParameterName("groupBy"))) =>
     }
   }
 
@@ -207,7 +204,7 @@ class TableAggregationTest
     scenarios.foreach(s => {
       val result = runner.runWithData(s, input, Boundedness.BOUNDED)
       result.invalidValue.toList.loneElement should matchPattern {
-        case CustomNodeError("agg0", _, Some(ParameterName("aggregateBy"))) =>
+        case CustomNodeError(NodeId("agg0"), _, Some(ParameterName("aggregateBy"))) =>
       }
     })
   }
@@ -225,7 +222,7 @@ class TableAggregationTest
     )
     results.foreach { r =>
       r.invalidValue.toList.loneElement should matchPattern {
-        case CustomNodeError("agg0", _, Some(ParameterName("aggregateBy"))) =>
+        case CustomNodeError(NodeId("agg0"), _, Some(ParameterName("aggregateBy"))) =>
       }
     }
   }

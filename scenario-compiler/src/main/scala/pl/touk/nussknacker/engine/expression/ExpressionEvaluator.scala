@@ -65,7 +65,7 @@ class ExpressionEvaluator(
       ctx: Context
   )(implicit nodeId: NodeId, jobData: JobData): ValueWithContext[AnyRef] = {
     try {
-      val valueWithModifiedContext = evaluate[AnyRef](param.expression, param.name.value, nodeId.id, ctx)
+      val valueWithModifiedContext = evaluate[AnyRef](param.expression, param.name.value, nodeId, ctx)
       valueWithModifiedContext.map { evaluatedValue =>
         if (param.shouldBeWrappedWithScalaOption)
           Option(evaluatedValue)
@@ -79,7 +79,7 @@ class ExpressionEvaluator(
     }
   }
 
-  def evaluate[R](expr: CompiledExpression, expressionId: String, nodeId: String, ctx: Context)(
+  def evaluate[R](expr: CompiledExpression, expressionId: String, nodeId: NodeId, ctx: Context)(
       implicit jobData: JobData
   ): ValueWithContext[R] = {
     val globalVariables = if (cacheGlobalVariables) {

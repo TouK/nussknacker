@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.migrate
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingService, MissingSourceFactory}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -166,7 +167,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     }
   }
 
-  private def errorTypes(validationResult: ValidationResult): Map[String, List[String]] =
+  private def errorTypes(validationResult: ValidationResult): Map[NodeId, List[String]] =
     validationResult.errors.invalidNodes.mapValuesNow(_.map(_.typ))
 
   private def newTestModelMigrations(testMigrations: TestMigrations): TestModelMigrations =

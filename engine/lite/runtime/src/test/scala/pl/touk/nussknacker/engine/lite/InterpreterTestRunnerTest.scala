@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine.lite
 import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{ContextId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{ContextId, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestSourceSpecificFormatJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -33,38 +34,46 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       .emptySink("end", "end", "value" -> "#input + ':' + #sum".spel)
     val scenarioTestData = ScenarioTestData(
       List(
-        ScenarioTestSourceSpecificFormatJsonRecord("start", Json.fromString("A|2")),
-        ScenarioTestSourceSpecificFormatJsonRecord("start", Json.fromString("B|1")),
-        ScenarioTestSourceSpecificFormatJsonRecord("start", Json.fromString("C|3")),
+        ScenarioTestSourceSpecificFormatJsonRecord(NodeId("start"), Json.fromString("A|2")),
+        ScenarioTestSourceSpecificFormatJsonRecord(NodeId("start"), Json.fromString("B|1")),
+        ScenarioTestSourceSpecificFormatJsonRecord(NodeId("start"), Json.fromString("C|3")),
       )
     )
 
     val results = sample.test(scenario, processVersionFor(scenario), scenarioTestData)
 
     nodeResults(results, "start") shouldBe List(
-      (ContextId("A", "", 0, 0), Map("input" -> variable(2))),
-      (ContextId("B", "", 0, 0), Map("input" -> variable(1))),
-      (ContextId("C", "", 0, 0), Map("input" -> variable(3)))
+      (ContextId(ProcessName("A"), NodeId(""), 0, 0), Map("input" -> variable(2))),
+      (ContextId(ProcessName("B"), NodeId(""), 0, 0), Map("input" -> variable(1))),
+      (ContextId(ProcessName("C"), NodeId(""), 0, 0), Map("input" -> variable(3)))
     )
 
     nodeResults(results, "sum") shouldBe List(
-      (ContextId("A", "", 0, 0), Map("input" -> 2, "out1" -> 2).mapValuesNow(variable)),
-      (ContextId("C", "", 0, 0), Map("input" -> 3, "out1" -> 3).mapValuesNow(variable))
+      (ContextId(ProcessName("A"), NodeId(""), 0, 0), Map("input" -> 2, "out1" -> 2).mapValuesNow(variable)),
+      (ContextId(ProcessName("C"), NodeId(""), 0, 0), Map("input" -> 3, "out1" -> 3).mapValuesNow(variable))
     )
 
     nodeResults(results, "end") shouldBe List(
-      (ContextId("A", "", 0, 0), Map("input" -> 2, "out1" -> 2, "sum" -> 2).mapValuesNow(variable)),
-      (ContextId("C", "", 0, 0), Map("input" -> 3, "out1" -> 3, "sum" -> 5).mapValuesNow(variable))
+      (
+        ContextId(ProcessName("A"), NodeId(""), 0, 0),
+        Map("input" -> 2, "out1" -> 2, "sum" -> 2).mapValuesNow(variable)
+      ),
+      (ContextId(ProcessName("C"), NodeId(""), 0, 0), Map("input" -> 3, "out1" -> 3, "sum" -> 5).mapValuesNow(variable))
     )
 
-    results.invocationResults("sum").map(withMockedTimestamp) shouldBe List(
-      ExpressionInvocationResult(ContextId("A", "", 0, 0), mockedTimestamp, "value", variable(2)),
-      ExpressionInvocationResult(ContextId("C", "", 0, 0), mockedTimestamp, "value", variable(3))
+    results.invocationResults(NodeId("sum")).map(withMockedTimestamp) shouldBe List(
+      ExpressionInvocationResult(ContextId(ProcessName("A"), NodeId(""), 0, 0), mockedTimestamp, "value", variable(2)),
+      ExpressionInvocationResult(ContextId(ProcessName("C"), NodeId(""), 0, 0), mockedTimestamp, "value", variable(3))
     )
 
-    results.externalInvocationResults("end").map(withMockedTimestamp) shouldBe List(
-      ExternalInvocationResult(ContextId("A", "", 0, 0), mockedTimestamp, "end", variable("2:2.0")),
-      ExternalInvocationResult(ContextId("C", "", 0, 0), mockedTimestamp, "end", variable("3:5.0"))
+    results.externalInvocationResults(NodeId("end")).map(withMockedTimestamp) shouldBe List(
+      ExternalInvocationResult(
+        ContextId(ProcessName("A"), NodeId(""), 0, 0),
+        mockedTimestamp,
+        "end",
+        variable("2:2.0")
+      ),
+      ExternalInvocationResult(ContextId(ProcessName("C"), NodeId(""), 0, 0), mockedTimestamp, "end", variable("3:5.0"))
     )
   }
 
@@ -77,26 +86,28 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       )
     val scenarioTestData = ScenarioTestData(
       List(
-        ScenarioTestSourceSpecificFormatJsonRecord("source1", Json.fromString("A|1")),
-        ScenarioTestSourceSpecificFormatJsonRecord("source1", Json.fromString("B|2")),
-        ScenarioTestSourceSpecificFormatJsonRecord("source2", Json.fromString("C|3")),
+        ScenarioTestSourceSpecificFormatJsonRecord(NodeId("source1"), Json.fromString("A|1")),
+        ScenarioTestSourceSpecificFormatJsonRecord(NodeId("source1"), Json.fromString("B|2")),
+        ScenarioTestSourceSpecificFormatJsonRecord(NodeId("source2"), Json.fromString("C|3")),
       )
     )
 
     val results = sample.test(scenario, processVersionFor(scenario), scenarioTestData)
 
     nodeResults(results, "source1") shouldBe List(
-      (ContextId("A", "", 0, 0), Map("input" -> variable(1))),
-      (ContextId("B", "", 0, 0), Map("input" -> variable(2)))
+      (ContextId(ProcessName("A"), NodeId(""), 0, 0), Map("input" -> variable(1))),
+      (ContextId(ProcessName("B"), NodeId(""), 0, 0), Map("input" -> variable(2)))
     )
-    nodeResults(results, "source2") shouldBe List((ContextId("C", "", 0, 0), Map("input" -> variable(3))))
+    nodeResults(results, "source2") shouldBe List(
+      (ContextId(ProcessName("C"), NodeId(""), 0, 0), Map("input" -> variable(3)))
+    )
 
-    results.externalInvocationResults("end1").map(withMockedTimestamp) shouldBe List(
-      ExternalInvocationResult(ContextId("A", "", 0, 0), mockedTimestamp, "end1", variable(1)),
-      ExternalInvocationResult(ContextId("B", "", 0, 0), mockedTimestamp, "end1", variable(2))
+    results.externalInvocationResults(NodeId("end1")).map(withMockedTimestamp) shouldBe List(
+      ExternalInvocationResult(ContextId(ProcessName("A"), NodeId(""), 0, 0), mockedTimestamp, "end1", variable(1)),
+      ExternalInvocationResult(ContextId(ProcessName("B"), NodeId(""), 0, 0), mockedTimestamp, "end1", variable(2))
     )
-    results.externalInvocationResults("end2").map(withMockedTimestamp) shouldBe List(
-      ExternalInvocationResult(ContextId("C", "", 0, 0), mockedTimestamp, "end2", variable(3))
+    results.externalInvocationResults(NodeId("end2")).map(withMockedTimestamp) shouldBe List(
+      ExternalInvocationResult(ContextId(ProcessName("C"), NodeId(""), 0, 0), mockedTimestamp, "end2", variable(3))
     )
   }
 
@@ -115,11 +126,11 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
 
     nodeResults(results, "source1") shouldBe List(
       (
-        ContextId("some-ctx-id", "", 0, 0),
+        ContextId(ProcessName("some-ctx-id"), NodeId(""), 0, 0),
         Map(
           "input" -> variable(
             SampleInputWithListAndMap(
-              ContextId("some-ctx-id", "", 0, 0),
+              ContextId(ProcessName("some-ctx-id"), NodeId(""), 0, 0),
               List(1L, 2L, 3L).asJava,
               Map[String, Any]("unoDosTres" -> 123).asJava
             )
@@ -150,11 +161,11 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
 
     nodeResults(results, "source1") shouldBe List(
       (
-        ContextId("some-ctx-id", "", 0, 0),
+        ContextId(ProcessName("some-ctx-id"), NodeId(""), 0, 0),
         Map(
           "input" -> variable(
             SampleInputWithListAndMap(
-              ContextId("some-ctx-id", "", 0, 0),
+              ContextId(ProcessName("some-ctx-id"), NodeId(""), 0, 0),
               List(1L, 2L, 3L, 4L, 5L).asJava,
               Map[String, Any]("extraValue" -> 100).asJava
             )
@@ -163,17 +174,22 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       )
     )
 
-    results.invocationResults("sumNumbers").map(withMockedTimestamp) shouldBe List(
+    results.invocationResults(NodeId("sumNumbers")).map(withMockedTimestamp) shouldBe List(
       ExpressionInvocationResult(
-        ContextId("some-ctx-id", "", 0, 0),
+        ContextId(ProcessName("some-ctx-id"), NodeId(""), 0, 0),
         mockedTimestamp,
         "value",
         variable(List(1, 2, 3, 4, 5))
       )
     )
 
-    results.externalInvocationResults("end").map(withMockedTimestamp) shouldBe List(
-      ExternalInvocationResult(ContextId("some-ctx-id", "", 0, 0), mockedTimestamp, "end", variable(120))
+    results.externalInvocationResults(NodeId("end")).map(withMockedTimestamp) shouldBe List(
+      ExternalInvocationResult(
+        ContextId(ProcessName("some-ctx-id"), NodeId(""), 0, 0),
+        mockedTimestamp,
+        "end",
+        variable(120)
+      )
     )
   }
 
@@ -190,17 +206,17 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     val results          = sample.test(fragment, processVersionFor(fragment), scenarioTestData)
 
     nodeResults(results, "fragment1") shouldBe List(
-      (ContextId("fragment1", "fragment1", 0, 0), Map("in" -> variable("some-text-id")))
+      (ContextId(ProcessName("fragment1"), NodeId("fragment1"), 0, 0), Map("in" -> variable("some-text-id")))
     )
     nodeResults(results, "fragmentEnd") shouldBe List(
       (
-        ContextId("fragment1", "fragment1", 0, 0),
+        ContextId(ProcessName("fragment1"), NodeId("fragment1"), 0, 0),
         Map("in" -> variable("some-text-id"), "out" -> variable("some-text-id"))
       )
     )
-    results.invocationResults("fragmentEnd").map(withMockedTimestamp) shouldBe List(
+    results.invocationResults(NodeId("fragmentEnd")).map(withMockedTimestamp) shouldBe List(
       ExpressionInvocationResult(
-        ContextId("fragment1", "fragment1", 0, 0),
+        ContextId(ProcessName("fragment1"), NodeId("fragment1"), 0, 0),
         mockedTimestamp,
         "out",
         variable("some-text-id")
@@ -221,19 +237,19 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     val results          = sample.test(fragment, processVersionFor(fragment), scenarioTestData)
 
     nodeResults(results, "fragment1") shouldBe List(
-      (ContextId("fragment1", "fragment1", 0, 0), Map("in" -> variable(0)))
+      (ContextId(ProcessName("fragment1"), NodeId("fragment1"), 0, 0), Map("in" -> variable(0)))
     )
     nodeResults(results, "fragmentEnd") shouldBe List(
-      (ContextId("fragment1", "fragment1", 0, 0), Map("in" -> variable(0)))
+      (ContextId(ProcessName("fragment1"), NodeId("fragment1"), 0, 0), Map("in" -> variable(0)))
     )
     results.exceptions.map(e => ((e.context.id, e.context.variables), e.nodeId, e.throwable.getMessage)) shouldBe List(
       (
-        (ContextId("fragment1", "fragment1", 0, 0), Map("in" -> variable(0))),
+        (ContextId(ProcessName("fragment1"), NodeId("fragment1"), 0, 0), Map("in" -> variable(0))),
         Some("fragmentEnd"),
         "Expression [4 / #in] evaluation failed, message: / by zero"
       ),
       (
-        (ContextId("fragment1", "fragment1", 0, 0), Map("in" -> variable(0))),
+        (ContextId(ProcessName("fragment1"), NodeId("fragment1"), 0, 0), Map("in" -> variable(0))),
         Some("fragmentEnd"),
         "Expression [8 / #in] evaluation failed, message: / by zero"
       )
@@ -257,7 +273,7 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
   }
 
   private def nodeResults[T](results: TestProcess.TestResults[T], key: String) =
-    results.nodeResults(key).map(r => (r.id, r.variables))
+    results.nodeResults(NodeId(key)).map(r => (r.id, r.variables))
 
   private def withMockedTimestamp(result: ExpressionInvocationResult[Json]) =
     result.copy(timestamp = mockedTimestamp)

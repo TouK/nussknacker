@@ -444,44 +444,44 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
   test("invoke listeners") {
 
-    var nodeResults = List[String]()
+    var nodeResults = List[NodeId]()
 
     var serviceResults = Map[String, Any]()
 
     val listener = new ProcessListener {
 
-      override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
+      override def nodeEntered(nodeId: NodeId, context: Context, processMetaData: MetaData): Unit = {
         nodeResults = nodeResults :+ nodeId
       }
 
       override def transitionToNextNode(
-          nodeId: String,
-          nextNodeId: String,
+          nodeId: NodeId,
+          nextNodeId: NodeId,
           context: Context,
           processMetaData: MetaData
       ): Unit = ()
 
       override def processingFinishedInNode(
-          nodeId: String,
+          nodeId: NodeId,
           context: Context,
           processMetaData: MetaData
       ): Unit = ()
 
       override def endEncountered(
-          nodeId: String,
+          nodeId: NodeId,
           ref: String,
           context: Context,
           processMetaData: MetaData
       ): Unit = {}
 
       override def deadEndEncountered(
-          lastNodeId: String,
+          lastNodeId: NodeId,
           context: Context,
           processMetaData: MetaData
       ): Unit = {}
 
       override def serviceInvoked(
-          nodeId: String,
+          nodeId: NodeId,
           id: String,
           context: Context,
           processMetaData: MetaData,
@@ -491,7 +491,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       }
 
       override def expressionEvaluated(
-          nodeId: String,
+          nodeId: NodeId,
           expressionId: String,
           expression: String,
           context: Context,
@@ -622,7 +622,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     val resolved = FragmentResolver(List(emptyFragment)).resolve(process)
 
-    resolved should matchPattern { case Invalid(NonEmptyList(InvalidFragment("fragment1", "sub"), Nil)) =>
+    resolved should matchPattern { case Invalid(NonEmptyList(InvalidFragment("fragment1", NodeId("sub")), Nil)) =>
     }
   }
 

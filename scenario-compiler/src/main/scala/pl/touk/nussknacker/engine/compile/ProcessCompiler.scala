@@ -4,7 +4,7 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.JobData
+import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -12,14 +12,9 @@ import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.FragmentValidator.validateUniqueFragmentOutputNames
-import pl.touk.nussknacker.engine.compile.nodecompilation.{
-  LazyParameterCreationStrategy,
-  MultipleInputBranchesNodeInputValidationContext,
-  NodeCompiler,
-  SingleInputNodeInputValidationContext
-}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, MultipleInputBranchesNodeInputValidationContext, NodeCompiler, SingleInputNodeInputValidationContext}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
-import pl.touk.nussknacker.engine.compiledgraph.{part, CompiledProcessParts}
+import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
 import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, TypedEnd}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
@@ -167,7 +162,7 @@ protected trait ProcessCompilerBase {
   private def findDuplicates(parts: NonEmptyList[SourcePart]): Validated[ProcessCompilationError, Unit] = {
     val allNodes = NodesCollector.collectNodesInAllParts(parts)
     val duplicatedIds =
-      allNodes.map(_.id).groupBy(identity).collect {
+      allNodes.map(n => NodeId(n.id)).groupBy(identity).collect {
         case (id, grouped) if grouped.size > 1 =>
           id
       }
@@ -199,7 +194,7 @@ protected trait ProcessCompilerBase {
         partInputContexts
           .get(p.id)
           .map(compileSubsequentPart(p, _))
-          .getOrElse(CompilationResult(Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(p.id)))))
+          .getOrElse(CompilationResult(Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(NodeId(p.id))))))
       )
       .sequence
   }

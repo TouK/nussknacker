@@ -80,7 +80,7 @@ abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
   ): ValidationContext => ValidatedNel[ProcessCompilationError, ValidationContext] = validationCtx =>
     computeOutputType(aggregateBy.returnType)
       // TODO: better error?
-      .leftMap(message => NonEmptyList.of(CannotCreateObjectError(message, nodeId.id)))
+      .leftMap(message => NonEmptyList.of(CannotCreateObjectError(message, nodeId)))
       .andThen { outputType =>
         val ctx = if (emitContext) validationCtx else validationCtx.clearVariables
         ctx.withVariable(variableName, outputType, paramName = None)

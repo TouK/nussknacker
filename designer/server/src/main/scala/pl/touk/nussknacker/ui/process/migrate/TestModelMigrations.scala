@@ -1,18 +1,13 @@
 package pl.touk.nussknacker.ui.process.migrate
 
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
-  NodeValidationError,
-  UIGlobalError,
-  ValidationErrors,
-  ValidationResult,
-  ValidationWarnings
-}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, UIGlobalError, ValidationErrors, ValidationResult, ValidationWarnings}
 import pl.touk.nussknacker.ui.process.fragment.{FragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
@@ -127,7 +122,7 @@ class TestModelMigrations(
       after.filterNot(error => errorsBefore.contains(errorToKey(error)))
     }
 
-    def diffOnMap(before: Map[String, List[NodeValidationError]], after: Map[String, List[NodeValidationError]]) = {
+    def diffOnMap(before: Map[NodeId, List[NodeValidationError]], after: Map[NodeId, List[NodeValidationError]]) = {
       after
         .map { case (nodeId, errorsAfter) =>
           (nodeId, diffErrorLists(before.getOrElse(nodeId, List.empty), errorsAfter))

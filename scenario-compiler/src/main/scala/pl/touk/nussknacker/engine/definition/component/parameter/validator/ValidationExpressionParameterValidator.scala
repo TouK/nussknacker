@@ -39,7 +39,7 @@ case class ValidationExpressionParameterValidator(
     val context = Context(ContextId.dummy, Map(variableName -> value), None)
 
     Try(
-      expressionEvaluator.evaluate[java.lang.Boolean](validationExpression, "validationExpression", nodeId.id, context)(
+      expressionEvaluator.evaluate[java.lang.Boolean](validationExpression, "validationExpression", nodeId, context)(
         jobData
       )
     ).fold(
@@ -51,14 +51,14 @@ case class ValidationExpressionParameterValidator(
             description =
               s"Please provide value that satisfies the validation expression '${validationExpression.original}'",
             paramName = paramName,
-            nodeId = nodeId.id
+            nodeId = nodeId
           )
         ),
-      result => if (result.value) valid(()) else invalid(error(paramName, nodeId.id))
+      result => if (result.value) valid(()) else invalid(error(paramName, nodeId))
     )
   }
 
-  private def error(paramName: ParameterName, nodeId: String): CustomParameterValidationError =
+  private def error(paramName: ParameterName, nodeId: NodeId): CustomParameterValidationError =
     CustomParameterValidationError(
       validationFailedMessage.getOrElse(
         s"This field has to satisfy the validation expression '${validationExpression.original}'"

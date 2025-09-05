@@ -1,23 +1,19 @@
 package pl.touk.nussknacker.engine.lite.components
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.data.Validated.{invalidNel, Invalid, Valid}
+import cats.data.Validated.{Invalid, Valid, invalidNel}
 import io.circe.Json
-import io.circe.Json.{fromFields, fromInt, fromLong, fromString, obj, Null}
+import io.circe.Json.{Null, fromFields, fromInt, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.everit.json.schema.{ObjectSchema, Schema => EveritSchema, StringSchema}
+import org.everit.json.schema.{ObjectSchema, StringSchema, Schema => EveritSchema}
 import org.scalatest.{Assertion, Inside}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  CustomNodeError,
-  EmptyMandatoryParameter,
-  ExpressionParserCompilationError
-}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, EmptyMandatoryParameter, ExpressionParserCompilationError}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.TopicName
@@ -329,7 +325,7 @@ class LiteKafkaUniversalJsonFunctionalTest
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  valid(inputObjectIntPropValue)),
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      strict,               invalidTypes("actual: 'Long | String' expected: 'Long'")),
       (inputObject,                  objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  invalidNel(
-        ExpressionParserCompilationError("There is no property 'foo_int' in type: Record{definedProp: String}", "my-sink", Some(ParameterName("Value")), "#input['foo_int']", Some(CoordinatesBasedTextRange(TextCoordinates(6, 0), TextCoordinates(7, 0)))))),
+        ExpressionParserCompilationError("There is no property 'foo_int' in type: Record{definedProp: String}", NodeId("my-sink"), Some(ParameterName("Value")), "#input['foo_int']", Some(CoordinatesBasedTextRange(TextCoordinates(6, 0), TextCoordinates(7, 0)))))),
       (inputObjectWithDefinedProp,   objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaString,                                   SpecialSpELElement("#input.definedProp"),     strict,               valid(inputObjectDefinedPropValue)),
     )
     //@formatter:on
@@ -354,7 +350,7 @@ class LiteKafkaUniversalJsonFunctionalTest
   test("pattern properties validations should work in editor mode") {
     def invalidTypeInEditorMode(fieldName: String, error: String): Invalid[NonEmptyList[CustomNodeError]] = {
       val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil, Nil)
-      Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(ParameterName(fieldName)))))
+      Invalid(NonEmptyList.one(CustomNodeError(NodeId(sinkName), finalMessage, Some(ParameterName(fieldName)))))
     }
 
     val objWithNestedPatternPropertiesMapSchema =
@@ -423,7 +419,7 @@ class LiteKafkaUniversalJsonFunctionalTest
 
     def expectedMissingValue(result: ValidatedNel[ProcessCompilationError, Map[String, Json]]): Assertion =
       result.invalidValue should matchPattern {
-        case NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName(`ObjectFieldName`), `sinkName`), Nil) =>
+        case NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName(`ObjectFieldName`), NodeId(`sinkName`)), Nil) =>
       }
 
     forAll(
@@ -535,7 +531,7 @@ class LiteKafkaUniversalJsonFunctionalTest
     )
     val strictValidationErrors = runWithValueResults(strictConfig).invalidValue
     strictValidationErrors should matchPattern {
-      case NonEmptyList(CustomNodeError(`sinkName`, message, _), Nil)
+      case NonEmptyList(CustomNodeError(NodeId(`sinkName`), message, _), Nil)
           if message.contains(s"Redundant fields: $secondsField") =>
     }
 

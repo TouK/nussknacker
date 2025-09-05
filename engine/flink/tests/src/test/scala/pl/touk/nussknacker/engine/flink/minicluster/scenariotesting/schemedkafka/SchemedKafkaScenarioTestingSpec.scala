@@ -11,8 +11,9 @@ import org.scalatest.{BeforeAndAfterAll, LoneElement, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelConfig
-import pl.touk.nussknacker.engine.api.ContextId
+import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestSourceSpecificFormatJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
@@ -132,11 +133,13 @@ class SchemedKafkaScenarioTestingSpec
     val testRecordJson =
       obj("keySchemaId" -> Null, "valueSchemaId" -> fromInt(id), "consumerRecord" -> consumerRecordJson)
     val scenarioTestData =
-      ScenarioTestData(ScenarioTestSourceSpecificFormatJsonRecord("start", testRecordJson, timestamp = None) :: Nil)
+      ScenarioTestData(
+        ScenarioTestSourceSpecificFormatJsonRecord(NodeId("start"), testRecordJson, timestamp = None) :: Nil
+      )
 
     val results = testRunner.runTests(process, scenarioTestData).futureValue
 
-    val testResultVars = results.nodeResults("end").head.variables
+    val testResultVars = results.nodeResults(NodeId("end")).head.variables
     testResultVars("extractedTimestamp").hcursor.downField("pretty").as[Long].rightValue shouldBe givenTimestamp
     val expectedInputMetaInTestResults = Json.fromFields(
       Map(
@@ -180,7 +183,7 @@ class SchemedKafkaScenarioTestingSpec
 
     val results = testRunner.runTests(process, scenarioTestData).futureValue
     results
-      .invocationResults("end")
+      .invocationResults(NodeId("end"))
       .head
       .value
       .hcursor
@@ -203,14 +206,24 @@ class SchemedKafkaScenarioTestingSpec
     val results          = testRunner.runTests(fragment, scenarioTestData).futureValue
 
     nodeResults(results, "fragment1").loneElement shouldBe (
-      ContextId(scenarioId = "fragment1", originatingNodeId = "fragment1", taskId = 0, index = 0),
+      ContextId(
+        scenarioName = ProcessName("fragment1"),
+        originatingNodeId = NodeId("fragment1"),
+        taskId = 0,
+        index = 0
+      ),
       Map(
         "in" -> Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id")))
       )
     )
 
     nodeResults(results, "fragmentEnd").loneElement shouldBe (
-      ContextId(scenarioId = "fragment1", originatingNodeId = "fragment1", taskId = 0, index = 0),
+      ContextId(
+        scenarioName = ProcessName("fragment1"),
+        originatingNodeId = NodeId("fragment1"),
+        taskId = 0,
+        index = 0
+      ),
       Map(
         "in"  -> Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id"))),
         "out" -> Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id")))
@@ -219,10 +232,15 @@ class SchemedKafkaScenarioTestingSpec
 
     val mockedTimestamp = Instant.now()
     results
-      .invocationResults("fragmentEnd")
+      .invocationResults(NodeId("fragmentEnd"))
       .loneElement
       .copy(timestamp = mockedTimestamp) shouldBe ExpressionInvocationResult(
-      ContextId(scenarioId = "fragment1", originatingNodeId = "fragment1", taskId = 0, index = 0),
+      ContextId(
+        scenarioName = ProcessName("fragment1"),
+        originatingNodeId = NodeId("fragment1"),
+        taskId = 0,
+        index = 0
+      ),
       mockedTimestamp,
       "out",
       Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id")))
@@ -238,7 +256,7 @@ class SchemedKafkaScenarioTestingSpec
   }
 
   private def nodeResults[T](results: TestProcess.TestResults[T], key: String) =
-    results.nodeResults(key).map(r => (r.id, r.variables))
+    results.nodeResults(NodeId(key)).map(r => (r.id, r.variables))
 
 }
 

@@ -47,14 +47,14 @@ case object MandatoryParameterValidator extends ParameterValidator {
     expression.language match {
       case Language.Spel | Language.DictKeyWithLabel | Language.TabularDataDefinition | Language.Json |
           Language.JsonTemplate =>
-        Validated.cond(!expression.expression.isBlank, (), error(paramName, nodeId.id))
+        Validated.cond(!expression.expression.isBlank, (), error(paramName, nodeId))
       case Language.SpelTemplate =>
         valid(())
     }
 
   }
 
-  private def error(paramName: ParameterName, nodeId: String): EmptyMandatoryParameter = EmptyMandatoryParameter(
+  private def error(paramName: ParameterName, nodeId: NodeId): EmptyMandatoryParameter = EmptyMandatoryParameter(
     message = s"Field: ${paramName.value} is mandatory and can not be empty",
     description = "Please fill field for this parameter",
     paramName = paramName,
@@ -69,12 +69,12 @@ case object NotNullParameterValidator extends ParameterValidator {
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
     value match {
-      case Some(null) => invalid(error(paramName, nodeId.id))
+      case Some(null) => invalid(error(paramName, nodeId))
       case _          => valid(())
     }
   }
 
-  private def error(paramName: ParameterName, nodeId: String): EmptyMandatoryParameter = EmptyMandatoryParameter(
+  private def error(paramName: ParameterName, nodeId: NodeId): EmptyMandatoryParameter = EmptyMandatoryParameter(
     message = "This field is required and can not be null",
     description = "Please fill field for this parameter",
     paramName = paramName,
@@ -89,12 +89,12 @@ case object CompileTimeEvaluableValueValidator extends ParameterValidator {
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
     value match {
-      case None => invalid(error(paramName, nodeId.id))
+      case None => invalid(error(paramName, nodeId))
       case _    => valid(())
     }
   }
 
-  private def error(paramName: ParameterName, nodeId: String): CompileTimeEvaluableParameterNotEvaluated =
+  private def error(paramName: ParameterName, nodeId: NodeId): CompileTimeEvaluableParameterNotEvaluated =
     CompileTimeEvaluableParameterNotEvaluated(
       message = "This field's value has to be evaluable at deployment time",
       description = "Please provide a value that is evaluable at deployment time",
@@ -112,11 +112,11 @@ case object NotBlankParameterValidator extends ParameterValidator {
     value match {
       case None                         => valid(())
       case Some(null)                   => valid(())
-      case Some(s: String) if s.isBlank => invalid(error(paramName, nodeId.id))
+      case Some(s: String) if s.isBlank => invalid(error(paramName, nodeId))
       case _                            => valid(())
     }
 
-  private def error(paramName: ParameterName, nodeId: String): BlankParameter = BlankParameter(
+  private def error(paramName: ParameterName, nodeId: NodeId): BlankParameter = BlankParameter(
     "This field value is required and can not be blank",
     "Please fill field value for this parameter",
     paramName,
@@ -155,7 +155,7 @@ case class RegExpParameterValidator(pattern: String, message: String, descriptio
       case None                                                  => valid(())
       case Some(null)                                            => valid(())
       case Some(s: String) if regexpPattern.matcher(s).matches() => valid(())
-      case _ => invalid(MismatchParameter(message, description, paramName, nodeId.id))
+      case _ => invalid(MismatchParameter(message, description, paramName, nodeId))
     }
   }
 
@@ -172,10 +172,10 @@ case object LiteralIntegerValidator extends ParameterValidator {
     expression.expression match {
       case e if e.isBlank              => valid(())
       case e if Try(e.toInt).isSuccess => valid(())
-      case _                           => invalid(error(paramName, nodeId.id))
+      case _                           => invalid(error(paramName, nodeId))
     }
 
-  private def error(paramName: ParameterName, nodeId: String): InvalidIntegerLiteralParameter =
+  private def error(paramName: ParameterName, nodeId: NodeId): InvalidIntegerLiteralParameter =
     InvalidIntegerLiteralParameter(
       "This field value has to be an integer number",
       "Please fill field by proper integer type",
@@ -196,10 +196,10 @@ case class MinimalNumberValidator(minimalNumber: BigDecimal) extends ParameterVa
       case Some(null)                                                 => valid(())
       case Some(n: BigDecimal) if n >= minimalNumber                  => valid(())
       case Some(n: Number) if BigDecimal(n.toString) >= minimalNumber => valid(())
-      case _                                                          => invalid(error(paramName, nodeId.id))
+      case _                                                          => invalid(error(paramName, nodeId))
     }
 
-  private def error(paramName: ParameterName, nodeId: String): LowerThanRequiredParameter = LowerThanRequiredParameter(
+  private def error(paramName: ParameterName, nodeId: NodeId): LowerThanRequiredParameter = LowerThanRequiredParameter(
     s"This field value has to be a number greater than or equal to ${minimalNumber}",
     "Please fill field with proper number",
     paramName,
@@ -219,10 +219,10 @@ case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterVa
       case Some(null)                                                 => valid(())
       case Some(n: BigDecimal) if n <= maximalNumber                  => valid(())
       case Some(n: Number) if BigDecimal(n.toString) <= maximalNumber => valid(())
-      case _                                                          => invalid(error(paramName, nodeId.id))
+      case _                                                          => invalid(error(paramName, nodeId))
     }
 
-  private def error(paramName: ParameterName, nodeId: String): GreaterThanRequiredParameter =
+  private def error(paramName: ParameterName, nodeId: NodeId): GreaterThanRequiredParameter =
     GreaterThanRequiredParameter(
       s"This field value has to be a number lower than or equal to ${maximalNumber}",
       "Please fill field with proper number",
@@ -246,16 +246,16 @@ case object JsonValidator extends ParameterValidator {
       case Some(s: String) =>
         parse(s.trim) match {
           case Right(_)             => valid(())
-          case Left(parsingFailure) => invalid(error(parsingFailure.message, paramName, nodeId.id))
+          case Left(parsingFailure) => invalid(error(parsingFailure.message, paramName, nodeId))
         }
       case o =>
         invalid(
-          error(s"Expected String with valid json, got object of class: ${o.getClass.getName}", paramName, nodeId.id)
+          error(s"Expected String with valid json, got object of class: ${o.getClass.getName}", paramName, nodeId)
         )
     }
   }
 
-  private def error(message: String, paramName: ParameterName, nodeId: String): JsonRequiredParameter =
+  private def error(message: String, paramName: ParameterName, nodeId: NodeId): JsonRequiredParameter =
     JsonRequiredParameter(
       message,
       "Please fill field with valid json",

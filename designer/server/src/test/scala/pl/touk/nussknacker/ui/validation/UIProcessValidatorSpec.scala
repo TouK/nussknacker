@@ -215,7 +215,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           errorType = SaveNotAllowed,
           details = None
         ),
-        List("loose")
+        List(NodeId("loose"))
       )
     )
   }
@@ -289,7 +289,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           errorType = RenderNotAllowed,
           details = None
         ),
-        List("inID")
+        List(NodeId("inID"))
       )
     )
   }
@@ -321,7 +321,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           errorType = RenderNotAllowed,
           details = None
         ),
-        List("switchID")
+        List(NodeId("switchID"))
       )
     )
     result.errors.invalidNodes shouldBe empty
@@ -661,7 +661,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val validationResult = validateWithConfiguredProperties(fragmentGraph)
 
     validationResult.errors should not be empty
-    validationResult.errors.invalidNodes("in") should matchPattern {
+    validationResult.errors.invalidNodes(NodeId("in")) should matchPattern {
       case List(
             NodeValidationError(
               "FragmentParamClassLoadError",
@@ -741,7 +741,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val validationResult = validateWithConfiguredProperties(fragmentGraph)
 
     validationResult.errors should not be empty
-    validationResult.errors.invalidNodes("in") should matchPattern {
+    validationResult.errors.invalidNodes(NodeId("in")) should matchPattern {
       case List(
             NodeValidationError(
               "InitialValueNotPresentInPossibleValues",
@@ -897,7 +897,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     ).validate(fragmentGraph, sampleProcessName, isFragment = true, labels = List.empty)
 
     validationResult.errors should not be empty
-    validationResult.errors.invalidNodes("in") should matchPattern {
+    validationResult.errors.invalidNodes(NodeId("in")) should matchPattern {
       case List(
             NodeValidationError(
               "DictNotDeclared",
@@ -973,7 +973,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val validationResult = validateWithConfiguredProperties(fragmentGraph, isFragment = true)
 
     validationResult.errors should not be empty
-    validationResult.errors.invalidNodes("in") should matchPattern {
+    validationResult.errors.invalidNodes(NodeId("in")) should matchPattern {
       case List(
             NodeValidationError(
               "InvalidValidationExpression",
@@ -1030,7 +1030,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
     validationResult should matchPattern {
       case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil), ValidationWarnings.success, _)
-          if invalidNodes("subIn").size == 1 && invalidNodes("subIn-subVar").size == 1 =>
+          if invalidNodes(NodeId("subIn")).size == 1 && invalidNodes(NodeId("subIn-subVar")).size == 1 =>
     }
   }
 
@@ -1101,7 +1101,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       processValidation.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     validationResult.errors should not be empty
-    validationResult.errors.invalidNodes("subIn1") should matchPattern {
+    validationResult.errors.invalidNodes(NodeId("subIn1")) should matchPattern {
       case List(
             NodeValidationError(
               "InvalidPropertyFixedValue",
@@ -1113,7 +1113,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             )
           ) =>
     }
-    validationResult.errors.invalidNodes("subIn2") should matchPattern {
+    validationResult.errors.invalidNodes(NodeId("subIn2")) should matchPattern {
       case List(
             NodeValidationError(
               "EmptyMandatoryParameter",
@@ -1236,7 +1236,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validateWithConfiguredProperties(process)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("custom")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -1272,7 +1272,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("custom")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -1308,7 +1308,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("custom")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -1344,7 +1344,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("custom")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -1380,7 +1380,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("custom")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -1429,7 +1429,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("custom")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -1478,7 +1478,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("custom")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -1531,7 +1531,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("custom")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -1584,7 +1584,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("custom")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -1632,7 +1632,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern { case None => }
+    result.errors.invalidNodes.get(NodeId("custom")) should matchPattern { case None => }
     result.warnings shouldBe ValidationWarnings.success
   }
 
@@ -1666,7 +1666,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("custom")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -1726,7 +1726,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("custom")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -1755,7 +1755,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       processValidatorWithDicts(Map.empty).validate(process, sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("custom")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -1779,7 +1779,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       processValidatorWithDicts(Map.empty).validate(process, sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("custom")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -1805,7 +1805,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     ).validate(process, sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("custom")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -1842,7 +1842,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validateWithConfiguredProperties(scenarioGraph)
 
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("custom")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -1933,7 +1933,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         labels = List.empty
       )
     validationResultWithCategory2.errors.invalidNodes shouldBe Map(
-      "subIn" -> List(PrettyValidationErrors.formatErrorMessage(UnknownFragment(fragment.name.value, "subIn")))
+      "subIn" -> List(PrettyValidationErrors.formatErrorMessage(UnknownFragment(fragment.name.value, NodeId("subIn"))))
     )
   }
 
@@ -1985,7 +1985,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
     result.hasErrors shouldBe true
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("subIn") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("subIn")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -2032,7 +2032,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
     result.hasErrors shouldBe true
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("subIn") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("subIn")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -2131,7 +2131,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     )
     result.hasErrors shouldBe true
     result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("subIn") should matchPattern {
+    result.errors.invalidNodes.get(NodeId("subIn")) should matchPattern {
       case Some(
             List(
               NodeValidationError(
@@ -2194,7 +2194,11 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       .errors
       .invalidNodes
     val nodeErrors =
-      Map(blankValue -> List(PrettyValidationErrors.formatErrorMessage(NodeIdValidationError(BlankId, blankValue))))
+      Map(
+        blankValue -> List(
+          PrettyValidationErrors.formatErrorMessage(NodeIdValidationError(BlankId, NodeId(blankValue)))
+        )
+      )
     result shouldBe nodeErrors
   }
 
@@ -2214,8 +2218,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     inside(result) { case ValidationResult(errors, _, _) =>
       inside(errors) { case ValidationErrors(nodeErrors, propertiesErrors, _) =>
         nodeErrors should contain key " "
-        nodeErrors(" ") should contain(
-          PrettyValidationErrors.formatErrorMessage(NodeIdValidationError(BlankId, " "))
+        nodeErrors(NodeId(" ")) should contain(
+          PrettyValidationErrors.formatErrorMessage(NodeIdValidationError(BlankId, NodeId(" ")))
         )
         propertiesErrors shouldBe List(
           PrettyValidationErrors.formatErrorMessage(ScenarioNameError(BlankId, ProcessName(" "), isFragment = false))
@@ -2245,9 +2249,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.errors.globalErrors shouldBe List(
       UIGlobalError(
         PrettyValidationErrors.formatErrorMessage(
-          DuplicateFragmentOutputNamesInFragment(`duplicatedOutputName`, Set("outNode1", "outNode2"))
+          DuplicateFragmentOutputNamesInFragment(`duplicatedOutputName`, Set(NodeId("outNode1"), NodeId("outNode2")))
         ),
-        List("outNode1", "outNode2")
+        List(NodeId("outNode1"), NodeId("outNode2"))
       )
     )
   }
@@ -2274,7 +2278,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
     result.errors.invalidNodes shouldBe Map(
       "fragment" -> List(
-        PrettyValidationErrors.formatErrorMessage(DuplicateFragmentOutputNamesInScenario("output1", "fragment"))
+        PrettyValidationErrors.formatErrorMessage(DuplicateFragmentOutputNamesInScenario("output1", NodeId("fragment")))
       )
     )
   }
@@ -2300,7 +2304,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         case List(
               UIGlobalError(
                 NodeValidationError("InvalidTailOfBranch", _, _, _, NodeValidationErrorType.SaveAllowed, None),
-                List("e")
+                List(NodeId("e"))
               )
             ) =>
       }
@@ -2320,9 +2324,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
     inside(result.errors.globalErrors) { case UIGlobalError(error, nodeIds) :: Nil =>
       error shouldBe PrettyValidationErrors.formatErrorMessage(
-        InvalidTailOfBranch(Set(invalidEndingNodeId1, invalidEndingNodeId2))
+        InvalidTailOfBranch(Set(NodeId(invalidEndingNodeId1), NodeId(invalidEndingNodeId2)))
       )
-      nodeIds should contain theSameElementsAs List(invalidEndingNodeId1, invalidEndingNodeId2)
+      nodeIds should contain theSameElementsAs List(NodeId(invalidEndingNodeId1), NodeId(invalidEndingNodeId2))
     }
   }
 

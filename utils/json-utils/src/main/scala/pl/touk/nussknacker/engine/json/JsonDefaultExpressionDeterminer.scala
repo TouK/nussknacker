@@ -23,9 +23,9 @@ object JsonDefaultExpressionDeterminer {
   ): ValidatedNel[ProcessCompilationError, Option[Expression]] =
     extractorWithHandleNotSupported
       .determine(schema)
-      .leftMap(_.map(customNodeError => customNodeError.copy(nodeId = nodeId.id, paramName = paramName)))
+      .leftMap(_.map(customNodeError => customNodeError.copy(nodeId = nodeId, paramName = paramName)))
 
-  private def createCustomNodeError(errMsg: String): CustomNodeError = CustomNodeError("", errMsg, None)
+  private def createCustomNodeError(errMsg: String): CustomNodeError = CustomNodeError(NodeId(""), errMsg, None)
 
   final val NullNotAllowed = createCustomNodeError("Value is not nullable")
 

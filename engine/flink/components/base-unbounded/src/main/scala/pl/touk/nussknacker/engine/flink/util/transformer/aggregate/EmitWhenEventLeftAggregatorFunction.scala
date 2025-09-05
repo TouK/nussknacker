@@ -45,7 +45,7 @@ class EmitWhenEventLeftAggregatorFunction[MapT[K, V]](
 
   override def open(openContext: OpenContext): Unit = {
     super.open(openContext)
-    contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.id)
+    contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId)
   }
 
   override def processElement(

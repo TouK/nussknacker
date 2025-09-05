@@ -200,7 +200,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "Property access on Unknown is not allowed",
-                "filter1",
+                NodeId("filter1"),
                 Some(DefaultExpressionIdParamName),
                 _,
                 _
@@ -250,7 +250,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "Unknown method 'copyValueOf' in String",
-                "filter1",
+                NodeId("filter1"),
                 Some(DefaultExpressionIdParamName),
                 "T(String).copyValueOf('test')",
                 _
@@ -281,7 +281,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "class java.lang.System is not allowed to be passed as TypeReference",
-                "filter1",
+                NodeId("filter1"),
                 Some(DefaultExpressionIdParamName),
                 "T(System).exit()",
                 _
@@ -325,7 +325,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "Dynamic property access is not allowed",
-                "filter1",
+                NodeId("filter1"),
                 Some(DefaultExpressionIdParamName),
                 _,
                 _
@@ -541,7 +541,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName("mandatoryParam"), "customNodeId"), _)) =>
+      case Invalid(
+            NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName("mandatoryParam"), NodeId("customNodeId")), _)
+          ) =>
     }
   }
 
@@ -560,11 +562,11 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(
             NonEmptyList(
-              BlankParameter(_, _, ParameterName("notBlankParam"), "customNodeId1"),
+              BlankParameter(_, _, ParameterName("notBlankParam"), NodeId("customNodeId1")),
               List(
-                BlankParameter(_, _, ParameterName("notBlankParam"), "customNodeId2"),
-                BlankParameter(_, _, ParameterName("notBlankParam"), "customNodeId3"),
-                BlankParameter(_, _, ParameterName("notBlankParam"), "customNodeId4")
+                BlankParameter(_, _, ParameterName("notBlankParam"), NodeId("customNodeId2")),
+                BlankParameter(_, _, ParameterName("notBlankParam"), NodeId("customNodeId3")),
+                BlankParameter(_, _, ParameterName("notBlankParam"), NodeId("customNodeId4"))
               )
             )
           ) =>
@@ -629,7 +631,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 _,
-                "customNodeId",
+                NodeId("customNodeId"),
                 Some(ParameterName("nullableLiteralIntegerParam")),
                 "as",
                 _
@@ -637,7 +639,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
               List(
                 ExpressionParserCompilationError(
                   _,
-                  "customNodeId2",
+                  NodeId("customNodeId2"),
                   Some(ParameterName("nullableLiteralIntegerParam")),
                   "1.23",
                   _
@@ -660,7 +662,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(
             NonEmptyList(
-              ExpressionParserCompilationError(_, "customNodeId", Some(ParameterName("regExpParam")), "as", _),
+              ExpressionParserCompilationError(_, NodeId("customNodeId"), Some(ParameterName("regExpParam")), "as", _),
               _
             )
           ) =>
@@ -698,11 +700,11 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(
             NonEmptyList(
-              JsonRequiredParameter(_, _, ParameterName("jsonParam"), "customNodeId"),
+              JsonRequiredParameter(_, _, ParameterName("jsonParam"), NodeId("customNodeId")),
               List(
-                JsonRequiredParameter(_, _, ParameterName("jsonParam"), "customNodeId2"),
-                JsonRequiredParameter(_, _, ParameterName("jsonParam"), "customNodeId3"),
-                JsonRequiredParameter(_, _, ParameterName("jsonParam"), "customNodeId4")
+                JsonRequiredParameter(_, _, ParameterName("jsonParam"), NodeId("customNodeId2")),
+                JsonRequiredParameter(_, _, ParameterName("jsonParam"), NodeId("customNodeId3")),
+                JsonRequiredParameter(_, _, ParameterName("jsonParam"), NodeId("customNodeId4"))
               )
             )
           ) =>
@@ -748,7 +750,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val definition = ModelDefinitionBuilder.empty.withService(serviceId, Parameter[String](ParameterName("foo"))).build
     val compilationResult = validate(processWithRefToMissingService, definition)
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(MissingSourceFactory("source", "id1"), Nil)) =>
+      case Invalid(NonEmptyList(MissingSourceFactory("source", NodeId("id1")), Nil)) =>
     }
     compilationResult.variablesInNodes("id2") shouldBe Map(
       "input"     -> Unknown,
@@ -767,7 +769,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .emptySink("id2", "sink")
 
     validate(processWithRefToMissingService, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(MissingCustomNodeExecutor("notExisting", "custom"), Nil)) =>
+      case Invalid(NonEmptyList(MissingCustomNodeExecutor("notExisting", NodeId("custom")), Nil)) =>
     }
   }
 
@@ -783,7 +785,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "Unresolved reference 'doesNotExist1'",
-                "sampleFilter",
+                NodeId("sampleFilter"),
                 Some(DefaultExpressionIdParamName),
                 _,
                 _
@@ -791,7 +793,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
               List(
                 ExpressionParserCompilationError(
                   "Unresolved reference 'doesNotExist2'",
-                  "sampleFilter",
+                  NodeId("sampleFilter"),
                   Some(DefaultExpressionIdParamName),
                   _,
                   _
@@ -814,7 +816,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "Non reference 'input' occurred. Maybe you missed '#' in front of it?",
-                "sampleFilter2",
+                NodeId("sampleFilter2"),
                 Some(DefaultExpressionIdParamName),
                 _,
                 _
@@ -837,7 +839,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "There is no property 'value3' in type: AnotherSimpleRecord",
-                "sampleFilter2",
+                NodeId("sampleFilter2"),
                 Some(DefaultExpressionIdParamName),
                 _,
                 _
@@ -862,7 +864,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "There is no property 'value3' in type: AnotherSimpleRecord",
-                "sampleFilter2",
+                NodeId("sampleFilter2"),
                 Some(DefaultExpressionIdParamName),
                 _,
                 _
@@ -891,7 +893,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "There is no property 'value3' in type: AnotherSimpleRecord",
-                "sampleFilter2",
+                NodeId("sampleFilter2"),
                 Some(DefaultExpressionIdParamName),
                 _,
                 _
@@ -928,7 +930,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "There is no property 'terefere' in type: AnotherSimpleRecord",
-                "sampleFilter2",
+                NodeId("sampleFilter2"),
                 Some(DefaultExpressionIdParamName),
                 "#out1.terefere",
                 _
@@ -952,7 +954,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "Unresolved reference 'strangeVar'",
-                "cNode1",
+                NodeId("cNode1"),
                 Some(ParameterName("par1")),
                 "#strangeVar",
                 _
@@ -991,7 +993,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "Bad expression type, expected: Record{someInt: Integer, someString: String}, found: Record{someString: String(abc)}",
-                "enricher1",
+                NodeId("enricher1"),
                 Some(NodeCompiler.MockExpressionParameterName),
                 _,
                 _
@@ -1019,7 +1021,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "Bad expression type, expected: Record{someInt: Integer, someString: String}, found: Record{someString: String}",
-                "enricher1",
+                NodeId("enricher1"),
                 Some(NodeCompiler.MockExpressionParameterName),
                 _,
                 _
@@ -1041,7 +1043,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "There is no property 'terefere' in type: BigDecimal",
-                "sampleFilter1",
+                NodeId("sampleFilter1"),
                 Some(DefaultExpressionIdParamName),
                 _,
                 _
@@ -1071,7 +1073,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "Unexpectedly ran out of input",
-                "c1",
+                NodeId("c1"),
                 Some(ParameterName("par1")),
                 _,
                 _
@@ -1079,14 +1081,14 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
               List(
                 ExpressionParserCompilationError(
                   "Unresolved reference 'terefere'",
-                  "p1",
+                  NodeId("p1"),
                   Some(ParameterName("par1")),
                   _,
                   _
                 ),
                 ExpressionParserCompilationError(
                   "Unresolved reference 'terefere22'",
-                  "v1",
+                  NodeId("v1"),
                   Some(ParameterName("$fields-0-$value")),
                   _,
                   _
@@ -1106,7 +1108,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .emptySink("id2", "sink")
     val compilationResult = validate(process, definitionWithTypedSource)
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", NodeId("var1overwrite"), _), _)) =>
     }
     compilationResult.variablesInNodes("id2") shouldBe Map(
       "input"         -> Typed[SimpleRecord],
@@ -1124,7 +1126,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .switch("var1overwrite", "''".spel, "var1", GraphBuilder.emptySink("id2", "sink"))
 
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", NodeId("var1overwrite"), _), _)) =>
     }
   }
 
@@ -1137,7 +1139,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .emptySink("id2", "sink")
 
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", NodeId("var1overwrite"), _), _)) =>
     }
   }
 
@@ -1149,7 +1151,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .buildVariable("var1overwrite", "var1", "a" -> "''".spel)
       .emptySink("id2", "sink")
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", NodeId("var1overwrite"), _), _)) =>
     }
   }
 
@@ -1167,7 +1169,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "Wrong part types",
-                "notWorking",
+                NodeId("notWorking"),
                 Some(DefaultExpressionIdParamName),
                 "#var1.a > 10",
                 _
@@ -1187,7 +1189,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .emptySink("id2", "sink")
 
     validate(process, definitionWithTypedSourceAndTransformNode.build).result should matchPattern {
-      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", NodeId("var1overwrite"), _), _)) =>
     }
   }
 
@@ -1242,7 +1244,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "Unresolved reference 'var3'",
-                "id3",
+                NodeId("id3"),
                 Some(DefaultExpressionIdParamName),
                 "#var3",
                 _
@@ -1264,7 +1266,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "Unresolved reference 'notExist'",
-                "switch",
+                NodeId("switch"),
                 Some(ParameterName("end1")),
                 "#notExist",
                 _
@@ -1297,7 +1299,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(MissingParameters(vars, "custom"), Nil))
+      case Invalid(NonEmptyList(MissingParameters(vars, NodeId("custom")), Nil))
           if vars == Set(ParameterName("OutputVariable")) =>
     }
   }
@@ -1352,7 +1354,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     validate(processWithInvalidExpresssion, failingDefinition).result should matchPattern {
       case Invalid(
-            NonEmptyList(CannotCreateObjectError("You passed incorrect parameter, cannot proceed", "id1", _), Nil)
+            NonEmptyList(
+              CannotCreateObjectError("You passed incorrect parameter, cannot proceed", NodeId("id1"), _),
+              Nil
+            )
           ) =>
     }
 
@@ -1441,8 +1446,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     result.result shouldBe Invalid(
       NonEmptyList.of(
-        CustomNodeError("service-1", "Too young", Some(ParameterName("age"))),
-        CustomNodeError("service-2", "Service is invalid", None),
+        CustomNodeError(NodeId("service-1"), "Too young", Some(ParameterName("age"))),
+        CustomNodeError(NodeId("service-2"), "Service is invalid", None),
       )
     )
   }
@@ -1464,7 +1469,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .emptySink("id2", "sink")
 
     validate(processWithLocalVarInEagerParam, baseDefinition).result shouldBe
-      Invalid(NonEmptyList.of(DuplicatedParameters(Set(ParameterName("par1"), ParameterName("par2")), "custom")))
+      Invalid(
+        NonEmptyList.of(DuplicatedParameters(Set(ParameterName("par1"), ParameterName("par2")), NodeId("custom")))
+      )
   }
 
   test("not allows local variables in eager custom node parameter") {
@@ -1480,7 +1487,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "Unresolved reference 'input'",
-                "custom",
+                NodeId("custom"),
                 Some(ParameterName("par1")),
                 "#input.toString()",
                 _
@@ -1700,7 +1707,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(
             NonEmptyList(
-              CustomParameterValidationError(_, _, ParameterName("param"), "customNodeId2"),
+              CustomParameterValidationError(_, _, ParameterName("param"), NodeId("customNodeId2")),
               Nil
             )
           ) =>
@@ -1732,7 +1739,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "Unresolved reference 'input'",
-                "customNodeId",
+                NodeId("customNodeId"),
                 Some(ParameterName("param")),
                 _,
                 _
@@ -1766,7 +1773,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     withUsed should matchPattern {
       case Invalid(
-            NonEmptyList(OverwrittenVariable(`usedVarName`, "sample-out", Some(ParameterName(`errorFieldName`))), Nil)
+            NonEmptyList(OverwrittenVariable(`usedVarName`, NodeId("sample-out"), Some(ParameterName(`errorFieldName`))), Nil)
           ) =>
     }
   }
@@ -1795,8 +1802,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     inside(validate(scenarioWith, baseDefinition).result) { case Invalid(errors) =>
       errors.toList should contain theSameElementsAs
         List(
-          InvalidRootNode(Set(variableName1, variableName2)),
-          InvalidTailOfBranch(Set(sourceName1, sourceName2)),
+          InvalidRootNode(Set(NodeId(variableName1), NodeId(variableName2))),
+          InvalidTailOfBranch(Set(NodeId(sourceName1), NodeId(sourceName2))),
           EmptyProcess
         )
     }
@@ -1990,7 +1997,7 @@ class StartingWithACustomValidator extends CustomParameterValidator {
             message = s"Value $value does not starts with 'A'",
             description = "Value does not starts with 'A'",
             paramName = paramName,
-            nodeId = nodeId.id
+            nodeId = nodeId
           )
         )
     }

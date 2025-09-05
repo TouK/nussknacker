@@ -2,6 +2,7 @@ package pl.touk.nussknacker.processCounts.influxdb
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.processCounts._
 import sttp.client3.SttpBackend
@@ -25,7 +26,7 @@ class InfluxCountsReporter[F[_]](env: String, config: InfluxConfig)(implicit bac
 
   private val metricsConfig = config.metricsConfig.getOrElse(MetricsConfig())
 
-  override def prepareRawCounts(processName: ProcessName, countsRequest: CountsRequest): F[String => Option[Long]] =
+  override def prepareRawCounts(processName: ProcessName, countsRequest: CountsRequest): F[NodeId => Option[Long]] =
     (countsRequest match {
       case RangeCount(fromDate, toDate) => prepareRangeCounts(processName, fromDate, toDate)
       case ExecutionCount(pointInTime) =>
@@ -34,7 +35,7 @@ class InfluxCountsReporter[F[_]](env: String, config: InfluxConfig)(implicit bac
 
   override def close(): Unit = {}
 
-  private def prepareRangeCounts(processName: ProcessName, fromDate: Instant, toDate: Instant): F[Map[String, Long]] = {
+  private def prepareRangeCounts(processName: ProcessName, fromDate: Instant, toDate: Instant): F[Map[NodeId, Long]] = {
 
     influxGenerator.detectRestarts(processName, fromDate, toDate, metricsConfig).flatMap { restarts =>
       (restarts, config.queryMode) match {

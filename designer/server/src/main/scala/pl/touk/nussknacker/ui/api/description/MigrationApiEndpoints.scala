@@ -5,6 +5,7 @@ import derevo.circe._
 import derevo.derive
 import io.circe.{Decoder, Encoder}
 import io.circe.syntax.EncoderOps
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
@@ -12,26 +13,11 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
-  NodeValidationError,
-  NodeValidationErrorType,
-  UIGlobalError,
-  ValidationErrors
-}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, UIGlobalError, ValidationErrors}
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
-  MigrateScenarioRequestDto,
-  MigrateScenarioRequestDtoV1,
-  MigrateScenarioRequestDtoV2,
-  MigrateScenarioRequestDtoV3
-}
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{MigrateScenarioRequestDto, MigrateScenarioRequestDtoV1, MigrateScenarioRequestDtoV2, MigrateScenarioRequestDtoV3}
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.MigrationError
-import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.MigrationError.{
-  CannotMigrateArchivedScenario,
-  CannotTransformMigrateScenarioRequestIntoMigrationDomain,
-  InsufficientPermission,
-  InvalidScenario
-}
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.MigrationError.{CannotMigrateArchivedScenario, CannotTransformMigrateScenarioRequestIntoMigrationDomain, InsufficientPermission, InvalidScenario}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import sttp.model.StatusCode._
 import sttp.tapir._
@@ -139,7 +125,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
                         NodeValidationErrorType.SaveAllowed,
                         None
                       ),
-                      List("node1")
+                      List(NodeId("node1"))
                     )
                   )
                 )

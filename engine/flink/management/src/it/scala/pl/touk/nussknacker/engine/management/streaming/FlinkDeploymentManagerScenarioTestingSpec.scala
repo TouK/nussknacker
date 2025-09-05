@@ -8,7 +8,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
-import pl.touk.nussknacker.engine.api.{ContextId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{ContextId, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingSinkFactory
 import pl.touk.nussknacker.engine.api.context.ScenarioCompilationErrors
 import pl.touk.nussknacker.engine.api.deployment.DMTestScenarioCommand
@@ -45,7 +45,7 @@ class FlinkDeploymentManagerScenarioTestingSpec
   }
 
   private val scenarioTestData = ScenarioTestData(
-    List(ScenarioTestSourceSpecificFormatJsonRecord("startProcess", Json.fromString("terefere")))
+    List(ScenarioTestSourceSpecificFormatJsonRecord(NodeId("startProcess"), Json.fromString("terefere")))
   )
 
   private lazy val (deploymentManager, releaseDeploymentMangerResources) =
@@ -69,19 +69,19 @@ class FlinkDeploymentManagerScenarioTestingSpec
       r.nodeResults.map(r => (r._1, r._2.map(r => (r.id, r.variables)))) shouldBe Map(
         "startProcess" -> List(
           (
-            ContextId(scenarioId = processName.value, originatingNodeId = "startProcess", taskId = 0, index = 0),
+            ContextId(scenarioName = processName, originatingNodeId = NodeId("startProcess"), taskId = 0, index = 0),
             Map("input" -> variable("terefere"))
           )
         ),
         "nightFilter" -> List(
           (
-            ContextId(scenarioId = processName.value, originatingNodeId = "startProcess", taskId = 0, index = 0),
+            ContextId(scenarioName = processName, originatingNodeId = NodeId("startProcess"), taskId = 0, index = 0),
             Map("input" -> variable("terefere"))
           )
         ),
         "endSend" -> List(
           (
-            ContextId(scenarioId = processName.value, originatingNodeId = "startProcess", taskId = 0, index = 0),
+            ContextId(scenarioName = processName, originatingNodeId = NodeId("startProcess"), taskId = 0, index = 0),
             Map("input" -> variable("terefere"))
           )
         )
@@ -99,7 +99,7 @@ class FlinkDeploymentManagerScenarioTestingSpec
     whenReady(deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData))) { r =>
       val variablesInNodes = r.nodeResults.map { case (key, values) => (key, values.map(v => (v.id, v.variables))) }
       val timestampAsJson =
-        variablesInNodes("endSend")(0)._2("eventTimeTimestampCopy")
+        variablesInNodes(NodeId("endSend"))(0)._2("eventTimeTimestampCopy")
       val timestampReadAsObject = timestampAsJson.asObject
       val firstValue            = timestampReadAsObject.get.values.toList(0)
       val timestamp             = firstValue.asNumber.get.toLong.get
@@ -121,7 +121,8 @@ class FlinkDeploymentManagerScenarioTestingSpec
         deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData)),
         patienceConfig.timeout
       )
-    } should matchPattern { case ScenarioCompilationErrors(MissingSinkFactory("sendSmsNotExist", "endSend") :: Nil) =>
+    } should matchPattern {
+      case ScenarioCompilationErrors(MissingSinkFactory("sendSmsNotExist", NodeId("endSend")) :: Nil) =>
     }
   }
 

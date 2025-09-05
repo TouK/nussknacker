@@ -143,7 +143,7 @@ class FlinkProcessRegistrar(
         globalParameters = globalParameters,
         validationContext,
         compilerData.runtimeMode.createContext(
-          deploymentData.nodesData.get(NodeId(nodeComponentId.nodeId))
+          deploymentData.nodesData.get(nodeComponentId.nodeId)
         ),
         // TODO: we should verify if component supports given node data type. If not, we should throw some error instead
         //       of silently skip these data
@@ -284,7 +284,7 @@ class FlinkProcessRegistrar(
       val withSinkAdded = resultCollector match {
         case testResultCollector: TestServiceInvocationCollector =>
           val typ                 = part.node.data.ref.typ
-          val collectingSink      = testResultCollector.createSinkInvocationCollector(part.id, typ)
+          val collectingSink      = testResultCollector.createSinkInvocationCollector(NodeId(part.id), typ)
           val prepareTestValueFun = sink.prepareTestValueFunction
           withValuePrepared
             .map(
@@ -292,7 +292,7 @@ class FlinkProcessRegistrar(
               customNodeContext.valueWithContextInfo.forUnknown
             )
             // FIXME: ...
-            .addSink(new CollectingSinkFunction[AnyRef](compilerDataForProcessPart(None), collectingSink, part.id))
+            .addSink(new CollectingSinkFunction[AnyRef](compilerDataForProcessPart(None), collectingSink, NodeId(part.id)))
         case _ =>
           sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfoFrom(part), Left(contextBefore)))
       }
@@ -412,7 +412,7 @@ object FlinkProcessRegistrar {
       .map { part =>
         (
           SplittedNodesCollector.collectNodes(part.node).map(_.data),
-          part.cast[PotentiallyStartPart].toList.flatMap(_.nextParts).map(_.id)
+          part.cast[PotentiallyStartPart].toList.flatMap(_.nextParts).map(p => NodeId(p.id))
         )
       }
       .getOrElse((Set.empty, Nil))

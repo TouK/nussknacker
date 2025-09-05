@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, Proces
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{ServiceExecutionContext, Source}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ServiceExecutionContext, Source}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -22,23 +22,14 @@ import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
-import pl.touk.nussknacker.engine.lite.api.commonTypes.{monoid, DataBatch, ErrorType, ResultType}
+import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
-import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{
-  EndResult,
-  ScenarioInputBatch,
-  ScenarioInterpreter,
-  SourceId
-}
+import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter, SourceId}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.Implicits.{RichIterable, RichScalaMap}
 import pl.touk.nussknacker.engine.util.LoggingListener
-import pl.touk.nussknacker.engine.util.metrics.common.{
-  EndCountingListener,
-  ExceptionCountingListener,
-  NodeCountingListener
-}
+import pl.touk.nussknacker.engine.util.metrics.common.{EndCountingListener, ExceptionCountingListener, NodeCountingListener}
 
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
@@ -74,7 +65,7 @@ object ScenarioInterpreterFactory {
       val allNodes = process.collectAllNodes
       val countingListeners = List(
         LoggingListener,
-        new NodeCountingListener(allNodes.map(_.id)),
+        new NodeCountingListener(allNodes.map(n => NodeId(n.id))),
         new ExceptionCountingListener,
         new EndCountingListener(allNodes),
       )
@@ -182,7 +173,7 @@ object ScenarioInterpreterFactory {
           Monad[F].pure[ResultType[PartResult]](
             Writer(
               NuExceptionInfo(
-                Some(NodeComponentInfo(source.value, ComponentType.Source, "source")),
+                Some(NodeComponentInfo(NodeId(source.value), ComponentType.Source, "source")),
                 new IllegalArgumentException(s"Unknown source ${source.value}"),
                 Context.dummy,
               ) :: Nil,
@@ -255,7 +246,7 @@ object ScenarioInterpreterFactory {
         )
         .result
 
-    private def customComponentContext(nodeId: String) =
+    private def customComponentContext(nodeId: NodeId) =
       CustomComponentContext[F](nodeId, capabilityTransformer)
 
     private def compiledPartInvoker(
@@ -271,11 +262,11 @@ object ScenarioInterpreterFactory {
         case CustomNodePart(transformerObj, node, _, validationContext, parts, _) =>
           val validatedTransformer = transformerObj match {
             case t: LiteCustomComponent => Valid(t)
-            case _                      => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
+            case _                      => Invalid(NonEmptyList.of(UnsupportedPart(NodeId(node.id))))
           }
           validatedTransformer.andThen { transformer =>
             val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
-            result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(node.id))))
+            result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(NodeId(node.id)))))
           }
       }
 
@@ -283,7 +274,7 @@ object ScenarioInterpreterFactory {
         it: WithSinkTypes[PartInterpreterType]
     ): WithSinkTypes[PartInterpreterType] = sink match {
       case sinkWithParams: LiteSink[Res @unchecked] =>
-        val (returnType, evaluation) = sinkWithParams.createTransformation[F](customComponentContext(compiledNode.id))
+        val (returnType, evaluation) = sinkWithParams.createTransformation[F](customComponentContext(NodeId(compiledNode.id)))
 
         it.bimap(
           _.updated(NodeId(compiledNode.id), returnType),
@@ -391,15 +382,15 @@ object ScenarioInterpreterFactory {
         case (s: LiteSource[Input @unchecked], _) => Valid(s)
         // Used only in fragment testing, when FragmentInputDefinition is available
         case (_: Source, fragmentInputDef: FragmentInputDefinition) if runtimeMode == RuntimeMode.Test =>
-          sourceForFragmentInputTesting(fragmentInputDef)
-        case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
+          sourceForFragmentInputTesting
+        case _ => Invalid(NonEmptyList.of(UnsupportedPart(NodeId(node.id))))
       }
       validatedSource.map { source =>
-        source.createTransformation(customComponentContext(node.id))
+        source.createTransformation(customComponentContext(NodeId(node.id)))
       }
     }
 
-    private def sourceForFragmentInputTesting(fragmentInputDef: FragmentInputDefinition): Valid[LiteSource[Input]] =
+    private val sourceForFragmentInputTesting: Valid[LiteSource[Input]] =
       Valid(
         new LiteSource[Input] {
 
@@ -408,7 +399,7 @@ object ScenarioInterpreterFactory {
           ): Input => ValidatedNel[ErrorType, Context] = { input =>
             Valid(
               Context(
-                ContextId(fragmentInputDef.id, evaluateLazyParameter.nodeId, 0, 0),
+                ContextId(processCompilerData.jobData.metaData.name, evaluateLazyParameter.nodeId, 0, 0),
                 input.asInstanceOf[Map[String, Any]],
                 None
               )
@@ -425,11 +416,11 @@ object ScenarioInterpreterFactory {
       val validatedTransformer = transformerObj match {
         case t: LiteJoinCustomComponent                               => Valid(t)
         case JoinContextTransformation(_, t: LiteJoinCustomComponent) => Valid(t)
-        case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
+        case _ => Invalid(NonEmptyList.of(UnsupportedPart(NodeId(node.id))))
       }
       validatedTransformer.andThen { transformer =>
         val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
-        result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(node.id))))
+        result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(NodeId(node.id)))))
       }
     }
 

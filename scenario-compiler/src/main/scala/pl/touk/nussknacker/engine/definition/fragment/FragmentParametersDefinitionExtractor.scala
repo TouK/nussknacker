@@ -86,7 +86,7 @@ class FragmentParametersDefinitionExtractor(
           initialValue = fragmentParameter.initialValue,
           refClazz = fragmentParameter.typ,
           paramName = fragmentParameter.name,
-          nodeIds = Set(nodeId.id)
+          nodeIds = Set(NodeId(nodeId.id))
         ) match {
           case Valid(editors) => (editors, List.empty)
           case Invalid(e)     => (NonEmptyList.one(SpelParameterEditor), e.toList)
@@ -149,7 +149,7 @@ class FragmentParametersDefinitionExtractor(
         Writer
           .value[List[PartSubGraphCompilationError], TypingResult](Unknown)
           .tell(
-            List(FragmentParamClassLoadError(fragmentParameter.name, fragmentParameter.typ.refClazzName, nodeId.id))
+            List(FragmentParamClassLoadError(fragmentParameter.name, fragmentParameter.typ.refClazzName, nodeId))
           )
       )
   }

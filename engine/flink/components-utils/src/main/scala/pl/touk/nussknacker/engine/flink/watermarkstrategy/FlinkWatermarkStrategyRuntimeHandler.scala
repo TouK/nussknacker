@@ -1,13 +1,17 @@
 package pl.touk.nussknacker.engine.flink.watermarkstrategy
 
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
-import org.apache.flink.api.common.functions.{OpenContext, RichMapFunction, RuntimeContext}
+import org.apache.flink.api.common.functions.{FlatMapFunction, OpenContext, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter}
+import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.process.ContextInitializer
+import pl.touk.nussknacker.engine.api.process.ContextVariables
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
-import pl.touk.nussknacker.engine.flink.api.process.FlinkLazyParameterFunctionHelper
+import pl.touk.nussknacker.engine.flink.api.process.{
+  AbstractLazyParameterInterpreterFunction,
+  FlinkLazyParameterFunctionHelper
+}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
 import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyOptions
@@ -16,13 +20,13 @@ import java.time.{Duration, Instant}
 
 object FlinkWatermarkStrategyRuntimeHandler {
 
-  class ContextInitializingFunction[Raw](
-      contextInitializer: ContextInitializer[Raw],
-      nodeId: String,
+  abstract class ContextInitializingFunction[Input](
+      nodeId: NodeId,
       convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
       eventTimeLazyParam: LazyParameter[Instant],
       lazyParamHelper: FlinkLazyParameterFunctionHelper
-  ) extends RichMapFunction[Raw, ContextWithEventTime] {
+  ) extends AbstractLazyParameterInterpreterFunction(lazyParamHelper)
+      with FlatMapFunction[Input, ContextWithEventTime] {
 
     private var contextIdGenerator: ContextIdGenerator = _
 
@@ -35,13 +39,17 @@ object FlinkWatermarkStrategyRuntimeHandler {
         .toEvaluateFunction(eventTimeLazyParam)
     }
 
-    override def map(input: Raw): ContextWithEventTime = {
-      val contextVariables = contextInitializer.convertToInitialVariables(input).variables
-      val context = Context(contextIdGenerator.nextContextId())
-        .withVariables(contextVariables)
-      val eventTimeValue = eventTimeFun(context)
-      ContextWithEventTime(context, eventTimeValue)
+    override def flatMap(input: Input, out: Collector[ContextWithEventTime]): Unit = {
+      val initialContext = Context(contextIdGenerator.nextContextId())
+      collectHandlingErrors(initialContext, out) {
+        val contextVariables                 = sourceOutputVariables(input, initialContext)
+        val contextWithSourceOutputVariables = initialContext.withVariables(contextVariables.variables)
+        val eventTimeValue                   = eventTimeFun(contextWithSourceOutputVariables)
+        ContextWithEventTime(contextWithSourceOutputVariables, eventTimeValue)
+      }
     }
+
+    protected def sourceOutputVariables(input: Input, initialContext: Context): ContextVariables
 
   }
 

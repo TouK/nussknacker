@@ -2,11 +2,11 @@ package pl.touk.nussknacker.engine.lite.api.utils.sources
 
 import cats.Monad
 import cats.data.{Validated, ValidatedNel}
-import pl.touk.nussknacker.engine.api.{Context, Lifecycle, NodeId}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ContextVariables
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
+import pl.touk.nussknacker.engine.api.{Context, Lifecycle, NodeId}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
@@ -23,7 +23,7 @@ trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
 
   override def open(context: EngineRuntimeContext): Unit = {
     this.context = context
-    this.contextIdGenerator = context.contextIdGenerator(nodeId.id)
+    this.contextIdGenerator = context.contextIdGenerator(nodeId)
   }
 
   override def createTransformation[F[_]: Monad](

@@ -7,7 +7,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{Context, EagerService, MethodToInvoke, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.{Context, EagerService, MethodToInvoke, NodeId, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
@@ -160,7 +160,7 @@ class ModelUtilExceptionHandlingSpec
       RecordingExceptionConsumer
         .exceptionsFor(runId)
         .collect {
-          case NuExceptionInfo(Some(NodeComponentInfo("join", _)), e: SpelExpressionEvaluationException, _, _, _) =>
+          case NuExceptionInfo(Some(NodeComponentInfo(NodeId("join"), _)), e: SpelExpressionEvaluationException, _, _, _) =>
             e.expression
         }
         .toSet shouldBe Set(

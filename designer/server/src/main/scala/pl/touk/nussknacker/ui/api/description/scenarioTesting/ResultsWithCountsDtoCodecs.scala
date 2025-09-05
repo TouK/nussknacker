@@ -3,13 +3,8 @@ package pl.touk.nussknacker.ui.api.description.scenarioTesting
 import io.circe.{Decoder, DecodingFailure, Encoder, Json, JsonObject}
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.generic.semiauto.deriveEncoder
-import pl.touk.nussknacker.engine.api.ContextId
-import pl.touk.nussknacker.engine.testmode.TestProcess.{
-  ExceptionResult,
-  ExpressionInvocationResult,
-  ExternalInvocationResult,
-  ResultContext
-}
+import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
+import pl.touk.nussknacker.engine.testmode.TestProcess.{ExceptionResult, ExpressionInvocationResult, ExternalInvocationResult, ResultContext}
 
 object ResultsWithCountsDtoCodecs {
 
@@ -51,7 +46,7 @@ object ResultsWithCountsDtoCodecs {
 
     implicit val nodeTransitionResultEncoder: Encoder[NodeTransitionResult] = Encoder.instance { value =>
       val baseFields: List[(String, Option[Json])] = List(
-        "sourceNodeId"      -> Some(Json.fromString(value.sourceNodeId)),
+        "sourceNodeId"      -> Some(value.sourceNodeId.id.asJson),
         "destinationNodeId" -> Some(value.destinationNodeId.asJson), // Always include json field (even when None)
         "results"           -> Some(value.results.asJson),
         "totalCount"        -> value.totalCount.map(Json.fromLong),  // Drop json field when None
@@ -111,7 +106,7 @@ object ResultsWithCountsDtoCodecs {
   }
 
   final case class ContextIdDto(
-      nid: String,
+      nid: NodeId,
       tid: Long,
       idx: Long,
       path: List[ContextIdPathPartDto]
@@ -130,6 +125,6 @@ object ResultsWithCountsDtoCodecs {
 
   }
 
-  final case class ContextIdPathPartDto(n: String, t: String)
+  final case class ContextIdPathPartDto(n: NodeId, t: String)
 
 }

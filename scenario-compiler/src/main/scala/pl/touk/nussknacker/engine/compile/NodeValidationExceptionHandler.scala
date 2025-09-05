@@ -30,7 +30,7 @@ object NodeValidationExceptionHandler extends LazyLogging {
       f
     } catch {
       case MissingOutputVariableException =>
-        Validated.invalidNel(MissingParameters(Set(ParameterName("OutputVariable")), nodeId.id))
+        Validated.invalidNel(MissingParameters(Set(ParameterName("OutputVariable")), nodeId))
       case exc: CustomNodeValidationException =>
         Validated.invalidNel(CustomNodeError(exc.message, exc.paramName))
       case NonFatal(e) =>
@@ -38,7 +38,7 @@ object NodeValidationExceptionHandler extends LazyLogging {
           s"Exception during validation handling of node '${nodeId.id}' in scenario ${metaData.name.value}",
           e
         )
-        Validated.invalidNel(CannotCreateObjectError(e, nodeId.id))
+        Validated.invalidNel(CannotCreateObjectError(e, nodeId))
     }
   }
 

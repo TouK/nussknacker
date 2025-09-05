@@ -9,6 +9,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.build.{ProcessGraphBuilder, ScenarioBuilder}
@@ -16,10 +17,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawEditorParamName
 import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunner._
-import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.{
-  InputSchemaProperty,
-  OutputSchemaProperty
-}
+import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.{InputSchemaProperty, OutputSchemaProperty}
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, ValidatedValuesDetailedMessage}
@@ -94,7 +92,7 @@ class CollectTransformerTest
     val compilationError = runScenario(scenario, List(1)).invalidValue.toList.loneElement
 
     inside(compilationError) {
-      case ExpressionParserCompilationError("Unresolved reference 'previousCtxVar'", `nodeIdWithError`, _, _, _) =>
+      case ExpressionParserCompilationError("Unresolved reference 'previousCtxVar'", NodeId(`nodeIdWithError`), _, _, _) =>
     }
   }
 

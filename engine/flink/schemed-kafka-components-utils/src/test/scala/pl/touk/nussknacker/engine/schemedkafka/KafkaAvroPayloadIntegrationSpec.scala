@@ -8,6 +8,7 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{Assertion, BeforeAndAfter}
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelConfig
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -23,10 +24,7 @@ import pl.touk.nussknacker.engine.schemedkafka.helpers.FlinkKafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
-  MockConfluentSchemaRegistryClientBuilder,
-  MockSchemaRegistryClient
-}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 
@@ -255,7 +253,7 @@ class KafkaAvroPayloadIntegrationSpec extends AnyFunSuite with FlinkKafkaAvroSpe
           val espExceptionInfo = RecordingExceptionConsumer.exceptionsFor(runId).head
 
           espExceptionInfo.nodeComponentInfo shouldBe Some(
-            NodeComponentInfo("end", ComponentType.Sink, "flinkKafkaAvroSink")
+            NodeComponentInfo(NodeId("end"), ComponentType.Sink, "flinkKafkaAvroSink")
           )
           espExceptionInfo.throwable shouldBe a[AvroRuntimeException]
           espExceptionInfo.throwable.getMessage should include("Not expected null for field: Some(street)")

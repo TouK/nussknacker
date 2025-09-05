@@ -201,7 +201,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                   "This field is required and can not be null",
                   _,
                   NodeExpressionId.DefaultExpressionIdParamName,
-                  "filter"
+                  NodeId("filter")
                 )
               ) :: Nil,
               _,
@@ -276,7 +276,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map("input" -> Typed[String])
       )
     ) {
-      case ValidationPerformed(CannotCreateObjectError("Some exception", "tst1", _) :: Nil, parameters, _)
+      case ValidationPerformed(CannotCreateObjectError("Some exception", NodeId("tst1"), _) :: Nil, parameters, _)
           if parameters.nonEmpty =>
     }
   }
@@ -314,7 +314,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                   "Field: $expression is mandatory and can not be empty",
                   _,
                   NodeExpressionId.DefaultExpressionIdParamName,
-                  "var1"
+                  NodeId("var1")
                 )
               ) :: Nil,
               _,
@@ -338,13 +338,13 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Variable("var1", "var1", "42L".spel, None),
         Map("var1" -> typing.Unknown)
       )
-    ) { case ValidationPerformed(OverwrittenVariable("var1", "var1", _) :: Nil, None, _) =>
+    ) { case ValidationPerformed(OverwrittenVariable("var1", NodeId("var1"), _) :: Nil, None, _) =>
     }
   }
 
   test("should not allow to use special chars in variable name") {
     inside(validate(Variable("var1", "var@ 2", "42L".spel, None), Map.empty)) {
-      case ValidationPerformed(InvalidVariableName("var@ 2", "var1", _) :: Nil, None, _) =>
+      case ValidationPerformed(InvalidVariableName("var@ 2", NodeId("var1"), _) :: Nil, None, _) =>
     }
   }
 
@@ -372,7 +372,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         VariableBuilder("var1", "var1", Nil, None),
         Map("var1" -> typing.Unknown)
       )
-    ) { case ValidationPerformed(OverwrittenVariable("var1", "var1", _) :: Nil, None, _) =>
+    ) { case ValidationPerformed(OverwrittenVariable("var1", NodeId("var1"), _) :: Nil, None, _) =>
     }
   }
 
@@ -388,12 +388,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               "The key of a record has to be unique",
               _,
               ParameterName("$fields-0-$key"),
-              "recordVariable"
+              NodeId("recordVariable")
             ) :: CustomParameterValidationError(
               "The key of a record has to be unique",
               _,
               ParameterName("$fields-1-$key"),
-              "recordVariable"
+              NodeId("recordVariable")
             ) :: Nil,
             None,
             _
@@ -415,7 +415,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       case ValidationPerformed(
             ExpressionParserCompilationError(
               "Non reference 'unresolvedReference' occurred. Maybe you missed '#' in front of it?",
-              "recordVariable",
+              NodeId("recordVariable"),
               Some(ParameterName("$fields-0-$value")),
               "unresolvedReference",
               _
@@ -424,12 +424,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               "The key of a record has to be unique",
               _,
               ParameterName("$fields-0-$key"),
-              "recordVariable"
+              NodeId("recordVariable")
             ) :: CustomParameterValidationError(
               "The key of a record has to be unique",
               _,
               ParameterName("$fields-1-$key"),
-              "recordVariable"
+              NodeId("recordVariable")
             ) :: Nil,
             _,
             _
@@ -450,12 +450,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                 "Field: $fields-0-$value is mandatory and can not be empty",
                 _,
                 ParameterName("$fields-0-$value"),
-                "recordVariable"
+                NodeId("recordVariable")
               ) :: EmptyMandatoryParameter(
                 "Field: $fields-1-$value is mandatory and can not be empty",
                 _,
                 ParameterName("$fields-1-$value"),
-                "recordVariable"
+                NodeId("recordVariable")
               ) :: Nil,
               None,
               _
@@ -511,7 +511,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
     ) should matchPattern {
       case ValidationPerformed(
-            List(UnknownFragment("non-existing-fragment", "frInput")),
+            List(UnknownFragment("non-existing-fragment", NodeId("frInput"))),
             None,
             None
           ) =>
@@ -530,7 +530,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       )
     ) {
       case ValidationPerformed(
-            List(ExpressionParserCompilationError(message, "frInput", Some(ParameterName("param1")), "145", _)),
+            List(ExpressionParserCompilationError(message, NodeId("frInput"), Some(ParameterName("param1")), "145", _)),
             None,
             None
           ) =>
@@ -658,8 +658,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     ) should matchPattern {
       case ValidationPerformed(
             List(
-              EmptyMandatoryParameter(_, _, ParameterName("P1"), "nameOfTheNode"),
-              EmptyMandatoryParameter(_, _, ParameterName("P2"), "nameOfTheNode")
+              EmptyMandatoryParameter(_, _, ParameterName("P1"), NodeId("nameOfTheNode")),
+              EmptyMandatoryParameter(_, _, ParameterName("P2"), NodeId("nameOfTheNode"))
             ),
             None,
             None
@@ -682,7 +682,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       outgoingEdges = defaultFragmentOutgoingEdges
     ) should matchPattern {
       case ValidationPerformed(
-            List(EmptyMandatoryParameter(_, _, ParameterName("optionalParam"), "enricherNodeId")),
+            List(EmptyMandatoryParameter(_, _, ParameterName("optionalParam"), NodeId("enricherNodeId"))),
             None,
             None
           ) =>
@@ -707,7 +707,11 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     ) {
       case ValidationPerformed(
             List(
-              InvalidVariableName("very bad var name", "frInput", Some(ParameterName("ref.outputVariableNames.out1")))
+              InvalidVariableName(
+                "very bad var name",
+                NodeId("frInput"),
+                Some(ParameterName("ref.outputVariableNames.out1"))
+              )
             ),
             None,
             None
@@ -730,7 +734,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       )
     ) {
       case ValidationPerformed(
-            List(OverwrittenVariable("var1", "frInput", Some(ParameterName("ref.outputVariableNames.out1")))),
+            List(OverwrittenVariable("var1", NodeId("frInput"), Some(ParameterName("ref.outputVariableNames.out1")))),
             None,
             None
           ) =>
@@ -770,14 +774,14 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
             List(
               ExpressionParserCompilationError(
                 "Non reference 'input' occurred. Maybe you missed '#' in front of it?",
-                "switchId",
+                NodeId("switchId"),
                 Some(ParameterName("$expression")),
                 "input",
                 _
               ),
               ExpressionParserCompilationError(
                 "Non reference 'notExist' occurred. Maybe you missed '#' in front of it?",
-                "switchId",
+                NodeId("switchId"),
                 Some(ParameterName("caseTarget1")),
                 "notExist",
                 _
@@ -804,7 +808,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                 "This field is required and can not be null",
                 _,
                 ParameterName("caseTarget"),
-                "switchId"
+                NodeId("switchId")
               ) :: Nil,
               None,
               None
@@ -1207,7 +1211,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         FragmentParamClassLoadError(
           ParameterName("param1"),
           "Map[List[Integer], Map[String, Map[Double, List[Integer]]]]]",
-          "in"
+          NodeId("in")
         )
       )
     }
@@ -1239,7 +1243,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
     ) { case ValidationPerformed(errors, None, None) =>
-      errors shouldBe List(FragmentParamClassLoadError(ParameterName("param1"), "Map[String, Foo]", "in"))
+      errors shouldBe List(FragmentParamClassLoadError(ParameterName("param1"), "Map[String, Foo]", NodeId("in")))
     }
   }
 
@@ -1323,7 +1327,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
             List(
               InvalidValidationExpression(
                 "Validation expression cannot be blank",
-                "in",
+                NodeId("in"),
                 ParameterName("param1"),
                 expr
               )
@@ -1364,7 +1368,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
             List(
               InvalidValidationExpression(
                 "Unresolved reference 'invalidReference'",
-                "in",
+                NodeId("in"),
                 ParameterName("param1"),
                 expr
               )
@@ -1409,7 +1413,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
             List(
               InvalidValidationExpression(
                 "Wrong part types",
-                "in",
+                NodeId("in"),
                 ParameterName("param1"),
                 expr
               )
@@ -1450,7 +1454,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
             List(
               InvalidValidationExpression(
                 "Bad expression type, expected: Boolean, found: String(ab)",
-                "in",
+                NodeId("in"),
                 ParameterName("param1"),
                 expr
               )
@@ -1482,7 +1486,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
             List(
               InvalidVariableName(
                 "1",
-                "in",
+                NodeId("in"),
                 Some(ParameterName("$param.1.$name"))
               )
             ),
@@ -1512,7 +1516,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     ) {
       case ValidationPerformed(
             List(
-              DuplicateFragmentInputParameter(ParameterName("paramName"), "in")
+              DuplicateFragmentInputParameter(ParameterName("paramName"), NodeId("in"))
             ),
             None,
             None
@@ -1551,7 +1555,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     ) {
       case ValidationPerformed(
             List(
-              DuplicateFragmentInputParameter(ParameterName("paramName"), "in")
+              DuplicateFragmentInputParameter(ParameterName("paramName"), NodeId("in"))
             ),
             None,
             None

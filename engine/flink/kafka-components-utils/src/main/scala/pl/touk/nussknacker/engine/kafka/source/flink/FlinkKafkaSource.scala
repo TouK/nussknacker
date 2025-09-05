@@ -8,7 +8,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumerBase}
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.{Context, NodeId}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId}
 import pl.touk.nussknacker.engine.api.component.StaticParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesWithRadioParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{
   ContextInitializer,
+  ContextVariables,
   TestDataGenerator,
   TestWithParametersSupport,
   TopicName
@@ -37,6 +38,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaCo
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.FlinkDeserializationSchemaWrapper
 import pl.touk.nussknacker.engine.kafka.source.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.{
+  FlinkKafkaContextInitializingFunction,
   OFFSET_RESET_STRATEGY_LABEL,
   OFFSET_RESET_STRATEGY_PARAM_NAME
 }
@@ -45,6 +47,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.Universa
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyOptions
 
+import java.time.Instant
 import java.util
 import java.util.Properties
 import scala.annotation.nowarn
@@ -84,13 +87,13 @@ class FlinkKafkaSource[K, V](
 
     // 2. initialize Context and compute event time
     rawSourceWithUid
-      .map(
-        new FlinkWatermarkStrategyRuntimeHandler.ContextInitializingFunction(
-          contextInitializer,
+      .flatMap(
+        new FlinkKafkaContextInitializingFunction[K, V](
           flinkNodeContext.nodeId,
           flinkNodeContext.convertToEngineRuntimeContext,
           watermarkStrategyOptions.eventTimeLazyParam,
-          flinkNodeContext.lazyParameterHelper
+          flinkNodeContext.lazyParameterHelper,
+          contextInitializer
         ),
         FlinkWatermarkStrategyRuntimeHandler.contextInitializingFunctionOutputTypeInfo(
           flinkNodeContext.asOneOutputContext
@@ -112,7 +115,7 @@ class FlinkKafkaSource[K, V](
       case singleOut: SingleOutputStreamOperator[_] =>
         setUidToNodeIdIfNeed[T](
           flinkNodeContext,
-          singleOut.name(flinkNodeContext.nodeId)
+          singleOut.name(flinkNodeContext.nodeId.id)
         )
       case _ => streamOfRaw
     }
@@ -219,7 +222,7 @@ class FlinkKafkaSource[K, V](
       KafkaUtils.toConsumerProperties(kafkaComponentsConfig, Some(consumerGroupId)),
       flinkNodeContext.exceptionHandlerPreparer,
       flinkNodeContext.convertToEngineRuntimeContext,
-      NodeId(flinkNodeContext.nodeId)
+      flinkNodeContext.nodeId
     )
   }
 
@@ -273,6 +276,28 @@ class FlinkKafkaSource[K, V](
 object FlinkKafkaSource {
   val OFFSET_RESET_STRATEGY_PARAM_NAME: ParameterName = ParameterName("offsetResetStrategy")
   val OFFSET_RESET_STRATEGY_LABEL: String             = "Offset reset strategy"
+
+  private class FlinkKafkaContextInitializingFunction[K, V](
+      nodeId: NodeId,
+      convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
+      eventTimeLazyParam: LazyParameter[Instant],
+      lazyParamHelper: FlinkLazyParameterFunctionHelper,
+      contextInitializer: ContextInitializer[ConsumerRecord[K, V]]
+  ) extends FlinkWatermarkStrategyRuntimeHandler.ContextInitializingFunction[ConsumerRecord[K, V]](
+        nodeId,
+        convertToEngineRuntimeContext,
+        eventTimeLazyParam,
+        lazyParamHelper,
+      ) {
+
+    override protected def sourceOutputVariables(
+        input: ConsumerRecord[K, V],
+        initialContext: Context
+    ): ContextVariables =
+      contextInitializer.convertToInitialVariables(input)
+
+  }
+
 }
 
 // TODO: Tricks like deserializationSchema.setExceptionHandlingData and FlinkKafkaConsumer overriding could be replaced by
@@ -299,7 +324,7 @@ class FlinkKafkaConsumerHandlingExceptions[T](
     patchRestoredState()
     super.open(openContext)
     exceptionHandler = exceptionHandlerPreparer(getRuntimeContext)
-    exceptionPurposeContextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.id)
+    exceptionPurposeContextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId)
     deserializationSchema.setExceptionHandlingData(exceptionHandler, exceptionPurposeContextIdGenerator, nodeId)
   }
 

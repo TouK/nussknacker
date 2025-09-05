@@ -345,7 +345,7 @@ class ScenarioTestService(
   ): Either[PerformTestError, ScenarioTestData] = {
     import cats.implicits._
 
-    val allScenarioSourceIds = scenario.collectAllSources.map(_.id).toSet
+    val allScenarioSourceIds = scenario.collectAllSources.map(n => NodeId(n.id)).toSet
     preliminaryScenarioRecords.records.zipWithIndex
       .map {
         case (SourceSpecificFormatPreliminaryScenarioRecord(sourceId, record, timestamp), _)
@@ -353,9 +353,9 @@ class ScenarioTestService(
           Right(ScenarioTestSourceSpecificFormatJsonRecord(sourceId, record, timestamp))
         case (CommonFormatPreliminaryScenarioRecord(sourceId, variables, timestamp), _)
             if allScenarioSourceIds.contains(sourceId) =>
-          Right(ScenarioTestCommonFormatJsonRecord(NodeId(sourceId), variables, timestamp))
+          Right(ScenarioTestCommonFormatJsonRecord(sourceId, variables, timestamp))
         case (record, recordIdx) =>
-          Left(PerformTestError.MissingSourceError(NodeId(record.sourceId), recordIdx))
+          Left(PerformTestError.MissingSourceError(record.sourceId, recordIdx))
       }
       .sequence
       .map(scenarioTestRecords => ScenarioTestData(scenarioTestRecords.toList))
@@ -423,7 +423,7 @@ class ScenarioTestService(
 
   private def computeCounts(canonical: CanonicalProcess, isFragment: Boolean, results: TestResults[_])(
       implicit loggedUser: LoggedUser
-  ): Map[String, NodeCount] = {
+  ): Map[NodeId, NodeCount] = {
     val counts = results.nodeResults.map { case (key, nresults) =>
       key -> RawCount(
         nresults.size.toLong,

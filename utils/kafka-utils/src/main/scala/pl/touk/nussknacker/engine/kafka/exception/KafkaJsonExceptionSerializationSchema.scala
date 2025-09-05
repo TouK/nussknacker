@@ -6,7 +6,7 @@ import io.circe.syntax.EncoderOps
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.record.DefaultRecordBatch
 import org.apache.kafka.common.utils.Utils
-import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -161,7 +161,7 @@ class KafkaJsonExceptionSerializationSchema(metaData: MetaData, consumerConfig: 
 
 @JsonCodec case class KafkaExceptionInfo(
     processName: ProcessName,
-    nodeId: Option[String],
+    nodeId: Option[NodeId],
     message: Option[String],
     exceptionInput: Option[String],
     inputEvent: Option[Json],

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.validator
 
 import cats.data.{NonEmptyList, Validated}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.TopicName
@@ -29,7 +30,7 @@ object TopicsExistenceValidator {
 final case class TopicExistenceValidationException[T <: TopicName](topics: NonEmptyList[T])
     extends RuntimeException(TopicExistenceValidationException.message(topics)) {
 
-  def toCustomNodeError(nodeId: String, paramName: Option[ParameterName]) =
+  def toCustomNodeError(nodeId: NodeId, paramName: Option[ParameterName]) =
     new CustomNodeError(nodeId, super.getMessage, paramName)
 }
 

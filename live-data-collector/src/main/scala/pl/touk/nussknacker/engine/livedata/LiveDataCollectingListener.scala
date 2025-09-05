@@ -28,14 +28,14 @@ class LiveDataCollectingListener private[livedata] (
   private val variableEncoder: Any => io.circe.Json = TestInterpreterRunner.testResultsVariableEncoder
 
   override def nodeEntered(
-      nodeId: String,
+      nodeId: NodeId,
       context: Context,
       processMetaData: MetaData,
   ): Unit = ()
 
   override def transitionToNextNode(
-      nodeId: String,
-      nextNodeId: String,
+      nodeId: NodeId,
+      nextNodeId: NodeId,
       context: Context,
       processMetaData: MetaData,
   ): Unit = performStorageOperation {
@@ -46,7 +46,7 @@ class LiveDataCollectingListener private[livedata] (
   }
 
   override def processingFinishedInNode(
-      nodeId: String,
+      nodeId: NodeId,
       context: Context,
       processMetaData: MetaData,
   ): Unit = performStorageOperation {
@@ -57,20 +57,20 @@ class LiveDataCollectingListener private[livedata] (
   }
 
   override def endEncountered(
-      nodeId: String,
+      nodeId: NodeId,
       ref: String,
       context: Context,
       processMetaData: MetaData,
   ): Unit = ()
 
   override def deadEndEncountered(
-      lastNodeId: String,
+      lastNodeId: NodeId,
       context: Context,
       processMetaData: MetaData,
   ): Unit = ()
 
   override def expressionEvaluated(
-      nodeId: String,
+      nodeId: NodeId,
       expressionId: String,
       expression: String,
       context: Context,
@@ -78,20 +78,20 @@ class LiveDataCollectingListener private[livedata] (
       result: Any,
   ): Unit = performStorageOperation {
     _.addExpressionEvaluation(
-      NodeId(nodeId),
+      nodeId,
       InvocationResult(context.id, Instant.now(), expressionId, encode(result)),
     )
   }
 
   override def serviceInvoked(
-      nodeId: String,
+      nodeId: NodeId,
       id: String,
       context: Context,
       processMetaData: MetaData,
       result: Try[Any],
   ): Unit = performStorageOperation {
     _.addExternalInvocation(
-      NodeId(nodeId),
+      nodeId,
       InvocationResult(context.id, Instant.now(), id, result.map(encode).getOrElse(Json.Null)),
     )
   }
@@ -103,7 +103,7 @@ class LiveDataCollectingListener private[livedata] (
       case Some(nodeComponentInfo) =>
         performStorageOperation {
           _.addException(
-            NodeId(nodeComponentInfo.nodeId),
+            nodeComponentInfo.nodeId,
             ExceptionResult(
               exceptionInfo.context.id,
               Instant.now(),

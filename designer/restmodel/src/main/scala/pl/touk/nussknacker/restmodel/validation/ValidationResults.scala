@@ -3,6 +3,7 @@ package pl.touk.nussknacker.restmodel.validation
 import cats.implicits._
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
 import pl.touk.nussknacker.engine.api.json.encoders.TypeEncoders
@@ -82,16 +83,16 @@ object ValidationResults {
   )
 
   @JsonCodec final case class ValidationErrors(
-      invalidNodes: Map[String, List[NodeValidationError]],
+      invalidNodes: Map[NodeId, List[NodeValidationError]],
       processPropertiesErrors: List[NodeValidationError],
       globalErrors: List[UIGlobalError]
   ) {
     def isEmpty: Boolean = invalidNodes.isEmpty && processPropertiesErrors.isEmpty && globalErrors.isEmpty
   }
 
-  @JsonCodec final case class UIGlobalError(error: NodeValidationError, nodeIds: List[String])
+  @JsonCodec final case class UIGlobalError(error: NodeValidationError, nodeIds: List[NodeId])
 
-  @JsonCodec final case class ValidationWarnings(invalidNodes: Map[String, List[NodeValidationError]])
+  @JsonCodec final case class ValidationWarnings(invalidNodes: Map[NodeId, List[NodeValidationError]])
 
   @JsonCodec final case class NodeValidationError(
       typ: String,
@@ -118,7 +119,7 @@ object ValidationResults {
       ValidationResult.errors(Map.empty, List.empty, globalErrors)
 
     def errors(
-        invalidNodes: Map[String, List[NodeValidationError]],
+        invalidNodes: Map[NodeId, List[NodeValidationError]],
         processPropertiesErrors: List[NodeValidationError],
         globalErrors: List[UIGlobalError]
     ): ValidationResult = {
@@ -133,7 +134,7 @@ object ValidationResults {
       )
     }
 
-    def warnings(invalidNodes: Map[String, List[NodeValidationError]]): ValidationResult = {
+    def warnings(invalidNodes: Map[NodeId, List[NodeValidationError]]): ValidationResult = {
       ValidationResult(
         ValidationErrors.success,
         ValidationWarnings(invalidNodes = invalidNodes),

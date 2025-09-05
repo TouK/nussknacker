@@ -142,7 +142,7 @@ class NodeDataValidator(modelData: ModelData) {
           ValidationNotPerformed
       }
 
-      val nodeIdErrors = IdValidator.validateNodeId(nodeData.id) match {
+      val nodeIdErrors = IdValidator.validateNodeId(NodeId(nodeData.id)) match {
         case Validated.Valid(_)   => List.empty
         case Validated.Invalid(e) => e.toList
       }
@@ -171,7 +171,7 @@ class NodeDataValidator(modelData: ModelData) {
               .map { output =>
                 val maybeOutputName: Option[String] = a.ref.outputVariableNames.get(output)
                 val outputName =
-                  Validated.fromOption(maybeOutputName, NonEmptyList.one(UnknownFragmentOutput(output, Set(a.id))))
+                  Validated.fromOption(maybeOutputName, NonEmptyList.one(UnknownFragmentOutput(output, Set(NodeId(a.id)))))
                 outputName.andThen(name =>
                   inputContext.validationContext.withVariable(OutputVar.fragmentOutput(output, name), Unknown)
                 )
@@ -181,7 +181,7 @@ class NodeDataValidator(modelData: ModelData) {
             val outgoingEdgesValidated = outputs
               .map {
                 case Output(name, _) if !outgoingEdges.exists(_.edgeType.contains(EdgeType.FragmentOutput(name))) =>
-                  invalidNel(FragmentOutputNotDefined(name, Set(a.id)))
+                  invalidNel(FragmentOutputNotDefined(name, Set(NodeId(a.id))))
                 case _ =>
                   valid(())
               }

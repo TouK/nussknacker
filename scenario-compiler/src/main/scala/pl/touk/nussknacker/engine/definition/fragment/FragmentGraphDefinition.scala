@@ -18,7 +18,7 @@ class FragmentGraphDefinition(
 
   def validOutputs(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Set[Output]] = {
     NonEmptyList.fromList(allOutputs.groupBy(_.name).filter(_._2.size > 1).toList) match {
-      case Some(groups) => invalid(groups.map(gr => DuplicateFragmentOutputNamesInScenario(gr._1, nodeId.id)))
+      case Some(groups) => invalid(groups.map(gr => DuplicateFragmentOutputNamesInScenario(gr._1, nodeId)))
       case None         => valid(allOutputs.toSet)
     }
   }

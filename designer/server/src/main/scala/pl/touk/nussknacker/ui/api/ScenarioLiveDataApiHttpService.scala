@@ -97,7 +97,7 @@ class ScenarioLiveDataApiHttpService(
 
   private def computeCounts(scenarioWithDetails: ScenarioWithDetails, liveData: CollectedLiveData)(
       implicit loggedUser: LoggedUser
-  ): Map[String, NodeCount] = {
+  ): Map[NodeId, NodeCount] = {
     val incomingCounts =
       liveData.nodeTransitions.toList
         .flatMap { case (transition, data) => transition.destinationNodeId.map(_ -> data.totalCount) }
@@ -110,13 +110,13 @@ class ScenarioLiveDataApiHttpService(
         .toGroupedMap
         .mapValuesNow(_.sum)
 
-    def getCount(nodeId: String): Option[RawCount] = Some(
+    def getCount(nodeId: NodeId): Option[RawCount] = Some(
       RawCount(
         incomingCounts
           .get(nodeId)
           .orElse(outgoingCounts.get(nodeId))
           .getOrElse(0),
-        liveData.exceptions.getOrElse(NodeId(nodeId), List.empty).size.toLong
+        liveData.exceptions.getOrElse(nodeId, List.empty).size.toLong
       )
     )
 

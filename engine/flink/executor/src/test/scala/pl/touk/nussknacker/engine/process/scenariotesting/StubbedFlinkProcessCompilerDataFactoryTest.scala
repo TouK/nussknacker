@@ -101,7 +101,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
   test("stubbing for test purpose should work for one source") {
     val scenarioTestData =
       ScenarioTestData(
-        List(1, 2, 3).map(v => ScenarioTestSourceSpecificFormatJsonRecord("left-source", Json.fromLong(v)))
+        List(1, 2, 3).map(v => ScenarioTestSourceSpecificFormatJsonRecord(NodeId("left-source"), Json.fromLong(v)))
       )
     val compiledProcess = testCompile(scenarioWithSingleSource, scenarioTestData)
     val sources = compiledProcess.sources.collect { case source: SourcePart =>
@@ -114,12 +114,12 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
   test("stubbing for test purpose should work for multiple sources") {
     val scenarioTestData = ScenarioTestData(
       List(
-        ScenarioTestSourceSpecificFormatJsonRecord("left-source", Json.fromLong(11)),
-        ScenarioTestSourceSpecificFormatJsonRecord("right-source", Json.fromLong(21)),
-        ScenarioTestSourceSpecificFormatJsonRecord("right-source", Json.fromLong(22)),
-        ScenarioTestSourceSpecificFormatJsonRecord("left-source", Json.fromLong(12)),
-        ScenarioTestSourceSpecificFormatJsonRecord("left-source", Json.fromLong(13)),
-        ScenarioTestSourceSpecificFormatJsonRecord("right-source", Json.fromLong(23)),
+        ScenarioTestSourceSpecificFormatJsonRecord(NodeId("left-source"), Json.fromLong(11)),
+        ScenarioTestSourceSpecificFormatJsonRecord(NodeId("right-source"), Json.fromLong(21)),
+        ScenarioTestSourceSpecificFormatJsonRecord(NodeId("right-source"), Json.fromLong(22)),
+        ScenarioTestSourceSpecificFormatJsonRecord(NodeId("left-source"), Json.fromLong(12)),
+        ScenarioTestSourceSpecificFormatJsonRecord(NodeId("left-source"), Json.fromLong(13)),
+        ScenarioTestSourceSpecificFormatJsonRecord(NodeId("right-source"), Json.fromLong(23)),
       )
     )
 

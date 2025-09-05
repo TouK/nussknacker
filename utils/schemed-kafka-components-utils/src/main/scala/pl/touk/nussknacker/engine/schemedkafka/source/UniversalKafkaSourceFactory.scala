@@ -198,7 +198,7 @@ class UniversalKafkaSourceFactory(
       .leftMap(error => CustomNodeError(error.getMessage, paramName))
   }
 
-  override protected def resultAfterEventTimeParam(
+  override protected def resultAfterWatermarkStrategyParameters(
       inputContext: ValidationContext,
       dependencies: List[NodeDependencyValue],
       parameters: List[(ParameterName, DefinedSingleParameter)],
