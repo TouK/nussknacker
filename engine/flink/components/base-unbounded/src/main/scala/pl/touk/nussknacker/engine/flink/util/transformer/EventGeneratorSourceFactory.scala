@@ -101,8 +101,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
         editors = List(JsonTemplateParameterEditor, SpelParameterEditor),
         defaultValue = Some(
           "{\n\t\"sampleField\": \"#{ #UTIL.uuid }\",\n\t\"dateTime\": \"#{ #DATE.now }\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}".jsonTemplate
-        ),
-        category = Advanced
+        )
       )
     )
 
