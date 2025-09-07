@@ -8,7 +8,14 @@ import type {
     BaseDrawArgs,
     Theme,
 } from "@glideapps/glide-data-grid";
-import DataEditor, { CompactSelection, GridCellKind, type CustomCell, type CustomRenderer, drawTextCell } from "@glideapps/glide-data-grid";
+import DataEditor, {
+    CompactSelection,
+    GridCellKind,
+    type CustomCell,
+    type CustomRenderer,
+    drawTextCell,
+    TextCellEntry,
+} from "@glideapps/glide-data-grid";
 import type { ProvideEditorComponent } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
 import type { GridColumn } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
 import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
@@ -115,10 +122,29 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
             kind: GridCellKind.Custom,
             isMatch: isVariablesCell,
             draw: (args, cell) => {
+                console.log(cell.data);
                 drawTextWithBoldSegments(args.ctx, cell.data.value, args.rect, args.theme);
             },
             provideEditor: () => ({
-                editor: () => <input />, // Simplified editor type
+                editor: (p) => {
+                    const { isHighlighted, onChange, value, validatedSelection } = p;
+
+                    return (
+                        <TextCellEntry
+                            highlight={isHighlighted}
+                            autoFocus={value.readonly !== true}
+                            disabled={value.readonly === true}
+                            altNewline={true}
+                            value={value.data.value}
+                            validatedSelection={validatedSelection}
+                            onChange={(e) =>
+                                onChange({
+                                    ...value,
+                                })
+                            }
+                        />
+                    );
+                },
                 deletedValue: (v) => ({ ...v, copyData: "", data: { ...(v as VariablesCell).data, value: "" } }),
             }),
         }),
