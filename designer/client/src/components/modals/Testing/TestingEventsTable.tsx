@@ -8,14 +8,7 @@ import type {
     BaseDrawArgs,
     Theme,
 } from "@glideapps/glide-data-grid";
-import DataEditor, {
-    CompactSelection,
-    GridCellKind,
-    type CustomCell,
-    type CustomRenderer,
-    drawTextCell,
-    TextCellEntry,
-} from "@glideapps/glide-data-grid";
+import DataEditor, { CompactSelection, GridCellKind, type CustomRenderer, drawTextCell, TextCellEntry } from "@glideapps/glide-data-grid";
 import type { ProvideEditorComponent } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
 import type { GridColumn } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
 import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
@@ -28,29 +21,13 @@ import { useErrorHighlights } from "../../graph/node-modal/editors/expression/Ta
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import { Sizer } from "../../graph/node-modal/editors/expression/Table/Sizer";
 import { useTableTheme } from "../../graph/node-modal/editors/expression/Table/tableTheme";
-import {
-    DEFAULT_ROW_HEADER,
-    drawTextWithBoldSegments,
-    formatEventVariablesForDisplay,
-    getRowLines,
-    LINE_HEIGHT,
-    paddingX,
-    paddingY,
-    SPLIT_SEPARATOR,
-} from "./drawText";
+import { DEFAULT_ROW_HEADER, drawTextWithBoldSegments } from "./drawText";
+import type { VariablesCell } from "./testingCellContent";
+import { getTestingCellContent, isSourceSelectCell, isVariablesCell } from "./testingCellContent";
+import type { SourceSelectCell } from "./TestingEventsTableSourceEditor";
 import TestingEventsTableSourceEditor from "./TestingEventsTableSourceEditor";
 import "@glideapps/glide-data-grid/dist/index.css";
-import { buildDefaultVariablesMap } from "./utils";
-
-type SourceSelectCellData = { kind: "source-select-cell"; value: string; options: string[] };
-type SourceSelectCell = CustomCell<SourceSelectCellData>;
-const isSourceSelectCell = (c: GridCell): c is SourceSelectCell =>
-    c.kind === GridCellKind.Custom && (c as SourceSelectCell).data?.kind === "source-select-cell";
-
-type VariablesCellData = { kind: "variables-cell"; value: string; options: string[] };
-type VariablesCell = CustomCell<VariablesCellData>;
-const isVariablesCell = (c: GridCell): c is VariablesCell =>
-    c.kind === GridCellKind.Custom && (c as VariablesCell).data?.kind === "variables-cell";
+import { buildDefaultVariablesMap, buildTestingRowUpdates, computeVariablesRowHeight } from "./utils";
 
 export interface TestingEventParameters {
     sourceId: string;
@@ -75,11 +52,23 @@ interface EventsTableProps {
     cellErrors: CellError[];
 }
 
+export const TABLE_HEIGHT = "65vh";
+export const TABLE_WIDTH = "100%";
+const TRAILING_ROW_HINT = "Add record";
+const COLUMN_SOURCE_ID = "sourceId";
+const COLUMN_VARIABLES_ID = "variables";
+const COLUMN_SOURCE_TITLE = "Source";
+const COLUMN_VARIABLES_TITLE = "Input variables";
+const COLUMN_SOURCE_WIDTH = 150;
+const COLUMN_VARIABLES_WIDTH = 300;
+
 const emptySelection: GridSelection = { columns: CompactSelection.empty(), rows: CompactSelection.empty() };
 const tableColumns: GridColumn[] = [
-    { id: "sourceId", title: "Source", width: 150, hasMenu: false },
-    { id: "variables", title: "Input variables", width: 300, grow: 1, hasMenu: false },
+    { id: COLUMN_SOURCE_ID, title: COLUMN_SOURCE_TITLE, width: COLUMN_SOURCE_WIDTH, hasMenu: false },
+    { id: COLUMN_VARIABLES_ID, title: COLUMN_VARIABLES_TITLE, width: COLUMN_VARIABLES_WIDTH, grow: 1, hasMenu: false },
 ];
+
+type HeaderRenderArgs = { columnIndex: number; theme: Theme; rect: { width: number } };
 
 export const TestingEventsTable: React.FC<EventsTableProps> = ({
     data = [],
@@ -96,7 +85,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
     const tableTheme = useTableTheme();
     const [selection, setSelection] = useState<GridSelection>(emptySelection);
     const [hasFocus, setHasFocus] = useState(false);
-    const ref = useRef<DataEditorRef>();
+    const ref = useRef<DataEditorRef | null>(null);
     const [cellMenuData, setCellMenuData] = useState<{ position: PopoverPosition | null; row?: number }>({ position: null });
 
     const { toggleTooltip, highlightRegions, drawCell, tooltipElement } = useErrorHighlights(cellErrors, ref);
@@ -105,13 +94,17 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
         () => ({
             kind: GridCellKind.Custom,
             isMatch: isSourceSelectCell,
-            draw: (args, cell) => {
-                drawTextCell(args, cell.data.value, cell.contentAlign);
+            draw: (drawArgs, cell) => {
+                drawTextCell(drawArgs, cell.data.value, cell.contentAlign);
                 return true;
             },
             provideEditor: () => ({
                 editor: TestingEventsTableSourceEditor as ProvideEditorComponent<SourceSelectCell>,
-                deletedValue: (v) => ({ ...v, copyData: "", data: { ...(v as unknown as SourceSelectCell).data, value: "" } }),
+                deletedValue: (sourceSelectCell) => ({
+                    ...sourceSelectCell,
+                    copyData: "",
+                    data: { ...(sourceSelectCell as unknown as SourceSelectCell).data, value: "" },
+                }),
             }),
         }),
         [],
@@ -121,13 +114,13 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
         () => ({
             kind: GridCellKind.Custom,
             isMatch: isVariablesCell,
-            draw: (args, cell) => {
-                console.log(cell.data);
-                drawTextWithBoldSegments(args.ctx, cell.data.value, args.rect, args.theme);
+            draw: (drawArgs, cell) => {
+                drawTextWithBoldSegments(drawArgs.ctx, cell.data.value, drawArgs.rect, drawArgs.theme);
             },
             provideEditor: () => ({
-                editor: (p) => {
-                    const { isHighlighted, onChange, value, validatedSelection } = p;
+                styleOverride: { padding: "4px" },
+                editor: (props) => {
+                    const { isHighlighted, onChange, value, validatedSelection } = props;
 
                     return (
                         <TextCellEntry
@@ -137,7 +130,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                             altNewline={true}
                             value={value.data.value}
                             validatedSelection={validatedSelection}
-                            onChange={(e) =>
+                            onChange={() =>
                                 onChange({
                                     ...value,
                                 })
@@ -153,60 +146,15 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
 
     const defaultVariablesBySourceId = useMemo(() => buildDefaultVariablesMap(sourceParameters), [sourceParameters]);
 
-    const getCellContent = useCallback(
-        ([col, row]: Item): GridCell => {
-            const rowData = data[row];
-            if (!rowData) return { kind: GridCellKind.Text, displayData: "", data: "", allowOverlay: true, readonly: false };
-            if (col === 0)
-                return {
-                    kind: GridCellKind.Custom,
-                    allowOverlay: true,
-                    copyData: rowData.sourceId || "",
-                    data: { kind: "source-select-cell", value: rowData.sourceId || "", options: sourceOptions },
-                    readonly: false,
-                } as SourceSelectCell;
-            if (col === 1) {
-                const raw = rowData.variables || "";
-
-                return {
-                    kind: GridCellKind.Custom,
-                    allowOverlay: true,
-                    copyData: rowData.variables || "",
-                    data: { kind: "variables-cell", value: raw, options: sourceOptions },
-                    readonly: false,
-                };
-            }
-            return { kind: GridCellKind.Text, displayData: "", data: "", allowOverlay: true, readonly: false };
-        },
-        [data, sourceOptions],
-    );
-
+    const getCellContent = useCallback((item: Item): GridCell => getTestingCellContent(item, data, sourceOptions), [data, sourceOptions]);
     const buildRowUpdates = useCallback(
-        (changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[]) => {
-            const rowUpdates: Record<number, TestingEventParameters> = {};
-            changes.forEach(({ location, value }) => {
-                const [col, row] = location;
-                const prevRow = data[row];
-                const base = rowUpdates[row] || { ...(prevRow || { sourceId: "", timestamp: "", variables: "" }) };
-                const cellValue = isSourceSelectCell(value) ? value.data.value : (value as any).data?.toString?.() ?? "";
-                if (col === 0) {
-                    if (prevRow?.sourceId !== cellValue) {
-                        const resetVars = cellValue ? defaultVariablesBySourceId[cellValue] ?? "" : "";
-                        rowUpdates[row] = { ...base, sourceId: cellValue, variables: resetVars };
-                    } else {
-                        rowUpdates[row] = { ...base, sourceId: cellValue };
-                    }
-                } else if (col === 1) {
-                    rowUpdates[row] = { ...base, variables: cellValue };
-                }
-            });
-            return rowUpdates;
-        },
+        (changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[]): Record<number, TestingEventParameters> =>
+            buildTestingRowUpdates(changes, data, defaultVariablesBySourceId),
         [data, defaultVariablesBySourceId],
     );
 
     const onCellEdited = useCallback<NonNullable<DataEditorProps["onCellsEdited"]>>(
-        (changes) => {
+        (changes): void => {
             if (!changes.length) return;
             const rowUpdates = buildRowUpdates(changes);
             if (!Object.keys(rowUpdates).length) return;
@@ -218,14 +166,14 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
         [buildRowUpdates, onRowUpdated],
     );
 
-    const onCellAdded = useCallback(() => {
+    const onCellAdded = useCallback((): void => {
         const newRow: TestingEventParameters = { ...defaultEvent };
         const rowIndex = data.length;
         onRowAdded(rowIndex, newRow);
     }, [data.length, defaultEvent, onRowAdded]);
 
     const onCellDeleted = useCallback(
-        (rows: number[]) => {
+        (rows: number[]): number[] => {
             if (!rows.length) return [] as number[];
             const deletedRows = [...rows].sort((a, b) => a - b);
             onRowsDeleted(deletedRows);
@@ -234,19 +182,19 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
         [onRowsDeleted],
     );
 
-    const clearSelection = useCallback(() => setSelection({ rows: CompactSelection.empty(), columns: CompactSelection.empty() }), []);
-    const closeCellMenu = () => setCellMenuData((c) => ({ ...c, position: null }));
-    const onDataEditorCellContextMenu = useCallback(([, row], e) => {
+    const clearSelection = useCallback((): void => setSelection({ rows: CompactSelection.empty(), columns: CompactSelection.empty() }), []);
+    const closeCellMenu = (): void => setCellMenuData((c) => ({ ...c, position: null }));
+    const onDataEditorCellContextMenu = useCallback<NonNullable<DataEditorProps["onCellContextMenu"]>>(([, row], e): void => {
         e.preventDefault();
         setCellMenuData({ position: { top: e.bounds.y + e.localEventY, left: e.bounds.x + e.localEventX }, row });
     }, []);
     const getRowThemeOverride: GetRowThemeCallback = useCallback(
-        (row) => ({ bgCell: row >= data.length ? tableTheme.bgCellMedium : tableTheme.bgCell }),
+        (row): Partial<Theme> => ({ bgCell: row >= data.length ? tableTheme.bgCellMedium : tableTheme.bgCell }),
         [data.length, tableTheme.bgCell, tableTheme.bgCellMedium],
     );
 
     const handleRowReorder = useCallback(
-        (fromIndex: number, toIndex: number) => {
+        (fromIndex: number, toIndex: number): void => {
             const isDropAtFooter = toIndex === data.length;
             const isDropToTheSamePlace = fromIndex === toIndex;
 
@@ -258,23 +206,60 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
         [data.length, onRowMoved, clearSelection],
     );
 
+    // Track measured width of the variables column and the theme provided by the DataEditor
+    const variablesColumnWidthRef = useRef<number | null>(null);
+    const dataEditorThemeRef = useRef<Theme | null>(null);
+
     const getRowHeight = useCallback(
-        (rowIndex: number) => {
-            if (rowIndex >= data.length || !rowWidthRef?.current) return DEFAULT_ROW_HEADER;
-
-            const rowLines = getRowLines(
-                data[rowIndex]?.variables ? formatEventVariablesForDisplay(data[rowIndex].variables).split(SPLIT_SEPARATOR) : [],
-                rowWidthRef.current - paddingX,
+        (rowIndex: number): number => {
+            if (rowIndex >= data.length || variablesColumnWidthRef.current == null || dataEditorThemeRef.current == null)
+                return DEFAULT_ROW_HEADER;
+            return computeVariablesRowHeight(
+                data[rowIndex]?.variables || "",
+                variablesColumnWidthRef.current,
+                dataEditorThemeRef.current.lineHeight,
             );
-
-            const linesCount = rowLines.length + 1;
-            return linesCount * LINE_HEIGHT * dataEditorThemeRef.current.lineHeight + paddingY;
         },
         [data],
     );
 
-    const rowWidthRef = useRef<number>(null);
-    const dataEditorThemeRef = useRef<Theme>(null);
+    const customRenderers = useMemo(() => [sourceSelectRenderer, variablesRenderer], [sourceSelectRenderer, variablesRenderer]);
+    const trailingRowOptions = useMemo(() => ({ sticky: true, hint: TRAILING_ROW_HINT }), []);
+    const highlightedRegions = useMemo(() => highlightRegions(), [highlightRegions]);
+    const handleGridSelectionChange = useCallback(
+        (selection: GridSelection): void => {
+            setSelection(selection);
+            toggleTooltip(selection);
+        },
+        [toggleTooltip],
+    );
+    const renderHeaderCell = useCallback((args: HeaderRenderArgs & { [key: string]: unknown }): void => {
+        const { columnIndex, theme } = args;
+        dataEditorThemeRef.current = theme;
+        if (columnIndex === 1) {
+            variablesColumnWidthRef.current = args.rect.width;
+        }
+        const col = tableColumns[columnIndex];
+        if (!col) return;
+        drawTextCell(args as unknown as BaseDrawArgs, col.title);
+    }, []);
+    const sizerSx = useMemo(() => ({ border: "1px solid", borderColor: tableTheme.borderColor }), [tableTheme.borderColor]);
+    const deleteMenuIndexes = useMemo<number[]>(() => {
+        if (selection.rows.toArray().length > 0) return selection.rows.toArray();
+        if (selection.current?.range) {
+            return Array.from({ length: selection.current.range.height }, (_, i) => selection.current.range.y + i);
+        }
+        return cellMenuData.row !== undefined && cellMenuData.row >= 0 ? [cellMenuData.row] : [];
+    }, [selection, cellMenuData.row]);
+    const handleDeleteRows = useCallback(
+        (idx: number[]): void => {
+            onCellDeleted(idx);
+            clearSelection();
+            closeCellMenu();
+        },
+        [onCellDeleted, clearSelection],
+    );
+
     return (
         <>
             <Sizer
@@ -282,7 +267,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                 overflowY={false}
                 data-testid="events-table-container"
                 className={className}
-                sx={{ border: "1px solid", borderColor: tableTheme.borderColor }}
+                sx={sizerSx}
                 onFocus={() => setHasFocus(true)}
                 onBlur={(e) => {
                     if (e.currentTarget.contains(e.relatedTarget)) return;
@@ -293,7 +278,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                     ref={ref}
                     columns={tableColumns}
                     getCellContent={getCellContent}
-                    customRenderers={useMemo(() => [sourceSelectRenderer, variablesRenderer], [sourceSelectRenderer, variablesRenderer])}
+                    customRenderers={customRenderers}
                     getCellsForSelection
                     onCellsEdited={onCellEdited}
                     onRowAppended={onCellAdded}
@@ -302,55 +287,23 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                     smoothScrollX
                     smoothScrollY
                     theme={tableTheme}
-                    width="100%"
-                    height={"65vh"}
+                    width={TABLE_WIDTH}
+                    height={TABLE_HEIGHT}
                     gridSelection={hasFocus ? selection : emptySelection}
                     onCellContextMenu={onDataEditorCellContextMenu}
                     getRowThemeOverride={getRowThemeOverride}
-                    trailingRowOptions={{ sticky: true, hint: "Add record" }}
-                    highlightRegions={highlightRegions()}
-                    onGridSelectionChange={(selection) => {
-                        setSelection(selection);
-                        toggleTooltip(selection);
-                    }}
+                    trailingRowOptions={trailingRowOptions}
+                    highlightRegions={highlightedRegions}
+                    onGridSelectionChange={handleGridSelectionChange}
                     onItemHovered={toggleTooltip}
                     drawCell={drawCell}
-                    drawHeader={(args) => {
-                        const { columnIndex, theme } = args;
-
-                        dataEditorThemeRef.current = theme;
-                        const isVariablesColumn = columnIndex === 1;
-
-                        if (isVariablesColumn) {
-                            rowWidthRef.current = args.rect.width;
-                        }
-
-                        const col = tableColumns[columnIndex];
-                        if (!col) return undefined;
-
-                        drawTextCell(args as unknown as BaseDrawArgs, col.title);
-
-                        return undefined;
-                    }}
+                    drawHeader={renderHeaderCell}
                     rowHeight={getRowHeight}
                     onRowMoved={handleRowReorder}
                 />
                 <CellMenu anchorPosition={cellMenuData.position} onClose={closeCellMenu}>
-                    {cellMenuData.row !== undefined && cellMenuData.row >= 0 && (
-                        <DeleteRowMenuItem
-                            indexes={
-                                selection.rows.toArray().length > 0
-                                    ? selection.rows.toArray()
-                                    : selection.current?.range
-                                    ? Array.from({ length: selection.current.range.height }, (_, i) => selection.current.range.y + i)
-                                    : [cellMenuData.row]
-                            }
-                            onClick={(idx) => {
-                                onCellDeleted(idx);
-                                clearSelection();
-                                closeCellMenu();
-                            }}
-                        />
+                    {cellMenuData.row !== undefined && cellMenuData.row >= 0 && deleteMenuIndexes.length > 0 && (
+                        <DeleteRowMenuItem indexes={deleteMenuIndexes} onClick={handleDeleteRows} />
                     )}
                 </CellMenu>
             </Sizer>
