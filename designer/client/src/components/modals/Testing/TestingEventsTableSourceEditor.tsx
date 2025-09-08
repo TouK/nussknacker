@@ -3,7 +3,6 @@ import React, { useCallback, useRef } from "react";
 
 import TestingEventsTableDropdown from "./TestingEventsTableDropdown";
 
-// Recreate the SourceSelectCell type locally (kept in sync with TestingEventsTable.tsx)
 export interface SourceSelectCellData {
     kind: "source-select-cell";
     value: string;
