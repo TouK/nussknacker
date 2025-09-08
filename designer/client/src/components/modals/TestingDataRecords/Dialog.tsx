@@ -179,11 +179,11 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
             buttons={buttons}
         >
             <ContentSize>
-                <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }} pl={1}>
+                <Box sx={(theme) => ({ height: "100%", display: "flex", flexDirection: "column", padding: theme.spacing(0, 2, 2) })}>
                     <Typography mt={0} variant={"h3"}>
                         {t("testingDialog.label.inputDataRecords", "Input data records")}
                     </Typography>
-                    <Box display={"flex"} sx={(theme) => ({ padding: theme.spacing(2) })}>
+                    <Box display={"flex"} sx={(theme) => ({ paddingTop: theme.spacing(2) })}>
                         <Table
                             sourceOptions={sourceOptions}
                             sourceParameters={testCapabilities.testWithParameters.sourceParameters}
