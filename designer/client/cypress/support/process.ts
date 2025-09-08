@@ -358,6 +358,7 @@ function dragNode(
             clientY: y,
         });
     cy.get("body").trigger("mouseup");
+    cy.wait(250);
     return cy.getNode(name);
 }
 
