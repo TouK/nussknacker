@@ -28,7 +28,6 @@ describe("Sticky notes", () => {
                 force: true,
             });
 
-        cy.wait(500);
         cy.get("[data-testid=graphPage]").matchImage(screenshotOptions);
     });
 
@@ -46,7 +45,6 @@ describe("Sticky notes", () => {
                 },
                 force: true,
             });
-        cy.layoutScenario();
         cy.get(".sticky-note-content").dblclick();
         cy.get(".sticky-note-content textarea").type("# Title\n- p1\n- p2\n\n[link](href)");
         cy.getNode("request").click();
