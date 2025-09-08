@@ -73,6 +73,17 @@ export function useOpenDescription() {
     );
 }
 
+const waitForStablePosition = (ref: React.RefObject<HTMLElement>, timeout = 100) => {
+    return function wait(callback: (box: DOMRect) => void) {
+        const box = ref.current?.getBoundingClientRect();
+        setTimeout(() => {
+            const currentBox = ref.current?.getBoundingClientRect();
+            if (box && currentBox && currentBox.x === box.x && currentBox.y === box.y) return callback(currentBox);
+            wait(callback);
+        }, timeout);
+    };
+};
+
 export const ScenarioDescription = () => {
     const [description, showDescription] = useAppSelector(getScenarioDescription);
     const scenario = useAppSelector(getScenario);
@@ -83,13 +94,14 @@ export const ScenarioDescription = () => {
     const ref = useRef<HTMLButtonElement>();
 
     const handleOpenDescription = useCallback(() => {
-        if (!ref.current) return;
-        const { top, left } = ref.current.getBoundingClientRect();
-        openDescription(
-            processProperties,
-            scenario,
-            description ? DescriptionViewMode.descriptionView : DescriptionViewMode.descriptionEdit,
-            { top, left, width: 600 },
+        const wait = waitForStablePosition(ref, 250);
+        wait(({ top, left }) =>
+            openDescription(
+                processProperties,
+                scenario,
+                description ? DescriptionViewMode.descriptionView : DescriptionViewMode.descriptionEdit,
+                { top, left, width: 600 },
+            ),
         );
     }, [description, openDescription, processProperties, scenario]);
 
