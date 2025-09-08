@@ -130,11 +130,14 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                             altNewline={true}
                             value={value.data.value}
                             validatedSelection={validatedSelection}
-                            onChange={() =>
+                            onChange={(e) => {
+                                const newVal = e.target.value;
                                 onChange({
                                     ...value,
-                                })
-                            }
+                                    copyData: newVal,
+                                    data: { ...value.data, value: newVal },
+                                });
+                            }}
                         />
                     );
                 },

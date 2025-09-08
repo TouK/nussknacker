@@ -4,6 +4,7 @@ import { type EditListItem } from "@glideapps/glide-data-grid";
 import type { TestFormParameters } from "../../../common/TestResultUtils";
 import { formatEventVariablesForDisplay, getRowLines, LINE_HEIGHT, paddingX, paddingY, SPLIT_SEPARATOR } from "./drawText";
 import { isSourceSelectCell } from "./testingCellContent";
+import { isVariablesCell } from "./testingCellContent";
 import type { TestingEventParameters } from "./TestingEventsTable";
 import type { SourceSelectCell } from "./TestingEventsTableSourceEditor";
 
@@ -82,6 +83,8 @@ export function buildTestingRowUpdates(
         let cellValue: string;
         if (isSourceSelectCell(value)) {
             cellValue = value.data.value;
+        } else if (isVariablesCell(value as any)) {
+            cellValue = (value as any).data?.value ?? "";
         } else {
             const maybeData = (value as unknown as { data?: unknown }).data;
             if (typeof maybeData === "string") cellValue = maybeData;
