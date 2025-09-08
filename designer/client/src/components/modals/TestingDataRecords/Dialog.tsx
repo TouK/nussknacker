@@ -4,9 +4,9 @@ import type { ElementType, ReactElement } from "react";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { testScenarioWithEventsData } from "../../../actions/nk/displayTestResults";
+import { testScenarioWithDataRecords } from "../../../actions/nk/displayTestResults";
 import HttpService from "../../../http/HttpService";
-import { getProcessName, getScenarioGraph, getTestCapabilities, getTestingEventParameters } from "../../../reducers/selectors/graph";
+import { getProcessName, getScenarioGraph, getTestCapabilities, getTestingDataRecords } from "../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { WindowKind } from "../../../windowManager";
 import { WindowContent } from "../../../windowManager";
@@ -16,7 +16,7 @@ import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
 import { AppendRowButton } from "./AppendRowButton";
-import type { TestingEventParameters } from "./Table";
+import type { TestingDataRecords } from "./Table";
 import { Table } from "./Table";
 import { mapGeneratedTestingDataToTableFormat } from "./utils";
 
@@ -46,13 +46,13 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
 
     const dispatch = useAppDispatch();
     const testCapabilities = useAppSelector(getTestCapabilities);
-    const testingEventsParameters = useAppSelector(getTestingEventParameters);
+    const testingDataRecords = useAppSelector(getTestingDataRecords);
     const scenarioName = useAppSelector(getProcessName);
     const scenarioGraph = useAppSelector(getScenarioGraph);
 
     const defaultParameter = testCapabilities.testWithParameters.sourceParameters[0];
 
-    const defaultEvent = useMemo(
+    const defaultDataRecord = useMemo(
         () =>
             defaultParameter
                 ? {
@@ -64,13 +64,13 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
         [defaultParameter],
     );
 
-    const [events, setEvents] = useState<TestingEventParameters[]>(testingEventsParameters || []);
+    const [dataRecords, setDataRecords] = useState<TestingDataRecords[]>(testingDataRecords || []);
     const [cellErrors, setCellErrors] = useState<CellError[]>([]);
 
     const handleGenerateTestData = useCallback(
         async (numberOfSamples: number) => {
             const { data } = await HttpService.generatedTestData(scenarioName, scenarioGraph, numberOfSamples);
-            setEvents((prevState) => [...prevState, ...data.map(mapGeneratedTestingDataToTableFormat)]);
+            setDataRecords((prevState) => [...prevState, ...data.map(mapGeneratedTestingDataToTableFormat)]);
         },
         [scenarioGraph, scenarioName],
     );
@@ -81,8 +81,8 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
     );
 
     const validateEditedRow = React.useCallback(
-        (rowIndex: number, row: TestingEventParameters) => {
-            HttpService.validateTestDataWithEventsData(scenarioName, scenarioGraph, row.variables).then(({ data }) =>
+        (rowIndex: number, row: TestingDataRecords) => {
+            HttpService.validateTestDataWithDataRecords(scenarioName, scenarioGraph, row.variables).then(({ data }) =>
                 setCellErrors((prev) => {
                     const withoutRow = prev.filter((e) => e.y !== rowIndex || e.columnName !== "variables");
                     const newErrors: CellError[] = data.validationErrors.map((validationError) => ({
@@ -100,12 +100,12 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
     );
 
     const handleRowUpdated = React.useCallback(
-        (rowIndex: number, row: TestingEventParameters) => {
-            setEvents((prev) => {
+        (rowIndex: number, row: TestingDataRecords) => {
+            setDataRecords((prev) => {
                 const next = [...prev];
                 if (rowIndex >= next.length) {
                     for (let i = next.length; i <= rowIndex; i++) {
-                        next[i] = { sourceId: "", timestamp: undefined, variables: "" } as TestingEventParameters;
+                        next[i] = { sourceId: "", timestamp: undefined, variables: "" } as TestingDataRecords;
                     }
                 }
                 next[rowIndex] = row;
@@ -116,8 +116,8 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
         [validateEditedRow],
     );
 
-    const handleRowAdded = React.useCallback((rowIndex: number, row: TestingEventParameters) => {
-        setEvents((prev) => {
+    const handleRowAdded = React.useCallback((rowIndex: number, row: TestingDataRecords) => {
+        setDataRecords((prev) => {
             const next = [...prev];
             if (rowIndex === next.length) next.push(row);
             else next.splice(rowIndex, 0, row);
@@ -130,7 +130,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
         if (!deletedRows.length) return;
         const deletedSet = new Set(deletedRows);
         const sorted = [...deletedRows].sort((a, b) => a - b);
-        setEvents((prev) => prev.filter((_, i) => !deletedSet.has(i)));
+        setDataRecords((prev) => prev.filter((_, i) => !deletedSet.has(i)));
         setCellErrors((prev) =>
             prev
                 .filter((e) => !deletedSet.has(e.y))
@@ -142,7 +142,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
     }, []);
 
     const handleRowMoved = React.useCallback((fromIndex: number, toIndex: number) => {
-        setEvents((prev) => {
+        setDataRecords((prev) => {
             if (!prev || fromIndex < 0 || toIndex < 0 || fromIndex >= prev.length || toIndex > prev.length) return prev;
             const next = [...prev];
             const [moved] = next.splice(fromIndex, 1);
@@ -151,7 +151,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
         });
     }, []);
 
-    const disableTestButton = events.length === 0 || cellErrors.length > 0;
+    const disableTestButton = dataRecords.length === 0 || cellErrors.length > 0;
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("testingForm.cancelButton.label", "Cancel"), action: () => close(), classname: LoadingButtonTypes.secondaryButton },
@@ -160,7 +160,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                 title: t("testingForm.testButton.label", "Test"),
                 action: () => {
                     try {
-                        dispatch(testScenarioWithEventsData(events));
+                        dispatch(testScenarioWithDataRecords(dataRecords));
                         close();
                     } catch (e) {
                         console.error(e.message);
@@ -168,7 +168,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                 },
             },
         ],
-        [close, disableTestButton, dispatch, events, t],
+        [close, disableTestButton, dispatch, dataRecords, t],
     );
 
     return (
@@ -187,13 +187,13 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                         <Table
                             sourceOptions={sourceOptions}
                             sourceParameters={testCapabilities.testWithParameters.sourceParameters}
-                            data={events}
+                            data={dataRecords}
                             cellErrors={cellErrors}
                             onRowUpdated={handleRowUpdated}
                             onRowAdded={handleRowAdded}
                             onRowsDeleted={handleRowsDeleted}
                             onRowMoved={handleRowMoved}
-                            defaultEvent={defaultEvent}
+                            defaultDataRecord={defaultDataRecord}
                         />
                     </Box>
 

@@ -29,23 +29,23 @@ import SourceEditor from "./SourceEditor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { buildDefaultVariablesMap, buildTestingRowUpdates, computeVariablesRowHeight } from "./utils";
 
-export interface TestingEventParameters {
+export interface TestingDataRecords {
     sourceId: string;
     variables: string;
 }
 
-export interface TestingEventParametersRequestData {
+export interface TestingDataRecordsRequestData {
     sourceId: string;
     variables: unknown;
 }
 
-interface EventsTableProps {
-    data?: TestingEventParameters[];
-    onRowUpdated: (rowIndex: number, row: TestingEventParameters) => void;
-    onRowAdded: (rowIndex: number, row: TestingEventParameters) => void;
+interface TableProps {
+    data?: TestingDataRecords[];
+    onRowUpdated: (rowIndex: number, row: TestingDataRecords) => void;
+    onRowAdded: (rowIndex: number, row: TestingDataRecords) => void;
     onRowsDeleted: (deletedRows: number[]) => void;
     onRowMoved: (fromIndex: number, toIndex: number) => void;
-    defaultEvent: TestingEventParameters;
+    defaultDataRecord: TestingDataRecords;
     sourceOptions: string[];
     className?: string;
     sourceParameters: TestFormParameters[];
@@ -70,7 +70,7 @@ const tableColumns: GridColumn[] = [
 
 type HeaderRenderArgs = { columnIndex: number; theme: Theme; rect: { width: number } };
 
-export const Table: React.FC<EventsTableProps> = ({
+export const Table: React.FC<TableProps> = ({
     data = [],
     onRowUpdated,
     onRowAdded,
@@ -78,7 +78,7 @@ export const Table: React.FC<EventsTableProps> = ({
     onRowMoved,
     sourceOptions,
     className,
-    defaultEvent,
+    defaultDataRecord,
     sourceParameters,
     cellErrors,
 }) => {
@@ -151,7 +151,7 @@ export const Table: React.FC<EventsTableProps> = ({
 
     const getCellContent = useCallback((item: Item): GridCell => getTestingCellContent(item, data, sourceOptions), [data, sourceOptions]);
     const buildRowUpdates = useCallback(
-        (changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[]): Record<number, TestingEventParameters> =>
+        (changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[]): Record<number, TestingDataRecords> =>
             buildTestingRowUpdates(changes, data, defaultVariablesBySourceId),
         [data, defaultVariablesBySourceId],
     );
@@ -170,10 +170,10 @@ export const Table: React.FC<EventsTableProps> = ({
     );
 
     const onCellAdded = useCallback((): void => {
-        const newRow: TestingEventParameters = { ...defaultEvent };
+        const newRow: TestingDataRecords = { ...defaultDataRecord };
         const rowIndex = data.length;
         onRowAdded(rowIndex, newRow);
-    }, [data.length, defaultEvent, onRowAdded]);
+    }, [data.length, defaultDataRecord, onRowAdded]);
 
     const onCellDeleted = useCallback(
         (rows: number[]): number[] => {
@@ -268,7 +268,7 @@ export const Table: React.FC<EventsTableProps> = ({
             <Sizer
                 offsetParent={`[data-testid="window"] section`}
                 overflowY={false}
-                data-testid="events-table-container"
+                data-testid="data-records-table-container"
                 className={className}
                 sx={sizerSx}
                 onFocus={() => setHasFocus(true)}

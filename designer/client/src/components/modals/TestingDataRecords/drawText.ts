@@ -40,7 +40,7 @@ export function drawTextWithBoldSegments(
     const lineHeight = LINE_HEIGHT * theme.lineHeight;
     const maxTextWidth = width - paddingX * 2;
 
-    const formattedText = formatEventVariablesForDisplay(text);
+    const formattedText = formatDataRecordsVariablesForDisplay(text);
     if (!formattedText) return;
 
     ctx.fillStyle = theme.textDark;
@@ -83,7 +83,7 @@ export function drawTextWithBoldSegments(
     }
 }
 
-export const formatEventVariablesForDisplay = (raw?: string): string => {
+export const formatDataRecordsVariablesForDisplay = (raw?: string): string => {
     if (!raw) return "";
     try {
         const parsed = JSON.parse(raw);

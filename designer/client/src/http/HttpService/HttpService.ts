@@ -16,7 +16,7 @@ import type { ExpressionSuggestion } from "../../components/graph/node-modal/edi
 import type { AdditionalInfo } from "../../components/graph/node-modal/NodeAdditionalInfoBox";
 import { extractStickyNotesFromNodes } from "../../components/graph/utils/stickyNotesUtils";
 import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../../components/Labels/types";
-import type { TestingEventParameters, TestingEventParametersRequestData } from "../../components/modals/TestingDataRecords/Table";
+import type { TestingDataRecords, TestingDataRecordsRequestData } from "../../components/modals/TestingDataRecords/Table";
 import type { ProcessName, ProcessVersionId, Scenario, StatusDefinitionType } from "../../components/Process/types";
 import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../../components/toolbars/activities/types";
 import { ActivityTypesRelatedToExecutions } from "../../components/toolbars/activities/types";
@@ -797,7 +797,7 @@ export class HttpService {
         return promise;
     }
 
-    testScenarioWithEventsData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, testData: TestingEventParametersRequestData[]) {
+    testScenarioWithEventsData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, testData: TestingDataRecordsRequestData[]) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
 
         const data = new FormData();
@@ -821,7 +821,7 @@ export class HttpService {
         return promise;
     }
 
-    validateTestDataWithEventsData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, expression: string) {
+    validateTestDataWithDataRecords(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, expression: string) {
         const sanitizedScenarioGraph = this.#sanitizeScenarioGraph(scenarioGraph);
 
         const promise = api.post<GenericValidationData>(`/scenarioTesting/${encodeURIComponent(scenarioName)}/validate`, {
@@ -854,7 +854,7 @@ export class HttpService {
 
     generatedTestData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, numberOfSamples = 10) {
         const sanitizedScenarioGraph = this.#sanitizeScenarioGraph(scenarioGraph);
-        const promise = api.post<TestingEventParameters[]>(`/scenarioTesting/${encodeURIComponent(scenarioName)}/generatedTestData`, {
+        const promise = api.post<TestingDataRecords[]>(`/scenarioTesting/${encodeURIComponent(scenarioName)}/generatedTestData`, {
             scenarioGraph: sanitizedScenarioGraph,
             numberOfSamples,
         });

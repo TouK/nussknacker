@@ -2,12 +2,12 @@ import { alpha } from "@mui/material";
 import React, { useCallback, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { testScenarioWithEventsData } from "../../../../actions/nk/displayTestResults";
+import { testScenarioWithDataRecords } from "../../../../actions/nk/displayTestResults";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
 import {
     getTestCapabilities,
-    getTestingEventParameters,
+    getTestingDataRecords,
     getTestResultsLoading,
     isLatestProcessVersion,
 } from "../../../../reducers/selectors/graph";
@@ -43,11 +43,11 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { disabled, name, title, titleOverride, docs, markdownContent, type } = props;
     const { t } = useTranslation();
     const { open } = useWindows();
-    const testingEventsParameters = useAppSelector(getTestingEventParameters);
+    const testingEventsParameters = useAppSelector(getTestingDataRecords);
     const dispatch = useAppDispatch();
 
     const handleRerunLastTest = useCallback(() => {
-        return dispatch(testScenarioWithEventsData(testingEventsParameters));
+        return dispatch(testScenarioWithDataRecords(testingEventsParameters));
     }, [dispatch, testingEventsParameters]);
 
     const presets: Preset[] = useMemo(() => {

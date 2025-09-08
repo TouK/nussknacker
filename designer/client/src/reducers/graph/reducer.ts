@@ -50,7 +50,7 @@ const emptyGraphState: GraphState = {
         testResults: null,
         testResultsLoading: false,
         testData: null,
-        testingEventParameters: null,
+        testingDataRecords: null,
     },
 };
 
@@ -400,7 +400,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 ...state,
                 testing: {
                     ...state.testing,
-                    testingEventParameters: action.testingEventsParameters,
+                    testingDataRecords: action.testingEventsParameters,
                 },
             };
         }

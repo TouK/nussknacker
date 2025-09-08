@@ -3,29 +3,29 @@ import { type EditListItem } from "@glideapps/glide-data-grid";
 
 import type { TestFormParameters } from "../../../common/TestResultUtils";
 import { isSourceSelectCell, isVariablesCell } from "./CellContent";
-import { formatEventVariablesForDisplay, getRowLines, LINE_HEIGHT, paddingX, paddingY, SPLIT_SEPARATOR } from "./drawText";
+import { formatDataRecordsVariablesForDisplay, getRowLines, LINE_HEIGHT, paddingX, paddingY, SPLIT_SEPARATOR } from "./drawText";
 import type { SourceSelectCell } from "./SourceEditor";
-import type { TestingEventParameters } from "./Table";
+import type { TestingDataRecords } from "./Table";
 
-export const mapEventsToRunTestsFormat = (event: TestingEventParameters) => {
+export const mapDataRecordsToRunTestsFormat = (dataRecords: TestingDataRecords) => {
     let parsedVariables: unknown;
     try {
-        parsedVariables = JSON.parse(event.variables);
+        parsedVariables = JSON.parse(dataRecords.variables);
     } catch {
         // Fallback: keep original string if not valid JSON
-        parsedVariables = event.variables;
+        parsedVariables = dataRecords.variables;
     }
 
     return {
-        sourceId: event.sourceId,
+        sourceId: dataRecords.sourceId,
         variables: parsedVariables,
     };
 };
 
-export const mapGeneratedTestingDataToTableFormat = (events: TestingEventParameters) => {
-    events.variables = JSON.stringify(events.variables, null, 2);
+export const mapGeneratedTestingDataToTableFormat = (dataRecords: TestingDataRecords) => {
+    dataRecords.variables = JSON.stringify(dataRecords.variables, null, 2);
 
-    return events;
+    return dataRecords;
 };
 
 export function safeParseExpression(expr: string): unknown {
@@ -62,7 +62,7 @@ export function buildDefaultVariablesMap(sourceParameters?: TestFormParameters[]
 }
 
 export function computeVariablesRowHeight(variables: string, columnInnerWidth: number, themeLineHeight: number): number {
-    const tokens = variables ? formatEventVariablesForDisplay(variables).split(SPLIT_SEPARATOR) : [];
+    const tokens = variables ? formatDataRecordsVariablesForDisplay(variables).split(SPLIT_SEPARATOR) : [];
     const rowLines = getRowLines(tokens, columnInnerWidth - paddingX);
     const linesCount = rowLines.length + 1;
     return linesCount * LINE_HEIGHT * themeLineHeight + paddingY;
@@ -70,10 +70,10 @@ export function computeVariablesRowHeight(variables: string, columnInnerWidth: n
 
 export function buildTestingRowUpdates(
     changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[],
-    data: TestingEventParameters[],
+    data: TestingDataRecords[],
     defaultVariablesBySourceId: Record<string, string>,
-): Record<number, TestingEventParameters> {
-    const rowUpdates: Record<number, TestingEventParameters> = {};
+): Record<number, TestingDataRecords> {
+    const rowUpdates: Record<number, TestingDataRecords> = {};
     changes.forEach(({ location, value }) => {
         const [col, row] = location;
         const prevRow = data[row];
