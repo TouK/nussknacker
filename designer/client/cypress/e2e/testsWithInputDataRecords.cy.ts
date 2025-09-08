@@ -46,24 +46,24 @@ describe("test with events data", () => {
                     "  }\n" +
                     "}";
 
-                verifyTableData(1, 3, defaultEventForEventGenerator);
+                verifyTableData(1, 2, defaultEventForEventGenerator);
             });
         cy.get("@testDialogFooter").contains("button", "Test").should("not.be.disabled");
 
         // Generate test data
-        cy.get("@testDialogFooter")
-            .contains("button", /Generate Test Data/i)
+        cy.get("@window")
+            .contains("button", /Append from live data/i)
             .click();
 
-        // Verify if the newly generated data are visible, it's 12 because table header + 10 data rows + table footer
-        cy.get("@window").find('table[aria-rowcount="12"]');
+        // Verify if the newly generated data are visible, it's 12 because table header + 10 data rows + table footer + 1 initially added row
+        cy.get("@window").find('table[aria-rowcount="13"]');
 
         cy.get("@testDialogFooter").contains("button", "Test").click();
 
         // Verify if test mode running
         cy.get('[id="tipsPanel"]').contains("Testing mode enabled");
         // verify if node has 10 test results
-        cy.get('[model-id="Event Generator"]').find('[joint-selector="testResultsSummary"').contains("10");
+        cy.get('[model-id="Event Generator"]').find('[joint-selector="testResultsSummary"').contains("11");
         cy.get('[data-selector="SCENARIO_TEST"]').click();
 
         // Rerun test

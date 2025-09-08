@@ -16,6 +16,7 @@ import type { ExpressionSuggestion } from "../../components/graph/node-modal/edi
 import type { AdditionalInfo } from "../../components/graph/node-modal/NodeAdditionalInfoBox";
 import { extractStickyNotesFromNodes } from "../../components/graph/utils/stickyNotesUtils";
 import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../../components/Labels/types";
+import type { TestingEventParameters, TestingEventParametersRequestData } from "../../components/modals/Testing/TestingEventsTable";
 import type { ProcessName, ProcessVersionId, Scenario, StatusDefinitionType } from "../../components/Process/types";
 import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../../components/toolbars/activities/types";
 import { ActivityTypesRelatedToExecutions } from "../../components/toolbars/activities/types";
@@ -35,7 +36,6 @@ import { handleAxiosError } from "../../devHelpers";
 import type { AuthenticationSettings } from "../../reducers/settings";
 import type { Expression, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import type { WithId } from "../../types/common";
-import type { TestingEventParameters, TestingEventParametersRequestData } from "../components/modals/Testing/TestingEventsTable";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "../parametersUtils";
 import type { ProcessCounts, ResultsWithCountsDto } from "../resultsWithCountsDto";
 import type {
