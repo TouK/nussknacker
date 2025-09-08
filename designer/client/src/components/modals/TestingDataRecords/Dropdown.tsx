@@ -26,15 +26,7 @@ interface SelectWithPicker extends HTMLSelectElement {
     showPicker?: () => void;
 }
 
-export const TestingEventsTableDropdown: React.FC<Props> = ({
-    value,
-    options,
-    onValueChange,
-    onCommit,
-    onCancel,
-    style,
-    autoOpen = true,
-}) => {
+export const Dropdown: React.FC<Props> = ({ value, options, onValueChange, onCommit, onCancel, style, autoOpen = true }) => {
     const selectRef = useRef<HTMLSelectElement>(null);
     const openedRef = useRef(false);
 
@@ -103,4 +95,4 @@ export const TestingEventsTableDropdown: React.FC<Props> = ({
     );
 };
 
-export default TestingEventsTableDropdown;
+export default Dropdown;

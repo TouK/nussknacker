@@ -1,6 +1,6 @@
 import type { Layout, RefreshData } from "../../actions/nk";
 import type { TestCapabilities, TestFormParameters } from "../../common/TestResultUtils";
-import type { TestingEventParameters } from "../../components/modals/Testing/TestingEventsTable";
+import type { TestingEventParameters } from "../../components/modals/TestingDataRecords/Table";
 import type { Scenario } from "../../components/Process/types";
 import type { SourceWithParametersTest } from "../../http/HttpService";
 import type { ProcessCounts, TestResultsDto } from "../../http/resultsWithCountsDto";

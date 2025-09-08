@@ -2,11 +2,10 @@ import type { Item } from "@glideapps/glide-data-grid";
 import { type EditListItem } from "@glideapps/glide-data-grid";
 
 import type { TestFormParameters } from "../../../common/TestResultUtils";
+import { isSourceSelectCell, isVariablesCell } from "./CellContent";
 import { formatEventVariablesForDisplay, getRowLines, LINE_HEIGHT, paddingX, paddingY, SPLIT_SEPARATOR } from "./drawText";
-import { isSourceSelectCell } from "./testingCellContent";
-import { isVariablesCell } from "./testingCellContent";
-import type { TestingEventParameters } from "./TestingEventsTable";
-import type { SourceSelectCell } from "./TestingEventsTableSourceEditor";
+import type { SourceSelectCell } from "./SourceEditor";
+import type { TestingEventParameters } from "./Table";
 
 export const mapEventsToRunTestsFormat = (event: TestingEventParameters) => {
     let parsedVariables: unknown;

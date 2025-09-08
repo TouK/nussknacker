@@ -21,11 +21,11 @@ import { useErrorHighlights } from "../../graph/node-modal/editors/expression/Ta
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import { Sizer } from "../../graph/node-modal/editors/expression/Table/Sizer";
 import { useTableTheme } from "../../graph/node-modal/editors/expression/Table/tableTheme";
+import type { VariablesCell } from "./CellContent";
+import { getTestingCellContent, isSourceSelectCell, isVariablesCell } from "./CellContent";
 import { DEFAULT_ROW_HEADER, drawTextWithBoldSegments } from "./drawText";
-import type { VariablesCell } from "./testingCellContent";
-import { getTestingCellContent, isSourceSelectCell, isVariablesCell } from "./testingCellContent";
-import type { SourceSelectCell } from "./TestingEventsTableSourceEditor";
-import TestingEventsTableSourceEditor from "./TestingEventsTableSourceEditor";
+import type { SourceSelectCell } from "./SourceEditor";
+import SourceEditor from "./SourceEditor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { buildDefaultVariablesMap, buildTestingRowUpdates, computeVariablesRowHeight } from "./utils";
 
@@ -70,7 +70,7 @@ const tableColumns: GridColumn[] = [
 
 type HeaderRenderArgs = { columnIndex: number; theme: Theme; rect: { width: number } };
 
-export const TestingEventsTable: React.FC<EventsTableProps> = ({
+export const Table: React.FC<EventsTableProps> = ({
     data = [],
     onRowUpdated,
     onRowAdded,
@@ -99,7 +99,7 @@ export const TestingEventsTable: React.FC<EventsTableProps> = ({
                 return true;
             },
             provideEditor: () => ({
-                editor: TestingEventsTableSourceEditor as ProvideEditorComponent<SourceSelectCell>,
+                editor: SourceEditor as ProvideEditorComponent<SourceSelectCell>,
                 deletedValue: (sourceSelectCell) => ({
                     ...sourceSelectCell,
                     copyData: "",

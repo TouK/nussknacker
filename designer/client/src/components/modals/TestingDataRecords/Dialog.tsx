@@ -16,8 +16,8 @@ import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
 import { AppendRowButton } from "./AppendRowButton";
-import type { TestingEventParameters } from "./TestingEventsTable";
-import { TestingEventsTable } from "./TestingEventsTable";
+import type { TestingEventParameters } from "./Table";
+import { Table } from "./Table";
 import { mapGeneratedTestingDataToTableFormat } from "./utils";
 
 type DocsLink = {
@@ -36,7 +36,7 @@ export interface TestingData {
     viewParams: TestingViewParams;
 }
 
-function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): ReactElement {
+function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElement {
     const { t } = useTranslation();
     const { data, close } = props;
     const {
@@ -184,7 +184,7 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
                         {t("testingDialog.label.inputDataRecords", "Input data records")}
                     </Typography>
                     <Box display={"flex"} sx={(theme) => ({ padding: theme.spacing(2) })}>
-                        <TestingEventsTable
+                        <Table
                             sourceOptions={sourceOptions}
                             sourceParameters={testCapabilities.testWithParameters.sourceParameters}
                             data={events}
@@ -203,4 +203,4 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
         </WindowContent>
     );
 }
-export default TestingDialog;
+export default Dialog;

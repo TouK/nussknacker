@@ -1,7 +1,7 @@
 import type { CustomCell } from "@glideapps/glide-data-grid";
 import React, { useCallback, useRef } from "react";
 
-import TestingEventsTableDropdown from "./TestingEventsTableDropdown";
+import Dropdown from "./Dropdown";
 
 export interface SourceSelectCellData {
     kind: "source-select-cell";
@@ -17,7 +17,7 @@ interface EditorProps {
     target: { width: number; height: number };
 }
 
-export const TestingEventsTableSourceEditor: React.FC<EditorProps> = ({ value, onChange, onFinishedEditing, target }) => {
+export const SourceEditor: React.FC<EditorProps> = ({ value, onChange, onFinishedEditing, target }) => {
     const originalValueRef = useRef(value.data.value ?? "");
     const currentValueRef = useRef(value.data.value ?? "");
 
@@ -60,7 +60,7 @@ export const TestingEventsTableSourceEditor: React.FC<EditorProps> = ({ value, o
         >
             {/*TODO There is a problem with using Mui elements or react-select. Change value doesn't work probably due to react portal usage both in the glide-data-grid and dropdown libraries
              */}
-            <TestingEventsTableDropdown
+            <Dropdown
                 value={currentValueRef.current}
                 options={value.data.options}
                 onValueChange={setVal}
@@ -72,4 +72,4 @@ export const TestingEventsTableSourceEditor: React.FC<EditorProps> = ({ value, o
     );
 };
 
-export default TestingEventsTableSourceEditor;
+export default SourceEditor;

@@ -1,7 +1,7 @@
 import type { ProcessName } from "src/components/Process/types";
 
-import type { TestingEventParameters } from "../../components/modals/Testing/TestingEventsTable";
-import { mapEventsToRunTestsFormat } from "../../components/modals/Testing/utils";
+import type { TestingEventParameters } from "../../components/modals/TestingDataRecords/Table";
+import { mapEventsToRunTestsFormat } from "../../components/modals/TestingDataRecords/utils";
 import type { SourceWithParametersTest } from "../../http/HttpService";
 import HttpService from "../../http/HttpService";
 import type { ResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
