@@ -1,28 +1,31 @@
 package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import org.scalatest.funsuite.AnyFunSuite
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.schemedkafka.{
   TopicsMatchingPatternWithExistingSubjectsSelectionStrategy,
   TopicsWithExistingSubjectSelectionStrategy
 }
-import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaSchemaRegistryMixin
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
 
 import java.util.regex.Pattern
 
-class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
+class TopicSelectionStrategySpec
+    extends AnyFunSuite
+    with KafkaSchemaRegistryMixin
+    with WithMockSchemaRegistryWithSampleSchemasRegistered {
 
   import KafkaAvroSourceMockSchemaRegistry._
 
+  override protected lazy val kafkaComponentsConfigPrefix: String = "not-important"
+
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 
-  override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = factory
-
-  private lazy val confluentClient = schemaRegistryClientFactory.create(kafkaConfig)
+  private lazy val confluentClient = factory.create(kafkaComponentsConfig)
 
   test("all topic strategy test") {
     val strategy = new TopicsWithExistingSubjectSelectionStrategy(confluentClient)
@@ -49,12 +52,11 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   }
 
   test("show how to override topic selection strategy") {
-    val kafkaConfig = KafkaConfig.parseConfig(testModelConfig.underlyingConfig)
     new UniversalKafkaSourceFactory(
-      schemaRegistryClientFactory,
-      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig),
-      testModelConfig,
-      kafkaConfig,
+      factory,
+      UniversalSchemaBasedSerdeProvider.create(factory, kafkaComponentsConfig),
+      kafkaComponentsConfig,
+      NamingStrategy.Disabled,
       new FlinkKafkaSourceImplFactory
     ) {
       override lazy val topicSelectionStrategy =

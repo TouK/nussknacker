@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.docker.{WithKafkaContainer, WithSchemaRegistryContainer}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaConfig, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaComponentsConfig, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
@@ -54,11 +54,6 @@ class SchemedKafkaTestingApiHttpServiceSpec
   // boostrap logic
 
   override val container: Container = MultipleContainers(kafkaContainer, schemaRegistryContainer)
-
-  private lazy val defaultKafkaConfig: KafkaConfig = KafkaConfig(
-    kafkaProperties = Some(Map("bootstrap.servers" -> hostKafkaAddress)),
-    kafkaEspProperties = None,
-  )
 
   override def designerRawConfig: Config = super.designerRawConfig
     .withoutPath("scenarioTypes.streaming.modelConfig.components.kafka.disabled")

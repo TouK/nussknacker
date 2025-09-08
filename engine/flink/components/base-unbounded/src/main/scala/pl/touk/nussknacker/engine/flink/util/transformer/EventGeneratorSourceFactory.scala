@@ -14,8 +14,13 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.VariableConstants.InputVariableName
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
+import pl.touk.nussknacker.engine.api.context.transformation.{
+  DefinedLazyParameter,
+  NodeDependencyValue,
+  SingleInputDynamicComponent
+}
+import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.definition.ParameterCategory.Advanced
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.livedata.{DataRecord, DataRecords, LiveDataProvider}
@@ -30,13 +35,12 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   TimestampWatermarkHandler
 }
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.util.TimestampUtils
 
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 import java.util
-import javax.annotation.Nullable
-import javax.validation.constraints.Min
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
@@ -53,36 +57,83 @@ object EventGeneratorSourceFactory
 
 class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHandler[ValueWithContext[AnyRef]])
     extends SourceFactory
+    with SingleInputDynamicComponent[FlinkSource]
     with UnboundedStreamComponent {
 
+  override type State = Nothing
+
+  override def nodeDependencies: List[NodeDependency] = List.empty
+
+  private lazy val scheduleParameterName = ParameterName("schedule")
+
+  private lazy val countParameterName = ParameterName("count")
+
+  private lazy val valueParameterName = ParameterName("value")
+
+  private val scheduleParameterDeclaration = ParameterDeclaration
+    .mandatory[Duration](scheduleParameterName)
+    .withCreator(
+      _.copy(
+        editors = List(
+          new DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS))
+        ),
+        defaultValue = Some("T(java.time.Duration).parse('PT1M')".spel)
+      )
+    )
+
+  private val countParameterDeclaration = ParameterDeclaration
+    .optional[Int](countParameterName)
+    .withCreator(
+      _.copy(
+        validators = List(MinimalNumberValidator(BigDecimal.valueOf(1))),
+        editors = List(
+          new DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS))
+        ),
+        defaultValue = Some("1".spel),
+        category = Advanced
+      )
+    )
+
+  private val valueParameterDeclaration = ParameterDeclaration
+    .lazyMandatory[AnyRef](valueParameterName)
+    .withCreator(
+      _.copy(
+        editors = List(JsonTemplateParameterEditor, SpelParameterEditor),
+        defaultValue = Some(
+          "{\n\t\"sampleField\": \"#{ #UTIL.uuid }\",\n\t\"dateTime\": \"#{ #DATE.now }\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}".jsonTemplate
+        )
+      )
+    )
+
+  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): ContextTransformationDefinition = {
+    case TransformationStep(Nil, _) =>
+      NextParameters(
+        List(scheduleParameterDeclaration, countParameterDeclaration, valueParameterDeclaration).map(
+          _.createParameter()
+        )
+      )
+    case TransformationStep(
+          (`scheduleParameterName`, _) ::
+          (`countParameterName`, _) ::
+          (`valueParameterName`, DefinedLazyParameter(valueType)) ::
+          Nil,
+          _
+        ) =>
+      FinalResults(ValidationContext.empty.withVariableUnsafe(InputVariableName, valueType))
+  }
+
   @nowarn("cat=deprecation")
-  @MethodToInvoke
-  def create(
-      @ParamName("schedule")
-      @Editor(
-        `type` = EditorType.DURATION_EDITOR,
-        timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS)
-      )
-      @Editor(`type` = EditorType.SPEL_EDITOR)
-      @DefaultValue("T(java.time.Duration).parse('PT1M')")
-      schedule: Duration,
-      // TODO: @DefaultValue(1) instead of nullable
-      @ParamName("count")
-      @Nullable
-      @DefaultValue("1")
-      @Min(1)
-      @ParameterCategory(`type` = ParameterCategoryType.ADVANCED)
-      nullableCount: Integer,
-      @Editor(`type` = EditorType.JSON_TEMPLATE_EDITOR)
-      @Editor(`type` = EditorType.SPEL_EDITOR)
-      @DefaultValue(
-        value =
-          "{\n\t\"sampleField\": \"#{ #UTIL.uuid }\",\n\t\"dateTime\": \"#{ #DATE.now }\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}",
-        language = ExpressionLanguage.JSON_TEMPLATE
-      )
-      @ParamName("value")
-      value: LazyParameter[AnyRef]
-  ): Source = {
+  override def implementation(
+      params: Params,
+      dependencies: List[NodeDependencyValue],
+      finalState: Option[Nothing]
+  ): FlinkSource = {
+    val schedule = scheduleParameterDeclaration.extractValueUnsafe(params)
+    val count    = countParameterDeclaration.extractValue(params).getOrElse(1)
+    val value    = valueParameterDeclaration.extractValueUnsafe(params)
+
     new FlinkSource
       with BaseFlinkSource
       with ExplicitUidInOperatorsSupport
@@ -105,7 +156,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
           flinkNodeContext: FlinkCustomNodeContext
       ): DataStream[Context] = {
         // Without this local variable, flatMap function is not serializable
-        val count = Option(nullableCount).map(_.toInt).getOrElse(1)
+        val localCount = count
         val streamOfRaw =
           env
             .addSource(new PeriodicFunction(schedule))
@@ -114,7 +165,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
                 // This empty String is a dummy value. It has to exist for each event, but its value is completely ignored.
                 // The type is not important too, it just has to be serializable by Flink.
                 // For each of those dummy values, a new Context will be created.
-                (1 to count).foreach(_ => out.collect(""))
+                (1 to localCount).foreach(_ => out.collect(""))
               },
               TypeInformationDetection.instance.forClass[String]
             )

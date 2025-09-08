@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry
 
 import cats.data.Validated
 import io.confluent.kafka.schemaregistry.ParsedSchema
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.TopicsWithExistingSubjectSelectionStrategy
 
 trait SchemaRegistryClient {
@@ -42,8 +42,8 @@ trait SchemaRegistryClient {
 
   def getAllVersions(topic: UnspecializedTopicName, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]]
 
-  def isTopicWithSchema(topic: String, kafkaConfig: KafkaConfig): Boolean = {
-    if (!kafkaConfig.showTopicsWithoutSchema) {
+  def isTopicWithSchema(topic: String, kafkaComponentsConfig: KafkaComponentsConfig): Boolean = {
+    if (!kafkaComponentsConfig.showTopicsWithoutSchema) {
       true
     } else {
       val topicsWithSchema = new TopicsWithExistingSubjectSelectionStrategy(this).getTopics

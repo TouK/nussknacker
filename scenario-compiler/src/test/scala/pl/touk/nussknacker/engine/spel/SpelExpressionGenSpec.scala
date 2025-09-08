@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.TypedExpression
+import pl.touk.nussknacker.engine.spel.parser.NuSpelExpressionParser
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 
 import scala.util.{Failure, Success, Try}
@@ -112,7 +113,7 @@ class SpelExpressionGenSpec
   }
 
   private def evaluate(expr: String, a: Any, b: Any): AnyRef = {
-    val spelParser        = new org.springframework.expression.spel.standard.SpelExpressionParser()
+    val spelParser        = NuSpelExpressionParser.interpreted()
     val evaluationContext = new StandardEvaluationContext()
     evaluationContext.setVariable("a", a)
     evaluationContext.setVariable("b", b)

@@ -15,17 +15,18 @@ import pl.touk.nussknacker.test.{KafkaConfigProperties, PatientScalaFutures}
 
 import scala.jdk.CollectionConverters._
 
-class FinkExactlyOnceItSpec
-    extends FlinkWithKafkaSuite
-    with PatientScalaFutures
-    with LazyLogging
-    with WithKafkaComponentsConfig {
+class FinkExactlyOnceItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
   override val avroAsJsonSerialization: Boolean = true
 
-  override def kafkaComponentsConfig: Config = super.kafkaComponentsConfig
-    .withValue("config.sinkDeliveryGuarantee", fromAnyRef("EXACTLY_ONCE"))
-    .withValue(KafkaConfigProperties.property("config", "isolation.level"), fromAnyRef("read_committed"))
+  override protected def resolveModelConfig(config: Config): Config =
+    super
+      .resolveModelConfig(config)
+      .withValue(s"$kafkaComponentsConfigPrefix.sinkDeliveryGuarantee", fromAnyRef("EXACTLY_ONCE"))
+      .withValue(
+        KafkaConfigProperties.property(kafkaComponentsConfigPrefix, "isolation.level"),
+        fromAnyRef("read_committed")
+      )
 
   private val inputOutputMessage =
     """
@@ -43,7 +44,7 @@ class FinkExactlyOnceItSpec
     val sendResult = sendAsJson(inputOutputMessage, topicConfig.input).futureValue
     logger.info(s"Messages sent successful: $sendResult")
 
-    run(buildScenario(topicConfig)) {
+    testScenarioRunner.withRunningScenario(buildScenario(topicConfig)) { _ =>
       val consumer = kafkaClient.createConsumer()
       val result   = consumer.consumeWithJson[Json](topicConfig.output.name).take(1).head
       result.message() shouldEqual parseJson(inputOutputMessage)

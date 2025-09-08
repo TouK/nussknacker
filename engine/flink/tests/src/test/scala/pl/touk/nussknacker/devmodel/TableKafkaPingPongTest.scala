@@ -138,7 +138,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
         KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> "true".spel,
       )
 
-    run(process) {
+    testScenarioRunner.withRunningScenario(process) { _ =>
       val result = kafkaClient
         .createConsumer()
         .consumeWithJson[Json](topics.output.name)
@@ -174,7 +174,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
         "Value"      -> "#input".spel
       )
 
-    run(process) {
+    testScenarioRunner.withRunningScenario(process) { _ =>
       val result = kafkaClient
         .createConsumer()
         .consumeWithJson[Json](topics.output.name)
@@ -206,7 +206,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
         "Value"      -> "{someInt: 2, someString: 'BBB'}".spel
       )
 
-    run(process) {
+    testScenarioRunner.withRunningScenario(process) { _ =>
       val result = kafkaClient
         .createConsumer()
         .consumeWithJson[Json](topics.output.name)

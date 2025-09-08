@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { useDebouncedValue } from "rooks";
 
 import { displayTestCapabilities } from "../../../actions/nk";
 import { TestCapabilityStatus } from "../../../common/TestResultUtils";
@@ -19,12 +20,13 @@ export function useAdhocTestingAvailability(disabled: boolean) {
     const testCapabilities = useAppSelector(getTestCapabilities);
     const isRenamed = useAppSelector(isProcessRenamed);
     const scenarioName = useAppSelector(getProcessName);
-    const scenarioGraph = useAppSelector(getScenarioGraph);
+    const _scenarioGraph = useAppSelector(getScenarioGraph);
 
     const isAvailable = useMemo(() => {
         return !disabled && processIsLatestVersion && testCapabilities?.testWithParameters.status === TestCapabilityStatus.AVAILABLE;
     }, [disabled, processIsLatestVersion, testCapabilities?.testWithParameters.status]);
 
+    const [scenarioGraph] = useDebouncedValue(_scenarioGraph, 500);
     useEffect(() => {
         if (isRenamed) return;
         dispatch(displayTestCapabilities(scenarioName, scenarioGraph));

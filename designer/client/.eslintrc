@@ -61,31 +61,36 @@
             }
         ],
         "react/prop-types": "off",
-        "react-hooks/exhaustive-deps": "error",
-        "import/order": [
-      "error",
+        "react-hooks/exhaustive-deps": [
+            "error",
             {
-                "groups": ["builtin", "external", ["internal", "parent", "sibling", "index"]],
-                "newlines-between": "always",
-                "alphabetize": {
-                    "order": "asc",
-                    "caseInsensitive": true
-                }
+                "additionalHooks": "(useDrop|useDrag)$"
             }
+        ],
+        "import/order": [
+          "error",
+          {
+            "groups": ["builtin", "external", ["internal", "parent", "sibling", "index"]],
+            "newlines-between": "always",
+            "alphabetize": {
+              "order": "asc",
+              "caseInsensitive": true
+            }
+          }
         ],
         "no-restricted-syntax": [
-      "error",
-            {
-                "selector": "ImportNamespaceSpecifier",
-                "message": "Wildcard imports are not allowed."
-            }
+          "error",
+          {
+            "selector": "ImportNamespaceSpecifier",
+            "message": "Wildcard imports are not allowed."
+          }
         ],
         "@typescript-eslint/consistent-type-imports": [
-      "error",
-            {
-                "prefer": "type-imports",
-                "disallowTypeAnnotations": false
-            }
+          "error",
+          {
+            "prefer": "type-imports",
+            "disallowTypeAnnotations": false
+          }
         ]
     },
     "overrides": [
@@ -108,17 +113,23 @@
             }
         },
         {
-            "files": ["**/*.test.ts", "**/*.test.tsx"],
-            "plugins": ["eslint-plugin-jest"],
-            "extends": ["plugin:jest/recommended"],
-            "rules": {
-                "jest/expect-expect": [
-                    "warn",
-                    {
-                        "assertFunctionNames": ["expect", "tstyche.expect"]
-                    }
-                ]
-            }
+          "files": [
+            "**/*.test.ts",
+            "**/*.test.tsx",
+            "**/*-test.ts",
+            "**/*-test.tsx"
+          ],
+          "plugins": ["eslint-plugin-jest"],
+          "extends": ["plugin:jest/recommended"],
+          "rules": {
+            "jest/expect-expect": [
+              "warn",
+              {
+                "assertFunctionNames": ["expect", "tstyche.expect"]
+              }
+            ],
+            "no-restricted-syntax": "off"
+          }
         }
     ]
 }

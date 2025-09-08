@@ -47,6 +47,8 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
   import SpecialSpELElement._
   import ValidationMode._
 
+  override protected val kafkaComponentsConfigPrefix: String = "kafka"
+
   implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
     PropertyCheckConfiguration(minSuccessful = 1000, minSize = 0, workers = 5)
 

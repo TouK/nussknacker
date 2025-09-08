@@ -4,6 +4,7 @@ import { getToolbarsInitData } from "../../reducers/selectors/toolbars";
 import type { ToolbarsSide } from "../../reducers/toolbars";
 import type { WithId } from "../../types/common";
 import type { ThunkAction } from "../reduxTypes";
+import type { PanelSide } from "./ui/panelSide";
 
 export type ToolbarPosition = [ToolbarsSide | string, number];
 
@@ -71,4 +72,5 @@ export type ToolbarActions =
     | ToggleToolbarAction
     | ToggleAllToolbarsAction
     | ToggleToolboxGroupAction
-    | ProcessToolbarsConfigurationAction;
+    | ProcessToolbarsConfigurationAction
+    | WithConfigId<{ type: "TOGGLE_PANEL"; side: PanelSide }>;

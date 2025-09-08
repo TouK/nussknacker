@@ -1,7 +1,7 @@
 import type { Theme } from "@mui/material";
 import { alpha } from "@mui/material";
-import { dia } from "jointjs";
 import type { shapes } from "jointjs";
+import { dia } from "jointjs";
 import type { CSSProperties } from "react";
 
 import { getBorderColor } from "../../../../containers/theme/helpers";
@@ -233,7 +233,7 @@ export const basicNoteModel: StickyNoteNodeType = {
     color: DEFAULT_COLOR,
 };
 
-export const basicNoteOffset = { dx: DEFAULT_WIDTH * -0.8, dy: DEFAULT_HEIGHT * -0.12 };
+export const basicNoteOffset = { x: DEFAULT_WIDTH * -0.8, y: DEFAULT_HEIGHT * -0.5 };
 
 export const StickyNoteElementBasic = dia.ElementView.extend({
     events: {

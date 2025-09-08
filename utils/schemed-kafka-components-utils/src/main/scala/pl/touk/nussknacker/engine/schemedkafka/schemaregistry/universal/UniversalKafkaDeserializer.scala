@@ -4,19 +4,19 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Deserializer
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 
 class UniversalKafkaDeserializer[T](
     schemaRegistryClient: SchemaRegistryClient,
-    kafkaConfig: KafkaConfig,
+    kafkaComponentsConfig: KafkaComponentsConfig,
     schemaIdFromMessageExtractor: ChainedSchemaIdFromMessageExtractor,
     readerSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
     isKey: Boolean
 ) extends Deserializer[T] {
 
-  private val schemaSupportDispatcher = UniversalSchemaSupportDispatcher(kafkaConfig)
+  private val schemaSupportDispatcher = UniversalSchemaSupportDispatcher(kafkaComponentsConfig)
 
   override def deserialize(topic: String, data: Array[Byte]): T = {
     throw new IllegalAccessException(
@@ -31,7 +31,7 @@ class UniversalKafkaDeserializer[T](
       .getOrElse(throw MessageWithoutSchemaIdException)
 
     val schemaWithMetadata = {
-      if (schemaRegistryClient.isTopicWithSchema(topic, kafkaConfig)) {
+      if (schemaRegistryClient.isTopicWithSchema(topic, kafkaComponentsConfig)) {
         schemaRegistryClient.getSchemaById(writerSchemaId.value)
       } else {
         writerSchemaId.value match {
@@ -62,7 +62,7 @@ class UniversalKafkaDeserializer[T](
       new RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](writerSchema), Some(writerSchemaId.value))
 
     schemaSupportDispatcher
-      .forSchemaType(writerSchema.schemaType())
+      .forParsedSchema(writerSchema)
       .payloadDeserializer
       .deserialize(readerSchemaDataOpt, writerSchemaData, writerSchemaId.buffer)
       .asInstanceOf[T]

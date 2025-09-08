@@ -3,6 +3,7 @@ import type { Dictionary } from "lodash";
 import { flushSync } from "react-dom";
 
 import NodeUtils from "../../components/graph/NodeUtils";
+import { canInjectNode } from "../../components/graph/utils/graphUtils";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { prepareNewNodesWithLayout } from "../../reducers/graph/utils";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
@@ -18,7 +19,7 @@ import type {
     ValidationResult,
 } from "../../types";
 import type { ThunkAction } from "../reduxTypes";
-import type { EditNodeAction, EditScenarioLabels } from "./editNode";
+import type { NodeAddActions } from "./editNode";
 import type { NodePosition, Position } from "./ui/layout";
 import { layoutChanged } from "./ui/layout";
 
@@ -106,48 +107,51 @@ export function nodesDisconnected(from: NodeId, to: NodeId): ThunkAction {
     };
 }
 
-export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edgeType }: Edge): ThunkAction {
-    return (dispatch, getState) => {
+export function injectNode(node: NodeType, edge: Edge): ThunkAction {
+    return async (dispatch, getState) => {
         const state = getState();
+        let scenarioGraph = getScenarioGraph(state);
         const processDefinitionData = getProcessDefinitionData(state);
-        const scenarioGraph = getScenarioGraph(state);
 
-        batchGroupBy.startOrContinue();
+        if (!canInjectNode(scenarioGraph, edge.from, node.id, edge.to, processDefinitionData)) return;
+
+        const from = NodeUtils.getNodeById(edge.from, scenarioGraph);
+        const to = NodeUtils.getNodeById(edge.to, scenarioGraph);
 
         dispatch({
             type: "NODES_DISCONNECTED",
-            from: from?.id,
-            to: to?.id,
+            from: edge.from,
+            to: edge.to,
         });
 
-        const inputs = NodeUtils.nodeInputs(middle.id, scenarioGraph);
-        if (from && NodeUtils.canHaveMoreInputs(middle, inputs, processDefinitionData)) {
+        scenarioGraph = getScenarioGraph(getState());
+        const inputs = NodeUtils.nodeInputs(node.id, scenarioGraph);
+        if (from && NodeUtils.canHaveMoreInputs(node, inputs, processDefinitionData)) {
             dispatch({
                 type: "NODES_CONNECTED",
                 fromNode: from,
-                toNode: middle,
+                toNode: node,
                 processDefinitionData,
-                edgeType,
+                edgeType: edge.edgeType,
             });
         }
 
-        const outputs = NodeUtils.nodeOutputs(middle.id, scenarioGraph);
-        if (to && NodeUtils.canHaveMoreOutputs(middle, outputs, processDefinitionData)) {
+        const outputs = NodeUtils.nodeOutputs(node.id, scenarioGraph);
+        if (to && NodeUtils.canHaveMoreOutputs(node, outputs, processDefinitionData)) {
             dispatch({
                 type: "NODES_CONNECTED",
-                fromNode: middle,
+                fromNode: node,
                 toNode: to,
                 processDefinitionData,
             });
         }
         dispatch(layoutChanged());
-        batchGroupBy.end();
     };
 }
 
 export function nodeAdded(node: NodeType, position: Position): ThunkAction {
     return (dispatch, getState) => {
-        batchGroupBy.startOrContinue();
+        batchGroupBy.startOrExtend();
 
         // We need to disable automatic React batching https://react.dev/blog/2022/03/29/react-v18#new-feature-automatic-batching
         // since it breaks redux undo in this case
@@ -162,13 +166,12 @@ export function nodeAdded(node: NodeType, position: Position): ThunkAction {
             });
             dispatch(layoutChanged());
         });
-        batchGroupBy.end();
     };
 }
 
 export function stickyNoteUpdated(element: dia.Element, content?: string): ThunkAction {
     return (dispatch) => {
-        batchGroupBy.startOrContinue();
+        batchGroupBy.startOrExtend();
         const id = element.id.toString();
         const dimensions = element.attributes.size as Dimensions;
         flushSync(() => {
@@ -180,7 +183,6 @@ export function stickyNoteUpdated(element: dia.Element, content?: string): Thunk
             });
             dispatch(layoutChanged());
         });
-        batchGroupBy.end();
     };
 }
 
@@ -193,24 +195,31 @@ export function stickyNoteSetErrors(stickyNoteErrors: Record<string, NodeValidat
     };
 }
 
-export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edges: Edge[], isCopy = true): ThunkAction {
-    return (dispatch, getState) => {
+type Options = { isCopy?: boolean; dryRun?: boolean };
+export function nodesWithEdgesAdded(
+    nodesWithPositions: NodesWithPositions,
+    edges: Edge[],
+    { isCopy = true, dryRun = false }: Options = {},
+): ThunkAction<Promise<NodeType[]>> {
+    return async (dispatch, getState) => {
         const state = getState();
         const processDefinitionData = getProcessDefinitionData(state);
         const scenarioGraph = getScenarioGraph(state);
         const { nodes, layout, idMapping } = prepareNewNodesWithLayout(scenarioGraph.nodes, nodesWithPositions, isCopy);
 
-        batchGroupBy.startOrContinue();
-        dispatch({
+        if (dryRun) return nodes;
+
+        batchGroupBy.startOrExtend();
+        await dispatch({
             type: "NODES_WITH_EDGES_ADDED",
             nodes,
             layout,
             idMapping,
-            edges,
+            edges: edges.filter(Boolean),
             processDefinitionData,
         });
         dispatch(layoutChanged());
-        batchGroupBy.end();
+        return nodes;
     };
 }
 
@@ -223,5 +232,4 @@ export type NodeActions =
     | NodesDisonnectedAction
     | NodesWithEdgesAddedAction
     | ValidationResultAction
-    | EditNodeAction
-    | EditScenarioLabels;
+    | NodeAddActions;

@@ -254,7 +254,7 @@ description: Stay informed with detailed changelogs covering new features, impro
      }
   ```
   * This setting is optional. If not specified, the default editors remain `SpelTemplateParameterEditor` and `SpelParameterEditor` (no change in behavior).
-* [#8366](https://github.com/TouK/nussknacker/pull/8366) Spring and SpEL upgraded 5.2.23.RELEASE -> 6.2.9.
+* [#8366](https://github.com/TouK/nussknacker/pull/8366)[#8559](https://github.com/TouK/nussknacker/pull/8559) Spring and SpEL upgraded 5.2.23.RELEASE -> 6.2.9.
   * [Safe navigation operator ?.](https://docs.spring.io/spring-framework/reference/core/expressions/language-ref/operator-safe-navigation.html)
     is supported for collections, maps and strings.
 * [#8375](https://github.com/TouK/nussknacker/pull/8375) Explicit definition of expression language for default parameter values in component configuration
@@ -277,6 +277,10 @@ description: Stay informed with detailed changelogs covering new features, impro
        }
      }
   ```
+* [#8534](https://github.com/TouK/nussknacker/pull/8534) Kafka components: Added support for "PLAIN" Content type for topics without schema 
+* [#8523](https://github.com/TouK/nussknacker/pull/8523) `FlinkTestScenarioRunner`: added asynchronous method allowing scenario testing on Flink engine (`withRunningScenario`) 
+* [#8555](https://github.com/TouK/nussknacker/pull/8555) SpEL: Added implicit conversions between various date types e.g. `Long` -> `Instant`, `OffsetDateTime` -> `LocalDateTime` etc. 
+* [#8540](https://github.com/TouK/nussknacker/pull/8540) Kafka source: Added advanced parameters allowing a user to specify watermark strategy (`Event time`, `Max out-of-orderness`, `Idleness`)  
 * [#8352](https://github.com/TouK/nussknacker/pull/8352) Updated dependencies:
   * Caffeine Cache 3.1.8 -> 3.2.1
   * Cats Effect 3.5.4 -> 3.5.7

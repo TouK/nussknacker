@@ -6,12 +6,13 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.common.header.Headers
 import org.scalatest.Assertion
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor6}
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.KafkaRecordUtils
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
-import pl.touk.nussknacker.engine.schemedkafka.helpers.{SchemaRegistryMixin, SimpleKafkaAvroSerializer}
+import pl.touk.nussknacker.engine.schemedkafka.helpers.{KafkaSchemaRegistryMixin, SimpleKafkaAvroSerializer}
 import pl.touk.nussknacker.engine.schemedkafka.schema.{PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ChainedSchemaIdFromMessageExtractor, SchemaId}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
@@ -25,11 +26,14 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
 import java.io.OutputStream
 
 class UniversalKafkaDeserializerTest
-    extends SchemaRegistryMixin
+    extends AnyFunSuite
+    with KafkaSchemaRegistryMixin
     with TableDrivenPropertyChecks
     with ConfluentKafkaAvroSeDeSpecMixin {
 
   import MockSchemaRegistry._
+
+  override protected val kafkaComponentsConfigPrefix: String = "components.kafka.config"
 
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 
@@ -45,11 +49,11 @@ class UniversalKafkaDeserializerTest
   lazy val payloadWithSchemaIdSetup: CreateSetup = readerSchema =>
     SchemaRegistryProviderSetup(
       SchemaRegistryProviderSetupType.avro,
-      UniversalSchemaBasedSerdeProvider.create(MockSchemaRegistry.factory, kafkaConfig),
+      UniversalSchemaBasedSerdeProvider.create(MockSchemaRegistry.factory, kafkaComponentsConfig),
       new SimpleKafkaAvroSerializer(MockSchemaRegistry.schemaRegistryMockClient, isKey = false),
       new UniversalKafkaDeserializer(
         confluentSchemaRegistryClient,
-        kafkaConfig,
+        kafkaComponentsConfig,
         schemaIdExtractor,
         Some(readerSchema),
         isKey = false

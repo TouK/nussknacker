@@ -1,5 +1,5 @@
 import { alpha } from "@mui/material";
-import type { Ref } from "react";
+import type { FocusEventHandler, Ref } from "react";
 import React, { forwardRef } from "react";
 
 import { blendLighten } from "../../containers/theme/helpers";
@@ -9,6 +9,8 @@ import type { ValueFieldProps } from "../valueField";
 export type InputProps = ValueFieldProps<string> & {
     placeholder?: string;
     className?: string;
+    onFocus?: FocusEventHandler;
+    onBlur?: FocusEventHandler;
 };
 
 export const ThemedInput = forwardRef(function ThemedInput(

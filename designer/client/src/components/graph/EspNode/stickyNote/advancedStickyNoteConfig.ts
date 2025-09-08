@@ -1,8 +1,8 @@
 import type { CSSOthersObject } from "@emotion/serialize";
 import type { Theme } from "@mui/material";
 import { lighten } from "@mui/material";
-import { dia } from "jointjs";
 import type { shapes } from "jointjs";
+import { dia } from "jointjs";
 
 import { blendDarken, blendLighten, getBorderColor } from "../../../../containers/theme/helpers";
 import type { NodeType, StickyNoteNodeType } from "../../../../types";
@@ -231,7 +231,7 @@ export const advancedNoteModel: StickyNoteNodeType = {
     color: DEFAULT_COLOR,
 };
 
-export const advancedNoteOffset = { dx: DEFAULT_WIDTH * -0.5, dy: DEFAULT_HEIGHT * -0.5 };
+export const advancedNoteOffset = { x: DEFAULT_WIDTH * -0.8, y: DEFAULT_HEIGHT * -0.5 };
 
 export const overrideAdvancedStickyNoteColorToDefault = (stickyNote: NodeType) => ({ ...stickyNote, color: DEFAULT_COLOR });
 

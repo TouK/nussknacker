@@ -1,6 +1,4 @@
-import type { EditorMode } from "../components/graph/node-modal/editors/expression/types";
 import type { Editor } from "../components/graph/node-modal/editors/types";
-import { ParamType } from "../components/graph/node-modal/editors/types";
 import type { ComponentGroup } from "./component";
 import type { TypingResult, UIParameter } from "./definition";
 import type { Edge, EdgeType } from "./edge";
@@ -16,7 +14,7 @@ export type ScenarioGraph = {
 export type Category = string;
 
 export type ProcessAdditionalFields = {
-    description: string | null;
+    description?: string | null;
     properties: { [key: string]: string };
     metaDataType: string;
     showDescription?: boolean;

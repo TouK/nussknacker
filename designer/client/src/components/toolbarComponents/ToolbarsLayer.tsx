@@ -31,6 +31,7 @@ export function useToolbarsVisibility(toolbars: Toolbar[]) {
         () => ({
             "survey-panel": !showSurvey,
             "creator-panel": !editFrontend,
+            "creator-panel-dynamic": !editFrontend,
             "user-settings-panel": !userSettings["debug.userSettingsVisible"],
         }),
         [editFrontend, showSurvey, userSettings],

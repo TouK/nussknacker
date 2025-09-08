@@ -3,19 +3,19 @@ package pl.touk.nussknacker.engine.schemedkafka.serialization
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordKafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 
 abstract class KafkaSchemaBasedKeyValueDeserializationSchemaFactory extends Serializable {
 
-  protected def kafkaConfig: KafkaConfig
+  protected def kafkaComponentsConfig: KafkaComponentsConfig
 
   private def createKeyOrUseStringDeserializer[K](
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
   ): Deserializer[K] = {
-    if (kafkaConfig.useStringForKey) {
+    if (kafkaComponentsConfig.useStringForKey) {
       createStringKeyDeserializer.asInstanceOf[Deserializer[K]]
     } else {
       createKeyDeserializer[K](schemaDataOpt)

@@ -33,23 +33,23 @@ trait KafkaUtils extends LazyLogging {
     props.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, sanitizeClientId(id))
   }
 
-  def createKafkaAdminClient(kafkaConfig: KafkaConfig): Admin = {
-    AdminClient.create(withPropertiesFromConfig(new Properties, kafkaConfig))
+  def createKafkaAdminClient(kafkaComponentsConfig: KafkaComponentsConfig): Admin = {
+    AdminClient.create(withPropertiesFromConfig(new Properties, kafkaComponentsConfig))
   }
 
-  def usingAdminClient[T](kafkaConfig: KafkaConfig)(adminClientOperation: Admin => T): T = {
+  def usingAdminClient[T](kafkaComponentsConfig: KafkaComponentsConfig)(adminClientOperation: Admin => T): T = {
     // we don't use default close not to block indefinitely
     val releasable = new Releasable[Admin] {
       override def release(resource: Admin): Unit = resource.close(time.Duration.ofMillis(defaultTimeoutMillis))
     }
-    Using.resource(createKafkaAdminClient(kafkaConfig))(adminClientOperation)(releasable)
+    Using.resource(createKafkaAdminClient(kafkaComponentsConfig))(adminClientOperation)(releasable)
   }
 
-  def createCachingAdminClient(kafkaConfig: KafkaConfig): CachingKafkaAdminClient = {
+  def createCachingAdminClient(kafkaComponentsConfig: KafkaComponentsConfig): CachingKafkaAdminClient = {
     CachingKafkaAdminClient(
-      kafkaConfig,
+      kafkaComponentsConfig,
       new UsingKafkaAdminClient {
-        override def apply[T](f: Admin => T): T = usingAdminClient(kafkaConfig)(f)
+        override def apply[T](f: Admin => T): T = usingAdminClient(kafkaComponentsConfig)(f)
       }
     )
   }
@@ -58,7 +58,7 @@ trait KafkaUtils extends LazyLogging {
     // https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/common/Config.scala#L25-L35
     originalId.replaceAll("[^a-zA-Z0-9\\._\\-]", "_")
 
-  def setOffsetToLatest(topic: String, groupId: String, config: KafkaConfig): Unit = {
+  def setOffsetToLatest(topic: String, groupId: String, config: KafkaComponentsConfig): Unit = {
     val timeoutMillis = readTimeoutForTempConsumer(config)
     logger.info(s"Setting offset to latest for topic: $topic, groupId: $groupId")
     val consumerAfterWork = Future {
@@ -69,7 +69,7 @@ trait KafkaUtils extends LazyLogging {
     Await.result(consumerAfterWork, Duration.apply(timeoutMillis, TimeUnit.MILLISECONDS))
   }
 
-  def setOffsetToEarliest(topic: String, groupId: String, config: KafkaConfig): Unit = {
+  def setOffsetToEarliest(topic: String, groupId: String, config: KafkaComponentsConfig): Unit = {
     val timeoutMillis = readTimeoutForTempConsumer(config)
     logger.info(s"Setting offset to latest for topic: $topic, groupId: $groupId")
     val consumerAfterWork = Future {
@@ -80,7 +80,7 @@ trait KafkaUtils extends LazyLogging {
     Await.result(consumerAfterWork, Duration.apply(timeoutMillis, TimeUnit.MILLISECONDS))
   }
 
-  def toProducerProperties(config: KafkaConfig, clientId: String): Properties = {
+  def toProducerProperties(config: KafkaComponentsConfig, clientId: String): Properties = {
     val props: Properties = new Properties
     props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, classOf[ByteArraySerializer].getName)
     props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, classOf[ByteArraySerializer].getName)
@@ -88,19 +88,19 @@ trait KafkaUtils extends LazyLogging {
     withPropertiesFromConfig(props, config)
   }
 
-  private def withPropertiesFromConfig(defaults: Properties, kafkaConfig: KafkaConfig): Properties = {
+  private def withPropertiesFromConfig(
+      defaults: Properties,
+      kafkaComponentsConfig: KafkaComponentsConfig
+  ): Properties = {
     val props = new Properties()
     defaults.forEach((k, v) => props.put(k, v))
-    kafkaConfig.kafkaAddress.foreach { kafkaAddress =>
-      props.put("bootstrap.servers", kafkaAddress)
-    }
-    kafkaConfig.kafkaProperties.getOrElse(Map.empty).foreach { case (k, v) =>
+    kafkaComponentsConfig.kafkaProperties.foreach { case (k, v) =>
       props.put(k, v)
     }
     props
   }
 
-  def toConsumerProperties(config: KafkaConfig, groupId: Option[String]): Properties = {
+  def toConsumerProperties(config: KafkaComponentsConfig, groupId: Option[String]): Properties = {
     val props = new Properties()
     props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, classOf[ByteArrayDeserializer].getName)
     props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, classOf[ByteArrayDeserializer].getName)
@@ -111,7 +111,7 @@ trait KafkaUtils extends LazyLogging {
   def readLastMessages(
       topic: TopicName.ForSource,
       size: Int,
-      config: KafkaConfig
+      config: KafkaComponentsConfig
   ): List[ConsumerRecord[Array[Byte], Array[Byte]]] = {
     doWithTempKafkaConsumer(config, None) { consumer =>
       try {
@@ -153,7 +153,7 @@ trait KafkaUtils extends LazyLogging {
     }
   }
 
-  private def doWithTempKafkaConsumer[T](config: KafkaConfig, groupId: Option[String])(
+  private def doWithTempKafkaConsumer[T](config: KafkaComponentsConfig, groupId: Option[String])(
       fun: KafkaConsumer[Array[Byte], Array[Byte]] => T
   ) = {
     // there has to be Kafka's classloader
@@ -172,8 +172,8 @@ trait KafkaUtils extends LazyLogging {
     consumerProperties.putIfAbsent(ConsumerConfig.ISOLATION_LEVEL_CONFIG, isolationLevel.toString.toLowerCase)
   }
 
-  private def readTimeoutForTempConsumer(config: KafkaConfig): Long =
-    config.kafkaProperties.flatMap(_.get("session.timeout.ms").map(_.toLong)).getOrElse(defaultTimeoutMillis)
+  private def readTimeoutForTempConsumer(config: KafkaComponentsConfig): Long =
+    config.kafkaProperties.get("session.timeout.ms").map(_.toLong).getOrElse(defaultTimeoutMillis)
 
   private def setOffsetToLatest(topic: String, consumer: KafkaConsumer[_, _]): Unit = {
     val partitions = consumer.partitionsFor(topic).asScala.map { partition =>

@@ -536,6 +536,92 @@ class DetectLargeTransactionSpec
              |          }
              |        }
              |      ],
+             |      "transactions": [
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-0",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 0,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "Event time",
+             |          "value": {
+             |            "pretty": "${regexes.zuluDateRegex}"
+             |          }
+             |        },
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-1",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 1,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "Event time",
+             |          "value": {
+             |            "pretty": "${regexes.zuluDateRegex}"
+             |          }
+             |        },
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-2",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 2,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "Event time",
+             |          "value": {
+             |            "pretty": "${regexes.zuluDateRegex}"
+             |          }
+             |        },
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-3",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 3,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "Event time",
+             |          "value": {
+             |            "pretty": "${regexes.zuluDateRegex}"
+             |          }
+             |        },
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-4",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 4,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "Event time",
+             |          "value": {
+             |            "pretty": "${regexes.zuluDateRegex}"
+             |          }
+             |        },
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-5",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 5,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "Event time",
+             |          "value": {
+             |            "pretty": "${regexes.zuluDateRegex}"
+             |          }
+             |        }
+             |      ],
              |      "send for audit": [
              |        {
              |          "contextId": "DetectLargeTransactions-transactions-0-3",

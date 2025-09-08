@@ -1,7 +1,7 @@
 import { css, cx } from "@emotion/css";
 import { useTheme } from "@mui/material";
 import type { PropsWithChildren, ReactElement, ReactNode } from "react";
-import React, { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
+import React, { forwardRef, useCallback, useImperativeHandle, useRef, useState } from "react";
 
 import { ClearIcon } from "../table/SearchFilter";
 import type { InputProps } from "./ThemedInput";
@@ -16,6 +16,8 @@ type Props = PropsWithChildren<InputProps> & {
 
 export type Focusable = {
     focus: (options?: FocusOptions) => void;
+    blur: () => void;
+    hasFocus: boolean;
 };
 
 export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon(
@@ -63,7 +65,8 @@ export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon
         [props.value.length, theme.transitions.duration.standard],
     );
 
-    useImperativeHandle(forwardedRef, () => ({ focus }), [focus]);
+    const [hasFocus, setHasFocus] = useState(false);
+    useImperativeHandle(forwardedRef, () => ({ focus, blur: () => ref.current?.blur(), hasFocus }), [focus, hasFocus]);
 
     return (
         <div className={cx(children && wrapperWithAddonStyles)}>
@@ -72,7 +75,18 @@ export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon
                     {children}
                 </div>
             )}
-            <ThemedInput ref={ref} {...props} />
+            <ThemedInput
+                ref={ref}
+                {...props}
+                onFocus={(event) => {
+                    setHasFocus(true);
+                    props.onFocus?.(event);
+                }}
+                onBlur={(event) => {
+                    setHasFocus(false);
+                    props.onBlur?.(event);
+                }}
+            />
             <div className={addonWrapperStyles}>
                 {!!props.value && onClear && (
                     <div

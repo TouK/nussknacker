@@ -14,12 +14,6 @@ class CachingKafkaAdminClient(
     usingKafkaAdminClient: UsingKafkaAdminClient
 ) extends LazyLogging {
 
-  def getOrFetchTopics: Set[UnspecializedTopicName] = {
-    caches.topicsCache.getOrCreate {
-      fetchFreshTopics
-    }
-  }
-
   def getCachedTopics: Option[Set[UnspecializedTopicName]] = {
     caches.topicsCache.get()
   }
@@ -76,9 +70,12 @@ class CachingKafkaAdminClient(
 
 object CachingKafkaAdminClient {
 
-  def apply(kafkaConfig: KafkaConfig, usingKafkaAdminClient: UsingKafkaAdminClient): CachingKafkaAdminClient = {
-    val caches = KafkaAdminCachesFactory.createOrRetrieve(kafkaConfig)
-    new CachingKafkaAdminClient(caches, kafkaConfig.kafkaAdminConfig.clientTimeout, usingKafkaAdminClient)
+  def apply(
+      kafkaComponentsConfig: KafkaComponentsConfig,
+      usingKafkaAdminClient: UsingKafkaAdminClient
+  ): CachingKafkaAdminClient = {
+    val caches = KafkaAdminCachesFactory.createOrRetrieve(kafkaComponentsConfig)
+    new CachingKafkaAdminClient(caches, kafkaComponentsConfig.kafkaAdminConfig.clientTimeout, usingKafkaAdminClient)
   }
 
   trait UsingKafkaAdminClient {

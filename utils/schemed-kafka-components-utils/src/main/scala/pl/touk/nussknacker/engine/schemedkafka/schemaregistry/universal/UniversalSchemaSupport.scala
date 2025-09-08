@@ -12,15 +12,15 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ContentTypesSchemas, SchemaRegistryClient}
 import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SingleSchemaBasedParameter}
 
-class UniversalSchemaSupportDispatcher private (kafkaConfig: KafkaConfig) {
+class UniversalSchemaSupportDispatcher private (kafkaComponentsConfig: KafkaComponentsConfig) {
 
   val supportBySchemaType: Map[String, UniversalSchemaSupport] =
     Map(
-      AvroSchema.TYPE -> new AvroSchemaSupport(kafkaConfig),
+      AvroSchema.TYPE -> new AvroSchemaSupport(kafkaComponentsConfig),
       JsonSchema.TYPE -> JsonSchemaSupport
     )
 
@@ -29,17 +29,19 @@ class UniversalSchemaSupportDispatcher private (kafkaConfig: KafkaConfig) {
 
   def forParsedSchema(parsedSchema: ParsedSchema): UniversalSchemaSupport = parsedSchema match {
     // For ad hoc tests we want to present the user with json editor when topic has no schema and content type Json was selected
-    case ContentTypesSchemas.schemaForJson => NoSchemaJsonSupport
-    case _                                 => forSchemaType(parsedSchema.schemaType())
+    case ContentTypesSchemas.schemaForJson  => NoSchemaJsonSupport
+    case ContentTypesSchemas.schemaForPlain => NoSchemaPlainSupport
+    case _                                  => forSchemaType(parsedSchema.schemaType())
   }
 
 }
 
 object UniversalSchemaSupportDispatcher {
 
-  def apply(kafkaConfig: KafkaConfig): UniversalSchemaSupportDispatcher = new UniversalSchemaSupportDispatcher(
-    kafkaConfig
-  )
+  def apply(kafkaComponentsConfig: KafkaComponentsConfig): UniversalSchemaSupportDispatcher =
+    new UniversalSchemaSupportDispatcher(
+      kafkaComponentsConfig
+    )
 
 }
 

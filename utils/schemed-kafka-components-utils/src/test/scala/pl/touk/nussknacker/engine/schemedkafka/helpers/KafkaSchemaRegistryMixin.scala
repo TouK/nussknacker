@@ -1,0 +1,26 @@
+package pl.touk.nussknacker.engine.schemedkafka.helpers
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import org.scalatest.Suite
+import pl.touk.nussknacker.engine.kafka.KafkaSpec
+import pl.touk.nussknacker.test.KafkaConfigProperties
+
+trait KafkaSchemaRegistryMixin extends KafkaSpec with KafkaWithSchemaRegistryOperations { self: Suite =>
+
+  override protected def resolveModelConfig(config: Config): Config = {
+    super
+      .resolveModelConfig(config)
+      // schema.registry.url have to be defined even for MockSchemaRegistryClient
+      .withValue(
+        KafkaConfigProperties.property(kafkaComponentsConfigPrefix, "schema.registry.url"),
+        fromAnyRef("not_used")
+      )
+      // we turn off auto registration to do it on our own passing mocked schema registry client // meaningful only in Flink tests
+      .withValue(
+        s"$kafkaComponentsConfigPrefix.kafkaEspProperties.autoRegisterRecordSchemaIdSerialization",
+        fromAnyRef(false)
+      )
+  }
+
+}

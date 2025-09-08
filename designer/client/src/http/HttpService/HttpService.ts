@@ -6,188 +6,61 @@ import FileSaver from "file-saver";
 import i18next from "i18next";
 import type { Moment } from "moment";
 
-import type { ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
-import type { GenericValidationData, GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
-import api from "../api";
-import type { UserData } from "../common/models/User";
-import SystemUtils, { AUTHORIZATION_HEADER_NAMESPACE } from "../common/SystemUtils";
-import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
-import type { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
-import type { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
-import { extractStickyNotesFromNodes } from "../components/graph/utils/stickyNotesUtils";
-import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
-import type { TestingEventParameters, TestingEventParametersRequestData } from "../components/modals/Testing/TestingEventsTable";
-import type { ProcessName, ProcessStateType, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
-import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../components/toolbars/activities/types";
-import { ActivityTypesRelatedToExecutions } from "../components/toolbars/activities/types";
+import type { ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../../actions/nk";
+import type { GenericValidationData, GenericValidationRequest, TestAdhocValidationRequest } from "../../actions/nk/adhocTesting";
+import api from "../../api";
+import type { UserData } from "../../common/models/User";
+import SystemUtils, { AUTHORIZATION_HEADER_NAMESPACE } from "../../common/SystemUtils";
+import { withoutHackOfEmptyEdges } from "../../components/graph/GraphPartialsInTS/EdgeUtils";
+import type { ExpressionSuggestion } from "../../components/graph/node-modal/editors/expression/ExpressionSuggester";
+import type { AdditionalInfo } from "../../components/graph/node-modal/NodeAdditionalInfoBox";
+import { extractStickyNotesFromNodes } from "../../components/graph/utils/stickyNotesUtils";
+import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../../components/Labels/types";
+import type { ProcessName, ProcessVersionId, Scenario, StatusDefinitionType } from "../../components/Process/types";
+import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../../components/toolbars/activities/types";
+import { ActivityTypesRelatedToExecutions } from "../../components/toolbars/activities/types";
 import type {
-    ScenarioActionResultDeploySuccess,
     ScenarioActionResult,
-    ScenarioActionUnhandledError,
+    ScenarioActionResultDeploySuccess,
     ScenarioActionResultSuccess,
-} from "../components/toolbars/scenarioActions/buttons/types";
-import { ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
-import type { ToolbarsConfig } from "../components/toolbarSettings/types";
-import type { ProcessVersionValidationResponse } from "../components/versionControl/types";
-import { API_URL } from "../config";
-import type { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
-import type { BackendNotification } from "../containers/Notifications";
-import { handleAxiosError } from "../devHelpers";
-import type { AuthenticationSettings } from "../reducers/settings";
-import type { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
-import type { Instant, WithId } from "../types/common";
-import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
-import type { ProcessCounts, ResultsWithCountsDto } from "./resultsWithCountsDto";
+    ScenarioActionUnhandledError,
+} from "../../components/toolbars/scenarioActions/buttons/types";
+import { ScenarioActionResultType } from "../../components/toolbars/scenarioActions/buttons/types";
+import type { ToolbarsConfig } from "../../components/toolbarSettings/types";
+import type { ProcessVersionValidationResponse } from "../../components/versionControl/types";
+import { API_URL } from "../../config";
+import type { EventTrackingSelectorType, EventTrackingType } from "../../containers/event-tracking";
+import type { BackendNotification } from "../../containers/Notifications";
+import { handleAxiosError } from "../../devHelpers";
+import type { AuthenticationSettings } from "../../reducers/settings";
+import type { Expression, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
+import type { WithId } from "../../types/common";
+import type { TestingEventParameters, TestingEventParametersRequestData } from "../components/modals/Testing/TestingEventsTable";
+import { fixAggregateParameters, fixBranchParametersTemplate } from "../parametersUtils";
+import type { ProcessCounts, ResultsWithCountsDto } from "../resultsWithCountsDto";
+import type {
+    AppBuildInfo,
+    ComponentType,
+    ComponentUsageType,
+    DeployResponse,
+    DictOption,
+    ExpressionSuggestionRequest,
+    FetchProcessQueryParams,
+    HealthCheckProcessDeploymentType,
+    HealthCheckResponse,
+    NodesDeploymentData,
+    NotificationActions,
+    ProcessDefinitionDataDictOption,
+    PropertiesValidationRequest,
+    ResponseStatus,
+    ScenarioGraphSource,
+    ScenarioParametersCombinations,
+    SourceWithParametersTest,
+    StatusesType,
+} from "./types";
+import { HealthState } from "./types";
 
-type HealthCheckProcessDeploymentType = {
-    status: string;
-    message: null | string;
-    processes: null | Array<string>;
-};
-
-export type HealthCheckResponse = {
-    state: HealthState;
-    error?: string;
-    processes?: string[];
-};
-
-export enum HealthState {
-    ok = "ok",
-    error = "error",
-}
-
-export type FetchProcessQueryParams = Partial<{
-    search: string;
-    categories: string;
-    isFragment: boolean;
-    isArchived: boolean;
-    isDeployed: boolean;
-}>;
-
-export type StatusesType = Record<Scenario["name"], ProcessStateType>;
-
-export interface AppBuildInfo {
-    name: string;
-    gitCommit: string;
-    buildTime: string;
-    version: string;
-    processingType: any;
-}
-
-export type ComponentActionType = {
-    id: string;
-    title: string;
-    icon: string;
-    url?: string;
-};
-
-export type ComponentType = {
-    id: string;
-    name: string;
-    icon: string;
-    componentType: string;
-    componentGroupName: string;
-    categories: string[];
-    actions: ComponentActionType[];
-    usageCount: number;
-    allowedProcessingModes: ProcessingMode[];
-    links: Array<{
-        id: string;
-        title: string;
-        icon: string;
-        url: string;
-    }>;
-    label: string;
-};
-
-export type SourceWithParametersTest = {
-    sourceId: string;
-    parameterExpressions: {
-        [paramName: string]: Expression;
-    };
-};
-
-export type NodesDeploymentData = Record<NodeId, Record<string, string>>;
-
-export type ScenarioGraphSource = {
-    type: ScenarioGraphSourceType;
-    scenarioGraph?: ScenarioGraph;
-    scenarioLabels?: string[];
-    baseScenarioVersionId?: number;
-};
-
-export enum ScenarioGraphSourceType {
-    FROM_GRAPH = "FromGraph",
-}
-
-type DeployResponse = {
-    deployedScenarioVersionId: number;
-};
-
-export type NodeUsageData = {
-    fragmentNodeId?: string;
-    nodeId: string;
-    type: string;
-};
-
-export type ComponentUsageType = {
-    name: string;
-    nodesUsagesData: NodeUsageData[];
-    isArchived: boolean;
-    isFragment: boolean;
-    processCategory: string;
-    modificationDate: Instant;
-    modifiedBy: string;
-    createdAt: Instant;
-    createdBy: string;
-};
-
-export type NotificationActions = {
-    success(message: string): void;
-    error(message: string, error: string, showErrorText: boolean): void;
-    warn(message: string): void;
-};
-
-export interface PropertiesValidationRequest {
-    name: string;
-    additionalFields: ProcessAdditionalFields;
-}
-
-export interface ExpressionSuggestionRequest {
-    expression: Expression;
-    caretPosition2d: CaretPosition2d;
-    variableTypes: VariableTypes;
-}
-
-export enum ProcessingMode {
-    "streaming" = "Unbounded-Stream",
-    "requestResponse" = "Request-Response",
-    "batch" = "Bounded-Stream",
-}
-
-export interface ScenarioParametersCombination {
-    processingMode: ProcessingMode;
-    category: string;
-    engineSetupName: string;
-}
-
-export interface ScenarioParametersCombinations {
-    combinations: ScenarioParametersCombination[];
-    engineSetupErrors: Record<string, string[]>;
-}
-
-export type ProcessDefinitionDataDictOption = {
-    key: string;
-    label: string;
-};
-type DictOption = {
-    id: string;
-    label: string;
-};
-
-type ResponseStatus = { status: "success"; data?: any } | { status: "error"; error: AxiosError<string> };
-
-class HttpService {
+export class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
     #notificationActions: NotificationActions = null;
     #skipResultsPerTransition = null;
@@ -1232,5 +1105,3 @@ class HttpService {
         return error.message === "canceled";
     }
 }
-
-export default new HttpService();

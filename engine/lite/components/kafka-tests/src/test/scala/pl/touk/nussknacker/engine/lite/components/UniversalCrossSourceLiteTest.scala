@@ -38,6 +38,8 @@ class UniversalCrossSourceLiteTest
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._
 
+  override protected val kafkaComponentsConfigPrefix: String = "kafka"
+
   val avroSchema: avro.Schema = AvroTestData.personSchema
   val jsonSchema: Schema      = JsonTestData.schemaPerson
 

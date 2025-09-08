@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, Fli
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.flink.util.keyed
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValueMapper
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
 import pl.touk.nussknacker.engine.util.KeyedValue
@@ -27,7 +27,7 @@ class FlinkKafkaUniversalSink(
     preparedTopic: PreparedKafkaTopic[TopicName.ForSink],
     key: LazyParameter[AnyRef],
     value: LazyParameter[AnyRef],
-    kafkaConfig: KafkaConfig,
+    kafkaComponentsConfig: KafkaComponentsConfig,
     serializationSchema: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]],
     clientId: String,
     schema: NkSerializableParsedSchema[ParsedSchema],
@@ -38,7 +38,7 @@ class FlinkKafkaUniversalSink(
 
   type Value = KeyedValue[AnyRef, AnyRef]
 
-  private lazy val schemaSupportDispatcher = UniversalSchemaSupportDispatcher(kafkaConfig)
+  private lazy val schemaSupportDispatcher = UniversalSchemaSupportDispatcher(kafkaComponentsConfig)
 
   override def registerSink(
       dataStream: DataStream[ValueWithContext[Value]],
@@ -69,7 +69,7 @@ class FlinkKafkaUniversalSink(
 
   @nowarn("cat=deprecation")
   private def toFlinkFunction: SinkFunction[KeyedValue[AnyRef, AnyRef]] = {
-    PartitionByKeyFlinkKafkaProducer(kafkaConfig, preparedTopic.prepared, serializationSchema, clientId)
+    PartitionByKeyFlinkKafkaProducer(kafkaComponentsConfig, preparedTopic.prepared, serializationSchema, clientId)
   }
 
   class EncodeAvroRecordFunction(flinkNodeContext: FlinkCustomNodeContext)
@@ -86,7 +86,7 @@ class FlinkKafkaUniversalSink(
     override def open(openContext: OpenContext): Unit = {
       super.open(openContext)
       encodeRecord = schemaSupportDispatcher
-        .forSchemaType(schema.getParsedSchema.schemaType())
+        .forParsedSchema(schema.getParsedSchema)
         .formValueEncoder(schema.getParsedSchema, validationMode)
     }
 

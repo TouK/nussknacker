@@ -6,7 +6,8 @@ import TreeView from "react-treeview";
 import { toggleToolboxGroup } from "../../../actions/nk/toolbars";
 import { getClosedComponentGroups, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
-import type { ComponentGroup, NodeType } from "../../../types";
+import type { ComponentGroup } from "../../../types";
+import type { ToolProps } from "./Tool";
 import Tool from "./Tool";
 
 function isEmptyComponentGroup(componentGroup: ComponentGroup) {
@@ -25,14 +26,14 @@ function useStateToggleWithReset(resetCondition: boolean, initialState = false):
     return [flag, toggle];
 }
 
-interface Props {
+export type ToolboxComponentGroupProps = {
     componentGroup: ComponentGroup;
     highlights?: string[];
     flatten?: boolean;
     addTreeElement?: React.ReactElement | null;
     addGroupLabelElement?: React.ReactElement | null;
-    onSelect?: (item?: NodeType) => void;
-}
+    toolSelect?: Pick<ToolProps, "onClick" | "onDragEnd">;
+};
 
 export function ToolboxComponentGroup({
     addGroupLabelElement,
@@ -40,8 +41,8 @@ export function ToolboxComponentGroup({
     componentGroup,
     flatten,
     highlights = [],
-    onSelect,
-}: Props): JSX.Element {
+    toolSelect,
+}: ToolboxComponentGroupProps): JSX.Element {
     const dispatch = useAppDispatch();
     const closedComponentGroups = useAppSelector(getClosedComponentGroups);
     const { name } = componentGroup;
@@ -87,13 +88,11 @@ export function ToolboxComponentGroup({
                     key={component.componentId}
                     highlights={highlights}
                     disabled={component.disabled ? component.disabled() : false}
-                    onClick={onSelect}
-                    onDragEnd={(item, monitor) => {
-                        if (monitor.didDrop()) onSelect();
-                    }}
+                    onClick={toolSelect?.onClick}
+                    onDragEnd={toolSelect?.onDragEnd}
                 />
             )),
-        [componentGroup.components, highlights, onSelect],
+        [componentGroup.components, highlights, toolSelect?.onClick, toolSelect?.onDragEnd],
     );
 
     const collapsed = useMemo(

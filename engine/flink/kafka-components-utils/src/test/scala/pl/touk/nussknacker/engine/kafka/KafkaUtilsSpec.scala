@@ -9,16 +9,18 @@ import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.scalatest.funsuite.AnyFunSuite
-import pl.touk.nussknacker.test.WithModelConfig
 
 import java.lang
 
-class KafkaUtilsSpec extends AnyFunSuite with WithModelConfig {
+class KafkaUtilsSpec extends AnyFunSuite {
   import KafkaUtilsSpec._
 
   // This test can be removed when code in Nu will start using KafkaSource
   test("test KafkaSource creation with defaults set by KafkaUtils") {
-    val properties = KafkaUtils.toConsumerProperties(KafkaConfig.parseConfig(modelConfig), None)
+    val properties = KafkaUtils.toConsumerProperties(
+      KafkaComponentsConfig(kafkaProperties = Map("bootstrap.servers" -> "localhost:9200")),
+      None
+    )
 
     def createSource(): Unit = {
       KafkaSource
@@ -42,7 +44,10 @@ class KafkaUtilsSpec extends AnyFunSuite with WithModelConfig {
   // This test can be removed when code in Nu will start using KafkaSource.
   // It's here to make sure that we would be safe if Flink made KafkaSink's sanity checks as strict as in KafkaSource
   test("test KafkaSink creation with defaults set by KafkaUtils") {
-    val properties = KafkaUtils.toProducerProperties(KafkaConfig.parseConfig(modelConfig), clientId = "test")
+    val properties = KafkaUtils.toProducerProperties(
+      KafkaComponentsConfig(kafkaProperties = Map("bootstrap.servers" -> "localhost:9200")),
+      clientId = "test"
+    )
 
     def createSink(): Unit = {
       KafkaSink

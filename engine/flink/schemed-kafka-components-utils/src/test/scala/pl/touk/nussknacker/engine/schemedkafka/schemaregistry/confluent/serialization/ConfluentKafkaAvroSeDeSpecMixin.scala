@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.seriali
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
+import org.scalatest.Suite
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.kafka.{serialization, KafkaClient}
@@ -16,7 +17,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
 }
 import pl.touk.nussknacker.engine.util.KeyedValue
 
-trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDrivenPropertyChecks {
+trait ConfluentKafkaAvroSeDeSpecMixin extends KafkaSchemaRegistryMixin with TableDrivenPropertyChecks { self: Suite =>
 
   object MockSchemaRegistry {
     final val fullNameTopic = "full-name"

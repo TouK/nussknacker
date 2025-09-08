@@ -6,19 +6,21 @@ import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.{ModelConfig, ModelData}
+import pl.touk.nussknacker.engine.ModelConfig.JsonLikeValuesEnteringMode
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.{CorrectExceptionHandlingSpec, FlinkSpec}
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
+import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaSchemaRegistryMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.FullNameV1
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
   MockSchemaRegistryClientFactory,
@@ -31,9 +33,10 @@ class KafkaUniversalSinkExceptionHandlingSpec
     extends AnyFunSuite
     with FlinkSpec
     with Matchers
-    with SchemaRegistryMixin
-    with KafkaAvroSinkSpecMixin
+    with KafkaSchemaRegistryMixin
     with CorrectExceptionHandlingSpec {
+
+  override protected val kafkaComponentsConfigPrefix: String = "components.kafka.config"
 
   private val topic = TopicName.ForSink("topic1")
 
@@ -49,13 +52,14 @@ class KafkaUniversalSinkExceptionHandlingSpec
     registerSchema(topic.toUnspecialized, FullNameV1.schema, isKey = false)
 
     val schemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
-    val kafkaConfig                 = KafkaConfig.parseConfig(modelConfig)
-    val universalProvider           = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
+    val kafkaComponentsConfig = KafkaComponentsConfig.parseConfig(modelConfig.getConfig(kafkaComponentsConfigPrefix))
+    val universalProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaComponentsConfig)
     val kafkaComponent = new UniversalKafkaSinkFactory(
       schemaRegistryClientFactory,
       universalProvider,
-      ModelConfig.parse(modelConfig),
-      kafkaConfig,
+      kafkaComponentsConfig,
+      NamingStrategy.Disabled,
+      JsonLikeValuesEnteringMode.DynamicForms,
       FlinkKafkaUniversalSinkImplFactory
     )
 

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionConsumerConfig
 import pl.touk.nussknacker.engine.lite.{
   InterpreterTestRunner,
@@ -62,7 +62,7 @@ object KafkaTransactionalScenarioInterpreter {
       interpreterTimeout: Duration = 10 seconds,
       publishTimeout: Duration = 5 seconds,
       waitAfterFailureDelay: FiniteDuration = 10 seconds,
-      kafka: KafkaConfig,
+      kafka: KafkaComponentsConfig,
       exceptionHandlingConfig: KafkaExceptionConsumerConfig,
       kafkaTransactionsEnabled: Option[Boolean] = None
   )

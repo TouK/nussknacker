@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.scalatest.OptionValues.convertOptionToValuable
+import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelConfig.JsonLikeValuesEnteringMode
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
@@ -17,6 +18,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   JsonTemplateParameterEditor,
   SpelParameterEditor
 }
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext.LiveRuntime
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -31,28 +33,47 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
-import pl.touk.nussknacker.engine.schemedkafka.schema.{FullNameV1, PaymentV1}
+import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaSchemaRegistryMixin
+import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientBuilder
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
+  MockSchemaRegistryClientFactory,
+  UniversalSchemaBasedSerdeProvider
+}
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpecMixin {
+class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegistryMixin {
 
   import pl.touk.nussknacker.test.LiteralSpELImplicits._
 
   import KafkaAvroSinkMockSchemaRegistry._
 
-  override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
+  override protected def kafkaComponentsConfigPrefix: String = "not-important"
 
-  override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = factory
+  override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 
   private lazy val defaultUniversalSinkFactory: UniversalKafkaSinkFactory =
     universalSinkFactory(jsonLikeValuesEnteringMode = JsonLikeValuesEnteringMode.DynamicForms)
 
   private lazy val universalKafkaSinkFactoryWithTemplateParam: UniversalKafkaSinkFactory =
     universalSinkFactory(jsonLikeValuesEnteringMode = JsonLikeValuesEnteringMode.SingleJsonTemplateParameter)
+
+  protected def universalSinkFactory(
+      jsonLikeValuesEnteringMode: JsonLikeValuesEnteringMode
+  ): UniversalKafkaSinkFactory = {
+    val universalPayload = UniversalSchemaBasedSerdeProvider.create(factory, kafkaComponentsConfig)
+    new UniversalKafkaSinkFactory(
+      factory,
+      universalPayload,
+      kafkaComponentsConfig,
+      NamingStrategy.Disabled,
+      jsonLikeValuesEnteringMode,
+      FlinkKafkaUniversalSinkImplFactory
+    )
+  }
 
   private implicit val sinkNodeId: NodeId = NodeId("id")
 
@@ -86,7 +107,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       sinkKeyParamName            -> "".spel,
       sinkValueParamName          -> FullNameV1.exampleData.toSpELLiteral.spel,
       sinkRawEditorParamName      -> "true".spel,
-      sinkValidationModeParamName -> validationModeParam(ValidationMode.strict),
+      sinkValidationModeParamName -> s"'${ValidationMode.strict.name}'".spel,
       topicParamName              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'".spel,
       schemaVersionParamName      -> "'1'".spel
     )(defaultUniversalSinkFactory)
@@ -99,7 +120,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       sinkKeyParamName            -> "".spel,
       ParameterName("mapSimple")  -> """{id:{id:"10"}}""".spel,
       sinkRawEditorParamName      -> "false".spel,
-      sinkValidationModeParamName -> validationModeParam(ValidationMode.strict),
+      sinkValidationModeParamName -> s"'${ValidationMode.strict.name}'".spel,
       topicParamName              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'".spel,
       schemaVersionParamName      -> "'4'".spel
     )(defaultUniversalSinkFactory)
@@ -112,7 +133,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       sinkKeyParamName            -> "".spel,
       sinkValueParamName          -> PaymentV1.exampleData.toSpELLiteral.spel,
       sinkRawEditorParamName      -> "true".spel,
-      sinkValidationModeParamName -> validationModeParam(ValidationMode.strict),
+      sinkValidationModeParamName -> s"'${ValidationMode.strict.name}'".spel,
       topicParamName              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'".spel,
       schemaVersionParamName      -> s"'3'".spel
     )(defaultUniversalSinkFactory)
@@ -125,7 +146,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       sinkKeyParamName            -> "".spel,
       sinkValueParamName          -> "null".spel,
       sinkRawEditorParamName      -> "true".spel,
-      sinkValidationModeParamName -> validationModeParam(ValidationMode.strict),
+      sinkValidationModeParamName -> s"'${ValidationMode.strict.name}'".spel,
       topicParamName              -> "'tereferer'".spel,
       schemaVersionParamName      -> "'1'".spel
     )(defaultUniversalSinkFactory)
@@ -153,7 +174,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       sinkKeyParamName            -> "".spel,
       sinkValueParamName          -> "null".spel,
       sinkRawEditorParamName      -> "true".spel,
-      sinkValidationModeParamName -> validationModeParam(ValidationMode.strict),
+      sinkValidationModeParamName -> s"'${ValidationMode.strict.name}'".spel,
       topicParamName              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'".spel,
       schemaVersionParamName      -> "'343543'".spel
     )(defaultUniversalSinkFactory)
@@ -172,7 +193,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       sinkKeyParamName            -> "".spel,
       sinkValueParamName          -> "''".spel,
       sinkRawEditorParamName      -> "true".spel,
-      sinkValidationModeParamName -> validationModeParam(ValidationMode.strict),
+      sinkValidationModeParamName -> s"'${ValidationMode.strict.name}'".spel,
       topicParamName              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'".spel,
       schemaVersionParamName      -> s"'3'".spel
     )(defaultUniversalSinkFactory)
@@ -515,6 +536,27 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
     )(universalKafkaSinkFactoryWithTemplateParam)
 
     validationForSinkDefaultValue.errors shouldBe List.empty
+
+  }
+
+  private object KafkaAvroSinkMockSchemaRegistry {
+
+    val fullnameTopic: String    = "fullname"
+    val exampleAvroTopic: String = "example-avro"
+    val exampleJsonTopic: String = "example-json"
+
+    val schemaRegistryMockClient: CSchemaRegistryClient = new MockConfluentSchemaRegistryClientBuilder()
+      .register(fullnameTopic, FullNameV1.schema, 1, isKey = false)
+      .register(fullnameTopic, FullNameV2.schema, 2, isKey = false)
+      .register(fullnameTopic, PaymentV1.schema, 3, isKey = false)
+      .register(fullnameTopic, NestedRecord.schema, 4, isKey = false)
+      .register(exampleAvroTopic, AllTypesAvroSchemaWithDefaultValues.schema, 1, isKey = false)
+      .register(exampleAvroTopic, AllTypesAvroSchemaWithoutDefaultValues.schema, 2, isKey = false)
+      .register(exampleJsonTopic, AllTypesJsonSchemaWithDefaultValues.schema, 1, isKey = false)
+      .register(exampleJsonTopic, AllTypesJsonSchemaWithoutDefaultValues.schema, 2, isKey = false)
+      .build
+
+    val factory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
 
   }
 

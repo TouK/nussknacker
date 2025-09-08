@@ -4,7 +4,7 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
 import org.apache.avro.io.DecoderFactory
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroRecordDeserializer, DatumReaderWriterMixin}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serializ
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
 
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 
 trait UniversalSchemaPayloadDeserializer {
 
@@ -24,7 +25,7 @@ trait UniversalSchemaPayloadDeserializer {
 }
 
 object AvroPayloadDeserializer {
-  def apply(config: KafkaConfig) =
+  def apply(config: KafkaComponentsConfig) =
     new AvroPayloadDeserializer(GenericRecordSchemaIdSerializationSupport(config), DecoderFactory.get())
 }
 
@@ -79,6 +80,20 @@ object JsonSchemaPayloadDeserializer extends UniversalSchemaPayloadDeserializer 
     val bytes = new Array[Byte](buffer.remaining())
     buffer.get(bytes)
     jsonSchema.deserializer.deserialize(bytes)
+  }
+
+}
+
+object PlainTextPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
+
+  override def deserialize(
+      expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]],
+      writerSchemaData: RuntimeSchemaData[ParsedSchema],
+      buffer: ByteBuffer
+  ): Any = {
+    val bytes = new Array[Byte](buffer.remaining())
+    buffer.get(bytes)
+    new String(bytes, StandardCharsets.UTF_8)
   }
 
 }

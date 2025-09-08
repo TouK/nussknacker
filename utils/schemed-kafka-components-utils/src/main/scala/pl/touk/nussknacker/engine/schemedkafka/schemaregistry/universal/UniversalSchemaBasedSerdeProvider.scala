@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ChainedSchemaIdFromMessageExtractor,
   SchemaRegistryClient,
@@ -26,18 +26,18 @@ object UniversalSchemaBasedSerdeProvider {
 
   def create(
       schemaRegistryClientFactory: SchemaRegistryClientFactory,
-      kafkaConfig: KafkaConfig
+      kafkaComponentsConfig: KafkaComponentsConfig
   ): UniversalSchemaBasedSerdeProvider = {
     val deserializationSchemaFactory = new UniversalKafkaDeserializationSchemaFactory(
-      kafkaConfig,
+      kafkaComponentsConfig,
       schemaRegistryClientFactory,
       createSchemaIdFromMessageExtractor
     )
     new UniversalSchemaBasedSerdeProvider(
-      new UniversalKafkaSerializationSchemaFactory(schemaRegistryClientFactory, kafkaConfig),
+      new UniversalKafkaSerializationSchemaFactory(schemaRegistryClientFactory, kafkaComponentsConfig),
       deserializationSchemaFactory,
       new UniversalToJsonFormatterFactory(
-        kafkaConfig,
+        kafkaComponentsConfig,
         createSchemaIdFromMessageExtractor,
         deserializationSchemaFactory
       ),

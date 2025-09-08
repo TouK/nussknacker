@@ -1,6 +1,7 @@
 import { curryRight } from "lodash";
 
-import type { ComponentGroup } from "../../types";
+import NodeUtils from "../../components/graph/NodeUtils";
+import type { ComponentGroup, NodeType, ProcessDefinitionData } from "../../types";
 
 function replaceOrAdd<T>(collection: T[] = [], predicate: (item: T) => boolean, replaceOrAddFn: (item?: T) => T): T[] {
     const index = collection.findIndex(predicate);
@@ -50,3 +51,8 @@ export const appendFragmentCreator = curryRight((groups: ComponentGroup[], isFra
         }),
     );
 });
+
+export function isFragmentCreator(node: NodeType, processDefinitionData: ProcessDefinitionData) {
+    if (NodeUtils.isAvailable(node, processDefinitionData)) return false;
+    return node.ref.id === FRAGMENT_TEMPLATE_ID;
+}
