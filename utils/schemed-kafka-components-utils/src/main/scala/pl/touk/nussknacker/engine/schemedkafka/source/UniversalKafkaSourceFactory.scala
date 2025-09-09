@@ -101,14 +101,21 @@ class UniversalKafkaSourceFactory(
           (`dataSampleParamName`, DefinedEagerParameter(_, typingResult)) :: Nil,
           _
         ) if contentType == ContentTypes.JSON.toString =>
-      val preparedTopic = prepareTopic(topic)
+      val preparedTopic          = prepareTopic(topic)
+      val dataSampleTypingResult = TypingResultFromJsonSampleTypeDeterminer(typingResult)
       val valueValidationResult = Valid(
         (
           Some(runtimeDataForJsonSchema),
-          TypingResultFromJsonSampleTypeDeterminer(typingResult)
+          dataSampleTypingResult
         )
       )
-      val validFinalState = prepareFinalState(preparedTopic, valueValidationResult, dependencies, step.parameters)
+      val validFinalState = prepareFinalState(
+        preparedTopic,
+        valueValidationResult,
+        Some(dataSampleTypingResult),
+        dependencies,
+        step.parameters
+      )
       NextParameters(
         prepareWatermarkStrategyParameters(outputValidationOrEmpty(inputContext, validFinalState)),
         state = Some(
@@ -122,7 +129,7 @@ class UniversalKafkaSourceFactory(
         ) if contentType == ContentTypes.JSON.toString =>
       val preparedTopic         = prepareTopic(topic)
       val valueValidationResult = Valid((Some(runtimeDataForJsonSchema), Typed.json))
-      val validFinalState       = prepareFinalState(preparedTopic, valueValidationResult, dependencies, step.parameters)
+      val validFinalState = prepareFinalState(preparedTopic, valueValidationResult, None, dependencies, step.parameters)
 
       NextParameters(
         prepareWatermarkStrategyParameters(outputValidationOrEmpty(inputContext, validFinalState)),
@@ -135,7 +142,7 @@ class UniversalKafkaSourceFactory(
         ) if contentType == ContentTypes.PLAIN.toString =>
       val preparedTopic         = prepareTopic(topic)
       val valueValidationResult = Valid((Some(runtimeDataForPlainSchema), Typed[String]))
-      val validFinalState       = prepareFinalState(preparedTopic, valueValidationResult, dependencies, step.parameters)
+      val validFinalState = prepareFinalState(preparedTopic, valueValidationResult, None, dependencies, step.parameters)
       NextParameters(
         prepareWatermarkStrategyParameters(outputValidationOrEmpty(inputContext, validFinalState)),
         state = Some(BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState(validFinalState))
@@ -158,7 +165,7 @@ class UniversalKafkaSourceFactory(
               Some(schemaVersionParamName)
             )
         }
-      val validFinalState = prepareFinalState(preparedTopic, valueValidationResult, dependencies, step.parameters)
+      val validFinalState = prepareFinalState(preparedTopic, valueValidationResult, None, dependencies, step.parameters)
 
       NextParameters(
         prepareWatermarkStrategyParameters(outputValidationOrEmpty(inputContext, validFinalState)),
@@ -220,6 +227,7 @@ class UniversalKafkaSourceFactory(
         ProcessCompilationError,
         (Option[RuntimeSchemaData[ParsedSchema]], TypingResult)
       ],
+      dataSampleTypingResult: Option[TypingResult],
       dependencies: List[NodeDependencyValue],
       parameters: List[(ParameterName, DefinedParameter)]
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ImplementationUniversalKafkaSourceFactoryState] = {
@@ -236,7 +244,12 @@ class UniversalKafkaSourceFactory(
     (keyValidationResult.toValidatedNel, valueValidationResult.toValidatedNel).mapN {
       case ((keyRuntimeSchema, keyType), (valueRuntimeSchema, valueType)) =>
         val finalInitializer = prepareContextInitializer(dependencies, parameters, keyType, valueType)
-        ImplementationUniversalKafkaSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
+        ImplementationUniversalKafkaSourceFactoryState(
+          keyRuntimeSchema,
+          valueRuntimeSchema,
+          finalInitializer,
+          dataSampleTypingResult
+        )
     }
   }
 
@@ -303,12 +316,13 @@ class UniversalKafkaSourceFactory(
     val ImplementationUniversalKafkaSourceFactoryState(
       keySchemaDataUsedInRuntime,
       valueSchemaUsedInRuntime,
-      kafkaContextInitializer
+      kafkaContextInitializer,
+      dataSampleTypingResult
     ) = finalState.get
 
     // prepare KafkaDeserializationSchema based on given key and value schema (with schema evolution)
     val deserializationSchema = schemaBasedMessagesSerdeProvider.deserializationSchemaFactory
-      .create[Any, Any](keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime)
+      .create[Any, Any](keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime, dataSampleTypingResult)
 
     val recordFormatter = schemaBasedMessagesSerdeProvider.recordFormatterFactory.create(schemaRegistryClient)
 
@@ -459,7 +473,8 @@ object UniversalKafkaSourceFactory {
   case class ImplementationUniversalKafkaSourceFactoryState(
       keySchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       valueSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-      contextInitializer: ContextInitializer[ConsumerRecord[Any, Any]]
+      contextInitializer: ContextInitializer[ConsumerRecord[Any, Any]],
+      dataSampleTypingResult: Option[TypingResult]
   ) extends UniversalKafkaSourceFactoryState
 
   // Used by external project

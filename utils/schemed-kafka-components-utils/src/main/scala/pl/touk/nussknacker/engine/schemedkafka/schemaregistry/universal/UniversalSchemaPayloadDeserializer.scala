@@ -1,9 +1,13 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
+import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
 import org.apache.avro.io.DecoderFactory
+import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroRecordDeserializer, DatumReaderWriterMixin}
@@ -63,7 +67,7 @@ object JsonPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
     val avroSchema = writerSchemaData.schema.rawSchema().asInstanceOf[Schema]
     val bytes      = new Array[Byte](buffer.remaining())
     buffer.get(bytes)
-    JsonPayloadToAvroConverter.convert(buffer.array(), avroSchema)
+    JsonPayloadToAvroConverter.convert(bytes, avroSchema)
   }
 
 }
@@ -97,3 +101,27 @@ object PlainTextPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
   }
 
 }
+
+class JsonTypingResultPayloadDeserializer(typingResult: TypingResult) extends UniversalSchemaPayloadDeserializer {
+
+  override def deserialize(
+      expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]],
+      writerSchemaData: RuntimeSchemaData[ParsedSchema],
+      buffer: ByteBuffer
+  ): Any = {
+    val bytes = new Array[Byte](buffer.remaining())
+    buffer.get(bytes)
+
+    CirceUtil
+      .decodeJson[Json](bytes)
+      .flatMap(json =>
+        FromJsonTypingResultBasedDecoder
+          .decodeValue(typingResult, json.hcursor)
+      )
+      .fold(ex => throw new PayloadDeserializationException(ex), identity)
+  }
+
+}
+
+final class PayloadDeserializationException(cause: Exception)
+    extends RuntimeException(s"Exception during payload deserialization: ${cause.getMessage}", cause)

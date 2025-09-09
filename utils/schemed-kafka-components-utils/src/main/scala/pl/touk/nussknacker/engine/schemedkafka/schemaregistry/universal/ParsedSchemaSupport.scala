@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   SpelTemplateParameterEditor
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.json.{JsonSchemaBasedParameter, JsonTemplateFromJsonSchemaDeterminer}
@@ -39,6 +39,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serializ
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.ConfluentJsonPayloadKafkaSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AvroMessageReader
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.JsonSchemaSupport.defaultJsonTemplateFor
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.NoSchemaJsonSupport.jsonSupport
 import pl.touk.nussknacker.engine.schemedkafka.typed.{
   AvroSchemaTypeDefinitionExtractor,
   AvroSchemaTypeDefinitionExtractorWithUnderlyingMap
@@ -246,11 +247,12 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
 
 }
 
-object NoSchemaJsonSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
+object NoSchemaJsonSupport extends UniversalSchemaSupport {
 
   private final val jsonSupport = JsonSchemaSupport
 
-  override def payloadDeserializer: UniversalSchemaPayloadDeserializer = jsonSupport.payloadDeserializer
+  override val payloadDeserializer: UniversalSchemaPayloadDeserializer =
+    new JsonTypingResultPayloadDeserializer(Unknown)
 
   override def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, isKey: Boolean): Serializer[Any] =
     jsonSupport.serializer(schemaOpt, c, isKey)
