@@ -4,6 +4,7 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Deserializer
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
@@ -13,10 +14,14 @@ class UniversalKafkaDeserializer[T](
     kafkaComponentsConfig: KafkaComponentsConfig,
     schemaIdFromMessageExtractor: ChainedSchemaIdFromMessageExtractor,
     readerSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-    isKey: Boolean
+    isKey: Boolean,
+    dataSampleTypingResult: Option[TypingResult]
 ) extends Deserializer[T] {
 
   private val schemaSupportDispatcher = UniversalSchemaSupportDispatcher(kafkaComponentsConfig)
+
+  private val deserializerBasedOnDataSampleOpt = dataSampleTypingResult
+    .map(new JsonTypingResultPayloadDeserializer(_))
 
   override def deserialize(topic: String, data: Array[Byte]): T = {
     throw new IllegalAccessException(
@@ -61,9 +66,11 @@ class UniversalKafkaDeserializer[T](
     val writerSchemaData =
       new RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](writerSchema), Some(writerSchemaId.value))
 
-    schemaSupportDispatcher
-      .forParsedSchema(writerSchema)
-      .payloadDeserializer
+    val payloadDeserializer = deserializerBasedOnDataSampleOpt.getOrElse(
+      schemaSupportDispatcher.forParsedSchema(writerSchema).payloadDeserializer
+    )
+
+    payloadDeserializer
       .deserialize(readerSchemaDataOpt, writerSchemaData, writerSchemaId.buffer)
       .asInstanceOf[T]
   }
