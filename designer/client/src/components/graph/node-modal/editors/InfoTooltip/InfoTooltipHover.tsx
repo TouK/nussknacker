@@ -1,7 +1,7 @@
 import { Tooltip } from "@mui/material";
 import type { TooltipProps } from "@mui/material/Tooltip/Tooltip";
 import type { PropsWithChildren } from "react";
-import React from "react";
+import React, { useRef, useCallback, useEffect } from "react";
 
 import { StyledInfoChildrenWrapper, StyledInfoMarkdown } from "./StyledInfo";
 import { useTooltip } from "./useTooltip";
@@ -19,10 +19,37 @@ export const InfoTooltipHover = ({ title, className, children, customComponentsP
         enterDelay,
     });
 
+    // Delay closing to allow moving pointer from trigger to tooltip without flicker
+    const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const clearCloseTimer = useCallback(() => {
+        if (closeTimerRef.current) {
+            clearTimeout(closeTimerRef.current);
+            closeTimerRef.current = null;
+        }
+    }, []);
+    const scheduleClose = useCallback(() => {
+        clearCloseTimer();
+        closeTimerRef.current = setTimeout(() => {
+            handleSetTooltipClose();
+            closeTimerRef.current = null;
+        }, 300);
+    }, [clearCloseTimer, handleSetTooltipClose]);
+
+    useEffect(() => () => clearCloseTimer(), [clearCloseTimer]);
+
     return (
         <Tooltip
             title={
-                <div ref={tooltipRef}>
+                <div
+                    ref={tooltipRef}
+                    onPointerEnter={() => {
+                        clearCloseTimer();
+                        handleSetTooltipOpen();
+                    }}
+                    onPointerLeave={() => {
+                        scheduleClose();
+                    }}
+                >
                     <StyledInfoMarkdown>{title}</StyledInfoMarkdown>
                 </div>
             }
@@ -40,13 +67,16 @@ export const InfoTooltipHover = ({ title, className, children, customComponentsP
             <StyledInfoChildrenWrapper
                 onPointerEnter={(e) => {
                     if (e.pointerType === "mouse") {
+                        clearCloseTimer();
                         handleSetTooltipOpen();
                     }
                 }}
-                onPointerLeave={() => {
-                    handleSetTooltipClose();
+                onPointerLeave={(e) => {
+                    const relatedTarget = e.relatedTarget as Node | null;
+                    if (tooltipRef.current && relatedTarget && tooltipRef.current.contains(relatedTarget)) return; // heading into tooltip
+                    scheduleClose();
                 }}
-                onBlur={handleSetTooltipClose}
+                onBlur={scheduleClose}
             >
                 {children}
             </StyledInfoChildrenWrapper>
