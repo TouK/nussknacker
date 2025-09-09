@@ -56,7 +56,8 @@ class UniversalKafkaDeserializerTest
         kafkaComponentsConfig,
         schemaIdExtractor,
         Some(readerSchema),
-        isKey = false
+        isKey = false,
+        dataSampleTypingResult = None
       )
     )
 
@@ -162,7 +163,7 @@ class UniversalKafkaDeserializerTest
         val setup = createSetup(expectedRuntimeSchemaData.toParsedSchemaData)
         val deserializer =
           setup.provider.deserializationSchemaFactory
-            .create(keySchemaDataOpt = None, schemaDataOpt.map(_.toParsedSchemaData))
+            .create(keySchemaDataOpt = None, schemaDataOpt.map(_.toParsedSchemaData), None)
 
         val headers = if (shouldSendHeaders) {
           val givenObjSchemaId =

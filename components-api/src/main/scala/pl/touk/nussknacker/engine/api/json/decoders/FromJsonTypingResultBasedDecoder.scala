@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe._
 import org.apache.commons.lang3.LocaleUtils
 import org.springframework.util.StringUtils
-import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 
@@ -15,8 +15,6 @@ import java.time._
 import java.util.{Currency, Locale, UUID}
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
-
-import StandardTypesClasses._
 
 object FromJsonTypingResultBasedDecoder extends FromJsonTypingResultBasedDecoder
 

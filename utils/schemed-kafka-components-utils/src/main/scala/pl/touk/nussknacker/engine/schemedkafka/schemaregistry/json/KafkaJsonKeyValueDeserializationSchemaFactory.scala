@@ -4,6 +4,7 @@ import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
@@ -20,6 +21,7 @@ class KafkaJsonKeyValueDeserializationSchemaFactory(override protected val kafka
 
   override protected def createValueDeserializer[V](
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      dataSampleTypingResult: Option[TypingResult]
   ): Deserializer[V] =
     toJsonDeserializer.asInstanceOf[Deserializer[V]]
 

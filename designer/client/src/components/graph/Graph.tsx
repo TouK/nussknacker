@@ -199,7 +199,8 @@ export class Graph extends React.Component<Props> {
     forceLayout = debounce((readOnly?: boolean) => {
         const cellsToLayout = getCellsToLayout(this.graph, this.props.selectionState);
         if (!readOnly) {
-            this.directedLayout(cellsToLayout);
+            const nodesAndLinks = cellsToLayout.filter((cell) => !isStickyNoteElement(cell));
+            this.directedLayout(nodesAndLinks);
         }
         this.fit(cellsToLayout);
     }, 250);

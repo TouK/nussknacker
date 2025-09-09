@@ -1,11 +1,11 @@
-import { defaultsDeep } from "lodash";
+import { defaultsDeep, sortBy } from "lodash";
 
 import type { Layout } from "../actions/nk";
 import type { Reducer } from "../actions/reduxTypes";
 import type { NodeType, ScenarioGraph } from "../types";
 
 export function fromMeta(scenarioGraph: ScenarioGraph): Layout {
-    return scenarioGraph.nodes
+    return sortBy(scenarioGraph.nodes, (e) => e.id)
         .filter(({ additionalFields }) => additionalFields?.layoutData)
         .map(({ id, additionalFields }) => ({ id, position: additionalFields.layoutData }));
 }

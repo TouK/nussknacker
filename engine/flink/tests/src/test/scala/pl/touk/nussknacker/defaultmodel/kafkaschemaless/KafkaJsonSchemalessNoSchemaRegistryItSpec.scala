@@ -27,4 +27,8 @@ class KafkaJsonSchemalessNoSchemaRegistryItSpec extends BaseKafkaJsonSchemalessI
     shouldRoundTripPlainMessageWithoutProvidedSchema()
   }
 
+  test("should throw if json message cannot be deserialized based on the inferred data sample type") {
+    shouldDropEventsBasedOnTheInferredDataSampleType()
+  }
+
 }
