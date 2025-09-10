@@ -23,7 +23,7 @@ describe("Sticky notes", () => {
             .drag("#nk-graph-main", {
                 target: {
                     x: 600,
-                    y: 300,
+                    y: 400,
                 },
                 force: true,
             });
@@ -41,7 +41,7 @@ describe("Sticky notes", () => {
             .drag("#nk-graph-main", {
                 target: {
                     x: 600,
-                    y: 300,
+                    y: 400,
                 },
                 force: true,
             });

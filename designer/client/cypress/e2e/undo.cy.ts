@@ -95,6 +95,7 @@ describe("Undo/Redo", () => {
         cy.get("@copy").click();
         cy.get("@undo").should("be.disabled");
         cy.get("@paste").click();
+        cy.contains("sendSms (copy 1)").should("be.visible");
         cy.get("@undo").should("be.enabled").click().should("be.disabled");
         cy.get("@graph").matchImage(screenshotOptions);
         cy.get("@redo").should("be.enabled").click().should("be.disabled");

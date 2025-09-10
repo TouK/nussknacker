@@ -310,7 +310,7 @@ export class Graph extends React.Component<Props> {
         });
 
         this.graph.on(Events.ADD, (cell: dia.Element) => {
-            if (!isModelOrStickyNote(cell)) return;
+            if (!isModelElement(cell)) return;
             // wait for cell.position update
             requestAnimationFrame(() => {
                 const point = findFreeSpaceForNode(this.processGraphPaper, cell.position(), cell);
