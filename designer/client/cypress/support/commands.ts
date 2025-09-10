@@ -33,3 +33,4 @@ import "./settings";
 import "./overrides";
 import "./network";
 import "./mocks";
+import "./testing";

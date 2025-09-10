@@ -6,7 +6,6 @@ import { useAppSelector } from "../../store/storeHelpers";
 import SpinnerWrapper from "../spinner/SpinnerWrapper";
 import ToolbarsLayer from "../toolbarComponents/ToolbarsLayer";
 import { useToolbarConfig } from "../toolbarSettings/useToolbarConfig";
-import { TestingButtonProvider } from "./test/buttons/TestButtonContext";
 
 type Props = PropsWithChildren<{
     isReady: boolean;
@@ -18,9 +17,7 @@ const Toolbars = ({ isReady, ...passProps }: Props) => {
     const [toolbars, toolbarsConfigId] = useToolbarConfig();
     return (
         <SpinnerWrapper isReady={isReady && !!scenario}>
-            <TestingButtonProvider>
-                <ToolbarsLayer toolbars={toolbars} configId={toolbarsConfigId} {...passProps} />
-            </TestingButtonProvider>
+            <ToolbarsLayer toolbars={toolbars} configId={toolbarsConfigId} {...passProps} />
         </SpinnerWrapper>
     );
 };

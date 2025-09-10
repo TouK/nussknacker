@@ -2,7 +2,7 @@ import { produce } from "immer";
 import type { Dictionary } from "lodash";
 import { cloneDeep, mapValues, reject, snakeCase, zipObject } from "lodash";
 
-import type { Layout, NodePosition, NodesWithPositions} from "../../actions/nk";
+import type { Layout, NodePosition, NodesWithPositions } from "../../actions/nk";
 import { snapToInt } from "../../actions/nk";
 import ProcessUtils from "../../common/ProcessUtils";
 import { ExpressionLang } from "../../components/graph/node-modal/editors/expression/types";

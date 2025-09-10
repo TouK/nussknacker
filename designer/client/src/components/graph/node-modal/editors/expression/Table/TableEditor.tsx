@@ -339,7 +339,22 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
     }, []);
 
     const ref = useRef<DataEditorRef>();
-    const { toggleTooltip, highlightRegions, drawCell, tooltipElement } = useErrorHighlights(fieldErrors, columns, ref);
+    const cellErrors = useMemo(
+        () =>
+            fieldErrors.flatMap(
+                (e) =>
+                    e.details.type === "TabularDataDefinitionParserErrorDetails" &&
+                    e.details?.cellErrors
+                        ?.map(({ rowIndex, ...e }) => ({
+                            ...e,
+                            x: columns.findIndex((c) => c.name === e.columnName),
+                            y: rowIndex,
+                        }))
+                        .filter((e) => e?.x >= 0),
+            ),
+        [columns, fieldErrors],
+    );
+    const { toggleTooltip, highlightRegions, drawCell, tooltipElement } = useErrorHighlights(cellErrors, ref);
 
     const onDataEditorColumnResize = useCallback(
         (column, newSize, colIndex, newSizeWithGrow) => {

@@ -25,7 +25,7 @@ const CompareVersionsDialog = loadable(() => import("../components/modals/Compar
 const AdhocTestingDialog = loadable(() => import("../components/modals/AdhocTesting/AdhocTestingDialog"), {
     fallback: <LoaderSpinner show />,
 });
-const TestingDialog = loadable(() => import("../components/modals/Testing/TestingDialog"), {
+const TestingDataRecordsDialog = loadable(() => import("../components/modals/TestingDataRecords/Dialog"), {
     fallback: <LoaderSpinner show />,
 });
 const DeployProcessDialog = loadable(() => import("../components/modals/DeployProcessDialog"), {
@@ -93,7 +93,7 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
         case WindowKind.adhocTesting:
             return <AdhocTestingDialog {...props} />;
         case WindowKind.scenarioTest:
-            return <TestingDialog {...props} />;
+            return <TestingDataRecordsDialog {...props} />;
         case WindowKind.confirm:
             return <GenericConfirmDialog {...props} />;
         case WindowKind.inform:

@@ -2,12 +2,12 @@ import { alpha } from "@mui/material";
 import React, { useCallback, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { updateTestType } from "../../../../actions/nk/displayTestResults";
+import { testScenarioWithDataRecords } from "../../../../actions/nk/displayTestResults";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
 import {
-    getPerformedTestType,
     getTestCapabilities,
+    getTestingDataRecords,
     getTestResultsLoading,
     isLatestProcessVersion,
 } from "../../../../reducers/selectors/graph";
@@ -16,11 +16,10 @@ import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { getHasPendingChanges } from "../../../graph/node-modal/node/useEditState";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
-import type { TestingData, TestingViewParams } from "../../../modals/Testing/TestingDialog";
+import type { TestingData, TestingViewParams } from "../../../modals/TestingDataRecords/Dialog";
 import { ButtonsVariant, ToolbarButton, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer";
 import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
-import { useTestingButtonContext } from "./TestButtonContext";
 
 export type ScenarioTestButtonProps = {
     type: CustomButtonTypes.scenarioTest;
@@ -31,7 +30,8 @@ export type ScenarioTestButtonProps = {
     markdownContent?: TestingViewParams["markdownContent"];
 };
 
-const RERUN_PREVIOUS = "rerunPrevious";
+const RUN_NEW_TEST = "reNewTest";
+const RERUN_LAST_TEST = "rerunLastTest";
 
 type Preset = {
     value: string;
@@ -43,34 +43,32 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { disabled, name, title, titleOverride, docs, markdownContent, type } = props;
     const { t } = useTranslation();
     const { open } = useWindows();
+    const testingEventsParameters = useAppSelector(getTestingDataRecords);
+    const dispatch = useAppDispatch();
 
-    const testingState = useTestingButtonContext();
+    const handleRerunLastTest = useCallback(() => {
+        return dispatch(testScenarioWithDataRecords(testingEventsParameters));
+    }, [dispatch, testingEventsParameters]);
 
     const presets: Preset[] = useMemo(() => {
-        const retest = {
-            label: t("testingForm.retest.menu.label", "Rerun last test"),
-            value: RERUN_PREVIOUS,
-            isDisabled: !testingState.action,
-        };
+        return [
+            {
+                label: t("testingForm.test.menu.label", "Run a new test"),
+                value: RUN_NEW_TEST,
+            },
+            {
+                label: t("testingForm.retest.menu.label", "Rerun last test"),
+                value: RERUN_LAST_TEST,
+                isDisabled: !testingEventsParameters,
+            },
+        ];
+    }, [t, testingEventsParameters]);
 
-        const options = testingState.options
-            .filter((o) => !o.disabled)
-            .slice(0, 1)
-            .map(({ value, menuLabel = t("testingForm.test.menu.label", "Run a new test"), disabled }) => ({
-                value,
-                label: menuLabel,
-                isDisabled: disabled,
-            }));
-
-        return [...options, retest];
-    }, [t, testingState.action, testingState.options]);
-
-    const performedTestType = useAppSelector(getPerformedTestType);
     const isLoading = useAppSelector(getTestResultsLoading);
 
-    const preset = useMemo(() => {
-        return presets.find((p) => p.value === performedTestType);
-    }, [performedTestType, presets]);
+    const presetActionOnButtonClick = useMemo(() => {
+        return testingEventsParameters ? presets[1] : presets[0];
+    }, [presets, testingEventsParameters]);
 
     // Availability of adhoc testing
     const adhocTestIsAvailable = useAdhocTestingAvailability(disabled);
@@ -85,22 +83,21 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
 
     const hasPendingChanges = useAppSelector(getHasPendingChanges);
 
-    const dispatch = useAppDispatch();
     const openDialog = useCallback(
         (preset?: Preset) => {
-            if (preset?.value === RERUN_PREVIOUS) {
-                testingState.action();
+            if (preset?.value === RERUN_LAST_TEST) {
+                handleRerunLastTest();
                 return;
             }
-            dispatch(updateTestType(preset?.value));
             open<TestingData>({
                 id: "scenarioTest",
                 title: t("dialog.title.scenarioTest", "Scenario test"),
                 isResizable: true,
                 isModal: true,
                 kind: WindowKind.scenarioTest,
+                minWidth: 1200,
+                minHeight: 750,
                 meta: {
-                    storeAction: testingState.handleSetAction,
                     viewParams: {
                         Icon: TestingIcon,
                         docs,
@@ -109,7 +106,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                 },
             });
         },
-        [dispatch, docs, markdownContent, open, t, testingState],
+        [docs, handleRerunLastTest, markdownContent, open, t],
     );
 
     const { variant } = useContext(ToolbarButtonsContext);
@@ -132,7 +129,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     return (
         <ToolbarButton
             name={
-                preset?.value === RERUN_PREVIOUS
+                testingEventsParameters
                     ? t("panels.actions.scenarioTest.button.nameAlt", "Rerun test")
                     : name || t("panels.actions.scenarioTest.button.name", "Test")
             }
@@ -173,10 +170,10 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
             }}
             isLoading={isLoading}
             disabled={!atLeastOneTypeOfTestIsAvailable || hasPendingChanges || isLoading}
-            onClick={() => openDialog(preset)}
+            onClick={() => openDialog(presetActionOnButtonClick)}
             type={type}
             presets={presets}
-            selected={preset}
+            selected={presetActionOnButtonClick}
             onPresetChange={(value) => openDialog(value)}
         />
     );

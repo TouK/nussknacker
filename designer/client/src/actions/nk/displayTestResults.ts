@@ -1,6 +1,7 @@
 import type { ProcessName } from "src/components/Process/types";
 
-import type { TestType } from "../../components/modals/Testing/useTestOptions";
+import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
+import { mapDataRecordsToRunTestsFormat } from "../../components/modals/TestingDataRecords/utils";
 import type { SourceWithParametersTest } from "../../http/HttpService";
 import HttpService from "../../http/HttpService";
 import type { ResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
@@ -8,8 +9,6 @@ import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph
 import type { ScenarioGraph } from "../../types";
 import type { Action, ThunkAction } from "../reduxTypes";
 import { displayProcessCounts } from "./displayProcessCounts";
-
-export type PerformedTestType = TestType | "rerunPrevious";
 
 export function testProcessFromFile(testDataFile: File): ThunkAction {
     return wrapWithTestAction((processName, scenarioGraph) =>
@@ -42,6 +41,19 @@ export function testScenarioWithGeneratedData(testSampleSize: string): ThunkActi
     );
 }
 
+export function testScenarioWithDataRecords(testingEventsParameters: TestingDataRecords[]): ThunkAction {
+    return wrapWithTestAction((scenarioName, scenarioGraph) =>
+        HttpService.testScenarioWithEventsData(
+            scenarioName,
+            scenarioGraph,
+            testingEventsParameters.map(mapDataRecordsToRunTestsFormat),
+        ).then(({ data }) => ({
+            testResults: data,
+            testingEventsParameters: testingEventsParameters,
+        })),
+    );
+}
+
 export type TestsActions =
     | {
           type: "TEST_RESULTS_LOADING";
@@ -53,6 +65,7 @@ export type TestsActions =
           type: "DISPLAY_TEST_RESULTS_DETAILS";
           testResults: TestResultsDto;
           testData?: SourceWithParametersTest;
+          testingDataRecords?: TestingDataRecords[];
       }
     | {
           type: "UPDATE_TEST_TYPE";
@@ -63,8 +76,8 @@ export type TestsActions =
           testData: SourceWithParametersTest;
       }
     | {
-          type: "SET_PERFORMED_TEST_TYPE";
-          performedTestType: PerformedTestType;
+          type: "SET_TESTING_EVENTS_PARAMETERS";
+          testingEventsParameters: TestingDataRecords[];
       };
 
 function wrapWithTestAction(
@@ -74,6 +87,7 @@ function wrapWithTestAction(
     ) => Promise<{
         testResults: ResultsWithCountsDto;
         testData?: SourceWithParametersTest;
+        testingEventsParameters?: TestingDataRecords[];
     }>,
 ): ThunkAction {
     return (dispatch, getState) => {
@@ -82,7 +96,9 @@ function wrapWithTestAction(
         const scenarioGraph = getScenarioGraph(state);
         const processName = getProcessName(state);
         fn(processName, scenarioGraph)
-            .then(({ testResults, testData }) => dispatch(displayTestResults(testResults, testData)))
+            .then(({ testResults, testData, testingEventsParameters }) =>
+                dispatch(displayTestResults(testResults, testData, testingEventsParameters)),
+            )
             .catch(() => dispatch({ type: "TEST_RESULTS_FAILED" }));
     };
 }
@@ -95,25 +111,24 @@ export function displayTestResultsDetails(testResults: TestResultsDto, testData?
     };
 }
 
-export function updateTestType(testType: string): Action {
+export function setTestingEventsParameters(testingEventsParameters: TestingDataRecords[]): Action {
     return {
-        type: "UPDATE_TEST_TYPE",
-        testType,
+        type: "SET_TESTING_EVENTS_PARAMETERS",
+        testingEventsParameters,
     };
 }
 
-export function setPerformedTestType(performedTestType: PerformedTestType): Action {
-    return {
-        type: "SET_PERFORMED_TEST_TYPE",
-        performedTestType,
-    };
-}
-
-function displayTestResults({ counts, results }: ResultsWithCountsDto, testData?: SourceWithParametersTest): ThunkAction {
+function displayTestResults(
+    { counts, results }: ResultsWithCountsDto,
+    testData?: SourceWithParametersTest,
+    testingEventsParameters?: TestingDataRecords[],
+): ThunkAction {
     return (dispatch) => {
         dispatch(displayProcessCounts(counts));
         dispatch(displayTestResultsDetails(results, testData));
-        dispatch(setPerformedTestType("rerunPrevious"));
+        if (testingEventsParameters) {
+            dispatch(setTestingEventsParameters(testingEventsParameters));
+        }
     };
 }
 

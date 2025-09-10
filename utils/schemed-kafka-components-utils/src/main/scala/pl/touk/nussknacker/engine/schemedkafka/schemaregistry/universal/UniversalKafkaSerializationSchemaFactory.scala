@@ -5,8 +5,8 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.header.internals.RecordHeaders
 import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.api.process.TopicName
+import pl.touk.nussknacker.engine.kafka.{serialization, KafkaComponentsConfig}
 import pl.touk.nussknacker.engine.kafka.serialization.{CharSequenceSerializer, KafkaProducerHelper}
-import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, serialization}
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload.ValueSchemaIdHeaderName

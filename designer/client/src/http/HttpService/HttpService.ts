@@ -7,7 +7,7 @@ import i18next from "i18next";
 import type { Moment } from "moment";
 
 import type { ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../../actions/nk";
-import type { GenericValidationRequest, TestAdhocValidationRequest } from "../../actions/nk/adhocTesting";
+import type { GenericValidationData, GenericValidationRequest, TestAdhocValidationRequest } from "../../actions/nk/adhocTesting";
 import api from "../../api";
 import type { UserData } from "../../common/models/User";
 import SystemUtils, { AUTHORIZATION_HEADER_NAMESPACE } from "../../common/SystemUtils";
@@ -16,6 +16,7 @@ import type { ExpressionSuggestion } from "../../components/graph/node-modal/edi
 import type { AdditionalInfo } from "../../components/graph/node-modal/NodeAdditionalInfoBox";
 import { extractStickyNotesFromNodes } from "../../components/graph/utils/stickyNotesUtils";
 import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../../components/Labels/types";
+import type { TestingDataRecords, TestingDataRecordsRequestData } from "../../components/modals/TestingDataRecords/Table";
 import type { ProcessName, ProcessVersionId, Scenario, StatusDefinitionType } from "../../components/Process/types";
 import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../../components/toolbars/activities/types";
 import { ActivityTypesRelatedToExecutions } from "../../components/toolbars/activities/types";
@@ -789,6 +790,84 @@ export class HttpService {
                 i18next.t("notification.error.failedToTest", "Failed to test due to: {{axiosError}}", {
                     axiosError: handleAxiosError(error),
                 }),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
+    testScenarioWithEventsData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, testData: TestingDataRecordsRequestData[]) {
+        const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
+
+        const data = new FormData();
+        data.append("testData", new Blob([JSON.stringify(testData)], { type: "application/json" }));
+        data.append("scenarioGraph", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
+
+        const promise = api.post<ResultsWithCountsDto>(`/processManagement/test/${encodeURIComponent(scenarioName)}`, data, {
+            params: {
+                skipResultsPerTransition: this.#skipResultsPerTransition,
+            },
+        });
+        promise.catch((error: AxiosError) =>
+            this.#addError(
+                i18next.t("notification.error.failedToTestScenarioWithEventsData", "Failed to test due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
+    validateTestDataWithDataRecords(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, expression: string) {
+        const sanitizedScenarioGraph = this.#sanitizeScenarioGraph(scenarioGraph);
+
+        const promise = api.post<GenericValidationData>(`/scenarioTesting/${encodeURIComponent(scenarioName)}/validate`, {
+            scenarioGraph: sanitizedScenarioGraph,
+            testData: {
+                type: "WITH_PARAMETERS",
+                sourceParameters: {
+                    sourceId: "Event Generator",
+                    parameterExpressions: {
+                        "Input variables": {
+                            language: "json",
+                            expression,
+                        },
+                    },
+                },
+            },
+        });
+
+        promise.catch((error: AxiosError) =>
+            this.#addError(
+                i18next.t("notification.error.failedValidateTestDataWithEventsData", "Failed to validate due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
+    generatedTestData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, numberOfSamples = 10) {
+        const sanitizedScenarioGraph = this.#sanitizeScenarioGraph(scenarioGraph);
+        const promise = api.post<TestingDataRecords[]>(`/scenarioTesting/${encodeURIComponent(scenarioName)}/generatedTestData`, {
+            scenarioGraph: sanitizedScenarioGraph,
+            numberOfSamples,
+        });
+
+        promise.catch((error: AxiosError) =>
+            this.#addError(
+                i18next.t(
+                    "notification.error.failedToValidateScenarioWithEventsData",
+                    "Failed to generated test data due to: {{axiosError}}",
+                    {
+                        axiosError: handleAxiosError(error),
+                    },
+                ),
                 error,
                 true,
             ),
