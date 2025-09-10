@@ -342,7 +342,11 @@ describe("Process", () => {
             .contains(/^test$/i)
             .should("be.enabled")
             .click();
-        cy.openNodeWindow("request").matchImage();
+        cy.openNodeWindow("request");
+        cy.get("[data-testid=window]")
+            .contains(/^Test case/i)
+            .should("be.visible");
+        cy.get("[data-testid=window]").matchImage();
         cy.get("[data-testid=window]")
             .should("contain.text", "Test case")
             .then(($win) => {
