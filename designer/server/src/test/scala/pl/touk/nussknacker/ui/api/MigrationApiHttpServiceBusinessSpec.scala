@@ -32,9 +32,8 @@ import pl.touk.nussknacker.test.{
 }
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithCategoryUsedMoreThanOnceConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
-import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestProcessingType
 import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig
+import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
 
 // FIXME: For migrating between different API version should be written end to end test (e2e-tests directory)
@@ -592,11 +591,8 @@ class MigrationApiHttpServiceBusinessSpec
     val scenario = scenarioWithConfigurableParameterExpression(sourceExpression)
     given()
       .applicationState {
-        createSavedFragment(
-          fragmentWithConfigurableParameterEditor(targetEditor),
-          TestProcessingType.Streaming2.stringify
-        )
-        createSavedScenario(scenario, TestProcessingType.Streaming2.stringify)
+        createSavedFragment(fragmentWithConfigurableParameterEditor(targetEditor))
+        createSavedScenario(scenario)
       }
       .when()
       .when()
@@ -620,11 +616,8 @@ class MigrationApiHttpServiceBusinessSpec
     val scenario = scenarioWithConfigurableParameterExpression(sourceExpression)
     given()
       .applicationState {
-        createSavedFragment(
-          fragmentWithConfigurableParameterEditor(targetEditor),
-          TestProcessingType.Streaming2.stringify
-        )
-        createSavedScenario(scenario, TestProcessingType.Streaming2.stringify)
+        createSavedFragment(fragmentWithConfigurableParameterEditor(targetEditor))
+        createSavedScenario(scenario)
       }
       .when()
       .when()
