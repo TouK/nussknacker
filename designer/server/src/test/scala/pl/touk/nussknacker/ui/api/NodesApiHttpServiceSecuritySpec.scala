@@ -550,7 +550,26 @@ class NodesApiHttpServiceSecuritySpec
                |      "description": "Expected one of 1, 2, got: a.",
                |      "fieldName": "numberOfThreads",
                |      "errorType": "SaveAllowed",
-               |      "details": null
+               |      "details": {
+               |                "paramName": "numberOfThreads",
+               |                "parameterEditors": [
+               |                    {
+               |                        "possibleValues": [
+               |                            {
+               |                                "expression": "1",
+               |                                "label": "1"
+               |                            },
+               |                            {
+               |                                "expression": "2",
+               |                                "label": "2"
+               |                            }
+               |                        ],
+               |                        "type": "FixedValuesParameterEditor"
+               |                    }
+               |                ],
+               |                "nodeId": "properties",
+               |                "type": "IncompatibleParameterDefinitionErrorDetails"
+               |            }
                |    }
                |  ],
                |  "validationPerformed": true
@@ -644,7 +663,26 @@ class NodesApiHttpServiceSecuritySpec
                |      "description": "Expected one of 1, 2, got: a.",
                |      "fieldName": "numberOfThreads",
                |      "errorType": "SaveAllowed",
-               |      "details": null
+               |      "details": {
+               |                "paramName": "numberOfThreads",
+               |                "parameterEditors": [
+               |                    {
+               |                        "possibleValues": [
+               |                            {
+               |                                "expression": "1",
+               |                                "label": "1"
+               |                            },
+               |                            {
+               |                                "expression": "2",
+               |                                "label": "2"
+               |                            }
+               |                        ],
+               |                        "type": "FixedValuesParameterEditor"
+               |                    }
+               |                ],
+               |                "nodeId": "properties",
+               |                "type": "IncompatibleParameterDefinitionErrorDetails"
+               |            }
                |    }
                |  ],
                |  "validationPerformed": true
