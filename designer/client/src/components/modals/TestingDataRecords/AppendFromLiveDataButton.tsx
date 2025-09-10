@@ -44,6 +44,7 @@ export const AppendFromLiveDataButton = ({ handleGenerateTestData, maxTestingRec
                     setRecordsToAppend(clamped);
                 }}
                 value={recordsToAppend}
+                data-testid={"numberOfRecords"}
             />
             <FormLabel sx={{ display: "flex", alignItems: "center", ml: 1 }}>{t("testingDialog.labels.records", "Records")}</FormLabel>
             <Box display={"flex"} alignItems={"center"} ml={1}>

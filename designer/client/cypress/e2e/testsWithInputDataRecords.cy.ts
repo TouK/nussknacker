@@ -61,4 +61,33 @@ describe("test with events data", () => {
         cy.contains('[data-testid="toolbarButton-label"]', /Rerun test/).click();
         cy.wait("@retest");
     });
+
+    it("should block adding new records if records limit exceeded", () => {
+        cy.viewport("macbook-15");
+        cy.visitNewProcess(seed, seed, "DevelopmentTests");
+        cy.get('[data-selector="SCENARIO_TEST"]').click();
+
+        cy.get("[data-testid=window]").as("window");
+        cy.get("@window").find("footer").as("testDialogFooter");
+        cy.get("@testDialogFooter").contains("button", "Test").should("to.be.disabled");
+        cy.get("[data-testid=numberOfRecords]").clear().type("14");
+
+        cy.get("@window")
+            .contains("button", /Append from live data/i)
+            .click();
+
+        cy.get("@testDialogFooter").contains("button", "Test").should("not.be.disabled");
+
+        cy.get("[data-testid=numberOfRecords]").should("have.value", 6);
+
+        cy.get("@window")
+            .contains("button", /Append from live data/i)
+            .click();
+
+        cy.get("@window")
+            .contains("button", /Append from live data/i)
+            .should("to.be.disabled");
+
+        cy.contains('[role="alert"]', /The maximum number of 20 Input data records has been exceeded/).should("be.visible");
+    });
 });

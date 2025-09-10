@@ -1,5 +1,6 @@
 import { cx } from "@emotion/css";
 import { styled } from "@mui/material";
+import type { InputHTMLAttributes } from "react";
 import React from "react";
 
 import type { UnknownFunction } from "../../../../../types/common";
@@ -26,7 +27,7 @@ const StyledInput = styled("input")(({ theme }) => ({
     },
 }));
 
-type Props = {
+type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "onChange" | "value"> & {
     onChange: UnknownFunction;
     value: number;
     fieldName?: string;
@@ -36,13 +37,14 @@ type Props = {
     isMarked?: boolean;
 };
 
-export const NumericInput = ({ readOnly, value, onChange, showValidation, fieldName, isMarked, isValid }: Props) => {
+export const NumericInput = ({ readOnly, value, onChange, showValidation, fieldName, isMarked, isValid, ...props }: Props) => {
     return (
         <StyledInput
             readOnly={readOnly}
             value={value ?? ""}
             onChange={(event) => onChange(fieldName, event.target.value)}
             className={cx([showValidation && !isValid && nodeInputWithError, isMarked && "marked", readOnly && "read-only"])}
+            {...props}
         />
     );
 };
