@@ -25,3 +25,4 @@ export const getWritableCategories = createSelector(getLoggedUser, getCategories
     categories.filter((c) => user.canWrite(c)),
 );
 export const getMetricsSettings = createSelector(getFeatureSettings, (settings) => settings?.metrics || ({} as MetricsType));
+export const getMaxTestingRecords = createSelector(getSettings, (s) => s.featuresSettings.testDataSettings.maxSamplesCount);

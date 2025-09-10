@@ -40,7 +40,7 @@ export const NumericInput = ({ readOnly, value, onChange, showValidation, fieldN
     return (
         <StyledInput
             readOnly={readOnly}
-            value={value || ""}
+            value={value ?? ""}
             onChange={(event) => onChange(fieldName, event.target.value)}
             className={cx([showValidation && !isValid && nodeInputWithError, isMarked && "marked", readOnly && "read-only"])}
         />
