@@ -25,29 +25,19 @@ describe("test with events data", () => {
         cy.get("[data-testid=window]").as("window");
         cy.get("@window").find("footer").as("testDialogFooter");
         cy.get("@testDialogFooter").contains("button", "Test").should("to.be.disabled");
+        cy.addTestRecord(() => {
+            const defaultEventForEventGenerator =
+                "{\n" +
+                '  "input" : {\n' +
+                '    "sampleField" : "",\n' +
+                '    "dateTime" : "",\n' +
+                '    "type" : "",\n' +
+                '    "value" : 0\n' +
+                "  }\n" +
+                "}";
 
-        cy.get('[data-testid="data-grid-canvas"]')
-            .as("canvasTable")
-            .should("be.visible")
-            .then(($canvas) => {
-                const rect = $canvas[0].getBoundingClientRect();
-                // Click near bottom right corner
-                const clickX = rect.width - 10;
-                const clickY = rect.height - 10;
-
-                cy.wrap($canvas).click(clickX, clickY, { force: true });
-                const defaultEventForEventGenerator =
-                    "{\n" +
-                    '  "input" : {\n' +
-                    '    "sampleField" : "",\n' +
-                    '    "dateTime" : "",\n' +
-                    '    "type" : "",\n' +
-                    '    "value" : 0\n' +
-                    "  }\n" +
-                    "}";
-
-                verifyTableData(1, 2, defaultEventForEventGenerator);
-            });
+            verifyTableData(1, 2, defaultEventForEventGenerator);
+        });
         cy.get("@testDialogFooter").contains("button", "Test").should("not.be.disabled");
 
         // Generate test data
