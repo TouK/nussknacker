@@ -18,7 +18,7 @@ const TOOLTIP_APPEND_LIVE_DATA = "The table will be appended with live data from
 
 export const AppendFromLiveDataButton = ({ handleGenerateTestData, maxTestingRecords, currentRecordsNumber }: Props) => {
     const { t } = useTranslation();
-    const [recordsToAppend, setRecordsToAppend] = useState<number | null>(DEFAULT_APPEND_COUNT);
+    const [recordsToAppend, setRecordsToAppend] = useState<number>(DEFAULT_APPEND_COUNT);
     const maxLiveDataToAppend = maxTestingRecords - currentRecordsNumber;
     const buttonDisabled = useMemo(() => !Number(recordsToAppend), [recordsToAppend]);
 
