@@ -32,6 +32,7 @@ import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import type { Edge, NodeType } from "../../types";
 import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
 import NodeUtils from "./NodeUtils";
+import { StickyNoteType } from "./utils/stickyNotesUtils";
 
 const hasTextSelection = () => !!window.getSelection().toString();
 
@@ -196,19 +197,18 @@ export default function SelectionContextProvider(
     const [parseInsertNodes] = useDebounceFn((clipboardText: string) => {
         const selection = parse(clipboardText);
         if (selection) {
-            dispatch(
-                addNodeMultiple(
-                    selection.nodes,
-                    selection.edges,
-                    props.pastePosition(
-                        selection.nodes.reduce(
-                            (acc, { additionalFields: { layoutData } }) =>
-                                new g.Rect(layoutData.x, layoutData.y, RECT_WIDTH, RECT_HEIGHT).union(acc),
-                            new g.Rect(),
+            const size = selection.nodes
+                .map(
+                    (n) =>
+                        new g.Rect(
+                            n.additionalFields.layoutData.x,
+                            n.additionalFields.layoutData.y,
+                            n.type === StickyNoteType ? n.dimensions.width : RECT_WIDTH,
+                            n.type === StickyNoteType ? n.dimensions.height : RECT_HEIGHT,
                         ),
-                    ),
-                ),
-            );
+                )
+                .reduce((acc, rect) => rect.union(acc));
+            dispatch(addNodeMultiple(selection.nodes, selection.edges, props.pastePosition(size)));
         } else {
             dispatch(error(t("userActions.paste.failed", "Cannot paste content from clipboard")));
         }
