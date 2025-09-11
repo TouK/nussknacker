@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{
   EngineScenarioCompilationDependencies,
+  FixedExpressionValue,
   JsonTemplateParameterEditor,
   SpelParameterEditor
 }
@@ -134,14 +135,14 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
         paramName = topicParamName,
         label = None,
         value = "'tereferer'",
-        values = List("", s"'$exampleAvroTopic'", s"'$exampleJsonTopic'", s"'$fullnameTopic'"),
+        values = List("", exampleAvroTopic, exampleJsonTopic, fullnameTopic).map(fixedExpressionValue),
         nodeId = sinkNodeId.id
       ),
       InvalidPropertyFixedValue(
         paramName = schemaVersionParamName,
         label = None,
         value = "'1'",
-        values = List("'latest'"),
+        values = List(FixedExpressionValue(s"'latest'", "Latest version")),
         nodeId = sinkNodeId.id
       )
     )
@@ -161,7 +162,8 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       paramName = schemaVersionParamName,
       label = None,
       value = "'343543'",
-      values = List("'latest'", "'1'", "'2'", "'3'", "'4'"),
+      values =
+        List(FixedExpressionValue(s"'latest'", "Latest version")) ++ List("1", "2", "3", "4").map(fixedExpressionValue),
       nodeId = sinkNodeId.id
     ) :: Nil
   }
@@ -515,6 +517,11 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
 
     validationForSinkDefaultValue.errors shouldBe List.empty
 
+  }
+
+  private def fixedExpressionValue(value: String) = {
+    if (value == "") FixedExpressionValue("", "")
+    else FixedExpressionValue(s"'$value'", value)
   }
 
 }

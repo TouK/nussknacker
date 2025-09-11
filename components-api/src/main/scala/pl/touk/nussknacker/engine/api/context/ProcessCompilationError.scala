@@ -4,7 +4,7 @@ import cats.Applicative
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
-import pl.touk.nussknacker.engine.api.definition.ParameterEditor
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, ParameterEditor}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -274,14 +274,14 @@ object ProcessCompilationError {
       paramName: ParameterName,
       label: Option[String],
       value: String,
-      values: List[String],
+      values: List[FixedExpressionValue],
       nodeId: String
   ) extends PartSubGraphCompilationError
       with InASingleNode
 
   object InvalidPropertyFixedValue {
 
-    def apply(paramName: ParameterName, label: Option[String], value: String, values: List[String])(
+    def apply(paramName: ParameterName, label: Option[String], value: String, values: List[FixedExpressionValue])(
         implicit nodeId: NodeId
     ): PartSubGraphCompilationError =
       InvalidPropertyFixedValue(paramName, label, value, values, nodeId.id)

@@ -7,18 +7,33 @@ import io.restassured.response.ValidatableResponse
 import org.hamcrest.Matchers._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.freespec.AnyFreeSpecLike
+import org.scalatest.matchers.must.Matchers.include
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.api.parameter.{
+  ParameterName,
+  ParameterValueInput,
+  ValueInputWithDictEditor,
+  ValueInputWithFixedValuesProvided
+}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   RestAssuredVerboseLoggingIfValidationFails,
   StandardPatientScalaFutures
 }
+import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithCategoryUsedMoreThanOnceConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig
+import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
 
 // FIXME: For migrating between different API version should be written end to end test (e2e-tests directory)
@@ -166,6 +181,97 @@ class MigrationApiHttpServiceBusinessSpec
               )
             }
           }
+      }
+    }
+    "migrate scenario when parameter adaptation is required" - {
+      "adapt dictionary value from label in source to spel expression in target when label defined" in {
+        testAdaptingParameter(
+          sourceExpression = Expression.dictKeyWithLabel("H000", Some("Black")),
+          targetEditor = None,
+          expectedParameterJsonPart = """[{"name":"param1","expression":{"language":"spel","expression":"'Black'"}}]"""
+        )
+      }
+      "adapt dictionary value from key in source to spel expression in target when label not defined" in {
+        testAdaptingParameter(
+          sourceExpression = Expression.dictKeyWithLabel("H000", None),
+          targetEditor = None,
+          expectedParameterJsonPart = """[{"name":"param1","expression":{"language":"spel","expression":"'H000'"}}]"""
+        )
+      }
+      "adapt dictionary value in source to fixed list expression in target taking value from label" in {
+        testAdaptingParameter(
+          sourceExpression = Expression.dictKeyWithLabel("H000", Some("Black")),
+          targetEditor = Some(
+            ValueInputWithFixedValuesProvided(
+              fixedValuesList = List(FixedExpressionValue("'Black'", "Black")),
+              allowOtherValue = false
+            )
+          ),
+          expectedParameterJsonPart = """[{"name":"param1","expression":{"language":"spel","expression":"'Black'"}}]"""
+        )
+      }
+      "adapt dictionary value in source to fixed list expression in target taking value from key" in {
+        testAdaptingParameter(
+          sourceExpression = Expression.dictKeyWithLabel("Black", Some("ABC")),
+          targetEditor = Some(
+            ValueInputWithFixedValuesProvided(
+              fixedValuesList = List(FixedExpressionValue("'Black'", "Black")),
+              allowOtherValue = false
+            )
+          ),
+          expectedParameterJsonPart = """[{"name":"param1","expression":{"language":"spel","expression":"'Black'"}}]"""
+        )
+      }
+      "cannot adapt dictionary value in source to fixed list expression in target" in {
+        testAdaptingParameterNotPossible(
+          sourceExpression = Expression.dictKeyWithLabel("Green", Some("Green")),
+          targetEditor = Some(
+            ValueInputWithFixedValuesProvided(
+              fixedValuesList = List(FixedExpressionValue("'Black'", "Black")),
+              allowOtherValue = false
+            )
+          ),
+          expectedError =
+            "There is an incompatible parameter [param1] in component [fragmentWithConfigurableParameterEditor]. Its value cannot be used for target editors [FixedValuesParameterEditor(List(FixedExpressionValue(,), FixedExpressionValue('Black',Black)))]"
+        )
+      }
+      "adapt spel value in source to fixed list expression in target" in {
+        testAdaptingParameter(
+          sourceExpression = Expression.spel("'abc'"),
+          targetEditor = Some(
+            ValueInputWithFixedValuesProvided(
+              fixedValuesList = List(FixedExpressionValue("'abc'", "abc")),
+              allowOtherValue = false
+            )
+          ),
+          expectedParameterJsonPart = """[{"name":"param1","expression":{"language":"spel","expression":"'abc'"}}]"""
+        )
+      }
+      "cannot adapt spel value in source to fixed list expression in target" in {
+        testAdaptingParameterNotPossible(
+          sourceExpression = Expression.spel("'Green'"),
+          targetEditor = Some(
+            ValueInputWithFixedValuesProvided(
+              fixedValuesList = List(FixedExpressionValue("'Black'", "Black")),
+              allowOtherValue = false
+            )
+          ),
+          expectedError = "Property param1 has invalid value"
+        )
+      }
+      // todo: perhaps we should allow adapting spel value to dictionary value in the future
+      "cannot adapt spel value in source to dict expression in target" in {
+        testAdaptingParameterNotPossible(
+          sourceExpression = Expression.spel("'Black'"),
+          targetEditor = Some(
+            ValueInputWithDictEditor(
+              dictId = "rgb",
+              allowOtherValue = false
+            )
+          ),
+          expectedError =
+            """There is an incompatible parameter [param1] in component [fragmentWithConfigurableParameterEditor]. Its value cannot be used for target editors [DictParameterEditor(rgb)]"""
+        )
       }
     }
     "fail when scenario name contains illegal character(s)" in {
@@ -464,5 +570,102 @@ class MigrationApiHttpServiceBusinessSpec
         "modelVersion",
         equalTo(modelVersion)
       )
+
+  private def fetchScenario(scenarioName: String): String =
+    given()
+      .when()
+      .basicAuthAllPermUser()
+      .get(
+        s"$nuDesignerHttpAddress/api/processes/$scenarioName?skipValidateAndResolve=true&skipNodeResults=true"
+      )
+      .Then()
+      .extract()
+      .body()
+      .asString()
+
+  private def testAdaptingParameter(
+      sourceExpression: Expression,
+      targetEditor: Option[ParameterValueInput],
+      expectedParameterJsonPart: String,
+  ) = {
+    val scenario = scenarioWithConfigurableParameterExpression(sourceExpression)
+    given()
+      .applicationState {
+        createSavedFragment(fragmentWithConfigurableParameterEditor(targetEditor))
+        createSavedScenario(scenario)
+      }
+      .when()
+      .when()
+      .basicAuthAllPermUser()
+      .impersonateRemoteUser()
+      .jsonBody(prepareRequestJsonDataV1(scenario.name.value, scenario.toScenarioGraph, isFragment = false))
+      .post(s"$nuDesignerHttpAddress/api/migrate")
+      .Then()
+      .statusCode(200)
+      .equalsPlainBody("")
+
+    val scenarioGraphJsonStr = fetchScenario(scenario.name.value)
+    scenarioGraphJsonStr should include(expectedParameterJsonPart)
+  }
+
+  private def testAdaptingParameterNotPossible(
+      sourceExpression: Expression,
+      targetEditor: Option[ParameterValueInput],
+      expectedError: String,
+  ) = {
+    val scenario = scenarioWithConfigurableParameterExpression(sourceExpression)
+    given()
+      .applicationState {
+        createSavedFragment(fragmentWithConfigurableParameterEditor(targetEditor))
+        createSavedScenario(scenario)
+      }
+      .when()
+      .when()
+      .basicAuthAllPermUser()
+      .impersonateRemoteUser()
+      .jsonBody(prepareRequestJsonDataV1(scenario.name.value, scenario.toScenarioGraph, isFragment = false))
+      .post(s"$nuDesignerHttpAddress/api/migrate")
+      .Then()
+      .statusCode(400)
+      .body(containsString(expectedError))
+  }
+
+  private def scenarioWithConfigurableParameterExpression(parameterValueExpression: Expression) =
+    ScenarioBuilder
+      .withCustomMetaData(exampleProcessName.value, Map("environment" -> "test"))
+      .source("source", "csv-source-lite")
+      .fragment(
+        fragmentWithConfigurableParameterEditorName.value,
+        fragmentWithConfigurableParameterEditorName.value,
+        List(("param1", parameterValueExpression)),
+        Map("output" -> "fragmentResult"),
+        Map(
+          "output" -> GraphBuilder.emptySink("sink", "dead-end-lite")
+        )
+      )
+
+  private def fragmentWithConfigurableParameterEditor(editor: Option[ParameterValueInput]): CanonicalProcess =
+    CanonicalProcess(
+      MetaData(fragmentWithConfigurableParameterEditorName.value, FragmentSpecificData()),
+      List(
+        FlatNode(
+          FragmentInputDefinition(
+            "in",
+            List(
+              FragmentParameter(
+                ParameterName("param1"),
+                FragmentClazzRef[String]
+              ).copy(valueEditor = editor)
+            )
+          )
+        ),
+        canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+      ),
+      List.empty
+    )
+
+  private def fragmentWithConfigurableParameterEditorName: ProcessName = ProcessName(
+    "fragmentWithConfigurableParameterEditor"
+  )
 
 }
