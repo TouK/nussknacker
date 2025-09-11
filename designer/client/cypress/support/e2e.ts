@@ -21,7 +21,7 @@ import "./commands";
 // require('./commands')
 
 beforeEach(() => {
-    cy.intercept({ resourceType: /xhr|fetch/, url: "/be-static/**" }, { log: false });
-    cy.intercept({ resourceType: /xhr|fetch/, url: "/assets/**" }, { log: false });
-    cy.intercept({ resourceType: /xhr|fetch/, url: "/api/**" }, { log: false });
+    // cy.intercept({ resourceType: /xhr|fetch/, url: "/be-static/**" }, { log: false });
+    // cy.intercept({ resourceType: /xhr|fetch/, url: "/assets/**" }, { log: false });
+    // cy.intercept({ resourceType: /xhr|fetch/, url: "/api/**" }, { log: false });
 });
