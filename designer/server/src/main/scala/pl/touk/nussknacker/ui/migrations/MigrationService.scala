@@ -1,12 +1,18 @@
 package pl.touk.nussknacker.ui.migrations
 
 import cats.data.EitherT
+import cats.implicits._
+import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.IncompatibleParameterDefinitionErrorDetails
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessingType, ProcessName}
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcessConverter
+import pl.touk.nussknacker.engine.dict.DictKeyParameterAdapter
+import pl.touk.nussknacker.engine.dict.DictKeyParameterAdapter.ParameterToAdapt
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.{FatalError, NuDesignerError, UnauthorizedError}
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ListenerApiUser}
@@ -42,7 +48,7 @@ class MigrationService(
     processChangeListener: ProcessChangeListener,
     scenarioParametersService: ProcessingTypeDataProvider[_, ScenarioParametersService],
     useLegacyCreateScenarioApi: Boolean,
-    migrationApiAdapterService: MigrationApiAdapterService
+    migrationApiAdapterService: MigrationApiAdapterService,
 )(implicit val ec: ExecutionContext) {
 
   def migrate(
@@ -86,15 +92,6 @@ class MigrationService(
     val isFragment     = migrateScenarioData.isFragment
     val scenarioLabels = migrateScenarioData.scenarioLabels.map(ScenarioLabel.apply)
 
-    val migrateScenarioCommand =
-      MigrateScenarioCommand(
-        scenarioGraph = scenarioGraph,
-        scenarioLabels = Some(scenarioLabels.map(_.value)),
-        sourceEnvironment = sourceEnvironmentId,
-        targetEnvironment = targetEnvironmentId,
-        sourceScenarioVersionId = migrateScenarioData.sourceScenarioVersionId,
-      )
-
     val processingTypeValidated = scenarioParametersService.combined.queryProcessingTypeWithWritePermission(
       Some(parameters.category),
       Some(parameters.processingMode),
@@ -111,7 +108,30 @@ class MigrationService(
           scenarioLabels,
           processingType
         )
-      _ <- checkForValidationErrors(validationResult)
+      processVersion = ProcessVersion(
+        versionId = migrateScenarioData.sourceScenarioVersionId.getOrElse(VersionId.initialVersionId),
+        processName = processName,
+        processId = ProcessId(1),
+        labels = migrateScenarioData.scenarioLabels,
+        user = loggedUser.username,
+        modelVersion = None
+      )
+      scenarioGraphAfterAdaptations = adaptDictionaryParameters(
+        scenarioGraph,
+        processVersion,
+        processingType,
+        isFragment,
+        validationResult,
+      )
+      validationResultAfterAdaptations <-
+        validateProcessingTypeAndUIProcessResolver(
+          scenarioGraphAfterAdaptations,
+          processName,
+          isFragment,
+          scenarioLabels,
+          processingType
+        )
+      _ <- checkForValidationErrors(validationResultAfterAdaptations)
       _ <- checkOrCreateAndCheckArchivedProcess(
         processName,
         targetEnvironmentId,
@@ -121,10 +141,51 @@ class MigrationService(
       processId <- getProcessId(processName)
       processIdWithName = ProcessIdWithName(processId, processName)
       _ <- checkLoggedUserCanWriteToProcess(processId)
+      migrateScenarioCommand =
+        MigrateScenarioCommand(
+          scenarioGraph = scenarioGraphAfterAdaptations,
+          scenarioLabels = Some(scenarioLabels.map(_.value)),
+          sourceEnvironment = sourceEnvironmentId,
+          targetEnvironment = targetEnvironmentId,
+          sourceScenarioVersionId = migrateScenarioData.sourceScenarioVersionId,
+        )
       _ <- migrateProcessAndNotifyListeners(migrateScenarioCommand, processIdWithName)
     } yield ()
 
     result.value
+  }
+
+  private def adaptDictionaryParameters(
+      scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
+      processingType: ProcessingType,
+      isFragment: Boolean,
+      validationResult: ValidationResult,
+  )(implicit loggedUser: LoggedUser): ScenarioGraph = {
+    val dictionaryParametersToAdapt = validationResult.errors.invalidNodes.values
+      .flatMap(_.flatMap(_.details))
+      .collect { case details: IncompatibleParameterDefinitionErrorDetails => details }
+      .map(error => ParameterToAdapt(error.nodeId, error.paramName, error.parameterEditors))
+      .toList
+      .toNel
+
+    dictionaryParametersToAdapt match {
+      case Some(parametersToAdapt) =>
+        val process         = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
+        val modifiedProcess = DictKeyParameterAdapter.adaptParameters(process, parametersToAdapt.toList)
+        val resolver        = processResolver.forProcessingTypeUnsafe(processingType)
+        val modifiedScenarioGraph = resolver
+          .validateAndReverseResolve(
+            canonical = modifiedProcess,
+            processVersion = processVersion,
+            isFragment = isFragment,
+            removeDictLabels = false,
+          )
+          .scenarioGraph
+        modifiedScenarioGraph
+      case None =>
+        scenarioGraph
+    }
   }
 
   private def checkLoggedUserCanWriteToProcess(processId: ProcessId)(implicit loggedUser: LoggedUser) = {
