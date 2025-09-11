@@ -99,7 +99,7 @@ class KafkaJsonSchemalessSourceFactorySpec
   test("Should handle integer data sample") {
     val dataSample = "123"
     val result     = typingResultForDataSample(dataSample)
-    result shouldBe Valid(Typed.typedClass[Int])
+    result shouldBe Valid(Typed.typedClass[Long])
   }
 
   test("Should handle floating number data sample") {
@@ -144,7 +144,7 @@ class KafkaJsonSchemalessSourceFactorySpec
     val result = typingResultForDataSample(dataSample)
     result shouldBe Valid(
       Typed.record(
-        List("name" -> Typed.typedClass[String], "age" -> Typed.typedClass[Int], "city" -> Typed.typedClass[String])
+        List("name" -> Typed.typedClass[String], "age" -> Typed.typedClass[Long], "city" -> Typed.typedClass[String])
       )
     )
   }
@@ -162,7 +162,7 @@ class KafkaJsonSchemalessSourceFactorySpec
          |""".stripMargin
 
     val recordType = Typed.record(
-      List("name" -> Typed.typedClass[String], "age" -> Typed.typedClass[Int], "city" -> Typed.typedClass[String])
+      List("name" -> Typed.typedClass[String], "age" -> Typed.typedClass[Long], "city" -> Typed.typedClass[String])
     )
     val expectedType = Typed.genericTypeClass[java.util.List[_]](List(recordType))
     val result       = typingResultForDataSample(dataSample)
@@ -202,8 +202,8 @@ class KafkaJsonSchemalessSourceFactorySpec
     val expectedDisplayedResult = typingResultForDataSample(dataSample).map(_.display)
     expectedDisplayedResult shouldBe Valid(
       "Record{" +
-        "arrayExample: List[Unknown], booleanExample: Boolean, integerExample: Integer, nullExample: Unknown, numberExample: BigDecimal, " +
-        "objectExample: Record{nestedArray: List[Integer], nestedBoolean: Boolean, nestedInteger: Integer, nestedNumber: BigDecimal, " +
+        "arrayExample: List[Unknown], booleanExample: Boolean, integerExample: Long, nullExample: Unknown, numberExample: BigDecimal, " +
+        "objectExample: Record{nestedArray: List[Long], nestedBoolean: Boolean, nestedInteger: Long, nestedNumber: BigDecimal, " +
         "nestedObject: Record{deepKey: String}, nestedString: String}, stringExample: String" +
         "}"
     )

@@ -63,7 +63,6 @@ private[engine] object TypeConversionHandler {
   private val dateTypesConversions: List[SimpleTypeConversion[_, _]] = List(
     // to Instant
     new SimpleTypeConversion[java.lang.Long, Instant](millis => Instant.ofEpochMilli(millis)),
-    new SimpleTypeConversion[java.lang.Integer, Instant](millis => Instant.ofEpochMilli(millis.longValue())),
     new SimpleTypeConversion[ZonedDateTime, Instant](_.toInstant),
     new SimpleTypeConversion[OffsetDateTime, Instant](_.toInstant),
     // to OffsetDateTime
