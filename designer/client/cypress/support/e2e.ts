@@ -19,9 +19,3 @@ import "./commands";
 
 // Alternatively you can use CommonJS syntax:
 // require('./commands')
-
-beforeEach(() => {
-    cy.intercept({ resourceType: /xhr|fetch/, url: "/be-static/**" }, { log: false });
-    cy.intercept({ resourceType: /xhr|fetch/, url: "/assets/**" }, { log: false });
-    cy.intercept({ resourceType: /xhr|fetch/, url: "/api/**" }, { log: false });
-});
