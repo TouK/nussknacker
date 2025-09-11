@@ -49,7 +49,7 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K, V]](
 
   override def open(openContext: OpenContext): Unit = {
     state = getRuntimeContext.getState(stateDescriptor)
-    contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.id)
+    contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId)
   }
 
   override protected val minimalResolutionMs: Long = timeWindowLengthMillis

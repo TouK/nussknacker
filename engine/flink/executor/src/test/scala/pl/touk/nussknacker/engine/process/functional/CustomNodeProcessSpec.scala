@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.functional
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.context.ScenarioCompilationErrors
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -264,7 +265,7 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
       processInvoker.invokeWithSampleData(process, data)
     } should matchPattern {
       case ScenarioCompilationErrors(
-            ExpressionParserCompilationError("Unresolved reference 'input'", "proc2", _, _, _) :: _
+            ExpressionParserCompilationError("Unresolved reference 'input'", NodeId("proc2"), _, _, _) :: _
           ) =>
     }
   }
@@ -284,7 +285,7 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
       case ScenarioCompilationErrors(
             ExpressionParserCompilationError(
               "There is no property 'value999' in type: SimpleRecord",
-              "delta",
+              NodeId("delta"),
               _,
               _,
               _
@@ -336,9 +337,11 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
       )
     val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
 
-    CountingNodesListener.listen {
-      processInvoker.invokeWithSampleData(process, data)
-    } shouldBe List("id", "testVar", "custom", "split", "out", "custom-ending", "id", "testVar", "custom")
+    CountingNodesListener
+      .listen {
+        processInvoker.invokeWithSampleData(process, data)
+      }
+      .map(_.id) shouldBe List("id", "testVar", "custom", "split", "out", "custom-ending", "id", "testVar", "custom")
   }
 
 }

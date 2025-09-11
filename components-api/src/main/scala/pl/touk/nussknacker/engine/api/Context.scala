@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api
 
+import pl.touk.nussknacker.engine.api.process.ProcessName
+
 import scala.jdk.CollectionConverters._
 
 object Context {
@@ -15,8 +17,8 @@ object Context {
 }
 
 final case class ContextId private (
-    scenarioName: String,
-    originatingNodeId: String,
+    scenarioName: ProcessName,
+    originatingNodeId: NodeId,
     taskId: Long,
     index: Long,
     // We need to use java.util.List instead of the Scala List implementation, because of Flink typing issues:
@@ -30,15 +32,15 @@ final case class ContextId private (
 
   def path: List[ContextIdPathPart] = contextIdPath.asScala.toList
 
-  def withContextIdPathPart(nodeId: String, value: String): ContextId = {
+  def withContextIdPathPart(nodeId: NodeId, value: String): ContextId = {
     val copied = copy(contextIdPath = new java.util.ArrayList(contextIdPath))
     copied.contextIdPath.add(ContextIdPathPart(nodeId, value))
     copied
   }
 
-  lazy val legacyString: String = List(
-    List(scenarioName),
-    List(originatingNodeId),
+  lazy val legacyString: String = List[Seq[String]](
+    List(scenarioName.value),
+    List(originatingNodeId.id),
     List(taskId.toString),
     List(index.toString),
     contextIdPath.asScala.map(_.value),
@@ -46,31 +48,31 @@ final case class ContextId private (
 
 }
 
-case class ContextIdPathPart(nodeId: String, value: String)
+case class ContextIdPathPart(nodeId: NodeId, value: String)
 
 object ContextId {
 
   // Override and hide the default apply, in order to hide java list
   private def apply(
-      scenarioId: String,
-      originatingNodeId: String,
+      scenarioName: ProcessName,
+      originatingNodeId: NodeId,
       taskId: Long,
       index: Long,
       contextIdPath: java.util.List[ContextIdPathPart]
   ): ContextId =
-    new ContextId(scenarioId, originatingNodeId, taskId, index, contextIdPath)
+    new ContextId(scenarioName, originatingNodeId, taskId, index, contextIdPath)
 
   def apply(
-      scenarioId: String,
-      originatingNodeId: String,
+      scenarioName: ProcessName,
+      originatingNodeId: NodeId,
       taskId: Long,
       index: Long,
       path: List[ContextIdPathPart] = List.empty
   ): ContextId =
-    new ContextId(scenarioId, originatingNodeId, taskId, index, path.asJava)
+    new ContextId(scenarioName, originatingNodeId, taskId, index, path.asJava)
 
   // The dummy ContextId should only be used in test suites, perhaps also Nu scenario test mechanism or examples
-  def dummy: ContextId = new ContextId("dummy", "dummy", 0, 0, List.empty.asJava)
+  def dummy: ContextId = new ContextId(ProcessName("dummy"), NodeId("dummy"), 0, 0, List.empty.asJava)
 }
 
 /**
@@ -86,7 +88,7 @@ case class Context(
     parentContext: Option[Context]
 ) {
 
-  def withContextIdPathPart(nodeId: String, transformation: String): Context =
+  def withContextIdPathPart(nodeId: NodeId, transformation: String): Context =
     copy(id = id.withContextIdPathPart(nodeId, transformation))
 
   // TODO: all methods should has NotNothing type check to avoid situation when scala's compiler implicitly put Nothing

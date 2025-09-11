@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{ContextId, ContextIdPathPart}
+import pl.touk.nussknacker.engine.api.{ContextId, ContextIdPathPart, NodeId}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -34,9 +34,9 @@ class UnionTransformersTestModeSpec
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  private val scenarioName      = "sample-union"
-  private val sourceId          = "start-foo"
-  private val endSinkId         = "end"
+  private val scenarioName      = ProcessName("sample-union")
+  private val sourceId          = NodeId("start-foo")
+  private val endSinkId         = NodeId("end")
   private val leftBranchId      = "left"
   private val rightBranchId     = "right"
   private val unionNodeId       = "union-node-id"
@@ -76,10 +76,10 @@ class UnionTransformersTestModeSpec
 
   private def testDiamondLikeScenario(unionPart: GraphBuilder[node.SourceNode]): Unit = {
     val scenario = ScenarioBuilder
-      .streaming(scenarioName)
+      .streaming(scenarioName.value)
       .sources(
         GraphBuilder
-          .source(sourceId, "start")
+          .source(sourceId.id, "start")
           .split(
             "split",
             GraphBuilder
@@ -90,7 +90,7 @@ class UnionTransformersTestModeSpec
               .branchEnd(rightBranchId, unionNodeId)
           ),
         unionPart
-          .emptySink(endSinkId, "dead-end")
+          .emptySink(endSinkId.id, "dead-end")
       )
     ResultsCollectingListenerHolder.withListener { collectingListener =>
       val modelData = createModelData(data, collectingListener)
@@ -102,43 +102,43 @@ class UnionTransformersTestModeSpec
       contextIds should contain theSameElementsAs contextIds.toSet
       contextIds should contain only (
         ContextId(
-          scenarioId = scenarioName,
+          scenarioName = scenarioName,
           originatingNodeId = sourceId,
           taskId = firstSubtaskIndex,
           index = 0,
           path = List(
-            ContextIdPathPart("split", leftBranchId),
-            ContextIdPathPart("union-node-id", leftBranchId)
+            ContextIdPathPart(NodeId("split"), leftBranchId),
+            ContextIdPathPart(NodeId("union-node-id"), leftBranchId)
           )
         ),
         ContextId(
-          scenarioId = scenarioName,
+          scenarioName = scenarioName,
           originatingNodeId = sourceId,
           taskId = firstSubtaskIndex,
           index = 1,
           path = List(
-            ContextIdPathPart("split", leftBranchId),
-            ContextIdPathPart("union-node-id", leftBranchId)
+            ContextIdPathPart(NodeId("split"), leftBranchId),
+            ContextIdPathPart(NodeId("union-node-id"), leftBranchId)
           )
         ),
         ContextId(
-          scenarioId = scenarioName,
+          scenarioName = scenarioName,
           originatingNodeId = sourceId,
           taskId = firstSubtaskIndex,
           index = 0,
           path = List(
-            ContextIdPathPart("split", rightBranchId),
-            ContextIdPathPart("union-node-id", rightBranchId)
+            ContextIdPathPart(NodeId("split"), rightBranchId),
+            ContextIdPathPart(NodeId("union-node-id"), rightBranchId)
           )
         ),
         ContextId(
-          scenarioId = scenarioName,
+          scenarioName = scenarioName,
           originatingNodeId = sourceId,
           taskId = firstSubtaskIndex,
           index = 1,
           path = List(
-            ContextIdPathPart("split", rightBranchId),
-            ContextIdPathPart("union-node-id", rightBranchId)
+            ContextIdPathPart(NodeId("split"), rightBranchId),
+            ContextIdPathPart(NodeId("union-node-id"), rightBranchId)
           )
         ),
       )

@@ -68,7 +68,7 @@ object RecordValidator {
             "The key of a record has to be unique",
             "Record key not unique",
             ParameterName(fieldName),
-            nodeId.id
+            nodeId
           )
         )
       }.toValidatedNel

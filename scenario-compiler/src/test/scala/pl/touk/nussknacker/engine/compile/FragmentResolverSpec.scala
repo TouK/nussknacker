@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -132,7 +132,9 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
 
     val resolvedValidated = FragmentResolver(List(fragment)).resolve(process)
 
-    resolvedValidated shouldBe Invalid(NonEmptyList.of(FragmentOutputNotDefined("badoutput", Set("sub-out1", "sub"))))
+    resolvedValidated shouldBe Invalid(
+      NonEmptyList.of(FragmentOutputNotDefined("badoutput", Set(NodeId("sub-out1"), NodeId("sub"))))
+    )
 
   }
 
@@ -171,7 +173,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
 
     val resolvedValidated = FragmentResolver(List(fragment)).resolve(process)
 
-    resolvedValidated shouldBe Invalid(NonEmptyList.of(DisablingManyOutputsFragment("sub")))
+    resolvedValidated shouldBe Invalid(NonEmptyList.of(DisablingManyOutputsFragment(NodeId("sub"))))
 
   }
 
@@ -196,7 +198,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
 
     val resolvedValidated = FragmentResolver(List(fragment)).resolve(process)
 
-    resolvedValidated shouldBe Invalid(NonEmptyList.of(DisablingNoOutputsFragment("sub")))
+    resolvedValidated shouldBe Invalid(NonEmptyList.of(DisablingNoOutputsFragment(NodeId("sub"))))
 
   }
 
@@ -298,7 +300,9 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
 
     val resolvedValidated = FragmentResolver(List.empty).resolve(process)
 
-    resolvedValidated shouldBe Invalid(NonEmptyList.of(UnknownFragment(id = "fragmentId", nodeId = "nodeFragmentId")))
+    resolvedValidated shouldBe Invalid(
+      NonEmptyList.of(UnknownFragment(id = "fragmentId", nodeId = NodeId("nodeFragmentId")))
+    )
   }
 
   test("should resolve diamond fragments") {
@@ -384,7 +388,9 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       .emptySink("id1", "sink")
 
     val resolvedValidated = FragmentResolver(List(fragment)).resolve(scenario)
-    resolvedValidated shouldBe Invalid(NonEmptyList.of(DuplicateFragmentOutputNamesInScenario("output1", "fragment")))
+    resolvedValidated shouldBe Invalid(
+      NonEmptyList.of(DuplicateFragmentOutputNamesInScenario("output1", NodeId("fragment")))
+    )
 
   }
 

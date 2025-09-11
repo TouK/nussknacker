@@ -8,6 +8,7 @@ import org.apache.pekko.http.scaladsl.server._
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcessConverter
@@ -89,7 +90,7 @@ class ProcessReportResources(
       processName: ProcessName,
       scenarioGraph: ScenarioGraph,
       isFragment: Boolean,
-      nodeCountFunction: String => Option[Long]
+      nodeCountFunction: NodeId => Option[Long]
   )(implicit loggedUser: LoggedUser): ToResponseMarshallable = {
     val computedCounts = processCounter.computeCounts(
       CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processName),

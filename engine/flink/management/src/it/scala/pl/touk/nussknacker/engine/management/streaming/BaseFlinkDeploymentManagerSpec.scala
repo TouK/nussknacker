@@ -114,7 +114,7 @@ trait BaseFlinkDeploymentManagerSpec
 
           // Wait until first 15 live data samples are collected
           liveDataSamples.nodeTransitions
-            .get(NodeTransition("start", Some("endSend")))
+            .get(NodeTransition(NodeId("start"), Some(NodeId("endSend"))))
             .map(_.samples.size) shouldBe Some(15)
 
           val (liveDataWithMockedTimestamp, mockedTimestamp) = withFixedTimestamp(liveDataSamples)
@@ -123,13 +123,13 @@ trait BaseFlinkDeploymentManagerSpec
           val expected = CollectedLiveData(
             timestamp = mockedTimestamp,
             nodeTransitions = Map(
-              NodeTransition("start", Some("endSend")) ->
+              NodeTransition(NodeId("start"), Some(NodeId("endSend"))) ->
                 LiveDataForNodeTransition(
                   samples = (0 to 14).map { idx =>
                     LiveDataSample(
                       ContextId(
-                        scenarioId = "runningFlinkEventGenerator",
-                        originatingNodeId = "start",
+                        scenarioName = ProcessName("runningFlinkEventGenerator"),
+                        originatingNodeId = NodeId("start"),
                         taskId = 0,
                         index = idx
                       ),
@@ -146,8 +146,8 @@ trait BaseFlinkDeploymentManagerSpec
                 (0 to 14).map { idx =>
                   InvocationResult(
                     ContextId(
-                      scenarioId = "runningFlinkEventGenerator",
-                      originatingNodeId = "start",
+                      scenarioName = ProcessName("runningFlinkEventGenerator"),
+                      originatingNodeId = NodeId("start"),
                       taskId = 0,
                       index = idx
                     ),
@@ -160,8 +160,8 @@ trait BaseFlinkDeploymentManagerSpec
                 (0 to 14).map { idx =>
                   InvocationResult(
                     ContextId(
-                      scenarioId = "runningFlinkEventGenerator",
-                      originatingNodeId = "start",
+                      scenarioName = ProcessName("runningFlinkEventGenerator"),
+                      originatingNodeId = NodeId("start"),
                       taskId = 0,
                       index = idx
                     ),

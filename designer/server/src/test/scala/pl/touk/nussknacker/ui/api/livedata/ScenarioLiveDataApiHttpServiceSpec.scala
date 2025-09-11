@@ -8,12 +8,12 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
-import pl.touk.nussknacker.engine.api.{Context, ContextId}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId}
 import pl.touk.nussknacker.engine.api.component.ComponentType.Source
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.deployment.{LiveDataPreviewStoredInDesignerJvm, NoLiveDataPreviewSupport}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListener
@@ -112,30 +112,45 @@ class ScenarioLiveDataApiHttpServiceSpec
         skipLiveDataUploaderWithReason = None
       )
       listener.transitionToNextNode(
-        nodeId = "start",
-        nextNodeId = "variable",
+        nodeId = NodeId("start"),
+        nextNodeId = NodeId("variable"),
         context = Context(
-          ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
+          ContextId(
+            scenarioName = ProcessName("mocked-scenario-id"),
+            originatingNodeId = NodeId("source"),
+            taskId = 0,
+            index = 0
+          ),
           Map("v1" -> Json.obj("a" -> "aaa".asJson, "b" -> 1.asJson))
         ),
         processMetaData = exampleScenario.metaData
       )
       listener.expressionEvaluated(
-        nodeId = "start",
+        nodeId = NodeId("start"),
         expressionId = "var",
         expression = "ignored_by_live_data_collector",
         context = Context(
-          ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
+          ContextId(
+            scenarioName = ProcessName("mocked-scenario-id"),
+            originatingNodeId = NodeId("source"),
+            taskId = 0,
+            index = 0
+          ),
           Map.empty
         ),
         processMetaData = exampleScenario.metaData,
         result = 1
       )
       listener.serviceInvoked(
-        nodeId = "start",
+        nodeId = NodeId("start"),
         id = "var",
         context = Context(
-          ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
+          ContextId(
+            scenarioName = ProcessName("mocked-scenario-id"),
+            originatingNodeId = NodeId("source"),
+            taskId = 0,
+            index = 0
+          ),
           Map.empty
         ),
         processMetaData = exampleScenario.metaData,
@@ -143,10 +158,15 @@ class ScenarioLiveDataApiHttpServiceSpec
       )
       listener.exceptionThrown(
         NuExceptionInfo(
-          nodeComponentInfo = Some(NodeComponentInfo("start", Source, "start")),
+          nodeComponentInfo = Some(NodeComponentInfo(NodeId("start"), Source, "start")),
           throwable = new Exception("Something bad happened"),
           context = Context(
-            ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
+            ContextId(
+              scenarioName = ProcessName("mocked-scenario-id"),
+              originatingNodeId = NodeId("source"),
+              taskId = 0,
+              index = 0
+            ),
             Map("var1" -> Json.obj("pretty" -> "abc".asJson))
           ),
           input = "ignored_by_live_data_collector",

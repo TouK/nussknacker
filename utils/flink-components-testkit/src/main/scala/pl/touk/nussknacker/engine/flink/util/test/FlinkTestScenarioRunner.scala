@@ -8,7 +8,7 @@ import org.scalatest.concurrent.ScalaFutures.{convertScalaFuture, scaled, Patien
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
 import pl.touk.nussknacker.engine.RuntimeMode
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -350,7 +350,7 @@ class FlinkTestScenarioRunner(
       testScenarioCollectorHandler: TestScenarioCollectorHandler
   ) = {
     val allSinks           = scenario.collectAllNodes.collect { case sink: node.Sink => sink }
-    def isSink(id: String) = allSinks.exists(_.id == id)
+    def isSink(id: NodeId) = allSinks.exists(_.id == id.id)
     testScenarioCollectorHandler.resultsCollectingListener.results.externalInvocationResults.flatMap {
       case (id, externalInvocationResults) if isSink(id) =>
         externalInvocationResults.map(_.value)

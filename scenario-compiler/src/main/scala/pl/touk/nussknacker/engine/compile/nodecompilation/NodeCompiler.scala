@@ -293,7 +293,7 @@ class NodeCompiler(
           if customNodeIsEndingNode.contains(
             true
           ) && !scenarioIsAllowedToEndWithoutSink && !componentDefinition.componentTypeSpecificData.asCustomComponentData.canBeEnding =>
-        val error = Invalid(NonEmptyList.of(InvalidTailOfBranch(Set(nodeId.id))))
+        val error = Invalid(NonEmptyList.of(InvalidTailOfBranch(Set(nodeId))))
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
       case Some(componentDefinition) =>
         compileComponentWithContextTransformation[AnyRef]( // For custom nodes, we don't have a base class yet

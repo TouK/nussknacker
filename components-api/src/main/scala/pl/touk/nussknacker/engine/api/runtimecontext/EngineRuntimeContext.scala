@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.runtimecontext
 
-import pl.touk.nussknacker.engine.api.JobData
+import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.util.metrics.MetricsProviderForScenario
 
 trait EngineRuntimeContext {
@@ -9,6 +9,6 @@ trait EngineRuntimeContext {
 
   def metricsProvider: MetricsProviderForScenario
 
-  def contextIdGenerator(nodeId: String): ContextIdGenerator
+  def contextIdGenerator(nodeId: NodeId): ContextIdGenerator
 
 }

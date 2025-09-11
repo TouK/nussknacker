@@ -9,7 +9,7 @@ import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.typelevel.ci._
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId, StreamMetaData}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -392,7 +392,7 @@ class BaseFlowTest
         .response(asJson[ValidationResult])
     )
     updateResponse.code shouldEqual StatusCode.Ok
-    updateResponse.body.rightValue.errors.invalidNodes("input1") should matchPattern {
+    updateResponse.body.rightValue.errors.invalidNodes(NodeId("input1")) should matchPattern {
       case List(
             NodeValidationError(
               "FragmentParamClassLoadError",

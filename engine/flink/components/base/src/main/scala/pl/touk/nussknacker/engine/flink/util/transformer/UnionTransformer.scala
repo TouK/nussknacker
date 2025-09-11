@@ -38,7 +38,7 @@ object UnionTransformer extends UnionTransformer(None) {
     }
     unifiedReturnType
       .map(unionValidationContext(variableName, contexts, _))
-      .getOrElse(Validated.invalidNel(CannotCreateObjectError("All branch values must be of the same type", nodeId.id)))
+      .getOrElse(Validated.invalidNel(CannotCreateObjectError("All branch values must be of the same type", nodeId)))
   }
 
   private def findSuperTypeCheckingAllFieldsMatchingForObjects(

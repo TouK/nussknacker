@@ -28,7 +28,7 @@ class FlinkSinkSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     // without certain hack (see SpelHack & SpelMapHack) this throws exception.
     processInvoker.invokeWithSampleData(process, data)
 
-    SinkAccessingNodeContext.nodeId shouldBe "out"
+    SinkAccessingNodeContext.nodeId.id shouldBe "out"
   }
 
 }

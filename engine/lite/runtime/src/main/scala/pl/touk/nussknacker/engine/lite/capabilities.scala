@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.lite
 import cats.~>
 import cats.data.{Validated, ValidatedNel}
 import cats.data.Validated.Valid
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
@@ -31,7 +32,7 @@ object capabilities {
           override def apply[A](fa: From[A]): Target[A] = fa.asInstanceOf[Target[A]]
         })
       } else {
-        Validated.invalidNel(CannotCreateObjectError(s"Cannot convert capability: $tag", ""))
+        Validated.invalidNel(CannotCreateObjectError(s"Cannot convert capability: $tag", NodeId("")))
       }
     }
 

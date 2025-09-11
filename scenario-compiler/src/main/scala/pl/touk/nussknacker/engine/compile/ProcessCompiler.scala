@@ -4,7 +4,7 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.JobData
+import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -167,7 +167,7 @@ protected trait ProcessCompilerBase {
   private def findDuplicates(parts: NonEmptyList[SourcePart]): Validated[ProcessCompilationError, Unit] = {
     val allNodes = NodesCollector.collectNodesInAllParts(parts)
     val duplicatedIds =
-      allNodes.map(_.id).groupBy(identity).collect {
+      allNodes.map(n => NodeId(n.id)).groupBy(identity).collect {
         case (id, grouped) if grouped.size > 1 =>
           id
       }
@@ -199,7 +199,7 @@ protected trait ProcessCompilerBase {
         partInputContexts
           .get(p.id)
           .map(compileSubsequentPart(p, _))
-          .getOrElse(CompilationResult(Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(p.id)))))
+          .getOrElse(CompilationResult(Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(NodeId(p.id))))))
       )
       .sequence
   }

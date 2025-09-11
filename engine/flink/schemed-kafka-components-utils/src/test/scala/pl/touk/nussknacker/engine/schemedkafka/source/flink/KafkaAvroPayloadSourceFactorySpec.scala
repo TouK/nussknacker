@@ -325,7 +325,7 @@ class KafkaAvroPayloadSourceFactorySpec
           "testAvroRecordTopic1WithKey",
           "testPaymentDateTopic"
         ).map(fixedExpressionValue),
-        "id"
+        NodeId("id")
       ) :: Nil
     result.outputContext shouldBe ValidationContext(
       Map(
@@ -346,7 +346,7 @@ class KafkaAvroPayloadSourceFactorySpec
       label = None,
       value = "'12345'",
       values = List(FixedExpressionValue(s"'latest'", "Latest version")) ++ List("1", "2").map(fixedExpressionValue),
-      nodeId = "id"
+      nodeId = NodeId("id")
     ) :: Nil
     result.outputContext shouldBe ValidationContext(
       Map(

@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.Suite
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
@@ -47,7 +48,7 @@ trait FunctionalTestMixin extends KafkaSpec { self: Suite =>
     )
     Invalid(
       NonEmptyList.one(
-        CustomNodeError(sinkName, finalMessage, Some(KafkaUniversalComponentTransformer.sinkValueParamName))
+        CustomNodeError(NodeId(sinkName), finalMessage, Some(KafkaUniversalComponentTransformer.sinkValueParamName))
       )
     )
   }

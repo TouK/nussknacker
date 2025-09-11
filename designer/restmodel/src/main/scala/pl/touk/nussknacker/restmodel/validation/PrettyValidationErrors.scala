@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.restmodel.validation
 
 import org.apache.commons.lang3.StringUtils
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor}
@@ -322,7 +323,7 @@ object PrettyValidationErrors {
       label: Option[String],
       value: String,
       values: List[FixedExpressionValue],
-      nodeId: String,
+      nodeId: NodeId,
   ) = {
     val labelText = getLabel(label)
     NodeValidationError(

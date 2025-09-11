@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api.description.scenarioTesting
 
 import io.circe._
-import pl.touk.nussknacker.engine.api.ContextId
+import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
 import pl.touk.nussknacker.engine.livedata.CollectedLiveData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
@@ -16,7 +16,7 @@ import sttp.tapir.Schema
 import java.time.Instant
 import scala.collection.compat._
 
-final case class ResultsWithCountsDto(timestamp: Instant, results: TestResultsDto, counts: Map[String, NodeCount])
+final case class ResultsWithCountsDto(timestamp: Instant, results: TestResultsDto, counts: Map[NodeId, NodeCount])
 
 object ResultsWithCountsDto {
 
@@ -53,10 +53,10 @@ object ResultsWithCountsDto {
     )
   }
 
-  def from(liveData: CollectedLiveData, counts: Map[String, NodeCount]): ResultsWithCountsDto = {
+  def from(liveData: CollectedLiveData, counts: Map[NodeId, NodeCount]): ResultsWithCountsDto = {
     lazy val exceptionsByNodeId = liveData.exceptions.map { case (nodeId, results) =>
-      nodeId.id -> results.map(e =>
-        ExceptionResult(ResultContext(e.contextId, e.timestamp, e.variables), Some(nodeId.id), e.throwable)
+      nodeId -> results.map(e =>
+        ExceptionResult(ResultContext(e.contextId, e.timestamp, e.variables), Some(nodeId), e.throwable)
       )
     }
     ResultsWithCountsDto(
@@ -75,10 +75,10 @@ object ResultsWithCountsDto {
           }.toList
         ),
         invocationResults = liveData.invocationResults.map { case (nodeId, results) =>
-          nodeId.id -> results.map(r => ExpressionInvocationResult(r.contextId, r.timestamp, r.name, r.value))
+          nodeId -> results.map(r => ExpressionInvocationResult(r.contextId, r.timestamp, r.name, r.value))
         },
         externalInvocationResults = liveData.externalInvocationResults.map { case (nodeId, results) =>
-          nodeId.id -> results.map(r => ExternalInvocationResult(r.contextId, r.timestamp, r.name, r.value))
+          nodeId -> results.map(r => ExternalInvocationResult(r.contextId, r.timestamp, r.name, r.value))
         },
         exceptions = exceptionsByNodeId.values.toList.flatten,
         exceptionsByNodeId = exceptionsByNodeId,
@@ -89,6 +89,8 @@ object ResultsWithCountsDto {
 
   import sttp.tapir.json.circe._
 
+  implicit def nodeIdSchema: Schema[NodeId]                             = Schema.derived
+  implicit def nodeIdKeyMapSchema[V: Schema]: Schema[Map[NodeId, V]]    = Schema.schemaForMap[NodeId, V](_.id)
   implicit def contextIdPathPartDtoSchema: Schema[ContextIdPathPartDto] = Schema.derived
   implicit def contextIdSchema: Schema[ContextId] =
     Schema.derived[ContextIdDto].map(_ => None)(ContextIdDto.from)
@@ -105,17 +107,17 @@ object ResultsWithCountsDto {
 }
 
 final case class TestResultsDto(
-    nodeResults: Option[Map[String, List[ResultContext[Json]]]],
+    nodeResults: Option[Map[NodeId, List[ResultContext[Json]]]],
     nodeTransitionResults: Option[List[NodeTransitionResult]],
-    invocationResults: Map[String, List[ExpressionInvocationResult[Json]]],
-    externalInvocationResults: Map[String, List[ExternalInvocationResult[Json]]],
+    invocationResults: Map[NodeId, List[ExpressionInvocationResult[Json]]],
+    externalInvocationResults: Map[NodeId, List[ExternalInvocationResult[Json]]],
     exceptions: List[ExceptionResult[Json]],
-    exceptionsByNodeId: Map[String, List[ExceptionResult[Json]]],
+    exceptionsByNodeId: Map[NodeId, List[ExceptionResult[Json]]],
 )
 
 final case class NodeTransitionResult(
-    sourceNodeId: String,
-    destinationNodeId: Option[String],
+    sourceNodeId: NodeId,
+    destinationNodeId: Option[NodeId],
     results: List[ResultContext[Json]],
     totalCount: Option[Long],
     currentThroughput: Option[BigDecimal],
