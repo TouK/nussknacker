@@ -821,7 +821,7 @@ export class HttpService {
         return promise;
     }
 
-    validateTestDataWithDataRecords(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, expression: string) {
+    validateTestDataWithDataRecords(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, dataRecords: TestingDataRecords) {
         const sanitizedScenarioGraph = this.#sanitizeScenarioGraph(scenarioGraph);
 
         const promise = api.post<GenericValidationData>(`/scenarioTesting/${encodeURIComponent(scenarioName)}/validate`, {
@@ -829,11 +829,11 @@ export class HttpService {
             testData: {
                 type: "WITH_PARAMETERS",
                 sourceParameters: {
-                    sourceId: "Event Generator",
+                    sourceId: dataRecords.sourceId,
                     parameterExpressions: {
                         "Input variables": {
                             language: "json",
-                            expression,
+                            expression: dataRecords.variables,
                         },
                     },
                 },

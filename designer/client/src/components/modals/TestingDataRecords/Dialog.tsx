@@ -82,7 +82,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
 
     const validateEditedRow = React.useCallback(
         (rowIndex: number, row: TestingDataRecords) => {
-            HttpService.validateTestDataWithDataRecords(scenarioName, scenarioGraph, row.variables).then(({ data }) =>
+            HttpService.validateTestDataWithDataRecords(scenarioName, scenarioGraph, row).then(({ data }) =>
                 setCellErrors((prev) => {
                     const withoutRow = prev.filter((e) => e.y !== rowIndex || e.columnName !== "variables");
                     const newErrors: CellError[] = data.validationErrors.map((validationError) => ({
