@@ -34,7 +34,7 @@ export const AppendFromLiveDataButton = ({ handleGenerateTestData, maxTestingRec
                 <StyledLoadingButton
                     sx={{ mr: 2, fontSize: "14px" }}
                     title={t("testingDialog.appendRecordsButton", "Append from live data")}
-                    action={() => handleGenerateTestData(recordsToAppend)}
+                    action={() => handleGenerateTestData(recordsToAppend ?? 0)}
                     disabled={buttonDisabled}
                 />
             </Box>
