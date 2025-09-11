@@ -1,4 +1,5 @@
 import { useWindowManager } from "@touk/window-manager";
+import type { dia } from "jointjs";
 import { isEmpty } from "lodash";
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useErrorBoundary } from "react-error-boundary";
@@ -33,6 +34,7 @@ import { getCapabilities } from "../reducers/selectors/other";
 import { useAppDispatch, useAppSelector } from "../store/storeHelpers";
 import { useWindows } from "../windowManager";
 import { AddComponentsButtons } from "./AddComponentsButtons";
+import { AdjustNodeOverlapBehavior } from "./AdjustNodeOverlapBehavior";
 import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
 import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { useInterval } from "./Interval";
@@ -167,12 +169,15 @@ function Visualization() {
     const capabilities = useAppSelector(getCapabilities);
     const nothingToSave = useAppSelector(isPristine);
 
-    const getPastePosition = useCallback(() => {
-        const instance = getGraphInstance();
-        const paper = instance?.processGraphPaper;
-        const point = paper?.clientToLocalRect(instance.viewport).center().snapToGrid(1, 1) || { x: 0, y: 0 };
-        return findFreeSpaceForNode(paper, point);
-    }, [getGraphInstance]);
+    const getPastePosition = useCallback(
+        (size?: dia.Size) => {
+            const instance = getGraphInstance();
+            const paper = instance?.processGraphPaper;
+            const point = paper?.clientToLocalRect(instance.viewport).center().snapToGrid(1, 1) || { x: 0, y: 0 };
+            return findFreeSpaceForNode(paper, point, null, size);
+        },
+        [getGraphInstance],
+    );
 
     useEffect(() => {
         fetchData(processName);
@@ -213,6 +218,7 @@ function Visualization() {
                 <GraphProvider graph={getGraphInstance}>
                     <LiveDataThroughputs />
                     <PanToNodes />
+                    <AdjustNodeOverlapBehavior />
                     <SelectionContextProvider pastePosition={getPastePosition}>
                         <BindKeyboardShortcuts disabled={windows.length > 0} />
                         <Toolbars isReady={dataResolved} externalLayerWrapper={Portal}>

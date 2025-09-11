@@ -1,3 +1,5 @@
+import type { dia } from "jointjs";
+import { g } from "jointjs";
 import type { PropsWithChildren, ReactElement } from "react";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -27,6 +29,8 @@ import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDef
 import { canModifySelectedNodes, getScenarioGraph, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
+import type { Edge, NodeType } from "../../types";
+import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
 import NodeUtils from "./NodeUtils";
 
 const hasTextSelection = () => !!window.getSelection().toString();
@@ -49,8 +53,8 @@ interface UserActions {
 function useClipboardParse() {
     const processDefinitionData = useAppSelector(getProcessDefinitionData);
     return useCallback(
-        (text) => {
-            const selection = tryParseOrNull(text);
+        (text: string) => {
+            const selection = tryParseOrNull<{ edges: Edge[]; nodes: NodeType[] }>(text);
             // TODO: check what happens with wrong nodes.
             const isValid = selection?.edges && selection?.nodes?.every((node) => NodeUtils.isAvailable(node, processDefinitionData));
             return isValid ? selection : null;
@@ -63,7 +67,7 @@ function useClipboardPermission(): boolean | string {
     const clipboardPermission = useRef<PermissionStatus>();
     const [state, setState] = useState<"denied" | "granted" | "prompt">();
     const [text, setText] = useState("");
-    const [content, setContent] = useState("");
+    const [content, setContent] = useState<{ edges: Edge[]; nodes: NodeType[] }>(null);
 
     const parse = useClipboardParse();
 
@@ -110,7 +114,7 @@ function useClipboardPermission(): boolean | string {
             // https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API
             return true;
         }
-        return state === "prompt" || content;
+        return state === "prompt" || content !== null;
     }, [content, state]);
 }
 
@@ -137,7 +141,7 @@ function useUndoRedoActions(disabled?: boolean) {
 
 export default function SelectionContextProvider(
     props: PropsWithChildren<{
-        pastePosition: () => { x: number; y: number };
+        pastePosition: (size?: dia.Size) => { x: number; y: number };
     }>,
 ): ReactElement {
     const dispatch = useAppDispatch();
@@ -189,10 +193,22 @@ export default function SelectionContextProvider(
 
     const parse = useClipboardParse();
 
-    const [parseInsertNodes] = useDebounceFn((clipboardText) => {
+    const [parseInsertNodes] = useDebounceFn((clipboardText: string) => {
         const selection = parse(clipboardText);
         if (selection) {
-            dispatch(addNodeMultiple(selection.nodes, selection.edges, props.pastePosition()));
+            dispatch(
+                addNodeMultiple(
+                    selection.nodes,
+                    selection.edges,
+                    props.pastePosition(
+                        selection.nodes.reduce(
+                            (acc, { additionalFields: { layoutData } }) =>
+                                new g.Rect(layoutData.x, layoutData.y, RECT_WIDTH, RECT_HEIGHT).union(acc),
+                            new g.Rect(),
+                        ),
+                    ),
+                ),
+            );
         } else {
             dispatch(error(t("userActions.paste.failed", "Cannot paste content from clipboard")));
         }
