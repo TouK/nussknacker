@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyValida
 
 import java.time.Instant
 
-class CustomWatermarkStrategyKafkaSpec extends FlinkWithKafkaSuite {
+class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite {
 
   override protected def resolveModelConfig(config: Config): Config =
     super
@@ -26,9 +26,47 @@ class CustomWatermarkStrategyKafkaSpec extends FlinkWithKafkaSuite {
   private val givenKey  = "foo-key"
   private val givenData = 1
 
-  test("should use timestamp configured by a user") {
-    val inputTopic  = "input-topic-custom-event-time"
-    val outputTopic = "output-topic-custom-event-time"
+
+  test("should use timestamp configured by a user in event generator") {
+    val outputTopic = "output-topic-custom-event-time-event-generator"
+
+    kafkaClient.createTopic(outputTopic, 1)
+    val givenTimestamp   = 123
+
+    val scenario =
+      ScenarioBuilder
+        .streaming("without-schema")
+        .parallelism(1)
+        .source(
+          "start",
+          "event-generator",
+          "schedule"  -> "T(java.time.Duration).parse('PT1S')".spel,
+          "value"   ->
+            s"""{
+               |  "timestamp": $givenTimestamp
+               |}""".stripMargin.jsonTemplate,
+          "Event time" -> "#input.timestamp".spel
+        )
+        .emptySink(
+          "end",
+          "kafka",
+          KafkaUniversalComponentTransformer.sinkKeyParamName.value     -> "".spel,
+          KafkaUniversalComponentTransformer.sinkValueParamName.value   -> "foo".spelTemplate,
+          KafkaUniversalComponentTransformer.topicParamName.value       -> s"'$outputTopic'".spel,
+          KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.PLAIN.toString}'".spel,
+        )
+
+    testScenarioRunner.withRunningScenario(scenario) { _ =>
+      val records = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic)
+
+      val firstRecord = records.head
+      firstRecord.timestamp shouldBe givenTimestamp
+    }
+  }
+
+  test("should use timestamp configured by a user in kafka source") {
+    val inputTopic  = "input-topic-custom-event-time-kafka-source"
+    val outputTopic = "output-topic-custom-event-time-kafka-source"
 
     kafkaClient.createTopic(inputTopic, 1)
     kafkaClient.createTopic(outputTopic, 1)

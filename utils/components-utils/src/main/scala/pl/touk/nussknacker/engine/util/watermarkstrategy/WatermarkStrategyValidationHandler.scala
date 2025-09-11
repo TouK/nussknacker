@@ -111,10 +111,10 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
           ((`idlenessParamName`, _: DefinedEagerParameter)),
           _
         ) =>
-      resultAfterEventTimeParam(inputContext, dependencies, step.parameters, step.state)
+      resultAfterWatermarkStrategyParameters(inputContext, dependencies, step.parameters, step.state)
   }
 
-  protected def resultAfterEventTimeParam(
+  protected def resultAfterWatermarkStrategyParameters(
       inputContext: ValidationContext,
       dependencies: List[NodeDependencyValue],
       parameters: List[(ParameterName, DefinedParameter)],
