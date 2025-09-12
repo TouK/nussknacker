@@ -18,7 +18,8 @@ function dndTo(subject, target: string, options?: { x?: number; y?: number }) {
             const x = width + x1 - 10;
             const y = y1 + 10;
             cy.wrap($target).trigger("mousemove", x, y, { button: 0, x, y, force: true, moveThreshold: 5 });
-            cy.get("@target").trigger("mouseup", { button: 0, bubbles: true });
+            cy.wait(50);
+            cy.wrap($target).trigger("mouseup", { force: true, bubbles: true, x, y });
         });
     cy.wait(250);
 }
