@@ -18,7 +18,6 @@ import {
     stickyNoteUpdated,
     toggleSelection,
 } from "../../actions/nk";
-import { findFreeSpaceForNode } from "../../actions/nk/findFreeSpaceForNode";
 import { isEdgeEditable } from "../../common/EdgeUtils";
 import type User from "../../common/models/User";
 import ProcessUtils from "../../common/ProcessUtils";
@@ -307,16 +306,6 @@ export class Graph extends React.Component<Props> {
             if (isStickyNoteElement(cell)) {
                 this.props.dispatch(stickyNoteUpdated(cell, content));
             }
-        });
-
-        this.graph.on(Events.ADD, (cell: dia.Element) => {
-            if (!isModelElement(cell)) return;
-            // wait for cell.position update
-            requestAnimationFrame(() => {
-                const point = findFreeSpaceForNode(this.processGraphPaper, cell.position(), cell);
-                cell.position(point.x, point.y);
-                this.changeLayoutIfNeeded();
-            });
         });
 
         this.fit();

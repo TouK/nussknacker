@@ -17,8 +17,9 @@ export function findFreeSpaceForNode(
     paper: dia.Paper,
     plainPoint: g.PlainPoint,
     self?: dia.Cell,
-    options: Partial<typeof defaultOptions> = defaultOptions,
+    _options: Partial<typeof defaultOptions> = {},
 ): g.Point {
+    const options = { ...defaultOptions, ..._options };
     const rect = new g.Rect(plainPoint.x, plainPoint.y, options.width, options.height);
     if (countCellsInArea(paper, rect.clone().inflate(2), self)) {
         return findFreeSpaceForNode(paper, rect.offset(options.dx).topLeft(), self, options);
