@@ -127,9 +127,9 @@ object ProcessTestHelpersConfigCreator extends EmptyProcessConfigCreator {
 
 case object SinkAccessingNodeContext extends EmptySink with Serializable {
 
-  @transient private var _nodeId: String = _
+  @transient private var _nodeId: NodeId = _
 
-  def nodeId: String = _nodeId
+  def nodeId: NodeId = _nodeId
 
   @nowarn("cat=deprecation")
   override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[AnyRef] = {

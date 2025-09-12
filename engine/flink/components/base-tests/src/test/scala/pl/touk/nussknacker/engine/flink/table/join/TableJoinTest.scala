@@ -6,6 +6,7 @@ import org.apache.flink.types.Row
 import org.scalatest.{BeforeAndAfterAll, Inside, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -181,7 +182,7 @@ class TableJoinTest
 
     enrichedOrders.invalidValue.toList should matchPattern {
       case CustomNodeError(
-            `joinNodeId`,
+            NodeId(`joinNodeId`),
             "Types Integer and String are not comparable",
             Some(ParameterName("Key"))
           ) :: Nil =>

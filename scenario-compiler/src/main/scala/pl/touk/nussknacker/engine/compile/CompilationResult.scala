@@ -6,6 +6,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.instances.map._
 import cats.kernel.Semigroup
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ProcessUncanonizationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   EmptyProcess,
@@ -84,7 +85,7 @@ object CompilationResult extends Applicative[CompilationResult] {
     def mergeErrors[T <: ProcessUncanonizationError: ClassTag](
         collectedSoFar: NonEmptyList[ProcessUncanonizationError],
         error: ProcessUncanonizationNodeError,
-        create: Set[String] => T
+        create: Set[NodeId] => T
     ): NonEmptyList[ProcessUncanonizationError] = {
       val (matching, nonMatching) = collectedSoFar.toList.partition {
         case _: T => true

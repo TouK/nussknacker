@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.canonize
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.syntax.traverse._
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.canonicalgraph._
 import pl.touk.nussknacker.engine.graph._
 import pl.touk.nussknacker.engine.graph.node.{BranchEnd, BranchEndData}
@@ -46,7 +47,7 @@ object ProcessCanonizer {
       case (a @ canonicalnode.FlatNode(data: node.StartingNodeData)) :: tail =>
         uncanonize(a, tail).map(node.SourceNode(data, _))
       case other :: _ =>
-        MaybeArtificial.artificialSource(InvalidRootNode(other.id))
+        MaybeArtificial.artificialSource(InvalidRootNode(NodeId(other.id)))
 
       case _ =>
         MaybeArtificial.artificialSource(EmptyProcess)
@@ -96,7 +97,7 @@ object ProcessCanonizer {
         }
 
       case canonicalnode.SplitNode(bare, Nil) :: Nil =>
-        missingSinkHandler.handleMissingSink(bare.id, Some(node.SplitNode(bare, List.empty)))
+        missingSinkHandler.handleMissingSink(NodeId(bare.id), Some(node.SplitNode(bare, List.empty)))
 
       case (a @ canonicalnode.SplitNode(bare, nexts)) :: Nil =>
         nexts
@@ -107,10 +108,10 @@ object ProcessCanonizer {
           }
 
       case invalidHead :: _ =>
-        MaybeArtificial.missingSinkError(InvalidTailOfBranch(invalidHead.id))
+        MaybeArtificial.missingSinkError(InvalidTailOfBranch(NodeId(invalidHead.id)))
 
       case Nil =>
-        missingSinkHandler.handleMissingSink(previous.id, None)
+        missingSinkHandler.handleMissingSink(NodeId(previous.id), None)
     }
 
 }

@@ -128,7 +128,7 @@ class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
     result shouldBe Invalid(
       NonEmptyList.one(
         CustomNodeError(
-          nodeId.id,
+          nodeId,
           s"""Record field name is restricted. Restricted names are Schema version, Key, Value validation mode, Topic""",
           None
         )

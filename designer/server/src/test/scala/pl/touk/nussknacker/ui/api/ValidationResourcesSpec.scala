@@ -9,7 +9,7 @@ import org.apache.pekko.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unm
 import org.scalatest.{Assertion, BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.{NodeId, StreamMetaData}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
@@ -213,13 +213,13 @@ class ValidationResourcesSpec
     createAndValidateScenario(process) {
       status shouldEqual StatusCodes.OK
       val validation = responseAs[ValidationResult]
-      validation.errors.invalidNodes("filter").head.message should include(
+      validation.errors.invalidNodes(NodeId("filter")).head.message should include(
         "This field is required and can not be null"
       )
-      validation.errors.invalidNodes("variable1").head.message should include(
+      validation.errors.invalidNodes(NodeId("variable1")).head.message should include(
         "Field: $expression is mandatory and can not be empty"
       )
-      validation.errors.invalidNodes.get("variable2") shouldBe None
+      validation.errors.invalidNodes.get(NodeId("variable2")) shouldBe None
     }
   }
 
@@ -236,8 +236,8 @@ class ValidationResourcesSpec
     createAndValidateScenario(processWithDisabledFilterAndProcessor, ProcessName("p1")) {
       status shouldEqual StatusCodes.OK
       val validation = responseAs[ValidationResult]
-      validation.warnings.invalidNodes("filter1").head.message should include("Node filter1 is disabled")
-      validation.warnings.invalidNodes("proc1").head.message should include("Node proc1 is disabled")
+      validation.warnings.invalidNodes(NodeId("filter1")).head.message should include("Node filter1 is disabled")
+      validation.warnings.invalidNodes(NodeId("proc1")).head.message should include("Node proc1 is disabled")
     }
   }
 

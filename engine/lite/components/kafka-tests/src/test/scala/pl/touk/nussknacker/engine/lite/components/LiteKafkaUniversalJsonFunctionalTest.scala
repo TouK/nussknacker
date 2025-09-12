@@ -11,7 +11,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CustomNodeError,
@@ -292,7 +292,7 @@ class LiteKafkaUniversalJsonFunctionalTest
 
     results.isValid shouldBe false
     val runtimeError = results.invalidValue.head
-    runtimeError.nodeIds shouldBe Set("my-sink")
+    runtimeError.nodeIds shouldBe Set(NodeId("my-sink"))
     runtimeError.asInstanceOf[CustomNodeError].message shouldBe
       """Provided value does not match scenario output - errors:
         |Incorrect type: actual: 'List[Integer]({1, 2})' expected: 'List[Integer]({1, 2, 3}) | String(A)'.""".stripMargin
@@ -329,7 +329,7 @@ class LiteKafkaUniversalJsonFunctionalTest
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  valid(inputObjectIntPropValue)),
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      strict,               invalidTypes("actual: 'Long | String' expected: 'Long'")),
       (inputObject,                  objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  invalidNel(
-        ExpressionParserCompilationError("There is no property 'foo_int' in type: Record{definedProp: String}", "my-sink", Some(ParameterName("Value")), "#input['foo_int']", Some(CoordinatesBasedTextRange(TextCoordinates(6, 0), TextCoordinates(7, 0)))))),
+        ExpressionParserCompilationError("There is no property 'foo_int' in type: Record{definedProp: String}", NodeId("my-sink"), Some(ParameterName("Value")), "#input['foo_int']", Some(CoordinatesBasedTextRange(TextCoordinates(6, 0), TextCoordinates(7, 0)))))),
       (inputObjectWithDefinedProp,   objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaString,                                   SpecialSpELElement("#input.definedProp"),     strict,               valid(inputObjectDefinedPropValue)),
     )
     //@formatter:on
@@ -354,7 +354,7 @@ class LiteKafkaUniversalJsonFunctionalTest
   test("pattern properties validations should work in editor mode") {
     def invalidTypeInEditorMode(fieldName: String, error: String): Invalid[NonEmptyList[CustomNodeError]] = {
       val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil, Nil)
-      Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(ParameterName(fieldName)))))
+      Invalid(NonEmptyList.one(CustomNodeError(NodeId(sinkName), finalMessage, Some(ParameterName(fieldName)))))
     }
 
     val objWithNestedPatternPropertiesMapSchema =
@@ -423,7 +423,7 @@ class LiteKafkaUniversalJsonFunctionalTest
 
     def expectedMissingValue(result: ValidatedNel[ProcessCompilationError, Map[String, Json]]): Assertion =
       result.invalidValue should matchPattern {
-        case NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName(`ObjectFieldName`), `sinkName`), Nil) =>
+        case NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName(`ObjectFieldName`), NodeId(`sinkName`)), Nil) =>
       }
 
     forAll(
@@ -535,7 +535,7 @@ class LiteKafkaUniversalJsonFunctionalTest
     )
     val strictValidationErrors = runWithValueResults(strictConfig).invalidValue
     strictValidationErrors should matchPattern {
-      case NonEmptyList(CustomNodeError(`sinkName`, message, _), Nil)
+      case NonEmptyList(CustomNodeError(NodeId(`sinkName`), message, _), Nil)
           if message.contains(s"Redundant fields: $secondsField") =>
     }
 

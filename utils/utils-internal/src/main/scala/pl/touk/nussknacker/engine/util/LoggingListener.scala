@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.util
 
 import org.slf4j.Logger
-import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener}
+import pl.touk.nussknacker.engine.api.{Context, MetaData, NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import java.util.concurrent.ConcurrentHashMap
@@ -36,38 +36,38 @@ object LoggingListener extends ProcessListener with Serializable {
     }
   }
 
-  override def nodeEntered(nodeId: String, context: Context, metadata: MetaData): Unit = {
-    debug(List(metadata.name.value, nodeId), s"Node entered. Context: $context")
+  override def nodeEntered(nodeId: NodeId, context: Context, metadata: MetaData): Unit = {
+    debug(List(metadata.name.value, nodeId.id), s"Node entered. Context: $context")
   }
 
   override def transitionToNextNode(
-      nodeId: String,
-      nextNodeId: String,
+      nodeId: NodeId,
+      nextNodeId: NodeId,
       context: Context,
       processMetaData: MetaData
   ): Unit = ()
 
   override def processingFinishedInNode(
-      nodeId: String,
+      nodeId: NodeId,
       context: Context,
       processMetaData: MetaData,
   ): Unit = ()
 
   override def endEncountered(
-      nodeId: String,
+      nodeId: NodeId,
       ref: String,
       context: Context,
       metadata: MetaData
   ): Unit = {
-    debug(List(metadata.name.value, nodeId, "end", ref), s"End encountered. Context: $context")
+    debug(List(metadata.name.value, nodeId.id, "end", ref), s"End encountered. Context: $context")
   }
 
-  override def deadEndEncountered(lastNodeId: String, context: Context, metadata: MetaData): Unit = {
-    debug(List(metadata.name.value, lastNodeId, "deadEnd"), s"Dead end encountered. Context: $context")
+  override def deadEndEncountered(lastNodeId: NodeId, context: Context, metadata: MetaData): Unit = {
+    debug(List(metadata.name.value, lastNodeId.id, "deadEnd"), s"Dead end encountered. Context: $context")
   }
 
   override def expressionEvaluated(
-      nodeId: String,
+      nodeId: NodeId,
       expressionId: String,
       expr: String,
       context: Context,
@@ -75,20 +75,20 @@ object LoggingListener extends ProcessListener with Serializable {
       result: Any
   ): Unit = {
     debug(
-      List(metadata.name.value, nodeId, "expression"),
+      List(metadata.name.value, nodeId.id, "expression"),
       s"invoked expression: $expr with result $result. Context: $context"
     )
   }
 
   override def serviceInvoked(
-      nodeId: String,
+      nodeId: NodeId,
       id: String,
       context: Context,
       metadata: MetaData,
       result: Try[Any]
   ): Unit = {
     debug(
-      List(metadata.name.value, nodeId, "service", id),
+      List(metadata.name.value, nodeId.id, "service", id),
       s"Invocation ended-up with result: $result. Context: $context"
     )
   }

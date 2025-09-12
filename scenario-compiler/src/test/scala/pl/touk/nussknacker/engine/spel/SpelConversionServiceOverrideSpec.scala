@@ -82,7 +82,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
       case Invalid(
             NonEmptyList(
               NuExceptionInfo(
-                Some(NodeComponentInfo("invoke-service", Some(ComponentId(ComponentType.Service, "service")))),
+                Some(NodeComponentInfo(NodeId("invoke-service"), Some(ComponentId(ComponentType.Service, "service")))),
                 ex,
                 _,
                 _,

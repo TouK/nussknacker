@@ -92,7 +92,7 @@ trait BaseFlinkSource { this: ExplicitUidInOperatorsSupport =>
       case singleOut: SingleOutputStreamOperator[_] =>
         setUidToNodeIdIfNeed[T](
           flinkNodeContext,
-          singleOut.name(flinkNodeContext.nodeId)
+          singleOut.name(flinkNodeContext.nodeId.id)
         )
       case _ => streamOfRaw
     }

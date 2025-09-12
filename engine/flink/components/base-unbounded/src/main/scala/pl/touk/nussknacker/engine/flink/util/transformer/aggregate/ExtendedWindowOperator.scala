@@ -13,7 +13,7 @@ import org.apache.flink.streaming.runtime.operators.windowing.functions.Internal
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api
-import pl.touk.nussknacker.engine.api.ValueWithContext
+import pl.touk.nussknacker.engine.api.{NodeId, ValueWithContext}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyEnricher
@@ -118,7 +118,7 @@ private[aggregate] class ExtendedWindowOperator[A](
 
 private class ValueEmittingWindowFunction(
     convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
-    nodeId: String,
+    nodeId: NodeId,
     private val contextHolderRef: NuWindowContextHolder
 ) extends ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], AnyRef, TimeWindow] {
 

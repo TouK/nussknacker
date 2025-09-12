@@ -50,6 +50,7 @@ interface TableProps {
     className?: string;
     sourceParameters: TestFormParameters[];
     cellErrors: CellError[];
+    recordsToAddLimitExceeded?: boolean;
 }
 
 export const TABLE_HEIGHT = "65vh";
@@ -81,6 +82,7 @@ export const Table: React.FC<TableProps> = ({
     defaultDataRecord,
     sourceParameters,
     cellErrors,
+    recordsToAddLimitExceeded,
 }) => {
     const tableTheme = useTableTheme();
     const [selection, setSelection] = useState<GridSelection>(emptySelection);
@@ -284,7 +286,7 @@ export const Table: React.FC<TableProps> = ({
                     customRenderers={customRenderers}
                     getCellsForSelection
                     onCellsEdited={onCellEdited}
-                    onRowAppended={onCellAdded}
+                    onRowAppended={recordsToAddLimitExceeded ? undefined : onCellAdded}
                     rowMarkers="clickable-number"
                     rows={data.length}
                     smoothScrollX

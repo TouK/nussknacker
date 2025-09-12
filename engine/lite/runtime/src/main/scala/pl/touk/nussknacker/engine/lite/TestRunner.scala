@@ -144,9 +144,8 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
   ): Unit = {
     val successfulResults = results.value
     successfulResults.foreach { result =>
-      val node = result.nodeId.id
       testServiceInvocationCollector
-        .createSinkInvocationCollector(node, node)
+        .createSinkInvocationCollector(result.nodeId, result.nodeId.id)
         .collect(result.context, result.result)
     }
   }

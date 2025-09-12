@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -153,7 +154,9 @@ class UnionTransformerSpec
       )
 
     val result = testScenarioRunner.runWithData(scenario, data).invalidValue
-    result.toList should contain(CannotCreateObjectError("All branch values must be of the same type", UnionNodeId))
+    result.toList should contain(
+      CannotCreateObjectError("All branch values must be of the same type", NodeId(UnionNodeId))
+    )
   }
 
   test("should throw when one branch emits error") {

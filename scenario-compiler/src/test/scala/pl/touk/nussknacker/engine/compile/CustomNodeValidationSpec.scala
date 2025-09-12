@@ -7,7 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
@@ -168,7 +168,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
       )
 
     validate(invalidProcess).result should matchPattern {
-      case Invalid(NonEmptyList(InvalidTailOfBranch(nodeIds), _)) if nodeIds == Set("custom1") =>
+      case Invalid(NonEmptyList(InvalidTailOfBranch(nodeIds), _)) if nodeIds == Set(NodeId("custom1")) =>
     }
   }
 
@@ -182,7 +182,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
       )
 
     validate(invalidProcess).result should matchPattern {
-      case Invalid(NonEmptyList(InvalidTailOfBranch(nodeIds), _)) if nodeIds == Set("custom1") =>
+      case Invalid(NonEmptyList(InvalidTailOfBranch(nodeIds), _)) if nodeIds == Set(NodeId("custom1")) =>
     }
   }
 
@@ -196,7 +196,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
             NonEmptyList(
               ExpressionParserCompilationError(
                 "Unresolved reference 'nonExisitngVar'",
-                "custom1",
+                NodeId("custom1"),
                 Some(ParameterName("stringVal")),
                 "#nonExisitngVar",
                 _
@@ -216,7 +216,13 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     validate(invalidProcess).result should matchPattern {
       case Invalid(
             NonEmptyList(
-              ExpressionParserCompilationError(`expectedMsg`, "custom1", Some(ParameterName("stringVal")), "42", _),
+              ExpressionParserCompilationError(
+                `expectedMsg`,
+                NodeId("custom1"),
+                Some(ParameterName("stringVal")),
+                "42",
+                _
+              ),
               _
             )
           ) =>
@@ -312,7 +318,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     errors.head should matchPattern {
       case ExpressionParserCompilationError(
             "Bad expression type, expected: String, found: Integer",
-            "stringService",
+            NodeId("stringService"),
             Some(ParameterName("stringParam")),
             _,
             _
@@ -353,7 +359,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
       Map("branch1" -> Typed[String])
     )
     val errors = validationResult.result.swap.toList.flatMap(_.toList).map(_.nodeIds)
-    errors shouldBe List(Set("invalidFilter"))
+    errors shouldBe List(Set(NodeId("invalidFilter")))
 
   }
 
@@ -471,7 +477,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
             NonEmptyList(
               ExpressionParserCompilationError(
                 `expectedMsg`,
-                "join1",
+                NodeId("join1"),
                 Some(ParameterName("key for branch branch2")),
                 "123",
                 _
@@ -513,7 +519,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
           "This field value is required and can not be blank",
           "Please fill field value for this parameter",
           ParameterName("key for branch branch1"),
-          "join1"
+          NodeId("join1")
         ),
         Nil
       )
@@ -653,7 +659,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     val validationResult = validate(process)
 
     validationResult.result shouldBe Validated
-      .invalid(CustomNodeError("join1", "Validation contexts do not match", Option.empty))
+      .invalid(CustomNodeError(NodeId("join1"), "Validation contexts do not match", Option.empty))
       .toValidatedNel
   }
 

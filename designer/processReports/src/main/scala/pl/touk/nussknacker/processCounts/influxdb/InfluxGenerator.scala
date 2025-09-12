@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.processCounts.influxdb
 
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import sttp.client3.SttpBackend
@@ -25,16 +26,16 @@ private[influxdb] class InfluxGenerator[F[_]](config: InfluxConfig, env: String)
       dateFrom: Option[Instant],
       dateTo: Instant,
       config: MetricsConfig
-  ): F[Map[String, Long]] = {
+  ): F[Map[NodeId, Long]] = {
     val pointInTimeQuery = new PointInTimeQuery(influxClient.query, processName, env, config)
 
     for {
       valuesAtEnd <- pointInTimeQuery.query(dateTo)
       valuesAtStart <- dateFrom
         .map(pointInTimeQuery.query)
-        .getOrElse(monadError.unit(Map[String, Long]()))
-    } yield valuesAtEnd.map { case (key, value) =>
-      key -> (value - valuesAtStart.getOrElse(key, 0L))
+        .getOrElse(monadError.unit(Map[NodeId, Long]()))
+    } yield valuesAtEnd.map { case (nodeId, value) =>
+      nodeId -> (value - valuesAtStart.getOrElse(nodeId, 0L))
     }
   }
 
@@ -43,7 +44,7 @@ private[influxdb] class InfluxGenerator[F[_]](config: InfluxConfig, env: String)
       dateFrom: Instant,
       dateTo: Instant,
       config: MetricsConfig
-  ): F[Map[String, Long]] = {
+  ): F[Map[NodeId, Long]] = {
     val query = s"""select sum(diff) as count from (SELECT non_negative_difference("${config.countField}") AS diff
      FROM "${config.nodeCountMetric}"
      WHERE ${config.envTag} = '$env' AND ${config.scenarioTag} = '$processName'
@@ -91,7 +92,7 @@ object InfluxGenerator extends LazyLogging {
       config: MetricsConfig,
       invokeQuery: String => F[List[InfluxSeries]],
       queryString: String
-  ): F[Map[String, Long]] = {
+  ): F[Map[NodeId, Long]] = {
 
     val groupedResults = invokeQuery(queryString).map { seriesList =>
       seriesList
@@ -103,7 +104,7 @@ object InfluxGenerator extends LazyLogging {
             firstResult.getOrElse("count", 0L).asInstanceOf[Number].longValue()
           )
         }
-        .groupBy(_._1)
+        .groupBy { case (nodeId, _) => NodeId(nodeId) }
         .mapValuesNow(_.map(_._2).sum)
     }
     groupedResults.map { evaluated =>
@@ -125,7 +126,7 @@ object InfluxGenerator extends LazyLogging {
     // two hour window is for possible delays in sending metrics from taskmanager to jobmanager (or upd sending problems...)
     // it's VERY unclear how large it should be. If it's too large, we may overlap with end and still generate
     // bad results...
-    def query(date: Instant): F[Map[String, Long]] = {
+    def query(date: Instant): F[Map[NodeId, Long]] = {
       def query(timeCondition: String, aggregateFunction: String) =
         s"""select ${config.nodeIdTag} as nodeId, $aggregateFunction(${config.countField}) as count
            | from "${config.nodeCountMetric}" where ${config.scenarioTag} = '$processName'

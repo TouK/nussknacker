@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink
 import cats.data.NonEmptyList
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.EmptyMandatoryParameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -48,7 +49,7 @@ class ExpressionEvaluationSpec extends AnyFunSuite with FlinkSpec with Matchers 
 
     val result = runScenario(scenario, List(""))
     result.invalidValue should matchPattern {
-      case NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName("value"), "end"), Nil) =>
+      case NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName("value"), NodeId("end")), Nil) =>
     }
   }
 

@@ -58,7 +58,7 @@ case class FragmentParameterValidator(classDefinitions: ClassDefinitionSet) {
       initialValue: Option[FixedExpressionValue],
       refClazz: FragmentClazzRef,
       paramName: ParameterName,
-      nodeIds: Set[String]
+      nodeIds: Set[NodeId]
   ): ValidatedNel[PartSubGraphCompilationError, NonEmptyList[ParameterEditor]] = {
     validateValueEditorSupportedType(valueEditor, refClazz, paramName, nodeIds)
       .andThen(_ =>
@@ -75,7 +75,7 @@ case class FragmentParameterValidator(classDefinitions: ClassDefinitionSet) {
       valueEditor: ParameterValueInput,
       refClazz: FragmentClazzRef,
       paramName: ParameterName,
-      nodeIds: Set[String]
+      nodeIds: Set[NodeId]
   ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
     if (permittedTypesForEditors.contains(refClazz))
       Valid(())
@@ -106,7 +106,7 @@ case class FragmentParameterValidator(classDefinitions: ClassDefinitionSet) {
               else
                 DictKeyWithLabelExpressionParser
                   .parseDictKeyWithLabelExpression(fixedExpressionValue.expression)
-                  .leftMap(errs => errs.map(_.toProcessCompilationError(nodeId.id, fragmentParameter.name)))
+                  .leftMap(errs => errs.map(_.toProcessCompilationError(nodeId, fragmentParameter.name)))
                   .andThen(e => valid(Expression.dictKeyWithLabel(e.key, e.label)))
             case _ => valid(Expression.spel(fixedExpressionValue.expression))
           }
@@ -126,7 +126,7 @@ case class FragmentParameterValidator(classDefinitions: ClassDefinitionSet) {
           case e: ExpressionParserCompilationError =>
             ExpressionParserCompilationErrorInFragmentDefinition(
               message = e.message,
-              nodeId = nodeId.id,
+              nodeId = nodeId,
               paramName = fragmentParameter.name,
               subFieldName = subFieldName,
               originalExpr = e.originalExpr
@@ -179,7 +179,7 @@ case class FragmentParameterValidator(classDefinitions: ClassDefinitionSet) {
                     dictId,
                     dictValueType,
                     fragmentParameterTypingResult,
-                    nodeId.id,
+                    nodeId,
                     qualifiedParamFieldName(fragmentParameter.name, Some(DictIdFieldName))
                   )
                 )
@@ -188,7 +188,7 @@ case class FragmentParameterValidator(classDefinitions: ClassDefinitionSet) {
               invalidNel(
                 DictNotDeclared(
                   dictId,
-                  nodeId.id,
+                  nodeId,
                   qualifiedParamFieldName(fragmentParameter.name, Some(DictIdFieldName))
                 )
               )
@@ -202,7 +202,7 @@ case class FragmentParameterValidator(classDefinitions: ClassDefinitionSet) {
     if (dictId.isBlank)
       invalidNel(
         EmptyMandatoryField(
-          nodeId.id,
+          nodeId,
           qualifiedParamFieldName(parameterName, Some(DictIdFieldName))
         )
       )
@@ -217,7 +217,7 @@ case class FragmentParameterValidator(classDefinitions: ClassDefinitionSet) {
       .groupBy(identity)
       .foldLeft(valid(()): ValidatedNel[ProcessCompilationError, Unit]) { case (acc, (paramName, group)) =>
         val duplicationError = if (group.size > 1) {
-          invalid(DuplicateFragmentInputParameter(paramName, nodeId.toString)).toValidatedNel
+          invalid(DuplicateFragmentInputParameter(paramName, nodeId)).toValidatedNel
         } else valid(())
         val validIdentifierError = validateVariableName(
           paramName.value,

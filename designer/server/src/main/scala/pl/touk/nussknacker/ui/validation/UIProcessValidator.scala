@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.effect.SyncIO
 import cats.effect.kernel.Resource
 import pl.touk.nussknacker.engine.{CustomProcessValidator, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -203,7 +203,9 @@ class UIProcessValidator(
       case d: NodeData with Disableable if d.isDisabled.getOrElse(false) => d
     }
     val disabledNodesWarnings =
-      disabledNodes.map(node => (node.id, List(PrettyValidationErrors.formatErrorMessage(DisabledNode(node.id))))).toMap
+      disabledNodes
+        .map(node => (NodeId(node.id), List(PrettyValidationErrors.formatErrorMessage(DisabledNode(NodeId(node.id))))))
+        .toMap
     ValidationResult.warnings(disabledNodesWarnings)
   }
 
@@ -216,7 +218,7 @@ class UIProcessValidator(
 
   private def validateNodesId(scenarioGraph: ScenarioGraph): ValidationResult = {
     val nodeIdErrors = scenarioGraph.nodes
-      .map(n => IdValidator.validateNodeId(n.id))
+      .map(n => IdValidator.validateNodeId(NodeId(n.id)))
       .collect { case Invalid(e) =>
         e
       }
@@ -257,9 +259,9 @@ class UIProcessValidator(
   }
 
   private def validateEdgeUniqueness(scenarioGraph: ScenarioGraph): ValidationResult = {
-    val edgesByFrom = scenarioGraph.edges.groupBy(_.from)
+    val edgesByFrom = scenarioGraph.edges.groupBy(e => NodeId(e.from))
 
-    def findNonUniqueEdge(nodeId: String, edgesFromNode: List[Edge]) = {
+    def findNonUniqueEdge(nodeId: NodeId, edgesFromNode: List[Edge]) = {
       val nonUniqueByType = edgesFromNode.groupBy(_.edgeType).collect {
         case (Some(eType), list) if eType.mustBeUnique && list.size > 1 =>
           PrettyValidationErrors.formatErrorMessage(NonUniqueEdgeType(eType.toString, nodeId))
@@ -286,7 +288,7 @@ class UIProcessValidator(
       formatErrors(
         NonEmptyList.fromListUnsafe(
           tooLongStickyNotes.map(n =>
-            StickyNoteContentTooLong(n.id, n.content.length, stickyNotesSettings.maxContentLength)
+            StickyNoteContentTooLong(NodeId(n.id), n.content.length, stickyNotesSettings.maxContentLength)
           )
         )
       )
@@ -299,7 +301,7 @@ class UIProcessValidator(
       if (numberOfStickyNotes > notesLimit)
         formatErrors(
           NonEmptyList.fromListUnsafe(
-            scenarioGraph.stickyNotes.map(n => StickyNotesLimitExceeded(n.id, numberOfStickyNotes, notesLimit))
+            scenarioGraph.stickyNotes.map(n => StickyNotesLimitExceeded(NodeId(n.id), numberOfStickyNotes, notesLimit))
           )
         )
       else ValidationResult.success
@@ -311,7 +313,7 @@ class UIProcessValidator(
       // source & fragment inputs don't have inputs
       .filterNot(n => n.isInstanceOf[FragmentInputDefinition] || n.isInstanceOf[Source])
       .filterNot(n => scenarioGraph.edges.exists(_.to == n.id))
-      .map(_.id)
+      .map(n => NodeId(n.id))
 
     if (looseNodesIds.isEmpty) {
       ValidationResult.success
@@ -321,7 +323,7 @@ class UIProcessValidator(
   }
 
   private def validateDuplicates(scenarioGraph: ScenarioGraph): ValidationResult = {
-    val nodeIds    = scenarioGraph.nodes.map(_.id)
+    val nodeIds    = scenarioGraph.nodes.map(n => NodeId(n.id))
     val duplicates = nodeIds.groupBy(identity).filter(_._2.size > 1).keys.toList
 
     if (duplicates.isEmpty) {

@@ -65,10 +65,10 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
       {
         case canonicalnode.Fragment(FragmentInput(dataId, _, _, Some(true), _), nextNodes)
             if nextNodes.values.size > 1 =>
-          invalidBranches(DisablingManyOutputsFragment(dataId))
+          invalidBranches(DisablingManyOutputsFragment(NodeId(dataId)))
         case canonicalnode.Fragment(FragmentInput(dataId, _, _, Some(true), _), nextNodes)
             if nextNodes.values.isEmpty =>
-          invalidBranches(DisablingNoOutputsFragment(dataId))
+          invalidBranches(DisablingNoOutputsFragment(NodeId(dataId)))
         case canonicalnode.Fragment(data @ FragmentInput(_, _, _, Some(true), _), nextNodesMap) =>
           // TODO: disabling nodes should be in one place
           val output = nextNodesMap.keys.head
@@ -132,11 +132,11 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
     fragments
       .apply(ProcessName(fragmentInput.ref.id))
       .map(valid)
-      .getOrElse(invalidNel(UnknownFragment(id = fragmentInput.ref.id, nodeId = nodeId.id)))
+      .getOrElse(invalidNel(UnknownFragment(id = fragmentInput.ref.id, nodeId = nodeId)))
       .andThen { fragment =>
         FragmentGraphDefinitionExtractor
           .extractFragmentGraphDefinition(fragment)
-          .leftMap(_ => InvalidFragment(id = fragmentInput.ref.id, nodeId = nodeId.id))
+          .leftMap(_ => InvalidFragment(id = fragmentInput.ref.id, nodeId = nodeId))
           .toValidatedNel
       }
   }
@@ -163,7 +163,7 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
                   FragmentUsageOutput(id, parentId, name, Some(FragmentOutputVarDefinition(outputName, fields)), add)
                 ) :: nodes
               )
-            case _ => invalidBranches(FragmentOutputNotDefined(name, Set(id, parentId)))
+            case _ => invalidBranches(FragmentOutputNotDefined(name, Set(NodeId(id), NodeId(parentId))))
           }
         }
       },

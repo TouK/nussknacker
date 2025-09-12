@@ -21,7 +21,7 @@ object CronParameterValidator extends CustomParameterValidatorDelegate("cron_val
         message = "Expression is not valid cron expression",
         description = s"Expression '$value' is not valid cron expression",
         paramName = paramName,
-        nodeId = nodeId.id
+        nodeId = nodeId
       )
     }
     value match {

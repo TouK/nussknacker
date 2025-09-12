@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.api.process
 
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, NodeId, ValueWithContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -17,7 +17,7 @@ import scala.reflect.ClassTag
 case class FlinkCustomNodeContext(
     jobData: JobData,
     // TODO: it can be used in state recovery - make sure that it won't change during renaming of nodes on gui
-    nodeId: String,
+    nodeId: NodeId,
     timeout: FiniteDuration,
     convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
     lazyParameterHelper: FlinkLazyParameterFunctionHelper,

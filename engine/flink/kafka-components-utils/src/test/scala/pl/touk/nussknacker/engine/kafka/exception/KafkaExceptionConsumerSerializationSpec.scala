@@ -33,7 +33,7 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
   private val context = Context(ContextId.dummy, variables, None)
 
   private val exception = NuExceptionInfo(
-    Some(NodeComponentInfo("nodeId", ComponentType.Service, "componentName")),
+    Some(NodeComponentInfo(NodeId("nodeId"), ComponentType.Service, "componentName")),
     new Exception("mess"),
     context,
     "input1",
@@ -62,7 +62,7 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
     val decodedPayload = CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](message.value())
 
     decodedPayload.processName shouldBe metaData.name
-    decodedPayload.nodeId shouldBe Some("nodeId")
+    decodedPayload.nodeId shouldBe Some(NodeId("nodeId"))
     decodedPayload.exceptionInput shouldBe Some("input1")
     decodedPayload.message shouldBe Some("mess")
     decodedPayload.timestamp shouldBe 111

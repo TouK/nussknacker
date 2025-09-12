@@ -5,6 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.{forAll, Table}
 import org.scalatest.prop.TableFor2
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -60,7 +61,7 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
       case Validated.Invalid(errors) =>
         errors.toList should contain theSameElementsAs List(
           ScenarioNameError(EmptyValue, ProcessName(""), isFragment = false),
-          NodeIdValidationError(EmptyValue, "")
+          NodeIdValidationError(EmptyValue, NodeId(""))
         )
       case Validated.Valid(_) =>
         fail("Validation succeeded, but was expected to fail")
@@ -83,15 +84,15 @@ object IdValidationTestData {
   val nodeIdErrorCases: TableFor2[String, List[IdError]] = Table(
     ("nodeId", "errors"),
     ("validId", List.empty),
-    ("", List(NodeIdValidationError(EmptyValue, ""))),
-    (" ", List(NodeIdValidationError(BlankId, " "))),
-    ("trailingSpace ", List(NodeIdValidationError(TrailingSpacesId, "trailingSpace "))),
-    (" leadingSpace", List(NodeIdValidationError(LeadingSpacesId, " leadingSpace"))),
+    ("", List(NodeIdValidationError(EmptyValue, NodeId("")))),
+    (" ", List(NodeIdValidationError(BlankId, NodeId(" ")))),
+    ("trailingSpace ", List(NodeIdValidationError(TrailingSpacesId, NodeId("trailingSpace ")))),
+    (" leadingSpace", List(NodeIdValidationError(LeadingSpacesId, NodeId(" leadingSpace")))),
     (
       " leadingAndTrailingSpace ",
       List(
-        NodeIdValidationError(LeadingSpacesId, " leadingAndTrailingSpace "),
-        NodeIdValidationError(TrailingSpacesId, " leadingAndTrailingSpace ")
+        NodeIdValidationError(LeadingSpacesId, NodeId(" leadingAndTrailingSpace ")),
+        NodeIdValidationError(TrailingSpacesId, NodeId(" leadingAndTrailingSpace "))
       )
     ),
   )

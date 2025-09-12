@@ -185,7 +185,7 @@ class FullOuterJoinTransformer(
         inputType,
         storedTypeInfo,
         context.convertToEngineRuntimeContext
-      )(NodeId(context.nodeId))
+      )(context.nodeId)
       val outputType = aggregator.computeOutputTypeUnsafe(inputType)
       val outputTypeInfo =
         TypeInformationDetection.instance.forValueWithContext[AnyRef](ValidationContext(), outputType)

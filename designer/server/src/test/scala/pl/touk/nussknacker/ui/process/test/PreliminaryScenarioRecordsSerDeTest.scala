@@ -6,6 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.TestDataFormat
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.{DeserializationError, SerializationError}
@@ -23,7 +24,7 @@ class PreliminaryScenarioRecordsSerDeTest extends AnyFunSuite with Matchers with
   )
 
   private val correctSourceSpecificFormatRecord = SourceSpecificFormatPreliminaryScenarioRecord(
-    sourceId = "source1",
+    sourceId = NodeId("source1"),
     record = Json.obj("f1" -> Json.fromString("field value"), "f2" -> Json.fromLong(42L)),
     timestamp = Some(24L)
   )
@@ -32,7 +33,7 @@ class PreliminaryScenarioRecordsSerDeTest extends AnyFunSuite with Matchers with
     """{"sourceId":"source1","record":{"f1":"field value","f2":42},"timestamp":24}""".stripMargin
 
   private val correctCommonFormatRecord = CommonFormatPreliminaryScenarioRecord(
-    sourceId = "source1",
+    sourceId = NodeId("source1"),
     variables = Map(
       "input" -> Json.obj(
         "f1" -> Json.fromString("field value"),

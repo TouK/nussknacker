@@ -230,7 +230,7 @@ class ProcessMarshallerSpec
           CanonicalProcess(MetaData("1", StreamMetaData()), nodes.toList, List.empty),
           DoNotAllowMissingSinkHandler,
         )
-      ) { case Invalid(NonEmptyList(canonize.InvalidTailOfBranch(id), Nil)) =>
+      ) { case Invalid(NonEmptyList(canonize.InvalidTailOfBranch(NodeId(id)), Nil)) =>
         id shouldBe expectedBadNodeId
       }
     }

@@ -154,7 +154,7 @@ class SingleSideJoinTransformer(
           aggregateBy.returnType,
           storedTypeInfo,
           context.convertToEngineRuntimeContext
-        )(NodeId(context.nodeId))
+        )(context.nodeId)
 
         val statefulStreamWithUid = keyedMainBranchStream
           .connect(keyedJoinedStream)

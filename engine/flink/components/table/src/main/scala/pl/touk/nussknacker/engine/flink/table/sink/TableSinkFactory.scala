@@ -170,7 +170,7 @@ class TableSinkFactory(
           invalid(
             NonEmptyList.one(
               CustomNodeError(
-                nodeId.id,
+                nodeId,
                 s"Sink's output record's field name '${field.getName}' is restricted. Please use raw editor for this case.",
                 None
               )

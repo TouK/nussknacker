@@ -9,6 +9,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.build.{ProcessGraphBuilder, ScenarioBuilder}
@@ -94,7 +95,13 @@ class CollectTransformerTest
     val compilationError = runScenario(scenario, List(1)).invalidValue.toList.loneElement
 
     inside(compilationError) {
-      case ExpressionParserCompilationError("Unresolved reference 'previousCtxVar'", `nodeIdWithError`, _, _, _) =>
+      case ExpressionParserCompilationError(
+            "Unresolved reference 'previousCtxVar'",
+            NodeId(`nodeIdWithError`),
+            _,
+            _,
+            _
+          ) =>
     }
   }
 

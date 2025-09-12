@@ -21,7 +21,7 @@ object DictKeyParameterAdapter extends LazyLogging {
   ): CanonicalProcess = {
     val rewriter = ProcessNodesRewriter.rewritingAllExpressions { exprIdWithMetadata => original =>
       val parameterToAdaptForExpressionOpt = parametersToAdapt.find { error =>
-        error.nodeId == exprIdWithMetadata.expressionId.nodeId.id &&
+        error.nodeId == exprIdWithMetadata.expressionId.nodeId &&
         exprIdWithMetadata.parameterName.contains(error.paramName)
       }
       parameterToAdaptForExpressionOpt match {
@@ -62,7 +62,7 @@ object DictKeyParameterAdapter extends LazyLogging {
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, Expression] = {
     val incompatibleChangeToParameterDefinitionDetected: ValidatedNel[PartSubGraphCompilationError, Expression] =
-      invalidNel(IncompatibleParameterDefinitionModification(paramName, expression.language, editors, nodeId.id))
+      invalidNel(IncompatibleParameterDefinitionModification(paramName, expression.language, editors, nodeId))
 
     def adaptToSpel(
         expression: Expression
@@ -167,7 +167,7 @@ object DictKeyParameterAdapter extends LazyLogging {
   }
 
   final case class ParameterToAdapt(
-      nodeId: String,
+      nodeId: NodeId,
       paramName: ParameterName,
       parameterEditors: List[ParameterEditor],
   )

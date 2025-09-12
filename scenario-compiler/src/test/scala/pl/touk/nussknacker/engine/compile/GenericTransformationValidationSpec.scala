@@ -251,7 +251,7 @@ class GenericTransformationValidationSpec
       )
     )
     result.result should matchPattern {
-      case Invalid(NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName("val2"), "end"), Nil)) =>
+      case Invalid(NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName("val2"), NodeId("end")), Nil)) =>
     }
 
     val parameters = result.parametersInNodes("end")
@@ -290,7 +290,7 @@ class GenericTransformationValidationSpec
         .emptySink("end", "dummySink")
     )
     result.result.invalidValue.toList should matchPattern {
-      case ExpressionParserCompilationError(message, "generic", Some(ParameterName("par1")), "12", _) :: Nil
+      case ExpressionParserCompilationError(message, NodeId("generic"), Some(ParameterName("par1")), "12", _) :: Nil
           if message == s"Bad expression type, expected: String, found: ${Typed.fromInstance(12).display}" =>
     }
     val info1 = result.typing("end")
@@ -314,7 +314,7 @@ class GenericTransformationValidationSpec
         .emptySink("end", "dummySink")
     )
     result.result should matchPattern {
-      case Invalid(NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName("val2"), "generic"), Nil)) =>
+      case Invalid(NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName("val2"), NodeId("generic")), Nil)) =>
     }
 
     val info1 = result.typing("end")
@@ -362,7 +362,7 @@ class GenericTransformationValidationSpec
         .emptySink("end", "dummySink")
     )
     result.result.invalidValue.toList should matchPattern {
-      case ExpressionParserCompilationError(message, "generic", Some(ParameterName("par1")), "12", _) :: Nil
+      case ExpressionParserCompilationError(message, NodeId("generic"), Some(ParameterName("par1")), "12", _) :: Nil
           if message == s"Bad expression type, expected: String, found: ${Typed.fromInstance(12).display}" =>
     }
     val info1 = result.typing("end")

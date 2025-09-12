@@ -7,6 +7,7 @@ import org.scalatest.{Assertion, BeforeAndAfterAll}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.processCounts.{CannotFetchCountsError, ExecutionCount, RangeCount}
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
@@ -56,9 +57,9 @@ class InfluxCountsReporterSpec
     data.writePointForCount(process, "node2", 20, startTime)
 
     val results = data.reporter(QueryMode.OnlySingleDifference).prepareRawCounts(process, ExecutionCount(startTime))
-    results("node1") shouldBe Some(10)
-    results("node2") shouldBe Some(20)
-    results("node3") shouldBe None
+    results(NodeId("node1")) shouldBe Some(10)
+    results(NodeId("node2")) shouldBe Some(20)
+    results(NodeId("node3")) shouldBe None
 
   }
 
@@ -83,9 +84,9 @@ class InfluxCountsReporterSpec
       val results = data
         .reporter(mode)
         .prepareRawCounts(process, RangeCount(startTime.minusHours(1), startTime.plusHours(2)))
-      results("node1") shouldBe Some(9)
-      results("node2") shouldBe Some(30)
-      results("node3") shouldBe None
+      results(NodeId("node1")) shouldBe Some(9)
+      results(NodeId("node2")) shouldBe Some(30)
+      results(NodeId("node3")) shouldBe None
     }
   }
 
@@ -113,7 +114,7 @@ class InfluxCountsReporterSpec
       val value = data
         .reporter(mode)
         .prepareRawCounts(process, RangeCount(startTime.minusHours(1), startTime.plusHours(2)))
-      value("node1") shouldBe Some(10 + 15)
+      value(NodeId("node1")) shouldBe Some(10 + 15)
 
     }
   }

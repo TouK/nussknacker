@@ -208,7 +208,7 @@ class ExpressionCompiler(
       parameterByName <- nodeParameters
         .map(param => (param.name, param))
         .toMapCheckingDuplicates
-        .leftMap(duplicatedKeys => NonEmptyList.of(DuplicatedParameters(duplicatedKeys.toList.toSet, nodeId.id)))
+        .leftMap(duplicatedKeys => NonEmptyList.of(DuplicatedParameters(duplicatedKeys.toList.toSet, nodeId)))
         .toIor
       compiledParams <- compileParameters(parameterByName).toIor
       paramValidatorsMap     = parameterValidatorsMap(parameterDefinitions, inputContext.globalVariables)
@@ -276,7 +276,7 @@ class ExpressionCompiler(
     def substitute(dictId: String) = {
       DictKeyWithLabelExpressionParser
         .parseDictKeyWithLabelExpression(expression.expression)
-        .leftMap(errs => errs.map(_.toProcessCompilationError(nodeId.id, paramName)))
+        .leftMap(errs => errs.map(_.toProcessCompilationError(nodeId, paramName)))
         .andThen(expr =>
           dictRegistry match {
             case _: EngineDictRegistry =>
@@ -285,10 +285,10 @@ class ExpressionCompiler(
             case _ =>
               dictRegistry
                 .labelByKey(dictId, expr.key)
-                .leftMap(e => NonEmptyList.of(e.toPartSubGraphCompilationError(nodeId.id, paramName)))
+                .leftMap(e => NonEmptyList.of(e.toPartSubGraphCompilationError(nodeId, paramName)))
                 .andThen {
                   case Some(label) => Valid(Expression.dictKeyWithLabel(expr.key, Some(label)))
-                  case None        => invalidNel(DictLabelByKeyResolutionFailed(dictId, expr.key, nodeId.id, paramName))
+                  case None        => invalidNel(DictLabelByKeyResolutionFailed(dictId, expr.key, nodeId, paramName))
                 }
           }
         )
@@ -298,7 +298,7 @@ class ExpressionCompiler(
       expression.language == DictKeyWithLabel
 
     val incompatibleChangeToParameterDefinitionDetected: ValidatedNel[PartSubGraphCompilationError, Expression] =
-      invalidNel(IncompatibleParameterDefinitionModification(paramName, expression.language, editors, nodeId.id))
+      invalidNel(IncompatibleParameterDefinitionModification(paramName, expression.language, editors, nodeId))
 
     def validateAndSubstitute(expression: Expression): ValidatedNel[PartSubGraphCompilationError, Expression] = {
       editors match {
@@ -355,7 +355,7 @@ class ExpressionCompiler(
       case e: ExpressionParserCompilationError =>
         InvalidValidationExpression(
           e.message,
-          nodeId.id,
+          nodeId,
           paramName,
           e.originalExpr
         )
@@ -366,7 +366,7 @@ class ExpressionCompiler(
           invalidNel(
             InvalidValidationExpression(
               "Validation expression cannot be blank",
-              nodeId.id,
+              nodeId,
               paramName,
               toCompileValidator.validationExpression.expression
             )
