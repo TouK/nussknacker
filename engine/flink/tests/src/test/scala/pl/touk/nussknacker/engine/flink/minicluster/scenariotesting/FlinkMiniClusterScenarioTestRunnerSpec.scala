@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ParameterValueCompileTimeValidation,
   ValueInputWithDictEditor
 }
-import pl.touk.nussknacker.engine.api.process.ComponentUseContext
+import pl.touk.nussknacker.engine.api.process.{ComponentUseContext, ProcessName}
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestSourceSpecificFormatJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -71,8 +71,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
   private implicit val ec: ExecutionContext = ExecutionContext.global
   private implicit val ioRuntime: IORuntime = IORuntime.global
 
-  private val scenarioName      = "proc1"
-  private val sourceNodeId      = "id"
+  private val scenarioName      = ProcessName("proc1")
+  private val sourceNodeId      = NodeId("id")
   private val firstSubtaskIndex = 0
 
   private val miniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
@@ -104,8 +104,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val sleepSecondsInScenario = (patienceConfig.timeout * 2).toSeconds
       val process =
         ScenarioBuilder
-          .streaming(scenarioName)
-          .source(sourceNodeId, "input")
+          .streaming(scenarioName.value)
+          .source(sourceNodeId.id, "input")
           .customNodeNoOutput("sleep", "sleep", "seconds" -> sleepSecondsInScenario.toString.spel)
           .emptySink("out", "valueMonitor", "Value" -> "#input.value1".spel)
 
@@ -132,8 +132,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     "be able to return test results" in {
       val process =
         ScenarioBuilder
-          .streaming(scenarioName)
-          .source(sourceNodeId, "input")
+          .streaming(scenarioName.value)
+          .source(sourceNodeId.id, "input")
           .filter("filter1", "#input.value1 > 1".spel)
           .buildSimpleVariable("v1", "variable1", "'ala'".spel)
           .processor("eager1", "collectingEager", "static" -> "'s'".spel, "dynamic" -> "#input.id".spel)
@@ -158,18 +158,18 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val nodeResults = nodeResultsWithoutTimestamp(results)
 
       nodeResults(sourceNodeId) shouldBe List(nodeResult(0, "input" -> input), nodeResult(1, "input" -> input2))
-      nodeResults("filter1") shouldBe List(nodeResult(0, "input" -> input), nodeResult(1, "input" -> input2))
-      nodeResults("v1") shouldBe List(nodeResult(1, "input" -> input2))
-      nodeResults("proc2") shouldBe List(nodeResult(1, "input" -> input2, "variable1" -> "ala"))
-      nodeResults("out") shouldBe List(nodeResult(1, "input" -> input2, "variable1" -> "ala"))
+      nodeResults(NodeId("filter1")) shouldBe List(nodeResult(0, "input" -> input), nodeResult(1, "input" -> input2))
+      nodeResults(NodeId("v1")) shouldBe List(nodeResult(1, "input" -> input2))
+      nodeResults(NodeId("proc2")) shouldBe List(nodeResult(1, "input" -> input2, "variable1" -> "ala"))
+      nodeResults(NodeId("out")) shouldBe List(nodeResult(1, "input" -> input2, "variable1" -> "ala"))
 
       val invocationResults = results.invocationResults
 
-      invocationResults("proc2").map(withMockedTimestamp) shouldBe
+      invocationResults(NodeId("proc2")).map(withMockedTimestamp) shouldBe
         List(
           ExpressionInvocationResult(
             ContextId(
-              scenarioId = scenarioName,
+              scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
               taskId = firstSubtaskIndex,
               index = 1
@@ -180,11 +180,11 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           )
         )
 
-      invocationResults("out").map(withMockedTimestamp) shouldBe
+      invocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
         List(
           ExpressionInvocationResult(
             ContextId(
-              scenarioId = scenarioName,
+              scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
               taskId = firstSubtaskIndex,
               index = 1
@@ -195,26 +195,41 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           )
         )
 
-      results.externalInvocationResults("proc2").map(r => (r.contextId, r.name, r.value)) shouldBe List(
+      results.externalInvocationResults(NodeId("proc2")).map(r => (r.contextId, r.name, r.value)) shouldBe List(
         (
-          ContextId(scenarioId = scenarioName, originatingNodeId = sourceNodeId, taskId = firstSubtaskIndex, index = 1),
+          ContextId(
+            scenarioName = scenarioName,
+            originatingNodeId = sourceNodeId,
+            taskId = firstSubtaskIndex,
+            index = 1
+          ),
           "logService",
           variable("0-collectedDuringServiceInvocation")
         )
       )
 
-      results.externalInvocationResults("out").map(withMockedTimestamp) shouldBe List(
+      results.externalInvocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe List(
         ExternalInvocationResult(
-          ContextId(scenarioId = scenarioName, originatingNodeId = sourceNodeId, taskId = firstSubtaskIndex, index = 1),
+          ContextId(
+            scenarioName = scenarioName,
+            originatingNodeId = sourceNodeId,
+            taskId = firstSubtaskIndex,
+            index = 1
+          ),
           mockedTimestamp,
           "valueMonitor",
           variable(11)
         )
       )
 
-      results.externalInvocationResults("eager1").map(withMockedTimestamp) shouldBe List(
+      results.externalInvocationResults(NodeId("eager1")).map(withMockedTimestamp) shouldBe List(
         ExternalInvocationResult(
-          ContextId(scenarioId = scenarioName, originatingNodeId = sourceNodeId, taskId = firstSubtaskIndex, index = 1),
+          ContextId(
+            scenarioName = scenarioName,
+            originatingNodeId = sourceNodeId,
+            taskId = firstSubtaskIndex,
+            index = 1
+          ),
           mockedTimestamp,
           "collectingEager",
           variable("static-s-dynamic-0")
@@ -228,8 +243,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     "be able to run tests multiple time on the same mini cluster" in {
       val process =
         ScenarioBuilder
-          .streaming(scenarioName)
-          .source(sourceNodeId, "input")
+          .streaming(scenarioName.value)
+          .source(sourceNodeId.id, "input")
           .emptySink("out", "valueMonitor", "Value" -> "#input.value1".spel)
 
       val input = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
@@ -251,15 +266,15 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         val nodeResults = nodeResultsWithoutTimestamp(results)
 
         nodeResults(sourceNodeId) shouldBe List(nodeResult(0, "input" -> input))
-        nodeResults("out") shouldBe List(nodeResult(0, "input" -> input))
+        nodeResults(NodeId("out")) shouldBe List(nodeResult(0, "input" -> input))
 
         val invocationResults = results.invocationResults
 
-        invocationResults("out").map(withMockedTimestamp) shouldBe
+        invocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
           List(
             ExpressionInvocationResult(
               ContextId(
-                scenarioId = scenarioName,
+                scenarioName = scenarioName,
                 originatingNodeId = sourceNodeId,
                 taskId = firstSubtaskIndex,
                 index = 0
@@ -270,10 +285,10 @@ class FlinkMiniClusterScenarioTestRunnerSpec
             )
           )
 
-        results.externalInvocationResults("out").map(withMockedTimestamp) shouldBe List(
+        results.externalInvocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe List(
           ExternalInvocationResult(
             ContextId(
-              scenarioId = scenarioName,
+              scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
               taskId = firstSubtaskIndex,
               index = 0
@@ -292,8 +307,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     "collect results for split" in {
       val process =
         ScenarioBuilder
-          .streaming(scenarioName)
-          .source(sourceNodeId, "input")
+          .streaming(scenarioName.value)
+          .source(sourceNodeId.id, "input")
           .split("splitId1", GraphBuilder.emptySink("out1", "monitor"), GraphBuilder.emptySink("out2", "monitor"))
 
       val results = prepareTestRunner(useIOMonadInInterpreter)
@@ -303,7 +318,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         )
         .futureValue
 
-      nodeResultsWithoutTimestamp(results)("splitId1") shouldBe List(
+      nodeResultsWithoutTimestamp(results)(NodeId("splitId1")) shouldBe List(
         nodeResult(
           0,
           "input" ->
@@ -320,8 +335,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     "return correct result for custom node" in {
       val process =
         ScenarioBuilder
-          .streaming(scenarioName)
-          .source(sourceNodeId, "input")
+          .streaming(scenarioName.value)
+          .source(sourceNodeId.id, "input")
           .customNode("cid", "out", "stateCustom", "groupBy" -> "#input.id".spel, "stringVal" -> "'s'".spel)
           .emptySink("out", "valueMonitor", "Value" -> "#input.value1 + ' ' + #out.previous".spel)
 
@@ -341,20 +356,20 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val nodeResults = nodeResultsWithoutTimestamp(results)
 
       nodeResults(sourceNodeId) shouldBe List(nodeResult(0, "input" -> input), nodeResult(1, "input" -> input2))
-      nodeResults("cid") shouldBe List(nodeResult(0, "input" -> input), nodeResult(1, "input" -> input2))
-      nodeResults("out") shouldBe List(
+      nodeResults(NodeId("cid")) shouldBe List(nodeResult(0, "input" -> input), nodeResult(1, "input" -> input2))
+      nodeResults(NodeId("out")) shouldBe List(
         nodeResult(0, "input" -> input, "out"  -> aggregate),
         nodeResult(1, "input" -> input2, "out" -> aggregate2)
       )
 
       val invocationResults = results.invocationResults
 
-      invocationResults("cid").map(withMockedTimestamp) shouldBe
+      invocationResults(NodeId("cid")).map(withMockedTimestamp) shouldBe
         List(
           // we record only LazyParameter execution results
           ExpressionInvocationResult(
             ContextId(
-              scenarioId = scenarioName,
+              scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
               taskId = firstSubtaskIndex,
               index = 0
@@ -365,7 +380,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           ),
           ExpressionInvocationResult(
             ContextId(
-              scenarioId = scenarioName,
+              scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
               taskId = firstSubtaskIndex,
               index = 1
@@ -376,11 +391,11 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           )
         )
 
-      invocationResults("out").map(withMockedTimestamp) shouldBe
+      invocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
         List(
           ExpressionInvocationResult(
             ContextId(
-              scenarioId = scenarioName,
+              scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
               taskId = firstSubtaskIndex,
               index = 0
@@ -391,7 +406,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           ),
           ExpressionInvocationResult(
             ContextId(
-              scenarioId = scenarioName,
+              scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
               taskId = firstSubtaskIndex,
               index = 1
@@ -402,11 +417,11 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           )
         )
 
-      results.externalInvocationResults("out").map(withMockedTimestamp) shouldBe
+      results.externalInvocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
         List(
           ExternalInvocationResult(
             ContextId(
-              scenarioId = scenarioName,
+              scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
               taskId = firstSubtaskIndex,
               index = 0
@@ -417,7 +432,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           ),
           ExternalInvocationResult(
             ContextId(
-              scenarioId = scenarioName,
+              scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
               taskId = firstSubtaskIndex,
               index = 1
@@ -432,9 +447,9 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     "handle large parallelism" in {
       val process =
         ScenarioBuilder
-          .streaming(scenarioName)
+          .streaming(scenarioName.value)
           .parallelism(FlinkMiniClusterFactory.DefaultTaskSlots + 1)
-          .source(sourceNodeId, "input")
+          .source(sourceNodeId.id, "input")
           .emptySink("out", "monitor")
 
       val results =
@@ -453,8 +468,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     "detect errors" in {
       val process =
         ScenarioBuilder
-          .streaming(scenarioName)
-          .source(sourceNodeId, "input")
+          .streaming(scenarioName.value)
+          .source(sourceNodeId.id, "input")
           .processor("failing", "throwingService", "throw" -> "#input.value1 == 2".spel)
           .filter("filter", "1 / #input.value1 >= 0".spel)
           .emptySink("out", "monitor")
@@ -476,12 +491,12 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val nodeResults = nodeResultsWithoutTimestamp(results)
 
       nodeResults(sourceNodeId) should have length 4
-      nodeResults("out") should have length 2
+      nodeResults(NodeId("out")) should have length 2
 
       results.exceptions should have length 2
 
       val exceptionFromExpression = results.exceptions.head
-      exceptionFromExpression.nodeId shouldBe Some("filter")
+      exceptionFromExpression.nodeId shouldBe Some(NodeId("filter"))
       exceptionFromExpression.context
         .variables("input")
         .asInstanceOf[Json]
@@ -494,7 +509,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       exceptionFromExpression.throwable.getMessage shouldBe "Expression [1 / #input.value1 >= 0] evaluation failed, message: / by zero"
 
       val exceptionFromService = results.exceptions.last
-      exceptionFromService.nodeId shouldBe Some("failing")
+      exceptionFromService.nodeId shouldBe Some(NodeId("failing"))
       exceptionFromService.context
         .variables("input")
         .asInstanceOf[Json]
@@ -510,8 +525,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     "ignore real exception handler" in {
       val process =
         ScenarioBuilder
-          .streaming(scenarioName)
-          .source(sourceNodeId, "input")
+          .streaming(scenarioName.value)
+          .source(sourceNodeId.id, "input")
           .processor("failing", "throwingService", "throw" -> "#input.value1 == 2".spel)
           .filter("filter", "1 / #input.value1 >= 0".spel)
           .emptySink("out", "monitor")
@@ -535,7 +550,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val nodeResults = nodeResultsWithoutTimestamp(results)
 
       nodeResults(sourceNodeId) should have length 4
-      nodeResults("out") should have length 2
+      nodeResults(NodeId("out")) should have length 2
 
       results.exceptions should have length 2
       RecordingExceptionConsumer.exceptionsFor(exceptionConsumerId) shouldBe Symbol("empty")
@@ -544,8 +559,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     "handle transient errors" in {
       val process =
         ScenarioBuilder
-          .streaming(scenarioName)
-          .source(sourceNodeId, "input")
+          .streaming(scenarioName.value)
+          .source(sourceNodeId.id, "input")
           .processor("failing", "throwingTransientService", "throw" -> "#input.value1 == 2".spel)
           .emptySink("out", "monitor")
 
@@ -565,22 +580,22 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     "handle json input" in {
       val process =
         ScenarioBuilder
-          .streaming(scenarioName)
-          .source(sourceNodeId, "jsonInput")
+          .streaming(scenarioName.value)
+          .source(sourceNodeId.id, "jsonInput")
           .emptySink("out", "valueMonitor", "Value" -> "#input".spel)
       val testData = ScenarioTestData(
         List(
           ScenarioTestSourceSpecificFormatJsonRecord(
             sourceNodeId,
-            Json.obj(sourceNodeId -> Json.fromString("1"), "field" -> Json.fromString("11"))
+            Json.obj(sourceNodeId.id -> Json.fromString("1"), "field" -> Json.fromString("11"))
           ),
           ScenarioTestSourceSpecificFormatJsonRecord(
             sourceNodeId,
-            Json.obj(sourceNodeId -> Json.fromString("2"), "field" -> Json.fromString("22"))
+            Json.obj(sourceNodeId.id -> Json.fromString("2"), "field" -> Json.fromString("22"))
           ),
           ScenarioTestSourceSpecificFormatJsonRecord(
             sourceNodeId,
-            Json.obj(sourceNodeId -> Json.fromString("3"), "field" -> Json.fromString("33"))
+            Json.obj(sourceNodeId.id -> Json.fromString("3"), "field" -> Json.fromString("33"))
           ),
         )
       )
@@ -589,11 +604,11 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         prepareTestRunner(useIOMonadInInterpreter).runTests(process, testData).futureValue
 
       nodeResultsWithoutTimestamp(results)(sourceNodeId) should have size 3
-      results.externalInvocationResults("out").map(withMockedTimestamp) shouldBe
+      results.externalInvocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
         List(
           ExternalInvocationResult(
             ContextId(
-              scenarioId = scenarioName,
+              scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
               taskId = firstSubtaskIndex,
               index = 0
@@ -604,7 +619,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           ),
           ExternalInvocationResult(
             ContextId(
-              scenarioId = scenarioName,
+              scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
               taskId = firstSubtaskIndex,
               index = 1
@@ -615,7 +630,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           ),
           ExternalInvocationResult(
             ContextId(
-              scenarioId = scenarioName,
+              scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
               taskId = firstSubtaskIndex,
               index = 2
@@ -629,8 +644,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
     "handle custom variables in source" in {
       val process = ScenarioBuilder
-        .streaming(scenarioName)
-        .source(sourceNodeId, "genericSourceWithCustomVariables", "elements" -> "{'abc'}".spel)
+        .streaming(scenarioName.value)
+        .source(sourceNodeId.id, "genericSourceWithCustomVariables", "elements" -> "{'abc'}".spel)
         .emptySink("out", "valueMonitor", "Value" -> "#additionalOne + '|' + #additionalTwo".spel)
       val testData =
         ScenarioTestData(List(ScenarioTestSourceSpecificFormatJsonRecord(sourceNodeId, Json.fromString("abc"))))
@@ -639,11 +654,11 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         prepareTestRunner(useIOMonadInInterpreter).runTests(process, testData).futureValue
 
       nodeResultsWithoutTimestamp(results)(sourceNodeId) should have size 1
-      results.externalInvocationResults("out").map(withMockedTimestamp) shouldBe
+      results.externalInvocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
         List(
           ExternalInvocationResult(
             ContextId(
-              scenarioId = scenarioName,
+              scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
               taskId = firstSubtaskIndex,
               index = 0
@@ -658,8 +673,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     "give meaningful error messages for sink errors" in {
       val process =
         ScenarioBuilder
-          .streaming(scenarioName)
-          .source(sourceNodeId, "input")
+          .streaming(scenarioName.value)
+          .source(sourceNodeId.id, "input")
           .emptySink("out", "sinkForInts", "Value" -> "15 / {0, 1}[0]".spel)
 
       val results =
@@ -671,15 +686,15 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           .futureValue
 
       results.exceptions should have length 1
-      results.exceptions.head.nodeId shouldBe Some("out")
+      results.exceptions.head.nodeId shouldBe Some(NodeId("out"))
       results.exceptions.head.throwable.getMessage should include("message: / by zero")
     }
 
     "be able to test process with time windows" in {
       val process =
         ScenarioBuilder
-          .streaming(scenarioName)
-          .source(sourceNodeId, "input")
+          .streaming(scenarioName.value)
+          .source(sourceNodeId.id, "input")
           .customNode("cid", "count", "transformWithTime", "seconds" -> "10".spel)
           .emptySink("out", "monitor")
 
@@ -703,16 +718,19 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
       val nodeResults = results.nodeResults
 
-      nodeResults("out").map(_.variables) shouldBe List(Map("count" -> variable(4)), Map("count" -> variable(1)))
+      nodeResults(NodeId("out")).map(_.variables) shouldBe List(
+        Map("count" -> variable(4)),
+        Map("count" -> variable(1))
+      )
 
     }
 
     "be able to test typed map" in {
       val process =
         ScenarioBuilder
-          .streaming(scenarioName)
+          .streaming(scenarioName.value)
           .source(
-            sourceNodeId,
+            sourceNodeId.id,
             "typedJsonInput",
             "type" -> """{"field1": "String", "field2": "java.lang.String"}""".spel
           )
@@ -730,7 +748,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         )
         .futureValue
 
-      results.invocationResults("out").map(_.value) shouldBe List(variable("abcdef"))
+      results.invocationResults(NodeId("out")).map(_.value) shouldBe List(variable("abcdef"))
     }
 
     "using dependent services" in {
@@ -738,8 +756,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val valueToReturn = 18
 
       val process = ScenarioBuilder
-        .streaming(scenarioName)
-        .source(sourceNodeId, "input")
+        .streaming(scenarioName.value)
+        .source(sourceNodeId.id, "input")
         .enricher(
           "dependent",
           "parsed",
@@ -758,14 +776,14 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           )
           .futureValue
 
-      results.invocationResults("out").map(_.value) shouldBe List(variable(s"$countToPass $valueToReturn"))
+      results.invocationResults(NodeId("out")).map(_.value) shouldBe List(variable(s"$countToPass $valueToReturn"))
     }
 
     "switch value should be equal to variable value" in {
       val process = ScenarioBuilder
-        .streaming(scenarioName)
+        .streaming(scenarioName.value)
         .parallelism(1)
-        .source(sourceNodeId, "input")
+        .source(sourceNodeId.id, "input")
         .switch(
           "switch",
           "#input.id == 'ala'".spel,
@@ -786,11 +804,11 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
       val invocationResults = results.invocationResults
 
-      invocationResults("switch").filter(_.name == "expression").head.value shouldBe variable(true)
-      invocationResults("switch").filter(_.name == "expression").last.value shouldBe variable(false)
+      invocationResults(NodeId("switch")).filter(_.name == "expression").head.value shouldBe variable(true)
+      invocationResults(NodeId("switch")).filter(_.name == "expression").last.value shouldBe variable(false)
       // first record was filtered out
-      invocationResults("out").head.contextId shouldBe ContextId(
-        scenarioId = scenarioName,
+      invocationResults(NodeId("out")).head.contextId shouldBe ContextId(
+        scenarioName = scenarioName,
         originatingNodeId = sourceNodeId,
         taskId = firstSubtaskIndex,
         index = 1,
@@ -799,10 +817,10 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
     "should handle joins for one input (diamond-like) " in {
       val process = ScenarioBuilder
-        .streaming(scenarioName)
+        .streaming(scenarioName.value)
         .sources(
           GraphBuilder
-            .source(sourceNodeId, "input")
+            .source(sourceNodeId.id, "input")
             .split(
               "split",
               GraphBuilder.filter("left", "#input.id != 'a'".spel).branchEnd("end1", "join1"),
@@ -830,51 +848,51 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           .runTests(process, ScenarioTestData(List(recA, recB, recC)))
           .futureValue
 
-      results.invocationResults("proc2").map(_.contextId) should contain only (
+      results.invocationResults(NodeId("proc2")).map(_.contextId) should contain only (
         ContextId(
-          scenarioId = scenarioName,
+          scenarioName = scenarioName,
           originatingNodeId = sourceNodeId,
           taskId = firstSubtaskIndex,
           index = 1,
           path = List(
-            ContextIdPathPart("split", "left"),
-            ContextIdPathPart("join1", "end1"),
+            ContextIdPathPart(NodeId("split"), "left"),
+            ContextIdPathPart(NodeId("join1"), "end1"),
           )
         ),
         ContextId(
-          scenarioId = scenarioName,
+          scenarioName = scenarioName,
           originatingNodeId = sourceNodeId,
           taskId = firstSubtaskIndex,
           index = 2,
           path = List(
-            ContextIdPathPart("split", "left"),
-            ContextIdPathPart("join1", "end1"),
+            ContextIdPathPart(NodeId("split"), "left"),
+            ContextIdPathPart(NodeId("join1"), "end1"),
           )
         ),
         ContextId(
-          scenarioId = scenarioName,
+          scenarioName = scenarioName,
           originatingNodeId = sourceNodeId,
           taskId = firstSubtaskIndex,
           index = 0,
           path = List(
-            ContextIdPathPart("split", "right"),
-            ContextIdPathPart("join1", "end2"),
+            ContextIdPathPart(NodeId("split"), "right"),
+            ContextIdPathPart(NodeId("join1"), "end2"),
           )
         ),
         ContextId(
-          scenarioId = scenarioName,
+          scenarioName = scenarioName,
           originatingNodeId = sourceNodeId,
           taskId = firstSubtaskIndex,
           index = 2,
           path = List(
-            ContextIdPathPart("split", "right"),
-            ContextIdPathPart("join1", "end2"),
+            ContextIdPathPart(NodeId("split"), "right"),
+            ContextIdPathPart(NodeId("join1"), "end2"),
           )
         ),
       )
 
       results
-        .externalInvocationResults("proc2")
+        .externalInvocationResults(NodeId("proc2"))
         .map(_.value.asInstanceOf[Json]) should contain theSameElementsAs List(
         "b",
         "a",
@@ -885,7 +903,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
     "should test multiple source scenario" in {
       val process = ScenarioBuilder
-        .streaming(scenarioName)
+        .streaming(scenarioName.value)
         .sources(
           GraphBuilder
             .source("source1", "input")
@@ -926,36 +944,36 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         .futureValue
 
       val nodeResults = nodeResultsWithoutTimestamp(results)
-      nodeResults("source1") shouldBe List(
-        nodeResult(0, "source1", "input" -> recordA),
-        nodeResult(1, "source1", "input" -> recordD)
+      nodeResults(NodeId("source1")) shouldBe List(
+        nodeResult(0, NodeId("source1"), "input" -> recordA),
+        nodeResult(1, NodeId("source1"), "input" -> recordD)
       )
-      nodeResults("source2") shouldBe List(
-        nodeResult(0, "source2", "input" -> recordA),
-        nodeResult(1, "source2", "input" -> recordB),
-        nodeResult(2, "source2", "input" -> recordC)
+      nodeResults(NodeId("source2")) shouldBe List(
+        nodeResult(0, NodeId("source2"), "input" -> recordA),
+        nodeResult(1, NodeId("source2"), "input" -> recordB),
+        nodeResult(2, NodeId("source2"), "input" -> recordC)
       )
-      nodeResults("filter1") shouldBe nodeResults("source1")
-      nodeResults("filter2") shouldBe nodeResults("source2")
-      nodeResults("$edge-end1-join") shouldBe List(nodeResult(1, "source1", "input" -> recordD))
-      nodeResults("$edge-end2-join") shouldBe List(
-        nodeResult(0, "source2", "input" -> recordA),
-        nodeResult(2, "source2", "input" -> recordC)
+      nodeResults(NodeId("filter1")) shouldBe nodeResults(NodeId("source1"))
+      nodeResults(NodeId("filter2")) shouldBe nodeResults(NodeId("source2"))
+      nodeResults(NodeId("$edge-end1-join")) shouldBe List(nodeResult(1, NodeId("source1"), "input" -> recordD))
+      nodeResults(NodeId("$edge-end2-join")) shouldBe List(
+        nodeResult(0, NodeId("source2"), "input" -> recordA),
+        nodeResult(2, NodeId("source2"), "input" -> recordC)
       )
-      nodeResults("join") should contain only (
-        nodeResult(1, "source1", "end1", "input" -> recordD, "joinInput" -> recordD),
-        nodeResult(0, "source2", "end2", "input" -> recordA, "joinInput" -> recordA),
-        nodeResult(2, "source2", "end2", "input" -> recordC, "joinInput" -> recordC)
+      nodeResults(NodeId("join")) should contain only (
+        nodeResult(1, NodeId("source1"), "end1", "input" -> recordD, "joinInput" -> recordD),
+        nodeResult(0, NodeId("source2"), "end2", "input" -> recordA, "joinInput" -> recordA),
+        nodeResult(2, NodeId("source2"), "end2", "input" -> recordC, "joinInput" -> recordC)
       )
 
-      results.invocationResults("proc2").map(withMockedTimestamp) should contain only (
+      results.invocationResults(NodeId("proc2")).map(withMockedTimestamp) should contain only (
         ExpressionInvocationResult(
           ContextId(
-            scenarioId = scenarioName,
-            originatingNodeId = "source1",
+            scenarioName = scenarioName,
+            originatingNodeId = NodeId("source1"),
             taskId = firstSubtaskIndex,
             index = 1,
-            path = List(ContextIdPathPart("join", "end1"))
+            path = List(ContextIdPathPart(NodeId("join"), "end1"))
           ),
           mockedTimestamp,
           "all",
@@ -963,11 +981,11 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         ),
         ExpressionInvocationResult(
           ContextId(
-            scenarioId = scenarioName,
-            originatingNodeId = "source2",
+            scenarioName = scenarioName,
+            originatingNodeId = NodeId("source2"),
             taskId = firstSubtaskIndex,
             index = 0,
-            path = List(ContextIdPathPart("join", "end2"))
+            path = List(ContextIdPathPart(NodeId("join"), "end2"))
           ),
           mockedTimestamp,
           "all",
@@ -975,11 +993,11 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         ),
         ExpressionInvocationResult(
           ContextId(
-            scenarioId = scenarioName,
-            originatingNodeId = "source2",
+            scenarioName = scenarioName,
+            originatingNodeId = NodeId("source2"),
             taskId = firstSubtaskIndex,
             index = 2,
-            path = List(ContextIdPathPart("join", "end2"))
+            path = List(ContextIdPathPart(NodeId("join"), "end2"))
           ),
           mockedTimestamp,
           "all",
@@ -988,7 +1006,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       )
 
       results
-        .externalInvocationResults("proc2")
+        .externalInvocationResults(NodeId("proc2"))
         .map(_.value.asInstanceOf[Json]) should contain theSameElementsAs List("a", "c", "d")
         .map(_ + "-collectedDuringServiceInvocation")
         .map(variable)
@@ -996,7 +1014,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
     "should have correct run mode" in {
       val process = ScenarioBuilder
-        .streaming(scenarioName)
+        .streaming(scenarioName.value)
         .source("start", "input")
         .enricher("componentUseContextService", "componentUseContextService", "returningComponentUseContextService")
         .customNode(
@@ -1018,7 +1036,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           )
           .futureValue
 
-      results.invocationResults("out").map(_.value) shouldBe List(
+      results.invocationResults(NodeId("out")).map(_.value) shouldBe List(
         variable(List(ComponentUseContext.ScenarioTesting, ComponentUseContext.ScenarioTesting))
       )
     }
@@ -1026,8 +1044,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     "should throw exception when parameter was modified by AdditionalUiConfigProvider with dict editor and flink wasn't provided with additional config" in {
       val process =
         ScenarioBuilder
-          .streaming(scenarioName)
-          .source(sourceNodeId, "input")
+          .streaming(scenarioName.value)
+          .source(sourceNodeId.id, "input")
           .processor(
             "eager1",
             "collectingEager",
@@ -1049,7 +1067,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
                 ParameterName("static"),
                 `DictKeyWithLabel`,
                 List(SpelTemplateParameterEditor, SpelParameterEditor),
-                "eager1"
+                NodeId("eager1")
               ) :: Nil
             ) =>
       }
@@ -1060,8 +1078,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val modifiedParameterName = "static"
       val process =
         ScenarioBuilder
-          .streaming(scenarioName)
-          .source(sourceNodeId, "input")
+          .streaming(scenarioName.value)
+          .source(sourceNodeId.id, "input")
           .processor(
             "eager1",
             modifiedComponentName,
@@ -1092,7 +1110,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     "should not throw exception when process fragment has parameter validation defined" in {
       val scenario = ScenarioBuilder
         .streaming("scenario1")
-        .source(sourceNodeId, "input")
+        .source(sourceNodeId.id, "input")
         .fragmentOneOut("sub", fragmentWithValidationName, "output", "fragmentResult", "param" -> "'asd'".spel)
         .emptySink("out", "valueMonitor", "Value" -> "1".spel)
 
@@ -1111,11 +1129,11 @@ class FlinkMiniClusterScenarioTestRunnerSpec
   }
 
   private def createTestRecord(
-      sourceId: String = sourceNodeId,
+      sourceId: String = sourceNodeId.id,
       id: String = "0",
       value1: Long = 1
   ): ScenarioTestSourceSpecificFormatJsonRecord =
-    ScenarioTestSourceSpecificFormatJsonRecord(sourceId, Json.fromString(s"$id|$value1|2|3|4|5|6"))
+    ScenarioTestSourceSpecificFormatJsonRecord(NodeId(sourceId), Json.fromString(s"$id|$value1|2|3|4|5|6"))
 
   private def prepareTestRunner(
       useIOMonadInInterpreter: Boolean,
@@ -1145,7 +1163,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
   private def nodeResult(count: Int, vars: (String, Any)*): (ContextId, Map[String, Json]) =
     nodeResult(count, sourceNodeId, vars: _*)
 
-  private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): (ContextId, Map[String, Json]) =
+  private def nodeResult(count: Int, sourceId: NodeId, vars: (String, Any)*): (ContextId, Map[String, Json]) =
     (
       ContextId(scenarioName, sourceId, firstSubtaskIndex, count),
       Map(vars: _*).mapValuesNow(variable)
@@ -1153,7 +1171,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
   private def nodeResult(
       count: Int,
-      sourceId: String,
+      sourceId: NodeId,
       branchId: String,
       vars: (String, Any)*
   ): (ContextId, Map[String, Json]) =
@@ -1163,7 +1181,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         sourceId,
         firstSubtaskIndex,
         count,
-        List(ContextIdPathPart("join", branchId)),
+        List(ContextIdPathPart(NodeId("join"), branchId)),
       ),
       Map(vars: _*).mapValuesNow(variable)
     )

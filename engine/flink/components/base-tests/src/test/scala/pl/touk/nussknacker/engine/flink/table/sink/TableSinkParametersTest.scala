@@ -9,6 +9,7 @@ import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelConfig
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CustomNodeError,
@@ -169,14 +170,14 @@ class TableSinkParametersTest
             NonEmptyList(
               ExpressionParserCompilationError(
                 "Bad expression type, expected: String, found: Double(123.11)",
-                "end",
+                NodeId("end"),
                 _,
                 _,
                 _
               ),
               ExpressionParserCompilationError(
                 "Bad expression type, expected: BigDecimal, found: String()",
-                "end",
+                NodeId("end"),
                 _,
                 _,
                 _
@@ -198,7 +199,8 @@ class TableSinkParametersTest
       )
 
     val result = runner.runWithoutData(scenario)
-    inside(result) { case Invalid(NonEmptyList(CustomNodeError("end", _, _), CustomNodeError("end", _, _) :: Nil)) =>
+    inside(result) {
+      case Invalid(NonEmptyList(CustomNodeError(NodeId("end"), _, _), CustomNodeError(NodeId("end"), _, _) :: Nil)) =>
     }
   }
 

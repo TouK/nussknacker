@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{invalidNel, valid}
 import cats.data.ValidatedNel
 import cats.implicits._
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -16,7 +17,7 @@ object IdValidator {
   def validate(process: CanonicalProcess, isFragment: Boolean): ValidatedNel[ProcessCompilationError, Unit] = {
     val scenarioIdValidationResult = validateScenarioName(process.name, isFragment)
     val nodesIdValidationResult = process.nodes
-      .map(node => validateNodeId(node.data.id))
+      .map(node => validateNodeId(NodeId(node.data.id)))
       .combineAll
 
     scenarioIdValidationResult.combine(nodesIdValidationResult)
@@ -28,8 +29,8 @@ object IdValidator {
   ): ValidatedNel[ProcessCompilationError, Unit] =
     validateId(scenarioName.value).leftMap(_.map(ScenarioNameError(_, scenarioName, isFragment)))
 
-  def validateNodeId(nodeId: String): ValidatedNel[ProcessCompilationError, Unit] =
-    validateId(nodeId, nodeIdIllegalCharacters, nodeIdIllegalCharactersReadable)
+  def validateNodeId(nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] =
+    validateId(nodeId.id, nodeIdIllegalCharacters, nodeIdIllegalCharactersReadable)
       .leftMap(_.map(NodeIdValidationError(_, nodeId)))
 
   private def validateId(

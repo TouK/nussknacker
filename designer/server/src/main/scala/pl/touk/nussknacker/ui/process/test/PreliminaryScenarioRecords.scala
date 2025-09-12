@@ -4,22 +4,23 @@ import cats.data.NonEmptyList
 import io.circe._
 import io.circe.DecodingFailure.Reason.CustomReason
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import pl.touk.nussknacker.engine.api.NodeId
 
 case class PreliminaryScenarioRecords(records: NonEmptyList[PreliminaryScenarioRecord])
 
 sealed trait PreliminaryScenarioRecord {
-  def sourceId: String
+  def sourceId: NodeId
   def timestamp: Option[Long]
 }
 
 final case class SourceSpecificFormatPreliminaryScenarioRecord(
-    override val sourceId: String,
+    override val sourceId: NodeId,
     record: Json,
     override val timestamp: Option[Long]
 ) extends PreliminaryScenarioRecord
 
 final case class CommonFormatPreliminaryScenarioRecord(
-    override val sourceId: String,
+    override val sourceId: NodeId,
     variables: Map[String, Json],
     override val timestamp: Option[Long]
 ) extends PreliminaryScenarioRecord

@@ -86,7 +86,7 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
                     value = ScenarioGraphValidationError(
                       ValidationErrors(
                         invalidNodes = Map(
-                          "filter" -> List(
+                          NodeId("filter") -> List(
                             PrettyValidationErrors.formatErrorMessage(
                               ExpressionParserCompilationError(
                                 message = "Bad expression",

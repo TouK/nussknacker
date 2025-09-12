@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ModelConfig, ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
   ComponentDependencies,
@@ -114,7 +114,9 @@ class FlinkProcessCompilerDataFactory(
       nodeData.isInstanceOf[CustomNode] || nodeData.isInstanceOf[node.Sink]
     List(
       LoggingListener,
-      new NodeCountingListener(usedNodes.nodes.filterNot(nodesHandledInNextParts).map(_.id) ++ usedNodes.nextParts),
+      new NodeCountingListener(
+        usedNodes.nodes.filterNot(nodesHandledInNextParts).map(n => NodeId(n.id)) ++ usedNodes.nextParts
+      ),
       new EndCountingListener(usedNodes.nodes)
     )
   }
@@ -174,7 +176,7 @@ class FlinkProcessCompilerDataFactory(
 //ProcessListener.nodeEntered method is invoked in Interpreter, when PartRef is encountered. This is because CustomNode/Sink
 //in Interpreter is invoked *after* node execution in Flink/Lite. To initialize Metric listeners correctly we need
 //to pass list of nextParts, so when Interpreter invokes nodeEntered on PartRef, the counter is properly initialized
-private[process] case class UsedNodes(nodes: Iterable[NodeData], nextParts: Iterable[String])
+private[process] case class UsedNodes(nodes: Iterable[NodeData], nextParts: Iterable[NodeId])
 
 object UsedNodes {
   val empty: UsedNodes = UsedNodes(Nil, Nil)

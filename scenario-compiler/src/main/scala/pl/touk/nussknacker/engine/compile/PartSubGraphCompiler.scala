@@ -151,7 +151,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
 
       // probably this shouldn't occur - otherwise we'd have empty fragment?
       case FragmentInput(id, _, _, _, _) =>
-        toCompilationResult(Invalid(NonEmptyList.of(UnresolvedFragment(id))), Map.empty, None)
+        toCompilationResult(Invalid(NonEmptyList.of(UnresolvedFragment(NodeId(id)))), Map.empty, None)
 
       case FragmentOutputDefinition(id, _, Nil, _) =>
         // TODO: should we validate it's process?

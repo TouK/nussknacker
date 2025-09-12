@@ -6,18 +6,18 @@ import scala.util.Try
 
 trait ProcessListener extends Lifecycle {
 
-  def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit
+  def nodeEntered(nodeId: NodeId, context: Context, processMetaData: MetaData): Unit
 
-  def transitionToNextNode(nodeId: String, nextNodeId: String, context: Context, processMetaData: MetaData): Unit
+  def transitionToNextNode(nodeId: NodeId, nextNodeId: NodeId, context: Context, processMetaData: MetaData): Unit
 
-  def processingFinishedInNode(nodeId: String, context: Context, processMetaData: MetaData): Unit
+  def processingFinishedInNode(nodeId: NodeId, context: Context, processMetaData: MetaData): Unit
 
-  def endEncountered(nodeId: String, ref: String, context: Context, processMetaData: MetaData): Unit
+  def endEncountered(nodeId: NodeId, ref: String, context: Context, processMetaData: MetaData): Unit
 
-  def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit
+  def deadEndEncountered(lastNodeId: NodeId, context: Context, processMetaData: MetaData): Unit
 
   def expressionEvaluated(
-      nodeId: String,
+      nodeId: NodeId,
       expressionId: String,
       expression: String,
       context: Context,
@@ -26,7 +26,7 @@ trait ProcessListener extends Lifecycle {
   ): Unit
 
   def serviceInvoked(
-      nodeId: String,
+      nodeId: NodeId,
       id: String,
       context: Context,
       processMetaData: MetaData,
@@ -38,36 +38,36 @@ trait ProcessListener extends Lifecycle {
 }
 
 trait EmptyProcessListener extends ProcessListener {
-  override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = ()
+  override def nodeEntered(nodeId: NodeId, context: Context, processMetaData: MetaData): Unit = ()
 
   override def transitionToNextNode(
-      nodeId: String,
-      nextNodeId: String,
+      nodeId: NodeId,
+      nextNodeId: NodeId,
       context: Context,
       processMetaData: MetaData,
   ): Unit = ()
 
   override def processingFinishedInNode(
-      nodeId: String,
+      nodeId: NodeId,
       context: Context,
       processMetaData: MetaData,
   ): Unit = ()
 
   override def endEncountered(
-      nodeId: String,
+      nodeId: NodeId,
       ref: String,
       context: Context,
       processMetaData: MetaData
   ): Unit = {}
 
   override def deadEndEncountered(
-      lastNodeId: String,
+      lastNodeId: NodeId,
       context: Context,
       processMetaData: MetaData
   ): Unit = {}
 
   override def expressionEvaluated(
-      nodeId: String,
+      nodeId: NodeId,
       expressionId: String,
       expression: String,
       context: Context,
@@ -76,7 +76,7 @@ trait EmptyProcessListener extends ProcessListener {
   ): Unit = {}
 
   override def serviceInvoked(
-      nodeId: String,
+      nodeId: NodeId,
       id: String,
       context: Context,
       processMetaData: MetaData,

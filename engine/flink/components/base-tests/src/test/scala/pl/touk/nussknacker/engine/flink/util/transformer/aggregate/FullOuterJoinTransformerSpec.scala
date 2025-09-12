@@ -44,7 +44,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
   private val JoinNodeId = "joined-node-id"
 
-  private val EndNodeId = "end-node-id"
+  private val EndNodeId = NodeId("end-node-id")
 
   private val KeyVariableName = "keyVar"
 
@@ -83,7 +83,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')".spel,
           )
-          .emptySink(EndNodeId, "dead-end")
+          .emptySink(EndNodeId.id, "dead-end")
       )
 
     val input1 = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -453,7 +453,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')".spel,
           )
-          .emptySink(EndNodeId, "dead-end")
+          .emptySink(EndNodeId.id, "dead-end")
       )
 
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -502,7 +502,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')".spel,
           )
-          .emptySink(EndNodeId, "dead-end")
+          .emptySink(EndNodeId.id, "dead-end")
       )
 
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))

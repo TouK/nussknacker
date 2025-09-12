@@ -9,7 +9,7 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
-import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{LayoutData, NodeId, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
@@ -711,6 +711,7 @@ object NodesApiEndpoints {
     implicit lazy val columnDefinitionSchema: Schema[ColumnDefinition]         = Schema.derived
     implicit lazy val languageSchema: Schema[Language]                         = Schema.string[Language]
     implicit lazy val parameterEditorSchema: Schema[ParameterEditor]           = Schema.anyObject[ParameterEditor]
+    implicit lazy val nodeIdSchema: Schema[NodeId]                             = Schema.string[NodeId]
     implicit lazy val errorDetailsSchema: Schema[ErrorDetails]                 = Schema.derived
     implicit lazy val nodeValidationErrorSchema: Schema[NodeValidationError]   = Schema.derived
     implicit lazy val fixedExpressionValueSchema: Schema[FixedExpressionValue] = Schema.derived

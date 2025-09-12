@@ -265,7 +265,7 @@ class DeploymentService(
             .map { params =>
               val paramsMap = params.toList
                 .map { case (nodeComponentInfo, paramsForNode) =>
-                  NodeId(nodeComponentInfo.nodeId) -> paramsForNode
+                  nodeComponentInfo.nodeId -> paramsForNode
                     // Important NOTICE! If the user hasn't provided any (quick deploy/redeploy action) deploy parameters,
                     // we take parameters with defined default values.
                     // Parameters without default values (even required ones) are skipped.

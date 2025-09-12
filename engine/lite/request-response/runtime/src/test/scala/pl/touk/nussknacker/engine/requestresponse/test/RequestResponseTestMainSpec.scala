@@ -6,7 +6,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{ContextIdPathPart, DisplayJsonWithEncoder, JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{ContextIdPathPart, DisplayJsonWithEncoder, JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestSourceSpecificFormatJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -40,14 +40,14 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       RequestResponseComponentProvider.Components
   )
 
-  private val sourceId = "start"
+  private val sourceId = NodeId("start")
 
   private val mockedTimestamp = Instant.now()
 
   test("perform test on mocks") {
     val process = ScenarioBuilder
       .requestResponse("proc1")
-      .source(sourceId, "request1-post-source")
+      .source(sourceId.id, "request1-post-source")
       .filter("filter1", "#input.field1() == 'a'".spel)
       .enricher("enricher", "var1", "enricherService")
       .processor("processor", "processorService")
@@ -67,19 +67,19 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       (secondId, Map("input" -> variable(Request1("c", "d"))))
     )
 
-    results.invocationResults("filter1").map(withMockedTimestamp).toSet shouldBe Set(
+    results.invocationResults(NodeId("filter1")).map(withMockedTimestamp).toSet shouldBe Set(
       ExpressionInvocationResult(firstId, mockedTimestamp, "expression", variable(true)),
       ExpressionInvocationResult(secondId, mockedTimestamp, "expression", variable(false))
     )
 
-    results.externalInvocationResults("processor").map(withMockedTimestamp).toSet shouldBe Set(
+    results.externalInvocationResults(NodeId("processor")).map(withMockedTimestamp).toSet shouldBe Set(
       ExternalInvocationResult(firstId, mockedTimestamp, "processorService", variable("processor service invoked"))
     )
-    results.externalInvocationResults("eagerProcessor").map(withMockedTimestamp).toSet shouldBe Set(
+    results.externalInvocationResults(NodeId("eagerProcessor")).map(withMockedTimestamp).toSet shouldBe Set(
       ExternalInvocationResult(firstId, mockedTimestamp, "collectingEager", variable("static-s-dynamic-a"))
     )
 
-    results.externalInvocationResults("endNodeIID").map(withMockedTimestamp).toSet shouldBe Set(
+    results.externalInvocationResults(NodeId("endNodeIID")).map(withMockedTimestamp).toSet shouldBe Set(
       ExternalInvocationResult(firstId, mockedTimestamp, "endNodeIID", variable(Response(s"alamakota-$firstId")))
     )
 
@@ -90,7 +90,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
   test("detect errors in nodes") {
     val process = ScenarioBuilder
       .requestResponse("proc1")
-      .source(sourceId, "request1-post-source")
+      .source(sourceId.id, "request1-post-source")
       .filter("occasionallyThrowFilter", "#input.field1() == 'a' ? 1/{0, 1}[0] == 0 : true".spel)
       .filter("filter1", "#input.field1() == 'a'".spel)
       .enricher("enricher", "var1", "enricherService")
@@ -105,21 +105,21 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
 
     val results = runTest(process, scenarioTestData)
 
-    results.invocationResults("occasionallyThrowFilter").map(withMockedTimestamp).toSet shouldBe Set(
+    results.invocationResults(NodeId("occasionallyThrowFilter")).map(withMockedTimestamp).toSet shouldBe Set(
       ExpressionInvocationResult(secondId, mockedTimestamp, "expression", variable(true))
     )
 
     results.exceptions should have size 1
     results.exceptions.head.context.id shouldBe firstId
     results.exceptions.head.context.variables shouldBe Map("input" -> variable(Request1("a", "b")))
-    results.exceptions.head.nodeId shouldBe Some("occasionallyThrowFilter")
+    results.exceptions.head.nodeId shouldBe Some(NodeId("occasionallyThrowFilter"))
     results.exceptions.head.throwable.getMessage shouldBe """Expression [#input.field1() == 'a' ? 1/{0, 1}[0] == 0 : true] evaluation failed, message: / by zero"""
   }
 
   test("get results on parameter sinks") {
     val process = ScenarioBuilder
       .requestResponse("proc1")
-      .source(sourceId, "request1-post-source")
+      .source(sourceId.id, "request1-post-source")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1()".spel)
 
     val scenarioTestData = ScenarioTestData(List(createTestRecord("a", "b")))
@@ -139,7 +139,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       (firstId, Map("input" -> variable(Request1("a", "b"))))
     )
 
-    results.externalInvocationResults("endNodeIID").map(withMockedTimestamp).toSet shouldBe Set(
+    results.externalInvocationResults(NodeId("endNodeIID")).map(withMockedTimestamp).toSet shouldBe Set(
       ExternalInvocationResult(firstId, mockedTimestamp, "endNodeIID", variable("a withRandomString"))
     )
 
@@ -152,7 +152,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       .streaming("proc1")
       .sources(
         GraphBuilder
-          .source(sourceId, "request1-post-source")
+          .source(sourceId.id, "request1-post-source")
           .split(
             "spl",
             GraphBuilder.buildSimpleVariable("v1", "v1", "'aa'".spel).branchEnd(branch1NodeId, "union1"),
@@ -176,28 +176,28 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val results = runTest(process, scenarioTestData)
 
     val sourceContextId = contextIdGenForFirstSource(process).nextContextId()
-    results.nodeResults("union1") should have size 2
+    results.nodeResults(NodeId("union1")) should have size 2
 
-    val unionContextIds = results.nodeResults("union1").map(_.id)
+    val unionContextIds = results.nodeResults(NodeId("union1")).map(_.id)
     unionContextIds should contain only (
       sourceContextId.copy(
         contextIdPath = List(
-          ContextIdPathPart("spl", "v1"),
-          ContextIdPathPart("union1", branch1NodeId),
+          ContextIdPathPart(NodeId("spl"), "v1"),
+          ContextIdPathPart(NodeId("union1"), branch1NodeId),
         ).asJava
       ),
       sourceContextId.copy(
         contextIdPath = List(
-          ContextIdPathPart("spl", "v2"),
-          ContextIdPathPart("union1", branch2NodeId),
+          ContextIdPathPart(NodeId("spl"), "v2"),
+          ContextIdPathPart(NodeId("union1"), branch2NodeId),
         ).asJava
       ),
     )
     unionContextIds should contain theSameElementsAs unionContextIds.toSet
     nodeResults(results, "union1") shouldBe nodeResults(results, "collect1")
 
-    val endNodeIdInvocationResult = results.externalInvocationResults("endNodeIID").loneElement
-    endNodeIdInvocationResult.contextId shouldBe contextIdGenForNodeId(process, "collect1").nextContextId()
+    val endNodeIdInvocationResult = results.externalInvocationResults(NodeId("endNodeIID")).loneElement
+    endNodeIdInvocationResult.contextId shouldBe contextIdGenForNodeId(process, NodeId("collect1")).nextContextId()
 
     endNodeIdInvocationResult.value shouldBe variable(List("aa", "bb"))
   }
@@ -210,9 +210,9 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
   }
 
   private def contextIdGenForFirstSource(scenario: CanonicalProcess): IncContextIdGenerator =
-    contextIdGenForNodeId(scenario, scenario.nodes.head.id)
+    contextIdGenForNodeId(scenario, NodeId(scenario.nodes.head.id))
 
-  private def contextIdGenForNodeId(scenario: CanonicalProcess, nodeId: String): IncContextIdGenerator =
+  private def contextIdGenForNodeId(scenario: CanonicalProcess, nodeId: NodeId): IncContextIdGenerator =
     IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, nodeId, taskId = 0)
 
   private def runTest(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Json] = {
@@ -238,8 +238,8 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     Json.obj("pretty" -> toJson(value))
   }
 
-  private def nodeResults[T](results: TestProcess.TestResults[T], key: String) =
-    results.nodeResults(key).map(r => (r.id, r.variables))
+  private def nodeResults[T](results: TestProcess.TestResults[T], nodeId: String) =
+    results.nodeResults(NodeId(nodeId)).map(r => (r.id, r.variables))
 
   private def withMockedTimestamp(result: ExpressionInvocationResult[Json]) =
     result.copy(timestamp = mockedTimestamp)

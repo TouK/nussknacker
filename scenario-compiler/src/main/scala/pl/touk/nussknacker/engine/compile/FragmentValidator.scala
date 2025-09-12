@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{invalidNel, valid}
 import cats.data.ValidatedNel
 import cats.implicits._
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.DuplicateFragmentOutputNamesInFragment
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -20,7 +21,7 @@ object FragmentValidator {
       val duplicatedOutputNamesWithNodeIds = fragmentOutputNodes
         .groupBy(_.outputName)
         .collect {
-          case (name, nodes) if nodes.size > 1 => name -> nodes.map(_.id).toSet
+          case (name, nodes) if nodes.size > 1 => name -> nodes.map(n => NodeId(n.id)).toSet
         }
       duplicatedOutputNamesWithNodeIds
         .map(n => invalidNel(DuplicateFragmentOutputNamesInFragment(n._1, n._2)))

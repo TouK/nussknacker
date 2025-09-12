@@ -50,7 +50,7 @@ object FlinkSerializationSchemaConversions extends LazyLogging {
       val (exceptionHandler, contextIdGenerator, nodeId) = exceptionHandlingData
       exceptionHandler
         .handling(
-          Some(NodeComponentInfo(nodeId.id, ComponentType.Source, "unknown")),
+          Some(NodeComponentInfo(nodeId, ComponentType.Source, "unknown")),
           Context(contextIdGenerator.nextContextId())
         ) {
           deserializationSchema.deserialize(record)

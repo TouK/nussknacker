@@ -36,7 +36,7 @@ object Union extends CustomStreamTransformer {
         unifiedReturnType
           .map(unionValidationContext(variableName, contexts, _))
           .getOrElse(
-            Validated.invalidNel(CannotCreateObjectError("All branch values must be of the same type", nodeId.id))
+            Validated.invalidNel(CannotCreateObjectError("All branch values must be of the same type", nodeId))
           )
       }
       .implementedBy(new LiteJoinCustomComponent {

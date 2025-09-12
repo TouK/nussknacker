@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink
 
 import com.typesafe.config.ConfigFactory
-import pl.touk.nussknacker.engine.api.ContextId
+import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -89,7 +89,7 @@ trait FlinkMiniClusterTestRunner { _: FlinkSpec =>
       toNodeId: Option[String]
   ): Map[ContextId, Map[String, Any]] = {
     testResults
-      .nodeTransitionResults(NodeTransition(fromNodeId, toNodeId))
+      .nodeTransitionResults(NodeTransition(NodeId(fromNodeId), toNodeId.map(NodeId(_))))
       .map { result =>
         (result.id, result.variables.map { case (key, value) => (key, scalaMap(value)) })
       }
@@ -104,7 +104,7 @@ trait FlinkMiniClusterTestRunner { _: FlinkSpec =>
   }
 
   protected def assertNumberOfSamplesThatFinishedInNode(testResults: TestResults[Any], sinkId: String, expected: Int) =
-    testResults.nodeTransitionResults.get(NodeTransition(sinkId, None)).map(_.length) shouldBe Some(expected)
+    testResults.nodeTransitionResults.get(NodeTransition(NodeId(sinkId), None)).map(_.length) shouldBe Some(expected)
 
   protected def catchExceptionMessage(f: => Any): String = Try(f).failed.get.getMessage
 

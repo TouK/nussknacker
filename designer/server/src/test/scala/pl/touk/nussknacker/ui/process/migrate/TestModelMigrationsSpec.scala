@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.migrate
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingService, MissingSourceFactory}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -60,7 +61,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
-    errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[MissingService].getSimpleName))
+    errorTypes(results.head.newErrors) shouldBe Map(NodeId("processor") -> List(classOf[MissingService].getSimpleName))
   }
 
   test("should detect failed migration on multiple sources scenario") {
@@ -70,8 +71,8 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val results = testMigration.testMigrations(List(scenarioGraph), List(), batchingExecutionContext)
 
     errorTypes(results.head.newErrors) shouldBe Map(
-      "source1" -> List(classOf[MissingSourceFactory].getSimpleName),
-      "source2" -> List(classOf[MissingSourceFactory].getSimpleName)
+      NodeId("source1") -> List(classOf[MissingSourceFactory].getSimpleName),
+      NodeId("source2") -> List(classOf[MissingSourceFactory].getSimpleName)
     )
   }
 
@@ -97,7 +98,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
-    errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[MissingService].getSimpleName))
+    errorTypes(results.head.newErrors) shouldBe Map(NodeId("processor") -> List(classOf[MissingService].getSimpleName))
   }
 
   test("should migrate fragment and its usage within scenario") {
@@ -166,7 +167,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     }
   }
 
-  private def errorTypes(validationResult: ValidationResult): Map[String, List[String]] =
+  private def errorTypes(validationResult: ValidationResult): Map[NodeId, List[String]] =
     validationResult.errors.invalidNodes.mapValuesNow(_.map(_.typ))
 
   private def newTestModelMigrations(testMigrations: TestMigrations): TestModelMigrations =

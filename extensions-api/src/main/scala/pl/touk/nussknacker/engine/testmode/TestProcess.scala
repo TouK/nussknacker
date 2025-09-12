@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.testmode
 
-import pl.touk.nussknacker.engine.api.{Context, ContextId}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import java.time.Instant
@@ -8,22 +8,22 @@ import java.time.Instant
 object TestProcess {
 
   case class TestResults[T](
-      nodeResults: Map[String, List[ResultContext[T]]],
+      nodeResults: Map[NodeId, List[ResultContext[T]]],
       nodeTransitionResults: Map[NodeTransition, List[ResultContext[T]]],
-      invocationResults: Map[String, List[ExpressionInvocationResult[T]]],
-      externalInvocationResults: Map[String, List[ExternalInvocationResult[T]]],
+      invocationResults: Map[NodeId, List[ExpressionInvocationResult[T]]],
+      externalInvocationResults: Map[NodeId, List[ExternalInvocationResult[T]]],
       exceptions: List[ExceptionResult[T]]
   ) {
 
-    def updateNodeResult(nodeId: String, context: Context, variableEncoder: Any => T): TestResults[T] =
+    def updateNodeResult(nodeId: NodeId, context: Context, variableEncoder: Any => T): TestResults[T] =
       copy(nodeResults =
         nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ ResultContext
           .fromContext(context, Instant.now(), variableEncoder)))
       )
 
     def updateNodeOutputResult(
-        nodeId: String,
-        nextNodeIdOpt: Option[String],
+        nodeId: NodeId,
+        nextNodeIdOpt: Option[NodeId],
         context: Context,
         variableEncoder: Any => T
     ): TestResults[T] = {
@@ -36,7 +36,7 @@ object TestProcess {
     }
 
     def updateExpressionResult(
-        nodeId: String,
+        nodeId: NodeId,
         context: Context,
         name: String,
         result: Any,
@@ -49,7 +49,7 @@ object TestProcess {
     }
 
     def updateExternalInvocationResult(
-        nodeId: String,
+        nodeId: NodeId,
         contextId: ContextId,
         name: String,
         result: Any,
@@ -104,7 +104,7 @@ object TestProcess {
 
   }
 
-  final case class NodeTransition(sourceNodeId: String, destinationNodeId: Option[String])
+  final case class NodeTransition(sourceNodeId: NodeId, destinationNodeId: Option[NodeId])
 
   case class ExpressionInvocationResult[T](contextId: ContextId, timestamp: Instant, name: String, value: T)
 
@@ -125,7 +125,7 @@ object TestProcess {
 
   }
 
-  case class ExceptionResult[T](context: ResultContext[T], nodeId: Option[String], throwable: Throwable)
+  case class ExceptionResult[T](context: ResultContext[T], nodeId: Option[NodeId], throwable: Throwable)
 
   object ResultContext {
     def fromContext[T](context: Context, timestamp: Instant, variableEncoder: Any => T): ResultContext[T] =

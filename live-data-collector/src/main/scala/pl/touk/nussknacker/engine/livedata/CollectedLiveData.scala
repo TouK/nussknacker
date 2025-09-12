@@ -5,6 +5,7 @@ import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.{ContextId, ContextIdPathPart, NodeId}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichTupleList}
 
 import java.time.Instant
@@ -27,8 +28,8 @@ object CollectedLiveData {
   private implicit def contextIdCodec: Codec[ContextId] =
     Codec.forProduct5("sn", "nid", "tid", "idx", "path")(
       (
-          scenarioName: String,
-          nodeId: String,
+          scenarioName: ProcessName,
+          nodeId: NodeId,
           taskId: Long,
           index: Long,
           path: List[ContextIdPathPart]
@@ -40,9 +41,6 @@ object CollectedLiveData {
 
   private implicit val instantEncoder: Encoder[Instant] = Encoder.encodeLong.contramap(_.getEpochSecond)
   private implicit val instantDecoder: Decoder[Instant] = Decoder.decodeLong.map(Instant.ofEpochSecond)
-
-  private implicit val nodeIdEncoder: Encoder[NodeId] = Encoder.encodeString.contramap(_.id)
-  private implicit val nodeIdDecoder: Decoder[NodeId] = Decoder.decodeString.map(NodeId(_))
 
   private implicit val nodeTransitionEncoder: Encoder[NodeTransition] = deriveEncoder
   private implicit val nodeTransitionDecoder: Decoder[NodeTransition] = deriveDecoder
@@ -171,4 +169,4 @@ case class LiveDataSample(
     variables: Map[String, Json],
 )
 
-final case class NodeTransition(sourceNodeId: String, destinationNodeId: Option[String])
+final case class NodeTransition(sourceNodeId: NodeId, destinationNodeId: Option[NodeId])

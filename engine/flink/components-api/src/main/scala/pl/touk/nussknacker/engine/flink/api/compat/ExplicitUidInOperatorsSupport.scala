@@ -24,16 +24,16 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 trait ExplicitUidInOperatorsSupport {
 
   protected def setUidToNodeIdIfNeed[T](nodeCtx: FlinkCustomNodeContext, stream: DataStream[T]): DataStream[T] =
-    ExplicitUidInOperatorsSupport.setUidIfNeed(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId)(stream)
+    ExplicitUidInOperatorsSupport.setUidIfNeed(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId.id)(stream)
 
   protected def setUidToNodeIdIfNeed[T](nodeCtx: FlinkCustomNodeContext, stream: DataStreamSink[T]): DataStreamSink[T] =
-    ExplicitUidInOperatorsSupport.setUidIfNeedSink(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId)(stream)
+    ExplicitUidInOperatorsSupport.setUidIfNeedSink(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId.id)(stream)
 
   protected def setUidToNodeIdIfNeed[T](
       nodeCtx: FlinkCustomNodeContext,
       stream: SingleOutputStreamOperator[T]
   ): SingleOutputStreamOperator[T] =
-    ExplicitUidInOperatorsSupport.setUidIfNeedJava(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId)(stream)
+    ExplicitUidInOperatorsSupport.setUidIfNeedJava(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId.id)(stream)
 
   /**
    * Rewrite it if you wan to change globally configured behaviour of setting uid with local one

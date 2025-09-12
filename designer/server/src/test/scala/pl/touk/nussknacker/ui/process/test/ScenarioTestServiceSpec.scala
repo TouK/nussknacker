@@ -255,24 +255,36 @@ class ScenarioTestServiceSpec
       format match {
         case TestDataFormat.SourceSpecific =>
           liveDataRecords shouldBe List(
-            SourceSpecificFormatPreliminaryScenarioRecord("source1", Json.fromString("record 1"), timestamp = Some(1)),
-            SourceSpecificFormatPreliminaryScenarioRecord("source1", Json.fromString("record 2"), timestamp = Some(2)),
-            SourceSpecificFormatPreliminaryScenarioRecord("source1", Json.fromString("record 3"), timestamp = Some(3)),
+            SourceSpecificFormatPreliminaryScenarioRecord(
+              NodeId("source1"),
+              Json.fromString("record 1"),
+              timestamp = Some(1)
+            ),
+            SourceSpecificFormatPreliminaryScenarioRecord(
+              NodeId("source1"),
+              Json.fromString("record 2"),
+              timestamp = Some(2)
+            ),
+            SourceSpecificFormatPreliminaryScenarioRecord(
+              NodeId("source1"),
+              Json.fromString("record 3"),
+              timestamp = Some(3)
+            ),
           )
         case TestDataFormat.CommonFormat =>
           liveDataRecords shouldBe List(
             CommonFormatPreliminaryScenarioRecord(
-              "source1",
+              NodeId("source1"),
               Map("input" -> Json.fromString("record 1")),
               timestamp = Some(1)
             ),
             CommonFormatPreliminaryScenarioRecord(
-              "source1",
+              NodeId("source1"),
               Map("input" -> Json.fromString("record 2")),
               timestamp = Some(2)
             ),
             CommonFormatPreliminaryScenarioRecord(
-              "source1",
+              NodeId("source1"),
               Map("input" -> Json.fromString("record 3")),
               timestamp = Some(3)
             ),
@@ -296,24 +308,36 @@ class ScenarioTestServiceSpec
       format match {
         case TestDataFormat.SourceSpecific =>
           liveDataRecords shouldBe List(
-            SourceSpecificFormatPreliminaryScenarioRecord("source1", Json.fromString("record 1"), timestamp = None),
-            SourceSpecificFormatPreliminaryScenarioRecord("source1", Json.fromString("record 2"), timestamp = None),
-            SourceSpecificFormatPreliminaryScenarioRecord("source1", Json.fromString("record 3"), timestamp = None),
+            SourceSpecificFormatPreliminaryScenarioRecord(
+              NodeId("source1"),
+              Json.fromString("record 1"),
+              timestamp = None
+            ),
+            SourceSpecificFormatPreliminaryScenarioRecord(
+              NodeId("source1"),
+              Json.fromString("record 2"),
+              timestamp = None
+            ),
+            SourceSpecificFormatPreliminaryScenarioRecord(
+              NodeId("source1"),
+              Json.fromString("record 3"),
+              timestamp = None
+            ),
           )
         case TestDataFormat.CommonFormat =>
           liveDataRecords shouldBe List(
             CommonFormatPreliminaryScenarioRecord(
-              "source1",
+              NodeId("source1"),
               Map("input" -> Json.fromString("record 1")),
               timestamp = None
             ),
             CommonFormatPreliminaryScenarioRecord(
-              "source1",
+              NodeId("source1"),
               Map("input" -> Json.fromString("record 2")),
               timestamp = None
             ),
             CommonFormatPreliminaryScenarioRecord(
-              "source1",
+              NodeId("source1"),
               Map("input" -> Json.fromString("record 3")),
               timestamp = None
             ),
@@ -369,54 +393,86 @@ class ScenarioTestServiceSpec
       format match {
         case TestDataFormat.SourceSpecific =>
           liveDataRecords shouldBe List(
-            SourceSpecificFormatPreliminaryScenarioRecord("source1", Json.fromString("record 1"), timestamp = Some(1)),
-            SourceSpecificFormatPreliminaryScenarioRecord("source3", Json.fromString("record 1"), timestamp = Some(1)),
-            SourceSpecificFormatPreliminaryScenarioRecord("source1", Json.fromString("record 2"), timestamp = Some(2)),
-            SourceSpecificFormatPreliminaryScenarioRecord("source3", Json.fromString("record 2"), timestamp = Some(2)),
-            SourceSpecificFormatPreliminaryScenarioRecord("source1", Json.fromString("record 3"), timestamp = Some(3)),
-            SourceSpecificFormatPreliminaryScenarioRecord("source2", Json.fromString("record 1"), timestamp = None),
-            SourceSpecificFormatPreliminaryScenarioRecord("source2", Json.fromString("record 2"), timestamp = None),
-            SourceSpecificFormatPreliminaryScenarioRecord("source2", Json.fromString("record 3"), timestamp = None),
+            SourceSpecificFormatPreliminaryScenarioRecord(
+              NodeId("source1"),
+              Json.fromString("record 1"),
+              timestamp = Some(1)
+            ),
+            SourceSpecificFormatPreliminaryScenarioRecord(
+              NodeId("source3"),
+              Json.fromString("record 1"),
+              timestamp = Some(1)
+            ),
+            SourceSpecificFormatPreliminaryScenarioRecord(
+              NodeId("source1"),
+              Json.fromString("record 2"),
+              timestamp = Some(2)
+            ),
+            SourceSpecificFormatPreliminaryScenarioRecord(
+              NodeId("source3"),
+              Json.fromString("record 2"),
+              timestamp = Some(2)
+            ),
+            SourceSpecificFormatPreliminaryScenarioRecord(
+              NodeId("source1"),
+              Json.fromString("record 3"),
+              timestamp = Some(3)
+            ),
+            SourceSpecificFormatPreliminaryScenarioRecord(
+              NodeId("source2"),
+              Json.fromString("record 1"),
+              timestamp = None
+            ),
+            SourceSpecificFormatPreliminaryScenarioRecord(
+              NodeId("source2"),
+              Json.fromString("record 2"),
+              timestamp = None
+            ),
+            SourceSpecificFormatPreliminaryScenarioRecord(
+              NodeId("source2"),
+              Json.fromString("record 3"),
+              timestamp = None
+            ),
           )
         case TestDataFormat.CommonFormat =>
           liveDataRecords shouldBe List(
             CommonFormatPreliminaryScenarioRecord(
-              "source1",
+              NodeId("source1"),
               Map("input" -> Json.fromString("record 1")),
               timestamp = Some(1)
             ),
             CommonFormatPreliminaryScenarioRecord(
-              "source3",
+              NodeId("source3"),
               Map("input" -> Json.fromString("record 1")),
               timestamp = Some(1)
             ),
             CommonFormatPreliminaryScenarioRecord(
-              "source1",
+              NodeId("source1"),
               Map("input" -> Json.fromString("record 2")),
               timestamp = Some(2)
             ),
             CommonFormatPreliminaryScenarioRecord(
-              "source3",
+              NodeId("source3"),
               Map("input" -> Json.fromString("record 2")),
               timestamp = Some(2)
             ),
             CommonFormatPreliminaryScenarioRecord(
-              "source1",
+              NodeId("source1"),
               Map("input" -> Json.fromString("record 3")),
               timestamp = Some(3)
             ),
             CommonFormatPreliminaryScenarioRecord(
-              "source2",
+              NodeId("source2"),
               Map("input" -> Json.fromString("record 1")),
               timestamp = None
             ),
             CommonFormatPreliminaryScenarioRecord(
-              "source2",
+              NodeId("source2"),
               Map("input" -> Json.fromString("record 2")),
               timestamp = None
             ),
             CommonFormatPreliminaryScenarioRecord(
-              "source2",
+              NodeId("source2"),
               Map("input" -> Json.fromString("record 3")),
               timestamp = None
             ),
@@ -430,13 +486,33 @@ class ScenarioTestServiceSpec
       ("scenario", "size", "expected size", "expected size by source id"),
       (createScenarioWithSingleSource(), 0, None, Map.empty),
       (createScenarioWithMultipleSources(), 0, None, Map.empty),
-      (createScenarioWithSingleSource(), 1, Some(1), Map("source1" -> 1)),
-      (createScenarioWithMultipleSources(), 1, Some(1), Map("source1" -> 1)),
-      (createScenarioWithMultipleSources(), 2, Some(2), Map("source1" -> 1, "source2" -> 1)),
-      (createScenarioWithMultipleSources(), 3, Some(3), Map("source1" -> 1, "source2" -> 1, "source3" -> 1)),
-      (createScenarioWithMultipleSources(), 4, Some(4), Map("source1" -> 2, "source2" -> 1, "source3" -> 1)),
-      (createScenarioWithMultipleSources(), 5, Some(5), Map("source1" -> 2, "source2" -> 2, "source3" -> 1)),
-      (createScenarioWithMultipleSources(), 6, Some(6), Map("source1" -> 2, "source2" -> 2, "source3" -> 2)),
+      (createScenarioWithSingleSource(), 1, Some(1), Map(NodeId("source1") -> 1)),
+      (createScenarioWithMultipleSources(), 1, Some(1), Map(NodeId("source1") -> 1)),
+      (createScenarioWithMultipleSources(), 2, Some(2), Map(NodeId("source1") -> 1, NodeId("source2") -> 1)),
+      (
+        createScenarioWithMultipleSources(),
+        3,
+        Some(3),
+        Map(NodeId("source1") -> 1, NodeId("source2") -> 1, NodeId("source3") -> 1)
+      ),
+      (
+        createScenarioWithMultipleSources(),
+        4,
+        Some(4),
+        Map(NodeId("source1") -> 2, NodeId("source2") -> 1, NodeId("source3") -> 1)
+      ),
+      (
+        createScenarioWithMultipleSources(),
+        5,
+        Some(5),
+        Map(NodeId("source1") -> 2, NodeId("source2") -> 2, NodeId("source3") -> 1)
+      ),
+      (
+        createScenarioWithMultipleSources(),
+        6,
+        Some(6),
+        Map(NodeId("source1") -> 2, NodeId("source2") -> 2, NodeId("source3") -> 2)
+      ),
     )
 
     forAll(allFormats) { format =>
@@ -466,12 +542,12 @@ class ScenarioTestServiceSpec
     val scenarioRecords = PreliminaryScenarioRecords(
       NonEmptyList(
         SourceSpecificFormatPreliminaryScenarioRecord(
-          sourceId = "source1",
+          sourceId = NodeId("source1"),
           record = Json.fromString("record 1"),
           timestamp = Some(1)
         ),
         SourceSpecificFormatPreliminaryScenarioRecord(
-          sourceId = "source2",
+          sourceId = NodeId("source2"),
           record = Json.fromString("record 2"),
           timestamp = None
         ) :: Nil,
@@ -482,8 +558,8 @@ class ScenarioTestServiceSpec
       sourceSpecificFormatTestService.prepareTestData(scenarioRecords, createScenarioWithMultipleSources()).rightValue
 
     scenarioTestData.inputRecords shouldBe List(
-      ScenarioTestSourceSpecificFormatJsonRecord("source1", Json.fromString("record 1"), timestamp = Some(1L)),
-      ScenarioTestSourceSpecificFormatJsonRecord("source2", Json.fromString("record 2")),
+      ScenarioTestSourceSpecificFormatJsonRecord(NodeId("source1"), Json.fromString("record 1"), timestamp = Some(1L)),
+      ScenarioTestSourceSpecificFormatJsonRecord(NodeId("source2"), Json.fromString("record 2")),
     )
   }
 
@@ -491,12 +567,12 @@ class ScenarioTestServiceSpec
     val scenarioRecords = PreliminaryScenarioRecords(
       NonEmptyList(
         CommonFormatPreliminaryScenarioRecord(
-          sourceId = "source1",
+          sourceId = NodeId("source1"),
           variables = Map("input" -> Json.fromString("record 1")),
           timestamp = Some(1)
         ),
         CommonFormatPreliminaryScenarioRecord(
-          sourceId = "source2",
+          sourceId = NodeId("source2"),
           variables = Map("input" -> Json.fromString("record 2")),
           timestamp = None
         ) :: Nil,
@@ -530,17 +606,17 @@ class ScenarioTestServiceSpec
             PreliminaryScenarioRecords(
               NonEmptyList(
                 SourceSpecificFormatPreliminaryScenarioRecord(
-                  sourceId = "source1",
+                  sourceId = NodeId("source1"),
                   record = Json.fromString("record 1"),
                   timestamp = None
                 ),
                 SourceSpecificFormatPreliminaryScenarioRecord(
-                  sourceId = "non-existing source",
+                  sourceId = NodeId("non-existing source"),
                   record = Json.fromString("record 2"),
                   timestamp = None
                 ) ::
                   SourceSpecificFormatPreliminaryScenarioRecord(
-                    sourceId = "non-existing source 2",
+                    sourceId = NodeId("non-existing source 2"),
                     record = Json.fromString("record 3"),
                     timestamp = None
                   ) :: Nil
@@ -550,17 +626,17 @@ class ScenarioTestServiceSpec
             PreliminaryScenarioRecords(
               NonEmptyList(
                 CommonFormatPreliminaryScenarioRecord(
-                  sourceId = "source1",
+                  sourceId = NodeId("source1"),
                   variables = Map("input" -> Json.fromString("record 1")),
                   timestamp = None
                 ),
                 CommonFormatPreliminaryScenarioRecord(
-                  sourceId = "non-existing source",
+                  sourceId = NodeId("non-existing source"),
                   variables = Map("input" -> Json.fromString("record 2")),
                   timestamp = None
                 ) ::
                   CommonFormatPreliminaryScenarioRecord(
-                    sourceId = "non-existing source 2",
+                    sourceId = NodeId("non-existing source 2"),
                     variables = Map("input" -> Json.fromString("record 3")),
                     timestamp = None
                   ) :: Nil

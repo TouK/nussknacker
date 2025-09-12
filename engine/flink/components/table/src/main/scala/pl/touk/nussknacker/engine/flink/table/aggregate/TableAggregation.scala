@@ -116,7 +116,7 @@ class TableAggregation(
     private var contextIdGenerator: ContextIdGenerator = _
 
     override def open(openContext: OpenContext): Unit = {
-      contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.toString)
+      contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId)
     }
 
     override def processElement(

@@ -279,7 +279,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
               value = SourcesCompilationError(
                 ValidationErrors(
                   invalidNodes = Map(
-                    "source" -> List(
+                    NodeId("source") -> List(
                       PrettyValidationErrors.formatErrorMessage(
                         ExpressionParserCompilationError(
                           message = "Bad expression",

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka
 
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 
@@ -9,10 +10,10 @@ class ConsumerGroupDeterminer(consumerGroupNamingStrategy: ConsumerGroupNamingSt
     consumerGroup(nodeContext.metaData.name, nodeContext.nodeId)
   }
 
-  def consumerGroup(processName: ProcessName, nodeId: String): String = {
+  def consumerGroup(processName: ProcessName, nodeId: NodeId): String = {
     consumerGroupNamingStrategy match {
       case ConsumerGroupNamingStrategy.ProcessId       => processName.value
-      case ConsumerGroupNamingStrategy.ProcessIdNodeId => processName.value + "-" + nodeId
+      case ConsumerGroupNamingStrategy.ProcessIdNodeId => processName.value + "-" + nodeId.id
     }
   }
 

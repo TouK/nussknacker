@@ -112,7 +112,7 @@ class FlinkKafkaSource[K, V](
       case singleOut: SingleOutputStreamOperator[_] =>
         setUidToNodeIdIfNeed[T](
           flinkNodeContext,
-          singleOut.name(flinkNodeContext.nodeId)
+          singleOut.name(flinkNodeContext.nodeId.id)
         )
       case _ => streamOfRaw
     }
@@ -219,7 +219,7 @@ class FlinkKafkaSource[K, V](
       KafkaUtils.toConsumerProperties(kafkaComponentsConfig, Some(consumerGroupId)),
       flinkNodeContext.exceptionHandlerPreparer,
       flinkNodeContext.convertToEngineRuntimeContext,
-      NodeId(flinkNodeContext.nodeId)
+      NodeId(flinkNodeContext.nodeId.id)
     )
   }
 
@@ -299,7 +299,7 @@ class FlinkKafkaConsumerHandlingExceptions[T](
     patchRestoredState()
     super.open(openContext)
     exceptionHandler = exceptionHandlerPreparer(getRuntimeContext)
-    exceptionPurposeContextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.id)
+    exceptionPurposeContextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId)
     deserializationSchema.setExceptionHandlingData(exceptionHandler, exceptionPurposeContextIdGenerator, nodeId)
   }
 

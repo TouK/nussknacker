@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.watermarkstrategy
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
 import org.apache.flink.api.common.functions.{OpenContext, RichMapFunction, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.ContextInitializer
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
@@ -18,7 +18,7 @@ object FlinkWatermarkStrategyRuntimeHandler {
 
   class ContextInitializingFunction[Raw](
       contextInitializer: ContextInitializer[Raw],
-      nodeId: String,
+      nodeId: NodeId,
       convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
       eventTimeLazyParam: LazyParameter[Instant],
       lazyParamHelper: FlinkLazyParameterFunctionHelper

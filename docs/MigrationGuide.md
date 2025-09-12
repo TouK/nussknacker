@@ -167,6 +167,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `KafkaConfig` was renamed to `KafkaComponentsConfig`
   * `KafkaComponentsConfig.kafkaProperties` is mandatory now
   * `KafkaComponentsConfig.kafkaAddress` was removed
+* [#8576](https://github.com/TouK/nussknacker/pull/8576) `NodeId` value class become used more frequently in the API:
+  `NodeComponentInfo`, `ContextId`, `ProcessCompilationError`, `ProcessListener` and `FlinkCustomNodeContext` 
 
 ### Other changes
 

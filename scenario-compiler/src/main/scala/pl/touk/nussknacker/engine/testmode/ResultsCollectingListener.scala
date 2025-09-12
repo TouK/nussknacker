@@ -41,13 +41,13 @@ private case class ResultsCollectingListenerImpl[T](holderClass: String, runId: 
 
   override def clean(): Unit = ResultsCollectingListenerHolder.cleanResult(runId)
 
-  override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
+  override def nodeEntered(nodeId: NodeId, context: Context, processMetaData: MetaData): Unit = {
     updateResults(_.updateNodeResult(nodeId, context, variableEncoder))
   }
 
   override def transitionToNextNode(
-      nodeId: String,
-      nextNodeId: String,
+      nodeId: NodeId,
+      nextNodeId: NodeId,
       context: Context,
       processMetaData: MetaData,
   ): Unit = {
@@ -55,7 +55,7 @@ private case class ResultsCollectingListenerImpl[T](holderClass: String, runId: 
   }
 
   override def processingFinishedInNode(
-      nodeId: String,
+      nodeId: NodeId,
       context: Context,
       processMetaData: MetaData,
   ): Unit = {
@@ -63,20 +63,20 @@ private case class ResultsCollectingListenerImpl[T](holderClass: String, runId: 
   }
 
   override def endEncountered(
-      nodeId: String,
+      nodeId: NodeId,
       ref: String,
       context: Context,
       processMetaData: MetaData
   ): Unit = {}
 
   override def deadEndEncountered(
-      lastNodeId: String,
+      lastNodeId: NodeId,
       context: Context,
       processMetaData: MetaData
   ): Unit = {}
 
   override def expressionEvaluated(
-      nodeId: String,
+      nodeId: NodeId,
       expressionId: String,
       expression: String,
       context: Context,
@@ -87,7 +87,7 @@ private case class ResultsCollectingListenerImpl[T](holderClass: String, runId: 
   }
 
   override def serviceInvoked(
-      nodeId: String,
+      nodeId: NodeId,
       id: String,
       context: Context,
       processMetaData: MetaData,

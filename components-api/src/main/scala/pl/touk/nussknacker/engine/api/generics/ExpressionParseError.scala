@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.generics
 import io.circe.{Codec, Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -47,7 +48,7 @@ object ExpressionParseError {
   final case class IncompatibleParameterDefinitionErrorDetails(
       paramName: ParameterName,
       parameterEditors: List[ParameterEditor],
-      nodeId: String,
+      nodeId: NodeId,
   ) extends ErrorDetails
 
 }

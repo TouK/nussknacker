@@ -8,6 +8,7 @@ import org.apache.flink.table.api.DataTypes
 import org.scalatest.{BeforeAndAfterAll, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -647,7 +648,7 @@ class TableFileSinkTest
         |Incorrect type: actual: 'Record{arrayOfInts: List[Double]({1.23, 2.34}), map: Record{foo: Double(1.23)}}' expected: 'Record{arrayOfInts: List[Integer], map: Map[String,Integer]}'.""".stripMargin
     result.invalidValue.toList should matchPattern {
       case CustomNodeError(
-            "end",
+            NodeId("end"),
             `expectedMessage`,
             Some(ParameterName("Value"))
           ) :: Nil =>
@@ -674,7 +675,11 @@ class TableFileSinkTest
     val result  = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     val intType = DataTypes.INT().getLogicalType
     result.validValue.errors should matchPattern {
-      case ExceptionResult(_, Some("end"), NotConvertibleResultOfAlignmentException("ala", "ala", `intType`)) :: Nil =>
+      case ExceptionResult(
+            _,
+            Some(NodeId("end")),
+            NotConvertibleResultOfAlignmentException("ala", "ala", `intType`)
+          ) :: Nil =>
     }
   }
 

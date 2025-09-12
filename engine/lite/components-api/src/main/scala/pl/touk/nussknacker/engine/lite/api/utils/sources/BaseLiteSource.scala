@@ -23,7 +23,7 @@ trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
 
   override def open(context: EngineRuntimeContext): Unit = {
     this.context = context
-    this.contextIdGenerator = context.contextIdGenerator(nodeId.id)
+    this.contextIdGenerator = context.contextIdGenerator(nodeId)
   }
 
   override def createTransformation[F[_]: Monad](

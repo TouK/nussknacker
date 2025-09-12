@@ -4,6 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -57,7 +58,7 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
       runScenario(model, process)
 
       val result = collectingListener.results
-        .nodeResults("end")
+        .nodeResults(NodeId("end"))
         .map(_.variableTyped[Record]("input"))
 
       result shouldBe List(Some(record))

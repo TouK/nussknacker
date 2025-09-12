@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.canonize
 
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.graph.node
 
 // This trait and its 2 implementation encapsulate the logic of handling scenarios that do not end with sink
@@ -8,7 +9,7 @@ import pl.touk.nussknacker.engine.graph.node
 sealed trait MissingSinkHandler {
 
   def handleMissingSink(
-      previousNodeId: String,
+      previousNodeId: NodeId,
       nodeOnMissingSink: Option[node.SubsequentNode],
   ): MaybeArtificial[Option[node.SubsequentNode]]
 
@@ -19,7 +20,7 @@ object MissingSinkHandler {
   object AllowMissingSinkHandler extends MissingSinkHandler {
 
     override def handleMissingSink(
-        previousNodeId: String,
+        previousNodeId: NodeId,
         nodeOnMissingSink: Option[node.SubsequentNode],
     ): MaybeArtificial[Option[node.SubsequentNode]] =
       new MaybeArtificial(nodeOnMissingSink, Nil)
@@ -29,7 +30,7 @@ object MissingSinkHandler {
   object DoNotAllowMissingSinkHandler extends MissingSinkHandler {
 
     override def handleMissingSink(
-        previousNodeId: String,
+        previousNodeId: NodeId,
         nodeOnMissingSink: Option[node.SubsequentNode],
     ): MaybeArtificial[Option[node.SubsequentNode]] =
       new MaybeArtificial(nodeOnMissingSink, InvalidTailOfBranch(previousNodeId) :: Nil)

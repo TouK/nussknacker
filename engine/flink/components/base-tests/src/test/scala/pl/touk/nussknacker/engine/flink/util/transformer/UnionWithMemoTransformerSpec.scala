@@ -6,7 +6,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
@@ -34,9 +34,9 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
   import UnionWithMemoTransformerSpec._
 
-  private val UnionNodeId = "joined-node-id"
+  private val UnionNodeId = NodeId("joined-node-id")
 
-  private val EndNodeId = "end-node-id"
+  private val EndNodeId = NodeId("end-node-id")
 
   private val OutVariableName = "outVar"
 
@@ -49,13 +49,13 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       .sources(
         GraphBuilder
           .source("start-foo", "start-foo")
-          .branchEnd(BranchFooId, UnionNodeId),
+          .branchEnd(BranchFooId, UnionNodeId.id),
         GraphBuilder
           .source("start-bar", "start-bar")
-          .branchEnd(BranchBarId, UnionNodeId),
+          .branchEnd(BranchBarId, UnionNodeId.id),
         GraphBuilder
           .join(
-            UnionNodeId,
+            UnionNodeId.id,
             "union-memo",
             Some(OutVariableName),
             List(
@@ -70,7 +70,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')".spel
           )
-          .emptySink(EndNodeId, "dead-end")
+          .emptySink(EndNodeId.id, "dead-end")
       )
 
     val key       = "fooKey"
@@ -111,13 +111,13 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       .sources(
         GraphBuilder
           .source("start-foo", "start-foo")
-          .branchEnd(BranchFooId, UnionNodeId),
+          .branchEnd(BranchFooId, UnionNodeId.id),
         GraphBuilder
           .source("start-bar", "start-bar")
-          .branchEnd(BranchBarId, UnionNodeId),
+          .branchEnd(BranchBarId, UnionNodeId.id),
         GraphBuilder
           .join(
-            UnionNodeId,
+            UnionNodeId.id,
             "union-memo",
             Some(OutVariableName),
             List(
@@ -132,7 +132,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')".spel
           )
-          .emptySink(EndNodeId, "dead-end")
+          .emptySink(EndNodeId.id, "dead-end")
       )
 
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -163,13 +163,13 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       .sources(
         GraphBuilder
           .source("start-foo", "start-foo")
-          .branchEnd(BranchFooId, UnionNodeId),
+          .branchEnd(BranchFooId, UnionNodeId.id),
         GraphBuilder
           .source("start-bar", "start-bar")
-          .branchEnd(BranchBarId, UnionNodeId),
+          .branchEnd(BranchBarId, UnionNodeId.id),
         GraphBuilder
           .join(
-            UnionNodeId,
+            UnionNodeId.id,
             "union-memo",
             Some(OutVariableName),
             List(
@@ -184,7 +184,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')".spel
           )
-          .emptySink(EndNodeId, "dead-end")
+          .emptySink(EndNodeId.id, "dead-end")
       )
 
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))

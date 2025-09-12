@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import org.apache.flink.streaming.api.functions.sink.{RichSinkFunction, SinkFunction}
-import pl.touk.nussknacker.engine.api.ValueWithContext
+import pl.touk.nussknacker.engine.api.{NodeId, ValueWithContext}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.process.ExceptionHandlerFunction
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
@@ -13,7 +13,7 @@ import scala.annotation.nowarn
 private[registrar] class CollectingSinkFunction[T](
     val compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData,
     collectingSink: SinkInvocationCollector,
-    sinkId: String
+    sinkId: NodeId
 ) extends RichSinkFunction[ValueWithContext[T]]
     with ExceptionHandlerFunction {
 

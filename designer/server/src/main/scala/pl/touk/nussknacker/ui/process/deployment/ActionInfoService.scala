@@ -71,7 +71,7 @@ class ActionInfoService(
       .map { case (scenarioActionName, nodeParamsMap) =>
         scenarioActionName -> nodeParamsMap.map { case (nodeComponentInfo, params) =>
           UiActionNodeParameters(
-            NodeId(nodeComponentInfo.nodeId),
+            nodeComponentInfo.nodeId,
             nodeComponentInfo.componentId.getOrElse(
               throw new IllegalStateException("ComponentId is not present")
             ),

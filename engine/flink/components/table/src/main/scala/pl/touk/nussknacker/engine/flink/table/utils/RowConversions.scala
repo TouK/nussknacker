@@ -5,8 +5,9 @@ import io.circe.syntax.EncoderOps
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.api.java.typeutils.RowTypeInfo
 import org.apache.flink.types.Row
-import pl.touk.nussknacker.engine.api.{Context, ContextId, ContextIdPathPart}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, ContextIdPathPart, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
@@ -73,8 +74,8 @@ object RowConversions {
   private implicit def contextIdCodec: Codec[ContextId] =
     Codec.forProduct5("sn", "nid", "tid", "idx", "path")(
       (
-          scenarioName: String,
-          nodeId: String,
+          scenarioName: ProcessName,
+          nodeId: NodeId,
           taskId: Long,
           index: Long,
           path: List[ContextIdPathPart]
