@@ -49,16 +49,19 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
   }
 
   private def prepareEventTimeParameter(outputValidationContext: ValidationContext): Parameter =
-    Parameter[Instant](eventTimeParamName).copy(
-      isLazyParameter = true,
-      additionalVariables = outputValidationContext.localVariables.mapValuesNow(AdditionalVariableProvidedInRuntime(_)),
-      defaultValue = Some(eventTimeDefaultValueExpression),
-      hintText = Some(
-        s"An expression that determines the Event Time to be used in stateful stream processing. " +
-          s"For more information on how Event Time is handled in Flink, and why it is important, see [Flink documentation](${FlinkDocumentationUrl.forCurrentFlinkVersion("concepts/time/#introduction")})"
-      ),
-      category = ParameterCategory.Advanced
-    )
+    Parameter
+      .optional[Instant](eventTimeParamName)
+      .copy(
+        isLazyParameter = true,
+        additionalVariables =
+          outputValidationContext.localVariables.mapValuesNow(AdditionalVariableProvidedInRuntime(_)),
+        defaultValue = Some(eventTimeDefaultValueExpression),
+        hintText = Some(
+          s"An expression that determines the Event Time to be used in stateful stream processing. " +
+            s"For more information on how Event Time is handled in Flink, and why it is important, see [Flink documentation](${FlinkDocumentationUrl.forCurrentFlinkVersion("concepts/time/#introduction")})"
+        ),
+        category = ParameterCategory.Advanced
+      )
 
   private lazy val maxOutOfOrdernessParameter =
     Parameter

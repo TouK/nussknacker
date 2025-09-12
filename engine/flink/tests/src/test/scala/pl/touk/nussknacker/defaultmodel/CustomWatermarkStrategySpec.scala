@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.defaultmodel
 
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import io.circe.Json
-import org.scalatest.OptionValues
+import org.scalatest.{LoneElement, OptionValues}
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.process.TopicName.ForSource
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.flink.table.FlinkTableDataSourceComponentProvider
 import pl.touk.nussknacker.engine.flink.util.test.FlinkNodeCompiler.FlinkNodeCompilerExt
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -18,10 +19,12 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypes
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.util.test.TestNodeCompiler
 import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyValidationHandler
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
-import java.time.Instant
+import java.time.{Instant, ZoneId, ZoneOffset}
+import java.time.format.DateTimeFormatter
 
-class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues {
+class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues with LoneElement {
 
   override protected def resolveModelConfig(config: Config): Config =
     super
@@ -31,10 +34,154 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
         ConfigValueFactory.fromAnyRef(true)
       )
 
+  private val eventTimeConfiguredInSourceTableName = "input_topic_event_time_table_source"
+  private val eventTimeConfiguredInSourceTopicName = "input-topic-event-time-table-source"
+
+  private val eventTimeConfiguredInTableDefinitionTableName = "input_topic_event_time_table_definition"
+  private val eventTimeConfiguredInTableDefinitionTopicName = "input-topic-event-time-table-definition"
+
+  private lazy val tablesDefinition =
+    s"""CREATE TABLE $eventTimeConfiguredInSourceTableName (
+       |  `timestamp` TIMESTAMP_LTZ(3)
+       |) WITH (
+       |  'connector' = 'kafka',
+       |  'topic' = '$eventTimeConfiguredInSourceTopicName',
+       |  'properties.bootstrap.servers' = '${kafkaServer.bootstrapServers}',
+       |  'properties.group.id' = 'custom-event-time-table-source',
+       |  'scan.startup.mode' = 'earliest-offset',
+       |  'format' = 'json'
+       |);
+       |
+       |CREATE TABLE $eventTimeConfiguredInTableDefinitionTableName (
+       |  `timestamp` TIMESTAMP_LTZ(3),
+       |  WATERMARK FOR `timestamp` AS `timestamp`
+       |) WITH (
+       |  'connector' = 'kafka',
+       |  'topic' = '$eventTimeConfiguredInTableDefinitionTopicName',
+       |  'properties.bootstrap.servers' = '${kafkaServer.bootstrapServers}',
+       |  'properties.group.id' = 'custom-event-time-table-definition',
+       |  'scan.startup.mode' = 'earliest-offset',
+       |  'format' = 'json'
+       |);
+       |""".stripMargin
+
+  private lazy val kafkaTableConfig =
+    s"""
+       |{
+       |  tableDefinition: \"\"\" $tablesDefinition \"\"\"
+       |}
+       |""".stripMargin
+
+  override lazy val additionalComponents: List[ComponentDefinition] =
+    new FlinkTableDataSourceComponentProvider().create(ConfigFactory.parseString(kafkaTableConfig))
+
   private val givenKey  = "foo-key"
   private val givenData = 1
 
-  private lazy val nodeCompiler = TestNodeCompiler.flinkBased(modelConfig).build()
+  private lazy val nodeCompiler = TestNodeCompiler
+    .flinkBased(modelConfig)
+    .withFlinkMiniCluster(flinkMiniCluster)
+    .withExtraComponents(additionalComponents)
+    .build()
+
+  test("should use timestamp configured in table definition used by table source") {
+    val outputTopic = "output-topic-event-time-table-definition"
+
+    kafkaClient.createTopic(eventTimeConfiguredInTableDefinitionTopicName, 1)
+    kafkaClient.createTopic(outputTopic, 1)
+    val givenTimestamp = Instant.ofEpochMilli(123)
+    val jsonRecord = Json.obj(
+      "timestamp" -> Json.fromString(
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSX").format(givenTimestamp.atZone(ZoneOffset.UTC))
+      ),
+    )
+    sendAsJson(jsonRecord.toString, ForSource(eventTimeConfiguredInTableDefinitionTopicName), Instant.now.toEpochMilli)
+
+    val scenario =
+      ScenarioBuilder
+        .streaming("custom-event-time-table-source")
+        .parallelism(1)
+        .source(
+          "start",
+          "table",
+          "Table" -> s"'`default_catalog`.`default_database`.`$eventTimeConfiguredInTableDefinitionTableName`'".spel
+        )
+        .emptySink(
+          "end",
+          "kafka",
+          KafkaUniversalComponentTransformer.sinkKeyParamName.value     -> "".spel,
+          KafkaUniversalComponentTransformer.sinkValueParamName.value   -> "foo".spelTemplate,
+          KafkaUniversalComponentTransformer.topicParamName.value       -> s"'$outputTopic'".spel,
+          KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.PLAIN.toString}'".spel,
+        )
+
+    val compilationResult = nodeCompiler.compileNode(
+      node.Source(
+        "id",
+        SourceRef(
+          "table",
+          Parameter(
+            ParameterName("Table"),
+            s"'`default_catalog`.`default_database`.`$eventTimeConfiguredInTableDefinitionTableName`'".spel
+          ) ::
+            Nil
+        )
+      )
+    )
+    compilationResult.compiledObject shouldBe Symbol("valid")
+    val dynamicParametersDefinitions = compilationResult.parameters.value
+    val eventTimeParameterDefinition =
+      dynamicParametersDefinitions.filter(_.name == WatermarkStrategyValidationHandler.eventTimeParamName).loneElement
+    // Lack of Event time parameter will be interpreted as null expression which means that it will be used upstream Event time
+    eventTimeParameterDefinition.defaultValue.value shouldBe "".spel
+
+    testScenarioRunner.withRunningScenario(scenario) { _ =>
+      val records = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic)
+
+      val firstRecord = records.head
+      firstRecord.timestamp shouldBe givenTimestamp.toEpochMilli
+    }
+  }
+
+  test("should use timestamp configured by a user in table source") {
+    val outputTopic = "output-topic-event-time-table-source"
+
+    kafkaClient.createTopic(eventTimeConfiguredInSourceTopicName, 1)
+    kafkaClient.createTopic(outputTopic, 1)
+    val givenTimestamp = Instant.ofEpochMilli(123)
+    val jsonRecord = Json.obj(
+      "timestamp" -> Json.fromString(
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSX").format(givenTimestamp.atZone(ZoneOffset.UTC))
+      ),
+    )
+    sendAsJson(jsonRecord.toString, ForSource(eventTimeConfiguredInSourceTopicName), Instant.now.toEpochMilli)
+
+    val scenario =
+      ScenarioBuilder
+        .streaming("custom-event-time-table-source")
+        .parallelism(1)
+        .source(
+          "start",
+          "table",
+          "Table"      -> s"'`default_catalog`.`default_database`.`$eventTimeConfiguredInSourceTableName`'".spel,
+          "Event time" -> "#input.timestamp".spel
+        )
+        .emptySink(
+          "end",
+          "kafka",
+          KafkaUniversalComponentTransformer.sinkKeyParamName.value     -> "".spel,
+          KafkaUniversalComponentTransformer.sinkValueParamName.value   -> "foo".spelTemplate,
+          KafkaUniversalComponentTransformer.topicParamName.value       -> s"'$outputTopic'".spel,
+          KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.PLAIN.toString}'".spel,
+        )
+
+    testScenarioRunner.withRunningScenario(scenario) { _ =>
+      val records = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic)
+
+      val firstRecord = records.head
+      firstRecord.timestamp shouldBe givenTimestamp.toEpochMilli
+    }
+  }
 
   test("should return watermark strategy dynamic parameters when they are not provided") {
     nodeCompiler

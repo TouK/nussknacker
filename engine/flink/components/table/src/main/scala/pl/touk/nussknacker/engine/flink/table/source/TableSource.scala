@@ -7,7 +7,7 @@ import org.apache.flink.table.api.{DataTypes, Schema}
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.catalog.Column.{ComputedColumn, MetadataColumn, PhysicalColumn}
 import org.apache.flink.types.Row
-import pl.touk.nussknacker.engine.api.VariableConstants
+import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.livedata.{DataRecord, DataRecords, LiveDataProvider}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -18,8 +18,11 @@ import pl.touk.nussknacker.engine.api.process.{
   TestWithParametersSupport
 }
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{
+  CustomizableContextInitializerSource,
   FlinkCustomNodeContext,
+  FlinkSource,
   FlinkSourceTestSupport,
   StandardFlinkSource
 }
@@ -35,6 +38,12 @@ import pl.touk.nussknacker.engine.flink.table.source.TableSource.{
 }
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.SchemaExtensions._
+import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler
+import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler.{
+  ContextInitializingFunction,
+  ContextWithEventTime
+}
+import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyOptions
 
 import scala.jdk.CollectionConverters._
 
@@ -42,18 +51,24 @@ class TableSource(
     tableDefinition: TableDefinition,
     flinkDataDefinition: FlinkDataDefinition,
     testDataGenerationMode: TestDataGenerationMode,
-    environmentForTestingPurposes: StreamTableEnvironment
-) extends StandardFlinkSource[Row]
-    with TestWithParametersSupport[Row]
+    environmentForTestingPurposes: StreamTableEnvironment,
+    watermarkStrategyOptions: WatermarkStrategyOptions
+) extends FlinkSource
+    with ExplicitUidInOperatorsSupport
+    with Serializable
+    // These mixins below are for scenario testing mechanism using source-specific test data format
     with FlinkSourceTestSupport[Row]
     with TestDataGenerator
+    with TestWithParametersSupport[Row]
+    with CustomizableContextInitializerSource[Row]
+    // end
     with LiveDataProvider
     with LazyLogging {
 
-  override def sourceStream(
+  override def contextStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStream[Row] = {
+  ): DataStream[Context] = {
     val tableEnv = StreamTableEnvironment.create(env)
     flinkDataDefinition.registerIn(tableEnv).orFail
 
@@ -70,7 +85,25 @@ class TableSource(
       }
       .getOrElse(selectQuery)
 
-    tableEnv.toDataStream(finalQuery)
+    val streamOfRow = tableEnv.toDataStream(finalQuery)
+
+    streamOfRow
+      .flatMap(
+        ContextInitializingFunction(
+          flinkNodeContext.nodeId,
+          flinkNodeContext.convertToEngineRuntimeContext,
+          watermarkStrategyOptions.eventTimeLazyParam,
+          flinkNodeContext.lazyParameterHelper,
+          contextInitializer
+        ),
+        FlinkWatermarkStrategyRuntimeHandler.contextInitializingFunctionOutputTypeInfo(
+          flinkNodeContext.asOneOutputContext
+        )
+      )
+      .assignTimestampsAndWatermarks(
+        FlinkWatermarkStrategyRuntimeHandler.watermarkStrategy(watermarkStrategyOptions)
+      )
+      .map((ctxWithEventTime: ContextWithEventTime) => ctxWithEventTime.context, flinkNodeContext.contextTypeInfo)
   }
 
   override val contextInitializer: ContextInitializer[Row] =
