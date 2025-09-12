@@ -292,6 +292,7 @@ description: Stay informed with detailed changelogs covering new features, impro
   * PostgreSQL JDBC driver 42.7.4 -> 42.7.7
   * sttp 3.9.8 -> 3.11.0
   * Tapir 1.11.7 -> 1.11.12
+* [#8606](https://github.com/TouK/nussknacker/pull/8606) `Testkit`: Added `TestNodeCompiler`
 
 ## 1.18
 

@@ -117,7 +117,7 @@ class ScenarioTestService(
     val sources   = canonical.collectAllSources
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       val compiledSourcesById =
-        sources.map(source => NodeId(source.id) -> commonModelDataInfoProvider.compileSourceNode(source))
+        sources.map(source => NodeId(source.id) -> commonModelDataInfoProvider.nodeCompiler.compileNode[Source](source))
       compiledSourcesById
         .map { case (sourceId, sourceCompilationResult) =>
           testDataFormatHandler.getTestParametersDefinition(sourceId, sourceCompilationResult).map { parameters =>
@@ -221,8 +221,8 @@ class ScenarioTestService(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): ValidatedNel[(NodeId, NonEmptyList[ProcessCompilationError]), (NodeId, Source)] = {
     val nodeId = NodeId(source.id)
-    commonModelDataInfoProvider
-      .compileSourceNode(source)
+    commonModelDataInfoProvider.nodeCompiler
+      .compileNode[Source](source)
       .compiledObject
       .leftMap { compilationErrors =>
         NonEmptyList.one(nodeId -> compilationErrors)

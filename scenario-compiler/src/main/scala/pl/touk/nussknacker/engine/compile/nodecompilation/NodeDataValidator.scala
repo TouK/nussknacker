@@ -76,66 +76,11 @@ class NodeDataValidator(modelData: ModelData) {
     lazy val validationContext = SingleInputNodeInputValidationContext(
       validationContextWithGlobalVariablesOnly.copy(localVariables = variableTypes)
     )
-    lazy val branchCtxs = {
-      val branchContexts = branchVariableTypes
-        .getOrElse(Map.empty)
-        .mapValuesNow { branchVariableTypes =>
-          validationContextWithGlobalVariablesOnly.copy(localVariables = branchVariableTypes)
-        }
-      MultipleInputBranchesNodeInputValidationContext(branchContexts, validationContextWithGlobalVariablesOnly)
-    }
 
     modelData.withModelClassloaderAsContextClassLoader {
       val compilationErrors = nodeData match {
-        case a: Join =>
-          toValidationResponse(
-            compiler.compileCustomNodeObject(
-              data = a,
-              ctx = branchCtxs,
-              customNodeIsEndingNode = None
-            )
-          )
-        case a: CustomNode =>
-          toValidationResponse(
-            compiler.compileCustomNodeObject(
-              data = a,
-              ctx = validationContext,
-              customNodeIsEndingNode = None
-            )
-          )
-        case a: SourceNodeData => toValidationResponse(compiler.compileSource(a))
-        case a: Sink           => toValidationResponse(compiler.compileSink(a, validationContext))
-        case a: Enricher =>
-          toValidationResponse(
-            compiler.compileEnricher(a, validationContext)
-          )
-        case a: Processor => toValidationResponse(compiler.compileProcessor(a, validationContext))
-        case a: Filter =>
-          toValidationResponse(
-            compiler.compileFilter(a, validationContext)
-          )
-        case a: Variable =>
-          toValidationResponse(
-            compiler.compileVariable(a, validationContext)
-          )
-        case a: VariableBuilder =>
-          implicit val nodeId: NodeId = NodeId(a.id)
-          toValidationResponse(
-            compiler.compileFields(a.fields, validationContext, outputVar = Some(OutputVar.variable(a.varName)))
-          )
-        case a: FragmentOutputDefinition =>
-          implicit val nodeId: NodeId = NodeId(a.id)
-          toValidationResponse(compiler.compileFields(a.fields, validationContext, outputVar = None))
-        case a: Switch =>
-          toValidationResponse(
-            compiler.compileSwitch(
-              a,
-              outgoingEdges.collect { case OutgoingEdge(k, Some(NextSwitch(expression))) =>
-                (k, expression)
-              },
-              validationContext
-            )
-          )
+        case a: CompilableNodeData =>
+          toValidationResponse(compiler.compileNode(a, variableTypes, branchVariableTypes, outgoingEdges))
         case a: FragmentInput =>
           validateFragment(validationContext, outgoingEdges, a, fragmentResolver)
         case Split(_, _) | FragmentUsageOutput(_, _, _, _, _) | BranchEndData(_) =>

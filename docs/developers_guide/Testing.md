@@ -77,7 +77,7 @@ import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
 val stubbedGetCustomerOpenApiService: SwaggerEnricher = new SwaggerEnricher(Some(new URL(rootUrl(port))), services.head, Map.empty, stubbedBackedProvider)
 val mockComponents = List(ComponentDefinition("getCustomer", stubbedGetCustomerOpenApiService))
 val testScenarioRunner = TestScenarioRunner
-      .flinkBased(resolvedConfig, flinkMiniCluster)
+      .flinkBased(modelConfig, flinkMiniCluster)
       .withExtraComponents(mockComponents)
       .build()
 ```
@@ -93,7 +93,7 @@ val mockedDate = new DateUtils(mockedClock)
 val globalVariables = Map("DATE" -> date)
 
 val testScenarioRunner = TestScenarioRunner
-      .flinkBased(resolvedConfig, flinkMiniCluster)
+      .flinkBased(modelConfig, flinkMiniCluster)
       .withExtraGlobalVariables(globalVariables)
       .build()
 ```
@@ -130,7 +130,7 @@ This approach is currently available only for Flink engine. Example code:
 
 ```scala
 val testScenarioRunner = TestScenarioRunner
-  .flinkBased(resolvedConfig, flinkMiniCluster)
+  .flinkBased(modelConfig, flinkMiniCluster)
   .build()
 
 testScenarioRunner.withRunningScenario(scenario) { verificationFixture =>
@@ -141,16 +141,25 @@ testScenarioRunner.withRunningScenario(scenario) { verificationFixture =>
 }
 ```
 
-### Retrieving results
+### Auto provided test components
+Test toolkit automatically gives you few test components you could see above.
+- `source` - it can be used to provide data for the scenario
+- `sink` - it collect test result
 
-Results of the scenario invocation can be get with `results()`
+### Testing node compilation
+
+If you don't want to test a component in the runtime but rather want to verify how the components behave during scenario authoring, 
+you can use `TestNodeCompiler` instead.
+
+Example usage:
 
 ```scala
-testScenarioRunner.results().size shouldBe 6
-testScenarioRunner.results().toSet shouldBe Set(5, 10, 15, 20, 30, 40)
-```
+val nodeCompiler = TestNodeCompiler
+  .flinkBased(modeConfig)
+  .withExtraComponents(List(ComponentDefinition("tested-component-id", testedComponent)))
+  .build()
 
-## Auto provided test components
-Test toolkit automatically gives you few test components you could see above.
-- source - it can be used to provide data for the scenario
-- invocationCollector - you can use it to verify scenario behaviour
+nodeCompiler.compileNode[Source](SourceNode("node-id", SourceRef("tested-component-id", nodeParameters)))
+  .parameters shouldBe Some(List(..))
+
+```

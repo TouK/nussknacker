@@ -8,28 +8,23 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistryClientHolder
-import pl.touk.nussknacker.engine.{RuntimeMode, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData}
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
-import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
+import pl.touk.nussknacker.engine.flink.util.test.FlinkNodeCompiler.FlinkNodeCompilerExt
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.node.{Source => SourceNode}
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
-import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaSchemaRegistryMixin
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
-import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.test.TestNodeCompiler
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, WithModelConfig}
 
 class KafkaJsonSchemalessSourceFactorySpec
@@ -63,22 +58,10 @@ class KafkaJsonSchemalessSourceFactorySpec
       NamingStrategy.Disabled,
       new FlinkKafkaSourceImplFactory
     )
-    val modelData = LocalModelData(ConfigFactory.empty(), List(ComponentDefinition("kafka", sourceFactory)))
-    new NodeCompiler(
-      definitions = modelData.modelDefinition,
-      fragmentDefinitionExtractor = new FragmentParametersDefinitionExtractor(
-        modelData.modelClassLoader,
-        modelData.modelDefinitionWithClasses.classDefinitions,
-        modelData.modelConfig.globalParametersConfig
-      ),
-      expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper,
-      classLoader = modelData.modelClassLoader,
-      listeners = Seq.empty,
-      resultCollector = ProductionServiceInvocationCollector,
-      runtimeMode = RuntimeMode.Live,
-      nodesDeploymentData = NodesDeploymentData.empty,
-      nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
-    )
+    TestNodeCompiler
+      .flinkBased(ConfigFactory.empty())
+      .withExtraComponents(List(ComponentDefinition("kafka", sourceFactory)))
+      .build()
   }
 
   private val sampleTopic = "topicName"
@@ -225,13 +208,7 @@ class KafkaJsonSchemalessSourceFactorySpec
   protected def validateParamsAndGetValidationContext(
       nodeParameters: List[NodeParameter]
   ): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-    val compilationResult = nodeCompiler
-      .compileSource(SourceNode("mock-id", SourceRef("kafka", nodeParameters)))(
-        new ScenarioCompilationDependencies(
-          JobData(MetaData("mock-id", StreamMetaData()), ProcessVersion.empty),
-          EngineScenarioCompilationDependencies.empty
-        )
-      )
+    val compilationResult = nodeCompiler.compileNode[Source](SourceNode("mock-id", SourceRef("kafka", nodeParameters)))
     compilationResult.compiledObject.andThen { _ =>
       compilationResult.validationContext
     }

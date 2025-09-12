@@ -1,65 +1,32 @@
 package pl.touk.nussknacker.engine.definition.action
 
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.{ModelData, RuntimeMode, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, NodesDeploymentData}
+import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, PartSubGraphCompiler, ProcessCompiler}
-import pl.touk.nussknacker.engine.compile.nodecompilation.{
-  LazyParameterCreationStrategy,
-  NodeCompiler,
-  SingleInputNodeInputValidationContext
-}
+import pl.touk.nussknacker.engine.compile.{PartSubGraphCompiler, ProcessCompiler}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeCompiler, SingleInputNodeInputValidationContext}
 import pl.touk.nussknacker.engine.compiledgraph.{node => compiledNode, CompiledNodesCollector}
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart, SourcePart}
-import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
-import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor
-import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 class CommonModelDataInfoProvider(modelData: ModelData) {
 
-  private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
-
-  private lazy val nodeCompiler = new NodeCompiler(
-    modelData.modelDefinition,
-    new FragmentParametersDefinitionExtractor(
-      modelData.modelClassLoader,
-      modelData.modelDefinitionWithClasses.classDefinitions,
-      modelData.modelConfig.globalParametersConfig
-    ),
-    expressionCompiler,
-    modelData.modelClassLoader,
-    Seq.empty,
-    ProductionServiceInvocationCollector,
-    RuntimeMode.Live,
-    NodesDeploymentData.empty,
-    nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
-  )
+  lazy val nodeCompiler: NodeCompiler = NodeCompiler(modelData).withLabelsDictTyper
 
   private lazy val subGraphCompiler = new PartSubGraphCompiler(nodeCompiler)
 
   private lazy val scenarioCompiler = new ProcessCompiler(
-    modelData.modelClassLoader,
-    subGraphCompiler,
-    GlobalVariablesPreparer(modelData.modelDefinitionWithClasses.modelDefinition.expressionConfig),
-    nodeCompiler,
-    modelData.customProcessValidator
+    classLoader = modelData.modelClassLoader,
+    sub = subGraphCompiler,
+    globalVariablesPreparer =
+      GlobalVariablesPreparer(modelData.modelDefinitionWithClasses.modelDefinition.expressionConfig),
+    nodeCompiler = nodeCompiler,
+    customProcessValidator = modelData.customProcessValidator,
+    allowEndingScenarioWithoutSink = modelData.modelDefinition.allowEndingScenarioWithoutSink
   )
-
-  def compileSourceNode(
-      source: SourceNodeData
-  )(
-      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
-  ): NodeCompiler.NodeCompilationResult[Source] = {
-    // We have to wrap this block with model's class loader because it invokes node compilation
-    modelData.withModelClassloaderAsContextClassLoader {
-      nodeCompiler.compileSource(source)
-    }
-  }
 
   def compileAllCustomNodes(
       scenario: CanonicalProcess
