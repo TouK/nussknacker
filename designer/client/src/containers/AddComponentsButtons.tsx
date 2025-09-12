@@ -1,6 +1,5 @@
 import { AddBox } from "@mui/icons-material";
 import { Fade, IconButton } from "@mui/material";
-import { OverridableComponent } from "@mui/material/OverridableComponent";
 import type SvgIcon from "@mui/material/SvgIcon/SvgIcon";
 import React from "react";
 import { useDragLayer } from "react-dnd";
