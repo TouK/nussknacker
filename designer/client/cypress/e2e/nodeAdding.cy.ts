@@ -42,11 +42,11 @@ describe("Node adding", () => {
         cy.contains(/event generator/i).should("be.visible");
         cy.get("@graph").matchImage();
 
-        return;
         // panel closes by click outside
         cy.get("body").realClick({ position: { x: 100, y: 100 } });
         cy.contains(/event generator/i).should("be.not.visible");
 
+        return;
         // panel closes by esc
         cy.get("[title='add source node']").should("be.visible").click({ force: true });
         cy.contains(/event generator/i).should("be.visible");
