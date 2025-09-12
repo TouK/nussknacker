@@ -34,10 +34,7 @@ describe("Node adding", () => {
 
     it("should be possible with dynamic panel", () => {
         cy.get("@graph").matchImage();
-        cy.contains(/csv.*sql/i)
-            .parent()
-            .as("toolbar")
-            .should("be.not.visible");
+        cy.get(`[placeholder="type here to filter..."]`).as("searchInput").should("exist").should("be.not.visible");
 
         cy.get("[title='add source node']").should("be.visible").click({ force: true });
         cy.contains(/event generator/i).should("be.visible");
@@ -49,18 +46,20 @@ describe("Node adding", () => {
         cy.get("[title='add source node']").should("be.visible").click({ force: true });
         cy.contains(/event generator/i).should("be.visible");
 
-        return;
-
         cy.realPress("{esc}");
         cy.contains(/event generator/i).should("be.not.visible");
 
         cy.get("[title='add source node']").should("be.visible").click({ force: true });
         cy.contains(/event generator/i).should("be.visible");
 
-        cy.get("@toolbar").find("input").should("be.focused").type("sql");
+        cy.wait(500);
+        cy.get("@searchInput").should("be.focused").type("sql");
         cy.contains(/event generator/i).should("not.exist");
-        cy.contains(/sql source/i).should("be.visible");
-        cy.realPress("Enter");
+        cy.contains(/sql source/i)
+            .should("be.visible")
+            .click();
+        cy.wait(500);
+        cy.get("@searchInput").should("be.focused").type("{enter}");
 
         cy.get("[title='add source node']").should("not.exist");
         cy.get("[title='add new node']").should("be.visible").click({ force: true });
