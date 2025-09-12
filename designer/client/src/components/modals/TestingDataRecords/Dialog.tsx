@@ -1,4 +1,4 @@
-import { Box, Typography } from "@mui/material";
+import { Alert, Box, Typography } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import type { ElementType, ReactElement } from "react";
 import React, { useCallback, useMemo, useState } from "react";
@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { testScenarioWithDataRecords } from "../../../actions/nk/displayTestResults";
 import HttpService from "../../../http/HttpService";
 import { getProcessName, getScenarioGraph, getTestCapabilities, getTestingDataRecords } from "../../../reducers/selectors/graph";
+import { getMaxTestingRecords } from "../../../reducers/selectors/settings";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { WindowKind } from "../../../windowManager";
 import { WindowContent } from "../../../windowManager";
@@ -15,7 +16,7 @@ import type { CellError } from "../../graph/node-modal/editors/expression/Table/
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
-import { AppendRowButton } from "./AppendRowButton";
+import { AppendFromLiveDataButton } from "./AppendFromLiveDataButton";
 import type { TestingDataRecords } from "./Table";
 import { Table } from "./Table";
 import { mapGeneratedTestingDataToTableFormat } from "./utils";
@@ -37,6 +38,8 @@ export interface TestingData {
 }
 
 function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElement {
+    const maxTestingRecords = useAppSelector(getMaxTestingRecords);
+
     const { t } = useTranslation();
     const { data, close } = props;
     const {
@@ -151,7 +154,10 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
         });
     }, []);
 
-    const disableTestButton = dataRecords.length === 0 || cellErrors.length > 0;
+    const recordsToAddLimitExceeded = useMemo(() => dataRecords.length >= maxTestingRecords, [dataRecords.length, maxTestingRecords]);
+    const testDataLimitExceeded = useMemo(() => dataRecords.length > maxTestingRecords, [dataRecords.length, maxTestingRecords]);
+
+    const disableTestButton = dataRecords.length === 0 || cellErrors.length > 0 || testDataLimitExceeded;
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("testingForm.cancelButton.label", "Cancel"), action: () => close(), classname: LoadingButtonTypes.secondaryButton },
@@ -183,6 +189,15 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                     <Typography mt={0} variant={"h3"}>
                         {t("testingDialog.label.inputDataRecords", "Input data records")}
                     </Typography>
+                    {recordsToAddLimitExceeded && (
+                        <Alert sx={{ width: "100%" }} severity={"warning"}>
+                            {t(
+                                "testingDialog.warning.dataRecordsLimitExceeded",
+                                "The maximum number of {{maxTestingRecords}} Input data records has been exceeded.",
+                                { maxTestingRecords },
+                            )}
+                        </Alert>
+                    )}
                     <Box display={"flex"} sx={(theme) => ({ paddingTop: theme.spacing(2) })}>
                         <Table
                             sourceOptions={sourceOptions}
@@ -194,10 +209,15 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                             onRowsDeleted={handleRowsDeleted}
                             onRowMoved={handleRowMoved}
                             defaultDataRecord={defaultDataRecord}
+                            recordsToAddLimitExceeded={recordsToAddLimitExceeded}
                         />
                     </Box>
 
-                    <AppendRowButton handleGenerateTestData={handleGenerateTestData} />
+                    <AppendFromLiveDataButton
+                        handleGenerateTestData={handleGenerateTestData}
+                        maxTestingRecords={maxTestingRecords}
+                        currentRecordsNumber={dataRecords.length}
+                    />
                 </Box>
             </ContentSize>
         </WindowContent>
