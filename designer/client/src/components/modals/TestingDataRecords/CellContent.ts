@@ -8,7 +8,7 @@ type SourceSelectCell = CustomCell<SourceSelectCellData>;
 export const isSourceSelectCell = (c: GridCell): c is SourceSelectCell =>
     c.kind === GridCellKind.Custom && (c as SourceSelectCell).data?.kind === "source-select-cell";
 
-type VariablesCellData = { kind: "variables-cell"; value: string; options: string[] };
+type VariablesCellData = { kind: "variables-cell"; value: string; sourceId: string };
 export type VariablesCell = CustomCell<VariablesCellData>;
 export const isVariablesCell = (c: GridCell): c is VariablesCell =>
     c.kind === GridCellKind.Custom && (c as VariablesCell).data?.kind === "variables-cell";
@@ -32,7 +32,7 @@ export function getTestingCellContent(item: Item, data: TestingDataRecords[], so
             kind: GridCellKind.Custom,
             allowOverlay: true,
             copyData: rowData.variables || "",
-            data: { kind: "variables-cell", value: raw, options: sourceOptions },
+            data: { kind: "variables-cell", value: raw, sourceId: rowData.sourceId },
             readonly: false,
         };
     }
