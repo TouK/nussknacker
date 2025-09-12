@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateStatu
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.IllegalOperationError
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusWithAllowedActions
+import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicScenarioStatus
 
 final case class ProcessIllegalAction(message: String) extends IllegalOperationError(message, details = "")
 
@@ -13,12 +14,17 @@ object ProcessIllegalAction {
       actionName: ScenarioActionName,
       processName: ProcessName,
       ScenarioStatusWithAllowedActions: ScenarioStatusWithAllowedActions
-  ): ProcessIllegalAction =
+  ): ProcessIllegalAction = {
+    val scenarioStatusName = ScenarioStatusWithAllowedActions.scenarioStatus match {
+      case status: PeriodicScenarioStatus => status.mergedStatus.name
+      case other                          => other.name
+    }
     ProcessIllegalAction(
-      s"Action: $actionName is not allowed in scenario ($processName) state: ${ScenarioStatusWithAllowedActions.scenarioStatus}, allowed actions: ${ScenarioStatusWithAllowedActions.allowedActions
+      s"Action: $actionName is not allowed, because scenario $processName is in state $scenarioStatusName, allowed actions: ${ScenarioStatusWithAllowedActions.allowedActions
           .map(_.value)
           .mkString(",")}."
     )
+  }
 
   def archived(actionName: ScenarioActionName, processName: ProcessName): ProcessIllegalAction =
     ProcessIllegalAction(s"Forbidden action: $actionName for archived scenario: $processName.")
