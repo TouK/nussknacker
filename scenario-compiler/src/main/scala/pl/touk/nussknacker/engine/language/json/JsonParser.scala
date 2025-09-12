@@ -8,11 +8,13 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.FromInstanceTypeDeterminer
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue, TypingResult}
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.language.json.JsonParsingFailureToExpressionParseErrorConverter.ParsingFailureExt
+import pl.touk.nussknacker.engine.language.json.UnknownTypeToJsonConverter.UnknownTypeToJsonConverterOps
 
 object JsonParser extends ExpressionParser {
 
@@ -27,7 +29,7 @@ object JsonParser extends ExpressionParser {
       parseJson(jsonString)
         .andThen { json =>
           decodeJson(expectedType, json).map { decodedJson =>
-            val typ = Typed.fromInstance(decodedJson)
+            val typ = JsonFromInstanceTypeDeterminer.fromInstance(decodedJson)
             TypedExpression(
               CompiledJsonExpression(jsonString, json),
               ExpressionTypingInfo(typ)
@@ -56,6 +58,19 @@ object JsonParser extends ExpressionParser {
         }
       )
       .toValidatedNel
+  }
+
+  private object JsonFromInstanceTypeDeterminer extends FromInstanceTypeDeterminer {
+
+    override protected val highPriorityTypeDeterminer: PartialFunction[Any, TypingResult] = { case i: Int =>
+      TypedObjectWithValue(Typed.typedClass[Long], i.toLong)
+    }
+
+    override def fromInstance(obj: Any): TypingResult =
+      super
+        .fromInstance(obj)
+        .unknownToJson
+
   }
 
   private case class CompiledJsonExpression(originalJsonString: String, json: Json) extends CompiledExpression {

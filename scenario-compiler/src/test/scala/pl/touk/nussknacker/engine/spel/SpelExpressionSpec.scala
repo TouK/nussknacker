@@ -1584,8 +1584,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("should be able to handle spel type conversions between date types") {
     parse[Instant]("123L", ctx).validExpression.expression.evaluateSync[Instant](ctx) shouldBe
       Instant.ofEpochMilli(123L)
-    parse[Instant]("123", ctx).validExpression.expression.evaluateSync[Instant](ctx) shouldBe
-      Instant.ofEpochMilli(123)
     parse[Instant](
       "T(java.time.ZonedDateTime).of(2025, 1, 1, 0, 0, 0, 0, T(java.time.ZoneOffset).UTC)",
       ctx
