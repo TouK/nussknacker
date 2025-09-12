@@ -1,23 +1,26 @@
 import type { dia } from "jointjs";
-import { fromEvents, stream } from "kefir";
+import { fromEvents, interval, stream } from "kefir";
 import { useEffect } from "react";
 
 import { getNeighbors } from "../components/graph/getNeighbors";
 import { useGraph } from "../components/graph/GraphContext";
 import { isModelOrStickyNote } from "../components/graph/GraphPartialsInTS";
 import { Events } from "../components/graph/types";
+import { isVisualTesting } from "../devHelpers";
 
-const frameStream = stream<DOMHighResTimeStamp, unknown>((emitter) => {
-    let frame: number;
+const frameStream = isVisualTesting
+    ? interval(100, 1)
+    : stream<DOMHighResTimeStamp, unknown>((emitter) => {
+          let frame: number;
 
-    const tick: FrameRequestCallback = (time) => {
-        emitter.emit(time);
-        frame = requestAnimationFrame(tick);
-    };
+          const tick: FrameRequestCallback = (time) => {
+              emitter.emit(time);
+              frame = requestAnimationFrame(tick);
+          };
 
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-});
+          frame = requestAnimationFrame(tick);
+          return () => cancelAnimationFrame(frame);
+      });
 
 function getCellsBox(paper: dia.Paper, [entry, ...cells]: dia.Cell[]) {
     return cells.reduce((rect, cell) => rect.union(paper.findViewByModel(cell).getBBox()), paper.findViewByModel(entry).getBBox());
