@@ -38,7 +38,7 @@ final case class ContextId private (
     copied
   }
 
-  lazy val legacyString: String = List[Seq[String]](
+  lazy val legacyString: String = List(
     List(scenarioName.value),
     List(originatingNodeId.id),
     List(taskId.toString),
