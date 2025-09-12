@@ -13,7 +13,7 @@ export function getNeighbors(graph: dia.Graph, element: dia.Element, options: Ge
     const result = new Set<dia.Element>(withSelf ? [element] : []);
 
     const walk = (currentElement: dia.Element, remaining: number) => {
-        if (remaining === 0) return;
+        if (remaining <= 0) return;
         for (const neighbor of graph.getNeighbors(currentElement, { inbound, outbound })) {
             if (result.has(neighbor)) continue;
             if (neighbor.id === element.id && !withSelf) continue;
