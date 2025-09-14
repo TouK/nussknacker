@@ -51,7 +51,6 @@ describe("Node adding", () => {
         cy.contains(/event generator/i).should("be.visible");
         cy.realPress("{esc}");
         cy.contains(/event generator/i).should("be.not.visible");
-        return;
 
         // source node added by click
         cy.get("[title='add source node']").should("be.visible").click({ force: true });
@@ -63,6 +62,7 @@ describe("Node adding", () => {
             .should("be.visible")
             .click();
         cy.wait(500);
+        return;
 
         // placeholder button hidden, node added
         cy.get("[title='add source node']").should("not.exist");
