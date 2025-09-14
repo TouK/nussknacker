@@ -1,8 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
-import { isEmpty, set } from "lodash";
+import { isEmpty } from "lodash";
 import { v4 as uuid4 } from "uuid";
 
-import api, { setToken } from "../api";
+import api from "../api";
 import { PendingPromise } from "./PendingPromise";
 
 class SystemUtils {
@@ -13,6 +13,14 @@ class SystemUtils {
     public static NONCE = "nonce";
 
     #tokenPromise: PendingPromise<string> | null;
+    #tokenInterceptor: number;
+
+    constructor() {
+        if (this.hasAccessToken()) {
+            this.#updateTokenInterceptor();
+        }
+    }
+
     get tokenPromise(): PendingPromise<string> {
         if (!this.#tokenPromise) {
             this.#tokenPromise = new PendingPromise<string>();
@@ -45,12 +53,7 @@ class SystemUtils {
 
     public clearAuthorizationToken = (): void => {
         this.#tokenPromise = null;
-
-        api.interceptors.request.use((config) => {
-            delete config.headers[SystemUtils.AUTHORIZATION_HEADER_NAMESPACE];
-            return config;
-        });
-
+        this.#updateTokenInterceptor(false);
         return this.removeAccessToken();
     };
 
@@ -59,11 +62,7 @@ class SystemUtils {
             this.tokenPromise.resolve(token);
         }
 
-        api.interceptors.request.use((config) => {
-            set(config.headers, SystemUtils.AUTHORIZATION_HEADER_NAMESPACE, this.authorizationToken());
-            return config;
-        });
-
+        this.#updateTokenInterceptor();
         return this.saveAccessToken(token);
     };
 
@@ -74,14 +73,22 @@ class SystemUtils {
 
         return localStorage.getItem(SystemUtils.USER_ID_NAMESPACE);
     };
+
+    setAuthHeader<C extends { readonly headers: Record<string, string> }>(config: C): C {
+        if (this.hasAccessToken()) {
+            config.headers[SystemUtils.AUTHORIZATION_HEADER_NAMESPACE] = this.authorizationToken();
+        }
+        return config;
+    }
+
+    #updateTokenInterceptor(clear?: boolean) {
+        api.interceptors.request.eject(this.#tokenInterceptor);
+        if (clear) return;
+
+        this.#tokenInterceptor = api.interceptors.request.use((config) => {
+            return this.setAuthHeader(config);
+        });
+    }
 }
 
-export const AUTHORIZATION_HEADER_NAMESPACE = SystemUtils.AUTHORIZATION_HEADER_NAMESPACE;
-
-const systemUtils = new SystemUtils();
-
-export default systemUtils;
-
-if (systemUtils.hasAccessToken()) {
-    setToken(AUTHORIZATION_HEADER_NAMESPACE, systemUtils.authorizationToken());
-}
+export default new SystemUtils();

@@ -10,7 +10,7 @@ import type { ProcessingType, SettingsData, ValidationData, ValidationRequest } 
 import type { GenericValidationData, GenericValidationRequest, TestAdhocValidationRequest } from "../../actions/nk/adhocTesting";
 import api from "../../api";
 import type { UserData } from "../../common/models/User";
-import SystemUtils, { AUTHORIZATION_HEADER_NAMESPACE } from "../../common/SystemUtils";
+import SystemUtils from "../../common/SystemUtils";
 import { withoutHackOfEmptyEdges } from "../../components/graph/GraphPartialsInTS/EdgeUtils";
 import type { ExpressionSuggestion } from "../../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import type { AdditionalInfo } from "../../components/graph/node-modal/NodeAdditionalInfoBox";
@@ -1030,21 +1030,20 @@ export class HttpService {
             Accept: "text/event-stream",
         };
 
-        if (SystemUtils.hasAccessToken()) {
-            headers[AUTHORIZATION_HEADER_NAMESPACE] = SystemUtils.authorizationToken();
-        }
-
         const PATHNAME = "custom/assistant/chat";
 
         /**
          * Axios doesn't support stream response, even with fetch adapter, there are problems in safari https://github.com/axios/axios/issues/5806
          */
-        return fetch(`${API_URL}/${PATHNAME}`, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({ message, threadId }),
-            signal: abortSignal,
-        });
+        return fetch(
+            `${API_URL}/${PATHNAME}`,
+            SystemUtils.setAuthHeader({
+                method: "POST",
+                headers,
+                body: JSON.stringify({ message, threadId }),
+                signal: abortSignal,
+            }),
+        );
     }
 
     async nodeActions(
