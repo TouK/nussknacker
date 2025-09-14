@@ -27,7 +27,7 @@ describe("Process", () => {
                     },
                     force: true,
                 });
-            cy.layoutScenario();
+            cy.layoutScenario(800);
             cy.get("[model-id$=Choice-sendSms-true]").should("be.visible").trigger("dblclick");
 
             cy.get("[data-testid=window]").should("be.visible");
