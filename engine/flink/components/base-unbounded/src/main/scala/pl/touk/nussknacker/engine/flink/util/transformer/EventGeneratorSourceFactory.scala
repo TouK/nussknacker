@@ -121,7 +121,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
           Nil,
           _
         ) =>
-      FinalResults(ValidationContext.empty.withVariableUnsafe(InputVariableName, valueType))
+      FinalResults(context.withVariableUnsafe(InputVariableName, valueType))
   }
 
   @nowarn("cat=deprecation")
