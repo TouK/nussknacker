@@ -56,9 +56,7 @@ describe("Node adding", () => {
         cy.get("[title='add source node']").should("be.visible").click({ force: true });
         cy.contains(/event generator/i).should("be.visible");
         cy.wait(500);
-        cy.get("@searchInput").should("be.focused");
-        cy.get("@searchInput").click().type("sql");
-        return;
+        cy.get("@searchInput").should("be.focused").click().type("sql");
         cy.contains(/event generator/i).should("not.exist");
         cy.contains(/sql source/i)
             .should("be.visible")
@@ -83,6 +81,7 @@ describe("Node adding", () => {
         cy.getNode("Filter").find(`circle[port="Out"]`).click();
         cy.get("@searchInput")
             .should("be.focused")
+            .click()
             .type("{enter}") // nothing happens
             .type("record variable")
             .type("{enter}"); // only component added
