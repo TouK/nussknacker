@@ -12,6 +12,7 @@ import DataEditor, { CompactSelection, GridCellKind, type CustomRenderer, drawTe
 import type { ProvideEditorComponent } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
 import type { GridColumn } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
 import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
+import { useTheme } from "@mui/material";
 import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
@@ -23,7 +24,7 @@ import { Sizer } from "../../graph/node-modal/editors/expression/Table/Sizer";
 import { useTableTheme } from "../../graph/node-modal/editors/expression/Table/tableTheme";
 import type { VariablesCell } from "./CellContent";
 import { getTestingCellContent, isSourceSelectCell, isVariablesCell } from "./CellContent";
-import { DEFAULT_ROW_HEADER, drawTextWithBoldSegments } from "./drawText";
+import { DEFAULT_ROW_HEADER, drawFieldForDisplay } from "./drawText";
 import type { SourceSelectCell } from "./SourceEditor";
 import SourceEditor from "./SourceEditor";
 import "@glideapps/glide-data-grid/dist/index.css";
@@ -85,6 +86,7 @@ export const Table: React.FC<TableProps> = ({
     recordsToAddLimitExceeded,
 }) => {
     const tableTheme = useTableTheme();
+    const theme = useTheme();
     const [selection, setSelection] = useState<GridSelection>(emptySelection);
     const [hasFocus, setHasFocus] = useState(false);
     const ref = useRef<DataEditorRef | null>(null);
@@ -117,7 +119,7 @@ export const Table: React.FC<TableProps> = ({
             kind: GridCellKind.Custom,
             isMatch: isVariablesCell,
             draw: (drawArgs, cell) => {
-                drawTextWithBoldSegments(drawArgs.ctx, cell.data.value, drawArgs.rect, drawArgs.theme);
+                drawFieldForDisplay(drawArgs.ctx, cell.data.value, drawArgs.rect, drawArgs.theme, theme);
             },
             provideEditor: () => ({
                 styleOverride: { padding: "4px" },
@@ -146,7 +148,7 @@ export const Table: React.FC<TableProps> = ({
                 deletedValue: (v) => ({ ...v, copyData: "", data: { ...(v as VariablesCell).data, value: "" } }),
             }),
         }),
-        [],
+        [theme],
     );
 
     const defaultVariablesBySourceId = useMemo(() => buildDefaultVariablesMap(sourceParameters), [sourceParameters]);
