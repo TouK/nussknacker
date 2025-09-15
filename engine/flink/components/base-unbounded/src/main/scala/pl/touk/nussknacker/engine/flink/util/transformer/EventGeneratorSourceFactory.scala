@@ -117,6 +117,8 @@ object EventGeneratorSourceFactory
   ): ContextTransformationDefinition =
     standardParametersStep(inputContext) orElse watermarkStrategyParametersStep(inputContext, dependencies)
 
+  override protected def isIdlenessParameterAvailable: Boolean = false
+
   override protected def resultAfterWatermarkStrategyParameters(
       inputContext: ValidationContext,
       dependencies: List[NodeDependencyValue],

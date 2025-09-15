@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.util.watermarkstrategy
 
 import pl.touk.nussknacker.engine.api.{LazyParameter, NodeId, Params}
+import pl.touk.nussknacker.engine.api.Params.ParamExtractionResult
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
@@ -42,8 +43,9 @@ object WatermarkStrategyValidationHandler {
 trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] =>
 
   protected def prepareWatermarkStrategyParameters(outputValidationContext: ValidationContext): List[Parameter] = {
-    val eventTimeParameter = prepareEventTimeParameter(outputValidationContext)
-    eventTimeParameter :: maxOutOfOrdernessParameter :: idlenessParameter :: Nil
+    val eventTimeParameter   = prepareEventTimeParameter(outputValidationContext)
+    val idlenessParameterOpt = if (isIdlenessParameterAvailable) Some(idlenessParameter) else None
+    eventTimeParameter :: maxOutOfOrdernessParameter :: idlenessParameterOpt.toList
   }
 
   private def prepareEventTimeParameter(outputValidationContext: ValidationContext): Parameter =
@@ -73,6 +75,8 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
         ),
         category = ParameterCategory.Advanced
       )
+
+  protected def isIdlenessParameterAvailable: Boolean = true
 
   private lazy val idlenessParameter =
     Parameter
@@ -112,6 +116,13 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
           _
         ) =>
       resultAfterWatermarkStrategyParameters(inputContext, dependencies, step.parameters, step.state)
+    case step @ TransformationStep(
+          _ :+
+          ((`eventTimeParamName`, _: DefinedLazyParameter)) :+
+          ((`maxOutOfOrdernessParamName`, _: DefinedEagerParameter)),
+          _
+        ) =>
+      resultAfterWatermarkStrategyParameters(inputContext, dependencies, step.parameters, step.state)
   }
 
   protected def resultAfterWatermarkStrategyParameters(
@@ -122,10 +133,15 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
   )(implicit nodeId: NodeId): TransformationStepResult
 
   protected def extractWatermarkStrategyOptions(params: Params): WatermarkStrategyOptions = {
+    val idleTimeoutOptionValue = params.extractParam[Duration](idlenessParamName) match {
+      case ParamExtractionResult.Value(value)     => Some(value)
+      case ParamExtractionResult.ParamValueIsNone => None
+      case ParamExtractionResult.MissingParam     => None
+    }
     new WatermarkStrategyOptions(
       params.extractDeclaredParamUnsafe[LazyParameter[Instant]](eventTimeParamName),
       params.extractDeclaredParam[Duration](maxOutOfOrdernessParamName),
-      params.extractDeclaredParam[Duration](idlenessParamName),
+      idleTimeoutOptionValue,
     )
   }
 

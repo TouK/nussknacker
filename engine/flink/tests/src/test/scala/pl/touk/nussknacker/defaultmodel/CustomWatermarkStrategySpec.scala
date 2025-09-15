@@ -2,18 +2,26 @@ package pl.touk.nussknacker.defaultmodel
 
 import com.typesafe.config.{Config, ConfigValueFactory}
 import io.circe.Json
+import org.scalatest.OptionValues
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.process.TopicName.ForSource
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.flink.util.test.FlinkNodeCompiler.FlinkNodeCompilerExt
+import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypes
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
+import pl.touk.nussknacker.engine.util.test.TestNodeCompiler
 import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyValidationHandler
 
 import java.time.Instant
 
-class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite {
+class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues {
 
   override protected def resolveModelConfig(config: Config): Config =
     super
@@ -26,6 +34,32 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite {
   private val givenKey  = "foo-key"
   private val givenData = 1
 
+  private lazy val nodeCompiler = TestNodeCompiler.flinkBased(modelConfig).build()
+
+  test("should return watermark strategy dynamic parameters when they are not provided") {
+    nodeCompiler
+      .compileNode[Source](
+        node.Source(
+          "id",
+          SourceRef(
+            "event-generator",
+            Parameter(ParameterName("schedule"), "T(java.time.Duration).parse('PT1S')".spel) ::
+              Parameter(ParameterName("value"), "123".spel) ::
+              Nil
+          )
+        )
+      )
+      .parameters
+      .value
+      .map(_.name.value) shouldBe List(
+      "schedule",
+      "count",
+      "value",
+      "Event time",
+      "Max out-of-orderness"
+    )
+  }
+
   test("should use timestamp configured by a user in event generator") {
     val outputTopic = "output-topic-custom-event-time-event-generator"
 
@@ -34,7 +68,7 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite {
 
     val scenario =
       ScenarioBuilder
-        .streaming("without-schema")
+        .streaming("custom-event-time-event-generator")
         .parallelism(1)
         .source(
           "start",
@@ -78,7 +112,7 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite {
 
     val scenario =
       ScenarioBuilder
-        .streaming("without-schema")
+        .streaming("custom-event-time-kafka-source")
         .parallelism(1)
         .source(
           "start",
@@ -137,7 +171,7 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite {
 
     val scenario =
       ScenarioBuilder
-        .streaming("without-schema")
+        .streaming("max-out-of-orderness")
         .parallelism(1)
         .source(
           "start",
