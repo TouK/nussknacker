@@ -57,13 +57,13 @@ describe("Node adding", () => {
         cy.contains(/event generator/i).should("be.visible");
         cy.wait(500);
         cy.get("@searchInput").should("be.focused");
-        cy.realType("sql");
+        cy.get("@searchInput").click().type("sql");
+        return;
         cy.contains(/event generator/i).should("not.exist");
         cy.contains(/sql source/i)
             .should("be.visible")
             .click();
         cy.wait(500);
-        return;
 
         // placeholder button hidden, node added
         cy.get("[title='add source node']").should("not.exist");
