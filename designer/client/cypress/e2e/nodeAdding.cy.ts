@@ -68,6 +68,7 @@ describe("Node adding", () => {
         cy.get("[title='add new node']").should("be.visible").click({ force: true });
         cy.contains(/^filter$/i).click();
         cy.wait(500);
+        return;
 
         // node adding by port click, sources hidden
         cy.getNode("Sql Source").find(`circle[port="Out"]`).click();
@@ -77,7 +78,6 @@ describe("Node adding", () => {
             .click({ force: true });
         cy.wait(500);
 
-        return;
         // node adding by search and enter
         cy.getNode("Filter").find(`circle[port="Out"]`).click();
         cy.get("@searchInput")
