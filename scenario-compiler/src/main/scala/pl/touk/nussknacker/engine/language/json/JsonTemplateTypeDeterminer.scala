@@ -18,11 +18,11 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.language.json.JsonParsingFailureToExpressionParseErrorConverter.ParsingFailureExt
 import pl.touk.nussknacker.engine.language.json.JsonTemplateTypeDeterminer._
+import pl.touk.nussknacker.engine.language.json.UnknownTypeToJsonConverter.UnknownTypeToJsonConverterOps
 import pl.touk.nussknacker.engine.spel.{CompiledSpelExpression, SpelExpressionParser, SpelExpressionRepr}
 import pl.touk.nussknacker.engine.util.Implicits._
 
 import java.math.{BigDecimal => JBigDecimal}
-import scala.collection.immutable.ListMap
 
 private[json] class JsonTemplateTypeDeterminer(spelParser: SpelExpressionParser) extends LazyLogging {
 
@@ -236,16 +236,6 @@ private object JsonTemplateTypeDeterminer {
         Json.fromString(specialMarkerValue)
       // For now, for more complex types we use a number, because we don't want to break the validation and numbers are acceptable in most places
       case _ => Json.fromBigDecimal(specialMarkerForUnknownTypes)
-    }
-
-    def unknownToJson: TypingResult = typ match {
-      case Unknown => Typed.json
-      case obj @ TypedObjectTypingResult(fields, _, _) =>
-        obj.copy(fields = ListMap(fields.toList.map { case (fieldName, fieldValue) =>
-          fieldName -> fieldValue.unknownToJson
-        }: _*))
-      case clazz @ TypedClass(_, params) => clazz.copy(params = params.map(_.unknownToJson))
-      case other                         => other
     }
 
   }

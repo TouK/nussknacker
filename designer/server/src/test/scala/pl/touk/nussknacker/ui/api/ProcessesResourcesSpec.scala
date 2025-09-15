@@ -14,7 +14,7 @@ import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
-import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
+import pl.touk.nussknacker.engine.api.{NodeId, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
@@ -270,7 +270,7 @@ class ProcessesResourcesSpec
       val scenarioDetails = responseAs[ScenarioWithDetails]
       scenarioDetails.validationResult.value.errors.invalidNodes should not be empty
       scenarioDetails.validationResult.value.errors.invalidNodes
-        .get(fragmentName)
+        .get(NodeId(fragmentName))
         .value
         .find(_.typ == "IncompatibleParameterDefinitionModification")
         .value

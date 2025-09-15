@@ -12,4 +12,6 @@ object NodeId {
 
   implicit val keyEncoder: KeyEncoder[NodeId] = KeyEncoder.encodeKeyString.contramap(_.id)
   implicit val keyDecoder: KeyDecoder[NodeId] = KeyDecoder.decodeKeyString.map(NodeId(_))
+
+  implicit val ordering: Ordering[NodeId] = Ordering.by[NodeId, String](_.id)
 }

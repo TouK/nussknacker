@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.process.typeinformation.internal
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.ListTypeInfo
-import pl.touk.nussknacker.engine.api.{Context, ContextId, ContextIdPathPart}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, ContextIdPathPart, NodeId}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.flink.api.typeinfo.option.OptionTypeInfo
 import pl.touk.nussknacker.engine.flink.typeinformation.{ConcreteCaseClassTypeInfo, FixedValueTypeInformationHelper}
 
@@ -28,20 +29,26 @@ object ContextTypeHelpers {
     infoFromVariablesAndParent(variables, parentCtx)
   }
 
-  private def contextIdInfo: TypeInformation[ContextId] = {
+  private val processNameTypeInformation: TypeInformation[ProcessName] =
+    ConcreteCaseClassTypeInfo[ProcessName](("value", TypeInformation.of(classOf[String])))
+
+  private val nodeIdTypeInformation: TypeInformation[NodeId] =
+    ConcreteCaseClassTypeInfo[NodeId](("id", TypeInformation.of(classOf[String])))
+
+  private val contextIdPathPartInfo: TypeInformation[ContextIdPathPart] = {
     ConcreteCaseClassTypeInfo(
-      ("scenarioId", TypeInformation.of(classOf[String])),
-      ("originatingNodeId", TypeInformation.of(classOf[String])),
-      ("taskId", TypeInformation.of(classOf[Long])),
-      ("index", TypeInformation.of(classOf[Long])),
-      ("contextIdPath", new ListTypeInfo[ContextIdPathPart](contextIdPathPartInfo)),
+      ("nodeId", nodeIdTypeInformation),
+      ("value", TypeInformation.of(classOf[String])),
     )
   }
 
-  private def contextIdPathPartInfo: TypeInformation[ContextIdPathPart] = {
+  private val contextIdInfo: TypeInformation[ContextId] = {
     ConcreteCaseClassTypeInfo(
-      ("nodeId", TypeInformation.of(classOf[String])),
-      ("value", TypeInformation.of(classOf[String])),
+      ("scenarioName", processNameTypeInformation),
+      ("originatingNodeId", nodeIdTypeInformation),
+      ("taskId", TypeInformation.of(classOf[Long])),
+      ("index", TypeInformation.of(classOf[Long])),
+      ("contextIdPath", new ListTypeInfo[ContextIdPathPart](contextIdPathPartInfo)),
     )
   }
 

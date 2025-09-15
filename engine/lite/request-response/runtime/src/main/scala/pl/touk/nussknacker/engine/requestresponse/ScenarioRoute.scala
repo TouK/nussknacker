@@ -15,6 +15,7 @@ import org.apache.pekko.http.scaladsl.server.directives.{
   DebuggingDirectives,
   SecurityDirectives
 }
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator
@@ -123,6 +124,6 @@ private[requestresponse] class ScenarioRoute(
 
   private def jsonStringToEntity(j: String): ResponseEntity = HttpEntity(contentType = `application/json`, string = j)
 
-  @JsonCodec sealed case class NuError(nodeId: Option[String], message: Option[String])
+  @JsonCodec sealed case class NuError(nodeId: Option[NodeId], message: Option[String])
 
 }

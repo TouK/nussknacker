@@ -29,7 +29,7 @@ class JsonParserTest extends AnyFunSuite with Matchers with LoneElement {
   test("Should parse integer") {
     val dataSample = "123"
     val result     = parse(dataSample)
-    result shouldBe Valid(TypedObjectWithValue(Typed.typedClass[Int], 123))
+    result shouldBe Valid(TypedObjectWithValue(Typed.typedClass[Long], 123L))
   }
 
   test("Should parse floating number") {
@@ -80,7 +80,7 @@ class JsonParserTest extends AnyFunSuite with Matchers with LoneElement {
       Typed.record(
         List(
           "name" -> TypedObjectWithValue(Typed.typedClass[String], "Tom"),
-          "age"  -> TypedObjectWithValue(Typed.typedClass[Int], 22),
+          "age"  -> TypedObjectWithValue(Typed.typedClass[Long], 22L),
           "city" -> TypedObjectWithValue(Typed.typedClass[String], "Warsaw")
         )
       )
@@ -102,7 +102,7 @@ class JsonParserTest extends AnyFunSuite with Matchers with LoneElement {
     val recordType = Typed.record(
       List(
         "name" -> Typed.typedClass[String],
-        "age"  -> Typed.typedClass[Int],
+        "age"  -> Typed.typedClass[Long],
         "city" -> Typed.typedClass[String]
       )
     )
@@ -155,7 +155,7 @@ class JsonParserTest extends AnyFunSuite with Matchers with LoneElement {
       Seq(
         "stringExample"  -> Typed[String],
         "numberExample"  -> Typed[java.math.BigDecimal],
-        "integerExample" -> Typed[Integer],
+        "integerExample" -> Typed[Long],
         "booleanExample" -> Typed[Boolean],
         "nullExample"    -> Unknown,
         "arrayExample"   -> Typed.fromDetailedType[java.util.List[_]],
@@ -163,9 +163,9 @@ class JsonParserTest extends AnyFunSuite with Matchers with LoneElement {
           Seq(
             "nestedString"  -> Typed[String],
             "nestedNumber"  -> Typed[java.math.BigDecimal],
-            "nestedInteger" -> Typed[Integer],
+            "nestedInteger" -> Typed[Long],
             "nestedBoolean" -> Typed[Boolean],
-            "nestedArray"   -> Typed.fromDetailedType[java.util.List[Int]],
+            "nestedArray"   -> Typed.fromDetailedType[java.util.List[Long]],
             "nestedObject" -> Typed.record(
               Seq(
                 "deepKey" -> Typed[String],

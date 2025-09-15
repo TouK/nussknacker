@@ -4,7 +4,7 @@ import io.circe.Json
 import io.circe.Json._
 import io.circe.syntax._
 import org.scalatest.OptionValues
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
@@ -239,17 +239,17 @@ class StreamingEmbeddedDeploymentManagerTest
 
     val testData = ScenarioTestData(
       List(
-        ScenarioTestSourceSpecificFormatJsonRecord("source", testRecord("1")),
-        ScenarioTestSourceSpecificFormatJsonRecord("source", testRecord("2"))
+        ScenarioTestSourceSpecificFormatJsonRecord(NodeId("source"), testRecord("1")),
+        ScenarioTestSourceSpecificFormatJsonRecord(NodeId("source"), testRecord("2"))
       )
     )
 
     val results = wrapInFailingLoader {
       manager.processCommand(DMTestScenarioCommand(processVersion, scenario, testData)).futureValue
     }
-    results.nodeResults("sink") should have length 2
-    val idGenerator       = IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, "source", taskId = 0)
-    val invocationResults = results.invocationResults("sink")
+    results.nodeResults(NodeId("sink")) should have length 2
+    val idGenerator = IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, NodeId("source"), taskId = 0)
+    val invocationResults = results.invocationResults(NodeId("sink"))
     val id1               = idGenerator.nextContextId()
     val id2               = idGenerator.nextContextId()
 

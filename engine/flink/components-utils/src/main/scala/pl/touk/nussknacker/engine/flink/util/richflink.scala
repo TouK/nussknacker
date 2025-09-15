@@ -46,8 +46,10 @@ object richflink {
         implicit ctx: FlinkCustomNodeContext,
         explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
     ): DataStream[T] =
-      ExplicitUidInOperatorsSupport.setUidIfNeed[T](explicitUidInStatefulOperators(ctx), ctx.nodeId)(dataStream) match {
-        case operator: SingleOutputStreamOperator[T] => operator.name(ctx.nodeId)
+      ExplicitUidInOperatorsSupport.setUidIfNeed[T](explicitUidInStatefulOperators(ctx), ctx.nodeId.id)(
+        dataStream
+      ) match {
+        case operator: SingleOutputStreamOperator[T] => operator.name(ctx.nodeId.id)
         case other                                   => other
       }
 

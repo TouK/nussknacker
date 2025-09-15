@@ -5564,7 +5564,7 @@ components:
       - idx
       properties:
         nid:
-          type: string
+          $ref: '#/components/schemas/NodeId'
         tid:
           type: integer
           format: int64
@@ -5583,7 +5583,7 @@ components:
       - t
       properties:
         n:
-          type: string
+          $ref: '#/components/schemas/NodeId'
         t:
           type: string
     CoordinatesBasedTextRange:
@@ -5753,9 +5753,9 @@ components:
         context:
           $ref: '#/components/schemas/ResultContext_Json'
         nodeId:
-          type:
-          - string
-          - 'null'
+          anyOf:
+          - $ref: '#/components/schemas/NodeId'
+          - type: 'null'
         throwable:
           type: string
     Expression:
@@ -6113,34 +6113,6 @@ components:
       title: Map_Json
       type: object
       additionalProperties: {}
-    Map_List_ExceptionResult_Json:
-      title: Map_List_ExceptionResult_Json
-      type: object
-      additionalProperties:
-        type: array
-        items:
-          $ref: '#/components/schemas/ExceptionResult_Json'
-    Map_List_ExpressionInvocationResult_Json:
-      title: Map_List_ExpressionInvocationResult_Json
-      type: object
-      additionalProperties:
-        type: array
-        items:
-          $ref: '#/components/schemas/ExpressionInvocationResult_Json'
-    Map_List_ExternalInvocationResult_Json:
-      title: Map_List_ExternalInvocationResult_Json
-      type: object
-      additionalProperties:
-        type: array
-        items:
-          $ref: '#/components/schemas/ExternalInvocationResult_Json'
-    Map_List_ResultContext_Json:
-      title: Map_List_ResultContext_Json
-      type: object
-      additionalProperties:
-        type: array
-        items:
-          $ref: '#/components/schemas/ResultContext_Json'
     Map_List_String:
       title: Map_List_String
       type: object
@@ -6158,16 +6130,18 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_String'
-    Map_NodeCount:
-      title: Map_NodeCount
-      type: object
-      additionalProperties:
-        type: object
     Map_NodeId_String:
       title: Map_NodeId_String
       type: object
       additionalProperties:
         type: string
+    Map_NodeId_V:
+      title: Map_NodeId_V
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/ResultContext_Json'
     Map_ParameterName_Expression:
       title: Map_ParameterName_Expression
       type: object
@@ -6661,6 +6635,14 @@ components:
             type: string
           type:
             $ref: '#/components/schemas/NodeTypes12'
+    NodeId:
+      title: NodeId
+      type: object
+      required:
+      - id
+      properties:
+        id:
+          type: string
     NodeTransitionResult:
       title: NodeTransitionResult
       type: object
@@ -6668,11 +6650,11 @@ components:
       - sourceNodeId
       properties:
         sourceNodeId:
-          type: string
+          $ref: '#/components/schemas/NodeId'
         destinationNodeId:
-          type:
-          - string
-          - 'null'
+          anyOf:
+          - $ref: '#/components/schemas/NodeId'
+          - type: 'null'
         results:
           type: array
           items:
@@ -7162,7 +7144,7 @@ components:
         results:
           $ref: '#/components/schemas/TestResultsDto'
         counts:
-          $ref: '#/components/schemas/Map_NodeCount'
+          $ref: '#/components/schemas/Map_NodeId_V'
     RunDeploymentRequest:
       title: RunDeploymentRequest
       type: object
@@ -7665,7 +7647,7 @@ components:
       properties:
         nodeResults:
           anyOf:
-          - $ref: '#/components/schemas/Map_List_ResultContext_Json'
+          - $ref: '#/components/schemas/Map_NodeId_V'
           - type: 'null'
         nodeTransitionResults:
           type:
@@ -7674,15 +7656,15 @@ components:
           items:
             $ref: '#/components/schemas/NodeTransitionResult'
         invocationResults:
-          $ref: '#/components/schemas/Map_List_ExpressionInvocationResult_Json'
+          $ref: '#/components/schemas/Map_NodeId_V'
         externalInvocationResults:
-          $ref: '#/components/schemas/Map_List_ExternalInvocationResult_Json'
+          $ref: '#/components/schemas/Map_NodeId_V'
         exceptions:
           type: array
           items:
             $ref: '#/components/schemas/ExceptionResult_Json'
         exceptionsByNodeId:
-          $ref: '#/components/schemas/Map_List_ExceptionResult_Json'
+          $ref: '#/components/schemas/Map_NodeId_V'
     TestSourceParameters:
       title: TestSourceParameters
       type: object

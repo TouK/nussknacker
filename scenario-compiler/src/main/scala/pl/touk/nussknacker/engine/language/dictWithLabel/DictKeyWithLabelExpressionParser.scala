@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.language.dictWithLabel
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{invalidNel, Valid}
 import io.circe.parser
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _}
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
@@ -86,7 +86,7 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
   case class KeyWithLabelExpressionParsingError(keyWithLabel: String, message: String) extends ExpressionParseError {
 
     def toProcessCompilationError(
-        nodeId: String,
+        nodeId: NodeId,
         paramName: ParameterName
     ): ProcessCompilationError.KeyWithLabelExpressionParsingError =
       ProcessCompilationError.KeyWithLabelExpressionParsingError(keyWithLabel, message, paramName, nodeId)

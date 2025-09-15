@@ -183,7 +183,7 @@ class UniversalCrossSourceLiteTest
 
     // Then
     val CustomNodeError(nodeId, message, _) = result.invalidValue.head
-    nodeId shouldBe "my-sink"
+    nodeId.id shouldBe "my-sink"
     message should include("Incorrect type: path 'age' actual: 'Long' expected: 'Integer'")
   }
 

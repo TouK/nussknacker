@@ -6,6 +6,7 @@ import org.scalatest.{BeforeAndAfterAll, Inside}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
@@ -103,7 +104,7 @@ trait DecisionTableSpec
           errors.toList should matchPattern {
             case ExpressionParserCompilationError(
                   "There is no property 'years' in type: Record{DoB: LocalDate, age: Integer, name: String}",
-                  "decision-table",
+                  NodeId("decision-table"),
                   Some(ParameterName("Match condition")),
                   "#ROW['years'] > #input.minAge",
                   _
@@ -127,7 +128,7 @@ trait DecisionTableSpec
             NonEmptyList.one(
               ExpressionParserCompilationError(
                 message = "Wrong part types",
-                nodeId = "decision-table",
+                nodeId = NodeId("decision-table"),
                 paramName = Some(ParameterName("Match condition")),
                 originalExpr = "#ROW['name'] > #input.minAge",
                 details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(14, 0)))
@@ -154,7 +155,7 @@ trait DecisionTableSpec
             NonEmptyList.of(
               ExpressionParserCompilationError(
                 message = "Typing error in some cells",
-                nodeId = "decision-table",
+                nodeId = NodeId("decision-table"),
                 paramName = Some(ParameterName("Decision Table")),
                 originalExpr = invalidColumnTypeDecisionTableJson.expression,
                 details = Some(
@@ -189,7 +190,7 @@ trait DecisionTableSpec
               ),
               ExpressionParserCompilationError(
                 message = "Operator '==' used with not comparable types: Integer and String(John)",
-                nodeId = "decision-table",
+                nodeId = NodeId("decision-table"),
                 paramName = Some(ParameterName("Match condition")),
                 originalExpr = """#ROW.age > #input.minAge && #ROW.name == "John"""",
                 details = Some(CoordinatesBasedTextRange(TextCoordinates(38, 0), TextCoordinates(40, 0)))

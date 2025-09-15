@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.dict
 
 import cats.data.Validated
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.dict.DictRegistry._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -40,13 +41,13 @@ trait EngineDictRegistry extends DictRegistry {
 object DictRegistry {
 
   sealed trait DictLookupError {
-    def toPartSubGraphCompilationError(nodeId: String, paramName: ParameterName): PartSubGraphCompilationError
+    def toPartSubGraphCompilationError(nodeId: NodeId, paramName: ParameterName): PartSubGraphCompilationError
   }
 
   case class DictNotDeclared(dictId: String) extends DictLookupError {
 
     override def toPartSubGraphCompilationError(
-        nodeId: String,
+        nodeId: NodeId,
         paramName: ParameterName
     ): PartSubGraphCompilationError =
       ProcessCompilationError.DictNotDeclared(dictId, nodeId, paramName)
@@ -57,7 +58,7 @@ object DictRegistry {
       extends DictLookupError {
 
     override def toPartSubGraphCompilationError(
-        nodeId: String,
+        nodeId: NodeId,
         paramName: ParameterName
     ): PartSubGraphCompilationError =
       ProcessCompilationError.DictEntryWithLabelNotExists(dictId, label, possibleLabels, nodeId, paramName)
@@ -68,7 +69,7 @@ object DictRegistry {
       extends DictLookupError {
 
     override def toPartSubGraphCompilationError(
-        nodeId: String,
+        nodeId: NodeId,
         paramName: ParameterName
     ): PartSubGraphCompilationError =
       ProcessCompilationError.DictEntryWithKeyNotExists(dictId, key, possibleKeys, nodeId, paramName)

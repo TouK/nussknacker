@@ -81,7 +81,7 @@ object SampleNodes {
   }
 
   class JoinExprBranchFunction(
-      nodeId: String,
+      nodeId: NodeId,
       valueByBranchId: Map[String, LazyParameter[AnyRef]],
       val lazyParameterHelper: FlinkLazyParameterFunctionHelper
   ) extends RichCoFlatMapFunction[Context, Context, ValueWithContext[AnyRef]]
@@ -1131,10 +1131,10 @@ object SampleNodes {
   }
 
   object CountingNodesListener extends EmptyProcessListener {
-    @volatile private var nodesEntered: List[String] = Nil
+    @volatile private var nodesEntered: List[NodeId] = Nil
     @volatile private var listening                  = false
 
-    def listen(body: => Unit): List[String] = {
+    def listen(body: => Unit): List[NodeId] = {
       nodesEntered = Nil
       listening = true
       body
@@ -1142,7 +1142,7 @@ object SampleNodes {
       nodesEntered
     }
 
-    override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
+    override def nodeEntered(nodeId: NodeId, context: Context, processMetaData: MetaData): Unit = {
       if (listening) nodesEntered = nodesEntered ::: nodeId :: Nil
     }
 
@@ -1161,37 +1161,37 @@ object SampleNodes {
       closed = true
     }
 
-    override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit =
+    override def nodeEntered(nodeId: NodeId, context: Context, processMetaData: MetaData): Unit =
       checkValidState("nodeEntered")
 
     override def transitionToNextNode(
-        nodeId: String,
-        nextNodeId: String,
+        nodeId: NodeId,
+        nextNodeId: NodeId,
         context: Context,
         processMetaData: MetaData
     ): Unit =
       checkValidState("transitionToNextNode")
 
     override def processingFinishedInNode(
-        nodeId: String,
+        nodeId: NodeId,
         context: Context,
         processMetaData: MetaData,
     ): Unit =
       checkValidState("processingFinishedInNode")
 
     override def endEncountered(
-        nodeId: String,
+        nodeId: NodeId,
         ref: String,
         context: Context,
         processMetaData: MetaData
     ): Unit =
       checkValidState("endEncountered")
 
-    override def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit =
+    override def deadEndEncountered(lastNodeId: NodeId, context: Context, processMetaData: MetaData): Unit =
       checkValidState("deadEndEncountered")
 
     override def expressionEvaluated(
-        nodeId: String,
+        nodeId: NodeId,
         expressionId: String,
         expression: String,
         context: Context,
@@ -1201,7 +1201,7 @@ object SampleNodes {
       checkValidState("expressionEvaluated")
 
     override def serviceInvoked(
-        nodeId: String,
+        nodeId: NodeId,
         id: String,
         context: Context,
         processMetaData: MetaData,

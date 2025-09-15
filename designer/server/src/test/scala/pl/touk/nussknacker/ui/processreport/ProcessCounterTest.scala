@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.processreport
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, NodeId}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -33,13 +33,16 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       defaultCounter.computeCounts(
         process,
         isFragment = false,
-        Map("source1" -> RawCount(30L, 5L), "filter1" -> RawCount(20, 10)).get
+        Map(
+          NodeId("source1") -> RawCount(30L, 5L),
+          NodeId("filter1") -> RawCount(20, 10)
+        ).get
       )
 
     computed shouldBe Map(
-      "source1" -> NodeCount(30, 5),
-      "filter1" -> NodeCount(20, 10),
-      "sink11"  -> NodeCount(0, 0)
+      NodeId("source1") -> NodeCount(30, 5),
+      NodeId("filter1") -> NodeCount(20, 10),
+      NodeId("sink11")  -> NodeCount(0, 0)
     )
   }
 
@@ -69,18 +72,18 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       process,
       isFragment = false,
       Map(
-        "source1" -> RawCount(1, 0),
-        "source2" -> RawCount(2, 0),
-        "join1"   -> RawCount(3, 0),
-        "end"     -> RawCount(4, 0)
+        NodeId("source1") -> RawCount(1, 0),
+        NodeId("source2") -> RawCount(2, 0),
+        NodeId("join1")   -> RawCount(3, 0),
+        NodeId("end")     -> RawCount(4, 0)
       ).get
     )
 
     result shouldBe Map(
-      "source1" -> NodeCount(1, 0),
-      "source2" -> NodeCount(2, 0),
-      "join1"   -> NodeCount(3, 0),
-      "end"     -> NodeCount(4, 0)
+      NodeId("source1") -> NodeCount(1, 0),
+      NodeId("source2") -> NodeCount(2, 0),
+      NodeId("join1")   -> NodeCount(3, 0),
+      NodeId("end")     -> NodeCount(4, 0)
     )
   }
 
@@ -114,29 +117,29 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       process,
       isFragment = false,
       Map(
-        "source1"              -> RawCount(70L, 0L),
-        "filter1"              -> RawCount(60, 1),
-        "fragment1"            -> RawCount(55, 2),
-        "fragment1-subFilter1" -> RawCount(45, 4),
-        "fragment1-outId1"     -> RawCount(35, 5),
-        "sink11"               -> RawCount(30, 10)
+        NodeId("source1")              -> RawCount(70L, 0L),
+        NodeId("filter1")              -> RawCount(60, 1),
+        NodeId("fragment1")            -> RawCount(55, 2),
+        NodeId("fragment1-subFilter1") -> RawCount(45, 4),
+        NodeId("fragment1-outId1")     -> RawCount(35, 5),
+        NodeId("sink11")               -> RawCount(30, 10)
       ).get
     )
 
     computed shouldBe Map(
-      "source1" -> NodeCount(70, 0),
-      "filter1" -> NodeCount(60, 1),
-      "fragment1" -> NodeCount(
+      NodeId("source1") -> NodeCount(70, 0),
+      NodeId("filter1") -> NodeCount(60, 1),
+      NodeId("fragment1") -> NodeCount(
         55,
         2,
         Map(
-          "subInput1"  -> NodeCount(55, 2),
-          "subFilter1" -> NodeCount(45, 4),
-          "subFilter2" -> NodeCount(0, 0),
-          "outId1"     -> NodeCount(35, 5)
+          NodeId("subInput1")  -> NodeCount(55, 2),
+          NodeId("subFilter1") -> NodeCount(45, 4),
+          NodeId("subFilter2") -> NodeCount(0, 0),
+          NodeId("outId1")     -> NodeCount(35, 5)
         )
       ),
-      "sink11" -> NodeCount(30, 10)
+      NodeId("sink11") -> NodeCount(30, 10)
     )
   }
 
@@ -152,16 +155,16 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       fragment,
       isFragment = true,
       Map(
-        "fragment1"   -> RawCount(30, 0),
-        "filter"      -> RawCount(20, 5),
-        "fragmentEnd" -> RawCount(15, 10)
+        NodeId("fragment1")   -> RawCount(30, 0),
+        NodeId("filter")      -> RawCount(20, 5),
+        NodeId("fragmentEnd") -> RawCount(15, 10)
       ).get
     )
 
     computed shouldBe Map(
-      "fragment1"   -> NodeCount(30, 0),
-      "filter"      -> NodeCount(20, 5),
-      "fragmentEnd" -> NodeCount(15, 10)
+      NodeId("fragment1")   -> NodeCount(30, 0),
+      NodeId("filter")      -> NodeCount(20, 5),
+      NodeId("fragmentEnd") -> NodeCount(15, 10)
     )
   }
 

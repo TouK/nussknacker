@@ -52,7 +52,7 @@ object sample {
   // Example: ContextId("the_value_used_in_sample_engine", "", 0, 0, [])
   case class SampleInput(contextId: String, value: Int)
 
-  private def dummyContextId(str: String): ContextId = ContextId(str, "", 0, 0)
+  private def dummyContextId(str: String): ContextId = ContextId(ProcessName(str), NodeId(""), 0, 0)
 
   case class SampleInputWithListAndMap(
       contextId: ContextId,
@@ -220,7 +220,7 @@ object sample {
           if (input.value == 1) {
             Invalid(
               NuExceptionInfo(
-                Some(NodeComponentInfo(nodeId.id, ComponentType.Source, "failOnNumber1SourceFactory")),
+                Some(NodeComponentInfo(nodeId, ComponentType.Source, "failOnNumber1SourceFactory")),
                 SourceFailure,
                 Context(dummyContextId(input.contextId))
               )

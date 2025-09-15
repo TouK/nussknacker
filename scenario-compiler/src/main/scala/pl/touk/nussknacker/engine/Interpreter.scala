@@ -54,15 +54,15 @@ private class InterpreterInternal[F[_]: Monad](
     NuExceptionInfo(Some(NodeComponentInfoExtractor.fromCompiledNode(node)), _, ctx)
   }
 
-  private def onTransitionToNextNode(nodeId: String, nextNode: Next, ctx: Context): Unit = {
+  private def onTransitionToNextNode(nodeId: NodeId, nextNode: Next, ctx: Context): Unit = {
     val nextNodeId = nextNode match {
       case NextNode(BranchEnd(definition)) => definition.joinId
       case other                           => other.id
     }
-    listeners.foreach(_.transitionToNextNode(nodeId, nextNodeId, ctx, jobData.metaData))
+    listeners.foreach(_.transitionToNextNode(nodeId, NodeId(nextNodeId), ctx, jobData.metaData))
   }
 
-  private def onProcessingFinishedInNode(nodeId: String, ctx: Context): Unit = {
+  private def onProcessingFinishedInNode(nodeId: NodeId, ctx: Context): Unit = {
     listeners.foreach(_.processingFinishedInNode(nodeId, ctx, jobData.metaData))
   }
 
@@ -73,7 +73,7 @@ private class InterpreterInternal[F[_]: Monad](
       // We do not invoke listener 'nodeEntered' here for nodes which are wrapped in PartRef by ProcessSplitter.
       // These are handled in interpretNext method
       case CustomNode(_, _, _) | EndingCustomNode(_, _) | Sink(_, _, _) | FragmentOutput(_, _, _) =>
-      case _ => listeners.foreach(_.nodeEntered(node.id, ctx, jobData.metaData))
+      case _ => listeners.foreach(_.nodeEntered(NodeId(node.id), ctx, jobData.metaData))
     }
     node match {
       case Source(_, _, next) =>
@@ -82,7 +82,7 @@ private class InterpreterInternal[F[_]: Monad](
         val variable = createOrUpdateVariable(ctx, varName, fields)
         interpretOptionalNext(node, next, variable)
       case VariableBuilder(_, varName, Left(expression), next) =>
-        val valueWithModifiedContext = expressionEvaluator.evaluate[Any](expression, varName, node.id, ctx)
+        val valueWithModifiedContext = expressionEvaluator.evaluate[Any](expression, varName, NodeId(node.id), ctx)
         interpretOptionalNext(node, next, ctx.withVariable(varName, valueWithModifiedContext.value))
       case FragmentUsageStart(_, params, next) =>
         val (newCtx, vars) = expressionEvaluator.evaluateParameters(params, ctx)
@@ -106,8 +106,8 @@ private class InterpreterInternal[F[_]: Monad](
         // - the `interpretOptionalNext` method triggers only reporting of the transition between the last node of the fragment graph and the next node
         // - we have to also report the transition between the single node representing the entire fragment and the next node
         next match {
-          case Some(next) => onTransitionToNextNode(fragmentUsageStartNodeId, next, newParentContext)
-          case None       => onProcessingFinishedInNode(fragmentUsageStartNodeId, newParentContext)
+          case Some(next) => onTransitionToNextNode(NodeId(fragmentUsageStartNodeId), next, newParentContext)
+          case None       => onProcessingFinishedInNode(NodeId(fragmentUsageStartNodeId), newParentContext)
         }
         interpretOptionalNext(node, next, newParentContext)
       case Processor(_, ref, next, false) =>
@@ -121,7 +121,7 @@ private class InterpreterInternal[F[_]: Monad](
       case Processor(_, _, next, true) =>
         interpretOptionalNext(node, next, ctx)
       case EndingProcessor(id, ref, false) =>
-        listeners.foreach(_.endEncountered(id, ref.id, ctx, jobData.metaData))
+        listeners.foreach(_.endEncountered(NodeId(id), ref.id, ctx, jobData.metaData))
         invokeWrappedInInterpreterShape(ref, ctx).map {
           // for Processor the result is null/BoxedUnit/Void etc. so we ignore it
           case Left(ValueWithContext(_, newCtx)) =>
@@ -136,23 +136,23 @@ private class InterpreterInternal[F[_]: Monad](
         fieldsWithExpression.toList
           .traverse(a =>
             Either
-              .catchNonFatal(a._1 -> expressionEvaluator.evaluate(a._2.expression, a._1, id, ctx).value)
+              .catchNonFatal(a._1 -> expressionEvaluator.evaluate(a._2.expression, a._1, NodeId(id), ctx).value)
               .toValidatedNel
           )
           .map(_.toMap)
           .fold(
             exceptions => {
-              listeners.foreach(_.nodeEntered(node.id, ctx, jobData.metaData))
+              listeners.foreach(_.nodeEntered(NodeId(node.id), ctx, jobData.metaData))
               Monad[F].pure(exceptions.toList.map(exc => Right(handleError(node, ctx)(exc))))
             },
             fields => {
               val newCtx = ctx.withVariables(fields)
-              listeners.foreach(_.nodeEntered(node.id, newCtx, jobData.metaData))
+              listeners.foreach(_.nodeEntered(NodeId(node.id), newCtx, jobData.metaData))
               interpretationResult(node, FragmentEndReference(id, fields), newCtx)
             }
           )
       case Enricher(_, _, outName, next, Some(mockedOutput)) if runtimeMode == Test =>
-        val valueWithModifiedContext = expressionEvaluator.evaluate[Any](mockedOutput, outName, node.id, ctx)
+        val valueWithModifiedContext = expressionEvaluator.evaluate[Any](mockedOutput, outName, NodeId(node.id), ctx)
         interpretOptionalNext(node, next, ctx.withVariable(outName, valueWithModifiedContext.value))
       case Enricher(_, ref, outName, next, _) =>
         invokeWrappedInInterpreterShape(ref, ctx).flatMap {
@@ -196,22 +196,22 @@ private class InterpreterInternal[F[_]: Monad](
       case Sink(id, _, true) =>
         sinkInterpretationResult(EndReference(id), ctx)
       case Sink(id, ref, false) =>
-        listeners.foreach(_.endEncountered(id, ref, ctx, jobData.metaData))
+        listeners.foreach(_.endEncountered(NodeId(id), ref, ctx, jobData.metaData))
         sinkInterpretationResult(EndReference(id), ctx)
       case BranchEnd(e) =>
         Monad[F].pure(List(Left(InterpretationResult(e.joinReference, ctx))))
       case CustomNode(_, _, next) =>
         interpretOptionalNext(node, next, ctx)
       case EndingCustomNode(id, ref) =>
-        listeners.foreach(_.endEncountered(id, ref, ctx, jobData.metaData))
+        listeners.foreach(_.endEncountered(NodeId(id), ref, ctx, jobData.metaData))
         interpretationResult(node, EndReference(id), ctx)
       case SplitNode(_, Nil) =>
-        onProcessingFinishedInNode(node.id, ctx)
+        onProcessingFinishedInNode(NodeId(node.id), ctx)
         Applicative[F].pure(List.empty)
       case SplitNode(_, nexts) =>
         import cats.implicits._
         nexts
-          .map(next => interpretNext(node, next, ctx.withContextIdPathPart(node.id, next.id)))
+          .map(next => interpretNext(node, next, ctx.withContextIdPathPart(NodeId(node.id), next.id)))
           .sequence
           .map(_.flatten)
     }
@@ -229,7 +229,7 @@ private class InterpreterInternal[F[_]: Monad](
       reference: PartReference,
       ctx: Context
   ): FF[List[Result[InterpretationResult]]] = {
-    onProcessingFinishedInNode(node.id, ctx)
+    onProcessingFinishedInNode(NodeId(node.id), ctx)
     Applicative[FF].pure(List(Left(InterpretationResult(reference, ctx))))
   }
 
@@ -245,7 +245,7 @@ private class InterpreterInternal[F[_]: Monad](
         // todo: perhaps we should refactor the way DeadEndingData is used, all nodes can be dead ends now
         node match {
           case Filter(_, _, _, _, _) | Switch(_, _, _, _) =>
-            listeners.foreach(_.deadEndEncountered(node.id, ctx, jobData.metaData))
+            listeners.foreach(_.deadEndEncountered(NodeId(node.id), ctx, jobData.metaData))
           case _ =>
             ()
         }
@@ -254,12 +254,12 @@ private class InterpreterInternal[F[_]: Monad](
   }
 
   private def interpretNext(node: Node, next: Next, ctx: Context): F[List[Result[InterpretationResult]]] = {
-    onTransitionToNextNode(node.id, next, ctx)
+    onTransitionToNextNode(NodeId(node.id), next, ctx)
     next match {
       case NextNode(node) =>
         interpret(node, ctx)
       case pr @ PartRef(ref) =>
-        listeners.foreach(_.nodeEntered(pr.id, ctx, jobData.metaData))
+        listeners.foreach(_.nodeEntered(NodeId(pr.id), ctx, jobData.metaData))
         Monad[F].pure(List(Left(InterpretationResult(NextPartReference(ref), ctx))))
     }
   }
@@ -271,7 +271,7 @@ private class InterpreterInternal[F[_]: Monad](
       ctx.modifyOptionalVariable[java.util.Map[String, Any]](varName, _.getOrElse(new java.util.HashMap[String, Any]()))
 
     fields.foldLeft(contextWithInitialVariable) { case (context, field) =>
-      val valueWithContext = expressionEvaluator.evaluate[Any](field.expression, field.name, node.id, context)
+      val valueWithContext = expressionEvaluator.evaluate[Any](field.expression, field.name, NodeId(node.id), context)
       valueWithContext.context.modifyVariable[java.util.Map[String, Any]](
         varName,
         { m =>
@@ -290,7 +290,9 @@ private class InterpreterInternal[F[_]: Monad](
     {
       import scala.jdk.CollectionConverters._
       val fieldsMap = fields
-        .map(field => (field.name, expressionEvaluator.evaluate[Any](field.expression, field.name, node.id, ctx).value))
+        .map(field =>
+          (field.name, expressionEvaluator.evaluate[Any](field.expression, field.name, NodeId(node.id), ctx).value)
+        )
         .toMap
         .asJava
 
@@ -315,7 +317,7 @@ private class InterpreterInternal[F[_]: Monad](
     val resultFuture                                      = ref.invoke(ctx, serviceExecutionContext)
     import SynchronousExecutionContextAndIORuntime.syncEc
     resultFuture.onComplete { result =>
-      listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, jobData.metaData, result))
+      listeners.foreach(_.serviceInvoked(NodeId(node.id), ref.id, ctx, jobData.metaData, result))
     }
     resultFuture.map(ValueWithContext(_, ctx))
   }
@@ -323,7 +325,7 @@ private class InterpreterInternal[F[_]: Monad](
   private def evaluateExpression[R](expr: CompiledExpression, ctx: Context, name: String)(
       implicit node: Node
   ): ValueWithContext[R] = {
-    expressionEvaluator.evaluate(expr, name, node.id, ctx)
+    expressionEvaluator.evaluate(expr, name, NodeId(node.id), ctx)
   }
 
 }

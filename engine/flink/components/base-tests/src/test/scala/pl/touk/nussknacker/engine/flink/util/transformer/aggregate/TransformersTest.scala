@@ -9,7 +9,14 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, JobData, MetaData, ProcessVersion, VariableConstants}
+import pl.touk.nussknacker.engine.api.{
+  FragmentSpecificData,
+  JobData,
+  MetaData,
+  NodeId,
+  ProcessVersion,
+  VariableConstants
+}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CannotCreateObjectError,
@@ -84,13 +91,13 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
     def endVariablesForKey[K <: Any](key: K): List[TestProcess.ResultContext[Any]] = {
       collectingListener.results
-        .nodeResults("end")
+        .nodeResults(NodeId("end"))
         .filter(_.variableTyped[K](VariableConstants.KeyVariableName).contains(key))
     }
 
     def keyVariables[T <: AnyRef]: List[T] = {
       collectingListener.results
-        .nodeResults("end")
+        .nodeResults(NodeId("end"))
         .map(_.variableTyped[T]("key").get)
     }
 
@@ -351,7 +358,13 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     inside(result.result) {
       case Invalid(
             NonEmptyList(
-              ExpressionParserCompilationError("Unresolved reference 'input'", "after-aggregate-expression-", _, _, _),
+              ExpressionParserCompilationError(
+                "Unresolved reference 'input'",
+                NodeId("after-aggregate-expression-"),
+                _,
+                _,
+                _
+              ),
               _
             )
           ) =>
@@ -508,7 +521,13 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         runScenario(model, resolvedScenario)
       } should matchPattern {
         case ScenarioCompilationErrors(
-              ExpressionParserCompilationError("Unresolved reference 'input'", "inputVarAccessTest", _, _, _) :: Nil
+              ExpressionParserCompilationError(
+                "Unresolved reference 'input'",
+                NodeId("inputVarAccessTest"),
+                _,
+                _,
+                _
+              ) :: Nil
             ) =>
       }
     }
@@ -1057,7 +1076,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   private def validateError(aggregator: String, aggregateBy: String, error: String): Unit = {
     val result = validateConfig(aggregator, aggregateBy)
     result.result shouldBe Symbol("invalid")
-    result.result.swap.toOption.get shouldBe NonEmptyList.of(CannotCreateObjectError(error, "transform"))
+    result.result.swap.toOption.get shouldBe NonEmptyList.of(CannotCreateObjectError(error, NodeId("transform")))
   }
 
   private def validateOk(aggregator: String, aggregateBy: String, typingResult: TypingResult): Unit = {

@@ -185,7 +185,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
           .validateTopic(preparedTopic.prepared)
           .swap
           .toList
-          .map(_.toCustomNodeError(nodeId.id, Some(topicParamName)))
+          .map(_.toCustomNodeError(nodeId, Some(topicParamName)))
       NextParameters(
         versionOrContentTypeParam.value.createParameter() :: nextParams,
         errors = versionOrContentTypeParam.written ++ topicValidationErrors

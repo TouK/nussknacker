@@ -4,14 +4,14 @@ import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.util.Collector
-import pl.touk.nussknacker.engine.api.{Context => NkContext, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{Context => NkContext, NodeId, ValueWithContext}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyEnricher
 
 import java.lang
 
-class EnrichingWithKeyFunction(convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext, nodeId: String)
+class EnrichingWithKeyFunction(convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext, nodeId: NodeId)
     extends ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], AnyRef, TimeWindow] {
 
   @transient

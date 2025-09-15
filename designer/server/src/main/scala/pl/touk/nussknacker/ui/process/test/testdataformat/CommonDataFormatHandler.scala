@@ -58,7 +58,7 @@ class CommonDataFormatHandler(modelData: ModelData) extends TestDataFormatHandle
           sourceRecords
             .map { record =>
               val variablesAsJson = record.variables.mapValuesNow(toJsonEncoder.encodeUnsafe)
-              CommonFormatPreliminaryScenarioRecord(sourceId.id, variablesAsJson, record.timestamp)
+              CommonFormatPreliminaryScenarioRecord(sourceId, variablesAsJson, record.timestamp)
             }
         }
         Right(records)

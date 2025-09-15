@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.processreport
 
 import cats.data.NonEmptyList
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
@@ -11,11 +12,11 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class ProcessCounter(fragmentRepository: FragmentRepository) {
 
-  def computeCounts(canonicalProcess: CanonicalProcess, isFragment: Boolean, counts: String => Option[RawCount])(
+  def computeCounts(canonicalProcess: CanonicalProcess, isFragment: Boolean, counts: NodeId => Option[RawCount])(
       implicit user: LoggedUser
-  ): Map[String, NodeCount] = {
+  ): Map[NodeId, NodeCount] = {
 
-    def computeCounts(prefixes: List[String])(nodes: NonEmptyList[Iterable[CanonicalNode]]): Map[String, NodeCount] = {
+    def computeCounts(prefixes: List[NodeId])(nodes: NonEmptyList[Iterable[CanonicalNode]]): Map[NodeId, NodeCount] = {
       nodes
         .map(startNode => computeCountsForSingle(prefixes)(startNode))
         .toList
@@ -23,15 +24,16 @@ class ProcessCounter(fragmentRepository: FragmentRepository) {
         .getOrElse(Map.empty)
     }
 
-    def computeCountsForSingle(prefixes: List[String])(nodes: Iterable[CanonicalNode]): Map[String, NodeCount] = {
+    def computeCountsForSingle(prefixes: List[NodeId])(nodes: Iterable[CanonicalNode]): Map[NodeId, NodeCount] = {
 
       val computeCountsSamePrefixes = computeCountsForSingle(prefixes) _
 
-      def nodeCount(id: String, fragmentCounts: Map[String, NodeCount] = Map()): NodeCount =
-        nodeCountOption(Some(id), fragmentCounts)
+      def nodeCount(nodeId: NodeId, fragmentCounts: Map[NodeId, NodeCount] = Map()): NodeCount =
+        nodeCountOption(Some(nodeId), fragmentCounts)
 
-      def nodeCountOption(id: Option[String], fragmentCounts: Map[String, NodeCount] = Map()): NodeCount = {
-        val countId = (prefixes ++ id).mkString("-")
+      def nodeCountOption(nodeId: Option[NodeId], fragmentCounts: Map[NodeId, NodeCount] = Map()): NodeCount = {
+        // TODO: we should distinguish between NodeId for nodes of graph and something like "node invocation path"
+        val countId = NodeId((prefixes ++ nodeId).mkString("-"))
         val count   = counts(countId).getOrElse(RawCount(0L, 0L))
         NodeCount(count.all, count.errors, fragmentCounts)
       }
@@ -40,22 +42,24 @@ class ProcessCounter(fragmentRepository: FragmentRepository) {
         // TODO: this is a bit of a hack. Metric for fragment input is counted in node with fragment occurrence id...
         // We want to count it though while testing fragments
         case FlatNode(FragmentInputDefinition(id, _, _)) if !isFragment =>
-          Map(id -> nodeCountOption(None))
+          Map(NodeId(id) -> nodeCountOption(None))
         // BranchEndData is kind of artificial entity
-        case FlatNode(BranchEndData(_))  => Map.empty[String, NodeCount]
-        case FlatNode(node)              => Map(node.id -> nodeCount(node.id))
-        case FilterNode(node, nextFalse) => computeCountsSamePrefixes(nextFalse) + (node.id -> nodeCount(node.id))
+        case FlatNode(BranchEndData(_)) => Map.empty[NodeId, NodeCount]
+        case FlatNode(node)             => Map(NodeId(node.id) -> nodeCount(NodeId(node.id)))
+        case FilterNode(node, nextFalse) =>
+          computeCountsSamePrefixes(nextFalse) + (NodeId(node.id) -> nodeCount(NodeId(node.id)))
         case SwitchNode(node, nexts, defaultNext) =>
           computeCountsSamePrefixes(nexts.flatMap(_.nodes)) ++ computeCountsSamePrefixes(
             defaultNext
-          ) + (node.id -> nodeCount(node.id))
-        case SplitNode(node, nexts)  => computeCountsSamePrefixes(nexts.flatten) + (node.id -> nodeCount(node.id))
+          ) + (NodeId(node.id) -> nodeCount(NodeId(node.id)))
+        case SplitNode(node, nexts) =>
+          computeCountsSamePrefixes(nexts.flatten) + (NodeId(node.id) -> nodeCount(NodeId(node.id)))
         case Fragment(node, outputs) =>
           // TODO: validate that process exists
           val fragment = fragmentRepository.fetchLatestFragmentSync(ProcessName(node.ref.id)).get
-          computeCountsSamePrefixes(outputs.values.flatten) + (node.id -> nodeCount(
-            node.id,
-            computeCounts(prefixes :+ node.id)(fragment.allStartNodes)
+          computeCountsSamePrefixes(outputs.values.flatten) + (NodeId(node.id) -> nodeCount(
+            NodeId(node.id),
+            computeCounts(prefixes :+ NodeId(node.id))(fragment.allStartNodes)
           ))
       }.toMap
 
@@ -68,4 +72,4 @@ class ProcessCounter(fragmentRepository: FragmentRepository) {
 
 final case class RawCount(all: Long, errors: Long)
 
-@JsonCodec final case class NodeCount(all: Long, errors: Long, fragmentCounts: Map[String, NodeCount] = Map())
+@JsonCodec final case class NodeCount(all: Long, errors: Long, fragmentCounts: Map[NodeId, NodeCount] = Map())

@@ -90,7 +90,7 @@ object ContextTransformation {
     contextMap.values.map(_.parent).toList.distinct match {
       case Nil      => Valid(None)
       case a :: Nil => Valid(a)
-      case more => Invalid(NonEmptyList.of(CustomNodeError(nodeId.id, s"Not consistent parent contexts: $more", None)))
+      case more     => Invalid(NonEmptyList.of(CustomNodeError(nodeId, s"Not consistent parent contexts: $more", None)))
     }
   }
 

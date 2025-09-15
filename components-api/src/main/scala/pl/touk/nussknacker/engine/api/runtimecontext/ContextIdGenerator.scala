@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine.api.runtimecontext
 
-import pl.touk.nussknacker.engine.api.{ContextId, JobData, MetaData}
+import pl.touk.nussknacker.engine.api.{ContextId, JobData, MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import java.util.concurrent.atomic.AtomicLong
-import scala.jdk.CollectionConverters._
 
 /**
   * Context id generator - it should fulfill rules:
@@ -20,23 +19,23 @@ trait ContextIdGenerator {
 }
 
 class IncContextIdGenerator(
-    scenarioId: ProcessName,
-    nodeId: String,
+    scenarioName: ProcessName,
+    nodeId: NodeId,
     taskId: Long,
     counter: AtomicLong = new AtomicLong(0),
 ) extends ContextIdGenerator {
 
   override def nextContextId(): ContextId =
-    ContextId(scenarioId.value, nodeId, taskId, counter.getAndIncrement(), List.empty)
+    ContextId(scenarioName, nodeId, taskId, counter.getAndIncrement(), List.empty)
 
 }
 
 object IncContextIdGenerator {
 
-  def withProcessIdNodeIdPrefix(jobData: JobData, nodeId: String, taskId: Long): IncContextIdGenerator =
+  def withProcessIdNodeIdPrefix(jobData: JobData, nodeId: NodeId, taskId: Long): IncContextIdGenerator =
     withProcessIdNodeIdPrefix(jobData.metaData, nodeId, taskId)
 
-  def withProcessIdNodeIdPrefix(metaData: MetaData, nodeId: String, taskId: Long): IncContextIdGenerator =
+  def withProcessIdNodeIdPrefix(metaData: MetaData, nodeId: NodeId, taskId: Long): IncContextIdGenerator =
     new IncContextIdGenerator(metaData.name, nodeId, taskId)
 
 }

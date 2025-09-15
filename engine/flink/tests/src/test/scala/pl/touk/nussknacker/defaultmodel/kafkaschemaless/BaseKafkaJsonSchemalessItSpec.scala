@@ -3,6 +3,7 @@ package pl.touk.nussknacker.defaultmodel.kafkaschemaless
 import com.typesafe.config.{Config, ConfigValueFactory}
 import io.circe.{parser, Json, ParsingFailure}
 import pl.touk.nussknacker.defaultmodel.FlinkWithKafkaSuite
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.process.TopicName.ForSource
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -233,7 +234,7 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite with Pa
 
   def shouldDropEventsBasedOnTheInferredDataSampleType(): Unit = {
     def assertDecodingFailureException(e: ExceptionResult[_])(exceptionMessageSuffix: String) = {
-      e.nodeId shouldBe Some("start")
+      e.nodeId shouldBe Some(NodeId("start"))
       e.throwable shouldBe a[PayloadDeserializationException]
       e.throwable.getMessage shouldBe s"Exception during payload deserialization: $exceptionMessageSuffix"
     }

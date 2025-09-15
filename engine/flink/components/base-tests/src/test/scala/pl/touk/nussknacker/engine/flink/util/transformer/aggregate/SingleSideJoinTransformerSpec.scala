@@ -45,9 +45,9 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
 
   private val JoinedBranchId = "joined"
 
-  private val JoinNodeId = "joined-node-id"
+  private val JoinNodeId = NodeId("joined-node-id")
 
-  private val EndNodeId = "end-node-id"
+  private val EndNodeId = NodeId("end-node-id")
 
   private val KeyVariableName = "keyVar"
 
@@ -60,13 +60,13 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
         GraphBuilder
           .source("source", "start-main")
           .buildSimpleVariable("build-key", KeyVariableName, "#input.key".spel)
-          .branchEnd(MainBranchId, JoinNodeId),
+          .branchEnd(MainBranchId, JoinNodeId.id),
         GraphBuilder
           .source("joined-source", "start-joined")
-          .branchEnd(JoinedBranchId, JoinNodeId),
+          .branchEnd(JoinedBranchId, JoinNodeId.id),
         GraphBuilder
           .join(
-            JoinNodeId,
+            JoinNodeId.id,
             customElementName,
             Some(OutVariableName),
             List(
@@ -83,7 +83,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
             "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT2H')".spel,
             "aggregateBy" -> "{last: #input.value, list: #input.value, approxCardinality: #input.value, sum: #input.value } ".spel
           )
-          .emptySink(EndNodeId, "dead-end")
+          .emptySink(EndNodeId.id, "dead-end")
       )
 
     val key    = "fooKey"

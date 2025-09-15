@@ -294,10 +294,10 @@ class ScenarioTestingApiHttpService(
 
   private def collectInvalidNodes(
       nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
-  ): Map[String, List[ValidationResults.NodeValidationError]] = {
+  ): Map[NodeId, List[ValidationResults.NodeValidationError]] = {
     nodesWithErrors
       .map { case (nodeId, errors) =>
-        (nodeId.id, errors.map(PrettyValidationErrors.formatErrorMessage).toList)
+        (nodeId, errors.map(PrettyValidationErrors.formatErrorMessage).toList)
       }
       .toList
       .toMap

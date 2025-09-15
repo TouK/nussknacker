@@ -9,7 +9,7 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.types.logical.RowType
 import org.apache.flink.types.Row
 import org.apache.flink.util.Collector
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId, ValueWithContext}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
@@ -76,7 +76,7 @@ class TableSink(
 
 class EncodeAsTableTypeFunction private (
     override protected val exceptionHandlerPreparer: RuntimeContext => ExceptionHandler,
-    nodeId: String,
+    nodeId: NodeId,
     sinkRowType: RowType,
     producedType: TypeInformation[Row]
 ) extends RichFlatMapFunction[ValueWithContext[AnyRef], Row]

@@ -23,7 +23,7 @@ class TestServiceInvocationCollector(resultsCollectingListener: ResultsCollectin
       case Some(mockVal) =>
         resultsCollectingListener.updateResults(
           _.updateExternalInvocationResult(
-            nodeId.id,
+            nodeId,
             contextId,
             serviceRef,
             request,
@@ -36,7 +36,7 @@ class TestServiceInvocationCollector(resultsCollectingListener: ResultsCollectin
           val invocationResult = Map("request" -> request, "response" -> resultToCollect())
           resultsCollectingListener.updateResults(
             _.updateExternalInvocationResult(
-              nodeId.id,
+              nodeId,
               contextId,
               serviceRef,
               invocationResult,
@@ -48,7 +48,7 @@ class TestServiceInvocationCollector(resultsCollectingListener: ResultsCollectin
     }
   }
 
-  def createSinkInvocationCollector(nodeId: String, ref: String): SinkInvocationCollector =
+  def createSinkInvocationCollector(nodeId: NodeId, ref: String): SinkInvocationCollector =
     new SinkInvocationCollector(resultsCollectingListener, nodeId, ref)
 
 }
@@ -56,7 +56,7 @@ class TestServiceInvocationCollector(resultsCollectingListener: ResultsCollectin
 //TODO: this should be somehow expressed via ResultCollector/TestServiceInvocationCollector
 final class SinkInvocationCollector(
     resultsCollectingListener: ResultsCollectingListener[_],
-    nodeId: String,
+    nodeId: NodeId,
     ref: String
 ) extends Serializable {
 

@@ -5,6 +5,7 @@ import derevo.circe._
 import derevo.derive
 import io.circe.{Decoder, Encoder}
 import io.circe.syntax.EncoderOps
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
@@ -139,7 +140,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
                         NodeValidationErrorType.SaveAllowed,
                         None
                       ),
-                      List("node1")
+                      List(NodeId("node1"))
                     )
                   )
                 )

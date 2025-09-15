@@ -44,7 +44,7 @@ class SourceSpecificDataFormatHandler(modelData: ModelData) extends TestDataForm
         Right(
           sourceRecords
             .map { record =>
-              SourceSpecificFormatPreliminaryScenarioRecord(sourceId.id, record.json, record.timestamp)
+              SourceSpecificFormatPreliminaryScenarioRecord(sourceId, record.json, record.timestamp)
             }
         )
       }
