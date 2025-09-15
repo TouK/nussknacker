@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import HttpService from "../../../http/HttpService";
 import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
+import type { NodeValidationError } from "../../../types";
 import { JsonEditor } from "../../graph/node-modal/editors/expression/JsonEditor";
 import { ExpressionLang } from "../../graph/node-modal/editors/expression/types";
 import type { VariablesCell } from "./CellContent";
@@ -13,7 +14,7 @@ interface Props {
     onChange: (cell: VariablesCell) => void;
 }
 export const VariablesEditor = ({ value, onChange }: Props) => {
-    const [validationErrors, setValidationErrors] = useState([]);
+    const [validationErrors, setValidationErrors] = useState<NodeValidationError[]>([]);
     const scenarioName = useAppSelector(getProcessName);
     const scenarioGraph = useAppSelector(getScenarioGraph);
 
