@@ -208,7 +208,7 @@ class KafkaJsonSchemalessSourceFactorySpec
   protected def validateParamsAndGetValidationContext(
       nodeParameters: List[NodeParameter]
   ): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-    val compilationResult = nodeCompiler.compileNode[Source](SourceNode("mock-id", SourceRef("kafka", nodeParameters)))
+    val compilationResult = nodeCompiler.compileNode(SourceNode("mock-id", SourceRef("kafka", nodeParameters)))
     compilationResult.compiledObject.andThen { _ =>
       compilationResult.validationContext
     }

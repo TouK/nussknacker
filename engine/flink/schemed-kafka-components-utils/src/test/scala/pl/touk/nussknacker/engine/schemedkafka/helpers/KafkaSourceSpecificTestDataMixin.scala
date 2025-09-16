@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.util.test.FlinkNodeCompiler.FlinkNodeCompilerExt
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.node.{Source => SourceNode}
@@ -90,10 +89,11 @@ trait KafkaSourceSpecificTestDataMixin {
       .build()
 
     nodeCompiler
-      .compileNode[Source with TestDataGenerator with FlinkSourceTestSupport[AnyRef]](
+      .compileNode(
         SourceNode("mock-id", SourceRef("kafka", nodeParameters))
       )
       .compiledObject
+      .map(_.asInstanceOf[Source with TestDataGenerator with SourceTestSupport[AnyRef]])
   }
 
   protected def prepareNodeParameters(

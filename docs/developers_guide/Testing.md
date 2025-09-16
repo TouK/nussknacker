@@ -107,8 +107,8 @@ testScenarioRunner.runWithData(scenario, List(1, 3, 5))
 ```
 
 Both `flinkBased` and `liteBased` scenario test runners provides additional `source` component which is used for providing test data in `runWithData` method.
-Results are collected using `sink` component in `liteBased` case and `invocationCollector` in `flinkBased` case.
-All component names can be accessed using `TestScenarioRunner` object e.g. using `TestScenarioRunner.testDataSource` property.
+Results are collected using `sink` component. These component names are available in `TestScenarioRunner` object, 
+see: `TestScenarioRunner.testDataSource` and `TestScenarioRunner.testResultSink` properties.
 
 In case of `kafkaLiteBased` scenario test runner, you should use the same source/sink components as in production (e.g. `kafka`). There are available
 methods for passing Avro records or JSON objects - you don't need to serialize them. Example for Avro:
@@ -144,7 +144,7 @@ testScenarioRunner.withRunningScenario(scenario) { verificationFixture =>
 ### Auto provided test components
 Test toolkit automatically gives you few test components you could see above.
 - `source` - it can be used to provide data for the scenario
-- `sink` - it collect test result
+- `sink` - it collects test results
 
 ### Testing node compilation
 

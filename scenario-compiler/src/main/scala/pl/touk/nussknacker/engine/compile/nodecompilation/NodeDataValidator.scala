@@ -80,7 +80,9 @@ class NodeDataValidator(modelData: ModelData) {
     modelData.withModelClassloaderAsContextClassLoader {
       val compilationErrors = nodeData match {
         case a: CompilableNodeData =>
-          toValidationResponse(compiler.compileNode(a, variableTypes, branchVariableTypes, outgoingEdges))
+          toValidationResponse(
+            compiler.compileNode[CompilableNodeData](a, variableTypes, branchVariableTypes, outgoingEdges)
+          )
         case a: FragmentInput =>
           validateFragment(validationContext, outgoingEdges, a, fragmentResolver)
         case Split(_, _) | FragmentUsageOutput(_, _, _, _, _) | BranchEndData(_) =>

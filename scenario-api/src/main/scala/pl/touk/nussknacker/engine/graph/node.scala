@@ -117,7 +117,7 @@ object node {
   }
 
   sealed trait CustomNodeData
-      extends NodeData
+      extends CompilableNodeData
       with WithComponent
       with RealNodeData
       with WithParameters
@@ -178,7 +178,6 @@ object node {
       branchParameters: List[BranchParameters],
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends StartingNodeData
-      with CompilableNodeData
       with CustomNodeData {
     override val componentId: String = nodeType
   }
@@ -269,7 +268,6 @@ object node {
       parameters: List[NodeParameter],
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends OneOutputSubsequentNodeData
-      with CompilableNodeData
       with CustomNodeData
       with EndingNodeData {
     override val componentId: String = nodeType

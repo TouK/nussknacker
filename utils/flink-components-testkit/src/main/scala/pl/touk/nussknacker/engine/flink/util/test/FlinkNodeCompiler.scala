@@ -7,12 +7,12 @@ import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessVersion, Stream
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.util.NotNothing
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeCompiler, NodeDataValidator}
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.CompilesTo
 import pl.touk.nussknacker.engine.flink.{FlinkBaseUnboundedComponentProvider, FlinkScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
-import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.node.CompilableNodeData
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.test.TestNodeCompiler
 
@@ -21,52 +21,31 @@ class FlinkNodeCompiler(
     underlyingNodeCompiler: NodeCompiler
 ) extends TestNodeCompiler {
 
-  override def compileNode[CompiledObject: NotNothing](
-      nodeData: node.CompilableNodeData,
+  override def compileNode[NodeData <: CompilableNodeData](
+      nodeData: NodeData,
       variableTypes: Map[String, typing.TypingResult],
       branchVariableTypes: Option[Map[String, Map[String, typing.TypingResult]]],
       outgoingEdges: List[NodeDataValidator.OutgoingEdge]
-  ): NodeCompiler.NodeCompilationResult[CompiledObject] = {
-    flinkMiniClusterWithServices
-      .map(
-        _.withDetachedStreamExecutionEnvironment { env =>
-          val engineScenarioCompilationDependencies = new FlinkScenarioCompilationDependencies(env)
-          doCompileNode[CompiledObject](
-            nodeData,
-            variableTypes,
-            branchVariableTypes,
-            outgoingEdges,
-            engineScenarioCompilationDependencies
-          )
-        }
-      )
-      .getOrElse {
-        doCompileNode[CompiledObject](
-          nodeData,
-          variableTypes,
-          branchVariableTypes,
-          outgoingEdges,
-          EngineScenarioCompilationDependencies.empty
-        )
-      }
-  }
-
-  private def doCompileNode[CompiledObject](
-      nodeData: node.CompilableNodeData,
-      variableTypes: Map[String, typing.TypingResult],
-      branchVariableTypes: Option[Map[String, Map[String, typing.TypingResult]]],
-      outgoingEdges: List[NodeDataValidator.OutgoingEdge],
-      engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies
-  ): NodeCompiler.NodeCompilationResult[CompiledObject] = {
+  )(implicit compilesTo: CompilesTo[NodeData]): NodeCompiler.NodeCompilationResult[compilesTo.ReturnType] = {
     // TODO: configurable
     val dummyJobData = JobData(
       MetaData("dummy", StreamMetaData()),
       ProcessVersion.empty
     )
-    underlyingNodeCompiler
-      .compileNode[CompiledObject](nodeData, variableTypes, branchVariableTypes, outgoingEdges)(
-        new ScenarioCompilationDependencies(dummyJobData, engineScenarioCompilationDependencies)
+    flinkMiniClusterWithServices
+      .map(
+        _.withDetachedStreamExecutionEnvironment { env =>
+          val engineScenarioCompilationDependencies = new FlinkScenarioCompilationDependencies(env)
+          implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+            new ScenarioCompilationDependencies(dummyJobData, engineScenarioCompilationDependencies)
+          underlyingNodeCompiler.compileNode(nodeData, variableTypes, branchVariableTypes, outgoingEdges)
+        }
       )
+      .getOrElse {
+        implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+          new ScenarioCompilationDependencies(dummyJobData, EngineScenarioCompilationDependencies.empty)
+        underlyingNodeCompiler.compileNode(nodeData, variableTypes, branchVariableTypes, outgoingEdges)
+      }
   }
 
 }

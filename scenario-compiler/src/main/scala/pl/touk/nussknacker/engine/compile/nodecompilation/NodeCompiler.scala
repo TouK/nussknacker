@@ -18,12 +18,15 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compile.ComponentExecutorFactory.ComponentExecutorDependencies
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{
+  CompilesTo,
   EnricherCompilationResult,
   MockExpressionParameterName,
   NodeCompilationResult
 }
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
+import pl.touk.nussknacker.engine.compiledgraph.service.ServiceRef
+import pl.touk.nussknacker.engine.compiledgraph.variable.Field
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   NodeCompilationDependencies
@@ -47,7 +50,8 @@ import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.branchParameterExpressionId
-import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.node.{CompilableNodeData, _}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
@@ -78,6 +82,76 @@ object NodeCompiler {
       nodesDeploymentData = NodesDeploymentData.empty,
       nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
     )
+  }
+
+  trait CompilesTo[NodeData <: CompilableNodeData] {
+    type ReturnType
+  }
+
+  object CompilesTo {
+
+    implicit val compilableNodeDataCompilesTo: CompilesTo[CompilableNodeData] { type ReturnType = Any } =
+      new CompilesTo[CompilableNodeData] {
+        override type ReturnType = Any
+      }
+
+    implicit val sourceNodeDataCompilesTo: CompilesTo[SourceNodeData] { type ReturnType = api.process.Source } =
+      new CompilesTo[SourceNodeData] {
+        override type ReturnType = api.process.Source
+      }
+
+    implicit val sourceCompilesTo: CompilesTo[node.Source] { type ReturnType = api.process.Source } =
+      new CompilesTo[node.Source] {
+        override type ReturnType = api.process.Source
+      }
+
+    implicit val sinkCompilesTo: CompilesTo[node.Sink] { type ReturnType = api.process.Sink } =
+      new CompilesTo[node.Sink] {
+        override type ReturnType = api.process.Sink
+      }
+
+    implicit val customNodeDataCompilesTo: CompilesTo[CustomNodeData] { type ReturnType = AnyRef } =
+      new CompilesTo[CustomNodeData] {
+        override type ReturnType = AnyRef
+      }
+
+    implicit val processorCompilesTo: CompilesTo[Processor] { type ReturnType = ServiceRef } =
+      new CompilesTo[Processor] {
+        override type ReturnType = ServiceRef
+      }
+
+    implicit val enricherCompilesTo: CompilesTo[Enricher] { type ReturnType = EnricherCompilationResult } =
+      new CompilesTo[Enricher] {
+        override type ReturnType = EnricherCompilationResult
+      }
+
+    implicit val filterCompilesTo: CompilesTo[Filter] { type ReturnType = CompiledExpression } =
+      new CompilesTo[Filter] {
+        override type ReturnType = CompiledExpression
+      }
+
+    implicit val variableCompilesTo: CompilesTo[Variable] { type ReturnType = CompiledExpression } =
+      new CompilesTo[Variable] {
+        override type ReturnType = CompiledExpression
+      }
+
+    implicit val variableBuilderCompilesTo: CompilesTo[VariableBuilder] { type ReturnType = List[Field] } =
+      new CompilesTo[VariableBuilder] {
+        override type ReturnType = List[Field]
+      }
+
+    implicit val fragmentOutputDefinitionCompilesTo
+        : CompilesTo[FragmentOutputDefinition] { type ReturnType = List[Field] } =
+      new CompilesTo[FragmentOutputDefinition] {
+        override type ReturnType = List[Field]
+      }
+
+    implicit val switchCompilesTo
+        : CompilesTo[Switch] { type ReturnType = (Option[CompiledExpression], List[CompiledExpression]) } =
+      new CompilesTo[Switch] {
+        override type ReturnType = (Option[CompiledExpression], List[CompiledExpression])
+      }
+
   }
 
   case class NodeCompilationResult[T](
@@ -158,14 +232,15 @@ class NodeCompiler(
 
   private val fragmentParameterValidator = FragmentParameterValidator(fragmentDefinitionExtractor.classDefinitions)
 
-  def compileNode[CompiledObject](
-      nodeData: CompilableNodeData,
+  def compileNode[NodeData <: CompilableNodeData](
+      nodeData: NodeData,
       variableTypes: Map[String, TypingResult] = Map.empty,
       branchVariableTypes: Option[Map[String, Map[String, TypingResult]]] = None,
       outgoingEdges: List[OutgoingEdge] = List.empty
   )(
-      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
-  ): NodeCompilationResult[CompiledObject] = {
+      implicit compilesTo: CompilesTo[NodeData],
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): NodeCompilationResult[compilesTo.ReturnType] = {
     import scenarioCompilationDependencies._
 
     val validationContextWithGlobalVariablesOnly =
@@ -220,7 +295,7 @@ class NodeCompiler(
           )
       }
     }
-    compilationResult.copy(compiledObject = compilationResult.compiledObject.map(_.asInstanceOf[CompiledObject]))
+    compilationResult.copy(compiledObject = compilationResult.compiledObject.map(_.asInstanceOf[compilesTo.ReturnType]))
   }
 
   private[compile] def compileSource(
