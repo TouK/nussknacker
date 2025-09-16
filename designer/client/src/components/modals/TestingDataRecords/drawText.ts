@@ -268,11 +268,10 @@ export function drawFieldForDisplay(
 ): void {
     const tokens = tokenizeDataRecords(text);
     if (!tokens.length) return;
-    const workingCtx = ctx;
-    workingCtx.font = FONT_BASE;
-    const lineHeight = computeLineHeight(workingCtx, theme);
-    const fragments = layoutTokens(tokens, workingCtx, rect, muiTheme, lineHeight);
-    renderFragments(workingCtx, fragments);
+    ctx.font = FONT_BASE;
+    const lineHeight = computeLineHeight(ctx, theme);
+    const fragments = layoutTokens(tokens, ctx, rect, muiTheme, lineHeight);
+    renderFragments(ctx, fragments);
 }
 
 export const formatDataRecordsEntries = (raw?: string): string[] => tokenizeDataRecords(raw).map((t) => `${t.key} **${t.value}**`);
