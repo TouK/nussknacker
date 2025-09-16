@@ -199,8 +199,13 @@ private object JsonTemplateTypeDeterminer {
   private object JsonTemplateFromInstanceTypeDeterminer extends FromInstanceTypeDeterminer {
 
     override protected val highPriorityTypeDeterminer: PartialFunction[Any, TypingResult] =
-      specialMarkersForLogicalTypes.toMap[Any, TypingResult] orElse { case `specialMarkerForUnknownTypes` =>
-        Typed.json
+      specialMarkersForLogicalTypes.toMap[Any, TypingResult] orElse {
+        case `specialMarkerForUnknownTypes` =>
+          Typed.json
+        // For compatibility with json parser - by an integer a user may want to express that it is some kind of Long (e.g. timestamp)
+        // It is better to return wider type than narrow if we are not sure what was the intention
+        case i: Int =>
+          TypedObjectWithValue(Typed.typedClass[Long], i.toLong)
       }
 
     override def fromInstance(obj: Any): TypingResult =

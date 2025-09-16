@@ -30,6 +30,7 @@ trait KafkaLiveDataProvider[K, V] extends LiveDataProvider { self: Source =>
       .map(deserializationSchema.deserialize)
       .map { consumerRecord =>
         val variables = contextInitializer.convertToInitialVariables(consumerRecord)
+        // TODO: Respect Event time parameter
         val timestamp = Option(consumerRecord.timestamp())
           .filterNot(_ => consumerRecord.timestampType() == TimestampType.NO_TIMESTAMP_TYPE)
         DataRecord(variables.variables, timestamp)

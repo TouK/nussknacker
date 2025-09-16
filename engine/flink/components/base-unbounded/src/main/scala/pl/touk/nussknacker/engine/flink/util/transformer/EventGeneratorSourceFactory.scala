@@ -210,6 +210,7 @@ object EventGeneratorSourceFactory
         DataRecords(records.map { record =>
           DataRecord(
             variables = Map(VariableConstants.InputVariableName -> record),
+            // TODO: Respect Event time parameter
             timestamp = None
           )
         })

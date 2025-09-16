@@ -1029,16 +1029,16 @@ class NodesApiHttpServiceBusinessSpec
         .body(
           matchJsonWithRegexValues(
             s"""[
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123}
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}}
                |]""".stripMargin
           )
         )

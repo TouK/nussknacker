@@ -38,7 +38,7 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
 
   test("should return watermark strategy dynamic parameters when they are not provided") {
     nodeCompiler
-      .compileNode[Source](
+      .compileNode(
         node.Source(
           "id",
           SourceRef(

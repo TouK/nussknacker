@@ -17,8 +17,7 @@ import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 import pl.touk.nussknacker.engine.language.json.JsonParsingFailureToExpressionParseErrorConverter.JsonParseError
 import pl.touk.nussknacker.engine.language.json.JsonTemplateParser.JsonTemplateDecodingException
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser
-import pl.touk.nussknacker.engine.spel.SpelFlavour
+import pl.touk.nussknacker.engine.spel.{SpelExpressionParser, SpelFlavour}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
@@ -76,10 +75,10 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
       Table(
         ("Data sample", "Typing result"),
         ("{}", Typed.record(List())),
-        ("123", Typed.typedClass[Integer]),
+        ("123", Typed.typedClass[Long]),
         ("[]", Typed.genericTypeClass[java.util.List[_]](List(Typed.json))),
         ("\"text\"", Typed.typedClass[String]),
-        ("false", Typed.typedClass[java.lang.Boolean]),
+        ("false", Typed.typedClass[Boolean]),
         ("null", Typed.json),
         (
           s"""
@@ -92,7 +91,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
           Typed.record(
             List(
               "name" -> Typed.typedClass[String],
-              "age"  -> Typed.typedClass[Integer],
+              "age"  -> Typed.typedClass[Long],
               "city" -> Typed.typedClass[String],
             )
           )
@@ -112,7 +111,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
               Typed.record(
                 List(
                   "name" -> Typed.typedClass[String],
-                  "age"  -> Typed.typedClass[Integer],
+                  "age"  -> Typed.typedClass[Long],
                   "city" -> Typed.typedClass[String],
                 )
               )
@@ -129,8 +128,8 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
           Typed.record(
             List(
               "name"       -> Typed.typedClass[String],
-              "age"        -> Typed.typedClass[Integer],
-              "hasConsent" -> Typed.typedClass[java.lang.Boolean],
+              "age"        -> Typed.typedClass[Long],
+              "hasConsent" -> Typed.typedClass[Boolean],
               "amount"     -> Typed.typedClass[java.math.BigDecimal],
             )
           )
@@ -157,7 +156,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
 
     mapResult shouldBe Map(
       "name"       -> "John",
-      "age"        -> 50,
+      "age"        -> 50L,
       "hasConsent" -> true,
       "amount"     -> new java.math.BigDecimal("100.5"),
     ).asJava
