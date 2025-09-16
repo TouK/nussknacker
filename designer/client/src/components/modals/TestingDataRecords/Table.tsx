@@ -8,7 +8,7 @@ import type {
     BaseDrawArgs,
     Theme,
 } from "@glideapps/glide-data-grid";
-import DataEditor, { CompactSelection, GridCellKind, type CustomRenderer, drawTextCell, TextCellEntry } from "@glideapps/glide-data-grid";
+import DataEditor, { CompactSelection, GridCellKind, type CustomRenderer, drawTextCell } from "@glideapps/glide-data-grid";
 import type { ProvideEditorComponent } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
 import type { GridColumn } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
 import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
@@ -18,8 +18,8 @@ import React, { useCallback, useMemo, useRef, useState } from "react";
 
 import type { TestFormParameters } from "../../../common/TestResultUtils";
 import { CellMenu, DeleteRowMenuItem } from "../../graph/node-modal/editors/expression/Table/CellMenu";
-import { useErrorHighlights } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
+import { useErrorHighlights } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import { Sizer } from "../../graph/node-modal/editors/expression/Table/Sizer";
 import { useTableTheme } from "../../graph/node-modal/editors/expression/Table/tableTheme";
 import type { VariablesCell } from "./CellContent";
@@ -29,6 +29,7 @@ import type { SourceSelectCell } from "./SourceEditor";
 import SourceEditor from "./SourceEditor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { buildDefaultVariablesMap, buildTestingRowUpdates, computeVariablesRowHeight } from "./utils";
+import { VariablesEditor } from "./VariablesEditor";
 
 export interface TestingDataRecords {
     sourceId: string;
@@ -124,26 +125,9 @@ export const Table: React.FC<TableProps> = ({
             provideEditor: () => ({
                 styleOverride: { padding: "4px" },
                 editor: (props) => {
-                    const { isHighlighted, onChange, value, validatedSelection } = props;
+                    const { onChange, value } = props;
 
-                    return (
-                        <TextCellEntry
-                            highlight={isHighlighted}
-                            autoFocus={value.readonly !== true}
-                            disabled={value.readonly === true}
-                            altNewline={true}
-                            value={value.data.value}
-                            validatedSelection={validatedSelection}
-                            onChange={(e) => {
-                                const newVal = e.target.value;
-                                onChange({
-                                    ...value,
-                                    copyData: newVal,
-                                    data: { ...value.data, value: newVal },
-                                });
-                            }}
-                        />
-                    );
+                    return <VariablesEditor value={value} onChange={onChange} />;
                 },
                 deletedValue: (v) => ({ ...v, copyData: "", data: { ...(v as VariablesCell).data, value: "" } }),
             }),

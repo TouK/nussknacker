@@ -73,7 +73,8 @@ object ProcessCompilerData {
       subCompiler,
       globalVariablesPreparer,
       nodeCompiler,
-      customProcessValidator
+      customProcessValidator,
+      definitionWithTypes.modelDefinition.allowEndingScenarioWithoutSink
     )
     val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
     val interpreter         = Interpreter(listeners, expressionEvaluator, runtimeMode, nodesData)

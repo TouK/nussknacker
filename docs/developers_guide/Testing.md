@@ -77,7 +77,7 @@ import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
 val stubbedGetCustomerOpenApiService: SwaggerEnricher = new SwaggerEnricher(Some(new URL(rootUrl(port))), services.head, Map.empty, stubbedBackedProvider)
 val mockComponents = List(ComponentDefinition("getCustomer", stubbedGetCustomerOpenApiService))
 val testScenarioRunner = TestScenarioRunner
-      .flinkBased(resolvedConfig, flinkMiniCluster)
+      .flinkBased(modelConfig, flinkMiniCluster)
       .withExtraComponents(mockComponents)
       .build()
 ```
@@ -93,7 +93,7 @@ val mockedDate = new DateUtils(mockedClock)
 val globalVariables = Map("DATE" -> date)
 
 val testScenarioRunner = TestScenarioRunner
-      .flinkBased(resolvedConfig, flinkMiniCluster)
+      .flinkBased(modelConfig, flinkMiniCluster)
       .withExtraGlobalVariables(globalVariables)
       .build()
 ```
@@ -107,8 +107,8 @@ testScenarioRunner.runWithData(scenario, List(1, 3, 5))
 ```
 
 Both `flinkBased` and `liteBased` scenario test runners provides additional `source` component which is used for providing test data in `runWithData` method.
-Results are collected using `sink` component in `liteBased` case and `invocationCollector` in `flinkBased` case.
-All component names can be accessed using `TestScenarioRunner` object e.g. using `TestScenarioRunner.testDataSource` property.
+Results are collected using `sink` component. These component names are available in `TestScenarioRunner` object, 
+see: `TestScenarioRunner.testDataSource` and `TestScenarioRunner.testResultSink` properties.
 
 In case of `kafkaLiteBased` scenario test runner, you should use the same source/sink components as in production (e.g. `kafka`). There are available
 methods for passing Avro records or JSON objects - you don't need to serialize them. Example for Avro:
@@ -130,7 +130,7 @@ This approach is currently available only for Flink engine. Example code:
 
 ```scala
 val testScenarioRunner = TestScenarioRunner
-  .flinkBased(resolvedConfig, flinkMiniCluster)
+  .flinkBased(modelConfig, flinkMiniCluster)
   .build()
 
 testScenarioRunner.withRunningScenario(scenario) { verificationFixture =>
@@ -141,16 +141,25 @@ testScenarioRunner.withRunningScenario(scenario) { verificationFixture =>
 }
 ```
 
-### Retrieving results
+### Auto provided test components
+Test toolkit automatically gives you few test components you could see above.
+- `source` - it can be used to provide data for the scenario
+- `sink` - it collects test results
 
-Results of the scenario invocation can be get with `results()`
+### Testing node compilation
+
+If you don't want to test a component in the runtime but rather want to verify how the components behave during scenario authoring, 
+you can use `TestNodeCompiler` instead.
+
+Example usage:
 
 ```scala
-testScenarioRunner.results().size shouldBe 6
-testScenarioRunner.results().toSet shouldBe Set(5, 10, 15, 20, 30, 40)
-```
+val nodeCompiler = TestNodeCompiler
+  .flinkBased(modeConfig)
+  .withExtraComponents(List(ComponentDefinition("tested-component-id", testedComponent)))
+  .build()
 
-## Auto provided test components
-Test toolkit automatically gives you few test components you could see above.
-- source - it can be used to provide data for the scenario
-- invocationCollector - you can use it to verify scenario behaviour
+nodeCompiler.compileNode[Source](SourceNode("node-id", SourceRef("tested-component-id", nodeParameters)))
+  .parameters shouldBe Some(List(..))
+
+```

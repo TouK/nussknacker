@@ -1,6 +1,22 @@
 import type { FullTheme } from "@glideapps/glide-data-grid/src/common/styles";
 import type { Theme } from "@mui/material";
 
+interface Token {
+    key: string;
+    value: string;
+    valueKind: "numeric" | "boolean" | "string";
+}
+interface Fragment {
+    text: string;
+    x: number;
+    y: number;
+    color: string;
+}
+interface TraverseOptions {
+    maxDepth: number;
+    maxEntries: number;
+}
+
 export const LINE_HEIGHT = 14;
 export const paddingX = 8;
 export const paddingY = 2;
@@ -23,22 +39,6 @@ function ensureMeasureCtx(): CanvasRenderingContext2D | null {
         measureCtx = ctx;
     }
     return measureCtx;
-}
-
-interface Token {
-    key: string;
-    value: string;
-    valueKind: "numeric" | "boolean" | "string";
-}
-interface Fragment {
-    text: string;
-    x: number;
-    y: number;
-    color: string;
-}
-interface TraverseOptions {
-    maxDepth: number;
-    maxEntries: number;
 }
 
 function classifyValue(value: string): Token["valueKind"] {
@@ -116,35 +116,27 @@ function computeLineHeight(ctx: CanvasRenderingContext2D, theme: FullTheme): num
     return Math.max(Math.ceil(target), Math.ceil(measured));
 }
 
-function layoutTokens(
+function buildFragmentsForTokens(
     tokens: Token[],
     ctx: CanvasRenderingContext2D,
     rect: { x: number; y: number; width: number; height: number },
-    theme: FullTheme,
-    muiTheme: Theme,
+    maxRight: number,
+    bottom: number,
+    keyColor: string,
+    kindColor: (k: Token["valueKind"]) => string,
     lineHeight: number,
 ): Fragment[] {
     const fragments: Fragment[] = [];
-    const maxRight = rect.x + rect.width - paddingX;
-    const bottom = rect.y + rect.height - paddingY;
-    const keyColor = muiTheme.palette.custom.codeEditor.objectKeys.color;
-    const kindColor = (k: Token["valueKind"]): string =>
-        k === "numeric" || k === "boolean"
-            ? muiTheme.palette.custom.codeEditor.numeric.color
-            : muiTheme.palette.custom.codeEditor.string.color;
-
     let lineIndex = 0;
     let x = rect.x + paddingX;
     const baseY = rect.y + paddingY + lineHeight;
     const currentY = () => baseY + lineIndex * lineHeight;
-
     const advanceLine = (): boolean => {
         lineIndex++;
         x = rect.x + paddingX;
         if (currentY() > bottom) return false;
         return true;
     };
-
     const wrapAndPushWords = (text: string, color: string): boolean => {
         const baseLeft = rect.x + paddingX;
         const fullLineWidth = maxRight - baseLeft;
@@ -205,42 +197,58 @@ function layoutTokens(
         }
         return true;
     };
-
-    for (let i = 0; i < tokens.length; i++) {
+    for (let index = 0; index < tokens.length; index++) {
         if (currentY() > bottom) break;
-        const t = tokens[i];
-        if (t.key) {
-            const keyWidth = measureTextWidth(t.key, ctx);
-            const spaceWidth = measureTextWidth(" ", ctx);
-            const firstValueWord = t.value.split(/\s+/)[0] || "";
-            const firstWordWidth = firstValueWord ? measureTextWidth(firstValueWord, ctx) : 0;
-            const needsTogether = firstValueWord.length > 0;
-            if (needsTogether && x !== rect.x + paddingX && x + keyWidth + spaceWidth + firstWordWidth > maxRight) {
-                if (!advanceLine()) break;
-            } else if (!needsTogether && x !== rect.x + paddingX && x + keyWidth + spaceWidth > maxRight) {
+        const token = tokens[index];
+        const lineStart = rect.x + paddingX;
+        const spaceChar = SPLIT_SEPARATOR;
+        const spaceWidth = measureTextWidth(spaceChar, ctx);
+        if (token.key) {
+            const keyWidth = measureTextWidth(token.key, ctx);
+            const firstValueWord = token.value.split(/\s+/)[0] || "";
+            const firstValueWordWidth = firstValueWord ? measureTextWidth(firstValueWord, ctx) : 0;
+            const requireSameLine = firstValueWord.length > 0;
+            const requiredWidth = keyWidth + spaceWidth + (requireSameLine ? firstValueWordWidth : 0);
+            if (x !== lineStart && x + requiredWidth > maxRight) {
                 if (!advanceLine()) break;
             }
-            fragments.push({ text: t.key, x, y: currentY(), color: keyColor });
+            fragments.push({ text: token.key, x, y: currentY(), color: keyColor });
             x += keyWidth;
             if (x + spaceWidth > maxRight) {
                 if (!advanceLine()) break;
             } else {
-                fragments.push({ text: " ", x, y: currentY(), color: keyColor });
+                fragments.push({ text: spaceChar, x, y: currentY(), color: keyColor });
                 x += spaceWidth;
             }
         }
-        if (!wrapAndPushWords(t.value, kindColor(t.valueKind))) break;
-        if (i < tokens.length - 1 && currentY() <= bottom) {
-            const spaceWidth = measureTextWidth(" ", ctx);
+        if (!wrapAndPushWords(token.value, kindColor(token.valueKind))) break;
+        if (index < tokens.length - 1 && currentY() <= bottom) {
             if (x + spaceWidth > maxRight) {
                 if (!advanceLine()) break;
             } else {
-                fragments.push({ text: " ", x, y: currentY(), color: keyColor });
+                fragments.push({ text: spaceChar, x, y: currentY(), color: keyColor });
                 x += spaceWidth;
             }
         }
     }
     return fragments;
+}
+
+function layoutTokens(
+    tokens: Token[],
+    ctx: CanvasRenderingContext2D,
+    rect: { x: number; y: number; width: number; height: number },
+    muiTheme: Theme,
+    lineHeight: number,
+): Fragment[] {
+    const maxRight = rect.x + rect.width - paddingX;
+    const bottom = rect.y + rect.height - paddingY;
+    const keyColor = muiTheme.palette.custom.codeEditor.objectKeys.color;
+    const kindColor = (k: Token["valueKind"]): string =>
+        k === "numeric" || k === "boolean"
+            ? muiTheme.palette.custom.codeEditor.numeric.color
+            : muiTheme.palette.custom.codeEditor.string.color;
+    return buildFragmentsForTokens(tokens, ctx, rect, maxRight, bottom, keyColor, kindColor, lineHeight);
 }
 
 function renderFragments(ctx: CanvasRenderingContext2D, fragments: Fragment[]): void {
@@ -263,7 +271,7 @@ export function drawFieldForDisplay(
     const workingCtx = ctx;
     workingCtx.font = FONT_BASE;
     const lineHeight = computeLineHeight(workingCtx, theme);
-    const fragments = layoutTokens(tokens, workingCtx, rect, theme, muiTheme, lineHeight);
+    const fragments = layoutTokens(tokens, workingCtx, rect, muiTheme, lineHeight);
     renderFragments(workingCtx, fragments);
 }
 
