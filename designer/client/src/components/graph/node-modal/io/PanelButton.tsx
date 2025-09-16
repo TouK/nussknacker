@@ -20,20 +20,23 @@ export const PanelButton = styled("button", {
         "&:focus": {
             color: theme.palette.action.active,
         },
+        svg: {
+            fontSize: "1.2rem",
+        },
     };
     switch (side) {
         case "left":
             return {
                 ...styles,
-                right: 0,
-                transform: `translateY(-50%) translateX(35%) rotate(${collapsed ? 90 : -90}deg)`,
+                left: 0,
+                transform: `translateY(-50%) translateX(-35%) rotate(${collapsed ? 90 : -90}deg)`,
                 paddingInline: 20,
             };
         case "right":
             return {
                 ...styles,
-                left: 0,
-                transform: `translateY(-50%) translateX(-35%) rotate(${collapsed ? -90 : 90}deg)`,
+                right: 0,
+                transform: `translateY(-50%) translateX(35%) rotate(${collapsed ? -90 : 90}deg)`,
                 paddingInline: 20,
             };
         case "center":
