@@ -67,6 +67,7 @@ export const SourceEditor: React.FC<EditorProps> = ({ value, onChange, onFinishe
                 onCommit={commit}
                 onCancel={cancel}
                 style={{ width: "100%" }}
+                commitOnClick
             />
         </div>
     );

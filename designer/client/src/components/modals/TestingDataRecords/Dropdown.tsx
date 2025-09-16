@@ -1,3 +1,5 @@
+import { List, ListItemButton, ListItemText } from "@mui/material";
+import i18next from "i18next";
 import React, { useCallback, useEffect, useRef } from "react";
 
 interface Props {
@@ -8,9 +10,9 @@ interface Props {
     onCancel: () => void;
     style?: React.CSSProperties;
     autoOpen?: boolean;
+    commitOnClick?: boolean; // new flag to close editor immediately when user clicks
 }
 
-const EMPTY_OPTION_VALUE = "";
 const BASE_SELECT_STYLE: React.CSSProperties = {
     width: "100%",
     height: "100%",
@@ -22,76 +24,137 @@ const BASE_SELECT_STYLE: React.CSSProperties = {
     margin: 0,
 };
 
-interface SelectWithPicker extends HTMLSelectElement {
-    showPicker?: () => void;
-}
-
-export const Dropdown: React.FC<Props> = ({ value, options, onValueChange, onCommit, onCancel, style, autoOpen = true }) => {
-    const selectRef = useRef<HTMLSelectElement>(null);
+export const Dropdown: React.FC<Props> = ({
+    value,
+    options,
+    onValueChange,
+    onCommit,
+    onCancel,
+    style,
+    autoOpen = true,
+    commitOnClick = false,
+}) => {
+    const listRef = useRef<HTMLUListElement>(null);
     const openedRef = useRef(false);
+    const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-    // Focus on mount only
     useEffect(() => {
-        const el = selectRef.current;
-        if (!el) return;
-        el.focus();
+        listRef.current?.focus();
     }, []);
 
     useEffect(() => {
         if (!autoOpen) return;
-        const el = selectRef.current;
-        if (!el || openedRef.current) return;
-        openedRef.current = true;
-        const openSelect = () => {
-            try {
-                (el as SelectWithPicker).showPicker?.();
-            } catch (e) {
-                void e;
-            }
-            try {
-                const events: Array<"mousedown" | "mouseup" | "click"> = ["mousedown", "mouseup", "click"];
-                for (const type of events) {
-                    const ev = new MouseEvent(type, { bubbles: true, cancelable: true, view: window });
-                    el.dispatchEvent(ev);
-                }
-            } catch (e) {
-                void e;
-            }
-        };
-        const id = window.setTimeout(openSelect, 0);
-        return () => window.clearTimeout(id);
+        if (openedRef.current) return;
+        openedRef.current = true; // native picker opening timing no longer needed
     }, [autoOpen]);
 
+    // Ensure active item stays visible when value changes via keyboard
+    useEffect(() => {
+        const node = itemRefs.current[value];
+        if (node && listRef.current) {
+            const parent = listRef.current;
+            const parentRect = parent.getBoundingClientRect();
+            const nodeRect = node.getBoundingClientRect();
+            if (nodeRect.top < parentRect.top) {
+                parent.scrollTop -= parentRect.top - nodeRect.top;
+            } else if (nodeRect.bottom > parentRect.bottom) {
+                parent.scrollTop += nodeRect.bottom - parentRect.bottom;
+            }
+        }
+    }, [value]);
+
+    const moveSelection = useCallback(
+        (delta: number) => {
+            if (!options.length) return;
+            const currentIndex = Math.max(0, options.indexOf(value));
+            let nextIndex = currentIndex + delta;
+            if (nextIndex < 0) nextIndex = 0;
+            if (nextIndex >= options.length) nextIndex = options.length - 1;
+            if (nextIndex !== currentIndex) onValueChange(options[nextIndex]);
+        },
+        [options, value, onValueChange],
+    );
+
     const handleKey = useCallback(
-        (e: React.KeyboardEvent<HTMLSelectElement>) => {
+        (e: React.KeyboardEvent<HTMLUListElement>) => {
             if (e.key === "Enter" || e.key === "Tab") {
                 e.preventDefault();
                 onCommit();
             } else if (e.key === "Escape") {
                 e.preventDefault();
                 onCancel();
+            } else if (e.key === "ArrowDown") {
+                e.preventDefault();
+                moveSelection(1);
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                moveSelection(-1);
+            } else if (e.key.length === 1 && /\S/.test(e.key)) {
+                const lower = e.key.toLowerCase();
+                const currentIndex = options.indexOf(value);
+                const ordered = options
+                    .map((opt, i) => ({ opt, i }))
+                    .slice(currentIndex + 1)
+                    .concat(options.map((opt, i) => ({ opt, i })).slice(0, currentIndex + 1));
+                const found = ordered.find(({ opt }) => opt.toLowerCase().startsWith(lower));
+                if (found) onValueChange(found.opt);
             }
         },
-        [onCommit, onCancel],
+        [onCommit, onCancel, moveSelection, options, value, onValueChange],
     );
 
     return (
-        <select
-            ref={selectRef}
-            autoFocus
-            value={value}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onValueChange(e.target.value)}
-            onBlur={onCommit}
+        <List
+            ref={listRef}
+            tabIndex={0}
+            role="listbox"
+            aria-activedescendant={options.length ? `dropdown-option-${options.indexOf(value)}` : undefined}
             onKeyDown={handleKey}
-            style={{ ...BASE_SELECT_STYLE, ...style }}
+            onBlur={onCommit}
+            dense
+            disablePadding
+            style={{ ...BASE_SELECT_STYLE, overflowY: "auto", ...style }}
         >
-            <option value={EMPTY_OPTION_VALUE} />
-            {options.map((o) => (
-                <option key={o} value={o}>
-                    {o}
-                </option>
+            {options.map((o, i) => (
+                <ListItemButton
+                    key={o}
+                    id={`dropdown-option-${i}`}
+                    role="option"
+                    aria-selected={o === value}
+                    selected={o === value}
+                    data-value={o}
+                    ref={(el) => (itemRefs.current[o] = el)}
+                    onMouseDown={(e) => {
+                        e.preventDefault();
+                        if (o !== value) onValueChange(o);
+                    }}
+                    onClick={() => {
+                        if (o !== value) onValueChange(o);
+                        if (commitOnClick) {
+                            // Ensure commit after value change
+                            onCommit();
+                        }
+                    }}
+                    sx={{
+                        // Keep visual parity with previous custom styles
+                        lineHeight: 1.4,
+                        py: 0.25,
+                        px: 0.5,
+                        fontWeight: o === value ? 600 : 400,
+                    }}
+                >
+                    <ListItemText primaryTypographyProps={{ noWrap: true }} primary={o} />
+                </ListItemButton>
             ))}
-        </select>
+            {!options.length && (
+                <ListItemButton disabled sx={{ py: 0.25, px: 0.5 }}>
+                    <ListItemText
+                        primaryTypographyProps={{ fontStyle: "italic", noWrap: true, sx: { opacity: 0.7 } }}
+                        primary={i18next.t("testingDataRecords.dropdown.noOptions", "No options")}
+                    />
+                </ListItemButton>
+            )}
+        </List>
     );
 };
 
