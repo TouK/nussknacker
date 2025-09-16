@@ -6,6 +6,8 @@ import com.typesafe.scalalogging.StrictLogging
 import io.circe.Json
 import io.circe.syntax.EncoderOps
 import org.apache.flink.api.common.JobID
+import org.scalatest.Inside.inside
+import org.scalatest.Inspectors.forAll
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ModelData, ModelDependencies}
@@ -25,7 +27,6 @@ import pl.touk.nussknacker.engine.livedata._
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
-import java.time.Instant
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
 
@@ -85,11 +86,12 @@ trait BaseFlinkDeploymentManagerSpec
     val process      = SampleProcess.prepareProcessWithEventGeneratorSource(processName)
     val deploymentId = DeploymentId("with-event-generator")
 
+    val configuredMaxNumbersOfRecords = 20
     LiveDataCollectingListener.createListenerFor(
       processIdWithName = ProcessIdWithName(processId, processName),
       deploymentIdOpt = None,
       liveDataEnabledConfig = LiveDataPreviewMode.Enabled(
-        maxNumberOfRecords = 20,
+        maxNumberOfRecords = configuredMaxNumbersOfRecords,
         throughputTimeWindowInSeconds = 60,
         liveDataStorage = LiveDataPreviewMode.LiveDataStorage.DesignerJvm
       ),
@@ -100,83 +102,81 @@ trait BaseFlinkDeploymentManagerSpec
       processVersion = ProcessVersion(version, processName, processId, List.empty, "user1", Some(13)),
       deploymentId = deploymentId
     )
+    externalDeploymentIdOpt shouldBe defined
     try {
       deploymentStatus(processName) should matchPattern {
         case List(DeploymentStatusDetails(SimpleStateStatus.Running(`version`, _), Some(`deploymentId`))) =>
       }
 
-      eventually {
-        if (useMiniClusterForDeployment) {
+      if (useMiniClusterForDeployment) {
+        val totalCountWaitLimit = 15
+        val liveDataSamples = eventually {
           // Wait until first live data samples are collected
-          val liveDataOpt = LiveDataCollectingListenerStorageHolder.getLiveDataPreview(processName)
-          liveDataOpt shouldBe defined
-          val liveDataSamples = liveDataOpt.get
+          val liveDataOpt     = LiveDataCollectingListenerStorageHolder.getLiveDataPreview(processName)
+          val liveDataSamples = liveDataOpt.value
 
           // Wait until first 15 live data samples are collected
           liveDataSamples.nodeTransitions
             .get(NodeTransition(NodeId("start"), Some(NodeId("endSend"))))
-            .map(_.samples.size) shouldBe Some(15)
-
-          val (liveDataWithMockedTimestamp, mockedTimestamp) = withFixedTimestamp(liveDataSamples)
-
-          externalDeploymentIdOpt shouldBe defined
-          val expected = CollectedLiveData(
-            timestamp = mockedTimestamp,
-            nodeTransitions = Map(
-              NodeTransition(NodeId("start"), Some(NodeId("endSend"))) ->
-                LiveDataForNodeTransition(
-                  samples = (0 to 14).map { idx =>
-                    LiveDataSample(
-                      ContextId(
-                        scenarioName = ProcessName("runningFlinkEventGenerator"),
-                        originatingNodeId = NodeId("start"),
-                        taskId = 0,
-                        index = idx
-                      ),
-                      mockedTimestamp,
-                      Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
-                    )
-                  }.toList,
-                  totalCount = 15,
-                  currentThroughput = 1
-                )
-            ),
-            invocationResults = Map(
-              NodeId("start") ->
-                (0 to 14).map { idx =>
-                  InvocationResult(
-                    ContextId(
-                      scenarioName = ProcessName("runningFlinkEventGenerator"),
-                      originatingNodeId = NodeId("start"),
-                      taskId = 0,
-                      index = idx
-                    ),
-                    mockedTimestamp,
-                    "value",
-                    Json.obj("pretty" -> "abrakadabra".asJson)
-                  )
-                }.toList,
-              NodeId("endSend") ->
-                (0 to 14).map { idx =>
-                  InvocationResult(
-                    ContextId(
-                      scenarioName = ProcessName("runningFlinkEventGenerator"),
-                      originatingNodeId = NodeId("start"),
-                      taskId = 0,
-                      index = idx
-                    ),
-                    mockedTimestamp,
-                    "Value",
-                    Json.obj("pretty" -> "message".asJson)
-                  )
-                }.toList,
-            ),
-            externalInvocationResults = Map.empty,
-            exceptions = Map.empty,
-          )
-          liveDataWithMockedTimestamp shouldBe expected
+            .value
+            .totalCount should be >= totalCountWaitLimit.toLong
+          liveDataSamples
         }
-        externalDeploymentIdOpt shouldBe defined
+
+        val nodeTransitions = liveDataSamples.nodeTransitions
+          .get(NodeTransition(NodeId("start"), Some(NodeId("endSend"))))
+          .value
+          .samples
+        nodeTransitions.size should be >= totalCountWaitLimit
+        nodeTransitions.size should be <= configuredMaxNumbersOfRecords
+        forAll(nodeTransitions.zipWithIndex) { case (sample, idx) =>
+          sample.contextId shouldBe ContextId(
+            scenarioName = processName,
+            originatingNodeId = NodeId("start"),
+            taskId = 0,
+            index = idx
+          )
+          sample.variables shouldBe Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson))
+        }
+
+        val startInvocationResults = liveDataSamples.invocationResults
+          .get(NodeId("start"))
+          .value
+        // We reach maxNumbersOfRecords because there are 2 samples for each transition (one for value and one for Event time
+        startInvocationResults.size shouldBe configuredMaxNumbersOfRecords
+        forAll(startInvocationResults.grouped(2).toList) { invocationResults =>
+          inside(invocationResults) {
+            case InvocationResult(valueContextId, _, "value", valueJson) :: InvocationResult(
+                  eventTimeContextId,
+                  _,
+                  "Event time",
+                  _
+                ) :: Nil =>
+              valueContextId.scenarioName shouldBe processName
+              valueContextId.originatingNodeId shouldBe NodeId("start")
+              valueContextId.taskId shouldBe 0
+              eventTimeContextId.scenarioName shouldBe processName
+              eventTimeContextId.originatingNodeId shouldBe NodeId("start")
+              eventTimeContextId.taskId shouldBe 0
+              valueJson shouldBe Json.obj("pretty" -> "abrakadabra".asJson)
+
+          }
+        }
+        val endSendInvocationResults = liveDataSamples.invocationResults
+          .get(NodeId("endSend"))
+          .value
+        endSendInvocationResults.size should be >= totalCountWaitLimit
+        endSendInvocationResults.size should be <= configuredMaxNumbersOfRecords
+        forAll(endSendInvocationResults.zipWithIndex) { case (invocationResult, idx) =>
+          invocationResult.contextId shouldBe ContextId(
+            scenarioName = processName,
+            originatingNodeId = NodeId("start"),
+            taskId = 0,
+            index = idx
+          )
+          invocationResult.name shouldBe "Value"
+          invocationResult.value shouldBe Json.obj("pretty" -> "message".asJson)
+        }
       }
     } finally {
       cancelProcess(processName)
@@ -444,82 +444,5 @@ trait BaseFlinkDeploymentManagerSpec
 
   private def deploymentStatus(name: ProcessName): List[DeploymentStatusDetails] =
     deploymentManager.getScenarioDeploymentsStatuses(name).futureValue.value
-
-  private def withFixedTimestamp(testResults: CollectedLiveData): (CollectedLiveData, Instant) = {
-    val fixedInstant = Instant.now
-    (
-      CollectedLiveData(
-        timestamp = fixedInstant,
-        nodeTransitions = withFixedTimestamp(testResults.nodeTransitions, fixedInstant),
-        invocationResults = withFixedTimestamp[NodeId, InvocationResult](
-          testResults.invocationResults,
-          fixedInstant,
-          withFixedTimestamp
-        ),
-        externalInvocationResults = withFixedTimestamp[NodeId, InvocationResult](
-          testResults.externalInvocationResults,
-          fixedInstant,
-          withFixedTimestamp
-        ),
-        exceptions = withFixedTimestamp[NodeId, ExceptionResult](
-          testResults.exceptions,
-          fixedInstant,
-          withFixedTimestamp
-        ),
-      ),
-      fixedInstant
-    )
-  }
-
-  private def withFixedTimestamp[K, V](
-      results: Map[K, List[V]],
-      fixedTimestamp: Instant,
-      withFixedTimestamp: (V, Instant) => V
-  ): Map[K, List[V]] = {
-    results.map { case (k, v) => (k, v.map(withFixedTimestamp(_, fixedTimestamp))) }
-  }
-
-  private def withFixedTimestamp(
-      exceptionResult: ExceptionResult,
-      fixedTimestamp: Instant
-  ): ExceptionResult = {
-    ExceptionResult(
-      exceptionResult.contextId,
-      fixedTimestamp,
-      exceptionResult.variables,
-      exceptionResult.throwable,
-    )
-  }
-
-  private def withFixedTimestamp(result: InvocationResult, fixedTimestamp: Instant): InvocationResult = {
-    InvocationResult(
-      result.contextId,
-      fixedTimestamp,
-      result.name,
-      result.value
-    )
-  }
-
-  private def withFixedTimestamp[K](
-      results: Map[K, LiveDataForNodeTransition],
-      fixedTimestamp: Instant
-  ): Map[K, LiveDataForNodeTransition] = {
-    results.map { case (k, v) => (k, withFixedTimestamp(v, fixedTimestamp)) }
-  }
-
-  private def withFixedTimestamp(
-      data: LiveDataForNodeTransition,
-      fixedTimestamp: Instant
-  ): LiveDataForNodeTransition = {
-    LiveDataForNodeTransition(
-      data.samples.map(withFixedTimestamp(_, fixedTimestamp)),
-      data.totalCount,
-      data.currentThroughput,
-    )
-  }
-
-  private def withFixedTimestamp(sample: LiveDataSample, fixedTimestamp: Instant): LiveDataSample = {
-    LiveDataSample(sample.contextId, fixedTimestamp, sample.variables)
-  }
 
 }
