@@ -4,6 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
 import pl.touk.nussknacker.engine.{ModelConfig, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
@@ -220,7 +221,7 @@ class EventGeneratorSourceFactorySpec
       .buildSimpleVariable(
         "variableId",
         "varName",
-        "#UTIL".spel
+        "#DATE.now".spel
       )
       .emptySink("sinkId", "dead-end")
 
@@ -228,13 +229,7 @@ class EventGeneratorSourceFactorySpec
       val modelDataWithUtil = LocalModelData(
         ConfigFactory.empty(),
         FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components,
-        configCreator = new EmptyProcessConfigCreator {
-          override def expressionConfig(modelConfig: ModelConfig): ExpressionConfig =
-            ExpressionConfig(
-              Map("UTIL" -> WithCategories.anyCategory("stub")),
-              List.empty
-            )
-        }
+        configCreator = new DefaultConfigCreator
       )
       ProcessValidator.default(modelDataWithUtil)
     }
