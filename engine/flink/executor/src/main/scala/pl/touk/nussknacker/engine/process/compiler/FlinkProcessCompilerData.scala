@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   EvaluableLazyParameterCreatorDeps,
+  NodeCompiler,
   SingleInputNodeInputValidationContext
 }
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts

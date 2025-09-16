@@ -117,7 +117,7 @@ object node {
   }
 
   sealed trait CustomNodeData
-      extends NodeData
+      extends CompilableNodeData
       with WithComponent
       with RealNodeData
       with WithParameters
@@ -146,13 +146,15 @@ object node {
     def fields: List[Field]
   }
 
+  sealed trait CompilableNodeData extends NodeData
+
   sealed trait OneOutputSubsequentNodeData extends NodeData with RealNodeData
 
   sealed trait EndingNodeData extends NodeData
 
   sealed trait StartingNodeData extends NodeData
 
-  sealed trait SourceNodeData extends StartingNodeData
+  sealed trait SourceNodeData extends StartingNodeData with CompilableNodeData
 
   sealed trait DeadEndingData extends NodeData
 
@@ -186,6 +188,7 @@ object node {
       isDisabled: Option[Boolean] = None,
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends NodeData
+      with CompilableNodeData
       with Disableable
       with RealNodeData
       with DeadEndingData
@@ -204,6 +207,7 @@ object node {
       exprVal: Option[String],
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends NodeData
+      with CompilableNodeData
       with RealNodeData
       with DeadEndingData
 
@@ -215,6 +219,7 @@ object node {
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends OneOutputSubsequentNodeData
       with WithFields
+      with CompilableNodeData
 
   case class Variable(
       id: String,
@@ -222,6 +227,7 @@ object node {
       value: Expression,
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends OneOutputSubsequentNodeData
+      with CompilableNodeData
 
   case class Split(id: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
       extends NodeData
@@ -229,6 +235,7 @@ object node {
 
   sealed trait ServiceNodeData
       extends OneOutputSubsequentNodeData
+      with CompilableNodeData
       with WithComponent
       with WithParameters
       with WithOptionalOutputVar {
@@ -307,6 +314,7 @@ object node {
       isDisabled: Option[Boolean] = None,
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends EndingNodeData
+      with CompilableNodeData
       with WithComponent
       with Disableable
       with RealNodeData
@@ -366,6 +374,7 @@ object node {
       fields: List[Field] = List.empty,
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends EndingNodeData
+      with CompilableNodeData
       with RealNodeData
       with WithFields
 

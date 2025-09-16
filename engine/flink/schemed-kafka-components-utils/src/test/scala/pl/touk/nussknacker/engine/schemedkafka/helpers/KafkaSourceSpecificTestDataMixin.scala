@@ -5,22 +5,15 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.Assertion
-import pl.touk.nussknacker.engine.{RuntimeMode, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData}
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
-import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
+import pl.touk.nussknacker.engine.flink.util.test.FlinkNodeCompiler.FlinkNodeCompilerExt
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.node.{Source => SourceNode}
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
-import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ExistingSchemaVersion,
@@ -31,7 +24,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
-import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.test.TestNodeCompiler
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
 trait KafkaSourceSpecificTestDataMixin {
@@ -90,32 +83,17 @@ trait KafkaSourceSpecificTestDataMixin {
       sourceFactory: KafkaSource,
       nodeParameters: List[NodeParameter]
   ): ValidatedNel[ProcessCompilationError, Source with TestDataGenerator with SourceTestSupport[AnyRef]] = {
-    val modelData = LocalModelData(ConfigFactory.empty(), List(ComponentDefinition("kafka", sourceFactory)))
-    val nodeCompiler = new NodeCompiler(
-      definitions = modelData.modelDefinition,
-      fragmentDefinitionExtractor = new FragmentParametersDefinitionExtractor(
-        modelData.modelClassLoader,
-        modelData.modelDefinitionWithClasses.classDefinitions,
-        modelData.modelConfig.globalParametersConfig
-      ),
-      expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper,
-      classLoader = modelData.modelClassLoader,
-      listeners = Seq.empty,
-      resultCollector = ProductionServiceInvocationCollector,
-      runtimeMode = RuntimeMode.Live,
-      nodesDeploymentData = NodesDeploymentData.empty,
-      nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
-    )
+    val nodeCompiler = TestNodeCompiler
+      .flinkBased(ConfigFactory.empty())
+      .withExtraComponents(List(ComponentDefinition("kafka", sourceFactory)))
+      .build()
 
     nodeCompiler
-      .compileSource(SourceNode("mock-id", SourceRef("kafka", nodeParameters)))(
-        new ScenarioCompilationDependencies(
-          JobData(MetaData("mock-id", StreamMetaData()), ProcessVersion.empty),
-          EngineScenarioCompilationDependencies.empty
-        )
+      .compileNode(
+        SourceNode("mock-id", SourceRef("kafka", nodeParameters))
       )
       .compiledObject
-      .map(_.asInstanceOf[Source with TestDataGenerator with FlinkSourceTestSupport[AnyRef]])
+      .map(_.asInstanceOf[Source with TestDataGenerator with SourceTestSupport[AnyRef]])
   }
 
   protected def prepareNodeParameters(

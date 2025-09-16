@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.canonize.{MissingSinkHandler, ProcessCanonizer}
 import pl.touk.nussknacker.engine.compile.FragmentValidator.validateUniqueFragmentOutputNames
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   LazyParameterCreationStrategy,
@@ -42,7 +42,8 @@ class ProcessCompiler(
     protected val sub: PartSubGraphCompiler,
     protected val globalVariablesPreparer: GlobalVariablesPreparer,
     protected val nodeCompiler: NodeCompiler,
-    protected val customProcessValidator: CustomProcessValidator
+    protected val customProcessValidator: CustomProcessValidator,
+    protected val allowEndingScenarioWithoutSink: Boolean,
 ) extends ProcessCompilerBase
     with ProcessValidator {
 
@@ -52,7 +53,8 @@ class ProcessCompiler(
       sub.withLabelsDictTyper,
       globalVariablesPreparer,
       nodeCompiler.withLabelsDictTyper,
-      customProcessValidator
+      customProcessValidator,
+      allowEndingScenarioWithoutSink
     )
 
   // ProcessCompiler does not compile fragment, you must resolve it with ScenarioResolver before!
@@ -112,6 +114,8 @@ protected trait ProcessCompilerBase {
 
   protected def globalVariablesPreparer: GlobalVariablesPreparer
 
+  protected def allowEndingScenarioWithoutSink: Boolean
+
   protected def compile(
       process: CanonicalProcess
   )(
@@ -120,11 +124,26 @@ protected trait ProcessCompilerBase {
     ThreadUtils.withContextClassLoader(classLoader) {
       val compilationResultWithArtificial =
         ProcessCanonizer
-          .uncanonizeArtificial(process, nodeCompiler.missingSinkHandler)
+          .uncanonizeArtificial(process, missingSinkHandler)
           .map(ProcessSplitter.split)
           .map(compile)
       compilationResultWithArtificial.extract
     }
+  }
+
+  private def missingSinkHandler(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): MissingSinkHandler = {
+    if (scenarioIsAllowedToEndWithoutSink) MissingSinkHandler.AllowMissingSinkHandler
+    else MissingSinkHandler.DoNotAllowMissingSinkHandler
+  }
+
+  private def scenarioIsAllowedToEndWithoutSink(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ) = {
+    import scenarioCompilationDependencies._
+    lazy val isFragment = metaData.typeSpecificData.isFragment
+    allowEndingScenarioWithoutSink && !isFragment
   }
 
   private def contextWithOnlyGlobalVariables(implicit jobData: JobData): ValidationContext =
@@ -417,7 +436,8 @@ object ProcessValidator {
       sub,
       globalVariablesPreparer,
       nodeCompiler,
-      customProcessValidator
+      customProcessValidator,
+      modelDefinition.allowEndingScenarioWithoutSink
     )
   }
 

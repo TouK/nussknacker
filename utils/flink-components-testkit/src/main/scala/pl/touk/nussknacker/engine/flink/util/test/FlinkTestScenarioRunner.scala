@@ -8,7 +8,7 @@ import org.scalatest.concurrent.ScalaFutures.{convertScalaFuture, scaled, Patien
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
 import pl.touk.nussknacker.engine.RuntimeMode
-import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -31,7 +31,6 @@ import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode.Execution
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestProcess, TestRunId}
-import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.test._
 import pl.touk.nussknacker.engine.util.test.TestScenarioCollectorHandler.TestScenarioCollectorHandler
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResultUnit}
@@ -81,10 +80,18 @@ class FlinkTestScenarioRunner(
     components: List[ComponentDefinition],
     serializersRegistrars: List[SerializersRegistrar],
     globalVariables: Map[String, AnyRef],
-    config: Config,
+    modelConfig: Config,
     flinkMiniClusterWithServices: FlinkMiniClusterWithServices,
     runtimeMode: RuntimeMode,
 ) extends ClassBasedTestScenarioRunner {
+
+  private val modelData = LocalModelData(
+    inputConfig = modelConfig,
+    // We can't just pass extra components here because we don't want Flink to serialize them.
+    // We also don't want user to make them serializable
+    components = FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components,
+    configCreator = new DefaultConfigCreator
+  )
 
   private implicit val WaitForJobStatusPatience: PatienceConfig =
     PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(50, Millis)))
@@ -196,13 +203,6 @@ class FlinkTestScenarioRunner(
       nodesData: NodesDeploymentData = NodesDeploymentData.empty,
       labels: List[String] = List.empty
   )(f: ScenarioVerificationFixture => R): R = {
-    val modelData = LocalModelData(
-      inputConfig = config,
-      // We can't just pass extra components here because we don't want Flink to serialize them.
-      // We also don't want user to make them serializable
-      components = FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components,
-      configCreator = new DefaultConfigCreator
-    )
     Using.resource(
       TestExtensionsHolder.registerTestExtensions(components, testResultSinkComponentCreator :: Nil, globalVariables)
     ) { testExtensionsHolder =>
@@ -269,36 +269,18 @@ class FlinkTestScenarioRunner(
       labels: List[String],
       testExtensionsHolder: TestExtensionsHolder
   ): RunnerListResult[OUTPUT] = {
-    val modelData = LocalModelData(
-      inputConfig = config,
-      // We can't just pass extra components here because we don't want Flink to serialize them.
-      // We also don't want user to make them serializable
-      components = FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components,
-      configCreator = new DefaultConfigCreator
-    )
-
     flinkMiniClusterWithServices.withDetachedStreamExecutionEnvironment { env =>
       TestScenarioCollectorHandler.withHandler(runtimeMode) { testScenarioCollectorHandler =>
-        val compilerFactory =
-          FlinkProcessCompilerDataFactoryWithTestComponents(
-            testExtensionsHolder,
-            testScenarioCollectorHandler.resultsCollectingListener,
-            modelData,
-            runtimeMode,
-            nodesData
-          )
-
         val processVersion = ProcessVersion.empty.copy(
           processName = scenario.metaData.name,
           labels = labels
         )
-        // We directly use Compiler even if registrar already do this to return compilation errors
-        // TODO: figure how to get compilation result on highest level - registrar.register?
-        val compileProcessData = compilerFactory.prepareCompilerData(
-          scenario.metaData,
-          processVersion,
-          testScenarioCollectorHandler.resultCollector,
-          getClass.getClassLoader,
+
+        val (compilerFactory, compileProcessData) = prepareCompilerData(
+          testExtensionsHolder,
+          testScenarioCollectorHandler,
+          JobData(scenario.metaData, processVersion),
+          nodesData
         )
 
         flinkMiniClusterWithServices.withAttachedStreamExecutionEnvironment { envForCompilation =>
@@ -343,6 +325,30 @@ class FlinkTestScenarioRunner(
         }
       }
     }
+  }
+
+  private def prepareCompilerData(
+      testExtensionsHolder: TestExtensionsHolder,
+      testScenarioCollectorHandler: TestScenarioCollectorHandler,
+      jobData: JobData,
+      nodesData: NodesDeploymentData,
+  ) = {
+    val compilerFactory =
+      FlinkProcessCompilerDataFactoryWithTestComponents(
+        testExtensionsHolder,
+        testScenarioCollectorHandler.resultsCollectingListener,
+        modelData,
+        runtimeMode,
+        nodesData
+      )
+
+    val compilerData = compilerFactory.prepareCompilerData(
+      jobData.metaData,
+      jobData.processVersion,
+      testScenarioCollectorHandler.resultCollector,
+      getClass.getClassLoader,
+    )
+    (compilerFactory, compilerData)
   }
 
   private def tryToCollectResultsFromExternalInvocationResults(
@@ -400,7 +406,7 @@ object FlinkTestScenarioRunner {
 
 }
 
-case class FlinkTestScenarioRunnerBuilder(
+final case class FlinkTestScenarioRunnerBuilder(
     components: List[ComponentDefinition],
     serializersRegistrars: List[SerializersRegistrar],
     globalVariables: Map[String, AnyRef],
