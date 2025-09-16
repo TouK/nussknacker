@@ -57,7 +57,9 @@ class TableSourceDataGenerationTest
           tableDefinition = tableDefinitions.loneElement,
           flinkDataDefinition = flinkDataDefinition,
           testDataGenerationMode = TestDataGenerationMode.Random,
-          tableEnvironment
+          tableEnvironment,
+          // This field is not used during test data generation
+          watermarkStrategyOptions = null
         )
       }
       test(tableSource)

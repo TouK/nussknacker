@@ -71,6 +71,10 @@ final case class FlinkNodeCompilerBuilder(
     copy(components = components)
   }
 
+  def withFlinkMiniCluster(flinkMiniClusterWithServices: FlinkMiniClusterWithServices): FlinkNodeCompilerBuilder = {
+    copy(flinkMiniClusterWithServices = Some(flinkMiniClusterWithServices))
+  }
+
   def build(): FlinkNodeCompiler = {
     val modelDataWithExtraComponents = LocalModelData(
       inputConfig = modelConfig,
