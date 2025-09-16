@@ -4,10 +4,17 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.{ModelConfig, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ExpressionConfig, WithCategories}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkTestScenarioRunnerExt
 import pl.touk.nussknacker.engine.spel.SpelExtension._
+import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -198,6 +205,46 @@ class EventGeneratorSourceFactorySpec
       ).asJava
       emittedRecord shouldBe expectedRecord
     }
+  }
+
+  test("event generator output context should contain helpers") {
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source(
+        "event-generator",
+        "event-generator",
+        "schedule" -> "T(java.time.Duration).ofSeconds(1)".spel,
+        "count"    -> "1".spel,
+        "value"    -> s"'some value'".spel
+      )
+      .buildSimpleVariable(
+        "variableId",
+        "varName",
+        "#UTIL".spel
+      )
+      .emptySink("sinkId", "dead-end")
+
+    val processValidator = {
+      val modelDataWithUtil = LocalModelData(
+        ConfigFactory.empty(),
+        FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components,
+        configCreator = new EmptyProcessConfigCreator {
+          override def expressionConfig(modelConfig: ModelConfig): ExpressionConfig =
+            ExpressionConfig(
+              Map("UTIL" -> WithCategories.anyCategory("stub")),
+              List.empty
+            )
+        }
+      )
+      ProcessValidator.default(modelDataWithUtil)
+    }
+    val scenarioCompilationDependencies = {
+      val jobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
+    }
+
+    val result = processValidator.validate(scenario, isFragment = false)(scenarioCompilationDependencies).result
+    result shouldBe Symbol("valid")
   }
 
 }
