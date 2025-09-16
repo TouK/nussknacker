@@ -64,7 +64,7 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
     val outputTopic = "output-topic-custom-event-time-event-generator"
 
     kafkaClient.createTopic(outputTopic, 1)
-    val givenTimestamp = 123
+    val givenTimestamp = 10000000000L
 
     val scenario =
       ScenarioBuilder
