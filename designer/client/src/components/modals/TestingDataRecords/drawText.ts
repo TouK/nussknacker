@@ -10,6 +10,8 @@ const FONT_FAMILY = "Roboto Mono, Monaco, monospace";
 const FONT_BASE = `14px ${FONT_FAMILY}`;
 const FONT_MEASURE = `13px ${FONT_FAMILY}`;
 const AVG_CHAR_WIDTH = 7;
+const MAX_TRAVERSE_DEPTH = 8;
+const MAX_TOKENS = 2000;
 
 let measureCtx: CanvasRenderingContext2D | null = null;
 function ensureMeasureCtx(): CanvasRenderingContext2D | null {
@@ -23,32 +25,230 @@ function ensureMeasureCtx(): CanvasRenderingContext2D | null {
     return measureCtx;
 }
 
-// --- Key/value token parsing ---
-const ENTRY_REGEX = /^(.*?)\s\*\*(.*?)\*\*$/; // key<space>**value** (non-greedy key)
-function parseEntryToken(token: string): { key: string; value: string } | null {
-    const m = ENTRY_REGEX.exec(token);
-    if (!m) return null;
-    const key = m[1] ?? "";
-    const value = m[2] ?? "";
-    if (value === "") return null;
-    return { key, value };
+interface Token {
+    key: string;
+    value: string;
+    valueKind: "numeric" | "boolean" | "string";
+}
+interface Fragment {
+    text: string;
+    x: number;
+    y: number;
+    color: string;
+}
+interface TraverseOptions {
+    maxDepth: number;
+    maxEntries: number;
 }
 
-// Helper: find longest prefix of value fitting in given width (binary search for efficiency)
-function fitValuePrefix(value: string, maxWidth: number, ctx: CanvasRenderingContext2D): string {
-    if (ctx.measureText(value).width <= maxWidth) return value;
-    let lo = 0;
-    let hi = value.length;
-    while (lo < hi) {
-        const mid = Math.ceil((lo + hi) / 2);
-        const slice = value.slice(0, mid);
-        if (ctx.measureText(slice).width <= maxWidth) {
-            lo = mid;
-        } else {
-            hi = mid - 1;
+function classifyValue(value: string): Token["valueKind"] {
+    if (value === "true" || value === "false") return "boolean";
+    if (value !== "" && !isNaN(Number(value))) return "numeric";
+    return "string";
+}
+
+function tokenizeDataRecords(raw?: string): Token[] {
+    if (!raw) return [];
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(raw);
+    } catch {
+        return [];
+    }
+    const tokens: Token[] = [];
+    const opts: TraverseOptions = { maxDepth: MAX_TRAVERSE_DEPTH, maxEntries: MAX_TOKENS };
+    const seen = new WeakSet<object>();
+    let produced = 0;
+    const push = (key: string, value: string): void => {
+        if (produced >= opts.maxEntries) return;
+        tokens.push({ key, value, valueKind: classifyValue(value) });
+        produced++;
+    };
+    const isPrim = (v: unknown): v is string | number | boolean | null =>
+        v === null || ["string", "number", "boolean"].includes(typeof v as string);
+    const walk = (val: unknown, path: string, depth: number): void => {
+        if (depth > opts.maxDepth) {
+            push(path || "$", "…");
+            return;
+        }
+        if (isPrim(val)) {
+            push(path || "$", val === null ? "null" : String(val));
+            return;
+        }
+        if (Array.isArray(val)) {
+            if (val.length === 0) {
+                push(path || "$", "[]");
+                return;
+            }
+            val.forEach((item, i) => walk(item, path ? `${path}[${i}]` : `$[${i}]`, depth + 1));
+            return;
+        }
+        if (val && typeof val === "object") {
+            if (seen.has(val as object)) {
+                push(path || "$", "[circular]");
+                return;
+            }
+            seen.add(val as object);
+            const keys = Object.keys(val as object);
+            if (keys.length === 0) {
+                push(path || "$", "{}");
+                return;
+            }
+            keys.forEach((k) => walk((val as Record<string, unknown>)[k], path ? `${path}.${k}` : k, depth + 1));
+            return;
+        }
+        push(path || "$", String(val));
+    };
+    walk(parsed, "", 0);
+    return tokens;
+}
+
+function measureTextWidth(text: string, ctx: CanvasRenderingContext2D): number {
+    return ctx.measureText(text).width;
+}
+
+function computeLineHeight(ctx: CanvasRenderingContext2D, theme: FullTheme): number {
+    const sample = ctx.measureText("Mg");
+    const ascent = sample.actualBoundingBoxAscent ?? 0;
+    const descent = sample.actualBoundingBoxDescent ?? 0;
+    const measured = ascent + descent;
+    const target = LINE_HEIGHT * theme.lineHeight;
+    return Math.max(Math.ceil(target), Math.ceil(measured));
+}
+
+function layoutTokens(
+    tokens: Token[],
+    ctx: CanvasRenderingContext2D,
+    rect: { x: number; y: number; width: number; height: number },
+    theme: FullTheme,
+    muiTheme: Theme,
+    lineHeight: number,
+): Fragment[] {
+    const fragments: Fragment[] = [];
+    const maxRight = rect.x + rect.width - paddingX;
+    const bottom = rect.y + rect.height - paddingY;
+    const keyColor = muiTheme.palette.custom.codeEditor.objectKeys.color;
+    const kindColor = (k: Token["valueKind"]): string =>
+        k === "numeric" || k === "boolean"
+            ? muiTheme.palette.custom.codeEditor.numeric.color
+            : muiTheme.palette.custom.codeEditor.string.color;
+
+    let lineIndex = 0;
+    let x = rect.x + paddingX;
+    const baseY = rect.y + paddingY + lineHeight;
+    const currentY = () => baseY + lineIndex * lineHeight;
+
+    const advanceLine = (): boolean => {
+        lineIndex++;
+        x = rect.x + paddingX;
+        if (currentY() > bottom) return false;
+        return true;
+    };
+
+    const wrapAndPushWords = (text: string, color: string): boolean => {
+        const baseLeft = rect.x + paddingX;
+        const fullLineWidth = maxRight - baseLeft;
+        const parts = text.split(/(\s+)/).filter((p) => p.length > 0);
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
+            const isSpace = /^\s+$/.test(part);
+            if (isSpace) {
+                if (x > baseLeft && i < parts.length - 1) {
+                    const w = measureTextWidth(part, ctx);
+                    if (x + w > maxRight) {
+                        if (!advanceLine()) return false;
+                    } else {
+                        fragments.push({ text: part, x, y: currentY(), color });
+                        x += w;
+                    }
+                }
+                continue;
+            }
+            const wordWidth = measureTextWidth(part, ctx);
+            if (wordWidth > fullLineWidth) {
+                let remaining = part;
+                while (remaining.length) {
+                    const avail = maxRight - x;
+                    if (avail <= 0) {
+                        if (!advanceLine()) return false;
+                        continue;
+                    }
+                    let lo = 1;
+                    let hi = remaining.length;
+                    while (lo <= hi) {
+                        const mid = Math.floor((lo + hi) / 2);
+                        const slice = remaining.slice(0, mid);
+                        if (measureTextWidth(slice, ctx) <= avail) lo = mid + 1;
+                        else hi = mid - 1;
+                    }
+                    const fitLen = hi;
+                    if (fitLen <= 0) {
+                        if (!advanceLine()) return false;
+                        continue;
+                    }
+                    const slice = remaining.slice(0, fitLen);
+                    fragments.push({ text: slice, x, y: currentY(), color });
+                    x += measureTextWidth(slice, ctx);
+                    remaining = remaining.slice(fitLen);
+                    if (remaining.length) {
+                        if (!advanceLine()) return false;
+                    }
+                }
+                continue;
+            }
+            if (x !== baseLeft && x + wordWidth > maxRight) {
+                if (!advanceLine()) return false;
+            }
+            fragments.push({ text: part, x, y: currentY(), color });
+            x += wordWidth;
+            if (currentY() > bottom) return false;
+        }
+        return true;
+    };
+
+    for (let i = 0; i < tokens.length; i++) {
+        if (currentY() > bottom) break;
+        const t = tokens[i];
+        if (t.key) {
+            const keyWidth = measureTextWidth(t.key, ctx);
+            const spaceWidth = measureTextWidth(" ", ctx);
+            const firstValueWord = t.value.split(/\s+/)[0] || "";
+            const firstWordWidth = firstValueWord ? measureTextWidth(firstValueWord, ctx) : 0;
+            const needsTogether = firstValueWord.length > 0;
+            if (needsTogether && x !== rect.x + paddingX && x + keyWidth + spaceWidth + firstWordWidth > maxRight) {
+                if (!advanceLine()) break;
+            } else if (!needsTogether && x !== rect.x + paddingX && x + keyWidth + spaceWidth > maxRight) {
+                if (!advanceLine()) break;
+            }
+            fragments.push({ text: t.key, x, y: currentY(), color: keyColor });
+            x += keyWidth;
+            if (x + spaceWidth > maxRight) {
+                if (!advanceLine()) break;
+            } else {
+                fragments.push({ text: " ", x, y: currentY(), color: keyColor });
+                x += spaceWidth;
+            }
+        }
+        if (!wrapAndPushWords(t.value, kindColor(t.valueKind))) break;
+        if (i < tokens.length - 1 && currentY() <= bottom) {
+            const spaceWidth = measureTextWidth(" ", ctx);
+            if (x + spaceWidth > maxRight) {
+                if (!advanceLine()) break;
+            } else {
+                fragments.push({ text: " ", x, y: currentY(), color: keyColor });
+                x += spaceWidth;
+            }
         }
     }
-    return value.slice(0, lo);
+    return fragments;
+}
+
+function renderFragments(ctx: CanvasRenderingContext2D, fragments: Fragment[]): void {
+    ctx.font = FONT_BASE;
+    for (const f of fragments) {
+        ctx.fillStyle = f.color;
+        ctx.fillText(f.text, f.x, f.y);
+    }
 }
 
 export function drawFieldForDisplay(
@@ -58,207 +258,25 @@ export function drawFieldForDisplay(
     theme: FullTheme,
     muiTheme: Theme,
 ): void {
-    const { x, y, width, height } = rect;
-    const lineHeight = LINE_HEIGHT * theme.lineHeight;
-    const maxContentRight = x + width - paddingX;
-
-    const tokens = formatDataRecordsEntries(text);
+    const tokens = tokenizeDataRecords(text);
     if (!tokens.length) return;
-
-    let currentX = x + paddingX;
-    let currentY = y + paddingY + lineHeight; // baseline of first line
-    const measure = (s: string) => ctx.measureText(s).width;
-
-    const advanceLine = () => {
-        currentY += lineHeight;
-        currentX = x + paddingX;
-    };
-
-    for (let ti = 0; ti < tokens.length; ti++) {
-        if (currentY > y + height - paddingY) break; // no more vertical space
-        const raw = tokens[ti];
-        const parsed = parseEntryToken(raw);
-        if (!parsed) {
-            // Fallback plain text token wrapping
-            let remaining = raw;
-            ctx.font = FONT_BASE;
-            ctx.fillStyle = theme.textDark;
-            while (remaining.length) {
-                const available = maxContentRight - currentX;
-                if (available <= 0) {
-                    advanceLine();
-                    if (currentY > y + height - paddingY) break;
-                    continue;
-                }
-                const slice = fitValuePrefix(remaining, available, ctx);
-                if (!slice) {
-                    // force wrap single char
-                    advanceLine();
-                    if (currentY > y + height - paddingY) break;
-                    continue;
-                }
-                ctx.fillText(slice, currentX, currentY);
-                currentX += measure(slice);
-                remaining = remaining.slice(slice.length);
-                if (remaining.length) {
-                    advanceLine();
-                }
-            }
-        } else {
-            const { key, value } = parsed;
-            ctx.font = FONT_BASE;
-            // Draw key if any with wrapping if not enough room
-            if (key) {
-                const keyWidth = measure(key);
-                const spaceWidth = measure(" ");
-                if (currentX !== x + paddingX && currentX + keyWidth + spaceWidth > maxContentRight) {
-                    advanceLine();
-                    if (currentY > y + height - paddingY) break;
-                }
-                ctx.fillStyle = muiTheme.palette.custom.codeEditor.objectKeys.color;
-                ctx.fillText(key, currentX, currentY);
-                currentX += keyWidth;
-                // space after key
-                if (currentX + spaceWidth > maxContentRight) {
-                    advanceLine();
-                    if (currentY > y + height - paddingY) break;
-                } else {
-                    ctx.fillText(" ", currentX, currentY);
-                    currentX += spaceWidth;
-                }
-            }
-            // Draw value with intra-token wrapping
-            ctx.fillStyle = fillSpecialTextStyle(value, muiTheme);
-            let remainingVal = value;
-            while (remainingVal.length) {
-                const available = maxContentRight - currentX;
-                if (available <= 0) {
-                    advanceLine();
-                    if (currentY > y + height - paddingY) break;
-                    continue;
-                }
-                const part = fitValuePrefix(remainingVal, available, ctx);
-                if (!part) {
-                    advanceLine();
-                    if (currentY > y + height - paddingY) break;
-                    continue;
-                }
-                ctx.fillText(part, currentX, currentY);
-                currentX += measure(part);
-                remainingVal = remainingVal.slice(part.length);
-                if (remainingVal.length) {
-                    advanceLine();
-                    if (currentY > y + height - paddingY) break;
-                }
-            }
-        }
-        // Space between tokens (only if not last)
-        if (ti < tokens.length - 1) {
-            const spaceWidth = measure(" ");
-            if (currentX + spaceWidth > maxContentRight) {
-                advanceLine();
-                if (currentY > y + height - paddingY) break;
-            } else {
-                ctx.fillText(" ", currentX, currentY);
-                currentX += spaceWidth;
-            }
-        }
-    }
+    const workingCtx = ctx;
+    workingCtx.font = FONT_BASE;
+    const lineHeight = computeLineHeight(workingCtx, theme);
+    const fragments = layoutTokens(tokens, workingCtx, rect, theme, muiTheme, lineHeight);
+    renderFragments(workingCtx, fragments);
 }
 
-const fillSpecialTextStyle = (val: string, muiTheme: Theme) => {
-    const isBoolean = val === "true" || val === "false";
-    const isNumeric = val !== "" && !isNaN(Number(val));
-    return isBoolean || isNumeric ? muiTheme.palette.custom.codeEditor.numeric.color : muiTheme.palette.custom.codeEditor.string.color;
-};
-
-// Reusable traversal producing entry tokens "key **value**"
-interface TraverseOptions {
-    maxDepth: number;
-    maxEntries: number;
-}
-const traverseAndCollect = (
-    value: unknown,
-    path: string,
-    entries: string[],
-    seen: WeakSet<object>,
-    opts: TraverseOptions,
-    produced: { n: number },
-    depth: number,
-) => {
-    if (produced.n >= opts.maxEntries) return;
-    if (depth > opts.maxDepth) {
-        const key = path || "$";
-        if (produced.n < opts.maxEntries) {
-            entries.push(`${key} **…**`);
-            produced.n++;
-        }
-        return;
-    }
-    const push = (k: string, v: string) => {
-        if (produced.n >= opts.maxEntries) return;
-        entries.push(`${k} **${v}` + `**`);
-        produced.n++;
-    };
-    const isPrim = (v: unknown): v is string | number | boolean | null =>
-        v === null || ["string", "number", "boolean"].includes(typeof v as string);
-    if (isPrim(value)) {
-        const safe = value === null ? "null" : String(value).replace(/ /g, "\u00A0");
-        push(path || "$", safe);
-        return;
-    }
-    if (Array.isArray(value)) {
-        if (value.length === 0) {
-            push(path || "$", "[]");
-            return;
-        }
-        value.forEach((item, i) => traverseAndCollect(item, path ? `${path}[${i}]` : `$[${i}]`, entries, seen, opts, produced, depth + 1));
-        return;
-    }
-    if (value && typeof value === "object") {
-        if (seen.has(value)) {
-            push(path || "$", "[circular]");
-            return;
-        }
-        seen.add(value as object);
-        const keys = Object.keys(value as object);
-        if (keys.length === 0) {
-            push(path || "$", "{}");
-            return;
-        }
-        keys.forEach((k) =>
-            traverseAndCollect((value as Record<string, unknown>)[k], path ? `${path}.${k}` : k, entries, seen, opts, produced, depth + 1),
-        );
-        return;
-    }
-    push(path || "$", String(value));
-};
-
-export const formatDataRecordsEntries = (raw?: string): string[] => {
-    if (!raw) return [];
-    try {
-        const parsed = JSON.parse(raw);
-        const entries: string[] = [];
-        traverseAndCollect(parsed, "", entries, new WeakSet<object>(), { maxDepth: 8, maxEntries: 2000 }, { n: 0 }, 0);
-        return entries;
-    } catch {
-        return [raw];
-    }
-};
-
-export const formatDataRecordsVariablesForDisplay = (raw?: string): string => {
-    return formatDataRecordsEntries(raw).join(" ");
-};
-
-// Legacy export (still used elsewhere) — unchanged logic
+export const formatDataRecordsEntries = (raw?: string): string[] => tokenizeDataRecords(raw).map((t) => `${t.key} **${t.value}**`);
+export const formatDataRecordsVariablesForDisplay = (raw?: string): string => formatDataRecordsEntries(raw).join(" ");
 export const getRowLines = (words: string[], maxTextWidth: number): string[] => {
     const ctx = ensureMeasureCtx();
-    const measure = (t: string) => (ctx ? ctx.measureText(t).width : t.length * AVG_CHAR_WIDTH);
+    const measureFn = (t: string) => (ctx ? ctx.measureText(t).width : t.length * AVG_CHAR_WIDTH);
     let line = "";
     const lines: string[] = [];
     for (let n = 0; n < words.length; n++) {
         const testLine = line + words[n] + SPLIT_SEPARATOR;
-        const testWidth = measure(testLine);
+        const testWidth = measureFn(testLine);
         if (testWidth > maxTextWidth && n > 0) {
             lines.push(line);
             line = words[n] + SPLIT_SEPARATOR;
