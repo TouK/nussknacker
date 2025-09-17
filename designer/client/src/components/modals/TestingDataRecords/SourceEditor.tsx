@@ -1,6 +1,6 @@
 import type { CustomCell } from "@glideapps/glide-data-grid";
 import { Box } from "@mui/material";
-import React, { useCallback, useRef } from "react";
+import React, { useCallback } from "react";
 
 import { Dropdown } from "./Dropdown";
 
@@ -13,15 +13,15 @@ export type SourceSelectCell = CustomCell<SourceSelectCellData>;
 
 interface EditorProps {
     value: SourceSelectCell;
-    onChange: (cell: SourceSelectCell) => void;
-    onFinishedEditing: (cell: SourceSelectCell) => void;
+    onFinishedEditing: (cell?: SourceSelectCell) => void;
 }
 
 export const SourceEditor: React.FC<EditorProps> = ({ value, onFinishedEditing }) => {
     const setVal = useCallback(
         (newValue: string) => {
             if (newValue === value.data.value) {
-                return;
+                // just close the editor if value did not change
+                onFinishedEditing();
             }
 
             onFinishedEditing({
