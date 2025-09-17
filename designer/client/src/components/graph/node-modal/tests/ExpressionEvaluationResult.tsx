@@ -24,7 +24,7 @@ export const ExpressionEvaluationResult = (props: Props) => {
         setExpanded(isExpanded);
     }, []);
 
-    const dataToShow = value.pretty || value.original;
+    const dataToShow = value.pretty !== undefined ? value.pretty : value.original;
 
     return (
         <Accordion className={"expressionEvaluationResult"} expanded={expanded} disableGutters onChange={handleExpandedChange}>
@@ -60,7 +60,7 @@ export const ExpressionEvaluationResult = (props: Props) => {
                             customStyle={{ border: 0, backgroundColor: "inherit" }}
                             staticHighlightOptions={{ showGutter: false }}
                         >
-                            {JSON.stringify(dataToShow, null, 2)}
+                            {JSON.stringify(dataToShow, null, 2) || "undefined"}
                         </SyntaxHighlighter>
                     </Box>
                 )}

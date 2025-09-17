@@ -1,5 +1,5 @@
 import { css } from "@emotion/css";
-import { MoreHoriz } from "@mui/icons-material";
+import { ExpandLess, MoreHoriz } from "@mui/icons-material";
 import { Box, styled } from "@mui/material";
 import { Allotment } from "allotment";
 import type { AllotmentHandle } from "allotment/dist/types/src/allotment";
@@ -52,8 +52,9 @@ export const InputOutputLayout = memo(function InputOutputWrapper({ children }: 
 
         const handleMouseMove = (moveEvent: MouseEvent) => {
             const deltaX = moveEvent.clientX - startPos.current.x;
-            const sizes = [left + deltaX, center, right - deltaX];
-            ref.current.resize(sizes);
+            const newSizes = [left + deltaX, center, right - deltaX];
+            sizes.current = newSizes;
+            ref.current.resize(newSizes);
         };
 
         const handleMouseUp = () => {
@@ -68,44 +69,60 @@ export const InputOutputLayout = memo(function InputOutputWrapper({ children }: 
 
     const prevSizes = useRef<number[]>(defaultSizes);
 
-    const togglePanel = useCallback((index: number, collapsedSize: number, shouldCollapse = sizes.current[index] > collapsedSize * 2) => {
-        const currentSize = sizes.current[index];
-        const prevSize = prevSizes.current[index];
-        const defaultSize = 0.2 * sum(sizes.current);
-        const newSize = shouldCollapse ? collapsedSize : Math.max(prevSize, defaultSize);
-        const updatedCenter = sizes.current[1] + (shouldCollapse ? currentSize : collapsedSize) - newSize;
+    const collapsedSize = 8;
+    const collapseThreshold = 100;
+    const togglePanel = useCallback(
+        (index: number, collapsedSize: number, shouldCollapse = sizes.current[index] > collapseThreshold) => {
+            const currentSize = sizes.current[index];
+            const prevSize = prevSizes.current[index];
+            const defaultSize = 0.2 * sum(sizes.current);
+            const newSize = shouldCollapse ? collapsedSize : Math.max(prevSize, defaultSize);
+            const updatedCenter = sizes.current[1] + (shouldCollapse ? currentSize : collapsedSize) - newSize;
 
-        prevSizes.current = sizes.current;
-        ref.current?.resize(
-            sizes.current.map((size, i) => {
-                if (i === index) return newSize;
-                if (i === 1) return updatedCenter;
-                return size;
-            }),
-        );
-    }, []);
-
-    const collapsedSize = 30;
+            prevSizes.current = sizes.current;
+            ref.current?.resize(
+                sizes.current.map((size, i) => {
+                    if (i === index) return newSize;
+                    if (i === 1) return updatedCenter;
+                    return size;
+                }),
+            );
+        },
+        [collapseThreshold],
+    );
 
     const [sidesState, setSidesState] = useState<SidesState>({
         left: { side: "left", collapsed: false, hidden: false },
         right: { side: "right", collapsed: false, hidden: false },
     });
 
-    const onChange = useCallback((currentSizes) => {
-        const [leftSize, centerSize, rightSize] = currentSizes;
-        sizes.current = currentSizes;
-        if (moveHandle.current) {
-            moveHandle.current.style.left = `${leftSize + centerSize / 2}px`;
-        }
+    const onChange = useCallback(
+        (currentSizes) => {
+            const [leftSize, centerSize, rightSize] = currentSizes;
+            sizes.current = currentSizes;
+            if (moveHandle.current) {
+                moveHandle.current.style.left = `${leftSize + centerSize / 2}px`;
+            }
 
-        setSidesState(
-            produce(({ left, right }) => {
-                left.collapsed = leftSize < collapsedSize * 2;
-                right.collapsed = rightSize < collapsedSize * 2;
-            }),
-        );
-    }, []);
+            setSidesState(
+                produce(({ left, right }) => {
+                    left.collapsed = leftSize < collapseThreshold;
+                    right.collapsed = rightSize < collapseThreshold;
+                }),
+            );
+        },
+        [collapseThreshold],
+    );
+
+    const onChangeEnd = useCallback(() => {
+        const [leftSize, centerSize, rightSize] = sizes.current;
+        if (leftSize < collapseThreshold) {
+            togglePanel(0, collapsedSize, true);
+        }
+        if (rightSize < collapseThreshold) {
+            togglePanel(2, collapsedSize, true);
+        }
+    }, [togglePanel]);
 
     const onIsEmptyChange = useCallback(
         (side: "left" | "right", isEmpty: boolean) => {
@@ -127,16 +144,34 @@ export const InputOutputLayout = memo(function InputOutputWrapper({ children }: 
 
     return (
         <Wrapper>
-            <Allotment ref={ref} onChange={onChange} defaultSizes={defaultSizes}>
+            <Allotment ref={ref} onChange={onChange} defaultSizes={defaultSizes} onDragEnd={onChangeEnd}>
                 <Allotment.Pane
                     preferredSize={sidesState.right.hidden ? "40%" : "20%"}
                     minSize={sidesState.left.hidden ? 0 : collapsedSize}
                     maxSize={sidesState.left.hidden ? 0 : Infinity}
                     visible={!sidesState.left.hidden}
                 >
-                    <SidePane sideState={sidesState.left} onToggleClick={onToggleClick} onIsEmptyChange={onIsEmptyChange} />
+                    <SidePane sideState={sidesState.left} onIsEmptyChange={onIsEmptyChange} />
                 </Allotment.Pane>
                 <Allotment.Pane preferredSize="60%" minSize={820} className={shadowClassName}>
+                    <PanelButton
+                        side={sidesState.left.side}
+                        collapsed={sidesState.left.collapsed}
+                        onClick={(e) => {
+                            onToggleClick(sidesState.left.side);
+                        }}
+                    >
+                        <ExpandLess />
+                    </PanelButton>
+                    <PanelButton
+                        side={sidesState.right.side}
+                        collapsed={sidesState.right.collapsed}
+                        onClick={(e) => {
+                            onToggleClick(sidesState.right.side);
+                        }}
+                    >
+                        <ExpandLess />
+                    </PanelButton>
                     {children}
                 </Allotment.Pane>
                 <Allotment.Pane
@@ -145,10 +180,19 @@ export const InputOutputLayout = memo(function InputOutputWrapper({ children }: 
                     maxSize={sidesState.right.hidden ? 0 : Infinity}
                     visible={!sidesState.right.hidden}
                 >
-                    <SidePane sideState={sidesState.right} onToggleClick={onToggleClick} onIsEmptyChange={onIsEmptyChange} />
+                    <SidePane sideState={sidesState.right} onIsEmptyChange={onIsEmptyChange} />
                 </Allotment.Pane>
             </Allotment>
-            <PanelButton side="center" ref={moveHandle} tabIndex={-1} onMouseDown={onMouseDown} onDoubleClick={onResetClick}>
+            <PanelButton
+                side="center"
+                ref={moveHandle}
+                tabIndex={-1}
+                onMouseDown={onMouseDown}
+                onMouseUp={() => {
+                    setTimeout(() => onChangeEnd());
+                }}
+                onDoubleClick={onResetClick}
+            >
                 <MoreHoriz />
             </PanelButton>
         </Wrapper>

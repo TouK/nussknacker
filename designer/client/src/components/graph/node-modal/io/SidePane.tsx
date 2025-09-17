@@ -1,22 +1,20 @@
-import { ExpandLess } from "@mui/icons-material";
 import { Box, styled } from "@mui/material";
+import type { PropsWithChildren } from "react";
 import React, { memo } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { getScrollStyle } from "../node/StyledHeader";
 import type { Side, SideState } from "./InputOutputLayout";
-import { PanelButton } from "./PanelButton";
 import { VariableContextTree } from "./VariableContextTree";
 
 export const SidePane = memo(function SidePane({
     sideState,
     onIsEmptyChange,
-    onToggleClick,
-}: {
+    children,
+}: PropsWithChildren<{
     sideState: SideState;
     onIsEmptyChange: (side: Side, isEmpty: boolean) => void;
-    onToggleClick: (side: Side) => void;
-}) {
+}>) {
     return (
         <>
             <SidePanelBox
@@ -32,9 +30,7 @@ export const SidePane = memo(function SidePane({
                     />
                 </ErrorBoundary>
             </SidePanelBox>
-            <PanelButton side={sideState.side} collapsed={sideState.collapsed} onClick={() => onToggleClick(sideState.side)}>
-                <ExpandLess />
-            </PanelButton>
+            {children}
         </>
     );
 });
