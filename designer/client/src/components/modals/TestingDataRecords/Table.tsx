@@ -26,9 +26,9 @@ import type { VariablesCell } from "./CellContent";
 import { getTestingCellContent, isSourceSelectCell, isVariablesCell } from "./CellContent";
 import { DEFAULT_ROW_HEADER, drawFieldForDisplay } from "./drawText";
 import type { SourceSelectCell } from "./SourceEditor";
-import SourceEditor from "./SourceEditor";
+import { SourceEditor } from "./SourceEditor";
 import "@glideapps/glide-data-grid/dist/index.css";
-import { buildDefaultVariablesMap, buildTestingRowUpdates, computeVariablesRowHeight } from "./utils";
+import { buildDefaultVariablesMap, buildInputDataRecordUpdates, computeVariablesRowHeight } from "./utils";
 import { VariablesEditor } from "./VariablesEditor";
 
 export interface TestingDataRecords {
@@ -140,7 +140,7 @@ export const Table: React.FC<TableProps> = ({
     const getCellContent = useCallback((item: Item): GridCell => getTestingCellContent(item, data, sourceOptions), [data, sourceOptions]);
     const buildRowUpdates = useCallback(
         (changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[]): Record<number, TestingDataRecords> =>
-            buildTestingRowUpdates(changes, data, defaultVariablesBySourceId),
+            buildInputDataRecordUpdates(changes, data, defaultVariablesBySourceId),
         [data, defaultVariablesBySourceId],
     );
 

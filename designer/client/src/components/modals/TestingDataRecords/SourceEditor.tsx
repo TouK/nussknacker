@@ -1,8 +1,8 @@
 import type { CustomCell } from "@glideapps/glide-data-grid";
 import { Box } from "@mui/material";
-import React, { useCallback } from "react";
+import React, { useCallback, useRef } from "react";
 
-import Dropdown from "./Dropdown";
+import { Dropdown } from "./Dropdown";
 
 export interface SourceSelectCellData {
     kind: "source-select-cell";
@@ -46,5 +46,3 @@ export const SourceEditor: React.FC<EditorProps> = ({ value, onFinishedEditing }
         </Box>
     );
 };
-
-export default SourceEditor;

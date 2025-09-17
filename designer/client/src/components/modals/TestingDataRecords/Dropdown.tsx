@@ -51,5 +51,3 @@ export const Dropdown: React.FC<Props> = ({ value, options, onValueChange }) => 
         </StyledList>
     );
 };
-
-export default Dropdown;
