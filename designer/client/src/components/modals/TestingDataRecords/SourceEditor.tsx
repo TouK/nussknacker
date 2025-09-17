@@ -1,6 +1,6 @@
 import type { CustomCell } from "@glideapps/glide-data-grid";
 import { Box } from "@mui/material";
-import React, { useCallback, useRef } from "react";
+import React, { useCallback } from "react";
 
 import Dropdown from "./Dropdown";
 
@@ -14,40 +14,24 @@ export type SourceSelectCell = CustomCell<SourceSelectCellData>;
 interface EditorProps {
     value: SourceSelectCell;
     onChange: (cell: SourceSelectCell) => void;
-    onFinishedEditing: () => void;
-    target: { width: number; height: number };
+    onFinishedEditing: (cell: SourceSelectCell) => void;
 }
 
-export const SourceEditor: React.FC<EditorProps> = ({ value, onChange, onFinishedEditing }) => {
-    const originalValueRef = useRef(value.data.value ?? "");
-    const currentValueRef = useRef(value.data.value ?? "");
-
+export const SourceEditor: React.FC<EditorProps> = ({ value, onFinishedEditing }) => {
     const setVal = useCallback(
-        (val: string) => {
-            currentValueRef.current = val;
-            onChange({
+        (newValue: string) => {
+            if (newValue === value.data.value) {
+                return;
+            }
+
+            onFinishedEditing({
                 ...value,
-                copyData: val,
-                data: { ...value.data, value: val },
+                copyData: newValue,
+                data: { ...value.data, value: newValue },
             });
         },
-        [onChange, value],
+        [onFinishedEditing, value],
     );
-
-    const commit = useCallback(() => {
-        onFinishedEditing();
-    }, [onFinishedEditing]);
-
-    const cancel = useCallback(() => {
-        if (currentValueRef.current !== originalValueRef.current) {
-            onChange({
-                ...value,
-                copyData: originalValueRef.current,
-                data: { ...value.data, value: originalValueRef.current },
-            });
-        }
-        onFinishedEditing();
-    }, [onChange, onFinishedEditing, value]);
 
     return (
         <Box
@@ -58,14 +42,7 @@ export const SourceEditor: React.FC<EditorProps> = ({ value, onChange, onFinishe
                 padding: 0,
             }}
         >
-            <Dropdown
-                value={currentValueRef.current}
-                options={value.data.options}
-                onValueChange={setVal}
-                onCommit={commit}
-                onCancel={cancel}
-                commitOnClick
-            />
+            <Dropdown value={value.data.value} options={value.data.options} onValueChange={setVal} />
         </Box>
     );
 };
