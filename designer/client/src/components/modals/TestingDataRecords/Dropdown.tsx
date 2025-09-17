@@ -29,10 +29,6 @@ export const Dropdown: React.FC<Props> = ({ value, options, onValueChange }) => 
                     role="option"
                     aria-selected={option === value}
                     selected={option === value}
-                    onMouseDown={(e) => {
-                        e.preventDefault();
-                        onValueChange(option);
-                    }}
                     onClick={() => {
                         onValueChange(option);
                     }}
