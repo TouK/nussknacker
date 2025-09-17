@@ -82,7 +82,7 @@ class RequestResponseTestScenarioRunner(
         context = LiteEngineRuntimeContextPreparer.noOp,
         modelData = modelData,
         additionalListeners = Nil,
-        resultCollector = testScenarioCollectorHandler.resultCollector,
+        resultCollector = testScenarioCollectorHandler.servicesResultCollector,
         runtimeMode = runtimeMode
       ).map { interpreter =>
         interpreter.open()

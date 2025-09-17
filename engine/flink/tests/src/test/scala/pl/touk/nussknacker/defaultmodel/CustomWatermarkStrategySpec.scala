@@ -3,7 +3,9 @@ package pl.touk.nussknacker.defaultmodel
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import io.circe.Json
 import org.scalatest.{LoneElement, OptionValues}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.livedata.DataRecord
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.TopicName.ForSource
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -17,12 +19,13 @@ import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypes
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
-import pl.touk.nussknacker.engine.util.test.TestNodeCompiler
+import pl.touk.nussknacker.engine.util.test.{TestDataRecord, TestNodeCompiler, TestScenarioRunner}
 import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyValidationHandler
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
-import java.time.{Instant, ZoneId, ZoneOffset}
+import java.time.{Instant, ZoneOffset}
 import java.time.format.DateTimeFormatter
+import scala.jdk.CollectionConverters._
 
 class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues with LoneElement {
 
@@ -83,6 +86,75 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
     .withFlinkMiniCluster(flinkMiniCluster)
     .withExtraComponents(additionalComponents)
     .build()
+
+  test("should respect timestamp configured by a user during scenario testing") {
+    val inputTopic = "input-topic-custom-event-time-scenario-testing"
+
+    // We create topics to skip validation problems
+    kafkaClient.createTopic(inputTopic, 1)
+    val givenFirstEventTimestamp  = 6000000000L
+    val givenSecondEventTimestamp = 6000000000L + 60 * 1000 - 1
+    val givenThirdEventTimestamp  = 6000000000L + 60 * 1000
+
+    val scenario =
+      ScenarioBuilder
+        .streaming("custom-event-time-scenario-testing")
+        .parallelism(1)
+        .source(
+          "start",
+          "kafka",
+          KafkaUniversalComponentTransformer.topicParamName.value       -> Expression.spel(s"'$inputTopic'"),
+          KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.JSON.toString}'".spel,
+          KafkaUniversalComponentTransformer.dataSampleParamName.value  -> dataSampleExpression,
+          WatermarkStrategyValidationHandler.eventTimeParamName.value   -> "#input.timestamp".spel,
+        )
+        .customNode(
+          "aggregate",
+          "sum",
+          "aggregate-sliding",
+          "groupBy"      -> "#input.key".spel,
+          "aggregateBy"  -> "#input.data".spel,
+          "aggregator"   -> "#AGG.sum".spel,
+          "windowLength" -> "T(java.time.Duration).parse('PT1M')".spel,
+        )
+        .emptySink(
+          "end",
+          TestScenarioRunner.testResultSink,
+          // TODO: { timestamp: #eventTimestamp, sum: #sum } <- allow to return event timestamp as well
+          "value" -> s"#sum".spel,
+        )
+
+    val testData = List(
+      TestDataRecord(
+        NodeId("start"),
+        DataRecord(
+          Map("input" -> prepareMapRecord(givenFirstEventTimestamp)),
+          timestamp = None
+        )
+      ),
+      TestDataRecord(
+        NodeId("start"),
+        DataRecord(
+          Map("input" -> prepareMapRecord(givenSecondEventTimestamp)),
+          timestamp = None
+        )
+      ),
+      TestDataRecord(
+        NodeId("start"),
+        DataRecord(
+          Map("input" -> prepareMapRecord(givenThirdEventTimestamp)),
+          timestamp = None
+        )
+      )
+    )
+    val testResults = testScenarioRunner.runWithTestRecords(scenario, testData).validValue
+
+    testResults.successes shouldBe List(
+      givenData,
+      givenData * 2,
+      givenData
+    )
+  }
 
   test("should use timestamp configured in table definition used by table source") {
     val outputTopic = "output-topic-event-time-table-definition"
@@ -379,12 +451,24 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
   }
 
   private def sendEventWithTimestampOnTopic(eventTimestamp: Long, topic: String, key: String = givenKey) = {
-    val jsonRecord = Json.obj(
+    val jsonRecord = prepareJsonRecord(eventTimestamp, key)
+    sendAsJson(jsonRecord.toString, ForSource(topic), Instant.now.toEpochMilli)
+  }
+
+  private def prepareJsonRecord(eventTimestamp: Long, key: String = givenKey) = {
+    Json.obj(
       "key"       -> Json.fromString(key),
       "data"      -> Json.fromLong(givenData),
       "timestamp" -> Json.fromLong(eventTimestamp),
     )
-    sendAsJson(jsonRecord.toString, ForSource(topic), Instant.now.toEpochMilli)
+  }
+
+  private def prepareMapRecord(eventTimestamp: Long, key: String = givenKey) = {
+    Map(
+      "key"       -> key,
+      "data"      -> givenData.toLong,
+      "timestamp" -> eventTimestamp,
+    ).asJava
   }
 
 }

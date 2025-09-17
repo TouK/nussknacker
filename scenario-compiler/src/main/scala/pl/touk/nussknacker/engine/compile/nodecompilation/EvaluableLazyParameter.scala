@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{Context, JobData, LazyParameter, MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.LazyParameter.{CustomLazyParameter, Evaluate}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compiledgraph.{BaseCompiledParameter, CompiledParameter}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 
 class EvaluableLazyParameter[T <: AnyRef](
+    creator: EvaluableLazyParameterCreator[T],
     compiledParameter: BaseCompiledParameter,
     expressionEvaluator: ExpressionEvaluator,
     nodeId: NodeId,
@@ -15,12 +16,13 @@ class EvaluableLazyParameter[T <: AnyRef](
 ) extends CustomLazyParameter[T] {
 
   def this(
+      creator: EvaluableLazyParameterCreator[T],
       compiledParameter: CompiledParameter,
       expressionEvaluator: ExpressionEvaluator,
       nodeId: NodeId,
       jobData: JobData
   ) =
-    this(compiledParameter, expressionEvaluator, nodeId, jobData, compiledParameter.typingInfo.typingResult)
+    this(creator, compiledParameter, expressionEvaluator, nodeId, jobData, compiledParameter.typingInfo.typingResult)
 
   override val evaluate: Evaluate[T] = { ctx: Context =>
     expressionEvaluator
@@ -28,5 +30,7 @@ class EvaluableLazyParameter[T <: AnyRef](
       .value
       .asInstanceOf[T]
   }
+
+  override def toSerializable: LazyParameter[T] = creator
 
 }

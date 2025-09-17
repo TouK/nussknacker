@@ -43,7 +43,7 @@ import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategy
   ContextInitializingFunction,
   ContextWithEventTime
 }
-import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyOptions
+import pl.touk.nussknacker.engine.util.watermarkstrategy.{WatermarkStrategyOptions, WithWatermarkStrategyOptions}
 
 import scala.jdk.CollectionConverters._
 
@@ -52,7 +52,7 @@ class TableSource(
     flinkDataDefinition: FlinkDataDefinition,
     testDataGenerationMode: TestDataGenerationMode,
     environmentForTestingPurposes: StreamTableEnvironment,
-    watermarkStrategyOptions: WatermarkStrategyOptions
+    override val watermarkStrategyOptions: WatermarkStrategyOptions
 ) extends FlinkSource
     with ExplicitUidInOperatorsSupport
     with Serializable
@@ -63,6 +63,7 @@ class TableSource(
     with CustomizableContextInitializerSource[Row]
     // end
     with LiveDataProvider
+    with WithWatermarkStrategyOptions
     with LazyLogging {
 
   override def contextStream(
@@ -85,7 +86,7 @@ class TableSource(
       }
       .getOrElse(selectQuery)
 
-    val streamOfRow = tableEnv.toDataStream(finalQuery)
+    val streamOfRow = sourceWithUidAndName(tableEnv.toDataStream(finalQuery), flinkNodeContext)
 
     streamOfRow
       .flatMap(

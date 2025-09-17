@@ -35,6 +35,10 @@ trait LazyParameter[+T <: AnyRef] extends Serializable {
   def map[Y <: AnyRef](fun: T => Y, transformTypingResult: TypingResult => TypingResult): LazyParameter[Y] =
     new MappedLazyParameter[T, Y](this, fun, transformTypingResult)
 
+  // This method is helpful when LazyParameter was converted to evaluable form and we want to get it back to the Serializable
+  // form - see DataRecordsSource and TestSourceComponentImplementationInvoker.invokeOriginalInvoker
+  def toSerializable: LazyParameter[T] = this
+
 }
 
 object LazyParameter {

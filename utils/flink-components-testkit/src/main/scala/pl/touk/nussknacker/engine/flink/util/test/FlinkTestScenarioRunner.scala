@@ -82,7 +82,7 @@ class FlinkTestScenarioRunner(
     globalVariables: Map[String, AnyRef],
     modelConfig: Config,
     flinkMiniClusterWithServices: FlinkMiniClusterWithServices,
-    runtimeMode: RuntimeMode,
+    runnerRuntimeMode: RuntimeMode,
 ) extends ClassBasedTestScenarioRunner {
 
   private val modelData = LocalModelData(
@@ -146,7 +146,18 @@ class FlinkTestScenarioRunner(
     )
   }
 
-  private def runWithTestSourceComponent[I: ClassTag, R](
+  def runWithTestRecords[R](
+      scenario: CanonicalProcess,
+      records: List[TestDataRecord]
+  ): RunnerListResult[R] = {
+    Using.resource(
+      TestExtensionsHolder.registerTestExtensions(components, testResultSinkComponentCreator :: Nil, globalVariables)
+    ) { testComponentHolder =>
+      run[R](scenario, NodesDeploymentData.empty, List.empty, testComponentHolder, Some(records))
+    }
+  }
+
+  private def runWithTestSourceComponent[I, R](
       scenario: CanonicalProcess,
       nodesData: NodesDeploymentData,
       labels: List[String],
@@ -157,7 +168,7 @@ class FlinkTestScenarioRunner(
       TestExtensionsHolder
         .registerTestExtensions(components ++ testComponents, testResultSinkComponentCreator :: Nil, globalVariables)
     ) { testComponentHolder =>
-      run[R](scenario, nodesData, labels, testComponentHolder)
+      run[R](scenario, nodesData, labels, testComponentHolder, None)
     }
   }
 
@@ -174,7 +185,7 @@ class FlinkTestScenarioRunner(
       TestExtensionsHolder
         .registerTestExtensions(components ++ testComponents, testResultSinkComponentCreator :: Nil, globalVariables)
     ) { testComponentHolder =>
-      run[R](scenario, nodesData, labels, testComponentHolder)
+      run[R](scenario, nodesData, labels, testComponentHolder, None)
     }
   }
 
@@ -191,7 +202,7 @@ class FlinkTestScenarioRunner(
     Using.resource(
       TestExtensionsHolder.registerTestExtensions(components ++ testComponents, List.empty, globalVariables)
     ) { testComponentHolder =>
-      run[AnyRef](scenario, nodesData, labels, testComponentHolder).map { case RunListResult(errors, _) =>
+      run[AnyRef](scenario, nodesData, labels, testComponentHolder, None).map { case RunListResult(errors, _) =>
         RunUnitResult(errors)
       }
     }
@@ -207,13 +218,14 @@ class FlinkTestScenarioRunner(
       TestExtensionsHolder.registerTestExtensions(components, testResultSinkComponentCreator :: Nil, globalVariables)
     ) { testExtensionsHolder =>
       flinkMiniClusterWithServices.withDetachedStreamExecutionEnvironment { env =>
-        TestScenarioCollectorHandler.withHandler(runtimeMode) { testScenarioCollectorHandler =>
+        TestScenarioCollectorHandler.withHandler(runnerRuntimeMode) { testScenarioCollectorHandler =>
           val compilerFactory =
             FlinkProcessCompilerDataFactoryWithTestComponents(
               testExtensionsHolder,
               testScenarioCollectorHandler.resultsCollectingListener,
               modelData,
-              runtimeMode,
+              runnerRuntimeMode,
+              None,
               nodesData
             )
 
@@ -232,7 +244,7 @@ class FlinkTestScenarioRunner(
             scenario,
             processVersion,
             DeploymentData.empty.copy(nodesData = nodesData),
-            testScenarioCollectorHandler.resultCollector
+            testScenarioCollectorHandler.servicesResultCollector
           )
           val streamGraph = env.getStreamGraph
           streamGraph.setSavepointRestoreSettings(savepointRestoreSettings)
@@ -267,10 +279,11 @@ class FlinkTestScenarioRunner(
       scenario: CanonicalProcess,
       nodesData: NodesDeploymentData,
       labels: List[String],
-      testExtensionsHolder: TestExtensionsHolder
+      testExtensionsHolder: TestExtensionsHolder,
+      testRecords: Option[List[TestDataRecord]]
   ): RunnerListResult[OUTPUT] = {
     flinkMiniClusterWithServices.withDetachedStreamExecutionEnvironment { env =>
-      TestScenarioCollectorHandler.withHandler(runtimeMode) { testScenarioCollectorHandler =>
+      TestScenarioCollectorHandler.withHandler(runnerRuntimeMode) { testScenarioCollectorHandler =>
         val processVersion = ProcessVersion.empty.copy(
           processName = scenario.metaData.name,
           labels = labels
@@ -280,7 +293,8 @@ class FlinkTestScenarioRunner(
           testExtensionsHolder,
           testScenarioCollectorHandler,
           JobData(scenario.metaData, processVersion),
-          nodesData
+          nodesData,
+          testRecords
         )
 
         flinkMiniClusterWithServices.withAttachedStreamExecutionEnvironment { envForCompilation =>
@@ -297,7 +311,7 @@ class FlinkTestScenarioRunner(
                 scenario,
                 processVersion,
                 DeploymentData.empty.copy(nodesData = nodesData),
-                testScenarioCollectorHandler.resultCollector
+                testScenarioCollectorHandler.servicesResultCollector
               )
 
               val jobExecutionResult = env.execute(scenario.name.value)
@@ -332,20 +346,22 @@ class FlinkTestScenarioRunner(
       testScenarioCollectorHandler: TestScenarioCollectorHandler,
       jobData: JobData,
       nodesData: NodesDeploymentData,
+      testRecords: Option[List[TestDataRecord]]
   ) = {
     val compilerFactory =
       FlinkProcessCompilerDataFactoryWithTestComponents(
         testExtensionsHolder,
         testScenarioCollectorHandler.resultsCollectingListener,
         modelData,
-        runtimeMode,
+        testRecords.map(_ => RuntimeMode.Test).getOrElse(runnerRuntimeMode),
+        testRecords,
         nodesData
       )
 
     val compilerData = compilerFactory.prepareCompilerData(
       jobData.metaData,
       jobData.processVersion,
-      testScenarioCollectorHandler.resultCollector,
+      testScenarioCollectorHandler.servicesResultCollector,
       getClass.getClassLoader,
     )
     (compilerFactory, compilerData)

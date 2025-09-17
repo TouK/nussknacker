@@ -2,23 +2,32 @@ package pl.touk.nussknacker.engine.flink.util.test
 
 import pl.touk.nussknacker.engine.{ModelConfig, ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
-import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{
-  ComponentAdditionalConfig,
-  DesignerWideComponentId,
-  NodesDeploymentData
+import pl.touk.nussknacker.engine.api.component.{ComponentType, DesignerWideComponentId, NodesDeploymentData}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.compile.nodecompilation.StaticComponentOutputValidationContextDeterminer
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  NodeCompilationDependencies
 }
-import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.process.compiler.{ComponentDefinitionContext, FlinkProcessCompilerDataFactory}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
-import pl.touk.nussknacker.engine.process.scenariotesting.TestFlinkExceptionHandler
+import pl.touk.nussknacker.engine.process.scenariotesting.{
+  DataRecordsSource,
+  StubbedComponentImplementationInvoker,
+  TestFlinkExceptionHandler
+}
+import pl.touk.nussknacker.engine.testmode.NonMapBasedRecordTypesOps.TypingResultExt
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.test.TestDataRecord
+import pl.touk.nussknacker.engine.util.watermarkstrategy.WithWatermarkStrategyOptions
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import shapeless.syntax.typeable.typeableOps
 
 object FlinkProcessCompilerDataFactoryWithTestComponents {
 
@@ -27,37 +36,17 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       resultsCollectingListener: ResultsCollectingListener[Any],
       modelData: ModelData,
       runtimeMode: RuntimeMode,
-      nodesData: NodesDeploymentData,
-  ): FlinkProcessCompilerDataFactory =
-    FlinkProcessCompilerDataFactoryWithTestComponents(
-      modelData.configCreator,
-      modelData.extractModelDefinitionFun,
-      modelData.modelConfig,
-      runtimeMode,
-      testExtensionsHolder,
-      resultsCollectingListener,
-      modelData.additionalConfigsFromProvider,
-      nodesData
-    )
-
-  def apply(
-      creator: ProcessConfigCreator,
-      extractModelDefinition: ExtractDefinitionFun,
-      modelConfig: ModelConfig,
-      runtimeMode: RuntimeMode,
-      testExtensionsHolder: TestExtensionsHolder,
-      resultsCollectingListener: ResultsCollectingListener[Any],
-      configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+      testRecordsOpt: Option[List[TestDataRecord]],
       nodesData: NodesDeploymentData,
   ): FlinkProcessCompilerDataFactory = {
     new FlinkProcessCompilerDataFactory(
-      creator,
-      extractModelDefinition,
-      modelConfig,
-      runtimeMode,
-      configsFromProviderWithDictionaryEditor,
-      nodesData,
-      List.empty,
+      creator = modelData.configCreator,
+      extractModelDefinition = modelData.extractModelDefinitionFun,
+      modelConfig = modelData.modelConfig,
+      runtimeMode = runtimeMode,
+      configsFromProviderWithDictionaryEditor = modelData.additionalConfigsFromProvider,
+      nodesData = nodesData,
+      processListeners = List.empty,
     ) {
 
       override protected def adjustDefinitions(
@@ -73,8 +62,50 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
             globalParametersConfig = GlobalParametersConfig.default
           )
 
-        originalModelDefinition
-          .withComponents(testComponents)
+        val withTestComponents = originalModelDefinition.withComponents(testComponents)
+
+        val withStubbedSourcesIfNeeded = testRecordsOpt match {
+          case None =>
+            withTestComponents
+          case Some(testRecords) =>
+            val outputValidationContextDeterminer = new StaticComponentOutputValidationContextDeterminer(
+              GlobalVariablesPreparer(definitionContext.modelDefinitionWithClasses.modelDefinition.expressionConfig)
+            )
+
+            withTestComponents.copy(components =
+              withTestComponents.components.copy(components =
+                withTestComponents.components.components.map {
+                  case component if component.componentType == ComponentType.Source =>
+                    component.withImplementationInvoker(
+                      new StubbedComponentImplementationInvoker(component, outputValidationContextDeterminer) {
+                        override def transformOriginalInvocationResult(
+                            originalSource: Any,
+                            outputValidationContext: ValidationContext,
+                            typingResult: typing.TypingResult,
+                            compilationDependencies: NodeCompilationDependencies,
+                        ): Any = { // We change record type because to emulate the same behaviour as we have during scenario testing
+                          val outputValidationContextWithRecordsAsMaps =
+                            outputValidationContext.mapTypes(_.withoutValue.toMapBasedRecordTypes)
+                          val recordsForSource =
+                            testRecords
+                              .filter(_.sourceId == compilationDependencies.nodeId)
+                              .map(_.record)
+                              .sortBy(_.timestamp)
+                          new DataRecordsSource(
+                            recordsForSource,
+                            outputValidationContextWithRecordsAsMaps,
+                            originalSource.cast[WithWatermarkStrategyOptions].map(_.watermarkStrategyOptions)
+                          )
+                        }
+                      }
+                    )
+                  case other => other
+                }
+              )
+            )
+        }
+
+        withStubbedSourcesIfNeeded
           .copy(
             expressionConfig = originalModelDefinition.expressionConfig.copy(
               originalModelDefinition.expressionConfig.globalVariables ++
