@@ -1,4 +1,4 @@
-import { List, ListItemButton, ListItemText } from "@mui/material";
+import { List, ListItemButton, ListItemText, styled } from "@mui/material";
 import i18next from "i18next";
 import React, { useCallback, useEffect, useRef } from "react";
 
@@ -13,7 +13,7 @@ interface Props {
     commitOnClick?: boolean; // new flag to close editor immediately when user clicks
 }
 
-const BASE_SELECT_STYLE: React.CSSProperties = {
+const StyledList = styled(List)(() => ({
     width: "100%",
     height: "100%",
     border: "none",
@@ -22,31 +22,16 @@ const BASE_SELECT_STYLE: React.CSSProperties = {
     font: "inherit",
     padding: 0,
     margin: 0,
-};
+    overflowY: "auto",
+}));
 
-export const Dropdown: React.FC<Props> = ({
-    value,
-    options,
-    onValueChange,
-    onCommit,
-    onCancel,
-    style,
-    autoOpen = true,
-    commitOnClick = false,
-}) => {
+export const Dropdown: React.FC<Props> = ({ value, options, onValueChange, onCommit, onCancel, commitOnClick = false }) => {
     const listRef = useRef<HTMLUListElement>(null);
-    const openedRef = useRef(false);
     const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
     useEffect(() => {
         listRef.current?.focus();
     }, []);
-
-    useEffect(() => {
-        if (!autoOpen) return;
-        if (openedRef.current) return;
-        openedRef.current = true; // native picker opening timing no longer needed
-    }, [autoOpen]);
 
     // Ensure active item stays visible when value changes via keyboard
     useEffect(() => {
@@ -104,7 +89,7 @@ export const Dropdown: React.FC<Props> = ({
     );
 
     return (
-        <List
+        <StyledList
             ref={listRef}
             tabIndex={0}
             role="listbox"
@@ -113,7 +98,6 @@ export const Dropdown: React.FC<Props> = ({
             onBlur={onCommit}
             dense
             disablePadding
-            style={{ ...BASE_SELECT_STYLE, overflowY: "auto", ...style }}
         >
             {options.map((o, i) => (
                 <ListItemButton
@@ -135,13 +119,6 @@ export const Dropdown: React.FC<Props> = ({
                             onCommit();
                         }
                     }}
-                    sx={{
-                        // Keep visual parity with previous custom styles
-                        lineHeight: 1.4,
-                        py: 0.25,
-                        px: 0.5,
-                        fontWeight: o === value ? 600 : 400,
-                    }}
                 >
                     <ListItemText primaryTypographyProps={{ noWrap: true }} primary={o} />
                 </ListItemButton>
@@ -154,7 +131,7 @@ export const Dropdown: React.FC<Props> = ({
                     />
                 </ListItemButton>
             )}
-        </List>
+        </StyledList>
     );
 };
 
