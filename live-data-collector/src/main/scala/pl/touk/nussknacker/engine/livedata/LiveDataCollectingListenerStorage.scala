@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.livedata
 
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerStorage.NodeParameter
 
 import java.time.{Clock, Instant}
 import java.util.concurrent.ConcurrentHashMap
@@ -16,9 +17,11 @@ private[livedata] class LiveDataCollectingListenerStorage(
 
   private val samples = new ConcurrentHashMap[NodeTransition, RingBufferWithTotalCount[LiveDataSample]]
 
-  private val invocationResults = new ConcurrentHashMap[NodeId, RingBufferWithTotalCount[InvocationResult]]
+  private val expressionEvaluationResults =
+    new ConcurrentHashMap[NodeParameter, RingBufferWithTotalCount[InvocationResult]]
 
-  private val externalInvocations = new ConcurrentHashMap[NodeId, RingBufferWithTotalCount[InvocationResult]]
+  private val externalServiceInvocationResults =
+    new ConcurrentHashMap[NodeParameter, RingBufferWithTotalCount[InvocationResult]]
 
   private val exceptions = new ConcurrentHashMap[NodeId, RingBufferWithTotalCount[ExceptionResult]]
 
@@ -37,12 +40,12 @@ private[livedata] class LiveDataCollectingListenerStorage(
           currentThroughput = transitionsSlidingWindowCounter.getThroughput.getOrElse(transition, 0)
         )
       },
-      invocationResults = invocationResults.asScala.toMap.map { case (nodeId, values) =>
-        nodeId -> values.values
-      },
-      externalInvocationResults = externalInvocations.asScala.toMap.map { case (nodeId, values) =>
-        nodeId -> values.values
-      },
+      invocationResults = expressionEvaluationResults.asScala.toMap
+        .groupBy { case (nodeExpr, _) => nodeExpr.nodeId }
+        .map { case (nodeId, matchingValuesMap) => nodeId -> matchingValuesMap.values.toList.flatMap(_.values) },
+      externalInvocationResults = externalServiceInvocationResults.asScala.toMap
+        .groupBy { case (nodeExpr, _) => nodeExpr.nodeId }
+        .map { case (nodeId, matchingValuesMap) => nodeId -> matchingValuesMap.values.toList.flatMap(_.values) },
       exceptions = exceptions.asScala.toMap.map { case (nodeId, values) =>
         nodeId -> values.values
       },
@@ -54,12 +57,12 @@ private[livedata] class LiveDataCollectingListenerStorage(
     put(samples, nodeTransition, liveDataSample)
   }
 
-  def addExpressionEvaluation(nodeId: NodeId, value: InvocationResult): Unit = {
-    put(invocationResults, nodeId, value)
+  def addExpressionEvaluationResult(nodeId: NodeId, value: InvocationResult): Unit = {
+    put(expressionEvaluationResults, NodeParameter(nodeId, value.name), value)
   }
 
-  def addExternalInvocation(nodeId: NodeId, value: InvocationResult): Unit = {
-    put(externalInvocations, nodeId, value)
+  def addExternalServiceInvocation(nodeId: NodeId, value: InvocationResult): Unit = {
+    put(externalServiceInvocationResults, NodeParameter(nodeId, value.name), value)
   }
 
   def addException(nodeId: NodeId, value: ExceptionResult): Unit = {
@@ -85,4 +88,8 @@ private[livedata] class LiveDataCollectingListenerStorage(
     )
   }
 
+}
+
+object LiveDataCollectingListenerStorage {
+  private final case class NodeParameter(nodeId: NodeId, parameterName: String)
 }
