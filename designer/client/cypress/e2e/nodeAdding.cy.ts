@@ -5,9 +5,9 @@ describe("Node adding", () => {
         cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
-    after(() => {
-        cy.deleteAllTestProcesses({ filter: seed, force: true });
-    });
+    // after(() => {
+    //     cy.deleteAllTestProcesses({ filter: seed, force: true });
+    // });
 
     beforeEach(() => {
         cy.intercept("GET", "/api/processes/*/toolbars", (req) => {
