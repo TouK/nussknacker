@@ -1962,7 +1962,7 @@ lazy val customHttpServiceApi = (project in file("designer/custom-http-service-a
       )
     }
   )
-  .dependsOn(extensionsApi, security)
+  .dependsOn(extensionsApi, security, restmodel)
 
 lazy val configLoaderApi = (project in file("designer/config-loader-api"))
   .settings(commonSettings)
