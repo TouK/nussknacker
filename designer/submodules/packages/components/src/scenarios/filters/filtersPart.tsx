@@ -61,13 +61,13 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                 case "ARCHIVED":
                     return t("table.filter.ARCHIVED", "Archived");
                 case "STATUS":
-                    return t("table.filter.status." + value, statusFilterLabels[value]);
+                    return t("table.filter.status." + value, statusFilterLabels[value] as string);
                 case "PROCESSING_MODE":
                     return processingModeItems.find((processingModeItem) => processingModeItem.name === value).displayableName;
             }
 
             if (value?.toString().length) {
-                return value;
+                return value.toString();
             }
 
             return name;

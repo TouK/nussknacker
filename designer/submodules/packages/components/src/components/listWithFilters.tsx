@@ -179,7 +179,7 @@ export function Components(): JSX.Element {
             }
 
             if (value?.toString().length) {
-                return value;
+                return value.toString();
             }
 
             return name;

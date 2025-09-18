@@ -1,5 +1,5 @@
 import AssessmentIcon from "@mui/icons-material/Assessment";
-import { ListItemAvatar } from "@mui/material";
+import { Box, ListItemAvatar } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -146,18 +146,16 @@ export function ItemsList(props: {
         <div ref={ref}>
             <WindowScroller scrollElement={scrollParent}>
                 {({ height = 0, width = 0, isScrolling, onChildScroll, scrollTop, registerChild }) => (
-                    <>
-                        <Paper ref={registerChild} sx={{ flex: 1 }}>
-                            <ScenarioAndFragmentsList
-                                height={height}
-                                width={width}
-                                isScrolling={isScrolling}
-                                onChildScroll={onChildScroll}
-                                rows={rows}
-                                scrollTop={scrollTop}
-                            />
-                        </Paper>
-                    </>
+                    <Box component={Paper} ref={registerChild} sx={{ flex: 1 }}>
+                        <ScenarioAndFragmentsList
+                            height={height}
+                            width={width}
+                            isScrolling={isScrolling}
+                            onChildScroll={onChildScroll}
+                            rows={rows}
+                            scrollTop={scrollTop}
+                        />
+                    </Box>
                 )}
             </WindowScroller>
             <Stats current={rows?.length} all={data?.length} isLoading={isLoading} />
