@@ -92,7 +92,9 @@ object PeriodicStateStatus {
           ScenarioActionName.RunOffSchedule -> s"Version ${print(input.deployedVersionId)} is deployed, but different version ${print(input.currentlyPresentedVersionId)} is displayed"
         )
       case other =>
-        Map(ScenarioActionName.RunOffSchedule -> s"Disabled for ${other.name} status.")
+        Map(
+          ScenarioActionName.RunOffSchedule -> s"Cannot run off schedule, because scenario is in ${other.name} state."
+        )
     }
   }
 
