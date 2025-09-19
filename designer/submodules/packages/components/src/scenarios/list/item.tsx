@@ -3,9 +3,11 @@ import { formatDateTime } from "nussknackerUi/DateUtils";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { CategoryButton, Highlight, TruncateWrapper } from "../../common";
+import { CategoryButton } from "../../common/categoryChip";
 import type { FiltersContextType } from "../../common/filters/filtersContext";
+import { Highlight } from "../../common/highlight";
 import { LabelChip } from "../../common/labelChip";
+import { TruncateWrapper } from "../../common/utils/truncateWrapper";
 import { useScenariosFilterContext } from "../filters/common/useScenariosFilterContext";
 import type { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import { useScenariosWithCategoryVisible } from "../useScenariosQuery";

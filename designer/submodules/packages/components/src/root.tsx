@@ -1,11 +1,13 @@
 import { CssBaseline, GlobalStyles } from "@mui/material";
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import React from "react";
-import { RootProvidersWithAuth } from "./settings";
-import { useDefaultTheme, View } from "./common";
-import { RootRoutes } from "./components/rootRoutes";
 import { BrowserRouter } from "react-router-dom";
+
+import { useDefaultTheme } from "./common/defaultTheme";
+import { View } from "./common/view";
+import { RootRoutes } from "./components/rootRoutes";
 import { Navigation } from "./navigation";
+import { RootProvidersWithAuth } from "./settings/rootProvidersWithAuth";
 
 export const Root = (): JSX.Element => {
     const defaultTheme = useDefaultTheme();

@@ -1,10 +1,12 @@
-import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
-import React, { PropsWithChildren, useEffect, useMemo } from "react";
-import { RootProviders } from "../settings";
 import { useTheme } from "@mui/material";
+import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
+import type { RemoteComponentProps } from "nussknackerUi/containers/DynamicTab";
+import type { PropsWithChildren } from "react";
+import React, { useEffect, useMemo } from "react";
+
+import { RootProviders } from "../settings/rootProviders";
 import { useDefaultTheme } from "./defaultTheme";
 import { NavigationProvider } from "./parentNavigationProvider";
-import { RemoteComponentProps } from "nussknackerUi/containers/DynamicTab";
 import { View } from "./view";
 
 export type NkViewProps = Omit<RemoteComponentProps, "basepath">;

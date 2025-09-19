@@ -1,8 +1,9 @@
-import React from "react";
-import { NuIcon } from "../../common";
-import { capitalize, startCase } from "lodash";
 import { Box, Typography } from "@mui/material";
+import { capitalize, startCase } from "lodash";
+import React from "react";
 import { useTranslation } from "react-i18next";
+
+import { NuIcon } from "../../common/nuIcon";
 
 interface Props {
     value: string;
