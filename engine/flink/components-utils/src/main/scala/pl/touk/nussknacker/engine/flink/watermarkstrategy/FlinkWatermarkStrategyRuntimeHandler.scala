@@ -103,7 +103,7 @@ object FlinkWatermarkStrategyRuntimeHandler {
     strategyWithOptIdleness.withTimestampAssigner(EventTimeTimestampAssigner)
   }
 
-  private object EventTimeTimestampAssigner extends SerializableTimestampAssigner[ContextWithEventTime] {
+  object EventTimeTimestampAssigner extends SerializableTimestampAssigner[ContextWithEventTime] {
 
     override def extractTimestamp(context: ContextWithEventTime, recordTimestamp: Long): Long =
       context.eventTime

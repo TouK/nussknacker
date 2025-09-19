@@ -54,45 +54,38 @@ class TestDataPreparer(
     val jsonRecordList       = records.collect { case r: ScenarioTestSourceSpecificFormatJsonRecord => r }
     val parametersRecordList = records.collect { case r: ScenarioTestParametersRecord => r }
     // We don't handle ScenarioTestCommonFormatJsonRecord - it is handled by CommonTestDataFormatComponentExecutorStubber
-    val testRecordsFromJsonRecords = jsonRecordList match {
-      case Nil => List.empty
-      case _ =>
-        source match {
-          case s: SourceTestSupport[T @unchecked] =>
-            val parser = s.testRecordParser
-            ThreadUtils.withContextClassLoader(classloader) {
-              parser.parse(jsonRecordList.map(record => TestRecord(record.record, record.timestamp)))
-            }
-          case other =>
-            throw new IllegalArgumentException(
-              s"Source ${other.getClass} cannot be stubbed - it doesn't provide test data parser"
-            )
+    val testRecordsFromJsonRecords = (jsonRecordList, source) match {
+      case (Nil, _) => List.empty
+      case (_, s: SourceTestSupport[T @unchecked]) =>
+        val parser = s.testRecordParser
+        ThreadUtils.withContextClassLoader(classloader) {
+          parser.parse(jsonRecordList.map(record => TestRecord(record.record, record.timestamp)))
         }
+      case (_, other) =>
+        throw new IllegalArgumentException(
+          s"Source ${other.getClass} cannot be stubbed - it doesn't provide test data parser"
+        )
     }
-    val testRecordsFromParametersRecords = parametersRecordList match {
-      case Nil => List.empty
-      case _ =>
-        source match {
-          case s: TestWithParametersSupport[T @unchecked] => {
-            parametersRecordList.map { record =>
-              implicit val implicitNodeId: NodeId = record.sourceId
-              val parameterTypingResults = s.testParametersDefinition.collect { param =>
-                record.parameterExpressions.get(param.name) match {
-                  case Some(expression)          => evaluateExpression(expression, param).map(e => param.name -> e)
-                  case None if !param.isOptional => UnknownProperty(param.name).invalidNel
-                }
-              }
-              parameterTypingResults.sequence match {
-                case Valid(evaluatedParams) => s.parametersToTestData(evaluatedParams.toMap)
-                case Invalid(errors)        => throw new IllegalArgumentException(errors.toList.mkString(", "))
-              }
+    val testRecordsFromParametersRecords = (parametersRecordList, source) match {
+      case (Nil, _) => List.empty
+      case (_, s: TestWithParametersSupport[T @unchecked]) =>
+        parametersRecordList.map { record =>
+          implicit val implicitNodeId: NodeId = record.sourceId
+          val parameterTypingResults = s.testParametersDefinition.collect { param =>
+            record.parameterExpressions.get(param.name) match {
+              case Some(expression)          => evaluateExpression(expression, param).map(e => param.name -> e)
+              case None if !param.isOptional => UnknownProperty(param.name).invalidNel
             }
           }
-          case other =>
-            throw new IllegalArgumentException(
-              s"Source ${other.getClass} cannot be stubbed - it doesn't provide test with parameters support"
-            )
+          parameterTypingResults.sequence match {
+            case Valid(evaluatedParams) => s.parametersToTestData(evaluatedParams.toMap)
+            case Invalid(errors)        => throw new IllegalArgumentException(errors.toList.mkString(", "))
+          }
         }
+      case (_, other) =>
+        throw new IllegalArgumentException(
+          s"Source ${other.getClass} cannot be stubbed - it doesn't provide test with parameters support"
+        )
     }
     testRecordsFromJsonRecords ++ testRecordsFromParametersRecords
   }

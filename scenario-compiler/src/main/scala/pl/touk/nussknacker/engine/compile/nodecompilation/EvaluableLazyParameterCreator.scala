@@ -45,6 +45,7 @@ final class EvaluableLazyParameterCreator[T <: AnyRef](
       override val shouldBeWrappedWithJavaOptional: Boolean = parameterDef.javaOptionalParameter
     }
     new EvaluableLazyParameter[T](
+      this,
       compiledParameter,
       deps.expressionEvaluator,
       nodeId,

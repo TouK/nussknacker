@@ -516,7 +516,7 @@ class SchemalessKafkaJsonTypeTests
         .multiPart(
           "testData",
           s"""[
-             |  { "sourceId":"$exampleScenarioSourceId","variables": { "input": {"name": "Foo"} } }
+             |  { "sourceId":"$exampleScenarioSourceId","variables": { "input": {"name": "Foo"}, "inputMeta": {"timestamp": 123} } }
              |]""".stripMargin,
           "application/json"
         )

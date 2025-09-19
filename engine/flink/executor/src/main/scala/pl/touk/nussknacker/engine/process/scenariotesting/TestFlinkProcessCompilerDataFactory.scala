@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.process.scenariotesting
 
 import cats.data.NonEmptyList
-import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.{ModelConfig, ModelData, RuntimeMode}
@@ -13,7 +12,7 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId,
   NodesDeploymentData
 }
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ScenarioCompilationErrors, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, Source}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -26,22 +25,18 @@ import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   NodeCompilationDependencies
 }
-import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.{
-  ComponentImplementationSpecificInvocationContext,
-  DynamicComponentInvocationContext
-}
-import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.ComponentImplementationSpecificInvocationContext
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, FlinkSourceTestSupport}
-import pl.touk.nussknacker.engine.flink.util.source.EmptySource
+import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.process.compiler.{ComponentDefinitionContext, FlinkProcessCompilerDataFactory}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
+import pl.touk.nussknacker.engine.util.watermarkstrategy.WithWatermarkStrategyOptions
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import shapeless.syntax.typeable.typeableOps
 
 import scala.annotation.nowarn
 
@@ -176,7 +171,7 @@ class TestFlinkProcessCompilerDataFactory(
       sourceSpecificFormatStubbedSourcePreparer: SourceSpecificFormatStubbedSourcePreparer,
       outputValidationContextDeterminer: StaticComponentOutputValidationContextDeterminer,
       sourceFactory: ComponentDefinitionWithImplementation
-  ) extends StubbedComponentImplementationInvoker(sourceFactory) {
+  ) extends StubbedComponentImplementationInvoker(sourceFactory, outputValidationContextDeterminer) {
 
     override def invokeOriginalInvoker(
         params: Params,
@@ -194,18 +189,16 @@ class TestFlinkProcessCompilerDataFactory(
 
     override def transformOriginalInvocationResult(
         originalSource: Any,
-        originalSourceWasWrappedInContextTransformation: Boolean,
+        outputValidationContext: ValidationContext,
         typingResult: TypingResult,
-        compilationDependencies: NodeCompilationDependencies,
-        invocationContext: Option[ComponentImplementationSpecificInvocationContext]
+        compilationDependencies: NodeCompilationDependencies
     ): Any = {
-      val outputValidationContext =
-        determineOutputValidationContext(originalSource, compilationDependencies, invocationContext)
-
-      val commonFormatRecordsNelOpt =
-        NonEmptyList.fromList(scenarioTestData.commonFormatRecords(compilationDependencies.nodeId))
-      (originalSource, commonFormatRecordsNelOpt) match {
-        case (sourceWithTestSupport: Source with FlinkSourceTestSupport[Object @unchecked], None) =>
+      val commonFormatRecords = scenarioTestData.commonFormatRecords(compilationDependencies.nodeId)
+      lazy val watermarkStrategyOptions =
+        originalSource.cast[WithWatermarkStrategyOptions].map(_.watermarkStrategyOptions)
+      originalSource match {
+        case sourceWithTestSupport: Source with FlinkSourceTestSupport[Object @unchecked]
+            if commonFormatRecords.isEmpty =>
           logger.debug(
             s"Preparing source stubbed with test data in the source-specific format for component [${componentDefinition.id}]"
           )
@@ -214,24 +207,16 @@ class TestFlinkProcessCompilerDataFactory(
             typingResult,
             compilationDependencies.nodeId
           )
-        case (_, Some(commonFormatRecordsNel)) =>
-          logger.debug(
-            s"Preparing source stubbed with ${commonFormatRecordsNel.size} test data records in the common format for component [${componentDefinition.id}]"
-          )
-          val stubbedSource = CommonTestDataFormatStubbedSourcePreparer.prepareSubbedSource(
-            commonFormatRecordsNel,
-            outputValidationContext,
-            compilationDependencies.nodeId
-          )
-          recoverOutputValidationContextIfNeeded(
-            originalSourceWasWrappedInContextTransformation,
-            outputValidationContext,
-            stubbedSource
-          )
         case _ =>
-          // TODO: This probably doesn't work correctly for sources with custom ContextInitializer -
-          //       we should recover validation context, see TestFlinkProcessCompilerDataFactory.recoverOutputValidationContextIfNeeded
-          EmptySource(typingResult)
+          logger.debug(
+            s"Preparing source stubbed with ${commonFormatRecords.size} test data records in the common format for component [${componentDefinition.id}]"
+          )
+          CommonTestDataFormatStubbedSourcePreparer.prepareSubbedSource(
+            commonFormatRecords,
+            outputValidationContext,
+            compilationDependencies.nodeId,
+            watermarkStrategyOptions
+          )
       }
     }
 
@@ -240,52 +225,6 @@ class TestFlinkProcessCompilerDataFactory(
         sourceSpecificFormatStubbedSourcePreparer.resolveParam(lazyParameterCreator)
       case other =>
         other
-    }
-
-    private def determineOutputValidationContext(
-        originalSource: Any,
-        compilationDependencies: NodeCompilationDependencies,
-        invocationContext: Option[ComponentImplementationSpecificInvocationContext]
-    ) = {
-      (componentDefinition, invocationContext) match {
-        case (_, Some(DynamicComponentInvocationContext(_, outputValidationContext))) => outputValidationContext
-        case (staticComponent: MethodBasedComponentDefinitionWithImplementation, _) =>
-          outputValidationContextDeterminer
-            .contextAfterNode(
-              nodeData = compilationDependencies.nodeData,
-              customNodeIsEndingNode = None,
-              staticComponent = staticComponent,
-              validComponentExecutor = Valid(originalSource),
-              inputContext = compilationDependencies.inputValidationContext
-            )(compilationDependencies.jobData)
-            .valueOr { errNel =>
-              throw new IllegalStateException(
-                "Compilation errors during output validation context determining",
-                ScenarioCompilationErrors(errNel.toList)
-              )
-            }
-        case _ =>
-          throw new IllegalStateException(
-            s"Illegal combination of component [$componentDefinition] and invocation context [$invocationContext]"
-          )
-      }
-    }
-
-    private def recoverOutputValidationContextIfNeeded(
-        originalSourceWasWrappedInContextTransformation: Boolean,
-        outputValidationContext: ValidationContext,
-        stubbedSource: FlinkSource
-    ) = {
-      componentDefinition match {
-        case _: DynamicComponentDefinitionWithImplementation => stubbedSource
-        case _: MethodBasedComponentDefinitionWithImplementation if originalSourceWasWrappedInContextTransformation =>
-          stubbedSource
-        case _: MethodBasedComponentDefinitionWithImplementation =>
-          // For static components that returns Source, we have to recover the output validation context
-          ContextTransformation
-            .definedBy(_ => Valid(outputValidationContext))
-            .implementedBy(stubbedSource)
-      }
     }
 
   }

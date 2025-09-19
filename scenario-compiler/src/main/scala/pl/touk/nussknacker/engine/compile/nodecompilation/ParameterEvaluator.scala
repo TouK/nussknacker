@@ -106,22 +106,24 @@ class ParameterEvaluator(
       nodeId: NodeId,
       lazyParameterCreationStrategy: LazyParameterCreationStrategy
   ): LazyParameter[Nothing] = {
+    val creator = new EvaluableLazyParameterCreator[Nothing](
+      nodeId,
+      definition,
+      graph.expression.Expression(exprValue.expression.language, exprValue.expression.original),
+      validationContext,
+      exprValue.returnType
+    )
     lazyParameterCreationStrategy match {
       case EvaluableLazyParameterStrategy =>
-        new EvaluableLazyParameter(
+        new EvaluableLazyParameter[Nothing](
+          creator,
           CompiledParameter(exprValue, definition),
           runtimeExpressionEvaluator,
           nodeId,
           jobData
         )
       case PostponedEvaluatorLazyParameterStrategy =>
-        new EvaluableLazyParameterCreator(
-          nodeId,
-          definition,
-          graph.expression.Expression(exprValue.expression.language, exprValue.expression.original),
-          validationContext,
-          exprValue.returnType
-        )
+        creator
     }
   }
 

@@ -7,6 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{CirceUtil, JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{SourceFactory, TestWithParametersSupport}
@@ -18,7 +19,7 @@ import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.part.SourcePart
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
+import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.process.compiler.UsedNodes
@@ -72,7 +73,9 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     ),
     ComponentDefinition(
       "source-no-test-support",
-      SourceFactory.noParamUnboundedStreamFactory[Int](EmptySource(Typed.fromDetailedType[Int]))
+      SourceFactory.noParamUnboundedStreamFactory[Int](
+        new DataRecordsSource(List.empty, ValidationContext.empty, None)
+      )
     ),
     ComponentDefinition("mockService", new MockService(mockServiceResultsHolder))
   )
@@ -94,7 +97,8 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     val sources = compiledProcess.sources.collect { case source: SourcePart =>
       source.obj
     }
-    sources should matchPattern { case (_: EmptySource) :: (_: EmptySource) :: (_: EmptySource) :: Nil =>
+    sources should matchPattern {
+      case (_: DataRecordsSource) :: (_: DataRecordsSource) :: (_: DataRecordsSource) :: Nil =>
     }
   }
 
@@ -132,7 +136,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     }
     sources("right-source") should matchPattern { case CollectionSource(List(21, 22, 23), _, _, _) =>
     }
-    sources("source-no-test-support") should matchPattern { case EmptySource(_) =>
+    sources("source-no-test-support") should matchPattern { case _: DataRecordsSource =>
     }
   }
 
