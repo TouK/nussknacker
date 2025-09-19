@@ -6,7 +6,7 @@ import type { IAceEditor } from "react-ace/lib/types";
 import { useTranslation } from "react-i18next";
 
 import type { GenericValidationRequest } from "../../../../../../../actions/nk/adhocTesting";
-import HttpService from "../../../../../../../http/HttpService";
+import HttpService from "../../../../../../../http/instance";
 import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../../../../store/storeHelpers";
 import type { ReturnedType } from "../../../../../../../types/scenarioGraph";

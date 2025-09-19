@@ -1,7 +1,7 @@
 import { debounce } from "lodash";
 
-import HttpService from "../../http/HttpService";
-import type { SourceWithParametersTest } from "../../http/HttpService/types";
+import HttpService from "../../http/instance";
+import type { SourceWithParametersTest } from "../../http/types";
 import type { TypingResult } from "../../types/definition";
 import type { Expression } from "../../types/node";
 import type { ScenarioGraph } from "../../types/scenarioGraph";

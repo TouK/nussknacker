@@ -4,7 +4,7 @@ import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { NodesDeploymentData, ScenarioGraphSource } from "../../http/HttpService/types";
+import type { NodesDeploymentData, ScenarioGraphSource } from "../../http/types";
 import { getProcessName, getProcessVersionId, getScenarioGraphSource } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { useAppSelector } from "../../store/storeHelpers";

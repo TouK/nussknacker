@@ -1,5 +1,5 @@
 import type { ProcessName } from "../../components/Process/types";
-import HttpService from "../../http/HttpService";
+import HttpService from "../../http/instance";
 import type { ThunkAction } from "../reduxTypes";
 
 export function importFiles(processName: ProcessName, files: File[]): ThunkAction {

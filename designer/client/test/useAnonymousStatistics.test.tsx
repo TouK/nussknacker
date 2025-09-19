@@ -2,11 +2,11 @@ import { jest } from "@jest/globals";
 import { renderHook, waitFor } from "@testing-library/react";
 import { AxiosResponse } from "axios";
 import { useAnonymousStatistics } from "../src/containers/useAnonymousStatistics";
-import httpService from "../src/http/HttpService";
+import httpService from "../src/http/instance";
 import { useAppSelector } from "../src/store/storeHelpers";
 
 jest.mock("../src/store/storeHelpers");
-jest.mock("../src/http/HttpService");
+jest.mock("../src/http/instance");
 jest.mock("rooks", () => ({
     useLocalstorageState: () => {
         return [{ createdAt: Date.now() }, () => {}];

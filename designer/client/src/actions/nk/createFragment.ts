@@ -1,5 +1,5 @@
 import { jsonToFileInFormData } from "../../components/graph/createFragment";
-import HttpService from "../../http/HttpService";
+import HttpService from "../../http/instance";
 import { createUniqueName } from "../../reducers/graph/utils";
 import { fetchScenarios, getScenariosNames } from "../../reducers/scenarios";
 import { getScenario } from "../../reducers/selectors/graph";

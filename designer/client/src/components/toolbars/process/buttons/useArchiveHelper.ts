@@ -6,7 +6,7 @@ import { displayCurrentProcessVersion } from "../../../../actions/nk/process";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { ArchivedPath } from "../../../../containers/paths";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/instance";
 import { isPristine } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";

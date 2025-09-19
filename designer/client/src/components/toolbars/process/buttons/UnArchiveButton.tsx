@@ -6,7 +6,7 @@ import { displayCurrentProcessVersion } from "../../../../actions/nk/process";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import Icon from "../../../../assets/img/toolbarButtons/unarchive.svg";
 import DialogMessages from "../../../../common/DialogMessages";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/instance";
 import { getProcessName, isArchived } from "../../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager/useWindows";

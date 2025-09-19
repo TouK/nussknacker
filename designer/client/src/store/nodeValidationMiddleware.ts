@@ -4,7 +4,7 @@ import type { Middleware } from "redux";
 import { ActionTypes as UndoActionTypes } from "redux-undo";
 
 import type { Action } from "../actions/reduxTypes";
-import HttpService from "../http/HttpService";
+import HttpService from "../http/instance";
 import type { RootState } from "../reducers";
 import { getProcessName, getScenarioGraph, getUnsavedOrCurrentName } from "../reducers/selectors/graph";
 

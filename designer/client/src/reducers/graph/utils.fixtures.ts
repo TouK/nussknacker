@@ -1,6 +1,6 @@
 import type { NodesWithPositions } from "../../actions/nk/node";
 import { TestCapabilityStatus } from "../../common/TestResultUtils";
-import { ProcessingMode } from "../../http/HttpService/types";
+import { ProcessingMode } from "../../http/types";
 import { EdgeKind } from "../../types/edge";
 import type { GraphState } from "./types";
 

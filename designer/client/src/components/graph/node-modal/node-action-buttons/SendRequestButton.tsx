@@ -3,7 +3,7 @@ import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 import { setTestData } from "../../../../actions/nk/displayTestResults";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/instance";
 import { getProcessName } from "../../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import type { NodeType } from "../../../../types/node";

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 
-import HttpService from "../../../http/HttpService";
+import HttpService from "../../../http/instance";
 import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeValidationError } from "../../../types/validation";

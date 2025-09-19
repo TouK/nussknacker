@@ -9,7 +9,7 @@ import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities
 import DialogMessages from "../../../../common/DialogMessages";
 import { getEventTrackingProps } from "../../../../containers/event-tracking/helpers";
 import { EventTrackingSelector } from "../../../../containers/event-tracking/use-register-tracking-events";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/instance";
 import { getProcessName, getProcessVersionId, getScenario, isPristine } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getLoggedUser } from "../../../../reducers/selectors/settings";

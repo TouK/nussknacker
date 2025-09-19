@@ -1,7 +1,7 @@
 import { debounce } from "lodash";
 import { useCallback, useMemo } from "react";
 
-import httpService from "../../http/HttpService";
+import httpService from "../../http/instance";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { useAppSelector } from "../../store/storeHelpers";
 import { getEventStatisticName } from "./helpers";

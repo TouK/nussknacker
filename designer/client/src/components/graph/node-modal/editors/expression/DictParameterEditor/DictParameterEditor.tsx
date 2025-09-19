@@ -7,8 +7,8 @@ import { isEmpty } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { tryParseOrNull } from "../../../../../../common/JsonUtils";
-import HttpService from "../../../../../../http/HttpService";
-import type { ProcessDefinitionDataDictOption } from "../../../../../../http/HttpService/types";
+import HttpService from "../../../../../../http/instance";
+import type { ProcessDefinitionDataDictOption } from "../../../../../../http/types";
 import { getScenario } from "../../../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
 import { selectStyled } from "../../../../../../stylesheets/SelectStyled";

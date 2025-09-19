@@ -6,41 +6,41 @@ import FileSaver from "file-saver";
 import i18next from "i18next";
 import type { Moment } from "moment";
 
-import type { GenericValidationData, GenericValidationRequest, TestAdhocValidationRequest } from "../../actions/nk/adhocTesting";
-import type { SettingsData } from "../../actions/nk/assignSettings";
-import type { ValidationData, ValidationRequest } from "../../actions/nk/nodeDetails";
-import type { ProcessingType } from "../../actions/nk/processDefinitionData";
-import api from "../../api";
-import type { UserData } from "../../common/models/User";
-import SystemUtils from "../../common/SystemUtils";
-import { withoutHackOfEmptyEdges } from "../../components/graph/GraphPartialsInTS/EdgeUtils";
-import type { ExpressionSuggestion } from "../../components/graph/node-modal/editors/expression/ExpressionSuggester";
-import type { AdditionalInfo } from "../../components/graph/node-modal/NodeAdditionalInfoBox";
-import { extractStickyNotesFromNodes } from "../../components/graph/utils/stickyNotesUtils";
-import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../../components/Labels/types";
-import type { TestingDataRecords, TestingDataRecordsRequestData } from "../../components/modals/TestingDataRecords/Table";
-import type { ProcessName, ProcessVersionId, Scenario, StatusDefinitionType } from "../../components/Process/types";
-import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../../components/toolbars/activities/types";
-import { ActivityTypesRelatedToExecutions } from "../../components/toolbars/activities/types";
+import type { GenericValidationData, GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
+import type { SettingsData } from "../actions/nk/assignSettings";
+import type { ValidationData, ValidationRequest } from "../actions/nk/nodeDetails";
+import type { ProcessingType } from "../actions/nk/processDefinitionData";
+import api from "../api";
+import type { UserData } from "../common/models/User";
+import SystemUtils from "../common/SystemUtils";
+import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
+import type { ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
+import type { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
+import { extractStickyNotesFromNodes } from "../components/graph/utils/stickyNotesUtils";
+import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
+import type { TestingDataRecords, TestingDataRecordsRequestData } from "../components/modals/TestingDataRecords/Table";
+import type { ProcessName, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
+import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../components/toolbars/activities/types";
+import { ActivityTypesRelatedToExecutions } from "../components/toolbars/activities/types";
 import type {
     ScenarioActionResult,
     ScenarioActionResultDeploySuccess,
     ScenarioActionResultSuccess,
     ScenarioActionUnhandledError,
-} from "../../components/toolbars/scenarioActions/buttons/types";
-import { ScenarioActionResultType } from "../../components/toolbars/scenarioActions/buttons/types";
-import type { ToolbarsConfig } from "../../components/toolbarSettings/types";
-import type { ProcessVersionValidationResponse } from "../../components/versionControl/types";
-import { API_URL } from "../../config";
-import type { EventTrackingSelectorType, EventTrackingType } from "../../containers/event-tracking/use-register-tracking-events";
-import type { BackendNotification } from "../../containers/Notifications";
-import { handleAxiosError } from "../../devHelpers";
-import type { AuthenticationSettings } from "../../reducers/settings";
-import type { WithId } from "../../types/common";
-import type { Expression, NodeType } from "../../types/node";
-import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
-import { fixAggregateParameters, fixBranchParametersTemplate } from "../parametersUtils";
-import type { ProcessCounts, ResultsWithCountsDto } from "../resultsWithCountsDto";
+} from "../components/toolbars/scenarioActions/buttons/types";
+import { ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
+import type { ToolbarsConfig } from "../components/toolbarSettings/types";
+import type { ProcessVersionValidationResponse } from "../components/versionControl/types";
+import { API_URL } from "../config";
+import type { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking/use-register-tracking-events";
+import type { BackendNotification } from "../containers/Notifications";
+import { handleAxiosError } from "../devHelpers";
+import type { AuthenticationSettings } from "../reducers/settings";
+import type { WithId } from "../types/common";
+import type { Expression, NodeType } from "../types/node";
+import type { ProcessDefinitionData, ScenarioGraph } from "../types/scenarioGraph";
+import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
+import type { ProcessCounts, ResultsWithCountsDto } from "./resultsWithCountsDto";
 import type {
     AppBuildInfo,
     ComponentType,

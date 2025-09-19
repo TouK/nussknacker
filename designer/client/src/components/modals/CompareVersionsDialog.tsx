@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 import Icon from "../../assets/img/toolbarButtons/compare.svg";
 import { formatAbsolutely } from "../../common/DateUtils";
 import { flattenObj, objectDiff } from "../../common/JsonUtils";
-import HttpService from "../../http/HttpService";
+import HttpService from "../../http/instance";
 import { getProcessName, getProcessVersionId, getVersions } from "../../reducers/selectors/graph";
 import { getTargetEnvironmentId } from "../../reducers/selectors/settings";
 import { useAppSelector } from "../../store/storeHelpers";

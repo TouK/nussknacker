@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import httpService from "../../../../../../../http/HttpService";
+import httpService from "../../../../../../../http/instance";
 import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../../../../store/storeHelpers";
 import type { ReturnedType } from "../../../../../../../types/scenarioGraph";

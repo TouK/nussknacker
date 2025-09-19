@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import Icon from "../../../../assets/img/toolbarButtons/save.svg";
 import { useUserSettings } from "../../../../common/userSettings";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/instance";
 import {
     getProcessName,
     getProcessUnsavedNewName,

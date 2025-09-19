@@ -1,4 +1,4 @@
-import HttpService from "../../http/HttpService";
+import HttpService from "../../http/instance";
 import type { ResultsWithCountsDto } from "../../http/resultsWithCountsDto";
 import { VisibleDataType } from "../../reducers/graph/types";
 import { getHasPauseReasons, getIsLiveDataWorking, getVisibleDataType, isReadyForLiveData } from "../../reducers/selectors/getLiveData";

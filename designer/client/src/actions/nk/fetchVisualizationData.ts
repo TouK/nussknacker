@@ -1,5 +1,5 @@
 import type { ProcessName } from "../../components/Process/types";
-import HttpService from "../../http/HttpService";
+import HttpService from "../../http/instance";
 import type { ThunkAction } from "../reduxTypes";
 import { loadProcessToolbarsConfiguration } from "./loadProcessToolbarsConfiguration";
 import { fetchProcessDefinition } from "./processDefinitionData";

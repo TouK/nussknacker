@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { loadProcessState } from "../../../../actions/nk/process";
 import Icon from "../../../../assets/img/toolbarButtons/run-off-schedule.svg";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/instance";
 import type { RootState } from "../../../../reducers";
 import { getProcessName, isRunOffScheduleVisible } from "../../../../reducers/selectors/graph";
 import { isRunOffSchedulePossible, isValidationResultPresent } from "../../../../reducers/selectors/graph2";

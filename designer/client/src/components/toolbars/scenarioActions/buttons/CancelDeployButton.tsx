@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { loadProcessState } from "../../../../actions/nk/process";
 import Icon from "../../../../assets/img/toolbarButtons/stop.svg";
 import { useUserSettings } from "../../../../common/userSettings";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/instance";
 import { getProcessName, getProcessVersionId, isCancelPossible } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";

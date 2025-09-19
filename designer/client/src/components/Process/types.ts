@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import type { ProcessingMode } from "../../http/HttpService/types";
+import type { ProcessingMode } from "../../http/types";
 import type { Instant } from "../../types/common";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
 import type { ValidationResult } from "../../types/validation";

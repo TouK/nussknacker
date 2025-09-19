@@ -9,7 +9,7 @@ import BatchIcon from "../assets/img/batch.svg";
 import RequestResponseIcon from "../assets/img/request-response.svg";
 import StreamingIcon from "../assets/img/streaming.svg";
 import { formLabelWidth } from "../containers/theme/styles";
-import { ProcessingMode } from "../http/HttpService/types";
+import { ProcessingMode } from "../http/types";
 import type { NodeValidationError } from "../types/validation";
 import type { ChangeableValue } from "./ChangeableValue";
 import { CustomRadio } from "./customRadio/CustomRadio";

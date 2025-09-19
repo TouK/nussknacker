@@ -2,7 +2,7 @@ import "ace-builds/src-noconflict/ace";
 import { isEmpty, isEqual } from "lodash";
 import React, { useEffect, useRef, useState } from "react";
 
-import HttpService from "../../../../../http/HttpService";
+import HttpService from "../../../../../http/instance";
 import { getProcessDefinitionData } from "../../../../../reducers/selectors/getProcessDefinitionData";
 import { getProcessingType } from "../../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../../store/storeHelpers";

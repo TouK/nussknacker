@@ -2,9 +2,9 @@ import type { ProcessName } from "src/components/Process/types";
 
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import { mapDataRecordsToRunTestsFormat } from "../../components/modals/TestingDataRecords/utils";
-import HttpService from "../../http/HttpService";
-import type { SourceWithParametersTest } from "../../http/HttpService/types";
+import HttpService from "../../http/instance";
 import type { ResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
+import type { SourceWithParametersTest } from "../../http/types";
 import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
 import type { Action, ThunkAction } from "../reduxTypes";

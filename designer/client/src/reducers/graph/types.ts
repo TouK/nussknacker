@@ -3,8 +3,8 @@ import type { Layout } from "../../actions/nk/ui/layout";
 import type { TestCapabilities, TestFormParameters } from "../../common/TestResultUtils";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import type { Scenario } from "../../components/Process/types";
-import type { SourceWithParametersTest } from "../../http/HttpService/types";
 import type { ProcessCounts, TestResultsDto } from "../../http/resultsWithCountsDto";
+import type { SourceWithParametersTest } from "../../http/types";
 
 type Source = SourceWithParametersTest["sourceId"];
 export type SourceTestData = SourceWithParametersTest["parameterExpressions"];

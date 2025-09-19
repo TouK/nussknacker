@@ -4,7 +4,7 @@ import React, { useCallback, useMemo } from "react";
 
 import ProcessUtils from "../../../common/ProcessUtils";
 import { useUserSettings } from "../../../common/userSettings";
-import HttpService from "../../../http/HttpService";
+import HttpService from "../../../http/instance";
 import type { RootState } from "../../../reducers";
 import { getConfiguredAdditionalComponents } from "../../../reducers/selectors/configuredAdditionalComponents";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
