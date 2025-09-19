@@ -24,12 +24,13 @@ case class ComponentConfig(
     //      to not break the compatibility
     componentId: Option[DesignerWideComponentId],
     disabled: Boolean = false,
-    label: Option[String]
+    label: Option[String],
+    blueprintId: Option[BlueprintId],
 )
 
 object ComponentConfig {
 
-  val zero: ComponentConfig = ComponentConfig(None, None, None, None, None, false, None)
+  val zero: ComponentConfig = ComponentConfig(None, None, None, None, None, false, None, None)
 
   implicit val semigroup: Semigroup[ComponentConfig] = {
     implicit def takeLeftOptionSemi[T]: Semigroup[Option[T]] = Semigroup.instance[Option[T]] {
@@ -60,7 +61,8 @@ object ComponentConfig {
         x.componentGroup |+| y.componentGroup,
         x.componentId |+| y.componentId,
         disabled = x.disabled || y.disabled,
-        label = x.label |+| y.label
+        label = x.label |+| y.label,
+        blueprintId = x.blueprintId |+| y.blueprintId,
       )
     }
   }

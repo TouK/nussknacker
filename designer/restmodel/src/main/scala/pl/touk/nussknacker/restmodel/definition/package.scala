@@ -3,7 +3,7 @@ package pl.touk.nussknacker.restmodel
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
+import pl.touk.nussknacker.engine.api.component.{BlueprintId, ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.definition.{ParameterCategory, ParameterEditor, StaticParameterEditor}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.EdgeType
@@ -74,8 +74,13 @@ package object definition {
       docsUrl: Option[String],
       // This field is defined only for fragments
       outputParameters: Option[List[String]],
-      label: String
+      label: String,
+      blueprintId: Option[BlueprintId] // todo: if not used by fe mby it can be hidden?
   )
+
+  object UIComponentDefinition {
+    implicit val blueprintIdEncoder: Encoder[BlueprintId] = Encoder.encodeString.contramap(_.value)
+  }
 
   @JsonCodec final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
 

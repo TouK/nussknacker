@@ -57,6 +57,7 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
 
   def allowedProcessingModes: AllowedProcessingModes = component.allowedProcessingModes
 
+  def blueprintId: Option[BlueprintId] = uiDefinition.blueprintId
 }
 
 trait ObjectOperatingOnTypes {
@@ -71,7 +72,8 @@ final case class ComponentUiDefinition(
     icon: String,
     docsUrl: Option[String],
     designerWideId: DesignerWideComponentId,
-    label: String
+    label: String,
+    blueprintId: Option[BlueprintId],
 )
 
 object ComponentDefinitionWithImplementation {

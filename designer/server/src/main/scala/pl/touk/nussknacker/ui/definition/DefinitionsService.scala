@@ -138,7 +138,8 @@ class DefinitionsService(
       outputParameters = Option(componentDefinition.component.componentTypeSpecificData).collect {
         case FragmentSpecificData(outputNames) => outputNames
       },
-      label = componentDefinition.component.label
+      label = componentDefinition.component.label,
+      blueprintId = componentDefinition.component.blueprintId
     )
   }
 
