@@ -34,7 +34,7 @@ declare global {
     }
 }
 
-type MarkdownWithPluginsProps = PropsOf<typeof Markdown> & { linkTarget?: string };
+export type MarkdownWithPluginsProps = PropsOf<typeof Markdown> & { linkTarget?: string };
 const MarkdownWithPlugins = ({
     remarkPlugins = [],
     children,

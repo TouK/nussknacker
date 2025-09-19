@@ -2,6 +2,7 @@ import InfoIcon from "@mui/icons-material/Info";
 import { styled } from "@mui/material";
 import React from "react";
 
+import type { MarkdownWithPluginsProps } from "../../MarkdownStyled";
 import { MarkdownStyled } from "../../MarkdownStyled";
 
 export const StyledInfo = styled(InfoIcon)(() => ({
@@ -20,7 +21,7 @@ StyledInfoChildrenWrapper.defaultProps = {
     title: "",
 };
 
-export const StyledInfoMarkdown = styled((props) => <MarkdownStyled {...props} />)(({ theme }) => ({
+export const StyledInfoMarkdown = styled((props: MarkdownWithPluginsProps) => <MarkdownStyled {...props} />)(({ theme }) => ({
     fontSize: "0.75rem",
     marginTop: theme.spacing(1),
     marginBottom: theme.spacing(1),
