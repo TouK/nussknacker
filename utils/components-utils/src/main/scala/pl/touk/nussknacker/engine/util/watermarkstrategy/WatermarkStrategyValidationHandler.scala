@@ -9,13 +9,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
-import pl.touk.nussknacker.engine.api.definition.{
-  AdditionalVariableProvidedInRuntime,
-  DurationParameterEditor,
-  Parameter,
-  ParameterCategory,
-  SpelParameterEditor
-}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
@@ -42,13 +36,19 @@ object WatermarkStrategyValidationHandler {
 
 trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] =>
 
-  protected def prepareWatermarkStrategyParameters(outputValidationContext: ValidationContext): List[Parameter] = {
-    val eventTimeParameter   = prepareEventTimeParameter(outputValidationContext)
+  protected def prepareWatermarkStrategyParameters(
+      outputValidationContext: ValidationContext,
+      eventTimeDefaultValueExpression: Expression
+  ): List[Parameter] = {
+    val eventTimeParameter   = prepareEventTimeParameter(outputValidationContext, eventTimeDefaultValueExpression)
     val idlenessParameterOpt = if (isIdlenessParameterAvailable) Some(idlenessParameter) else None
     eventTimeParameter :: maxOutOfOrdernessParameter :: idlenessParameterOpt.toList
   }
 
-  private def prepareEventTimeParameter(outputValidationContext: ValidationContext): Parameter =
+  private def prepareEventTimeParameter(
+      outputValidationContext: ValidationContext,
+      eventTimeDefaultValueExpression: Expression
+  ): Parameter =
     Parameter
       .optional[Instant](eventTimeParamName)
       .copy(
@@ -57,7 +57,7 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
           outputValidationContext.localVariables.mapValuesNow(AdditionalVariableProvidedInRuntime(_)),
         defaultValue = Some(eventTimeDefaultValueExpression),
         hintText = Some(
-          s"An expression that determines the Event Time to be used in stateful stream processing. " +
+          s"An expression that determines the Event Time to be used in stateful stream processing. If this field won't be specified, the upstream source event time will be used.  " +
             s"For more information on how Event Time is handled in Flink, and why it is important, see [Flink documentation](${FlinkDocumentationUrl.forCurrentFlinkVersion("concepts/time/#introduction")})"
         ),
         category = ParameterCategory.Advanced
@@ -96,8 +96,6 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
         ),
         category = ParameterCategory.Advanced
       )
-
-  protected def eventTimeDefaultValueExpression: Expression
 
   protected def maxOutOfOrdernessDefaultValueExpression: Expression = "T(java.time.Duration).parse('PT10S')".spel
 

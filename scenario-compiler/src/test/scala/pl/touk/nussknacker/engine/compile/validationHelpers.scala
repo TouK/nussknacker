@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
+import java.time.Instant
 import javax.validation.constraints.NotBlank
 import scala.concurrent.Future
 import scala.reflect.{classTag, ClassTag}
@@ -310,7 +311,7 @@ object validationHelpers {
 
         override def fetchLiveData(maxNumberOfRecords: Int): DataRecords = DataRecords((for {
           number <- 1 to maxNumberOfRecords
-          record = DataRecord(Map("input" -> s"record $number"), timestamp = Some(number))
+          record = DataRecord(Map("input" -> s"record $number"), upstreamTimestamp = Some(Instant.ofEpochMilli(number)))
         } yield record).toList)
       }
     }

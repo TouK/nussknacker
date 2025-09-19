@@ -33,6 +33,7 @@ import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts.UsersB
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 
+import java.time.Instant
 import scala.jdk.CollectionConverters._
 
 class SchemedKafkaTestingApiHttpServiceSpec
@@ -143,7 +144,7 @@ class SchemedKafkaTestingApiHttpServiceSpec
       |        "headers": {}
       |      }
       |    },
-      |    "timestamp": $givenTimestamp
+      |    "upstreamTimestamp": "${Instant.ofEpochMilli(givenTimestamp)}"
       |  }
       |]""".stripMargin
 

@@ -58,7 +58,7 @@ class CommonDataFormatHandler(modelData: ModelData) extends TestDataFormatHandle
           sourceRecords
             .map { record =>
               val variablesAsJson = record.variables.mapValuesNow(toJsonEncoder.encodeUnsafe)
-              CommonFormatPreliminaryScenarioRecord(sourceId, variablesAsJson, record.timestamp)
+              CommonFormatPreliminaryScenarioRecord(sourceId, variablesAsJson, record.upstreamTimestamp)
             }
         }
         Right(records)
@@ -105,7 +105,7 @@ class CommonDataFormatHandler(modelData: ModelData) extends TestDataFormatHandle
         .leftMap(_.message)
         .leftMap(InputVariablesExpressionDecodingError)
       // Timestamp handling is supported only during testing using test data in the json format
-      singleRecord = ScenarioTestCommonFormatJsonRecord(NodeId(sourceId), validVariablesMap, timestamp = None)
+      singleRecord = ScenarioTestCommonFormatJsonRecord(NodeId(sourceId), validVariablesMap, upstreamTimestamp = None)
     } yield ScenarioTestData(List(singleRecord))
   }
 

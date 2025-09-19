@@ -45,8 +45,8 @@ class CsvSource
 
   override def fetchLiveData(maxNumberOfRecords: Int): DataRecords = DataRecords(
     List(
-      DataRecord(Map(VariableConstants.InputVariableName -> Array("record1", "field2")), timestamp = None),
-      DataRecord(Map(VariableConstants.InputVariableName -> Array("record2", "field3")), timestamp = None)
+      DataRecord(Map(VariableConstants.InputVariableName -> Array("record1", "field2")), upstreamTimestamp = None),
+      DataRecord(Map(VariableConstants.InputVariableName -> Array("record2", "field3")), upstreamTimestamp = None)
     )
   )
 

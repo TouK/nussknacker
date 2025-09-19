@@ -72,8 +72,10 @@ class UniversalToJsonFormatter[K, V](
       size: Int,
       kafkaComponentsConfig: KafkaComponentsConfig
   ): TestData = {
-    val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaComponentsConfig))
-    val merged             = ListUtil.mergeLists(listsFromAllTopics.toList, size)
+    val listsFromAllTopics = topics.map(
+      KafkaUtils.readLastMessages(_, size, kafkaComponentsConfig).sorted(Ordering.by(getConsumerRecordTimestamp))
+    )
+    val merged = ListUtil.mergeListsRoundRobin(listsFromAllTopics.toList, size)
     prepareGeneratedTestData(merged)
   }
 

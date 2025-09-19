@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentType, DesignerWideComponentId, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.livedata.DataRecord
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.compile.nodecompilation.StaticComponentOutputValidationContextDeterminer
 import pl.touk.nussknacker.engine.definition.component.{
@@ -89,8 +90,8 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
                           val recordsForSource =
                             testRecords
                               .filter(_.sourceId == compilationDependencies.nodeId)
-                              .map(_.record)
-                              .sortBy(_.timestamp)
+                              .sortBy(_.upstreamTimestamp)
+                              .map(r => DataRecord(r.variables, r.upstreamTimestamp))
                           new DataRecordsSource(
                             recordsForSource,
                             outputValidationContextWithRecordsAsMaps,

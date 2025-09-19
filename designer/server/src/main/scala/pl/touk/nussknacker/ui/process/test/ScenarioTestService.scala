@@ -165,8 +165,10 @@ class ScenarioTestService(
         )
 
         mergedLivedData = ListUtil
-          .mergeLists(fetchedLiveDataForSourcesNel.toList, maxNumberOfRecords)
-          .sortBy(_.timestamp.getOrElse(Long.MaxValue))
+          // We sort firstly in case if returner by the source records are not sorted
+          // and then sort at the end after we merge elements from each list in round-robin manner
+          .mergeListsRoundRobin(fetchedLiveDataForSourcesNel.toList.map(_.sorted), maxNumberOfRecords)
+          .sorted
 
         fetchedLiveDataNel <- NonEmptyList
           .fromList(mergedLivedData)
@@ -201,6 +203,7 @@ class ScenarioTestService(
         fetchedLiveData <- testDataFormatHandler
           .fetchLiveData(nodeId, compiledSource, maxNumberOfRecords)
           .leftMap(_ => FetchLiveDataError.LiveDataFetchingNotSupportedError)
+          .map(_.sorted)
 
         fetchedLiveDataNel <- NonEmptyList
           .fromList(fetchedLiveData)

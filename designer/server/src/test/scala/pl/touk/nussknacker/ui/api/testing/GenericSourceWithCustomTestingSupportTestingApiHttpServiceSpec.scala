@@ -29,9 +29,9 @@ class GenericSourceWithCustomTestingSupportTestingApiHttpServiceSpec
 
   override protected def expectedTestDataJson: String =
     s"""[
-       |  {"sourceId":"sourceId","variables":{"input": "test-0"},"timestamp":123},
-       |  {"sourceId":"sourceId","variables":{"input": "test-1"},"timestamp":123},
-       |  {"sourceId":"sourceId","variables":{"input": "test-2"},"timestamp":123}
+       |  {"sourceId":"sourceId","variables":{"input": "test-0"},"upstreamTimestamp":"1970-01-01T00:00:00.123Z"},
+       |  {"sourceId":"sourceId","variables":{"input": "test-1"},"upstreamTimestamp":"1970-01-01T00:00:00.123Z"},
+       |  {"sourceId":"sourceId","variables":{"input": "test-2"},"upstreamTimestamp":"1970-01-01T00:00:00.123Z"}
        |]""".stripMargin
 
   override protected def validParameters: TestSourceParameters =
