@@ -17,7 +17,7 @@ export default defineConfig({
         video: true,
         experimentalMemoryManagement: true,
         experimentalRunAllSpecs: true,
-        numTestsKeptInMemory: 10,
+        numTestsKeptInMemory: 0,
         // We've imported your old cypress plugins here.
         // You may want to clean this up later by importing these.
         setupNodeEvents(on, config) {
