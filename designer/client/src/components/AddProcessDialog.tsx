@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 
 import { visualizationUrl } from "../common/VisualizationUrl";
 import { useProcessNameValidators } from "../containers/hooks/useProcessNameValidators";
-import HttpService, { ProcessingMode } from "../http/instance";
+import HttpService from "../http/instance";
+import { ProcessingMode } from "../http/types";
 import type { NodeValidationError } from "../types/validation";
 import { LoadingButtonTypes } from "../windowManager/LoadingButton";
 import { WindowContent } from "../windowManager/WindowContent";
