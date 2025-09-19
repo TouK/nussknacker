@@ -93,6 +93,31 @@ object ComponentProviderConfig {
    */
   implicit val reader: ValueReader[ComponentProviderConfig] = new ValueReader[ComponentProviderConfig] {
     import net.ceedubs.ficus.Ficus._
+
+    private val componentBaseNameReader: ValueReader[ComponentBaseName] = ValueReader[String].map(ComponentBaseName)
+    private val blueprintIdReader: ValueReader[BlueprintId]             = ValueReader[String].map(BlueprintId)
+
+    implicit val mapReader: ValueReader[Map[ComponentBaseName, BlueprintId]] = {
+      import scala.jdk.CollectionConverters._
+      ValueReader.relative { config =>
+        config.root
+          .keySet()
+          .asScala
+          .map { key =>
+            val baseName    = componentBaseNameReader.read(config, key)
+            val blueprintId = blueprintIdReader.read(config, key)
+            baseName -> blueprintId
+          }
+          .toMap
+      }
+    }
+
+    implicit val optionMapReader: ValueReader[Option[Map[ComponentBaseName, BlueprintId]]] =
+      ValueReader.relative { config =>
+        if (config.isEmpty) None
+        else Some(mapReader.read(config, ""))
+      }
+
     private val normalReader = ArbitraryTypeReader.arbitraryTypeValueReader[ComponentProviderConfig]
 
     override def read(config: Config, path: String): ComponentProviderConfig = {
@@ -108,8 +133,13 @@ case class ComponentProviderConfig( // if not present, we assume providerType is
     disabled: Boolean = false,
     // TODO: more configurable/extensible way of name customization
     componentPrefix: Option[String],
-    config: Config = ConfigFactory.empty()
+    config: Config = ConfigFactory.empty(),
+    blueprintsConfig: Map[ComponentBaseName, BlueprintId] = Map.empty,
 )
+
+final case class ComponentBaseName(value: String) extends AnyVal
+
+final case class BlueprintId(value: String) extends AnyVal
 
 /**
   * Implementations should be registered with ServiceLoader mechanism. Each provider can be configured multiple times
@@ -150,7 +180,8 @@ case class ComponentDefinition(
     docsUrl: Option[String] = None,
     designerWideId: Option[DesignerWideComponentId] = None,
     label: Option[String] = None,
-    componentGroup: Option[ComponentGroupName] = None
+    componentGroup: Option[ComponentGroupName] = None,
+    blueprintId: Option[BlueprintId] = None,
 ) {
 
   def withDesignerWideId(id: String): ComponentDefinition = copy(designerWideId = Some(DesignerWideComponentId(id)))

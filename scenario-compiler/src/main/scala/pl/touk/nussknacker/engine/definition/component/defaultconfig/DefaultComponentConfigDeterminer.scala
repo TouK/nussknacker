@@ -40,7 +40,8 @@ object DefaultComponentConfigDeterminer {
       docsUrl = None,
       componentGroup = Some(configData.componentGroup),
       componentId = None,
-      label = None
+      label = None,
+      blueprintId = None,
     )
   }
 
@@ -57,7 +58,8 @@ object DefaultComponentConfigDeterminer {
       docsUrl = None,
       componentGroup = Some(componentGroup),
       componentId = Some(DesignerWideComponentId.forBuiltInComponent(id)),
-      label = None
+      label = None,
+      blueprintId = None,
     )
   }
 
@@ -81,7 +83,8 @@ object DefaultComponentConfigDeterminer {
       docsUrl = docsUrl,
       designerWideId = designerWideId,
       // Fragment's name is also it's id and label so should not be formatted, e.g. to Title Case
-      label = name
+      label = name,
+      blueprintId = None,
     )
   }
 

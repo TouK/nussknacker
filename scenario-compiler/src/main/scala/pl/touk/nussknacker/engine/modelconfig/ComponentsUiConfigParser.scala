@@ -100,7 +100,8 @@ object ComponentsUiConfigParser {
         componentGroup = config.getAs[ComponentGroupName]("componentGroup"),
         componentId = config.getAs[DesignerWideComponentId]("componentId"),
         disabled = config.getAs[Boolean]("disabled").getOrElse(ComponentConfig.zero.disabled),
-        label = config.getAs[String]("label")
+        label = config.getAs[String]("label"),
+        blueprintId = None
       )
     }
 

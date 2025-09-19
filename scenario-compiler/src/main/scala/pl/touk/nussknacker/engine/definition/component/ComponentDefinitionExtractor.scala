@@ -236,6 +236,7 @@ object ComponentDefinitionExtractor {
         finalCombinedConfig.docsUrl,
         getDefinedProperty("componentId", _.componentId),
         finalCombinedConfig.label.getOrElse(IdToTitleConverter.toTitle(name)),
+        finalCombinedConfig.blueprintId
       )
       (uiDefinition, finalCombinedConfig.params.getOrElse(Map.empty))
     }

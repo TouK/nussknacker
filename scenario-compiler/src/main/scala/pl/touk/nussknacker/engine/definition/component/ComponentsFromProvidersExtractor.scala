@@ -143,11 +143,18 @@ class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknackerVers
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): Components = {
-    val components = provider.create(config.config, componentDependencies).map { inputComponentDefinition =>
-      config.componentPrefix
-        .map(prefix => inputComponentDefinition.copy(name = prefix + inputComponentDefinition.name))
-        .getOrElse(inputComponentDefinition)
-    }
+    val components = provider
+      .create(config.config, componentDependencies)
+      .map(definition =>
+        definition.copy(blueprintId =
+          config.blueprintsConfig.get(ComponentBaseName(definition.name)).orElse(definition.blueprintId)
+        )
+      )
+      .map { inputComponentDefinition =>
+        config.componentPrefix
+          .map(prefix => inputComponentDefinition.copy(name = prefix + inputComponentDefinition.name))
+          .getOrElse(inputComponentDefinition)
+      }
 
     Components.forList(
       components,

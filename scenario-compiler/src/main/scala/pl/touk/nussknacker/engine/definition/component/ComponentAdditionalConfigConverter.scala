@@ -27,7 +27,8 @@ object ComponentAdditionalConfigConverter {
       componentGroup = componentAdditionalConfig.componentGroup,
       disabled = componentAdditionalConfig.disabled,
       componentId = None,
-      label = None
+      label = None,
+      blueprintId = None
     )
 
   private def toParameterConfig(
