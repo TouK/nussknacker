@@ -1,7 +1,8 @@
 import type { CustomCell } from "@glideapps/glide-data-grid";
-import React, { useCallback, useRef } from "react";
+import { Box } from "@mui/material";
+import React, { useCallback } from "react";
 
-import Dropdown from "./Dropdown";
+import { Dropdown } from "./Dropdown";
 
 export interface SourceSelectCellData {
     kind: "source-select-cell";
@@ -12,64 +13,36 @@ export type SourceSelectCell = CustomCell<SourceSelectCellData>;
 
 interface EditorProps {
     value: SourceSelectCell;
-    onChange: (cell: SourceSelectCell) => void;
-    onFinishedEditing: () => void;
-    target: { width: number; height: number };
+    onFinishedEditing: (cell?: SourceSelectCell) => void;
 }
 
-export const SourceEditor: React.FC<EditorProps> = ({ value, onChange, onFinishedEditing, target }) => {
-    const originalValueRef = useRef(value.data.value ?? "");
-    const currentValueRef = useRef(value.data.value ?? "");
-
+export const SourceEditor: React.FC<EditorProps> = ({ value, onFinishedEditing }) => {
     const setVal = useCallback(
-        (val: string) => {
-            currentValueRef.current = val;
-            onChange({
+        (newValue: string) => {
+            if (newValue === value.data.value) {
+                // just close the editor if value did not change
+                onFinishedEditing();
+            }
+
+            onFinishedEditing({
                 ...value,
-                copyData: val,
-                data: { ...value.data, value: val },
+                copyData: newValue,
+                data: { ...value.data, value: newValue },
             });
         },
-        [onChange, value],
+        [onFinishedEditing, value],
     );
 
-    const commit = useCallback(() => {
-        onFinishedEditing();
-    }, [onFinishedEditing]);
-
-    const cancel = useCallback(() => {
-        if (currentValueRef.current !== originalValueRef.current) {
-            onChange({
-                ...value,
-                copyData: originalValueRef.current,
-                data: { ...value.data, value: originalValueRef.current },
-            });
-        }
-        onFinishedEditing();
-    }, [onChange, onFinishedEditing, value]);
-
     return (
-        <div
-            style={{
-                width: target.width,
-                height: target.height,
+        <Box
+            id={"source-editor"}
+            sx={{
                 display: "flex",
                 alignItems: "center",
                 padding: 0,
             }}
         >
-            {/*TODO There is a problem with using Mui elements or react-select. Change value doesn't work probably due to react portal usage both in the glide-data-grid and dropdown libraries
-             */}
-            <Dropdown
-                value={currentValueRef.current}
-                options={value.data.options}
-                onValueChange={setVal}
-                onCommit={commit}
-                onCancel={cancel}
-                style={{ width: "100%" }}
-            />
-        </div>
+            <Dropdown value={value.data.value} options={value.data.options} onValueChange={setVal} />
+        </Box>
     );
 };
-
-export default SourceEditor;

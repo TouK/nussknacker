@@ -51,7 +51,7 @@ export function buildDefaultVariablesMap(sourceParameters?: TestFormParameters[]
         }
 
         try {
-            defaultsBySourceId[sourceParameter.sourceId] = JSON.stringify(values);
+            defaultsBySourceId[sourceParameter.sourceId] = JSON.stringify(values, null, 2);
         } catch {
             // If stringify fails for any reason, fall back to empty string
             defaultsBySourceId[sourceParameter.sourceId] = "";
@@ -68,7 +68,7 @@ export function computeVariablesRowHeight(variables: string, columnInnerWidth: n
     return linesCount * LINE_HEIGHT * themeLineHeight + paddingY;
 }
 
-export function buildTestingRowUpdates(
+export function buildInputDataRecordUpdates(
     changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[],
     data: TestingDataRecords[],
     defaultVariablesBySourceId: Record<string, string>,

@@ -1,17 +1,14 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import { List, ListItemButton, ListItemText, styled } from "@mui/material";
+import i18next from "i18next";
+import React from "react";
 
 interface Props {
     value: string;
     options: string[];
     onValueChange: (val: string) => void;
-    onCommit: () => void;
-    onCancel: () => void;
-    style?: React.CSSProperties;
-    autoOpen?: boolean;
 }
 
-const EMPTY_OPTION_VALUE = "";
-const BASE_SELECT_STYLE: React.CSSProperties = {
+const StyledList = styled(List)(() => ({
     width: "100%",
     height: "100%",
     border: "none",
@@ -20,79 +17,33 @@ const BASE_SELECT_STYLE: React.CSSProperties = {
     font: "inherit",
     padding: 0,
     margin: 0,
-};
+    overflowY: "auto",
+}));
 
-interface SelectWithPicker extends HTMLSelectElement {
-    showPicker?: () => void;
-}
-
-export const Dropdown: React.FC<Props> = ({ value, options, onValueChange, onCommit, onCancel, style, autoOpen = true }) => {
-    const selectRef = useRef<HTMLSelectElement>(null);
-    const openedRef = useRef(false);
-
-    // Focus on mount only
-    useEffect(() => {
-        const el = selectRef.current;
-        if (!el) return;
-        el.focus();
-    }, []);
-
-    useEffect(() => {
-        if (!autoOpen) return;
-        const el = selectRef.current;
-        if (!el || openedRef.current) return;
-        openedRef.current = true;
-        const openSelect = () => {
-            try {
-                (el as SelectWithPicker).showPicker?.();
-            } catch (e) {
-                void e;
-            }
-            try {
-                const events: Array<"mousedown" | "mouseup" | "click"> = ["mousedown", "mouseup", "click"];
-                for (const type of events) {
-                    const ev = new MouseEvent(type, { bubbles: true, cancelable: true, view: window });
-                    el.dispatchEvent(ev);
-                }
-            } catch (e) {
-                void e;
-            }
-        };
-        const id = window.setTimeout(openSelect, 0);
-        return () => window.clearTimeout(id);
-    }, [autoOpen]);
-
-    const handleKey = useCallback(
-        (e: React.KeyboardEvent<HTMLSelectElement>) => {
-            if (e.key === "Enter" || e.key === "Tab") {
-                e.preventDefault();
-                onCommit();
-            } else if (e.key === "Escape") {
-                e.preventDefault();
-                onCancel();
-            }
-        },
-        [onCommit, onCancel],
-    );
-
+export const Dropdown: React.FC<Props> = ({ value, options, onValueChange }) => {
     return (
-        <select
-            ref={selectRef}
-            autoFocus
-            value={value}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onValueChange(e.target.value)}
-            onBlur={onCommit}
-            onKeyDown={handleKey}
-            style={{ ...BASE_SELECT_STYLE, ...style }}
-        >
-            <option value={EMPTY_OPTION_VALUE} />
-            {options.map((o) => (
-                <option key={o} value={o}>
-                    {o}
-                </option>
+        <StyledList tabIndex={0} role="listbox" dense disablePadding>
+            {options.map((option) => (
+                <ListItemButton
+                    key={option}
+                    role="option"
+                    aria-selected={option === value}
+                    selected={option === value}
+                    onClick={() => {
+                        onValueChange(option);
+                    }}
+                >
+                    <ListItemText primaryTypographyProps={{ noWrap: true }} primary={option} />
+                </ListItemButton>
             ))}
-        </select>
+            {!options.length && (
+                <ListItemButton disabled sx={{ py: 0.25, px: 0.5 }}>
+                    <ListItemText
+                        primaryTypographyProps={{ fontStyle: "italic", noWrap: true, sx: { opacity: 0.7 } }}
+                        primary={i18next.t("testingDataRecords.dropdown.noOptions", "No options")}
+                    />
+                </ListItemButton>
+            )}
+        </StyledList>
     );
 };
-
-export default Dropdown;
