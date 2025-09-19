@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 
-import { CategoryChip, TruncateWrapper } from "../../common";
+import { CategoryChip } from "../../common/categoryChip";
+import { TruncateWrapper } from "../../common/utils/truncateWrapper";
 import { useComponentsFilterContext } from "../filters/useComponentsFilterContext";
 import type { CellRendererParams } from "../tableWrapper";
 

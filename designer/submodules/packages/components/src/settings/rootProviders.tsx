@@ -1,13 +1,15 @@
-import React, { PropsWithChildren } from "react";
+import createCache from "@emotion/cache";
+import { CacheProvider } from "@emotion/react";
+import type { PropsWithChildren } from "react";
+import React from "react";
 import { I18nextProvider } from "react-i18next";
 import { QueryClientProvider } from "react-query";
-import { HistoryProvider } from "../common";
+import { prefixer } from "stylis";
+
+import { HistoryProvider } from "../common/historyContext";
+import { queryClient } from "../store/queryClient";
 import i18n from "./i18n";
 import { NkApiProvider } from "./nkApiProvider";
-import { queryClient } from "../store";
-import { CacheProvider } from "@emotion/react";
-import createCache from "@emotion/cache";
-import { prefixer } from "stylis";
 
 // copy/paste from https://github.com/drenckpohl/stylis-plugin-extra-scope/blob/stylis-v4/src/index.js
 function createExtraScopePlugin(...extra) {

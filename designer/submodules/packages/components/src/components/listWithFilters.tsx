@@ -4,7 +4,7 @@ import { getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/even
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { FiltersContextProvider, useFilterContext } from "../common";
+import { FiltersContextProvider, useFilterContext } from "../common/filters/filtersContext";
 import { ActiveFilters } from "../scenarios/filters/activeFilters";
 import { FilterListItem } from "../scenarios/filters/filterListItem";
 import { FilterMenu } from "../scenarios/filters/filterMenu";
@@ -15,8 +15,8 @@ import { SimpleOptionsStack } from "../scenarios/filters/simpleOptionsStack";
 import { processingModeItems } from "../scenarios/list/processingMode";
 import { useUserQuery } from "../scenarios/useScenariosQuery";
 import { ComponentTable } from "./componentTable";
-import { COMPONENTS_FILTER } from "./filters";
-import type { ComponentsFiltersModel } from "./filters";
+import { COMPONENTS_FILTER } from "./filters/componentsFiltersModel";
+import type { ComponentsFiltersModel } from "./filters/componentsFiltersModel";
 import { useComponentsFilterContext } from "./filters/useComponentsFilterContext";
 import { useComponentsQuery } from "./useComponentsQuery";
 

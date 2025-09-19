@@ -1,7 +1,8 @@
 import React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { UnavailableViewPlaceholder } from "../common";
-import { ScenariosView } from "../scenarios";
+
+import { UnavailableViewPlaceholder } from "../common/unavailableViewPlaceholder";
+import { ScenariosView } from "../scenarios/scenariosView";
 import { ComponentsRoutes } from "./componentsRoutes";
 
 export function RootRoutes(): JSX.Element {

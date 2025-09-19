@@ -7,8 +7,9 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDebouncedValue } from "rooks";
 
-import { createFilterRules, Highlight } from "../../common";
-import { FilterLinkCell } from "../cellRenderers";
+import { createFilterRules } from "../../common/filters/filterRules";
+import { Highlight } from "../../common/highlight";
+import { FilterLinkCell } from "../cellRenderers/filterLinkCell";
 import { ScenarioStatusFormatted } from "../cellRenderers/scenarioStatusFormatted";
 import { TableWrapper } from "../tableWrapper";
 import type { Columns, TableViewData } from "../tableWrapper";

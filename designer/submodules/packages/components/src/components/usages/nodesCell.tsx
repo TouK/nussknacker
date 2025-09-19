@@ -4,7 +4,11 @@ import type { GridRenderCellParams } from "@mui/x-data-grid";
 import type { NodeUsageData } from "nussknackerUi/HttpService";
 import React, { memo, useCallback, useMemo } from "react";
 
-import { createFilterRules, ExternalLink, fragmentNodeHref, Highlight, nodeHref, TruncateWrapper } from "../../common";
+import { createFilterRules } from "../../common/filters/filterRules";
+import { Highlight } from "../../common/highlight";
+import { ExternalLink } from "../../common/parentNavigationProvider";
+import { fragmentNodeHref, nodeHref } from "../../common/scenarioHref";
+import { TruncateWrapper } from "../../common/utils/truncateWrapper";
 import type { UsageWithStatus } from "../useComponentsQuery";
 import type { UsagesFiltersModel } from "./usagesFiltersModel";
 import { nodeFilter } from "./usagesTable";
