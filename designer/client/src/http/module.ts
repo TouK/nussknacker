@@ -1,3 +1,5 @@
 // check federation.config.json
+import instance from "./instance";
+
 export * from "./types";
-export * from "./instance";
+export default instance;
