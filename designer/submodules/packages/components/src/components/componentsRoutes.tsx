@@ -1,7 +1,8 @@
-import { Navigate, Route, Routes } from "react-router-dom";
-import { ComponentsView } from "./listWithFilters";
-import { ComponentView } from "./usages";
 import React from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
+
+import { ComponentsView } from "./listWithFilters";
+import { ComponentView } from "./usages/componentView";
 
 export function ComponentsRoutes() {
     return (

@@ -1,4 +1,4 @@
-import { useFilterContext } from "../../common";
+import { useFilterContext } from "../../common/filters/filtersContext";
 import type { ComponentsFiltersModel } from "./componentsFiltersModel";
 import { COMPONENTS_FILTER } from "./componentsFiltersModel";
 

@@ -1,7 +1,8 @@
-import { NuIcon } from "../../common";
-import React, { useMemo } from "react";
 import { Stack } from "@mui/material";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+
+import { NuIcon } from "../../common/nuIcon";
 
 export function FilterListItemLabel({
     name,

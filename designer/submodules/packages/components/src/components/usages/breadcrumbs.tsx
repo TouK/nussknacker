@@ -1,9 +1,10 @@
-import { useComponentQuery } from "../useComponentsQuery";
-import { useBackHref } from "../../common";
-import React from "react";
 import { ViewList } from "@mui/icons-material";
 import { Breadcrumbs as MuiBreadcrumbs, Link, Skeleton, Typography } from "@mui/material";
+import React from "react";
 import { Link as RouterLink, Navigate, useParams } from "react-router-dom";
+
+import { useBackHref } from "../../common/historyContext";
+import { useComponentQuery } from "../useComponentsQuery";
 
 export function Breadcrumbs(): JSX.Element {
     const { componentId } = useParams<"componentId">();
