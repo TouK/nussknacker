@@ -193,12 +193,12 @@ class TestFlinkProcessCompilerDataFactory(
         typingResult: TypingResult,
         compilationDependencies: NodeCompilationDependencies
     ): Any = {
-      val commonFormatRecordsNelOpt =
-        NonEmptyList.fromList(scenarioTestData.commonFormatRecords(compilationDependencies.nodeId))
+      val commonFormatRecords = scenarioTestData.commonFormatRecords(compilationDependencies.nodeId)
       lazy val watermarkStrategyOptions =
         originalSource.cast[WithWatermarkStrategyOptions].map(_.watermarkStrategyOptions)
-      (originalSource, commonFormatRecordsNelOpt) match {
-        case (sourceWithTestSupport: Source with FlinkSourceTestSupport[Object @unchecked], None) =>
+      originalSource match {
+        case sourceWithTestSupport: Source with FlinkSourceTestSupport[Object @unchecked]
+            if commonFormatRecords.isEmpty =>
           logger.debug(
             s"Preparing source stubbed with test data in the source-specific format for component [${componentDefinition.id}]"
           )
@@ -207,20 +207,14 @@ class TestFlinkProcessCompilerDataFactory(
             typingResult,
             compilationDependencies.nodeId
           )
-        case (_, Some(commonFormatRecordsNel)) =>
+        case _ =>
           logger.debug(
-            s"Preparing source stubbed with ${commonFormatRecordsNel.size} test data records in the common format for component [${componentDefinition.id}]"
+            s"Preparing source stubbed with ${commonFormatRecords.size} test data records in the common format for component [${componentDefinition.id}]"
           )
           CommonTestDataFormatStubbedSourcePreparer.prepareSubbedSource(
-            commonFormatRecordsNel.toList,
+            commonFormatRecords,
             outputValidationContext,
             compilationDependencies.nodeId,
-            watermarkStrategyOptions
-          )
-        case (_, None) =>
-          new DataRecordsSource(
-            List.empty,
-            outputValidationContext,
             watermarkStrategyOptions
           )
       }
