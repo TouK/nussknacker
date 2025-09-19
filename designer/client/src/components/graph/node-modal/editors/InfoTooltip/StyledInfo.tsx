@@ -1,5 +1,6 @@
 import InfoIcon from "@mui/icons-material/Info";
 import { styled } from "@mui/material";
+import React from "react";
 
 import { MarkdownStyled } from "../../MarkdownStyled";
 
@@ -19,7 +20,7 @@ StyledInfoChildrenWrapper.defaultProps = {
     title: "",
 };
 
-export const StyledInfoMarkdown = styled(MarkdownStyled)(({ theme }) => ({
+export const StyledInfoMarkdown = styled((props) => <MarkdownStyled {...props} />)(({ theme }) => ({
     fontSize: "0.75rem",
     marginTop: theme.spacing(1),
     marginBottom: theme.spacing(1),
