@@ -49,7 +49,7 @@ describe("Node adding", () => {
         // panel closes by esc
         cy.get("[title='add source node']").should("be.visible").click({ force: true });
         cy.contains(/event generator/i).should("be.visible");
-        cy.realPress("{esc}");
+        cy.get("@searchInput").should("be.focused").type("{esc}");
         cy.contains(/event generator/i).should("be.not.visible");
 
         // source node added by click
