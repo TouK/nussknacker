@@ -32,8 +32,7 @@ import { ScenarioActionResultType } from "../../components/toolbars/scenarioActi
 import type { ToolbarsConfig } from "../../components/toolbarSettings/types";
 import type { ProcessVersionValidationResponse } from "../../components/versionControl/types";
 import { API_URL } from "../../config";
-import type { EventTrackingType } from "../../containers/event-tracking";
-import type { EventTrackingSelectorType } from "../../containers/event-tracking/use-register-tracking-events";
+import type { EventTrackingSelectorType, EventTrackingType } from "../../containers/event-tracking/use-register-tracking-events";
 import type { BackendNotification } from "../../containers/Notifications";
 import { handleAxiosError } from "../../devHelpers";
 import type { AuthenticationSettings } from "../../reducers/settings";
