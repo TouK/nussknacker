@@ -29,7 +29,7 @@ const initState = (): State => {
     };
 };
 
-export function CountsDialog({ children, ...props }: PropsWithChildren<WindowContentProps>): JSX.Element {
+function CountsDialog({ children, ...props }: PropsWithChildren<WindowContentProps>): JSX.Element {
     const { t } = useTranslation();
     const [state, setState] = useState(initState);
     const processName = useAppSelector(getProcessName);
@@ -93,3 +93,5 @@ export function CountsDialog({ children, ...props }: PropsWithChildren<WindowCon
         </WindowContent>
     );
 }
+
+export default CountsDialog;
