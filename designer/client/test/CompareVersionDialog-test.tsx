@@ -19,7 +19,7 @@ jest.mock("react-i18next", () => ({
     }),
 }));
 
-jest.mock("../src/windowManager", () => ({
+jest.mock("../src/windowManager/WindowContent", () => ({
     WindowContent: ({ children }) => <div>{children}</div>,
 }));
 
