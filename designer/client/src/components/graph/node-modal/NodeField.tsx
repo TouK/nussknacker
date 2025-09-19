@@ -2,7 +2,8 @@ import { cx } from "@emotion/css";
 import { get, isEmpty } from "lodash";
 import React, { useCallback, useMemo } from "react";
 
-import type { NodeOrPropertiesType, NodeValidationError } from "../../../types";
+import type { NodeOrPropertiesType } from "../../../types/node";
+import type { NodeValidationError } from "../../../types/validation";
 import type { FieldType } from "./editors/field/Field";
 import Field from "./editors/field/Field";
 import { getValidationErrorsForField } from "./editors/Validators";

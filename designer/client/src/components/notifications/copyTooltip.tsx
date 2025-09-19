@@ -3,7 +3,7 @@ import { Button, Tooltip } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React from "react";
 
-import { useCopyClipboard } from "../../common/copyToClipboard";
+import { useCopyClipboard } from "../../common/copyToClipboard/useCopyToClipboard";
 
 export function CopyTooltip({
     children,

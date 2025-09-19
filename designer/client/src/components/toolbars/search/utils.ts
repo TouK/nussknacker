@@ -5,7 +5,8 @@ import { useTranslation } from "react-i18next";
 import { ensureArray } from "../../../common/arrayUtils";
 import { getScenario } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
-import type { Edge, NodeType } from "../../../types";
+import type { Edge } from "../../../types/edge";
+import type { NodeType } from "../../../types/node";
 import NodeUtils from "../../graph/NodeUtils";
 import type { SearchQuery } from "./SearchResults";
 

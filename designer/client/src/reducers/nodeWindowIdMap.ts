@@ -1,5 +1,5 @@
 import type { Action } from "../actions/reduxTypes";
-import type { NodeId } from "../types";
+import type { NodeId } from "../types/node";
 
 // node's name is node's id so we have to map when changed to avoid duplicates
 export function nodeWindowIdMap(state = {}, action: Action): Record<NodeId, string> {

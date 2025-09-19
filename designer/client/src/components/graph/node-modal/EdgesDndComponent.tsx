@@ -3,15 +3,16 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
-import type { Edge, NodeValidationError, VariableTypes } from "../../../types";
-import { EdgeKind } from "../../../types";
+import type { Edge } from "../../../types/edge";
+import { EdgeKind } from "../../../types/edge";
+import type { NodeValidationError, VariableTypes } from "../../../types/validation";
 import { DndItems } from "../../common/dndItems/DndItems";
 import NodeUtils from "../NodeUtils";
 import { EdgeFields } from "./EdgeFields";
 import type { EdgeTypeOption } from "./EdgeTypeSelect";
 import { ExpressionLang } from "./editors/expression/types";
 import { getValidationErrorsForField } from "./editors/Validators";
-import { NodeRowFieldsProvider } from "./node-row-fields-provider";
+import { NodeRowFieldsProvider } from "./node-row-fields-provider/NodeRowFieldsProvider";
 
 interface EdgeType extends Partial<EdgeTypeOption> {
     value: EdgeKind;

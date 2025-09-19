@@ -6,8 +6,9 @@ import Icon from "../../../../assets/img/toolbarButtons/counts.svg";
 import { getProcessCountsRefresh, isFragment } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { useAppSelector } from "../../../../store/storeHelpers";
-import { useWindows, WindowKind } from "../../../../windowManager";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { useWindows } from "../../../../windowManager/useWindows";
+import { WindowKind } from "../../../../windowManager/WindowKind";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 // TODO: counts and metrics should not be visible in archived process

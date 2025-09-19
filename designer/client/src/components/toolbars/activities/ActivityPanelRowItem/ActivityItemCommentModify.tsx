@@ -2,7 +2,8 @@ import React, { useCallback } from "react";
 
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { useAppSelector } from "../../../../store/storeHelpers";
-import { useWindows, WindowKind } from "../../../../windowManager";
+import { useWindows } from "../../../../windowManager/useWindows";
+import { WindowKind } from "../../../../windowManager/WindowKind";
 import type { ActionMetadata, ActivityComment, ActivityType, ModifyActivityCommentMeta } from "../types";
 import { StyledActionIcon } from "./StyledActionIcon";
 

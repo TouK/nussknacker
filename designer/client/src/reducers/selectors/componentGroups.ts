@@ -3,7 +3,7 @@ import { compact, flow } from "lodash";
 import { createSelector } from "reselect";
 
 import { StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
-import type { ComponentGroup } from "../../types";
+import type { ComponentGroup } from "../../types/component";
 import { appendAdditionalCreators } from "./appendAdditionalCreators";
 import { appendFragmentCreator } from "./appendFragmentCreator";
 import { appendStickyNotes } from "./appendStickyNotes";

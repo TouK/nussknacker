@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { importFiles } from "../../../../actions/nk";
+import { importFiles } from "../../../../actions/nk/importExport";
 import Icon from "../../../../assets/img/toolbarButtons/import.svg";
 import { getProcessName } from "../../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";

@@ -1,7 +1,7 @@
 import { Stack, styled, Typography } from "@mui/material";
 import React from "react";
 
-import type { NodeType } from "../../../types";
+import type { NodeType } from "../../../types/node";
 import { ComponentIcon } from "../creator/ComponentIcon";
 import { SearchHighlighter } from "../creator/SearchHighlighter";
 

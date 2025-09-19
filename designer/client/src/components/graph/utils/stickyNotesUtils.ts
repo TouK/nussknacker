@@ -1,6 +1,6 @@
 import { partition } from "lodash";
 
-import type { ComponentDefinition, ScenarioGraph } from "../../../types";
+import type { ComponentDefinition, ScenarioGraph } from "../../../types/scenarioGraph";
 import type { Scenario } from "../../Process/types";
 
 export const StickyNoteType = "StickyNoteNode";

@@ -4,7 +4,8 @@ import type { ReactElement } from "react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
+import { getEventTrackingProps } from "../../../containers/event-tracking/helpers";
+import { EventTrackingSelector } from "../../../containers/event-tracking/use-register-tracking-events";
 import { AdvancedOptionsIcon, SearchIcon } from "../../table/SearchFilter";
 import type { Focusable } from "../../themed/InputWithIcon";
 import { SearchInputWithIcon } from "../../themed/SearchInput";

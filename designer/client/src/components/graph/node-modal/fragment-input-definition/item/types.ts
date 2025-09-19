@@ -1,6 +1,7 @@
 import { isNil } from "lodash";
 
-import type { Expression, ReturnedType } from "../../../../../types";
+import type { Expression } from "../../../../../types/node";
+import type { ReturnedType } from "../../../../../types/scenarioGraph";
 import { resolveRefClazzName } from "./utils";
 
 export type onChangeType = string | number | boolean | FixedValuesOption | FixedValuesOption[] | ValueCompileTimeValidation | ValueEditor;

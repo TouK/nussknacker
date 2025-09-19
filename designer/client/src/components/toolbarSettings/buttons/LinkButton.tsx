@@ -2,7 +2,7 @@ import React from "react";
 
 import FallbackIcon from "../../../assets/img/toolbarButtons/link.svg";
 import { PlainStyleLink } from "../../../containers/plainStyleLink";
-import { ToolbarButton } from "../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../toolbarComponents/toolbarButtons/ToolbarButton";
 import UrlIcon from "../../UrlIcon";
 import type { CustomButtonTypes } from "./CustomButtonTypes";
 

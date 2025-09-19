@@ -1,4 +1,4 @@
-import type { TypingResult } from "../../../../types";
+import type { TypingResult } from "../../../../types/definition";
 import type { PossibleValue } from "../aggregate/aggregatorFieldsStack";
 import type { EditorMode, EditorType } from "./expression/types";
 

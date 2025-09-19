@@ -1,11 +1,11 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { zoomOut } from "../../../../actions/nk";
+import { zoomOut } from "../../../../actions/nk/zoom";
 import Icon from "../../../../assets/img/toolbarButtons/zoom-out.svg";
 import { useAppDispatch } from "../../../../store/storeHelpers";
 import { useGraph } from "../../../graph/GraphContext";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 export function ZoomOutButton(props: ToolbarButtonProps) {

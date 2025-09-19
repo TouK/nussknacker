@@ -4,7 +4,8 @@ import React, { memo } from "react";
 
 import type { RootState } from "../../../../reducers";
 import { useAppSelector } from "../../../../store/storeHelpers";
-import type { Edge, NodeType } from "../../../../types";
+import type { Edge } from "../../../../types/edge";
+import type { NodeType } from "../../../../types/node";
 import NodeUtils from "../../NodeUtils";
 import { NodeDetailsContent } from "../NodeDetailsContent";
 import { useNodeAdjust } from "../useNodeTypeDetailsContentLogic";

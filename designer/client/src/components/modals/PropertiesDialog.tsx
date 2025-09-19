@@ -6,21 +6,23 @@ import { set } from "lodash/fp";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { editProperties } from "../../actions/nk";
+import { editProperties } from "../../actions/nk/editProperties";
 import PropertiesSvg from "../../assets/img/properties.svg";
 import HttpService from "../../http/HttpService";
 import type { RootState } from "../../reducers";
 import { getProperties, getScenario } from "../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
-import type { NodeValidationError, PropertiesType } from "../../types";
-import { WindowContent, WindowKind } from "../../windowManager";
+import type { PropertiesType } from "../../types/node";
+import type { NodeValidationError } from "../../types/validation";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
+import { WindowContent } from "../../windowManager/WindowContent";
+import { WindowKind } from "../../windowManager/WindowKind";
 import { ContentSize } from "../graph/node-modal/node/ContentSize";
 import { getPropertiesErrors, getReadOnly } from "../graph/node-modal/node/selectors";
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../graph/node-modal/nodeDetails/SubHeader";
 import { getProcessName, getScenarioPropertiesConfig } from "../graph/node-modal/NodeDetailsContent/selectors";
-import { PropertiesForm } from "../properties";
+import { PropertiesForm } from "../properties/PropertiesForm";
 
 export const usePropertiesState = () => {
     const currentProperties = useAppSelector(getProperties);

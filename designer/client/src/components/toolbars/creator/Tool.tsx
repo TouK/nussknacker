@@ -5,9 +5,9 @@ import type { DragSourceMonitor } from "react-dnd";
 import { useDrag } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
 
-import type { NodeType } from "../../../types";
+import type { NodeType } from "../../../types/node";
 import { DndTypes } from "../../DndTypes";
-import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip";
+import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
 import type { ElementDropResult } from "../../graph/ProcessGraph";
 import { ComponentIcon } from "./ComponentIcon";
 import { SearchHighlighter } from "./SearchHighlighter";

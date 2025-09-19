@@ -1,4 +1,4 @@
-import type { Layout } from "../../actions/nk";
+import type { Layout } from "../../actions/nk/ui/layout";
 import type { ProcessCounts } from "../../http/resultsWithCountsDto";
 import type { Capabilities } from "../../reducers/selectors/other";
 import type { AppDispatch } from "../../store/storeHelpers";

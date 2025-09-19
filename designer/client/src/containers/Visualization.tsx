@@ -5,9 +5,11 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "
 import { useErrorBoundary } from "react-error-boundary";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-import { clearProcess, expandSelection, fetchAndDisplayProcessCounts, loadProcessState } from "../actions/nk";
+import { fetchAndDisplayProcessCounts } from "../actions/nk/displayProcessCounts";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
 import { findFreeSpaceForNode } from "../actions/nk/findFreeSpaceForNode";
+import { clearProcess, loadProcessState } from "../actions/nk/process";
+import { expandSelection } from "../actions/nk/selection";
 import { useDecodedParams } from "../common/routerUtils";
 import { extractCountParams } from "../common/VisualizationUrl";
 import type { Graph } from "../components/graph/Graph";
@@ -32,7 +34,7 @@ import {
 } from "../reducers/selectors/graph";
 import { getCapabilities } from "../reducers/selectors/other";
 import { useAppDispatch, useAppSelector } from "../store/storeHelpers";
-import { useWindows } from "../windowManager";
+import { useWindows } from "../windowManager/useWindows";
 import { AddComponentsButtons } from "./AddComponentsButtons";
 import { AdjustNodeOverlapBehavior } from "./AdjustNodeOverlapBehavior";
 import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";

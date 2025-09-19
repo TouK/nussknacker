@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { layout } from "../../../../actions/nk";
+import { layout } from "../../../../actions/nk/ui/layout";
 import Icon from "../../../../assets/img/toolbarButtons/layout.svg";
 import { useAppDispatch } from "../../../../store/storeHelpers";
 import { useGraph } from "../../../graph/GraphContext";

@@ -6,7 +6,7 @@ import type { PropsWithChildren } from "react";
 
 import type { NodeResultsForContext } from "../../../../common/TestResultUtils";
 import { useUserSettings } from "../../../../common/userSettings";
-import { InfoTooltip } from "../editors/InfoTooltip";
+import { InfoTooltip } from "../editors/InfoTooltip/InfoTooltip";
 import { HIDDEN_TEXTAREA_PIXEL_HEIGHT, nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 import { ExpressionEvaluationResult } from "./ExpressionEvaluationResult";
 import TestValue from "./TestValue";

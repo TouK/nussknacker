@@ -1,7 +1,7 @@
 import { uniqBy } from "lodash";
 import { createSelector } from "reselect";
 
-import type { MetricsType } from "../../actions/nk";
+import type { MetricsType } from "../../actions/nk/assignSettings";
 import type { DynamicTabData } from "../../containers/DynamicTab";
 import type { RootState } from "../index";
 import type { AuthenticationSettings, SettingsState } from "../settings";

@@ -4,7 +4,7 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 
 import { visualizationUrl } from "../../../common/VisualizationUrl";
-import type { NodeId, NodeType } from "../../../types";
+import type { NodeId, NodeType } from "../../../types/node";
 import NodeUtils from "../../graph/NodeUtils";
 import type { Scenario } from "../../Process/types";
 import { ErrorHeader } from "./ErrorHeader";

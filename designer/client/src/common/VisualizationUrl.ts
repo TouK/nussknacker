@@ -3,7 +3,7 @@ import Moment from "moment";
 import { stringifyUrl } from "query-string";
 
 import { VisualizationBasePath } from "../containers/paths";
-import type { NodeId } from "../types";
+import type { NodeId } from "../types/node";
 
 function fromTimestampOrDate(tsOrDate): Moment.Moment {
     const asInt = parseInt(tsOrDate);

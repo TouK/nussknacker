@@ -7,8 +7,9 @@ import { useTranslation } from "react-i18next";
 import type { Scenario } from "../components/Process/types";
 import { getProperties, getScenario, getScenarioDescription } from "../reducers/selectors/graph";
 import { useAppSelector } from "../store/storeHelpers";
-import type { NodeOrPropertiesType } from "../types";
-import { useWindows, WindowKind } from "../windowManager";
+import type { NodeOrPropertiesType } from "../types/node";
+import { useWindows } from "../windowManager/useWindows";
+import { WindowKind } from "../windowManager/WindowKind";
 
 const measureText = (text: string, font: string, elementWidth: number): { width: number; height: number } => {
     const canvas = document.createElement("canvas");

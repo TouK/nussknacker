@@ -3,7 +3,9 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type ProcessUtils from "../../../../../common/ProcessUtils";
-import type { NodeType, NodeValidationError, UIParameter } from "../../../../../types";
+import type { UIParameter } from "../../../../../types/definition";
+import type { NodeType } from "../../../../../types/node";
+import type { NodeValidationError } from "../../../../../types/validation";
 import { FieldLabel } from "../../FieldLabel";
 import { useDiffMark } from "../../PathsToMark";
 import { useTestResults } from "../../TestResultsWrapper";

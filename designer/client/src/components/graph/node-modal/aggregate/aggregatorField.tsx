@@ -8,7 +8,7 @@ import { v4 as uuid4 } from "uuid";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import { DndItems } from "../../../common/dndItems/DndItems";
 import { FieldsRow } from "../fragment-input-definition/FieldsRow";
-import { NodeRowFieldsProvider } from "../node-row-fields-provider";
+import { NodeRowFieldsProvider } from "../node-row-fields-provider/NodeRowFieldsProvider";
 import { getFindAvailableVariables } from "../NodeDetailsContent/selectors";
 import type { FieldWrapperProps } from "../ParameterExpressionField";
 import { findParamDefinitionByName } from "../parameterHelpers";

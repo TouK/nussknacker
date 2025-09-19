@@ -1,7 +1,8 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
+import { loadProcessToolbarsConfiguration } from "../../../../actions/nk/loadProcessToolbarsConfiguration";
+import { displayCurrentProcessVersion } from "../../../../actions/nk/process";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { ArchivedPath } from "../../../../containers/paths";
@@ -9,7 +10,7 @@ import HttpService from "../../../../http/HttpService";
 import { isPristine } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
-import { useWindows } from "../../../../windowManager";
+import { useWindows } from "../../../../windowManager/useWindows";
 
 export const useArchiveHelper = (processName: string) => {
     const dispatch = useAppDispatch();

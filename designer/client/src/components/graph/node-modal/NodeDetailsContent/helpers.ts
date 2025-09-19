@@ -1,4 +1,4 @@
-import type { NodeType, Parameter } from "../../../../types";
+import type { NodeType, Parameter } from "../../../../types/node";
 
 export function findParameters(node: NodeType): Parameter[] {
     switch (node.type) {

@@ -3,7 +3,8 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
 
 import ValidationLabels from "../../../modals/ValidationLabels";
 import type { FieldError } from "../editors/Validators";
-import { NodeRow, NodeValue } from "../node";
+import { NodeRow } from "../node/NodeRow";
+import { NodeValue } from "../node/NodeValue";
 import { FieldsControl } from "./FieldsControl";
 
 interface FieldsContext {

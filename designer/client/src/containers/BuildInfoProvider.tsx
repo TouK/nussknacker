@@ -2,8 +2,8 @@ import type { PropsWithChildren } from "react";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 import LoaderSpinner from "../components/spinner/Spinner";
-import type { AppBuildInfo } from "../http/HttpService";
 import HttpService from "../http/HttpService";
+import type { AppBuildInfo } from "../http/HttpService/types";
 
 const BuildInfoContext = createContext<AppBuildInfo>(null);
 

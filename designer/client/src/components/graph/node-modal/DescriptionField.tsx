@@ -1,7 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
 import React from "react";
 
-import type { NodeOrPropertiesType, NodeValidationError } from "../../../types";
+import type { NodeOrPropertiesType } from "../../../types/node";
+import type { NodeValidationError } from "../../../types/validation";
 import { FieldType } from "./editors/field/Field";
 import { NodeField } from "./NodeField";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";

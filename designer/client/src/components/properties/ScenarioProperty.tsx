@@ -1,7 +1,9 @@
 import { get } from "lodash";
 import React, { useCallback } from "react";
 
-import type { NodeValidationError, PropertiesType, UIScenarioProperty } from "../../types";
+import type { PropertiesType } from "../../types/node";
+import type { UIScenarioProperty } from "../../types/scenarioGraph";
+import type { NodeValidationError } from "../../types/validation";
 import EditableEditor from "../graph/node-modal/editors/EditableEditor";
 import type { ExpressionObj } from "../graph/node-modal/editors/expression/types";
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";

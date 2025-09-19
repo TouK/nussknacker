@@ -5,43 +5,34 @@ import { cloneDeep, debounce, isEmpty, isEqual, keys, without } from "lodash";
 import React from "react";
 import type { UseTranslationResponse } from "react-i18next";
 
-import type { Layout, NodePosition, Position } from "../../actions/nk";
-import {
-    layoutChanged,
-    moveNodeInject,
-    moveNodePlain,
-    moveNodeReplace,
-    nodesConnected,
-    nodesDisconnected,
-    resetSelection,
-    stickyNoteSetErrors,
-    stickyNoteUpdated,
-    toggleSelection,
-} from "../../actions/nk";
+import { moveNodeInject, moveNodePlain, moveNodeReplace } from "../../actions/nk/editNode";
+import { nodesConnected, nodesDisconnected, stickyNoteSetErrors, stickyNoteUpdated } from "../../actions/nk/node";
+import { resetSelection, toggleSelection } from "../../actions/nk/selection";
+import type { Layout, NodePosition, Position } from "../../actions/nk/ui/layout";
+import { layoutChanged } from "../../actions/nk/ui/layout";
 import { isEdgeEditable } from "../../common/EdgeUtils";
 import type User from "../../common/models/User";
 import ProcessUtils from "../../common/ProcessUtils";
-import type { TrackEventParams } from "../../containers/event-tracking";
-import { EventTrackingSelector, EventTrackingType } from "../../containers/event-tracking";
+import { EventTrackingType } from "../../containers/event-tracking";
+import type { TrackEventParams } from "../../containers/event-tracking/use-event-tracking";
+import { EventTrackingSelector } from "../../containers/event-tracking/use-register-tracking-events";
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import type { UserSettings } from "../../reducers/userSettings";
-import type { Edge, NodeId, NodeType, NodeValidationError, ProcessDefinitionData, ScenarioGraph } from "../../types";
+import type { Edge } from "../../types/edge";
+import type { NodeId, NodeType } from "../../types/node";
+import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
+import type { NodeValidationError } from "../../types/validation";
 import { ComponentDragPreview } from "../ComponentDragPreview";
 import type { Scenario } from "../Process/types";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
 import { getDefaultLinkCreator } from "./EspNode/link";
-import {
-    applyCellChanges,
-    calcLayout,
-    createPaper,
-    isConnected,
-    isModelElement,
-    isModelOrStickyNote,
-    isStickyNoteElement,
-} from "./GraphPartialsInTS";
+import { applyCellChanges } from "./GraphPartialsInTS/applyCellChanges";
+import { calcLayout } from "./GraphPartialsInTS/calcLayout";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
+import { isConnected, isModelElement, isModelOrStickyNote, isStickyNoteElement } from "./GraphPartialsInTS/cellUtils";
+import { createPaper } from "./GraphPartialsInTS/createPaper";
 import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
 import { dragHovered, nodeFocused, nodeValidationError } from "./graphStyledWrapper";

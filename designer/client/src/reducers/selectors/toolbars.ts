@@ -1,7 +1,7 @@
 import { createSelector } from "reselect";
 
-import { ButtonsVariant } from "../../components/toolbarComponents/toolbarButtons";
-import { BuiltinButtonTypes } from "../../components/toolbarSettings/buttons";
+import { ButtonsVariant } from "../../components/toolbarComponents/toolbarButtons/ToolbarButtons";
+import { BuiltinButtonTypes } from "../../components/toolbarSettings/buttons/BuiltinButtonTypes";
 import type { ToolbarsConfig } from "../../components/toolbarSettings/types";
 import type { WithId } from "../../types/common";
 import type { RootState } from "../index";

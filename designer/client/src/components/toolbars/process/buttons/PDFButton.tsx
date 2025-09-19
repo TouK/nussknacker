@@ -7,7 +7,7 @@ import HttpService from "../../../../http/HttpService";
 import { getProcessName, getProcessVersionId } from "../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import { useGraph } from "../../../graph/GraphContext";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 export default function PDFButton(props: ToolbarButtonProps) {

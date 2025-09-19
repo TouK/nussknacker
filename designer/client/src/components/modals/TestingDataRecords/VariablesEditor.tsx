@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import HttpService from "../../../http/HttpService";
 import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
-import type { NodeValidationError } from "../../../types";
+import type { NodeValidationError } from "../../../types/validation";
 import { JsonEditor } from "../../graph/node-modal/editors/expression/JsonEditor";
 import { ExpressionLang } from "../../graph/node-modal/editors/expression/types";
 import type { VariablesCell } from "./CellContent";

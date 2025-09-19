@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { RemoteComponent } from "../RemoteComponent";
 import type { ToolbarConfig } from "../toolbarSettings/types";
-import { ToolbarButtons } from "./toolbarButtons";
+import { ToolbarButtons } from "./toolbarButtons/ToolbarButtons";
 import { ToolbarWrapper } from "./toolbarWrapper/ToolbarWrapper";
 
 export type ToolbarPanelProps = PropsWithChildren<Omit<ToolbarConfig, "buttons" | "additionalParams">>;

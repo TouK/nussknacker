@@ -5,7 +5,7 @@ import type { shapes } from "jointjs";
 import { dia } from "jointjs";
 
 import { blendDarken, blendLighten, getBorderColor } from "../../../../containers/theme/helpers";
-import type { NodeType, StickyNoteNodeType } from "../../../../types";
+import type { NodeType, StickyNoteNodeType } from "../../../../types/node";
 import { stickyNoteIcon } from "../../../toolbars/creator/ComponentIcon";
 import { Events } from "../../types";
 import { StickyNoteType } from "../../utils/stickyNotesUtils";

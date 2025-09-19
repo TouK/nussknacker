@@ -5,7 +5,7 @@ import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import HttpService from "../../http/HttpService";
 import type { ProcessCounts } from "../../http/resultsWithCountsDto";
 import { getProcessCountsRefresh, getScenarioGraph } from "../../reducers/selectors/graph";
-import type { ScenarioGraph } from "../../types";
+import type { ScenarioGraph } from "../../types/scenarioGraph";
 import type { ThunkAction } from "../reduxTypes";
 
 export type RefreshData = {

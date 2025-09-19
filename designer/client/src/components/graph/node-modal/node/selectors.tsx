@@ -4,7 +4,7 @@ import ProcessUtils from "../../../../common/ProcessUtils";
 import type { RootState } from "../../../../reducers";
 import { getScenario } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
-import type { NodeId } from "../../../../types";
+import type { NodeId } from "../../../../types/node";
 
 export const getNodeErrors = createSelector(
     getScenario,

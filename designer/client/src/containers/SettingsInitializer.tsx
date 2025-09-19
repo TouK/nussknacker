@@ -1,8 +1,8 @@
 import type { PropsWithChildren } from "react";
 import React, { useEffect, useState } from "react";
 
-import type { SettingsData } from "../actions/nk";
-import { assignSettings } from "../actions/nk";
+import type { SettingsData } from "../actions/nk/assignSettings";
+import { assignSettings } from "../actions/nk/assignSettings";
 import { useUserSettings } from "../common/userSettings";
 import LoaderSpinner from "../components/spinner/Spinner";
 import HttpService from "../http/HttpService";

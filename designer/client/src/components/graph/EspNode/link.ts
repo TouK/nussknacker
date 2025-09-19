@@ -4,8 +4,9 @@ import type { routers } from "jointjs";
 import { dia } from "jointjs";
 
 import { blendLighten, getBorderColor } from "../../../containers/theme/helpers";
-import type { Edge, ProcessDefinitionData, ScenarioGraph } from "../../../types";
-import { EdgeKind } from "../../../types";
+import type { Edge } from "../../../types/edge";
+import { EdgeKind } from "../../../types/edge";
+import type { ProcessDefinitionData, ScenarioGraph } from "../../../types/scenarioGraph";
 import NodeUtils from "../NodeUtils";
 import { portSize, RECT_HEIGHT } from "./esp";
 

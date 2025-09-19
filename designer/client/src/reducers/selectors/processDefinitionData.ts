@@ -1,7 +1,7 @@
 import { isEqual } from "lodash";
 import { createSelectorCreator, lruMemoize as defaultMemoize } from "reselect";
 
-import type { ProcessDefinitionData } from "../../types";
+import type { ProcessDefinitionData } from "../../types/scenarioGraph";
 import { getSettings } from "./settings";
 
 const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);

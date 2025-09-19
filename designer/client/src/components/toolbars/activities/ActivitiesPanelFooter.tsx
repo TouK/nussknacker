@@ -2,10 +2,12 @@ import { Box, Button, lighten, styled } from "@mui/material";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
-import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
+import { getEventTrackingProps } from "../../../containers/event-tracking/helpers";
+import { EventTrackingSelector } from "../../../containers/event-tracking/use-register-tracking-events";
 import { getCapabilities } from "../../../reducers/selectors/other";
 import { useAppSelector } from "../../../store/storeHelpers";
-import { useWindows, WindowKind } from "../../../windowManager";
+import { useWindows } from "../../../windowManager/useWindows";
+import { WindowKind } from "../../../windowManager/WindowKind";
 
 const StyledFooterButton = styled(Button)(({ theme }) => ({
     textTransform: "none",

@@ -3,13 +3,13 @@ import React, { forwardRef, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useForkRef } from "rooks";
 
-import { useEventTracking } from "../../containers/event-tracking";
+import { useEventTracking } from "../../containers/event-tracking/use-event-tracking";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { getProcessCategory, getSelectionState, isPristine } from "../../reducers/selectors/graph";
 import { getLoggedUser } from "../../reducers/selectors/settings";
 import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../store/storeHelpers";
-import { useWindows } from "../../windowManager";
+import { useWindows } from "../../windowManager/useWindows";
 import { Graph } from "./Graph";
 import { GraphStyledWrapper } from "./graphStyledWrapper";
 import { NodeDescriptionPopover } from "./NodeDescriptionPopover";

@@ -1,6 +1,6 @@
 import { curryRight } from "lodash";
 
-import type { Component, ComponentGroup } from "../../types";
+import type { Component, ComponentGroup } from "../../types/component";
 import { getFakeVarName } from "./getCreator";
 
 function addUniqueElement<T extends { name: string }>(array: T[], newElement: T): T[] {

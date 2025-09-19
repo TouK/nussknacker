@@ -1,7 +1,7 @@
-import type { NodesWithPositions } from "../../actions/nk";
+import type { NodesWithPositions } from "../../actions/nk/node";
 import { TestCapabilityStatus } from "../../common/TestResultUtils";
-import { ProcessingMode } from "../../http/HttpService";
-import { EdgeKind } from "../../types";
+import { ProcessingMode } from "../../http/HttpService/types";
+import { EdgeKind } from "../../types/edge";
 import type { GraphState } from "./types";
 
 export const state: GraphState = {

@@ -1,7 +1,9 @@
 import { curryRight } from "lodash";
 
 import NodeUtils from "../../components/graph/NodeUtils";
-import type { ComponentGroup, NodeType, ProcessDefinitionData } from "../../types";
+import type { ComponentGroup } from "../../types/component";
+import type { NodeType } from "../../types/node";
+import type { ProcessDefinitionData } from "../../types/scenarioGraph";
 
 function replaceOrAdd<T>(collection: T[] = [], predicate: (item: T) => boolean, replaceOrAddFn: (item?: T) => T): T[] {
     const index = collection.findIndex(predicate);

@@ -10,7 +10,7 @@ import { editors, isExtendedEditor } from "../expression/Editor";
 import { editorsParameters } from "../expression/editorsParameters";
 import type { ExpressionObj } from "../expression/types";
 import { EditorType } from "../expression/types";
-import { InfoTooltip } from "../InfoTooltip";
+import { InfoTooltip } from "../InfoTooltip/InfoTooltip";
 import type { Editor, ParamType } from "../types";
 
 const StyledTab = styled(Tab)(({ theme }) => ({

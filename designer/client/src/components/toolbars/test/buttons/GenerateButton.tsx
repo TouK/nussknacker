@@ -5,7 +5,8 @@ import Icon from "../../../../assets/img/toolbarButtons/generate.svg";
 import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
 import { getTestCapabilities, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../store/storeHelpers";
-import { useWindows, WindowKind } from "../../../../windowManager";
+import { useWindows } from "../../../../windowManager/useWindows";
+import { WindowKind } from "../../../../windowManager/WindowKind";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 

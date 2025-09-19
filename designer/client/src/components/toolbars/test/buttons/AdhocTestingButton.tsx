@@ -4,12 +4,14 @@ import { useTranslation } from "react-i18next";
 
 import { getTestParameters, getTestResultsLoading } from "../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../store/storeHelpers";
-import { useWindows, WindowKind } from "../../../../windowManager";
+import { useWindows } from "../../../../windowManager/useWindows";
+import { WindowKind } from "../../../../windowManager/WindowKind";
 import type { AdhocTestingData, AdhocTestingViewParams } from "../../../modals/AdhocTesting/AdhocTestingDialog";
 import { useAdhocTestingAction } from "../../../modals/AdhocTesting/useAdhocTestingAction";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
-import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
+import type { CustomButtonTypes } from "../../../toolbarSettings/buttons/CustomButtonTypes";
+import type { PropsOfButton } from "../../../toolbarSettings/buttons/TOOLBAR_BUTTONS_MAP";
 
 export type AdhocTestingButtonProps = {
     type: CustomButtonTypes.adhocTesting;

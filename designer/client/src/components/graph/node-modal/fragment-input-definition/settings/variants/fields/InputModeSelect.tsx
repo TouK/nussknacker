@@ -3,11 +3,11 @@ import { isNil } from "lodash";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import type { NodeValidationError } from "../../../../../../../types";
+import type { NodeValidationError } from "../../../../../../../types/validation";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import type { Option } from "../../../FieldsSelect";
-import type { onChangeType, PermittedTypeParameterVariant, ValueEditor } from "../../../item";
-import { FixedValuesType, InputMode } from "../../../item";
+import type { onChangeType, PermittedTypeParameterVariant, ValueEditor } from "../../../item/types";
+import { FixedValuesType, InputMode } from "../../../item/types";
 import { TypeSelect } from "../../../TypeSelect";
 import { useSettings } from "../../SettingsProvider";
 import { SettingLabelStyled } from "./StyledSettingsComponnets";

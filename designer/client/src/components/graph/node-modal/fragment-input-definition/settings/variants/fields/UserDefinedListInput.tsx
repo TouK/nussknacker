@@ -9,12 +9,13 @@ import type { GenericValidationRequest } from "../../../../../../../actions/nk/a
 import HttpService from "../../../../../../../http/HttpService";
 import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../../../../store/storeHelpers";
-import type { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
+import type { ReturnedType } from "../../../../../../../types/scenarioGraph";
+import type { NodeValidationError, VariableTypes } from "../../../../../../../types/validation";
 import { useDelayedEnterAction } from "../../../../../../toolbars/scenarioDetails/useDelayedEnterAction";
 import { SpelEditor } from "../../../../editors/expression/SpelEditor";
 import { ExpressionLang } from "../../../../editors/expression/types";
 import { getValidationErrorsForField, mandatoryValueValidator, uniqueValueValidator } from "../../../../editors/Validators";
-import type { FieldName, FixedValuesOption, onChangeType } from "../../../item";
+import type { FieldName, FixedValuesOption, onChangeType } from "../../../item/types";
 import { useSettings } from "../../SettingsProvider";
 import { ListItems } from "./ListItems";
 import { SettingLabelStyled } from "./StyledSettingsComponnets";

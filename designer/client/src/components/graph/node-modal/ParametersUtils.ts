@@ -1,6 +1,7 @@
 import { get } from "lodash";
 
-import type { NodeType, UIParameter } from "../../../types";
+import type { UIParameter } from "../../../types/definition";
+import type { NodeType } from "../../../types/node";
 import { setImmutable } from "./setImmutable";
 
 const parametersPath = (node) => {

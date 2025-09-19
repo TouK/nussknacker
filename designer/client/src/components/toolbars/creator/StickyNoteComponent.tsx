@@ -1,7 +1,7 @@
 import i18next from "i18next";
 
-import type { StickyNotesSettings } from "../../../actions/nk";
-import type { ComponentGroup } from "../../../types";
+import type { StickyNotesSettings } from "../../../actions/nk/assignSettings";
+import type { ComponentGroup } from "../../../types/component";
 import { advancedNoteModel } from "../../graph/EspNode/stickyNote/advancedStickyNoteConfig";
 import { basicNoteModel } from "../../graph/EspNode/stickyNote/basicStickyNoteConfig";
 import { StickyNoteType } from "../../graph/utils/stickyNotesUtils";

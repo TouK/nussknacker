@@ -8,7 +8,7 @@ import { blendLighten, getBorderColor } from "../containers/theme/helpers";
 import { getIdMapping } from "../reducers/graph/utils";
 import { getNodes } from "../reducers/selectors/graph";
 import { useAppSelector } from "../store/storeHelpers";
-import type { NodeType } from "../types";
+import type { NodeType } from "../types/node";
 import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize, RECT_HEIGHT, RECT_WIDTH } from "./graph/EspNode/esp";
 import NodeUtils from "./graph/NodeUtils";
 import { ComponentIcon } from "./toolbars/creator/ComponentIcon";

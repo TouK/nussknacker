@@ -1,7 +1,7 @@
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import React from "react";
 
-import { InfoTooltip } from "../../components/graph/node-modal/editors/InfoTooltip";
+import { InfoTooltip } from "../../components/graph/node-modal/editors/InfoTooltip/InfoTooltip";
 import { StyledIconButton } from "./CopyIconButton";
 
 type Props = {
