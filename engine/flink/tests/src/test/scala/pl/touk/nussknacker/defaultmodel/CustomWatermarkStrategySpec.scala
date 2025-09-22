@@ -150,7 +150,7 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
   }
 
   test(
-    "should user upstream timestamp if event timestamp is configured as null expression by a user during scenario testing"
+    "should use upstream timestamp if event timestamp is configured as null expression by a user during scenario testing"
   ) {
     val inputTopic = "input-topic-upstream-timestamp-scenario-testing"
 
