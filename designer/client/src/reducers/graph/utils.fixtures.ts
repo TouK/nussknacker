@@ -1,4 +1,4 @@
-import type { NodesWithPositions } from "../../actions/nk";
+import type { NodesWithPositions } from "../../actions/nk/node";
 import { TestCapabilityStatus } from "../../common/TestResultUtils";
 import { ProcessingMode } from "../../http/HttpService/types";
 import { EdgeKind } from "../../types/edge";

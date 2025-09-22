@@ -5,19 +5,11 @@ import { cloneDeep, debounce, isEmpty, isEqual, keys, without } from "lodash";
 import React from "react";
 import type { UseTranslationResponse } from "react-i18next";
 
-import type { Layout, NodePosition, Position } from "../../actions/nk";
-import {
-    layoutChanged,
-    moveNodeInject,
-    moveNodePlain,
-    moveNodeReplace,
-    nodesConnected,
-    nodesDisconnected,
-    resetSelection,
-    stickyNoteSetErrors,
-    stickyNoteUpdated,
-    toggleSelection,
-} from "../../actions/nk";
+import { moveNodeInject, moveNodePlain, moveNodeReplace } from "../../actions/nk/editNode";
+import { nodesConnected, nodesDisconnected, stickyNoteSetErrors, stickyNoteUpdated } from "../../actions/nk/node";
+import { resetSelection, toggleSelection } from "../../actions/nk/selection";
+import { layoutChanged } from "../../actions/nk/ui/layout";
+import type { Layout, NodePosition, Position } from "../../actions/nk/ui/layout";
 import { isEdgeEditable } from "../../common/EdgeUtils";
 import type User from "../../common/models/User";
 import ProcessUtils from "../../common/ProcessUtils";

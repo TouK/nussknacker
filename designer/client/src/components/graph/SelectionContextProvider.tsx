@@ -7,16 +7,9 @@ import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { createSelector } from "reselect";
 import { useDebounceFn } from "rooks";
 
-import {
-    addNodeMultiple,
-    copySelection,
-    cutSelection,
-    deleteNodes,
-    deleteSelection,
-    pasteSelection,
-    resetSelection,
-    selectAll,
-} from "../../actions/nk";
+import { addNodeMultiple } from "../../actions/nk/editNode";
+import { deleteNodes } from "../../actions/nk/node";
+import { copySelection, cutSelection, deleteSelection, pasteSelection, resetSelection, selectAll } from "../../actions/nk/selection";
 import { error, success } from "../../actions/notificationActions";
 import type { Action } from "../../actions/reduxTypes";
 import { readText, writeText } from "../../common/ClipboardUtils";

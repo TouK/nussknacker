@@ -1,4 +1,4 @@
-import { nodeAdded, nodesWithEdgesAdded } from "../src/actions/nk";
+import { nodeAdded, nodesWithEdgesAdded } from "../src/actions/nk/node";
 import NodeUtils from "../src/components/graph/NodeUtils";
 import { Scenario } from "../src/components/Process/types";
 import rootReducer from "../src/reducers/index";

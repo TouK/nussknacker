@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useDebouncedValue } from "rooks";
 
-import { displayTestCapabilities } from "../../../actions/nk";
+import { displayTestCapabilities } from "../../../actions/nk/process";
 import { TestCapabilityStatus } from "../../../common/TestResultUtils";
 import {
     getProcessName,

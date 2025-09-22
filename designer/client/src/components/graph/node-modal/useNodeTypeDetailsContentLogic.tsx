@@ -1,7 +1,11 @@
 import { get, identity, isEqual } from "lodash";
 import React, { type SetStateAction, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 
-import { nodeValidationDynamicParametersLoaded, nodeValidationDynamicParametersLoading, validateNodeData } from "../../../actions/nk";
+import {
+    nodeValidationDynamicParametersLoaded,
+    nodeValidationDynamicParametersLoading,
+    validateNodeData,
+} from "../../../actions/nk/nodeDetails";
 import { useUserSettings } from "../../../common/userSettings";
 import type { RootState } from "../../../reducers";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";

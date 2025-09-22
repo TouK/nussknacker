@@ -1,4 +1,4 @@
-import type { FeaturesSettings } from "../actions/nk";
+import type { FeaturesSettings } from "../actions/nk/assignSettings";
 import type { Action } from "../actions/reduxTypes";
 import type User from "../common/models/User";
 import type { ToolbarsConfig } from "../components/toolbarSettings/types";

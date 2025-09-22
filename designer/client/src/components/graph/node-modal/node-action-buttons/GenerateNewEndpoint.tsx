@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { validateNodeData } from "../../../../actions/nk";
+import { validateNodeData } from "../../../../actions/nk/nodeDetails";
 import HttpService from "../../../../http/HttpService/instance";
 import { getProcessName, getScenarioGraph } from "../../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";

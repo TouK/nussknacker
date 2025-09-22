@@ -6,7 +6,7 @@ import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import urljoin from "url-join";
 
-import { nodeDetailsClosed, nodeDetailsOpened } from "../../../../actions/nk";
+import { nodeDetailsClosed, nodeDetailsOpened } from "../../../../actions/nk/nodeDetails";
 import { useUserSettings } from "../../../../common/userSettings";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";

@@ -2,8 +2,9 @@ import { produce } from "immer";
 import type { Dictionary } from "lodash";
 import { cloneDeep, mapValues, reject, snakeCase, zipObject } from "lodash";
 
-import type { Layout, NodePosition, NodesWithPositions } from "../../actions/nk";
-import { snapToInt } from "../../actions/nk";
+import type { NodesWithPositions } from "../../actions/nk/node";
+import type { Layout, NodePosition } from "../../actions/nk/ui/layout";
+import { snapToInt } from "../../actions/nk/ui/layout";
 import ProcessUtils from "../../common/ProcessUtils";
 import { ExpressionLang } from "../../components/graph/node-modal/editors/expression/types";
 import { replaceValue } from "../../components/graph/node-modal/replaceValue";

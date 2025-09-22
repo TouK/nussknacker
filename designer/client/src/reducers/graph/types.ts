@@ -1,4 +1,5 @@
-import type { Layout, RefreshData } from "../../actions/nk";
+import type { RefreshData } from "../../actions/nk/displayProcessCounts";
+import type { Layout } from "../../actions/nk/ui/layout";
 import type { TestCapabilities, TestFormParameters } from "../../common/TestResultUtils";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import type { Scenario } from "../../components/Process/types";

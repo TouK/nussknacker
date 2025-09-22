@@ -1,7 +1,8 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { disableToolTipsHighlight, enableToolTipsHighlight, fetchProcessToDisplay, loadProcessState } from "../../../../actions/nk";
+import { fetchProcessToDisplay, loadProcessState } from "../../../../actions/nk/process";
+import { disableToolTipsHighlight, enableToolTipsHighlight } from "../../../../actions/nk/tooltips";
 import notificationActions from "../../../../actions/notificationActions";
 import Icon from "../../../../assets/img/toolbarButtons/deploy.svg";
 import { useUserSettings } from "../../../../common/userSettings";
