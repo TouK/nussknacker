@@ -10,7 +10,7 @@ import { useUserSettings } from "../../common/userSettings";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { ToolbarsSide } from "../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
-import { WindowKind } from "../../windowManager";
+import { WindowKind } from "../../windowManager/WindowKind";
 import { SidePanel } from "../sidePanels/SidePanel";
 import { SidePanelsContextProvider, useSidePanel } from "../sidePanels/SidePanelsContext";
 import { SidePanelToggleButton } from "../SidePanelToggleButton";

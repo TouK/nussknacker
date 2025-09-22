@@ -15,9 +15,9 @@ import { removeHistorySnapshot, takeHistorySnapshot } from "../../../../reducers
 import { getCreatorType } from "../../../../reducers/selectors/getCreator";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import type { Edge, NodeType } from "../../../../types";
-import type { WindowKind } from "../../../../windowManager";
-import { WindowContent } from "../../../../windowManager";
 import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
+import { WindowContent } from "../../../../windowManager/WindowContent";
+import type { WindowKind } from "../../../../windowManager/WindowKind";
 import type { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
 import type { EditedNode } from "../IdField";

@@ -9,7 +9,7 @@ import { getProcessCategory, getSelectionState, isPristine } from "../../reducer
 import { getLoggedUser } from "../../reducers/selectors/settings";
 import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../store/storeHelpers";
-import { useWindows } from "../../windowManager";
+import { useWindows } from "../../windowManager/useWindows";
 import { Graph } from "./Graph";
 import { GraphStyledWrapper } from "./graphStyledWrapper";
 import { NodeDescriptionPopover } from "./NodeDescriptionPopover";

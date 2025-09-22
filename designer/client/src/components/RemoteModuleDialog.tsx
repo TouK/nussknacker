@@ -4,9 +4,9 @@ import type { FooterButtonProps } from "@touk/window-manager/cjs/components/wind
 import React, { useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { WindowKind } from "../windowManager";
-import { WindowContent } from "../windowManager";
 import { LoadingButtonTypes } from "../windowManager/LoadingButton";
+import { WindowContent } from "../windowManager/WindowContent";
+import type { WindowKind } from "../windowManager/WindowKind";
 import { RemoteComponent } from "./RemoteComponent";
 
 export type RemoteModuleDialogProps = NonNullable<unknown>;

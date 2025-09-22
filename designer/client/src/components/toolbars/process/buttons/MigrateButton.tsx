@@ -10,7 +10,7 @@ import { getProcessName, getProcessVersionId } from "../../../../reducers/select
 import { isMigrationPossible } from "../../../../reducers/selectors/graph2";
 import { getFeatureSettings, getTargetEnvironmentId } from "../../../../reducers/selectors/settings";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
-import { useWindows } from "../../../../windowManager";
+import { useWindows } from "../../../../windowManager/useWindows";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 

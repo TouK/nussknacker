@@ -8,8 +8,8 @@ import { useTranslation } from "react-i18next";
 
 import NuLogoIcon from "../../assets/img/nussknacker-logo-icon.svg";
 import { DATE_FORMAT } from "../../config";
-import type { WindowKind } from "../../windowManager";
-import { WindowContent } from "../../windowManager";
+import { WindowContent } from "../../windowManager/WindowContent";
+import type { WindowKind } from "../../windowManager/WindowKind";
 import type { ProcessStateType, Scenario } from "../Process/types";
 import LoaderSpinner from "../spinner/Spinner";
 import { getProcessingModeVariantName } from "../toolbars/scenarioDetails/getProcessingModeVariantName";

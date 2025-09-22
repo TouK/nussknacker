@@ -8,8 +8,8 @@ import { useTranslation } from "react-i18next";
 import { testScenarioWithGeneratedData } from "../../actions/nk/displayTestResults";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
-import { PromptContent } from "../../windowManager";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
+import { PromptContent } from "../../windowManager/PromptContent";
 import { NodeInput } from "../FormElements";
 import {
     extendErrors,

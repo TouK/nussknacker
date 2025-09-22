@@ -10,7 +10,7 @@ import { getScenario } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
 import { useAppSelector } from "../../store/storeHelpers";
 import type { NodeType } from "../../types";
-import { useWindows } from "../../windowManager";
+import { useWindows } from "../../windowManager/useWindows";
 import type { ToolbarPanelProps } from "../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import Errors from "./error/Errors";
