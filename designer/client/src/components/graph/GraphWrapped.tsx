@@ -3,7 +3,7 @@ import React, { forwardRef, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useForkRef } from "rooks";
 
-import { useEventTracking } from "../../containers/event-tracking";
+import { useEventTracking } from "../../containers/event-tracking/use-event-tracking";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { getProcessCategory, getSelectionState, isPristine } from "../../reducers/selectors/graph";
 import { getLoggedUser } from "../../reducers/selectors/settings";
