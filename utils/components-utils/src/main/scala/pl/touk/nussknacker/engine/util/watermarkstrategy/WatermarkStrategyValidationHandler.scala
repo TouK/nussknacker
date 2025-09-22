@@ -57,7 +57,7 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
           outputValidationContext.localVariables.mapValuesNow(AdditionalVariableProvidedInRuntime(_)),
         defaultValue = Some(eventTimeDefaultValueExpression),
         hintText = Some(
-          s"An expression that determines the Event Time to be used in stateful stream processing. If this field won't be specified, the upstream source event time will be used.  " +
+          s"An expression that determines the Event Time to be used in stateful stream processing. If this field is empty, the upstream source event time will be used.  " +
             s"For more information on how Event Time is handled in Flink, and why it is important, see [Flink documentation](${FlinkDocumentationUrl.forCurrentFlinkVersion("concepts/time/#introduction")})"
         ),
         category = ParameterCategory.Advanced
