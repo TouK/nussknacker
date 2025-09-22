@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.definition.component.ComponentImplementationIn
   DynamicComponentInvocationContext
 }
 
-class DynamicComponentImplementationInvoker(obj: DynamicComponent[_]) extends ComponentImplementationInvoker {
+class DynamicComponentImplementationInvoker(obj: DynamicComponent) extends ComponentImplementationInvoker {
 
   override def invokeMethod(
       params: Params,

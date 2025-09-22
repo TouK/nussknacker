@@ -168,7 +168,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `KafkaComponentsConfig.kafkaProperties` is mandatory now
   * `KafkaComponentsConfig.kafkaAddress` was removed
 * [#8576](https://github.com/TouK/nussknacker/pull/8576) `NodeId` value class become used more frequently in the API:
-  `NodeComponentInfo`, `ContextId`, `ProcessCompilationError`, `ProcessListener` and `FlinkCustomNodeContext` 
+  `NodeComponentInfo`, `ContextId`, `ProcessCompilationError`, `ProcessListener` and `FlinkCustomNodeContext`
+* [#8632](https://github.com/TouK/nussknacker/pull/8632) `DynamicComponent`'s `[T]` generic parameter was replaced with `Implementation` type
+  We recommend to not invoke `DynamicComponent.implemenation()` method directly. To check how component behave during compilation, use `TestNodeCompiler` instead.
+  Read [Testing](../docs/developers_guide/Testing.md) for more info.
 
 ### Other changes
 

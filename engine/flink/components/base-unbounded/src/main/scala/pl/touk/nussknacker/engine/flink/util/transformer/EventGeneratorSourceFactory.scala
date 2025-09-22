@@ -29,7 +29,7 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
-import pl.touk.nussknacker.engine.flink.api.process._
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, _}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler.ContextWithEventTime
@@ -47,9 +47,11 @@ import scala.annotation.nowarn
 
 object EventGeneratorSourceFactory
     extends SourceFactory
-    with SingleInputDynamicComponent[FlinkSource]
+    with SingleInputDynamicComponent
     with UnboundedStreamComponent
     with WatermarkStrategyValidationHandler {
+
+  override type Implementation = FlinkSource
 
   override type State = Nothing
 

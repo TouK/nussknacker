@@ -30,9 +30,11 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object TableJoinComponent
     extends CustomStreamTransformer
-    with JoinDynamicComponent[FlinkCustomJoinTransformation]
+    with JoinDynamicComponent
     with WithExplicitTypesToExtract
     with BoundedStreamComponent {
+
+  override type Implementation = FlinkCustomJoinTransformation
 
   private val contextInternalColumnName   = "context"
   private val mainKeyInternalColumnName   = "mainKey"

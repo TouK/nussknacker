@@ -46,8 +46,10 @@ object TableAggregationFactory {
 
 class TableAggregationFactory
     extends CustomStreamTransformer
-    with SingleInputDynamicComponent[FlinkCustomStreamTransformation]
+    with SingleInputDynamicComponent
     with BoundedStreamComponent {
+
+  override type Implementation = FlinkCustomStreamTransformation
 
   case class TableAggregationTransformationState(
       selectedAggregator: TableAggregator,

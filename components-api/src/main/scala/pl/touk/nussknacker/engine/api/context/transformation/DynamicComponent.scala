@@ -21,7 +21,9 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
      - for sinks OutputVariable is not handled, result ValidationContext will be ignored
      - for sources OutputVariable *has* to be used for Flink sources, it's value is always equal to 'input' ATM, due to source API limitations
  */
-sealed trait DynamicComponent[T] extends Component {
+sealed trait DynamicComponent extends Component {
+
+  type Implementation
 
   // ValidationContext for single input, Map[String, ValidationContext] for joins
   type InputContext
@@ -37,7 +39,7 @@ sealed trait DynamicComponent[T] extends Component {
       implicit nodeId: NodeId
   ): ContextTransformationDefinition
 
-  def implementation(params: Params, dependencies: List[NodeDependencyValue], finalState: Option[State]): T
+  def implementation(params: Params, dependencies: List[NodeDependencyValue], finalState: Option[State]): Implementation
 
   // Here we assume that this list is fixed - cannot be changed depending on parameter values
   def nodeDependencies: List[NodeDependency]
@@ -131,7 +133,7 @@ sealed trait DynamicComponent[T] extends Component {
 
 }
 
-trait SingleInputDynamicComponent[T] extends DynamicComponent[T] {
+trait SingleInputDynamicComponent extends DynamicComponent {
   type InputContext     = ValidationContext
   type DefinedParameter = DefinedSingleParameter
 }
@@ -140,7 +142,7 @@ trait SingleInputDynamicComponent[T] extends DynamicComponent[T] {
   NOTE: currently, due to FE limitations, it's *NOT* possible to defined dynamic branch parameters - that is,
   branch parameters that are changed based on other parameter values
  */
-trait JoinDynamicComponent[T] extends DynamicComponent[T] with LazyLogging {
+trait JoinDynamicComponent extends DynamicComponent with LazyLogging {
   type InputContext     = Map[String, ValidationContext]
   type DefinedParameter = BaseDefinedParameter
 }

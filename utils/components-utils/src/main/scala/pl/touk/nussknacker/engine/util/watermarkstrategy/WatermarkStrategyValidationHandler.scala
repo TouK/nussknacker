@@ -34,7 +34,7 @@ object WatermarkStrategyValidationHandler {
 
 }
 
-trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] =>
+trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent =>
 
   protected def prepareWatermarkStrategyParameters(
       outputValidationContext: ValidationContext,

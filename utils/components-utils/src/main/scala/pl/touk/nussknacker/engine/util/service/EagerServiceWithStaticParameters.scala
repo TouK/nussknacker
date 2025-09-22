@@ -32,10 +32,9 @@ import scala.runtime.BoxedUnit
   list from external source (e.g. configuration, OpenAPI definition, database).
   For dynamic parameters use SingleInputDynamicComponent, for parameters known at compile time - use @MethodToInvoke
  */
-trait EagerServiceWithStaticParameters
-    extends EagerService
-    with SingleInputDynamicComponent[ServiceInvoker]
-    with WithStaticParameters {
+trait EagerServiceWithStaticParameters extends EagerService with SingleInputDynamicComponent with WithStaticParameters {
+
+  override type Implementation = ServiceInvoker
 
   override type State = TypingResult
 

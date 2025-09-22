@@ -37,7 +37,7 @@ class DynamicNodeValidator(
 
   def validateNode(
       compilationDependencies: NodeCompilationDependencies,
-      component: DynamicComponent[_],
+      component: DynamicComponent,
       parametersConfig: Map[ParameterName, ParameterConfig],
       nodeInputValidationContext: NodeInputValidationContext,
   ): ValidatedNel[ProcessCompilationError, TransformationResult] = {
@@ -60,7 +60,7 @@ class DynamicNodeValidator(
 
   private class TransformationStepsProcessor(
       compilationDependencies: NodeCompilationDependencies,
-      component: DynamicComponent[_],
+      component: DynamicComponent,
       parametersConfig: Map[ParameterName, ParameterConfig],
       nodeInputValidationContext: NodeInputValidationContext,
   ) extends LazyLogging {
