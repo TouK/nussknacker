@@ -1,6 +1,6 @@
 import { createSelector } from "reselect";
 
-import type { ItemActivity, UIActivity } from "../../components/toolbars/activities";
+import type { ItemActivity, UIActivity } from "../../components/toolbars/activities/ActivitiesPanel";
 import { ActivityTypesRelatedToExecutions } from "../../components/toolbars/activities/types";
 import type { RootState } from "../index";
 

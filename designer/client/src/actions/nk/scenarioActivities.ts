@@ -1,4 +1,4 @@
-import type { UIActivity } from "../../components/toolbars/activities";
+import type { UIActivity } from "../../components/toolbars/activities/ActivitiesPanel";
 import { extendActivitiesWithUIData } from "../../components/toolbars/activities/helpers/extendActivitiesWithUIData";
 import { mergeActivityDataWithMetadata } from "../../components/toolbars/activities/helpers/mergeActivityDataWithMetadata";
 import httpService from "../../http/HttpService/instance";
