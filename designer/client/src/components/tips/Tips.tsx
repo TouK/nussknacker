@@ -4,7 +4,7 @@ import { Scrollbars } from "react-custom-scrollbars";
 import { v4 as uuid4 } from "uuid";
 
 import ProcessUtils from "../../common/ProcessUtils";
-import { VisibleDataType } from "../../reducers/graph";
+import { VisibleDataType } from "../../reducers/graph/types";
 import { getVisibleDataType } from "../../reducers/selectors/getLiveData";
 import { getScenario } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";

@@ -1,14 +1,14 @@
-import type { NotificationsReducer, NotificationsState} from "react-notification-system-redux";
+import type { NotificationsReducer, NotificationsState } from "react-notification-system-redux";
 import { reducer as notifications } from "react-notification-system-redux";
 import { combineReducers } from "redux";
 
 import type { Action } from "../actions/reduxTypes";
 import type { ProcessStateType } from "../components/Process/types";
 import { reducer as cloudData } from "./cloudData";
-import type { GraphStateWithHistory } from "./graph";
-import { reducerWithUndo as graphReducer } from "./graph";
 import type { LiveData } from "./graph/liveData";
 import { liveData } from "./graph/liveData";
+import type { GraphStateWithHistory } from "./graph/reducer";
+import { reducerWithUndo as graphReducer } from "./graph/reducer";
 import { reducer as httpErrorHandler } from "./httpErrorHandler";
 import type { NodeDetailsState } from "./nodeDetailsState";
 import { reducer as nodeDetails } from "./nodeDetailsState";

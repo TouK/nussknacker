@@ -1,6 +1,6 @@
 import HttpService from "../../http/HttpService";
 import type { ResultsWithCountsDto } from "../../http/resultsWithCountsDto";
-import { VisibleDataType } from "../../reducers/graph";
+import { VisibleDataType } from "../../reducers/graph/types";
 import { getHasPauseReasons, getIsLiveDataWorking, getVisibleDataType, isReadyForLiveData } from "../../reducers/selectors/getLiveData";
 import { getScenario } from "../../reducers/selectors/graph";
 import type { ThunkAction } from "../reduxTypes";
