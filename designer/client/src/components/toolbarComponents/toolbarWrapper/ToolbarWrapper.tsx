@@ -11,7 +11,7 @@ import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { SIDEBAR_WIDTH } from "../../../stylesheets/variables";
 import { useDragHandler } from "../../common/dndItems/DragHandle";
 import { ErrorBoundary } from "../../common/error-boundary/ErrorBoundary";
-import { ToolbarErrorFallbackComponent } from "../../common/error-boundary/fallbackComponent";
+import { ToolbarErrorFallbackComponent } from "../../common/error-boundary/fallbackComponent/ToolbarErrorFallbackComponent";
 import { CollapsiblePanelContent, Panel, PanelHeader } from "../Panel";
 import { IconWrapper, StyledCloseIcon, StyledCollapseIcon } from "./ToolbarStyled";
 

@@ -9,7 +9,7 @@ import { getProcessCounts } from "../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import type { FragmentNodeType } from "../../../../types/node";
 import { ErrorBoundary } from "../../../common/error-boundary/ErrorBoundary";
-import { DialogErrorFallbackComponent } from "../../../common/error-boundary/fallbackComponent";
+import { DialogErrorFallbackComponent } from "../../../common/error-boundary/fallbackComponent/DialogErrorFallbackComponent";
 import type { Scenario } from "../../../Process/types";
 import { FragmentGraphPreview } from "../../fragmentGraph";
 import NodeUtils from "../../NodeUtils";

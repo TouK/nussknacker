@@ -2,7 +2,7 @@ import loadable from "@loadable/component";
 import React, { useMemo } from "react";
 import { createRoutesFromElements, Navigate, Route } from "react-router-dom";
 
-import { RouteErrorFallbackComponent } from "../components/common/error-boundary/fallbackComponent";
+import { RouteErrorFallbackComponent } from "../components/common/error-boundary/fallbackComponent/RouteErrorFallbackComponent";
 import { NotFound } from "../components/common/error-boundary/NotFound";
 import LoaderSpinner from "../components/spinner/Spinner";
 import { CustomTab, StarRedirect } from "./CustomTab";
