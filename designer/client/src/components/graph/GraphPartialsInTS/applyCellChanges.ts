@@ -6,7 +6,8 @@ import { partition } from "lodash";
 
 import type { UserSettings } from "../../../reducers/userSettings";
 import type { ScenarioGraph, ProcessDefinitionData } from "../../../types/scenarioGraph";
-import { makeElement, makeLink } from "../EspNode";
+import { makeElement } from "../EspNode/element";
+import { makeLink } from "../EspNode/link";
 import { overrideAdvancedStickyNoteColorToDefault } from "../EspNode/stickyNote/advancedStickyNoteConfig";
 import type { ModelWithTool } from "../EspNode/stickyNote/stickyNoteElements";
 import { makeStickyNoteElement } from "../EspNode/stickyNote/stickyNoteElements";
