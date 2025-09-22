@@ -4,7 +4,7 @@ import Moment from "moment/moment";
 import React, { useMemo } from "react";
 
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
-import { VisibleDataType } from "../../../../reducers/graph";
+import { VisibleDataType } from "../../../../reducers/graph/types";
 import { getVisibleDataType } from "../../../../reducers/selectors/getLiveData";
 import { getProcessName } from "../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../store/storeHelpers";
