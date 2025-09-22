@@ -1,6 +1,6 @@
 import { Item } from "../../../src/components/graph/node-modal/fragment-input-definition/item";
 import React from "react";
-import { NodeRowFieldsProvider } from "../../../src/components/graph/node-modal/node-row-fields-provider";
+import { NodeRowFieldsProvider } from "../../../src/components/graph/node-modal/node-row-fields-provider/NodeRowFieldsProvider";
 import { NuThemeProvider } from "../../../src/containers/theme/nuThemeProvider";
 import { jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";

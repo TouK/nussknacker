@@ -3,7 +3,7 @@ import React, { useCallback, useMemo } from "react";
 import type { Parameter } from "../../../../types/node";
 import type { NodeValidationError, VariableTypes } from "../../../../types/validation";
 import { DndItems } from "../../../common/dndItems/DndItems";
-import { NodeRowFieldsProvider } from "../node-row-fields-provider";
+import { NodeRowFieldsProvider } from "../node-row-fields-provider/NodeRowFieldsProvider";
 import type { FragmentInputParameter, onChangeType } from "./item";
 import { Item } from "./item";
 

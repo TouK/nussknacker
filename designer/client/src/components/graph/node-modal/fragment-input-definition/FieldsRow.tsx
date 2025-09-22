@@ -3,7 +3,7 @@ import { styled } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React, { useCallback } from "react";
 
-import { useFieldsContext } from "../node-row-fields-provider";
+import { useFieldsContext } from "../node-row-fields-provider/NodeRowFieldsProvider";
 import { NodeRow } from "../node/NodeRow";
 import { NodeValue } from "../node/NodeValue";
 import { movableRow, nodeValue } from "../NodeDetailsContent/NodeTableStyled";

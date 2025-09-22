@@ -12,7 +12,7 @@ import { EdgeFields } from "./EdgeFields";
 import type { EdgeTypeOption } from "./EdgeTypeSelect";
 import { ExpressionLang } from "./editors/expression/types";
 import { getValidationErrorsForField } from "./editors/Validators";
-import { NodeRowFieldsProvider } from "./node-row-fields-provider";
+import { NodeRowFieldsProvider } from "./node-row-fields-provider/NodeRowFieldsProvider";
 
 interface EdgeType extends Partial<EdgeTypeOption> {
     value: EdgeKind;
