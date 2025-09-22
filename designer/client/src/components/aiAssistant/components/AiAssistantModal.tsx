@@ -3,7 +3,7 @@ import { styled } from "@mui/material";
 import type { WindowContentProps } from "@touk/window-manager";
 import React, { useMemo } from "react";
 
-import { WindowContent } from "../../../windowManager";
+import { WindowContent } from "../../../windowManager/WindowContent";
 import { AssistantMessage } from "./AssistantMessage";
 import { Composer } from "./Composer";
 import { ScrollToBottomButton } from "./ScrollToBottomButton";

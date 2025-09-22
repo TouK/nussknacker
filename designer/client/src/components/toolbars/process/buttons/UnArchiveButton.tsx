@@ -8,7 +8,7 @@ import DialogMessages from "../../../../common/DialogMessages";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName, isArchived } from "../../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
-import { useWindows } from "../../../../windowManager";
+import { useWindows } from "../../../../windowManager/useWindows";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 

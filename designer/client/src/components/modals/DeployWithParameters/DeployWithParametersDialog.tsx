@@ -8,9 +8,9 @@ import type { NodesDeploymentData, ScenarioGraphSource } from "../../../http/Htt
 import { getProcessName, getProcessVersionId, getScenarioGraphSource } from "../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../reducers/selectors/settings";
 import { useAppSelector } from "../../../store/storeHelpers";
-import type { WindowKind } from "../../../windowManager";
-import { PromptContent } from "../../../windowManager";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
+import { PromptContent } from "../../../windowManager/PromptContent";
+import type { WindowKind } from "../../../windowManager/WindowKind";
 import CommentInput from "../../comment/CommentInput";
 import { ErrorBoundary, TextErrorBoundaryFallbackComponent } from "../../common/error-boundary";
 import LoaderSpinner from "../../spinner/Spinner";

@@ -32,7 +32,7 @@ import {
 } from "../reducers/selectors/graph";
 import { getCapabilities } from "../reducers/selectors/other";
 import { useAppDispatch, useAppSelector } from "../store/storeHelpers";
-import { useWindows } from "../windowManager";
+import { useWindows } from "../windowManager/useWindows";
 import { AddComponentsButtons } from "./AddComponentsButtons";
 import { AdjustNodeOverlapBehavior } from "./AdjustNodeOverlapBehavior";
 import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";

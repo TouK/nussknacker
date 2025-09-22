@@ -5,7 +5,8 @@ import { useTranslation } from "react-i18next";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
 import { getCapabilities } from "../../../reducers/selectors/other";
 import { useAppSelector } from "../../../store/storeHelpers";
-import { useWindows, WindowKind } from "../../../windowManager";
+import { useWindows } from "../../../windowManager/useWindows";
+import { WindowKind } from "../../../windowManager/WindowKind";
 
 const StyledFooterButton = styled(Button)(({ theme }) => ({
     textTransform: "none",

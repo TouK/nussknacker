@@ -3,7 +3,8 @@ import i18next from "i18next";
 import React from "react";
 
 import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
-import { useWindows, WindowKind } from "../../../../windowManager";
+import { useWindows } from "../../../../windowManager/useWindows";
+import { WindowKind } from "../../../../windowManager/WindowKind";
 import type { ProcessStateType, Scenario } from "../../../Process/types";
 
 interface Props {

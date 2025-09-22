@@ -13,7 +13,8 @@ import {
 } from "../../../../reducers/selectors/graph";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
-import { useWindows, WindowKind } from "../../../../windowManager";
+import { useWindows } from "../../../../windowManager/useWindows";
+import { WindowKind } from "../../../../windowManager/WindowKind";
 import { getHasPendingChanges } from "../../../graph/node-modal/node/useEditState";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
 import type { TestingData, TestingViewParams } from "../../../modals/TestingDataRecords/Dialog";

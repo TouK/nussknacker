@@ -5,7 +5,7 @@ import { resetSelection } from "../../../actions/nk";
 import { getScenario, getSelectionState } from "../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types";
-import { useWindows } from "../../../windowManager";
+import { useWindows } from "../../../windowManager/useWindows";
 import { useGraph } from "../../graph/GraphContext";
 import { nodeFound, nodeFoundHover } from "../../graph/graphStyledWrapper";
 import { FoundNode } from "./FoundNode";

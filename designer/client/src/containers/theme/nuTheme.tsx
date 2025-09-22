@@ -4,7 +4,7 @@ import { deepmerge } from "@mui/utils";
 import type { Dispatch, SetStateAction } from "react";
 
 import type { NodeType } from "../../types";
-import { WindowKind } from "../../windowManager";
+import { WindowKind } from "../../windowManager/WindowKind";
 import type { EnvironmentTagColor } from "../EnvironmentTag";
 import { darkModePalette } from "./darkModePalette";
 import { blendDarken, blendLighten } from "./helpers";

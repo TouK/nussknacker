@@ -9,7 +9,7 @@ import { MenuBar } from "../components/MenuBar";
 import { VersionInfo } from "../components/versionInfo";
 import { getLoggedUser } from "../reducers/selectors/settings";
 import { useAppSelector } from "../store/storeHelpers";
-import { WindowManager } from "../windowManager";
+import { WindowManager } from "../windowManager/WindowManager";
 import { ConnectionErrorProvider } from "./connectionErrorProvider";
 import { useRegisterTrackingEvents } from "./event-tracking";
 import { useErrorRegister } from "./event-tracking/use-error-register";
