@@ -5,7 +5,7 @@ import React, { forwardRef, useCallback, useState } from "react";
 import type { PanelSide } from "../../actions/nk/ui/panelSide";
 import { isDynamic, isLeft, isRight } from "../../actions/nk/ui/panelSide";
 import { ErrorBoundary } from "../common/error-boundary/ErrorBoundary";
-import { ToolbarErrorFallbackComponent } from "../common/error-boundary/fallbackComponent";
+import { ToolbarErrorFallbackComponent } from "../common/error-boundary/fallbackComponent/ToolbarErrorFallbackComponent";
 import { DRAGGABLE_CLASSNAME, DRAGGABLE_LIST_CLASSNAME } from "../toolbarComponents/ToolbarsContainer";
 import { TOOLBAR_WRAPPER_CLASSNAME } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { CollapsiblePanel } from "./CollapsiblePanel";

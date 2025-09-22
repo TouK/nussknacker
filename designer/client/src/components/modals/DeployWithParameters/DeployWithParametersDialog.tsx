@@ -13,7 +13,7 @@ import { PromptContent } from "../../../windowManager/PromptContent";
 import type { WindowKind } from "../../../windowManager/WindowKind";
 import CommentInput from "../../comment/CommentInput";
 import { ErrorBoundary } from "../../common/error-boundary/ErrorBoundary";
-import { TextErrorBoundaryFallbackComponent } from "../../common/error-boundary/fallbackComponent";
+import { TextErrorBoundaryFallbackComponent } from "../../common/error-boundary/fallbackComponent/TextErrorBoundaryFallbackComponent";
 import LoaderSpinner from "../../spinner/Spinner";
 import { ScenarioActionResultType } from "../../toolbars/scenarioActions/buttons/types";
 import type { ToggleProcessActionModalData } from "../DeployProcessDialog";
