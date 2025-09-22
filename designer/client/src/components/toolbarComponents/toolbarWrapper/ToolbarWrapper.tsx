@@ -10,7 +10,8 @@ import { getIsCollapsed, getToolbarsConfigId } from "../../../reducers/selectors
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { SIDEBAR_WIDTH } from "../../../stylesheets/variables";
 import { useDragHandler } from "../../common/dndItems/DragHandle";
-import { ErrorBoundary, ToolbarErrorFallbackComponent } from "../../common/error-boundary";
+import { ErrorBoundary } from "../../common/error-boundary/ErrorBoundary";
+import { ToolbarErrorFallbackComponent } from "../../common/error-boundary/fallbackComponent";
 import { CollapsiblePanelContent, Panel, PanelHeader } from "../Panel";
 import { IconWrapper, StyledCloseIcon, StyledCollapseIcon } from "./ToolbarStyled";
 

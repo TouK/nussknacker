@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { DefaultFullScreenMessage } from "../../components/common/error-boundary";
+import { DefaultFullScreenMessage } from "../../components/common/error-boundary/DefaultFullScreenMessage";
 import { LoadingButton } from "../../windowManager/LoadingButton";
 import { AuthErrorCodes } from "../Auth/AuthErrorCodes";
 import type { InitErrorComponentProps } from "../Auth/InitErrorComponent";
