@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
+import java.time.Instant
 import scala.jdk.CollectionConverters._
 
 object GenericSourceWithCustomTestingSupport
@@ -55,12 +56,16 @@ object GenericSourceWithCustomTestingSupport
       with FlinkSourceTestSupport[ProcessingType]
       with TestWithParametersSupport[ProcessingType]
       with LiveDataProvider {
+
       override val contextInitializer: ContextInitializer[ProcessingType] = customContextInitializer
 
       override def fetchLiveData(maxNumberOfRecords: Int): DataRecords = DataRecords(
         (0 until maxNumberOfRecords).flatMap { index =>
           elementsValue.map { el =>
-            DataRecord(variables = Map(VariableConstants.InputVariableName -> (el + s"-$index")), timestamp = Some(123))
+            DataRecord(
+              variables = Map(VariableConstants.InputVariableName -> (el + s"-$index")),
+              upstreamTimestamp = Some(Instant.ofEpochMilli(123))
+            )
           }
         }.toList
       )

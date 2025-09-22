@@ -8,6 +8,8 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
+import java.time.Instant
+
 class PreliminaryScenarioRecordTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
 
   test("should encode and decode source-specific format record") {
@@ -26,9 +28,10 @@ class PreliminaryScenarioRecordTest extends AnyFunSuite with Matchers with Eithe
     val inputRecord: PreliminaryScenarioRecord = CommonFormatPreliminaryScenarioRecord(
       sourceId = NodeId("source 1"),
       variables = Map("input" -> Json.obj("f1" -> Json.fromLong(42), "f2" -> Json.fromString("str"))),
-      timestamp = Some(159L)
+      upstreamTimestamp = Some(Instant.ofEpochMilli(159L))
     )
-    val recordJsonString = """{"sourceId":"source 1","variables":{"input":{"f1":42,"f2":"str"}},"timestamp":159}"""
+    val recordJsonString =
+      """{"sourceId":"source 1","variables":{"input":{"f1":42,"f2":"str"}},"upstreamTimestamp":"1970-01-01T00:00:00.159Z"}"""
 
     inputRecord.asJson.noSpaces shouldBe recordJsonString
     decode[PreliminaryScenarioRecord](recordJsonString).rightValue shouldBe inputRecord

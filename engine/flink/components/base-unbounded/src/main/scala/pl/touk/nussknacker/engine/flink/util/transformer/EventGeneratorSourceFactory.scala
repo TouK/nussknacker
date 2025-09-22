@@ -111,10 +111,10 @@ object EventGeneratorSourceFactory
           _
         ) =>
       val outputValidationContext = prepareOutputValidationContext(inputContext, valueType)
-      NextParameters(prepareWatermarkStrategyParameters(outputValidationContext))
+      NextParameters(
+        prepareWatermarkStrategyParameters(outputValidationContext, eventTimeDefaultValueExpression = "#DATE.now".spel)
+      )
   }
-
-  override protected def eventTimeDefaultValueExpression: Expression = "#DATE.now".spel
 
   override def contextTransformation(inputContext: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
@@ -220,7 +220,7 @@ object EventGeneratorSourceFactory
           DataRecord(
             variables = Map(VariableConstants.InputVariableName -> record),
             // TODO: Respect Event time parameter
-            timestamp = None
+            upstreamTimestamp = None
           )
         })
       }

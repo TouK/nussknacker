@@ -86,7 +86,7 @@ class DataRecordsSource(
   private lazy val dataRecordTypeInformation: TypeInformation[DataRecord] =
     ConcreteCaseClassTypeInfo[DataRecord](
       ("variables", TypeInformationDetection.instance.forVariables(sourceOutputValidationContext.localVariables)),
-      ("timestamp", new OptionTypeInfo[Long, Option[Long]](TypeInformation.of(classOf[Long])))
+      ("upstreamTimestamp", new OptionTypeInfo[Instant, Option[Instant]](TypeInformation.of(classOf[Instant])))
     )
 
 }
@@ -117,10 +117,12 @@ class DataRecordContextInitializingFunction(
     val initialContext = Context(contextIdGenerator.nextContextId())
     collectHandlingErrors(initialContext, out) {
       val contextWithSourceOutputVariables = initialContext.withVariables(input.variables)
+      // We simulate behaviour of FlinkWatermarkStrategyRuntimeHandler.EventTimeTimestampAssigner which
+      // use upstream timestamp as a fallback if user haven't specified the Event time parameter
       val eventTimeValue =
         eventTimeFun
           .flatMap(fun => Option(fun(contextWithSourceOutputVariables)))
-          .orElse(input.timestamp.map(Instant.ofEpochMilli))
+          .orElse(input.upstreamTimestamp)
       ContextWithEventTime(contextWithSourceOutputVariables, eventTimeValue)
     }
   }

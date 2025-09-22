@@ -20,7 +20,6 @@ import scala.jdk.CollectionConverters._
 class FlinkTableDataSourceComponentProvider extends ComponentProvider with LazyLogging {
 
   override def providerName: String = "flinkTableDataSource"
-  private val tableComponentName    = "table"
 
   override def resolveConfigForExecution(config: Config): Config = config
 
@@ -28,10 +27,20 @@ class FlinkTableDataSourceComponentProvider extends ComponentProvider with LazyL
       componentProviderConfig: Config,
       componentDependencies: ComponentDependencies
   ): List[ComponentDefinition] = {
-    create(componentProviderConfig)
+    FlinkTableDataSourceComponentProvider.create(componentProviderConfig)
   }
 
-  private[nussknacker] def create(componentProviderConfig: Config) = {
+  override def isCompatible(version: NussknackerVersion): Boolean = true
+
+  override def isAutoLoaded: Boolean = false
+
+}
+
+object FlinkTableDataSourceComponentProvider {
+
+  private val tableComponentName = "table"
+
+  private[nussknacker] def create(componentProviderConfig: Config): List[ComponentDefinition] = {
     val parsedConfig                    = TableComponentProviderConfig.parse(componentProviderConfig)
     val testDataGenerationModeOrDefault = parsedConfig.testDataGenerationMode.getOrElse(TestDataGenerationMode.default)
     val sqlStatements                   = parsedConfig.tableDefinition
@@ -53,10 +62,6 @@ class FlinkTableDataSourceComponentProvider extends ComponentProvider with LazyL
       )
     )
   }
-
-  override def isCompatible(version: NussknackerVersion): Boolean = true
-
-  override def isAutoLoaded: Boolean = false
 
 }
 

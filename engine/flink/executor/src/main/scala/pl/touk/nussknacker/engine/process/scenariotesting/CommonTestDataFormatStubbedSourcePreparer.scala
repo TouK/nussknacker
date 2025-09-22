@@ -26,9 +26,9 @@ object CommonTestDataFormatStubbedSourcePreparer {
     val decodedRecords = testRecords
       .map { case (record, testRecordIndex) =>
         val decodedVariables = decoder.decode(record.variables, testRecordIndex)
-        DataRecord(decodedVariables, record.timestamp)
+        DataRecord(decodedVariables, record.upstreamTimestamp)
       }
-      .sortBy(_.timestamp)
+      .sortBy(_.upstreamTimestamp)
 
     new DataRecordsSource(decodedRecords, outputValidationContextWithRecordsAsMaps, watermarkStrategyOptions)
   }

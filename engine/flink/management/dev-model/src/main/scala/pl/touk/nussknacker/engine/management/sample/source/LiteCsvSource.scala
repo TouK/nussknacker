@@ -26,8 +26,11 @@ class LiteCsvSource(override val nodeId: NodeId)
 
   override def fetchLiveData(maxNumberOfRecords: Int): DataRecords = DataRecords(
     List(
-      DataRecord(Map(VariableConstants.InputVariableName -> List("record1", "field2").asJava), timestamp = None),
-      DataRecord(Map(VariableConstants.InputVariableName -> List("record2", "field3").asJava), timestamp = None)
+      DataRecord(
+        Map(VariableConstants.InputVariableName -> List("record1", "field2").asJava),
+        upstreamTimestamp = None
+      ),
+      DataRecord(Map(VariableConstants.InputVariableName -> List("record2", "field3").asJava), upstreamTimestamp = None)
     )
   )
 

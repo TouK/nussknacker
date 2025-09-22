@@ -44,7 +44,7 @@ class TableSourceTest
   )
 
   private lazy val tableComponents: List[ComponentDefinition] =
-    new FlinkTableDataSourceComponentProvider().create(tableComponentsConfig)
+    FlinkTableDataSourceComponentProvider.create(tableComponentsConfig)
 
   private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
 
@@ -118,7 +118,7 @@ class TableSourceTest
     )
 
     val tableComponentsBasedOnCatalogConfiguration: List[ComponentDefinition] =
-      new FlinkTableDataSourceComponentProvider().create(configWithCatalogConfiguration)
+      FlinkTableDataSourceComponentProvider.create(configWithCatalogConfiguration)
 
     val runnerWithCatalogConfiguration: FlinkTestScenarioRunner = TestScenarioRunner
       .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)

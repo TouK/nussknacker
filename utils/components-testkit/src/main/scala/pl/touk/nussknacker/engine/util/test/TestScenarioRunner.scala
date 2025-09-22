@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.RuntimeMode.{Live, Test}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.livedata.DataRecord
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.testmode.{
@@ -17,6 +16,7 @@ import pl.touk.nussknacker.engine.testmode.{
 import pl.touk.nussknacker.engine.testmode.TestProcess.ExceptionResult
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 
+import java.time.Instant
 import scala.reflect.ClassTag
 
 /**
@@ -121,4 +121,4 @@ case class RunListResult[T](errors: List[ExceptionResult[_]], successes: List[T]
 
 case class RunUnitResult(errors: List[ExceptionResult[_]]) extends RunResult
 
-case class TestDataRecord(sourceId: NodeId, record: DataRecord)
+case class TestDataRecord(sourceId: NodeId, variables: Map[String, Any], upstreamTimestamp: Option[Instant])

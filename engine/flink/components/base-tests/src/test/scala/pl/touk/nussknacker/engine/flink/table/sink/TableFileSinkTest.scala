@@ -221,7 +221,7 @@ class TableFileSinkTest
        |""".stripMargin)
 
   private lazy val tableComponents: List[ComponentDefinition] =
-    new FlinkTableDataSourceComponentProvider().create(tableComponentsConfig)
+    FlinkTableDataSourceComponentProvider.create(tableComponentsConfig)
 
   private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
 
