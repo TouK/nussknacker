@@ -18,7 +18,7 @@ import { ExpressionLang } from "./editors/expression/types";
 import type { FieldError } from "./editors/Validators";
 import { FieldsRow } from "./fragment-input-definition/FieldsRow";
 import { TypeSelect } from "./fragment-input-definition/TypeSelect";
-import { NodeValue } from "./node";
+import { NodeValue } from "./node/NodeValue";
 import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 
 interface Props {

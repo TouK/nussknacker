@@ -1,7 +1,7 @@
 import { cx } from "@emotion/css";
 import React from "react";
 
-import { NodeValue } from "../../node";
+import { NodeValue } from "../../node/NodeValue";
 import type { InputProps } from "../field/Input";
 import Input from "../field/Input";
 
