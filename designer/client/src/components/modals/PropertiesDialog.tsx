@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 
 import { editProperties } from "../../actions/nk";
 import PropertiesSvg from "../../assets/img/properties.svg";
-import HttpService from "../../http/HttpService";
+import HttpService from "../../http/HttpService/instance";
 import type { RootState } from "../../reducers";
 import { getProperties, getScenario } from "../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";

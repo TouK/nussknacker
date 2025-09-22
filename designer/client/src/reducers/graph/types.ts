@@ -2,7 +2,7 @@ import type { Layout, RefreshData } from "../../actions/nk";
 import type { TestCapabilities, TestFormParameters } from "../../common/TestResultUtils";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import type { Scenario } from "../../components/Process/types";
-import type { SourceWithParametersTest } from "../../http/HttpService";
+import type { SourceWithParametersTest } from "../../http/HttpService/types";
 import type { ProcessCounts, TestResultsDto } from "../../http/resultsWithCountsDto";
 
 type Source = SourceWithParametersTest["sourceId"];

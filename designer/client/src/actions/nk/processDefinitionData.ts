@@ -1,4 +1,4 @@
-import HttpService from "../../http/HttpService";
+import HttpService from "../../http/HttpService/instance";
 import type { ProcessDefinitionData } from "../../types/scenarioGraph";
 import type { ThunkAction } from "../reduxTypes";
 

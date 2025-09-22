@@ -1,4 +1,4 @@
-import HttpService from "../../http/HttpService";
+import HttpService from "../../http/HttpService/instance";
 import type { ThunkAction } from "../reduxTypes";
 
 export function loadProcessToolbarsConfiguration(processName: string): ThunkAction {

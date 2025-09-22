@@ -3,7 +3,7 @@ import { debounce } from "lodash";
 import { applyIdFromFakeName } from "../../components/graph/node-modal/IdField";
 import { getNodeDetails } from "../../components/graph/node-modal/NodeDetailsContent/getNodeDetails";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
-import HttpService from "../../http/HttpService";
+import HttpService from "../../http/HttpService/instance";
 import type { TypingResult, UIParameter } from "../../types/definition";
 import type { Edge } from "../../types/edge";
 import type { NodeId, NodeType, PropertiesType } from "../../types/node";

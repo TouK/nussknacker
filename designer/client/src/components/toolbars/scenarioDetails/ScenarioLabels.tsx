@@ -17,7 +17,7 @@ import React, { createRef, useCallback, useEffect, useMemo, useRef, useState } f
 import { useTranslation } from "react-i18next";
 
 import { editScenarioLabels } from "../../../actions/nk";
-import HttpService from "../../../http/HttpService";
+import HttpService from "../../../http/HttpService/instance";
 import { getScenarioLabels } from "../../../reducers/selectors/graph";
 import { getScenarioLabelsErrors } from "../../../reducers/selectors/graph2";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";

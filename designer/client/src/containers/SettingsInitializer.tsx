@@ -5,7 +5,7 @@ import type { SettingsData } from "../actions/nk";
 import { assignSettings } from "../actions/nk";
 import { useUserSettings } from "../common/userSettings";
 import LoaderSpinner from "../components/spinner/Spinner";
-import HttpService from "../http/HttpService";
+import HttpService from "../http/HttpService/instance";
 import type { UserSettings } from "../reducers/userSettings";
 import { useAppDispatch } from "../store/storeHelpers";
 
