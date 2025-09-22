@@ -4,7 +4,8 @@ import type { PropsWithChildren } from "react";
 import React, { useCallback } from "react";
 
 import { useFieldsContext } from "../node-row-fields-provider";
-import { NodeRow, NodeValue } from "../node/";
+import { NodeRow } from "../node/NodeRow";
+import { NodeValue } from "../node/NodeValue";
 import { movableRow, nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 import { RemoveButton } from "./buttons/RemoveButton";
 

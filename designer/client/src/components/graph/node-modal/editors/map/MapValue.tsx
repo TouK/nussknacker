@@ -3,7 +3,7 @@ import React from "react";
 
 import type { Expression } from "../../../../../types/node";
 import type { VariableTypes } from "../../../../../types/validation";
-import { NodeValue } from "../../node";
+import { NodeValue } from "../../node/NodeValue";
 import { EditableEditor } from "../EditableEditor";
 import type { ExpressionObj } from "../expression/types";
 import type { FieldError } from "../Validators";
