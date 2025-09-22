@@ -139,14 +139,14 @@ trait BaseFlinkDeploymentManagerSpec
           sample.variables shouldBe Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson))
         }
 
-        val startInvocationResults = liveDataSamples.invocationResults
+        val startInvocationResults = liveDataSamples.expressionEvaluationResults
           .get(NodeId("start"))
           .value
         // We reach maxNumbersOfRecords because there are 2 samples for each transition (one for value and one for Event time
         startInvocationResults.size shouldBe configuredMaxNumbersOfRecords
-        forAll(startInvocationResults.grouped(2).toList) { invocationResults =>
-          inside(invocationResults) {
-            case InvocationResult(valueContextId, _, "value", valueJson) :: InvocationResult(
+        forAll(startInvocationResults.grouped(2).toList) { expressionEvaluationResults =>
+          inside(expressionEvaluationResults) {
+            case ExpressionEvaluationResult(valueContextId, _, "value", valueJson) :: ExpressionEvaluationResult(
                   eventTimeContextId,
                   _,
                   "Event time",
@@ -162,7 +162,7 @@ trait BaseFlinkDeploymentManagerSpec
 
           }
         }
-        val endSendInvocationResults = liveDataSamples.invocationResults
+        val endSendInvocationResults = liveDataSamples.expressionEvaluationResults
           .get(NodeId("endSend"))
           .value
         endSendInvocationResults.size should be >= totalCountWaitLimit

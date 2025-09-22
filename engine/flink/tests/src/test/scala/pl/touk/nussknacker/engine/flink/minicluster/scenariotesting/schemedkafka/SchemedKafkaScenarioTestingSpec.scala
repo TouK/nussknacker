@@ -183,7 +183,7 @@ class SchemedKafkaScenarioTestingSpec
 
     val results = testRunner.runTests(process, scenarioTestData).futureValue
     results
-      .invocationResults(NodeId("end"))
+      .expressionEvaluationResults(NodeId("end"))
       .head
       .value
       .hcursor
@@ -232,9 +232,9 @@ class SchemedKafkaScenarioTestingSpec
 
     val mockedTimestamp = Instant.now()
     results
-      .invocationResults(NodeId("fragmentEnd"))
+      .expressionEvaluationResults(NodeId("fragmentEnd"))
       .loneElement
-      .copy(timestamp = mockedTimestamp) shouldBe ExpressionInvocationResult(
+      .copy(timestamp = mockedTimestamp) shouldBe ExpressionEvaluationResult(
       ContextId(
         scenarioName = ProcessName("fragment1"),
         originatingNodeId = NodeId("fragment1"),

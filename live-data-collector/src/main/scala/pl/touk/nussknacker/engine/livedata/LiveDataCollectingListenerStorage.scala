@@ -18,10 +18,10 @@ private[livedata] class LiveDataCollectingListenerStorage(
   private val samples = new ConcurrentHashMap[NodeTransition, RingBufferWithTotalCount[LiveDataSample]]
 
   private val expressionEvaluationResults =
-    new ConcurrentHashMap[NodeParameter, RingBufferWithTotalCount[InvocationResult]]
+    new ConcurrentHashMap[NodeParameter, RingBufferWithTotalCount[ExpressionEvaluationResult]]
 
   private val externalServiceInvocationResults =
-    new ConcurrentHashMap[NodeParameter, RingBufferWithTotalCount[InvocationResult]]
+    new ConcurrentHashMap[NodeParameter, RingBufferWithTotalCount[ExternalServiceInvocationResult]]
 
   private val exceptions = new ConcurrentHashMap[NodeId, RingBufferWithTotalCount[ExceptionResult]]
 
@@ -40,10 +40,10 @@ private[livedata] class LiveDataCollectingListenerStorage(
           currentThroughput = transitionsSlidingWindowCounter.getThroughput.getOrElse(transition, 0)
         )
       },
-      invocationResults = expressionEvaluationResults.asScala.toMap
+      expressionEvaluationResults = expressionEvaluationResults.asScala.toMap
         .groupBy { case (nodeExpr, _) => nodeExpr.nodeId }
         .map { case (nodeId, matchingValuesMap) => nodeId -> matchingValuesMap.values.toList.flatMap(_.values) },
-      externalInvocationResults = externalServiceInvocationResults.asScala.toMap
+      externalServiceInvocationResults = externalServiceInvocationResults.asScala.toMap
         .groupBy { case (nodeExpr, _) => nodeExpr.nodeId }
         .map { case (nodeId, matchingValuesMap) => nodeId -> matchingValuesMap.values.toList.flatMap(_.values) },
       exceptions = exceptions.asScala.toMap.map { case (nodeId, values) =>
@@ -57,11 +57,11 @@ private[livedata] class LiveDataCollectingListenerStorage(
     put(samples, nodeTransition, liveDataSample)
   }
 
-  def addExpressionEvaluationResult(nodeId: NodeId, value: InvocationResult): Unit = {
+  def addExpressionEvaluationResult(nodeId: NodeId, value: ExpressionEvaluationResult): Unit = {
     put(expressionEvaluationResults, NodeParameter(nodeId, value.name), value)
   }
 
-  def addExternalServiceInvocation(nodeId: NodeId, value: InvocationResult): Unit = {
+  def addExternalServiceInvocation(nodeId: NodeId, value: ExternalServiceInvocationResult): Unit = {
     put(externalServiceInvocationResults, NodeParameter(nodeId, value.name), value)
   }
 

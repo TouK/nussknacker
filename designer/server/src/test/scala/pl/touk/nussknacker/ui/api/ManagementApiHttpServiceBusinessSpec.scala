@@ -43,8 +43,8 @@ class ManagementApiHttpServiceBusinessSpec
               exampleScenario.name.value -> TestResults(
                 nodeResults = Map.empty,
                 nodeTransitionResults = Map.empty,
-                invocationResults = Map.empty,
-                externalInvocationResults = Map.empty,
+                expressionEvaluationResults = Map.empty,
+                externalServiceInvocationResults = Map.empty,
                 exceptions = List.empty,
               )
             )
@@ -76,8 +76,8 @@ class ManagementApiHttpServiceBusinessSpec
              |  "results": {
              |    "nodeResults": {},
              |    "nodeTransitionResults": [],
-             |    "invocationResults": {},
-             |    "externalInvocationResults": {},
+             |    "expressionEvaluationResults": {},
+             |    "externalServiceInvocationResults": {},
              |    "exceptions": [],
              |    "exceptionsByNodeId": {}
              |  },

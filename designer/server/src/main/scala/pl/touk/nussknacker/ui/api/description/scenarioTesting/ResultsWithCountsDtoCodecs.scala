@@ -6,8 +6,8 @@ import io.circe.generic.semiauto.deriveEncoder
 import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
 import pl.touk.nussknacker.engine.testmode.TestProcess.{
   ExceptionResult,
-  ExpressionInvocationResult,
-  ExternalInvocationResult,
+  ExpressionEvaluationResult,
+  ExternalServiceInvocationResult,
   ResultContext
 }
 
@@ -35,14 +35,14 @@ object ResultsWithCountsDtoCodecs {
       underlying = Encoder.forProduct3("cid", "timestamp", "variables")(r => (r.id, r.timestamp, r.variables)),
     )
 
-    implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = encoderWithLegacyContextId(
+    implicit val expressionInvocationResult: Encoder[ExpressionEvaluationResult[Json]] = encoderWithLegacyContextId(
       fieldName = "contextId",
       valueExtractor = _.contextId,
       underlying =
         Encoder.forProduct4("cid", "timestamp", "name", "value")(r => (r.contextId, r.timestamp, r.name, r.value)),
     )
 
-    implicit val externalInvocationResult: Encoder[ExternalInvocationResult[Json]] = encoderWithLegacyContextId(
+    implicit val externalInvocationResult: Encoder[ExternalServiceInvocationResult[Json]] = encoderWithLegacyContextId(
       fieldName = "contextId",
       valueExtractor = _.contextId,
       underlying =
@@ -74,8 +74,8 @@ object ResultsWithCountsDtoCodecs {
       case TestResultsDto(
             nodeResults,
             nodeTransitionResults,
-            invocationResults,
-            externalInvocationResults,
+            expressionEvaluationResults,
+            externalServiceInvocationResults,
             exceptions,
             exceptionsByNodeId,
           ) =>
@@ -87,10 +87,10 @@ object ResultsWithCountsDtoCodecs {
             .map(_.sortBy(r => (r.sourceNodeId, r.destinationNodeId)))
             .asJson
             .deepDropNullValues,
-          "invocationResults" -> invocationResults.map { case (node, list) =>
+          "expressionEvaluationResults" -> expressionEvaluationResults.map { case (node, list) =>
             node -> list.sortBy(_.contextId.legacyString)
           }.asJson,
-          "externalInvocationResults" -> externalInvocationResults.map { case (node, list) =>
+          "externalServiceInvocationResults" -> externalServiceInvocationResults.map { case (node, list) =>
             node -> list.sortBy(_.contextId.legacyString)
           }.asJson,
           "exceptions" -> exceptions.sortBy(_.context.id.legacyString).asJson,

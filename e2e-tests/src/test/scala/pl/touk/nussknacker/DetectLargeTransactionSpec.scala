@@ -449,7 +449,7 @@ class DetectLargeTransactionSpec
              |        "currentThroughput": "${regexes.decimalRegex}"
              |      }
              |    ],
-             |    "invocationResults": {
+             |    "expressionEvaluationResults": {
              |      "only large ones": [
              |        {
              |          "contextId": "DetectLargeTransactions-transactions-0-0",
@@ -715,7 +715,7 @@ class DetectLargeTransactionSpec
              |        }
              |      ]
              |    },
-             |    "externalInvocationResults": {},
+             |    "externalServiceInvocationResults": {},
              |    "exceptions": [],
              |    "exceptionsByNodeId": {}
              |  },

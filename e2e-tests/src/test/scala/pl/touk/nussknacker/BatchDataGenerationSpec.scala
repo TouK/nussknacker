@@ -151,7 +151,7 @@ class BatchDataGenerationSpec
            |        ]
            |      }
            |    ],
-           |    "invocationResults": {
+           |    "expressionEvaluationResults": {
            |      "sourceId": [
            |        {
            |          "contextId": "E2ETest-SumTransactions-sourceId-0-0",
@@ -167,7 +167,7 @@ class BatchDataGenerationSpec
            |        }
            |      ]
            |    },
-           |    "externalInvocationResults": {},
+           |    "externalServiceInvocationResults": {},
            |    "exceptions": [],
            |    "exceptionsByNodeId": {}
            |  },
@@ -286,7 +286,7 @@ class BatchDataGenerationSpec
            |        ]
            |      }
            |    ],
-           |    "invocationResults": {
+           |    "expressionEvaluationResults": {
            |      "sourceId": [
            |        {
            |          "contextId": "E2ETest-SumTransactions-sourceId-0-0",
@@ -302,7 +302,7 @@ class BatchDataGenerationSpec
            |        }
            |      ]
            |    },
-           |    "externalInvocationResults": {},
+           |    "externalServiceInvocationResults": {},
            |    "exceptions": [],
            |    "exceptionsByNodeId": {}
            |  },

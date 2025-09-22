@@ -11,7 +11,7 @@ export interface ResultContextJson {
     variables: Record<string, Variable>;
 }
 
-export interface ExpressionInvocationResultJson {
+export interface ExpressionEvaluationResultJson {
     contextId: ResultContextJson["id"];
     name: string;
     value: unknown;
@@ -23,7 +23,7 @@ export interface ExceptionResultJson {
     throwable;
 }
 
-export interface ExternalInvocationResultJson {
+export interface ExternalServiceInvocationResultJson {
     contextId: ResultContextJson["id"];
 }
 
@@ -39,8 +39,8 @@ export interface TestResultsDto {
     /** @deprecated Use nodeTransitionResults instead */
     nodeResults?: Record<NodeId, ResultContextJson[]> | null;
     nodeTransitionResults?: NodeTransitionResult[] | null;
-    invocationResults: Record<NodeId, ExpressionInvocationResultJson[]>;
-    externalInvocationResults: Record<NodeId, ExternalInvocationResultJson[]>;
+    expressionEvaluationResults: Record<NodeId, ExpressionEvaluationResultJson[]>;
+    externalServiceInvocationResults: Record<NodeId, ExternalServiceInvocationResultJson[]>;
     /** @deprecated Use exceptionsByNodeId instead */
     exceptions: ExceptionResultJson[];
     exceptionsByNodeId: Record<NodeId, ExceptionResultJson[]>;
