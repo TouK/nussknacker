@@ -6,7 +6,7 @@ import React, { memo, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import SystemUtils from "../common/SystemUtils";
-import { ErrorBoundary } from "../components/common/error-boundary";
+import { ErrorBoundary } from "../components/common/error-boundary/ErrorBoundary";
 import { NotFound } from "../components/common/error-boundary/NotFound";
 import { RemoteComponent } from "../components/RemoteComponent";
 
