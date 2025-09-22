@@ -49,14 +49,14 @@ sealed trait DynamicComponent extends Component {
       step: TransformationStep,
       inputContext: InputContext,
       outputVariable: Option[String]
-  )(implicit nodeId: NodeId): FinalResults = {
+  )(implicit nodeId: NodeId): TransformationStepResult = {
     val fallback = fallbackFinalResult(step, inputContext, outputVariable)
     // if some parameters are failed to define, then probably it just missing implementation of this corner case and we can just use fallback
     if (step.parameters.map(_._2).exists(_.isInstanceOf[FailedToDefineParameter])) {
       fallback
     } else {
       // TODO: better error
-      fallback.copy(errors = fallback.errors :+ WrongParameters(Set.empty, step.parameters.map(_._1).toSet))
+      fallback.withErrors(fallback.errors :+ WrongParameters(Set.empty, step.parameters.map(_._1).toSet))
     }
   }
 
@@ -67,15 +67,16 @@ sealed trait DynamicComponent extends Component {
       outputVariable: Option[String],
       ex: Throwable
   )(implicit nodeId: NodeId): FinalResults = {
-    val fallback = fallbackFinalResult(step, inputContext, outputVariable)
-    fallback.copy(errors = fallback.errors :+ CannotCreateObjectError(ex, nodeId))
+    val fallback =
+      prepareFinalResultWithOptionalVariable(inputContext, outputVariable.map(name => (name, Unknown)), step.state)
+    fallback.withErrors(fallback.errors :+ CannotCreateObjectError(ex, nodeId))
   }
 
   protected def fallbackFinalResult(
       step: TransformationStep,
       inputContext: InputContext,
       outputVariable: Option[String]
-  )(implicit nodeId: NodeId): FinalResults = {
+  )(implicit nodeId: NodeId): TransformationStepResult = {
     prepareFinalResultWithOptionalVariable(inputContext, outputVariable.map(name => (name, Unknown)), step.state)
   }
 
@@ -97,6 +98,8 @@ sealed trait DynamicComponent extends Component {
 
   sealed trait TransformationStepResult {
     def errors: List[ProcessCompilationError]
+
+    def withErrors(newErrors: List[ProcessCompilationError]): TransformationStepResult
   }
 
   case class NextParameters(
@@ -104,13 +107,23 @@ sealed trait DynamicComponent extends Component {
       parameters: List[Parameter],
       errors: List[ProcessCompilationError] = Nil,
       state: Option[State] = None
-  ) extends TransformationStepResult
+  ) extends TransformationStepResult {
+
+    override def withErrors(newErrors: List[ProcessCompilationError]): NextParameters =
+      copy(errors = newErrors)
+
+  }
 
   case class FinalResults(
       finalContext: ValidationContext,
       errors: List[ProcessCompilationError] = Nil,
       state: Option[State] = None
-  ) extends TransformationStepResult
+  ) extends TransformationStepResult {
+
+    override def withErrors(newErrors: List[ProcessCompilationError]): FinalResults =
+      copy(errors = newErrors)
+
+  }
 
   object FinalResults {
 

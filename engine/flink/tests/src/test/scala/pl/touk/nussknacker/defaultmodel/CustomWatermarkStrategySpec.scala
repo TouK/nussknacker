@@ -4,9 +4,13 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import io.circe.Json
 import org.scalatest.{LoneElement, OptionValues}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.VariableConstants.InputVariableName
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
+import pl.touk.nussknacker.engine.api.definition.AdditionalVariableProvidedInRuntime
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.TopicName.ForSource
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.table.FlinkTableDataSourceComponentProvider
 import pl.touk.nussknacker.engine.flink.util.test.FlinkNodeCompiler.FlinkNodeCompilerExt
@@ -335,6 +339,45 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
       "Event time",
       "Max out-of-orderness"
     )
+  }
+
+  test(
+    "should return watermark strategy dynamic parameters even if there is some problem with validation of preceding parameters"
+  ) {
+    val nodeCompilationResult = nodeCompiler
+      .compileNode(
+        node.Source(
+          "id",
+          SourceRef(
+            "event-generator",
+            Parameter(ParameterName("schedule"), "T(java.time.Duration).parse('PT1S')".spel) ::
+              Parameter(ParameterName("value"), "invalid_value".spel) ::
+              Nil
+          )
+        )
+      )
+
+    nodeCompilationResult.compiledObject.invalidValue.toList should matchPattern {
+      case ExpressionParserCompilationError(_, _, Some(ParameterName("value")), _, _) :: Nil =>
+    }
+
+    val dynamicParameters = nodeCompilationResult.parameters.value
+
+    dynamicParameters
+      .map(_.name.value) shouldBe List(
+      "schedule",
+      "count",
+      "value",
+      "Event time",
+      "Max out-of-orderness"
+    )
+
+    val eventTimeParameter = dynamicParameters.find(_.name == ParameterName("Event time")).value
+
+    eventTimeParameter.additionalVariables.get(InputVariableName).value should matchPattern {
+      case AdditionalVariableProvidedInRuntime(Unknown) =>
+    }
+    eventTimeParameter.defaultValue.value shouldBe "".spel
   }
 
   test("should use timestamp configured by a user in event generator") {

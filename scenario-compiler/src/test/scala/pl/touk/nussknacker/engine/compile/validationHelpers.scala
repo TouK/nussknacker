@@ -232,7 +232,7 @@ object validationHelpers {
         context: ValidationContext,
         dependencies: List[NodeDependencyValue],
         rest: List[(ParameterName, BaseDefinedParameter)]
-    )(implicit nodeId: NodeId): this.FinalResults = {
+    )(implicit nodeId: NodeId): TransformationStepResult = {
       dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
         case Some(name) =>
           finalResult(context, rest, name)
@@ -294,7 +294,7 @@ object validationHelpers {
         context: ValidationContext,
         dependencies: List[NodeDependencyValue],
         rest: List[(ParameterName, BaseDefinedParameter)]
-    )(implicit nodeId: NodeId): this.FinalResults = {
+    )(implicit nodeId: NodeId): TransformationStepResult = {
       finalResult(context, rest, "otherNameThanInput")
     }
 
@@ -464,7 +464,7 @@ object validationHelpers {
         context: ValidationContext,
         dependencies: List[NodeDependencyValue],
         rest: List[(ParameterName, BaseDefinedParameter)]
-    )(implicit nodeId: NodeId): this.FinalResults = {
+    )(implicit nodeId: NodeId): TransformationStepResult = {
       dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
         case Some(name) =>
           finalResult(context, rest, name)
@@ -514,7 +514,7 @@ object validationHelpers {
         step: TransformationStep,
         inputContext: ValidationContext,
         outputVariable: Option[String]
-    )(implicit nodeId: NodeId): FinalResults = {
+    )(implicit nodeId: NodeId): TransformationStepResult = {
       val result = Typed.record(
         step.parameters.toMap
           .filterKeysNow(k => k != par1ParamName && k != lazyPar1ParamName)
@@ -527,7 +527,7 @@ object validationHelpers {
         context: ValidationContext,
         dependencies: List[NodeDependencyValue],
         rest: List[(ParameterName, BaseDefinedParameter)]
-    )(implicit nodeId: NodeId): this.FinalResults
+    )(implicit nodeId: NodeId): TransformationStepResult
 
     protected def finalResult(
         context: ValidationContext,
@@ -535,7 +535,7 @@ object validationHelpers {
         name: String
     )(
         implicit nodeId: NodeId
-    ): this.FinalResults = {
+    ): TransformationStepResult = {
       val result = Typed.record(rest.map { case (k, v) => k.value -> v.returnType })
       prepareFinalResultWithOptionalVariable(context, Some((name, result)), None)
     }

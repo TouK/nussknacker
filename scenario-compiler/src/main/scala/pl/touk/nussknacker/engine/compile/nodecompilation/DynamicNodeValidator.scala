@@ -102,101 +102,79 @@ class DynamicNodeValidator(
         stateForFar
       )
 
-      def returnUnmatchedFallback = {
-        logger.debug(
-          s"Component $component hasn't handled context transformation step: $transformationStep. " +
-            s"Fallback result with fallback context and errors collected during parameters validation will be returned."
-        )
-        val fallbackResult =
-          component.handleUnmatchedTransformationStep(transformationStep, inputContext, outputVariableName)
-        Valid(
-          TransformationResult(
-            errors ++ fallbackResult.errors,
-            evaluatedNodeParametersSoFar.map(_._1),
-            fallbackResult.finalContext,
-            fallbackResult.state,
-            nodeParameters
-          )
-        )
-      }
-
       // We assume that the last parameter in the last step can't reload parameters so we revert original value of this property
       def revertChangesCanReloadParametersForLastParameter(parameters: List[Parameter]) =
         parameters.transformLast(_.copy(changesCanReloadParameters = false))
 
-      Try(definition.lift.apply(transformationStep)) match {
-        case Success(None) =>
-          returnUnmatchedFallback
+      val nextPart = Try(definition.lift.apply(transformationStep)) match {
+        // NextParameters(Nil) is some strange response from the component. W should consider throwing an Exception in this case.
+        // Normally, if developer want to signal that they don't need any parameters more to be processed, they should return FinalResults
+        case Success(None) | Success(Some(component.NextParameters(Nil, _, _))) =>
+          logger.debug(
+            s"Component $component hasn't handled context transformation step: $transformationStep. " +
+              s"Fallback result with fallback context and errors collected during parameters validation will be returned."
+          )
+          component.handleUnmatchedTransformationStep(transformationStep, inputContext, outputVariableName)
         case Success(Some(nextPart)) =>
-          val errorsCombined = errors ++ nextPart.errors
-          nextPart match {
-            case component.FinalResults(finalContext, errors, state) =>
-              // we add distinct here, as multi-step, partial validation of parameters can cause duplicate errors if implementation is not v. careful
-              val allErrors = (errorsCombined ++ errors).distinct
-              val finalParametersDefinition = revertChangesCanReloadParametersForLastParameter(
-                evaluatedNodeParametersSoFar.map(_._1)
-              )
-              Valid(
-                TransformationResult(
-                  allErrors,
-                  finalParametersDefinition,
-                  finalContext,
-                  state,
-                  nodeParameters
-                )
-              )
-            case component.NextParameters(Nil, _, _) =>
-              returnUnmatchedFallback
-            case component.NextParameters(newParametersDefinitions, newParameterErrors, state) =>
-              val enrichedParametersDefinitions =
-                StandardParameterEnrichment.enrichParameterDefinitions(
-                  newParametersDefinitions,
-                  parametersConfig,
-                  globalParametersConfig
-                )
-              // We assume that the developer of component split parameter transformation steps this way because
-              // the last parameter in the step can cause changes in parameter definitions for the next step
-              val newParametersDefinition =
-                enrichedParametersDefinitions.transformLast(_.copy(changesCanReloadParameters = true))
-              val (evaluatedParametersCombinedWithDefinition, newErrorsCombined, newNodeParameters) =
-                newParametersDefinition.foldLeft(
-                  (evaluatedNodeParametersSoFar, errorsCombined ++ newParameterErrors, nodeParameters)
-                ) { case ((evaluatedNodeParametersAcc, errorsAcc, nodeParametersAcc), newParameterDefinition) =>
-                  val parameterEvaluationResult = evaluateParameter(newParameterDefinition, nodeParametersAcc)
-                  val (paramEvaluationError, newEvaluatedParam, extraNodeParamOpt) = parameterEvaluationResult
-                    .map { case (evaluatedValue, extraNodeParamOpt) =>
-                      (List.empty[ProcessCompilationError], evaluatedValue, extraNodeParamOpt)
-                    }
-                    .valueOr(ne => (ne.toList, FailedToDefineParameter(ne), None))
-                  (
-                    evaluatedNodeParametersAcc :+ (newParameterDefinition, newEvaluatedParam),
-                    errorsAcc ++ paramEvaluationError,
-                    nodeParametersAcc ++ extraNodeParamOpt
-                  )
-                }
-              processRemainingTransformationSteps(
-                evaluatedParametersCombinedWithDefinition,
-                state,
-                newErrorsCombined,
-                newNodeParameters
-              )
-          }
+          nextPart
         case Failure(ex) =>
           logger.warn(
             s"Exception thrown during handling of transformation step: $transformationStep. " +
               s"Will be returned fallback results with fallback context and errors collected during parameters validation.",
             ex
           )
-          val fallbackResult =
-            component.handleExceptionDuringTransformation(transformationStep, inputContext, outputVariableName, ex)
+          component.handleExceptionDuringTransformation(transformationStep, inputContext, outputVariableName, ex)
+      }
+
+      val errorsCombined = errors ++ nextPart.errors
+      nextPart match {
+        case component.FinalResults(finalContext, errors, state) =>
+          // we add distinct here, as multi-step, partial validation of parameters can cause duplicate errors if implementation is not v. careful
+          val allErrors = (errorsCombined ++ errors).distinct
+          val finalParametersDefinition = revertChangesCanReloadParametersForLastParameter(
+            evaluatedNodeParametersSoFar.map(_._1)
+          )
           Valid(
             TransformationResult(
-              errors ++ fallbackResult.errors,
-              revertChangesCanReloadParametersForLastParameter(evaluatedNodeParametersSoFar.map(_._1)),
-              fallbackResult.finalContext,
-              fallbackResult.state,
+              allErrors,
+              finalParametersDefinition,
+              finalContext,
+              state,
               nodeParameters
             )
+          )
+        case component.NextParameters(newParametersDefinitions, newParameterErrors, state) =>
+          val enrichedParametersDefinitions =
+            StandardParameterEnrichment.enrichParameterDefinitions(
+              newParametersDefinitions,
+              parametersConfig,
+              globalParametersConfig
+            )
+          // We assume that the developer of component split parameter transformation steps this way because
+          // the last parameter in the step can cause changes in parameter definitions for the next step
+          val newParametersDefinition =
+            enrichedParametersDefinitions.transformLast(_.copy(changesCanReloadParameters = true))
+          val (evaluatedParametersCombinedWithDefinition, newErrorsCombined, newNodeParameters) =
+            newParametersDefinition.foldLeft(
+              (evaluatedNodeParametersSoFar, errorsCombined ++ newParameterErrors, nodeParameters)
+            ) { case ((evaluatedNodeParametersAcc, errorsAcc, nodeParametersAcc), newParameterDefinition) =>
+              val parameterEvaluationResult = evaluateParameter(newParameterDefinition, nodeParametersAcc)
+              val (paramEvaluationError, newEvaluatedParam, extraNodeParamOpt) = parameterEvaluationResult
+                .map { case (evaluatedValue, extraNodeParamOpt) =>
+                  (List.empty[ProcessCompilationError], evaluatedValue, extraNodeParamOpt)
+                }
+                .valueOr(ne => (ne.toList, FailedToDefineParameter(ne), None))
+              (
+                evaluatedNodeParametersAcc :+ (newParameterDefinition, newEvaluatedParam),
+                errorsAcc ++ paramEvaluationError,
+                nodeParametersAcc ++ extraNodeParamOpt
+              )
+            }
+          processRemainingTransformationSteps(
+            evaluatedParametersCombinedWithDefinition,
+            state,
+            newErrorsCombined,
+            newNodeParameters
           )
       }
     }

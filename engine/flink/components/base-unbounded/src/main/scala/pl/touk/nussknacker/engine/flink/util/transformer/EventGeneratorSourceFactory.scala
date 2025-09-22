@@ -28,6 +28,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, _}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -136,7 +137,8 @@ object EventGeneratorSourceFactory
         valueType
       }
       .getOrElse(
-        throw new IllegalStateException(s"Missing $valueParameterName after watermark strategy parameters: $parameters")
+        // Edge-case when there was some validation problem of parameter preceding watermark strategy parameters
+        Unknown
       )
     val outputValidationContext = prepareOutputValidationContext(inputContext, valueType)
     FinalResults(outputValidationContext)
