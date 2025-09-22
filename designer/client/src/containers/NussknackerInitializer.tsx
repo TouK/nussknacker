@@ -5,7 +5,7 @@ import { assignUser } from "../actions/nk/assignUser";
 import HttpService from "../http/HttpService/instance";
 import { getAuthenticationSettings } from "../reducers/selectors/settings";
 import { useAppDispatch, useAppSelector } from "../store/storeHelpers";
-import { AuthInitializer } from "./Auth";
+import { AuthInitializer } from "./Auth/AuthInitializer";
 
 function NussknackerInitializer({ children }: PropsWithChildren<unknown>): JSX.Element {
     const dispatch = useAppDispatch();
