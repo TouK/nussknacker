@@ -273,7 +273,7 @@ export const Table: React.FC<TableProps> = ({
                     getCellsForSelection
                     onCellsEdited={onCellEdited}
                     onRowAppended={recordsToAddLimitExceeded ? undefined : onCellAdded}
-                    rowMarkers="clickable-number"
+                    rowMarkers="both"
                     rows={data.length}
                     smoothScrollX
                     smoothScrollY
@@ -291,6 +291,7 @@ export const Table: React.FC<TableProps> = ({
                     drawHeader={renderHeaderCell}
                     rowHeight={getRowHeight}
                     onRowMoved={handleRowReorder}
+                    rowSelectionMode="multi"
                 />
                 <CellMenu anchorPosition={cellMenuData.position} onClose={closeCellMenu}>
                     {cellMenuData.row !== undefined && cellMenuData.row >= 0 && deleteMenuIndexes.length > 0 && (
