@@ -8,7 +8,8 @@ import { useDebouncedValue } from "rooks";
 
 import type { ToolbarPosition } from "../../actions/nk/toolbars";
 import { PendingPromise } from "../../common/PendingPromise";
-import { EventTrackingSelector, EventTrackingType, useEventTracking } from "../../containers/event-tracking";
+import { useEventTracking } from "../../containers/event-tracking/use-event-tracking";
+import { EventTrackingSelector, EventTrackingType } from "../../containers/event-tracking/use-register-tracking-events";
 import { SIDEBAR_WIDTH } from "../../stylesheets/variables";
 import getKeyboardSensor from "./sensors/use-keyboard-sensor";
 import getMouseSensor from "./sensors/use-mouse-sensor";

@@ -3,7 +3,8 @@ import type { PropsWithChildren } from "react";
 import React, { useCallback, useEffect, useState } from "react";
 
 import { toggleToolbar } from "../../../actions/nk/toolbars";
-import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
+import { getEventTrackingProps } from "../../../containers/event-tracking/helpers";
+import { EventTrackingSelector } from "../../../containers/event-tracking/use-register-tracking-events";
 import type { RootState } from "../../../reducers";
 import { getIsCollapsed, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";

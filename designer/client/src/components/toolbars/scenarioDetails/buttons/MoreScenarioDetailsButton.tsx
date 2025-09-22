@@ -2,7 +2,8 @@ import { Link, Typography } from "@mui/material";
 import i18next from "i18next";
 import React from "react";
 
-import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
+import { getEventTrackingProps } from "../../../../containers/event-tracking/helpers";
+import { EventTrackingSelector } from "../../../../containers/event-tracking/use-register-tracking-events";
 import { useWindows } from "../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../windowManager/WindowKind";
 import type { ProcessStateType, Scenario } from "../../../Process/types";

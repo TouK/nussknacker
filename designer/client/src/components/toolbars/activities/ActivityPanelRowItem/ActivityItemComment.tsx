@@ -5,7 +5,8 @@ import { createSelector } from "reselect";
 
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import DialogMessages from "../../../../common/DialogMessages";
-import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
+import { getEventTrackingProps } from "../../../../containers/event-tracking/helpers";
+import { EventTrackingSelector } from "../../../../containers/event-tracking/use-register-tracking-events";
 import HttpService from "../../../../http/HttpService/instance";
 import { getProcessName } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";

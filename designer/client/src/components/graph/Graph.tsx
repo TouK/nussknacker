@@ -13,8 +13,8 @@ import type { Layout, NodePosition, Position } from "../../actions/nk/ui/layout"
 import { isEdgeEditable } from "../../common/EdgeUtils";
 import type User from "../../common/models/User";
 import ProcessUtils from "../../common/ProcessUtils";
-import type { TrackEventParams } from "../../containers/event-tracking";
-import { EventTrackingSelector, EventTrackingType } from "../../containers/event-tracking";
+import type { TrackEventParams } from "../../containers/event-tracking/use-event-tracking";
+import { EventTrackingSelector, EventTrackingType } from "../../containers/event-tracking/use-register-tracking-events";
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import type { UserSettings } from "../../reducers/userSettings";
