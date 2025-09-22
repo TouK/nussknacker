@@ -3,7 +3,8 @@ import type React from "react";
 import { type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useDebounce } from "rooks";
 
-import { editNode, nodeValidationDynamicParametersLoaded } from "../../../../actions/nk";
+import { editNode } from "../../../../actions/nk/editNode";
+import { nodeValidationDynamicParametersLoaded } from "../../../../actions/nk/nodeDetails";
 import { PendingPromise } from "../../../../common/PendingPromise";
 import { useUserSettings } from "../../../../common/userSettings";
 import { getScenario } from "../../../../reducers/selectors/graph";

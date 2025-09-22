@@ -1,7 +1,8 @@
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
-import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
+import { loadProcessToolbarsConfiguration } from "../../../../actions/nk/loadProcessToolbarsConfiguration";
+import { displayCurrentProcessVersion } from "../../../../actions/nk/process";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import Icon from "../../../../assets/img/toolbarButtons/unarchive.svg";
 import DialogMessages from "../../../../common/DialogMessages";

@@ -1,7 +1,7 @@
 import { MenuItem, MenuList } from "@mui/material";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import { resetSelection } from "../../../actions/nk";
+import { resetSelection } from "../../../actions/nk/selection";
 import { getScenario, getSelectionState } from "../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";

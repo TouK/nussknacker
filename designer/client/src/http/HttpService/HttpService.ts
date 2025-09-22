@@ -6,8 +6,10 @@ import FileSaver from "file-saver";
 import i18next from "i18next";
 import type { Moment } from "moment";
 
-import type { ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../../actions/nk";
 import type { GenericValidationData, GenericValidationRequest, TestAdhocValidationRequest } from "../../actions/nk/adhocTesting";
+import type { SettingsData } from "../../actions/nk/assignSettings";
+import type { ValidationData, ValidationRequest } from "../../actions/nk/nodeDetails";
+import type { ProcessingType } from "../../actions/nk/processDefinitionData";
 import api from "../../api";
 import type { UserData } from "../../common/models/User";
 import SystemUtils from "../../common/SystemUtils";

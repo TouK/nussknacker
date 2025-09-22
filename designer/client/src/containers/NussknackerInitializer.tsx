@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from "react";
 import React, { useCallback } from "react";
 
-import { assignUser } from "../actions/nk";
+import { assignUser } from "../actions/nk/assignUser";
 import HttpService from "../http/HttpService/instance";
 import { getAuthenticationSettings } from "../reducers/selectors/settings";
 import { useAppDispatch, useAppSelector } from "../store/storeHelpers";

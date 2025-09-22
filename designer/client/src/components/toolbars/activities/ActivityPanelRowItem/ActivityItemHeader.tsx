@@ -4,7 +4,7 @@ import type { PropsWithChildren } from "react";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { displayScenarioVersion } from "../../../../actions/nk";
+import { displayScenarioVersion } from "../../../../actions/nk/process";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import DialogMessages from "../../../../common/DialogMessages";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";

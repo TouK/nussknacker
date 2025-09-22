@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 
-import type { SurveySettings } from "../../actions/nk";
+import type { SurveySettings } from "../../actions/nk/assignSettings";
 import { useUserSettings } from "../../common/userSettings";
 import { getSurveySettings } from "../../reducers/selectors/settings";
 import { useAppSelector } from "../../store/storeHelpers";

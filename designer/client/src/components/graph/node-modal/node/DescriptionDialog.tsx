@@ -5,7 +5,7 @@ import { DefaultComponents } from "@touk/window-manager";
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { editProperties } from "../../../../actions/nk";
+import { editProperties } from "../../../../actions/nk/editProperties";
 import { getScenario } from "../../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import type { NodeType } from "../../../../types/node";

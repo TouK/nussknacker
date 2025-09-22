@@ -6,7 +6,7 @@ import { set } from "lodash/fp";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { editProperties } from "../../actions/nk";
+import { editProperties } from "../../actions/nk/editProperties";
 import PropertiesSvg from "../../assets/img/properties.svg";
 import HttpService from "../../http/HttpService/instance";
 import type { RootState } from "../../reducers";

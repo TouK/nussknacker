@@ -5,8 +5,9 @@ import React, { useCallback, useEffect } from "react";
 import { default as ReactNotifications } from "react-notification-system-redux";
 import { bindActionCreators } from "redux";
 
-import { fetchProcessDefinition, loadProcessState } from "../actions/nk";
 import { markBackendNotificationRead, updateBackendNotifications } from "../actions/nk/notifications";
+import { loadProcessState } from "../actions/nk/process";
+import { fetchProcessDefinition } from "../actions/nk/processDefinitionData";
 import { getScenarioActivities } from "../actions/nk/scenarioActivities";
 import NotificationActions from "../actions/notificationActions";
 import type { ThunkAction } from "../actions/reduxTypes";

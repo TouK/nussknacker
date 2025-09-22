@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { loadProcessState } from "../../../../actions/nk";
+import { loadProcessState } from "../../../../actions/nk/process";
 import Icon from "../../../../assets/img/toolbarButtons/run-off-schedule.svg";
 import HttpService from "../../../../http/HttpService/instance";
 import type { RootState } from "../../../../reducers";

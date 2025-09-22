@@ -6,7 +6,7 @@ import type { PropsWithChildren } from "react";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { fetchAndDisplayProcessCounts } from "../../../actions/nk";
+import { fetchAndDisplayProcessCounts } from "../../../actions/nk/displayProcessCounts";
 import Icon from "../../../assets/img/toolbarButtons/counts.svg";
 import { getProcessName } from "../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";

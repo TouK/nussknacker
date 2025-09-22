@@ -1,7 +1,8 @@
 import { useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../actions/nk";
+import { loadProcessToolbarsConfiguration } from "../../../actions/nk/loadProcessToolbarsConfiguration";
+import { displayCurrentProcessVersion } from "../../../actions/nk/process";
 import { getScenarioActivities } from "../../../actions/nk/scenarioActivities";
 import type { ThunkAction } from "../../../actions/reduxTypes";
 import { visualizationUrl } from "../../../common/VisualizationUrl";

@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { zoomOut } from "../../../../actions/nk";
+import { zoomOut } from "../../../../actions/nk/zoom";
 import Icon from "../../../../assets/img/toolbarButtons/zoom-out.svg";
 import { useAppDispatch } from "../../../../store/storeHelpers";
 import { useGraph } from "../../../graph/GraphContext";

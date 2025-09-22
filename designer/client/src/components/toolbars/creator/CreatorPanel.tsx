@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 
-import { addNodeConnected, addNodeInject, addNodePlain, addNodeReplace } from "../../../actions/nk";
+import { addNodeConnected, addNodeInject, addNodePlain, addNodeReplace } from "../../../actions/nk/editNode";
 import { isDynamic } from "../../../actions/nk/ui/panelSide";
 import { useUserSettings } from "../../../common/userSettings";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
