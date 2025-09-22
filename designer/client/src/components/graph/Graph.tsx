@@ -27,16 +27,11 @@ import type { Scenario } from "../Process/types";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
 import { getDefaultLinkCreator } from "./EspNode/link";
-import {
-    applyCellChanges,
-    calcLayout,
-    createPaper,
-    isConnected,
-    isModelElement,
-    isModelOrStickyNote,
-    isStickyNoteElement,
-} from "./GraphPartialsInTS";
+import { applyCellChanges } from "./GraphPartialsInTS/applyCellChanges";
+import { calcLayout } from "./GraphPartialsInTS/calcLayout";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
+import { isConnected, isModelElement, isModelOrStickyNote, isStickyNoteElement } from "./GraphPartialsInTS/cellUtils";
+import { createPaper } from "./GraphPartialsInTS/createPaper";
 import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
 import { dragHovered, nodeFocused, nodeValidationError } from "./graphStyledWrapper";
