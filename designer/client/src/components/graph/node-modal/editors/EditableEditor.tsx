@@ -4,8 +4,9 @@ import { isEmpty } from "lodash";
 import type { ReactNode } from "react";
 import React, { forwardRef, useMemo } from "react";
 
-import type { TypingResult, VariableTypes } from "../../../../types";
 import type { UnknownFunction } from "../../../../types/common";
+import type { TypingResult } from "../../../../types/definition";
+import type { VariableTypes } from "../../../../types/validation";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 import type { OnValueChange } from "./expression/Editor";
 import { editors as editorsClasses } from "./expression/Editor";

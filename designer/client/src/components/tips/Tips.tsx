@@ -9,7 +9,7 @@ import { getVisibleDataType } from "../../reducers/selectors/getLiveData";
 import { getScenario } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
 import { useAppSelector } from "../../store/storeHelpers";
-import type { NodeType } from "../../types";
+import type { NodeType } from "../../types/node";
 import { useWindows } from "../../windowManager/useWindows";
 import type { ToolbarPanelProps } from "../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";

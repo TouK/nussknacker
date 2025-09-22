@@ -5,7 +5,7 @@ import { isEmpty, isObject, join } from "lodash";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import type { NodeId } from "../../../../types";
+import type { NodeId } from "../../../../types/node";
 import { InfoTooltip } from "../editors/InfoTooltip";
 import { useTestResults } from "../TestResultsWrapper";
 import TestResultsVariables from "./TestResultsVariables";

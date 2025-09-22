@@ -9,7 +9,8 @@ import type { GenericValidationRequest } from "../../../../../../../actions/nk/a
 import HttpService from "../../../../../../../http/HttpService";
 import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../../../../store/storeHelpers";
-import type { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
+import type { ReturnedType } from "../../../../../../../types/scenarioGraph";
+import type { NodeValidationError, VariableTypes } from "../../../../../../../types/validation";
 import { useDelayedEnterAction } from "../../../../../../toolbars/scenarioDetails/useDelayedEnterAction";
 import { SpelEditor } from "../../../../editors/expression/SpelEditor";
 import { ExpressionLang } from "../../../../editors/expression/types";

@@ -7,7 +7,7 @@ import type { Scenario } from "../../components/Process/types";
 import { isStatusRunning } from "../../components/Process/types";
 import { ScenarioGraphSourceType } from "../../http/HttpService";
 import type { ProcessCounts } from "../../http/resultsWithCountsDto";
-import type { ScenarioGraph } from "../../types";
+import type { ScenarioGraph } from "../../types/scenarioGraph";
 import type { TestData } from "../graph";
 import type { RootState } from "../index";
 import { getHistoryPast } from "./getHistory";

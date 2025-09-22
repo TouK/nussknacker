@@ -1,6 +1,7 @@
 import React from "react";
 
-import type { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
+import type { ReturnedType } from "../../../../../../../types/scenarioGraph";
+import type { NodeValidationError, VariableTypes } from "../../../../../../../types/validation";
 import type { onChangeType, FixedValuesOption, FixedListParameterVariant } from "../../../item";
 import { FixedValuesType } from "../../../item";
 import { DictSelect } from "./dictSelect";

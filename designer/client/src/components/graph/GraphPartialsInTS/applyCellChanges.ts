@@ -5,7 +5,7 @@ import { flatMap, groupBy, isEqual } from "lodash";
 import { partition } from "lodash";
 
 import type { UserSettings } from "../../../reducers/userSettings";
-import type { ScenarioGraph, ProcessDefinitionData } from "../../../types";
+import type { ScenarioGraph, ProcessDefinitionData } from "../../../types/scenarioGraph";
 import { makeElement, makeLink } from "../EspNode";
 import { overrideAdvancedStickyNoteColorToDefault } from "../EspNode/stickyNote/advancedStickyNoteConfig";
 import type { ModelWithTool } from "../EspNode/stickyNote/stickyNoteElements";

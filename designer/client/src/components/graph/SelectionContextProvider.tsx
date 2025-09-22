@@ -29,7 +29,8 @@ import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDef
 import { canModifySelectedNodes, getScenarioGraph, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
-import type { Edge, NodeType } from "../../types";
+import type { Edge } from "../../types/edge";
+import type { NodeType } from "../../types/node";
 import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
 import NodeUtils from "./NodeUtils";
 import { StickyNoteType } from "./utils/stickyNotesUtils";

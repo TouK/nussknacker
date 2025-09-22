@@ -14,7 +14,7 @@ import HttpService from "../../http/HttpService";
 import { getProcessName, getProcessVersionId, getVersions } from "../../reducers/selectors/graph";
 import { getTargetEnvironmentId } from "../../reducers/selectors/settings";
 import { useAppSelector } from "../../store/storeHelpers";
-import type { NodeType, StickyNoteNodeType } from "../../types";
+import type { NodeType, StickyNoteNodeType } from "../../types/node";
 import { WindowContent } from "../../windowManager/WindowContent";
 import { WindowKind } from "../../windowManager/WindowKind";
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent";

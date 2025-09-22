@@ -26,7 +26,10 @@ import { EventTrackingSelector, EventTrackingType } from "../../containers/event
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import type { UserSettings } from "../../reducers/userSettings";
-import type { Edge, NodeId, NodeType, NodeValidationError, ProcessDefinitionData, ScenarioGraph } from "../../types";
+import type { Edge } from "../../types/edge";
+import type { NodeId, NodeType } from "../../types/node";
+import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
+import type { NodeValidationError } from "../../types/validation";
 import { ComponentDragPreview } from "../ComponentDragPreview";
 import type { Scenario } from "../Process/types";
 import { createUniqueArrowMarker } from "./arrowMarker";

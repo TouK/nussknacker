@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo } from "react";
 
-import type { NodeValidationError, Parameter, VariableTypes } from "../../../../types";
+import type { Parameter } from "../../../../types/node";
+import type { NodeValidationError, VariableTypes } from "../../../../types/validation";
 import { DndItems } from "../../../common/dndItems/DndItems";
 import { NodeRowFieldsProvider } from "../node-row-fields-provider";
 import type { FragmentInputParameter, onChangeType } from "./item";

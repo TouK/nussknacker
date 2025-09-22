@@ -5,7 +5,7 @@ import { dia } from "jointjs";
 import type { CSSProperties } from "react";
 
 import { getBorderColor } from "../../../../containers/theme/helpers";
-import type { StickyNoteNodeType } from "../../../../types";
+import type { StickyNoteNodeType } from "../../../../types/node";
 import { stickyNoteIcon } from "../../../toolbars/creator/ComponentIcon";
 import { Events } from "../../types";
 import { StickyNoteType } from "../../utils/stickyNotesUtils";

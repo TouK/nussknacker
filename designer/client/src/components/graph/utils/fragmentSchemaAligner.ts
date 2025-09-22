@@ -1,6 +1,7 @@
 import fp from "lodash/fp";
 
-import type { NodeType, ProcessDefinitionData } from "../../../types";
+import type { NodeType } from "../../../types/node";
+import type { ProcessDefinitionData } from "../../../types/scenarioGraph";
 
 /*
  * TODO: It's a workaround

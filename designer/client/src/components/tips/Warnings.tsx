@@ -4,7 +4,8 @@ import { groupBy } from "lodash";
 import React from "react";
 import { v4 as uuid4 } from "uuid";
 
-import type { NodeType, ScenarioGraph } from "../../types";
+import type { NodeType } from "../../types/node";
+import type { ScenarioGraph } from "../../types/scenarioGraph";
 import NodeUtils from "../graph/NodeUtils";
 import { LinkStyled } from "./Styled";
 

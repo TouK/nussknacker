@@ -4,7 +4,7 @@ import { NodeRowFieldsProvider } from "../../../src/components/graph/node-modal/
 import { NuThemeProvider } from "../../../src/containers/theme/nuThemeProvider";
 import { jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { ReturnedType } from "../../../src/types";
+import { ReturnedType } from "../../../src/types/scenarioGraph";
 
 const DOWN_ARROW = { keyCode: 40 };
 

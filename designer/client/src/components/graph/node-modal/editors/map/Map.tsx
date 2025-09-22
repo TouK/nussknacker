@@ -1,6 +1,8 @@
 import React, { createContext, useCallback, useMemo } from "react";
 
-import type { Field, NodeValidationError, TypedObjectTypingResult, VariableTypes } from "../../../../../types";
+import type { TypedObjectTypingResult } from "../../../../../types/definition";
+import type { Field } from "../../../../../types/node";
+import type { NodeValidationError, VariableTypes } from "../../../../../types/validation";
 import { DndItems } from "../../../../common/dndItems/DndItems";
 import { FieldsRow } from "../../fragment-input-definition/FieldsRow";
 import { NodeRowFieldsProvider } from "../../node-row-fields-provider";

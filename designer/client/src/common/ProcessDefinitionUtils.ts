@@ -1,4 +1,4 @@
-import type { Component, ComponentGroup } from "../types";
+import type { Component, ComponentGroup } from "../types/component";
 
 export function filterComponentsByLabel(filters: string[]): (componentGroup: ComponentGroup) => ComponentGroup {
     const predicate = ({ label }: Component) => filters.every((searchText) => label.toLowerCase().includes(searchText));

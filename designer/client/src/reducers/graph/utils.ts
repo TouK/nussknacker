@@ -9,7 +9,9 @@ import { ExpressionLang } from "../../components/graph/node-modal/editors/expres
 import { replaceValue } from "../../components/graph/node-modal/replaceValue";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { deleteNode } from "../../components/graph/utils/graphUtils";
-import type { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData } from "../../types";
+import type { Edge, EdgeType } from "../../types/edge";
+import type { NodeId, NodeType } from "../../types/node";
+import type { ProcessDefinitionData } from "../../types/scenarioGraph";
 import type { GraphState } from "./types";
 
 export function updateLayoutAfterNodeIdChange(layout: Layout, oldId: NodeId, newId: NodeId): Layout {

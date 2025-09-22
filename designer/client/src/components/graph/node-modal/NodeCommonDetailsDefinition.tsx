@@ -1,7 +1,8 @@
 import type { PropsWithChildren } from "react";
 import React, { useCallback } from "react";
 
-import type { Field, NodeType, NodeValidationError } from "../../../types";
+import type { Field, NodeType } from "../../../types/node";
+import type { NodeValidationError } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
 import LabeledInput from "./editors/field/LabeledInput";
 import { getValidationErrorsForField } from "./editors/Validators";

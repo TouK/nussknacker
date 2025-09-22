@@ -1,8 +1,8 @@
 import React from "react";
 
 import { getStringEnumElement } from "../../../common/enumUtils";
-import type { Edge } from "../../../types";
-import { EdgeKind } from "../../../types";
+import type { Edge } from "../../../types/edge";
+import { EdgeKind } from "../../../types/edge";
 import { TypeSelect } from "./fragment-input-definition/TypeSelect";
 
 export interface EdgeTypeOption {

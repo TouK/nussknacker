@@ -2,7 +2,8 @@ import type { SyntheticEvent } from "react";
 import React from "react";
 import { v4 as uuid4 } from "uuid";
 
-import type { NodeOrPropertiesType, ValidationErrors } from "../../../types";
+import type { NodeOrPropertiesType } from "../../../types/node";
+import type { ValidationErrors } from "../../../types/validation";
 import type { Scenario } from "../../Process/types";
 import { ErrorTips } from "./ErrorTips";
 import { HeaderIcon } from "./HeaderIcon";

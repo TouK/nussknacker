@@ -2,7 +2,7 @@ import { FormControl, FormControlLabel } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import type { NodeValidationError, VariableTypes } from "../../../../../../types";
+import type { NodeValidationError, VariableTypes } from "../../../../../../types/validation";
 import { TextAreaNode } from "../../../../../FormElements";
 import { getValidationErrorsForField } from "../../../editors/Validators";
 import { nodeInput } from "../../../NodeDetailsContent/NodeTableStyled";

@@ -2,7 +2,10 @@ import type { PropsWithChildren } from "react";
 import React, { useMemo } from "react";
 
 import ProcessUtils from "../../../common/ProcessUtils";
-import type { NodeType, NodeValidationError, ProcessDefinitionData, UIParameter } from "../../../types";
+import type { UIParameter } from "../../../types/definition";
+import type { NodeType } from "../../../types/node";
+import type { ProcessDefinitionData } from "../../../types/scenarioGraph";
+import type { NodeValidationError } from "../../../types/validation";
 import { AggregateParametersList } from "./aggregateParametersList";
 import { DescriptionField } from "./DescriptionField";
 import { FieldType } from "./editors/field/Field";

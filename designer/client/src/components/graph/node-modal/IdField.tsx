@@ -4,7 +4,8 @@ import { createSelector } from "reselect";
 
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
-import type { NodeOrPropertiesType, NodeType, NodeValidationError } from "../../../types";
+import type { NodeOrPropertiesType, NodeType } from "../../../types/node";
+import type { NodeValidationError } from "../../../types/validation";
 import NodeUtils from "../NodeUtils";
 import Field, { FieldType } from "./editors/field/Field";
 import { extendErrors, getValidationErrorsForField, uniqueScenarioValueValidator } from "./editors/Validators";

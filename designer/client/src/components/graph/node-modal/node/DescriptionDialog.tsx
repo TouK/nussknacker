@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { editProperties } from "../../../../actions/nk";
 import { getScenario } from "../../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
-import type { NodeType } from "../../../../types";
+import type { NodeType } from "../../../../types/node";
 import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 import { WindowContent } from "../../../../windowManager/WindowContent";
 import type { WindowKind } from "../../../../windowManager/WindowKind";

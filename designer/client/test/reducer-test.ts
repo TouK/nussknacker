@@ -3,7 +3,8 @@ import NodeUtils from "../src/components/graph/NodeUtils";
 import { Scenario } from "../src/components/Process/types";
 import rootReducer from "../src/reducers/index";
 import { getLayout, getScenario, getScenarioGraph } from "../src/reducers/selectors/graph";
-import type { Edge, NodeType } from "../src/types";
+import type { Edge } from "../src/types/edge";
+import type { NodeType } from "../src/types/node";
 
 const baseProcessState: Scenario = {
     name: "xxx",

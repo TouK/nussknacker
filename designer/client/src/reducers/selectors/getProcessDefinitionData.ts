@@ -1,6 +1,6 @@
 import { createSelector } from "reselect";
 
-import type { ProcessDefinitionData } from "../../types";
+import type { ProcessDefinitionData } from "../../types/scenarioGraph";
 import { getComponentGroupsExtender } from "./componentGroups";
 import { getPlainProcessDefinitionData } from "./processDefinitionData";
 
