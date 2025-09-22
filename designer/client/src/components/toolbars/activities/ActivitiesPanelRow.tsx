@@ -6,8 +6,10 @@ import { isDeploymentActivity } from "../../../reducers/selectors/activities";
 import { getIsRunningOrScheduled } from "../../../reducers/selectors/scenarioState";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { UIActivity } from "./ActivitiesPanel";
-import { ActivityItem, DateItem, ToggleButtonItem } from "./ActivityPanelRowItem";
+import { ActivityItem } from "./ActivityPanelRowItem/ActivityItem";
 import { ActivityItemProvider } from "./ActivityPanelRowItem/ActivityItemProvider";
+import { DateItem } from "./ActivityPanelRowItem/DateItem";
+import { ToggleButtonItem } from "./ActivityPanelRowItem/ToggleButtonItem";
 
 interface Props {
     index: number;
