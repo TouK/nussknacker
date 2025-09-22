@@ -9,7 +9,7 @@ import { getScenarioGraph } from "../../reducers/selectors/graph";
 import { useAppSelector } from "../../store/storeHelpers";
 import type { Graph } from "./Graph";
 import { getNodeData } from "./Graph";
-import { isStickyNoteElement } from "./GraphPartialsInTS";
+import { isStickyNoteElement } from "./GraphPartialsInTS/cellUtils";
 import { MarkdownStyled } from "./node-modal/MarkdownStyled";
 import { Events } from "./types";
 
