@@ -2,7 +2,7 @@ import React, { useCallback, useState } from "react";
 
 import { useInitEffect } from "../../../../containers/hooks/useInitEffect";
 import { getFragmentNodesPrefix, useModalDetailsIfNeeded } from "../../../../containers/hooks/useModalDetailsIfNeeded";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/HttpService/instance";
 import { correctFetchedDetails } from "../../../../reducers/graph/correctFetchedDetails";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/getProcessDefinitionData";
 import { getProcessCounts } from "../../../../reducers/selectors/graph";

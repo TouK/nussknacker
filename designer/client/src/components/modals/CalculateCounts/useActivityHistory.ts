@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { DATE_FORMAT } from "../../../config";
-import HttpService from "../../../http/HttpService";
+import HttpService from "../../../http/HttpService/instance";
 import { ActivityTypesRelatedToExecutions } from "../../toolbars/activities/types";
 import type { Range } from "./CountsRangesButtons";
 

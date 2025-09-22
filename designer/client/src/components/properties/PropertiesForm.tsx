@@ -2,7 +2,7 @@ import { sortBy } from "lodash";
 import type { ComponentProps } from "react";
 import React, { useMemo } from "react";
 
-import HttpService from "../../http/HttpService";
+import HttpService from "../../http/HttpService/instance";
 import { useAppSelector } from "../../store/storeHelpers";
 import type { PropertiesType } from "../../types/node";
 import type { NodeValidationError } from "../../types/validation";

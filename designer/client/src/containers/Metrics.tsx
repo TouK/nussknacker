@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import type { ProcessName } from "src/components/Process/types";
 
-import HttpService from "../http/HttpService";
+import HttpService from "../http/HttpService/instance";
 import { getMetricsSettings } from "../reducers/selectors/settings";
 import { useAppSelector } from "../store/storeHelpers";
 import { CustomTabWrapper } from "./CustomTabPage";

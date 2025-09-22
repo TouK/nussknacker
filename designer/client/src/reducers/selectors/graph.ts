@@ -5,7 +5,7 @@ import type { TestFormParameters } from "../../common/TestResultUtils";
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils";
 import type { Scenario } from "../../components/Process/types";
 import { isStatusRunning } from "../../components/Process/types";
-import { ScenarioGraphSourceType } from "../../http/HttpService";
+import { ScenarioGraphSourceType } from "../../http/HttpService/types";
 import type { ProcessCounts } from "../../http/resultsWithCountsDto";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
 import type { TestData } from "../graph/types";

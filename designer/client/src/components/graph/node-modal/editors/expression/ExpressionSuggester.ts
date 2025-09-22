@@ -1,4 +1,4 @@
-import type HttpService from "../../../../../http/HttpService";
+import type HttpService from "../../../../../http/HttpService/instance";
 import type { VariableTypes } from "../../../../../types/validation";
 import type { ExpressionLang } from "./types";
 

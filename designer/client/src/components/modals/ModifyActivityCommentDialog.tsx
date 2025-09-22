@@ -5,7 +5,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
-import httpService from "../../http/HttpService";
+import httpService from "../../http/HttpService/instance";
 import { getProcessName } from "../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";

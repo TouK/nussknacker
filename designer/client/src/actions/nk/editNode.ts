@@ -5,7 +5,7 @@ import { getEdgesForNode } from "../../components/graph/node-modal/node/useNodeS
 import { replaceNodeData } from "../../components/graph/node-modal/NodeSwitcherUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import type { Scenario } from "../../components/Process/types";
-import HttpService from "../../http/HttpService";
+import HttpService from "../../http/HttpService/instance";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { updateAfterNodeDelete } from "../../reducers/graph/utils";
 import { isFragmentCreator } from "../../reducers/selectors/appendFragmentCreator";

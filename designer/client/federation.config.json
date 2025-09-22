@@ -2,7 +2,7 @@
     "name": "nussknackerUi",
     "exposes": {
         "./config": "./src/config",
-        "./HttpService": "./src/http/HttpService/index",
+        "./HttpService": "./src/http/HttpService/module",
         "./Auth": "./src/containers/Auth/AuthInitializer",
         "./Icon": "./src/components/UrlIcon",
         "./themeHelpers": "./src/containers/theme/helpers",

@@ -5,10 +5,10 @@ import type { TestCapabilities } from "../../common/TestResultUtils";
 import type { PredefinedActionName, ProcessName, ProcessStateType, ProcessVersionId, Scenario } from "../../components/Process/types";
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import { memoizeByArgsWithTTL } from "../../helpers/memoizeByArgsWithTTL";
+import HttpService from "../../http/HttpService/instance";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
 import type { Action, ThunkAction } from "../reduxTypes";
-import HttpService from "./../../http/HttpService";
 import { stopLiveData } from "./liveData";
 
 export type ScenarioActions =

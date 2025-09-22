@@ -5,7 +5,7 @@ import { isEmpty } from "lodash";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import HttpService from "../../http/HttpService";
+import HttpService from "../../http/HttpService/instance";
 import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { useAppSelector } from "../../store/storeHelpers";

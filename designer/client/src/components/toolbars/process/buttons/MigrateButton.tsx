@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import Icon from "../../../../assets/img/toolbarButtons/migrate.svg";
 import DialogMessages from "../../../../common/DialogMessages";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/HttpService/instance";
 import { getProcessName, getProcessVersionId } from "../../../../reducers/selectors/graph";
 import { isMigrationPossible } from "../../../../reducers/selectors/graph2";
 import { getFeatureSettings, getTargetEnvironmentId } from "../../../../reducers/selectors/settings";

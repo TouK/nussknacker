@@ -5,8 +5,8 @@ import { disableToolTipsHighlight, enableToolTipsHighlight, fetchProcessToDispla
 import notificationActions from "../../../../actions/notificationActions";
 import Icon from "../../../../assets/img/toolbarButtons/redeploy.svg";
 import { useUserSettings } from "../../../../common/userSettings";
-import type { NodesDeploymentData, ScenarioGraphSource } from "../../../../http/HttpService";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/HttpService/instance";
+import type { NodesDeploymentData, ScenarioGraphSource } from "../../../../http/HttpService/types";
 import { getProcessName, getProcessVersionId, getScenarioGraphSource, isRedeployVisible } from "../../../../reducers/selectors/graph";
 import { hasError, isRedeployPossible, isValidationResultPresent } from "../../../../reducers/selectors/graph2";
 import { getCapabilities } from "../../../../reducers/selectors/other";
