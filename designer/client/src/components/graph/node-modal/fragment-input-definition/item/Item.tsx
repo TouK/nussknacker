@@ -5,7 +5,7 @@ import type { ReturnedType } from "../../../../../types/scenarioGraph";
 import type { NodeValidationError, VariableTypes } from "../../../../../types/validation";
 import Input from "../../editors/field/Input";
 import { getValidationErrorsForField } from "../../editors/Validators";
-import { useFieldsContext } from "../../node-row-fields-provider";
+import { useFieldsContext } from "../../node-row-fields-provider/NodeRowFieldsProvider";
 import { NodeValue } from "../../node/NodeValue";
 import { useDiffMark } from "../../PathsToMark";
 import SettingsButton from "../buttons/SettingsButton";

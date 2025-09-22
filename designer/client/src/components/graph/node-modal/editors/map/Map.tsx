@@ -5,7 +5,7 @@ import type { Field } from "../../../../../types/node";
 import type { NodeValidationError, VariableTypes } from "../../../../../types/validation";
 import { DndItems } from "../../../../common/dndItems/DndItems";
 import { FieldsRow } from "../../fragment-input-definition/FieldsRow";
-import { NodeRowFieldsProvider } from "../../node-row-fields-provider";
+import { NodeRowFieldsProvider } from "../../node-row-fields-provider/NodeRowFieldsProvider";
 import { useDiffMark } from "../../PathsToMark";
 import type { SetProperty } from "../../useNodeTypeDetailsContentLogic";
 import MapRow from "./MapRow";

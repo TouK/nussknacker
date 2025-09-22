@@ -9,7 +9,7 @@ import { ExpressionLang } from "../editors/expression/types";
 import Input from "../editors/field/Input";
 import type { FieldError } from "../editors/Validators";
 import { TypeSelect } from "../fragment-input-definition/TypeSelect";
-import { useFieldsContext } from "../node-row-fields-provider";
+import { useFieldsContext } from "../node-row-fields-provider/NodeRowFieldsProvider";
 import type { AggRow, WithUuid } from "./aggregatorField";
 import { DynamicLabel } from "./dynamicLabel";
 
