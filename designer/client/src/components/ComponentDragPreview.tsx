@@ -4,7 +4,7 @@ import { useDragDropManager, useDragLayer } from "react-dnd";
 import { createPortal } from "react-dom";
 import { useDebouncedValue } from "rooks";
 
-import type { NodeType } from "../types";
+import type { NodeType } from "../types/node";
 import type { ComponentPreviewProps } from "./ComponentPreview";
 import { ComponentPreview } from "./ComponentPreview";
 import { DndTypes } from "./DndTypes";

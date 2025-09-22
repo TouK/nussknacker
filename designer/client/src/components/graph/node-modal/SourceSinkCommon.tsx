@@ -3,7 +3,9 @@ import type { PropsWithChildren } from "react";
 import React from "react";
 
 import type ProcessUtils from "../../../common/ProcessUtils";
-import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
+import type { UIParameter } from "../../../types/definition";
+import type { NodeType } from "../../../types/node";
+import type { NodeValidationError } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
 import { IdField } from "./IdField";
 import { findParameters } from "./NodeDetailsContent/helpers";

@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 
-import type { Field } from "../../../../../types";
+import type { Field } from "../../../../../types/node";
 import { getValidationErrorsForField } from "../Validators";
 import { MapItemsCtx } from "./Map";
 import MapKey from "./MapKey";

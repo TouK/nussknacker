@@ -2,7 +2,9 @@ import type { SetStateAction } from "react";
 import React from "react";
 
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
-import type { Edge, NodeType, NodeValidationError } from "../../../types";
+import type { Edge } from "../../../types/edge";
+import type { NodeType } from "../../../types/node";
+import type { NodeValidationError } from "../../../types/validation";
 import { CustomNode } from "./customNode";
 import { EnricherProcessor } from "./enricherProcessor";
 import { Filter } from "./filter";

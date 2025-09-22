@@ -4,8 +4,10 @@ import { isEqual, uniqBy } from "lodash";
 import ProcessUtils from "../../common/ProcessUtils";
 import { memoizeByArgsWithTTL } from "../../helpers/memoizeByArgsWithTTL";
 import { createEdge } from "../../reducers/graph/utils";
-import type { Edge, EdgeType, FragmentNodeType, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
-import { EdgeKind } from "../../types";
+import type { Edge, EdgeType } from "../../types/edge";
+import { EdgeKind } from "../../types/edge";
+import type { FragmentNodeType, NodeId, NodeType } from "../../types/node";
+import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
 import { NoWrap, WrapAllMethods } from "../../WrapAllMethods";
 
 @WrapAllMethods(memoizeByArgsWithTTL)

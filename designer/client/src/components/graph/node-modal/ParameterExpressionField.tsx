@@ -1,7 +1,9 @@
 import type { ComponentType, PropsWithChildren, ReactNode } from "react";
 import React, { useMemo } from "react";
 
-import type { NodeId, NodeType, NodeValidationError, Parameter, UIParameter, VariableTypes } from "../../../types";
+import type { UIParameter } from "../../../types/definition";
+import type { NodeId, NodeType, Parameter } from "../../../types/node";
+import type { NodeValidationError, VariableTypes } from "../../../types/validation";
 import ExpressionField from "./editors/expression/ExpressionField";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { findParamDefinitionByName } from "./parameterHelpers";

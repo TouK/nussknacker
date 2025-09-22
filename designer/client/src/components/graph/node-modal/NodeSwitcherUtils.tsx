@@ -3,8 +3,11 @@ import { cloneDeep, defaultsDeep, isArray, isPlainObject, mergeWith } from "loda
 import ProcessUtils from "../../../common/ProcessUtils";
 import { fakeComponentType } from "../../../reducers/selectors/appendAdditionalCreators";
 import { fakeNodeCreatorType } from "../../../reducers/selectors/getCreator";
-import type { ComponentGroup, Edge, NodeType, ProcessDefinitionData } from "../../../types";
-import { EdgeKind } from "../../../types";
+import type { ComponentGroup } from "../../../types/component";
+import type { Edge } from "../../../types/edge";
+import { EdgeKind } from "../../../types/edge";
+import type { NodeType } from "../../../types/node";
+import type { ProcessDefinitionData } from "../../../types/scenarioGraph";
 import NodeUtils from "../NodeUtils";
 import { ExpressionLang } from "./editors/expression/types";
 

@@ -3,7 +3,7 @@ import HttpService from "../../http/HttpService";
 import { createUniqueName } from "../../reducers/graph/utils";
 import { fetchScenarios, getScenariosNames } from "../../reducers/scenarios";
 import { getScenario } from "../../reducers/selectors/graph";
-import type { NodeType } from "../../types";
+import type { NodeType } from "../../types/node";
 import type { ThunkAction } from "../reduxTypes";
 import { fetchProcessDefinition } from "./index";
 

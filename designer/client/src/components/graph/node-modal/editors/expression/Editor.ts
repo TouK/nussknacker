@@ -1,6 +1,6 @@
 import type { ForwardRefExoticComponent, LegacyRef, ReactNode } from "react";
 
-import type { VariableTypes } from "../../../../../types";
+import type { VariableTypes } from "../../../../../types/validation";
 import type { FieldError } from "../Validators";
 import { BoolEditor } from "./BoolEditor";
 import { CronEditor } from "./Cron/CronEditor";

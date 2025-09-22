@@ -10,7 +10,9 @@ import { getConfiguredAdditionalComponents } from "../../../reducers/selectors/c
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
 import { getRemoteTenantId, getRemoteWebHost } from "../../../reducers/selectors/isCloudInstance";
 import { useAppSelector } from "../../../store/storeHelpers";
-import type { Edge, NodeType, NodeValidationError } from "../../../types";
+import type { Edge } from "../../../types/edge";
+import type { NodeType } from "../../../types/node";
+import type { NodeValidationError } from "../../../types/validation";
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox";
 import { DebugNodeInspector } from "./NodeDetailsContent/DebugNodeInspector";
 import { NodeTable } from "./NodeDetailsContent/NodeTable";

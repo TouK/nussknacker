@@ -1,7 +1,7 @@
 import { isEqual, sortBy } from "lodash";
 
 import { getLayout } from "../../../reducers/selectors/layout";
-import type { NodeId } from "../../../types";
+import type { NodeId } from "../../../types/node";
 import type { ThunkAction } from "../../reduxTypes";
 
 export type Position = {

@@ -7,7 +7,9 @@ import {
     enrichNodeWithProcessDependentData,
     removeBranchParameter,
 } from "../../../reducers/graph/utils";
-import type { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../../types";
+import type { Edge } from "../../../types/edge";
+import type { NodeId, NodeType } from "../../../types/node";
+import type { ProcessDefinitionData, ScenarioGraph } from "../../../types/scenarioGraph";
 import NodeUtils from "../NodeUtils";
 
 export function mapProcessWithNewNode(scenarioGraph: ScenarioGraph, before: NodeType, after: NodeType): ScenarioGraph {

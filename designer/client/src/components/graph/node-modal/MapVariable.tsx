@@ -1,7 +1,9 @@
 import React, { useCallback } from "react";
 import { v4 as uuid4 } from "uuid";
 
-import type { Field, NodeType, NodeValidationError, TypedObjectTypingResult, VariableTypes } from "../../../types";
+import type { TypedObjectTypingResult } from "../../../types/definition";
+import type { Field, NodeType } from "../../../types/node";
+import type { NodeValidationError, VariableTypes } from "../../../types/validation";
 import { ExpressionLang } from "./editors/expression/types";
 import Map from "./editors/map/Map";
 import { NodeCommonDetailsDefinition } from "./NodeCommonDetailsDefinition";

@@ -2,7 +2,7 @@ import { get, has } from "lodash";
 import type { Scenario } from "src/components/Process/types";
 import { v4 as uuid4 } from "uuid";
 
-import type { NodeType } from "../../../types";
+import type { NodeType } from "../../../types/node";
 import { setImmutable } from "./setImmutable";
 
 export function generateUUIDs(editedNode: Readonly<NodeType>, properties: Readonly<string[]>): NodeType {

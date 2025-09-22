@@ -1,4 +1,4 @@
-import type { NodeId } from "../types";
+import type { NodeId } from "../types/node";
 
 export interface Variable {
     original?: string;

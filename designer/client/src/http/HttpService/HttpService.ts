@@ -34,8 +34,9 @@ import type { EventTrackingSelectorType, EventTrackingType } from "../../contain
 import type { BackendNotification } from "../../containers/Notifications";
 import { handleAxiosError } from "../../devHelpers";
 import type { AuthenticationSettings } from "../../reducers/settings";
-import type { Expression, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import type { WithId } from "../../types/common";
+import type { Expression, NodeType } from "../../types/node";
+import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "../parametersUtils";
 import type { ProcessCounts, ResultsWithCountsDto } from "../resultsWithCountsDto";
 import type {

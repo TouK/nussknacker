@@ -2,7 +2,7 @@ import { produce } from "immer";
 import { isEqual } from "lodash";
 
 import { findParameters } from "../../components/graph/node-modal/NodeDetailsContent/helpers";
-import type { ScenarioGraph } from "../../types";
+import type { ScenarioGraph } from "../../types/scenarioGraph";
 import type { NodeDetailsState } from "../nodeDetailsState";
 
 function filterScenarioData(mode: "save" | "execution", nodeDetailsGetter?: (id: string) => NodeDetailsState[typeof id]) {

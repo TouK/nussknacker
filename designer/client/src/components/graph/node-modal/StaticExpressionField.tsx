@@ -1,6 +1,8 @@
 import React from "react";
 
-import type { NodeType, NodeValidationError, UIParameter, VariableTypes } from "../../../types";
+import type { UIParameter } from "../../../types/definition";
+import type { NodeType } from "../../../types/node";
+import type { NodeValidationError, VariableTypes } from "../../../types/validation";
 import ExpressionField from "./editors/expression/ExpressionField";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { findParamDefinitionByName } from "./parameterHelpers";

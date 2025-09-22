@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
-import type { NodeType, Parameter, ProcessDefinitionData } from "../../../types";
+import type { NodeType, Parameter } from "../../../types/node";
+import type { ProcessDefinitionData } from "../../../types/scenarioGraph";
 
 export const useParametersList = (
     editedNode: NodeType,

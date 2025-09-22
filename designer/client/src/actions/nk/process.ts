@@ -6,7 +6,7 @@ import type { PredefinedActionName, ProcessName, ProcessStateType, ProcessVersio
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import { memoizeByArgsWithTTL } from "../../helpers/memoizeByArgsWithTTL";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
-import type { ProcessDefinitionData, ScenarioGraph } from "../../types";
+import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
 import type { Action, ThunkAction } from "../reduxTypes";
 import HttpService from "./../../http/HttpService";
 import { stopLiveData } from "./liveData";

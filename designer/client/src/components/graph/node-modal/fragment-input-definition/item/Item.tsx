@@ -1,7 +1,8 @@
 import { isEqual } from "lodash";
 import React, { useCallback } from "react";
 
-import type { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../types";
+import type { ReturnedType } from "../../../../../types/scenarioGraph";
+import type { NodeValidationError, VariableTypes } from "../../../../../types/validation";
 import Input from "../../editors/field/Input";
 import { getValidationErrorsForField } from "../../editors/Validators";
 import { NodeValue } from "../../node";

@@ -2,8 +2,12 @@ import { isEmpty, isEqual } from "lodash";
 import React, { useMemo } from "react";
 
 import { useAppSelector } from "../../../store/storeHelpers";
-import type { Edge, NodeType, NodeValidationError, ProcessDefinitionData, UIParameter, VariableTypes } from "../../../types";
-import { EdgeKind } from "../../../types";
+import type { UIParameter } from "../../../types/definition";
+import type { Edge } from "../../../types/edge";
+import { EdgeKind } from "../../../types/edge";
+import type { NodeType } from "../../../types/node";
+import type { ProcessDefinitionData } from "../../../types/scenarioGraph";
+import type { NodeValidationError, VariableTypes } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
 import { EdgesDndComponent } from "./EdgesDndComponent";
 import { FieldType } from "./editors/field/Field";

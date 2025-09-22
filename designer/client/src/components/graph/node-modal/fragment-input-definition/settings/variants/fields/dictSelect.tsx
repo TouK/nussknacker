@@ -2,7 +2,8 @@ import { FormControl } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import type { NodeValidationError, ReturnedType } from "../../../../../../../types";
+import type { ReturnedType } from "../../../../../../../types/scenarioGraph";
+import type { NodeValidationError } from "../../../../../../../types/validation";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import type { onChangeType } from "../../../item";
 import { TypeSelect } from "../../../TypeSelect";

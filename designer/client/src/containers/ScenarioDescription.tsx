@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import type { Scenario } from "../components/Process/types";
 import { getProperties, getScenario, getScenarioDescription } from "../reducers/selectors/graph";
 import { useAppSelector } from "../store/storeHelpers";
-import type { NodeOrPropertiesType } from "../types";
+import type { NodeOrPropertiesType } from "../types/node";
 import { useWindows } from "../windowManager/useWindows";
 import { WindowKind } from "../windowManager/WindowKind";
 
