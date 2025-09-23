@@ -3,7 +3,7 @@ import React, { forwardRef, useContext } from "react";
 
 import { getEventTrackingProps, mapToolbarButtonToStatisticsEvent } from "../../../containers/event-tracking/helpers";
 import { PANEL_BUTTON_SIZE, PANEL_BUTTON_SMALL_SIZE } from "../../../stylesheets/variables";
-import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip";
+import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
 import { Button } from "./Button";
 import { Icon } from "./Icon";
 import { ButtonsVariant, ToolbarButtonsContext } from "./ToolbarButtons";

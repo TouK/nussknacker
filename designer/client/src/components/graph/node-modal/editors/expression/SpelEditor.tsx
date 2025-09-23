@@ -5,7 +5,7 @@ import type ReactAce from "react-ace/lib/ace";
 import { useTranslation } from "react-i18next";
 
 import type { VariableTypes } from "../../../../../types/validation";
-import { InfoTooltip } from "../InfoTooltip";
+import { InfoTooltip } from "../InfoTooltip/InfoTooltip";
 import type { ParamType } from "../types";
 import type { FieldError } from "../Validators";
 import type { OnValueChange, SimpleEditor } from "./Editor";
