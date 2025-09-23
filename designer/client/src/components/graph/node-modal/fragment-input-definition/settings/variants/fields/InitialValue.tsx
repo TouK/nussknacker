@@ -3,7 +3,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 
 import type { VariableTypes } from "../../../../../../../types/validation";
-import { DictParameterEditor } from "../../../../editors/expression/DictParameterEditor";
+import { DictParameterEditor } from "../../../../editors/expression/DictParameterEditor/DictParameterEditor";
 import { SpelEditor } from "../../../../editors/expression/SpelEditor";
 import { ExpressionLang } from "../../../../editors/expression/types";
 import type { FieldError } from "../../../../editors/Validators";

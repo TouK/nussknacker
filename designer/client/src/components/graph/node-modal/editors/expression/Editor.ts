@@ -7,7 +7,7 @@ import { CronEditor } from "./Cron/CronEditor";
 import { DateEditor } from "./DateTimeEditor/DateEditor";
 import { DateTimeEditor } from "./DateTimeEditor/DateTimeEditor";
 import { TimeEditor } from "./DateTimeEditor/TimeEditor";
-import { DictParameterEditor } from "./DictParameterEditor";
+import { DictParameterEditor } from "./DictParameterEditor/DictParameterEditor";
 import { DurationEditor } from "./Duration/DurationEditor";
 import { PeriodEditor } from "./Duration/PeriodEditor";
 import { FixedValuesEditor } from "./FixedValuesEditor";
