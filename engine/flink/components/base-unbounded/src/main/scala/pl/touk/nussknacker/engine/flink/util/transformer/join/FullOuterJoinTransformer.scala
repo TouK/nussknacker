@@ -48,13 +48,15 @@ import scala.jdk.CollectionConverters._
 class FullOuterJoinTransformer(
     timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]]
 ) extends CustomStreamTransformer
-    with JoinDynamicComponent[FlinkCustomJoinTransformation]
+    with JoinDynamicComponent
     with ExplicitUidInOperatorsSupport
     with WithExplicitTypesToExtract
     with LazyLogging
     with Serializable {
 
   import pl.touk.nussknacker.engine.flink.util.transformer.join.FullOuterJoinTransformer._
+
+  override type Implementation = FlinkCustomJoinTransformation
 
   override type State = Nothing
 

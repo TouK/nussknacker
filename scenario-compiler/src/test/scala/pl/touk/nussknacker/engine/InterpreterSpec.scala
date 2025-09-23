@@ -1424,7 +1424,9 @@ object InterpreterSpec {
 
   }
 
-  object DynamicEagerService extends EagerService with SingleInputDynamicComponent[ServiceInvoker] {
+  object DynamicEagerService extends EagerService with SingleInputDynamicComponent {
+
+    override type Implementation = ServiceInvoker
 
     override type State = Nothing
 

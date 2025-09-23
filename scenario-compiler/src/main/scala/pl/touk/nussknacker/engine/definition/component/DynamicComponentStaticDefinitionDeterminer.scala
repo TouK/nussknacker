@@ -51,7 +51,7 @@ class DynamicComponentStaticDefinitionDeterminer(
   private def determineInitialParameters(
       dynamic: DynamicComponentDefinitionWithImplementation
   )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): List[Parameter] = {
-    def inferParameters(component: DynamicComponent[_], inputContext: NodeInputValidationContext) = {
+    def inferParameters(component: DynamicComponent, inputContext: NodeInputValidationContext) = {
       // We assume that this information is not important for determining initial parameters of dynamic nodes, so we pass fake values
       val outputVariableName =
         if (dynamic.component.nodeDependencies.contains(OutputVariableNameDependency)) Some("fakeOutputVariable")
@@ -92,9 +92,9 @@ class DynamicComponentStaticDefinitionDeterminer(
           dynamic.parametersConfig,
           globalParametersConfig
         )
-      case single: SingleInputDynamicComponent[_] =>
+      case single: SingleInputDynamicComponent =>
         inferParameters(single, SingleInputNodeInputValidationContext(globalVariablesOnlyValidationContext))
-      case join: JoinDynamicComponent[_] =>
+      case join: JoinDynamicComponent =>
         inferParameters(
           join,
           MultipleInputBranchesNodeInputValidationContext(Map.empty, globalVariablesOnlyValidationContext)
@@ -129,7 +129,7 @@ object DynamicComponentStaticDefinitionDeterminer {
     }
   }
 
-  def staticReturnType(component: DynamicComponent[_]): Option[TypingResult] = {
+  def staticReturnType(component: DynamicComponent): Option[TypingResult] = {
     if (component.nodeDependencies.contains(OutputVariableNameDependency)) Some(Unknown) else None
   }
 

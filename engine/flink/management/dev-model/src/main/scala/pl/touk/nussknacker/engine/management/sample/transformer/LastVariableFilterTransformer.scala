@@ -29,9 +29,11 @@ import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeye
    - condition
    And in condition expression we want to have additional variable of type the same as value return type
  */
-object LastVariableFilterTransformer
-    extends CustomStreamTransformer
-    with SingleInputDynamicComponent[FlinkCustomStreamTransformation] {
+object LastVariableFilterTransformer extends CustomStreamTransformer with SingleInputDynamicComponent {
+
+  override type Implementation = FlinkCustomStreamTransformation
+
+  override type State = Nothing
 
   private val valueParameterName        = ParameterName("value")
   private val valueParameterDeclaration = ParameterDeclaration.lazyMandatory[AnyRef](valueParameterName).withCreator()
@@ -54,8 +56,6 @@ object LastVariableFilterTransformer
             )
           )
       )
-
-  type State = Nothing
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId

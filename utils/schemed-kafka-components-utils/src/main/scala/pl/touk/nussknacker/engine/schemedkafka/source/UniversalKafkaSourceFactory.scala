@@ -57,11 +57,13 @@ class UniversalKafkaSourceFactory(
     val kafkaComponentsConfig: KafkaComponentsConfig,
     val namingStrategy: NamingStrategy,
     protected val implProvider: KafkaSourceImplFactory[Any, Any],
-) extends KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
+) extends KafkaUniversalComponentTransformer[TopicName.ForSource]
     with WatermarkStrategyValidationHandler
     with SourceFactory
     with WithExplicitTypesToExtract
     with UnboundedStreamComponent {
+
+  override type Implementation = Source
 
   override type State = UniversalKafkaSourceFactoryState
 

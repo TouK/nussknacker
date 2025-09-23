@@ -36,13 +36,15 @@ import scala.concurrent.duration.FiniteDuration
 class SingleSideJoinTransformer(
     timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]]
 ) extends CustomStreamTransformer
-    with JoinDynamicComponent[FlinkCustomJoinTransformation]
+    with JoinDynamicComponent
     with ExplicitUidInOperatorsSupport
     with WithExplicitTypesToExtract
     with LazyLogging
     with Serializable {
 
   import pl.touk.nussknacker.engine.flink.util.transformer.join.SingleSideJoinTransformer._
+
+  override type Implementation = FlinkCustomJoinTransformation
 
   override type State = Nothing
 

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
 import io.circe.Json
-import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId, Params, VariableConstants}
+import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId, Params, ServiceInvoker, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
@@ -20,8 +20,10 @@ import scala.jdk.CollectionConverters._
 
 object GenericSourceWithCustomTestingSupport
     extends SourceFactory
-    with SingleInputDynamicComponent[Source]
+    with SingleInputDynamicComponent
     with UnboundedStreamComponent {
+
+  override type Implementation = Source
 
   override type State = Nothing
 

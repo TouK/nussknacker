@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample.transformer
 
-import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -20,7 +19,9 @@ import pl.touk.nussknacker.engine.api.definition.{
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
-trait DynamicParametersMixin extends SingleInputDynamicComponent[AnyRef] {
+trait DynamicParametersMixin extends SingleInputDynamicComponent {
+
+  override type Implementation = AnyRef
 
   override type State = Nothing
 

@@ -121,9 +121,11 @@ class LiteTestScenarioRunner(
 
 private[test] class SimpleSourceFactory(result: TypingResult)
     extends SourceFactory
-    with SingleInputDynamicComponent[Source]
+    with SingleInputDynamicComponent
     with WithExplicitTypesToExtract
     with UnboundedStreamComponent {
+
+  override type Implementation = Source
 
   override type State = Nothing
 

@@ -15,13 +15,13 @@ import pl.touk.nussknacker.engine.api.definition.{
   SpelTemplateParameterEditor
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ComponentUseContext
+import pl.touk.nussknacker.engine.api.process.{ComponentUseContext, Source}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object SpelTemplatePartsService extends EagerService with SingleInputDynamicComponent[ServiceInvoker] {
+object SpelTemplatePartsService extends EagerService with SingleInputDynamicComponent {
 
   private val spelTemplateParameterName = ParameterName("template")
 
@@ -31,6 +31,8 @@ object SpelTemplatePartsService extends EagerService with SingleInputDynamicComp
       isLazyParameter = true,
       editors = List(SpelTemplateParameterEditor)
     )
+
+  override type Implementation = ServiceInvoker
 
   override type State = Any
 
