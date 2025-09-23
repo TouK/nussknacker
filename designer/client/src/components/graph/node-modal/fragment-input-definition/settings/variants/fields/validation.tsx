@@ -11,7 +11,7 @@ import type {
     AnyValueParameterVariant,
     DefaultParameterVariant,
     ValueCompileTimeValidation,
-} from "../../../item";
+} from "../../../item/types";
 import { useSettings } from "../../SettingsProvider";
 import { SettingLabelStyled, CustomSwitch } from "./StyledSettingsComponnets";
 import ValidationFields from "./ValidationFields";

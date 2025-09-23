@@ -2,7 +2,7 @@ import { Chip, FormHelperText } from "@mui/material";
 import React from "react";
 
 import type { NodeValidationError } from "../../../../../../../types/validation";
-import type { FieldName, FixedValuesOption } from "../../../item";
+import type { FieldName, FixedValuesOption } from "../../../item/types";
 import type { Option } from "../../../TypeSelect";
 import { ListItemContainer, ListItemWrapper } from "./StyledSettingsComponnets";
 

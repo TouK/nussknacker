@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import type { ReturnedType } from "../../../../../../../types/scenarioGraph";
 import type { NodeValidationError } from "../../../../../../../types/validation";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
-import type { onChangeType } from "../../../item";
+import type { onChangeType } from "../../../item/types";
 import { TypeSelect } from "../../../TypeSelect";
 import { useGetAllDicts } from "../StringBooleanVariants/useGetAllDicts";
 import { SettingLabelStyled } from "./StyledSettingsComponnets";

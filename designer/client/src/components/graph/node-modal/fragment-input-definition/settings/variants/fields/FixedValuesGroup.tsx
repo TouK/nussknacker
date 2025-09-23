@@ -2,8 +2,8 @@ import { FormControl, FormControlLabel, Radio, RadioGroup, Typography, useTheme 
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import type { AnyValueWithSuggestionsParameterVariant, FixedListParameterVariant, onChangeType } from "../../../item";
-import { FixedValuesType } from "../../../item";
+import type { AnyValueWithSuggestionsParameterVariant, FixedListParameterVariant, onChangeType } from "../../../item/types";
+import { FixedValuesType } from "../../../item/types";
 import { SettingLabelStyled } from "./StyledSettingsComponnets";
 
 interface FixedValuesGroup {

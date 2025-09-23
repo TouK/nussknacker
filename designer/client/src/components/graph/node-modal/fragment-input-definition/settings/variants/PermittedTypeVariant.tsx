@@ -3,8 +3,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 
 import type { NodeValidationError, VariableTypes } from "../../../../../../types/validation";
-import type { onChangeType, PermittedTypeParameterVariant } from "../../item";
-import { InputMode, isAnyValueParameter, isAnyValueWithSuggestionsParameter, isFixedListParameter } from "../../item";
+import type { onChangeType, PermittedTypeParameterVariant } from "../../item/types";
+import { InputMode, isAnyValueParameter, isAnyValueWithSuggestionsParameter, isFixedListParameter } from "../../item/types";
 import InputModeSelect from "./fields/InputModeSelect";
 import { CustomSwitch, SettingLabelStyled, SettingsWrapper } from "./fields/StyledSettingsComponnets";
 import { AnyValueVariant, AnyValueWithSuggestionVariant, FixedListVariant } from "./StringBooleanVariants";

@@ -6,7 +6,7 @@ import type { NodeValidationError, VariableTypes } from "../../../../../../../ty
 import { TextAreaNode } from "../../../../../../FormElements";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { nodeInput } from "../../../../NodeDetailsContent/NodeTableStyled";
-import type { AnyValueParameterVariant, onChangeType } from "../../../item";
+import type { AnyValueParameterVariant, onChangeType } from "../../../item/types";
 import InitialValue from "../fields/InitialValue";
 import { SettingLabelStyled } from "../fields/StyledSettingsComponnets";
 import { ValidationsFields } from "../fields/validation";

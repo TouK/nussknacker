@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { jest } from "@jest/globals";
 import { NuThemeProvider } from "../../../src/containers/theme/nuThemeProvider";
 import { FixedValuesGroup } from "../../../src/components/graph/node-modal/fragment-input-definition/settings/variants/fields/FixedValuesGroup";
-import { FixedValuesType } from "../../../src/components/graph/node-modal/fragment-input-definition/item";
+import { FixedValuesType } from "../../../src/components/graph/node-modal/fragment-input-definition/item/types";
 import { ReturnedType } from "../../../src/types/scenarioGraph";
 
 jest.mock("../../../src/brace/theme/nussknacker.js", () => ({}));

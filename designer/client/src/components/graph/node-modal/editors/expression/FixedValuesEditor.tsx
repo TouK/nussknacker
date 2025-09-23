@@ -8,7 +8,7 @@ import Creatable from "react-select/creatable";
 import { selectStyled } from "../../../../../stylesheets/SelectStyled";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { PreloadedIcon } from "../../../../toolbars/creator/ComponentIcon";
-import type { FixedValuesOption } from "../../fragment-input-definition/item";
+import type { FixedValuesOption } from "../../fragment-input-definition/item/types";
 import type { FieldError } from "../Validators";
 import type { ExtendedEditor, OnValueChange } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
