@@ -10,7 +10,7 @@ import { VersionInfo } from "../components/versionInfo";
 import { getLoggedUser } from "../reducers/selectors/settings";
 import { useAppSelector } from "../store/storeHelpers";
 import { WindowManager } from "../windowManager/WindowManager";
-import { ConnectionErrorProvider } from "./connectionErrorProvider";
+import { ConnectionErrorProvider } from "./connectionErrorProvider/ConnectionErrorProvider";
 import { useErrorRegister } from "./event-tracking/use-error-register";
 import { useRegisterTrackingEvents } from "./event-tracking/use-register-tracking-events";
 import { MainOutlet } from "./MainOutlet";
