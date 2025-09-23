@@ -18,7 +18,9 @@ import java.lang
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
-object DecisionTable extends EagerService with SingleInputDynamicComponent[ServiceInvoker] {
+object DecisionTable extends EagerService with SingleInputDynamicComponent {
+
+  override type Implementation = ServiceInvoker
 
   override type State = Unit
 

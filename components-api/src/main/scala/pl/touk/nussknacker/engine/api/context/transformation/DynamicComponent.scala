@@ -21,7 +21,9 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
      - for sinks OutputVariable is not handled, result ValidationContext will be ignored
      - for sources OutputVariable *has* to be used for Flink sources, it's value is always equal to 'input' ATM, due to source API limitations
  */
-sealed trait DynamicComponent[T] extends Component {
+sealed trait DynamicComponent extends Component {
+
+  type Implementation
 
   // ValidationContext for single input, Map[String, ValidationContext] for joins
   type InputContext
@@ -37,7 +39,7 @@ sealed trait DynamicComponent[T] extends Component {
       implicit nodeId: NodeId
   ): ContextTransformationDefinition
 
-  def implementation(params: Params, dependencies: List[NodeDependencyValue], finalState: Option[State]): T
+  def implementation(params: Params, dependencies: List[NodeDependencyValue], finalState: Option[State]): Implementation
 
   // Here we assume that this list is fixed - cannot be changed depending on parameter values
   def nodeDependencies: List[NodeDependency]
@@ -47,14 +49,14 @@ sealed trait DynamicComponent[T] extends Component {
       step: TransformationStep,
       inputContext: InputContext,
       outputVariable: Option[String]
-  )(implicit nodeId: NodeId): FinalResults = {
+  )(implicit nodeId: NodeId): TransformationStepResult = {
     val fallback = fallbackFinalResult(step, inputContext, outputVariable)
     // if some parameters are failed to define, then probably it just missing implementation of this corner case and we can just use fallback
     if (step.parameters.map(_._2).exists(_.isInstanceOf[FailedToDefineParameter])) {
       fallback
     } else {
       // TODO: better error
-      fallback.copy(errors = fallback.errors :+ WrongParameters(Set.empty, step.parameters.map(_._1).toSet))
+      fallback.withErrors(fallback.errors :+ WrongParameters(Set.empty, step.parameters.map(_._1).toSet))
     }
   }
 
@@ -65,15 +67,16 @@ sealed trait DynamicComponent[T] extends Component {
       outputVariable: Option[String],
       ex: Throwable
   )(implicit nodeId: NodeId): FinalResults = {
-    val fallback = fallbackFinalResult(step, inputContext, outputVariable)
-    fallback.copy(errors = fallback.errors :+ CannotCreateObjectError(ex, nodeId))
+    val fallback =
+      prepareFinalResultWithOptionalVariable(inputContext, outputVariable.map(name => (name, Unknown)), step.state)
+    fallback.withErrors(fallback.errors :+ CannotCreateObjectError(ex, nodeId))
   }
 
   protected def fallbackFinalResult(
       step: TransformationStep,
       inputContext: InputContext,
       outputVariable: Option[String]
-  )(implicit nodeId: NodeId): FinalResults = {
+  )(implicit nodeId: NodeId): TransformationStepResult = {
     prepareFinalResultWithOptionalVariable(inputContext, outputVariable.map(name => (name, Unknown)), step.state)
   }
 
@@ -95,6 +98,8 @@ sealed trait DynamicComponent[T] extends Component {
 
   sealed trait TransformationStepResult {
     def errors: List[ProcessCompilationError]
+
+    def withErrors(newErrors: List[ProcessCompilationError]): TransformationStepResult
   }
 
   case class NextParameters(
@@ -102,13 +107,23 @@ sealed trait DynamicComponent[T] extends Component {
       parameters: List[Parameter],
       errors: List[ProcessCompilationError] = Nil,
       state: Option[State] = None
-  ) extends TransformationStepResult
+  ) extends TransformationStepResult {
+
+    override def withErrors(newErrors: List[ProcessCompilationError]): NextParameters =
+      copy(errors = newErrors)
+
+  }
 
   case class FinalResults(
       finalContext: ValidationContext,
       errors: List[ProcessCompilationError] = Nil,
       state: Option[State] = None
-  ) extends TransformationStepResult
+  ) extends TransformationStepResult {
+
+    override def withErrors(newErrors: List[ProcessCompilationError]): FinalResults =
+      copy(errors = newErrors)
+
+  }
 
   object FinalResults {
 
@@ -131,7 +146,7 @@ sealed trait DynamicComponent[T] extends Component {
 
 }
 
-trait SingleInputDynamicComponent[T] extends DynamicComponent[T] {
+trait SingleInputDynamicComponent extends DynamicComponent {
   type InputContext     = ValidationContext
   type DefinedParameter = DefinedSingleParameter
 }
@@ -140,7 +155,7 @@ trait SingleInputDynamicComponent[T] extends DynamicComponent[T] {
   NOTE: currently, due to FE limitations, it's *NOT* possible to defined dynamic branch parameters - that is,
   branch parameters that are changed based on other parameter values
  */
-trait JoinDynamicComponent[T] extends DynamicComponent[T] with LazyLogging {
+trait JoinDynamicComponent extends DynamicComponent with LazyLogging {
   type InputContext     = Map[String, ValidationContext]
   type DefinedParameter = BaseDefinedParameter
 }

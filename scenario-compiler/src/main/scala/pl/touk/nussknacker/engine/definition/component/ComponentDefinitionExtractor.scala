@@ -117,7 +117,7 @@ object ComponentDefinitionExtractor {
     }
 
     (component match {
-      case dynamicComponent: DynamicComponent[_] =>
+      case dynamicComponent: DynamicComponent =>
         val invoker = new DynamicComponentImplementationInvoker(dynamicComponent)
         Right(
           withUiDefinitionForNotDisabledComponent(
@@ -125,8 +125,8 @@ object ComponentDefinitionExtractor {
           ) { (uiDefinition, parametersConfig) =>
             val componentSpecificData = extractComponentSpecificData(component) {
               dynamicComponent match {
-                case _: JoinDynamicComponent[_]        => true
-                case _: SingleInputDynamicComponent[_] => false
+                case _: JoinDynamicComponent        => true
+                case _: SingleInputDynamicComponent => false
               }
             }
             DynamicComponentDefinitionWithImplementation(

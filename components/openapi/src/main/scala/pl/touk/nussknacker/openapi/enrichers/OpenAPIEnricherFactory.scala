@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.openapi.enrichers
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.{EagerService, NodeId, Params}
+import pl.touk.nussknacker.engine.api.{EagerService, NodeId, Params, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.component.AllProcessingModesComponent
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
@@ -41,7 +41,7 @@ class OpenAPIEnricherFactory(
     httpBeProvider: HttpBackendProvider,
     openApiDefinitionDiscovery: OpenApiDefinitionDiscovery,
 ) extends EagerService
-    with SingleInputDynamicComponent[OpenAPIEnricher]
+    with SingleInputDynamicComponent
     with AllProcessingModesComponent
     with LazyLogging
     with TimeMeasuringService {
@@ -49,6 +49,8 @@ class OpenAPIEnricherFactory(
   private val fixedParameters = Map[String, () => AnyRef]() // TODO: add configuration
 
   override protected def serviceName: String = "OpenAPI"
+
+  override type Implementation = OpenAPIEnricher
 
   override type State = TransformationState
 

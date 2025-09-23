@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.util.watermarkstrategy
 
 import pl.touk.nussknacker.engine.api.{LazyParameter, NodeId, Params}
 import pl.touk.nussknacker.engine.api.Params.ParamExtractionResult
+import pl.touk.nussknacker.engine.api.VariableConstants.InputVariableName
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
@@ -11,6 +12,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 }
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -34,7 +36,19 @@ object WatermarkStrategyValidationHandler {
 
 }
 
-trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] =>
+trait WatermarkStrategyValidationHandler extends SingleInputDynamicComponent {
+
+  override protected def fallbackFinalResult(
+      step: TransformationStep,
+      inputContext: ValidationContext,
+      outputVariable: Option[String]
+  )(implicit nodeId: NodeId): TransformationStepResult = {
+    val fallbackOutputContext = inputContext.withVariable(InputVariableName, Unknown, None).getOrElse(inputContext)
+    NextParameters(
+      prepareWatermarkStrategyParameters(fallbackOutputContext, "".spel),
+      state = step.state
+    )
+  }
 
   protected def prepareWatermarkStrategyParameters(
       outputValidationContext: ValidationContext,

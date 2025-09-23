@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 import java.util.Optional
 import scala.jdk.CollectionConverters._
 
-trait JavaDynamicComponent[T, VC, PAR, ST] {
+trait JavaDynamicComponent[IT, VC, PAR, ST] {
 
   def contextTransformation(
       context: VC,
@@ -25,14 +25,14 @@ trait JavaDynamicComponent[T, VC, PAR, ST] {
       params: java.util.Map[ParameterName, Any],
       dependencies: java.util.List[NodeDependencyValue],
       finalState: java.util.Optional[ST]
-  ): T
+  ): IT
 
   def nodeDependencies: java.util.List[NodeDependency]
 
 }
 
-trait JavaSingleInputDynamicComponent[T, ST]
-    extends JavaDynamicComponent[T, ValidationContext, DefinedSingleParameter, ST] {
+trait JavaSingleInputDynamicComponent[IT, ST]
+    extends JavaDynamicComponent[IT, ValidationContext, DefinedSingleParameter, ST] {
 
   def canBeEnding: Boolean = false
 
@@ -51,17 +51,19 @@ trait JavaSourceFactoryDynamicComponent[ST] extends JavaSingleInputDynamicCompon
 
 }
 
-trait DynamicComponentWrapper[T, VC, PAR, ST] { self: DynamicComponent[T] =>
+trait DynamicComponentWrapper[IT, VC, PAR, ST] { self: DynamicComponent =>
+
+  override type Implementation = IT
 
   override type State = ST
 
-  def javaDef: JavaDynamicComponent[T, VC, PAR, ST]
+  def javaDef: JavaDynamicComponent[IT, VC, PAR, ST]
 
   override def implementation(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
-  ): T =
+  ): Implementation =
     javaDef.implementation(
       params.nameToRawValueMap.asJava,
       dependencies.asJava,
@@ -72,10 +74,10 @@ trait DynamicComponentWrapper[T, VC, PAR, ST] { self: DynamicComponent[T] =>
 
 }
 
-class SingleInputDynamicComponentWrapper[T, ST](val javaDef: JavaSingleInputDynamicComponent[T, ST])
+class SingleInputDynamicComponentWrapper[IT, ST](val javaDef: JavaSingleInputDynamicComponent[IT, ST])
     extends CustomStreamTransformer
-    with SingleInputDynamicComponent[T]
-    with DynamicComponentWrapper[T, ValidationContext, DefinedSingleParameter, ST] {
+    with SingleInputDynamicComponent
+    with DynamicComponentWrapper[IT, ValidationContext, DefinedSingleParameter, ST] {
 
   override def canBeEnding: Boolean = javaDef.canBeEnding
 
@@ -100,7 +102,7 @@ class SingleInputDynamicComponentWrapper[T, ST](val javaDef: JavaSingleInputDyna
 
 class SourceFactoryDynamicComponentWrapper[ST](val javaDef: JavaSourceFactoryDynamicComponent[ST])
     extends SourceFactory
-    with SingleInputDynamicComponent[Source]
+    with SingleInputDynamicComponent
     with DynamicComponentWrapper[Source, ValidationContext, DefinedSingleParameter, ST]
     with UnboundedStreamComponent {
 
@@ -125,7 +127,9 @@ class SourceFactoryDynamicComponentWrapper[ST](val javaDef: JavaSourceFactoryDyn
 
 class JoinDynamicComponentWrapper[ST](javaDef: JavaJoinDynamicComponent[_ <: AnyRef, ST])
     extends CustomStreamTransformer
-    with JoinDynamicComponent[Object] {
+    with JoinDynamicComponent {
+
+  override type Implementation = Object
 
   override type State = ST
 

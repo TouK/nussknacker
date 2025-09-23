@@ -32,20 +32,21 @@ import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory.{
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory._
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyValidationHandler
 
 class TableSourceFactory(
     flinkDataDefinition: FlinkDataDefinition,
     testDataGenerationMode: TestDataGenerationMode
-) extends SingleInputDynamicComponent[Source]
+) extends SingleInputDynamicComponent
     with WatermarkStrategyValidationHandler
     with SourceFactory
     with LazyLogging {
 
   override def allowedProcessingModes: Component.AllowedProcessingModes =
     SetOf(ProcessingMode.UnboundedStream, ProcessingMode.BoundedStream)
+
+  override type Implementation = Source
 
   override type State = TableSourceFactoryState
 

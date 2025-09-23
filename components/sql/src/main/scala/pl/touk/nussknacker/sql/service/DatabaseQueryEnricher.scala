@@ -79,14 +79,17 @@ TODO:
 class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvider: DbMetaDataProvider)
     extends EagerService
     with TimeMeasuringService
-    with SingleInputDynamicComponent[ServiceInvoker]
+    with SingleInputDynamicComponent
     with LazyLogging {
 
   import DatabaseQueryEnricher._
 
   override protected def serviceName: String = "dbQueryEnricher"
 
+  override type Implementation = ServiceInvoker
+
   override type State = TransformationState
+
   protected lazy val sqlDialect                       = new SqlDialect(dbMetaDataProvider.getDialectMetaData)
   override val nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: metaData :: Nil
 

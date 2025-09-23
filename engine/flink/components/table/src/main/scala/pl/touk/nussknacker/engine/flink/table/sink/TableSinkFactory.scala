@@ -42,9 +42,11 @@ import scala.jdk.CollectionConverters._
 
 class TableSinkFactory(
     flinkDataDefinition: FlinkDataDefinition
-) extends SingleInputDynamicComponent[Sink]
+) extends SingleInputDynamicComponent
     with SinkFactory
     with LazyLogging {
+
+  override type Implementation = Sink
 
   override def allowedProcessingModes: Component.AllowedProcessingModes =
     SetOf(ProcessingMode.UnboundedStream, ProcessingMode.BoundedStream)
