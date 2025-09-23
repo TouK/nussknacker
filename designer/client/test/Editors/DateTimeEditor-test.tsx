@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { render, screen } from "@testing-library/react";
 import { jest } from "@jest/globals";
-import { DateTimeEditor } from "../../src/components/graph/node-modal/editors/expression/DateTimeEditor";
+import { DateTimeEditor } from "../../src/components/graph/node-modal/editors/expression/DateTimeEditor/DateTimeEditor";
 import { mockFormatter, mockFieldErrors, mockValueChange } from "./helpers";
 import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
 import { nodeInputWithError } from "../../src/components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
