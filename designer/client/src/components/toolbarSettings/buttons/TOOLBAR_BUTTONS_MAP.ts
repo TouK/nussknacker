@@ -1,39 +1,8 @@
+import loadable from "@loadable/component";
 import type { ComponentType } from "react";
 
-import CopyButton from "../../toolbars/edit/buttons/CopyButton";
-import DeleteButton from "../../toolbars/edit/buttons/DeleteButton";
-import LayoutButton from "../../toolbars/edit/buttons/LayoutButton";
-import PasteButton from "../../toolbars/edit/buttons/PasteButton";
-import RedoButton from "../../toolbars/edit/buttons/RedoButton";
-import UndoButton from "../../toolbars/edit/buttons/UndoButton";
-import ArchiveButton from "../../toolbars/process/buttons/ArchiveButton";
-import ArchiveToggleButton from "../../toolbars/process/buttons/ArchiveToggleButton";
-import CompareButton from "../../toolbars/process/buttons/CompareButton";
-import ExportButton from "../../toolbars/process/buttons/ExportButton";
-import ImportButton from "../../toolbars/process/buttons/ImportButton";
-import MigrateButton from "../../toolbars/process/buttons/MigrateButton";
-import PDFButton from "../../toolbars/process/buttons/PDFButton";
-import SaveButton from "../../toolbars/process/buttons/SaveButton";
-import UnArchiveButton from "../../toolbars/process/buttons/UnArchiveButton";
-import CancelDeployButton from "../../toolbars/scenarioActions/buttons/CancelDeployButton";
-import DeployButton from "../../toolbars/scenarioActions/buttons/DeployButton";
-import PropertiesButton from "../../toolbars/scenarioActions/buttons/PropertiesButton";
-import RedeployButton from "../../toolbars/scenarioActions/buttons/RedeployButton";
-import RunOffScheduleButton from "../../toolbars/scenarioActions/buttons/RunOffScheduleButton";
-import AdhocTestingButton from "../../toolbars/test/buttons/AdhocTestingButton";
-import CountsButton from "../../toolbars/test/buttons/CountsButton";
-import FromFileButton from "../../toolbars/test/buttons/FromFileButton";
-import GenerateAndTestButton from "../../toolbars/test/buttons/GenerateAndTestButton";
-import GenerateButton from "../../toolbars/test/buttons/GenerateButton";
-import HideButton from "../../toolbars/test/buttons/HideButton";
-import LiveDataButton from "../../toolbars/test/buttons/LiveDataButton";
-import ScenarioTestButton from "../../toolbars/test/buttons/ScenarioTestButton";
-import ResetViewButton from "../../toolbars/view/buttons/ResetViewButton";
-import ZoomInButton from "../../toolbars/view/buttons/ZoomInButton";
-import ZoomOutButton from "../../toolbars/view/buttons/ZoomOutButton";
 import { BuiltinButtonTypes } from "./BuiltinButtonTypes";
 import { CustomButtonTypes } from "./CustomButtonTypes";
-import LinkButton from "./LinkButton";
 import type { ToolbarButton, ToolbarButtonTypes } from "./types";
 
 export type PropsOfButton<T> = ToolbarButton & {
@@ -44,37 +13,37 @@ type ToolbarButtonsMap = {
     [T in ToolbarButtonTypes]: ComponentType<PropsOfButton<T>>;
 };
 
-export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
-    [BuiltinButtonTypes.processSave]: SaveButton,
-    [BuiltinButtonTypes.processDeploy]: DeployButton,
-    [BuiltinButtonTypes.processRedeploy]: RedeployButton,
-    [BuiltinButtonTypes.processCancel]: CancelDeployButton,
-    [BuiltinButtonTypes.processRunOffSchedule]: RunOffScheduleButton,
-    [BuiltinButtonTypes.viewZoomIn]: ZoomInButton,
-    [BuiltinButtonTypes.viewZoomOut]: ZoomOutButton,
-    [BuiltinButtonTypes.viewReset]: ResetViewButton,
-    [BuiltinButtonTypes.editUndo]: UndoButton,
-    [BuiltinButtonTypes.editRedo]: RedoButton,
-    [BuiltinButtonTypes.editCopy]: CopyButton,
-    [BuiltinButtonTypes.editPaste]: PasteButton,
-    [BuiltinButtonTypes.editDelete]: DeleteButton,
-    [BuiltinButtonTypes.editLayout]: LayoutButton,
-    [BuiltinButtonTypes.processProperties]: PropertiesButton,
-    [BuiltinButtonTypes.processCompare]: CompareButton,
-    [BuiltinButtonTypes.processMigrate]: MigrateButton,
-    [BuiltinButtonTypes.processImport]: ImportButton,
-    [BuiltinButtonTypes.processExport]: ExportButton,
-    [BuiltinButtonTypes.processPDF]: PDFButton,
-    [BuiltinButtonTypes.processArchiveToggle]: ArchiveToggleButton,
-    [BuiltinButtonTypes.processArchive]: ArchiveButton,
-    [BuiltinButtonTypes.processUnarchive]: UnArchiveButton,
-    [BuiltinButtonTypes.testFromFile]: FromFileButton,
-    [BuiltinButtonTypes.testGenerate]: GenerateButton,
-    [BuiltinButtonTypes.testCounts]: CountsButton,
-    [BuiltinButtonTypes.testHide]: HideButton,
-    [CustomButtonTypes.customLink]: LinkButton,
-    [CustomButtonTypes.adhocTesting]: AdhocTestingButton,
-    [BuiltinButtonTypes.generateAndTest]: GenerateAndTestButton,
-    [CustomButtonTypes.scenarioTest]: ScenarioTestButton,
-    [BuiltinButtonTypes.liveData]: LiveDataButton,
-};
+export const TOOLBAR_BUTTONS_MAP = {
+    [BuiltinButtonTypes.processSave]: loadable(() => import("../../toolbars/process/buttons/SaveButton")),
+    [BuiltinButtonTypes.processDeploy]: loadable(() => import("../../toolbars/scenarioActions/buttons/DeployButton")),
+    [BuiltinButtonTypes.processRedeploy]: loadable(() => import("../../toolbars/scenarioActions/buttons/RedeployButton")),
+    [BuiltinButtonTypes.processCancel]: loadable(() => import("../../toolbars/scenarioActions/buttons/CancelDeployButton")),
+    [BuiltinButtonTypes.processRunOffSchedule]: loadable(() => import("../../toolbars/scenarioActions/buttons/RunOffScheduleButton")),
+    [BuiltinButtonTypes.viewZoomIn]: loadable(() => import("../../toolbars/view/buttons/ZoomInButton")),
+    [BuiltinButtonTypes.viewZoomOut]: loadable(() => import("../../toolbars/view/buttons/ZoomOutButton")),
+    [BuiltinButtonTypes.viewReset]: loadable(() => import("../../toolbars/view/buttons/ResetViewButton")),
+    [BuiltinButtonTypes.editUndo]: loadable(() => import("../../toolbars/edit/buttons/UndoButton")),
+    [BuiltinButtonTypes.editRedo]: loadable(() => import("../../toolbars/edit/buttons/RedoButton")),
+    [BuiltinButtonTypes.editCopy]: loadable(() => import("../../toolbars/edit/buttons/CopyButton")),
+    [BuiltinButtonTypes.editPaste]: loadable(() => import("../../toolbars/edit/buttons/PasteButton")),
+    [BuiltinButtonTypes.editDelete]: loadable(() => import("../../toolbars/edit/buttons/DeleteButton")),
+    [BuiltinButtonTypes.editLayout]: loadable(() => import("../../toolbars/edit/buttons/LayoutButton")),
+    [BuiltinButtonTypes.processProperties]: loadable(() => import("../../toolbars/scenarioActions/buttons/PropertiesButton")),
+    [BuiltinButtonTypes.processCompare]: loadable(() => import("../../toolbars/process/buttons/CompareButton")),
+    [BuiltinButtonTypes.processMigrate]: loadable(() => import("../../toolbars/process/buttons/MigrateButton")),
+    [BuiltinButtonTypes.processImport]: loadable(() => import("../../toolbars/process/buttons/ImportButton")),
+    [BuiltinButtonTypes.processExport]: loadable(() => import("../../toolbars/process/buttons/ExportButton")),
+    [BuiltinButtonTypes.processPDF]: loadable(() => import("../../toolbars/process/buttons/PDFButton")),
+    [BuiltinButtonTypes.processArchiveToggle]: loadable(() => import("../../toolbars/process/buttons/ArchiveToggleButton")),
+    [BuiltinButtonTypes.processArchive]: loadable(() => import("../../toolbars/process/buttons/ArchiveButton")),
+    [BuiltinButtonTypes.processUnarchive]: loadable(() => import("../../toolbars/process/buttons/UnArchiveButton")),
+    [BuiltinButtonTypes.testFromFile]: loadable(() => import("../../toolbars/test/buttons/FromFileButton")),
+    [BuiltinButtonTypes.testGenerate]: loadable(() => import("../../toolbars/test/buttons/GenerateButton")),
+    [BuiltinButtonTypes.testCounts]: loadable(() => import("../../toolbars/test/buttons/CountsButton")),
+    [BuiltinButtonTypes.testHide]: loadable(() => import("../../toolbars/test/buttons/HideButton")),
+    [CustomButtonTypes.customLink]: loadable(() => import("./LinkButton")),
+    [CustomButtonTypes.adhocTesting]: loadable(() => import("../../toolbars/test/buttons/AdhocTestingButton")),
+    [BuiltinButtonTypes.generateAndTest]: loadable(() => import("../../toolbars/test/buttons/GenerateAndTestButton")),
+    [CustomButtonTypes.scenarioTest]: loadable(() => import("../../toolbars/test/buttons/ScenarioTestButton")),
+    [BuiltinButtonTypes.liveData]: loadable(() => import("../../toolbars/test/buttons/LiveDataButton")),
+} as ToolbarButtonsMap;
