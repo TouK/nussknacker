@@ -2,7 +2,7 @@ import { createSelector } from "reselect";
 
 import type { Action, Reducer, ThunkAction } from "../actions/reduxTypes";
 import type { Scenario } from "../components/Process/types";
-import HttpService from "../http/HttpService";
+import HttpService from "../http/HttpService/instance";
 import type { RootState } from "./index";
 
 export type ScenariosType = Scenario[];

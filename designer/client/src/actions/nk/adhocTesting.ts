@@ -1,8 +1,11 @@
 import { debounce } from "lodash";
 
-import type { SourceWithParametersTest } from "../../http/HttpService";
-import HttpService from "../../http/HttpService";
-import type { Expression, NodeValidationError, ScenarioGraph, TypingResult, VariableTypes } from "../../types";
+import HttpService from "../../http/HttpService/instance";
+import type { SourceWithParametersTest } from "../../http/HttpService/types";
+import type { TypingResult } from "../../types/definition";
+import type { Expression } from "../../types/node";
+import type { ScenarioGraph } from "../../types/scenarioGraph";
+import type { NodeValidationError, VariableTypes } from "../../types/validation";
 
 export interface GenericValidationData {
     validationErrors: NodeValidationError[];

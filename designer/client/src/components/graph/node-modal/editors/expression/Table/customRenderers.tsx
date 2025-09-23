@@ -2,8 +2,8 @@ import type { CustomRenderer } from "@glideapps/glide-data-grid";
 import { drawTextCell, GridCellKind } from "@glideapps/glide-data-grid";
 import type { EditListItem, Item } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
 
-import type { DatePickerCell } from "./customCells";
-import { DatePicker, isDatePickerCell } from "./customCells";
+import type { DatePickerCell } from "./customCells/DatePicker";
+import { DatePicker, isDatePickerCell } from "./customCells/DatePicker";
 
 declare module "@glideapps/glide-data-grid" {
     interface DataEditorProps {

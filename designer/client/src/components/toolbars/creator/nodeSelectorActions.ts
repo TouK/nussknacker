@@ -2,7 +2,8 @@ import type { g } from "jointjs";
 
 import type { PanelSide } from "../../../actions/nk/ui/panelSide";
 import type { AppAction } from "../../../store/storeHelpers";
-import type { Edge, NodeType } from "../../../types";
+import type { Edge } from "../../../types/edge";
+import type { NodeType } from "../../../types/node";
 import type { ToolBoxProps } from "./ToolBox";
 import { ComponentFilter } from "./ToolBox";
 

@@ -1,8 +1,8 @@
 import type { ModuleUrl } from "@touk/federated-component";
 
 import type { ToolbarsSide } from "../../reducers/toolbars";
-import type { ButtonsVariant } from "../toolbarComponents/toolbarButtons";
-import type { ToolbarButton } from "./buttons";
+import type { ButtonsVariant } from "../toolbarComponents/toolbarButtons/ToolbarButtons";
+import type { ToolbarButton } from "./buttons/types";
 
 export interface ToolbarConfig {
     id: string;

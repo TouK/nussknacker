@@ -5,13 +5,13 @@ import { DefaultComponents } from "@touk/window-manager";
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { editProperties } from "../../../../actions/nk";
+import { editProperties } from "../../../../actions/nk/editProperties";
 import { getScenario } from "../../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
-import type { NodeType } from "../../../../types";
-import type { WindowKind } from "../../../../windowManager";
-import { WindowContent } from "../../../../windowManager";
+import type { NodeType } from "../../../../types/node";
 import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
+import { WindowContent } from "../../../../windowManager/WindowContent";
+import type { WindowKind } from "../../../../windowManager/WindowKind";
 import { usePropertiesState } from "../../../modals/PropertiesDialog";
 import type { Scenario } from "../../../Process/types";
 import { DescriptionOnlyContent } from "../DescriptionOnlyContent";

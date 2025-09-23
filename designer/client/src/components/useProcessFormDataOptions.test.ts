@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
 
-import type { ScenarioParametersCombination } from "../http/HttpService";
-import { ProcessingMode } from "../http/HttpService";
+import type { ScenarioParametersCombination } from "../http/HttpService/types";
+import { ProcessingMode } from "../http/HttpService/types";
 import { useProcessFormDataOptions } from "./useProcessFormDataOptions";
 
 describe("useProcessFormDataOptions", () => {

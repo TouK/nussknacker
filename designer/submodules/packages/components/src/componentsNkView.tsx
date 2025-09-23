@@ -1,5 +1,7 @@
 import React, { memo } from "react";
-import { NkView, NkViewProps } from "./common";
+
+import type { NkViewProps } from "./common/nkView";
+import { NkView } from "./common/nkView";
 import { ComponentsRoutes } from "./components/componentsRoutes";
 
 const ComponentsNkView = ({ navigate }: NkViewProps) => (

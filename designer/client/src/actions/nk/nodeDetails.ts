@@ -3,8 +3,11 @@ import { debounce } from "lodash";
 import { applyIdFromFakeName } from "../../components/graph/node-modal/IdField";
 import { getNodeDetails } from "../../components/graph/node-modal/NodeDetailsContent/getNodeDetails";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
-import HttpService from "../../http/HttpService";
-import type { Edge, NodeId, NodeType, NodeValidationError, PropertiesType, TypingResult, UIParameter, VariableTypes } from "../../types";
+import HttpService from "../../http/HttpService/instance";
+import type { TypingResult, UIParameter } from "../../types/definition";
+import type { Edge } from "../../types/edge";
+import type { NodeId, NodeType, PropertiesType } from "../../types/node";
+import type { NodeValidationError, VariableTypes } from "../../types/validation";
 import type { ThunkAction } from "../reduxTypes";
 
 type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED"; validationData: ValidationData; nodeId: string };

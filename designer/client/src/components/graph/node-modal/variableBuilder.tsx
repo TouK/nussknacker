@@ -3,7 +3,8 @@ import React from "react";
 
 import type { RootState } from "../../../reducers";
 import { useAppSelector } from "../../../store/storeHelpers";
-import type { NodeType, NodeValidationError, VariableTypes } from "../../../types";
+import type { NodeType } from "../../../types/node";
+import type { NodeValidationError, VariableTypes } from "../../../types/validation";
 import MapVariable from "./MapVariable";
 import { getNodeExpressionType } from "./NodeDetailsContent/selectors";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";

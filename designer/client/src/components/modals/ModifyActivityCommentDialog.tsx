@@ -5,11 +5,11 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
-import httpService from "../../http/HttpService";
+import httpService from "../../http/HttpService/instance";
 import { getProcessName } from "../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
-import { PromptContent } from "../../windowManager";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
+import { PromptContent } from "../../windowManager/PromptContent";
 import CommentInput from "../comment/CommentInput";
 import type { ModifyActivityCommentMeta } from "../toolbars/activities/types";
 

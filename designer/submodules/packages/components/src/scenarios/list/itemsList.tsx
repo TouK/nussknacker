@@ -13,9 +13,10 @@ import React, { useCallback, useMemo } from "react";
 import { List as VList, WindowScroller } from "react-virtualized";
 import type { ListRowProps } from "react-virtualized/dist/es/List";
 
-import { ExternalLink, metricsHref, scenarioHref } from "../../common";
-import type { FilterRules } from "../../common/filters";
-import { useScrollParent } from "../../common/hooks";
+import type { FilterRules } from "../../common/filters/filterRules";
+import { useScrollParent } from "../../common/hooks/useScrollParent";
+import { ExternalLink } from "../../common/parentNavigationProvider";
+import { metricsHref, scenarioHref } from "../../common/scenarioHref";
 import { useScenariosFilterContext } from "../filters/common/useScenariosFilterContext";
 import type { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import { FirstLine, SecondLine } from "./item";

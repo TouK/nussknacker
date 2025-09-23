@@ -1,6 +1,7 @@
 import React from "react";
 
-import type { NodeType, NodeValidationError } from "../../../types";
+import type { NodeType } from "../../../types/node";
+import type { NodeValidationError } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
 import { IdField } from "./IdField";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";

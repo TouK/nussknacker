@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import { AiAssistantProvider } from "./components/aiAssistant/AiAssistantProvider";
-import { ErrorBoundary } from "./components/common/error-boundary";
+import { ErrorBoundary } from "./components/common/error-boundary/ErrorBoundary";
 import { GlideGridPortal } from "./components/graph/node-modal/editors/expression/Table/glideGridPortal";
 import { BASE_PATH } from "./config";
 import { BuildInfoProvider } from "./containers/BuildInfoProvider";

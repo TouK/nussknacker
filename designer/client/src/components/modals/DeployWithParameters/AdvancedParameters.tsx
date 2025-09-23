@@ -6,8 +6,8 @@ import { useTranslation } from "react-i18next";
 import { useLocalstorageState } from "rooks";
 import { clear, suspend } from "suspend-react";
 
-import type { NodesDeploymentData } from "../../../http/HttpService";
-import HttpService from "../../../http/HttpService";
+import HttpService from "../../../http/HttpService/instance";
+import type { NodesDeploymentData } from "../../../http/HttpService/types";
 import type { ActionNodeParameters } from "../../../types/action";
 import { Expandable } from "../../common/Expandable";
 import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";

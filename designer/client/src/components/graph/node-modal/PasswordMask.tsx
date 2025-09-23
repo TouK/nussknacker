@@ -10,7 +10,7 @@ type PasswordMaskProps = {
     timeout?: number;
 };
 
-export const PasswordMask = ({ children }: PasswordMaskProps) => {
+const PasswordMask = ({ children }: PasswordMaskProps) => {
     const { visible, setVisible, sanitize } = useTextSanitizer();
     return (
         <>
@@ -29,3 +29,5 @@ export const PasswordMask = ({ children }: PasswordMaskProps) => {
         </>
     );
 };
+
+export default PasswordMask;

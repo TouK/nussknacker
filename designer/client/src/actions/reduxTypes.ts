@@ -7,19 +7,16 @@ import type { SquashHistoryActions } from "../reducers/graph/historySquash";
 import type { ProcessActivityActions } from "../reducers/processActivity";
 import type { ScenariosActions } from "../reducers/scenarios";
 import type { ActionTypes } from "./actionTypes";
-import type {
-    CountsActions,
-    NodeActions,
-    NodeDetailsActions,
-    PropertiesActions,
-    ScenarioActions,
-    SelectionActions,
-    UpdateTestCapabilitiesAction,
-} from "./nk";
+import type { CountsActions } from "./nk/displayProcessCounts";
 import type { TestsActions } from "./nk/displayTestResults";
+import type { PropertiesActions } from "./nk/editProperties";
 import type { LiveDataActions } from "./nk/liveData";
+import type { NodeActions } from "./nk/node";
+import type { NodeDetailsActions } from "./nk/nodeDetails";
 import type { NotificationActions } from "./nk/notifications";
+import type { ScenarioActions, UpdateTestCapabilitiesAction } from "./nk/process";
 import type { GetScenarioActivitiesAction, UpdateScenarioActivitiesAction } from "./nk/scenarioActivities";
+import type { SelectionActions } from "./nk/selection";
 import type { ToolbarActions } from "./nk/toolbars";
 import type { UiActions } from "./nk/ui/uiActions";
 import type { UserSettingsActions } from "./nk/userSettings";

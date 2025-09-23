@@ -1,8 +1,8 @@
 import { curryRight } from "lodash";
 
-import type { StickyNotesSettings } from "../../actions/nk";
+import type { StickyNotesSettings } from "../../actions/nk/assignSettings";
 import { stickyNoteComponentGroup } from "../../components/toolbars/creator/StickyNoteComponent";
-import type { ComponentGroup } from "../../types";
+import type { ComponentGroup } from "../../types/component";
 
 export const appendStickyNotes = curryRight(
     (

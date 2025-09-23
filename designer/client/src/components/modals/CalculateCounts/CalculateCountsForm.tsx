@@ -3,7 +3,7 @@ import moment from "moment";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { State } from "./CalculateCountsDialog";
+import type { CountsState } from "./CalculateCountsDialog";
 import { CountsRanges } from "./CountsRanges";
 import type { PickerInput } from "./Picker";
 import { Picker } from "./Picker";
@@ -13,8 +13,8 @@ export function CalculateCountsForm({
     value,
     onChange,
 }: {
-    value: State;
-    onChange: React.Dispatch<React.SetStateAction<State>>;
+    value: CountsState;
+    onChange: React.Dispatch<React.SetStateAction<CountsState>>;
 }): JSX.Element {
     const { t } = useTranslation();
     const { from, to, refresh } = value;

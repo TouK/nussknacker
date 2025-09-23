@@ -3,12 +3,14 @@ import type React from "react";
 import { type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useDebounce } from "rooks";
 
-import { editNode, nodeValidationDynamicParametersLoaded } from "../../../../actions/nk";
+import { editNode } from "../../../../actions/nk/editNode";
+import { nodeValidationDynamicParametersLoaded } from "../../../../actions/nk/nodeDetails";
 import { PendingPromise } from "../../../../common/PendingPromise";
 import { useUserSettings } from "../../../../common/userSettings";
 import { getScenario } from "../../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
-import type { Edge, NodeType } from "../../../../types";
+import type { Edge } from "../../../../types/edge";
+import type { NodeType } from "../../../../types/node";
 import type { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
 import type { EditedNode } from "../IdField";

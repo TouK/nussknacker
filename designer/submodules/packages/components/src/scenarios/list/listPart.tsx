@@ -1,8 +1,9 @@
-import React from "react";
-import { filterRules } from "../filters";
-import { ItemsList } from "./itemsList";
-import { Scenario } from "nussknackerUi/components/Process/types";
 import { Box } from "@mui/material";
+import type { Scenario } from "nussknackerUi/components/Process/types";
+import React from "react";
+
+import { filterRules } from "../filters/filterRules";
+import { ItemsList } from "./itemsList";
 
 export interface RowType extends Scenario {
     hide?: boolean;

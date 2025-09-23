@@ -5,13 +5,14 @@ import { createSelector } from "reselect";
 
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import DialogMessages from "../../../../common/DialogMessages";
-import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
-import HttpService from "../../../../http/HttpService";
+import { getEventTrackingProps } from "../../../../containers/event-tracking/helpers";
+import { EventTrackingSelector } from "../../../../containers/event-tracking/use-register-tracking-events";
+import HttpService from "../../../../http/HttpService/instance";
 import { getProcessName } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getFeatureSettings, getLoggedUser } from "../../../../reducers/selectors/settings";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
-import { useWindows } from "../../../../windowManager";
+import { useWindows } from "../../../../windowManager/useWindows";
 import CommentContent from "../../../comment/CommentContent";
 import type { ActionMetadata, ActivityComment, ActivityType } from "../types";
 import { ActivityItemCommentModify } from "./ActivityItemCommentModify";

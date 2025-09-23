@@ -1,4 +1,4 @@
-import type { Component } from "../types";
+import type { Component } from "../types/component";
 
 export function fixBranchParametersTemplate({ node, branchParametersTemplate, ...component }: Component): Component {
     // This is a walk-around for having part of node template (branch parameters) outside of itself.

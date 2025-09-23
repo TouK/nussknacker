@@ -3,7 +3,9 @@ import { useTranslation } from "react-i18next";
 
 import type ProcessUtils from "../../../common/ProcessUtils";
 import { useUserSettings } from "../../../common/userSettings";
-import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
+import type { UIParameter } from "../../../types/definition";
+import type { NodeType } from "../../../types/node";
+import type { NodeValidationError } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
 import MockExpressionField from "./editors/expression/MockExpressionField";

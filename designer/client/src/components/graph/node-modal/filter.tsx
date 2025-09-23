@@ -1,7 +1,10 @@
 import React from "react";
 
-import type { Edge, NodeType, NodeValidationError, UIParameter, VariableTypes } from "../../../types";
-import { EdgeKind } from "../../../types";
+import type { UIParameter } from "../../../types/definition";
+import type { Edge } from "../../../types/edge";
+import { EdgeKind } from "../../../types/edge";
+import type { NodeType } from "../../../types/node";
+import type { NodeValidationError, VariableTypes } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
 import { EdgesDndComponent } from "./EdgesDndComponent";

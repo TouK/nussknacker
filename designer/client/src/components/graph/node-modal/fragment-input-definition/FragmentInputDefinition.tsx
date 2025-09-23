@@ -8,7 +8,7 @@ import { useAppSelector } from "../../../../store/storeHelpers";
 import type { MapVariableProps } from "../MapVariable";
 import { NodeCommonDetailsDefinition } from "../NodeCommonDetailsDefinition";
 import { FieldsSelect } from "./FieldsSelect";
-import type { FragmentInputParameter } from "./item";
+import type { FragmentInputParameter } from "./item/types";
 import { getDefaultFields } from "./item/utils";
 
 interface Props extends Omit<MapVariableProps<FragmentInputParameter>, "readOnly"> {

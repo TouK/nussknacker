@@ -4,7 +4,7 @@ import React from "react";
 import type { ErrorBoundaryProps } from "react-error-boundary";
 import { ErrorBoundary as ErrorBoundaryLibrary } from "react-error-boundary";
 
-import { FullPageErrorBoundaryFallbackComponent } from "./fallbackComponent";
+import { FullPageErrorBoundaryFallbackComponent } from "./fallbackComponent/FullPageErrorBoundaryFallbackComponent";
 
 export const messages = {
     unexpectedErrorTitle: () => i18next.t("unexpectedError.title", "An unexpected error occurred"),

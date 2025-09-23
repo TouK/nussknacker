@@ -1,6 +1,7 @@
-import { NuIcon } from "../../common";
-import React from "react";
 import { AccountTree } from "@mui/icons-material";
+import React from "react";
+
+import { NuIcon } from "../../common/nuIcon";
 import { TableCellAvatar } from "./tableCellAvatar";
 
 export function ComponentAvatar({ src, title, fragment }: { src: string; title?: string; fragment?: boolean }) {

@@ -2,13 +2,14 @@ import React, { useCallback, useState } from "react";
 
 import { useInitEffect } from "../../../../containers/hooks/useInitEffect";
 import { getFragmentNodesPrefix, useModalDetailsIfNeeded } from "../../../../containers/hooks/useModalDetailsIfNeeded";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/HttpService/instance";
 import { correctFetchedDetails } from "../../../../reducers/graph/correctFetchedDetails";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/getProcessDefinitionData";
 import { getProcessCounts } from "../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../store/storeHelpers";
-import type { FragmentNodeType } from "../../../../types";
-import { DialogErrorFallbackComponent, ErrorBoundary } from "../../../common/error-boundary";
+import type { FragmentNodeType } from "../../../../types/node";
+import { ErrorBoundary } from "../../../common/error-boundary/ErrorBoundary";
+import { DialogErrorFallbackComponent } from "../../../common/error-boundary/fallbackComponent/DialogErrorFallbackComponent";
 import type { Scenario } from "../../../Process/types";
 import { FragmentGraphPreview } from "../../fragmentGraph";
 import NodeUtils from "../../NodeUtils";

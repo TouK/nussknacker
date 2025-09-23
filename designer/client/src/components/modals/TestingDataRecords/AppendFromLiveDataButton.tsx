@@ -3,7 +3,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 import { NumericInput } from "../../graph/node-modal/editors/expression/NumericInput";
-import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip";
+import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
 import { StyledLoadingButton } from "../../graph/node-modal/node-action-buttons/StyledLoadingButton";
 
 interface Props {

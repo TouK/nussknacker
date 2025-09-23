@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import type { Scenario } from "src/components/Process/types";
 
 import NodeUtils from "../../components/graph/NodeUtils";
-import { useWindows } from "../../windowManager";
+import { useWindows } from "../../windowManager/useWindows";
 import { parseWindowsQueryParams } from "./useSearchQuery";
 
 export function getFragmentNodesPrefix(fragmentContent: Scenario) {

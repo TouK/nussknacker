@@ -6,8 +6,9 @@ import { useTranslation } from "react-i18next";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
-import type { Edge, VariableTypes } from "../../../types";
-import { EdgeKind } from "../../../types";
+import type { Edge } from "../../../types/edge";
+import { EdgeKind } from "../../../types/edge";
+import type { VariableTypes } from "../../../types/validation";
 import NodeUtils from "../NodeUtils";
 import type { EdgeTypeOption } from "./EdgeTypeSelect";
 import { EdgeTypeSelect } from "./EdgeTypeSelect";
@@ -17,7 +18,7 @@ import { ExpressionLang } from "./editors/expression/types";
 import type { FieldError } from "./editors/Validators";
 import { FieldsRow } from "./fragment-input-definition/FieldsRow";
 import { TypeSelect } from "./fragment-input-definition/TypeSelect";
-import { NodeValue } from "./node";
+import { NodeValue } from "./node/NodeValue";
 import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 
 interface Props {

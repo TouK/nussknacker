@@ -8,7 +8,7 @@ import CreatableSelect from "react-select/creatable";
 import { selectStyled } from "../../../../stylesheets/SelectStyled";
 import ValidationLabels from "../../../modals/ValidationLabels";
 import type { FieldError } from "../editors/Validators";
-import { NodeValue } from "../node";
+import { NodeValue } from "../node/NodeValue";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 
 function useCaptureEsc() {

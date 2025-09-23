@@ -5,8 +5,8 @@ import type { PropsWithChildren } from "react";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { WindowKind } from "../../windowManager";
-import { PromptContent } from "../../windowManager";
+import { PromptContent } from "../../windowManager/PromptContent";
+import type { WindowKind } from "../../windowManager/WindowKind";
 
 export interface InfoDialogData {
     text: string;

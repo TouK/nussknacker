@@ -4,12 +4,13 @@ import { useTranslation } from "react-i18next";
 
 import { getProcessDefinitionData } from "../../../../../../../reducers/selectors/getProcessDefinitionData";
 import { useAppSelector } from "../../../../../../../store/storeHelpers";
-import type { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
+import type { ReturnedType } from "../../../../../../../types/scenarioGraph";
+import type { NodeValidationError, VariableTypes } from "../../../../../../../types/validation";
 import EditableEditor from "../../../../editors/EditableEditor";
 import Input from "../../../../editors/field/Input";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { nodeValue } from "../../../../NodeDetailsContent/NodeTableStyled";
-import type { FieldName, onChangeType, ValueCompileTimeValidation } from "../../../item";
+import type { FieldName, onChangeType, ValueCompileTimeValidation } from "../../../item/types";
 import { fieldLabel } from "./StyledSettingsComponnets";
 
 interface ValidationFields extends ValueCompileTimeValidation {

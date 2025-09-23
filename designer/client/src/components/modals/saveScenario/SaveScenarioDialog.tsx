@@ -4,8 +4,8 @@ import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { PromptContent } from "../../../windowManager";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
+import { PromptContent } from "../../../windowManager/PromptContent";
 import { CommentInput } from "../../comment/CommentInput";
 import { useSaveScenario } from "./useSaveScenario";
 

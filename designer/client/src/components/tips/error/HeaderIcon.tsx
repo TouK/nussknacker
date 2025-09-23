@@ -3,7 +3,7 @@ import { useTheme } from "@mui/material";
 import { isEmpty } from "lodash";
 import React from "react";
 
-import type { ValidationErrors } from "../../../types";
+import type { ValidationErrors } from "../../../types/validation";
 import { styledIcon } from "../Styled";
 
 export const HeaderIcon = ({ errors }: { errors: ValidationErrors }) => {

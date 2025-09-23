@@ -6,19 +6,10 @@ import { StickyNoteDefinition, StickyNoteType } from "../components/graph/utils/
 import type { ScenarioLabelValidationError } from "../components/Labels/types";
 import type { RootState } from "../reducers";
 import { getScenario } from "../reducers/selectors/graph";
-import type {
-    ComponentDefinition,
-    NodeId,
-    NodeResults,
-    NodeType,
-    ReturnedType,
-    ScenarioGraph,
-    TypingResult,
-    UIParameter,
-    ValidationErrors,
-    ValidationResult,
-    VariableTypes,
-} from "../types";
+import type { TypingResult, UIParameter } from "../types/definition";
+import type { NodeId, NodeType } from "../types/node";
+import type { ComponentDefinition, ReturnedType, ScenarioGraph } from "../types/scenarioGraph";
+import type { NodeResults, ValidationErrors, ValidationResult, VariableTypes } from "../types/validation";
 
 class ProcessUtils {
     canExport = (state: RootState): boolean => {

@@ -4,7 +4,7 @@ import type { dia } from "jointjs";
 import { shapes, util } from "jointjs";
 
 import { blendLighten, getBorderColor, getNodeBorderColor } from "../../../containers/theme/helpers";
-import type { NodeType } from "../../../types";
+import type { NodeType } from "../../../types/node";
 import { getStringWidth } from "./element";
 import { getRoundedRectPath } from "./getRoundedRectPath";
 

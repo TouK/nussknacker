@@ -4,7 +4,7 @@ import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
-import { FiltersContextProvider } from "../../common";
+import { FiltersContextProvider } from "../../common/filters/filtersContext";
 import { ActiveFilters, getColorForName } from "../../scenarios/filters/activeFilters";
 import { useStatusDefinitions, useUserQuery } from "../../scenarios/useScenariosQuery";
 import { useComponentUsagesWithStatus } from "../useComponentsQuery";

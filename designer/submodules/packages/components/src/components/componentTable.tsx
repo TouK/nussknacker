@@ -1,14 +1,21 @@
-import { ComponentType } from "nussknackerUi/HttpService";
+import type { GridColDef } from "@mui/x-data-grid";
+import { GridActionsCellItem } from "@mui/x-data-grid";
+import type { ComponentType } from "nussknackerUi/HttpService";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { CategoriesCell, FilterLinkCell, NameCell, UsageCountCell } from "./cellRenderers";
-import { Columns, TableViewData, TableWrapper } from "./tableWrapper";
-import { ExternalLink, NuIcon } from "../common";
-import { filterRules } from "./filterRules";
-import { ComponentsFiltersModel } from "./filters";
-import { GridActionsCellItem, GridColDef } from "@mui/x-data-grid";
 import { useNavigate } from "react-router-dom";
+
+import { NuIcon } from "../common/nuIcon";
+import { ExternalLink } from "../common/parentNavigationProvider";
+import { CategoriesCell } from "./cellRenderers/categoriesCell";
+import { FilterLinkCell } from "./cellRenderers/filterLinkCell";
+import { NameCell } from "./cellRenderers/nameCell";
 import { ProcessingModesCell } from "./cellRenderers/processingModesCell";
+import { UsageCountCell } from "./cellRenderers/usageCountCell";
+import { filterRules } from "./filterRules";
+import type { ComponentsFiltersModel } from "./filters/componentsFiltersModel";
+import type { TableViewData } from "./tableWrapper";
+import { Columns, TableWrapper } from "./tableWrapper";
 
 export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element {
     const navigate = useNavigate();

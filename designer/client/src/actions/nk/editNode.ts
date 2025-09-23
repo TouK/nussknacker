@@ -5,13 +5,16 @@ import { getEdgesForNode } from "../../components/graph/node-modal/node/useNodeS
 import { replaceNodeData } from "../../components/graph/node-modal/NodeSwitcherUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import type { Scenario } from "../../components/Process/types";
-import HttpService from "../../http/HttpService";
+import HttpService from "../../http/HttpService/instance";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { updateAfterNodeDelete } from "../../reducers/graph/utils";
 import { isFragmentCreator } from "../../reducers/selectors/appendFragmentCreator";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { getGraph } from "../../reducers/selectors/graph";
-import type { Edge, NodeType, ScenarioGraph, ValidationResult } from "../../types";
+import type { Edge } from "../../types/edge";
+import type { NodeType } from "../../types/node";
+import type { ScenarioGraph } from "../../types/scenarioGraph";
+import type { ValidationResult } from "../../types/validation";
 import type { ThunkAction } from "../reduxTypes";
 import { calculateProcessAfterChange } from "./calculateProcessAfterChange";
 import { createFragment } from "./createFragment";

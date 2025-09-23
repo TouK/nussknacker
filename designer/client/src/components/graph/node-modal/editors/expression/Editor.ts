@@ -1,11 +1,13 @@
 import type { ForwardRefExoticComponent, LegacyRef, ReactNode } from "react";
 
-import type { VariableTypes } from "../../../../../types";
+import type { VariableTypes } from "../../../../../types/validation";
 import type { FieldError } from "../Validators";
 import { BoolEditor } from "./BoolEditor";
 import { CronEditor } from "./Cron/CronEditor";
-import { DateEditor, DateTimeEditor, TimeEditor } from "./DateTimeEditor";
-import { DictParameterEditor } from "./DictParameterEditor";
+import { DateEditor } from "./DateTimeEditor/DateEditor";
+import { DateTimeEditor } from "./DateTimeEditor/DateTimeEditor";
+import { TimeEditor } from "./DateTimeEditor/TimeEditor";
+import { DictParameterEditor } from "./DictParameterEditor/DictParameterEditor";
 import { DurationEditor } from "./Duration/DurationEditor";
 import { PeriodEditor } from "./Duration/PeriodEditor";
 import { FixedValuesEditor } from "./FixedValuesEditor";

@@ -1,6 +1,7 @@
-import { createFilterRules } from "../common";
-import { ComponentType } from "nussknackerUi/HttpService";
-import { ComponentsFiltersModel } from "./filters";
+import type { ComponentType } from "nussknackerUi/HttpService";
+
+import { createFilterRules } from "../common/filters/filterRules";
+import type { ComponentsFiltersModel } from "./filters/componentsFiltersModel";
 
 export const filterRules = createFilterRules<ComponentType, ComponentsFiltersModel>({
     NAME: (row, value) => {

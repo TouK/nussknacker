@@ -5,8 +5,9 @@ import React from "react";
 import { InfoTooltipClick } from "./InfoTooltipClick";
 import { InfoTooltipHover } from "./InfoTooltipHover";
 import { StyledInfo } from "./StyledInfo";
+import StyledInfoMarkdown from "./StyledInfoMarkdown";
 
-export interface Props {
+export interface InfoTooltipProps {
     title: string | undefined;
     variant?: "hover" | "click";
     children?: ReactElement;
@@ -22,17 +23,27 @@ export const InfoTooltip = ({
     className,
     customComponentsProps,
     enterDelay,
-}: Props) => {
+}: InfoTooltipProps) => {
     if (!title) {
         return children;
     }
 
     return variant === "hover" ? (
-        <InfoTooltipHover title={title} className={className} customComponentsProps={customComponentsProps} enterDelay={enterDelay}>
+        <InfoTooltipHover
+            title={<StyledInfoMarkdown>{title}</StyledInfoMarkdown>}
+            className={className}
+            customComponentsProps={customComponentsProps}
+            enterDelay={enterDelay}
+        >
             {children}
         </InfoTooltipHover>
     ) : (
-        <InfoTooltipClick title={title} className={className} customComponentsProps={customComponentsProps} enterDelay={enterDelay}>
+        <InfoTooltipClick
+            title={<StyledInfoMarkdown>{title}</StyledInfoMarkdown>}
+            className={className}
+            customComponentsProps={customComponentsProps}
+            enterDelay={enterDelay}
+        >
             {children}
         </InfoTooltipClick>
     );

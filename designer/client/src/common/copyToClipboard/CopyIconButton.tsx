@@ -2,7 +2,7 @@ import { ContentCopy, Done } from "@mui/icons-material";
 import { IconButton, styled } from "@mui/material";
 import React from "react";
 
-import { InfoTooltip } from "../../components/graph/node-modal/editors/InfoTooltip";
+import { InfoTooltip } from "../../components/graph/node-modal/editors/InfoTooltip/InfoTooltip";
 
 export const StyledIconButton = styled(IconButton)(({ theme }) => ({
     color: theme.palette.common.white,

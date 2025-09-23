@@ -1,14 +1,14 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { zoomIn } from "../../../../actions/nk";
+import { zoomIn } from "../../../../actions/nk/zoom";
 import Icon from "../../../../assets/img/toolbarButtons/zoom-in.svg";
 import { useAppDispatch } from "../../../../store/storeHelpers";
 import { useGraph } from "../../../graph/GraphContext";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
-export function ZoomInButton(props: ToolbarButtonProps) {
+function ZoomInButton(props: ToolbarButtonProps) {
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
     const graphGetter = useGraph();
@@ -25,3 +25,5 @@ export function ZoomInButton(props: ToolbarButtonProps) {
         />
     );
 }
+
+export default ZoomInButton;

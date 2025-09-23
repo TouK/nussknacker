@@ -4,7 +4,8 @@ import { dia } from "jointjs";
 import { shapes, util } from "jointjs";
 import { marked } from "marked";
 
-import type { NodeValidationError, StickyNoteNodeType } from "../../../../types";
+import type { StickyNoteNodeType } from "../../../../types/node";
+import type { NodeValidationError } from "../../../../types/validation";
 import { StickyNoteElement } from "../../StickyNoteElement";
 import { stickyNoteAdvancedBorder, stickyNoteAdvancedDefaultDeps } from "./advancedStickyNoteConfig";
 import { stickyNoteBasicBorder, stickyNoteBasicIcon, stickyNoteBasicDefaultDeps } from "./basicStickyNoteConfig";

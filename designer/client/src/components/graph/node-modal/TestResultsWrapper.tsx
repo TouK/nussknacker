@@ -6,7 +6,7 @@ import TestResultUtils from "../../../common/TestResultUtils";
 import { useUserSettings } from "../../../common/userSettings";
 import { getTestResults } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
-import type { NodeId } from "../../../types";
+import type { NodeId } from "../../../types/node";
 import { useInputOutputContext } from "./io/InputOutputContext";
 import TestErrors from "./tests/TestErrors";
 import TestResultsComponent from "./tests/TestResults";

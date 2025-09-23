@@ -4,7 +4,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import ProcessUtils from "../../../common/ProcessUtils";
-import type { ComponentDefinition, NodeType, NodeValidationError, ProcessDefinitionData } from "../../../types";
+import type { NodeType } from "../../../types/node";
+import type { ComponentDefinition, ProcessDefinitionData } from "../../../types/scenarioGraph";
+import type { NodeValidationError } from "../../../types/validation";
 import Field, { FieldType } from "./editors/field/Field";
 import type { FieldError } from "./editors/Validators";
 import { getValidationErrorsForField } from "./editors/Validators";

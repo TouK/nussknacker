@@ -1,4 +1,5 @@
-import type { Edge, ScenarioGraph } from "../../../types";
+import type { Edge } from "../../../types/edge";
+import type { ScenarioGraph } from "../../../types/scenarioGraph";
 
 export function isEdgeConnected(edge: Edge): boolean {
     return !!edge.from && !!edge.to;

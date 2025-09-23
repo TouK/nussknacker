@@ -4,13 +4,15 @@ import React, { useCallback, useMemo } from "react";
 
 import ProcessUtils from "../../../common/ProcessUtils";
 import { useUserSettings } from "../../../common/userSettings";
-import HttpService from "../../../http/HttpService";
+import HttpService from "../../../http/HttpService/instance";
 import type { RootState } from "../../../reducers";
 import { getConfiguredAdditionalComponents } from "../../../reducers/selectors/configuredAdditionalComponents";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
 import { getRemoteTenantId, getRemoteWebHost } from "../../../reducers/selectors/isCloudInstance";
 import { useAppSelector } from "../../../store/storeHelpers";
-import type { Edge, NodeType, NodeValidationError } from "../../../types";
+import type { Edge } from "../../../types/edge";
+import type { NodeType } from "../../../types/node";
+import type { NodeValidationError } from "../../../types/validation";
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox";
 import { DebugNodeInspector } from "./NodeDetailsContent/DebugNodeInspector";
 import { NodeTable } from "./NodeDetailsContent/NodeTable";

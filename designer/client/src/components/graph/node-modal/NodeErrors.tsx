@@ -3,8 +3,8 @@ import DangerousIcon from "@mui/icons-material/Dangerous";
 import { FormHelperText } from "@mui/material";
 import React from "react";
 
-import type { NodeValidationError } from "../../../types";
-import { InfoTooltip } from "./editors/InfoTooltip";
+import type { NodeValidationError } from "../../../types/validation";
+import { InfoTooltip } from "./editors/InfoTooltip/InfoTooltip";
 
 export default function NodeErrors(props: { errors: NodeValidationError[]; message: string }): JSX.Element {
     const { errors = [], message: errorMessage } = props;

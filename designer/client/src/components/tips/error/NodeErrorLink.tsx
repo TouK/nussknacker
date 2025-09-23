@@ -5,7 +5,7 @@ import type { MouseEventHandler } from "react";
 import React from "react";
 import { NavLink } from "react-router-dom";
 
-import type { NodeId } from "../../../types";
+import type { NodeId } from "../../../types/node";
 import { ErrorLinkStyle } from "./styled";
 
 export const NodeErrorLink = (props: { onClick: MouseEventHandler<HTMLAnchorElement>; nodeId: NodeId; disabled?: boolean }) => {

@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 
-import type { NodeValidationError } from "../../../types";
 import type { ActionParameterConfig, ActionParameterName } from "../../../types/action";
+import type { NodeValidationError } from "../../../types/validation";
 import { default as EditableEditor } from "../../graph/node-modal/editors/EditableEditor";
 import type { ExpressionObj } from "../../graph/node-modal/editors/expression/types";
 import { ExpressionLang } from "../../graph/node-modal/editors/expression/types";

@@ -5,13 +5,13 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { testScenarioWithDataRecords } from "../../../actions/nk/displayTestResults";
-import HttpService from "../../../http/HttpService";
+import HttpService from "../../../http/HttpService/instance";
 import { getProcessName, getScenarioGraph, getTestCapabilities, getTestingDataRecords } from "../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../reducers/selectors/settings";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
-import type { WindowKind } from "../../../windowManager";
-import { WindowContent } from "../../../windowManager";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
+import { WindowContent } from "../../../windowManager/WindowContent";
+import type { WindowKind } from "../../../windowManager/WindowKind";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";

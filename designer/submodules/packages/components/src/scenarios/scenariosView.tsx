@@ -5,8 +5,8 @@ import { useInViewRef, useMutationObserverRef } from "rooks";
 
 import FragmentIcon from "../assets/icons/fragment.svg";
 import ScanarioIcon from "../assets/icons/scenario.svg";
-import { FiltersContextProvider } from "../common";
-import { FiltersPart } from "./filters";
+import { FiltersContextProvider } from "../common/filters/filtersContext";
+import { FiltersPart } from "./filters/filtersPart";
 import type { ScenariosFiltersModel } from "./filters/scenariosFiltersModel";
 import { ListPart } from "./list/listPart";
 import { TablePart } from "./list/tablePart";

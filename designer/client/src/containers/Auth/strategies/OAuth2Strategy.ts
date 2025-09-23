@@ -6,7 +6,7 @@ import { parse } from "query-string";
 
 import SystemUtils from "../../../common/SystemUtils";
 import { BASE_PATH } from "../../../config";
-import HttpService from "../../../http/HttpService";
+import HttpService from "../../../http/HttpService/instance";
 import type { OAuth2Settings } from "../../../reducers/settings";
 import { AuthErrorCodes } from "../AuthErrorCodes";
 import type { Strategy, StrategyConstructor } from "../Strategy";

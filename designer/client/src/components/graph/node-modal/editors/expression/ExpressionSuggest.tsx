@@ -2,11 +2,11 @@ import "ace-builds/src-noconflict/ace";
 import { isEmpty, isEqual } from "lodash";
 import React, { useEffect, useRef, useState } from "react";
 
-import HttpService from "../../../../../http/HttpService";
+import HttpService from "../../../../../http/HttpService/instance";
 import { getProcessDefinitionData } from "../../../../../reducers/selectors/getProcessDefinitionData";
 import { getProcessingType } from "../../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../../store/storeHelpers";
-import type { VariableTypes } from "../../../../../types";
+import type { VariableTypes } from "../../../../../types/validation";
 import { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
 import type { CustomCompleterAceEditorProps } from "./CustomCompleterAceEditor";
 import { CustomCompleterAceEditor } from "./CustomCompleterAceEditor";

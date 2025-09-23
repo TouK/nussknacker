@@ -3,7 +3,9 @@ import type { ReactNode } from "react";
 import React, { useCallback } from "react";
 
 import type { NodeResultsForContext } from "../../../../../common/TestResultUtils";
-import type { NodeType, UIParameter, VariableTypes } from "../../../../../types";
+import type { UIParameter } from "../../../../../types/definition";
+import type { NodeType } from "../../../../../types/node";
+import type { VariableTypes } from "../../../../../types/validation";
 import { useDiffMark } from "../../PathsToMark";
 import ExpressionTestResults from "../../tests/ExpressionTestResults";
 import EditableEditor from "../EditableEditor";

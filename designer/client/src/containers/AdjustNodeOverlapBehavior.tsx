@@ -1,10 +1,10 @@
 import type { dia } from "jointjs";
 import { useEffect } from "react";
 
-import { layoutChanged } from "../actions/nk";
 import { findFreeSpaceForNode } from "../actions/nk/findFreeSpaceForNode";
+import { layoutChanged } from "../actions/nk/ui/layout";
 import { useGraph } from "../components/graph/GraphContext";
-import { isModelElement, isModelOrStickyNote } from "../components/graph/GraphPartialsInTS";
+import { isModelElement, isModelOrStickyNote } from "../components/graph/GraphPartialsInTS/cellUtils";
 import { Events } from "../components/graph/types";
 import { useAppDispatch } from "../store/storeHelpers";
 

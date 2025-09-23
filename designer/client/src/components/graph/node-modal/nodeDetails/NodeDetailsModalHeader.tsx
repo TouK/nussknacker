@@ -7,7 +7,7 @@ import nodeAttributes from "../../../../assets/json/nodeAttributes.json";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/getProcessDefinitionData";
 import { useAppSelector } from "../../../../store/storeHelpers";
-import type { NodeType } from "../../../../types";
+import type { NodeType } from "../../../../types/node";
 import { ComponentIcon } from "../../../toolbars/creator/ComponentIcon";
 import { IconModalTitle } from "./IconModalTitle";
 import { ModalHeader, WindowHeaderIconStyled } from "./NodeDetailsStyled";

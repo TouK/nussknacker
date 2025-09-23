@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 
-import httpService from "../../../../../../../http/HttpService";
+import httpService from "../../../../../../../http/HttpService/instance";
 import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../../../../store/storeHelpers";
-import type { ReturnedType } from "../../../../../../../types";
+import type { ReturnedType } from "../../../../../../../types/scenarioGraph";
 import type { Option } from "../../../FieldsSelect";
 
 interface Props {

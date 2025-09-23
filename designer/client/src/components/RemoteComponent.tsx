@@ -4,7 +4,8 @@ import React, { useMemo } from "react";
 
 import SystemUtils from "../common/SystemUtils";
 import { NuThemeProvider } from "../containers/theme/nuThemeProvider";
-import { useWindows, WindowKind } from "../windowManager";
+import { useWindows } from "../windowManager/useWindows";
+import { WindowKind } from "../windowManager/WindowKind";
 import LoaderSpinner from "./spinner/Spinner";
 
 export const loadExternalReactModule = getFederatedComponentLoader({ Wrapper: NuThemeProvider });

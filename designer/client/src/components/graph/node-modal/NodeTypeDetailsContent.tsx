@@ -2,12 +2,14 @@ import type { SetStateAction } from "react";
 import React from "react";
 
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
-import type { Edge, NodeType, NodeValidationError } from "../../../types";
+import type { Edge } from "../../../types/edge";
+import type { NodeType } from "../../../types/node";
+import type { NodeValidationError } from "../../../types/validation";
 import { CustomNode } from "./customNode";
 import { EnricherProcessor } from "./enricherProcessor";
 import { Filter } from "./filter";
 import FragmentInputDefinition from "./fragment-input-definition/FragmentInputDefinition";
-import type { FragmentInputParameter } from "./fragment-input-definition/item";
+import type { FragmentInputParameter } from "./fragment-input-definition/item/types";
 import { FragmentInput } from "./fragmentInput";
 import FragmentOutputDefinition from "./FragmentOutputDefinition";
 import { JoinNode } from "./joinNode";

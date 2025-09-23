@@ -3,10 +3,10 @@ import { useTranslation } from "react-i18next";
 
 import Icon from "../../../../assets/img/toolbarButtons/JSON.svg";
 import ProcessUtils from "../../../../common/ProcessUtils";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/HttpService/instance";
 import { getProcessName, getProcessVersionId, getScenarioGraph } from "../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../store/storeHelpers";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 export default function ExportButton(props: ToolbarButtonProps) {

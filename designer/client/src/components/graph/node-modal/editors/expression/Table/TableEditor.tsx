@@ -26,7 +26,7 @@ import type { EditorProps, ExtendedEditor } from "../Editor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { editorsParameters } from "../editorsParameters";
 import { CellMenu, DeleteColumnMenuItem, DeleteRowMenuItem, ResetColumnWidthMenuItem } from "./CellMenu";
-import { isDatePickerCell } from "./customCells";
+import { isDatePickerCell } from "./customCells/DatePicker";
 import { customRenderers } from "./customRenderers";
 import { useErrorHighlights } from "./errorHighlights";
 import { Sizer } from "./Sizer";

@@ -5,7 +5,7 @@ import { EventSourceParserStream } from "eventsource-parser/stream";
 import type { ReactNode } from "react";
 import React from "react";
 
-import httpService from "../../http/HttpService";
+import httpService from "../../http/HttpService/instance";
 
 //TODO: Find out how to pass threadId to the AiAssistant and use it instead of this variable
 const ThreadIdManager = {

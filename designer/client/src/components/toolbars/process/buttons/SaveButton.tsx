@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import Icon from "../../../../assets/img/toolbarButtons/save.svg";
 import { useUserSettings } from "../../../../common/userSettings";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/HttpService/instance";
 import {
     getProcessName,
     getProcessUnsavedNewName,
@@ -13,9 +13,10 @@ import {
 } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useAppSelector } from "../../../../store/storeHelpers";
-import { useWindows, WindowKind } from "../../../../windowManager";
+import { useWindows } from "../../../../windowManager/useWindows";
+import { WindowKind } from "../../../../windowManager/WindowKind";
 import { useSaveScenario } from "../../../modals/saveScenario/useSaveScenario";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 type SavePresetValue = "save" | "SaveWithComment";

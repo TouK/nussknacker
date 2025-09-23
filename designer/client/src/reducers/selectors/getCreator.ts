@@ -1,5 +1,5 @@
 import { isAggregate } from "../../components/graph/node-modal/isAggregate";
-import type { NodeType } from "../../types";
+import type { NodeType } from "../../types/node";
 
 const prefix = `㊙️㊙️`;
 const suffix = `㊙️㊙️`;

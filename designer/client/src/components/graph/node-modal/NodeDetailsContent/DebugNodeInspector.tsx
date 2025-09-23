@@ -1,7 +1,7 @@
 import React from "react";
 import { chromeDark, Inspector } from "react-inspector";
 
-import type { NodeType } from "../../../../types";
+import type { NodeType } from "../../../../types/node";
 
 export function DebugNodeInspector({ node }: { node: NodeType }) {
     return (

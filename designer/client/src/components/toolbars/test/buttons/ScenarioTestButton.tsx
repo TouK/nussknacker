@@ -13,13 +13,16 @@ import {
 } from "../../../../reducers/selectors/graph";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
-import { useWindows, WindowKind } from "../../../../windowManager";
+import { useWindows } from "../../../../windowManager/useWindows";
+import { WindowKind } from "../../../../windowManager/WindowKind";
 import { getHasPendingChanges } from "../../../graph/node-modal/node/useEditState";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
 import type { TestingData, TestingViewParams } from "../../../modals/TestingDataRecords/Dialog";
-import { ButtonsVariant, ToolbarButton, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
+import { ButtonsVariant, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons/ToolbarButtons";
 import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer";
-import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
+import type { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
+import type { PropsOfButton } from "../../../toolbarSettings/buttons/types";
 
 export type ScenarioTestButtonProps = {
     type: CustomButtonTypes.scenarioTest;
