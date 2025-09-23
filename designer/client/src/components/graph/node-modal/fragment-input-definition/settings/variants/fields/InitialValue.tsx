@@ -7,8 +7,8 @@ import { DictParameterEditor } from "../../../../editors/expression/DictParamete
 import { SpelEditor } from "../../../../editors/expression/SpelEditor";
 import { ExpressionLang } from "../../../../editors/expression/types";
 import type { FieldError } from "../../../../editors/Validators";
-import { FixedValuesType } from "../../../item";
-import type { FixedValuesOption, FragmentInputParameter, onChangeType } from "../../../item";
+import { FixedValuesType } from "../../../item/types";
+import type { FixedValuesOption, FragmentInputParameter, onChangeType } from "../../../item/types";
 import { TypeSelect } from "../../../TypeSelect";
 import type { Option } from "../../../TypeSelect";
 import { SettingLabelStyled } from "./StyledSettingsComponnets";

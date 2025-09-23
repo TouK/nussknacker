@@ -15,7 +15,7 @@ import { useDelayedEnterAction } from "../../../../../../toolbars/scenarioDetail
 import { SpelEditor } from "../../../../editors/expression/SpelEditor";
 import { ExpressionLang } from "../../../../editors/expression/types";
 import { getValidationErrorsForField, mandatoryValueValidator, uniqueValueValidator } from "../../../../editors/Validators";
-import type { FieldName, FixedValuesOption, onChangeType } from "../../../item";
+import type { FieldName, FixedValuesOption, onChangeType } from "../../../item/types";
 import { useSettings } from "../../SettingsProvider";
 import { ListItems } from "./ListItems";
 import { SettingLabelStyled } from "./StyledSettingsComponnets";

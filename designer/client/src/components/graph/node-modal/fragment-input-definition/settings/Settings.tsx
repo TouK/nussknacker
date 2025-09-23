@@ -1,8 +1,8 @@
 import React from "react";
 
 import type { NodeValidationError, VariableTypes } from "../../../../../types/validation";
-import type { onChangeType, FragmentInputParameter } from "../item";
-import { isPermittedTypeVariant, toFullRefClazzName } from "../item";
+import type { onChangeType, FragmentInputParameter } from "../item/types";
+import { isPermittedTypeVariant, toFullRefClazzName } from "../item/types";
 import { DefaultVariant, PermittedTypeVariant } from "./variants";
 
 interface Settings {

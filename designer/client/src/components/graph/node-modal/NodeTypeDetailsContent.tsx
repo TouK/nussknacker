@@ -9,7 +9,7 @@ import { CustomNode } from "./customNode";
 import { EnricherProcessor } from "./enricherProcessor";
 import { Filter } from "./filter";
 import FragmentInputDefinition from "./fragment-input-definition/FragmentInputDefinition";
-import type { FragmentInputParameter } from "./fragment-input-definition/item";
+import type { FragmentInputParameter } from "./fragment-input-definition/item/types";
 import { FragmentInput } from "./fragmentInput";
 import FragmentOutputDefinition from "./FragmentOutputDefinition";
 import { JoinNode } from "./joinNode";
