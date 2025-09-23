@@ -86,7 +86,7 @@ trait BaseFlinkDeploymentManagerSpec
     val process      = SampleProcess.prepareProcessWithEventGeneratorSource(processName)
     val deploymentId = DeploymentId("with-event-generator")
 
-    val configuredMaxNumbersOfRecords = 20
+    val configuredMaxNumbersOfRecords = 15
     LiveDataCollectingListener.createListenerFor(
       processIdWithName = ProcessIdWithName(processId, processName),
       deploymentIdOpt = None,
@@ -139,27 +139,33 @@ trait BaseFlinkDeploymentManagerSpec
           sample.variables shouldBe Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson))
         }
 
-        val startInvocationResults = liveDataSamples.expressionEvaluationResults
+        val startNodeExpressionEvaluationResults = liveDataSamples.expressionEvaluationResults
           .get(NodeId("start"))
           .value
-        // We reach maxNumbersOfRecords because there are 2 samples for each transition (one for value and one for Event time
-        startInvocationResults.size shouldBe configuredMaxNumbersOfRecords
-        forAll(startInvocationResults.grouped(2).toList) { expressionEvaluationResults =>
+        val valueEvaluationResults     = startNodeExpressionEvaluationResults.filter(_.name == "value")
+        val eventTimeEvaluationResults = startNodeExpressionEvaluationResults.filter(_.name == "Event time")
+        // We can exceed `configuredMaxNumbersOfRecords`, because:
+        // - `start` node has 2 expressions: `value` and `Event time`
+        // - the limit (configuredMaxNumbersOfRecords) is applied separately for each variable
+        startNodeExpressionEvaluationResults.size shouldBe configuredMaxNumbersOfRecords * 2
+        valueEvaluationResults.size shouldBe configuredMaxNumbersOfRecords
+        eventTimeEvaluationResults.size shouldBe configuredMaxNumbersOfRecords
+
+        forAll(valueEvaluationResults) { expressionEvaluationResults =>
           inside(expressionEvaluationResults) {
-            case ExpressionEvaluationResult(valueContextId, _, "value", valueJson) :: ExpressionEvaluationResult(
-                  eventTimeContextId,
-                  _,
-                  "Event time",
-                  _
-                ) :: Nil =>
+            case ExpressionEvaluationResult(valueContextId, _, "value", valueJson) =>
               valueContextId.scenarioName shouldBe processName
               valueContextId.originatingNodeId shouldBe NodeId("start")
               valueContextId.taskId shouldBe 0
+              valueJson shouldBe Json.obj("pretty" -> "abrakadabra".asJson)
+          }
+        }
+        forAll(eventTimeEvaluationResults) { expressionEvaluationResults =>
+          inside(expressionEvaluationResults) {
+            case ExpressionEvaluationResult(eventTimeContextId, _, "Event time", _) =>
               eventTimeContextId.scenarioName shouldBe processName
               eventTimeContextId.originatingNodeId shouldBe NodeId("start")
               eventTimeContextId.taskId shouldBe 0
-              valueJson shouldBe Json.obj("pretty" -> "abrakadabra".asJson)
-
           }
         }
         val endSendInvocationResults = liveDataSamples.expressionEvaluationResults
