@@ -4,8 +4,9 @@ import React, { useMemo } from "react";
 
 import { SANITIZED_PASSWORD_TAG_NAME } from "../components/graph/node-modal/MarkdownStyled";
 import { useTextSanitizer } from "../components/graph/node-modal/useTextSanitizer";
-import { CopyIconButton, useCopyClipboard } from "./copyToClipboard";
+import { CopyIconButton } from "./copyToClipboard/CopyIconButton";
 import { ShowPasswordsButton } from "./copyToClipboard/ShowPasswordsButton";
+import { useCopyClipboard } from "./copyToClipboard/useCopyToClipboard";
 import { InlineButtonsWrapper } from "./InlineButtonsWrapper";
 import { SyntaxHighlighter } from "./SyntaxHighlighter";
 
