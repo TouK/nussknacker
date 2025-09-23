@@ -6,7 +6,7 @@ import Dropzone from "react-dropzone";
 import { ButtonProgress } from "../../toolbars/test/buttons/ButtonProgress";
 import { ButtonMenu } from "./ButtonMenu";
 import { ButtonRoot } from "./ButtonRoot";
-import type { ToolbarButtonProps } from "./index";
+import type { ToolbarButtonProps } from "./types";
 
 const ToolbarButtonComponent = forwardRef<HTMLButtonElement, ToolbarButtonProps>(function _ToolbarButtonComponent(props, ref) {
     if ("isLoading" in props) {

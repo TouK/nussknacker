@@ -6,7 +6,7 @@ import { hasOneVersion } from "../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager/useWindows";
 import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsDialog";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 type Props = ToolbarButtonProps;

@@ -6,7 +6,7 @@ import { hasError, hasPropertiesErrors } from "../../../../reducers/selectors/gr
 import { useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../windowManager/WindowKind";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 export function useOpenProperties() {

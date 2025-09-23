@@ -6,7 +6,7 @@ import Creatable from "react-select/creatable";
 import { useUserSettings } from "../../common/userSettings";
 import type { UserSettings } from "../../reducers/userSettings";
 import type { ToolbarPanelProps } from "../toolbarComponents/ButtonsToolbar";
-import { ToolbarButtons } from "../toolbarComponents/toolbarButtons";
+import { ToolbarButtons } from "../toolbarComponents/toolbarButtons/ToolbarButtons";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 
 export function UserSettingsPanel({ buttonsVariant, children, ...props }: ToolbarPanelProps): JSX.Element {

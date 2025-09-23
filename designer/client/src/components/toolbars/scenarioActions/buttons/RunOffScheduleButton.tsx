@@ -17,7 +17,7 @@ import type { ToggleProcessActionModalData } from "../../../modals/DeployProcess
 import ProcessStateUtils from "../../../Process/ProcessStateUtils";
 import type { ProcessName, ProcessVersionId } from "../../../Process/types";
 import { PredefinedActionName } from "../../../Process/types";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 export default function RunOffScheduleButton(props: ToolbarButtonProps) {

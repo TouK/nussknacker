@@ -16,7 +16,7 @@ import { useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../windowManager/WindowKind";
 import { useSaveScenario } from "../../../modals/saveScenario/useSaveScenario";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 type SavePresetValue = "save" | "SaveWithComment";
