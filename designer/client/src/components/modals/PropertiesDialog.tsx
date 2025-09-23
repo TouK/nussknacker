@@ -22,7 +22,7 @@ import { getPropertiesErrors, getReadOnly } from "../graph/node-modal/node/selec
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../graph/node-modal/nodeDetails/SubHeader";
 import { getProcessName, getScenarioPropertiesConfig } from "../graph/node-modal/NodeDetailsContent/selectors";
-import { PropertiesForm } from "../properties";
+import { PropertiesForm } from "../properties/PropertiesForm";
 
 export const usePropertiesState = () => {
     const currentProperties = useAppSelector(getProperties);

@@ -25,7 +25,7 @@ import { NodeDetailsContent } from "../graph/node-modal/NodeDetailsContent";
 import { PathsToMarkProvider } from "../graph/node-modal/PathsToMark";
 import { StickyNoteType } from "../graph/utils/stickyNotesUtils";
 import type { ProcessVersionType } from "../Process/types";
-import { PropertiesForm } from "../properties";
+import { PropertiesForm } from "../properties/PropertiesForm";
 import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
 
 const initState: State = {
