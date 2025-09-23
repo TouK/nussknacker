@@ -13,7 +13,7 @@ import { useWindows } from "../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../windowManager/WindowKind";
 import type { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
 import type { ProcessName, ProcessVersionId } from "../../../Process/types";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 type CancelPresetValue = "cancel" | "cancelWithComment";

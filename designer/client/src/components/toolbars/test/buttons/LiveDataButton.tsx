@@ -12,7 +12,7 @@ import {
     isReadyForLiveData,
 } from "../../../../reducers/selectors/getLiveData";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 // adjusted by eye for a good looking indicator with paused 100%

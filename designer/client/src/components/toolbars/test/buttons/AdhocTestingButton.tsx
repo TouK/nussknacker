@@ -9,7 +9,7 @@ import { WindowKind } from "../../../../windowManager/WindowKind";
 import type { AdhocTestingData, AdhocTestingViewParams } from "../../../modals/AdhocTesting/AdhocTestingDialog";
 import { useAdhocTestingAction } from "../../../modals/AdhocTesting/useAdhocTestingAction";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
 
 export type AdhocTestingButtonProps = {

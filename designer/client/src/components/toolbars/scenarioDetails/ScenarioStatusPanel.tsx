@@ -5,7 +5,7 @@ import React, { memo, useRef, useState } from "react";
 
 import { useDragHandler } from "../../common/dndItems/DragHandle";
 import type { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
-import { ButtonsVariant, ToolbarButtons } from "../../toolbarComponents/toolbarButtons";
+import { ButtonsVariant, ToolbarButtons } from "../../toolbarComponents/toolbarButtons/ToolbarButtons";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { ScenarioStatusContent } from "./ScenarioStatusContent";
 

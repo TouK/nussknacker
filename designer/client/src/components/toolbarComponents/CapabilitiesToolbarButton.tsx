@@ -2,8 +2,8 @@ import React from "react";
 
 import { getCapabilities } from "../../reducers/selectors/other";
 import { useAppSelector } from "../../store/storeHelpers";
-import type { ToolbarButtonProps } from "./toolbarButtons";
-import { ToolbarButton } from "./toolbarButtons";
+import { ToolbarButton } from "./toolbarButtons/ToolbarButton";
+import type { ToolbarButtonProps } from "./toolbarButtons/types";
 
 interface Props {
     write?: boolean;

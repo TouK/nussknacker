@@ -5,7 +5,7 @@ import { zoomIn } from "../../../../actions/nk/zoom";
 import Icon from "../../../../assets/img/toolbarButtons/zoom-in.svg";
 import { useAppDispatch } from "../../../../store/storeHelpers";
 import { useGraph } from "../../../graph/GraphContext";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 export function ZoomInButton(props: ToolbarButtonProps) {
