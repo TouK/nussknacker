@@ -5,7 +5,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import ProcessUtils from "../../../common/ProcessUtils";
 import type { UIParameter } from "../../../types/definition";
 import { PlaceholderIconFallbackComponent } from "../../common/error-boundary/fallbackComponent/PlaceholderIconFallbackComponent";
-import { InfoTooltip } from "./editors/InfoTooltip";
+import { InfoTooltip } from "./editors/InfoTooltip/InfoTooltip";
 import { findParamDefinitionByName } from "./parameterHelpers";
 
 export const StyledNodeTip = styled(InfoTooltip)({
