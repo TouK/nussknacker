@@ -3,7 +3,8 @@ import React from "react";
 import type { NodeValidationError, VariableTypes } from "../../../../../types/validation";
 import type { onChangeType, FragmentInputParameter } from "../item/types";
 import { isPermittedTypeVariant, toFullRefClazzName } from "../item/types";
-import { DefaultVariant, PermittedTypeVariant } from "./variants";
+import { DefaultVariant } from "./variants/DefaultVariant";
+import { PermittedTypeVariant } from "./variants/PermittedTypeVariant";
 
 interface Settings {
     item: FragmentInputParameter;
