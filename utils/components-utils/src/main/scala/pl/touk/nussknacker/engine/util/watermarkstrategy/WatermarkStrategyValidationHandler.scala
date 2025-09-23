@@ -4,12 +4,7 @@ import pl.touk.nussknacker.engine.api.{LazyParameter, NodeId, Params}
 import pl.touk.nussknacker.engine.api.Params.ParamExtractionResult
 import pl.touk.nussknacker.engine.api.VariableConstants.InputVariableName
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{
-  DefinedEagerParameter,
-  DefinedLazyParameter,
-  NodeDependencyValue,
-  SingleInputDynamicComponent
-}
+import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
@@ -125,16 +120,16 @@ trait WatermarkStrategyValidationHandler extends SingleInputDynamicComponent {
   ): ContextTransformationDefinition = {
     case step @ TransformationStep(
           _ :+
-          ((`eventTimeParamName`, _: DefinedLazyParameter)) :+
-          ((`maxOutOfOrdernessParamName`, _: DefinedEagerParameter)) :+
-          ((`idlenessParamName`, _: DefinedEagerParameter)),
+          ((`eventTimeParamName`, _)) :+
+          ((`maxOutOfOrdernessParamName`, _)) :+
+          ((`idlenessParamName`, _)),
           _
         ) =>
       resultAfterWatermarkStrategyParameters(inputContext, dependencies, step.parameters, step.state)
     case step @ TransformationStep(
           _ :+
-          ((`eventTimeParamName`, _: DefinedLazyParameter)) :+
-          ((`maxOutOfOrdernessParamName`, _: DefinedEagerParameter)),
+          ((`eventTimeParamName`, _)) :+
+          ((`maxOutOfOrdernessParamName`, _)),
           _
         ) =>
       resultAfterWatermarkStrategyParameters(inputContext, dependencies, step.parameters, step.state)
