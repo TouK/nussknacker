@@ -2,7 +2,7 @@ import type React from "react";
 import type { DropEvent } from "react-dropzone";
 
 import type { ButtonProgressProps } from "../../toolbars/test/buttons/ButtonProgress";
-import type { BuiltinButtonTypes, CustomButtonTypes } from "../../toolbarSettings/buttons";
+import type { BuiltinButtonTypes, CustomButtonTypes } from "../../toolbarSettings/buttons/buttonsMap";
 
 type ButtonProps = React.DetailedHTMLProps<React.ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>;
 

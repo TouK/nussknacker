@@ -1,5 +1,4 @@
-import { BuiltinButtonTypes } from "../../components/toolbarSettings/buttons/BuiltinButtonTypes";
-import { CustomButtonTypes } from "../../components/toolbarSettings/buttons/CustomButtonTypes";
+import { BuiltinButtonTypes, CustomButtonTypes } from "../../components/toolbarSettings/buttons/buttonsMap";
 import type { TrackEventParams } from "./use-event-tracking";
 import type { EventTrackingSelectorType, EventTrackingType } from "./use-register-tracking-events";
 import { EventTrackingSelector } from "./use-register-tracking-events";

@@ -20,7 +20,7 @@ function adjustProgress(percent: number) {
     return Math.min(percent * 3 + 15, 100);
 }
 
-export const LiveDataButton = memo(function LiveDataButton(props: ToolbarButtonProps) {
+const LiveDataButton = memo(function LiveDataButton(props: ToolbarButtonProps) {
     const dispatch = useAppDispatch();
     const { t } = useTranslation();
 
@@ -73,3 +73,5 @@ function toggleLiveData(): ThunkAction {
         dispatch(action);
     };
 }
+
+export default LiveDataButton;

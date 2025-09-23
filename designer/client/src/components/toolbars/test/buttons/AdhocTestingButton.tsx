@@ -10,7 +10,8 @@ import type { AdhocTestingData, AdhocTestingViewParams } from "../../../modals/A
 import { useAdhocTestingAction } from "../../../modals/AdhocTesting/useAdhocTestingAction";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
-import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
+import type { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
+import type { PropsOfButton } from "../../../toolbarSettings/buttons/types";
 
 export type AdhocTestingButtonProps = {
     type: CustomButtonTypes.adhocTesting;

@@ -8,7 +8,7 @@ import { useGraph } from "../../../graph/GraphContext";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
-export function ZoomOutButton(props: ToolbarButtonProps) {
+function ZoomOutButton(props: ToolbarButtonProps) {
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
     const graphGetter = useGraph();
@@ -25,3 +25,5 @@ export function ZoomOutButton(props: ToolbarButtonProps) {
         />
     );
 }
+
+export default ZoomOutButton;
