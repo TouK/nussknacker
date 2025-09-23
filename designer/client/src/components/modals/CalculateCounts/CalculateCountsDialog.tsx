@@ -16,20 +16,20 @@ import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeD
 import { CalculateCountsForm } from "./CalculateCountsForm";
 import type { PickerInput } from "./Picker";
 
-export type State = {
+export type CountsState = {
     from: PickerInput;
     to: PickerInput;
     refresh?: number | null;
 };
 
-const initState = (): State => {
+const initState = (): CountsState => {
     return {
         from: moment().startOf("day"),
         to: moment().endOf("day"),
     };
 };
 
-export function CountsDialog({ children, ...props }: PropsWithChildren<WindowContentProps>): JSX.Element {
+function CountsDialog({ children, ...props }: PropsWithChildren<WindowContentProps>): JSX.Element {
     const { t } = useTranslation();
     const [state, setState] = useState(initState);
     const processName = useAppSelector(getProcessName);
@@ -93,3 +93,5 @@ export function CountsDialog({ children, ...props }: PropsWithChildren<WindowCon
         </WindowContent>
     );
 }
+
+export default CountsDialog;
