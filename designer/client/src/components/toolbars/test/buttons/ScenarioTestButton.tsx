@@ -21,7 +21,8 @@ import type { TestingData, TestingViewParams } from "../../../modals/TestingData
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import { ButtonsVariant, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons/ToolbarButtons";
 import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer";
-import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
+import type { CustomButtonTypes } from "../../../toolbarSettings/buttons/CustomButtonTypes";
+import type { PropsOfButton } from "../../../toolbarSettings/buttons/TOOLBAR_BUTTONS_MAP";
 
 export type ScenarioTestButtonProps = {
     type: CustomButtonTypes.scenarioTest;

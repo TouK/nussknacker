@@ -1,8 +1,8 @@
 import { mapValues } from "lodash";
 import React from "react";
 
-import type { ToolbarButton } from "./buttons";
 import { TOOLBAR_BUTTONS_MAP } from "./buttons";
+import type { ToolbarButton } from "./buttons/types";
 import { getToolbarComponent, getToolbarHorizontalComponent } from "./getToolbarComponent";
 import type { ToolbarConfig } from "./types";
 
