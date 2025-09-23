@@ -2,7 +2,7 @@ import { darken, Stack, styled, Typography } from "@mui/material";
 import type { JSX } from "react";
 import React, { useMemo } from "react";
 
-import { SANITIZED_PASSWORD_TAG_NAME } from "../components/graph/node-modal/MarkdownStyled";
+import { SANITIZED_PASSWORD_TAG_NAME } from "../components/graph/node-modal/customTagNames";
 import { useTextSanitizer } from "../components/graph/node-modal/useTextSanitizer";
 import { CopyIconButton } from "./copyToClipboard/CopyIconButton";
 import { ShowPasswordsButton } from "./copyToClipboard/ShowPasswordsButton";
@@ -91,3 +91,5 @@ export const CodeBlock = ({ className, children, node }: Props) => {
         </CodeBlockContainer>
     );
 };
+
+export default CodeBlock;
