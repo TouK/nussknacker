@@ -7,7 +7,7 @@ import PasteButton from "../../toolbars/edit/buttons/PasteButton";
 import RedoButton from "../../toolbars/edit/buttons/RedoButton";
 import UndoButton from "../../toolbars/edit/buttons/UndoButton";
 import ArchiveButton from "../../toolbars/process/buttons/ArchiveButton";
-import { ArchiveToggleButton } from "../../toolbars/process/buttons/ArchiveToggleButton";
+import ArchiveToggleButton from "../../toolbars/process/buttons/ArchiveToggleButton";
 import CompareButton from "../../toolbars/process/buttons/CompareButton";
 import ExportButton from "../../toolbars/process/buttons/ExportButton";
 import ImportButton from "../../toolbars/process/buttons/ImportButton";
@@ -26,14 +26,14 @@ import FromFileButton from "../../toolbars/test/buttons/FromFileButton";
 import GenerateAndTestButton from "../../toolbars/test/buttons/GenerateAndTestButton";
 import GenerateButton from "../../toolbars/test/buttons/GenerateButton";
 import HideButton from "../../toolbars/test/buttons/HideButton";
-import { LiveDataButton } from "../../toolbars/test/buttons/LiveDataButton";
+import LiveDataButton from "../../toolbars/test/buttons/LiveDataButton";
 import ScenarioTestButton from "../../toolbars/test/buttons/ScenarioTestButton";
-import { ResetViewButton } from "../../toolbars/view/buttons/ResetViewButton";
-import { ZoomInButton } from "../../toolbars/view/buttons/ZoomInButton";
-import { ZoomOutButton } from "../../toolbars/view/buttons/ZoomOutButton";
+import ResetViewButton from "../../toolbars/view/buttons/ResetViewButton";
+import ZoomInButton from "../../toolbars/view/buttons/ZoomInButton";
+import ZoomOutButton from "../../toolbars/view/buttons/ZoomOutButton";
 import { BuiltinButtonTypes } from "./BuiltinButtonTypes";
 import { CustomButtonTypes } from "./CustomButtonTypes";
-import { LinkButton } from "./LinkButton";
+import LinkButton from "./LinkButton";
 import type { ToolbarButton, ToolbarButtonTypes } from "./types";
 
 export type PropsOfButton<T> = ToolbarButton & {
