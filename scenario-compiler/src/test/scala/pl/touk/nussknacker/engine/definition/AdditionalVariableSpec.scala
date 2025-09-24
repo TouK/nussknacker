@@ -108,7 +108,9 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
 
   }
 
-  class IncorrectService2 extends SourceFactory with SingleInputDynamicComponent[Source] with UnboundedStreamComponent {
+  class IncorrectService2 extends SourceFactory with SingleInputDynamicComponent with UnboundedStreamComponent {
+
+    override type Implementation = Source
 
     override type State = Nothing
 

@@ -5,7 +5,7 @@ import type { FormEventHandler, PropsWithChildren } from "react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { InputWithClear } from "../../common";
+import { InputWithClear } from "../../common/forms/inputWithClear";
 import { useScenariosFilterContext } from "./common/useScenariosFilterContext";
 
 const preventSubmit: FormEventHandler<HTMLFormElement> = (e) => e.preventDefault();

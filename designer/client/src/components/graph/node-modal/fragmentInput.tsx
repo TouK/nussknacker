@@ -1,7 +1,10 @@
 import React, { useCallback } from "react";
 
 import type ProcessUtils from "../../../common/ProcessUtils";
-import type { NodeType, NodeValidationError, ProcessDefinitionData, UIParameter } from "../../../types";
+import type { UIParameter } from "../../../types/definition";
+import type { NodeType } from "../../../types/node";
+import type { ProcessDefinitionData } from "../../../types/scenarioGraph";
+import type { NodeValidationError } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
 import { IdField } from "./IdField";

@@ -8,6 +8,8 @@ import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source, Topic
 import pl.touk.nussknacker.engine.kafka.{serialization, KafkaComponentsConfig}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalToJsonFormatter
 
+import java.time.Instant
+
 trait KafkaLiveDataProvider[K, V] extends LiveDataProvider { self: Source =>
 
   protected val topics: NonEmptyList[TopicName.ForSource]
@@ -30,9 +32,9 @@ trait KafkaLiveDataProvider[K, V] extends LiveDataProvider { self: Source =>
       .map(deserializationSchema.deserialize)
       .map { consumerRecord =>
         val variables = contextInitializer.convertToInitialVariables(consumerRecord)
-        // TODO: Respect Event time parameter
         val timestamp = Option(consumerRecord.timestamp())
           .filterNot(_ => consumerRecord.timestampType() == TimestampType.NO_TIMESTAMP_TYPE)
+          .map(Instant.ofEpochMilli)
         DataRecord(variables.variables, timestamp)
       }
     DataRecords(records)

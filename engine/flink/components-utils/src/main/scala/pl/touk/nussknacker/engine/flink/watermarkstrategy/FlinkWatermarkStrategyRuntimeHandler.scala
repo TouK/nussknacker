@@ -90,7 +90,6 @@ object FlinkWatermarkStrategyRuntimeHandler {
     )
   }
 
-  // TODO: use this WatermarkStrategy also in scenario testing mechanism, when common format is used
   def watermarkStrategy(watermarkStrategyOptions: WatermarkStrategyOptions): WatermarkStrategy[ContextWithEventTime] = {
     val strategyWithLateness =
       WatermarkStrategy.forBoundedOutOfOrderness[ContextWithEventTime](
@@ -103,14 +102,15 @@ object FlinkWatermarkStrategyRuntimeHandler {
     strategyWithOptIdleness.withTimestampAssigner(EventTimeTimestampAssigner)
   }
 
-  private object EventTimeTimestampAssigner extends SerializableTimestampAssigner[ContextWithEventTime] {
+  object EventTimeTimestampAssigner extends SerializableTimestampAssigner[ContextWithEventTime] {
 
     override def extractTimestamp(context: ContextWithEventTime, recordTimestamp: Long): Long =
       context.eventTime
         .map(_.toEpochMilli)
-        // MinValue means that even time is not configured in upstream
+        // MinValue means that event time is not configured in upstream
         .orElse(Option(recordTimestamp).filterNot(_ == Long.MinValue))
-        // It is better produce watermarks in streaming than not. Thanks to that things such as aggregations will work
+        // It is better to produce watermarks based on current time in streaming than not produce at all.
+        // Thanks to that things such as aggregations will work somehow
         .getOrElse(System.currentTimeMillis())
 
   }

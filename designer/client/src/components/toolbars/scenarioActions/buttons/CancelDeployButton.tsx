@@ -1,18 +1,19 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { loadProcessState } from "../../../../actions/nk";
+import { loadProcessState } from "../../../../actions/nk/process";
 import Icon from "../../../../assets/img/toolbarButtons/stop.svg";
 import { useUserSettings } from "../../../../common/userSettings";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/HttpService/instance";
 import { getProcessName, getProcessVersionId, isCancelPossible } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
-import { useWindows, WindowKind } from "../../../../windowManager";
+import { useWindows } from "../../../../windowManager/useWindows";
+import { WindowKind } from "../../../../windowManager/WindowKind";
 import type { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
 import type { ProcessName, ProcessVersionId } from "../../../Process/types";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 type CancelPresetValue = "cancel" | "cancelWithComment";

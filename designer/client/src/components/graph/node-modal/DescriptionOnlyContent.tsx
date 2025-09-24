@@ -3,7 +3,7 @@ import { get } from "lodash";
 import React from "react";
 
 import { DescriptionView } from "../../../containers/DescriptionView";
-import type { NodeType, PropertiesType } from "../../../types";
+import type { NodeType, PropertiesType } from "../../../types/node";
 import { FieldType } from "./editors/field/Field";
 import { rowAceEditor } from "./NodeDetailsContent/NodeTableStyled";
 import { NodeField } from "./NodeField";

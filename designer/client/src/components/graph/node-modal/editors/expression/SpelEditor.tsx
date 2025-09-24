@@ -4,8 +4,8 @@ import React, { forwardRef, useCallback, useMemo } from "react";
 import type ReactAce from "react-ace/lib/ace";
 import { useTranslation } from "react-i18next";
 
-import type { VariableTypes } from "../../../../../types";
-import { InfoTooltip } from "../InfoTooltip";
+import type { VariableTypes } from "../../../../../types/validation";
+import { InfoTooltip } from "../InfoTooltip/InfoTooltip";
 import type { ParamType } from "../types";
 import type { FieldError } from "../Validators";
 import type { OnValueChange, SimpleEditor } from "./Editor";

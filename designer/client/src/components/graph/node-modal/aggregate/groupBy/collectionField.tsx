@@ -4,7 +4,7 @@ import type ReactAce from "react-ace/lib/ace";
 import { useArrayState, useFocusWithin } from "rooks";
 
 import { getBorderColor } from "../../../../../containers/theme/helpers";
-import type { VariableTypes } from "../../../../../types";
+import type { VariableTypes } from "../../../../../types/validation";
 import type { ValueFieldProps } from "../../../../valueField";
 import { rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import { Editor } from "./editor";

@@ -1,5 +1,5 @@
-import type HttpService from "../../../../../http/HttpService";
-import type { VariableTypes } from "../../../../../types";
+import type HttpService from "../../../../../http/HttpService/instance";
+import type { VariableTypes } from "../../../../../types/validation";
 import type { ExpressionLang } from "./types";
 
 type Arguments<T> = T extends (...args: infer A) => any ? A : never;

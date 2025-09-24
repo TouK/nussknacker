@@ -18,7 +18,9 @@ const NodeDetails = loadable(() => import("../components/graph/node-modal/node/N
 const DescriptionDialog = loadable(() => import("../components/graph/node-modal/node/DescriptionDialog"), {
     fallback: <LoaderSpinner show />,
 });
-const CountsDialog = loadable(() => import("../components/modals/CalculateCounts"), { fallback: <LoaderSpinner show /> });
+const CountsDialog = loadable(() => import("../components/modals/CalculateCounts/CalculateCountsDialog"), {
+    fallback: <LoaderSpinner show />,
+});
 const CompareVersionsDialog = loadable(() => import("../components/modals/CompareVersionsDialog"), {
     fallback: <LoaderSpinner show />,
 });

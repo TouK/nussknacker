@@ -3,7 +3,7 @@ import { isEqual } from "lodash";
 import React, { Fragment } from "react";
 
 import { useAppSelector } from "../../../store/storeHelpers";
-import type { Parameter } from "../../../types";
+import type { Parameter } from "../../../types/node";
 import { getDynamicParametersChanged } from "./NodeDetailsContent/selectors";
 import type { ParameterExpressionFieldProps } from "./ParameterExpressionField";
 import { ParametersListField } from "./parametersListField";

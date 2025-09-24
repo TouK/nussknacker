@@ -8,7 +8,7 @@ import React, { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDebouncedValue } from "rooks";
 
-import type { FilterRules } from "../common/filters";
+import type { FilterRules } from "../common/filters/filterRules";
 import { CustomPagination } from "./customPagination";
 import { useComponentsFilterContext } from "./filters/useComponentsFilterContext";
 

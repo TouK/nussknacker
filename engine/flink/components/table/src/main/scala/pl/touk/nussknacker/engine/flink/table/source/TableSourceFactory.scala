@@ -32,20 +32,21 @@ import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory.{
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory._
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyValidationHandler
 
 class TableSourceFactory(
     flinkDataDefinition: FlinkDataDefinition,
     testDataGenerationMode: TestDataGenerationMode
-) extends SingleInputDynamicComponent[Source]
+) extends SingleInputDynamicComponent
     with WatermarkStrategyValidationHandler
     with SourceFactory
     with LazyLogging {
 
   override def allowedProcessingModes: Component.AllowedProcessingModes =
     SetOf(ProcessingMode.UnboundedStream, ProcessingMode.BoundedStream)
+
+  override type Implementation = Source
 
   override type State = TableSourceFactoryState
 
@@ -85,23 +86,24 @@ class TableSourceFactory(
       )
     case TransformationStep(
           (`tableNameParamName`, DefinedEagerParameter(tableName: String, _)) :: Nil,
-          state @ Some(AvailableTables(tableDefinitions, _))
+          Some(AvailableTables(tableDefinitions, env))
         ) =>
       val selectedTable = getSelectedTableUnsafe(tableName, tableDefinitions)
       val initializer = new BasicContextInitializer(
         selectedTable.schema.toSourceRowDataType.getLogicalType.toTypingResult
       )
+      val nextState = Some(SelectedTable(selectedTable, env))
       NextParameters(
         prepareWatermarkStrategyParameters(
-          initializer.validationContext(inputContext).getOrElse(ValidationContext.empty)
+          initializer.validationContext(inputContext).getOrElse(ValidationContext.empty),
+          selectedTable.singleColumnWithTimezoneAwareRowtime
+            .map(_.getName)
+            .map(c => s"#input['$c']".spel)
+            .getOrElse("".spel)
         ),
-        state = state
+        state = nextState
       )
   }
-
-  // The null expression means that it will be used the default logic that uses upstream even time if is defined or
-  // System.currentTimeMills otherwise.
-  override protected def eventTimeDefaultValueExpression: Expression = "".spel
 
   override protected def resultAfterWatermarkStrategyParameters(
       inputContext: ValidationContext,
@@ -109,29 +111,19 @@ class TableSourceFactory(
       parameters: List[(ParameterName, DefinedSingleParameter)],
       state: Option[TableSourceFactoryState]
   )(implicit nodeId: NodeId): TransformationStepResult = {
-    val tableName = parameters
-      .collectFirst { case (`tableNameParamName`, DefinedEagerParameter(value: String, _)) =>
-        value
-      }
-      .getOrElse {
-        throw new IllegalStateException(
-          s"[$tableNameParamName] parameter is missing from parameters [$parameters] after watermark strategy parameters step"
-        )
-      }
-    val availableTables = state match {
-      case Some(availableTables: AvailableTables) =>
-        availableTables
+    val selectedTableStateValue = state match {
+      case Some(selectedTableState: SelectedTable) =>
+        selectedTableState
       case other =>
         throw new IllegalStateException(s"Unexpected state [$other] after watermark strategy parameters step")
     }
-    val selectedTable = getSelectedTableUnsafe(tableName, availableTables.tableDefinitions)
     val initializer = new BasicContextInitializer(
-      selectedTable.schema.toSourceRowDataType.getLogicalType.toTypingResult
+      selectedTableStateValue.tableDefinition.schema.toSourceRowDataType.getLogicalType.toTypingResult
     )
     FinalResults.forValidation(
       inputContext,
       errors = Nil,
-      state = Some(SelectedTable(selectedTable, availableTables.env))
+      state = Some(selectedTableStateValue)
     )(
       initializer.validationContext
     )

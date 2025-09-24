@@ -4,7 +4,7 @@ import React from "react";
 
 import { PendingPromise } from "../../../../common/PendingPromise";
 import SystemUtils from "../../../../common/SystemUtils";
-import { ErrorBoundary } from "../../../../components/common/error-boundary";
+import { ErrorBoundary } from "../../../../components/common/error-boundary/ErrorBoundary";
 import { PlainRemoteComponent } from "../../../../components/RemoteComponent";
 import type { RemoteAuthenticationSettings } from "../../../../reducers/settings";
 import { AuthErrorCodes } from "../../AuthErrorCodes";

@@ -9,9 +9,9 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
 
-object HidingVariablesTransformer
-    extends CustomStreamTransformer
-    with SingleInputDynamicComponent[FlinkCustomStreamTransformation] {
+object HidingVariablesTransformer extends CustomStreamTransformer with SingleInputDynamicComponent {
+
+  override type Implementation = FlinkCustomStreamTransformation
 
   override type State = Unit
 

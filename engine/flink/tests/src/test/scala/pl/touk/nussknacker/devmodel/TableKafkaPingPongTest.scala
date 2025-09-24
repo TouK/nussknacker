@@ -111,7 +111,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
   private lazy val tableKafkaComponentsConfig: Config = ConfigFactory.parseString(kafkaTableConfig)
 
   override lazy val additionalComponents: List[ComponentDefinition] =
-    new FlinkTableDataSourceComponentProvider().create(tableKafkaComponentsConfig)
+    FlinkTableDataSourceComponentProvider.create(tableKafkaComponentsConfig)
 
   test("should ping-pong with sql kafka source and DataStream kafka sink") {
     val topics = createAndRegisterTopicConfig(topicNaming1, simpleTypesSchema)

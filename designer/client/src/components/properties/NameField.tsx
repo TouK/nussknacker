@@ -2,7 +2,7 @@ import { isEmpty } from "lodash";
 import type { ComponentProps } from "react";
 import React from "react";
 
-import type { NodeValidationError } from "../../types";
+import type { NodeValidationError } from "../../types/validation";
 import Field, { FieldType } from "../graph/node-modal/editors/field/Field";
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
 import { FieldLabel } from "../graph/node-modal/FieldLabel";

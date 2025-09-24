@@ -3,7 +3,7 @@ import { v4 as uuid4 } from "uuid";
 
 import type { RootState } from "../../../reducers";
 import { useAppSelector } from "../../../store/storeHelpers";
-import type { Field } from "../../../types";
+import type { Field } from "../../../types/node";
 import { ExpressionLang } from "./editors/expression/types";
 import Map from "./editors/map/Map";
 import type { MapVariableProps } from "./MapVariable";

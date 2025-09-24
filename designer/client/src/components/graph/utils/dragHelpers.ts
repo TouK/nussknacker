@@ -1,8 +1,8 @@
 import type { dia, g } from "jointjs";
 
-import type { NodeType } from "../../../types";
+import type { NodeType } from "../../../types/node";
 import { getNodeData } from "../Graph";
-import { isModelElement } from "../GraphPartialsInTS";
+import { isModelElement } from "../GraphPartialsInTS/cellUtils";
 import { rafThrottle } from "../rafThrottle";
 
 function replaceAllowed(cell: dia.Cell, node?: NodeType) {

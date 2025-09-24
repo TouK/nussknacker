@@ -5,7 +5,7 @@ import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDef
 import { getScenarioGraph } from "../../reducers/selectors/graph";
 import { useAppSelector } from "../../store/storeHelpers";
 import type { Graph } from "./Graph";
-import { isModelElement } from "./GraphPartialsInTS";
+import { isModelElement } from "./GraphPartialsInTS/cellUtils";
 import NodeUtils from "./NodeUtils";
 import { Events } from "./types";
 

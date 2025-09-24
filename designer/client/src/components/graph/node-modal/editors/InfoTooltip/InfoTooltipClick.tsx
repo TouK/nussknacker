@@ -1,13 +1,13 @@
 import { ClickAwayListener, Tooltip } from "@mui/material";
 import type { TooltipProps } from "@mui/material/Tooltip/Tooltip";
-import type { PropsWithChildren } from "react";
+import type { PropsWithChildren, ReactNode } from "react";
 import React from "react";
 
-import { StyledInfoChildrenWrapper, StyledInfoMarkdown } from "./StyledInfo";
+import { StyledInfoChildrenWrapper } from "./StyledInfo";
 import { useTooltip } from "./useTooltip";
 
 interface Props {
-    title: string;
+    title: ReactNode;
     className?: string;
     customComponentsProps?: TooltipProps["componentsProps"];
     enterDelay?: number;
@@ -34,11 +34,7 @@ export const InfoTooltipClick = ({ title, className, customComponentsProps, ente
     return (
         <ClickAwayListener onClickAway={handleClickAway}>
             <Tooltip
-                title={
-                    <div ref={tooltipRef}>
-                        <StyledInfoMarkdown>{title}</StyledInfoMarkdown>
-                    </div>
-                }
+                title={<div ref={tooltipRef}>{title}</div>}
                 placement={"bottom-start"}
                 arrow
                 open={tooltipOpen}

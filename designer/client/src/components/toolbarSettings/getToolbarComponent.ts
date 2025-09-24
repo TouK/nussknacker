@@ -5,7 +5,7 @@ import { lazy } from "react";
 import TipsPanel from "../tips/Tips";
 import type { ToolbarPanelProps } from "../toolbarComponents/ButtonsToolbar";
 import { ButtonsToolbar } from "../toolbarComponents/ButtonsToolbar";
-import { ActivitiesPanel } from "../toolbars/activities";
+import { ActivitiesPanel } from "../toolbars/activities/ActivitiesPanel";
 import { CreatorPanel } from "../toolbars/creator/CreatorPanel";
 import ProcessActions from "../toolbars/scenarioActions/ProcessActions";
 import ScenarioDetails from "../toolbars/scenarioDetails/ScenarioDetails";

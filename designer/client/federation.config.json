@@ -2,11 +2,11 @@
     "name": "nussknackerUi",
     "exposes": {
         "./config": "./src/config",
-        "./HttpService": "./src/http/HttpService/index",
+        "./HttpService": "./src/http/HttpService/module",
         "./Auth": "./src/containers/Auth/AuthInitializer",
         "./Icon": "./src/components/UrlIcon",
         "./themeHelpers": "./src/containers/theme/helpers",
-        "./eventTracking": "./src/containers/event-tracking/index",
+        "./eventTracking": "./src/containers/event-tracking/module",
         "./DateUtils": "./src/common/DateUtils",
         "./nuThemeProvider": "./src/containers/theme/nuThemeProvider"
     }

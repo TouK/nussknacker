@@ -3,9 +3,14 @@ package pl.touk.nussknacker.defaultmodel
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import io.circe.Json
 import org.scalatest.{LoneElement, OptionValues}
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.VariableConstants.InputVariableName
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
+import pl.touk.nussknacker.engine.api.definition.AdditionalVariableProvidedInRuntime
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.TopicName.ForSource
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.table.FlinkTableDataSourceComponentProvider
 import pl.touk.nussknacker.engine.flink.util.test.FlinkNodeCompiler.FlinkNodeCompilerExt
@@ -17,12 +22,13 @@ import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypes
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
-import pl.touk.nussknacker.engine.util.test.TestNodeCompiler
+import pl.touk.nussknacker.engine.util.test.{TestDataRecord, TestNodeCompiler, TestScenarioRunner}
 import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyValidationHandler
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
-import java.time.{Instant, ZoneId, ZoneOffset}
+import java.time.{Instant, ZoneOffset}
 import java.time.format.DateTimeFormatter
+import scala.jdk.CollectionConverters._
 
 class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues with LoneElement {
 
@@ -73,7 +79,7 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
        |""".stripMargin
 
   override lazy val additionalComponents: List[ComponentDefinition] =
-    new FlinkTableDataSourceComponentProvider().create(ConfigFactory.parseString(kafkaTableConfig))
+    FlinkTableDataSourceComponentProvider.create(ConfigFactory.parseString(kafkaTableConfig))
 
   private val givenKey  = "foo-key"
   private val givenData = 1
@@ -84,8 +90,155 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
     .withExtraComponents(additionalComponents)
     .build()
 
+  test("should respect timestamp configured by a user during scenario testing") {
+    val inputTopic = "input-topic-custom-event-time-scenario-testing"
+
+    // We create topics to skip validation problems
+    kafkaClient.createTopic(inputTopic, 1)
+    val givenFirstEventTimestamp  = 6000000000L
+    val givenSecondEventTimestamp = 6000000000L + 60 * 1000 - 1
+    val givenThirdEventTimestamp  = 6000000000L + 60 * 1000
+
+    val scenario =
+      ScenarioBuilder
+        .streaming("custom-event-time-scenario-testing")
+        .parallelism(1)
+        .source(
+          "start",
+          "kafka",
+          KafkaUniversalComponentTransformer.topicParamName.value       -> Expression.spel(s"'$inputTopic'"),
+          KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.JSON.toString}'".spel,
+          KafkaUniversalComponentTransformer.dataSampleParamName.value  -> dataSampleExpression,
+          WatermarkStrategyValidationHandler.eventTimeParamName.value   -> "#input.timestamp".spel,
+        )
+        .customNode(
+          "aggregate",
+          "sum",
+          "aggregate-sliding",
+          "groupBy"      -> "#input.key".spel,
+          "aggregateBy"  -> "#input.data".spel,
+          "aggregator"   -> "#AGG.sum".spel,
+          "windowLength" -> "T(java.time.Duration).parse('PT1M')".spel,
+        )
+        .emptySink(
+          "end",
+          TestScenarioRunner.testResultSink,
+          // TODO: { timestamp: #eventTimestamp, sum: #sum } <- allow to return event timestamp as well
+          "value" -> s"#sum".spel,
+        )
+
+    val testData = List(
+      TestDataRecord(
+        NodeId("start"),
+        Map("input" -> prepareMapRecord(givenFirstEventTimestamp)),
+        upstreamTimestamp = Some(Instant.ofEpochMilli(123)) // Will be overridden by user-specified event time
+      ),
+      TestDataRecord(
+        NodeId("start"),
+        Map("input" -> prepareMapRecord(givenSecondEventTimestamp)),
+        upstreamTimestamp = Some(Instant.ofEpochMilli(123)) // Will be overridden by user-specified event time
+      ),
+      TestDataRecord(
+        NodeId("start"),
+        Map("input" -> prepareMapRecord(givenThirdEventTimestamp)),
+        upstreamTimestamp = Some(Instant.ofEpochMilli(123)) // Will be overridden by user-specified event time
+      )
+    )
+    val testResults = testScenarioRunner.runWithTestRecords(scenario, testData).validValue
+
+    testResults.successes shouldBe List(
+      givenData,
+      givenData * 2,
+      givenData
+    )
+  }
+
+  test(
+    "should use upstream timestamp if event timestamp is configured as null expression by a user during scenario testing"
+  ) {
+    val inputTopic = "input-topic-upstream-timestamp-scenario-testing"
+
+    // We create topics to skip validation problems
+    kafkaClient.createTopic(inputTopic, 1)
+    val givenFirstEventTimestamp  = 6000000000L
+    val givenSecondEventTimestamp = 6000000000L + 60 * 1000 - 1
+    val givenThirdEventTimestamp  = 6000000000L + 60 * 1000
+
+    val scenario =
+      ScenarioBuilder
+        .streaming("custom-event-time-scenario-testing")
+        .parallelism(1)
+        .source(
+          "start",
+          "kafka",
+          KafkaUniversalComponentTransformer.topicParamName.value       -> Expression.spel(s"'$inputTopic'"),
+          KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.JSON.toString}'".spel,
+          KafkaUniversalComponentTransformer.dataSampleParamName.value  -> dataSampleExpression,
+          WatermarkStrategyValidationHandler.eventTimeParamName.value -> "".spel, // null expression means upstream timestamp
+        )
+        .customNode(
+          "aggregate",
+          "sum",
+          "aggregate-sliding",
+          "groupBy"      -> "#input.key".spel,
+          "aggregateBy"  -> "#input.data".spel,
+          "aggregator"   -> "#AGG.sum".spel,
+          "windowLength" -> "T(java.time.Duration).parse('PT1M')".spel,
+        )
+        .emptySink(
+          "end",
+          TestScenarioRunner.testResultSink,
+          // TODO: { timestamp: #eventTimestamp, sum: #sum } <- allow to return event timestamp as well
+          "value" -> s"#sum".spel,
+        )
+
+    val testData = List(
+      TestDataRecord(
+        NodeId("start"),
+        Map("input" -> prepareMapRecord(123)),
+        upstreamTimestamp = Some(Instant.ofEpochMilli(givenFirstEventTimestamp))
+      ),
+      TestDataRecord(
+        NodeId("start"),
+        Map("input" -> prepareMapRecord(123)),
+        upstreamTimestamp = Some(Instant.ofEpochMilli(givenSecondEventTimestamp))
+      ),
+      TestDataRecord(
+        NodeId("start"),
+        Map("input" -> prepareMapRecord(123)),
+        upstreamTimestamp = Some(Instant.ofEpochMilli(givenThirdEventTimestamp))
+      )
+    )
+    val testResults = testScenarioRunner.runWithTestRecords(scenario, testData).validValue
+
+    testResults.successes shouldBe List(
+      givenData,
+      givenData * 2,
+      givenData
+    )
+  }
+
   test("should use timestamp configured in table definition used by table source") {
     val outputTopic = "output-topic-event-time-table-definition"
+
+    val compilationResult = nodeCompiler.compileNode(
+      node.Source(
+        "id",
+        SourceRef(
+          "table",
+          Parameter(
+            ParameterName("Table"),
+            s"'`default_catalog`.`default_database`.`$eventTimeConfiguredInTableDefinitionTableName`'".spel
+          ) ::
+            Nil
+        )
+      )
+    )
+    compilationResult.compiledObject shouldBe Symbol("valid")
+    val dynamicParametersDefinitions = compilationResult.parameters.value
+    val eventTimeParameterDefinition =
+      dynamicParametersDefinitions.filter(_.name == WatermarkStrategyValidationHandler.eventTimeParamName).loneElement
+    eventTimeParameterDefinition.defaultValue.value shouldBe "#input['timestamp']".spel
 
     kafkaClient.createTopic(eventTimeConfiguredInTableDefinitionTopicName, 1)
     kafkaClient.createTopic(outputTopic, 1)
@@ -109,31 +262,12 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
         .emptySink(
           "end",
           "kafka",
+          // null expression means that it will be used upstream Event time
           KafkaUniversalComponentTransformer.sinkKeyParamName.value     -> "".spel,
           KafkaUniversalComponentTransformer.sinkValueParamName.value   -> "foo".spelTemplate,
           KafkaUniversalComponentTransformer.topicParamName.value       -> s"'$outputTopic'".spel,
           KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.PLAIN.toString}'".spel,
         )
-
-    val compilationResult = nodeCompiler.compileNode(
-      node.Source(
-        "id",
-        SourceRef(
-          "table",
-          Parameter(
-            ParameterName("Table"),
-            s"'`default_catalog`.`default_database`.`$eventTimeConfiguredInTableDefinitionTableName`'".spel
-          ) ::
-            Nil
-        )
-      )
-    )
-    compilationResult.compiledObject shouldBe Symbol("valid")
-    val dynamicParametersDefinitions = compilationResult.parameters.value
-    val eventTimeParameterDefinition =
-      dynamicParametersDefinitions.filter(_.name == WatermarkStrategyValidationHandler.eventTimeParamName).loneElement
-    // Lack of Event time parameter will be interpreted as null expression which means that it will be used upstream Event time
-    eventTimeParameterDefinition.defaultValue.value shouldBe "".spel
 
     testScenarioRunner.withRunningScenario(scenario) { _ =>
       val records = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic)
@@ -198,6 +332,78 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
       )
       .parameters
       .value
+      .map(_.name.value) shouldBe List(
+      "schedule",
+      "count",
+      "value",
+      "Event time",
+      "Max out-of-orderness"
+    )
+  }
+
+  test(
+    "should return watermark strategy dynamic parameters even if there is some problem with validation of preceding parameters"
+  ) {
+    val nodeCompilationResult = nodeCompiler
+      .compileNode(
+        node.Source(
+          "id",
+          SourceRef(
+            "event-generator",
+            Parameter(ParameterName("schedule"), "T(java.time.Duration).parse('PT1S')".spel) ::
+              Parameter(ParameterName("value"), "invalid_value".spel) ::
+              Nil
+          )
+        )
+      )
+
+    nodeCompilationResult.compiledObject.invalidValue.toList should matchPattern {
+      case ExpressionParserCompilationError(_, _, Some(ParameterName("value")), _, _) :: Nil =>
+    }
+
+    val dynamicParameters = nodeCompilationResult.parameters.value
+
+    dynamicParameters
+      .map(_.name.value) shouldBe List(
+      "schedule",
+      "count",
+      "value",
+      "Event time",
+      "Max out-of-orderness"
+    )
+
+    val eventTimeParameter = dynamicParameters.find(_.name == ParameterName("Event time")).value
+
+    eventTimeParameter.additionalVariables.get(InputVariableName).value should matchPattern {
+      case AdditionalVariableProvidedInRuntime(Unknown) =>
+    }
+    eventTimeParameter.defaultValue.value shouldBe "".spel
+  }
+
+  test(
+    "should not cause stack overflow when Event time parameter has validation error"
+  ) {
+    val nodeCompilationResult = nodeCompiler
+      .compileNode(
+        node.Source(
+          "id",
+          SourceRef(
+            "event-generator",
+            Parameter(ParameterName("schedule"), "T(java.time.Duration).parse('PT1S')".spel) ::
+              Parameter(ParameterName("value"), "{}".spel) ::
+              Parameter(ParameterName("Event time"), "invalid_value".spel) ::
+              Nil
+          )
+        )
+      )
+
+    nodeCompilationResult.compiledObject.invalidValue.toList should matchPattern {
+      case ExpressionParserCompilationError(_, _, Some(ParameterName("Event time")), _, _) :: Nil =>
+    }
+
+    val dynamicParameters = nodeCompilationResult.parameters.value
+
+    dynamicParameters
       .map(_.name.value) shouldBe List(
       "schedule",
       "count",
@@ -379,12 +585,24 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
   }
 
   private def sendEventWithTimestampOnTopic(eventTimestamp: Long, topic: String, key: String = givenKey) = {
-    val jsonRecord = Json.obj(
+    val jsonRecord = prepareJsonRecord(eventTimestamp, key)
+    sendAsJson(jsonRecord.toString, ForSource(topic), Instant.now.toEpochMilli)
+  }
+
+  private def prepareJsonRecord(eventTimestamp: Long, key: String = givenKey) = {
+    Json.obj(
       "key"       -> Json.fromString(key),
       "data"      -> Json.fromLong(givenData),
       "timestamp" -> Json.fromLong(eventTimestamp),
     )
-    sendAsJson(jsonRecord.toString, ForSource(topic), Instant.now.toEpochMilli)
+  }
+
+  private def prepareMapRecord(eventTimestamp: Long, key: String = givenKey) = {
+    Map(
+      "key"       -> key,
+      "data"      -> givenData.toLong,
+      "timestamp" -> eventTimestamp,
+    ).asJava
   }
 
 }

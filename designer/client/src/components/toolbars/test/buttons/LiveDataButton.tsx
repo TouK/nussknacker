@@ -12,7 +12,7 @@ import {
     isReadyForLiveData,
 } from "../../../../reducers/selectors/getLiveData";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 // adjusted by eye for a good looking indicator with paused 100%
@@ -20,7 +20,7 @@ function adjustProgress(percent: number) {
     return Math.min(percent * 3 + 15, 100);
 }
 
-export const LiveDataButton = memo(function LiveDataButton(props: ToolbarButtonProps) {
+const LiveDataButton = memo(function LiveDataButton(props: ToolbarButtonProps) {
     const dispatch = useAppDispatch();
     const { t } = useTranslation();
 
@@ -73,3 +73,5 @@ function toggleLiveData(): ThunkAction {
         dispatch(action);
     };
 }
+
+export default LiveDataButton;

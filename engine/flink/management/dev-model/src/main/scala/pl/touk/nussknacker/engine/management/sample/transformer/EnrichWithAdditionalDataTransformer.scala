@@ -30,7 +30,11 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
   Implementation is simplistic, it doesn't wait for additional data stream to initialize etc. - it's mainly to
   show how JoinDynamicComponent works
  */
-object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with JoinDynamicComponent[AnyRef] {
+object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with JoinDynamicComponent {
+
+  override type Implementation = AnyRef
+
+  override type State = Nothing
 
   private val roleValues = List("Events", "Additional data")
 
@@ -60,8 +64,6 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
           )
         }
       )
-
-  override type State = Nothing
 
   override def contextTransformation(contexts: Map[String, ValidationContext], dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId

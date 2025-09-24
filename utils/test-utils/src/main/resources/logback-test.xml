@@ -49,6 +49,7 @@
     <logger name="org.apache.flink" level="${FLINK_LOG_LEVEL:-WARN}"/>
 
     <logger name="org.apache.flink.runtime.webmonitor.WebMonitorUtils" level="ERROR"/>
+    <logger name="org.apache.flink.runtime.metrics.MetricRegistryImpl" level="INFO"/>
     <logger name="org.apache.flink.queryablestate" level="OFF"/>
 
     <logger name="kafka" level="ERROR"/>

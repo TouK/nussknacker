@@ -41,8 +41,8 @@ object KafkaUniversalComponentTransformer {
 
 }
 
-abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValidationType]
-    extends SingleInputDynamicComponent[T] {
+abstract class KafkaUniversalComponentTransformer[TN <: TopicName: TopicValidationType]
+    extends SingleInputDynamicComponent {
   self: Component =>
 
   type WithError[V] = Writer[List[ProcessCompilationError], V]

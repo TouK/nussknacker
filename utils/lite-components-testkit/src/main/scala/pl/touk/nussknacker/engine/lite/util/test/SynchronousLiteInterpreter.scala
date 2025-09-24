@@ -53,13 +53,13 @@ object SynchronousLiteInterpreter {
     TestScenarioCollectorHandler.withHandler(runtimeMode) { testScenarioCollectorHandler =>
       ScenarioInterpreterFactory
         .createInterpreter[Id, Any, AnyRef](
-          scenario,
-          jobData,
-          nodesData,
-          modelData,
+          process = scenario,
+          jobData = jobData,
+          nodesDeploymentData = nodesData,
+          modelData = modelData,
           additionalListeners = Nil,
-          testScenarioCollectorHandler.resultCollector,
-          runtimeMode
+          resultCollector = testScenarioCollectorHandler.servicesResultCollector,
+          runtimeMode = runtimeMode
         )
         .map { interpreter =>
           try {

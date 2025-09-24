@@ -3,7 +3,9 @@ import React from "react";
 
 import ProcessUtils from "../../../common/ProcessUtils";
 import type { NodeResultsForContext } from "../../../common/TestResultUtils";
-import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
+import type { UIParameter } from "../../../types/definition";
+import type { NodeType } from "../../../types/node";
+import type { NodeValidationError } from "../../../types/validation";
 import ExpressionField from "./editors/expression/ExpressionField";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";

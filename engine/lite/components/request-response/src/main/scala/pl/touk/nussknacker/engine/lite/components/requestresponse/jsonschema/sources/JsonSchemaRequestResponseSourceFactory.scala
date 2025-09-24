@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source}
-import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseSource, RequestResponseSourceFactory}
@@ -15,9 +14,9 @@ import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpe
   OutputSchemaProperty
 }
 
-class JsonSchemaRequestResponseSourceFactory
-    extends RequestResponseSourceFactory
-    with SingleInputDynamicComponent[Source] {
+class JsonSchemaRequestResponseSourceFactory extends RequestResponseSourceFactory with SingleInputDynamicComponent {
+
+  override type Implementation = Source
 
   override type State = (Schema, Schema)
 

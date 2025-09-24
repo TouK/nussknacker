@@ -85,8 +85,12 @@ class SpelTemplateLazyParameterTest
 
 object SpelTemplatePartsCustomTransformer
     extends CustomStreamTransformer
-    with SingleInputDynamicComponent[FlinkCustomStreamTransformation]
+    with SingleInputDynamicComponent
     with BoundedStreamComponent {
+
+  override type Implementation = FlinkCustomStreamTransformation
+
+  override type State = Unit
 
   private val spelTemplateParameterName = ParameterName("template")
 
@@ -96,8 +100,6 @@ object SpelTemplatePartsCustomTransformer
       isLazyParameter = true,
       editors = List(SpelTemplateParameterEditor)
     )
-
-  override type State = Unit
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId

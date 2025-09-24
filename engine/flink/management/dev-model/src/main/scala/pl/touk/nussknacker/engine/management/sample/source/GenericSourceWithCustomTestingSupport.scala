@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
 import io.circe.Json
-import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId, Params, VariableConstants}
+import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId, Params, ServiceInvoker, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
@@ -15,12 +15,15 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
+import java.time.Instant
 import scala.jdk.CollectionConverters._
 
 object GenericSourceWithCustomTestingSupport
     extends SourceFactory
-    with SingleInputDynamicComponent[Source]
+    with SingleInputDynamicComponent
     with UnboundedStreamComponent {
+
+  override type Implementation = Source
 
   override type State = Nothing
 
@@ -55,12 +58,16 @@ object GenericSourceWithCustomTestingSupport
       with FlinkSourceTestSupport[ProcessingType]
       with TestWithParametersSupport[ProcessingType]
       with LiveDataProvider {
+
       override val contextInitializer: ContextInitializer[ProcessingType] = customContextInitializer
 
       override def fetchLiveData(maxNumberOfRecords: Int): DataRecords = DataRecords(
         (0 until maxNumberOfRecords).flatMap { index =>
           elementsValue.map { el =>
-            DataRecord(variables = Map(VariableConstants.InputVariableName -> (el + s"-$index")), timestamp = Some(123))
+            DataRecord(
+              variables = Map(VariableConstants.InputVariableName -> (el + s"-$index")),
+              upstreamTimestamp = Some(Instant.ofEpochMilli(123))
+            )
           }
         }.toList
       )

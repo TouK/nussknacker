@@ -3,11 +3,11 @@ import { useTranslation } from "react-i18next";
 
 import Icon from "../../../../assets/img/toolbarButtons/PDF.svg";
 import ProcessUtils from "../../../../common/ProcessUtils";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/HttpService/instance";
 import { getProcessName, getProcessVersionId } from "../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import { useGraph } from "../../../graph/GraphContext";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 export default function PDFButton(props: ToolbarButtonProps) {

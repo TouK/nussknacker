@@ -1,21 +1,27 @@
 package pl.touk.nussknacker.engine.process.scenariotesting
 
+import cats.data.Validated.Valid
 import pl.touk.nussknacker.engine.api.Params
-import pl.touk.nussknacker.engine.api.context.ContextTransformation
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ScenarioCompilationErrors, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.compile.nodecompilation.StaticComponentOutputValidationContextDeterminer
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   ComponentImplementationInvoker,
   NodeCompilationDependencies
 }
-import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.ComponentImplementationSpecificInvocationContext
+import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.{
+  ComponentImplementationSpecificInvocationContext,
+  DynamicComponentInvocationContext
+}
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import shapeless.syntax.typeable.typeableOps
 
 abstract class StubbedComponentImplementationInvoker(
-    protected val componentDefinition: ComponentDefinitionWithImplementation
+    protected val componentDefinition: ComponentDefinitionWithImplementation,
+    outputValidationContextDeterminer: StaticComponentOutputValidationContextDeterminer
 ) extends ComponentImplementationInvoker {
 
   private lazy val originalDefinitionReturnType: Option[TypingResult] = {
@@ -44,27 +50,34 @@ abstract class StubbedComponentImplementationInvoker(
     }
 
     val originalInvocationResult = invokeOriginalInvoker(params, compilationDependencies, invocationContext)
+
     originalInvocationResult match {
       case contextTransformation: ContextTransformation =>
+        val outputValidationContext =
+          determineOutputValidationContext(
+            contextTransformation.implementation,
+            compilationDependencies,
+            invocationContext
+          )
         contextTransformation.copy(implementation =
           withReturnType(contextTransformation.implementation)(
             transformOriginalInvocationResult(
               contextTransformation.implementation,
-              originalInvocationResultWasWrappedInContextTransformation = true,
+              outputValidationContext,
               _,
-              compilationDependencies,
-              invocationContext
+              compilationDependencies
             )
           )
         )
       case componentExecutor =>
+        val outputValidationContext =
+          determineOutputValidationContext(componentExecutor, compilationDependencies, invocationContext)
         withReturnType(componentExecutor)(
           transformOriginalInvocationResult(
             componentExecutor,
-            originalInvocationResultWasWrappedInContextTransformation = false,
+            outputValidationContext,
             _,
-            compilationDependencies,
-            invocationContext
+            compilationDependencies
           )
         )
     }
@@ -77,12 +90,41 @@ abstract class StubbedComponentImplementationInvoker(
   ): Any =
     componentDefinition.implementationInvoker.invokeMethod(params, compilationDependencies, invocationContext)
 
-  def transformOriginalInvocationResult(
-      originalInvocationResult: Any,
-      originalInvocationResultWasWrappedInContextTransformation: Boolean,
-      typingResult: TypingResult,
+  private def determineOutputValidationContext(
+      originalSource: Any,
       compilationDependencies: NodeCompilationDependencies,
       invocationContext: Option[ComponentImplementationSpecificInvocationContext]
+  ) = {
+    (componentDefinition, invocationContext) match {
+      case (_, Some(DynamicComponentInvocationContext(_, outputValidationContext))) => outputValidationContext
+      case (staticComponent: MethodBasedComponentDefinitionWithImplementation, _) =>
+        outputValidationContextDeterminer
+          .contextAfterNode(
+            nodeData = compilationDependencies.nodeData,
+            customNodeIsEndingNode = None,
+            staticComponent = staticComponent,
+            validComponentExecutor = Valid(originalSource),
+            inputContext = compilationDependencies.inputValidationContext
+          )(compilationDependencies.jobData)
+          .valueOr { errNel =>
+            throw new IllegalStateException(
+              "Compilation errors during output validation context determining",
+              ScenarioCompilationErrors(errNel.toList)
+            )
+          }
+      case _ =>
+        throw new IllegalStateException(
+          s"Illegal combination of component [$componentDefinition] and invocation context [$invocationContext]"
+        )
+    }
+  }
+
+  def transformOriginalInvocationResult(
+      originalInvocationResult: Any,
+      outputValidationContext: ValidationContext,
+      // TypingResult is for source-specific test data stubbing purpose where we still use ReturningType instead of ContextTransformation
+      typingResult: TypingResult,
+      compilationDependencies: NodeCompilationDependencies
   ): Any
 
 }

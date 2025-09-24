@@ -8,16 +8,10 @@ import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { prepareNewNodesWithLayout } from "../../reducers/graph/utils";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { getNodes, getScenarioGraph } from "../../reducers/selectors/graph";
-import type {
-    Dimensions,
-    Edge,
-    EdgeType,
-    NodeId,
-    NodeType,
-    NodeValidationError,
-    ProcessDefinitionData,
-    ValidationResult,
-} from "../../types";
+import type { Edge, EdgeType } from "../../types/edge";
+import type { Dimensions, NodeId, NodeType } from "../../types/node";
+import type { ProcessDefinitionData } from "../../types/scenarioGraph";
+import type { NodeValidationError, ValidationResult } from "../../types/validation";
 import type { ThunkAction } from "../reduxTypes";
 import type { NodeAddActions } from "./editNode";
 import type { NodePosition, Position } from "./ui/layout";

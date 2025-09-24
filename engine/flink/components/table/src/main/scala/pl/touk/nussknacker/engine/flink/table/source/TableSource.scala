@@ -11,20 +11,14 @@ import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.livedata.{DataRecord, DataRecords, LiveDataProvider}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{
-  BasicContextInitializer,
-  ContextInitializer,
-  TestDataGenerator,
-  TestWithParametersSupport
-}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{
   CustomizableContextInitializerSource,
   FlinkCustomNodeContext,
   FlinkSource,
-  FlinkSourceTestSupport,
-  StandardFlinkSource
+  FlinkSourceTestSupport
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
@@ -43,8 +37,9 @@ import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategy
   ContextInitializingFunction,
   ContextWithEventTime
 }
-import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyOptions
+import pl.touk.nussknacker.engine.util.watermarkstrategy.{WatermarkStrategyOptions, WithWatermarkStrategyOptions}
 
+import java.time.{Instant, OffsetDateTime}
 import scala.jdk.CollectionConverters._
 
 class TableSource(
@@ -52,7 +47,7 @@ class TableSource(
     flinkDataDefinition: FlinkDataDefinition,
     testDataGenerationMode: TestDataGenerationMode,
     environmentForTestingPurposes: StreamTableEnvironment,
-    watermarkStrategyOptions: WatermarkStrategyOptions
+    override val watermarkStrategyOptions: WatermarkStrategyOptions
 ) extends FlinkSource
     with ExplicitUidInOperatorsSupport
     with Serializable
@@ -63,6 +58,7 @@ class TableSource(
     with CustomizableContextInitializerSource[Row]
     // end
     with LiveDataProvider
+    with WithWatermarkStrategyOptions
     with LazyLogging {
 
   override def contextStream(
@@ -85,7 +81,7 @@ class TableSource(
       }
       .getOrElse(selectQuery)
 
-    val streamOfRow = tableEnv.toDataStream(finalQuery)
+    val streamOfRow = sourceWithUidAndName(tableEnv.toDataStream(finalQuery), flinkNodeContext)
 
     streamOfRow
       .flatMap(
@@ -171,9 +167,28 @@ class TableSource(
       .asScala
       .toList
       .map { row =>
-        DataRecord(Map(VariableConstants.InputVariableName -> row), timestamp = None)
+        DataRecord(
+          Map(VariableConstants.InputVariableName -> row),
+          upstreamTimestamp = extractTimezoneAwareRowtime(row)
+        )
       }
     DataRecords(records)
+  }
+
+  private def extractTimezoneAwareRowtime(row: Row) = {
+    tableDefinition.singleColumnWithTimezoneAwareRowtime.map(_.getName).map(row.getField).flatMap {
+      case instant: Instant =>
+        Some(instant)
+      // This is not tested because TIMESTAMP WITH TIME ZONE is not supported by flink sql https://issues.apache.org/jira/browse/FLINK-20869
+      case offsetDateTime: OffsetDateTime =>
+        Some(offsetDateTime.toInstant)
+      case other =>
+        logger.warn(
+          s"For ${tableDefinition.singleColumnWithTimezoneAwareRowtime.map(_.getName).getOrElse("<unknown>")} column in ${tableDefinition.tableId}: " +
+            s"timestamp of ${other.getClass.getName} type is not supported. Timestamp field will be omitted from returned live data"
+        )
+        None
+    }
   }
 
   // We don't want to generate data for computed columns - they will be added during parsing of test data

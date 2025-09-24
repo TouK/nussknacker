@@ -30,7 +30,7 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedT
 trait KafkaSourceSpecificTestDataMixin {
   self: KafkaSchemaRegistryMixin with LazyLogging =>
 
-  type KafkaSource = SourceFactory with KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
+  type KafkaSource = SourceFactory with KafkaUniversalComponentTransformer[TopicName.ForSource]
 
   protected def schemaRegistryClientFactory: SchemaRegistryClientFactory
 

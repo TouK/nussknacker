@@ -151,7 +151,22 @@ class BatchDataGenerationSpec
            |        ]
            |      }
            |    ],
-           |    "invocationResults": {},
+           |    "invocationResults": {
+           |      "sourceId": [
+           |        {
+           |          "contextId": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "cid": {
+           |            "nid": "sourceId",
+           |            "tid": 0,
+           |            "idx": 0,
+           |            "path": []
+           |          },
+           |          "timestamp": "${regexes.zuluDateRegex}",
+           |          "name": "Event time",
+           |          "value": null
+           |        }
+           |      ]
+           |    },
            |    "externalInvocationResults": {},
            |    "exceptions": [],
            |    "exceptionsByNodeId": {}
@@ -271,7 +286,22 @@ class BatchDataGenerationSpec
            |        ]
            |      }
            |    ],
-           |    "invocationResults": {},
+           |    "invocationResults": {
+           |      "sourceId": [
+           |        {
+           |          "contextId": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "cid": {
+           |            "nid": "sourceId",
+           |            "tid": 0,
+           |            "idx": 0,
+           |            "path": []
+           |          },
+           |          "timestamp": "${regexes.zuluDateRegex}",
+           |          "name": "Event time",
+           |          "value": null
+           |        }
+           |      ]
+           |    },
            |    "externalInvocationResults": {},
            |    "exceptions": [],
            |    "exceptionsByNodeId": {}

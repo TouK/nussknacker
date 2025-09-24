@@ -8,7 +8,8 @@ import type {
     ResultContextJson,
     TestResultsDto,
 } from "../http/resultsWithCountsDto";
-import type { NodeId, UIParameter } from "../types";
+import type { UIParameter } from "../types/definition";
+import type { NodeId } from "../types/node";
 
 export interface TestCapabilities {
     testWithParameters: TestWithParametersCapability;

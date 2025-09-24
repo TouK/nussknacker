@@ -23,6 +23,20 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
  */
 trait ExplicitUidInOperatorsSupport {
 
+  protected def sourceWithUidAndName[T](
+      stream: DataStream[T],
+      flinkNodeContext: FlinkCustomNodeContext
+  ): DataStream[T] = {
+    stream match {
+      case singleOut: SingleOutputStreamOperator[_] =>
+        setUidToNodeIdIfNeed[T](
+          flinkNodeContext,
+          singleOut.name(flinkNodeContext.nodeId.id)
+        )
+      case _ => stream
+    }
+  }
+
   protected def setUidToNodeIdIfNeed[T](nodeCtx: FlinkCustomNodeContext, stream: DataStream[T]): DataStream[T] =
     ExplicitUidInOperatorsSupport.setUidIfNeed(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId.id)(stream)
 

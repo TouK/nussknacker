@@ -3,12 +3,12 @@ import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 import { setTestData } from "../../../../actions/nk/displayTestResults";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/HttpService/instance";
 import { getProcessName } from "../../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
-import type { NodeType } from "../../../../types";
+import type { NodeType } from "../../../../types/node";
 import { useSourceParameters } from "../../../modals/AdhocTesting/useAdhocTestingAction";
-import { InfoTooltip } from "../editors/InfoTooltip";
+import { InfoTooltip } from "../editors/InfoTooltip/InfoTooltip";
 import { MarkdownStyled } from "../MarkdownStyled";
 import { StyledLoadingButton } from "./StyledLoadingButton";
 

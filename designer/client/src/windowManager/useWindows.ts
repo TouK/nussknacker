@@ -11,7 +11,7 @@ import type { Scenario } from "../components/Process/types";
 import { getWindowsIdMapping } from "../reducers/selectors/getWindowsIdMapping";
 import type { AppState } from "../store/storeHelpers";
 import { useAppSelector } from "../store/storeHelpers";
-import type { NodeType } from "../types";
+import type { NodeType } from "../types/node";
 import { WindowKind } from "./WindowKind";
 
 const useRemoveFocusOnEscKey = (isWindowOpen: boolean) => {

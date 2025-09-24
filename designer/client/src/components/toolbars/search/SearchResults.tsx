@@ -1,11 +1,11 @@
 import { MenuItem, MenuList } from "@mui/material";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import { resetSelection } from "../../../actions/nk";
+import { resetSelection } from "../../../actions/nk/selection";
 import { getScenario, getSelectionState } from "../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
-import type { NodeType } from "../../../types";
-import { useWindows } from "../../../windowManager";
+import type { NodeType } from "../../../types/node";
+import { useWindows } from "../../../windowManager/useWindows";
 import { useGraph } from "../../graph/GraphContext";
 import { nodeFound, nodeFoundHover } from "../../graph/graphStyledWrapper";
 import { FoundNode } from "./FoundNode";

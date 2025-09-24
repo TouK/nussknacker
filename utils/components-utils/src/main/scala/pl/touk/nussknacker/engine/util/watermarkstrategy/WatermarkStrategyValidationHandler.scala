@@ -2,21 +2,12 @@ package pl.touk.nussknacker.engine.util.watermarkstrategy
 
 import pl.touk.nussknacker.engine.api.{LazyParameter, NodeId, Params}
 import pl.touk.nussknacker.engine.api.Params.ParamExtractionResult
+import pl.touk.nussknacker.engine.api.VariableConstants.InputVariableName
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{
-  DefinedEagerParameter,
-  DefinedLazyParameter,
-  NodeDependencyValue,
-  SingleInputDynamicComponent
-}
-import pl.touk.nussknacker.engine.api.definition.{
-  AdditionalVariableProvidedInRuntime,
-  DurationParameterEditor,
-  Parameter,
-  ParameterCategory,
-  SpelParameterEditor
-}
+import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -40,15 +31,33 @@ object WatermarkStrategyValidationHandler {
 
 }
 
-trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] =>
+trait WatermarkStrategyValidationHandler extends SingleInputDynamicComponent {
 
-  protected def prepareWatermarkStrategyParameters(outputValidationContext: ValidationContext): List[Parameter] = {
-    val eventTimeParameter   = prepareEventTimeParameter(outputValidationContext)
+  override protected def fallbackFinalResult(
+      step: TransformationStep,
+      inputContext: ValidationContext,
+      outputVariable: Option[String]
+  )(implicit nodeId: NodeId): TransformationStepResult = {
+    val fallbackOutputContext = inputContext.withVariable(InputVariableName, Unknown, None).getOrElse(inputContext)
+    NextParameters(
+      prepareWatermarkStrategyParameters(fallbackOutputContext, "".spel),
+      state = step.state
+    )
+  }
+
+  protected def prepareWatermarkStrategyParameters(
+      outputValidationContext: ValidationContext,
+      eventTimeDefaultValueExpression: Expression
+  ): List[Parameter] = {
+    val eventTimeParameter   = prepareEventTimeParameter(outputValidationContext, eventTimeDefaultValueExpression)
     val idlenessParameterOpt = if (isIdlenessParameterAvailable) Some(idlenessParameter) else None
     eventTimeParameter :: maxOutOfOrdernessParameter :: idlenessParameterOpt.toList
   }
 
-  private def prepareEventTimeParameter(outputValidationContext: ValidationContext): Parameter =
+  private def prepareEventTimeParameter(
+      outputValidationContext: ValidationContext,
+      eventTimeDefaultValueExpression: Expression
+  ): Parameter =
     Parameter
       .optional[Instant](eventTimeParamName)
       .copy(
@@ -57,7 +66,7 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
           outputValidationContext.localVariables.mapValuesNow(AdditionalVariableProvidedInRuntime(_)),
         defaultValue = Some(eventTimeDefaultValueExpression),
         hintText = Some(
-          s"An expression that determines the Event Time to be used in stateful stream processing. " +
+          s"An expression that determines the Event Time to be used in stateful stream processing. If this field is empty, the upstream source event time will be used.  " +
             s"For more information on how Event Time is handled in Flink, and why it is important, see [Flink documentation](${FlinkDocumentationUrl.forCurrentFlinkVersion("concepts/time/#introduction")})"
         ),
         category = ParameterCategory.Advanced
@@ -97,8 +106,6 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
         category = ParameterCategory.Advanced
       )
 
-  protected def eventTimeDefaultValueExpression: Expression
-
   protected def maxOutOfOrdernessDefaultValueExpression: Expression = "T(java.time.Duration).parse('PT10S')".spel
 
   protected def idlenessDefaultValueExpression: Expression = "".spel
@@ -113,16 +120,16 @@ trait WatermarkStrategyValidationHandler { self: SingleInputDynamicComponent[_] 
   ): ContextTransformationDefinition = {
     case step @ TransformationStep(
           _ :+
-          ((`eventTimeParamName`, _: DefinedLazyParameter)) :+
-          ((`maxOutOfOrdernessParamName`, _: DefinedEagerParameter)) :+
-          ((`idlenessParamName`, _: DefinedEagerParameter)),
+          ((`eventTimeParamName`, _)) :+
+          ((`maxOutOfOrdernessParamName`, _)) :+
+          ((`idlenessParamName`, _)),
           _
         ) =>
       resultAfterWatermarkStrategyParameters(inputContext, dependencies, step.parameters, step.state)
     case step @ TransformationStep(
           _ :+
-          ((`eventTimeParamName`, _: DefinedLazyParameter)) :+
-          ((`maxOutOfOrdernessParamName`, _: DefinedEagerParameter)),
+          ((`eventTimeParamName`, _)) :+
+          ((`maxOutOfOrdernessParamName`, _)),
           _
         ) =>
       resultAfterWatermarkStrategyParameters(inputContext, dependencies, step.parameters, step.state)

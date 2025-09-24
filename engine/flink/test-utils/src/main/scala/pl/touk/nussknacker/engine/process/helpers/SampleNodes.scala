@@ -671,10 +671,9 @@ object SampleNodes {
     def invoke(): Future[Unit] = Future.successful(())
   }
 
-  object GenericParametersNode
-      extends CustomStreamTransformer
-      with SingleInputDynamicComponent[AnyRef]
-      with Serializable {
+  object GenericParametersNode extends CustomStreamTransformer with SingleInputDynamicComponent with Serializable {
+
+    override type Implementation = AnyRef
 
     override type State = List[String]
 
@@ -741,10 +740,12 @@ object SampleNodes {
 
   object NodePassingStateToImplementation
       extends CustomStreamTransformer
-      with SingleInputDynamicComponent[AnyRef]
+      with SingleInputDynamicComponent
       with Serializable {
 
     val VariableThatshouldBeDefinedBeforeNodeName = "foo"
+
+    override type Implementation = AnyRef
 
     override type State = Boolean
 
@@ -778,8 +779,10 @@ object SampleNodes {
   object GenericParametersSource
       extends SourceFactory
       with UnboundedStreamComponent
-      with SingleInputDynamicComponent[Source]
+      with SingleInputDynamicComponent
       with Serializable {
+
+    override type Implementation = Source
 
     override type State = Nothing
 
@@ -852,7 +855,7 @@ object SampleNodes {
   object GenericSourceWithCustomVariables
       extends SourceFactory
       with UnboundedStreamComponent
-      with SingleInputDynamicComponent[Source]
+      with SingleInputDynamicComponent
       with Serializable {
 
     private class CustomFlinkContextInitializer extends BasicContextInitializer[String](Typed[String]) {
@@ -887,6 +890,8 @@ object SampleNodes {
       }
 
     }
+
+    override type Implementation = Source
 
     override type State = Nothing
 
@@ -939,10 +944,12 @@ object SampleNodes {
 
   class GenericParametersSink(resultsHolder: => TestResultsHolder[String])
       extends SinkFactory
-      with SingleInputDynamicComponent[Sink]
+      with SingleInputDynamicComponent
       with Serializable {
 
     private val componentUseContextProviderDependency = TypedNodeDependency[ComponentUseContext]
+
+    override type Implementation = Sink
 
     override type State = Nothing
 

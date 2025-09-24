@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 import { getNeighbors } from "../components/graph/getNeighbors";
 import { useGraph } from "../components/graph/GraphContext";
-import { isModelOrStickyNote } from "../components/graph/GraphPartialsInTS";
+import { isModelOrStickyNote } from "../components/graph/GraphPartialsInTS/cellUtils";
 import { Events } from "../components/graph/types";
 
 const frameStream = stream<DOMHighResTimeStamp, unknown>((emitter) => {

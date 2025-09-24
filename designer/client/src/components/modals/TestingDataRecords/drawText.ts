@@ -141,6 +141,16 @@ function buildFragmentsForTokens(
         const baseLeft = rect.x + paddingX;
         const fullLineWidth = maxRight - baseLeft;
         const parts = text.split(/(\s+)/).filter((p) => p.length > 0);
+        // If we have an intentionally empty display string (e.g. ""), still push it directly
+        if (parts.length === 0 && text.length > 0) {
+            const w = measureTextWidth(text, ctx);
+            if (x !== baseLeft && x + w > maxRight) {
+                if (!advanceLine()) return false;
+            }
+            fragments.push({ text, x, y: currentY(), color });
+            x += w;
+            return true;
+        }
         for (let i = 0; i < parts.length; i++) {
             const part = parts[i];
             const isSpace = /^\s+$/.test(part);
@@ -203,11 +213,12 @@ function buildFragmentsForTokens(
         const lineStart = rect.x + paddingX;
         const spaceChar = SPLIT_SEPARATOR;
         const spaceWidth = measureTextWidth(spaceChar, ctx);
+        const displayValue = token.value === "" ? '""' : token.value; // show empty strings explicitly as ""
         if (token.key) {
             const keyWidth = measureTextWidth(token.key, ctx);
-            const firstValueWord = token.value.split(/\s+/)[0] || "";
-            const firstValueWordWidth = firstValueWord ? measureTextWidth(firstValueWord, ctx) : 0;
-            const requireSameLine = firstValueWord.length > 0;
+            const firstValueWordRaw = displayValue.split(/\s+/)[0] || "";
+            const firstValueWordWidth = firstValueWordRaw ? measureTextWidth(firstValueWordRaw, ctx) : 0;
+            const requireSameLine = firstValueWordRaw.length > 0;
             const requiredWidth = keyWidth + spaceWidth + (requireSameLine ? firstValueWordWidth : 0);
             if (x !== lineStart && x + requiredWidth > maxRight) {
                 if (!advanceLine()) break;
@@ -221,7 +232,7 @@ function buildFragmentsForTokens(
                 x += spaceWidth;
             }
         }
-        if (!wrapAndPushWords(token.value, kindColor(token.valueKind))) break;
+        if (!wrapAndPushWords(displayValue, kindColor(token.valueKind))) break;
         if (index < tokens.length - 1 && currentY() <= bottom) {
             if (x + spaceWidth > maxRight) {
                 if (!advanceLine()) break;

@@ -5,14 +5,21 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
+import java.time.Instant
+
 sealed trait ScenarioTestRecord {
   val sourceId: NodeId
 }
 
 case class ScenarioTestSourceSpecificFormatJsonRecord(sourceId: NodeId, record: Json, timestamp: Option[Long] = None)
     extends ScenarioTestRecord
-case class ScenarioTestCommonFormatJsonRecord(sourceId: NodeId, variables: Map[String, Json], timestamp: Option[Long])
-    extends ScenarioTestRecord
+
+case class ScenarioTestCommonFormatJsonRecord(
+    sourceId: NodeId,
+    variables: Map[String, Json],
+    upstreamTimestamp: Option[Instant]
+) extends ScenarioTestRecord
+
 case class ScenarioTestParametersRecord(sourceId: NodeId, parameterExpressions: Map[ParameterName, Expression])
     extends ScenarioTestRecord
 

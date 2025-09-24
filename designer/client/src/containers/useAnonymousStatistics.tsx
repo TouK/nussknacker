@@ -2,7 +2,7 @@ import moment from "moment";
 import { useCallback, useEffect, useState } from "react";
 import { useLocalstorageState } from "rooks";
 
-import httpService from "../http/HttpService";
+import httpService from "../http/HttpService/instance";
 import { getFeatureSettings } from "../reducers/selectors/settings";
 import { useAppSelector } from "../store/storeHelpers";
 

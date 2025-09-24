@@ -1,8 +1,9 @@
 import { defaultsDeep, sortBy } from "lodash";
 
-import type { Layout } from "../actions/nk";
+import type { Layout } from "../actions/nk/ui/layout";
 import type { Reducer } from "../actions/reduxTypes";
-import type { NodeType, ScenarioGraph } from "../types";
+import type { NodeType } from "../types/node";
+import type { ScenarioGraph } from "../types/scenarioGraph";
 
 export function fromMeta(scenarioGraph: ScenarioGraph): Layout {
     return sortBy(scenarioGraph.nodes, (e) => e.id)

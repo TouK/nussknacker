@@ -1,6 +1,7 @@
-import { createFilterRules } from "../../common";
-import { ScenariosFiltersModel, ScenariosFiltersModelType } from "./scenariosFiltersModel";
-import { RowType } from "../list/listPart";
+import { createFilterRules } from "../../common/filters/filterRules";
+import type { RowType } from "../list/listPart";
+import type { ScenariosFiltersModel } from "./scenariosFiltersModel";
+import { ScenariosFiltersModelType } from "./scenariosFiltersModel";
 
 export const filterRules = createFilterRules<RowType, ScenariosFiltersModel>({
     NAME: (row, filter) => {

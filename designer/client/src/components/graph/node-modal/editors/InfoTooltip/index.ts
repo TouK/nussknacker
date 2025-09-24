@@ -1,1 +1,0 @@
-export { InfoTooltip } from "./InfoTooltip";

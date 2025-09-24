@@ -4,15 +4,15 @@ import scala.annotation.tailrec
 
 object ListUtil {
 
-  def mergeLists[T](lists: List[List[T]], size: Int): List[T] = {
-    mergeLists(lists).take(size)
+  def mergeListsRoundRobin[T](lists: List[List[T]], size: Int): List[T] = {
+    mergeListsRoundRobin(lists).take(size)
   }
 
   @tailrec
-  private def mergeLists[T](lists: List[List[T]], acc: List[T] = List()): List[T] = lists match {
+  private def mergeListsRoundRobin[T](lists: List[List[T]], acc: List[T] = List()): List[T] = lists match {
     case Nil                         => acc
-    case Nil :: next                 => mergeLists(next, acc)
-    case (head :: rest) :: nextLists => mergeLists(nextLists :+ rest, acc :+ head)
+    case Nil :: next                 => mergeListsRoundRobin(next, acc)
+    case (head :: rest) :: nextLists => mergeListsRoundRobin(nextLists :+ rest, acc :+ head)
   }
 
 }

@@ -5,7 +5,8 @@ import { DefaultContent } from "@touk/window-manager";
 import type { PropsWithChildren } from "react";
 import React, { useMemo } from "react";
 
-import { DialogErrorFallbackComponent, ErrorBoundary } from "../components/common/error-boundary";
+import { ErrorBoundary } from "../components/common/error-boundary/ErrorBoundary";
+import { DialogErrorFallbackComponent } from "../components/common/error-boundary/fallbackComponent/DialogErrorFallbackComponent";
 import { isTouchDevice } from "../helpers/detectDevice";
 import { LoadingButton } from "./LoadingButton";
 

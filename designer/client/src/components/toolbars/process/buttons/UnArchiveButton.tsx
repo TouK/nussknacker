@@ -1,14 +1,15 @@
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
-import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
+import { loadProcessToolbarsConfiguration } from "../../../../actions/nk/loadProcessToolbarsConfiguration";
+import { displayCurrentProcessVersion } from "../../../../actions/nk/process";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import Icon from "../../../../assets/img/toolbarButtons/unarchive.svg";
 import DialogMessages from "../../../../common/DialogMessages";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/HttpService/instance";
 import { getProcessName, isArchived } from "../../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
-import { useWindows } from "../../../../windowManager";
+import { useWindows } from "../../../../windowManager/useWindows";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 

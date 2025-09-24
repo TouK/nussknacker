@@ -220,7 +220,7 @@ trait ScenarioTestingApiHttpServiceSpec
       createSavedScenario(exampleScenario)
 
       val response = runTestsFromFile(s"""[
-          |  {"sourceId":"$exampleScenarioSourceId","variables":{"nonExistingVariable": 123},"timestamp":123}
+          |  {"sourceId":"$exampleScenarioSourceId","variables":{"nonExistingVariable": 123},"upstreamTimestamp":"1970-01-01T00:00:00.123Z"}
           |]""".stripMargin)
 
       response.code shouldEqual StatusCode.BadRequest
@@ -231,7 +231,7 @@ trait ScenarioTestingApiHttpServiceSpec
       createSavedScenario(exampleScenario)
 
       val response = runTestsFromFile(s"""[
-                                         |  {"sourceId":"$exampleScenarioSourceId","variables":{"input":$inputValueNotMatchingExpectedType},"timestamp":123}
+                                         |  {"sourceId":"$exampleScenarioSourceId","variables":{"input":$inputValueNotMatchingExpectedType},"upstreamTimestamp":"1970-01-01T00:00:00.123Z"}
                                          |]""".stripMargin)
 
       response.code shouldEqual StatusCode.BadRequest

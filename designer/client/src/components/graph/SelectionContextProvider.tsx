@@ -7,16 +7,9 @@ import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { createSelector } from "reselect";
 import { useDebounceFn } from "rooks";
 
-import {
-    addNodeMultiple,
-    copySelection,
-    cutSelection,
-    deleteNodes,
-    deleteSelection,
-    pasteSelection,
-    resetSelection,
-    selectAll,
-} from "../../actions/nk";
+import { addNodeMultiple } from "../../actions/nk/editNode";
+import { deleteNodes } from "../../actions/nk/node";
+import { copySelection, cutSelection, deleteSelection, pasteSelection, resetSelection, selectAll } from "../../actions/nk/selection";
 import { error, success } from "../../actions/notificationActions";
 import type { Action } from "../../actions/reduxTypes";
 import { readText, writeText } from "../../common/ClipboardUtils";
@@ -29,7 +22,8 @@ import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDef
 import { canModifySelectedNodes, getScenarioGraph, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
-import type { Edge, NodeType } from "../../types";
+import type { Edge } from "../../types/edge";
+import type { NodeType } from "../../types/node";
 import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
 import NodeUtils from "./NodeUtils";
 import { StickyNoteType } from "./utils/stickyNotesUtils";

@@ -1,7 +1,9 @@
 import { cleanupNodeInputEdges, mapProcessWithNewNode, replaceNodeOutputEdges } from "../../components/graph/utils/graphUtils";
 import type { Scenario } from "../../components/Process/types";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
-import type { Edge, NodeType, ScenarioGraph } from "../../types";
+import type { Edge } from "../../types/edge";
+import type { NodeType } from "../../types/node";
+import type { ScenarioGraph } from "../../types/scenarioGraph";
 import type { ThunkAction } from "../reduxTypes";
 
 // FIXME: this is not an action,

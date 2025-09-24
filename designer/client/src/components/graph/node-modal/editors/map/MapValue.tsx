@@ -1,8 +1,9 @@
 import { isEqual } from "lodash";
 import React from "react";
 
-import type { Expression, VariableTypes } from "../../../../../types";
-import { NodeValue } from "../../node";
+import type { Expression } from "../../../../../types/node";
+import type { VariableTypes } from "../../../../../types/validation";
+import { NodeValue } from "../../node/NodeValue";
 import { EditableEditor } from "../EditableEditor";
 import type { ExpressionObj } from "../expression/types";
 import type { FieldError } from "../Validators";

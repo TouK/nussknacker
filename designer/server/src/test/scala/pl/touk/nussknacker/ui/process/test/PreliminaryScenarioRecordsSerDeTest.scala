@@ -10,7 +10,8 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.TestDataFormat
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.{DeserializationError, SerializationError}
-import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatSerDe
+
+import java.time.Instant
 
 class PreliminaryScenarioRecordsSerDeTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
 
@@ -40,11 +41,11 @@ class PreliminaryScenarioRecordsSerDeTest extends AnyFunSuite with Matchers with
         "f2" -> Json.fromLong(42L)
       )
     ),
-    timestamp = Some(24L)
+    upstreamTimestamp = Some(Instant.parse("2025-01-01T02:03:04.005Z"))
   )
 
   private val serializedCommonFormatRecord =
-    """[{"sourceId":"source1","variables":{"input":{"f1":"field value","f2":42}},"timestamp":24}]""".stripMargin
+    """[{"sourceId":"source1","variables":{"input":{"f1":"field value","f2":42}},"upstreamTimestamp":"2025-01-01T02:03:04.005Z"}]""".stripMargin
 
   test("should serialize scenario test data") {
     forAll(

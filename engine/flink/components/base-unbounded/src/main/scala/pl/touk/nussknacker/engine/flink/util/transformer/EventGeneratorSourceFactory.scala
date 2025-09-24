@@ -28,14 +28,19 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
-import pl.touk.nussknacker.engine.flink.api.process._
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, _}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler.ContextWithEventTime
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
-import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyValidationHandler
+import pl.touk.nussknacker.engine.util.watermarkstrategy.{
+  WatermarkStrategyOptions,
+  WatermarkStrategyValidationHandler,
+  WithWatermarkStrategyOptions
+}
 
 import java.time.{Duration, Instant}
 import java.time.temporal.ChronoUnit
@@ -43,9 +48,11 @@ import scala.annotation.nowarn
 
 object EventGeneratorSourceFactory
     extends SourceFactory
-    with SingleInputDynamicComponent[FlinkSource]
+    with SingleInputDynamicComponent
     with UnboundedStreamComponent
     with WatermarkStrategyValidationHandler {
+
+  override type Implementation = FlinkSource
 
   override type State = Nothing
 
@@ -107,10 +114,10 @@ object EventGeneratorSourceFactory
           _
         ) =>
       val outputValidationContext = prepareOutputValidationContext(inputContext, valueType)
-      NextParameters(prepareWatermarkStrategyParameters(outputValidationContext))
+      NextParameters(
+        prepareWatermarkStrategyParameters(outputValidationContext, eventTimeDefaultValueExpression = "#DATE.now".spel)
+      )
   }
-
-  override protected def eventTimeDefaultValueExpression: Expression = "#DATE.now".spel
 
   override def contextTransformation(inputContext: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
@@ -130,14 +137,14 @@ object EventGeneratorSourceFactory
         valueType
       }
       .getOrElse(
-        throw new IllegalStateException(s"Missing $valueParameterName after watermark strategy parameters: $parameters")
+        // Edge-case when there was some validation problem of parameter preceding watermark strategy parameters
+        Unknown
       )
     val outputValidationContext = prepareOutputValidationContext(inputContext, valueType)
     FinalResults(outputValidationContext)
   }
 
-  private def prepareOutputValidationContext(inputContext: ValidationContext,
-                                             valueType: typing.TypingResult) = {
+  private def prepareOutputValidationContext(inputContext: ValidationContext, valueType: typing.TypingResult) = {
     inputContext.withVariableUnsafe(InputVariableName, valueType)
   }
 
@@ -147,10 +154,10 @@ object EventGeneratorSourceFactory
       dependencies: List[NodeDependencyValue],
       finalState: Option[Nothing]
   ): FlinkSource = {
-    val schedule                 = scheduleParameterDeclaration.extractValueUnsafe(params)
-    val count                    = countParameterDeclaration.extractValue(params).getOrElse(1)
-    val value                    = valueParameterDeclaration.extractValueUnsafe(params)
-    val watermarkStrategyOptions = extractWatermarkStrategyOptions(params)
+    val schedule                          = scheduleParameterDeclaration.extractValueUnsafe(params)
+    val count                             = countParameterDeclaration.extractValue(params).getOrElse(1)
+    val value                             = valueParameterDeclaration.extractValueUnsafe(params)
+    val extractedWatermarkStrategyOptions = extractWatermarkStrategyOptions(params)
 
     new FlinkSource
       with ExplicitUidInOperatorsSupport
@@ -159,7 +166,10 @@ object EventGeneratorSourceFactory
       with TestDataGenerator
       with TestWithParametersSupport[AnyRef]
       with LiveDataProvider
+      with WithWatermarkStrategyOptions
       with LazyLogging {
+
+      override val watermarkStrategyOptions: WatermarkStrategyOptions = extractedWatermarkStrategyOptions
 
       // The stream is created in the following way:
       // 1. Events are triggered by PeriodicFunction
@@ -174,8 +184,11 @@ object EventGeneratorSourceFactory
       ): DataStream[Context] = {
         // Without this local variable, flatMap function is not serializable
         val localCount = count
-        env
-          .addSource(new PeriodicFunction(schedule))
+        sourceWithUidAndName(
+          env
+            .addSource(new PeriodicFunction(schedule)),
+          flinkNodeContext
+        )
           .flatMap(
             (_: Unit, out: Collector[Boolean]) => {
               // This 'true' is a dummy value. It has to exist for each event, but its value is completely ignored.
@@ -211,7 +224,7 @@ object EventGeneratorSourceFactory
           DataRecord(
             variables = Map(VariableConstants.InputVariableName -> record),
             // TODO: Respect Event time parameter
-            timestamp = None
+            upstreamTimestamp = None
           )
         })
       }

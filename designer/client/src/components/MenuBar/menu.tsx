@@ -7,7 +7,8 @@ import { TruncatedList } from "react-truncate-list";
 import { useIntersectionObserverRef, useKey } from "rooks";
 
 import Arrow from "../../assets/img/arrows/arrow-left.svg";
-import { EventTrackingSelector, getEventTrackingProps } from "../../containers/event-tracking";
+import { getEventTrackingProps } from "../../containers/event-tracking/helpers";
+import { EventTrackingSelector } from "../../containers/event-tracking/use-register-tracking-events";
 import { blendLighten } from "../../containers/theme/helpers";
 import { getLoggedUser, getTabs } from "../../reducers/selectors/settings";
 import { useAppSelector } from "../../store/storeHelpers";

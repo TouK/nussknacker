@@ -3,7 +3,7 @@ import type { PropsWithChildren } from "react";
 import React from "react";
 
 import { useDragHandler } from "../common/dndItems/DragHandle";
-import { ButtonsVariant, ToolbarButtons } from "../toolbarComponents/toolbarButtons";
+import { ButtonsVariant, ToolbarButtons } from "../toolbarComponents/toolbarButtons/ToolbarButtons";
 import type { ToolbarConfig } from "./types";
 
 type Props = PropsWithChildren<unknown>;

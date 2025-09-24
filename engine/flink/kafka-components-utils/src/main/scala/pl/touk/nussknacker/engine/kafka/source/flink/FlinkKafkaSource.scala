@@ -46,7 +46,7 @@ import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.{
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.inputParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalToJsonFormatter
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
-import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyOptions
+import pl.touk.nussknacker.engine.util.watermarkstrategy.{WatermarkStrategyOptions, WithWatermarkStrategyOptions}
 
 import java.util
 import java.util.Properties
@@ -61,7 +61,7 @@ class FlinkKafkaSource[K, V](
     override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
     testParametersInfo: KafkaTestParametersInfo,
     namingStrategy: NamingStrategy,
-    watermarkStrategyOptions: WatermarkStrategyOptions
+    override val watermarkStrategyOptions: WatermarkStrategyOptions
 ) extends FlinkSource
     with ExplicitUidInOperatorsSupport
     with Serializable
@@ -73,7 +73,8 @@ class FlinkKafkaSource[K, V](
     // end
     with WithActionParametersSupport
     with LazyLogging
-    with KafkaLiveDataProvider[K, V] {
+    with KafkaLiveDataProvider[K, V]
+    with WithWatermarkStrategyOptions {
 
   private val typeInformation = ConsumerRecordTypeInfo[K, V](kafkaComponentsConfig)
 
@@ -105,20 +106,6 @@ class FlinkKafkaSource[K, V](
       )
       // 4. unwrap context
       .map((ctxWithEventTime: ContextWithEventTime) => ctxWithEventTime.context, flinkNodeContext.contextTypeInfo)
-  }
-
-  private def sourceWithUidAndName[T](
-      streamOfRaw: DataStream[T],
-      flinkNodeContext: FlinkCustomNodeContext
-  ): DataStream[T] = {
-    streamOfRaw match {
-      case singleOut: SingleOutputStreamOperator[_] =>
-        setUidToNodeIdIfNeed[T](
-          flinkNodeContext,
-          singleOut.name(flinkNodeContext.nodeId.id)
-        )
-      case _ => streamOfRaw
-    }
   }
 
   @nowarn("cat=deprecation")

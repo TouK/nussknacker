@@ -34,6 +34,8 @@ import pl.touk.nussknacker.ui.process.test.ScenarioTestService.TestingCapabiliti
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.time.Instant
+
 class ScenarioTestServiceSpec
     extends AnyFunSuite
     with Matchers
@@ -75,7 +77,7 @@ class ScenarioTestServiceSpec
 
         override def fetchLiveData(maxNumberOfRecords: Int): DataRecords = DataRecords((for {
           number <- 1 to maxNumberOfRecords
-          record = DataRecord(Map("input" -> s"record $number"), timestamp = None)
+          record = DataRecord(Map("input" -> s"record $number"), upstreamTimestamp = None)
         } yield record).toList)
 
       }
@@ -276,17 +278,17 @@ class ScenarioTestServiceSpec
             CommonFormatPreliminaryScenarioRecord(
               NodeId("source1"),
               Map("input" -> Json.fromString("record 1")),
-              timestamp = Some(1)
+              upstreamTimestamp = Some(Instant.ofEpochMilli(1))
             ),
             CommonFormatPreliminaryScenarioRecord(
               NodeId("source1"),
               Map("input" -> Json.fromString("record 2")),
-              timestamp = Some(2)
+              upstreamTimestamp = Some(Instant.ofEpochMilli(2))
             ),
             CommonFormatPreliminaryScenarioRecord(
               NodeId("source1"),
               Map("input" -> Json.fromString("record 3")),
-              timestamp = Some(3)
+              upstreamTimestamp = Some(Instant.ofEpochMilli(3))
             ),
           )
       }
@@ -329,17 +331,17 @@ class ScenarioTestServiceSpec
             CommonFormatPreliminaryScenarioRecord(
               NodeId("source1"),
               Map("input" -> Json.fromString("record 1")),
-              timestamp = None
+              upstreamTimestamp = None
             ),
             CommonFormatPreliminaryScenarioRecord(
               NodeId("source1"),
               Map("input" -> Json.fromString("record 2")),
-              timestamp = None
+              upstreamTimestamp = None
             ),
             CommonFormatPreliminaryScenarioRecord(
               NodeId("source1"),
               Map("input" -> Json.fromString("record 3")),
-              timestamp = None
+              upstreamTimestamp = None
             ),
           )
       }
@@ -439,42 +441,42 @@ class ScenarioTestServiceSpec
             CommonFormatPreliminaryScenarioRecord(
               NodeId("source1"),
               Map("input" -> Json.fromString("record 1")),
-              timestamp = Some(1)
+              upstreamTimestamp = Some(Instant.ofEpochMilli(1))
             ),
             CommonFormatPreliminaryScenarioRecord(
               NodeId("source3"),
               Map("input" -> Json.fromString("record 1")),
-              timestamp = Some(1)
+              upstreamTimestamp = Some(Instant.ofEpochMilli(1))
             ),
             CommonFormatPreliminaryScenarioRecord(
               NodeId("source1"),
               Map("input" -> Json.fromString("record 2")),
-              timestamp = Some(2)
+              upstreamTimestamp = Some(Instant.ofEpochMilli(2))
             ),
             CommonFormatPreliminaryScenarioRecord(
               NodeId("source3"),
               Map("input" -> Json.fromString("record 2")),
-              timestamp = Some(2)
+              upstreamTimestamp = Some(Instant.ofEpochMilli(2))
             ),
             CommonFormatPreliminaryScenarioRecord(
               NodeId("source1"),
               Map("input" -> Json.fromString("record 3")),
-              timestamp = Some(3)
+              upstreamTimestamp = Some(Instant.ofEpochMilli(3))
             ),
             CommonFormatPreliminaryScenarioRecord(
               NodeId("source2"),
               Map("input" -> Json.fromString("record 1")),
-              timestamp = None
+              upstreamTimestamp = None
             ),
             CommonFormatPreliminaryScenarioRecord(
               NodeId("source2"),
               Map("input" -> Json.fromString("record 2")),
-              timestamp = None
+              upstreamTimestamp = None
             ),
             CommonFormatPreliminaryScenarioRecord(
               NodeId("source2"),
               Map("input" -> Json.fromString("record 3")),
-              timestamp = None
+              upstreamTimestamp = None
             ),
           )
       }
@@ -569,12 +571,12 @@ class ScenarioTestServiceSpec
         CommonFormatPreliminaryScenarioRecord(
           sourceId = NodeId("source1"),
           variables = Map("input" -> Json.fromString("record 1")),
-          timestamp = Some(1)
+          upstreamTimestamp = Some(Instant.ofEpochMilli(1))
         ),
         CommonFormatPreliminaryScenarioRecord(
           sourceId = NodeId("source2"),
           variables = Map("input" -> Json.fromString("record 2")),
-          timestamp = None
+          upstreamTimestamp = None
         ) :: Nil,
       )
     )
@@ -586,12 +588,12 @@ class ScenarioTestServiceSpec
       ScenarioTestCommonFormatJsonRecord(
         NodeId("source1"),
         Map("input" -> Json.fromString("record 1")),
-        timestamp = Some(1L)
+        upstreamTimestamp = Some(Instant.ofEpochMilli(1))
       ),
       ScenarioTestCommonFormatJsonRecord(
         NodeId("source2"),
         Map("input" -> Json.fromString("record 2")),
-        timestamp = None
+        upstreamTimestamp = None
       ),
     )
   }
@@ -628,17 +630,17 @@ class ScenarioTestServiceSpec
                 CommonFormatPreliminaryScenarioRecord(
                   sourceId = NodeId("source1"),
                   variables = Map("input" -> Json.fromString("record 1")),
-                  timestamp = None
+                  upstreamTimestamp = None
                 ),
                 CommonFormatPreliminaryScenarioRecord(
                   sourceId = NodeId("non-existing source"),
                   variables = Map("input" -> Json.fromString("record 2")),
-                  timestamp = None
+                  upstreamTimestamp = None
                 ) ::
                   CommonFormatPreliminaryScenarioRecord(
                     sourceId = NodeId("non-existing source 2"),
                     variables = Map("input" -> Json.fromString("record 3")),
-                    timestamp = None
+                    upstreamTimestamp = None
                   ) :: Nil
               )
             )

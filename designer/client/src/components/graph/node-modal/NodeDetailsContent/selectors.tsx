@@ -5,7 +5,10 @@ import ProcessUtils from "../../../../common/ProcessUtils";
 import type { RootState } from "../../../../reducers";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/getProcessDefinitionData";
 import { getScenario, getScenarioGraph } from "../../../../reducers/selectors/graph";
-import type { NodeId, NodeType, NodeValidationError, UIParameter, UiScenarioProperties } from "../../../../types";
+import type { UIParameter } from "../../../../types/definition";
+import type { NodeId, NodeType } from "../../../../types/node";
+import type { UiScenarioProperties } from "../../../../types/scenarioGraph";
+import type { NodeValidationError } from "../../../../types/validation";
 import { getNodeDetails } from "./getNodeDetails";
 
 const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);

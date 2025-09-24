@@ -4,7 +4,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import { render, screen } from "@testing-library/react";
 import * as React from "react";
 import { Provider } from "react-redux";
-import { DictParameterEditor } from "../../src/components/graph/node-modal/editors/expression/DictParameterEditor";
+import { DictParameterEditor } from "../../src/components/graph/node-modal/editors/expression/DictParameterEditor/DictParameterEditor";
 import { nodeInputWithError } from "../../src/components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
 import { mockFieldErrors, mockFormatter, mockValueChange } from "./helpers";

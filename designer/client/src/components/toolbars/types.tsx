@@ -1,4 +1,4 @@
-import type { BuiltinButtonTypes, CustomButtonTypes } from "../toolbarSettings/buttons";
+import type { BuiltinButtonTypes, CustomButtonTypes } from "../toolbarSettings/buttons/buttonsMap";
 
 export type ToolbarButtonProps = {
     type: BuiltinButtonTypes | CustomButtonTypes;

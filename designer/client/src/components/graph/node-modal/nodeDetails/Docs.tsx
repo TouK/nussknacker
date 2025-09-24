@@ -4,7 +4,8 @@ import { Box, styled, Typography } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
+import { getEventTrackingProps } from "../../../../containers/event-tracking/helpers";
+import { EventTrackingSelector } from "../../../../containers/event-tracking/use-register-tracking-events";
 import { Subtype } from "./Subtype";
 
 const LinkStyled = styled("a")({

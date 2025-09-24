@@ -2,7 +2,9 @@ import { OpenInNew } from "@mui/icons-material";
 import { Stack } from "@mui/material";
 import React, { useMemo } from "react";
 
-import { ExternalLink, Highlight, scenarioHref } from "../../common";
+import { Highlight } from "../../common/highlight";
+import { ExternalLink } from "../../common/parentNavigationProvider";
+import { scenarioHref } from "../../common/scenarioHref";
 import { ComponentAvatar } from "../../scenarios/list/componentAvatar";
 import { useComponentsFilterContext } from "../filters/useComponentsFilterContext";
 import type { CellRendererParams } from "../tableWrapper";

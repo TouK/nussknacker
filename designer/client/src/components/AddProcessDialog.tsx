@@ -6,10 +6,11 @@ import { useNavigate } from "react-router-dom";
 
 import { visualizationUrl } from "../common/VisualizationUrl";
 import { useProcessNameValidators } from "../containers/hooks/useProcessNameValidators";
-import HttpService, { ProcessingMode } from "../http/HttpService";
-import type { NodeValidationError } from "../types";
-import { WindowContent } from "../windowManager";
+import HttpService from "../http/HttpService/instance";
+import { ProcessingMode } from "../http/HttpService/types";
+import type { NodeValidationError } from "../types/validation";
 import { LoadingButtonTypes } from "../windowManager/LoadingButton";
+import { WindowContent } from "../windowManager/WindowContent";
 import type { FormValue, TouchedValue } from "./AddProcessForm";
 import { AddProcessForm } from "./AddProcessForm";
 import { extendErrors, mandatoryValueValidator } from "./graph/node-modal/editors/Validators";

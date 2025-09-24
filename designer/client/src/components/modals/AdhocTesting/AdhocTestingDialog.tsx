@@ -4,10 +4,11 @@ import type { ElementType, ReactElement } from "react";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { UIParameter, VariableTypes } from "../../../types";
-import type { WindowKind } from "../../../windowManager";
-import { WindowContent } from "../../../windowManager";
+import type { UIParameter } from "../../../types/definition";
+import type { VariableTypes } from "../../../types/validation";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
+import { WindowContent } from "../../../windowManager/WindowContent";
+import type { WindowKind } from "../../../windowManager/WindowKind";
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";

@@ -2,9 +2,10 @@ import { sortBy } from "lodash";
 import type { ComponentProps } from "react";
 import React, { useMemo } from "react";
 
-import HttpService from "../../http/HttpService";
+import HttpService from "../../http/HttpService/instance";
 import { useAppSelector } from "../../store/storeHelpers";
-import type { NodeValidationError, PropertiesType } from "../../types";
+import type { PropertiesType } from "../../types/node";
+import type { NodeValidationError } from "../../types/validation";
 import { DescriptionField } from "../graph/node-modal/DescriptionField";
 import { FieldType } from "../graph/node-modal/editors/field/Field";
 import { FieldLabel } from "../graph/node-modal/FieldLabel";

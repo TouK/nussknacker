@@ -6,23 +6,24 @@ import io.circe.DecodingFailure.Reason.CustomReason
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import pl.touk.nussknacker.engine.api.NodeId
 
+import java.time.Instant
+
 case class PreliminaryScenarioRecords(records: NonEmptyList[PreliminaryScenarioRecord])
 
 sealed trait PreliminaryScenarioRecord {
   def sourceId: NodeId
-  def timestamp: Option[Long]
 }
 
 final case class SourceSpecificFormatPreliminaryScenarioRecord(
     override val sourceId: NodeId,
     record: Json,
-    override val timestamp: Option[Long]
+    timestamp: Option[Long]
 ) extends PreliminaryScenarioRecord
 
 final case class CommonFormatPreliminaryScenarioRecord(
     override val sourceId: NodeId,
     variables: Map[String, Json],
-    override val timestamp: Option[Long]
+    upstreamTimestamp: Option[Instant]
 ) extends PreliminaryScenarioRecord
 
 object PreliminaryScenarioRecord {
@@ -56,6 +57,14 @@ object PreliminaryScenarioRecord {
           cursor
         )
       )
+  }
+
+  implicit val ordering: Ordering[PreliminaryScenarioRecord] = Ordering.by[PreliminaryScenarioRecord, Long] {
+    case SourceSpecificFormatPreliminaryScenarioRecord(_, _, Some(timestamp)) => timestamp
+    case CommonFormatPreliminaryScenarioRecord(_, _, Some(timestamp))         => timestamp.toEpochMilli
+    case SourceSpecificFormatPreliminaryScenarioRecord(_, _, None) |
+        CommonFormatPreliminaryScenarioRecord(_, _, None) =>
+      Long.MaxValue
   }
 
 }

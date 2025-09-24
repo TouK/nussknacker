@@ -1,13 +1,13 @@
 import { Tooltip } from "@mui/material";
 import type { TooltipProps } from "@mui/material/Tooltip/Tooltip";
-import type { PropsWithChildren } from "react";
-import React, { useRef, useCallback, useEffect } from "react";
+import type { PropsWithChildren, ReactNode } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 
-import { StyledInfoChildrenWrapper, StyledInfoMarkdown } from "./StyledInfo";
+import { StyledInfoChildrenWrapper } from "./StyledInfo";
 import { useTooltip } from "./useTooltip";
 
 interface Props {
-    title: string;
+    title: ReactNode;
     className?: string;
     customComponentsProps?: TooltipProps["componentsProps"];
     enterDelay?: number;
@@ -50,7 +50,7 @@ export const InfoTooltipHover = ({ title, className, children, customComponentsP
                         scheduleClose();
                     }}
                 >
-                    <StyledInfoMarkdown>{title}</StyledInfoMarkdown>
+                    {title}
                 </div>
             }
             placement="bottom-start"

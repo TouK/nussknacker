@@ -6,9 +6,13 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDebouncedValue } from "rooks";
 
-import { createFilterRules, ExternalLink, Highlight, metricsHref } from "../../common";
-import type { Columns } from "../../components";
-import { FilterLinkCell, TableWrapper } from "../../components";
+import { createFilterRules } from "../../common/filters/filterRules";
+import { Highlight } from "../../common/highlight";
+import { ExternalLink } from "../../common/parentNavigationProvider";
+import { metricsHref } from "../../common/scenarioHref";
+import { FilterLinkCell } from "../../components/cellRenderers/filterLinkCell";
+import type { Columns } from "../../components/tableWrapper";
+import { TableWrapper } from "../../components/tableWrapper";
 import { ScenarioCell } from "../../components/usages/scenarioCell";
 import { useScenariosFilterContext } from "../filters/common/useScenariosFilterContext";
 import type { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";

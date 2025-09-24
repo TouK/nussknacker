@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
-import pl.touk.nussknacker.engine.api.{Context, EagerService, NodeId, Params, ServiceInvoker}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
@@ -22,7 +22,9 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object DynamicMultipleParamsService extends EagerService with SingleInputDynamicComponent[ServiceInvoker] {
+object DynamicMultipleParamsService extends EagerService with SingleInputDynamicComponent {
+
+  override type Implementation = ServiceInvoker
 
   override type State = Unit
 

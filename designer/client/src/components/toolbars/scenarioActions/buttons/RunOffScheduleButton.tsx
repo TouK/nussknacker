@@ -1,9 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { loadProcessState } from "../../../../actions/nk";
+import { loadProcessState } from "../../../../actions/nk/process";
 import Icon from "../../../../assets/img/toolbarButtons/run-off-schedule.svg";
-import HttpService from "../../../../http/HttpService";
+import HttpService from "../../../../http/HttpService/instance";
 import type { RootState } from "../../../../reducers";
 import { getProcessName, isRunOffScheduleVisible } from "../../../../reducers/selectors/graph";
 import { isRunOffSchedulePossible, isValidationResultPresent } from "../../../../reducers/selectors/graph2";
@@ -11,12 +11,13 @@ import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getProcessState } from "../../../../reducers/selectors/scenarioState";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
-import { useWindows, WindowKind } from "../../../../windowManager";
+import { useWindows } from "../../../../windowManager/useWindows";
+import { WindowKind } from "../../../../windowManager/WindowKind";
 import type { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
 import ProcessStateUtils from "../../../Process/ProcessStateUtils";
 import type { ProcessName, ProcessVersionId } from "../../../Process/types";
 import { PredefinedActionName } from "../../../Process/types";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 export default function RunOffScheduleButton(props: ToolbarButtonProps) {

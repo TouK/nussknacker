@@ -103,7 +103,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
         currentlyPresentedVersionId = Some(VersionId(5)),
       )
     ) shouldEqual Map(
-      ScenarioActionName.RunOffSchedule -> "Disabled for CANCELED status."
+      ScenarioActionName.RunOffSchedule -> "Cannot run off schedule, because scenario is in CANCELED state."
     )
   }
 

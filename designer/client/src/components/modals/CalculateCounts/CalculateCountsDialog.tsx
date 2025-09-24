@@ -6,30 +6,30 @@ import type { PropsWithChildren } from "react";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { fetchAndDisplayProcessCounts } from "../../../actions/nk";
+import { fetchAndDisplayProcessCounts } from "../../../actions/nk/displayProcessCounts";
 import Icon from "../../../assets/img/toolbarButtons/counts.svg";
 import { getProcessName } from "../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
-import { WindowContent } from "../../../windowManager";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
+import { WindowContent } from "../../../windowManager/WindowContent";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { CalculateCountsForm } from "./CalculateCountsForm";
 import type { PickerInput } from "./Picker";
 
-export type State = {
+export type CountsState = {
     from: PickerInput;
     to: PickerInput;
     refresh?: number | null;
 };
 
-const initState = (): State => {
+const initState = (): CountsState => {
     return {
         from: moment().startOf("day"),
         to: moment().endOf("day"),
     };
 };
 
-export function CountsDialog({ children, ...props }: PropsWithChildren<WindowContentProps>): JSX.Element {
+function CountsDialog({ children, ...props }: PropsWithChildren<WindowContentProps>): JSX.Element {
     const { t } = useTranslation();
     const [state, setState] = useState(initState);
     const processName = useAppSelector(getProcessName);
@@ -93,3 +93,5 @@ export function CountsDialog({ children, ...props }: PropsWithChildren<WindowCon
         </WindowContent>
     );
 }
+
+export default CountsDialog;

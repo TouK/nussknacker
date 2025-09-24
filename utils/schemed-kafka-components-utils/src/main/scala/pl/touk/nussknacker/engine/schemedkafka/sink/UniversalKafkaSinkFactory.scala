@@ -66,8 +66,10 @@ class UniversalKafkaSinkFactory(
     val namingStrategy: NamingStrategy,
     jsonLikeValuesEnteringMode: JsonLikeValuesEnteringMode,
     implProvider: UniversalKafkaSinkImplFactory
-) extends KafkaUniversalComponentTransformer[Sink, TopicName.ForSink]
+) extends KafkaUniversalComponentTransformer[TopicName.ForSink]
     with SinkFactory {
+
+  override type Implementation = Sink
 
   override type State = TransformationState
 

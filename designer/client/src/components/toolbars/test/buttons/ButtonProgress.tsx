@@ -2,7 +2,7 @@ import type { LinearProgressProps } from "@mui/material";
 import { Fade, LinearProgress } from "@mui/material";
 import React, { useContext } from "react";
 
-import { ButtonsVariant, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons";
+import { ButtonsVariant, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons/ToolbarButtons";
 
 export type ButtonProgressProps = {
     enabled?: boolean;

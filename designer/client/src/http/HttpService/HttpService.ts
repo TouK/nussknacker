@@ -6,8 +6,10 @@ import FileSaver from "file-saver";
 import i18next from "i18next";
 import type { Moment } from "moment";
 
-import type { ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../../actions/nk";
 import type { GenericValidationData, GenericValidationRequest, TestAdhocValidationRequest } from "../../actions/nk/adhocTesting";
+import type { SettingsData } from "../../actions/nk/assignSettings";
+import type { ValidationData, ValidationRequest } from "../../actions/nk/nodeDetails";
+import type { ProcessingType } from "../../actions/nk/processDefinitionData";
 import api from "../../api";
 import type { UserData } from "../../common/models/User";
 import SystemUtils from "../../common/SystemUtils";
@@ -30,12 +32,13 @@ import { ScenarioActionResultType } from "../../components/toolbars/scenarioActi
 import type { ToolbarsConfig } from "../../components/toolbarSettings/types";
 import type { ProcessVersionValidationResponse } from "../../components/versionControl/types";
 import { API_URL } from "../../config";
-import type { EventTrackingSelectorType, EventTrackingType } from "../../containers/event-tracking";
+import type { EventTrackingSelectorType, EventTrackingType } from "../../containers/event-tracking/use-register-tracking-events";
 import type { BackendNotification } from "../../containers/Notifications";
 import { handleAxiosError } from "../../devHelpers";
 import type { AuthenticationSettings } from "../../reducers/settings";
-import type { Expression, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import type { WithId } from "../../types/common";
+import type { Expression, NodeType } from "../../types/node";
+import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "../parametersUtils";
 import type { ProcessCounts, ResultsWithCountsDto } from "../resultsWithCountsDto";
 import type {

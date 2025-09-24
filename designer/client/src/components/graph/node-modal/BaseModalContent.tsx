@@ -4,9 +4,9 @@ import type { PropsWithChildren } from "react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import type { NodeValidationError } from "../../../types";
-import { EdgeKind } from "../../../types";
 import type { UnknownFunction } from "../../../types/common";
+import { EdgeKind } from "../../../types/edge";
+import type { NodeValidationError } from "../../../types/validation";
 import { NodeInput } from "../../FormElements";
 import { EdgeTypeSelect } from "./EdgeTypeSelect";
 import { NodeTable } from "./NodeDetailsContent/NodeTable";

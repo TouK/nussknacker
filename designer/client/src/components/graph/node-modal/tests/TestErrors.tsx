@@ -2,7 +2,7 @@ import WarningIcon from "@mui/icons-material/Warning";
 import { FormControl, FormHelperText, FormLabel } from "@mui/material";
 import React from "react";
 
-import { InfoTooltip } from "../editors/InfoTooltip";
+import { InfoTooltip } from "../editors/InfoTooltip/InfoTooltip";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 import { useTestResults } from "../TestResultsWrapper";
 

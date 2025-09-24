@@ -26,9 +26,10 @@ import type { VariablesCell } from "./CellContent";
 import { getTestingCellContent, isSourceSelectCell, isVariablesCell } from "./CellContent";
 import { DEFAULT_ROW_HEADER, drawFieldForDisplay } from "./drawText";
 import type { SourceSelectCell } from "./SourceEditor";
-import SourceEditor from "./SourceEditor";
+import { SourceEditor } from "./SourceEditor";
 import "@glideapps/glide-data-grid/dist/index.css";
-import { buildDefaultVariablesMap, buildTestingRowUpdates, computeVariablesRowHeight } from "./utils";
+import { TableFooter } from "./TableFooter";
+import { buildDefaultVariablesMap, buildInputDataRecordUpdates, computeVariablesRowHeight } from "./utils";
 import { VariablesEditor } from "./VariablesEditor";
 
 export interface TestingDataRecords {
@@ -89,7 +90,6 @@ export const Table: React.FC<TableProps> = ({
     const tableTheme = useTableTheme();
     const theme = useTheme();
     const [selection, setSelection] = useState<GridSelection>(emptySelection);
-    const [hasFocus, setHasFocus] = useState(false);
     const ref = useRef<DataEditorRef | null>(null);
     const [cellMenuData, setCellMenuData] = useState<{ position: PopoverPosition | null; row?: number }>({ position: null });
 
@@ -140,7 +140,7 @@ export const Table: React.FC<TableProps> = ({
     const getCellContent = useCallback((item: Item): GridCell => getTestingCellContent(item, data, sourceOptions), [data, sourceOptions]);
     const buildRowUpdates = useCallback(
         (changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[]): Record<number, TestingDataRecords> =>
-            buildTestingRowUpdates(changes, data, defaultVariablesBySourceId),
+            buildInputDataRecordUpdates(changes, data, defaultVariablesBySourceId),
         [data, defaultVariablesBySourceId],
     );
 
@@ -259,10 +259,8 @@ export const Table: React.FC<TableProps> = ({
                 data-testid="data-records-table-container"
                 className={className}
                 sx={sizerSx}
-                onFocus={() => setHasFocus(true)}
                 onBlur={(e) => {
                     if (e.currentTarget.contains(e.relatedTarget)) return;
-                    setHasFocus(false);
                 }}
             >
                 <DataEditor
@@ -273,14 +271,14 @@ export const Table: React.FC<TableProps> = ({
                     getCellsForSelection
                     onCellsEdited={onCellEdited}
                     onRowAppended={recordsToAddLimitExceeded ? undefined : onCellAdded}
-                    rowMarkers="clickable-number"
+                    rowMarkers="both"
                     rows={data.length}
                     smoothScrollX
                     smoothScrollY
                     theme={tableTheme}
                     width={TABLE_WIDTH}
                     height={TABLE_HEIGHT}
-                    gridSelection={hasFocus ? selection : emptySelection}
+                    gridSelection={selection}
                     onCellContextMenu={onDataEditorCellContextMenu}
                     getRowThemeOverride={getRowThemeOverride}
                     trailingRowOptions={trailingRowOptions}
@@ -291,12 +289,21 @@ export const Table: React.FC<TableProps> = ({
                     drawHeader={renderHeaderCell}
                     rowHeight={getRowHeight}
                     onRowMoved={handleRowReorder}
+                    rowSelectionMode="multi"
                 />
                 <CellMenu anchorPosition={cellMenuData.position} onClose={closeCellMenu}>
                     {cellMenuData.row !== undefined && cellMenuData.row >= 0 && deleteMenuIndexes.length > 0 && (
                         <DeleteRowMenuItem indexes={deleteMenuIndexes} onClick={handleDeleteRows} />
                     )}
                 </CellMenu>
+                {selection.rows.length > 0 && (
+                    <TableFooter
+                        selection={selection}
+                        allRowsNumber={data.length}
+                        onDeleteRows={onCellDeleted}
+                        clearSelection={clearSelection}
+                    />
+                )}
             </Sizer>
             {tooltipElement}
         </>

@@ -2,7 +2,7 @@ import { Box, FormControl, FormControlLabel, Typography } from "@mui/material";
 import { t } from "i18next";
 import React from "react";
 
-import type { NodeValidationError, VariableTypes } from "../../../../../../../types";
+import type { NodeValidationError, VariableTypes } from "../../../../../../../types/validation";
 import { ExpressionLang } from "../../../../editors/expression/types";
 import { nodeValue } from "../../../../NodeDetailsContent/NodeTableStyled";
 import type {
@@ -11,7 +11,7 @@ import type {
     AnyValueParameterVariant,
     DefaultParameterVariant,
     ValueCompileTimeValidation,
-} from "../../../item";
+} from "../../../item/types";
 import { useSettings } from "../../SettingsProvider";
 import { SettingLabelStyled, CustomSwitch } from "./StyledSettingsComponnets";
 import ValidationFields from "./ValidationFields";

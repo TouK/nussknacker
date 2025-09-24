@@ -6,7 +6,7 @@ import TreeView from "react-treeview";
 import { toggleToolboxGroup } from "../../../actions/nk/toolbars";
 import { getClosedComponentGroups, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
-import type { ComponentGroup } from "../../../types";
+import type { ComponentGroup } from "../../../types/component";
 import type { ToolProps } from "./Tool";
 import Tool from "./Tool";
 
