@@ -12,7 +12,7 @@ type QueryRecord = ParsedQuery<QueryParamValue>;
 
 const DEFAULT_ARRAY_FORMAT: ParseOptions["arrayFormat"] = "comma";
 
-function parseQuery(searchString = window.location.search): QueryRecord {
+export function parseQuery(searchString = window.location.search): QueryRecord {
     const parsedRawQuery = parse(searchString, {
         arrayFormat: DEFAULT_ARRAY_FORMAT,
         parseNumbers: true,
@@ -51,8 +51,11 @@ function encodeQueryParamValue(value: QueryParamValue): QueryParamValue {
     }
 }
 
-function stringifyQuery(params: QueryRecord): string {
+export function stringifyQuery(params: QueryRecord): string {
     const resultParams = omitBy(params, (value) => value === undefined || isEqual(value, []));
+    // Manual encoding due to issues with 'query-string' library.
+    // The library does not encode query params correctly when the parameter value contains the array delimiter.
+    // When the array delimiter (comma in our case) is used in the parameter value, it's not encoded, and the parameter value is split into multiple values
     const encodedParams = Object.fromEntries(
         Object.entries(resultParams).map(([key, value]) => {
             if (Array.isArray(value)) {
