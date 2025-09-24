@@ -1,7 +1,8 @@
 import { cyan, deepOrange, lime } from "@mui/material/colors";
-import { alpha, createTheme, Theme } from "@mui/material/styles";
+import type { Theme } from "@mui/material/styles";
+import { alpha, createTheme } from "@mui/material/styles";
 import { useEffect, useMemo, useState } from "react";
-import { getBorderColor, blendLighten } from "nussknackerUi/themeHelpers";
+// import { getBorderColor, blendLighten } from "nussknackerUi/themeHelpers";
 
 const darkBase = createTheme({
     palette: {
@@ -58,11 +59,11 @@ export const useDefaultTheme = (parent = {}): Theme => {
                     MuiDataGrid: {
                         styleOverrides: {
                             withBorderColor: ({ theme }) => ({
-                                borderColor: getBorderColor(theme),
+                                // borderColor: getBorderColor(theme),
                             }),
                             root: {
                                 border: 0,
-                                "--DataGrid-containerBackground": blendLighten(root.palette.background.paper, 0.12),
+                                // "--DataGrid-containerBackground": blendLighten(root.palette.background.paper, 0.12),
                             },
                             row: {
                                 ":nth-of-type(even):not(:hover)": {
@@ -137,7 +138,7 @@ export const useDefaultTheme = (parent = {}): Theme => {
                     MuiListItemButton: {
                         styleOverrides: {
                             divider: ({ theme }) => ({
-                                borderColor: getBorderColor(theme),
+                                // borderColor: getBorderColor(theme),
                             }),
                         },
                     },
