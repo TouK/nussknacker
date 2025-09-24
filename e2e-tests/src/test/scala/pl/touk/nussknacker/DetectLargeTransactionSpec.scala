@@ -449,7 +449,7 @@ class DetectLargeTransactionSpec
              |        "currentThroughput": "${regexes.decimalRegex}"
              |      }
              |    ],
-             |    "invocationResults": {
+             |    "expressionEvaluationResults": {
              |      "only large ones": [
              |        {
              |          "contextId": "DetectLargeTransactions-transactions-0-0",
@@ -534,6 +534,98 @@ class DetectLargeTransactionSpec
              |          "value": {
              |            "pretty": true
              |          }
+             |        }
+             |      ],
+             |      "send for audit": [
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-3",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 3,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "Value",
+             |          "value": {
+             |            "pretty": {
+             |              "amount": 100,
+             |              "clientId": "100",
+             |              "isLast": false
+             |            }
+             |          }
+             |        },
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-3",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 3,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "Key",
+             |          "value": null
+             |        },
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-4",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 4,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "Value",
+             |          "value": {
+             |            "pretty": {
+             |              "amount": 1000,
+             |              "clientId": "100",
+             |              "isLast": false
+             |            }
+             |          }
+             |        },
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-4",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 4,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "Key",
+             |          "value": null
+             |        },
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-5",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 5,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "Value",
+             |          "value": {
+             |            "pretty": {
+             |              "amount": 10000,
+             |              "clientId": "100",
+             |              "isLast": false
+             |            }
+             |          }
+             |        },
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-5",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 5,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "Key",
+             |          "value": null
              |        }
              |      ],
              |      "transactions": [
@@ -621,101 +713,9 @@ class DetectLargeTransactionSpec
              |            "pretty": "${regexes.zuluDateRegex}"
              |          }
              |        }
-             |      ],
-             |      "send for audit": [
-             |        {
-             |          "contextId": "DetectLargeTransactions-transactions-0-3",
-             |          "cid": {
-             |            "nid": "transactions",
-             |            "tid": 0,
-             |            "idx": 3,
-             |            "path": []
-             |          },
-             |          "timestamp": "${regexes.zuluDateRegex}",
-             |          "name": "Key",
-             |          "value": null
-             |        },
-             |        {
-             |          "contextId": "DetectLargeTransactions-transactions-0-3",
-             |          "cid": {
-             |            "nid": "transactions",
-             |            "tid": 0,
-             |            "idx": 3,
-             |            "path": []
-             |          },
-             |          "timestamp": "${regexes.zuluDateRegex}",
-             |          "name": "Value",
-             |          "value": {
-             |            "pretty": {
-             |              "amount": 100,
-             |              "clientId": "100",
-             |              "isLast": false
-             |            }
-             |          }
-             |        },
-             |        {
-             |          "contextId": "DetectLargeTransactions-transactions-0-4",
-             |          "cid": {
-             |            "nid": "transactions",
-             |            "tid": 0,
-             |            "idx": 4,
-             |            "path": []
-             |          },
-             |          "timestamp": "${regexes.zuluDateRegex}",
-             |          "name": "Key",
-             |          "value": null
-             |        },
-             |        {
-             |          "contextId": "DetectLargeTransactions-transactions-0-4",
-             |          "cid": {
-             |            "nid": "transactions",
-             |            "tid": 0,
-             |            "idx": 4,
-             |            "path": []
-             |          },
-             |          "timestamp": "${regexes.zuluDateRegex}",
-             |          "name": "Value",
-             |          "value": {
-             |            "pretty": {
-             |              "amount": 1000,
-             |              "clientId": "100",
-             |              "isLast": false
-             |            }
-             |          }
-             |        },
-             |        {
-             |          "contextId": "DetectLargeTransactions-transactions-0-5",
-             |          "cid": {
-             |            "nid": "transactions",
-             |            "tid": 0,
-             |            "idx": 5,
-             |            "path": []
-             |          },
-             |          "timestamp": "${regexes.zuluDateRegex}",
-             |          "name": "Key",
-             |          "value": null
-             |        },
-             |        {
-             |          "contextId": "DetectLargeTransactions-transactions-0-5",
-             |          "cid": {
-             |            "nid": "transactions",
-             |            "tid": 0,
-             |            "idx": 5,
-             |            "path": []
-             |          },
-             |          "timestamp": "${regexes.zuluDateRegex}",
-             |          "name": "Value",
-             |          "value": {
-             |            "pretty": {
-             |              "amount": 10000,
-             |              "clientId": "100",
-             |              "isLast": false
-             |            }
-             |          }
-             |        }
              |      ]
              |    },
-             |    "externalInvocationResults": {},
+             |    "externalServiceInvocationResults": {},
              |    "exceptions": [],
              |    "exceptionsByNodeId": {}
              |  },

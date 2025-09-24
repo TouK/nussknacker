@@ -13,8 +13,8 @@ import java.time.Instant
 final case class CollectedLiveData(
     timestamp: Instant,
     nodeTransitions: Map[NodeTransition, LiveDataForNodeTransition],
-    invocationResults: Map[NodeId, List[InvocationResult]],
-    externalInvocationResults: Map[NodeId, List[InvocationResult]],
+    expressionEvaluationResults: Map[NodeId, List[ExpressionEvaluationResult]],
+    externalServiceInvocationResults: Map[NodeId, List[ExternalServiceInvocationResult]],
     exceptions: Map[NodeId, List[ExceptionResult]]
 )
 
@@ -51,8 +51,11 @@ object CollectedLiveData {
   private implicit val liveDataForNodeTransitionEncoder: Encoder[LiveDataForNodeTransition] = deriveEncoder
   private implicit val liveDataForNodeTransitionDecoder: Decoder[LiveDataForNodeTransition] = deriveDecoder
 
-  private implicit val invocationResultEncoder: Encoder[InvocationResult] = deriveEncoder
-  private implicit val invocationResultDecoder: Decoder[InvocationResult] = deriveDecoder
+  private implicit val expressionEvaluationResultEncoder: Encoder[ExpressionEvaluationResult] = deriveEncoder
+  private implicit val expressionEvaluationResultDecoder: Decoder[ExpressionEvaluationResult] = deriveDecoder
+
+  private implicit val externalServiceInvocationResultEncoder: Encoder[ExternalServiceInvocationResult] = deriveEncoder
+  private implicit val externalServiceInvocationResultDecoder: Decoder[ExternalServiceInvocationResult] = deriveDecoder
 
   private implicit val exceptionResultEncoder: Encoder[ExceptionResult] = deriveEncoder
   private implicit val exceptionResultDecoder: Decoder[ExceptionResult] = deriveDecoder
@@ -72,8 +75,31 @@ object CollectedLiveData {
       result.getOrElse(throw new IllegalArgumentException("Could not parse NodeTransition"))
     }
 
+  // The live data collected by standalone Flink are synchronized using `live_data` db table.
+  // They are stored in the db as CollectedLiveData encoded as Json.
+  // The already deployed processes will upload the data to the table using the old schema after Nu upgrade.
+  // This class represents old schema (with `invocationResults` and `externalInvocationResults` fields.
+  private final case class CollectedLiveDataV1(
+      timestamp: Instant,
+      nodeTransitions: Map[NodeTransition, LiveDataForNodeTransition],
+      invocationResults: Map[NodeId, List[ExpressionEvaluationResult]],
+      externalInvocationResults: Map[NodeId, List[ExternalServiceInvocationResult]],
+      exceptions: Map[NodeId, List[ExceptionResult]]
+  ) {}
+
   implicit val collectedLiveDataEncoder: Encoder[CollectedLiveData] = deriveEncoder
-  implicit val collectedLiveDataDecoder: Decoder[CollectedLiveData] = deriveDecoder
+
+  implicit val collectedLiveDataDecoder: Decoder[CollectedLiveData] =
+    deriveDecoder[CollectedLiveData]
+      .or(deriveDecoder[CollectedLiveDataV1].map { v1 =>
+        CollectedLiveData(
+          timestamp = v1.timestamp,
+          nodeTransitions = v1.nodeTransitions,
+          expressionEvaluationResults = v1.invocationResults,
+          externalServiceInvocationResults = v1.externalInvocationResults,
+          exceptions = v1.exceptions,
+        )
+      })
 
   def aggregate(
       liveData: List[CollectedLiveData],
@@ -89,13 +115,13 @@ object CollectedLiveData {
             liveDataNel.toList.map(_.nodeTransitions),
             maxNumberOfSamples
           ),
-          invocationResults = latestSamples[InvocationResult](
-            liveDataNel.toList.map(_.invocationResults),
+          expressionEvaluationResults = latestSamples[ExpressionEvaluationResult](
+            liveDataNel.toList.map(_.expressionEvaluationResults),
             maxNumberOfSamples,
             _.timestamp
           ),
-          externalInvocationResults = latestSamples[InvocationResult](
-            liveDataNel.toList.map(_.externalInvocationResults),
+          externalServiceInvocationResults = latestSamples[ExternalServiceInvocationResult](
+            liveDataNel.toList.map(_.externalServiceInvocationResults),
             maxNumberOfSamples,
             _.timestamp
           ),
@@ -150,7 +176,14 @@ final case class ExceptionResult(
     throwable: Throwable,
 )
 
-final case class InvocationResult(
+final case class ExpressionEvaluationResult(
+    contextId: ContextId,
+    timestamp: Instant,
+    name: String,
+    value: Json,
+)
+
+final case class ExternalServiceInvocationResult(
     contextId: ContextId,
     timestamp: Instant,
     name: String,

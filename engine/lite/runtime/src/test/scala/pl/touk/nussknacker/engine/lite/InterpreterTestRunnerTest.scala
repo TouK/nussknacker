@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.lite.sample.SampleInputWithListAndMap
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testmode.TestProcess
-import pl.touk.nussknacker.engine.testmode.TestProcess.{ExpressionInvocationResult, ExternalInvocationResult}
+import pl.touk.nussknacker.engine.testmode.TestProcess.{ExpressionEvaluationResult, ExternalServiceInvocationResult}
 
 import java.time.Instant
 import scala.jdk.CollectionConverters._
@@ -61,19 +61,24 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       (ContextId(ProcessName("C"), NodeId(""), 0, 0), Map("input" -> 3, "out1" -> 3, "sum" -> 5).mapValuesNow(variable))
     )
 
-    results.invocationResults(NodeId("sum")).map(withMockedTimestamp) shouldBe List(
-      ExpressionInvocationResult(ContextId(ProcessName("A"), NodeId(""), 0, 0), mockedTimestamp, "value", variable(2)),
-      ExpressionInvocationResult(ContextId(ProcessName("C"), NodeId(""), 0, 0), mockedTimestamp, "value", variable(3))
+    results.expressionEvaluationResults(NodeId("sum")).map(withMockedTimestamp) shouldBe List(
+      ExpressionEvaluationResult(ContextId(ProcessName("A"), NodeId(""), 0, 0), mockedTimestamp, "value", variable(2)),
+      ExpressionEvaluationResult(ContextId(ProcessName("C"), NodeId(""), 0, 0), mockedTimestamp, "value", variable(3))
     )
 
-    results.externalInvocationResults(NodeId("end")).map(withMockedTimestamp) shouldBe List(
-      ExternalInvocationResult(
+    results.externalServiceInvocationResults(NodeId("end")).map(withMockedTimestamp) shouldBe List(
+      ExternalServiceInvocationResult(
         ContextId(ProcessName("A"), NodeId(""), 0, 0),
         mockedTimestamp,
         "end",
         variable("2:2.0")
       ),
-      ExternalInvocationResult(ContextId(ProcessName("C"), NodeId(""), 0, 0), mockedTimestamp, "end", variable("3:5.0"))
+      ExternalServiceInvocationResult(
+        ContextId(ProcessName("C"), NodeId(""), 0, 0),
+        mockedTimestamp,
+        "end",
+        variable("3:5.0")
+      )
     )
   }
 
@@ -102,12 +107,27 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       (ContextId(ProcessName("C"), NodeId(""), 0, 0), Map("input" -> variable(3)))
     )
 
-    results.externalInvocationResults(NodeId("end1")).map(withMockedTimestamp) shouldBe List(
-      ExternalInvocationResult(ContextId(ProcessName("A"), NodeId(""), 0, 0), mockedTimestamp, "end1", variable(1)),
-      ExternalInvocationResult(ContextId(ProcessName("B"), NodeId(""), 0, 0), mockedTimestamp, "end1", variable(2))
+    results.externalServiceInvocationResults(NodeId("end1")).map(withMockedTimestamp) shouldBe List(
+      ExternalServiceInvocationResult(
+        ContextId(ProcessName("A"), NodeId(""), 0, 0),
+        mockedTimestamp,
+        "end1",
+        variable(1)
+      ),
+      ExternalServiceInvocationResult(
+        ContextId(ProcessName("B"), NodeId(""), 0, 0),
+        mockedTimestamp,
+        "end1",
+        variable(2)
+      )
     )
-    results.externalInvocationResults(NodeId("end2")).map(withMockedTimestamp) shouldBe List(
-      ExternalInvocationResult(ContextId(ProcessName("C"), NodeId(""), 0, 0), mockedTimestamp, "end2", variable(3))
+    results.externalServiceInvocationResults(NodeId("end2")).map(withMockedTimestamp) shouldBe List(
+      ExternalServiceInvocationResult(
+        ContextId(ProcessName("C"), NodeId(""), 0, 0),
+        mockedTimestamp,
+        "end2",
+        variable(3)
+      )
     )
   }
 
@@ -174,8 +194,8 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       )
     )
 
-    results.invocationResults(NodeId("sumNumbers")).map(withMockedTimestamp) shouldBe List(
-      ExpressionInvocationResult(
+    results.expressionEvaluationResults(NodeId("sumNumbers")).map(withMockedTimestamp) shouldBe List(
+      ExpressionEvaluationResult(
         ContextId(ProcessName("some-ctx-id"), NodeId(""), 0, 0),
         mockedTimestamp,
         "value",
@@ -183,8 +203,8 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       )
     )
 
-    results.externalInvocationResults(NodeId("end")).map(withMockedTimestamp) shouldBe List(
-      ExternalInvocationResult(
+    results.externalServiceInvocationResults(NodeId("end")).map(withMockedTimestamp) shouldBe List(
+      ExternalServiceInvocationResult(
         ContextId(ProcessName("some-ctx-id"), NodeId(""), 0, 0),
         mockedTimestamp,
         "end",
@@ -214,8 +234,8 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
         Map("in" -> variable("some-text-id"), "out" -> variable("some-text-id"))
       )
     )
-    results.invocationResults(NodeId("fragmentEnd")).map(withMockedTimestamp) shouldBe List(
-      ExpressionInvocationResult(
+    results.expressionEvaluationResults(NodeId("fragmentEnd")).map(withMockedTimestamp) shouldBe List(
+      ExpressionEvaluationResult(
         ContextId(ProcessName("fragment1"), NodeId("fragment1"), 0, 0),
         mockedTimestamp,
         "out",
@@ -275,10 +295,10 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
   private def nodeResults[T](results: TestProcess.TestResults[T], key: String) =
     results.nodeResults(NodeId(key)).map(r => (r.id, r.variables))
 
-  private def withMockedTimestamp(result: ExpressionInvocationResult[Json]) =
+  private def withMockedTimestamp(result: ExpressionEvaluationResult[Json]) =
     result.copy(timestamp = mockedTimestamp)
 
-  private def withMockedTimestamp(result: ExternalInvocationResult[Json]) =
+  private def withMockedTimestamp(result: ExternalServiceInvocationResult[Json]) =
     result.copy(timestamp = mockedTimestamp)
 
 }
