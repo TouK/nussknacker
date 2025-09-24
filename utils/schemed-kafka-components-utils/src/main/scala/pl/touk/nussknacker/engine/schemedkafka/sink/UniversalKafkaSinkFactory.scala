@@ -343,14 +343,14 @@ class UniversalKafkaSinkFactory(
       .leftMap(NonEmptyList.one)
   }
 
-  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+  override def contextTransformation(inputContext: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition =
-    topicParamStep orElse
+    topicParamStep(inputContext, dependencies) orElse
       schemaParamStep(paramsDeterminedAfterSchema) orElse
-      handleInvalidTopicParam(context) orElse
-      handleSinkValueForSchemalessTopic(context) orElse
-      handleSinkValueForSchemedTopic(context)
+      handleInvalidTopicParam(inputContext) orElse
+      handleSinkValueForSchemalessTopic(inputContext) orElse
+      handleSinkValueForSchemedTopic(inputContext)
 
   override def implementation(
       params: Params,
