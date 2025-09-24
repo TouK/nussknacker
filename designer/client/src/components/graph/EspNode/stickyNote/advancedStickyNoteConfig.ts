@@ -251,11 +251,49 @@ export const stickyNoteElementAdvanced: new () => StickyNoteElementAdvanced = di
         "keydown textarea": "selectAll",
         dblclick: "showEditor",
         mouseover: "stopPropagation",
+        // pointer events
+        "pointerdown .sticky-note-markdown-editor": "stopPropagation",
+        "pointerup .sticky-note-markdown-editor": "stopPropagation",
+        "pointermove .sticky-note-markdown-editor": "stopPropagation",
+        "pointerenter .sticky-note-markdown-editor": "stopPropagation",
+        "pointerleave .sticky-note-markdown-editor": "stopPropagation",
+
+        // mouse events
         "click .sticky-note-markdown-editor": "stopPropagation",
-        "mouseenter .sticky-note-markdown-editor": "stopPropagation",
+        "dblclick .sticky-note-markdown-editor": "stopPropagation",
+        "mousedown .sticky-note-markdown-editor": "stopPropagation",
         "mouseup .sticky-note-markdown-editor": "stopPropagation",
-        "mouseout .sticky-note-markdown-editor": "stopPropagation",
+        "mousemove .sticky-note-markdown-editor": "stopPropagation",
+        "mouseenter .sticky-note-markdown-editor": "stopPropagation",
         "mouseleave .sticky-note-markdown-editor": "stopPropagation",
+        "mouseover .sticky-note-markdown-editor": "stopPropagation",
+        "mouseout .sticky-note-markdown-editor": "stopPropagation",
+        "contextmenu .sticky-note-markdown-editor": "stopPropagation",
+        "wheel .sticky-note-markdown-editor": "stopPropagation",
+
+        // touch events
+        "touchstart .sticky-note-markdown-editor": "stopPropagation",
+        "touchend .sticky-note-markdown-editor": "stopPropagation",
+        "touchmove .sticky-note-markdown-editor": "stopPropagation",
+        "touchcancel .sticky-note-markdown-editor": "stopPropagation",
+
+        // keyboard events
+        "keydown .sticky-note-markdown-editor": "stopPropagation",
+        "keyup .sticky-note-markdown-editor": "stopPropagation",
+        "keypress .sticky-note-markdown-editor": "stopPropagation",
+
+        // focus / input
+        "focus .sticky-note-markdown-editor": "stopPropagation",
+        "blur .sticky-note-markdown-editor": "stopPropagation",
+        "input .sticky-note-markdown-editor": "stopPropagation",
+        "change .sticky-note-markdown-editor": "stopPropagation",
+        "compositionstart .sticky-note-markdown-editor": "stopPropagation",
+        "compositionend .sticky-note-markdown-editor": "stopPropagation",
+
+        // drag & drop
+        "dragstart .sticky-note-markdown-editor": "stopPropagation",
+        "dragover .sticky-note-markdown-editor": "stopPropagation",
+        "drop .sticky-note-markdown-editor": "stopPropagation",
     },
 
     remove: function (this: StickyNoteElementAdvanced, ...args: unknown[]): void {
@@ -274,7 +312,7 @@ export const stickyNoteElementAdvanced: new () => StickyNoteElementAdvanced = di
     render: function (this: StickyNoteElementAdvanced, ...args: unknown[]) {
         dia.ElementView.prototype.render.apply(this, args);
         this.model.toBack();
-        this.listenTo(this.model, "change:position", this.changePosition);
+        this.listenTo(this.model, Events.CHANGE_POSITION, this.changePosition);
         return this;
     },
 
@@ -318,7 +356,7 @@ export const stickyNoteElementAdvanced: new () => StickyNoteElementAdvanced = di
         }
     },
 
-    hideEditor: function (this: StickyNoteElementAdvanced, evt: { target: HTMLTextAreaElement }): void {
+    hideEditor: function (this: StickyNoteElementAdvanced, evt: { preventDefault: any; target: HTMLTextAreaElement }): void {
         this.model.toBack();
         this.model.trigger(Events.CELL_CONTENT_UPDATED, this.model, evt.target.value);
         this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/value`, evt.target.value);
