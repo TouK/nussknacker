@@ -380,6 +380,39 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
     eventTimeParameter.defaultValue.value shouldBe "".spel
   }
 
+  test(
+    "should not cause stack overflow when Event time parameter has validation error"
+  ) {
+    val nodeCompilationResult = nodeCompiler
+      .compileNode(
+        node.Source(
+          "id",
+          SourceRef(
+            "event-generator",
+            Parameter(ParameterName("schedule"), "T(java.time.Duration).parse('PT1S')".spel) ::
+              Parameter(ParameterName("value"), "{}".spel) ::
+              Parameter(ParameterName("Event time"), "invalid_value".spel) ::
+              Nil
+          )
+        )
+      )
+
+    nodeCompilationResult.compiledObject.invalidValue.toList should matchPattern {
+      case ExpressionParserCompilationError(_, _, Some(ParameterName("Event time")), _, _) :: Nil =>
+    }
+
+    val dynamicParameters = nodeCompilationResult.parameters.value
+
+    dynamicParameters
+      .map(_.name.value) shouldBe List(
+      "schedule",
+      "count",
+      "value",
+      "Event time",
+      "Max out-of-orderness"
+    )
+  }
+
   test("should use timestamp configured by a user in event generator") {
     val outputTopic = "output-topic-custom-event-time-event-generator"
 
