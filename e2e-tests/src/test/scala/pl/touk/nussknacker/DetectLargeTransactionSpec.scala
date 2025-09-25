@@ -55,6 +55,7 @@ class DetectLargeTransactionSpec
              |    "nodeTransitionResults": [
              |      {
              |        "sourceNodeId": "only large ones",
+             |        "destinationNodeId": null,
              |        "results": [
              |          {
              |            "id": "DetectLargeTransactions-transactions-0-0",
