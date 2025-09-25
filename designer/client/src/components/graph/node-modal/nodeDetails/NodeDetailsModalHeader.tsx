@@ -9,6 +9,7 @@ import { getProcessDefinitionData } from "../../../../reducers/selectors/getProc
 import { useAppSelector } from "../../../../store/storeHelpers";
 import type { NodeType } from "../../../../types/node";
 import { ComponentIcon } from "../../../toolbars/creator/ComponentIcon";
+import { InfoTooltip } from "../editors/InfoTooltip/InfoTooltip";
 import { IconModalTitle } from "./IconModalTitle";
 import { ModalHeader, WindowHeaderIconStyled } from "./NodeDetailsStyled";
 import { NodeDocs } from "./SubHeader";

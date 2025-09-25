@@ -58,7 +58,7 @@ export function WindowContent({ children, icon, subheader, buttons = [], closeWi
             FooterButton: LoadingButton,
             ...props.components,
         }),
-        [stableIcon, stableSubheader, props.components],
+        [props.components, stableIcon, stableSubheader],
     );
 
     return (

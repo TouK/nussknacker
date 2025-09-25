@@ -13,9 +13,9 @@ import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { WindowContent } from "../../../windowManager/WindowContent";
 import type { WindowKind } from "../../../windowManager/WindowKind";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
+import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
-import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
 import { AppendFromLiveDataButton } from "./AppendFromLiveDataButton";
 import type { TestingDataRecords } from "./Table";
 import { Table } from "./Table";
@@ -181,7 +181,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
         <WindowContent
             {...props}
             icon={<WindowHeaderIconStyled as={viewParams.Icon} type={kind} />}
-            subheader={<NodeDocs name={viewParams.docs?.label} href={viewParams.docs?.url} />}
+            subheader={<InfoTooltip variant={"hover"} title={"PLACEHOLDER"} />}
             buttons={buttons}
         >
             <ContentSize>
