@@ -61,7 +61,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                 ? {
                       sourceId: defaultParameter.sourceId,
                       timestamp: undefined,
-                      variables: defaultParameter.parameters[0].defaultValue.expression,
+                      variables: defaultParameter?.parameters?.[0]?.defaultValue?.expression ?? "",
                   }
                 : { sourceId: undefined, timestamp: undefined, variables: undefined },
         [defaultParameter],
