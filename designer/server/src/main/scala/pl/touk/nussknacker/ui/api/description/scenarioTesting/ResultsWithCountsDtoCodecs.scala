@@ -85,8 +85,7 @@ object ResultsWithCountsDtoCodecs {
             .getOrElse(Json.Null),
           "nodeTransitionResults" -> nodeTransitionResults
             .map(_.sortBy(r => (r.sourceNodeId, r.destinationNodeId)))
-            .asJson
-            .deepDropNullValues,
+            .asJson,
           "expressionEvaluationResults" -> expressionEvaluationResults.map { case (node, list) =>
             node -> list.sortBy(_.contextId.legacyString)
           }.asJson,
