@@ -18,7 +18,6 @@ import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
 import type { TestFormParameters } from "../../../common/TestResultUtils";
-import { blendDarken } from "../../../containers/theme/helpers";
 import { CellMenu, DeleteRowMenuItem } from "../../graph/node-modal/editors/expression/Table/CellMenu";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import { useErrorHighlights } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
