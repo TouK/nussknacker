@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.components.LiteBaseComponentProvider
 import pl.touk.nussknacker.engine.lite.components.requestresponse.RequestResponseComponentProvider
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller.fromJsonUnsafe
 import pl.touk.nussknacker.engine.requestresponse.{
   FutureBasedRequestResponseScenarioInterpreter,
   Request1,
@@ -25,6 +26,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess._
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.io.Source
 import scala.jdk.CollectionConverters._
 
 class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeAndAfterEach {
@@ -205,6 +207,15 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     endNodeIdInvocationResult.contextId shouldBe contextIdGenForNodeId(process, NodeId("collect1")).nextContextId()
 
     endNodeIdInvocationResult.value shouldBe variable(List("aa", "bb"))
+  }
+
+  test("scenario with multiple unions should work properly") {
+    val process = fromJsonUnsafe(Source.fromResource("scenarios/scenario-with-multiple-unions.json").mkString)
+
+    val scenarioTestData = ScenarioTestData(List(createTestRecord("a", "b")))
+
+    val results = runTest(process, scenarioTestData)
+    // todo: additional assertions after fixing problem with throwing "key not found: ddd" during scenario interpretation
   }
 
   private def createTestRecord(field1: String, field2: String) = {
