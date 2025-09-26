@@ -58,6 +58,7 @@ abstract class FlinkWithKafkaSuite
   protected var schemaRegistryMockClient: MockSchemaRegistryClient = _
   protected var valueSerializer: KafkaAvroSerializer               = _
   protected var valueDeserializer: KafkaAvroDeserializer           = _
+  protected var extraComponents: List[ComponentDefinition]         = _
   protected var testScenarioRunner: FlinkTestScenarioRunner        = _
 
   protected lazy val additionalComponents: List[ComponentDefinition] = Nil
@@ -68,16 +69,15 @@ abstract class FlinkWithKafkaSuite
     schemaRegistryMockClient = schemaRegistryClientProvider.schemaRegistryClient
     valueSerializer = new KafkaAvroSerializer(schemaRegistryMockClient)
     valueDeserializer = new KafkaAvroDeserializer(schemaRegistryMockClient)
-    val components =
-      createFinkKafkaComponentProvider(schemaRegistryClientProvider)
-        .create(
-          modelConfig.getConfig("components.kafka"),
-          ComponentDependencies(ModelConfig.parse(modelConfig), designerDbRef = None)
-        ) :::
-        additionalComponents
+    extraComponents = createFinkKafkaComponentProvider(schemaRegistryClientProvider)
+      .create(
+        modelConfig.getConfig("components.kafka"),
+        ComponentDependencies(ModelConfig.parse(modelConfig), designerDbRef = None)
+      ) :::
+      additionalComponents
     testScenarioRunner = TestScenarioRunner
       .flinkBased(modelConfig, flinkMiniCluster)
-      .withExtraComponents(components)
+      .withExtraComponents(extraComponents)
       .withExtraSerializersRegistrars(List((_: Config, executionConfig: ExecutionConfig) => {
         AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(
           executionConfig,

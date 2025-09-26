@@ -4,9 +4,13 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.Writer
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, SingleInputDynamicComponent}
+import pl.touk.nussknacker.engine.api.context.transformation.{
+  DefinedEagerParameter,
+  NodeDependencyValue,
+  SingleInputDynamicComponent
+}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue.nullFixedValue
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
@@ -71,7 +75,8 @@ abstract class KafkaUniversalComponentTransformer[TN <: TopicName: TopicValidati
       kafkaComponentsConfig
     )
 
-  protected def getTopicParam(
+  // protected + extra params used in external project
+  protected def getTopicParam(inputContext: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
     (topicSelectionStrategy.getTopics match {
@@ -82,11 +87,16 @@ abstract class KafkaUniversalComponentTransformer[TN <: TopicName: TopicValidati
           Nil
         )
     }).map { topics =>
-      getTopicParam(topics)
+      toTopicParamDeclaration(topics, inputContext, dependencies)
     }
   }
 
-  private def getTopicParam(topics: List[UnspecializedTopicName]) = {
+  // protected + extra params used in external project
+  protected def toTopicParamDeclaration(
+      topics: List[UnspecializedTopicName],
+      inputContext: ValidationContext,
+      dependencies: List[NodeDependencyValue]
+  )(implicit nodeId: NodeId): ParameterExtractor[String] with ParameterCreatorWithNoDependency = {
     val fixedValueParamEditor = FixedValuesParameterEditor(
       // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
       // TODO: add addNullOption feature flag to FixedValuesParameterEditor
@@ -168,10 +178,12 @@ abstract class KafkaUniversalComponentTransformer[TN <: TopicName: TopicValidati
   protected def parseVersionOption(versionOptionName: String): SchemaVersionOption =
     SchemaVersionOption.byName(versionOptionName)
 
-  protected def topicParamStep(implicit nodeId: NodeId): ContextTransformationDefinition = {
-    case TransformationStep(Nil, _) =>
-      val topicParam = getTopicParam.map(List(_))
-      NextParameters(parameters = topicParam.value.map(_.createParameter()), errors = topicParam.written)
+  // protected + extra params used in external project
+  protected def topicParamStep(inputContext: ValidationContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
+    val topicParam = getTopicParam(inputContext, dependencies).map(List(_))
+    NextParameters(parameters = topicParam.value.map(_.createParameter()), errors = topicParam.written)
   }
 
   protected def schemaParamStep(

@@ -125,22 +125,30 @@ trait WatermarkStrategyValidationHandler extends SingleInputDynamicComponent {
           ((`idlenessParamName`, _)),
           _
         ) =>
-      resultAfterWatermarkStrategyParameters(inputContext, dependencies, step.parameters, step.state)
+      resultAfterWatermarkStrategyParameters(inputContext, dependencies)
+        .applyOrElse(step, defaultFallbackFinalResult(inputContext, _: TransformationStep))
     case step @ TransformationStep(
           _ :+
           ((`eventTimeParamName`, _)) :+
           ((`maxOutOfOrdernessParamName`, _)),
           _
         ) =>
-      resultAfterWatermarkStrategyParameters(inputContext, dependencies, step.parameters, step.state)
+      resultAfterWatermarkStrategyParameters(inputContext, dependencies)
+        .applyOrElse(step, defaultFallbackFinalResult(inputContext, _: TransformationStep))
+  }
+
+  private def defaultFallbackFinalResult(inputContext: ValidationContext, step: TransformationStep)(
+      implicit nodeId: NodeId
+  ): TransformationStepResult = {
+    prepareFinalResultWithOptionalVariable(inputContext, Some(InputVariableName -> Unknown), step.state)
   }
 
   protected def resultAfterWatermarkStrategyParameters(
       inputContext: ValidationContext,
-      dependencies: List[NodeDependencyValue],
-      parameters: List[(ParameterName, DefinedParameter)],
-      state: Option[State]
-  )(implicit nodeId: NodeId): TransformationStepResult
+      dependencies: List[NodeDependencyValue]
+  )(
+      implicit nodeId: NodeId
+  ): ContextTransformationDefinition
 
   protected def extractWatermarkStrategyOptions(params: Params): WatermarkStrategyOptions = {
     val idleTimeoutOptionValue = params.extractParam[Duration](idlenessParamName) match {
