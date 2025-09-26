@@ -23,7 +23,7 @@ import type { Position } from "css-box-model";
 import { useRef } from "react";
 import { useCallback, useMemo } from "use-memo-one";
 
-import type { PendingPromise } from "../../../common/PendingPromise";
+import type { DelayPromise } from "./types";
 
 // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
 export const primaryButton = 0;
@@ -203,11 +203,8 @@ function getCaptureBindings({ cancel, completed, getPhase, setPhase, before }: G
 }
 
 // Original @hello-pangea/dnd sensor with delay
-export default function useMouseSensor(
-    api: SensorAPI,
-    delayPromiseGetter: (draggableId: DraggableId) => PendingPromise<{ end: PendingPromise<void> }>,
-) {
-    const delayPromise = useRef<PendingPromise<{ end: PendingPromise<void> }>>();
+export default function useMouseSensor(api: SensorAPI, delayPromiseGetter: (draggableId: DraggableId) => DelayPromise) {
+    const delayPromise = useRef<DelayPromise>();
     const phaseRef = useRef<Phase>(idle);
     const unbindEventsRef = useRef<() => void>(noop);
 
