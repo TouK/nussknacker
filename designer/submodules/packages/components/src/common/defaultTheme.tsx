@@ -1,10 +1,8 @@
 import { cyan, deepOrange, lime } from "@mui/material/colors";
-import type { Theme } from "@mui/material/styles";
-import { alpha, createTheme } from "@mui/material/styles";
+import { alpha, createTheme, type Theme } from "@mui/material/styles";
 import { useEffect, useMemo, useState } from "react";
-// import { getBorderColor, blendLighten } from "nussknackerUi/themeHelpers";
 
-const darkBase = createTheme({
+export const darkBase = createTheme({
     palette: {
         mode: "dark",
         primary: {
@@ -18,8 +16,7 @@ const darkBase = createTheme({
         },
     },
 });
-
-const lightBase = createTheme({
+export const lightBase = createTheme({
     palette: {
         mode: "light",
         primary: {
@@ -34,7 +31,7 @@ const lightBase = createTheme({
     },
 });
 
-function useModeCheck() {
+export function useModeCheck() {
     const query = "(prefers-color-scheme: light)";
     const [isLight, setLight] = useState(window.matchMedia?.(query).matches);
     useEffect(() => {
@@ -58,12 +55,11 @@ export const useDefaultTheme = (parent = {}): Theme => {
                 components: {
                     MuiDataGrid: {
                         styleOverrides: {
-                            withBorderColor: ({ theme }) => ({
-                                // borderColor: getBorderColor(theme),
-                            }),
                             root: {
                                 border: 0,
-                                // "--DataGrid-containerBackground": blendLighten(root.palette.background.paper, 0.12),
+                                "--DataGrid-containerBackground": root.palette.augmentColor({
+                                    color: { main: root.palette.background.paper },
+                                })[root.palette.mode],
                             },
                             row: {
                                 ":nth-of-type(even):not(:hover)": {
@@ -133,13 +129,6 @@ export const useDefaultTheme = (parent = {}): Theme => {
                                     cursor: "pointer",
                                 },
                             },
-                        },
-                    },
-                    MuiListItemButton: {
-                        styleOverrides: {
-                            divider: ({ theme }) => ({
-                                // borderColor: getBorderColor(theme),
-                            }),
                         },
                     },
                     MuiListItemIcon: {
