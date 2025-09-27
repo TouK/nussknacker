@@ -44,7 +44,7 @@ function OpenButton({ sourceOnly, Icon = AddBox }: { sourceOnly?: boolean; Icon?
             disableTouchRipple={sourceOnly}
             sx={{
                 borderRadius: 0,
-                zoom: sourceOnly ? 3 : 1,
+                transform: sourceOnly ? `scale(3)` : null,
                 opacity: sourceOnly ? 0.15 : 1,
             }}
         >

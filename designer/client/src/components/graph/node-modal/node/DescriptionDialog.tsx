@@ -79,7 +79,9 @@ function DescriptionDialog(props: DescriptionDialogProps): JSX.Element {
             <StyledHeader
                 {...props}
                 sx={{
-                    fontSize: ".75em",
+                    "@media (any-pointer: fine)": {
+                        fontSize: ".75em",
+                    },
                     backgroundColor: "transparent",
                     "&:hover, &:active": { backgroundColor: "var(--backgroundColor)" },
                 }}

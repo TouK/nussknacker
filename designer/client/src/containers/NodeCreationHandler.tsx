@@ -47,7 +47,8 @@ export function useNodeCreationHandler({ panelSide, when = true }: { panelSide: 
                 if (target.id) return;
 
                 const graph = link.graph;
-                const paper = cellView.paper;
+                if (!graph) return;
+
                 const source = link.source();
                 const cell = graph.getCell(source.id);
                 const isLinkReversed = source.port === "In";

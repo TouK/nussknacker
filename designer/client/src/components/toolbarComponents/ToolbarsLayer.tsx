@@ -130,7 +130,7 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
                     />
 
                     <StyledToolbarsContainer
-                        sx={{ gridArea: "bottom", px: 5 }}
+                        sx={(theme) => ({ gridArea: "bottom", px: 5, pb: `max(env(safe-area-inset-bottom), ${theme.spacing(0.5)})` })}
                         availableToolbars={availableToolbars}
                         side={ToolbarsSide.CenterBottom}
                     />
