@@ -105,12 +105,54 @@ function getWindowBindings({ cancel, getPhase }: GetBindingArgs): AnyEventBindin
             eventName: supportedPageVisibilityEventName,
             fn: cancel,
         },
+        {
+            eventName: "pointermove",
+            options: { capture: false },
+            fn: (event: PointerEvent) => {
+                const phase: Phase = getPhase();
+                // Drag has not yet started and we are waiting for a long press.
+                if (phase.type !== "DRAGGING") {
+                    cancel();
+                    return;
+                }
+
+                // At this point we are dragging
+                phase.hasMoved = true;
+
+                const { clientX, clientY } = event;
+
+                const point: Position = {
+                    x: clientX,
+                    y: clientY,
+                };
+
+                // We need to prevent the default event in order to block native scrolling
+                // Also because we are using it as part of a drag we prevent the default action
+                // as a sign that we are using the event
+                event.preventDefault();
+                phase.actions.move(point);
+            },
+        },
     ];
 }
 
 // All of the touch events get applied to the drag handle of the touch interaction
 // This plays well with the event.target being unmounted during a drag
 function getHandleBindings({ cancel, completed, getPhase }: GetBindingArgs): AnyEventBinding[] {
+    function touchend(event: TouchEvent | PointerEvent) {
+        const phase: Phase = getPhase();
+        // drag had not started yet - do not prevent the default action
+        if (phase.type !== "DRAGGING") {
+            cancel();
+            return;
+        }
+
+        // ending the drag
+        event.preventDefault();
+        phase.actions.drop({ shouldBlockNextClick: true });
+        completed();
+    }
+
     return [
         {
             eventName: "touchmove",
@@ -145,19 +187,11 @@ function getHandleBindings({ cancel, completed, getPhase }: GetBindingArgs): Any
         },
         {
             eventName: "touchend",
-            fn: (event: TouchEvent) => {
-                const phase: Phase = getPhase();
-                // drag had not started yet - do not prevent the default action
-                if (phase.type !== "DRAGGING") {
-                    cancel();
-                    return;
-                }
-
-                // ending the drag
-                event.preventDefault();
-                phase.actions.drop({ shouldBlockNextClick: true });
-                completed();
-            },
+            fn: touchend,
+        },
+        {
+            eventName: "pointerup",
+            fn: touchend,
         },
         {
             eventName: "touchcancel",
@@ -240,7 +274,7 @@ function getHandleBindings({ cancel, completed, getPhase }: GetBindingArgs): Any
     ];
 }
 
-// Original @hello-pangea/dnd sensor with delay
+// Original @hello-pangea/dnd sensor with delay and workaround for touchmove
 export default function useTouchSensor(api: SensorAPI, delayPromiseGetter: (draggableId: DraggableId) => DelayPromise) {
     const delayPromise = useRef<DelayPromise>();
     const phaseRef = useRef<Phase>(idle);
@@ -273,13 +307,6 @@ export default function useTouchSensor(api: SensorAPI, delayPromiseGetter: (drag
                     return;
                 }
 
-                delayPromise.current = delayPromiseGetter(draggableId);
-                delayPromise.current.catch(() => {
-                    if (actions.isActive()) {
-                        actions.abort();
-                    }
-                });
-
                 const actions: PreDragActions | null = api.tryGetLock(
                     draggableId,
                     // eslint-disable-next-line @typescript-eslint/no-use-before-define
@@ -291,6 +318,13 @@ export default function useTouchSensor(api: SensorAPI, delayPromiseGetter: (drag
                 if (!actions) {
                     return;
                 }
+
+                delayPromise.current = delayPromiseGetter(draggableId);
+                delayPromise.current.catch(() => {
+                    if (actions.isActive()) {
+                        actions.abort();
+                    }
+                });
 
                 const touch: Touch = event.touches[0];
                 const { clientX, clientY } = touch;
