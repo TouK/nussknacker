@@ -1,4 +1,3 @@
-import type { dia } from "jointjs";
 import { g } from "jointjs";
 import { useEffect } from "react";
 import { useKey } from "rooks";
@@ -8,6 +7,7 @@ import { portSize, RECT_HEIGHT, RECT_WIDTH } from "../components/graph/EspNode/e
 import { useGraph } from "../components/graph/GraphContext";
 import { useSidePanel } from "../components/sidePanels/SidePanelsContext";
 import { closeNodeSelector, openNodeSelector } from "../components/toolbars/creator/nodeSelectorActions";
+import { ComponentFilter } from "../components/toolbars/creator/ToolBox";
 import { useOutsideInteraction } from "../components/toolbars/creator/useOutsideInteraction";
 import { addListenerTyped, addOnceListenerTyped, useAppDispatch } from "../store/storeHelpers";
 
@@ -27,13 +27,12 @@ export function useNodeCreationHandler({ panelSide, when = true }: { panelSide: 
         paper.on(
             "blank:contextmenu",
             (event, x, y) => {
-                dispatch({
-                    type: "OPEN_NODE_SELECTOR",
-                    data: {
+                dispatch(
+                    openNodeSelector({
                         side: panelSide,
                         fromPoint: new g.Point(x, y).offset(RECT_WIDTH * -0.5),
-                    },
-                });
+                    }),
+                );
             },
             context,
         );
@@ -70,7 +69,18 @@ export function useNodeCreationHandler({ panelSide, when = true }: { panelSide: 
 
                 const edgeData = link.prop("edgeData");
 
-                dispatch(openNodeSelector(panelSide, position, isLinkReversed, edgeData, from, to));
+                dispatch(
+                    openNodeSelector({
+                        side: panelSide,
+                        fromPoint: position,
+                        filters: [isLinkReversed ? ComponentFilter.removeNoOutputs : ComponentFilter.removeNoInputs],
+                        withEdge: {
+                            ...edgeData,
+                            from,
+                            to,
+                        },
+                    }),
+                );
                 dispatch(
                     addOnceListenerTyped("CLOSE_NODE_SELECTOR", () => {
                         link.remove();

@@ -1,6 +1,5 @@
 import { AddBox } from "@mui/icons-material";
 import { Fade, IconButton } from "@mui/material";
-import { OverridableComponent } from "@mui/material/OverridableComponent";
 import type SvgIcon from "@mui/material/SvgIcon/SvgIcon";
 import React from "react";
 import { useDragLayer } from "react-dnd";
@@ -10,6 +9,7 @@ import { PanelSide } from "../actions/nk/ui/panelSide";
 import { RECT_HEIGHT, RECT_WIDTH } from "../components/graph/EspNode/esp";
 import { useGraph } from "../components/graph/GraphContext";
 import { Overlay } from "../components/toolbarComponents/Overlay";
+import { openNodeSelector } from "../components/toolbars/creator/nodeSelectorActions";
 import { ComponentFilter } from "../components/toolbars/creator/ToolBox";
 import { getScenario } from "../reducers/selectors/graph";
 import { getToolbarsConfig } from "../reducers/selectors/toolbars";
@@ -29,14 +29,13 @@ function OpenButton({ sourceOnly, Icon = AddBox }: { sourceOnly?: boolean; Icon?
                 const paper = graphGetter().processGraphPaper;
                 const center = paper.clientToLocalPoint(graphGetter().viewport.center());
 
-                dispatch({
-                    type: "OPEN_NODE_SELECTOR",
-                    data: {
+                dispatch(
+                    openNodeSelector({
                         side: PanelSide.RightDynamic,
                         filters: sourceOnly ? [ComponentFilter.sourcesOnly] : [],
                         fromPoint: center.offset(RECT_WIDTH * -0.5, RECT_HEIGHT * -0.5),
-                    },
-                });
+                    }),
+                );
             }}
             disableFocusRipple
             color="primary"
