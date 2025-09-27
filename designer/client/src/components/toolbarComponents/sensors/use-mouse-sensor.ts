@@ -202,6 +202,11 @@ function getCaptureBindings({ cancel, completed, getPhase, setPhase, before }: G
     ];
 }
 
+function isInteractive(target: EventTarget) {
+    if (!(target instanceof Element)) return;
+    return target.matches("button, button *, input, input *");
+}
+
 // Original @hello-pangea/dnd sensor with delay
 export default function useMouseSensor(api: SensorAPI, delayPromiseGetter: (draggableId: DraggableId) => DelayPromise) {
     const delayPromise = useRef<DelayPromise>();
@@ -213,6 +218,7 @@ export default function useMouseSensor(api: SensorAPI, delayPromiseGetter: (drag
             {
                 eventName: "mousedown",
                 fn: async function onMouseDown(event: MouseEvent) {
+                    if (isInteractive(event.target)) return;
                     // Event already used
                     if (event.defaultPrevented) {
                         return;
