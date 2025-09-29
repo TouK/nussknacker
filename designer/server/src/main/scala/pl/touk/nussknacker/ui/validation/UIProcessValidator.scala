@@ -346,8 +346,9 @@ class UIProcessValidator(
         .flatMap(error => error.nodeIds.map(nodeId => nodeId -> PrettyValidationErrors.formatErrorMessage(error)))
         .toGroupedMap
 
-    // There shouldn't be unclassified errors, but the current design of ProcessCompilationError allows for such errors
-    // Try to get rid of them and make the context of the error as accurate as possible
+    // TODO There shouldn't be unclassified errors, but the current design of ProcessCompilationError allows for such errors
+    // Try to get rid of them and make the context of the error as accurate as possible (with node ID)
+    // fatal unknown errors should be presented as node errors if possible, and the errors without a node ID as global errors
     val additionalGlobalErrors =
       NonEmptyList
         .fromList(unclassifiedErrors)
