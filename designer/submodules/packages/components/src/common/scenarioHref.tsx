@@ -22,7 +22,7 @@ export function scenarioHref(scenarioName: string): string {
 
 function scenarioWithNodesHref(scenarioName: string, nodeIds: string[]): string {
     // , and / allowed in nodeId
-    const ids = nodeIds.map((nodeId: string): string => encodeURIComponent(encodeURIComponent(nodeId)));
+    const ids = nodeIds.map((nodeId: string): string => encodeURIComponent(nodeId));
     return urljoin(scenarioHref(scenarioName), `?nodeId=${ids.join(",")}`);
 }
 

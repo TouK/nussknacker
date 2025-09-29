@@ -1,30 +1,72 @@
 import { isEqual, omitBy, uniq, without } from "lodash";
 import type { ParsedQuery, ParseOptions } from "query-string";
-import { parse } from "query-string";
-import { stringify } from "query-string";
+import { parse, stringify } from "query-string";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import { ensureArray } from "../../common/arrayUtils";
 
-type QueryRecord = ParsedQuery<string | boolean | number>;
+type QueryParamValue = string | boolean | number;
+
+type QueryRecord = ParsedQuery<QueryParamValue>;
 
 const DEFAULT_ARRAY_FORMAT: ParseOptions["arrayFormat"] = "comma";
 
-function parseQuery(searchString = window.location.search): QueryRecord {
-    return parse(searchString, {
+export function parseQuery(searchString = window.location.search): QueryRecord {
+    const parsedRawQuery = parse(searchString, {
         arrayFormat: DEFAULT_ARRAY_FORMAT,
         parseNumbers: true,
         parseBooleans: true,
-        decode: true,
+        decode: false,
     });
+
+    return Object.fromEntries(
+        Object.entries(parsedRawQuery).map(([key, value]) => {
+            const decodedKey = decodeURIComponent(key);
+            if (value === null) {
+                return [decodedKey, null];
+            }
+            if (Array.isArray(value)) {
+                return [decodedKey, value.map((v) => decodeQueryParamValue(v))];
+            }
+
+            return [decodedKey, decodeQueryParamValue(value)];
+        }),
+    );
 }
 
-function stringifyQuery(params: QueryRecord): string {
+function decodeQueryParamValue(value: QueryParamValue): QueryParamValue {
+    if (typeof value === "string") {
+        return decodeURIComponent(value);
+    } else {
+        return value;
+    }
+}
+
+function encodeQueryParamValue(value: QueryParamValue): QueryParamValue {
+    if (typeof value === "string") {
+        return encodeURIComponent(value);
+    } else {
+        return value;
+    }
+}
+
+export function stringifyQuery(params: QueryRecord): string {
     const resultParams = omitBy(params, (value) => value === undefined || isEqual(value, []));
-    return stringify(resultParams, {
+    // Manual encoding due to issues with 'query-string' library.
+    // The library does not encode query params correctly when the parameter value contains the array delimiter.
+    // When the array delimiter (comma in our case) is used in the parameter value, it's not encoded, and the parameter value is split into multiple values
+    const encodedParams = Object.fromEntries(
+        Object.entries(resultParams).map(([key, value]) => {
+            if (Array.isArray(value)) {
+                return [encodeURIComponent(key), value.map((v) => encodeQueryParamValue(v))];
+            }
+            return [encodeURIComponent(key), encodeQueryParamValue(value)];
+        }),
+    );
+    return stringify(encodedParams, {
         arrayFormat: DEFAULT_ARRAY_FORMAT,
-        encode: true,
+        encode: false,
     });
 }
 
