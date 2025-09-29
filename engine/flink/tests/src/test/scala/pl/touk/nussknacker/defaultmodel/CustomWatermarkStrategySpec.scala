@@ -71,7 +71,7 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
        |);
        |""".stripMargin
 
-  private lazy val kafkaTableConfig =
+  private lazy val tableComponentsConfig =
     s"""
        |{
        |  tableDefinition: \"\"\" $tablesDefinition \"\"\"
@@ -79,7 +79,7 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
        |""".stripMargin
 
   override lazy val additionalComponents: List[ComponentDefinition] =
-    FlinkTableDataSourceComponentProvider.create(ConfigFactory.parseString(kafkaTableConfig))
+    FlinkTableDataSourceComponentProvider.create(ConfigFactory.parseString(tableComponentsConfig))
 
   private val givenKey  = "foo-key"
   private val givenData = 1
@@ -87,7 +87,7 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
   private lazy val nodeCompiler = TestNodeCompiler
     .flinkBased(modelConfig)
     .withFlinkMiniCluster(flinkMiniCluster)
-    .withExtraComponents(additionalComponents)
+    .withExtraComponents(extraComponents)
     .build()
 
   test("should respect timestamp configured by a user during scenario testing") {
@@ -411,6 +411,29 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
       "Event time",
       "Max out-of-orderness"
     )
+  }
+
+  test("should proper handle validation error before schema and other things are known") {
+    val inputTopic = "input-topic-validation-error-before-final-state-determined"
+
+    kafkaClient.createTopic(inputTopic, 1)
+
+    val nodeCompilationResult = nodeCompiler
+      .compileNode(
+        node.Source(
+          "id",
+          SourceRef(
+            "kafka",
+            Parameter(ParameterName("Topic"), s"'$inputTopic'".spel) ::
+              Parameter(ParameterName("Content type"), "invalid_value".spel) ::
+              Nil
+          )
+        )
+      )
+
+    nodeCompilationResult.compiledObject.invalidValue.toList should matchPattern {
+      case ExpressionParserCompilationError(_, _, Some(ParameterName("Content type")), _, _) :: Nil =>
+    }
   }
 
   test("should use timestamp configured by a user in event generator") {

@@ -15,7 +15,8 @@ import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.graph.node.SubsequentNode
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.restmodel.DeployRequest
@@ -437,6 +438,43 @@ class ManagementResourcesSpec
         .downField("pretty")
         .downN(0)
         .focus shouldBe Some(Json.fromString("ala"))
+    }
+  }
+
+  test("nodeTransitionResults returned in test results should include null variables") {
+    val scenario = ScenarioBuilder
+      .streaming(ProcessTestData.sampleProcessName.value)
+      .parallelism(1)
+      .source("startProcess", "csv-source")
+      .emptySink(
+        "end",
+        "kafka-string",
+        TopicParamName.value     -> "'end.topic'".spel,
+        SinkValueParamName.value -> "'foo'".spel
+      )
+    saveCanonicalProcessAndAssertSuccess(scenario)
+
+    val testDataContent =
+      """[
+        |  {"sourceId":"startProcess","variables":{"input":null}}
+        |]""".stripMargin
+    testScenario(scenario, testDataContent) ~> check {
+      status shouldEqual StatusCodes.OK
+
+      val responseJson = responseAs[Json]
+      logger.debug(s"The response from the endpoint running scenario test from files was: $responseJson")
+
+      val inputVariable = responseJson.hcursor
+        .downField("results")
+        .downField("nodeTransitionResults")
+        .downN(0)
+        .downField("results")
+        .downN(0)
+        .downField("variables")
+        .downField("input")
+        .focus
+
+      inputVariable.value shouldBe Json.Null
     }
   }
 

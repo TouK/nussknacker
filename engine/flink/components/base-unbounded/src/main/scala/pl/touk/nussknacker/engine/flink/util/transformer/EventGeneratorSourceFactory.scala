@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedLazyParameter,
-  DefinedSingleParameter,
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
@@ -28,13 +27,11 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, _}
+import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler.ContextWithEventTime
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.util.watermarkstrategy.{
   WatermarkStrategyOptions,
@@ -128,20 +125,19 @@ object EventGeneratorSourceFactory
 
   override protected def resultAfterWatermarkStrategyParameters(
       inputContext: ValidationContext,
-      dependencies: List[NodeDependencyValue],
-      parameters: List[(ParameterName, DefinedSingleParameter)],
-      state: Option[Nothing]
-  )(implicit nodeId: NodeId): TransformationStepResult = {
-    val valueType = parameters
-      .collectFirst { case (`valueParameterName`, DefinedLazyParameter(valueType)) =>
-        valueType
-      }
-      .getOrElse(
-        // Edge-case when there was some validation problem of parameter preceding watermark strategy parameters
-        Unknown
-      )
-    val outputValidationContext = prepareOutputValidationContext(inputContext, valueType)
-    FinalResults(outputValidationContext)
+      dependencies: List[NodeDependencyValue]
+  )(
+      implicit nodeId: NodeId
+  ): ContextTransformationDefinition = {
+    case TransformationStep(
+          (`scheduleParameterName`, _) ::
+          (`countParameterName`, _) ::
+          (`valueParameterName`, DefinedLazyParameter(valueType)) ::
+          _,
+          state
+        ) =>
+      val outputValidationContext = prepareOutputValidationContext(inputContext, valueType)
+      FinalResults(outputValidationContext, state = state)
   }
 
   private def prepareOutputValidationContext(inputContext: ValidationContext, valueType: typing.TypingResult) = {

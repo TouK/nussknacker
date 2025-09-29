@@ -79,8 +79,8 @@ class ScenarioLiveDataApiHttpServiceSpec
              |  "results": {
              |    "nodeResults": null,
              |    "nodeTransitionResults": [],
-             |    "invocationResults": {},
-             |    "externalInvocationResults": {},
+             |    "expressionEvaluationResults": {},
+             |    "externalServiceInvocationResults": {},
              |    "exceptions": [],
              |    "exceptionsByNodeId": {}
              |  },
@@ -216,7 +216,7 @@ class ScenarioLiveDataApiHttpServiceSpec
              |        "currentThroughput": "${regexes.decimalRegex}"
              |      }
              |    ],
-             |    "invocationResults": {
+             |    "expressionEvaluationResults": {
              |      "start": [
              |        {
              |          "cid": {
@@ -235,7 +235,7 @@ class ScenarioLiveDataApiHttpServiceSpec
              |        }
              |      ]
              |    },
-             |    "externalInvocationResults": {
+             |    "externalServiceInvocationResults": {
              |      "start": [
              |        {
              |          "cid": {

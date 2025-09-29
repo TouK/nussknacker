@@ -163,11 +163,11 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       nodeResults(NodeId("proc2")) shouldBe List(nodeResult(1, "input" -> input2, "variable1" -> "ala"))
       nodeResults(NodeId("out")) shouldBe List(nodeResult(1, "input" -> input2, "variable1" -> "ala"))
 
-      val invocationResults = results.invocationResults
+      val expressionEvaluationResults = results.expressionEvaluationResults
 
-      invocationResults(NodeId("proc2")).map(withMockedTimestamp) shouldBe
+      expressionEvaluationResults(NodeId("proc2")).map(withMockedTimestamp) shouldBe
         List(
-          ExpressionInvocationResult(
+          ExpressionEvaluationResult(
             ContextId(
               scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
@@ -180,9 +180,9 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           )
         )
 
-      invocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
+      expressionEvaluationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
         List(
-          ExpressionInvocationResult(
+          ExpressionEvaluationResult(
             ContextId(
               scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
@@ -195,7 +195,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           )
         )
 
-      results.externalInvocationResults(NodeId("proc2")).map(r => (r.contextId, r.name, r.value)) shouldBe List(
+      results.externalServiceInvocationResults(NodeId("proc2")).map(r => (r.contextId, r.name, r.value)) shouldBe List(
         (
           ContextId(
             scenarioName = scenarioName,
@@ -208,8 +208,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         )
       )
 
-      results.externalInvocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe List(
-        ExternalInvocationResult(
+      results.externalServiceInvocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe List(
+        ExternalServiceInvocationResult(
           ContextId(
             scenarioName = scenarioName,
             originatingNodeId = sourceNodeId,
@@ -222,8 +222,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         )
       )
 
-      results.externalInvocationResults(NodeId("eager1")).map(withMockedTimestamp) shouldBe List(
-        ExternalInvocationResult(
+      results.externalServiceInvocationResults(NodeId("eager1")).map(withMockedTimestamp) shouldBe List(
+        ExternalServiceInvocationResult(
           ContextId(
             scenarioName = scenarioName,
             originatingNodeId = sourceNodeId,
@@ -268,11 +268,11 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         nodeResults(sourceNodeId) shouldBe List(nodeResult(0, "input" -> input))
         nodeResults(NodeId("out")) shouldBe List(nodeResult(0, "input" -> input))
 
-        val invocationResults = results.invocationResults
+        val expressionEvaluationResults = results.expressionEvaluationResults
 
-        invocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
+        expressionEvaluationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
           List(
-            ExpressionInvocationResult(
+            ExpressionEvaluationResult(
               ContextId(
                 scenarioName = scenarioName,
                 originatingNodeId = sourceNodeId,
@@ -285,8 +285,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
             )
           )
 
-        results.externalInvocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe List(
-          ExternalInvocationResult(
+        results.externalServiceInvocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe List(
+          ExternalServiceInvocationResult(
             ContextId(
               scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
@@ -362,12 +362,12 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         nodeResult(1, "input" -> input2, "out" -> aggregate2)
       )
 
-      val invocationResults = results.invocationResults
+      val expressionEvaluationResults = results.expressionEvaluationResults
 
-      invocationResults(NodeId("cid")).map(withMockedTimestamp) shouldBe
+      expressionEvaluationResults(NodeId("cid")).map(withMockedTimestamp) shouldBe
         List(
           // we record only LazyParameter execution results
-          ExpressionInvocationResult(
+          ExpressionEvaluationResult(
             ContextId(
               scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
@@ -378,7 +378,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
             "groupBy",
             variable("0")
           ),
-          ExpressionInvocationResult(
+          ExpressionEvaluationResult(
             ContextId(
               scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
@@ -391,9 +391,9 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           )
         )
 
-      invocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
+      expressionEvaluationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
         List(
-          ExpressionInvocationResult(
+          ExpressionEvaluationResult(
             ContextId(
               scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
@@ -404,7 +404,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
             "Value",
             variable("1 0")
           ),
-          ExpressionInvocationResult(
+          ExpressionEvaluationResult(
             ContextId(
               scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
@@ -417,9 +417,9 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           )
         )
 
-      results.externalInvocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
+      results.externalServiceInvocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
         List(
-          ExternalInvocationResult(
+          ExternalServiceInvocationResult(
             ContextId(
               scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
@@ -430,7 +430,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
             "valueMonitor",
             variable("1 0")
           ),
-          ExternalInvocationResult(
+          ExternalServiceInvocationResult(
             ContextId(
               scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
@@ -604,9 +604,9 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         prepareTestRunner(useIOMonadInInterpreter).runTests(process, testData).futureValue
 
       nodeResultsWithoutTimestamp(results)(sourceNodeId) should have size 3
-      results.externalInvocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
+      results.externalServiceInvocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
         List(
-          ExternalInvocationResult(
+          ExternalServiceInvocationResult(
             ContextId(
               scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
@@ -617,7 +617,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
             "valueMonitor",
             variable(SimpleJsonRecord("1", "11"))
           ),
-          ExternalInvocationResult(
+          ExternalServiceInvocationResult(
             ContextId(
               scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
@@ -628,7 +628,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
             "valueMonitor",
             variable(SimpleJsonRecord("2", "22"))
           ),
-          ExternalInvocationResult(
+          ExternalServiceInvocationResult(
             ContextId(
               scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
@@ -654,9 +654,9 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         prepareTestRunner(useIOMonadInInterpreter).runTests(process, testData).futureValue
 
       nodeResultsWithoutTimestamp(results)(sourceNodeId) should have size 1
-      results.externalInvocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
+      results.externalServiceInvocationResults(NodeId("out")).map(withMockedTimestamp) shouldBe
         List(
-          ExternalInvocationResult(
+          ExternalServiceInvocationResult(
             ContextId(
               scenarioName = scenarioName,
               originatingNodeId = sourceNodeId,
@@ -748,7 +748,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         )
         .futureValue
 
-      results.invocationResults(NodeId("out")).map(_.value) shouldBe List(variable("abcdef"))
+      results.expressionEvaluationResults(NodeId("out")).map(_.value) shouldBe List(variable("abcdef"))
     }
 
     "using dependent services" in {
@@ -776,7 +776,9 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           )
           .futureValue
 
-      results.invocationResults(NodeId("out")).map(_.value) shouldBe List(variable(s"$countToPass $valueToReturn"))
+      results.expressionEvaluationResults(NodeId("out")).map(_.value) shouldBe List(
+        variable(s"$countToPass $valueToReturn")
+      )
     }
 
     "switch value should be equal to variable value" in {
@@ -802,12 +804,12 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           .runTests(process, ScenarioTestData(List(recordTrue, recordFalse)))
           .futureValue
 
-      val invocationResults = results.invocationResults
+      val expressionEvaluationResults = results.expressionEvaluationResults
 
-      invocationResults(NodeId("switch")).filter(_.name == "expression").head.value shouldBe variable(true)
-      invocationResults(NodeId("switch")).filter(_.name == "expression").last.value shouldBe variable(false)
+      expressionEvaluationResults(NodeId("switch")).filter(_.name == "expression").head.value shouldBe variable(true)
+      expressionEvaluationResults(NodeId("switch")).filter(_.name == "expression").last.value shouldBe variable(false)
       // first record was filtered out
-      invocationResults(NodeId("out")).head.contextId shouldBe ContextId(
+      expressionEvaluationResults(NodeId("out")).head.contextId shouldBe ContextId(
         scenarioName = scenarioName,
         originatingNodeId = sourceNodeId,
         taskId = firstSubtaskIndex,
@@ -848,7 +850,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           .runTests(process, ScenarioTestData(List(recA, recB, recC)))
           .futureValue
 
-      results.invocationResults(NodeId("proc2")).map(_.contextId) should contain only (
+      results.expressionEvaluationResults(NodeId("proc2")).map(_.contextId) should contain only (
         ContextId(
           scenarioName = scenarioName,
           originatingNodeId = sourceNodeId,
@@ -892,7 +894,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       )
 
       results
-        .externalInvocationResults(NodeId("proc2"))
+        .externalServiceInvocationResults(NodeId("proc2"))
         .map(_.value.asInstanceOf[Json]) should contain theSameElementsAs List(
         "b",
         "a",
@@ -966,8 +968,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         nodeResult(2, NodeId("source2"), "end2", "input" -> recordC, "joinInput" -> recordC)
       )
 
-      results.invocationResults(NodeId("proc2")).map(withMockedTimestamp) should contain only (
-        ExpressionInvocationResult(
+      results.expressionEvaluationResults(NodeId("proc2")).map(withMockedTimestamp) should contain only (
+        ExpressionEvaluationResult(
           ContextId(
             scenarioName = scenarioName,
             originatingNodeId = NodeId("source1"),
@@ -979,7 +981,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           "all",
           variable("d")
         ),
-        ExpressionInvocationResult(
+        ExpressionEvaluationResult(
           ContextId(
             scenarioName = scenarioName,
             originatingNodeId = NodeId("source2"),
@@ -991,7 +993,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           "all",
           variable("a")
         ),
-        ExpressionInvocationResult(
+        ExpressionEvaluationResult(
           ContextId(
             scenarioName = scenarioName,
             originatingNodeId = NodeId("source2"),
@@ -1006,7 +1008,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       )
 
       results
-        .externalInvocationResults(NodeId("proc2"))
+        .externalServiceInvocationResults(NodeId("proc2"))
         .map(_.value.asInstanceOf[Json]) should contain theSameElementsAs List("a", "c", "d")
         .map(_ + "-collectedDuringServiceInvocation")
         .map(variable)
@@ -1036,7 +1038,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           )
           .futureValue
 
-      results.invocationResults(NodeId("out")).map(_.value) shouldBe List(
+      results.expressionEvaluationResults(NodeId("out")).map(_.value) shouldBe List(
         variable(List(ComponentUseContext.ScenarioTesting, ComponentUseContext.ScenarioTesting))
       )
     }
@@ -1202,10 +1204,10 @@ class FlinkMiniClusterScenarioTestRunnerSpec
   private def nodeResultsWithoutTimestamp[T](results: TestProcess.TestResults[T]) =
     results.nodeResults.map { case (key, values) => (key, values.map(v => (v.id, v.variables))) }
 
-  private def withMockedTimestamp(result: ExpressionInvocationResult[Json]) =
+  private def withMockedTimestamp(result: ExpressionEvaluationResult[Json]) =
     result.copy(timestamp = mockedTimestamp)
 
-  private def withMockedTimestamp(result: ExternalInvocationResult[Json]) =
+  private def withMockedTimestamp(result: ExternalServiceInvocationResult[Json]) =
     result.copy(timestamp = mockedTimestamp)
 
 }

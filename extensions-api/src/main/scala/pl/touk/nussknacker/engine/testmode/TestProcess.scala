@@ -10,8 +10,8 @@ object TestProcess {
   case class TestResults[T](
       nodeResults: Map[NodeId, List[ResultContext[T]]],
       nodeTransitionResults: Map[NodeTransition, List[ResultContext[T]]],
-      invocationResults: Map[NodeId, List[ExpressionInvocationResult[T]]],
-      externalInvocationResults: Map[NodeId, List[ExternalInvocationResult[T]]],
+      expressionEvaluationResults: Map[NodeId, List[ExpressionEvaluationResult[T]]],
+      externalServiceInvocationResults: Map[NodeId, List[ExternalServiceInvocationResult[T]]],
       exceptions: List[ExceptionResult[T]]
   ) {
 
@@ -42,9 +42,12 @@ object TestProcess {
         result: Any,
         variableEncoder: Any => T
     ): TestResults[T] = {
-      val invocationResult = ExpressionInvocationResult(context.id, Instant.now(), name, variableEncoder(result))
-      copy(invocationResults =
-        invocationResults + (nodeId -> addResults(invocationResult, invocationResults.getOrElse(nodeId, List())))
+      val invocationResult = ExpressionEvaluationResult(context.id, Instant.now(), name, variableEncoder(result))
+      copy(expressionEvaluationResults =
+        expressionEvaluationResults + (nodeId -> addResults(
+          invocationResult,
+          expressionEvaluationResults.getOrElse(nodeId, List())
+        ))
       )
     }
 
@@ -55,9 +58,10 @@ object TestProcess {
         result: Any,
         variableEncoder: Any => T
     ): TestResults[T] = {
-      val invocation = ExternalInvocationResult(contextId, Instant.now(), name, variableEncoder(result))
-      copy(externalInvocationResults =
-        externalInvocationResults + (nodeId -> (externalInvocationResults.getOrElse(nodeId, List()) :+ invocation))
+      val invocation = ExternalServiceInvocationResult(contextId, Instant.now(), name, variableEncoder(result))
+      copy(externalServiceInvocationResults =
+        externalServiceInvocationResults + (nodeId -> (externalServiceInvocationResults
+          .getOrElse(nodeId, List()) :+ invocation))
       )
     }
 
@@ -72,9 +76,9 @@ object TestProcess {
     // when evaluating e.g. keyBy expression can be invoked more than once...
     // TODO: is it the best way to handle it??
     private def addResults(
-        invocationResult: ExpressionInvocationResult[T],
-        resultsSoFar: List[ExpressionInvocationResult[T]]
-    ): List[ExpressionInvocationResult[T]] = resultsSoFar.filterNot(res =>
+        invocationResult: ExpressionEvaluationResult[T],
+        resultsSoFar: List[ExpressionEvaluationResult[T]]
+    ): List[ExpressionEvaluationResult[T]] = resultsSoFar.filterNot(res =>
       res.contextId == invocationResult.contextId && res.name == invocationResult.name
     ) :+ invocationResult
 
@@ -88,8 +92,8 @@ object TestProcess {
       TestResults[T](
         nodeResults = mergeMaps(testResults.map(_.nodeResults)),
         nodeTransitionResults = mergeMaps(testResults.map(_.nodeTransitionResults)),
-        invocationResults = mergeMaps(testResults.map(_.invocationResults)),
-        externalInvocationResults = mergeMaps(testResults.map(_.externalInvocationResults)),
+        expressionEvaluationResults = mergeMaps(testResults.map(_.expressionEvaluationResults)),
+        externalServiceInvocationResults = mergeMaps(testResults.map(_.externalServiceInvocationResults)),
         exceptions = testResults.flatMap(_.exceptions).toList,
       )
     }
@@ -106,9 +110,9 @@ object TestProcess {
 
   final case class NodeTransition(sourceNodeId: NodeId, destinationNodeId: Option[NodeId])
 
-  case class ExpressionInvocationResult[T](contextId: ContextId, timestamp: Instant, name: String, value: T)
+  case class ExpressionEvaluationResult[T](contextId: ContextId, timestamp: Instant, name: String, value: T)
 
-  case class ExternalInvocationResult[T](contextId: ContextId, timestamp: Instant, name: String, value: T)
+  case class ExternalServiceInvocationResult[T](contextId: ContextId, timestamp: Instant, name: String, value: T)
 
   object ExceptionResult {
 

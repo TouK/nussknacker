@@ -85,14 +85,14 @@ class UniversalKafkaSourceFactory(
   override val typesToExtract: List[TypedClass] =
     Typed.typedClass[GenericRecord] :: Typed.typedClass[TimestampType] :: Nil
 
-  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+  override def contextTransformation(inputContext: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition =
-    topicParamStep orElse
+    topicParamStep(inputContext, dependencies) orElse
       schemaParamStep(Nil) orElse
       afterSchemaParamStep(paramsDeterminedAfterSchema) orElse
-      nextSteps(context, dependencies) orElse
-      watermarkStrategyParametersStep(context, dependencies)
+      nextSteps(inputContext, dependencies) orElse
+      watermarkStrategyParametersStep(inputContext, dependencies)
 
   protected def nextSteps(inputContext: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
@@ -221,18 +221,15 @@ class UniversalKafkaSourceFactory(
 
   override protected def resultAfterWatermarkStrategyParameters(
       inputContext: ValidationContext,
-      dependencies: List[NodeDependencyValue],
-      parameters: List[(ParameterName, DefinedSingleParameter)],
-      state: Option[UniversalKafkaSourceFactoryState]
-  )(implicit nodeId: NodeId): TransformationStepResult = {
-    state match {
-      case Some(BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState(validFinalState)) =>
-        prepareSourceFinalResults(validFinalState, inputContext, dependencies, parameters)
-      case _ =>
-        throw new IllegalStateException(
-          s"Illegal state: $state. Expected state class is: ${classOf[BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState].getSimpleName}"
-        )
-    }
+      dependencies: List[NodeDependencyValue]
+  )(
+      implicit nodeId: NodeId
+  ): ContextTransformationDefinition = {
+    case TransformationStep(
+          parameters,
+          Some(BeforeWatermarkStrategyParametersStepKafkaSourceFactoryState(validFinalState))
+        ) =>
+      prepareSourceFinalResults(validFinalState, inputContext, dependencies, parameters)
   }
 
   private def prepareFinalState(

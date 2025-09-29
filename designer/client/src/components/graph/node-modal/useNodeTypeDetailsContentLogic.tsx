@@ -42,7 +42,7 @@ function wrapSetState<T>(action: SetStateAction<T>, transform: (value: T) => T =
 
 export function useNodeAdjust(
     node: NodeType,
-    onChange: NodeState["onChange"],
+    onChange?: NodeState["onChange"],
 ): [adjustedNode: typeof node, adjustedOnChange: typeof onChange] {
     const getParameterDefinitions = useAppSelector(getDynamicParameterDefinitions);
 
@@ -63,7 +63,7 @@ export function useNodeAdjust(
     const adjustedNode = useMemo<typeof node>(() => adjustNode(node), [adjustNode, node]);
 
     const adjustedOnChange = useCallback<typeof onChange>(
-        (setNodeAction, setEdgesAction) => onChange(wrapSetState(setNodeAction, adjustFn?.current), setEdgesAction),
+        (setNodeAction, setEdgesAction) => onChange?.(wrapSetState(setNodeAction, adjustFn?.current), setEdgesAction),
         [onChange],
     );
 

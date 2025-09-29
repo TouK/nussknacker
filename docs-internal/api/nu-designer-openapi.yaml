@@ -5769,8 +5769,8 @@ components:
           type: string
         expression:
           type: string
-    ExpressionInvocationResult_Json:
-      title: ExpressionInvocationResult_Json
+    ExpressionEvaluationResult_Json:
+      title: ExpressionEvaluationResult_Json
       type: object
       required:
       - contextId
@@ -5830,8 +5830,8 @@ components:
           $ref: '#/components/schemas/CaretPosition2d'
         variableTypes:
           $ref: '#/components/schemas/Map_TypingResultInJson'
-    ExternalInvocationResult_Json:
-      title: ExternalInvocationResult_Json
+    ExternalServiceInvocationResult_Json:
+      title: ExternalServiceInvocationResult_Json
       type: object
       required:
       - contextId
@@ -7641,8 +7641,8 @@ components:
       title: TestResultsDto
       type: object
       required:
-      - invocationResults
-      - externalInvocationResults
+      - expressionEvaluationResults
+      - externalServiceInvocationResults
       - exceptionsByNodeId
       properties:
         nodeResults:
@@ -7655,9 +7655,9 @@ components:
           - 'null'
           items:
             $ref: '#/components/schemas/NodeTransitionResult'
-        invocationResults:
+        expressionEvaluationResults:
           $ref: '#/components/schemas/Map_NodeId_V'
-        externalInvocationResults:
+        externalServiceInvocationResults:
           $ref: '#/components/schemas/Map_NodeId_V'
         exceptions:
           type: array

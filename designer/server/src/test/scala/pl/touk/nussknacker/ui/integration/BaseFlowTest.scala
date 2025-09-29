@@ -468,7 +468,7 @@ class BaseFlowTest
 
     def firstInvocationResult(result: Json): Option[String] = result.hcursor
       .downField("results")
-      .downField("externalInvocationResults")
+      .downField("externalServiceInvocationResults")
       .downField("end")
       .downArray
       .downField("value")
