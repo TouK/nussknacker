@@ -44,8 +44,8 @@ object ResultsWithCountsDto {
       results = TestResultsDto(
         nodeResults = Option.when(!skipResultsPerNode.value)(resultsWithCounts.results.nodeResults),
         nodeTransitionResults = Option.when(!skipResultsPerTransition.value)(nodeTransitionResults),
-        invocationResults = resultsWithCounts.results.invocationResults,
-        externalInvocationResults = resultsWithCounts.results.externalInvocationResults,
+        expressionEvaluationResults = resultsWithCounts.results.expressionEvaluationResults,
+        externalServiceInvocationResults = resultsWithCounts.results.externalServiceInvocationResults,
         exceptions = resultsWithCounts.results.exceptions,
         exceptionsByNodeId = exceptionsByNodeId,
       ),
@@ -74,11 +74,11 @@ object ResultsWithCountsDto {
             )
           }.toList
         ),
-        invocationResults = liveData.invocationResults.map { case (nodeId, results) =>
-          nodeId -> results.map(r => ExpressionInvocationResult(r.contextId, r.timestamp, r.name, r.value))
+        expressionEvaluationResults = liveData.expressionEvaluationResults.map { case (nodeId, results) =>
+          nodeId -> results.map(r => ExpressionEvaluationResult(r.contextId, r.timestamp, r.name, r.value))
         },
-        externalInvocationResults = liveData.externalInvocationResults.map { case (nodeId, results) =>
-          nodeId -> results.map(r => ExternalInvocationResult(r.contextId, r.timestamp, r.name, r.value))
+        externalServiceInvocationResults = liveData.externalServiceInvocationResults.map { case (nodeId, results) =>
+          nodeId -> results.map(r => ExternalServiceInvocationResult(r.contextId, r.timestamp, r.name, r.value))
         },
         exceptions = exceptionsByNodeId.values.toList.flatten,
         exceptionsByNodeId = exceptionsByNodeId,
@@ -94,23 +94,23 @@ object ResultsWithCountsDto {
   implicit def contextIdPathPartDtoSchema: Schema[ContextIdPathPartDto] = Schema.derived
   implicit def contextIdSchema: Schema[ContextId] =
     Schema.derived[ContextIdDto].map(_ => None)(ContextIdDto.from)
-  implicit def resultContextSchema: Schema[ResultContext[Json]]                           = Schema.derived
-  implicit def expressionInvocationResultSchema: Schema[ExpressionInvocationResult[Json]] = Schema.derived
-  implicit def externalInvocationResultSchema: Schema[ExternalInvocationResult[Json]]     = Schema.derived
-  implicit def throwableSchema: Schema[Throwable]                                         = Schema.string
-  implicit def exceptionResultSchema: Schema[ExceptionResult[Json]]                       = Schema.derived
-  implicit def nodeTransitionResultSchema: Schema[NodeTransitionResult]                   = Schema.derived
-  implicit def testResultsSchema: Schema[TestResultsDto]                                  = Schema.derived
-  implicit def nodeCountSchema: Schema[NodeCount]                                         = Schema.anyObject
-  implicit def resultsWithCountsSchema: Schema[ResultsWithCountsDto]                      = Schema.derived
+  implicit def resultContextSchema: Schema[ResultContext[Json]]                              = Schema.derived
+  implicit def expressionInvocationResultSchema: Schema[ExpressionEvaluationResult[Json]]    = Schema.derived
+  implicit def externalInvocationResultSchema: Schema[ExternalServiceInvocationResult[Json]] = Schema.derived
+  implicit def throwableSchema: Schema[Throwable]                                            = Schema.string
+  implicit def exceptionResultSchema: Schema[ExceptionResult[Json]]                          = Schema.derived
+  implicit def nodeTransitionResultSchema: Schema[NodeTransitionResult]                      = Schema.derived
+  implicit def testResultsSchema: Schema[TestResultsDto]                                     = Schema.derived
+  implicit def nodeCountSchema: Schema[NodeCount]                                            = Schema.anyObject
+  implicit def resultsWithCountsSchema: Schema[ResultsWithCountsDto]                         = Schema.derived
 
 }
 
 final case class TestResultsDto(
     nodeResults: Option[Map[NodeId, List[ResultContext[Json]]]],
     nodeTransitionResults: Option[List[NodeTransitionResult]],
-    invocationResults: Map[NodeId, List[ExpressionInvocationResult[Json]]],
-    externalInvocationResults: Map[NodeId, List[ExternalInvocationResult[Json]]],
+    expressionEvaluationResults: Map[NodeId, List[ExpressionEvaluationResult[Json]]],
+    externalServiceInvocationResults: Map[NodeId, List[ExternalServiceInvocationResult[Json]]],
     exceptions: List[ExceptionResult[Json]],
     exceptionsByNodeId: Map[NodeId, List[ExceptionResult[Json]]],
 )

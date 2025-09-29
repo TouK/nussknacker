@@ -107,16 +107,10 @@ class TableSourceFactory(
 
   override protected def resultAfterWatermarkStrategyParameters(
       inputContext: ValidationContext,
-      dependencies: List[NodeDependencyValue],
-      parameters: List[(ParameterName, DefinedSingleParameter)],
-      state: Option[TableSourceFactoryState]
-  )(implicit nodeId: NodeId): TransformationStepResult = {
-    val selectedTableStateValue = state match {
-      case Some(selectedTableState: SelectedTable) =>
-        selectedTableState
-      case other =>
-        throw new IllegalStateException(s"Unexpected state [$other] after watermark strategy parameters step")
-    }
+      dependencies: List[NodeDependencyValue]
+  )(
+      implicit nodeId: NodeId
+  ): ContextTransformationDefinition = { case TransformationStep(_, Some(selectedTableStateValue: SelectedTable)) =>
     val initializer = new BasicContextInitializer(
       selectedTableStateValue.tableDefinition.schema.toSourceRowDataType.getLogicalType.toTypingResult
     )

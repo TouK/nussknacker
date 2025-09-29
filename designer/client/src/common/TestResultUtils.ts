@@ -3,8 +3,8 @@ import { head, uniq, values } from "lodash";
 
 import type {
     ExceptionResultJson,
-    ExpressionInvocationResultJson,
-    ExternalInvocationResultJson,
+    ExpressionEvaluationResultJson,
+    ExternalServiceInvocationResultJson,
     ResultContextJson,
     TestResultsDto,
 } from "../http/resultsWithCountsDto";
@@ -36,8 +36,8 @@ export interface TestFormParameters {
 }
 
 export interface NodeTestResults {
-    externalInvocationResults: ExternalInvocationResultJson[];
-    invocationResults: ExpressionInvocationResultJson[];
+    externalServiceInvocationResults: ExternalServiceInvocationResultJson[];
+    expressionEvaluationResults: ExpressionEvaluationResultJson[];
     nodeResults: ResultContextJson[];
     errors: ExceptionResultJson[];
 }
@@ -49,9 +49,9 @@ export interface StateForSelectTestResults {
 
 export interface NodeResultsForContext {
     context: ResultContextJson;
-    externalInvocationResultsForEveryContext: ExternalInvocationResultJson[];
+    externalInvocationResultsForEveryContext: ExternalServiceInvocationResultJson[];
     expressionResults: Record<string, any>;
-    externalInvocationResultsForCurrentContext: ExternalInvocationResultJson[];
+    externalInvocationResultsForCurrentContext: ExternalServiceInvocationResultJson[];
     error: string;
 }
 
@@ -62,8 +62,8 @@ class TestResultUtils {
         if (nodeResults) {
             return {
                 nodeResults,
-                invocationResults: this._invocationResults(testResults, nodeId),
-                externalInvocationResults: this._externalInvocationResults(testResults, nodeId),
+                expressionEvaluationResults: this._expressionEvaluationResults(testResults, nodeId),
+                externalServiceInvocationResults: this._externalServiceInvocationResults(testResults, nodeId),
                 errors: this._errors(testResults, nodeId),
             };
         }
@@ -97,12 +97,12 @@ class TestResultUtils {
         );
     }
 
-    private _invocationResults(results: TestResultsDto, nodeId: NodeId): ExpressionInvocationResultJson[] {
-        return results?.invocationResults?.[nodeId] || [];
+    private _expressionEvaluationResults(results: TestResultsDto, nodeId: NodeId): ExpressionEvaluationResultJson[] {
+        return results?.expressionEvaluationResults?.[nodeId] || [];
     }
 
-    private _externalInvocationResults(results: TestResultsDto, nodeId: NodeId): ExternalInvocationResultJson[] {
-        return results?.externalInvocationResults?.[nodeId] || [];
+    private _externalServiceInvocationResults(results: TestResultsDto, nodeId: NodeId): ExternalServiceInvocationResultJson[] {
+        return results?.externalServiceInvocationResults?.[nodeId] || [];
     }
 
     private _errors(results: TestResultsDto, nodeId: NodeId): ExceptionResultJson[] {
@@ -119,14 +119,14 @@ class TestResultUtils {
     private nodeResultsForContext = (nodeTestResults: NodeTestResults, contextId: string): NodeResultsForContext => {
         const context = nodeTestResults.nodeResults.find((result) => result.id == contextId);
         const expressionResults = Object.fromEntries(
-            nodeTestResults.invocationResults
+            nodeTestResults.expressionEvaluationResults
                 .filter((result) => result.contextId == contextId)
                 .map((result) => [result.name, result.value]),
         );
-        const externalInvocationResultsForCurrentContext = nodeTestResults.externalInvocationResults.filter(
+        const externalInvocationResultsForCurrentContext = nodeTestResults.externalServiceInvocationResults.filter(
             (result) => result.contextId == contextId,
         );
-        const externalInvocationResultsForEveryContext = nodeTestResults.externalInvocationResults;
+        const externalInvocationResultsForEveryContext = nodeTestResults.externalServiceInvocationResults;
         const error = nodeTestResults.errors?.find((error) => error.context.id === contextId)?.throwable;
         return {
             context,

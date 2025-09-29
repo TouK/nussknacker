@@ -67,20 +67,25 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       (secondId, Map("input" -> variable(Request1("c", "d"))))
     )
 
-    results.invocationResults(NodeId("filter1")).map(withMockedTimestamp).toSet shouldBe Set(
-      ExpressionInvocationResult(firstId, mockedTimestamp, "expression", variable(true)),
-      ExpressionInvocationResult(secondId, mockedTimestamp, "expression", variable(false))
+    results.expressionEvaluationResults(NodeId("filter1")).map(withMockedTimestamp).toSet shouldBe Set(
+      ExpressionEvaluationResult(firstId, mockedTimestamp, "expression", variable(true)),
+      ExpressionEvaluationResult(secondId, mockedTimestamp, "expression", variable(false))
     )
 
-    results.externalInvocationResults(NodeId("processor")).map(withMockedTimestamp).toSet shouldBe Set(
-      ExternalInvocationResult(firstId, mockedTimestamp, "processorService", variable("processor service invoked"))
+    results.externalServiceInvocationResults(NodeId("processor")).map(withMockedTimestamp).toSet shouldBe Set(
+      ExternalServiceInvocationResult(
+        firstId,
+        mockedTimestamp,
+        "processorService",
+        variable("processor service invoked")
+      )
     )
-    results.externalInvocationResults(NodeId("eagerProcessor")).map(withMockedTimestamp).toSet shouldBe Set(
-      ExternalInvocationResult(firstId, mockedTimestamp, "collectingEager", variable("static-s-dynamic-a"))
+    results.externalServiceInvocationResults(NodeId("eagerProcessor")).map(withMockedTimestamp).toSet shouldBe Set(
+      ExternalServiceInvocationResult(firstId, mockedTimestamp, "collectingEager", variable("static-s-dynamic-a"))
     )
 
-    results.externalInvocationResults(NodeId("endNodeIID")).map(withMockedTimestamp).toSet shouldBe Set(
-      ExternalInvocationResult(firstId, mockedTimestamp, "endNodeIID", variable(Response(s"alamakota-$firstId")))
+    results.externalServiceInvocationResults(NodeId("endNodeIID")).map(withMockedTimestamp).toSet shouldBe Set(
+      ExternalServiceInvocationResult(firstId, mockedTimestamp, "endNodeIID", variable(Response(s"alamakota-$firstId")))
     )
 
     RequestResponseSampleComponents.processorService.get().invocationsCount.get shouldBe 0
@@ -105,8 +110,8 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
 
     val results = runTest(process, scenarioTestData)
 
-    results.invocationResults(NodeId("occasionallyThrowFilter")).map(withMockedTimestamp).toSet shouldBe Set(
-      ExpressionInvocationResult(secondId, mockedTimestamp, "expression", variable(true))
+    results.expressionEvaluationResults(NodeId("occasionallyThrowFilter")).map(withMockedTimestamp).toSet shouldBe Set(
+      ExpressionEvaluationResult(secondId, mockedTimestamp, "expression", variable(true))
     )
 
     results.exceptions should have size 1
@@ -139,8 +144,8 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       (firstId, Map("input" -> variable(Request1("a", "b"))))
     )
 
-    results.externalInvocationResults(NodeId("endNodeIID")).map(withMockedTimestamp).toSet shouldBe Set(
-      ExternalInvocationResult(firstId, mockedTimestamp, "endNodeIID", variable("a withRandomString"))
+    results.externalServiceInvocationResults(NodeId("endNodeIID")).map(withMockedTimestamp).toSet shouldBe Set(
+      ExternalServiceInvocationResult(firstId, mockedTimestamp, "endNodeIID", variable("a withRandomString"))
     )
 
   }
@@ -196,7 +201,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     unionContextIds should contain theSameElementsAs unionContextIds.toSet
     nodeResults(results, "union1") shouldBe nodeResults(results, "collect1")
 
-    val endNodeIdInvocationResult = results.externalInvocationResults(NodeId("endNodeIID")).loneElement
+    val endNodeIdInvocationResult = results.externalServiceInvocationResults(NodeId("endNodeIID")).loneElement
     endNodeIdInvocationResult.contextId shouldBe contextIdGenForNodeId(process, NodeId("collect1")).nextContextId()
 
     endNodeIdInvocationResult.value shouldBe variable(List("aa", "bb"))
@@ -241,10 +246,10 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
   private def nodeResults[T](results: TestProcess.TestResults[T], nodeId: String) =
     results.nodeResults(NodeId(nodeId)).map(r => (r.id, r.variables))
 
-  private def withMockedTimestamp(result: ExpressionInvocationResult[Json]) =
+  private def withMockedTimestamp(result: ExpressionEvaluationResult[Json]) =
     result.copy(timestamp = mockedTimestamp)
 
-  private def withMockedTimestamp(result: ExternalInvocationResult[Json]) =
+  private def withMockedTimestamp(result: ExternalServiceInvocationResult[Json]) =
     result.copy(timestamp = mockedTimestamp)
 
 }

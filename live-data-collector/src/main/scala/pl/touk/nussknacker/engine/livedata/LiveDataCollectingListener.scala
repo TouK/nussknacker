@@ -77,9 +77,9 @@ class LiveDataCollectingListener private[livedata] (
       processMetaData: MetaData,
       result: Any,
   ): Unit = performStorageOperation {
-    _.addExpressionEvaluation(
+    _.addExpressionEvaluationResult(
       nodeId,
-      InvocationResult(context.id, Instant.now(), expressionId, encode(result)),
+      ExpressionEvaluationResult(context.id, Instant.now(), expressionId, encode(result)),
     )
   }
 
@@ -90,9 +90,9 @@ class LiveDataCollectingListener private[livedata] (
       processMetaData: MetaData,
       result: Try[Any],
   ): Unit = performStorageOperation {
-    _.addExternalInvocation(
+    _.addExternalServiceInvocation(
       nodeId,
-      InvocationResult(context.id, Instant.now(), id, result.map(encode).getOrElse(Json.Null)),
+      ExternalServiceInvocationResult(context.id, Instant.now(), id, result.map(encode).getOrElse(Json.Null)),
     )
   }
 

@@ -87,7 +87,8 @@ export function useWindows(parent?: WindowId) {
             if (node.type === StickyNoteType) return;
             if (nodeWindowIdMap.current[node.id]) return;
             return open({
-                id: node.id,
+                // , and / allowed in nodeId
+                id: encodeURIComponent(node.id),
                 title: node.id,
                 isResizable: true,
                 kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
