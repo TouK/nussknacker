@@ -75,7 +75,9 @@ export const ButtonMenu = forwardRef<HTMLButtonElement, ToolbarButtonMenuWrapper
                         ? 20
                         : null,
                     justifyContent: "center",
-                    zoom: variant === ButtonsVariant.xs ? 0.75 : null,
+                    "@media (any-pointer: fine)": {
+                        zoom: variant === ButtonsVariant.xs ? 0.75 : null,
+                    },
                     borderTopLeftRadius: 0,
                     borderBottomLeftRadius: [ButtonsVariant.menu, ButtonsVariant.horizontal, ButtonsVariant.xs].includes(variant)
                         ? 0

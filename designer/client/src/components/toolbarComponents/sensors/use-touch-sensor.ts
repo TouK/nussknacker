@@ -20,6 +20,9 @@ import type { Position } from "css-box-model";
 import { useRef } from "react";
 import { useCallback, useMemo } from "use-memo-one";
 
+import { PendingPromise } from "../../../common/PendingPromise";
+import type { DelayPromise } from "./types";
+
 type TouchWithForce = Touch & {
     force: number;
 };
@@ -32,7 +35,7 @@ interface Pending {
     type: "PENDING";
     point: Position;
     actions: PreDragActions;
-    longPressTimerId;
+    longPressPromise: PendingPromise;
 }
 
 interface Dragging {
@@ -102,12 +105,54 @@ function getWindowBindings({ cancel, getPhase }: GetBindingArgs): AnyEventBindin
             eventName: supportedPageVisibilityEventName,
             fn: cancel,
         },
+        {
+            eventName: "pointermove",
+            options: { capture: false },
+            fn: (event: PointerEvent) => {
+                const phase: Phase = getPhase();
+                // Drag has not yet started and we are waiting for a long press.
+                if (phase.type !== "DRAGGING") {
+                    cancel();
+                    return;
+                }
+
+                // At this point we are dragging
+                phase.hasMoved = true;
+
+                const { clientX, clientY } = event;
+
+                const point: Position = {
+                    x: clientX,
+                    y: clientY,
+                };
+
+                // We need to prevent the default event in order to block native scrolling
+                // Also because we are using it as part of a drag we prevent the default action
+                // as a sign that we are using the event
+                event.preventDefault();
+                phase.actions.move(point);
+            },
+        },
     ];
 }
 
 // All of the touch events get applied to the drag handle of the touch interaction
 // This plays well with the event.target being unmounted during a drag
 function getHandleBindings({ cancel, completed, getPhase }: GetBindingArgs): AnyEventBinding[] {
+    function touchend(event: TouchEvent | PointerEvent) {
+        const phase: Phase = getPhase();
+        // drag had not started yet - do not prevent the default action
+        if (phase.type !== "DRAGGING") {
+            cancel();
+            return;
+        }
+
+        // ending the drag
+        event.preventDefault();
+        phase.actions.drop({ shouldBlockNextClick: true });
+        completed();
+    }
+
     return [
         {
             eventName: "touchmove",
@@ -142,19 +187,11 @@ function getHandleBindings({ cancel, completed, getPhase }: GetBindingArgs): Any
         },
         {
             eventName: "touchend",
-            fn: (event: TouchEvent) => {
-                const phase: Phase = getPhase();
-                // drag had not started yet - do not prevent the default action
-                if (phase.type !== "DRAGGING") {
-                    cancel();
-                    return;
-                }
-
-                // ending the drag
-                event.preventDefault();
-                phase.actions.drop({ shouldBlockNextClick: true });
-                completed();
-            },
+            fn: touchend,
+        },
+        {
+            eventName: "pointerup",
+            fn: touchend,
         },
         {
             eventName: "touchcancel",
@@ -237,7 +274,9 @@ function getHandleBindings({ cancel, completed, getPhase }: GetBindingArgs): Any
     ];
 }
 
-export default function useTouchSensor(api: SensorAPI) {
+// Original @hello-pangea/dnd sensor with delay and workaround for touchmove
+export default function useTouchSensor(api: SensorAPI, delayPromiseGetter: (draggableId: DraggableId) => DelayPromise) {
+    const delayPromise = useRef<DelayPromise>();
     const phaseRef = useRef<Phase>(idle);
     const unbindEventsRef = useRef<() => void>(noop);
 
@@ -280,6 +319,13 @@ export default function useTouchSensor(api: SensorAPI) {
                     return;
                 }
 
+                delayPromise.current = delayPromiseGetter(draggableId);
+                delayPromise.current.catch(() => {
+                    if (actions.isActive()) {
+                        actions.abort();
+                    }
+                });
+
                 const touch: Touch = event.touches[0];
                 const { clientX, clientY } = touch;
                 const point: Position = {
@@ -319,7 +365,7 @@ export default function useTouchSensor(api: SensorAPI) {
 
         // aborting any pending drag
         if (current.type === "PENDING") {
-            clearTimeout(current.longPressTimerId);
+            current.longPressPromise.reject("stop");
         }
 
         setPhase(idle);
@@ -387,14 +433,29 @@ export default function useTouchSensor(api: SensorAPI) {
         function startPendingDrag(actions: PreDragActions, point: Position) {
             invariant(getPhase().type === "IDLE", "Expected to move from IDLE to PENDING drag");
 
-            const longPressTimerId = setTimeout(startDragging, timeForLongPress);
+            const longPressPromise = PendingPromise.timedResolve(timeForLongPress);
 
             setPhase({
                 type: "PENDING",
                 point,
                 actions,
-                longPressTimerId,
+                longPressPromise,
             });
+
+            longPressPromise
+                .then(async () => {
+                    await delayPromise.current;
+                    startDragging();
+                })
+                .catch((reason) => {
+                    if (!delayPromise.current) return;
+                    delayPromise.current
+                        .then(({ end }) => end.resolve())
+                        .catch(() => {
+                            return;
+                        });
+                    delayPromise.current.reject(reason);
+                });
 
             bindCapturingEvents();
         },
@@ -412,7 +473,7 @@ export default function useTouchSensor(api: SensorAPI) {
                 // need to kill any pending drag start timer
                 const phase: Phase = getPhase();
                 if (phase.type === "PENDING") {
-                    clearTimeout(phase.longPressTimerId);
+                    phase.longPressPromise.reject("unmount");
                     setPhase(idle);
                 }
             };

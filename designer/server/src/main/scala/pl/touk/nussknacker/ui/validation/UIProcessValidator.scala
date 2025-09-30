@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import cats.effect.SyncIO
 import cats.effect.kernel.Resource
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{CustomProcessValidator, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
@@ -39,7 +40,7 @@ class UIProcessValidator(
     additionalValidators: List[CustomProcessValidator],
     fragmentResolver: FragmentResolver,
     stickyNotesSettings: StickyNotesSettings,
-) {
+) extends LazyLogging {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
@@ -336,18 +337,37 @@ class UIProcessValidator(
   private def formatErrors(errors: NonEmptyList[ProcessCompilationError]): ValidationResult = {
     val globalErrors     = errors.filter(_.isInstanceOf[ScenarioGraphLevelError])
     val propertiesErrors = errors.filter(_.isInstanceOf[ScenarioPropertiesError])
-    val nodeErrors = errors.filter { e =>
+    val otherErrors = errors.filter { e =>
       !globalErrors.contains(e) && !propertiesErrors.contains(e)
     }
+    val (nodeErrors, unclassifiedErrors) = otherErrors.partition(_.nodeIds.nonEmpty)
+    val invalidNodes =
+      nodeErrors
+        .flatMap(error => error.nodeIds.map(nodeId => nodeId -> PrettyValidationErrors.formatErrorMessage(error)))
+        .toGroupedMap
+
+    // TODO There shouldn't be unclassified errors, but the current design of ProcessCompilationError allows for such errors
+    // Try to get rid of them and make the context of the error as accurate as possible (with node ID)
+    // fatal unknown errors should be presented as node errors if possible, and the errors without a node ID as global errors
+    val additionalGlobalErrors =
+      NonEmptyList
+        .fromList(unclassifiedErrors)
+        .map { errors =>
+          errors.map(e => UIGlobalError(PrettyValidationErrors.formatErrorMessage(e), e.nodeIds.toList))
+        }
+        .fold(List.empty[UIGlobalError]) { additionalErrors =>
+          logger.error(
+            s"Unclassified errors occurred during scenario compilation - ${additionalErrors.toList.mkString(",")}"
+          )
+          additionalErrors.toList
+        }
 
     ValidationResult.errors(
-      invalidNodes = (for {
-        error  <- nodeErrors
-        nodeId <- error.nodeIds
-      } yield nodeId -> PrettyValidationErrors.formatErrorMessage(error)).toGroupedMap,
+      invalidNodes = invalidNodes,
       processPropertiesErrors = propertiesErrors.map(e => PrettyValidationErrors.formatErrorMessage(e)),
-      globalErrors =
-        globalErrors.map(e => UIGlobalError(PrettyValidationErrors.formatErrorMessage(e), e.nodeIds.toList))
+      globalErrors = globalErrors.map(e =>
+        UIGlobalError(PrettyValidationErrors.formatErrorMessage(e), e.nodeIds.toList)
+      ) ::: additionalGlobalErrors
     )
   }
 

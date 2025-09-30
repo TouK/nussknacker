@@ -23,7 +23,7 @@ import type { Position } from "css-box-model";
 import { useRef } from "react";
 import { useCallback, useMemo } from "use-memo-one";
 
-import type { PendingPromise } from "../../../common/PendingPromise";
+import type { DelayPromise } from "./types";
 
 // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
 export const primaryButton = 0;
@@ -202,12 +202,14 @@ function getCaptureBindings({ cancel, completed, getPhase, setPhase, before }: G
     ];
 }
 
+function isInteractive(target: EventTarget) {
+    if (!(target instanceof Element)) return;
+    return target.matches("button, button *, input, input *");
+}
+
 // Original @hello-pangea/dnd sensor with delay
-export default function useMouseSensor(
-    api: SensorAPI,
-    delayPromiseGetter: (draggableId: DraggableId) => PendingPromise<{ end: PendingPromise<void> }>,
-) {
-    const delayPromise = useRef<PendingPromise<{ end: PendingPromise<void> }>>();
+export default function useMouseSensor(api: SensorAPI, delayPromiseGetter: (draggableId: DraggableId) => DelayPromise) {
+    const delayPromise = useRef<DelayPromise>();
     const phaseRef = useRef<Phase>(idle);
     const unbindEventsRef = useRef<() => void>(noop);
 
@@ -216,6 +218,7 @@ export default function useMouseSensor(
             {
                 eventName: "mousedown",
                 fn: async function onMouseDown(event: MouseEvent) {
+                    if (isInteractive(event.target)) return;
                     // Event already used
                     if (event.defaultPrevented) {
                         return;
