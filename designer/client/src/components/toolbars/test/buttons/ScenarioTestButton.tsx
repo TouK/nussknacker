@@ -99,7 +99,10 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                 isModal: true,
                 kind: WindowKind.scenarioTest,
                 minWidth: 1200,
-                minHeight: 750,
+                minHeight: 650,
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                height: "80vh",
                 meta: {
                     viewParams: {
                         Icon: TestingIcon,
