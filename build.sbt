@@ -199,15 +199,16 @@ lazy val commonSettings =
       Compile / doc / scalacOptions -= "-Xfatal-warnings",
       // here we add dependencies that we want to have fixed across all modules
       dependencyOverrides ++= Seq(
-        "org.apache.avro"    % "avro"             % avroV,
-        "com.typesafe"       % "config"           % configV,
-        "commons-io"         % "commons-io"       % flinkCommonsIOV,       // dependency of avro via commons-compress
-        "org.apache.commons" % "commons-compress" % flinkCommonsCompressV, // dependency of avro
-        "org.apache.commons" % "commons-text"     % flinkCommonsTextV,     // dependency of commons-lang3, avro via commons-compress
-        "org.apache.commons" % "commons-lang3"    % flinkCommonsLang3V,
-        "org.influxdb"       % "influxdb-java"    % flinkInfluxdbJavaV,
-        "io.circe"          %% "circe-core"       % circeV,
-        "io.circe"          %% "circe-parser"     % circeV,
+        "org.apache.avro"          % "avro"             % avroV,
+        "com.typesafe"             % "config"           % configV,
+        "commons-io"               % "commons-io"       % flinkCommonsIOV,       // dependency of avro via commons-compress
+        "org.apache.commons"       % "commons-compress" % flinkCommonsCompressV, // dependency of avro
+        "org.apache.commons"       % "commons-text"     % flinkCommonsTextV,     // dependency of commons-lang3, avro via commons-compress
+        "org.apache.commons"       % "commons-lang3"    % flinkCommonsLang3V,
+        "org.influxdb"             % "influxdb-java"    % flinkInfluxdbJavaV,
+        "com.google.code.findbugs" % "jsr305"           % findBugsV,
+        "io.circe"                %% "circe-core"       % circeV,
+        "io.circe"                %% "circe-parser"     % circeV,
 
         // Pekko versions must match exactly, and sbt doesn't support BOM dependencies
         // https://pekko.apache.org/docs/pekko/current/common/binary-compatibility-rules.html#mixed-versioning-is-not-allowed
