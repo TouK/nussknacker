@@ -5,7 +5,6 @@ import type { AppAction } from "../../../store/storeHelpers";
 import type { Edge } from "../../../types/edge";
 import type { NodeType } from "../../../types/node";
 import type { ToolBoxProps } from "./ToolBox";
-import { ComponentFilter } from "./ToolBox";
 
 export type NodeSelectorActions =
     | {
@@ -25,25 +24,14 @@ export type NodeSelectorActions =
           };
       };
 
-export const openNodeSelector = (
-    panelSide: PanelSide,
-    position: g.Point,
-    isLinkReversed: boolean,
-    edgeData,
-    from,
-    to: string,
-): AppAction => ({
+export const openNodeSelector = (data: {
+    side?: PanelSide;
+    fromPoint?: g.PlainPoint;
+    withEdge?: Edge;
+    filters?: ToolBoxProps["filters"];
+}): AppAction => ({
     type: "OPEN_NODE_SELECTOR",
-    data: {
-        side: panelSide,
-        fromPoint: position,
-        filters: [isLinkReversed ? ComponentFilter.removeNoOutputs : ComponentFilter.removeNoInputs],
-        withEdge: {
-            ...edgeData,
-            from,
-            to,
-        },
-    },
+    data,
 });
 
 export const closeNodeSelector = (side: PanelSide): AppAction => ({

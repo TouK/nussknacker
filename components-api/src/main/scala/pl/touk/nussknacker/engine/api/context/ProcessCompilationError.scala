@@ -430,8 +430,8 @@ object ProcessCompilationError {
       CustomNodeError(nodeId, message, paramName)
   }
 
-  final case class FatalUnknownError(message: String) extends ProcessCompilationError {
-    override def nodeIds: Set[NodeId] = Set()
+  final case class FatalUnknownError(message: String, nodeId: Option[NodeId]) extends ProcessCompilationError {
+    override def nodeIds: Set[NodeId] = nodeId.toSet
   }
 
   final case class CannotCreateObjectError(message: String, nodeId: NodeId, cause: Option[Throwable])
