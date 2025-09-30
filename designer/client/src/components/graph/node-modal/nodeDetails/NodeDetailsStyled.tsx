@@ -18,5 +18,4 @@ export const WindowHeaderIconStyled = styled(Icon)<{ type?: WindowKind }>(({ the
 export const ModalHeader = styled("div")({
     flex: 1,
     display: "flex",
-    alignItems: "center",
 });

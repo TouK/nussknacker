@@ -182,13 +182,15 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
             {...props}
             icon={<WindowHeaderIconStyled as={viewParams.Icon} type={kind} />}
             subheader={
-                <InfoTooltip
-                    variant={"hover"}
-                    title={t(
-                        "testingDialog.description",
-                        `Use prepared set of input data records to verify the scenario before deploying it. <br /> The sources will be stubbed with data records below during test invocation.`,
-                    )}
-                />
+                <Box display={"flex"} alignItems={"center"}>
+                    <InfoTooltip
+                        variant={"hover"}
+                        title={t(
+                            "testingDialog.description",
+                            `Use prepared set of input data records to verify the scenario before deploying it. <br /> The sources will be stubbed with data records below during test invocation.`,
+                        )}
+                    />
+                </Box>
             }
             buttons={buttons}
         >
