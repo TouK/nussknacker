@@ -127,7 +127,7 @@ object validationHelpers {
             mainBranch(branchId)
           }
           if (mainBranches.size != 1) {
-            Invalid(FatalUnknownError("Should be exact one main branch")).toValidatedNel
+            Invalid(FatalUnknownError("Should be exact one main branch", Some(nodeId.id))).toValidatedNel
           } else {
             val mainBranchContext = mainBranches.head._2
 
