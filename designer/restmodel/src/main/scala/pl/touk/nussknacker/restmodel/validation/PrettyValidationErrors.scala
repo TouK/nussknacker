@@ -168,8 +168,11 @@ object PrettyValidationErrors {
       case UnsupportedPart(id)         => node("UnsupportedPart", s"Type of node $id is unsupported right now")
       case UnknownFragment(id, nodeId) => node("Unknown fragment", s"Node $nodeId uses fragment $id which is missing")
       case InvalidFragment(id, nodeId) => node("Invalid fragment", s"Node $nodeId uses fragment $id which is invalid")
-      case FatalUnknownError(message) =>
-        node("Unknown, fatal validation error", s"Fatal error: $message, please check configuration")
+      case FatalUnknownError(message, maybeNodeId) =>
+        node(
+          s"Unknown, fatal validation error${maybeNodeId.map(nodeId => s" for node $nodeId")}",
+          s"Fatal error: $message, please check configuration and logs for details"
+        )
       case CannotCreateObjectError(message, nodeId, _) =>
         node(s"Could not create $nodeId: $message", s"Could not create $nodeId: $message")
       case UnresolvedFragment(id) => node("Unresolved fragment", s"fragment $id encountered, this should not happen")
