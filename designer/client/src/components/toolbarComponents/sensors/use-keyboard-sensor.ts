@@ -19,7 +19,7 @@ import supportedPageVisibilityEventName from "@hello-pangea/dnd/src/view/use-sen
 import { useRef } from "react";
 import { useCallback, useMemo } from "use-memo-one";
 
-import type { PendingPromise } from "../../../common/PendingPromise";
+import type { DelayPromise } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 function noop() {}
@@ -140,11 +140,8 @@ function getDraggingBindings(actions: SnapDragActions, stop: () => void): AnyEve
 }
 
 // Original @hello-pangea/dnd sensor with delay
-export default function useKeyboardSensor(
-    api: SensorAPI,
-    delayPromiseGetter: (draggableId: DraggableId) => PendingPromise<{ end: PendingPromise<void> }>,
-) {
-    const delayPromise = useRef<PendingPromise<{ end: PendingPromise<void> }>>();
+export default function useKeyboardSensor(api: SensorAPI, delayPromiseGetter: (draggableId: DraggableId) => DelayPromise) {
+    const delayPromise = useRef<DelayPromise>();
     const unbindEventsRef = useRef<() => void>(noop);
 
     const startCaptureBinding: KeyboardEventBinding = useMemo(

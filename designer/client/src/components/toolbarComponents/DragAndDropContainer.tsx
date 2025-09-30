@@ -2,8 +2,7 @@ import type { OnDragEndResponder, OnDragStartResponder, SensorAPI } from "@hello
 import { DragDropContext } from "@hello-pangea/dnd";
 import { alpha, GlobalStyles, useTheme } from "@mui/material";
 import type { PropsWithChildren } from "react";
-import { useMemo } from "react";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useDebouncedValue } from "rooks";
 
 import type { ToolbarPosition } from "../../actions/nk/toolbars";
@@ -11,8 +10,10 @@ import { PendingPromise } from "../../common/PendingPromise";
 import { useEventTracking } from "../../containers/event-tracking/use-event-tracking";
 import { EventTrackingSelector, EventTrackingType } from "../../containers/event-tracking/use-register-tracking-events";
 import { SIDEBAR_WIDTH } from "../../stylesheets/variables";
+import type { DelayPromise } from "./sensors/types";
 import getKeyboardSensor from "./sensors/use-keyboard-sensor";
 import getMouseSensor from "./sensors/use-mouse-sensor";
+import getTouchSensor from "./sensors/use-touch-sensor";
 import { DRAGGABLE_LIST_CLASSNAME, DRAGGING_FROM_CLASSNAME, DRAGGING_OVER_CLASSNAME, DROPPABLE_CLASSNAME } from "./ToolbarsContainer";
 
 type Props = PropsWithChildren<{
@@ -22,6 +23,28 @@ type Props = PropsWithChildren<{
 export const TOOLBAR_DRAGGABLE_TYPE = "TOOLBAR";
 
 export const DraggableIdContext = React.createContext<string | null>(null);
+
+function useDelayedSensors(onStart: (draggableId: string) => void, onStop: () => void, animationDelay: number) {
+    const { touchSensor, mouseSensor, keyboardSensor } = useMemo(() => {
+        const delayPromiseGetter = (draggableId: string): DelayPromise => {
+            onStart(draggableId);
+            const delayPromise = new PendingPromise<{ end: PendingPromise<void> }>();
+            delayPromise.catch(() => onStop());
+            setTimeout(() => {
+                const endPromise = new PendingPromise<void>();
+                endPromise.then(() => onStop());
+                delayPromise.resolve({ end: endPromise });
+            }, animationDelay);
+            return delayPromise;
+        };
+        return {
+            touchSensor: (api: SensorAPI) => getTouchSensor(api, delayPromiseGetter),
+            mouseSensor: (api: SensorAPI) => getMouseSensor(api, delayPromiseGetter),
+            keyboardSensor: (api: SensorAPI) => getKeyboardSensor(api, delayPromiseGetter),
+        };
+    }, [onStart, animationDelay, onStop]);
+    return [touchSensor, mouseSensor, keyboardSensor];
+}
 
 export function DragAndDropContainer({ children, onMove }: Props) {
     const animationDelay = 500;
@@ -54,31 +77,10 @@ export function DragAndDropContainer({ children, onMove }: Props) {
 
     const theme = useTheme();
 
-    const { mouseSensor, keyboardSensor } = useMemo(() => {
-        const delayPromiseGetter = (draggableId: string) => {
-            setDraggableId(draggableId);
-            const delayPromise = new PendingPromise<{ end: PendingPromise<void> }>();
-            delayPromise.catch(() => clearDraggableId());
-            setTimeout(() => {
-                const endPromise = new PendingPromise<void>();
-                endPromise.then(() => clearDraggableId());
-                delayPromise.resolve({ end: endPromise });
-            }, animationDelay);
-            return delayPromise;
-        };
-        return {
-            mouseSensor: (api: SensorAPI) => getMouseSensor(api, delayPromiseGetter),
-            keyboardSensor: (api: SensorAPI) => getKeyboardSensor(api, delayPromiseGetter),
-        };
-    }, [clearDraggableId, animationDelay]);
+    const sensors = useDelayedSensors(setDraggableId, clearDraggableId, animationDelay);
 
     return (
-        <DragDropContext
-            sensors={[mouseSensor, keyboardSensor]}
-            onDragEnd={onDragEnd}
-            onDragStart={onDragStart}
-            enableDefaultSensors={false}
-        >
+        <DragDropContext sensors={sensors} onDragEnd={onDragEnd} onDragStart={onDragStart} enableDefaultSensors={false}>
             <GlobalStyles
                 styles={{
                     [`.${DRAGGABLE_LIST_CLASSNAME}`]: {

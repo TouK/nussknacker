@@ -56,7 +56,9 @@ export const ButtonRoot = forwardRef<HTMLButtonElement, Omit<ToolbarButtonProps,
                                 ? 0
                                 : "4px 0",
                         flexDirection: [ButtonsVariant.menu, ButtonsVariant.horizontal, ButtonsVariant.xs].includes(variant) ? "row" : null,
-                        zoom: variant === ButtonsVariant.xs ? 0.75 : null,
+                        "@media (any-pointer: fine)": {
+                            zoom: variant === ButtonsVariant.xs ? 0.75 : null,
+                        },
                         borderColor: hasError ? theme.palette.error.main : null,
                         color: hasError ? theme.palette.error.main : isActive ? theme.palette.success.main : null,
                     })}

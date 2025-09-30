@@ -8,8 +8,8 @@ import type { UseTranslationResponse } from "react-i18next";
 import { moveNodeInject, moveNodePlain, moveNodeReplace } from "../../actions/nk/editNode";
 import { nodesConnected, nodesDisconnected, stickyNoteSetErrors, stickyNoteUpdated } from "../../actions/nk/node";
 import { resetSelection, toggleSelection } from "../../actions/nk/selection";
-import { layoutChanged } from "../../actions/nk/ui/layout";
 import type { Layout, NodePosition, Position } from "../../actions/nk/ui/layout";
+import { layoutChanged } from "../../actions/nk/ui/layout";
 import { isEdgeEditable } from "../../common/EdgeUtils";
 import type User from "../../common/models/User";
 import ProcessUtils from "../../common/ProcessUtils";
@@ -28,8 +28,7 @@ import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
 import { getDefaultLinkCreator } from "./EspNode/link";
 import { applyCellChanges } from "./GraphPartialsInTS/applyCellChanges";
-import { calcLayout } from "./GraphPartialsInTS/calcLayout";
-import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
+import { calcLayout, getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
 import { isConnected, isModelElement, isModelOrStickyNote, isStickyNoteElement } from "./GraphPartialsInTS/cellUtils";
 import { createPaper } from "./GraphPartialsInTS/createPaper";
 import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
@@ -342,7 +341,8 @@ export class Graph extends React.Component<Props> {
     getEspGraphRef = (): HTMLElement => this.instance;
 
     bindEventHandlers(): void {
-        const showNodeDetails = (cellView: dia.CellView) => {
+        const showNodeDetails = (cellView: dia.CellView, event) => {
+            if (event.target.closest("[port]")) return;
             const { scenario, readonly, nodeIdPrefixForFragmentTests = "" } = this.props;
             const { nodeData, edgeData } = cellView.model.attributes;
             const nodeId = nodeData?.id || (isEdgeEditable(edgeData) ? edgeData.from : null);
@@ -359,6 +359,7 @@ export class Graph extends React.Component<Props> {
         };
 
         const selectNode = (cellView: dia.CellView, evt: dia.Event) => {
+            if (evt.target.closest("[port]")) return;
             if (this.props.isFragment === true) return;
             if (this.props.nodeSelectionEnabled) {
                 const nodeDataId = cellView.model.attributes.nodeData?.id;
