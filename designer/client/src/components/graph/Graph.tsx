@@ -26,6 +26,7 @@ import { ComponentDragPreview } from "../ComponentDragPreview";
 import type { Scenario } from "../Process/types";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
+import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
 import { getDefaultLinkCreator } from "./EspNode/link";
 import { applyCellChanges } from "./GraphPartialsInTS/applyCellChanges";
 import { calcLayout, getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
@@ -184,14 +185,97 @@ export class Graph extends React.Component<Props> {
         this.changeLayoutIfNeeded();
     };
 
-    forceLayout = debounce((readOnly?: boolean) => {
-        const cellsToLayout = getCellsToLayout(this.graph, this.props.selectionState);
-        if (!readOnly) {
-            const nodesAndLinks = cellsToLayout.filter((cell) => !isStickyNoteElement(cell));
-            this.directedLayout(nodesAndLinks);
-        }
-        this.fit(cellsToLayout);
-    }, 250);
+    forceLayout = debounce(
+        ({
+            readOnly,
+            align = {},
+            distribute = {},
+        }: {
+            readOnly?: boolean;
+            align?: {
+                horizontal?: "left" | "right" | "center";
+                vertical?: "top" | "bottom" | "center";
+            };
+            distribute?: {
+                horizontal?: boolean;
+                vertical?: boolean;
+            };
+        } = {}) => {
+            const cellsToLayout = getCellsToLayout(this.graph, this.props.selectionState);
+            if (!readOnly) {
+                if (align.horizontal || align.vertical || distribute.horizontal || distribute.vertical) {
+                    const filtered = cellsToLayout.filter((cell) => cell.isElement());
+                    const rect = g.Rect.fromRectUnion(...filtered.map((cell) => cell.getBBox()));
+
+                    if (distribute.horizontal || distribute.vertical) {
+                        const hdist = (rect.leftMiddle().distance(rect.rightMiddle()) - RECT_WIDTH) / (filtered.length - 1);
+                        const vdist = (rect.topMiddle().distance(rect.bottomMiddle()) - RECT_HEIGHT) / (filtered.length - 1);
+                        const sorted = filtered.sort((a, b) => {
+                            const ap = a.getBBox().center();
+                            const bp = b.getBBox().center();
+                            if (distribute.horizontal) {
+                                const p = rect.topLeft().translate(-20000, 0);
+                                return ap.distance(p) - bp.distance(p);
+                            }
+                            if (distribute.vertical) {
+                                const p = rect.topLeft().translate(0, -20000);
+                                return ap.distance(p) - bp.distance(p);
+                            }
+                        });
+                        sorted.forEach((cell: dia.Element, index) => {
+                            const point = cell.position();
+                            cell.position(
+                                distribute.horizontal
+                                    ? rect.topLeft().x + hdist * index
+                                    : align.horizontal === "left"
+                                    ? rect.leftMiddle().x
+                                    : align.horizontal === "center"
+                                    ? rect.center().x - cell.getBBox().width / 2
+                                    : align.horizontal === "right"
+                                    ? rect.rightMiddle().x - cell.getBBox().width
+                                    : point.x,
+                                distribute.vertical
+                                    ? rect.topLeft().y + vdist * index
+                                    : align.vertical === "top"
+                                    ? rect.topMiddle().y
+                                    : align.vertical === "center"
+                                    ? rect.center().y - cell.getBBox().height / 2
+                                    : align.vertical === "bottom"
+                                    ? rect.bottomMiddle().y - cell.getBBox().height
+                                    : point.y,
+                            );
+                        });
+                    } else {
+                        filtered.forEach((cell: dia.Element, index) => {
+                            const point = cell.position();
+                            cell.position(
+                                align.horizontal === "left"
+                                    ? rect.leftMiddle().x
+                                    : align.horizontal === "center"
+                                    ? rect.center().x - cell.getBBox().width / 2
+                                    : align.horizontal === "right"
+                                    ? rect.rightMiddle().x - cell.getBBox().width
+                                    : point.x,
+                                align.vertical === "top"
+                                    ? rect.topMiddle().y
+                                    : align.vertical === "center"
+                                    ? rect.center().y - cell.getBBox().height / 2
+                                    : align.vertical === "bottom"
+                                    ? rect.bottomMiddle().y - cell.getBBox().height
+                                    : point.y,
+                            );
+                        });
+                    }
+                    this.changeLayoutIfNeeded();
+                } else {
+                    const nodesAndLinks = cellsToLayout.filter((cell) => !isStickyNoteElement(cell));
+                    this.directedLayout(nodesAndLinks);
+                }
+            }
+            this.fit(cellsToLayout);
+        },
+        250,
+    );
 
     createPaper = (): dia.Paper => {
         const { theme } = this.props;

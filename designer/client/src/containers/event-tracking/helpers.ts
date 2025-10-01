@@ -23,6 +23,14 @@ export const mapToolbarButtonToStatisticsEvent = (
         case BuiltinButtonTypes.editDelete: {
             return EventTrackingSelector.EditDelete;
         }
+        case BuiltinButtonTypes.alignHorizontalLeft:
+        case BuiltinButtonTypes.alignHorizontalCenter:
+        case BuiltinButtonTypes.alignHorizontalRight:
+        case BuiltinButtonTypes.alignVerticalTop:
+        case BuiltinButtonTypes.alignVerticalCenter:
+        case BuiltinButtonTypes.alignVerticalBottom:
+        case BuiltinButtonTypes.distributeHorizontal:
+        case BuiltinButtonTypes.distributeVertical:
         case BuiltinButtonTypes.editLayout: {
             return EventTrackingSelector.EditLayout;
         }
