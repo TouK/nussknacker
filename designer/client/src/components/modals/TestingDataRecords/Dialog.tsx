@@ -1,6 +1,7 @@
 import { Alert, Box, Typography } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import type { ElementType, ReactElement } from "react";
+import type { ElementType, ReactElement} from "react";
+import { useEffect } from "react";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -17,6 +18,7 @@ import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
 import { AppendFromLiveDataButton } from "./AppendFromLiveDataButton";
+import { LimitExceededWarning } from "./LimitExceededWarning";
 import type { TestingDataRecords } from "./Table";
 import { Table } from "./Table";
 import { mapGeneratedTestingDataToTableFormat } from "./utils";
@@ -154,7 +156,6 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
         });
     }, []);
 
-    const recordsToAddLimitExceeded = useMemo(() => dataRecords.length >= maxTestingRecords, [dataRecords.length, maxTestingRecords]);
     const testDataLimitExceeded = useMemo(() => dataRecords.length > maxTestingRecords, [dataRecords.length, maxTestingRecords]);
 
     const disableTestButton = dataRecords.length === 0 || cellErrors.length > 0 || testDataLimitExceeded;
@@ -189,15 +190,8 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                     <Typography mt={0} variant={"h3"}>
                         {t("testingDialog.label.inputDataRecords", "Input data records")}
                     </Typography>
-                    {recordsToAddLimitExceeded && (
-                        <Alert sx={{ width: "100%" }} severity={"warning"}>
-                            {t(
-                                "testingDialog.warning.dataRecordsLimitExceeded",
-                                "The maximum number of {{maxTestingRecords}} Input data records has been exceeded.",
-                                { maxTestingRecords },
-                            )}
-                        </Alert>
-                    )}
+                    <LimitExceededWarning recordsToAddLimitExceeded={testDataLimitExceeded} maxTestingRecords={dataRecords.length} />
+
                     <Box display={"flex"} sx={(theme) => ({ paddingTop: theme.spacing(2) })}>
                         <Table
                             sourceOptions={sourceOptions}
@@ -209,7 +203,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                             onRowsDeleted={handleRowsDeleted}
                             onRowMoved={handleRowMoved}
                             defaultDataRecord={defaultDataRecord}
-                            recordsToAddLimitExceeded={recordsToAddLimitExceeded}
+                            recordsToAddLimitExceeded={testDataLimitExceeded}
                         />
                     </Box>
 
