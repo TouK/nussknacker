@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { testScenarioWithDataRecords } from "../../../../actions/nk/displayTestResults";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
+import { convertViewportUnitToPixels } from "../../../../common/convertViewportUnitToPixels";
 import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
 import {
     getTestCapabilities,
@@ -98,14 +99,16 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                 isResizable: true,
                 isModal: true,
                 kind: WindowKind.scenarioTest,
-                minWidth: 1200,
-                minHeight: 750,
                 meta: {
                     viewParams: {
                         Icon: TestingIcon,
                         docs,
                         markdownContent,
                     },
+                },
+                layoutData: {
+                    minWidth: 1200,
+                    height: convertViewportUnitToPixels("80vh"),
                 },
             });
         },

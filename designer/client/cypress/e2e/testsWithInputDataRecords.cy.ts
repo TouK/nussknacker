@@ -63,7 +63,7 @@ describe("test with events data", () => {
     });
 
     it("should block adding new records if records limit exceeded", () => {
-        cy.viewport("macbook-15");
+        cy.viewport(1920, 1080);
         cy.visitNewProcess(seed, seed, "DevelopmentTests");
         cy.get('[data-selector="SCENARIO_TEST"]').click();
 
