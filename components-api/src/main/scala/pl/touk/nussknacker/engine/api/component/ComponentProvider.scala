@@ -7,7 +7,6 @@ import org.semver4j.Semver
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.db.DbRef
-import pl.touk.nussknacker.engine.util.IdToTitleConverter
 import pl.touk.nussknacker.engine.version.BuildInfo
 
 /**
@@ -94,28 +93,9 @@ object ComponentProviderConfig {
   implicit val reader: ValueReader[ComponentProviderConfig] = new ValueReader[ComponentProviderConfig] {
     import net.ceedubs.ficus.Ficus._
 
-    private val componentBaseNameReader: ValueReader[ComponentBaseName] = ValueReader[String].map(ComponentBaseName)
-    private val blueprintIdReader: ValueReader[BlueprintId]             = ValueReader[String].map(BlueprintId)
-
-    implicit val mapReader: ValueReader[Map[ComponentBaseName, BlueprintId]] = {
-      import scala.jdk.CollectionConverters._
-      ValueReader.relative { config =>
-        config.root
-          .keySet()
-          .asScala
-          .map { key =>
-            val baseName    = componentBaseNameReader.read(config, key)
-            val blueprintId = blueprintIdReader.read(config, key)
-            baseName -> blueprintId
-          }
-          .toMap
-      }
-    }
-
-    implicit val optionMapReader: ValueReader[Option[Map[ComponentBaseName, BlueprintId]]] =
-      ValueReader.relative { config =>
-        if (config.isEmpty) None
-        else Some(mapReader.read(config, ""))
+    private implicit val blueprintMapReader: ValueReader[Option[Map[ComponentBaseName, BlueprintId]]] =
+      ValueReader[Option[Map[String, String]]].map { opt =>
+        opt.map(_.map { case (k, v) => (ComponentBaseName(k), BlueprintId(v)) })
       }
 
     private val normalReader = ArbitraryTypeReader.arbitraryTypeValueReader[ComponentProviderConfig]
