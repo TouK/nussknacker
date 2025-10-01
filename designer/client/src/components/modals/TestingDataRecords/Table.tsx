@@ -7,6 +7,7 @@ import type {
     EditListItem,
     BaseDrawArgs,
     Theme,
+    GridMouseCellEventArgs,
 } from "@glideapps/glide-data-grid";
 import DataEditor, { CompactSelection, GridCellKind, type CustomRenderer, drawTextCell } from "@glideapps/glide-data-grid";
 import type { ProvideEditorComponent } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
@@ -87,6 +88,8 @@ export const Table: React.FC<TableProps> = ({
     cellErrors,
     recordsToAddLimitExceeded,
 }) => {
+    const [draggingRow, setDraggingRow] = useState<number | null>(null);
+    const lastDraggingRowRef = useRef<number | null>(null);
     const tableTheme = useTableTheme();
     const theme = useTheme();
     const [selection, setSelection] = useState<GridSelection>(emptySelection);
@@ -180,8 +183,10 @@ export const Table: React.FC<TableProps> = ({
         setCellMenuData({ position: { top: e.bounds.y + e.localEventY, left: e.bounds.x + e.localEventX }, row });
     }, []);
     const getRowThemeOverride: GetRowThemeCallback = useCallback(
-        (row): Partial<Theme> => ({ bgCell: row >= data.length ? tableTheme.bgCellMedium : tableTheme.bgCell }),
-        [data.length, tableTheme.bgCell, tableTheme.bgCellMedium],
+        (row): Partial<Theme> => ({
+            bgCell: draggingRow === row ? theme.palette.action.hover : row >= data.length ? tableTheme.bgCellMedium : tableTheme.bgCell,
+        }),
+        [data.length, draggingRow, tableTheme.bgCell, tableTheme.bgCellMedium, theme.palette.action.hover],
     );
 
     const handleRowReorder = useCallback(
@@ -251,6 +256,21 @@ export const Table: React.FC<TableProps> = ({
         [onCellDeleted, clearSelection],
     );
 
+    const handleSetDraggingRow = useCallback(({ buttons, location }: GridMouseCellEventArgs) => {
+        if (buttons > 0) {
+            const row = location?.[1] ?? null;
+            if (lastDraggingRowRef.current !== row) {
+                lastDraggingRowRef.current = row;
+                setDraggingRow(row);
+            }
+        } else {
+            if (lastDraggingRowRef.current !== null) {
+                lastDraggingRowRef.current = null;
+                setDraggingRow(null);
+            }
+        }
+    }, []);
+
     return (
         <>
             <Sizer
@@ -290,6 +310,7 @@ export const Table: React.FC<TableProps> = ({
                     rowHeight={getRowHeight}
                     onRowMoved={handleRowReorder}
                     rowSelectionMode="multi"
+                    onMouseMove={handleSetDraggingRow}
                 />
                 <CellMenu anchorPosition={cellMenuData.position} onClose={closeCellMenu}>
                     {cellMenuData.row !== undefined && cellMenuData.row >= 0 && deleteMenuIndexes.length > 0 && (
