@@ -108,7 +108,6 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                 },
                 layoutData: {
                     minWidth: 1200,
-                    minHeight: 750,
                     height: convertViewportUnitToPixels("80vh"),
                 },
             });
