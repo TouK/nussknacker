@@ -67,12 +67,11 @@ function LayoutButton(props: ToolbarButtonProps) {
     const { t } = useTranslation();
     const graphGetter = useGraph();
     const { disabled, type } = props;
-    const icon = getIcon(props);
     return (
         <CapabilitiesToolbarButton
             editFrontend
             name={props.type === BuiltinButtonTypes.editLayout ? t("panels.actions.edit-layout.button", "layout") : props.type}
-            icon={icon}
+            icon={getIcon(props.type)}
             disabled={disabled}
             onClick={(e) => {
                 const altMode = "altKey" in e && e.altKey === true;
