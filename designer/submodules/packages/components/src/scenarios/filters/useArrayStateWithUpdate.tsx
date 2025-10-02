@@ -21,3 +21,5 @@ export function useArrayStateWithUpdate<T>(initial: T[] | (() => T[])) {
     const controls = useMemo(() => ({ ...arrayControls, updateItemAtIndex }), [arrayControls, updateItemAtIndex]);
     return useMemo<[T[], typeof controls]>(() => [array, controls], [array, controls]);
 }
+
+export type ArrayStateControls<T> = ReturnType<typeof useArrayStateWithUpdate<T>>[1];

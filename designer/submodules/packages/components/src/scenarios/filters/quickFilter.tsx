@@ -5,10 +5,10 @@ import { alpha } from "@mui/material/styles";
 import type { FormEventHandler, PropsWithChildren } from "react";
 import React, { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useFocusWithin } from "rooks";
 
 import { InputWithClear } from "../../common/forms/inputWithClear";
 import { useScenariosFilterContext } from "./common/useScenariosFilterContext";
+import { useFocusWithinState } from "./useFocusWithinState";
 import { useWrappedStack } from "./wrappedStack";
 
 const preventSubmit: FormEventHandler<HTMLFormElement> = (e) => e.preventDefault();
@@ -27,22 +27,26 @@ export function QuickFilter<F extends Record<string, any>>({
     const { getFilter, setFilter } = useScenariosFilterContext<F>();
 
     const inputRef = useRef<HTMLElement>();
-    const [expansion, setExpansion] = useState(0);
+    const inputHeight = inputRef.current?.getBoundingClientRect().height;
 
-    const [focused, onFocusWithinChange] = useState(false);
-    const { focusWithinProps } = useFocusWithin({ onFocusWithinChange });
+    const [expansionSize, setExpansionSize] = useState(0);
+    const { focused, focusWithinProps } = useFocusWithinState();
 
     const value = useMemo<string>(() => getFilter(filter) || "", [filter, getFilter]);
 
-    const { primary, secondary } = useWrappedStack({ onSpacingChange: (box) => setExpansion(box?.width || 0), children });
+    const { primaryLine, secondaryLine } = useWrappedStack(children, (box) => setExpansionSize(box?.width || 0));
 
+    const inputWidth = useMemo(
+        () =>
+            focused
+                ? `min(max(360px, calc(100% + ${expansionSize}px + 5ch), ${value.length + 15}ch), 80vw)`
+                : `calc(100% + ${expansionSize}px)`,
+        [expansionSize, focused, value.length],
+    );
     return (
         <Paper elevation={2} sx={{ position: "sticky", top: -1, zIndex: 2 }} {...props}>
             <Stack component={"form"} noValidate onSubmit={preventSubmit} autoComplete="off" direction="row">
-                <Box
-                    sx={{ flex: 1, position: "relative" }}
-                    style={{ height: inputRef.current?.getBoundingClientRect().height, minWidth: 128 }}
-                >
+                <Box sx={{ flex: 1, position: "relative", minWidth: 128 }} style={{ height: inputHeight }}>
                     <Box
                         ref={inputRef}
                         sx={(theme) => ({
@@ -52,11 +56,7 @@ export function QuickFilter<F extends Record<string, any>>({
                             zIndex: theme.zIndex.appBar,
                             transition: theme.transitions.create("width"),
                         })}
-                        style={{
-                            width: focused
-                                ? `min(max(360px, calc(100% + ${expansion}px + 5ch), ${value.length + 15}ch), 80vw)`
-                                : `calc(100% + ${expansion}px)`,
-                        }}
+                        style={{ width: inputWidth }}
                         {...focusWithinProps}
                     >
                         <InputWithClear
@@ -66,14 +66,14 @@ export function QuickFilter<F extends Record<string, any>>({
                             onChange={setFilter(filter)}
                             sx={(theme) => ({
                                 backgroundColor: alpha(theme.palette.background.paper, 0.75),
-                                backdropFilter: "blur(12px)",
+                                backdropFilter: "blur(25px)",
                                 borderStartEndRadius: 0,
                                 borderEndEndRadius: 0,
-                                borderEndStartRadius: secondary ? 0 : null,
+                                borderEndStartRadius: secondaryLine ? 0 : null,
                                 ".MuiOutlinedInput-notchedOutline": {
                                     borderStartEndRadius: 0,
                                     borderEndEndRadius: 0,
-                                    borderEndStartRadius: secondary ? 0 : null,
+                                    borderEndStartRadius: secondaryLine ? 0 : null,
                                     borderColor: "transparent",
                                     legend: {
                                         width: 0,
@@ -89,9 +89,9 @@ export function QuickFilter<F extends Record<string, any>>({
                         <Divider orientation="vertical" flexItem />
                     </Box>
                 </Box>
-                {primary}
+                {primaryLine}
             </Stack>
-            {secondary ? (
+            {secondaryLine ? (
                 <Box
                     sx={(theme) => ({
                         borderTop: "2px solid",
@@ -104,7 +104,7 @@ export function QuickFilter<F extends Record<string, any>>({
                         zIndex: theme.zIndex.appBar + 6,
                     })}
                 >
-                    {secondary}
+                    {secondaryLine}
                 </Box>
             ) : null}
             <Grow in={isLoading} unmountOnExit>
