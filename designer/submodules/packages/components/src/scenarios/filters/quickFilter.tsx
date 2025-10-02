@@ -1,15 +1,19 @@
 import { Search } from "@mui/icons-material";
-import { Divider, Grow, InputAdornment, LinearProgress, Stack } from "@mui/material";
+import { Box, Divider, Grow, InputAdornment, LinearProgress, Stack } from "@mui/material";
 import Paper from "@mui/material/Paper";
+import { alpha } from "@mui/material/styles";
 import type { FormEventHandler, PropsWithChildren } from "react";
-import React from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useFocusWithin } from "rooks";
 
 import { InputWithClear } from "../../common/forms/inputWithClear";
 import { useScenariosFilterContext } from "./common/useScenariosFilterContext";
+import { useWrappedStack } from "./wrappedStack";
 
 const preventSubmit: FormEventHandler<HTMLFormElement> = (e) => e.preventDefault();
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function QuickFilter<F extends Record<string, any>>({
     children,
     isLoading,
@@ -22,50 +26,98 @@ export function QuickFilter<F extends Record<string, any>>({
     const { t } = useTranslation();
     const { getFilter, setFilter } = useScenariosFilterContext<F>();
 
+    const inputRef = useRef<HTMLElement>();
+    const [expansion, setExpansion] = useState(0);
+
+    const [focused, onFocusWithinChange] = useState(false);
+    const { focusWithinProps } = useFocusWithin({ onFocusWithinChange });
+
+    const value = useMemo<string>(() => getFilter(filter) || "", [filter, getFilter]);
+
+    const { primary, secondary } = useWrappedStack({ onSpacingChange: (box) => setExpansion(box?.width || 0), children });
+
     return (
         <Paper elevation={2} sx={{ position: "sticky", top: -1, zIndex: 2 }} {...props}>
-            <Stack
-                component={"form"}
-                noValidate
-                onSubmit={preventSubmit}
-                autoComplete="off"
-                direction="row"
-                divider={<Divider orientation="vertical" flexItem />}
-            >
-                <InputWithClear
-                    placeholder={t("table.filter.QUICK", "Search...")}
-                    fullWidth
-                    value={getFilter(filter) || ""}
-                    onChange={setFilter(filter)}
-                    sx={{
-                        flex: 1,
-                        ".MuiOutlinedInput-notchedOutline": {
-                            borderStartEndRadius: 0,
-                            borderEndEndRadius: 0,
-                            borderColor: "transparent",
-                            legend: {
-                                width: 0,
-                            },
-                        },
-                    }}
-                    startAdornment={
-                        <InputAdornment sx={(theme) => ({ color: theme.palette.text.secondary })} position="start">
-                            <Search sx={{ marginTop: "3px" }} />
-                        </InputAdornment>
-                    }
-                />
-                {children}
+            <Stack component={"form"} noValidate onSubmit={preventSubmit} autoComplete="off" direction="row">
+                <Box
+                    sx={{ flex: 1, position: "relative" }}
+                    style={{ height: inputRef.current?.getBoundingClientRect().height, minWidth: 128 }}
+                >
+                    <Box
+                        ref={inputRef}
+                        sx={(theme) => ({
+                            display: "flex",
+                            position: "absolute",
+                            left: 0,
+                            zIndex: theme.zIndex.appBar,
+                            transition: theme.transitions.create("width"),
+                        })}
+                        style={{
+                            width: focused
+                                ? `min(max(360px, calc(100% + ${expansion}px + 5ch), ${value.length + 15}ch), 80vw)`
+                                : `calc(100% + ${expansion}px)`,
+                        }}
+                        {...focusWithinProps}
+                    >
+                        <InputWithClear
+                            placeholder={t("table.filter.QUICK", "Search...")}
+                            fullWidth
+                            value={value}
+                            onChange={setFilter(filter)}
+                            sx={(theme) => ({
+                                backgroundColor: alpha(theme.palette.background.paper, 0.75),
+                                backdropFilter: "blur(12px)",
+                                borderStartEndRadius: 0,
+                                borderEndEndRadius: 0,
+                                borderEndStartRadius: secondary ? 0 : null,
+                                ".MuiOutlinedInput-notchedOutline": {
+                                    borderStartEndRadius: 0,
+                                    borderEndEndRadius: 0,
+                                    borderEndStartRadius: secondary ? 0 : null,
+                                    borderColor: "transparent",
+                                    legend: {
+                                        width: 0,
+                                    },
+                                },
+                            })}
+                            startAdornment={
+                                <InputAdornment sx={(theme) => ({ color: theme.palette.text.secondary })} position="start">
+                                    <Search sx={{ marginTop: "3px" }} />
+                                </InputAdornment>
+                            }
+                        />
+                        <Divider orientation="vertical" flexItem />
+                    </Box>
+                </Box>
+                {primary}
             </Stack>
+            {secondary ? (
+                <Box
+                    sx={(theme) => ({
+                        borderTop: "2px solid",
+                        borderTopColor: theme.palette.divider,
+                        backgroundColor: theme.palette.background.paper,
+                        borderEndStartRadius: theme.shape.borderRadius,
+                        borderEndEndRadius: theme.shape.borderRadius,
+                        zoom: 0.8,
+                        position: "relative",
+                        zIndex: theme.zIndex.appBar + 6,
+                    })}
+                >
+                    {secondary}
+                </Box>
+            ) : null}
             <Grow in={isLoading} unmountOnExit>
                 <LinearProgress
-                    sx={{
+                    sx={(theme) => ({
                         position: "absolute",
                         bottom: 0,
                         left: 0,
                         right: 0,
+                        zIndex: theme.zIndex.appBar + 2,
                         borderBottomLeftRadius: (t) => t.shape.borderRadius,
                         borderBottomRightRadius: (t) => t.shape.borderRadius,
-                    }}
+                    })}
                 />
             </Grow>
         </Paper>
