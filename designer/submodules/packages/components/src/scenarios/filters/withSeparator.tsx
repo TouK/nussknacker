@@ -61,7 +61,7 @@ export const WithSeparator = ({
                         alignItems: "center",
                     }}
                 >
-                    {expandButton || <Box sx={{ background: "blue", flex: 1 }}></Box>}
+                    {expandButton}
                 </Box>
             )}
         </Box>
