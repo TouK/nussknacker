@@ -9,7 +9,7 @@ export function SecondaryElementsRow({ children }: PropsWithChildren) {
     return nodes.length > 0 ? (
         <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end" }}>
             {nodes.map((child, i, array) => (
-                <WithSeparator key={i} showDivider={0 <= i && i < array.length - 1}>
+                <WithSeparator key={i} showDivider={i < array.length - 1}>
                     {child}
                 </WithSeparator>
             ))}

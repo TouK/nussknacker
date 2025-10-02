@@ -49,7 +49,7 @@ export function PrimaryElementsRow({
                     onVisibilityChange={(ratio, size) => {
                         metaArrayControls.updateItemAtIndex(i, updateElement(i, ratio, size));
                     }}
-                    showDivider={0 <= i && i < React.Children.count(children) - 1}
+                    showDivider={i < React.Children.count(children) - 1}
                 >
                     {child}
                 </WithSeparator>
