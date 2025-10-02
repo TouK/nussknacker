@@ -18,12 +18,13 @@ export function alignCells(variant: AlignCellsVariant, elements: dia.Cell[]) {
     if (variant === "distribute:vertical" || variant === "distribute:horizontal") {
         const hdist = (boundingBox.leftMiddle().distance(boundingBox.rightMiddle()) - RECT_WIDTH) / (elements.length - 1);
         const vdist = (boundingBox.topMiddle().distance(boundingBox.bottomMiddle()) - RECT_HEIGHT) / (elements.length - 1);
+        const bigDistance = 20000;
         let p = boundingBox.topLeft();
         if (variant === "distribute:horizontal") {
-            p = p.translate(-20000, 0);
+            p = p.translate(-bigDistance, 0);
         }
         if (variant === "distribute:vertical") {
-            p = p.translate(0, -20000);
+            p = p.translate(0, -bigDistance);
         }
         const sorted = elements.sort((a, b) => {
             const ap = a.getBBox().center();
