@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -62,15 +63,41 @@ function getIcon(type: ToolbarButtonProps["type"]) {
     }
 }
 
+function getName(t: TFunction, type: ToolbarButtonProps["type"]) {
+    switch (type) {
+        case BuiltinButtonTypes.editLayout:
+            return t("panels.actions.edit-layout.button", "layout");
+        case BuiltinButtonTypes.alignHorizontalLeft:
+            return t("panels.actions.align-left.button", "align left");
+        case BuiltinButtonTypes.alignVerticalTop:
+            return t("panels.actions.align-top.button", "align top");
+        case BuiltinButtonTypes.alignHorizontalRight:
+            return t("panels.actions.align-right.button", "align right");
+        case BuiltinButtonTypes.alignVerticalBottom:
+            return t("panels.actions.align-bottom.button", "align bottom");
+        case BuiltinButtonTypes.alignHorizontalCenter:
+            return t("panels.actions.center-horizontal.button", "center horizontal");
+        case BuiltinButtonTypes.alignVerticalCenter:
+            return t("panels.actions.center-vertical.button", "center vertical");
+        case BuiltinButtonTypes.distributeHorizontal:
+            return t("panels.actions.distribute-horizontal.button", "distribute horizontal");
+        case BuiltinButtonTypes.distributeVertical:
+            return t("panels.actions.distribute-vertical.button", "distribute vertical");
+        default:
+            return type;
+    }
+}
+
 function LayoutButton(props: ToolbarButtonProps) {
     const dispatch = useAppDispatch();
     const { t } = useTranslation();
     const graphGetter = useGraph();
     const { disabled, type } = props;
+    const type1 = props.type;
     return (
         <CapabilitiesToolbarButton
             editFrontend
-            name={props.type === BuiltinButtonTypes.editLayout ? t("panels.actions.edit-layout.button", "layout") : props.type}
+            name={getName(t, props.type)}
             icon={getIcon(props.type)}
             disabled={disabled}
             onClick={(e) => {
