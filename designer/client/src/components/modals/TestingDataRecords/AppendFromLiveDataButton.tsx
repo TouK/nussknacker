@@ -1,5 +1,5 @@
 import { Box, FormLabel } from "@mui/material";
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 import { NumericInput } from "../../graph/node-modal/editors/expression/NumericInput";
@@ -10,21 +10,26 @@ interface Props {
     handleGenerateTestData: (numberOfSamples: number) => void;
     maxTestingRecords: number;
     currentRecordsNumber: number;
+    recordsToAddLimitExceeded: boolean;
 }
 
 const DEFAULT_APPEND_COUNT = 10;
-const APPEND_MIN = 0;
+const APPEND_MIN = 1;
 const TOOLTIP_APPEND_LIVE_DATA = "The table will be appended with live data from the data sources.";
 
-export const AppendFromLiveDataButton = ({ handleGenerateTestData, maxTestingRecords, currentRecordsNumber }: Props) => {
+export const AppendFromLiveDataButton = ({
+    handleGenerateTestData,
+    maxTestingRecords,
+    currentRecordsNumber,
+    recordsToAddLimitExceeded,
+}: Props) => {
     const { t } = useTranslation();
     const [recordsToAppend, setRecordsToAppend] = useState<number>(DEFAULT_APPEND_COUNT);
     const maxLiveDataToAppend = maxTestingRecords - currentRecordsNumber;
-    const buttonDisabled = useMemo(() => !Number(recordsToAppend), [recordsToAppend]);
 
     useEffect(() => {
         if (maxLiveDataToAppend <= DEFAULT_APPEND_COUNT) {
-            setRecordsToAppend(maxLiveDataToAppend > 0 ? maxLiveDataToAppend : 0);
+            setRecordsToAppend(maxLiveDataToAppend > 0 ? maxLiveDataToAppend : APPEND_MIN);
         }
     }, [maxLiveDataToAppend]);
 
@@ -34,13 +39,16 @@ export const AppendFromLiveDataButton = ({ handleGenerateTestData, maxTestingRec
                 <StyledLoadingButton
                     sx={{ mr: 2, fontSize: "14px" }}
                     title={t("testingDialog.appendRecordsButton", "Append from live data")}
-                    action={() => handleGenerateTestData(recordsToAppend ?? 0)}
-                    disabled={buttonDisabled}
+                    action={() => handleGenerateTestData(recordsToAppend ?? APPEND_MIN)}
+                    disabled={recordsToAddLimitExceeded}
                 />
             </Box>
             <NumericInput
-                onChange={(_, value: number) => {
-                    const clamped = Math.max(APPEND_MIN, Math.min(maxLiveDataToAppend, value));
+                onChange={(_, value: unknown) => {
+                    const num = typeof value === "number" ? value : Number(value);
+                    if (!Number.isFinite(num)) return; // ignore non-numeric input
+
+                    const clamped = Math.max(APPEND_MIN, Math.min(maxLiveDataToAppend, num));
                     setRecordsToAppend(clamped);
                 }}
                 value={recordsToAppend}

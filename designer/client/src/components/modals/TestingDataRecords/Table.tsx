@@ -55,6 +55,7 @@ interface TableProps {
     sourceParameters: TestFormParameters[];
     cellErrors: CellError[];
     recordsToAddLimitExceeded?: boolean;
+    maxTestingRecords: number;
 }
 
 export const TABLE_HEIGHT = "65vh";

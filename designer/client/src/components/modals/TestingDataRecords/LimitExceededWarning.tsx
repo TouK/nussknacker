@@ -1,20 +1,13 @@
 import { Alert } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface Props {
     maxTestingRecords: number;
-    recordsToAddLimitExceeded: boolean;
 }
-export const LimitExceededWarning = ({ maxTestingRecords, recordsToAddLimitExceeded }: Props) => {
+export const LimitExceededWarning = ({ maxTestingRecords }: Props) => {
     const { t } = useTranslation();
-    const [warningVisible, setWarningVisible] = useState<boolean>(false);
-
-    useEffect(() => {
-        if (recordsToAddLimitExceeded) {
-            setWarningVisible(true);
-        }
-    }, [recordsToAddLimitExceeded]);
+    const [warningVisible, setWarningVisible] = useState<boolean>(true);
 
     if (!warningVisible) {
         return null;
