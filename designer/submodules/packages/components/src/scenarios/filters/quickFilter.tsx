@@ -34,6 +34,7 @@ export function QuickFilter<F extends Record<string, any>>({
 }>): JSX.Element {
     const { t } = useTranslation();
     const [value, setValue] = useFilterStateDebounced<F>(filter);
+    const { results } = useScenariosFilterContext<F>();
 
     const inputRef = useRef<HTMLElement>();
     const inputHeight = inputRef.current?.getBoundingClientRect().height;
@@ -43,13 +44,11 @@ export function QuickFilter<F extends Record<string, any>>({
 
     const { primaryLine, secondaryLine } = useWrappedStack(children, (box) => setExpansionSize(box?.width || 0));
 
-    const inputWidth = useMemo(
-        () =>
-            focused
-                ? `min(max(calc(100% + ${expansionSize}px), ${(value || "").length + 15}ch), max(calc(100% + ${expansionSize}px), 80vw))`
-                : `calc(100% + ${expansionSize}px)`,
-        [expansionSize, focused, value],
-    );
+    const inputWidth = useMemo(() => {
+        const adjustToQuery = `${(value || "").length + 15}ch)`;
+        const adjustToSpace = `calc(100% + ${expansionSize}px)`;
+        return focused ? `min(max(${adjustToSpace}, ${adjustToQuery}, max(${adjustToSpace}, 80vw))` : adjustToSpace;
+    }, [expansionSize, focused, value]);
 
     return (
         <Paper
@@ -81,6 +80,7 @@ export function QuickFilter<F extends Record<string, any>>({
                             fullWidth
                             value={value}
                             onChange={setValue}
+                            error={value && results && results.length < 1}
                             sx={(theme) => ({
                                 backgroundColor: alpha(theme.palette.background.paper, 0.75),
                                 backdropFilter: "blur(25px)",

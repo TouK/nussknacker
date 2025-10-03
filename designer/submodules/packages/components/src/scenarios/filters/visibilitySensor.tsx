@@ -43,16 +43,10 @@ export const VisibilitySensor = ({
     );
     return (
         <Box sx={{ display: "flex" }}>
-            {ratio >= 0.9 ? (
-                <span ref={ref}>{children}</span>
+            {ratio < 1 ? (
+                <Placeholder ref={ref} style={{ width: maxSize?.width, height: maxSize?.height }} />
             ) : (
-                <Placeholder
-                    ref={ref}
-                    style={{
-                        width: maxSize?.width,
-                        height: maxSize?.height,
-                    }}
-                />
+                <span ref={ref}>{children}</span>
             )}
         </Box>
     );

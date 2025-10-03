@@ -7,7 +7,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Paper from "@mui/material/Paper";
 import type { ListIteratee, Many } from "lodash";
 import { orderBy } from "lodash";
-import { getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
+import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
 import type { CSSProperties } from "react";
 import React, { useCallback, useMemo } from "react";
 import { List as VList, WindowScroller } from "react-virtualized";
@@ -132,13 +132,14 @@ export function ItemsList(props: {
     filterRules?: FilterRules<RowType, ScenariosFiltersModel>;
 }): JSX.Element {
     const { data = [], filterRules, isLoading } = props;
-    const { getFilter } = useScenariosFilterContext();
+    const { getFilter, setResults } = useScenariosFilterContext();
 
     const rows = useMemo<RowType[]>(() => {
         const filtered = data.filter((row) => filterRules.every(({ key, rule }) => rule(row, getFilter(key))));
+        setResults(filtered);
         const [sortBy] = getFilter("SORT_BY", true);
         return orderBy(filtered, ...sortRules<RowType>(sortBy));
-    }, [data, filterRules, getFilter]);
+    }, [data, filterRules, getFilter, setResults]);
 
     const { scrollParent, ref } = useScrollParent();
 
