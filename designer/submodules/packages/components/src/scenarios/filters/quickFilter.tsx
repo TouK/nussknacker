@@ -9,9 +9,17 @@ import { useTranslation } from "react-i18next";
 import { InputWithClear } from "../../common/forms/inputWithClear";
 import { useScenariosFilterContext } from "./common/useScenariosFilterContext";
 import { useFocusWithinState } from "./useFocusWithinState";
+import { useSyncedState } from "./useSyncedState";
 import { useWrappedStack } from "./wrappedStack";
 
 const preventSubmit: FormEventHandler<HTMLFormElement> = (e) => e.preventDefault();
+
+function useFilterStateDebounced<F extends Record<string, any>>(filter: keyof F) {
+    const { getFilter, setFilter } = useScenariosFilterContext<F>();
+    const storedValue = useMemo<string>(() => getFilter(filter) || "", [filter, getFilter]);
+    const setStoredValue = setFilter(filter);
+    return useSyncedState([storedValue, setStoredValue]);
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function QuickFilter<F extends Record<string, any>>({
@@ -24,15 +32,13 @@ export function QuickFilter<F extends Record<string, any>>({
     isLoading?: boolean;
 }>): JSX.Element {
     const { t } = useTranslation();
-    const { getFilter, setFilter } = useScenariosFilterContext<F>();
+    const [value, setValue] = useFilterStateDebounced<F>(filter);
 
     const inputRef = useRef<HTMLElement>();
     const inputHeight = inputRef.current?.getBoundingClientRect().height;
 
     const [expansionSize, setExpansionSize] = useState(0);
     const { focused, focusWithinProps } = useFocusWithinState();
-
-    const value = useMemo<string>(() => getFilter(filter) || "", [filter, getFilter]);
 
     const { primaryLine, secondaryLine } = useWrappedStack(children, (box) => setExpansionSize(box?.width || 0));
 
@@ -43,6 +49,7 @@ export function QuickFilter<F extends Record<string, any>>({
                 : `calc(100% + ${expansionSize}px)`,
         [expansionSize, focused, value.length],
     );
+
     return (
         <Paper elevation={2} sx={{ position: "sticky", top: -1, zIndex: 2 }} {...props}>
             <Stack component={"form"} noValidate onSubmit={preventSubmit} autoComplete="off" direction="row">
@@ -63,7 +70,7 @@ export function QuickFilter<F extends Record<string, any>>({
                             placeholder={t("table.filter.QUICK", "Search...")}
                             fullWidth
                             value={value}
-                            onChange={setFilter(filter)}
+                            onChange={setValue}
                             sx={(theme) => ({
                                 backgroundColor: alpha(theme.palette.background.paper, 0.75),
                                 backdropFilter: "blur(25px)",
