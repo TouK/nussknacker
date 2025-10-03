@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.registrar
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.connector.sink2.WriterInitContext
 import org.apache.flink.streaming.api.datastream.{AsyncDataStream, DataStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -16,7 +17,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.FlinkScenarioCompilationDependencies
-import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
+import pl.touk.nussknacker.engine.flink.api.{FlinkEngineContext, NkGlobalParameters, RuntimeCtx, WriterInitCtx}
+import pl.touk.nussknacker.engine.flink.api.FlinkEngineContextOps._
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
@@ -124,8 +126,11 @@ class FlinkProcessRegistrar(
         nodeComponentId: NodeComponentInfo,
         validationContext: Either[ValidationContext, Map[String, ValidationContext]]
     ): FlinkCustomNodeContext = {
-      val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
-        compilerDataForProcessPart(None)(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
+      val exceptionHandlerPreparer = (flinkEngineContext: FlinkEngineContext) =>
+        compilerDataForProcessPart(None)(flinkEngineContext.getUserCodeClassLoader).prepareExceptionHandler(
+          flinkEngineContext
+        )
+
       val jobData                     = compilerData.jobData
       val componentUseContextProvider = compilerData.runtimeMode
 
@@ -133,10 +138,11 @@ class FlinkProcessRegistrar(
         jobData,
         nodeComponentId.nodeId,
         compilerData.processTimeout,
-        convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(jobData, _, componentUseContextProvider),
+        convertToEngineRuntimeContext =
+          (r: RuntimeContext) => FlinkEngineRuntimeContextImpl(jobData, RuntimeCtx(r), componentUseContextProvider),
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(
           nodeComponentId,
-          exceptionHandlerPreparer,
+          exceptionHandlerPreparer.narrowToRuntimeCtx,
           createInterpreter(compilerDataForProcessPart(None))
         ),
         exceptionHandlerPreparer = exceptionHandlerPreparer,

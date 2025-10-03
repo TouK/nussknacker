@@ -4,14 +4,15 @@ import cats.data.NonEmptyList
 import com.codahale.metrics
 import com.codahale.metrics.SlidingTimeWindowReservoir
 import org.apache.flink
-import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.MetricGroup
+import pl.touk.nussknacker.engine.flink.api.FlinkEngineContext
 import pl.touk.nussknacker.engine.util.metrics._
 
 import java.util.concurrent.TimeUnit
 
-class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends BaseMetricsProviderForScenario {
+class FlinkMetricsProviderForScenario(exceptionHandlerContext: FlinkEngineContext)
+    extends BaseMetricsProviderForScenario {
 
   override def registerGauge[T](identifier: MetricIdentifier, value: Gauge[T]): Unit =
     gauge[T, flink.metrics.Gauge[T]](identifier.name, identifier.tags, () => value.getValue)
@@ -58,8 +59,9 @@ class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends Ba
   private def tagMode(nameParts: NonEmptyList[String], tags: Map[String, String]): (MetricGroup, String) = {
     val lastName = nameParts.last
     // all but last
-    val metricNameParts    = nameParts.init
-    val groupWithNameParts = metricNameParts.foldLeft[MetricGroup](runtimeContext.getMetricGroup)(_.addGroup(_))
+    val metricNameParts = nameParts.init
+    val groupWithNameParts =
+      metricNameParts.foldLeft[MetricGroup](exceptionHandlerContext.getMetricGroup)(_.addGroup(_))
 
     val finalGroup = tags.toList.sortBy(_._1).foldLeft[MetricGroup](groupWithNameParts) {
       case (group, (tag, tagValue)) => group.addGroup(tag, tagValue)

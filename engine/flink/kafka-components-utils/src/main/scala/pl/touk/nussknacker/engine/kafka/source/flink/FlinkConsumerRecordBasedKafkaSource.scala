@@ -22,6 +22,8 @@ import pl.touk.nussknacker.engine.api.process.{
 }
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.flink.api.{FlinkEngineContext, RuntimeCtx}
+import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
@@ -243,7 +245,7 @@ class FlinkKafkaConsumerHandlingExceptions[T](
     topics: java.util.List[String],
     deserializationSchema: FlinkDeserializationSchemaWrapper[T],
     props: Properties,
-    exceptionHandlerPreparer: RuntimeContext => ExceptionHandler,
+    exceptionHandlerPreparer: FlinkEngineContext => ExceptionHandler,
     convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
     nodeId: NodeId
 ) extends FlinkKafkaConsumer[T](topics, deserializationSchema, props)
@@ -256,7 +258,7 @@ class FlinkKafkaConsumerHandlingExceptions[T](
   override def open(openContext: OpenContext): Unit = {
     patchRestoredState()
     super.open(openContext)
-    exceptionHandler = exceptionHandlerPreparer(getRuntimeContext)
+    exceptionHandler = exceptionHandlerPreparer(RuntimeCtx(getRuntimeContext))
     exceptionPurposeContextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.id)
     deserializationSchema.setExceptionHandlingData(exceptionHandler, exceptionPurposeContextIdGenerator, nodeId)
   }
