@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 
 import { InputWithClear } from "../../common/forms/inputWithClear";
 import { useScenariosFilterContext } from "./common/useScenariosFilterContext";
+import Scale from "./scale";
 import { useFocusWithinState } from "./useFocusWithinState";
 import { useSyncedState } from "./useSyncedState";
 import { useWrappedStack } from "./wrappedStack";
@@ -51,7 +52,16 @@ export function QuickFilter<F extends Record<string, any>>({
     );
 
     return (
-        <Paper elevation={2} sx={{ position: "sticky", top: -1, zIndex: 2 }} {...props}>
+        <Paper
+            elevation={2}
+            sx={{
+                position: "sticky",
+                top: 0,
+                zIndex: 2,
+                overflow: "hidden",
+            }}
+            {...props}
+        >
             <Stack component={"form"} noValidate onSubmit={preventSubmit} autoComplete="off" direction="row">
                 <Box sx={{ flex: 1, position: "relative", minWidth: "max(20%, 200px)" }} style={{ height: inputHeight }}>
                     <Box
@@ -78,13 +88,7 @@ export function QuickFilter<F extends Record<string, any>>({
                                 borderEndEndRadius: 0,
                                 borderEndStartRadius: secondaryLine ? 0 : null,
                                 ".MuiOutlinedInput-notchedOutline": {
-                                    borderStartEndRadius: 0,
-                                    borderEndEndRadius: 0,
-                                    borderEndStartRadius: secondaryLine ? 0 : null,
                                     borderColor: "transparent",
-                                    legend: {
-                                        width: 0,
-                                    },
                                 },
                             })}
                             startAdornment={
@@ -104,14 +108,11 @@ export function QuickFilter<F extends Record<string, any>>({
                         borderTop: "2px solid",
                         borderTopColor: theme.palette.divider,
                         backgroundColor: theme.palette.background.paper,
-                        borderEndStartRadius: theme.shape.borderRadius,
-                        borderEndEndRadius: theme.shape.borderRadius,
-                        zoom: 0.8,
-                        position: "relative",
-                        zIndex: theme.zIndex.appBar + 6,
                     })}
                 >
-                    {secondaryLine}
+                    <Scale zoom={0.8} origin="right">
+                        {secondaryLine}
+                    </Scale>
                 </Box>
             ) : null}
             <Grow in={isLoading} unmountOnExit>
