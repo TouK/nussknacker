@@ -46,7 +46,7 @@ export function QuickFilter<F extends Record<string, any>>({
     return (
         <Paper elevation={2} sx={{ position: "sticky", top: -1, zIndex: 2 }} {...props}>
             <Stack component={"form"} noValidate onSubmit={preventSubmit} autoComplete="off" direction="row">
-                <Box sx={{ flex: 1, position: "relative", minWidth: 128 }} style={{ height: inputHeight }}>
+                <Box sx={{ flex: 1, position: "relative", minWidth: "max(25%, 128px)" }} style={{ height: inputHeight }}>
                     <Box
                         ref={inputRef}
                         sx={(theme) => ({

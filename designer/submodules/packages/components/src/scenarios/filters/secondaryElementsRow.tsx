@@ -1,18 +1,21 @@
-import { Box } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React from "react";
 
-import { WithSeparator } from "./withSeparator";
+import { ElementsRow } from "./elementsRow";
+import { ElementWithSeparator } from "./elementWithSeparator";
 
 export function SecondaryElementsRow({ children }: PropsWithChildren) {
-    const nodes = React.Children.toArray(children);
-    return nodes.length > 0 ? (
-        <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end" }}>
-            {nodes.map((child, i, array) => (
-                <WithSeparator key={i} showDivider={i < array.length - 1}>
+    const childrenArray = React.Children.toArray(children);
+    if (childrenArray.length <= 0) {
+        return null;
+    }
+    return (
+        <ElementsRow sx={{ flexWrap: "wrap" }}>
+            {childrenArray.map((child, i, { length }) => (
+                <ElementWithSeparator key={i} showDivider={i < length - 1}>
                     {child}
-                </WithSeparator>
+                </ElementWithSeparator>
             ))}
-        </Box>
-    ) : null;
+        </ElementsRow>
+    );
 }

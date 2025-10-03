@@ -1,9 +1,10 @@
-import { Box } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React, { useCallback, useLayoutEffect, useRef } from "react";
 
+import { ElementsRow } from "./elementsRow";
+import { ElementWithSeparator } from "./elementWithSeparator";
 import { useArrayStateWithUpdate } from "./useArrayStateWithUpdate";
-import { WithSeparator } from "./withSeparator";
+import { VisibilitySensor } from "./visibilitySensor";
 
 export function PrimaryElementsRow({
     children,
@@ -34,26 +35,29 @@ export function PrimaryElementsRow({
         onHiddenElementsChanged?.(React.Children.map(children, (child, index) => (metaArray[index]?.ratio < 1 ? child : null)));
     }, [children, metaArray, onHiddenElementsChanged]);
 
+    const childrenArray = React.Children.toArray(children);
+    if (childrenArray.length === 0) {
+        return null;
+    }
     return (
-        <Box
+        <ElementsRow
             sx={{
-                display: "flex",
-                justifyContent: "flex-end",
-                alignItems: "center",
                 overflow: "hidden",
+                // compensate some rounding problems with different zoom levels
+                // some almost invisible value above 0.05% works well
+                paddingInline: "0.075%",
             }}
         >
-            {React.Children.map(children, (child, i) => (
-                <WithSeparator
+            {childrenArray.map((child, i, { length }) => (
+                <VisibilitySensor
                     key={i}
-                    onVisibilityChange={(ratio, size) => {
+                    onChange={(ratio, size) => {
                         metaArrayControls.updateItemAtIndex(i, updateElement(i, ratio, size));
                     }}
-                    showDivider={i < React.Children.count(children) - 1}
                 >
-                    {child}
-                </WithSeparator>
+                    <ElementWithSeparator showDivider={i < length - 1}>{child}</ElementWithSeparator>
+                </VisibilitySensor>
             ))}
-        </Box>
+        </ElementsRow>
     );
 }
