@@ -45,15 +45,15 @@ export function QuickFilter<F extends Record<string, any>>({
     const inputWidth = useMemo(
         () =>
             focused
-                ? `min(max(360px, calc(100% + ${expansionSize}px + 5ch), ${value.length + 15}ch), 80vw)`
+                ? `min(max(calc(100% + ${expansionSize}px), ${(value || "").length + 15}ch), max(calc(100% + ${expansionSize}px), 80vw))`
                 : `calc(100% + ${expansionSize}px)`,
-        [expansionSize, focused, value.length],
+        [expansionSize, focused, value],
     );
 
     return (
         <Paper elevation={2} sx={{ position: "sticky", top: -1, zIndex: 2 }} {...props}>
             <Stack component={"form"} noValidate onSubmit={preventSubmit} autoComplete="off" direction="row">
-                <Box sx={{ flex: 1, position: "relative", minWidth: "max(25%, 128px)" }} style={{ height: inputHeight }}>
+                <Box sx={{ flex: 1, position: "relative", minWidth: "max(20%, 200px)" }} style={{ height: inputHeight }}>
                     <Box
                         ref={inputRef}
                         sx={(theme) => ({
