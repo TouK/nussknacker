@@ -248,7 +248,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                             recordsToAddLimitExceeded={recordsToAddLimitExceeded}
                         />
                     )}
-                    {recordsToAddLimitExceeded && <LimitExceededWarning maxTestingRecords={dataRecords.length} />}
+                    {recordsToAddLimitExceeded && <LimitExceededWarning maxTestingRecords={maxTestingRecords} />}
                 </Box>
             </ContentSize>
         </WindowContent>
