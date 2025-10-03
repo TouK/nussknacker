@@ -90,7 +90,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
 
     const handleGenerateTestData = useCallback(
         async (numberOfSamples: number) => {
-            const nextCount = dataRecords.length + numberOfSamples;
+            const nextCount = dataRecords.length + (numberOfSamples || 1); // we treat 0 as 1 to run validation when limit exceeded
             if (!validateForCount(nextCount)) return;
 
             const { data } = await HttpService.generatedTestData(scenarioName, scenarioGraph, numberOfSamples);
@@ -237,7 +237,6 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                             onRowMoved={handleRowMoved}
                             defaultDataRecord={defaultDataRecord}
                             recordsToAddLimitExceeded={recordsToAddLimitExceeded}
-                            maxTestingRecords={maxTestingRecords}
                         />
                     </Box>
 

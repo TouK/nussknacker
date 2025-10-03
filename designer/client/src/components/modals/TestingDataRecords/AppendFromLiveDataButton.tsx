@@ -14,7 +14,7 @@ interface Props {
 }
 
 const DEFAULT_APPEND_COUNT = 10;
-const APPEND_MIN = 1;
+const APPEND_MIN = 0;
 const TOOLTIP_APPEND_LIVE_DATA = "The table will be appended with live data from the data sources.";
 
 export const AppendFromLiveDataButton = ({
