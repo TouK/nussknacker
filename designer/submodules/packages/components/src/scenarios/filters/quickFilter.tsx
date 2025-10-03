@@ -5,6 +5,7 @@ import { alpha } from "@mui/material/styles";
 import type { FormEventHandler, PropsWithChildren } from "react";
 import React, { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useDocumentEventListener } from "rooks";
 
 import { InputWithClear } from "../../common/forms/inputWithClear";
 import { useScenariosFilterContext } from "./common/useScenariosFilterContext";
@@ -22,6 +23,12 @@ function useFilterStateDebounced<F extends Record<string, any>>(filter: keyof F)
     return useSyncedState([storedValue, setStoredValue]);
 }
 
+function isSimpleChar(event: KeyboardEvent) {
+    const hasModifiers = event.shiftKey || event.altKey || event.ctrlKey || event.metaKey;
+    const simpleCharacters = event.key.length === 1 && /^[a-zA-Z0-9]$/.test(event.key);
+    return simpleCharacters && !hasModifiers;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function QuickFilter<F extends Record<string, any>>({
     children,
@@ -36,8 +43,9 @@ export function QuickFilter<F extends Record<string, any>>({
     const [value, setValue] = useFilterStateDebounced<F>(filter);
     const { results } = useScenariosFilterContext<F>();
 
-    const inputRef = useRef<HTMLElement>();
-    const inputHeight = inputRef.current?.getBoundingClientRect().height;
+    const inputRef = useRef<HTMLInputElement>();
+    const inputWrapperRef = useRef<HTMLElement>();
+    const inputHeight = inputWrapperRef.current?.getBoundingClientRect().height;
 
     const [expansionSize, setExpansionSize] = useState(0);
     const { focused, focusWithinProps } = useFocusWithinState();
@@ -49,6 +57,10 @@ export function QuickFilter<F extends Record<string, any>>({
         const adjustToSpace = `calc(100% + ${expansionSize}px)`;
         return focused ? `min(max(${adjustToSpace}, ${adjustToQuery}, max(${adjustToSpace}, 80vw))` : adjustToSpace;
     }, [expansionSize, focused, value]);
+
+    useDocumentEventListener("keydown", (event: KeyboardEvent) => {
+        if (isSimpleChar(event)) inputRef.current?.focus();
+    });
 
     return (
         <Paper
@@ -64,7 +76,7 @@ export function QuickFilter<F extends Record<string, any>>({
             <Stack component={"form"} noValidate onSubmit={preventSubmit} autoComplete="off" direction="row">
                 <Box sx={{ flex: 1, position: "relative", minWidth: "max(20%, 200px)" }} style={{ height: inputHeight }}>
                     <Box
-                        ref={inputRef}
+                        ref={inputWrapperRef}
                         sx={(theme) => ({
                             display: "flex",
                             position: "absolute",
@@ -76,6 +88,7 @@ export function QuickFilter<F extends Record<string, any>>({
                         {...focusWithinProps}
                     >
                         <InputWithClear
+                            inputRef={inputRef}
                             placeholder={t("table.filter.QUICK", "Search...")}
                             fullWidth
                             value={value}
