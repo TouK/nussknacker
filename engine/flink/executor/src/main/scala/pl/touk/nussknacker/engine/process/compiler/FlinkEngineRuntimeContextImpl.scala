@@ -4,13 +4,13 @@ import org.apache.flink.api.common.functions.RuntimeContext
 import pl.touk.nussknacker.engine.RuntimeMode
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, IncContextIdGenerator}
-import pl.touk.nussknacker.engine.flink.api.FlinkEngineRuntimeContext
+import pl.touk.nussknacker.engine.flink.api.{FlinkEngineContext, FlinkEngineRuntimeContext, RuntimeCtx}
 import pl.touk.nussknacker.engine.process.compiler.MetricsProviderForFlink.createMetricsProvider
 import pl.touk.nussknacker.engine.util.metrics.MetricsProviderForScenario
 
 case class FlinkEngineRuntimeContextImpl(
     jobData: JobData,
-    runtimeContext: RuntimeContext,
+    runtimeContext: FlinkEngineContext,
     metricsProvider: MetricsProviderForScenario
 ) extends FlinkEngineRuntimeContext {
 
@@ -28,7 +28,7 @@ object FlinkEngineRuntimeContextImpl {
 //  This creates FlinkEngineRuntimeContextImpl with correct metricsProviderForScenario based on ComponentUseContextProvider
   def apply(
       jobData: JobData,
-      runtimeContext: RuntimeContext,
+      runtimeContext: FlinkEngineContext,
       runtimeMode: RuntimeMode
   ): FlinkEngineRuntimeContextImpl = {
     val properMetricsProvider = createMetricsProvider(runtimeMode, runtimeContext)
