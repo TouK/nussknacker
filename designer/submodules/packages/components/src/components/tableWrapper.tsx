@@ -37,7 +37,7 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
     const { data = [], filterRules, isLoading, ...passProps } = props;
     const { t } = useTranslation();
 
-    const { getFilter } = useComponentsFilterContext<M>();
+    const { getFilter, setResults } = useComponentsFilterContext<M>();
     const filters = useMemo(
         () =>
             filterRules.map(
@@ -47,7 +47,11 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
             ),
         [filterRules, getFilter],
     );
-    const filtered = useMemo(() => data.filter((row) => filters.every((f) => f(row))), [data, filters]);
+    const filtered = useMemo(() => {
+        const filtered = data.filter((row) => filters.every((f) => f(row)));
+        setResults(filtered);
+        return filtered;
+    }, [data, filters, setResults]);
     const [rows] = useDebouncedValue(filtered, 100);
     const [loading] = useDebouncedValue(isLoading || rows.length !== filtered.length, 200);
 
