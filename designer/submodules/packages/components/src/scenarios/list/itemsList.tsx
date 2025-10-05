@@ -9,7 +9,7 @@ import type { ListIteratee, Many } from "lodash";
 import { orderBy } from "lodash";
 import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
 import type { CSSProperties } from "react";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { List as VList, WindowScroller } from "react-virtualized";
 import type { ListRowProps } from "react-virtualized/dist/es/List";
 
@@ -136,10 +136,12 @@ export function ItemsList(props: {
 
     const rows = useMemo<RowType[]>(() => {
         const filtered = data.filter((row) => filterRules.every(({ key, rule }) => rule(row, getFilter(key))));
-        setResults(filtered);
         const [sortBy] = getFilter("SORT_BY", true);
         return orderBy(filtered, ...sortRules<RowType>(sortBy));
-    }, [data, filterRules, getFilter, setResults]);
+    }, [data, filterRules, getFilter]);
+    useEffect(() => {
+        setResults(rows);
+    }, [rows, setResults]);
 
     const { scrollParent, ref } = useScrollParent();
 

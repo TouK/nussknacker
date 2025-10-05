@@ -4,7 +4,7 @@ import { useTheme } from "@mui/material/styles";
 import type { DataGridProps, GridActionsColDef, GridColDef, GridRenderCellParams, GridSlotsComponentsProps } from "@mui/x-data-grid";
 import { DataGrid, useGridApiRef } from "@mui/x-data-grid";
 import type { PropsWithChildren } from "react";
-import React, { memo, useCallback, useMemo } from "react";
+import React, { memo, useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDebouncedValue } from "rooks";
 
@@ -47,11 +47,11 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
             ),
         [filterRules, getFilter],
     );
-    const filtered = useMemo(() => {
-        const filtered = data.filter((row) => filters.every((f) => f(row)));
+    const filtered = useMemo(() => data.filter((row) => filters.every((f) => f(row))), [data, filters]);
+    useEffect(() => {
         setResults(filtered);
-        return filtered;
-    }, [data, filters, setResults]);
+    }, [filtered, setResults]);
+
     const [rows] = useDebouncedValue(filtered, 100);
     const [loading] = useDebouncedValue(isLoading || rows.length !== filtered.length, 200);
 

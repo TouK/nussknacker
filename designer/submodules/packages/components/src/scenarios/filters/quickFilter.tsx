@@ -20,7 +20,7 @@ function useFilterStateDebounced<F extends Record<string, any>>(filter: keyof F)
     const { getFilter, setFilter } = useScenariosFilterContext<F>();
     const storedValue = useMemo<string>(() => getFilter(filter) || "", [filter, getFilter]);
     const setStoredValue = setFilter(filter);
-    return useSyncedState([storedValue, setStoredValue]);
+    return useSyncedState([storedValue, setStoredValue], "");
 }
 
 function isSimpleChar(event: KeyboardEvent) {
@@ -93,7 +93,7 @@ export function QuickFilter<F extends Record<string, any>>({
                             fullWidth
                             value={value}
                             onChange={setValue}
-                            error={value && results && results.length < 1}
+                            error={Boolean(value && results && results.length < 1)}
                             sx={(theme) => ({
                                 backgroundColor: alpha(theme.palette.background.paper, 0.75),
                                 backdropFilter: "blur(25px)",
