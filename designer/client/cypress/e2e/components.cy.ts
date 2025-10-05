@@ -1,3 +1,12 @@
+function interceptLocalProxy() {
+    // for local dev only
+    const creds = `${Cypress.env("testUserUsername")}:${Cypress.env("testUserPassword")}`;
+    const encoded = typeof btoa === "function" ? btoa(creds) : Buffer.from(creds).toString("base64");
+    cy.intercept("http://localhost:5001/nu-core-proxy/api/*", (req) => {
+        req.headers["Authorization"] = `Basic ${encoded}`;
+    }).as("localhost");
+}
+
 describe("Components list", () => {
     const seed = "components";
 
@@ -13,6 +22,7 @@ describe("Components list", () => {
     });
 
     beforeEach(() => {
+        interceptLocalProxy();
         cy.mockWindowDate();
         cy.viewport(1400, 1000);
         cy.visit("/components");
@@ -63,7 +73,7 @@ describe("Components list", () => {
     it("should allow filtering by group", () => {
         filterByDefaultCategory();
         cy.get("[role=row]").should("have.length.greaterThan", 11);
-        cy.contains(/^group$/i).click();
+        cy.contains(/^group$/i).click({ force: true });
         cy.get("[role=menu]").find("li[role=menuitem]").as("options");
         cy.get("@options").should("have.lengthOf", totalGroups + 1);
         cy.get("@options").contains(/^base/i).click();
@@ -262,7 +272,7 @@ describe("Components list", () => {
 
     function filterByBaseGroup() {
         cy.get("[role=row]", { timeout: 60000 }).should("have.length.greaterThan", 11);
-        cy.contains(/^group$/i).click();
+        cy.contains(/^group$/i).click({ force: true });
         cy.get("[role=menu]").find("li[role=menuitem]").as("options");
         cy.get("@options").should("have.lengthOf", totalGroups + 1);
         cy.get("@options").contains(/^base/i).click();
