@@ -9,11 +9,11 @@ interface Options {
     delay?: number;
 }
 
-export function useSyncedState<T>(remoteState: UseStateLike<T>, options: Options = {}): UseStateLike<T> {
+export function useSyncedState<T>(remoteState: UseStateLike<T>, initialState: T, options: Options = {}): UseStateLike<T> {
     const { mode = "debounce", delay = 300 } = options;
     const [remoteValue, setRemoteValue] = remoteState;
 
-    const [localValue, setLocalValue] = useState<T>(remoteValue);
+    const [localValue, setLocalValue] = useState<T>(remoteValue || initialState);
 
     const localVersion = useRef(0);
     const remoteVersion = useRef(0);
