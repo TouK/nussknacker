@@ -16,11 +16,12 @@ export function PrimaryElementsRow({
 }>) {
     const [metaArray, metaArrayControls] = useArrayStateWithUpdate<{ ratio: number; box: DOMRectReadOnly }>([]);
     const lastSpacerIndex = useRef<number>();
+    const threshold = 0.9;
 
     const updateElement = useCallback(
         (i: number, ratio: number, box: DOMRectReadOnly) => (current) => {
             if (current?.ratio === ratio && current?.box === box) return current;
-            if (0 < ratio && ratio < 1) {
+            if (0 < ratio && ratio < threshold) {
                 lastSpacerIndex.current = i;
                 onSpacingChange?.(box);
             } else if (lastSpacerIndex.current === i) {
@@ -28,12 +29,12 @@ export function PrimaryElementsRow({
             }
             return { ...current, ratio, box };
         },
-        [onSpacingChange],
+        [onSpacingChange, threshold],
     );
 
     useLayoutEffect(() => {
-        onHiddenElementsChanged?.(React.Children.map(children, (child, index) => (metaArray[index]?.ratio < 1 ? child : null)));
-    }, [children, metaArray, onHiddenElementsChanged]);
+        onHiddenElementsChanged?.(React.Children.map(children, (child, index) => (metaArray[index]?.ratio < threshold ? child : null)));
+    }, [children, metaArray, onHiddenElementsChanged, threshold]);
 
     const childrenArray = React.Children.toArray(children);
     if (childrenArray.length === 0) {
@@ -51,6 +52,7 @@ export function PrimaryElementsRow({
             {childrenArray.map((child, i, { length }) => (
                 <VisibilitySensor
                     key={i}
+                    threshold={threshold}
                     onChange={(ratio, size) => {
                         metaArrayControls.updateItemAtIndex(i, updateElement(i, ratio, size));
                     }}
