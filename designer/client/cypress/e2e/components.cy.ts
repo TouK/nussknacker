@@ -159,6 +159,7 @@ describe("Components list", () => {
     });
 
     it("should display usages", () => {
+        cy.viewport(1400, 1000);
         cy.contains(/^usages$/i).click();
         cy.contains(/^≥ 1$/i).click();
         cy.get("body").click();
