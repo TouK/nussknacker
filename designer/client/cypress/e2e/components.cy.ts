@@ -192,12 +192,14 @@ describe("Components list", () => {
         cy.contains(/^filter 8$/).should("be.visible");
 
         cy.get(`[data-testid="loading-indicator"]`).should("not.exist");
+        cy.wait(250);
         cy.get("#app-container>main").matchImage({
-            screenshotConfig: { clip: { x: 0, y: 0, width: 1400, height: 300 } },
+            screenshotConfig: { clip: { x: 0, y: 0, width: 1600, height: 300 } },
         });
     });
 
     it("should filter usage types", () => {
+        cy.viewport(1400, 1000);
         cy.createTestFragment(`${seed}_xxx`, "fragmentWithFilter");
         cy.visitNewProcess(`${seed}_yyy`, "testProcess2");
         cy.get("#toolbox").contains("fragments").should("exist").scrollIntoView();
@@ -226,6 +228,7 @@ describe("Components list", () => {
             .contains(/\sdirect/i)
             .click();
         cy.get(`[data-testid="loading-indicator"]`).should("not.exist");
+        cy.wait(250);
         cy.get("#app-container>main").matchImage();
         cy.get("@options")
             .contains(/\sdirect/i)
@@ -234,6 +237,7 @@ describe("Components list", () => {
             .contains(/indirect/i)
             .click();
         cy.get(`[data-testid="loading-indicator"]`).should("not.exist");
+        cy.wait(250);
         cy.get("#app-container>main").matchImage();
 
         cy.get("@options")
@@ -244,6 +248,7 @@ describe("Components list", () => {
         cy.matchQuery("?TEXT=xxx");
         cy.viewport(1600, 500);
         cy.get(`[data-testid="loading-indicator"]`).should("not.exist");
+        cy.wait(250);
         cy.get("#app-container>main").matchImage({ maxDiffThreshold: 0.01 });
     });
 
