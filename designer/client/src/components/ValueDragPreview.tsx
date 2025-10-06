@@ -3,6 +3,7 @@ import type { Dispatch, PropsWithChildren, SetStateAction } from "react";
 import React, { createContext, forwardRef, useMemo, useState } from "react";
 import { useDragDropManager, useDragLayer } from "react-dnd";
 import { createPortal } from "react-dom";
+import { ErrorBoundary } from "react-error-boundary";
 
 import { useNotNull } from "./ComponentDragPreview";
 import { DndTypes } from "./DndTypes";
@@ -25,7 +26,7 @@ function ValuePreview({ data }: { data: SpelDndContext }) {
             </>
         );
     }
-    if (typeof data.value === "object") {
+    if (data.value && typeof data.value === "object") {
         const size = Object.keys(data.value).length;
         return (
             <>
@@ -33,7 +34,8 @@ function ValuePreview({ data }: { data: SpelDndContext }) {
             </>
         );
     }
-    return <>{data.value}</>;
+
+    return <>{JSON.stringify(data.value)}</>;
 }
 
 function KeyValuePreview({ data }: { data: SpelDndContext }) {
@@ -100,7 +102,9 @@ export const ValueDragPreview = forwardRef<HTMLDivElement, PropsWithChildren>(fu
             }}
             style={{ transform: `translate(${x}px, ${y}px)` }}
         >
-            <KeyValuePreview data={data} />
+            <ErrorBoundary fallback={null}>
+                <KeyValuePreview data={data} />
+            </ErrorBoundary>
         </Box>,
         document.body,
     );

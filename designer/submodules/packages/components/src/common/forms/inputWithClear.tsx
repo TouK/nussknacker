@@ -1,8 +1,9 @@
 import { Clear } from "@mui/icons-material";
-import { IconButton, InputAdornment, OutlinedInput, OutlinedInputProps } from "@mui/material";
+import type { OutlinedInputProps } from "@mui/material";
+import { IconButton, InputAdornment, OutlinedInput } from "@mui/material";
 import React from "react";
 
-type InputWithClearProps = OutlinedInputProps & {
+type InputWithClearProps = Omit<OutlinedInputProps, "onChange" | "value"> & {
     value: string;
     onChange: (value: string) => void;
 };

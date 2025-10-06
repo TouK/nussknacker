@@ -19,6 +19,7 @@ module.exports = {
                 },
             },
         },
+        "prefixIds",
         "removeOffCanvasPaths",
         "convertStyleToAttrs",
         {
@@ -30,7 +31,7 @@ module.exports = {
         {
             name: "convertColors",
             params: {
-                currentColor: /#ccc|#fff/,
+                currentColor: /#000|#ccc|#fff/,
             },
         },
     ],
