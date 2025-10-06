@@ -2,9 +2,9 @@ function interceptLocalProxy() {
     // for local dev only
     const creds = `${Cypress.env("testUserUsername")}:${Cypress.env("testUserPassword")}`;
     const encoded = typeof btoa === "function" ? btoa(creds) : Buffer.from(creds).toString("base64");
-    cy.intercept("http://localhost:5001/nu-core-proxy/api/*", (req) => {
+    cy.intercept(/localhost:5001\/nu-core-proxy\/.*/, (req) => {
         req.headers["Authorization"] = `Basic ${encoded}`;
-    }).as("localhost");
+    }).as("localhost auth");
 }
 
 describe("Components list", () => {
@@ -24,7 +24,7 @@ describe("Components list", () => {
     beforeEach(() => {
         interceptLocalProxy();
         cy.mockWindowDate();
-        cy.viewport(1400, 1000);
+        cy.viewport(1800, 1000);
         cy.visit("/components");
     });
 
@@ -215,7 +215,7 @@ describe("Components list", () => {
         cy.contains(/^save$/i).click();
         cy.contains(/^ok$/i).click();
 
-        cy.viewport(1400, 600);
+        cy.viewport(1000, 600);
         cy.visit("/components/usages/builtin-filter");
 
         cy.contains(/^other$/i).click();
@@ -224,16 +224,15 @@ describe("Components list", () => {
         cy.get("@options")
             .contains(/\sdirect/i)
             .click();
-        cy.wait(500); //ensure "loading" mask is hidden
+        cy.get(`[data-testid="loading-indicator"]`).should("not.exist");
         cy.get("#app-container>main").matchImage();
-
         cy.get("@options")
             .contains(/\sdirect/i)
             .click();
         cy.get("@options")
             .contains(/indirect/i)
             .click();
-        cy.wait(500); //ensure "loading" mask is hidden
+        cy.get(`[data-testid="loading-indicator"]`).should("not.exist");
         cy.get("#app-container>main").matchImage();
 
         cy.get("@options")
@@ -243,7 +242,7 @@ describe("Components list", () => {
         cy.get("input[type=text]").type("xxx");
         cy.matchQuery("?TEXT=xxx");
         cy.viewport(1600, 500);
-        cy.wait(500); //ensure "loading" mask is hidden
+        cy.get(`[data-testid="loading-indicator"]`).should("not.exist");
         cy.get("#app-container>main").matchImage({ maxDiffThreshold: 0.01 });
     });
 
