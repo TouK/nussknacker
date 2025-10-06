@@ -13,9 +13,9 @@ import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { WindowContent } from "../../../windowManager/WindowContent";
 import type { WindowKind } from "../../../windowManager/WindowKind";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
+import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
-import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
 import { AppendFromLiveDataButton } from "./AppendFromLiveDataButton";
 import { LimitExceededWarning } from "./LimitExceededWarning";
 import type { TestingDataRecords } from "./Table";
@@ -217,7 +217,17 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
         <WindowContent
             {...props}
             icon={<WindowHeaderIconStyled as={viewParams.Icon} type={kind} />}
-            subheader={<NodeDocs name={viewParams.docs?.label} href={viewParams.docs?.url} />}
+            subheader={
+                <Box display={"flex"} alignItems={"center"}>
+                    <InfoTooltip
+                        variant={"hover"}
+                        title={t(
+                            "testingDialog.description",
+                            `Use prepared set of input data records to verify the scenario before deploying it. <br /> The sources will be stubbed with data records below during test invocation.`,
+                        )}
+                    />
+                </Box>
+            }
             buttons={buttons}
         >
             <ContentSize>
