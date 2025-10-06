@@ -24,7 +24,7 @@ describe("Components list", () => {
     beforeEach(() => {
         interceptLocalProxy();
         cy.mockWindowDate();
-        cy.viewport(1800, 1000);
+        cy.viewport(1400, 1000);
         cy.visit("/components");
     });
 
@@ -73,7 +73,7 @@ describe("Components list", () => {
     it("should allow filtering by group", () => {
         filterByDefaultCategory();
         cy.get("[role=row]").should("have.length.greaterThan", 11);
-        cy.contains(/^group$/i).click({ force: true });
+        cy.contains(/^group$/i).click();
         cy.get("[role=menu]").find("li[role=menuitem]").as("options");
         cy.get("@options").should("have.lengthOf", totalGroups + 1);
         cy.get("@options").contains(/^base/i).click();
@@ -190,7 +190,7 @@ describe("Components list", () => {
         cy.matchQuery("?TEXT=8+xxx");
         cy.contains(/^filter 8$/).should("be.visible");
 
-        cy.wait(500); //ensure "loading" mask is hidden
+        cy.get(`[data-testid="loading-indicator"]`).should("not.exist");
         cy.get("#app-container>main").matchImage({
             screenshotConfig: { clip: { x: 0, y: 0, width: 1400, height: 300 } },
         });
@@ -215,7 +215,7 @@ describe("Components list", () => {
         cy.contains(/^save$/i).click();
         cy.contains(/^ok$/i).click();
 
-        cy.viewport(1000, 600);
+        cy.viewport(1400, 600);
         cy.visit("/components/usages/builtin-filter");
 
         cy.contains(/^other$/i).click();
@@ -271,7 +271,7 @@ describe("Components list", () => {
 
     function filterByBaseGroup() {
         cy.get("[role=row]", { timeout: 60000 }).should("have.length.greaterThan", 11);
-        cy.contains(/^group$/i).click({ force: true });
+        cy.contains(/^group$/i).click();
         cy.get("[role=menu]").find("li[role=menuitem]").as("options");
         cy.get("@options").should("have.lengthOf", totalGroups + 1);
         cy.get("@options").contains(/^base/i).click();

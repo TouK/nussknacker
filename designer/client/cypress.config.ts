@@ -23,7 +23,7 @@ export default defineConfig({
         setupNodeEvents(on, config) {
             on("before:browser:launch", (browser, launchOptions) => {
                 const width = 1920;
-                const height = 1080;
+                const height = 1200;
                 if (browser.isHeadless) {
                     if (browser.name === "chrome") {
                         launchOptions.args.push(`--window-size=${width},${height}`);
