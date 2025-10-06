@@ -73,7 +73,9 @@ export const ProcessingModeItem = ({ processingMode, filtersContext }: Props) =>
             aria-selected={isSelected}
         >
             <item.Icon color={"inherit"} />
-            <Typography variant={"caption"}>{item.displayableName}</Typography>
+            <Typography variant={"caption"} noWrap>
+                {item.displayableName}
+            </Typography>
         </Button>
     );
 };

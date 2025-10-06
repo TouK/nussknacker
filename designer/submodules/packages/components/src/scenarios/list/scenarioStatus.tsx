@@ -44,7 +44,9 @@ export const ScenarioStatus = ({ state, filtersContext }: Props) => {
                 })}
                 src={state.icon}
             />
-            <Typography variant={"caption"}>{capitalize(startCase(value))}</Typography>
+            <Typography variant={"caption"} noWrap>
+                {capitalize(startCase(value))}
+            </Typography>
         </Button>
     );
 };
