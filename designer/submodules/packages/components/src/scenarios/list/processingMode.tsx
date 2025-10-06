@@ -17,17 +17,23 @@ export enum ProcessingMode {
 export const processingModeItems = [
     {
         name: ProcessingMode.streaming,
-        displayableName: i18next.t(`scenarioDetails.processingModeVariants.streaming`, "Streaming"),
+        get displayableName() {
+            return i18next.t(`scenarioDetails.processingModeVariants.streaming`, "Streaming");
+        },
         Icon: Streaming,
     },
     {
         name: ProcessingMode.requestResponse,
-        displayableName: i18next.t(`scenarioDetails.processingModeVariants.requestResponse`, "Request-Response"),
+        get displayableName() {
+            return i18next.t(`scenarioDetails.processingModeVariants.requestResponse`, "Request-Response");
+        },
         Icon: RequestResponse,
     },
     {
         name: ProcessingMode.batch,
-        displayableName: i18next.t(`scenarioDetails.processingModeVariants.batch`, "Batch"),
+        get displayableName() {
+            return i18next.t(`scenarioDetails.processingModeVariants.batch`, "Batch");
+        },
         Icon: Batch,
     },
 ];
