@@ -72,7 +72,7 @@ export function SecondLine({ row }: { row: RowType }): JSX.Element {
     return (
         <Stack
             direction="row"
-            spacing={1.25}
+            spacing={1}
             mt={1}
             alignItems="center"
             divider={<Divider orientation="vertical" variant={"inset"} flexItem />}
