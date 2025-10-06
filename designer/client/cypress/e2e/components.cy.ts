@@ -24,7 +24,7 @@ describe("Components list", () => {
     beforeEach(() => {
         interceptLocalProxy();
         cy.mockWindowDate();
-        cy.viewport(1400, 1000);
+        cy.viewport(1600, 1000);
         cy.visit("/components");
     });
 
