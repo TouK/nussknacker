@@ -8,7 +8,16 @@ export function FilterMenu({ children, label, count }: PropsWithChildren<{ label
     const popupState = usePopupState({ variant: "popper", popupId: label });
     return (
         <>
-            <Badge badgeContent={count} color="primary">
+            <Badge
+                badgeContent={count}
+                color="primary"
+                sx={{
+                    ".MuiBadge-anchorOriginTopRight": {
+                        marginRight: 0.6,
+                        marginTop: 0.4,
+                    },
+                }}
+            >
                 <Button
                     type="button"
                     size="small"
