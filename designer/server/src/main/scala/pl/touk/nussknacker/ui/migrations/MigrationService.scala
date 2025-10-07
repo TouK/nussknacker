@@ -206,8 +206,8 @@ class MigrationService(
       .liftF[Future, NuDesignerError, ValidationResults.ValidationResult](
         processService
           .migrateProcess(processIdWithName, migrateScenarioCommand)
-          .withSideEffect(response =>
-            response.processResponse.foreach(resp => notifyListener(OnSaved(resp.id, resp.versionId)))
+          .withSideEffect(result =>
+            result.updated.newVersion.foreach(nv => notifyListener(OnSaved(result.updated.processId, nv)))
           )
           .map(_.validationResult)
       )
@@ -312,8 +312,8 @@ class MigrationService(
       .map(_.toEither)
       .map {
         case Left(value) => Left(value)
-        case Right(response) =>
-          notifyListener(OnSaved(response.id, response.versionId))
+        case Right(result) =>
+          notifyListener(OnSaved(result.processId, result.processVersionId))
           Right(())
       }
   } else {
@@ -329,8 +329,8 @@ class MigrationService(
       .map(_.toEither)
       .map {
         case Left(value) => Left(value)
-        case Right(response) =>
-          notifyListener(OnSaved(response.id, response.versionId))
+        case Right(result) =>
+          notifyListener(OnSaved(result.processId, result.processVersionId))
           Right(())
       }
   }
