@@ -1,13 +1,23 @@
-import React, { PropsWithChildren } from "react";
+import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { Badge, Button, Menu } from "@mui/material";
 import { bindMenu, bindTrigger, usePopupState } from "material-ui-popup-state/hooks";
-import { ExpandLess, ExpandMore } from "@mui/icons-material";
+import type { PropsWithChildren } from "react";
+import React from "react";
 
 export function FilterMenu({ children, label, count }: PropsWithChildren<{ label: string; count?: number }>): JSX.Element {
     const popupState = usePopupState({ variant: "popper", popupId: label });
     return (
         <>
-            <Badge badgeContent={count} color="primary">
+            <Badge
+                badgeContent={count}
+                color="primary"
+                sx={{
+                    ".MuiBadge-anchorOriginTopRight": {
+                        marginRight: 0.6,
+                        marginTop: 0.4,
+                    },
+                }}
+            >
                 <Button
                     type="button"
                     size="small"
@@ -29,6 +39,10 @@ export function FilterMenu({ children, label, count }: PropsWithChildren<{ label
                 transformOrigin={{
                     vertical: "top",
                     horizontal: "center",
+                }}
+                onKeyDown={(event) => {
+                    // prevent setting focus on search input
+                    event.stopPropagation();
                 }}
             >
                 {children}

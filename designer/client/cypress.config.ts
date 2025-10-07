@@ -22,7 +22,7 @@ export default defineConfig({
         // You may want to clean this up later by importing these.
         setupNodeEvents(on, config) {
             on("before:browser:launch", (browser, launchOptions) => {
-                const width = 1400;
+                const width = 1920;
                 const height = 1200;
                 if (browser.isHeadless) {
                     if (browser.name === "chrome") {

@@ -17,17 +17,23 @@ export enum ProcessingMode {
 export const processingModeItems = [
     {
         name: ProcessingMode.streaming,
-        displayableName: i18next.t(`scenarioDetails.processingModeVariants.streaming`, "Streaming"),
+        get displayableName() {
+            return i18next.t(`scenarioDetails.processingModeVariants.streaming`, "Streaming");
+        },
         Icon: Streaming,
     },
     {
         name: ProcessingMode.requestResponse,
-        displayableName: i18next.t(`scenarioDetails.processingModeVariants.requestResponse`, "Request-Response"),
+        get displayableName() {
+            return i18next.t(`scenarioDetails.processingModeVariants.requestResponse`, "Request-Response");
+        },
         Icon: RequestResponse,
     },
     {
         name: ProcessingMode.batch,
-        displayableName: i18next.t(`scenarioDetails.processingModeVariants.batch`, "Batch"),
+        get displayableName() {
+            return i18next.t(`scenarioDetails.processingModeVariants.batch`, "Batch");
+        },
         Icon: Batch,
     },
 ];
@@ -62,12 +68,14 @@ export const ProcessingModeItem = ({ processingMode, filtersContext }: Props) =>
         <Button
             title={t("scenariosList.tooltip.processingMode", "Processing mode")}
             color={isSelected ? "primary" : "inherit"}
-            sx={{ textTransform: "capitalize", display: "flex", gap: 1, alignItems: "center", fontSize: "1rem", py: 0.25, mx: 0 }}
+            sx={{ textTransform: "capitalize", display: "flex", gap: 0.75, alignItems: "center", fontSize: "1rem", py: 0.25, px: 0.25 }}
             onClick={onClick}
             aria-selected={isSelected}
         >
             <item.Icon color={"inherit"} />
-            <Typography variant={"caption"}>{item.displayableName}</Typography>
+            <Typography variant={"caption"} noWrap>
+                {item.displayableName}
+            </Typography>
         </Button>
     );
 };
