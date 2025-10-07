@@ -6,9 +6,8 @@ import { useTranslation } from "react-i18next";
 
 import type { VariableTypes } from "../../../../../types/validation";
 import { InfoTooltip } from "../InfoTooltip/InfoTooltip";
-import type { ParamType } from "../types";
 import type { FieldError } from "../Validators";
-import type { OnValueChange, SimpleEditor } from "./Editor";
+import type { ExtendedEditor, OnValueChange } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { ExpressionSuggestProps } from "./ExpressionSuggest";
 import { ExpressionSuggest } from "./ExpressionSuggest";
@@ -180,4 +179,28 @@ Use autocompletion to explore available options. To read more see [Documentation
     );
 };
 
-export const SpelEditor: SimpleEditor<SpelEditorProps> = forwardRef(SpelEditorComponent) as SimpleEditor<SpelEditorProps>;
+export const SpelEditor: ExtendedEditor<SpelEditorProps> = forwardRef(SpelEditorComponent) as ExtendedEditor<SpelEditorProps>;
+
+SpelEditor.parseValueOnEditorChange = ({ expression, language }: ExpressionObj, newLanguage) => {
+    if (language === ExpressionLang.SpELTemplate) {
+        if (expression === "") {
+            return { expression, language: newLanguage };
+        }
+
+        return { expression: `"${expression}"`, language: newLanguage };
+    }
+
+    return { expression, language: newLanguage };
+};
+
+function looksLikeSpelTemplateExpression(expr: string): boolean {
+    const trimmed = expr.trim();
+    return /#\{[\s\S]*?\}/.test(trimmed); // #{ ... }
+}
+
+SpelEditor.isSwitchableTo = (expressionObj) => {
+    return !looksLikeSpelTemplateExpression(expressionObj.expression);
+};
+
+SpelEditor.notSwitchableToHint = () =>
+    "The string-template-based input must be a literal value without embeeded expressions to switch to expression mode";
