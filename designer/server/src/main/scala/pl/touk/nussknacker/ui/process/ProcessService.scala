@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.scenariodetails.{BaseCreateScenarioCommand, ScenarioWithDetails}
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.api.ScenarioStatusPresenter
@@ -118,6 +119,11 @@ object ProcessService {
 
   case class SkipAdditionalFields(skipProcessActionOptionalFields: Boolean) extends AdditionalFieldsOptions
 
+  final case class UpdateScenarioResult(
+      validationResult: ValidationResult,
+      updated: ProcessUpdated
+  )
+
 }
 
 trait ProcessService {
@@ -153,15 +159,15 @@ trait ProcessService {
 
   def renameProcess(processIdWithName: ProcessIdWithName, name: ProcessName)(
       implicit user: LoggedUser
-  ): Future[UpdateProcessNameResponse]
+  ): Future[UpdateScenarioNameResponse]
 
   def createProcess(command: CreateScenarioCommand)(
       implicit user: LoggedUser
-  ): Future[Validated[NuDesignerError, ProcessResponse]]
+  ): Future[Validated[NuDesignerError, ProcessCreated]]
 
   def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateScenarioCommand)(
       implicit user: LoggedUser
-  ): Future[UpdateProcessResponse]
+  ): Future[UpdateScenarioResult]
 
   // TODO: move dto mapping to appropriate resource
   def updateProcessDBIO(
@@ -170,11 +176,11 @@ trait ProcessService {
       action: UpdateScenarioCommand
   )(
       implicit user: LoggedUser
-  ): DB[UpdateProcessResponse]
+  ): DB[UpdateScenarioResult]
 
   def migrateProcess(processIdWithName: ProcessIdWithName, action: MigrateScenarioCommand)(
       implicit user: LoggedUser
-  ): Future[UpdateProcessResponse]
+  ): Future[UpdateScenarioResult]
 
   def importProcess(processId: ProcessIdWithName, processData: String)(
       implicit user: LoggedUser
@@ -382,7 +388,7 @@ class DBProcessService(
 
   override def renameProcess(processIdWithName: ProcessIdWithName, name: ProcessName)(
       implicit user: LoggedUser
-  ): Future[UpdateProcessNameResponse] =
+  ): Future[UpdateScenarioNameResponse] =
     withNotArchivedProcess(processIdWithName, "Can't rename archived scenario.") { process =>
       if (process.isFragment) {
         doRename(processIdWithName, name)
@@ -423,7 +429,7 @@ class DBProcessService(
   // FIXME: Create process should create two inserts (process, processVersion) in transactional way, but right we do all in process repository..
   override def createProcess(
       command: CreateScenarioCommand
-  )(implicit user: LoggedUser): Future[Validated[NuDesignerError, ProcessResponse]] = {
+  )(implicit user: LoggedUser): Future[Validated[NuDesignerError, ProcessCreated]] = {
     val scenarioParametersService = scenarioParametersServiceProvider.combined
     scenarioParametersService
       .queryProcessingTypeWithWritePermission(command.category, command.processingMode, command.engineSetupName)
@@ -449,7 +455,6 @@ class DBProcessService(
             .runInTransaction(processRepository.saveNewProcess(action))
             .map { maybeCreated =>
               maybeCreated
-                .map(created => toProcessResponse(command.name, created))
                 .getOrElse(throw ProcessValidationError("Unknown error on creating scenario."))
             }
         }
@@ -460,7 +465,7 @@ class DBProcessService(
   // FIXME: Update process should update process and create process version in transactional way, but right we do all in process repository..
   override def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateScenarioCommand)(
       implicit user: LoggedUser
-  ): Future[UpdateProcessResponse] =
+  ): Future[UpdateScenarioResult] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { details =>
       dbioRunner.runInTransaction(updateProcessDBIO(processIdWithName, details, action))
     }
@@ -471,7 +476,7 @@ class DBProcessService(
       action: UpdateScenarioCommand
   )(
       implicit user: LoggedUser
-  ): DB[UpdateProcessResponse] = {
+  ): DB[UpdateScenarioResult] = {
     val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(details.processingType)
     val scenarioLabels  = action.scenarioLabels.getOrElse(List.empty).map(ScenarioLabel.apply)
     val validation =
@@ -493,18 +498,16 @@ class DBProcessService(
     processRepository
       .updateProcess(updateProcessAction)
       .map { processUpdated =>
-        UpdateProcessResponse(
-          processUpdated.newVersion
-            .map(ProcessCreated(processIdWithName.id, _))
-            .map(toProcessResponse(processIdWithName.name, _)),
-          validation
+        UpdateScenarioResult(
+          validationResult = validation,
+          updated = processUpdated
         )
       }
   }
 
   override def migrateProcess(processIdWithName: ProcessIdWithName, action: MigrateScenarioCommand)(
       implicit user: LoggedUser
-  ): Future[UpdateProcessResponse] = {
+  ): Future[UpdateScenarioResult] = {
     withNotArchivedProcess(processIdWithName, "Can't migrate graph archived scenario.") { details =>
       val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(details.processingType)
       val scenarioLabels  = action.scenarioLabels.getOrElse(List.empty).map(ScenarioLabel.apply)
@@ -530,11 +533,9 @@ class DBProcessService(
       dbioRunner
         .runInTransaction(processRepository.migrateProcess(migrateProcessAction))
         .map { processUpdated =>
-          UpdateProcessResponse(
-            processUpdated.newVersion
-              .map(ProcessCreated(processIdWithName.id, _))
-              .map(toProcessResponse(processIdWithName.name, _)),
-            validation
+          UpdateScenarioResult(
+            validationResult = validation,
+            updated = processUpdated
           )
         }
     }
@@ -603,16 +604,13 @@ class DBProcessService(
     dbioRunner.runInTransaction(
       processRepository
         .renameProcess(processIdWithName, name)
-        .map(_ => UpdateProcessNameResponse.create(processIdWithName.name, name))
+        .map(_ => UpdateScenarioNameResponse.create(processIdWithName.name, name))
     )
   }
 
   override def getProcessActions(id: ProcessId): Future[List[ProcessAction]] = {
     dbioRunner.runInTransaction(scenarioActionRepository.getFinishedProcessActions(id, None))
   }
-
-  private def toProcessResponse(processName: ProcessName, created: ProcessCreated): ProcessResponse =
-    ProcessResponse(created.processId, created.processVersionId, processName)
 
   private def withArchivedProcess[T](processIdWithName: ProcessIdWithName, errorMessage: String)(
       callback: => Future[T]
