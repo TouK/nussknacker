@@ -5,7 +5,7 @@ import type { PropsWithChildren } from "react";
 import React, { useEffect, useMemo } from "react";
 
 import { RootProviders } from "../settings/rootProviders";
-import { useDefaultTheme } from "./defaultTheme";
+import { useNuTheme } from "./nuTheme";
 import { NavigationProvider } from "./parentNavigationProvider";
 import { View } from "./view";
 
@@ -13,11 +13,11 @@ export type NkViewProps = Omit<RemoteComponentProps, "basepath">;
 
 export function NkView(props: PropsWithChildren<NkViewProps>): JSX.Element {
     const theme = useTheme();
-    const defaultTheme = useDefaultTheme(theme);
+    const defaultTheme = useNuTheme(theme);
     const { navigate, children } = props;
 
     useEffect(() => {
-        console.debug({ BUILD_HASH });
+        console.debug({ buildHash: BUILD_HASH, env: process.env.NODE_ENV });
     }, []);
 
     const navigation = useMemo(() => ({ onNavigate: navigate }), [navigate]);

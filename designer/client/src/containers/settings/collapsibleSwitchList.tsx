@@ -39,7 +39,7 @@ const CollapsibleSwitchList = ({ data, onToggle, basePath = "", level = 0, flatt
 
     const renderValue = (path: string, value: Primitive) => {
         if (typeof value === "boolean") {
-            return <Switch edge="end" checked={value} onChange={() => onToggle(path)} />;
+            return <Switch edge="end" checked={value} onChange={() => onToggle(path)} onClick={(e) => e.stopPropagation()} />;
         }
 
         return null;

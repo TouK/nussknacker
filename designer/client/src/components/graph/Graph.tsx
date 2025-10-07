@@ -24,6 +24,8 @@ import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioG
 import type { NodeValidationError } from "../../types/validation";
 import { ComponentDragPreview } from "../ComponentDragPreview";
 import type { Scenario } from "../Process/types";
+import type { AlignCellsVariant } from "./alignCells";
+import { alignCells } from "./alignCells";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
 import { getDefaultLinkCreator } from "./EspNode/link";
@@ -184,13 +186,22 @@ export class Graph extends React.Component<Props> {
         this.changeLayoutIfNeeded();
     };
 
-    forceLayout = debounce((readOnly?: boolean) => {
+    forceLayout = debounce((variant?: AlignCellsVariant, altMode?: boolean) => {
         const cellsToLayout = getCellsToLayout(this.graph, this.props.selectionState);
-        if (!readOnly) {
-            const nodesAndLinks = cellsToLayout.filter((cell) => !isStickyNoteElement(cell));
-            this.directedLayout(nodesAndLinks);
+        if (!variant) {
+            if (!altMode) {
+                const nodesAndLinks = cellsToLayout.filter((cell) => !isStickyNoteElement(cell));
+                this.directedLayout(nodesAndLinks);
+            }
+            return this.fit(cellsToLayout);
         }
-        this.fit(cellsToLayout);
+
+        const elements = cellsToLayout.filter((cell) => cell.isElement());
+        alignCells(variant, elements);
+        this.changeLayoutIfNeeded();
+        if (altMode) {
+            this.fit(cellsToLayout);
+        }
     }, 250);
 
     createPaper = (): dia.Paper => {

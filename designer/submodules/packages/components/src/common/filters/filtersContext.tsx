@@ -44,16 +44,20 @@ interface SetFilter<M> extends FilterSetter<M> {
     <I extends keyof M, V extends M[I]>(id: __, value: V): CurriedFunction1<I, void>;
 }
 
-interface FiltersModelContextType<S = any> {
+interface FiltersModelContextType<S = any, D = unknown> {
     model: S;
     setModel: Dispatch<SetStateAction<S>>;
+    data: D[] | null;
+    setData: (data: D[]) => void;
 }
 
-export interface FiltersContextType<M = any> {
+export interface FiltersContextType<M = any, D = unknown> {
     resetModel: (model: Partial<M>) => void;
     getFilter: GetFilter<M>;
     setFilter: SetFilter<M>;
     activeKeys: Array<keyof M>;
+    setResults: (data: D[]) => void;
+    results: D[] | null;
 }
 
 export interface ValueLinker<M = any> {
@@ -66,7 +70,7 @@ const ValueLinkerContext = createContext<ValueLinker>(null);
 export function useFilterContext<M = unknown, T extends Record<string, unknown> = Record<string, unknown>>(
     availableFilters: T,
 ): FiltersContextType<M> {
-    const { setModel, model } = useContext<FiltersModelContextType<M>>(FiltersModelContext);
+    const { setModel, model, data, setData } = useContext<FiltersModelContextType<M>>(FiltersModelContext);
     const getValueLinker = useContext<ValueLinker<M>>(ValueLinkerContext);
 
     const getValueSetter = useMemo<FilterSetter<M, (prev: M) => M>>(() => {
@@ -113,8 +117,10 @@ export function useFilterContext<M = unknown, T extends Record<string, unknown> 
             setFilter: curry(setFilter),
             activeKeys: Object.keys(model || {}).filter((key) => availableFilters && key in availableFilters) as Array<keyof M>,
             resetModel,
+            setResults: setData,
+            results: data,
         }),
-        [getFilter, setFilter, model, resetModel, availableFilters],
+        [getFilter, setFilter, model, resetModel, setData, data, availableFilters],
     );
 }
 
@@ -133,7 +139,9 @@ export function FiltersContextProvider<M>({ children, getValueLinker }: PropsWit
         setSearchParams(serializeToQuery(model), { replace: true });
     }, [model, setSearchParams]);
 
-    const filtersModel = useMemo(() => ({ setModel, model }), [model]);
+    const [data, setData] = useState(null);
+
+    const filtersModel = useMemo(() => ({ setModel, model, data, setData }), [data, model]);
 
     return (
         <ValueLinkerContext.Provider value={getValueLinker}>

@@ -128,7 +128,7 @@ services:
   ### KAFKA-related services:
 
   kafka:
-    image: bitnami/kafka:3.7.0
+    image: bitnamilegacy/kafka:3.7.0
     restart: unless-stopped
     hostname: nu-kafka
     environment:
@@ -148,7 +148,7 @@ services:
           memory: 512M
 
   schema-registry:
-    image: bitnami/schema-registry:7.6.1
+    image: bitnamilegacy/schema-registry:7.6.1
     restart: unless-stopped
     environment:
       SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081"
