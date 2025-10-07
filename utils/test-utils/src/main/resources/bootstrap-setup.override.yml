@@ -1,7 +1,7 @@
 services:
 
   bootstrap-setup:
-    image: touk/nussknacker-example-scenarios-library:1.3.0
+    image: touk/nussknacker-example-scenarios-library:1.5.0
     depends_on:
       nginx:
         condition: service_healthy
@@ -21,7 +21,6 @@ services:
       SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       SCHEMA_REGISTRY_USER: admin
       SCHEMA_REGISTRY_PASSWORD: admin
-      DISABLE_SCENARIO_REDEPLOY: true
     deploy:
       resources:
         limits:
