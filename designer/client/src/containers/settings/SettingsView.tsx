@@ -1,6 +1,7 @@
 import { Stack, Typography } from "@mui/material";
 import { set } from "lodash";
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { useUserSettings } from "../../common/userSettings";
 import type { UserSettings } from "../../reducers/userSettings";
@@ -24,10 +25,12 @@ function SettingsView() {
         return toNested(filtered);
     }, [filter, settings]);
 
+    const { t } = useTranslation();
+
     return (
         <>
             <Stack direction="row" sx={{ marginX: 1.5, justifyContent: "space-between", alignItems: "baseline" }}>
-                <Typography variant="h4">Settings</Typography>
+                <Typography variant="h4">{t("views.settings.header", "Settings")}</Typography>
                 <SearchField value={filter} onChange={setFilter} />
             </Stack>
             <CollapsibleSwitchList data={values} onToggle={(path: keyof UserSettings) => toggle([path])} flattenSingleChild />

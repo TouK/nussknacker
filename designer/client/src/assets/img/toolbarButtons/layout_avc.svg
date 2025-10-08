@@ -1,0 +1,9 @@
+<svg viewBox="0 0 30.72 30.72" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd" stroke-linecap="round" stroke-linejoin="round">
+    <defs>
+        <symbol id="layout_avc_svg__a" viewBox="0 0 11.5 3.68">
+            <rect transform="translate(-9.61 -13.52)" x="9.61" y="13.52" width="11.5" height="3.68" rx="1.8" ry="1.8" fill="currentcolor" stroke-width="0"/>
+        </symbol>
+    </defs>
+    <use href="#layout_avc_svg__a" width="11.5" height="3.68" transform="rotate(180 12.124 9.102) scale(1.54568)"/>
+    <rect fill="currentcolor" x="3.076" y="14.579" width="24.568" height="1.561" rx="1" ry="1"/>
+</svg>

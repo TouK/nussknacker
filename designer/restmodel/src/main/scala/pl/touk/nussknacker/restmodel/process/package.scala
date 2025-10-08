@@ -2,24 +2,29 @@ package pl.touk.nussknacker.restmodel
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationErrors, ValidationWarnings}
 
 package object process {
 
-  @JsonCodec final case class UpdateProcessCategoryResponse(oldCategory: String, newCategory: String)
-
-  object UpdateProcessNameResponse {
-    def create(oldNameString: ProcessName, newNameString: ProcessName): UpdateProcessNameResponse =
-      UpdateProcessNameResponse(oldNameString, newNameString)
+  object UpdateScenarioNameResponse {
+    def create(oldNameString: ProcessName, newNameString: ProcessName): UpdateScenarioNameResponse =
+      UpdateScenarioNameResponse(oldNameString, newNameString)
   }
 
-  @JsonCodec final case class UpdateProcessNameResponse(oldName: ProcessName, newName: ProcessName)
+  @JsonCodec(encodeOnly = true) final case class UpdateScenarioNameResponse(oldName: ProcessName, newName: ProcessName)
 
-  @JsonCodec final case class ProcessResponse(id: ProcessId, versionId: VersionId, processName: ProcessName)
+  @JsonCodec(encodeOnly = true) final case class CreateScenarioResponse(
+      id: ProcessId,
+      versionId: VersionId,
+      processName: ProcessName
+  )
 
-  @JsonCodec final case class UpdateProcessResponse(
-      processResponse: Option[ProcessResponse],
-      validationResult: ValidationResult
+  // This class is backward-compatible with ValidationResult which was returned before the change during put operation
+  @JsonCodec final case class UpdateScenarioResponse(
+      errors: ValidationErrors,
+      warnings: ValidationWarnings,
+      nodeResults: Map[String, NodeTypingData],
+      newVersion: Option[VersionId]
   )
 
 }

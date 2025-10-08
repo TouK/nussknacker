@@ -9,6 +9,7 @@ import org.apache.pekko.stream.Materializer
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.restmodel.process.{CreateScenarioResponse, UpdateScenarioResponse}
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
@@ -136,10 +137,17 @@ class ProcessesResources(
               complete {
                 processService
                   .updateProcess(processId, updateCommand)
-                  .withSideEffect(response =>
-                    response.processResponse.foreach(resp => notifyListener(OnSaved(resp.id, resp.versionId)))
+                  .withSideEffect(result =>
+                    result.updated.newVersion.foreach(nv => notifyListener(OnSaved(result.updated.processId, nv)))
                   )
-                  .map(_.validationResult)
+                  .map { result =>
+                    UpdateScenarioResponse(
+                      errors = result.validationResult.errors,
+                      warnings = result.validationResult.warnings,
+                      nodeResults = result.validationResult.nodeResults,
+                      newVersion = result.updated.newVersion,
+                    )
+                  }
               }
             }
           } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter) {
@@ -191,11 +199,18 @@ class ProcessesResources(
                 .createProcess(createCommand)
                 // Currently, we throw error but when we switch to Tapir, we would probably handle such a request validation errors more type-safety
                 .map(_.valueOr(err => throw err))
-                .withListenerNotifySideEffect(response => OnSaved(response.id, response.versionId))
-                .map(response =>
+                .withListenerNotifySideEffect(result => OnSaved(result.processId, result.processVersionId))
+                .map(result =>
                   HttpResponse(
                     status = StatusCodes.Created,
-                    entity = HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces)
+                    entity = HttpEntity(
+                      ContentTypes.`application/json`,
+                      CreateScenarioResponse(
+                        id = result.processId,
+                        versionId = result.processVersionId,
+                        processName = createCommand.name
+                      ).asJson.noSpaces
+                    )
                   )
                 )
             }

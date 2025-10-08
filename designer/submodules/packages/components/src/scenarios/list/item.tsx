@@ -72,7 +72,7 @@ export function SecondLine({ row }: { row: RowType }): JSX.Element {
     return (
         <Stack
             direction="row"
-            spacing={1.25}
+            spacing={1}
             mt={1}
             alignItems="center"
             divider={<Divider orientation="vertical" variant={"inset"} flexItem />}
@@ -96,7 +96,7 @@ export function SecondLine({ row }: { row: RowType }): JSX.Element {
 function CreationDate({ row }: { row: RowType }): JSX.Element {
     const { t } = useTranslation();
     return (
-        <Typography variant={"caption"}>
+        <Typography variant={"caption"} noWrap>
             {t("scenario.createdAt", "created {{date, relativeDate}}", { date: new Date(row.createdAt) })} {t("scenario.authorBy", "by")}{" "}
             <Author value={row.createdBy} />
         </Typography>
@@ -107,7 +107,7 @@ function ModificationDate({ row }: { row: RowType }): JSX.Element {
     const { t } = useTranslation();
 
     return (
-        <Typography variant={"caption"}>
+        <Typography variant={"caption"} noWrap>
             {t("scenario.modifiedAtLabel", "Last modified:")}{" "}
             {t("scenario.modifiedAt", "{{date, relativeDate}}", { date: formatDateTime(row.modificationDate) })}{" "}
             {t("scenario.authorBy", "by")} <Author value={row.modifiedBy} />

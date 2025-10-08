@@ -1,5 +1,5 @@
 import AssessmentIcon from "@mui/icons-material/Assessment";
-import { ListItemAvatar } from "@mui/material";
+import { Box, ListItemAvatar } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -7,9 +7,9 @@ import ListItemText from "@mui/material/ListItemText";
 import Paper from "@mui/material/Paper";
 import type { ListIteratee, Many } from "lodash";
 import { orderBy } from "lodash";
-import { getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
+import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
 import type { CSSProperties } from "react";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { List as VList, WindowScroller } from "react-virtualized";
 import type { ListRowProps } from "react-virtualized/dist/es/List";
 
@@ -132,13 +132,16 @@ export function ItemsList(props: {
     filterRules?: FilterRules<RowType, ScenariosFiltersModel>;
 }): JSX.Element {
     const { data = [], filterRules, isLoading } = props;
-    const { getFilter } = useScenariosFilterContext();
+    const { getFilter, setResults } = useScenariosFilterContext();
 
     const rows = useMemo<RowType[]>(() => {
         const filtered = data.filter((row) => filterRules.every(({ key, rule }) => rule(row, getFilter(key))));
         const [sortBy] = getFilter("SORT_BY", true);
         return orderBy(filtered, ...sortRules<RowType>(sortBy));
     }, [data, filterRules, getFilter]);
+    useEffect(() => {
+        setResults(rows);
+    }, [rows, setResults]);
 
     const { scrollParent, ref } = useScrollParent();
 
@@ -146,18 +149,16 @@ export function ItemsList(props: {
         <div ref={ref}>
             <WindowScroller scrollElement={scrollParent}>
                 {({ height = 0, width = 0, isScrolling, onChildScroll, scrollTop, registerChild }) => (
-                    <>
-                        <Paper ref={registerChild} sx={{ flex: 1 }}>
-                            <ScenarioAndFragmentsList
-                                height={height}
-                                width={width}
-                                isScrolling={isScrolling}
-                                onChildScroll={onChildScroll}
-                                rows={rows}
-                                scrollTop={scrollTop}
-                            />
-                        </Paper>
-                    </>
+                    <Box component={Paper} ref={registerChild} sx={{ flex: 1 }}>
+                        <ScenarioAndFragmentsList
+                            height={height}
+                            width={width}
+                            isScrolling={isScrolling}
+                            onChildScroll={onChildScroll}
+                            rows={rows}
+                            scrollTop={scrollTop}
+                        />
+                    </Box>
                 )}
             </WindowScroller>
             <Stats current={rows?.length} all={data?.length} isLoading={isLoading} />

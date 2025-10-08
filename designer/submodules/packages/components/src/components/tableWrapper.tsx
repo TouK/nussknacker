@@ -3,8 +3,9 @@ import { Box, Paper, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import type { DataGridProps, GridActionsColDef, GridColDef, GridRenderCellParams, GridSlotsComponentsProps } from "@mui/x-data-grid";
 import { DataGrid, useGridApiRef } from "@mui/x-data-grid";
+import type { DataGridPropsWithComplexDefaultValueBeforeProcessing } from "@mui/x-data-grid/models/props/DataGridProps";
 import type { PropsWithChildren } from "react";
-import React, { memo, useCallback, useMemo } from "react";
+import React, { memo, useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDebouncedValue } from "rooks";
 
@@ -37,7 +38,7 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
     const { data = [], filterRules, isLoading, ...passProps } = props;
     const { t } = useTranslation();
 
-    const { getFilter } = useComponentsFilterContext<M>();
+    const { getFilter, setResults } = useComponentsFilterContext<M>();
     const filters = useMemo(
         () =>
             filterRules.map(
@@ -49,6 +50,9 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
     );
     const filtered = useMemo(() => data.filter((row) => filters.every((f) => f(row))), [data, filters]);
     const [rows] = useDebouncedValue(filtered, 100);
+    useEffect(() => {
+        setResults(rows);
+    }, [rows, setResults]);
     const [loading] = useDebouncedValue(isLoading || rows.length !== filtered.length, 200);
 
     const rowSelectable = useCallback(() => false, []);
@@ -65,10 +69,11 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
                 allRows: data.length,
             },
             ...passProps.slotProps,
+            loadingOverlay: { ...passProps.slotProps?.loadingOverlay, "data-testid": "loading-indicator" },
         }),
         [data.length, passProps.slotProps],
     );
-    const slots = useMemo(
+    const slots = useMemo<DataGridPropsWithComplexDefaultValueBeforeProcessing["slots"]>(
         () => ({
             pagination: CustomPagination,
             ...passProps.slots,
