@@ -10,15 +10,17 @@ const flex = {
     flex: 1,
 };
 
-const AdvancedSearchIcon = styled(AdvancedSearchSvg)<{ isActive?: boolean }>(({ theme, isActive }) => ({
-    ...flex,
-    cursor: "pointer",
-    transform: "scale(1.5)",
-    path: {
-        fill: "none",
-        stroke: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
-    },
-}));
+const AdvancedSearchIcon = styled(AdvancedSearchSvg, { shouldForwardProp: (propName) => propName !== "isActive" })<{ isActive?: boolean }>(
+    ({ theme, isActive }) => ({
+        ...flex,
+        cursor: "pointer",
+        transform: "scale(1.5)",
+        path: {
+            fill: "none",
+            stroke: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
+        },
+    }),
+);
 
 export const AdvancedOptionsIcon = ({
     collapseHandler,
@@ -36,13 +38,15 @@ export const AdvancedOptionsIcon = ({
     />
 );
 
-export const SearchIcon = styled(SearchSvg)<{ isEmpty?: boolean }>(({ isEmpty, theme }) => ({
-    ...flex,
-    transform: "scale(0.8)",
-    path: {
-        fill: isEmpty ? theme.palette.text.secondary : theme.palette.primary.main,
-    },
-}));
+export const SearchIcon = styled(SearchSvg, { shouldForwardProp: (propName) => propName !== "isEmpty" })<{ isEmpty?: boolean }>(
+    ({ isEmpty, theme }) => ({
+        ...flex,
+        transform: "scale(0.8)",
+        path: {
+            fill: isEmpty ? theme.palette.text.secondary : theme.palette.primary.main,
+        },
+    }),
+);
 
 export const ClearIcon = styled(DeleteSvg)(({ theme }) => ({
     ...flex,
