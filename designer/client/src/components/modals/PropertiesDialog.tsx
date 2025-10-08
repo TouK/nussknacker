@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { editProperties } from "../../actions/nk/editProperties";
+import { ToolId } from "../../actions/nk/toolWindow";
 import PropertiesSvg from "../../assets/img/properties.svg";
 import HttpService from "../../http/HttpService/instance";
 import type { RootState } from "../../reducers";
@@ -23,6 +24,7 @@ import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDeta
 import { NodeDocs } from "../graph/node-modal/nodeDetails/SubHeader";
 import { getProcessName, getScenarioPropertiesConfig } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { PropertiesForm } from "../properties/PropertiesForm";
+import { useOnToolWindow } from "./useOnToolWindow";
 
 export const usePropertiesState = () => {
     const currentProperties = useAppSelector(getProperties);
@@ -90,6 +92,8 @@ const PropertiesDialog = ({ ...props }: WindowContentProps) => {
 
         debouncedValidateProperties(scenarioName, editedProperties.additionalFields, editedProperties.name);
     }, [debouncedValidateProperties, isEditMode, editedProperties.additionalFields, editedProperties.name, scenarioName]);
+
+    useOnToolWindow(ToolId.properties);
 
     return (
         <WindowContent
