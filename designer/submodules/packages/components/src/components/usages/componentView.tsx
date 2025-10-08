@@ -67,11 +67,11 @@ function Component(): JSX.Element {
                     }
                     break;
                 case "STATUS":
-                    return t("table.filter.status." + value, statusFilterLabels[value]);
+                    return t("table.filter.status." + value, statusFilterLabels[value] as string);
             }
 
             if (value?.toString().length) {
-                return value;
+                return value.toString();
             }
 
             return name;

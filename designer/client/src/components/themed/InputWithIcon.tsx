@@ -96,7 +96,7 @@ export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon
                             focus({ preventScroll: true });
                         }}
                     >
-                        <ClearIcon />
+                        <ClearIcon id="clear-icon" />
                     </div>
                 )}
                 {props.endAdornment && <div className={addonStyles}>{props.endAdornment}</div>}

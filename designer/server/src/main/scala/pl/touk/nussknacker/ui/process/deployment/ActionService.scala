@@ -226,19 +226,19 @@ class ActionService(
       val updateCommand = UpdateScenarioCommand(scenarioGraph, comment = None, scenarioLabels = scenarioLabels)
       processService
         .updateProcessDBIO(processId, scenarioDetails, updateCommand)(userForAutomaticUpdate)
-        .flatMap(response =>
-          response.processResponse match {
-            case Some(updateResult) =>
+        .flatMap(result =>
+          result.updated.newVersion match {
+            case Some(newVersion) =>
               logger.debug(
-                s"Scenario: ${updateResult.processName.value} with version: ${scenario.processVersionId.value} " +
-                  s"updated with automatic update. New version is: ${updateResult.versionId.value}"
+                s"Scenario: ${processId.name} with version: ${scenario.processVersionId} " +
+                  s"updated with automatic update. New version is: $newVersion"
               )
               val mappedScenario = scenario
                 .mapScenario(_.toScenarioGraph)
                 .copy(
                   json = scenarioGraph,
                   scenarioLabels = scenarioLabels.getOrElse(Nil),
-                  processVersionId = updateResult.versionId
+                  processVersionId = newVersion
                 )
               DBIOAction.successful(Some(convertScenarioToTargetShape(mappedScenario)))
             case None =>

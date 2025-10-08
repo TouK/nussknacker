@@ -24,8 +24,8 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension._
+import pl.touk.nussknacker.restmodel.process.UpdateScenarioResponse
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.it._
 import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig, WithMockableDeploymentManager}
@@ -666,8 +666,9 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
       val fetchedScenario = fetchScenario(validProcess.name)
       fetchedScenario.nodes.head.id shouldEqual validProcess.nodes.head.id
-      val validationResult = entityAs[ValidationResult]
-      validationResult.errors.invalidNodes shouldBe Map.empty
+      val updateResult = entityAs[UpdateScenarioResponse]
+      updateResult.errors.invalidNodes shouldBe Map.empty
+      updateResult.newVersion shouldBe Some(VersionId(2))
     }
   }
 
@@ -683,6 +684,8 @@ class ProcessesResourcesSpec
           process.history.map(_.size) shouldBe Some(1)
         }
         status shouldEqual StatusCodes.OK
+        val updateResult = entityAs[UpdateScenarioResponse]
+        updateResult.newVersion shouldBe empty
       }
     }
   }
@@ -874,7 +877,7 @@ class ProcessesResourcesSpec
       fetchScenario(
         ProcessTestData.invalidProcess.name
       ).nodes.head.id shouldEqual ProcessTestData.invalidProcess.nodes.head.id
-      entityAs[ValidationResult].errors.invalidNodes.isEmpty shouldBe false
+      entityAs[UpdateScenarioResponse].errors.invalidNodes.isEmpty shouldBe false
     }
   }
 

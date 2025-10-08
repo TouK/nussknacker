@@ -1,3 +1,12 @@
+function interceptLocalProxy() {
+    // for local dev only
+    const creds = `${Cypress.env("testUserUsername")}:${Cypress.env("testUserPassword")}`;
+    const encoded = typeof btoa === "function" ? btoa(creds) : Buffer.from(creds).toString("base64");
+    cy.intercept(/localhost:5001\/nu-core-proxy\/.*/, (req) => {
+        req.headers["Authorization"] = `Basic ${encoded}`;
+    }).as("localhost auth");
+}
+
 describe("Components list", () => {
     const seed = "components";
 
@@ -13,8 +22,9 @@ describe("Components list", () => {
     });
 
     beforeEach(() => {
+        interceptLocalProxy();
         cy.mockWindowDate();
-        cy.viewport(1400, 1000);
+        cy.viewport(1600, 1000);
         cy.visit("/components");
     });
 
@@ -149,6 +159,7 @@ describe("Components list", () => {
     });
 
     it("should display usages", () => {
+        cy.viewport(1400, 1000);
         cy.contains(/^usages$/i).click();
         cy.contains(/^≥ 1$/i).click();
         cy.get("body").click();
@@ -180,13 +191,15 @@ describe("Components list", () => {
         cy.matchQuery("?TEXT=8+xxx");
         cy.contains(/^filter 8$/).should("be.visible");
 
-        cy.wait(500); //ensure "loading" mask is hidden
+        cy.get(`[data-testid="loading-indicator"]`).should("not.exist");
+        cy.wait(250);
         cy.get("#app-container>main").matchImage({
-            screenshotConfig: { clip: { x: 0, y: 0, width: 1400, height: 300 } },
+            screenshotConfig: { clip: { x: 0, y: 0, width: 1600, height: 300 } },
         });
     });
 
     it("should filter usage types", () => {
+        cy.viewport(1400, 1000);
         cy.createTestFragment(`${seed}_xxx`, "fragmentWithFilter");
         cy.visitNewProcess(`${seed}_yyy`, "testProcess2");
         cy.get("#toolbox").contains("fragments").should("exist").scrollIntoView();
@@ -214,16 +227,17 @@ describe("Components list", () => {
         cy.get("@options")
             .contains(/\sdirect/i)
             .click();
-        cy.wait(500); //ensure "loading" mask is hidden
+        cy.get(`[data-testid="loading-indicator"]`).should("not.exist");
+        cy.wait(250);
         cy.get("#app-container>main").matchImage();
-
         cy.get("@options")
             .contains(/\sdirect/i)
             .click();
         cy.get("@options")
             .contains(/indirect/i)
             .click();
-        cy.wait(500); //ensure "loading" mask is hidden
+        cy.get(`[data-testid="loading-indicator"]`).should("not.exist");
+        cy.wait(250);
         cy.get("#app-container>main").matchImage();
 
         cy.get("@options")
@@ -233,7 +247,8 @@ describe("Components list", () => {
         cy.get("input[type=text]").type("xxx");
         cy.matchQuery("?TEXT=xxx");
         cy.viewport(1600, 500);
-        cy.wait(500); //ensure "loading" mask is hidden
+        cy.get(`[data-testid="loading-indicator"]`).should("not.exist");
+        cy.wait(250);
         cy.get("#app-container>main").matchImage({ maxDiffThreshold: 0.01 });
     });
 

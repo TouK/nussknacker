@@ -1,4 +1,4 @@
-import { Alert, Box, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import type { ElementType, ReactElement } from "react";
 import React, { useCallback, useMemo, useState } from "react";
@@ -17,6 +17,7 @@ import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTool
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { AppendFromLiveDataButton } from "./AppendFromLiveDataButton";
+import { LimitExceededWarning } from "./LimitExceededWarning";
 import type { TestingDataRecords } from "./Table";
 import { Table } from "./Table";
 import { mapGeneratedTestingDataToTableFormat } from "./utils";
@@ -36,6 +37,7 @@ export type TestingViewParams = {
 export interface TestingData {
     viewParams: TestingViewParams;
 }
+type RecordError = { type: "TEST_DATA_LIMIT_EXCEEDED" };
 
 function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElement {
     const maxTestingRecords = useAppSelector(getMaxTestingRecords);
@@ -54,6 +56,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
     const scenarioGraph = useAppSelector(getScenarioGraph);
 
     const defaultParameter = testCapabilities.testWithParameters.sourceParameters[0];
+    const [recordsErrors, setRecordsErrors] = useState<RecordError[]>([]);
 
     const defaultDataRecord = useMemo(
         () =>
@@ -70,12 +73,30 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
     const [dataRecords, setDataRecords] = useState<TestingDataRecords[]>(testingDataRecords || []);
     const [cellErrors, setCellErrors] = useState<CellError[]>([]);
 
+    const validateForCount = React.useCallback(
+        (nextCount: number) => {
+            const testDataLimitExceeded = nextCount > maxTestingRecords;
+            const errors: RecordError[] = [];
+
+            if (testDataLimitExceeded) {
+                errors.push({ type: "TEST_DATA_LIMIT_EXCEEDED" });
+            }
+
+            setRecordsErrors(errors);
+            return errors.length === 0;
+        },
+        [maxTestingRecords],
+    );
+
     const handleGenerateTestData = useCallback(
         async (numberOfSamples: number) => {
+            const nextCount = dataRecords.length + (numberOfSamples || 1); // we treat 0 as 1 to run validation when limit exceeded
+            if (!validateForCount(nextCount)) return;
+
             const { data } = await HttpService.generatedTestData(scenarioName, scenarioGraph, numberOfSamples);
             setDataRecords((prevState) => [...prevState, ...data.map(mapGeneratedTestingDataToTableFormat)]);
         },
-        [scenarioGraph, scenarioName],
+        [dataRecords.length, validateForCount, scenarioName, scenarioGraph],
     );
 
     const sourceOptions = useMemo(
@@ -119,30 +140,43 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
         [validateEditedRow],
     );
 
-    const handleRowAdded = React.useCallback((rowIndex: number, row: TestingDataRecords) => {
-        setDataRecords((prev) => {
-            const next = [...prev];
-            if (rowIndex === next.length) next.push(row);
-            else next.splice(rowIndex, 0, row);
-            return next;
-        });
-        setCellErrors((prev) => prev.map((e) => (e.y >= rowIndex ? { ...e, y: e.y + 1 } : e)));
-    }, []);
+    const handleRowAdded = React.useCallback(
+        (rowIndex: number, row: TestingDataRecords) => {
+            const nextCount = dataRecords.length + 1;
+            if (!validateForCount(nextCount)) return;
 
-    const handleRowsDeleted = React.useCallback((deletedRows: number[]) => {
-        if (!deletedRows.length) return;
-        const deletedSet = new Set(deletedRows);
-        const sorted = [...deletedRows].sort((a, b) => a - b);
-        setDataRecords((prev) => prev.filter((_, i) => !deletedSet.has(i)));
-        setCellErrors((prev) =>
-            prev
-                .filter((e) => !deletedSet.has(e.y))
-                .map((e) => {
-                    const shift = sorted.reduce((acc, r) => (r < e.y ? acc + 1 : acc), 0);
-                    return shift ? { ...e, y: e.y - shift } : e;
-                }),
-        );
-    }, []);
+            setDataRecords((prev) => {
+                const next = [...prev];
+                if (rowIndex === next.length) next.push(row);
+                else next.splice(rowIndex, 0, row);
+                return next;
+            });
+            setCellErrors((prev) => prev.map((e) => (e.y >= rowIndex ? { ...e, y: e.y + 1 } : e)));
+        },
+        [dataRecords.length, validateForCount],
+    );
+
+    const handleRowsDeleted = React.useCallback(
+        async (deletedRows: number[]) => {
+            if (!deletedRows.length) return;
+            const deletedSet = new Set(deletedRows);
+            const sorted = [...deletedRows].sort((a, b) => a - b);
+            const nextCount = Math.max(0, dataRecords.length - deletedRows.length);
+
+            setDataRecords((prev) => prev.filter((_, i) => !deletedSet.has(i)));
+            setCellErrors((prev) =>
+                prev
+                    .filter((e) => !deletedSet.has(e.y))
+                    .map((e) => {
+                        const shift = sorted.reduce((acc, r) => (r < e.y ? acc + 1 : acc), 0);
+                        return shift ? { ...e, y: e.y - shift } : e;
+                    }),
+            );
+
+            validateForCount(nextCount);
+        },
+        [dataRecords.length, validateForCount],
+    );
 
     const handleRowMoved = React.useCallback((fromIndex: number, toIndex: number) => {
         setDataRecords((prev) => {
@@ -154,10 +188,12 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
         });
     }, []);
 
-    const recordsToAddLimitExceeded = useMemo(() => dataRecords.length >= maxTestingRecords, [dataRecords.length, maxTestingRecords]);
-    const testDataLimitExceeded = useMemo(() => dataRecords.length > maxTestingRecords, [dataRecords.length, maxTestingRecords]);
+    const recordsToAddLimitExceeded = useMemo(
+        () => recordsErrors.some((recordsErrors) => recordsErrors.type === "TEST_DATA_LIMIT_EXCEEDED"),
+        [recordsErrors],
+    );
 
-    const disableTestButton = dataRecords.length === 0 || cellErrors.length > 0 || testDataLimitExceeded;
+    const disableTestButton = dataRecords.length === 0 || cellErrors.length > 0;
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("testingForm.cancelButton.label", "Cancel"), action: () => close(), classname: LoadingButtonTypes.secondaryButton },
@@ -199,15 +235,6 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                     <Typography mt={0} variant={"h3"}>
                         {t("testingDialog.label.inputDataRecords", "Input data records")}
                     </Typography>
-                    {recordsToAddLimitExceeded && (
-                        <Alert sx={{ width: "100%" }} severity={"warning"}>
-                            {t(
-                                "testingDialog.warning.dataRecordsLimitExceeded",
-                                "The maximum number of {{maxTestingRecords}} Input data records has been exceeded.",
-                                { maxTestingRecords },
-                            )}
-                        </Alert>
-                    )}
                     <Box display={"flex"} sx={(theme) => ({ paddingTop: theme.spacing(2) })}>
                         <Table
                             sourceOptions={sourceOptions}
@@ -223,11 +250,15 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                         />
                     </Box>
 
-                    <AppendFromLiveDataButton
-                        handleGenerateTestData={handleGenerateTestData}
-                        maxTestingRecords={maxTestingRecords}
-                        currentRecordsNumber={dataRecords.length}
-                    />
+                    {!recordsToAddLimitExceeded && (
+                        <AppendFromLiveDataButton
+                            handleGenerateTestData={handleGenerateTestData}
+                            maxTestingRecords={maxTestingRecords}
+                            currentRecordsNumber={dataRecords.length}
+                            recordsToAddLimitExceeded={recordsToAddLimitExceeded}
+                        />
+                    )}
+                    {recordsToAddLimitExceeded && <LimitExceededWarning maxTestingRecords={maxTestingRecords} />}
                 </Box>
             </ContentSize>
         </WindowContent>

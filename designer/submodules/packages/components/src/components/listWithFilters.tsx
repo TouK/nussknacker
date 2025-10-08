@@ -1,10 +1,10 @@
-import { Divider, Stack } from "@mui/material";
+import { Divider } from "@mui/material";
 import { flatten, uniq } from "lodash";
-import { getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
+import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { FiltersContextProvider, useFilterContext } from "../common/filters/filtersContext";
+import { FiltersContextProvider } from "../common/filters/filtersContext";
 import { ActiveFilters } from "../scenarios/filters/activeFilters";
 import { FilterListItem } from "../scenarios/filters/filterListItem";
 import { FilterMenu } from "../scenarios/filters/filterMenu";
@@ -15,8 +15,8 @@ import { SimpleOptionsStack } from "../scenarios/filters/simpleOptionsStack";
 import { processingModeItems } from "../scenarios/list/processingMode";
 import { useUserQuery } from "../scenarios/useScenariosQuery";
 import { ComponentTable } from "./componentTable";
-import { COMPONENTS_FILTER } from "./filters/componentsFiltersModel";
 import type { ComponentsFiltersModel } from "./filters/componentsFiltersModel";
+import { COMPONENTS_FILTER } from "./filters/componentsFiltersModel";
 import { useComponentsFilterContext } from "./filters/useComponentsFilterContext";
 import { useComponentsQuery } from "./useComponentsQuery";
 
@@ -71,7 +71,7 @@ export function UsagesOptionsStack(): JSX.Element {
             label={t("table.filter.USAGE", "Usages")}
             options={otherFilters.map((name) => ({ name }))}
             value={otherFilters
-                .flatMap<any>((k) => getFilter(k))
+                .flatMap<unknown>((k) => getFilter(k))
                 .filter((v) => v === 0 || !!v)
                 .map(toString)}
             onChange={(v) => otherFilters.forEach((k) => setFilter(k, v))}
@@ -101,45 +101,43 @@ export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolea
             filter="NAME"
             {...getEventTrackingProps({ selector: EventTrackingSelector.ComponentsByName })}
         >
-            <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
-                <FilterMenu label={t("table.filter.GROUP", "Group")} count={getFilter(COMPONENTS_FILTER.GROUP, true).length}>
-                    <SimpleOptionsStack
-                        label={t("table.filter.GROUP", "Group")}
-                        options={filterableValues["componentGroupName"]}
-                        value={getFilter(COMPONENTS_FILTER.GROUP, true)}
-                        onChange={setFilter(COMPONENTS_FILTER.GROUP)}
-                        {...getEventTrackingProps({ selector: EventTrackingSelector.ComponentsByGroup })}
-                    />
-                </FilterMenu>
-                <FilterMenu
+            <FilterMenu label={t("table.filter.GROUP", "Group")} count={getFilter(COMPONENTS_FILTER.GROUP, true).length}>
+                <SimpleOptionsStack
+                    label={t("table.filter.GROUP", "Group")}
+                    options={filterableValues["componentGroupName"]}
+                    value={getFilter(COMPONENTS_FILTER.GROUP, true)}
+                    onChange={setFilter(COMPONENTS_FILTER.GROUP)}
+                    {...getEventTrackingProps({ selector: EventTrackingSelector.ComponentsByGroup })}
+                />
+            </FilterMenu>
+            <FilterMenu
+                label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")}
+                count={getFilter(COMPONENTS_FILTER.PROCESSING_MODE, true).length}
+            >
+                <ProcessingModeStack
                     label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")}
-                    count={getFilter(COMPONENTS_FILTER.PROCESSING_MODE, true).length}
-                >
-                    <ProcessingModeStack
-                        label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")}
-                        options={filterableValues.processingModes}
-                        value={getFilter(COMPONENTS_FILTER.PROCESSING_MODE, true)}
-                        onChange={setFilter(COMPONENTS_FILTER.PROCESSING_MODE)}
-                        {...getEventTrackingProps({
-                            selector: EventTrackingSelector.ComponentsByProcessingMode,
-                        })}
-                    />
-                </FilterMenu>
-                <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter(COMPONENTS_FILTER.CATEGORY, true).length}>
-                    <SimpleOptionsStack
-                        label={t("table.filter.CATEGORY", "Category")}
-                        options={filterableValues["categories"]}
-                        value={getFilter(COMPONENTS_FILTER.CATEGORY, true)}
-                        onChange={setFilter(COMPONENTS_FILTER.CATEGORY)}
-                        {...getEventTrackingProps({
-                            selector: EventTrackingSelector.ComponentsByCategory,
-                        })}
-                    />
-                </FilterMenu>
-                <FilterMenu label={t("table.filter.USAGE", "Usages")} count={getFilter(COMPONENTS_FILTER.USAGES, true).length}>
-                    <UsagesOptionsStack />
-                </FilterMenu>
-            </Stack>
+                    options={filterableValues.processingModes}
+                    value={getFilter(COMPONENTS_FILTER.PROCESSING_MODE, true)}
+                    onChange={setFilter(COMPONENTS_FILTER.PROCESSING_MODE)}
+                    {...getEventTrackingProps({
+                        selector: EventTrackingSelector.ComponentsByProcessingMode,
+                    })}
+                />
+            </FilterMenu>
+            <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter(COMPONENTS_FILTER.CATEGORY, true).length}>
+                <SimpleOptionsStack
+                    label={t("table.filter.CATEGORY", "Category")}
+                    options={filterableValues["categories"]}
+                    value={getFilter(COMPONENTS_FILTER.CATEGORY, true)}
+                    onChange={setFilter(COMPONENTS_FILTER.CATEGORY)}
+                    {...getEventTrackingProps({
+                        selector: EventTrackingSelector.ComponentsByCategory,
+                    })}
+                />
+            </FilterMenu>
+            <FilterMenu label={t("table.filter.USAGE", "Usages")} count={getFilter(COMPONENTS_FILTER.USAGES, true).length}>
+                <UsagesOptionsStack />
+            </FilterMenu>
         </QuickFilter>
     );
 }
@@ -179,7 +177,7 @@ export function Components(): JSX.Element {
             }
 
             if (value?.toString().length) {
-                return value;
+                return value.toString();
             }
 
             return name;
