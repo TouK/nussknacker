@@ -203,4 +203,4 @@ SpelEditor.isSwitchableTo = (expressionObj) => {
 };
 
 SpelEditor.notSwitchableToHint = () =>
-    "The string-template-based input must be a literal value without embeeded expressions to switch to expression mode";
+    "The string-template-based input must be a literal value without embedded expressions to switch to expression mode";
