@@ -202,8 +202,12 @@ function Visualization() {
     useEffect(() => {
         if (graphNotReady) return;
         openToolWindows();
+    }, [graphNotReady, openToolWindows]);
+
+    useEffect(() => {
+        if (graphNotReady) return;
         openAndHighlightNodes(scenario);
-    }, [graphNotReady, openAndHighlightNodes, openToolWindows, scenario]);
+    }, [graphNotReady, openAndHighlightNodes, scenario]);
 
     useUnmountCleanup();
     useRouteLeavingGuard(capabilities.editFrontend && !nothingToSave);
