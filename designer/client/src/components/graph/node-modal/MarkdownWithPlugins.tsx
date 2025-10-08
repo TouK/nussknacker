@@ -10,6 +10,10 @@ import remarkHtml from "remark-html";
 
 import { ROUTER_LINK_TAG_NAME, SANITIZED_PASSWORD_TAG_NAME } from "./customTagNames";
 
+const PasswordMask = loadable(() => import("./PasswordMask"));
+const RouterLink = loadable(() => import("./RouterLink"));
+const CodeBlock = loadable(() => import("../../../common/CodeBlock"));
+
 type MarkdownWithPluginsProps = PropsOf<typeof Markdown> & { linkTarget?: string };
 export const MarkdownWithPlugins = ({
     remarkPlugins = [],
@@ -17,18 +21,20 @@ export const MarkdownWithPlugins = ({
     components = {},
     linkTarget = "_blank",
     ...props
-}: MarkdownWithPluginsProps) => (
-    <Markdown
-        components={{
-            [SANITIZED_PASSWORD_TAG_NAME]: loadable(() => import("./PasswordMask")),
-            [ROUTER_LINK_TAG_NAME]: loadable(() => import("./RouterLink")),
-            code: loadable(() => import("../../../common/CodeBlock")),
-            ...components,
-        }}
-        remarkPlugins={[remarkDirective, remarkDirectiveRehype, remarkHtml, ...remarkPlugins]}
-        rehypePlugins={[[rehypeExternalLinks, { target: linkTarget, rel: ["noopener", "noreferrer"] }], rehypeRaw]}
-        {...props}
-    >
-        {children}
-    </Markdown>
-);
+}: MarkdownWithPluginsProps) => {
+    return (
+        <Markdown
+            components={{
+                [SANITIZED_PASSWORD_TAG_NAME]: PasswordMask,
+                [ROUTER_LINK_TAG_NAME]: RouterLink,
+                code: CodeBlock,
+                ...components,
+            }}
+            remarkPlugins={[remarkDirective, remarkDirectiveRehype, remarkHtml, ...remarkPlugins]}
+            rehypePlugins={[[rehypeExternalLinks, { target: linkTarget, rel: ["noopener", "noreferrer"] }], rehypeRaw]}
+            {...props}
+        >
+            {children}
+        </Markdown>
+    );
+};
