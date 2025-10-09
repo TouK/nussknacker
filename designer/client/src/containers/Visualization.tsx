@@ -38,7 +38,7 @@ import { useWindows } from "../windowManager/useWindows";
 import { AddComponentsButtons } from "./AddComponentsButtons";
 import { AdjustNodeOverlapBehavior } from "./AdjustNodeOverlapBehavior";
 import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
-import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
+import { useModalsIfNeeded } from "./hooks/useModalsIfNeeded";
 import { useInterval } from "./Interval";
 import { LiveDataThroughputs } from "./liveData/LiveDataThroughputs";
 import { useLiveDataIfNeeded } from "./liveData/useLiveDataIfNeeded";
@@ -190,7 +190,7 @@ function Visualization() {
     useLiveDataIfNeeded();
     // useVersionSwitchIfNeeded(processName, version);
 
-    const { openNodes } = useModalDetailsIfNeeded();
+    const { openNodes, openToolWindows } = useModalsIfNeeded();
     const openAndHighlightNodes = useCallback(
         async (scenario: Scenario) => {
             const windows = await Promise.all(openNodes(scenario));
@@ -201,8 +201,13 @@ function Visualization() {
 
     useEffect(() => {
         if (graphNotReady) return;
+        openToolWindows();
+    }, [graphNotReady, openToolWindows]);
+
+    useEffect(() => {
+        if (graphNotReady) return;
         openAndHighlightNodes(scenario);
-    }, [scenario, graphNotReady, openAndHighlightNodes]);
+    }, [graphNotReady, openAndHighlightNodes, scenario]);
 
     useUnmountCleanup();
     useRouteLeavingGuard(capabilities.editFrontend && !nothingToSave);
