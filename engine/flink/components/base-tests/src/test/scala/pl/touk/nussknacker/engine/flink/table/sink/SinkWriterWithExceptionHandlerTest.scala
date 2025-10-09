@@ -108,9 +108,6 @@ object CollectSink extends SinkFactory {
           }
 
           override def flush(endOfInput: Boolean): Unit = ()
-
-          override def close(): Unit = ()
-
         }
 
       @nowarn("cat=deprecation")
