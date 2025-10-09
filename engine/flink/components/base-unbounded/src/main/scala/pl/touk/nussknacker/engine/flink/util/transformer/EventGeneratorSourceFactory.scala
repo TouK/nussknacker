@@ -77,9 +77,6 @@ object EventGeneratorSourceFactory
     .withCreator(
       _.copy(
         validators = List(MinimalNumberValidator(BigDecimal.valueOf(1))),
-        editors = List(
-          new DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS))
-        ),
         defaultValue = Some("1".spel),
         category = Advanced
       )
