@@ -51,7 +51,7 @@ trait WithTestPostgresDb extends WithTestDb {
   self: Suite with ForAllTestContainer =>
 
   override val container: PostgreSQLContainer =
-    PostgreSQLContainer(DockerImageName.parse("postgres:11.2"))
+    PostgreSQLContainer(DockerImageName.parse("postgres:18"))
 
   override def testDbConfig: Config = ConfigFactory.parseMap(
     Map(
