@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.{Context, LazyParameter, MethodToInvoke, P
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.flink.api.FlinkEngineContextOps._
 import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, SinkWriterWithExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{
   BasicFlinkSinkV2,
@@ -87,17 +88,8 @@ object CollectSink extends SinkFactory {
 
       override def createWriter(context: WriterInitContext): SinkWriter[Integer] =
         new SinkWriter[Integer] with SinkWriterWithExceptionHandler[Integer] {
-          override protected val exceptionHandler: ExceptionHandler = new ExceptionHandler {
-            override def handling[T](nodeComponentInfo: Option[NodeComponentInfo], context: Context)(
-                action: => T
-            ): Option[T] =
-              try {
-                Some(action)
-              } catch {
-                case _: Throwable =>
-                  None
-              }
-          }
+          override protected val exceptionHandler: ExceptionHandler =
+            flinkNodeContext.exceptionHandlerPreparer.narrowToWriterInitCtx(context)
 
           override def write(element: Integer, context: SinkWriter.Context): Unit = {
             val result = exceptionHandler.handling[Double](None, Context.dummy)(

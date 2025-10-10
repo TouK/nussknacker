@@ -8,7 +8,6 @@ trait SinkWriterWithExceptionHandler[T] {
   protected val exceptionHandler: ExceptionHandler
 
   override def close(): Unit = {
-    self.close()
     if (exceptionHandler != null) {
       exceptionHandler.close()
     }

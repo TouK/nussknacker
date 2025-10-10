@@ -35,6 +35,9 @@ object FlinkEngineContextOps {
   implicit class RichExceptionHandler(val f: FlinkEngineContext => ExceptionHandler) extends AnyVal {
     def narrowToRuntimeCtx: RuntimeContext => ExceptionHandler =
       rc => f(RuntimeCtx(rc))
+
+    def narrowToWriterInitCtx: WriterInitContext => ExceptionHandler =
+      wc => f(WriterInitCtx(wc))
   }
 
 }
