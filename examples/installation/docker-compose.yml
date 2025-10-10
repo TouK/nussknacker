@@ -70,7 +70,7 @@ services:
           memory: 1024M
 
   postgres:
-    image: postgres:13
+    image: postgres:18
     restart: unless-stopped
     environment:
       POSTGRES_DB: "nu-db"
