@@ -1,22 +1,24 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.Inside
+import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
-import pl.touk.nussknacker.engine.{ModelConfig, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
-import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ExpressionConfig, WithCategories}
+import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, SpelParameterEditor}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.util.test.FlinkNodeCompiler.FlinkNodeCompilerExt
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkTestScenarioRunnerExt
+import pl.touk.nussknacker.engine.graph.node.Source
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
+import pl.touk.nussknacker.engine.util.test.{TestNodeCompiler, TestScenarioRunner}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.nio.charset.StandardCharsets
@@ -29,10 +31,15 @@ class EventGeneratorSourceFactorySpec
     with FlinkSpec
     with PatientScalaFutures
     with Matchers
-    with Inside {
+    with Inside
+    with OptionValues {
 
   private lazy val testScenarioRunner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+    .build()
+
+  private lazy val nodeCompiler = TestNodeCompiler
+    .flinkBased(ConfigFactory.empty())
     .build()
 
   test("should produce results for each element in list") {
@@ -240,6 +247,14 @@ class EventGeneratorSourceFactorySpec
 
     val result = processValidator.validate(scenario, isFragment = false)(scenarioCompilationDependencies).result
     result shouldBe Symbol("valid")
+  }
+
+  test("node compilation should return number editor for count parameter") {
+    val parametersDefinition =
+      nodeCompiler.compileNode(Source("source id", SourceRef("event-generator", List.empty))).parameters.value
+
+    val countDefinition = parametersDefinition.find(_.name.value == "count").value
+    countDefinition.editors shouldBe List(SpelParameterEditor)
   }
 
 }
