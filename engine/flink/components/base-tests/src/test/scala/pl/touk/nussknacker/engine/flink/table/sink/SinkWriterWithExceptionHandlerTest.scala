@@ -64,7 +64,7 @@ class SinkWriterWithExceptionHandlerTest
 
     // FIXME: https://github.com/TouK/nussknacker/issues/8679
     // val result = runner.runWithData(scenario, List(1, 2, 3, 0, 4))
-    // result.validvalue.errors shouldbe 1
+    // result.validValue.errors shouldBe 1
 
     eventually {
       SinkResultHolder.buffer.results.length mustBe 4
