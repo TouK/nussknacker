@@ -26,13 +26,13 @@ type Action =
           context: VariableContextType;
       };
 
-type Created = NodeTransitionResult & { id: string };
+type ResultsWithId = NodeTransitionResult & { id: string };
 type ContextType = {
     state: InputOutputState;
     dispatch: React.Dispatch<Action>;
     getAvailableContexts: (direction?: "input" | "output") => [VariableContextType[], number];
-    inputNodesIds: Created[];
-    outputNodesIds: Created[];
+    inputNodesIds: ResultsWithId[];
+    outputNodesIds: ResultsWithId[];
 };
 
 const InputOutputContext = createContext<ContextType>(null);
