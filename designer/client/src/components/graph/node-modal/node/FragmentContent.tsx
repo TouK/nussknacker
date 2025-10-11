@@ -1,3 +1,4 @@
+import { Box } from "@mui/material";
 import React, { useCallback, useState } from "react";
 
 import { useInitEffect } from "../../../../containers/hooks/useInitEffect";
@@ -36,15 +37,19 @@ export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNode
 
     const fragmentCounts = (processCounts[nodeToDisplay.id] || {}).fragmentCounts || {};
 
+    if (!fragmentContent) {
+        return null;
+    }
+
     return (
-        <ErrorBoundary FallbackComponent={DialogErrorFallbackComponent}>
-            {fragmentContent && (
+        <Box sx={(theme) => ({ background: theme.palette.background.default, display: "grid", overflow: "hidden" })}>
+            <ErrorBoundary FallbackComponent={DialogErrorFallbackComponent}>
                 <FragmentGraphPreview
                     processCounts={fragmentCounts}
                     scenario={fragmentContent}
                     nodeIdPrefixForFragmentTests={getFragmentNodesPrefix(fragmentContent)}
                 />
-            )}
-        </ErrorBoundary>
+            </ErrorBoundary>
+        </Box>
     );
 }
