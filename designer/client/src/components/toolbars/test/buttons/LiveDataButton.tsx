@@ -31,8 +31,7 @@ const LiveDataButton = memo(function LiveDataButton(props: ToolbarButtonProps) {
 
     const { disabled, type, title } = props;
 
-    const expectedUpdate = nextIn > 5000;
-    const [percent, reset] = useProgress({ last, nextIn }, working && expectedUpdate);
+    const { percent, reset, isProgressing } = useProgress({ last, nextIn }, working && nextIn > 5000);
     const progress = adjustProgress(percent);
 
     useEffect(() => {
@@ -44,7 +43,7 @@ const LiveDataButton = memo(function LiveDataButton(props: ToolbarButtonProps) {
     return (
         <>
             <ToolbarButton
-                isLoading={readyForLiveData && !disabled && expectedUpdate && progress > 0}
+                isLoading={readyForLiveData && !disabled && isProgressing}
                 loadingVariant={"determinate"}
                 loadingProgress={progress}
                 isActive={working}

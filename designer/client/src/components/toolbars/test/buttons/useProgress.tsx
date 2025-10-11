@@ -3,19 +3,22 @@ import { useIntervalWhen } from "rooks";
 
 import type { RefreshData } from "../../../../actions/nk/displayProcessCounts";
 
-export function useProgress(refresh: RefreshData, when: boolean): [percent: number, reset: () => void] {
-    const [percent, setPercent] = useState(0);
+export function useProgress(refresh: RefreshData, when = true): { percent?: number; reset: () => void; isProgressing: boolean } {
+    const [percent, setPercent] = useState<number>();
+
+    const next = refresh ? refresh.last + refresh.nextIn : 0;
+    const isEnabled = when && next > Date.now();
 
     useIntervalWhen(
         () => {
-            const percent = Math.round(((refresh.last + refresh.nextIn - Date.now()) / refresh.nextIn) * 100);
+            const percent = Math.round(((next - Date.now()) / refresh.nextIn) * 100);
             setPercent(percent);
         },
         200,
-        refresh && when,
+        isEnabled,
     );
 
     const reset = useCallback(() => setPercent(0), []);
 
-    return [percent, reset];
+    return { percent, reset, isProgressing: isEnabled && percent > 0 };
 }

@@ -20,12 +20,11 @@ function CountsButton(props: ToolbarButtonProps) {
     const { open } = useWindows();
     const { disabled, type } = props;
 
-    const enabled = refresh && refresh.last + refresh.nextIn > Date.now();
-    const [percent] = useProgress(refresh, enabled);
+    const { percent, isProgressing } = useProgress(refresh);
 
     return featuresSettings?.counts && !fragment ? (
         <ToolbarButton
-            isLoading={enabled}
+            isLoading={isProgressing}
             loadingVariant={"determinate"}
             loadingProgress={percent}
             name={t("panels.actions.test-counts.name", "counts")}
