@@ -154,24 +154,28 @@ export const InputOutputLayout = memo(function InputOutputWrapper({ children }: 
                     <SidePane sideState={sidesState.left} onIsEmptyChange={onIsEmptyChange} />
                 </Allotment.Pane>
                 <Allotment.Pane preferredSize="60%" minSize={820} className={shadowClassName}>
-                    <PanelButton
-                        side={sidesState.left.side}
-                        collapsed={sidesState.left.collapsed}
-                        onClick={(e) => {
-                            onToggleClick(sidesState.left.side);
-                        }}
-                    >
-                        <ExpandLess />
-                    </PanelButton>
-                    <PanelButton
-                        side={sidesState.right.side}
-                        collapsed={sidesState.right.collapsed}
-                        onClick={(e) => {
-                            onToggleClick(sidesState.right.side);
-                        }}
-                    >
-                        <ExpandLess />
-                    </PanelButton>
+                    {sidesState.left.hidden ? null : (
+                        <PanelButton
+                            side={sidesState.left.side}
+                            collapsed={sidesState.left.collapsed}
+                            onClick={(e) => {
+                                onToggleClick(sidesState.left.side);
+                            }}
+                        >
+                            <ExpandLess />
+                        </PanelButton>
+                    )}
+                    {sidesState.right.hidden ? null : (
+                        <PanelButton
+                            side={sidesState.right.side}
+                            collapsed={sidesState.right.collapsed}
+                            onClick={(e) => {
+                                onToggleClick(sidesState.right.side);
+                            }}
+                        >
+                            <ExpandLess />
+                        </PanelButton>
+                    )}
                     {children}
                 </Allotment.Pane>
                 <Allotment.Pane
