@@ -12,7 +12,10 @@ export const messages = {
     sectionUnavailable: () => i18next.t("unexpectedError.sectionUnavailable", "Section unavailable."),
 };
 
-export function ErrorBoundary({ children, FallbackComponent }: PropsWithChildren<Partial<ErrorBoundaryProps>>): JSX.Element {
+export function ErrorBoundary({
+    children,
+    FallbackComponent,
+}: Partial<Pick<ErrorBoundaryProps, "children" | "FallbackComponent">>): JSX.Element {
     return (
         <ErrorBoundaryLibrary FallbackComponent={FallbackComponent || FullPageErrorBoundaryFallbackComponent}>
             {children}

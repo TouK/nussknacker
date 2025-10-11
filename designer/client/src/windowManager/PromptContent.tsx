@@ -5,8 +5,6 @@ import { DefaultContent } from "@touk/window-manager";
 import type { PropsWithChildren } from "react";
 import React, { useMemo } from "react";
 
-import { ErrorBoundary } from "../components/common/error-boundary/ErrorBoundary";
-import { DialogErrorFallbackComponent } from "../components/common/error-boundary/fallbackComponent/DialogErrorFallbackComponent";
 import { isTouchDevice } from "../helpers/detectDevice";
 import { LoadingButton } from "./LoadingButton";
 
@@ -35,7 +33,7 @@ export function PromptContent({ children, ...props }: PropsWithChildren<DefaultC
 
     return (
         <DefaultContent backgroundDrag={!isTouchDevice()} {...props} classnames={classnames} components={components}>
-            <ErrorBoundary FallbackComponent={DialogErrorFallbackComponent}>{children}</ErrorBoundary>
+            {children}
         </DefaultContent>
     );
 }
