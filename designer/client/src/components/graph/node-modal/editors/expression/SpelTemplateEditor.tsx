@@ -37,7 +37,8 @@ SpelTemplateEditor.parseValueOnEditorChange = ({ expression, language }: Express
 
 function looksLikeStringLiteral(expr: string): boolean {
     const trimmed = expr.trim();
-    if (!trimmed) return false;
+
+    if (trimmed === "") return true;
 
     const singleQuoted = /^'(?:\\'|''|[^'])*'$/.test(trimmed);
     const doubleQuoted = /^"(?:\\"|""|[^"])*"$/.test(trimmed);

@@ -70,6 +70,7 @@ describe("FieldSwitch", () => {
         ["#{", false],
         ["#", false],
         ["#{#Base64()}", true],
+        ["", false],
     ])("should verify that expression switch field option is disabled when %s expression", (expression, isDisabled) => {
         const mockOnValueChange = jest.fn();
         render(
@@ -93,6 +94,7 @@ describe("FieldSwitch", () => {
         ["a" + "b", true],
         ["a" + "b", true],
         [`#DATE.now.toString + 'millis'`, true],
+        ["", false],
     ])(
         "should verify that expression switch field option is disabled when expression contains %s SpEL expression",
         (expression, isDisabled) => {
