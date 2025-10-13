@@ -35,14 +35,16 @@ export default function Input(props: InputProps): JSX.Element {
         onFocus,
         onChange,
         onBlur,
-        ...rest
+        disabled,
+        id,
     } = props;
 
     return (
         <div className={className}>
             <div className={cx({ marked: isMarked })}>
                 <NodeInput
-                    {...rest}
+                    id={id}
+                    disabled={disabled}
                     autoFocus={autoFocus}
                     readOnly={readOnly}
                     placeholder={placeholder}

@@ -1,6 +1,7 @@
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
+import { ToolId } from "../../../../actions/nk/toolWindow";
 import Icon from "../../../../assets/img/toolbarButtons/properties.svg";
 import { hasError, hasPropertiesErrors } from "../../../../reducers/selectors/graph2";
 import { useAppSelector } from "../../../../store/storeHelpers";
@@ -14,6 +15,7 @@ export function useOpenProperties() {
     return useCallback(
         () =>
             open({
+                id: ToolId.properties,
                 kind: WindowKind.editProperties,
                 isResizable: true,
                 shouldCloseOnEsc: false,

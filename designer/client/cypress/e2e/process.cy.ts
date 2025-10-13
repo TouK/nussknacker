@@ -18,6 +18,36 @@ describe("Process", () => {
             cy.visitNewProcess(seed).as("processName");
         });
 
+        it("should have properties window", () => {
+            function openWindow() {
+                cy.contains(/^properties/i)
+                    .should("be.enabled")
+                    .click();
+                cy.get("[data-testid=window]").should("be.visible");
+                cy.matchQuery("?tool=properties");
+            }
+
+            openWindow();
+            cy.get("[data-testid=window]")
+                .contains(/^apply/i)
+                .should("be.enabled")
+                .click();
+            cy.get("[data-testid=window]").should("not.exist");
+            cy.matchQuery("");
+
+            openWindow();
+            cy.get("[data-testid=window]")
+                .contains(/^cancel/i)
+                .should("be.enabled")
+                .click();
+            cy.get("[data-testid=window]").should("not.exist");
+            cy.matchQuery("");
+
+            openWindow();
+            cy.reload();
+            cy.get("[data-testid=window]").should("be.visible");
+        });
+
         it("should allow rename", () => {
             cy.intercept("PUT", "/api/processes/*").as("save");
 
