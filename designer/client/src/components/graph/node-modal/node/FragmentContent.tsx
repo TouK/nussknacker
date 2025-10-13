@@ -42,7 +42,7 @@ export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNode
     }
 
     return (
-        <Box sx={(theme) => ({ background: theme.palette.background.default, display: "grid", overflow: "hidden" })}>
+        <Box sx={(theme) => ({ background: theme.palette.background.default, display: "grid", overflow: "hidden", minHeight: "400px" })}>
             <ErrorBoundary FallbackComponent={SectionErrorFallbackComponent}>
                 <FragmentGraphPreview
                     processCounts={fragmentCounts}
