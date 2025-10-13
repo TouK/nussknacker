@@ -51,6 +51,10 @@ export const StyledContent = styled(Window.Content)(({ theme }) => {
         "body :has(>&)": {
             ...getScrollStyle(theme),
             scrollbarGutter: "stable",
+            flex: 1,
+        },
+        "&, &>div": {
+            height: "100%",
         },
     };
 });
