@@ -85,29 +85,29 @@ describe("FieldSwitch", () => {
         expect(screen.getByRole("tab", { name: "expression" })).toHaveAttribute("aria-disabled", String(isDisabled));
     });
 
-    // it.each<[string, boolean]>([
-    //     ["#Base64()", true],
-    //     ["#Base64", true],
-    //     ["#", true],
-    //     ["'string literal'", false],
-    //     ['a' + 'b', true],
-    //     ["a" + "b", true],
-    //     [`#DATE.now.toString + 'millis'`, true]
-    // ])(
-    //     "should verify that expression switch field option is disabled when expression contains %s SpEL expression",
-    //     (expression, isDisabled) => {
-    //         const mockOnValueChange = jest.fn();
-    //         render(
-    //             <FieldSwitch
-    //                 expressionObj={{ expression, language: ExpressionLang.SpELTemplate }}
-    //                 availableEditors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }, { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR }]}
-    //                 onValueChange={mockOnValueChange}
-    //             >
-    //                 children
-    //             </FieldSwitch>,
-    //         );
-    //
-    //         expect(screen.getByRole("tab", { name: "string template" })).toHaveAttribute("aria-disabled", String(isDisabled));
-    //     },
-    // );
+    it.each<[string, boolean]>([
+        ["#Base64()", true],
+        ["#Base64", true],
+        ["#", true],
+        ["'string literal'", false],
+        ["a" + "b", true],
+        ["a" + "b", true],
+        [`#DATE.now.toString + 'millis'`, true],
+    ])(
+        "should verify that expression switch field option is disabled when expression contains %s SpEL expression",
+        (expression, isDisabled) => {
+            const mockOnValueChange = jest.fn();
+            render(
+                <FieldSwitch
+                    expressionObj={{ expression, language: ExpressionLang.SpEL }}
+                    availableEditors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }, { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR }]}
+                    onValueChange={mockOnValueChange}
+                >
+                    children
+                </FieldSwitch>,
+            );
+
+            expect(screen.getByRole("tab", { name: "string template" })).toHaveAttribute("aria-disabled", String(isDisabled));
+        },
+    );
 });
