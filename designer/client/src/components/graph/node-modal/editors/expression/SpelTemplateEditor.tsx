@@ -1,5 +1,4 @@
 import React, { useMemo } from "react";
-import { parse } from "ts-spel";
 
 import type { ExtendedEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
@@ -36,12 +35,21 @@ SpelTemplateEditor.parseValueOnEditorChange = ({ expression, language }: Express
     return { expression, language: newLanguage };
 };
 
-function looksLikeSpelExpression(expr: string): boolean {
+function looksLikeStringLiteral(expr: string): boolean {
     const trimmed = expr.trim();
-    return /^#\w[\w.[\]()]*$/.test(trimmed); // #variable.property
+    if (!trimmed) return false;
+
+    const singleQuoted = /^'(?:\\'|''|[^'])*'$/.test(trimmed);
+    const doubleQuoted = /^"(?:\\"|""|[^"])*"$/.test(trimmed);
+
+    return singleQuoted || doubleQuoted;
 }
 
 SpelTemplateEditor.isSwitchableTo = (expressionObj) => {
-    return !looksLikeSpelExpression(expressionObj.expression);
+    if (expressionObj.language === ExpressionLang.SpEL) {
+        return looksLikeStringLiteral(expressionObj.expression);
+    }
+
+    return true;
 };
 SpelTemplateEditor.notSwitchableToHint = () => "The expression must be a literal value to switch to string template mode";

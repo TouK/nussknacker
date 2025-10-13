@@ -187,7 +187,7 @@ SpelEditor.parseValueOnEditorChange = ({ expression, language }: ExpressionObj, 
             return { expression, language: newLanguage };
         }
 
-        return { expression: `"${expression}"`, language: newLanguage };
+        return { expression: `'${expression}'`, language: newLanguage };
     }
 
     return { expression, language: newLanguage };
@@ -199,7 +199,11 @@ function looksLikeSpelTemplateExpression(expr: string): boolean {
 }
 
 SpelEditor.isSwitchableTo = (expressionObj) => {
-    return !looksLikeSpelTemplateExpression(expressionObj.expression);
+    if (expressionObj.language === ExpressionLang.SpELTemplate) {
+        return !looksLikeSpelTemplateExpression(expressionObj.expression);
+    }
+
+    return true;
 };
 
 SpelEditor.notSwitchableToHint = () =>
