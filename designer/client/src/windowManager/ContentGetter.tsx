@@ -1,7 +1,9 @@
 import loadable from "@loadable/component";
 import type { WindowContentProps } from "@touk/window-manager";
 import React from "react";
+import { ErrorBoundary } from "react-error-boundary";
 
+import { DialogErrorFallbackComponent } from "../components/common/error-boundary/fallbackComponent/DialogErrorFallbackComponent";
 import FrameDialog from "../components/FrameDialog";
 import AddAttachmentDialog from "../components/modals/AddAttachmentDialog";
 import RemoteModuleDialog from "../components/RemoteModuleDialog";
@@ -133,4 +135,8 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
     }
 };
 
-export const ContentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => <NuThemeProvider>{contentGetter(props)}</NuThemeProvider>;
+export const ContentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => (
+    <NuThemeProvider>
+        <ErrorBoundary fallback={<DialogErrorFallbackComponent {...props} />}>{contentGetter(props)}</ErrorBoundary>
+    </NuThemeProvider>
+);

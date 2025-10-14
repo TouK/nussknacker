@@ -1,5 +1,4 @@
-/* eslint-disable i18next/no-literal-string */
-import { css, cx } from "@emotion/css";
+import { Box } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import moment from "moment";
 import type { PropsWithChildren } from "react";
@@ -75,21 +74,18 @@ function CountsDialog({ children, ...props }: PropsWithChildren<WindowContentPro
             buttons={buttons}
             title={t("calculateCounts.title", "counts")}
             icon={<WindowHeaderIconStyled as={Icon} type={props.data.kind} />}
-            classnames={{
-                content: cx(
-                    "modalContentDark",
-                    css({
-                        padding: "0 2em 2em",
-                        textAlign: "center",
-                        p: {
-                            marginTop: "30px",
-                        },
-                    }),
-                ),
-            }}
             {...props}
         >
-            <CalculateCountsForm value={state} onChange={setState} />
+            <Box
+                sx={{
+                    paddingX: "2em",
+                    paddingTop: 2,
+                    paddingBottom: 4,
+                    textAlign: "center",
+                }}
+            >
+                <CalculateCountsForm value={state} onChange={setState} />
+            </Box>
         </WindowContent>
     );
 }

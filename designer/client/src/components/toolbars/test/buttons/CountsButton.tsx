@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { useIntervalWhen } from "rooks";
 
 import Icon from "../../../../assets/img/toolbarButtons/counts.svg";
 import { getProcessCountsRefresh, isFragment } from "../../../../reducers/selectors/graph";
@@ -10,6 +9,7 @@ import { useWindows } from "../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../windowManager/WindowKind";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
+import { useProgress } from "./useProgress";
 
 // TODO: counts and metrics should not be visible in archived process
 function CountsButton(props: ToolbarButtonProps) {
@@ -20,19 +20,11 @@ function CountsButton(props: ToolbarButtonProps) {
     const { open } = useWindows();
     const { disabled, type } = props;
 
-    const [percent, setPercent] = useState(0);
-    const enabled = refresh && refresh.last + refresh.nextIn > Date.now();
-    useIntervalWhen(
-        () => {
-            setPercent(Math.round(((refresh.last + refresh.nextIn - Date.now()) / refresh.nextIn) * 100));
-        },
-        200,
-        enabled,
-    );
+    const { percent, isProgressing } = useProgress(refresh);
 
     return featuresSettings?.counts && !fragment ? (
         <ToolbarButton
-            isLoading={enabled}
+            isLoading={isProgressing}
             loadingVariant={"determinate"}
             loadingProgress={percent}
             name={t("panels.actions.test-counts.name", "counts")}

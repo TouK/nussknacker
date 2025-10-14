@@ -40,7 +40,7 @@ export const NodeGroupContent = memo(function NodeGroupContent({ node, edges, on
                     showTestResults
                 />
             </ContentSize>
-            {NodeUtils.nodeIsFragment(node) && <FragmentContent nodeToDisplay={node} />}
+            {NodeUtils.nodeIsFragment(node) ? <FragmentContent nodeToDisplay={node} /> : null}
         </div>
     );
 });
