@@ -6,7 +6,15 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{ContextIdPathPart, DisplayJsonWithEncoder, JobData, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{
+  ContextId,
+  ContextIdPathPart,
+  DisplayJsonWithEncoder,
+  JobData,
+  NodeId,
+  ProcessVersion
+}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestSourceSpecificFormatJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -212,10 +220,51 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
   test("scenario with multiple unions should work properly") {
     val process = fromJsonUnsafe(Source.fromResource("scenarios/scenario-with-multiple-unions.json").mkString)
 
-    val scenarioTestData = ScenarioTestData(List(createTestRecord("a", "b")))
+    def prepareContextId(varValue: String, right: Boolean): ContextId = {
+      val unionName = if (right) "unionRight" else "unionLeft"
+      val splitPart = if (right) Nil else List(ContextIdPathPart(NodeId("Split"), varValue))
+      val contextIdPath = splitPart ++ List(
+        ContextIdPathPart(NodeId(unionName), varValue),
+        ContextIdPathPart(NodeId("unionBeforeEnd"), unionName)
+      )
+      ContextId(ProcessName("unionTest"), NodeId("start"), 0, 0, contextIdPath)
+    }
 
-    val results = runTest(process, scenarioTestData)
-    // todo: additional assertions after fixing problem with throwing "key not found: ddd" during scenario interpretation
+    // Scenario go to 'left' nodes, where we have split and later union -> hence two variables
+    val forLeftUnion = runTest(process, ScenarioTestData(List(createTestRecord("left", ""))))
+
+    forLeftUnion.nodeResults.get(NodeId("unionRight")) should not be defined
+    forLeftUnion.nodeResults(NodeId("$edge-leftVariableA-unionLeft")) should have size 1
+    forLeftUnion.nodeResults(NodeId("$edge-leftVariableB-unionLeft")) should have size 1
+    forLeftUnion.externalServiceInvocationResults(NodeId("Response")).map(withMockedTimestamp).toSet shouldBe Set(
+      ExternalServiceInvocationResult(
+        prepareContextId("leftVariableB", right = false),
+        mockedTimestamp,
+        "Response",
+        variable("leftVariableB")
+      ),
+      ExternalServiceInvocationResult(
+        prepareContextId("leftVariableA", right = false),
+        mockedTimestamp,
+        "Response",
+        variable("leftVariableA")
+      )
+    )
+
+    val forRightUnion = runTest(process, ScenarioTestData(List(createTestRecord("right", ""))))
+
+    // Scenario go to 'right' nodes, where we have filter and later union -> hence one variable (B)
+    forRightUnion.nodeResults.get(NodeId("unionLeft")) should not be defined
+    forRightUnion.nodeResults(NodeId("$edge-rightVariableB-unionRight")) should have size 1
+    forRightUnion.externalServiceInvocationResults(NodeId("Response")).map(withMockedTimestamp).toSet shouldBe Set(
+      ExternalServiceInvocationResult(
+        prepareContextId("rightVariableB", right = true),
+        mockedTimestamp,
+        "Response",
+        variable("rightVariableB")
+      ),
+    )
+
   }
 
   private def createTestRecord(field1: String, field2: String) = {

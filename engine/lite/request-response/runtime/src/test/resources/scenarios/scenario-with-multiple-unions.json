@@ -4,7 +4,7 @@
     "additionalFields" : {
       "description" : null,
       "properties" : {
-        "inputSchema" : "{}",
+        "inputSchema" : "{\n\"type\": \"object\",\n\"properties\": {\n  \"field1\": {\n      \"type\": \"string\"\n  },\n  \"field2\": {\n      \"type\": \"string\"\n  }\n}\n}",
         "outputSchema" : "{}",
         "slug" : "unionTest"
       },
@@ -14,44 +14,32 @@
   },
   "nodes" : [
     {
-      "id" : "union222",
-      "outputVar" : "union222",
+      "id" : "unionLeft",
+      "outputVar" : "unionLeft",
       "nodeType" : "union",
       "parameters" : [
       ],
       "branchParameters" : [
         {
-          "branchId" : "aaa",
+          "branchId" : "leftVariableA",
           "parameters" : [
             {
               "name" : "Output expression",
               "expression" : {
                 "language" : "spel",
-                "expression" : "#aaa"
+                "expression" : "#leftVariableA"
               }
             }
           ]
         },
         {
-          "branchId" : "bbb",
+          "branchId" : "leftVariableB",
           "parameters" : [
             {
               "name" : "Output expression",
               "expression" : {
                 "language" : "spel",
-                "expression" : "#bbb"
-              }
-            }
-          ]
-        },
-        {
-          "branchId" : "ccc",
-          "parameters" : [
-            {
-              "name" : "Output expression",
-              "expression" : {
-                "language" : "spel",
-                "expression" : "#ccc"
+                "expression" : "#leftVariableB"
               }
             }
           ]
@@ -60,7 +48,7 @@
       "additionalFields" : {
         "description" : null,
         "layoutData" : {
-          "x" : 360,
+          "x" : 180,
           "y" : 900
         }
       },
@@ -68,8 +56,8 @@
     },
     {
       "definition" : {
-        "id" : "union222",
-        "joinId" : "union 2"
+        "id" : "unionLeft",
+        "joinId" : "unionBeforeEnd"
       },
       "type" : "BranchEndData"
     }
@@ -77,82 +65,32 @@
   "additionalBranches" : [
     [
       {
-        "id" : "union111",
-        "outputVar" : "union111",
+        "id" : "unionRight",
+        "outputVar" : "unionRight",
         "nodeType" : "union",
         "parameters" : [
         ],
         "branchParameters" : [
           {
-            "branchId" : "ddd",
+            "branchId" : "rightVariableB",
             "parameters" : [
               {
                 "name" : "Output expression",
                 "expression" : {
                   "language" : "spel",
-                  "expression" : "#ddd"
+                  "expression" : "#rightVariableB"
                 }
               }
             ]
           },
           {
-            "branchId" : "eee",
+            "branchId" : "rightVariableA",
             "parameters" : [
               {
                 "name" : "Output expression",
                 "expression" : {
                   "language" : "spel",
-                  "expression" : "#eee"
-                }
-              }
-            ]
-          }
-        ],
-        "additionalFields" : {
-          "description" : null,
-          "layoutData" : {
-            "x" : 1260,
-            "y" : 900
-          }
-        },
-        "type" : "Join"
-      },
-      {
-        "definition" : {
-          "id" : "union111",
-          "joinId" : "union 2"
-        },
-        "type" : "BranchEndData"
-      }
-    ],
-    [
-      {
-        "id" : "union 2",
-        "outputVar" : "outputVar",
-        "nodeType" : "union",
-        "parameters" : [
-        ],
-        "branchParameters" : [
-          {
-            "branchId" : "union111",
-            "parameters" : [
-              {
-                "name" : "Output expression",
-                "expression" : {
-                  "language" : "spel",
-                  "expression" : "#union111"
-                }
-              }
-            ]
-          },
-          {
-            "branchId" : "union222",
-            "parameters" : [
-              {
-                "name" : "Output expression",
-                "expression" : {
-                  "language" : "spel",
-                  "expression" : "#union222"
+                  "expression" : "#rightVariableA"
                 }
               }
             ]
@@ -162,6 +100,56 @@
           "description" : null,
           "layoutData" : {
             "x" : 900,
+            "y" : 900
+          }
+        },
+        "type" : "Join"
+      },
+      {
+        "definition" : {
+          "id" : "unionRight",
+          "joinId" : "unionBeforeEnd"
+        },
+        "type" : "BranchEndData"
+      }
+    ],
+    [
+      {
+        "id" : "unionBeforeEnd",
+        "outputVar" : "unionBeforeEnd",
+        "nodeType" : "union",
+        "parameters" : [
+        ],
+        "branchParameters" : [
+          {
+            "branchId" : "unionRight",
+            "parameters" : [
+              {
+                "name" : "Output expression",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "#unionRight"
+                }
+              }
+            ]
+          },
+          {
+            "branchId" : "unionLeft",
+            "parameters" : [
+              {
+                "name" : "Output expression",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "#unionLeft"
+                }
+              }
+            ]
+          }
+        ],
+        "additionalFields" : {
+          "description" : null,
+          "layoutData" : {
+            "x" : 540,
             "y" : 1080
           }
         },
@@ -178,6 +166,13 @@
                 "language" : "spel",
                 "expression" : "false"
               }
+            },
+            {
+              "name" : "Value",
+              "expression" : {
+                "language" : "spel",
+                "expression" : "#unionBeforeEnd"
+              }
             }
           ]
         },
@@ -186,7 +181,7 @@
         "additionalFields" : {
           "description" : null,
           "layoutData" : {
-            "x" : 900,
+            "x" : 540,
             "y" : 1260
           }
         },
@@ -204,7 +199,7 @@
         "additionalFields" : {
           "description" : null,
           "layoutData" : {
-            "x" : 900,
+            "x" : 540,
             "y" : 0
           }
         },
@@ -222,133 +217,86 @@
             "additionalFields" : {
               "description" : null,
               "layoutData" : {
-                "x" : 360,
+                "x" : 180,
                 "y" : 360
               }
             },
             "type" : "Variable"
           },
           {
-            "defaultNext" : [
-            ],
             "nexts" : [
-              {
-                "expression" : {
-                  "language" : "spel",
-                  "expression" : "#var1 == 1"
-                },
-                "nodes" : [
-                  {
-                    "id" : "aaa",
-                    "varName" : "aaa",
-                    "value" : {
-                      "language" : "spel",
-                      "expression" : "'aaaaa'"
-                    },
-                    "additionalFields" : {
-                      "description" : null,
-                      "layoutData" : {
-                        "x" : 0,
-                        "y" : 720
-                      }
-                    },
-                    "type" : "Variable"
+              [
+                {
+                  "id" : "leftVariableB",
+                  "varName" : "leftVariableB",
+                  "value" : {
+                    "language" : "spel",
+                    "expression" : "'leftVariableB'"
                   },
-                  {
-                    "definition" : {
-                      "id" : "aaa",
-                      "joinId" : "union222"
-                    },
-                    "type" : "BranchEndData"
-                  }
-                ]
-              },
-              {
-                "expression" : {
-                  "language" : "spel",
-                  "expression" : "#var1 == 2"
-                },
-                "nodes" : [
-                  {
-                    "id" : "bbb",
-                    "varName" : "bbb",
-                    "value" : {
-                      "language" : "spel",
-                      "expression" : "'bbbbbb'"
-                    },
-                    "additionalFields" : {
-                      "description" : null,
-                      "layoutData" : {
-                        "x" : 360,
-                        "y" : 720
-                      }
-                    },
-                    "type" : "Variable"
+                  "additionalFields" : {
+                    "description" : null,
+                    "layoutData" : {
+                      "x" : 360,
+                      "y" : 720
+                    }
                   },
-                  {
-                    "definition" : {
-                      "id" : "bbb",
-                      "joinId" : "union222"
-                    },
-                    "type" : "BranchEndData"
-                  }
-                ]
-              },
-              {
-                "expression" : {
-                  "language" : "spel",
-                  "expression" : "#var1 == 3"
+                  "type" : "Variable"
                 },
-                "nodes" : [
-                  {
-                    "id" : "ccc",
-                    "varName" : "ccc",
-                    "value" : {
-                      "language" : "spel",
-                      "expression" : "'ccccc'"
-                    },
-                    "additionalFields" : {
-                      "description" : null,
-                      "layoutData" : {
-                        "x" : 720,
-                        "y" : 720
-                      }
-                    },
-                    "type" : "Variable"
+                {
+                  "definition" : {
+                    "id" : "leftVariableB",
+                    "joinId" : "unionLeft"
                   },
-                  {
-                    "definition" : {
-                      "id" : "ccc",
-                      "joinId" : "union222"
-                    },
-                    "type" : "BranchEndData"
-                  }
-                ]
-              }
+                  "type" : "BranchEndData"
+                }
+              ],
+              [
+                {
+                  "id" : "leftVariableA",
+                  "varName" : "leftVariableA",
+                  "value" : {
+                    "language" : "spel",
+                    "expression" : "'leftVariableA'"
+                  },
+                  "additionalFields" : {
+                    "description" : null,
+                    "layoutData" : {
+                      "x" : 0,
+                      "y" : 720
+                    }
+                  },
+                  "type" : "Variable"
+                },
+                {
+                  "definition" : {
+                    "id" : "leftVariableA",
+                    "joinId" : "unionLeft"
+                  },
+                  "type" : "BranchEndData"
+                }
+              ]
             ],
-            "id" : "choice",
-            "expression" : null,
-            "exprVal" : null,
+            "id" : "Split",
             "additionalFields" : {
               "description" : null,
               "layoutData" : {
-                "x" : 360,
+                "x" : 180,
                 "y" : 540
               }
             },
-            "type" : "Switch"
+            "type" : "Split"
           }
         ],
         "id" : "filter",
         "expression" : {
           "language" : "spel",
-          "expression" : "true"
+          "expression" : "#input.field1 == \"right\""
         },
         "isDisabled" : null,
         "additionalFields" : {
           "description" : null,
           "layoutData" : {
-            "x" : 900,
+            "x" : 540,
             "y" : 180
           }
         },
@@ -357,16 +305,16 @@
       {
         "nextFalse" : [
           {
-            "id" : "eee",
-            "varName" : "eee",
+            "id" : "rightVariableA",
+            "varName" : "rightVariableA",
             "value" : {
               "language" : "spel",
-              "expression" : "'eeeeee'"
+              "expression" : "'rightVariableA'"
             },
             "additionalFields" : {
               "description" : null,
               "layoutData" : {
-                "x" : 1080,
+                "x" : 720,
                 "y" : 720
               }
             },
@@ -374,8 +322,8 @@
           },
           {
             "definition" : {
-              "id" : "eee",
-              "joinId" : "union111"
+              "id" : "rightVariableA",
+              "joinId" : "unionRight"
             },
             "type" : "BranchEndData"
           }
@@ -389,23 +337,23 @@
         "additionalFields" : {
           "description" : null,
           "layoutData" : {
-            "x" : 1260,
+            "x" : 900,
             "y" : 540
           }
         },
         "type" : "Filter"
       },
       {
-        "id" : "ddd",
-        "varName" : "ddd",
+        "id" : "rightVariableB",
+        "varName" : "rightVariableB",
         "value" : {
           "language" : "spel",
-          "expression" : "'ddddd'"
+          "expression" : "'rightVariableB'"
         },
         "additionalFields" : {
           "description" : null,
           "layoutData" : {
-            "x" : 1440,
+            "x" : 1080,
             "y" : 720
           }
         },
@@ -413,8 +361,8 @@
       },
       {
         "definition" : {
-          "id" : "ddd",
-          "joinId" : "union111"
+          "id" : "rightVariableB",
+          "joinId" : "unionRight"
         },
         "type" : "BranchEndData"
       }
