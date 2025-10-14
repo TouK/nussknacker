@@ -4,11 +4,11 @@ import React, { forwardRef, useCallback, useMemo } from "react";
 import type ReactAce from "react-ace/lib/ace";
 import { useTranslation } from "react-i18next";
 
+import { tryParseOrNull } from "../../../../../common/JsonUtils";
 import type { VariableTypes } from "../../../../../types";
 import { InfoTooltip } from "../InfoTooltip";
-import type { ParamType } from "../types";
 import type { FieldError } from "../Validators";
-import type { OnValueChange, SimpleEditor } from "./Editor";
+import type { ExtendedEditor, OnValueChange } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { ExpressionSuggestProps } from "./ExpressionSuggest";
 import { ExpressionSuggest } from "./ExpressionSuggest";
@@ -180,4 +180,42 @@ Use autocompletion to explore available options. To read more see [Documentation
     );
 };
 
-export const SpelEditor: SimpleEditor<SpelEditorProps> = forwardRef(SpelEditorComponent) as SimpleEditor<SpelEditorProps>;
+export const SpelEditor: ExtendedEditor<SpelEditorProps> = forwardRef(SpelEditorComponent) as ExtendedEditor<SpelEditorProps>;
+
+const isParseable = (expressionObj: ExpressionObj) =>
+    tryParseOrNull(expressionObj.expression) && typeof tryParseOrNull(expressionObj.expression) === "object";
+
+SpelEditor.parseValueOnEditorChange = ({ expression, language }: ExpressionObj, newLanguage) => {
+    if (language === ExpressionLang.DictKeyWithLabel) {
+        return {
+            language: newLanguage,
+            expression: isParseable({ expression, language }) ? "" : expression,
+        };
+    }
+
+    if (language === ExpressionLang.SpELTemplate) {
+        if (expression === "") {
+            return { expression, language: newLanguage };
+        }
+
+        return { expression: `'${expression}'`, language: newLanguage };
+    }
+
+    return { expression, language: newLanguage };
+};
+
+function looksLikeSpelTemplateExpression(expr: string): boolean {
+    const trimmed = expr.trim();
+    return /#\{[\s\S]*?\}/.test(trimmed); // #{ ... }
+}
+
+SpelEditor.isSwitchableTo = (expressionObj) => {
+    if (expressionObj.language === ExpressionLang.SpELTemplate) {
+        return !looksLikeSpelTemplateExpression(expressionObj.expression);
+    }
+
+    return true;
+};
+
+SpelEditor.notSwitchableToHint = () =>
+    "The string-template-based input must be a literal value without embedded expressions to switch to expression mode";

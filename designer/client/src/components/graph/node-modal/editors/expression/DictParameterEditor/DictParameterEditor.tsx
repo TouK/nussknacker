@@ -178,17 +178,10 @@ const isParseable = (expressionObj: ExpressionObj) =>
 DictParameterEditor.notSwitchableToHint = () => i18next.t("editors.dictParameter.notSwitchableToHint", "");
 DictParameterEditor.isSwitchableTo = () => true;
 DictParameterEditor.parseValueOnEditorChange = (expressionObj: ExpressionObj, newLanguage: ExpressionLang) => {
-    if (newLanguage === ExpressionLang.DictKeyWithLabel) {
+    if (expressionObj.language === ExpressionLang.SpEL) {
         return {
             language: newLanguage,
             expression: isParseable(expressionObj) ? expressionObj.expression : "",
-        };
-    }
-
-    if (newLanguage === ExpressionLang.SpEL) {
-        return {
-            language: newLanguage,
-            expression: isParseable(expressionObj) ? "" : expressionObj.expression,
         };
     }
 
