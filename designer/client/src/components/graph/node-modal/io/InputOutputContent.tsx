@@ -10,7 +10,7 @@ export const InputOutputContent = forwardRef<HTMLDivElement, PropsOf<typeof Styl
     return (
         <InputOutputLayout>
             <Stack sx={{ height: "100%", justifyContent: "space-between" }}>
-                <Stack sx={{ overflow: "hidden" }}>
+                <Stack sx={{ overflow: "hidden", height: "100%" }}>
                     <ValueDragPreview>
                         <StyledContent {...props} />
                     </ValueDragPreview>

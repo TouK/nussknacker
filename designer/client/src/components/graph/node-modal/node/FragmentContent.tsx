@@ -1,3 +1,4 @@
+import { Box } from "@mui/material";
 import React, { useCallback, useState } from "react";
 
 import { useInitEffect } from "../../../../containers/hooks/useInitEffect";
@@ -9,7 +10,7 @@ import { getProcessCounts } from "../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import type { FragmentNodeType } from "../../../../types/node";
 import { ErrorBoundary } from "../../../common/error-boundary/ErrorBoundary";
-import { DialogErrorFallbackComponent } from "../../../common/error-boundary/fallbackComponent/DialogErrorFallbackComponent";
+import { SectionErrorFallbackComponent } from "../../../common/error-boundary/fallbackComponent/DialogErrorFallbackComponent";
 import type { Scenario } from "../../../Process/types";
 import { FragmentGraphPreview } from "../../fragmentGraph";
 import NodeUtils from "../../NodeUtils";
@@ -36,15 +37,19 @@ export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNode
 
     const fragmentCounts = (processCounts[nodeToDisplay.id] || {}).fragmentCounts || {};
 
+    if (!fragmentContent) {
+        return null;
+    }
+
     return (
-        <ErrorBoundary FallbackComponent={DialogErrorFallbackComponent}>
-            {fragmentContent && (
+        <Box sx={(theme) => ({ background: theme.palette.background.default, display: "grid", overflow: "hidden", minHeight: "400px" })}>
+            <ErrorBoundary FallbackComponent={SectionErrorFallbackComponent}>
                 <FragmentGraphPreview
                     processCounts={fragmentCounts}
                     scenario={fragmentContent}
                     nodeIdPrefixForFragmentTests={getFragmentNodesPrefix(fragmentContent)}
                 />
-            )}
-        </ErrorBoundary>
+            </ErrorBoundary>
+        </Box>
     );
 }

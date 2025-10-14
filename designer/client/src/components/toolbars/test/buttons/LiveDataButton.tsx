@@ -1,7 +1,6 @@
 import { Insights } from "@mui/icons-material";
-import React, { memo, useEffect, useState } from "react";
+import React, { memo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useIntervalWhen } from "rooks";
 
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
 import type { ThunkAction } from "../../../../actions/reduxTypes";
@@ -14,6 +13,7 @@ import {
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
+import { useProgress } from "./useProgress";
 
 // adjusted by eye for a good looking indicator with paused 100%
 function adjustProgress(percent: number) {
@@ -31,29 +31,21 @@ const LiveDataButton = memo(function LiveDataButton(props: ToolbarButtonProps) {
 
     const { disabled, type, title } = props;
 
-    const [percent, setPercent] = useState(0);
-
-    useIntervalWhen(
-        () => {
-            const percent = Math.round(((last + nextIn - Date.now()) / nextIn) * 100);
-            setPercent(adjustProgress(percent));
-        },
-        200,
-        working && nextIn > 5000,
-    );
+    const { percent, reset, isProgressing } = useProgress({ last, nextIn }, working && nextIn > 5000);
+    const progress = adjustProgress(percent);
 
     useEffect(() => {
         if (!working) {
-            setPercent(0);
+            reset();
         }
-    }, [working]);
+    }, [reset, working]);
 
     return (
         <>
             <ToolbarButton
-                isLoading={readyForLiveData && !disabled && nextIn > 5000 && percent > 0}
+                isLoading={readyForLiveData && !disabled && isProgressing}
                 loadingVariant={"determinate"}
-                loadingProgress={percent}
+                loadingProgress={progress}
                 isActive={working}
                 name={t("panels.actions.live-data.name", "live data")}
                 title={title ?? t("panels.actions.live-data.button.title", "live data")}

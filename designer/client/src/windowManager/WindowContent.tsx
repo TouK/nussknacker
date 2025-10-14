@@ -6,8 +6,6 @@ import type { PropsWithChildren, ReactElement } from "react";
 import React, { useMemo, useState } from "react";
 import { useKey } from "rooks";
 
-import { ErrorBoundary } from "../components/common/error-boundary/ErrorBoundary";
-import { DialogErrorFallbackComponent } from "../components/common/error-boundary/fallbackComponent/DialogErrorFallbackComponent";
 import { StyledContent, StyledHeader } from "../components/graph/node-modal/node/StyledHeader";
 import { IconModalHeader } from "../components/graph/node-modal/nodeDetails/NodeDetailsModalHeader";
 import { isInputTarget } from "../containers/BindKeyboardShortcuts";
@@ -63,7 +61,7 @@ export function WindowContent({ children, icon, subheader, buttons = [], closeWi
 
     return (
         <DefaultContent {...props} buttons={cleanList(buttons)} components={components} classnames={classnames}>
-            <ErrorBoundary FallbackComponent={DialogErrorFallbackComponent}>{children}</ErrorBoundary>
+            {children}
         </DefaultContent>
     );
 }
