@@ -92,7 +92,6 @@ describe("FieldSwitch", () => {
         ["#", true],
         ["'string literal'", false],
         ["a" + "b", true],
-        ["a" + "b", true],
         [`#DATE.now.toString + 'millis'`, true],
         ["", false],
     ])(
