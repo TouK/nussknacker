@@ -142,14 +142,11 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                     onChange={(_, value: string) => {
                         const selectedEditor = availableEditors.find((editor) => editor.type === value);
                         const editorParameters = editorsParameters[selectedEditor.type];
-                        const editorWithParseValueMethod = availableEditors.find((availableEditor) => {
-                            const editorToVerification = editors[availableEditor.type];
-                            return isExtendedEditor(editorToVerification) && Boolean(editorToVerification.parseValueOnEditorChange);
-                        });
-                        const editorComponent = editors[editorWithParseValueMethod?.type];
+                        const editorComponent = editors[selectedEditor.type];
+                        const editorWithParseValueMethod = isExtendedEditor(editorComponent) && editorComponent.parseValueOnEditorChange;
 
                         onValueChange(
-                            editorComponent && isExtendedEditor(editorComponent)
+                            editorWithParseValueMethod
                                 ? editorComponent?.parseValueOnEditorChange(expressionObj, editorParameters.language)
                                 : { ...expressionObj, language: editorParameters.language },
                         );
