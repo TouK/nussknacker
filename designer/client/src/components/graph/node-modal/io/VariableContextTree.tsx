@@ -107,7 +107,7 @@ export const VariableContextTree = memo(function ValuesContextTree({
         onIsEmptyChange?.(isEmpty);
     }, [direction, dispatch, onIsEmptyChange, transitionNodesIds.length]);
 
-    const showNodes = transitionNodesIds.filter((t) => t.id).length > 1;
+    const showNodes = transitionNodesIds.length > 1;
     const toggleRefresh = useCallback(
         (e: MouseEvent) => dispatch(e.type === "mouseenter" ? stopLiveData(Initiator.list) : startLiveData(Initiator.list)),
         [dispatch],
@@ -162,9 +162,9 @@ export const VariableContextTree = memo(function ValuesContextTree({
             >
                 <Typography variant="subtitle1">{direction === "input" ? "Input variables" : "Output variables"}</Typography>
                 <CountsForNodes
-                    nodes={transitionNodesIds.map(({ id, totalCount }) => ({
+                    nodes={transitionNodesIds.map(({ id, totalCount, results }) => ({
                         id,
-                        count: totalCount,
+                        count: totalCount ?? results?.length,
                     }))}
                     input={direction === "input"}
                 />

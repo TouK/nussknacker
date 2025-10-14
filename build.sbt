@@ -318,8 +318,7 @@ val slickV                    = "3.4.1"  // 3.5 drops Scala 2.12
 val slickPgV                  = "0.21.1" // 0.22.2 uses Slick 3.5
 val hikariCpV                 = "7.0.0"
 val hsqldbV                   = "2.7.4"
-val postgresV                 = "42.7.7"
-// Flway 10 requires Java 17
+val postgresV                 = "42.7.8"
 val flywayV                   = "9.22.3"
 val confluentV                = "7.5.1"
 val azureKafkaSchemaRegistryV = "1.1.2"
@@ -1679,7 +1678,7 @@ lazy val security = (project in file("security"))
         ExclusionRule("commons-logging", "commons-logging"),
         // we're using testcontainers-scala which requires a proper junit4 dependency
         ExclusionRule("io.quarkus", "quarkus-junit4-mock")
-      ) // 3.x requires Java 17
+      )
     )
   )
   .dependsOn(utilsInternal, httpUtils, testUtils % "it,test")

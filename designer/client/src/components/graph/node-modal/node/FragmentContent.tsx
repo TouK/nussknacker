@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 
 import { useInitEffect } from "../../../../containers/hooks/useInitEffect";
-import { getFragmentNodesPrefix, useModalDetailsIfNeeded } from "../../../../containers/hooks/useModalDetailsIfNeeded";
+import { getFragmentNodesPrefix, useModalsIfNeeded } from "../../../../containers/hooks/useModalsIfNeeded";
 import HttpService from "../../../../http/HttpService/instance";
 import { correctFetchedDetails } from "../../../../reducers/graph/correctFetchedDetails";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/getProcessDefinitionData";
@@ -19,7 +19,7 @@ export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNode
     const processDefinitionData = useAppSelector(getProcessDefinitionData);
 
     const [fragmentContent, setFragmentContent] = useState<Scenario>(null);
-    const { openFragmentNodes } = useModalDetailsIfNeeded();
+    const { openFragmentNodes } = useModalsIfNeeded();
 
     const initFragmentData = useCallback(async () => {
         if (fragmentContent) return;

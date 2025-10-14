@@ -18,6 +18,7 @@ import type { ScenarioActions, UpdateTestCapabilitiesAction } from "./nk/process
 import type { GetScenarioActivitiesAction, UpdateScenarioActivitiesAction } from "./nk/scenarioActivities";
 import type { SelectionActions } from "./nk/selection";
 import type { ToolbarActions } from "./nk/toolbars";
+import type { ToolWindowActions } from "./nk/toolWindow";
 import type { UiActions } from "./nk/ui/uiActions";
 import type { UserSettingsActions } from "./nk/userSettings";
 import type { SettingsActions } from "./settingsActions";
@@ -39,6 +40,7 @@ export type TypedAction =
     | SettingsActions
     | SquashHistoryActions
     | TestsActions
+    | ToolWindowActions
     | ToolbarActions
     | UiActions
     | UpdateScenarioActivitiesAction
