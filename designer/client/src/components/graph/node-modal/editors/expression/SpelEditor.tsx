@@ -4,6 +4,7 @@ import React, { forwardRef, useCallback, useMemo } from "react";
 import type ReactAce from "react-ace/lib/ace";
 import { useTranslation } from "react-i18next";
 
+import { tryParseOrNull } from "../../../../../common/JsonUtils";
 import type { VariableTypes } from "../../../../../types/validation";
 import { InfoTooltip } from "../InfoTooltip/InfoTooltip";
 import type { FieldError } from "../Validators";
@@ -181,7 +182,17 @@ Use autocompletion to explore available options. To read more see [Documentation
 
 export const SpelEditor: ExtendedEditor<SpelEditorProps> = forwardRef(SpelEditorComponent) as ExtendedEditor<SpelEditorProps>;
 
+const isParseable = (expressionObj: ExpressionObj) =>
+    tryParseOrNull(expressionObj.expression) && typeof tryParseOrNull(expressionObj.expression) === "object";
+
 SpelEditor.parseValueOnEditorChange = ({ expression, language }: ExpressionObj, newLanguage) => {
+    if (language === ExpressionLang.DictKeyWithLabel) {
+        return {
+            language: newLanguage,
+            expression: isParseable({ expression, language }) ? "" : expression,
+        };
+    }
+
     if (language === ExpressionLang.SpELTemplate) {
         if (expression === "") {
             return { expression, language: newLanguage };
