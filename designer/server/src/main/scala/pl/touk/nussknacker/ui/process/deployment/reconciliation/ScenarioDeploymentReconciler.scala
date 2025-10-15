@@ -1,10 +1,13 @@
 package pl.touk.nussknacker.ui.process.deployment.reconciliation
 
 import cats.data.Validated
+import cats.effect.IO
+import cats.effect.kernel.Resource
 import cats.implicits.toFunctorOps
 import cats.instances.list._
 import cats.instances.tuple._
 import cats.syntax.apply._
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.JobsRecoverySettings
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
@@ -41,6 +44,7 @@ import pl.touk.nussknacker.ui.process.repository.{
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import slick.dbio.DBIOAction
 
+import java.util.concurrent.{Executor, Executors, ThreadFactory}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -52,7 +56,8 @@ class ScenarioDeploymentReconciler(
     deploymentStatusesProvider: EngineSideDeploymentStatusesProvider,
     actionRepository: ScenarioActionRepository,
     scenarioRepository: FetchingProcessRepository[Future],
-    dbioActionRunner: DBIOActionRunner
+    dbioActionRunner: DBIOActionRunner,
+    reconcilerExecutor: Executor
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
 
@@ -106,12 +111,23 @@ class ScenarioDeploymentReconciler(
             prepareRunDeploymentCommandForValidScenario(scenario, deploymentId)
           })
           .map(_.flatten)
-      recoveryResult <- Future.sequence(runDeploymentCommandsByProcessingType.map {
-        case (processingType, deployCommand) =>
-          recoverScenarioJob(processingType, deployCommand)
-      })
+      recoveryResult <- runDeploymentsCommandOneByOne(runDeploymentCommandsByProcessingType)
       _ = logRecoveryEnd(recoveryResult)
     } yield ()
+  }
+
+  // We are not using just Futures.sequence because we don't want to generate too much load and steal resources for other operational purposes
+  private def runDeploymentsCommandOneByOne(
+      runDeploymentCommandsByProcessingType: List[(ProcessingType, DMRunDeploymentCommand)]
+  ) = {
+    implicit val user: LoggedUser = NussknackerInternalUser.instance
+    runDeploymentCommandsByProcessingType.foldLeft(Future.successful(List.empty[Try[Unit]])) {
+      case (resultsFuture, (processingType, deployCommand)) =>
+        (for {
+          results              <- resultsFuture
+          resultForOneScenario <- recoverScenarioJob(processingType, deployCommand)
+        } yield results :+ resultForOneScenario)(ExecutionContext.fromExecutor(reconcilerExecutor))
+    }
   }
 
   private def logRecoveryBegin(
@@ -257,5 +273,33 @@ object ScenarioDeploymentReconciler {
       val jobsRecoverySettings: JobsRecoverySettings,
       val scenarioResolver: ScenarioResolver
   )
+
+  def resource(
+      processingTypeServicesProvider: ProcessingTypeDataProvider[
+        ScenarioDeploymentReconciler.ProcessingTypeServicesDeps,
+        _
+      ],
+      deploymentStatusesProvider: EngineSideDeploymentStatusesProvider,
+      actionRepository: ScenarioActionRepository,
+      scenarioRepository: FetchingProcessRepository[Future],
+      dbioActionRunner: DBIOActionRunner
+  )(implicit executionContext: ExecutionContext): Resource[IO, ScenarioDeploymentReconciler] = {
+    Resource
+      .make(IO {
+        Executors.newSingleThreadExecutor(
+          new ThreadFactoryBuilder().setNameFormat("ScenarioDeploymentReconciler-%d").setDaemon(true).build()
+        )
+      })(executor => IO(executor.shutdown()))
+      .map { reconcilerExecutor =>
+        new ScenarioDeploymentReconciler(
+          processingTypeServicesProvider,
+          deploymentStatusesProvider,
+          actionRepository,
+          scenarioRepository,
+          dbioActionRunner,
+          reconcilerExecutor
+        )
+      }
+  }
 
 }

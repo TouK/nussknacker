@@ -7,11 +7,13 @@ import io.dropwizard.metrics5.jmx.JmxReporter
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
 import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
+import pl.touk.nussknacker.ui.process.deployment.reconciliation.ScenarioDeploymentReconciler
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.server.{NussknackerHttpServer, PekkoHttpBasedRouteFactory}
 
 import java.time.Clock
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 class NussknackerAppFactory(
     designerConfigLoader: DesignerConfigLoader,
@@ -38,9 +40,27 @@ class NussknackerAppFactory(
         domainServices = domainServices
       )
       _ <- new NussknackerHttpServer(infrastructureServices, alreadyLoadedConfig).start(route)
+      _ = {
+        // We don't wait for recovery because it may take a while, and we don't want health check to detect that we have problem with application starting
+        recoverNotRunningDeploymentsThatShouldBeRunning(domainServices.reconciler)(
+          infrastructureServices.executionContextWithIORuntime
+        )
+      }
       _ <- startJmxReporter(infrastructureServices.metricsRegistry)
       _ <- createStartAndStopLoggingEntries()
     } yield ()
+  }
+
+  private def recoverNotRunningDeploymentsThatShouldBeRunning(
+      reconciler: ScenarioDeploymentReconciler
+  )(implicit ec: ExecutionContext): Unit = {
+    reconciler.recoverNotRunningDeploymentsThatShouldBeRunning(_.recoverJobsOnStart).onComplete {
+      case Success(_) =>
+      case Failure(
+            exception
+          ) => // It is done just in case, it rather shouldn't happen because we have exception handling for each recovered deployment
+        logger.error("Error while deployments recovery", exception)
+    }
   }
 
   private def startJmxReporter(metricsRegistry: MetricRegistry) = {
