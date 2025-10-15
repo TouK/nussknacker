@@ -92,6 +92,7 @@ final class DomainServices(
     val limitsService: LimitsService,
     val processCounter: ProcessCounter,
     val liveDataRepository: LiveDataRepository,
+    val reconciler: ScenarioDeploymentReconciler
 )
 
 object DomainServices extends LazyLogging {
@@ -311,10 +312,6 @@ object DomainServices extends LazyLogging {
         futureProcessRepository,
         dbioRunner
       )
-      _ = {
-        // We don't wait for recovery because it may take a while, and we don't want health check to detect that we have problem with application starting
-        recoverNotRunningDeploymentsThatShouldBeRunning(reconciler)
-      }
       _ <- FinishedDeploymentsStatusesSynchronizationScheduler.resource(
         actorSystem,
         reconciler,
@@ -362,6 +359,7 @@ object DomainServices extends LazyLogging {
       limitsService = limitsService,
       processCounter = counter,
       liveDataRepository = liveDataRepository,
+      reconciler = reconciler
     )
   }
 
@@ -458,18 +456,6 @@ object DomainServices extends LazyLogging {
       componentDefinitionExtractionMode,
       Some(infrastructureServices.dbRef)
     )
-  }
-
-  private def recoverNotRunningDeploymentsThatShouldBeRunning(
-      reconciler: ScenarioDeploymentReconciler
-  )(implicit ec: ExecutionContext): Unit = {
-    reconciler.recoverNotRunningDeploymentsThatShouldBeRunning(_.recoverJobsOnStart).onComplete {
-      case Success(_) =>
-      case Failure(
-            exception
-          ) => // It is done jus in case, it rather shouldn't happen because we have exception handling for each recovered deployment
-        logger.error("Error while deployments recovery", exception)
-    }
   }
 
   private def createLimitsService(
