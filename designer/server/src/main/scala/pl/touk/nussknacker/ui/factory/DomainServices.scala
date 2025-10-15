@@ -298,7 +298,7 @@ object DomainServices extends LazyLogging {
         )
       }
 
-      reconciler <- ScenarioDeploymentReconciler.resource(
+      reconciler = new ScenarioDeploymentReconciler(
         processingTypeServicesProvider.mapValues(services =>
           new ScenarioDeploymentReconciler.ProcessingTypeServicesDeps(
             deploymentManager = services.deploymentData.validDeploymentManagerOrStub,

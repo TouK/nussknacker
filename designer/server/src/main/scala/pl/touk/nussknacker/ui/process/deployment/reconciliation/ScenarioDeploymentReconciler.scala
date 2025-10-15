@@ -1,35 +1,16 @@
 package pl.touk.nussknacker.ui.process.deployment.reconciliation
 
 import cats.data.Validated
-import cats.effect.IO
-import cats.effect.kernel.Resource
-import cats.implicits.toFunctorOps
-import cats.instances.list._
-import cats.instances.tuple._
-import cats.syntax.apply._
-import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.JobsRecoverySettings
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
-import pl.touk.nussknacker.engine.api.deployment.{
-  DataFreshnessPolicy,
-  DeploymentManager,
-  DeploymentUpdateStrategy,
-  DMRunDeploymentCommand,
-  DMValidateScenarioCommand
-}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy.Fresh
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{
-  AdditionalModelConfigs,
-  DeploymentData,
-  DeploymentId,
-  EngineSetupName,
-  User
-}
+import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
@@ -44,7 +25,6 @@ import pl.touk.nussknacker.ui.process.repository.{
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import slick.dbio.DBIOAction
 
-import java.util.concurrent.{Executor, Executors, ThreadFactory}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -56,8 +36,7 @@ class ScenarioDeploymentReconciler(
     deploymentStatusesProvider: EngineSideDeploymentStatusesProvider,
     actionRepository: ScenarioActionRepository,
     scenarioRepository: FetchingProcessRepository[Future],
-    dbioActionRunner: DBIOActionRunner,
-    reconcilerExecutor: Executor
+    dbioActionRunner: DBIOActionRunner
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
 
@@ -123,10 +102,10 @@ class ScenarioDeploymentReconciler(
     implicit val user: LoggedUser = NussknackerInternalUser.instance
     runDeploymentCommandsByProcessingType.foldLeft(Future.successful(List.empty[Try[Unit]])) {
       case (resultsFuture, (processingType, deployCommand)) =>
-        (for {
+        for {
           results              <- resultsFuture
           resultForOneScenario <- recoverScenarioJob(processingType, deployCommand)
-        } yield results :+ resultForOneScenario)(ExecutionContext.fromExecutor(reconcilerExecutor))
+        } yield results :+ resultForOneScenario
     }
   }
 
@@ -273,33 +252,5 @@ object ScenarioDeploymentReconciler {
       val jobsRecoverySettings: JobsRecoverySettings,
       val scenarioResolver: ScenarioResolver
   )
-
-  def resource(
-      processingTypeServicesProvider: ProcessingTypeDataProvider[
-        ScenarioDeploymentReconciler.ProcessingTypeServicesDeps,
-        _
-      ],
-      deploymentStatusesProvider: EngineSideDeploymentStatusesProvider,
-      actionRepository: ScenarioActionRepository,
-      scenarioRepository: FetchingProcessRepository[Future],
-      dbioActionRunner: DBIOActionRunner
-  )(implicit executionContext: ExecutionContext): Resource[IO, ScenarioDeploymentReconciler] = {
-    Resource
-      .make(IO {
-        Executors.newSingleThreadExecutor(
-          new ThreadFactoryBuilder().setNameFormat("ScenarioDeploymentReconciler-%d").setDaemon(true).build()
-        )
-      })(executor => IO(executor.shutdown()))
-      .map { reconcilerExecutor =>
-        new ScenarioDeploymentReconciler(
-          processingTypeServicesProvider,
-          deploymentStatusesProvider,
-          actionRepository,
-          scenarioRepository,
-          dbioActionRunner,
-          reconcilerExecutor
-        )
-      }
-  }
 
 }

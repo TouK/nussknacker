@@ -35,7 +35,6 @@ import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepo
 import sttp.client3.testing.SttpBackendStub
 
 import java.time.Clock
-import java.util.concurrent.Executors
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
@@ -128,8 +127,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
         deploymentsStatusesProvider,
         actionRepository,
         fetchingScenarioFutureRepository,
-        dbioRunner,
-        Executors.newSingleThreadExecutor
+        dbioRunner
       )
 
     val fragmentResolver = new FragmentResolver(newFragmentRepository(dbRef))
