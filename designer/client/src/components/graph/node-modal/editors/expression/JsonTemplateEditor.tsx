@@ -4,6 +4,7 @@ import type { ExtendedEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { SpelEditorProps } from "./SpelEditor";
 import { SpelEditor } from "./SpelEditor";
+import { addQuotes } from "./SpelQuotesUtils";
 import { EditorMode, ExpressionLang, type ExpressionObj } from "./types";
 
 export const JsonTemplateEditor: ExtendedEditor<SpelEditorProps> = (props: SpelEditorProps) => {
@@ -30,17 +31,7 @@ export const JsonTemplateEditor: ExtendedEditor<SpelEditorProps> = (props: SpelE
 
 JsonTemplateEditor.parseValueOnEditorChange = ({ expression, language }: ExpressionObj, newLanguage) => {
     if (language === ExpressionLang.SpELTemplate) {
-        if (expression === "") {
-            return { expression, language: newLanguage };
-        }
-
-        const expressionContainsSingleQuote = expression.includes("'");
-        if (expressionContainsSingleQuote) {
-            const escaped = expression.replace(/"/g, '\\"');
-            return { expression: `"${escaped}"`, language: newLanguage };
-        }
-
-        return { expression: `'${expression}'`, language: newLanguage };
+        return { expression: addQuotes(expression), language: newLanguage };
     }
 
     return { expression, language: newLanguage };

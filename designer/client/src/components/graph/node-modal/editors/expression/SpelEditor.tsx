@@ -13,6 +13,7 @@ import { editorsParameters } from "./editorsParameters";
 import type { ExpressionSuggestProps } from "./ExpressionSuggest";
 import { ExpressionSuggest } from "./ExpressionSuggest";
 import { ResetToDefaultButton } from "./ResetToDefaultButton";
+import { addQuotes } from "./SpelQuotesUtils";
 import type { ExpressionObj } from "./types";
 import { EditorMode, ExpressionLang } from "./types";
 
@@ -194,17 +195,7 @@ SpelEditor.parseValueOnEditorChange = ({ expression, language }: ExpressionObj, 
     }
 
     if (language === ExpressionLang.SpELTemplate) {
-        if (expression === "") {
-            return { expression, language: newLanguage };
-        }
-
-        const expressionContainsSingleQuote = expression.includes("'");
-        if (expressionContainsSingleQuote) {
-            const escaped = expression.replace(/"/g, '\\"');
-            return { expression: `"${escaped}"`, language: newLanguage };
-        }
-
-        return { expression: `'${expression}'`, language: newLanguage };
+        return { expression: addQuotes(expression), language: newLanguage };
     }
 
     return { expression, language: newLanguage };

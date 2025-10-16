@@ -83,3 +83,17 @@ export function getQuotationMark(value: string): QuotationMark {
             return defaultQuotationMark;
     }
 }
+
+export function addQuotes(expression: string) {
+    if (expression === "") {
+        return expression;
+    }
+
+    const expressionContainsSingleQuote = expression.includes("'");
+    if (expressionContainsSingleQuote) {
+        const escaped = expression.replace(/"/g, '\\"');
+        return `"${escaped}"`;
+    }
+
+    return `'${expression}'`;
+}

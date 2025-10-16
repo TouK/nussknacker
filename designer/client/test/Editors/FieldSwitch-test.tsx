@@ -41,7 +41,7 @@ describe("FieldSwitch", () => {
     it.each<[string, string]>([
         ["test", "'test'"],
         ["", ""],
-        ["sinqle'quote", '"sinqle\'quote"'],
+        ["single'quote", '"single\'quote"'],
         ["double''quote", "\"double''quote\""],
     ])(
         "Should verify that quotes at the start and end of the %s text are added when switching from SpELTemplate to SpEL",
@@ -69,7 +69,7 @@ describe("FieldSwitch", () => {
     it.each<[string, string]>([
         ["test", "'test'"],
         ["", ""],
-        ["sinqle'quote", '"sinqle\'quote"'],
+        ["single'quote", '"single\'quote"'],
         ["double''quote", "\"double''quote\""],
     ])(
         "Should verify that quotes at the start and end of the %s text are added when switching from string template to json template editor",

@@ -4,6 +4,7 @@ import type { ExtendedEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { SpelEditorProps } from "./SpelEditor";
 import { SpelEditor } from "./SpelEditor";
+import { isQuoted } from "./SpelQuotesUtils";
 import { EditorMode, ExpressionLang, type ExpressionObj } from "./types";
 
 export const SpelTemplateEditor: ExtendedEditor<SpelEditorProps> = (props: SpelEditorProps) => {
@@ -40,10 +41,7 @@ function looksLikeStringLiteral(expr: string): boolean {
 
     if (trimmed === "") return true;
 
-    const singleQuoted = /^'(?:\\'|''|[^'])*'$/.test(trimmed);
-    const doubleQuoted = /^"(?:\\"|""|[^"])*"$/.test(trimmed);
-
-    return singleQuoted || doubleQuoted;
+    return isQuoted(expr);
 }
 
 SpelTemplateEditor.isSwitchableTo = (expressionObj) => {
