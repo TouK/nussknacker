@@ -66,6 +66,37 @@ describe("FieldSwitch", () => {
         },
     );
 
+    it.each<[string, string]>([
+        ["test", "'test'"],
+        ["", ""],
+        ["sinqle'quote", '"sinqle\'quote"'],
+        ["double''quote", "\"double''quote\""],
+    ])(
+        "Should verify that quotes at the start and end of the %s text are added when switching from string template to json template editor",
+        (expression, expectedExpression) => {
+            const mockOnValueChange = jest.fn();
+            render(
+                <FieldSwitch
+                    expressionObj={{ expression, language: ExpressionLang.SpELTemplate }}
+                    availableEditors={[
+                        { type: EditorType.JSON_TEMPLATE_PARAMETER_EDITOR },
+                        { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR },
+                    ]}
+                    onValueChange={mockOnValueChange}
+                >
+                    children
+                </FieldSwitch>,
+            );
+
+            fireEvent.click(screen.getByRole("tab", { name: "json template" }));
+
+            expect(mockOnValueChange).toHaveBeenCalledWith({
+                expression: expectedExpression,
+                language: "jsonTemplate",
+            });
+        },
+    );
+
     it.each<[string, boolean]>([
         ["test #{ #Base64() }", true],
         ["#{ #Base64() }", true],
@@ -97,13 +128,48 @@ describe("FieldSwitch", () => {
         [`#DATE.now.toString + 'millis'`, true],
         ["", false],
     ])(
-        "should verify that expression switch field option is disabled when expression contains %s SpEL expression",
+        "should verify that string template switch field option is disabled when expression contains %s SpEL expression and expression editor configured",
         (expression, isDisabled) => {
             const mockOnValueChange = jest.fn();
             render(
                 <FieldSwitch
                     expressionObj={{ expression, language: ExpressionLang.SpEL }}
                     availableEditors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }, { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR }]}
+                    onValueChange={mockOnValueChange}
+                >
+                    children
+                </FieldSwitch>,
+            );
+
+            expect(screen.getByRole("tab", { name: "string template" })).toHaveAttribute("aria-disabled", String(isDisabled));
+        },
+    );
+
+    it.each<[string, boolean]>([
+        [
+            "{\n" +
+                '  "name": "#{ #input.name }",\n' +
+                '  "age": #{ #input.age },\n' +
+                "  #{ #input.secondName ?: ', \"secondName\": \"' + #input.secondName + '\"' }\n" +
+                "}",
+            true,
+        ],
+        ["'string literal'", false],
+        ["a" + "b", true],
+        ["", false],
+        ["32", true],
+        ["true", true],
+    ])(
+        "should verify that string template switch field option is disabled when expression contains %s SpEL expression and json template editor configured",
+        (expression, isDisabled) => {
+            const mockOnValueChange = jest.fn();
+            render(
+                <FieldSwitch
+                    expressionObj={{ expression, language: ExpressionLang.JsonTemplate }}
+                    availableEditors={[
+                        { type: EditorType.JSON_TEMPLATE_PARAMETER_EDITOR },
+                        { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR },
+                    ]}
                     onValueChange={mockOnValueChange}
                 >
                     children

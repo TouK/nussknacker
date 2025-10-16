@@ -28,7 +28,7 @@ export const SpelTemplateEditor: ExtendedEditor<SpelEditorProps> = (props: SpelE
     );
 };
 SpelTemplateEditor.parseValueOnEditorChange = ({ expression, language }: ExpressionObj, newLanguage) => {
-    if (language === ExpressionLang.SpEL) {
+    if (language !== ExpressionLang.SpELTemplate) {
         return { expression: expression.replace(/^['"]|['"]$/g, ""), language: newLanguage };
     }
 
@@ -47,10 +47,10 @@ function looksLikeStringLiteral(expr: string): boolean {
 }
 
 SpelTemplateEditor.isSwitchableTo = (expressionObj) => {
-    if (expressionObj.language === ExpressionLang.SpEL) {
+    if (expressionObj.language !== ExpressionLang.SpELTemplate) {
         return looksLikeStringLiteral(expressionObj.expression);
     }
 
     return true;
 };
-SpelTemplateEditor.notSwitchableToHint = () => "The expression must be a literal value to switch to string template mode";
+SpelTemplateEditor.notSwitchableToHint = () => "There needs to be a literal value provided to switch to string template mode";

@@ -1,12 +1,12 @@
 import React, { useMemo } from "react";
 
-import type { SimpleEditor } from "./Editor";
+import type { ExtendedEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { SpelEditorProps } from "./SpelEditor";
 import { SpelEditor } from "./SpelEditor";
-import { EditorMode } from "./types";
+import { EditorMode, ExpressionLang, type ExpressionObj } from "./types";
 
-export const JsonTemplateEditor: SimpleEditor<SpelEditorProps> = (props: SpelEditorProps) => {
+export const JsonTemplateEditor: ExtendedEditor<SpelEditorProps> = (props: SpelEditorProps) => {
     const { expressionObj, rows = 5, ...passProps } = props;
 
     const value = useMemo(
@@ -27,3 +27,27 @@ export const JsonTemplateEditor: SimpleEditor<SpelEditorProps> = (props: SpelEdi
         />
     );
 };
+
+JsonTemplateEditor.parseValueOnEditorChange = ({ expression, language }: ExpressionObj, newLanguage) => {
+    if (language === ExpressionLang.SpELTemplate) {
+        if (expression === "") {
+            return { expression, language: newLanguage };
+        }
+
+        const expressionContainsSingleQuote = expression.includes("'");
+        if (expressionContainsSingleQuote) {
+            const escaped = expression.replace(/"/g, '\\"');
+            return { expression: `"${escaped}"`, language: newLanguage };
+        }
+
+        return { expression: `'${expression}'`, language: newLanguage };
+    }
+
+    return { expression, language: newLanguage };
+};
+
+JsonTemplateEditor.isSwitchableTo = () => {
+    return true;
+};
+
+JsonTemplateEditor.notSwitchableToHint = () => "";
