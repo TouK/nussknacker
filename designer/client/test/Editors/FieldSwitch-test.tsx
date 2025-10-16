@@ -16,7 +16,7 @@ describe("FieldSwitch", () => {
         ['"test"', "test"],
         ["'test'", "test"],
     ])(
-        "Should verify that apostrophes at the start and end of the %s text are removed when switching from SpEL to SpELTemplate",
+        "Should verify that quotes at the start and end of the %s text are removed when switching from SpEL to SpELTemplate",
         (expression, expectedExpression) => {
             const mockOnValueChange = jest.fn();
             render(
@@ -41,8 +41,10 @@ describe("FieldSwitch", () => {
     it.each<[string, string]>([
         ["test", "'test'"],
         ["", ""],
+        ["sinqle'quote", '"sinqle\'quote"'],
+        ["double''quote", "\"double''quote\""],
     ])(
-        "Should verify that apostrophes at the start and end of the %s text are added when switching from SpELTemplate to SpEL",
+        "Should verify that quotes at the start and end of the %s text are added when switching from SpELTemplate to SpEL",
         (expression, expectedExpression) => {
             const mockOnValueChange = jest.fn();
             render(

@@ -198,6 +198,12 @@ SpelEditor.parseValueOnEditorChange = ({ expression, language }: ExpressionObj, 
             return { expression, language: newLanguage };
         }
 
+        const expressionContainsSingleQuote = expression.includes("'");
+        if (expressionContainsSingleQuote) {
+            const escaped = expression.replace(/"/g, '\\"');
+            return { expression: `"${escaped}"`, language: newLanguage };
+        }
+
         return { expression: `'${expression}'`, language: newLanguage };
     }
 
