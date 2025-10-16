@@ -9,13 +9,14 @@ import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.flink.util.keyed
-import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValueMapper
+import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValueMapper, KeyOptions}
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
@@ -26,6 +27,7 @@ import scala.annotation.nowarn
 class FlinkKafkaUniversalSink(
     preparedTopic: PreparedKafkaTopic[TopicName.ForSink],
     key: LazyParameter[AnyRef],
+    keyParameterName: ParameterName,
     value: LazyParameter[AnyRef],
     kafkaComponentsConfig: KafkaComponentsConfig,
     serializationSchema: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]],
@@ -64,7 +66,16 @@ class FlinkKafkaUniversalSink(
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[ValueWithContext[Value]] = {
     val typeInfo = keyed.typeInfo(flinkNodeContext, key, value)
-    ds.flatMap(new KeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, value), typeInfo)
+    ds.flatMap(
+      new KeyedValueMapper(
+        flinkNodeContext.lazyParameterHelper,
+        key,
+        keyParameterName,
+        KeyOptions(allowNullableKeys = true),
+        value
+      ),
+      typeInfo
+    )
   }
 
   @nowarn("cat=deprecation")

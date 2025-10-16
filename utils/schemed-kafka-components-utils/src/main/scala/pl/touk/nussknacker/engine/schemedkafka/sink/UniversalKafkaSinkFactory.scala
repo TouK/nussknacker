@@ -405,6 +405,7 @@ class UniversalKafkaSinkFactory(
     implProvider.createSink(
       preparedTopic,
       key,
+      sinkKeyParamName,
       valueLazyParam,
       kafkaComponentsConfig,
       serializationSchema,

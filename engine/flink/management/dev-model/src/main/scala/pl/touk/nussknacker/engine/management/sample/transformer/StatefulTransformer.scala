@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.{
   ParamName,
   ValueWithContext
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
 
@@ -24,7 +25,7 @@ case object StatefulTransformer extends CustomStreamTransformer with LazyLogging
   def execute(@ParamName("groupBy") groupBy: LazyParameter[String]): FlinkCustomStreamTransformation =
     FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       start
-        .groupBy(groupBy)(ctx)
+        .groupBy(groupBy, ParameterName("groupBy"))(ctx)
         .mapWithState[ValueWithContext[AnyRef], util.List[String]] {
           case (StringFromIr(ir, sr), oldState) =>
             logger.info(s"received: $sr, current state: $oldState")

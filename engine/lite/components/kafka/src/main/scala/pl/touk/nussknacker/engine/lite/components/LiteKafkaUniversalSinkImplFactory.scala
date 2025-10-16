@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.lite.components
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.LazyParameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, PreparedKafkaTopic}
@@ -18,6 +19,7 @@ object LiteKafkaUniversalSinkImplFactory extends UniversalKafkaSinkImplFactory {
   override def createSink(
       preparedTopic: PreparedKafkaTopic[TopicName.ForSink],
       keyParam: LazyParameter[AnyRef],
+      keyParameterName: ParameterName,
       valueParam: LazyParameter[AnyRef],
       kafkaComponentsConfig: KafkaComponentsConfig,
       serializationSchema: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]],

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.join
 
-import cats.Id
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
@@ -32,6 +31,7 @@ import pl.touk.nussknacker.engine.flink.api.typeinfo.option.OptionTypeInfo
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
+import pl.touk.nussknacker.engine.flink.util.keyed.KeyOptions
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
@@ -151,7 +151,13 @@ class FullOuterJoinTransformer(
 
         stream
           .flatMap(
-            new StringKeyedValueMapper(context, keyByBranchId(id), valueParameter),
+            new StringKeyedValueMapper(
+              context,
+              keyByBranchId(id),
+              KeyParamDeclaration.parameterName,
+              KeyOptions(allowNullableKeys = false),
+              valueParameter
+            ),
             branchTypeInfo
           )
           .map(_.map(_.mapValue { x =>

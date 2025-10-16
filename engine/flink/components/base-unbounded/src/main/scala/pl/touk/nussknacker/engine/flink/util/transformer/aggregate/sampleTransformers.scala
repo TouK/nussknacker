@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes.SetOf
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.editor._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 
 import java.util.concurrent.TimeUnit
@@ -60,6 +61,7 @@ object sampleTransformers {
       val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
       transformers.slidingTransformer(
         groupBy,
+        ParameterName("groupBy"),
         aggregateBy,
         aggregator,
         windowDuration,
@@ -120,6 +122,7 @@ object sampleTransformers {
         .map(o => AggregateWindowsOffsetProvider.offset(windowDuration, o))
       transformers.tumblingTransformer(
         groupBy,
+        ParameterName("groupBy"),
         aggregateBy,
         aggregator,
         windowDuration,
@@ -181,6 +184,7 @@ object sampleTransformers {
       val sessionTimeoutDuration = Duration(sessionTimeout.toMillis, TimeUnit.MILLISECONDS)
       transformers.sessionWindowTransformer(
         groupBy,
+        ParameterName("groupBy"),
         aggregateBy,
         aggregator,
         sessionTimeoutDuration,

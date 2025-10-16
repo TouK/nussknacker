@@ -9,6 +9,7 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
 
@@ -32,7 +33,7 @@ class DelayTransformer extends CustomStreamTransformer with ExplicitUidInOperato
         Option(key)
           .map { _ =>
             stream
-              .groupBy(key)(ctx)
+              .groupBy(key, ParameterName("key"))(ctx)
           }
           .getOrElse {
             stream

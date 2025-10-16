@@ -9,6 +9,7 @@ import org.apache.flink.streaming.api.windowing.triggers.EventTimeTrigger
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import pl.touk.nussknacker.engine.api.{Context => NkContext, _}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
@@ -28,6 +29,7 @@ object transformers {
 
   def slidingTransformer(
       groupBy: LazyParameter[AnyRef],
+      groupByParameterName: ParameterName,
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
       windowLength: Duration,
@@ -62,7 +64,7 @@ object transformers {
                 fctx.convertToEngineRuntimeContext
               )
           start
-            .groupByWithValue(groupBy, aggregateBy)
+            .groupByWithValue(groupBy, groupByParameterName, aggregateBy)
             .process(aggregatorFunction, typeInfos.returnedValueTypeInfo)
             .setUidWithName(ctx, explicitUidInStatefulOperators)
         })
@@ -71,6 +73,7 @@ object transformers {
 
   def tumblingTransformer(
       groupBy: LazyParameter[AnyRef],
+      groupByParameterName: ParameterName,
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
       windowLength: Duration,
@@ -79,6 +82,7 @@ object transformers {
   )(implicit nodeId: NodeId): ContextTransformation = {
     tumblingTransformer(
       groupBy,
+      groupByParameterName,
       aggregateBy,
       aggregator,
       windowLength,
@@ -92,6 +96,7 @@ object transformers {
   @nowarn("cat=deprecation")
   def tumblingTransformer(
       groupBy: LazyParameter[AnyRef],
+      groupByParameterName: ParameterName,
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
       windowLength: Duration,
@@ -115,7 +120,7 @@ object transformers {
           val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
 
           val keyedStream = start
-            .groupByWithValue(groupBy, aggregateBy)
+            .groupByWithValue(groupBy, groupByParameterName, aggregateBy)
           val aggregatingFunction =
             new UnwrappingAggregateFunction[AnyRef](aggregator, aggregateBy.returnType, identity)
           val offsetMillis = windowOffset.getOrElse(Duration.Zero).toMillis
@@ -158,6 +163,7 @@ object transformers {
   @nowarn("cat=deprecation")
   def sessionWindowTransformer(
       groupBy: LazyParameter[AnyRef],
+      groupByParameterName: ParameterName,
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
       sessionTimeout: Duration,
@@ -187,7 +193,7 @@ object transformers {
           val groupByValue = aggregateBy.product(endSessionCondition)
 
           val keyedStream = start
-            .groupByWithValue(groupBy, groupByValue)
+            .groupByWithValue(groupBy, groupByParameterName, groupByValue)
           val aggregatingFunction =
             new UnwrappingAggregateFunction[(AnyRef, java.lang.Boolean)](aggregator, aggregateBy.returnType, _._1)
           val windowDefinition = EventTimeSessionWindows.withGap(Time.milliseconds(sessionTimeout.toMillis))
