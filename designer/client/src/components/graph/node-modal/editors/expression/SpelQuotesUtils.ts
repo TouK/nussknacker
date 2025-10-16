@@ -1,5 +1,7 @@
 import { curry, flow } from "lodash";
 
+import { ExpressionLang } from "./types";
+
 export enum QuotationMark {
     single = `'`,
     double = `"`,
@@ -84,7 +86,7 @@ export function getQuotationMark(value: string): QuotationMark {
     }
 }
 
-export function addQuotes(expression: string) {
+export function addQuotesToExpression({ expression, language }: { expression: string; language: ExpressionLang }) {
     if (expression === "") {
         return expression;
     }
@@ -93,6 +95,10 @@ export function addQuotes(expression: string) {
     if (expressionContainsSingleQuote) {
         const escaped = expression.replace(/"/g, '\\"');
         return `"${escaped}"`;
+    }
+
+    if (language === ExpressionLang.JsonTemplate) {
+        return `"${expression}"`;
     }
 
     return `'${expression}'`;

@@ -67,7 +67,7 @@ describe("FieldSwitch", () => {
     );
 
     it.each<[string, string]>([
-        ["test", "'test'"],
+        ["test", '"test"'],
         ["", ""],
         ["single'quote", '"single\'quote"'],
         ["double''quote", "\"double''quote\""],
