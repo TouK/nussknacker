@@ -1,12 +1,13 @@
 import React, { useMemo } from "react";
 
-import type { SimpleEditor } from "./Editor";
+import type { ExtendedEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { SpelEditorProps } from "./SpelEditor";
 import { SpelEditor } from "./SpelEditor";
-import { EditorMode } from "./types";
+import { addQuotesToExpression } from "./SpelQuotesUtils";
+import { EditorMode, ExpressionLang, type ExpressionObj } from "./types";
 
-export const JsonTemplateEditor: SimpleEditor<SpelEditorProps> = (props: SpelEditorProps) => {
+export const JsonTemplateEditor: ExtendedEditor<SpelEditorProps> = (props: SpelEditorProps) => {
     const { expressionObj, rows = 5, ...passProps } = props;
 
     const value = useMemo(
@@ -27,3 +28,17 @@ export const JsonTemplateEditor: SimpleEditor<SpelEditorProps> = (props: SpelEdi
         />
     );
 };
+
+JsonTemplateEditor.parseValueOnEditorChange = ({ expression, language }: ExpressionObj, newLanguage) => {
+    if (language === ExpressionLang.SpELTemplate) {
+        return { expression: addQuotesToExpression({ expression, language: newLanguage }), language: newLanguage };
+    }
+
+    return { expression, language: newLanguage };
+};
+
+JsonTemplateEditor.isSwitchableTo = () => {
+    return true;
+};
+
+JsonTemplateEditor.notSwitchableToHint = () => "";
