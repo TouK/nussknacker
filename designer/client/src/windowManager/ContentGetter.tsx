@@ -4,6 +4,7 @@ import React from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { DialogErrorFallbackComponent } from "../components/common/error-boundary/fallbackComponent/DialogErrorFallbackComponent";
+import { DialogWithChildren } from "../components/DialogWithChildren";
 import FrameDialog from "../components/FrameDialog";
 import AddAttachmentDialog from "../components/modals/AddAttachmentDialog";
 import RemoteModuleDialog from "../components/RemoteModuleDialog";
@@ -114,6 +115,8 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <FrameDialog {...props} />;
         case WindowKind.remote:
             return <RemoteModuleDialog {...props} />;
+        case WindowKind.withChildren:
+            return <DialogWithChildren {...props} />;
         case WindowKind.scenarioDetails:
             return <ScenarioDetailsDialog {...props} />;
         case WindowKind.addComment:
