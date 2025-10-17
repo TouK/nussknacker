@@ -99,6 +99,30 @@ const config: Configuration = {
                     }
                 },
             },
+            "/hermesManagement": {
+                target: process.env.BACKEND_DOMAIN.replace("-nussknacker.", "-hermes-management."),
+                changeOrigin: true,
+                onProxyRes: (proxyRes, req) => {
+                    if (req.headers?.origin) {
+                        proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin;
+                    }
+                },
+                pathRewrite: {
+                    "^/hermesManagement": "/",
+                },
+            },
+            "/hermesFrontend": {
+                target: process.env.BACKEND_DOMAIN.replace("-nussknacker.", "-gateway."),
+                changeOrigin: true,
+                onProxyRes: (proxyRes, req) => {
+                    if (req.headers?.origin) {
+                        proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin;
+                    }
+                },
+                pathRewrite: {
+                    "^/hermesFrontend": "/",
+                },
+            },
             "/grafana": {
                 target: process.env.BACKEND_DOMAIN,
                 changeOrigin: true,
