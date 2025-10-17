@@ -4,6 +4,7 @@ import type { ExtendedEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { SpelEditorProps } from "./SpelEditor";
 import { SpelEditor } from "./SpelEditor";
+import { isQuoted } from "./SpelQuotesUtils";
 import { EditorMode, ExpressionLang, type ExpressionObj } from "./types";
 
 export const SpelTemplateEditor: ExtendedEditor<SpelEditorProps> = (props: SpelEditorProps) => {
@@ -28,7 +29,7 @@ export const SpelTemplateEditor: ExtendedEditor<SpelEditorProps> = (props: SpelE
     );
 };
 SpelTemplateEditor.parseValueOnEditorChange = ({ expression, language }: ExpressionObj, newLanguage) => {
-    if (language === ExpressionLang.SpEL) {
+    if (language !== ExpressionLang.SpELTemplate) {
         return { expression: expression.replace(/^['"]|['"]$/g, ""), language: newLanguage };
     }
 
@@ -40,17 +41,14 @@ function looksLikeStringLiteral(expr: string): boolean {
 
     if (trimmed === "") return true;
 
-    const singleQuoted = /^'(?:\\'|''|[^'])*'$/.test(trimmed);
-    const doubleQuoted = /^"(?:\\"|""|[^"])*"$/.test(trimmed);
-
-    return singleQuoted || doubleQuoted;
+    return isQuoted(expr);
 }
 
 SpelTemplateEditor.isSwitchableTo = (expressionObj) => {
-    if (expressionObj.language === ExpressionLang.SpEL) {
+    if (expressionObj.language !== ExpressionLang.SpELTemplate) {
         return looksLikeStringLiteral(expressionObj.expression);
     }
 
     return true;
 };
-SpelTemplateEditor.notSwitchableToHint = () => "The expression must be a literal value to switch to string template mode";
+SpelTemplateEditor.notSwitchableToHint = () => "There needs to be a literal value provided to switch to string template mode";
