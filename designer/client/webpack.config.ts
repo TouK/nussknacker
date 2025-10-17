@@ -100,7 +100,7 @@ const config: Configuration = {
                 },
             },
             "/hermesManagement": {
-                target: process.env.BACKEND_DOMAIN.replace("-nussknacker.", "-hermes-management."),
+                target: process.env.BACKEND_DOMAIN?.replace("-nussknacker.", "-hermes-management."),
                 changeOrigin: true,
                 onProxyRes: (proxyRes, req) => {
                     if (req.headers?.origin) {
@@ -112,7 +112,7 @@ const config: Configuration = {
                 },
             },
             "/hermesFrontend": {
-                target: process.env.BACKEND_DOMAIN.replace("-nussknacker.", "-gateway."),
+                target: process.env.BACKEND_DOMAIN?.replace("-nussknacker.", "-gateway."),
                 changeOrigin: true,
                 onProxyRes: (proxyRes, req) => {
                     if (req.headers?.origin) {
