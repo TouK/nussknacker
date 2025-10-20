@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkLazyParameterFunctionHelper,
   OneParamLazyParameterFunction
 }
-import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
+import pl.touk.nussknacker.engine.flink.util.keyed.{KeyOptions, StringKeyedValue, StringKeyedValueMapper}
 
 /* This is example for GenericTransformation
    the idea is that we have two parameters:
@@ -86,7 +86,15 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
 
     FlinkCustomStreamTransformation((str: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       str
-        .flatMap(new StringKeyedValueMapper(ctx, groupBy, value))
+        .flatMap(
+          new StringKeyedValueMapper(
+            ctx,
+            groupBy,
+            groupByParameterDeclaration.parameterName,
+            KeyOptions(allowNullableKeys = false),
+            value
+          )
+        )
         .keyBy(_.value.key)
         .process(new ConditionalUpdateFunction(condition, ctx.lazyParameterHelper))
     })

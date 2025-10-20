@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.sink
 
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import pl.touk.nussknacker.engine.api.LazyParameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, PreparedKafkaTopic}
@@ -14,6 +15,7 @@ trait UniversalKafkaSinkImplFactory {
   def createSink(
       preparedTopic: PreparedKafkaTopic[TopicName.ForSink],
       key: LazyParameter[AnyRef],
+      keyParameterName: ParameterName,
       value: LazyParameter[AnyRef],
       kafkaComponentsConfig: KafkaComponentsConfig,
       serializationSchema: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]],

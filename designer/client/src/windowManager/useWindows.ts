@@ -59,7 +59,7 @@ export function useWindows(parent?: WindowId) {
         throw "used outside WindowManager context";
     }
 
-    const { open: _open, closeAll, windows } = windowManager;
+    const { open: _open, close, closeAll, windows } = windowManager;
     useRemoveFocusOnEscKey(windows.length > 0);
     const [settings] = useUserSettings();
     const forceDisableModals = useMemo(() => settings["debug.forceDisableModals"], [settings]);
@@ -145,8 +145,9 @@ export function useWindows(parent?: WindowId) {
             confirm,
             inform,
             openNodeWindow,
-            close: closeAll,
+            closeAll,
+            close,
         }),
-        [confirm, open, inform, openNodeWindow, closeAll],
+        [open, confirm, inform, openNodeWindow, closeAll, close],
     );
 }

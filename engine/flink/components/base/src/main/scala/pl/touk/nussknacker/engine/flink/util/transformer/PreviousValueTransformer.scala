@@ -6,6 +6,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
@@ -15,6 +16,8 @@ import pl.touk.nussknacker.engine.flink.util.richflink.FlinkKeyOperations
 case object PreviousValueTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
   type Value = AnyRef
+
+  private val keyParameterName = ParameterName("Key")
 
   @MethodToInvoke(returnType = classOf[Value])
   def execute(
@@ -26,7 +29,7 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
       setUidToNodeIdIfNeed(
         ctx,
         start
-          .groupBy(key)(ctx)
+          .groupBy(key, keyParameterName)(ctx)
           .flatMap(
             new PreviousValueFunction(value, ctx.lazyParameterHelper, valueTypeInfo),
             ctx.valueWithContextInfo.forType(valueTypeInfo)
