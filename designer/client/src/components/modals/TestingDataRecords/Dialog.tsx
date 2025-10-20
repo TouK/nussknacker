@@ -231,7 +231,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
             buttons={buttons}
         >
             <ContentSize>
-                <Box sx={(theme) => ({ height: "100%", display: "flex", flexDirection: "column", padding: theme.spacing(0, 2, 2) })}>
+                <Box sx={(theme) => ({ height: "100%", display: "flex", flexDirection: "column", padding: theme.spacing(1, 2, 1) })}>
                     <Typography mt={0} variant={"h3"}>
                         {t("testingDialog.label.inputDataRecords", "Input data records")}
                     </Typography>

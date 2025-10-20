@@ -48,10 +48,10 @@ import { VisualizationBasePath } from "./paths";
 import { ScenarioDescription } from "./ScenarioDescription";
 
 function useUnmountCleanup() {
-    const { close } = useWindows();
+    const { closeAll } = useWindows();
     const dispatch = useAppDispatch();
-    const closeRef = useRef(close);
-    closeRef.current = close;
+    const closeRef = useRef(closeAll);
+    closeRef.current = closeAll;
 
     const cleanup = useCallback(async () => {
         await closeRef.current();

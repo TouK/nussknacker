@@ -23,6 +23,7 @@ export enum WindowKind {
     addAttachment,
     editProperties,
     remote,
+    withChildren,
     scenarioTest,
     aiAssistant,
 }

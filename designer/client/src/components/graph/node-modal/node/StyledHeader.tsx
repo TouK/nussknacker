@@ -53,8 +53,5 @@ export const StyledContent = styled(Window.Content)(({ theme }) => {
             scrollbarGutter: "stable",
             flex: 1,
         },
-        "&, &>div": {
-            height: "100%",
-        },
     };
 });

@@ -9,10 +9,11 @@ import { CustomTab, StarRedirect } from "./CustomTab";
 import { useTabData } from "./CustomTabPage";
 import Metrics from "./Metrics";
 import { NussknackerApp } from "./NussknackerApp";
-import { MetricsBasePath, RootPath, ScenariosBasePath, VisualizationBasePath } from "./paths";
+import { MetricsBasePath, RootPath, ScenariosBasePath, TopicsBasePath, VisualizationBasePath } from "./paths";
 
 const Visualization = loadable(() => import("./Visualization"), { fallback: <LoaderSpinner show={true} /> });
 const ScenariosTab = loadable(() => import("./ScenariosTab"), { fallback: <LoaderSpinner show={true} /> });
+const TopicsTab = loadable(() => import("./TopicsTab"), { fallback: <LoaderSpinner show={true} /> });
 const SettingsView = loadable(() => import("./settings/SettingsView"), { fallback: <LoaderSpinner show={true} /> });
 
 function DefaultRedirect() {
@@ -32,6 +33,10 @@ export default createRoutesFromElements(
 
             {/* overrides scenarios custom tab */}
             <Route path={ScenariosBasePath} element={<ScenariosTab />} />
+            <Route path={TopicsBasePath}>
+                <Route index element={<TopicsTab />} />
+                <Route path="*" element={<TopicsTab />} />
+            </Route>
 
             {/* for the backward compatibility we redirect old urls */}
             <Route path="/legacy_scenarios/*" element={<StarRedirect to={RootPath} />} />
