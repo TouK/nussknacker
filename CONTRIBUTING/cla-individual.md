@@ -1,53 +1,50 @@
-# Individual Contributor
-# License Agreement
-# ("Agreement") V2.
+![image](https://nussknacker.io/wp-content/uploads/2021/10/Nussknacker-logo-black.svg)
+# Individual Contributor License Agreement ("Agreement")
 
-Thank you for your interest in The Apache Software Foundation (the
-"Foundation"). To clarify the intellectual property license
-granted with Contributions from any person or entity, the Foundation
-must have on file a signed Contributor License Agreement ("CLA")
-from each Contributor, indicating agreement with the license
-terms below. This agreement is for your protection as a Contributor
-as well as the protection of the Foundation and its users. It does not
-change your rights to use your own Contributions for any other purpose.
+Thank you for your interest in software projects stewarded by Nussknacker
+P.S.A.("Nussknacker"). In order to clarify the intellectual property
+license granted with Contributions from any person or entity, Nussknacker
+must have a Contributor License Agreement ("CLA") on file that has been
+signed by each Contributor, indicating agreement to the license terms
+below. This agreement is for your protection as a Contributor as well
+as the protection of Nussknacker and its users. It does not change
+your rights to use your own Contributions for any other purpose.
 
 Please complete and sign this Agreement, and then email a pdf copy
-to secretary@apache.org only (do not copy any other persons or lists).
+to legal@nussknacker.io only (do not copy any other persons or lists).
 Read this document carefully before signing and keep a copy for your records.
 
-Full name: _____________________________________________________\
-\* if you do not enter a public name your full name will be public
+Full name:
 
-\* Public name: ____________________________________________________\
-your public name might not include honorific, suffix, or middle name\
-- [ ] check this box only if you entered names with your family name first
-
-Postal Address: _________________________________________________ \
 \_________________________________________________
 
-Country: _________________________________________________
+Postal Address:
 
-\* E-Mail: ______________________________________________________
+\_________________________________________________
 
-\* (optional) preferred Apache id(s): ______________________________
+\_________________________________________________
 
-\* (optional) notify project: ______________________________________
+Country:
 
-\* The starred fields above will become part of your public profile.
+\_________________________________________________
+
+E-Mail:
+
+\_________________________________________________
 
 You accept and agree to the following terms and conditions for Your
-Contributions (present and future) that you submit to the Foundation. In
-return, the Foundation shall not use Your Contributions in a way that
+Contributions (present and future) that you submit to Nussknacker. In
+return, Nussknacker shall not use Your Contributions in a way that
 is contrary to the public benefit or inconsistent with its nonprofit
 status and bylaws in effect at the time of the Contribution. Except
-for the license granted herein to the Foundation and recipients of
-software distributed by the Foundation, You reserve all right, title,
+for the license granted herein to Nussknacker and recipients of
+software distributed by Nussknacker, You reserve all right, title,
 and interest in and to Your Contributions.
 
 1. Definitions.\
 "You" (or "Your") shall mean the copyright owner or legal entity
 authorized by the copyright owner that is making this Agreement
-with the Foundation. For legal entities, the entity making a
+with Nussknacker. For legal entities, the entity making a
 Contribution and all other entities that control, are controlled
 by, or are under common control with that entity are considered to
 be a single Contributor. For the purposes of this definition,
@@ -57,29 +54,29 @@ otherwise, or (ii) ownership of fifty percent (50%) or more of the
 outstanding shares, or (iii) beneficial ownership of such entity.\
 "Contribution" shall mean any original work of authorship,
 including any modifications or additions to an existing work, that
-is intentionally submitted by You to the Foundation for inclusion
+is intentionally submitted by You to Nussknacker for inclusion
 in, or documentation of, any of the products owned or managed by
-the Foundation (the "Work"). For the purposes of this definition,
+Nussknacker (the "Work"). For the purposes of this definition,
 "submitted" means any form of electronic, verbal, or written
-communication sent to the Foundation or its representatives,
+communication sent to Nussknacker or its representatives,
 including but not limited to communication on electronic mailing
 lists, source code control systems, and issue tracking systems that
-are managed by, or on behalf of, the Foundation for the purpose of
+are managed by, or on behalf of, Nussknacker for the purpose of
 discussing and improving the Work, but excluding communication that
 is conspicuously marked or otherwise designated in writing by You
 as "Not a Contribution."
 
 2. Grant of Copyright License. Subject to the terms and conditions of
-this Agreement, You hereby grant to the Foundation and to
-recipients of software distributed by the Foundation a perpetual,
+this Agreement, You hereby grant to Nussknacker and to
+recipients of software distributed by Nussknacker a perpetual,
 worldwide, non-exclusive, no-charge, royalty-free, irrevocable
 copyright license to reproduce, prepare derivative works of,
 publicly display, publicly perform, sublicense, and distribute Your
 Contributions and such derivative works.
 
 3. Grant of Patent License. Subject to the terms and conditions of
-this Agreement, You hereby grant to the Foundation and to
-recipients of software distributed by the Foundation a perpetual,
+this Agreement, You hereby grant to Nussknacker and to
+recipients of software distributed by Nussknacker a perpetual,
 worldwide, non-exclusive, no-charge, royalty-free, irrevocable
 (except as stated in this section) patent license to make, have
 made, use, offer to sell, sell, import, and otherwise transfer the
@@ -100,8 +97,8 @@ license. If your employer(s) has rights to intellectual property
 that you create that includes your Contributions, you represent
 that you have received permission to make Contributions on behalf
 of that employer, that your employer has waived such rights for
-your Contributions to the Foundation, or that your employer has
-executed a separate Corporate CLA with the Foundation.
+your Contributions to Nussknacker, or that your employer has
+executed a separate Corporate CLA with Nussknacker.
 
 5. You represent that each of Your Contributions is Your original
 creation (see section 7 for submissions on behalf of others). You
@@ -121,20 +118,22 @@ limitation, any warranties or conditions of TITLE, NON-
 INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A PARTICULAR PURPOSE.
 
 7. Should You wish to submit work that is not Your original creation,
-You may submit it to the Foundation separately from any
+You may submit it to Nussknacker separately from any
 Contribution, identifying the complete details of its source and of
 any license or other restriction (including, but not limited to,
 related patents, trademarks, and license agreements) of which you
 are personally aware, and conspicuously marking the work as
 "Submitted on behalf of a third-party: [named here]".
 
-8. You agree to notify the Foundation of any facts or circumstances of
+8. You agree to notify Nussknacker of any facts or circumstances of
 which you become aware that would make these representations
 inaccurate in any respect.
 
-Please sign: \__________________________________ Date: \________________
+Please sign:
 
-This is a legal contract containing Personally Identifiable Information.
-Please refer to https://s.apache.org/cla-privacy-policy for the policy
-governing how this information is used and shared.
+\_________________________________________________
+
+Date:
+
+\_________________________________________________
 
