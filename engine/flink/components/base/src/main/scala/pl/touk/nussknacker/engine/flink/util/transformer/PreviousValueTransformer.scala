@@ -17,6 +17,8 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
 
   type Value = AnyRef
 
+  private val keyParameterName = ParameterName("Key")
+
   @MethodToInvoke(returnType = classOf[Value])
   def execute(
       @ParamName("Key") key: LazyParameter[CharSequence],
@@ -27,7 +29,7 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
       setUidToNodeIdIfNeed(
         ctx,
         start
-          .groupBy(key, ParameterName("Key"))(ctx)
+          .groupBy(key, keyParameterName)(ctx)
           .flatMap(
             new PreviousValueFunction(value, ctx.lazyParameterHelper, valueTypeInfo),
             ctx.valueWithContextInfo.forType(valueTypeInfo)

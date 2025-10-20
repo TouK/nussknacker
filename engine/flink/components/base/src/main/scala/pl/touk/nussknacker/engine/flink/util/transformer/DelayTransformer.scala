@@ -23,6 +23,8 @@ class DelayTransformer extends CustomStreamTransformer with ExplicitUidInOperato
 
   import pl.touk.nussknacker.engine.flink.util.richflink._
 
+  private val keyParameterName = ParameterName("key")
+
   @MethodToInvoke(returnType = classOf[Void])
   def invoke(
       @ParamName("key") @Nullable key: LazyParameter[CharSequence],
@@ -33,7 +35,7 @@ class DelayTransformer extends CustomStreamTransformer with ExplicitUidInOperato
         Option(key)
           .map { _ =>
             stream
-              .groupBy(key, ParameterName("key"))(ctx)
+              .groupBy(key, keyParameterName)(ctx)
           }
           .getOrElse {
             stream

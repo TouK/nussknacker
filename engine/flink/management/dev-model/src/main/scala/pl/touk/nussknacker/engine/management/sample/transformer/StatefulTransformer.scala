@@ -21,11 +21,13 @@ case object StatefulTransformer extends CustomStreamTransformer with LazyLogging
 
   import pl.touk.nussknacker.engine.flink.util.richflink._
 
+  private val groupByParameterName = ParameterName("groupBy")
+
   @MethodToInvoke
   def execute(@ParamName("groupBy") groupBy: LazyParameter[String]): FlinkCustomStreamTransformation =
     FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       start
-        .groupBy(groupBy, ParameterName("groupBy"))(ctx)
+        .groupBy(groupBy, groupByParameterName)(ctx)
         .mapWithState[ValueWithContext[AnyRef], util.List[String]] {
           case (StringFromIr(ir, sr), oldState) =>
             logger.info(s"received: $sr, current state: $oldState")

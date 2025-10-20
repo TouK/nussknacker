@@ -26,6 +26,8 @@ object sampleTransformers {
       with ExplicitUidInOperatorsSupport
       with Serializable {
 
+    private val groupByParameterName = ParameterName("groupBy")
+
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(
         @ParamName("groupBy") groupBy: LazyParameter[AnyRef],
@@ -61,7 +63,7 @@ object sampleTransformers {
       val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
       transformers.slidingTransformer(
         groupBy,
-        ParameterName("groupBy"),
+        groupByParameterName,
         aggregateBy,
         aggregator,
         windowDuration,
@@ -83,6 +85,8 @@ object sampleTransformers {
       with UnboundedStreamComponent
       with ExplicitUidInOperatorsSupport
       with Serializable {
+
+    private val groupByParameterName = ParameterName("groupBy")
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(
@@ -122,7 +126,7 @@ object sampleTransformers {
         .map(o => AggregateWindowsOffsetProvider.offset(windowDuration, o))
       transformers.tumblingTransformer(
         groupBy,
-        ParameterName("groupBy"),
+        groupByParameterName,
         aggregateBy,
         aggregator,
         windowDuration,
@@ -145,6 +149,8 @@ object sampleTransformers {
       with UnboundedStreamComponent
       with ExplicitUidInOperatorsSupport
       with Serializable {
+
+    private val groupByParameterName = ParameterName("groupBy")
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(
@@ -184,7 +190,7 @@ object sampleTransformers {
       val sessionTimeoutDuration = Duration(sessionTimeout.toMillis, TimeUnit.MILLISECONDS)
       transformers.sessionWindowTransformer(
         groupBy,
-        ParameterName("groupBy"),
+        groupByParameterName,
         aggregateBy,
         aggregator,
         sessionTimeoutDuration,

@@ -33,6 +33,8 @@ import scala.concurrent.duration._
   */
 object TransformStateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
+  private val groupByParameterName = ParameterName("groupBy")
+
   @MethodToInvoke(returnType = classOf[AnyRef])
   def invoke(
       @ParamName("groupBy") groupBy: LazyParameter[CharSequence],
@@ -50,7 +52,7 @@ object TransformStateTransformer extends CustomStreamTransformer with ExplicitUi
           setUidToNodeIdIfNeed(
             ctx,
             stream
-              .groupBy(groupBy, ParameterName("groupBy"))
+              .groupBy(groupBy, groupByParameterName)
               .process(
                 new TransformStateFunction[String](
                   ctx.lazyParameterHelper,
