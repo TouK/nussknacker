@@ -5,6 +5,7 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
@@ -32,6 +33,8 @@ import scala.concurrent.duration._
   */
 object TransformStateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
+  private val groupByParameterName = ParameterName("groupBy")
+
   @MethodToInvoke(returnType = classOf[AnyRef])
   def invoke(
       @ParamName("groupBy") groupBy: LazyParameter[CharSequence],
@@ -49,7 +52,7 @@ object TransformStateTransformer extends CustomStreamTransformer with ExplicitUi
           setUidToNodeIdIfNeed(
             ctx,
             stream
-              .groupBy(groupBy)
+              .groupBy(groupBy, groupByParameterName)
               .process(
                 new TransformStateFunction[String](
                   ctx.lazyParameterHelper,

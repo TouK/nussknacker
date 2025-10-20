@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes.SetOf
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.editor._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 
 import java.util.concurrent.TimeUnit
@@ -24,6 +25,8 @@ object sampleTransformers {
       with UnboundedStreamComponent
       with ExplicitUidInOperatorsSupport
       with Serializable {
+
+    private val groupByParameterName = ParameterName("groupBy")
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(
@@ -60,6 +63,7 @@ object sampleTransformers {
       val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
       transformers.slidingTransformer(
         groupBy,
+        groupByParameterName,
         aggregateBy,
         aggregator,
         windowDuration,
@@ -81,6 +85,8 @@ object sampleTransformers {
       with UnboundedStreamComponent
       with ExplicitUidInOperatorsSupport
       with Serializable {
+
+    private val groupByParameterName = ParameterName("groupBy")
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(
@@ -120,6 +126,7 @@ object sampleTransformers {
         .map(o => AggregateWindowsOffsetProvider.offset(windowDuration, o))
       transformers.tumblingTransformer(
         groupBy,
+        groupByParameterName,
         aggregateBy,
         aggregator,
         windowDuration,
@@ -142,6 +149,8 @@ object sampleTransformers {
       with UnboundedStreamComponent
       with ExplicitUidInOperatorsSupport
       with Serializable {
+
+    private val groupByParameterName = ParameterName("groupBy")
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(
@@ -181,6 +190,7 @@ object sampleTransformers {
       val sessionTimeoutDuration = Duration(sessionTimeout.toMillis, TimeUnit.MILLISECONDS)
       transformers.sessionWindowTransformer(
         groupBy,
+        groupByParameterName,
         aggregateBy,
         aggregator,
         sessionTimeoutDuration,
