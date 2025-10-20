@@ -1,6 +1,9 @@
 ![image](https://nussknacker.io/wp-content/uploads/2021/10/Nussknacker-logo-black.svg)
 # Individual Contributor License Agreement ("Agreement")
 
+This file is based on the Individual Contributor License Agreement used
+by the Apache Software Foundation.
+
 Thank you for your interest in software projects stewarded by Nussknacker
 P.S.A.("Nussknacker"). In order to clarify the intellectual property
 license granted with Contributions from any person or entity, Nussknacker
