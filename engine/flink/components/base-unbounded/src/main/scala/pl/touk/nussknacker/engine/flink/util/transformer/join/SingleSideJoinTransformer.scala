@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper, StringKeyOnlyMapper}
+import pl.touk.nussknacker.engine.flink.util.keyed.KeyOptions
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
@@ -127,7 +128,12 @@ class SingleSideJoinTransformer(
 
         val keyedMainBranchStream = inputs(mainBranchId)
           .flatMap(
-            new StringKeyOnlyMapper(context.lazyParameterHelper, keyByBranchId(mainBranchId)),
+            new StringKeyOnlyMapper(
+              lazyParameterHelper = context.lazyParameterHelper,
+              key = keyByBranchId(mainBranchId),
+              keyParameterName = KeyParamDeclaration.parameterName,
+              keyOptions = KeyOptions(allowNullableKeys = false)
+            ),
             context.valueWithContextInfo.forBranch[String](mainBranchId, Typed.typedClass[String])
           )
 
@@ -141,7 +147,13 @@ class SingleSideJoinTransformer(
 
         val keyedJoinedStream = inputs(joinedBranchId)
           .flatMap(
-            new StringKeyedValueMapper(context, keyByBranchId(joinedBranchId), aggregateBy),
+            new StringKeyedValueMapper(
+              context,
+              keyByBranchId(joinedBranchId),
+              KeyParamDeclaration.parameterName,
+              KeyOptions(allowNullableKeys = false),
+              aggregateBy
+            ),
             joinedTypeInfo
           )
 

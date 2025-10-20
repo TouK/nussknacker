@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.context.{
   ProcessCompilationError,
   ValidationContext
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
@@ -24,6 +25,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
+import pl.touk.nussknacker.engine.flink.util.keyed.KeyOptions
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.UnionWithMemoTransformer.KeyField
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -90,7 +92,13 @@ class UnionWithMemoTransformer(
               stream
                 .map(ctx => ctx.withContextIdPathPart(context.nodeId, branchId))
                 .flatMap(
-                  new StringKeyedValueMapper(context, keyByBranchId(branchId), valueParam),
+                  new StringKeyedValueMapper(
+                    context,
+                    keyByBranchId(branchId),
+                    ParameterName(KeyField),
+                    KeyOptions(allowNullableKeys = false),
+                    valueParam
+                  ),
                   flatMapTypeInfo
                 )
                 .map(valueWithCtx =>

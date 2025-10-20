@@ -2,9 +2,10 @@ package pl.touk.nussknacker.engine.flink.util
 
 import org.apache.flink.streaming.api.datastream.{DataStream, KeyedStream, SingleOutputStreamOperator}
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
-import pl.touk.nussknacker.engine.flink.util.keyed.{GenericKeyedValueMapper, StringKeyOnlyMapper}
+import pl.touk.nussknacker.engine.flink.util.keyed.{GenericKeyedValueMapper, KeyOptions, StringKeyOnlyMapper}
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import scala.reflect.runtime.universe.TypeTag
@@ -14,24 +15,40 @@ object richflink {
   implicit class FlinkKeyOperations(dataStream: DataStream[Context]) {
 
     def groupBy(
-        groupBy: LazyParameter[CharSequence]
+        groupBy: LazyParameter[CharSequence],
+        groupByParameterName: ParameterName
     )(implicit ctx: FlinkCustomNodeContext): KeyedStream[ValueWithContext[String], String] =
       dataStream
         .flatMap(
-          new StringKeyOnlyMapper(ctx.lazyParameterHelper, groupBy),
+          new StringKeyOnlyMapper(
+            ctx.lazyParameterHelper,
+            groupBy,
+            groupByParameterName,
+            KeyOptions(allowNullableKeys = false)
+          ),
           ctx.valueWithContextInfo.forClass[String]
         )
         .keyBy((k: ValueWithContext[String]) => k.value)
 
     def groupByWithValue[T <: AnyRef: TypeTag, K <: AnyRef: TypeTag](
         groupBy: LazyParameter[K],
+        groupByParameterName: ParameterName,
         value: LazyParameter[T]
     )(
         implicit ctx: FlinkCustomNodeContext
     ): KeyedStream[ValueWithContext[KeyedValue[K, T]], K] = {
       val typeInfo = keyed.typeInfo(ctx, groupBy, value)
       dataStream
-        .flatMap(new GenericKeyedValueMapper(ctx.lazyParameterHelper, groupBy, value), typeInfo)
+        .flatMap(
+          new GenericKeyedValueMapper(
+            ctx.lazyParameterHelper,
+            groupBy,
+            groupByParameterName,
+            KeyOptions(allowNullableKeys = false),
+            value
+          ),
+          typeInfo
+        )
         .keyBy((k: ValueWithContext[KeyedValue[K, T]]) => k.value.key)
     }
 
