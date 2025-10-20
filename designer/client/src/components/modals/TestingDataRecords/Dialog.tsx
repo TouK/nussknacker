@@ -1,4 +1,4 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import type { ElementType, ReactElement } from "react";
 import React, { useCallback, useMemo, useState } from "react";
@@ -93,8 +93,10 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
             const nextCount = dataRecords.length + (numberOfSamples || 1); // we treat 0 as 1 to run validation when limit exceeded
             if (!validateForCount(nextCount)) return;
 
-            const { data } = await HttpService.generatedTestData(scenarioName, scenarioGraph, numberOfSamples);
-            setDataRecords((prevState) => [...prevState, ...data.map(mapGeneratedTestingDataToTableFormat)]);
+            if (numberOfSamples > 0) {
+                const { data } = await HttpService.generatedTestData(scenarioName, scenarioGraph, numberOfSamples);
+                setDataRecords((prevState) => [...prevState, ...data.map(mapGeneratedTestingDataToTableFormat)]);
+            }
         },
         [dataRecords.length, validateForCount, scenarioName, scenarioGraph],
     );
@@ -230,12 +232,18 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
             }
             buttons={buttons}
         >
-            <ContentSize>
-                <Box sx={(theme) => ({ height: "100%", display: "flex", flexDirection: "column", padding: theme.spacing(0, 2, 2) })}>
-                    <Typography mt={0} variant={"h3"}>
+            <ContentSize sx={{ paddingX: 3, paddingY: 3 }}>
+                <Stack spacing={2}>
+                    <Typography m={0} variant="h3">
                         {t("testingDialog.label.inputDataRecords", "Input data records")}
                     </Typography>
-                    <Box display={"flex"} sx={(theme) => ({ paddingTop: theme.spacing(2) })}>
+                    <Box
+                        sx={{
+                            "--sizer-height-cutout": "140px",
+                            "--sizer-minHeight": "300px",
+                            display: "flex",
+                        }}
+                    >
                         <Table
                             sourceOptions={sourceOptions}
                             sourceParameters={testCapabilities.testWithParameters.sourceParameters}
@@ -249,17 +257,14 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                             recordsToAddLimitExceeded={recordsToAddLimitExceeded}
                         />
                     </Box>
-
-                    {!recordsToAddLimitExceeded && (
-                        <AppendFromLiveDataButton
-                            handleGenerateTestData={handleGenerateTestData}
-                            maxTestingRecords={maxTestingRecords}
-                            currentRecordsNumber={dataRecords.length}
-                            recordsToAddLimitExceeded={recordsToAddLimitExceeded}
-                        />
-                    )}
-                    {recordsToAddLimitExceeded && <LimitExceededWarning maxTestingRecords={maxTestingRecords} />}
-                </Box>
+                    {recordsToAddLimitExceeded ? <LimitExceededWarning maxTestingRecords={maxTestingRecords} /> : null}
+                    <AppendFromLiveDataButton
+                        handleGenerateTestData={handleGenerateTestData}
+                        maxTestingRecords={maxTestingRecords}
+                        currentRecordsNumber={dataRecords.length}
+                        recordsToAddLimitExceeded={recordsToAddLimitExceeded}
+                    />
+                </Stack>
             </ContentSize>
         </WindowContent>
     );
