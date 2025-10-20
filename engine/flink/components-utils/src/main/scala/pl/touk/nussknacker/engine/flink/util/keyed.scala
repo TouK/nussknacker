@@ -94,6 +94,10 @@ object keyed {
         options: KeyOptions
     ): Either[InterpretationError.NullKeyError, T] = {
       Either.cond(
+        // Validate the key selector before using it in a keyed transformation.
+        // Flink's keyed stateful transformations require a non-null key selector.
+        // Passing a null key selector would cause the scenario to crash.
+        // This check can be bypassed if `allowNullableKeys` is explicitly enabled.
         options.allowNullableKeys || key != null,
         key,
         InterpretationError.NullKeyError(keyParameterName)
