@@ -19,31 +19,31 @@ submitted by its designated employees to Nussknacker, and to grant
 copyright and patent licenses thereto.
 
 Corporation name:
-```
+<pre>
 
-```
+</pre>
 
 Corporation address:
-```
+<pre>
 
 
 
-```
+</pre>
 
 Point of Contact:
-```
+<pre>
 
-```
+</pre>
 
 E-Mail:
-```
+<pre>
 
-```
+</pre>
 
 Telephone:
-```
+<pre>
 
-```
+</pre>
 
 You accept and agree to the following terms and conditions for Your
 present and future Contributions submitted to Nussknacker. In
@@ -136,44 +136,50 @@ Contributions on behalf of the Corporation, or to the Corporation's
 Point of Contact with Nussknacker.
 
 Please sign:
-```
+<pre>
 
-```
+</pre>
 
 Date:
-```
+<pre>
 
-```
+</pre>
 
 Title:
-```
+<pre>
 
-```
+</pre>
 
 Corporation:
-```
+<pre>
 
-```
+</pre>
 
 # Schedule A
 
 [Initial list of designated employees. NB: authorization is not
 tied to particular Contributions.]
 
-```
-```
+<pre>
 
-```
-```
+</pre>
 
-```
-```
+<pre>
 
-```
-```
+</pre>
 
-```
-```
+<pre>
 
-```
-```
+</pre>
+
+<pre>
+
+</pre>
+
+<pre>
+
+</pre>
+
+<pre>
+
+</pre>
