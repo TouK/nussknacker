@@ -14,22 +14,24 @@ as the protection of Nussknacker and its users. It does not change
 your rights to use your own Contributions for any other purpose.
 
 Full name:
+```
 
-___
+```
 
 Postal Address:
+```
 
-___
 
-___
+```
 
 Country:
+```
 
-___
-
+```
 E-Mail:
+```
 
-___
+```
 
 You accept and agree to the following terms and conditions for Your
 Contributions (present and future) that you submit to Nussknacker. In
@@ -129,10 +131,11 @@ which you become aware that would make these representations
 inaccurate in any respect.
 
 Please sign:
+```
 
-___
+```
 
 Date:
+```
 
-___
-
+```
