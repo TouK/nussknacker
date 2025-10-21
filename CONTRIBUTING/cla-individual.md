@@ -15,21 +15,21 @@ your rights to use your own Contributions for any other purpose.
 
 Full name:
 
-\_________________________________________________
+___
 
 Postal Address:
 
-\_________________________________________________
+___
 
-\_________________________________________________
+___
 
 Country:
 
-\_________________________________________________
+___
 
 E-Mail:
 
-\_________________________________________________
+___
 
 You accept and agree to the following terms and conditions for Your
 Contributions (present and future) that you submit to Nussknacker. In
@@ -130,9 +130,9 @@ inaccurate in any respect.
 
 Please sign:
 
-\_________________________________________________
+___
 
 Date:
 
-\_________________________________________________
+___
 
