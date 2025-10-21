@@ -1,4 +1,5 @@
-![image](https://nussknacker.io/wp-content/uploads/2021/10/Nussknacker-logo-black.svg)
+<img src="https://nussknacker.io/wp-content/uploads/2021/10/Nussknacker-logo-black.svg" height="50">
+
 # Individual Contributor License Agreement ("Agreement")
 
 This file is based on the Individual Contributor License Agreement used
