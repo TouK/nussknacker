@@ -13,10 +13,6 @@ below. This agreement is for your protection as a Contributor as well
 as the protection of Nussknacker and its users. It does not change
 your rights to use your own Contributions for any other purpose.
 
-Please complete and sign this Agreement, and then email a pdf copy
-to legal@nussknacker.io only (do not copy any other persons or lists).
-Read this document carefully before signing and keep a copy for your records.
-
 Full name:
 
 \_________________________________________________

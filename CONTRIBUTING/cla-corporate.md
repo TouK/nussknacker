@@ -18,11 +18,6 @@ submit Contributions to Nussknacker, to authorize Contributions
 submitted by its designated employees to Nussknacker, and to grant
 copyright and patent licenses thereto.
 
-If you have not already done so, please complete and sign, then scan and
-email a pdf file of this Agreement to legal@nussknacker.io.
-Please read this document carefully before signing and keep a copy for
-your records.
-
 Corporation name:
 
 \_________________________________________________
