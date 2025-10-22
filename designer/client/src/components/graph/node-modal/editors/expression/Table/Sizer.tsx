@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import type { BoxProps } from "@mui/material/Box/Box";
-import React, { useCallback } from "react";
+import React, { useCallback, useRef } from "react";
 
 import { useSize } from "../../../../../../containers/hooks/useSize";
 
@@ -15,9 +15,11 @@ const getOffsetParent: (el?: HTMLElement) => HTMLElement = (el?: HTMLElement): H
 
 export function Sizer({ overflowY, offsetParent, ...props }: SizerProps) {
     const { observe, height, unobserve } = useSize();
+    const ref = useRef<HTMLElement>();
     const refCallback = useCallback(
         (instance?: HTMLElement) => {
             unobserve();
+            ref.current = instance;
             if (!offsetParent) return observe(getOffsetParent(instance));
             if (typeof offsetParent === "function") return observe(offsetParent(instance));
             observe(document.querySelector(offsetParent));
@@ -25,17 +27,21 @@ export function Sizer({ overflowY, offsetParent, ...props }: SizerProps) {
         [observe, offsetParent, unobserve],
     );
 
+    ref.current?.style.setProperty("--height", `${height}px`);
+
     return (
         <Box
             {...props}
             sx={{
+                "--maxHeight": `var(--sizer-maxHeight, calc(var(--height) * (var(--sizer-height-percent, 100) / 100) - var(--sizer-height-cutout, 200px)))`,
+                "--minHeight": `var(--sizer-minHeight, 100px)`,
                 overflow: "hidden",
                 boxSizing: "border-box",
-                minHeight: 100,
+                minHeight: "var(--minHeight)",
                 ...props.sx,
                 flex: 1,
                 position: "relative",
-                maxHeight: overflowY ? "unset" : height * 0.8,
+                maxHeight: overflowY ? "unset" : `max(var(--minHeight), var(--maxHeight))`,
             }}
             ref={refCallback}
         />
