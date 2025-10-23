@@ -104,7 +104,7 @@ class DynamicNodeValidator(
 
       // We assume that the last parameter in the last step can't reload parameters so we revert original value of this property
       def revertChangesCanReloadParametersForLastParameter(parameters: List[Parameter]) =
-        parameters.transformLast(_.copy(changesCanReloadParameters = false))
+        parameters.transformLast(_.copy(changesCanReloadParameters = Some(false)))
 
       val nextPart = Try(definition.lift.apply(transformationStep)) match {
         // NextParameters(Nil) is some strange response from the component. W should consider throwing an Exception in this case.
@@ -153,7 +153,9 @@ class DynamicNodeValidator(
           // We assume that the developer of component split parameter transformation steps this way because
           // the last parameter in the step can cause changes in parameter definitions for the next step
           val newParametersDefinition =
-            enrichedParametersDefinitions.transformLast(_.copy(changesCanReloadParameters = true))
+            enrichedParametersDefinitions.transformLast(p =>
+              p.copy(changesCanReloadParameters = p.changesCanReloadParameters.orElse(Some(true)))
+            )
           val (evaluatedParametersCombinedWithDefinition, newErrorsCombined, newNodeParameters) =
             newParametersDefinition.foldLeft(
               (evaluatedNodeParametersSoFar, errorsCombined ++ newParameterErrors, nodeParameters)

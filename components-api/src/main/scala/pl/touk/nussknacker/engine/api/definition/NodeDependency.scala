@@ -93,7 +93,7 @@ object Parameter {
       hintText = None,
       labelOpt = None,
       category = ParameterCategory.Standard,
-      changesCanReloadParameters = false,
+      changesCanReloadParameters = None,
       nonImportantForExecution = false,
     )
 
@@ -118,7 +118,7 @@ object Parameter {
       hintText = None,
       labelOpt = None,
       category = ParameterCategory.Standard,
-      changesCanReloadParameters = false,
+      changesCanReloadParameters = None,
       nonImportantForExecution = false,
     )
 
@@ -152,7 +152,7 @@ case class Parameter(
     hintText: Option[String],
     labelOpt: Option[String],
     category: ParameterCategory,
-    changesCanReloadParameters: Boolean,
+    changesCanReloadParameters: Option[Boolean],
     nonImportantForExecution: Boolean
 ) extends NodeDependency {
 
@@ -201,7 +201,7 @@ case class Parameter(
       hintText: Option[String] = this.hintText,
       labelOpt: Option[String] = this.labelOpt,
       category: ParameterCategory = this.category,
-      changesCanReloadParameters: Boolean = this.changesCanReloadParameters,
+      changesCanReloadParameters: Option[Boolean] = this.changesCanReloadParameters,
       nonImportantForExecution: Boolean = this.nonImportantForExecution,
   ): Parameter = {
     new Parameter(
@@ -239,7 +239,7 @@ case class Parameter(
       hintText: Option[String],
       labelOpt: Option[String],
       category: ParameterCategory,
-      changesCanReloadParameters: Boolean,
+      changesCanReloadParameters: Option[Boolean],
       nonImportantForExecution: Boolean,
   ): Parameter = {
     new Parameter(
@@ -290,7 +290,7 @@ case class Parameter(
       hintText = None,
       labelOpt = None,
       category = ParameterCategory.Standard,
-      changesCanReloadParameters = false,
+      changesCanReloadParameters = None,
       nonImportantForExecution = false,
     )
   }
