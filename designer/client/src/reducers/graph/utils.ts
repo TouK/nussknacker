@@ -82,7 +82,6 @@ export function prepareNewNodesWithLayout(
                             };
                         case "output":
                         case "varName":
-                        case "outputVar":
                             return snakeCase(`${idMapping[node.id]} ${value}`);
                     }
                 }
