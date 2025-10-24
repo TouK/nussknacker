@@ -438,6 +438,14 @@ object ProcessCompilationError {
       extends ProcessCompilationError
       with InASingleNode
 
+  final case class EagerExpressionEvaluationError(
+      message: String,
+      nodeId: NodeId,
+      paramName: ParameterName,
+      cause: Throwable
+  ) extends ProcessCompilationError
+      with InASingleNode
+
   object CannotCreateObjectError {
 
     def apply(message: String, nodeId: NodeId) = new CannotCreateObjectError(message, nodeId, cause = None)
