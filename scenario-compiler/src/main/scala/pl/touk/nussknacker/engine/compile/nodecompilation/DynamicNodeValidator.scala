@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, Validations}
+import pl.touk.nussknacker.engine.compile.nodecompilation.DynamicNodeValidator.EvaluatedParameterWithDefinition
 import pl.touk.nussknacker.engine.compile.nodecompilation.ImplicitSourceOutputVariableHandler.NodeDataExt
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.definition.component.NodeCompilationDependencies
@@ -89,7 +90,7 @@ class DynamicNodeValidator(
 
     @tailrec
     final def processRemainingTransformationSteps(
-        evaluatedNodeParametersSoFar: List[(Parameter, BaseDefinedParameter)],
+        evaluatedNodeParametersSoFar: List[EvaluatedParameterWithDefinition],
         stateForFar: Option[component.State],
         errors: List[ProcessCompilationError],
         nodeParameters: List[NodeParameter]
@@ -98,15 +99,9 @@ class DynamicNodeValidator(
         evaluatedNodeParametersSoFar
           // unfortunately, this cast is needed as we have no easy way to statically check if Parameter definitions
           // are branch or not...
-          .map(a => (a._1.name, a._2.asInstanceOf[component.DefinedParameter])),
+          .map(a => (a.enrichedDefinition.name, a.evaluatedParameter.asInstanceOf[component.DefinedParameter])),
         stateForFar
       )
-
-      // We assume that the last parameter in the last step can't reload parameters so we revert original value of this property
-      def revertChangesCanReloadParametersForLastParameter(parameters: List[Parameter]) = {
-        // FIXME abr: we should accumulate original list of parameters and revert this value based on it
-        parameters.transformLast(_.copy(changesCanReloadParameters = None))
-      }
 
       val nextPart = Try(definition.lift.apply(transformationStep)) match {
         // NextParameters(Nil) is some strange response from the component. W should consider throwing an Exception in this case.
@@ -133,9 +128,11 @@ class DynamicNodeValidator(
         case component.FinalResults(finalContext, errors, state) =>
           // we add distinct here, as multi-step, partial validation of parameters can cause duplicate errors if implementation is not v. careful
           val allErrors = (errorsCombined ++ errors).distinct
-          val finalParametersDefinition = revertChangesCanReloadParametersForLastParameter(
-            evaluatedNodeParametersSoFar.map(_._1)
-          )
+
+          // We assume that the last parameter in the last step can't reload parameters so we revert original value of this property
+          val finalParametersDefinition = evaluatedNodeParametersSoFar
+            .transformLast(_.revertChangesCanReloadParametersInDefinition)
+            .map(_.enrichedDefinition)
           Valid(
             TransformationResult(
               allErrors,
@@ -145,35 +142,45 @@ class DynamicNodeValidator(
               nodeParameters
             )
           )
-        case component.NextParameters(newParametersDefinitions, newParameterErrors, state) =>
+        case component.NextParameters(nextParametersDefinitions, newParameterErrors, state) =>
           val enrichedParametersDefinitions =
             StandardParameterEnrichment.enrichParameterDefinitions(
-              newParametersDefinitions,
+              nextParametersDefinitions,
               parametersConfig,
               globalParametersConfig
             )
           // We assume that the developer of component split parameter transformation steps this way because
           // the last parameter in the step can cause changes in parameter definitions for the next step
-          val newParametersDefinition =
+          val withChangesCanReloadParametersForLastParameterInBatch =
             enrichedParametersDefinitions.transformLast(p =>
               p.copy(changesCanReloadParameters = p.changesCanReloadParameters.orElse(Some(true)))
             )
           val (evaluatedParametersCombinedWithDefinition, newErrorsCombined, newNodeParameters) =
-            newParametersDefinition.foldLeft(
-              (evaluatedNodeParametersSoFar, errorsCombined ++ newParameterErrors, nodeParameters)
-            ) { case ((evaluatedNodeParametersAcc, errorsAcc, nodeParametersAcc), newParameterDefinition) =>
-              val parameterEvaluationResult = evaluateParameter(newParameterDefinition, nodeParametersAcc)
-              val (paramEvaluationError, newEvaluatedParam, extraNodeParamOpt) = parameterEvaluationResult
-                .map { case (evaluatedValue, extraNodeParamOpt) =>
-                  (List.empty[ProcessCompilationError], evaluatedValue, extraNodeParamOpt)
-                }
-                .valueOr(ne => (ne.toList, FailedToDefineParameter(ne), None))
-              (
-                evaluatedNodeParametersAcc :+ (newParameterDefinition, newEvaluatedParam),
-                errorsAcc ++ paramEvaluationError,
-                nodeParametersAcc ++ extraNodeParamOpt
-              )
-            }
+            withChangesCanReloadParametersForLastParameterInBatch
+              .zip(nextParametersDefinitions)
+              .foldLeft(
+                (evaluatedNodeParametersSoFar, errorsCombined ++ newParameterErrors, nodeParameters)
+              ) {
+                case (
+                      (evaluatedNodeParametersAcc, errorsAcc, nodeParametersAcc),
+                      (enrichedParameterDefinition, originalParameterDefinition)
+                    ) =>
+                  val parameterEvaluationResult = evaluateParameter(enrichedParameterDefinition, nodeParametersAcc)
+                  val (paramEvaluationError, newEvaluatedParam, extraNodeParamOpt) = parameterEvaluationResult
+                    .map { case (evaluatedValue, extraNodeParamOpt) =>
+                      (List.empty[ProcessCompilationError], evaluatedValue, extraNodeParamOpt)
+                    }
+                    .valueOr(ne => (ne.toList, FailedToDefineParameter(ne), None))
+                  (
+                    evaluatedNodeParametersAcc :+ new EvaluatedParameterWithDefinition(
+                      evaluatedParameter = newEvaluatedParam,
+                      originalDefinitionReturnedByComponent = originalParameterDefinition,
+                      enrichedDefinition = enrichedParameterDefinition
+                    ),
+                    errorsAcc ++ paramEvaluationError,
+                    nodeParametersAcc ++ extraNodeParamOpt
+                  )
+              }
           processRemainingTransformationSteps(
             evaluatedParametersCombinedWithDefinition,
             state,
@@ -286,6 +293,23 @@ object DynamicNodeValidator {
       ),
       modelData.modelConfig.globalParametersConfig
     )
+  }
+
+  private class EvaluatedParameterWithDefinition(
+      val evaluatedParameter: BaseDefinedParameter,
+      originalDefinitionReturnedByComponent: Parameter,
+      val enrichedDefinition: Parameter,
+  ) {
+
+    def revertChangesCanReloadParametersInDefinition =
+      new EvaluatedParameterWithDefinition(
+        evaluatedParameter,
+        originalDefinitionReturnedByComponent,
+        enrichedDefinition = enrichedDefinition.copy(changesCanReloadParameters =
+          originalDefinitionReturnedByComponent.changesCanReloadParameters
+        )
+      )
+
   }
 
 }
