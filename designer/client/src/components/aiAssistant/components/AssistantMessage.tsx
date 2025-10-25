@@ -1,5 +1,5 @@
 import { useMessage } from "@assistant-ui/react";
-import { Box, CircularProgress, Typography } from "@mui/material";
+import { Box, Skeleton, Stack, Typography } from "@mui/material";
 import React, { useMemo } from "react";
 
 import { MarkdownStyled } from "../../graph/node-modal/MarkdownStyled";
@@ -7,17 +7,48 @@ import { ActionsContainer, useHandleActions } from "./actions/ActionsContainer";
 import { CopyContent } from "./actions/CopyContent";
 import { RefreshAssistantAnswer } from "./actions/RefreshAssistantAnswer";
 
+function SkeletonSentence() {
+    const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min)) + min;
+    const getWidth = () => randomInt(20, 120);
+    const getWords = () =>
+        Array(randomInt(2, 12))
+            .fill(null)
+            .map((item, i) => Math.random().toString(36).substring(5));
+    return (
+        <Stack
+            component={Typography}
+            variant="body2"
+            direction="row"
+            sx={{
+                marginBlockStart: "1em",
+                marginBlockEnd: "1em",
+                flexWrap: "wrap",
+                height: "3em",
+                overflow: "hidden",
+                alignItems: "flex-start",
+                alignContent: "flex-start",
+            }}
+        >
+            {getWords().map((item) => (
+                <Skeleton key={item} variant="text" width={getWidth()} sx={{ marginRight: 1 }} />
+            ))}
+        </Stack>
+    );
+}
+
 export const AssistantMessage = () => {
-    const { status, content } = useMessage();
+    const status = useMessage(({ status }) => status);
+    const content = useMessage(({ content }) => content);
     const { showActions, handleShowActions, handleHideActions } = useHandleActions();
 
     const messageText = useMemo(() => content.map((part) => part.text).join("\n"), [content]);
 
     if (status.type === "running" && messageText.length === 0) {
         return (
-            <Box display="flex" alignItems="center" gap={1}>
-                <CircularProgress size="0.75rem" />
-                <Typography variant={"body2"}>Running...</Typography>
+            <Box position={"relative"} onMouseEnter={handleShowActions} onMouseLeave={handleHideActions}>
+                <Box position={"relative"} pb={0.5}>
+                    <SkeletonSentence />
+                </Box>
             </Box>
         );
     }
@@ -31,7 +62,9 @@ export const AssistantMessage = () => {
             <Box position={"relative"} onMouseEnter={handleShowActions} onMouseLeave={handleHideActions}>
                 <Box position={"relative"} pb={0.5}>
                     <MarkdownStyled>{messageText}</MarkdownStyled>
-                    <ActionsContainer show={showActions} placement={"left"}>
+                    {status.type === "running" ? <SkeletonSentence /> : null}
+
+                    <ActionsContainer show={status.type === "complete" && showActions} placement={"left"}>
                         <CopyContent text={messageText} />
                         <RefreshAssistantAnswer />
                     </ActionsContainer>
@@ -40,7 +73,7 @@ export const AssistantMessage = () => {
         );
     }
 
-    if (status.type == "incomplete" && status.reason === "error") {
+    if (status.type === "incomplete" && status.reason === "error") {
         return (
             <Box position={"relative"} onMouseEnter={handleShowActions} onMouseLeave={handleHideActions}>
                 <Box position={"relative"} pb={0.5}>
