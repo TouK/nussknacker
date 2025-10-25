@@ -27,4 +27,4 @@ export const getWritableCategories = createSelector(getLoggedUser, getCategories
 export const getMetricsSettings = createSelector(getFeatureSettings, (settings) => settings?.metrics || ({} as MetricsType));
 export const getMaxTestingRecords = createSelector(getSettings, (s) => s.featuresSettings.testDataSettings.maxSamplesCount);
 
-export const getIsAssitantEnabled = createSelector(getFeatureSettings, (featureSettings) => featureSettings.assistant.enabled);
+export const getIsAssitantEnabled = createSelector(getFeatureSettings, (featureSettings) => featureSettings?.assistant.enabled);
