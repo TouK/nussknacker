@@ -4,7 +4,7 @@ import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import React from "react";
 import { DndProvider } from "react-dnd-multi-backend";
 
-import { AiAssistantButton } from "../components/aiAssistant/components/AiAssistanButton";
+import { AiAssistantButton } from "../components/aiAssistant/components/AiAssistantButton";
 import { MenuBar } from "../components/MenuBar";
 import { VersionInfo } from "../components/versionInfo";
 import { getLoggedUser } from "../reducers/selectors/settings";
