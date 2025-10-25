@@ -1,7 +1,8 @@
 import { useComposerRuntime, useThread } from "@assistant-ui/react";
 import { styled } from "@mui/material";
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
+import { addListenerTyped, useAppDispatch } from "../../../store/storeHelpers";
 import { LoadingButton } from "../../../windowManager/LoadingButton";
 import { TextAreaNode } from "../../FormElements";
 import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";
@@ -61,6 +62,7 @@ const adjustInputHeight = (textarea: HTMLTextAreaElement) => {
 export const Composer = () => {
     const { send, setText, cancel } = useComposerRuntime();
     const { scrollToBottom, provideBottomSpacer } = UseScrollToBottom();
+    const dispatch = useAppDispatch();
 
     const [message, setMessage] = useState("");
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -99,6 +101,14 @@ export const Composer = () => {
             handleSend();
         }
     };
+
+    useEffect(() => {
+        return dispatch(
+            addListenerTyped("ASSISTANT_FOCUS", () => {
+                textAreaRef.current?.focus();
+            }),
+        );
+    }, [dispatch]);
 
     useEffect(() => {
         scrollToBottom();

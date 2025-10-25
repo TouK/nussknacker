@@ -1,3 +1,4 @@
+import { Box } from "@mui/material";
 import i18next from "i18next";
 import React, { useCallback } from "react";
 import { Scrollbars } from "react-custom-scrollbars";
@@ -11,6 +12,7 @@ import { getUi } from "../../reducers/selectors/ui";
 import { useAppSelector } from "../../store/storeHelpers";
 import type { NodeType } from "../../types/node";
 import { useWindows } from "../../windowManager/useWindows";
+import { AskAssistantButton } from "../aiAssistant/components/AiAssistantButton";
 import type { ToolbarPanelProps } from "../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import Errors from "./error/Errors";
@@ -42,6 +44,12 @@ export default function Tips(props: ToolbarPanelProps): JSX.Element {
                     renderThumbVertical={(props) => <div key={uuid4()} {...props} />}
                     hideTracksWhenNotNeeded={true}
                 >
+                    <Box sx={{ float: "right" }}>
+                        <AskAssistantButton
+                            question={`Explain scenario state.`}
+                            realPrompt={`Explain problems in scenario if any. (raw internal data: ${JSON.stringify({ errors, warnings })})`}
+                        />
+                    </Box>
                     <ValidTips
                         loading={!ProcessUtils.isValidationResultPresent(scenario)}
                         testing={visibleDataType === VisibleDataType.test}
