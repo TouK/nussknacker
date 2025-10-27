@@ -17,11 +17,12 @@ const shadowClassName = css({
     zIndex: 10,
 });
 
-const Wrapper = styled(Box)({
+const Wrapper = styled(Box)(({ theme }) => ({
     width: "100%",
     height: "100%",
     position: "relative",
-});
+    "--focus-border": theme.palette.primary.dark,
+}));
 
 export type Side = "right" | "left";
 
@@ -144,7 +145,7 @@ export const InputOutputLayout = memo(function InputOutputWrapper({ children }: 
 
     return (
         <Wrapper>
-            <Allotment ref={ref} onChange={onChange} defaultSizes={defaultSizes} onDragEnd={onChangeEnd}>
+            <Allotment separator={false} ref={ref} onChange={onChange} defaultSizes={defaultSizes} onDragEnd={onChangeEnd}>
                 <Allotment.Pane
                     preferredSize={sidesState.right.hidden ? "40%" : "20%"}
                     minSize={sidesState.left.hidden ? 0 : collapsedSize}
