@@ -1,6 +1,6 @@
 import { Box, styled } from "@mui/material";
 import type { PropsWithChildren } from "react";
-import React, { memo } from "react";
+import React, { memo, useCallback } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { getScrollStyle } from "../node/StyledHeader";
@@ -15,6 +15,7 @@ export const SidePane = memo(function SidePane({
     sideState: SideState;
     onIsEmptyChange: (side: Side, isEmpty: boolean) => void;
 }>) {
+    const isEmptyChange = useCallback((isEmpty: boolean) => onIsEmptyChange(sideState.side, isEmpty), [onIsEmptyChange, sideState.side]);
     return (
         <>
             <SidePanelBox
@@ -24,10 +25,7 @@ export const SidePane = memo(function SidePane({
                 }}
             >
                 <ErrorBoundary fallback={<div>{`ERROR`}</div>}>
-                    <VariableContextTree
-                        direction={sideState.side === "left" ? "input" : "output"}
-                        onIsEmptyChange={(isEmpty) => onIsEmptyChange(sideState.side, isEmpty)}
-                    />
+                    <VariableContextTree direction={sideState.side === "left" ? "input" : "output"} onIsEmptyChange={isEmptyChange} />
                 </ErrorBoundary>
             </SidePanelBox>
             {children}
