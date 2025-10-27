@@ -448,7 +448,9 @@ class UniversalKafkaSourceFactory(
           hintText = Some(
             "Provide an example JSON data sample. It will be analyzed to determine field types and generate a schema for easier data access in the subsequent nodes."
           ),
-          nonImportantForExecution = true
+          nonImportantForExecution = true,
+          // This is a workaround for "topic" flickering. We should define dependencies between parameters instead
+          changesCanReloadParameters = Some(false)
         )
       )
   }

@@ -110,7 +110,7 @@ class GenericTransformationValidationSpec
         editors = List(
           SpelParameterEditor,
         ),
-        changesCanReloadParameters = true,
+        changesCanReloadParameters = Some(true),
       ),
     Parameter(ParameterName("val1"), Unknown).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel)),
     Parameter(ParameterName("val2"), Unknown).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel)),
@@ -269,7 +269,7 @@ class GenericTransformationValidationSpec
           isLazyParameter = true,
           editors = List(SpelParameterEditor),
           defaultValue = Some("0".spel),
-          changesCanReloadParameters = true
+          changesCanReloadParameters = Some(true)
         ),
       Parameter(ParameterName("val1"), Unknown).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel)),
       Parameter(ParameterName("val2"), Unknown).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel))
@@ -341,7 +341,7 @@ class GenericTransformationValidationSpec
           isLazyParameter = true,
           editors = List(SpelParameterEditor),
           defaultValue = Some("0".spel),
-          changesCanReloadParameters = true
+          changesCanReloadParameters = Some(true)
         ),
       Parameter(ParameterName("val1"), Unknown).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel)),
       Parameter(ParameterName("val2"), Unknown).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel))
