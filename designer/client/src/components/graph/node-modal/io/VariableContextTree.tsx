@@ -74,7 +74,10 @@ function useVariableContext(direction: "input" | "output") {
         [direction, dispatch],
     );
 
-    const transitionNodesIds = direction === "input" ? inputNodesIds : outputNodesIds;
+    const transitionNodesIds = useMemo(() => {
+        const transitions = direction === "input" ? inputNodesIds : outputNodesIds;
+        return transitions.filter(({ id, results }) => id || results?.length);
+    }, [direction, inputNodesIds, outputNodesIds]);
 
     return {
         value,
