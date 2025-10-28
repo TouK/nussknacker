@@ -63,7 +63,6 @@ export const ContextAccordion = memo(function ContextAccordion({
                 },
             }}
             ref={accordionRef}
-            // disableGutters
             sx={(theme) => ({
                 boxShadow: newlyAdded
                     ? `inset 0 0 0 2px ${theme.palette.success.main}, inset 0 0 8px 0px ${theme.palette.success.light}`
