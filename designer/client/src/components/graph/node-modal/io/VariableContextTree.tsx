@@ -6,12 +6,13 @@ import { useTranslation } from "react-i18next";
 
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
 import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
-import { getPauseReasons } from "../../../../reducers/selectors/getLiveData";
+import { getIsLiveDataWorking, getPauseReasons } from "../../../../reducers/selectors/getLiveData";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { ContextAccordion } from "./ContextAccordion";
 import { ContextTree } from "./ContextTree";
 import { CountsForNodes } from "./CountsForNodes";
 import { useInputOutputContext } from "./InputOutputContext";
+import { LiveDataLoadingIndicator } from "./LiveDataLoadingIndicator";
 import { useNewlyAddedContexts } from "./useNewlyAddedContexts";
 
 export type Direction = "input" | "output";
@@ -112,9 +113,16 @@ export const VariableContextTree = memo(function ValuesContextTree({
 
     const showNodes = transitionNodesIds.length > 1;
     const toggleRefresh = useCallback(
-        (e: MouseEvent) => dispatch(e.type === "mouseenter" ? stopLiveData(Initiator.list) : startLiveData(Initiator.list)),
-        [dispatch],
+        (e: MouseEvent) => {
+            const isEmpty = transitionNodesIds.flatMap(({ results = [] }) => results).length < 1;
+            if (!isEmpty) {
+                return dispatch(e.type === "mouseenter" ? stopLiveData(Initiator.list) : startLiveData(Initiator.list));
+            }
+        },
+        [dispatch, transitionNodesIds],
     );
+
+    const isLiveDataWorking = useAppSelector(getIsLiveDataWorking);
 
     return (
         <Box
@@ -131,8 +139,9 @@ export const VariableContextTree = memo(function ValuesContextTree({
                     sx={(theme) => ({
                         position: "absolute",
                         inset: 0,
-                        background: alpha(theme.palette.background.default, 0.75),
+                        background: isLiveDataWorking ? null : alpha(theme.palette.background.default, 0.75),
                         backdropFilter: "blur(1px)",
+                        zIndex: isLiveDataWorking ? -1 : null,
                     })}
                 >
                     <Stack
@@ -171,6 +180,7 @@ export const VariableContextTree = memo(function ValuesContextTree({
                     }))}
                     input={direction === "input"}
                 />
+                <LiveDataLoadingIndicator noLabel={direction === "input"} />
             </Stack>
 
             <Box
