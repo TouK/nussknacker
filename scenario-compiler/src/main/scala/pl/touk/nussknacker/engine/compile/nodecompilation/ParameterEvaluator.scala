@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
+import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableWithFixedValue, Parameter => ParameterDef}
+import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationStrategy.{
   EvaluableLazyParameterStrategy,
   PostponedEvaluatorLazyParameterStrategy
@@ -28,7 +30,7 @@ class ParameterEvaluator(
       context: Context,
       p: CompiledParameter
   )(implicit nodeId: NodeId, jobData: JobData): AnyRef = {
-    runtimeExpressionEvaluator.evaluateParameter(p, context).value
+    runtimeExpressionEvaluator.evaluateParameter(p, context).toTry.get.value
   }
 
   def evaluateParameter(
@@ -38,9 +40,9 @@ class ParameterEvaluator(
       implicit jobData: JobData,
       nodeId: NodeId,
       lazyParameterCreationStrategy: LazyParameterCreationStrategy
-  ): ParameterEvaluationResult = {
+  ): Either[CustomNodeValidationException, ParameterEvaluationResult] = {
     if (definition.isLazyParameter) {
-      evaluateLazyParameter(typedParameter, definition)
+      Right(evaluateLazyParameter(typedParameter, definition))
     } else {
       prepareEagerParameter(typedParameter, definition)
     }
@@ -73,7 +75,10 @@ class ParameterEvaluator(
   private def prepareEagerParameter(
       param: TypedParameter,
       definition: ParameterDef
-  )(implicit jobData: JobData, nodeId: NodeId): EagerParameterEvaluationResult = {
+  )(
+      implicit jobData: JobData,
+      nodeId: NodeId
+  ): Either[CustomNodeValidationException, EagerParameterEvaluationResult] = {
     val additionalDefinitions = definition.additionalVariables.collect {
       case (name, AdditionalVariableWithFixedValue(value, _)) =>
         name -> value
@@ -82,17 +87,22 @@ class ParameterEvaluator(
 
     param.typedValue match {
       case single: SingleBranchTypedValue if !definition.branchParam =>
-        val evaluatedValue = evaluateSync(CompiledParameter(single.typedExpression, definition), augumentedCtx)
-        SingleEagerParameterEvaluationResult(evaluatedValue, single.typedExpression.returnType)
+        evaluateSync(CompiledParameter(single.typedExpression, definition), augumentedCtx).map { evaluatedValue =>
+          SingleEagerParameterEvaluationResult(evaluatedValue, single.typedExpression.returnType)
+        }
       case MultipleBranchesTypedValue(valueByBranchId) if definition.branchParam =>
-        val evaluatedValuesByBranchId =
-          valueByBranchId.mapValuesNow(exp =>
-            evaluateSync(CompiledParameter(exp.typedExpression, definition), augumentedCtx)
-          )
-        BranchEagerParameterEvaluationResult(
-          evaluatedValuesByBranchId,
-          valueByBranchId.mapValuesNow(_.typedExpression.returnType)
-        )
+        valueByBranchId.toList
+          .map { case (branchId, exp) =>
+            evaluateSync(CompiledParameter(exp.typedExpression, definition), augumentedCtx).map(branchId -> _)
+          }
+          .sequence
+          .map(_.toMap)
+          .map { evaluatedValuesByBranchId =>
+            BranchEagerParameterEvaluationResult(
+              evaluatedValuesByBranchId,
+              valueByBranchId.mapValuesNow(_.typedExpression.returnType)
+            )
+          }
       case _ => throw new IllegalStateException()
     }
   }
@@ -130,8 +140,8 @@ class ParameterEvaluator(
   private def evaluateSync(
       param: CompiledParameter,
       ctx: Context
-  )(implicit jobData: JobData, nodeId: NodeId): AnyRef = {
-    compileTimeExpressionEvaluator.evaluateParameter(param, ctx).value
+  )(implicit jobData: JobData, nodeId: NodeId): Either[CustomNodeValidationException, AnyRef] = {
+    compileTimeExpressionEvaluator.evaluateParameter(param, ctx).map(_.value)
   }
 
 }

@@ -52,7 +52,7 @@ class ExpressionEvaluator(
   )(implicit nodeId: NodeId, jobData: JobData): (Context, Map[ParameterName, AnyRef]) = {
     val (newCtx, evaluatedParams) = params.foldLeft((ctx, List.empty[(ParameterName, AnyRef)])) {
       case ((accCtx, accParams), param) =>
-        val valueWithModifiedContext = evaluateParameter(param, accCtx)
+        val valueWithModifiedContext = evaluateParameter(param, accCtx).toTry.get
         val newAccParams             = (param.name -> valueWithModifiedContext.value) :: accParams
         (valueWithModifiedContext.context, newAccParams)
     }
@@ -63,20 +63,19 @@ class ExpressionEvaluator(
   def evaluateParameter(
       param: BaseCompiledParameter,
       ctx: Context
-  )(implicit nodeId: NodeId, jobData: JobData): ValueWithContext[AnyRef] = {
-    try {
-      val valueWithModifiedContext = evaluate[AnyRef](param.expression, param.name.value, nodeId, ctx)
-      valueWithModifiedContext.map { evaluatedValue =>
-        if (param.shouldBeWrappedWithScalaOption)
-          Option(evaluatedValue)
-        else if (param.shouldBeWrappedWithJavaOptional)
-          Optional.ofNullable(evaluatedValue)
-        else
-          evaluatedValue
-      }
+  )(implicit nodeId: NodeId, jobData: JobData): Either[CustomNodeValidationException, ValueWithContext[AnyRef]] = {
+    (try {
+      Right(evaluate[AnyRef](param.expression, param.name.value, nodeId, ctx))
     } catch {
-      case NonFatal(ex) => throw CustomNodeValidationException(ex.getMessage, Some(param.name), ex)
-    }
+      case NonFatal(ex) => Left(CustomNodeValidationException(ex.getMessage, Some(param.name), ex))
+    }).map(_.map { evaluatedValue =>
+      if (param.shouldBeWrappedWithScalaOption)
+        Option(evaluatedValue)
+      else if (param.shouldBeWrappedWithJavaOptional)
+        Optional.ofNullable(evaluatedValue)
+      else
+        evaluatedValue
+    })
   }
 
   def evaluate[R](expr: CompiledExpression, expressionId: String, nodeId: NodeId, ctx: Context)(

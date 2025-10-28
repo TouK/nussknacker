@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.ValidatedNel
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
@@ -9,7 +9,10 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  EagerExpressionEvaluationError,
+  MissingParameters
+}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -42,7 +45,7 @@ class DynamicNodeValidator(
       parametersConfig: Map[ParameterName, ParameterConfig],
       nodeInputValidationContext: NodeInputValidationContext,
   ): ValidatedNel[ProcessCompilationError, TransformationResult] = {
-    NodeValidationExceptionHandler.handleExceptionsInValidation {
+    NodeValidationExceptionHandler.handleExceptions {
       val processor =
         new TransformationStepsProcessor(
           compilationDependencies,
@@ -94,7 +97,7 @@ class DynamicNodeValidator(
         stateForFar: Option[component.State],
         errors: List[ProcessCompilationError],
         nodeParameters: List[NodeParameter]
-    ): ValidatedNel[ProcessCompilationError, TransformationResult] = {
+    ): TransformationResult = {
       val transformationStep = component.TransformationStep(
         evaluatedNodeParametersSoFar
           // unfortunately, this cast is needed as we have no easy way to statically check if Parameter definitions
@@ -133,14 +136,12 @@ class DynamicNodeValidator(
           val finalParametersDefinition = evaluatedNodeParametersSoFar
             .transformLast(_.revertChangesCanReloadParametersInDefinition)
             .map(_.enrichedDefinition)
-          Valid(
-            TransformationResult(
-              allErrors,
-              finalParametersDefinition,
-              finalContext,
-              state,
-              nodeParameters
-            )
+          TransformationResult(
+            allErrors,
+            finalParametersDefinition,
+            finalContext,
+            state,
+            nodeParameters
           )
         case component.NextParameters(nextParametersDefinitions, newParameterErrors, state) =>
           val enrichedParametersDefinitions =
@@ -195,17 +196,28 @@ class DynamicNodeValidator(
         nodeParameters: List[NodeParameter]
     ): ValidatedNel[ProcessCompilationError, (BaseDefinedParameter, Option[NodeParameter])] = {
       val compiledParameter = compileParameter(parameterDefinition, nodeParameters)
-      compiledParameter.map { case (typedParameter, extraNodeParamOpt) =>
-        val definedParam =
-          parameterEvaluator.evaluateParameter(typedParameter, parameterDefinition) match {
-            case SingleEagerParameterEvaluationResult(value, returnType) => DefinedEagerParameter(value, returnType)
-            case SingleLazyParameterEvaluationResult(lazyParameter) => DefinedLazyParameter(lazyParameter.returnType)
-            case BranchEagerParameterEvaluationResult(valueByBranchId, returnTypeByBranchId) =>
-              DefinedEagerBranchParameter(valueByBranchId, returnTypeByBranchId)
-            case BranchLazyParameterEvaluationResult(lazyParamByBranchId) =>
-              DefinedLazyBranchParameter(lazyParamByBranchId.mapValuesNow(_.returnType))
-          }
-        (definedParam, extraNodeParamOpt)
+      compiledParameter.andThen { case (typedParameter, extraNodeParamOpt) =>
+        (parameterEvaluator.evaluateParameter(typedParameter, parameterDefinition) match {
+          case Right(SingleEagerParameterEvaluationResult(value, returnType)) =>
+            Valid(DefinedEagerParameter(value, returnType))
+          case Right(SingleLazyParameterEvaluationResult(lazyParameter)) =>
+            Valid(DefinedLazyParameter(lazyParameter.returnType))
+          case Right(BranchEagerParameterEvaluationResult(valueByBranchId, returnTypeByBranchId)) =>
+            Valid(DefinedEagerBranchParameter(valueByBranchId, returnTypeByBranchId))
+          case Right(BranchLazyParameterEvaluationResult(lazyParamByBranchId)) =>
+            Valid(DefinedLazyBranchParameter(lazyParamByBranchId.mapValuesNow(_.returnType)))
+          case Left(evaluationError) =>
+            Invalid(
+              NonEmptyList.of(
+                EagerExpressionEvaluationError(
+                  evaluationError.message,
+                  nodeId,
+                  evaluationError.paramName.get,
+                  evaluationError.getCause
+                )
+              )
+            )
+        }).map((_, extraNodeParamOpt))
       }
     }
 

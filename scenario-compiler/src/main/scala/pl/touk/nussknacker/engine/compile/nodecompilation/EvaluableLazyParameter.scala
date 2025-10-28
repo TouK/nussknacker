@@ -27,6 +27,8 @@ class EvaluableLazyParameter[T <: AnyRef](
   override val evaluate: Evaluate[T] = { ctx: Context =>
     expressionEvaluator
       .evaluateParameter(compiledParameter, ctx)(nodeId, jobData)
+      .toTry
+      .get
       .value
       .asInstanceOf[T]
   }

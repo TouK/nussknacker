@@ -97,7 +97,7 @@ class TestDataPreparer(
       .compile(expression, Some(parameter.name), validationContext, parameter.typ)(nodeId)
       .map { typedExpression =>
         val param = CompiledParameter(typedExpression, parameter)
-        evaluator.evaluateParameter(param, dummyContext)(nodeId, jobData).value
+        evaluator.evaluateParameter(param, dummyContext)(nodeId, jobData).toTry.get.value
       }
   }
 
