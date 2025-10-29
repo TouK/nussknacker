@@ -348,6 +348,60 @@ class ScenarioWithoutSinksSpec
     )
   }
 
+  test("ending without sink is allowed - there is a fragment without sink at the end of the scenario") {
+    val scenarioWithFragment =
+      ScenarioBuilder
+        .streaming("sample-scenario-with-fragment")
+        .source("source", "start1")
+        .fragment(
+          "sub",
+          "fragment1",
+          List("fragment1_input" -> "#input".spel),
+          Map("output"           -> "fragmentResult"),
+          Map("output"           -> None)
+        )
+
+    val fragment = ScenarioBuilder
+      .fragment("fragment1", "fragment1_input" -> classOf[Int])
+      .filter("filter", "#fragment1_input != 10".spel)
+      .endWithoutSink
+
+    val scenario = FragmentResolver(List(fragment)).resolve(scenarioWithFragment).toOption.get
+
+    withCollectingTestResults(
+      scenario,
+      testResults => {
+        assertNumberOfSamplesThatFinishedInNode(testResults, "sub-filter", 4)
+        transitionVariables(testResults, "source", Some("sub")) shouldBe Set(
+          Map("input" -> 10),
+          Map("input" -> 20),
+          Map("input" -> 30),
+          Map("input" -> 40),
+        )
+        transitionVariables(testResults, "sub", Some("sub-filter")) shouldBe Set(
+          Map("fragment1_input" -> 10),
+          Map("fragment1_input" -> 20),
+          Map("fragment1_input" -> 30),
+          Map("fragment1_input" -> 40),
+        )
+        transitionVariables(testResults, "sub", Some("sub-filter")) shouldBe Set(
+          Map("fragment1_input" -> 10),
+          Map("fragment1_input" -> 20),
+          Map("fragment1_input" -> 30),
+          Map("fragment1_input" -> 40),
+        )
+        // All samples finish in the filter node, regardless of filtering, because there is no further node
+        transitionVariables(testResults, "sub-filter", None) shouldBe Set(
+          Map("fragment1_input" -> 10),
+          Map("fragment1_input" -> 20),
+          Map("fragment1_input" -> 30),
+          Map("fragment1_input" -> 40),
+        )
+      },
+      allowEndingScenarioWithoutSink = true,
+    )
+  }
+
   test("ending without sink is allowed - there is for-each node - without sink") {
     val scenario = ScenarioBuilder
       .streaming("sample-for-each")

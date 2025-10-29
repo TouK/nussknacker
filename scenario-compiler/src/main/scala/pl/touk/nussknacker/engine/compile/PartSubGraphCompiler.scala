@@ -122,6 +122,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[compiledgraph.node.Node] = {
+    import scenarioCompilationDependencies._
     implicit val nodeId: NodeId = NodeId(data.id)
     def toCompilationResult[T](
         validated: ValidatedNel[ProcessCompilationError, T],
@@ -149,10 +150,13 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
       case CustomNode(id, _, nodeType, _, _) =>
         toCompilationResult(Valid(compiledgraph.node.EndingCustomNode(id, nodeType)), Map.empty, None)
 
-      // probably this shouldn't occur - otherwise we'd have empty fragment?
-      case FragmentInput(id, _, _, _, _) =>
-        toCompilationResult(Invalid(NonEmptyList.of(UnresolvedFragment(NodeId(id)))), Map.empty, None)
-
+      // this occurs, when we have fragment without a sink
+      case fragmentInput: FragmentInput =>
+        val NodeCompilationResult(typingInfo, parameters, _, combinedValidParams, _) =
+          nodeCompiler.compileFragmentInput(fragmentInput, inputContext)
+        toCompilationResult(combinedValidParams, typingInfo, parameters).map { params =>
+          compiledgraph.node.FragmentUsageStart(fragmentInput.id, params, None)
+        }
       case FragmentOutputDefinition(id, _, Nil, _) =>
         // TODO: should we validate it's process?
         // TODO: does it make sense to validate FragmentOutput?
