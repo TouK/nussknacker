@@ -45,6 +45,7 @@ object ModelConfig {
 
     final case class Enabled(
         maxNumberOfRecords: Int,
+        retentionTimeInMinutes: Int,
         throughputTimeWindowInSeconds: Int,
         liveDataStorage: LiveDataStorage,
     ) extends LiveDataPreviewMode
@@ -126,6 +127,7 @@ object ModelConfig {
             config.getAs[Int]("liveDataPreview.maxNumberOfSamples")
           )
           .getOrElse(20),
+        retentionTimeInMinutes = config.getOrElse("liveDataPreview.retentionTimeInMinutes", 60),
         throughputTimeWindowInSeconds = config.getOrElse("liveDataPreview.throughputTimeWindowInSeconds", 60),
         liveDataStorage = if (config.hasPath("liveDataPreview.storage")) {
           config.getString("liveDataPreview.storage.type").toUpperCase match {

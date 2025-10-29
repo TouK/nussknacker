@@ -106,11 +106,33 @@ class ScenarioLiveDataApiHttpServiceSpec
         deploymentIdOpt = None,
         liveDataEnabledConfig = LiveDataPreviewMode.Enabled(
           maxNumberOfRecords = 10,
+          retentionTimeInMinutes = 1,
           throughputTimeWindowInSeconds = 10,
           liveDataStorage = LiveDataPreviewMode.LiveDataStorage.DesignerJvm
         ),
         skipLiveDataUploaderWithReason = None
       )
+
+      // This live data sample will not be returned:
+      // - because the retention time is 1 minute
+      // - and the sample has timestamp from 1.5 minutes ago
+      // - but it is still taken into account in the totalCount that is returned in the response
+      listener.transitionToNextNode(
+        nodeId = NodeId("start"),
+        nextNodeId = NodeId("variable"),
+        context = Context(
+          ContextId(
+            scenarioName = ProcessName("mocked-scenario-id"),
+            originatingNodeId = NodeId("source"),
+            taskId = 123,
+            index = 123
+          ),
+          Map("v1" -> Json.obj("a" -> "aaa".asJson, "b" -> 1.asJson))
+        ),
+        processMetaData = exampleScenario.metaData,
+        timestamp = Instant.now().minusSeconds(90)
+      )
+
       listener.transitionToNextNode(
         nodeId = NodeId("start"),
         nextNodeId = NodeId("variable"),
@@ -212,7 +234,7 @@ class ScenarioLiveDataApiHttpServiceSpec
              |            }
              |          }
              |        ],
-             |        "totalCount": 1,
+             |        "totalCount": 2,
              |        "currentThroughput": "${regexes.decimalRegex}"
              |      }
              |    ],

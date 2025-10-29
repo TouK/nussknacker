@@ -21,6 +21,7 @@ class LiveDataCollectingListener private[livedata] (
     deploymentId: Option[DeploymentId],
     uploaderConfig: Option[LiveDataUploaderConfig],
     maxNumberOfRecords: Int,
+    retentionTimeInMinutes: Int,
     throughputTimeWindowInSeconds: Int,
 ) extends ProcessListener
     with Serializable {
@@ -38,10 +39,18 @@ class LiveDataCollectingListener private[livedata] (
       nextNodeId: NodeId,
       context: Context,
       processMetaData: MetaData,
+  ): Unit = transitionToNextNode(nodeId, nextNodeId, context, processMetaData, Instant.now())
+
+  def transitionToNextNode(
+      nodeId: NodeId,
+      nextNodeId: NodeId,
+      context: Context,
+      processMetaData: MetaData,
+      timestamp: Instant,
   ): Unit = performStorageOperation {
     _.addLiveDataSample(
       NodeTransition(nodeId, Some(nextNodeId)),
-      sampleFromContext(context, Instant.now())
+      sampleFromContext(context, timestamp)
     )
   }
 
@@ -121,6 +130,7 @@ class LiveDataCollectingListener private[livedata] (
     LiveDataCollectingListenerStorageHolder.withStorage(
       processName = processIdWithName.name,
       maxNumberOfRecords = maxNumberOfRecords,
+      retentionTimeInMinutes = retentionTimeInMinutes,
       throughputTimeWindowInSeconds = throughputTimeWindowInSeconds
     )(actionOnStorage)
     uploaderConfig.foreach(LiveDataUploaderHolder.ensureLiveDataUploaderIsActive(processIdWithName, deploymentId, _))
@@ -173,6 +183,7 @@ object LiveDataCollectingListener extends LazyLogging {
       deploymentIdOpt,
       liveDataUploaderConfigOpt,
       liveDataEnabledConfig.maxNumberOfRecords,
+      liveDataEnabledConfig.retentionTimeInMinutes,
       liveDataEnabledConfig.throughputTimeWindowInSeconds
     )
   }

@@ -7,9 +7,11 @@ import java.time.{Clock, Instant}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 import scala.jdk.CollectionConverters._
+import scala.math.Ordered.orderingToOrdered
 
 private[livedata] class LiveDataCollectingListenerStorage(
     maxNumberOfRecords: Int,
+    retentionTimeInMinutes: Int,
     throughputTimeWindowInSeconds: Int,
 )(implicit clock: Clock) {
 
@@ -35,19 +37,25 @@ private[livedata] class LiveDataCollectingListenerStorage(
       timestamp = Instant.now,
       nodeTransitions = samples.asScala.toMap.map { case (transition, values) =>
         transition -> LiveDataForNodeTransition(
-          samples = values.values,
+          samples = latestValues[LiveDataSample](values, _.timestamp),
           totalCount = values.totalCount,
           currentThroughput = transitionsSlidingWindowCounter.getThroughput.getOrElse(transition, 0)
         )
       },
       expressionEvaluationResults = expressionEvaluationResults.asScala.toMap
         .groupBy { case (nodeExpr, _) => nodeExpr.nodeId }
-        .map { case (nodeId, matchingValuesMap) => nodeId -> matchingValuesMap.values.toList.flatMap(_.values) },
+        .map { case (nodeId, matchingValuesMap) =>
+          nodeId -> matchingValuesMap.values.toList
+            .flatMap(latestValues[ExpressionEvaluationResult](_, _.timestamp))
+        },
       externalServiceInvocationResults = externalServiceInvocationResults.asScala.toMap
         .groupBy { case (nodeExpr, _) => nodeExpr.nodeId }
-        .map { case (nodeId, matchingValuesMap) => nodeId -> matchingValuesMap.values.toList.flatMap(_.values) },
+        .map { case (nodeId, matchingValuesMap) =>
+          nodeId -> matchingValuesMap.values.toList
+            .flatMap(latestValues[ExternalServiceInvocationResult](_, _.timestamp))
+        },
       exceptions = exceptions.asScala.toMap.map { case (nodeId, values) =>
-        nodeId -> values.values
+        nodeId -> latestValues[ExceptionResult](values, _.timestamp)
       },
     )
   }
@@ -67,6 +75,11 @@ private[livedata] class LiveDataCollectingListenerStorage(
 
   def addException(nodeId: NodeId, value: ExceptionResult): Unit = {
     put(exceptions, nodeId, value)
+  }
+
+  private def latestValues[T](values: RingBufferWithTotalCount[T], timestampExtractor: T => Instant): List[T] = {
+    val cutoff = Instant.now.minusSeconds(retentionTimeInMinutes * 60)
+    values.values.filter(record => timestampExtractor(record) >= cutoff)
   }
 
   private def put[K, V](

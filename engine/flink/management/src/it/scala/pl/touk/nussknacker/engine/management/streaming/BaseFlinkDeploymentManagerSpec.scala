@@ -92,6 +92,7 @@ trait BaseFlinkDeploymentManagerSpec
       deploymentIdOpt = None,
       liveDataEnabledConfig = LiveDataPreviewMode.Enabled(
         maxNumberOfRecords = configuredMaxNumbersOfRecords,
+        retentionTimeInMinutes = 60,
         throughputTimeWindowInSeconds = 60,
         liveDataStorage = LiveDataPreviewMode.LiveDataStorage.DesignerJvm
       ),

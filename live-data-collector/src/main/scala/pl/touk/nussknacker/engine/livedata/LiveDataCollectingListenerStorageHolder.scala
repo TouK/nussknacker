@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.livedata
 
 import com.github.benmanes.caffeine.cache.Caffeine
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import java.time.Clock
 import scala.compat.java8.FunctionConverters._
@@ -23,12 +23,13 @@ object LiveDataCollectingListenerStorageHolder {
   private[livedata] def withStorage(
       processName: ProcessName,
       maxNumberOfRecords: Int,
+      retentionTimeInMinutes: Int,
       throughputTimeWindowInSeconds: Int,
   )(actionOnStorage: LiveDataCollectingListenerStorage => Unit): Unit = {
     val storage = listenerStorages.get(
       processName,
       asJavaFunction((_: ProcessName) =>
-        new LiveDataCollectingListenerStorage(maxNumberOfRecords, throughputTimeWindowInSeconds)
+        new LiveDataCollectingListenerStorage(maxNumberOfRecords, retentionTimeInMinutes, throughputTimeWindowInSeconds)
       )
     )
     actionOnStorage(storage)
