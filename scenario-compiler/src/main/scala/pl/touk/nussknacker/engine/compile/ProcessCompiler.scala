@@ -134,16 +134,8 @@ protected trait ProcessCompilerBase {
   private def missingSinkHandler(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): MissingSinkHandler = {
-    if (scenarioIsAllowedToEndWithoutSink) MissingSinkHandler.AllowMissingSinkHandler
+    if (allowEndingScenarioWithoutSink) MissingSinkHandler.AllowMissingSinkHandler
     else MissingSinkHandler.DoNotAllowMissingSinkHandler
-  }
-
-  private def scenarioIsAllowedToEndWithoutSink(
-      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
-  ) = {
-    import scenarioCompilationDependencies._
-    lazy val isFragment = metaData.typeSpecificData.isFragment
-    allowEndingScenarioWithoutSink && !isFragment
   }
 
   private def contextWithOnlyGlobalVariables(implicit jobData: JobData): ValidationContext =
