@@ -1,8 +1,8 @@
-import { CloudOff } from "@mui/icons-material";
-import { alpha, Box, Fade, Stack, Typography } from "@mui/material";
+import { Box, Fade, Stack, Typography } from "@mui/material";
 import type { MouseEvent } from "react";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { TransitionGroup } from "react-transition-group";
 
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
 import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
@@ -11,9 +11,10 @@ import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { ContextAccordion } from "./ContextAccordion";
 import { ContextTree } from "./ContextTree";
 import { CountsForNodes } from "./CountsForNodes";
+import { DoubleTransition } from "./DoubleTransition";
+import { EmptyListIndicator } from "./EmptyListIndicator";
 import { useInputOutputContext } from "./InputOutputContext";
 import { LiveDataLoadingIndicator } from "./LiveDataLoadingIndicator";
-import { useNewlyAddedContexts } from "./useNewlyAddedContexts";
 
 export type Direction = "input" | "output";
 type ValuesContextTreeProps = {
@@ -98,8 +99,6 @@ export const VariableContextTree = memo(function ValuesContextTree({
     const { availableContexts, hiddenAvailableContexts, setContext, inputVariables, transitionNodesIds, selectedContextCache } =
         useVariableContext(direction);
 
-    const isContextHighlighted = useNewlyAddedContexts(availableContexts);
-
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
 
@@ -134,41 +133,15 @@ export const VariableContextTree = memo(function ValuesContextTree({
             onMouseEnter={toggleRefresh}
             onMouseLeave={toggleRefresh}
         >
-            <Fade in={availableContexts.length < 1}>
-                <Box
-                    sx={(theme) => ({
-                        position: "absolute",
-                        inset: 0,
-                        background: isLiveDataWorking ? null : alpha(theme.palette.background.default, 0.75),
-                        backdropFilter: "blur(1px)",
-                        zIndex: isLiveDataWorking ? -1 : null,
-                    })}
-                >
-                    <Stack
-                        direction="column"
-                        sx={{
-                            position: "absolute",
-                            top: "50%",
-                            left: "50%",
-                            transform: "translate(-50%, -100%)",
-                            textAlign: "center",
-                            alignItems: "center",
-                            opacity: 0.25,
-                        }}
-                    >
-                        <CloudOff sx={{ fontSize: "4em" }} />
-                        <Typography variant="subtitle2" noWrap>
-                            {t("variableContext.noData", "data not available yet")}
-                        </Typography>
-                    </Stack>
-                </Box>
+            <Fade in={availableContexts.length < 1} timeout={1000} mountOnEnter unmountOnExit>
+                <EmptyListIndicator />
             </Fade>
             <Stack
                 spacing={1}
                 sx={{
                     position: "sticky",
                     top: 0,
-                    zIndex: -1,
+                    zIndex: 0,
                     padding: 1,
                 }}
             >
@@ -180,33 +153,42 @@ export const VariableContextTree = memo(function ValuesContextTree({
                     }))}
                     input={direction === "input"}
                 />
-                <LiveDataLoadingIndicator noLabel={direction === "input"} />
             </Stack>
 
-            <Box
-                sx={(theme) => ({
-                    background: theme.palette.background.paper,
-                })}
-            >
-                {(!selectedContextCache || availableContexts.find((r) => r.id === selectedContextCache.id)
-                    ? availableContexts
-                    : [...availableContexts, selectedContextCache]
-                ).map((r, index) => (
-                    <ContextAccordion
-                        key={r.id}
-                        value={r}
-                        direction={direction}
-                        disabled={r.disabled}
-                        expanded={selectedContextCache?.id === r.id && !r.disabled}
-                        onToggle={setContext}
-                        locked={index >= availableContexts.length}
-                        showNodes={showNodes}
-                        newlyAdded={isContextHighlighted(r.id)}
-                    >
-                        {direction === "output" ? <>{r.error}</> : null}
-                        <ContextTree context={r} oldFields={direction === "output" ? inputVariables : []} />
-                    </ContextAccordion>
-                ))}
+            <Box sx={{ position: "relative", zIndex: 1 }}>
+                <LiveDataLoadingIndicator noLabel={direction === "input"} />
+                <TransitionGroup>
+                    {(!selectedContextCache || availableContexts.find((r) => r.id === selectedContextCache.id)
+                        ? availableContexts
+                        : [...availableContexts, selectedContextCache]
+                    ).map((r, index) => (
+                        <DoubleTransition
+                            key={r.id + r.timestamp}
+                            directionIn="down"
+                            directionOut="up"
+                            timeout={{
+                                appear: 0,
+                                enter: isLiveDataWorking ? 300 : 0,
+                                exit: isLiveDataWorking ? 200 : 0,
+                            }}
+                            mountOnEnter
+                            unmountOnExit
+                        >
+                            <ContextAccordion
+                                value={r}
+                                direction={direction}
+                                disabled={r.disabled}
+                                expanded={selectedContextCache?.id === r.id && !r.disabled}
+                                onToggle={setContext}
+                                locked={index >= availableContexts.length}
+                                showNodes={showNodes}
+                            >
+                                {direction === "output" ? <>{r.error}</> : null}
+                                <ContextTree context={r} oldFields={direction === "output" ? inputVariables : []} />
+                            </ContextAccordion>
+                        </DoubleTransition>
+                    ))}
+                </TransitionGroup>
             </Box>
 
             {hiddenAvailableContexts > 0 ? (
@@ -218,7 +200,7 @@ export const VariableContextTree = memo(function ValuesContextTree({
                         opacity: 0.5,
                         position: "sticky",
                         bottom: 0,
-                        zIndex: -1,
+                        zIndex: 0,
                     }}
                 >
                     {t("variableContext.truncatedList", "...and {{count}} more", { count: hiddenAvailableContexts })}
