@@ -119,10 +119,10 @@ object PeriodicProcessStateDefinitionManager {
         }
         val prefix = scheduleId.scheduleName.value
           .map { definedScheduleName =>
-            s"Schedule $definedScheduleName scheduled at:"
+            s"Schedule $definedScheduleName scheduled for:"
           }
           .getOrElse {
-            s"Scheduled at:"
+            s"Scheduled for:"
           }
         s"$prefix ${runAt.format(PeriodicStateStatus.Format)} status: $refinedStatus"
       }
