@@ -1,16 +1,17 @@
 import { CloudOff } from "@mui/icons-material";
 import { alpha, Box, Stack, Typography } from "@mui/material";
-import React from "react";
+import React, { forwardRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { getIsLiveDataWorking } from "../../../../reducers/selectors/getLiveData";
 import { useAppSelector } from "../../../../store/storeHelpers";
 
-export function EmptyListIndicator() {
+export const EmptyListIndicator = forwardRef(function EmptyListIndicator(props, ref) {
     const { t } = useTranslation();
     const isLiveDataWorking = useAppSelector(getIsLiveDataWorking);
     return (
         <Box
+            ref={ref}
             sx={(theme) => ({
                 position: "absolute",
                 inset: 0,
@@ -38,4 +39,4 @@ export function EmptyListIndicator() {
             </Stack>
         </Box>
     );
-}
+});
