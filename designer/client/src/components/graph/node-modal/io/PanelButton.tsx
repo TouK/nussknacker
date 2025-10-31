@@ -28,7 +28,6 @@ export const PanelButton = styled("button", {
         },
         svg: {
             fontSize: "1.2rem",
-            marginBottom: -3,
             transform: `rotate(${collapsed ? 180 : 0}deg)`,
         },
         backdropFilter: "blur(15px)",
@@ -43,6 +42,9 @@ export const PanelButton = styled("button", {
                 transformOrigin: "left",
                 transform: `rotate(-90deg) translateX(-50%)`,
                 paddingBlockStart: 10,
+                "& svg": {
+                    marginBottom: -3,
+                },
             };
         case "right":
             return {
@@ -51,6 +53,9 @@ export const PanelButton = styled("button", {
                 transformOrigin: "right",
                 transform: `rotate(90deg) translateX(50%)`,
                 paddingBlockStart: 10,
+                "& svg": {
+                    marginBottom: -3,
+                },
             };
         case "center":
             return {
