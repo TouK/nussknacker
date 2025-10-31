@@ -4,7 +4,6 @@ import { blend } from "@mui/system";
 export const AccordionStyled = styled(Accordion, {
     shouldForwardProp: (prop) => prop !== "animatedAppear",
 })<AccordionProps & { animatedAppear: boolean }>(({ theme, expanded, animatedAppear }) => ({
-    zoom: 0.75,
     // gutter sized shadow to mask sticky elements in margin area
     boxShadow: expanded ? `0 0 0 ${theme.spacing(2)} var(--sidePanelBackground)` : null,
     animation: animatedAppear

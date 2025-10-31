@@ -67,11 +67,19 @@ export const ContextAccordion = memo(
                     expandIcon={<ExpandMore />}
                     sx={{
                         overflow: "hidden",
+                        zoom: 0.75,
                     }}
                 >
                     <ContextTitle reversed={direction === "input"} context={value} locked={locked} showNodes={showNodes} />
                 </AccordionSummary>
-                <AccordionDetails sx={{ padding: 0 }}>{children}</AccordionDetails>
+                <AccordionDetails
+                    sx={{
+                        padding: 0,
+                        zoom: 0.75,
+                    }}
+                >
+                    {children}
+                </AccordionDetails>
             </AccordionStyled>
         );
     }),
