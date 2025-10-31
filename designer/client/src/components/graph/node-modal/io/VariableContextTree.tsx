@@ -168,8 +168,8 @@ export const VariableContextTree = memo(function ValuesContextTree({
                             directionOut="up"
                             timeout={{
                                 appear: 0,
-                                enter: isLiveDataWorking ? 300 : 0,
-                                exit: isLiveDataWorking ? 200 : 0,
+                                enter: isLiveDataWorking ? 500 : 0,
+                                exit: isLiveDataWorking ? 400 : 0,
                             }}
                             mountOnEnter
                             unmountOnExit

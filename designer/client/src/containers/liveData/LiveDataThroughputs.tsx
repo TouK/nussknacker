@@ -1,4 +1,4 @@
-import { GlobalStyles } from "@mui/material";
+import { alpha, GlobalStyles, useTheme } from "@mui/material";
 import React, { useEffect, useMemo, useRef } from "react";
 
 import { useUserSettings } from "../../common/userSettings";
@@ -12,20 +12,41 @@ import {
 } from "../../reducers/selectors/getLiveData";
 import { useAppSelector } from "../../store/storeHelpers";
 
+const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
 const CLASS_NAME = "live-data";
-const PULSE_KEYFRAMES: Keyframe[] = [
-    { offset: 0, filter: "brightness(1)" },
-    { offset: 0.025, filter: "brightness(1.5) hue-rotate(20deg)" },
-    { offset: 1, filter: "brightness(1)" },
-];
-const PULSE2_KEYFRAMES: Keyframe[] = [
-    { filter: "brightness(1.5) hue-rotate(20deg)" },
-    { filter: "brightness(2.0) hue-rotate(30deg)" },
-    { filter: "brightness(1.5) hue-rotate(20deg)" },
-];
 const DASH_KEYFRAMES: Keyframe[] = [{ strokeDashoffset: 0 }, { strokeDashoffset: 20 }];
 
 export function LiveDataThroughputs() {
+    const theme = useTheme();
+    const PULSE_KEYFRAMES: Keyframe[] = useMemo(
+        () =>
+            isSafari
+                ? [{ offset: 0 }, { offset: 0.025, fill: alpha(theme.palette.primary.main, 0.2) }, { offset: 1 }]
+                : [
+                      { offset: 0, filter: "brightness(1)" },
+                      { offset: 0.025, filter: "brightness(1.5) hue-rotate(20deg)" },
+                      { offset: 1, filter: "brightness(1)" },
+                  ],
+        [theme.palette.primary.main],
+    );
+
+    const PULSE2_KEYFRAMES: Keyframe[] = useMemo(
+        () =>
+            isSafari
+                ? [
+                      { fill: alpha(theme.palette.primary.main, 0.2) },
+                      { fill: alpha(theme.palette.primary.main, 0.5) },
+                      { fill: alpha(theme.palette.primary.main, 0.2) },
+                  ]
+                : [
+                      { filter: "brightness(1.5) hue-rotate(20deg)" },
+                      { filter: "brightness(2.0) hue-rotate(30deg)" },
+                      { filter: "brightness(1.5) hue-rotate(20deg)" },
+                  ],
+        [theme.palette.primary.main],
+    );
+
     const graphGetter = useGraph();
 
     const [settings] = useUserSettings();
@@ -84,7 +105,10 @@ export function LiveDataThroughputs() {
             };
 
             const events = newEvents.filter(isMatchingModel);
-            const el = graphInstance.processGraphPaper.findViewByModel(model)?.el;
+            let el = graphInstance.processGraphPaper.findViewByModel(model)?.el;
+            if (isSafari) {
+                el = el.getElementsByTagName("rect")[0];
+            }
 
             const nodeInputThroughput = enabled
                 ? transitionResults.filter(isMatchingModel).reduce((sum, { currentThroughput }) => sum + currentThroughput, 0)
@@ -124,7 +148,7 @@ export function LiveDataThroughputs() {
                 animations.forEach((a) => a.cancel());
             }
         });
-    }, [enabled, graphGetter, nextIn, newEvents, transitionResults]);
+    }, [enabled, graphGetter, nextIn, newEvents, transitionResults, PULSE2_KEYFRAMES, PULSE_KEYFRAMES]);
 
     useEffect(() => {
         const graphInstance = graphGetter();
