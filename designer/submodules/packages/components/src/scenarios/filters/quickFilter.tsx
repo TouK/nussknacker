@@ -29,6 +29,13 @@ function isSimpleChar(event: KeyboardEvent) {
     return simpleCharacters && !hasModifiers;
 }
 
+function isOutsideInput() {
+    const activeElement = document.activeElement as HTMLElement;
+    const tagName = activeElement.tagName.toLowerCase();
+    const inputTagNames = ["input", "textarea", "select"];
+    return !inputTagNames.includes(tagName);
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function QuickFilter<F extends Record<string, any>>({
     children,
@@ -59,7 +66,7 @@ export function QuickFilter<F extends Record<string, any>>({
     }, [expansionSize, focused, value]);
 
     useDocumentEventListener("keydown", (event: KeyboardEvent) => {
-        if (isSimpleChar(event)) inputRef.current?.focus();
+        if (isSimpleChar(event) && isOutsideInput()) inputRef.current?.focus();
     });
 
     return (

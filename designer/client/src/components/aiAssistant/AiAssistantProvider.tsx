@@ -1,11 +1,13 @@
-import type { ChatModelRunOptions, TextContentPart } from "@assistant-ui/react";
+import type { ChatModelRunOptions, TextMessagePart } from "@assistant-ui/react";
 import { AssistantRuntimeProvider, type ChatModelAdapter, useLocalRuntime } from "@assistant-ui/react";
 import type { EventSourceMessage } from "eventsource-parser";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import type { ReactNode } from "react";
-import React from "react";
+import React, { useEffect } from "react";
 
 import httpService from "../../http/HttpService/instance";
+import { addListenerTyped, useAppDispatch } from "../../store/storeHelpers";
+import { prepareHelpMessage } from "./prepareHelpMessage";
 
 //TODO: Find out how to pass threadId to the AiAssistant and use it instead of this variable
 const ThreadIdManager = {
@@ -37,12 +39,32 @@ const parseEvent: (eventSourceMessage: EventSourceMessage) => ChatStreamEvent = 
     }
 };
 
+function smoothTransform(baseDelay: number, nth = 1) {
+    let lastTime = performance.now();
+    let counter = 0;
+    return new TransformStream({
+        async transform(chunk, controller) {
+            counter = (counter + 1) % nth;
+            if (counter === 0) {
+                const now = performance.now();
+                const sinceLast = now - lastTime;
+                const effectiveDelay = sinceLast < baseDelay ? baseDelay - sinceLast : 0;
+                if (effectiveDelay > 0) {
+                    await new Promise((r) => setTimeout(r, effectiveDelay));
+                }
+            }
+            lastTime = performance.now();
+            controller.enqueue(chunk);
+        },
+    });
+}
+
 async function* initializeChatStream(
     messages: ChatModelRunOptions["messages"],
     abortSignal?: AbortSignal,
 ): AsyncGenerator<ChatStreamEvent> {
     const response = await httpService.sendChatMessage(
-        messages[messages.length - 1].content[0] as TextContentPart,
+        messages[messages.length - 1].content[0] as TextMessagePart,
         abortSignal,
         ThreadIdManager.THREAD_ID,
     );
@@ -53,7 +75,11 @@ async function* initializeChatStream(
         return;
     }
 
-    const reader = response.body.pipeThrough(new TextDecoderStream()).pipeThrough(new EventSourceParserStream()).getReader();
+    const reader = response.body
+        .pipeThrough(new TextDecoderStream())
+        .pipeThrough(new EventSourceParserStream())
+        .pipeThrough(smoothTransform(100, 8))
+        .getReader();
 
     const abortHandler = () => {
         try {
@@ -139,6 +165,15 @@ export function AiAssistantProvider({
     children: ReactNode;
 }>) {
     const runtime = useLocalRuntime(ModelAdapter);
+
+    const dispatch = useAppDispatch();
+    useEffect(() => {
+        return dispatch(
+            addListenerTyped("ASSISTANT_ASK", ({ question, realPrompt }) => {
+                runtime.thread.append(prepareHelpMessage(question, realPrompt));
+            }),
+        );
+    }, [dispatch, runtime.thread]);
 
     return <AssistantRuntimeProvider runtime={runtime}>{children}</AssistantRuntimeProvider>;
 }
