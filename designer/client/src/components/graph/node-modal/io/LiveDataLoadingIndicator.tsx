@@ -1,11 +1,11 @@
 import { Fade, Skeleton, Stack, Typography } from "@mui/material";
 import React, { memo } from "react";
 
-import { getIsLiveDataWorking } from "../../../../reducers/selectors/getLiveData";
+import { getLiveDataNextUpdate } from "../../../../reducers/selectors/getLiveData";
 import { useAppSelector } from "../../../../store/storeHelpers";
 
 export const LiveDataLoadingIndicator = memo(function ContextAccordion({ noLabel }: { noLabel?: boolean }) {
-    const isLiveDataWorking = useAppSelector(getIsLiveDataWorking);
+    const isLiveDataWorking = useAppSelector(getLiveDataNextUpdate);
     return (
         <Fade in={isLiveDataWorking} mountOnEnter unmountOnExit>
             <Stack
