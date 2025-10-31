@@ -21,7 +21,6 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.components.LiteBaseComponentProvider
 import pl.touk.nussknacker.engine.lite.components.requestresponse.RequestResponseComponentProvider
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller.fromJsonUnsafe
 import pl.touk.nussknacker.engine.requestresponse.{
   FutureBasedRequestResponseScenarioInterpreter,
   Request1,
@@ -34,7 +33,6 @@ import pl.touk.nussknacker.engine.testmode.TestProcess._
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.io.Source
 import scala.jdk.CollectionConverters._
 
 class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeAndAfterEach {
@@ -218,7 +216,79 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
   }
 
   test("scenario with multiple unions should work properly") {
-    val process = fromJsonUnsafe(Source.fromResource("scenarios/scenario-with-multiple-unions.json").mkString)
+    val process = ScenarioBuilder
+      .requestResponse("unionTest", "unionTest")
+      .additionalFields(properties =
+        Map(
+          "inputSchema" -> """{"type": "object", "properties": {"field1": {"type": "string"}, "field2": {"type": "string"}}}""",
+          "outputSchema" -> "{}"
+        )
+      )
+      .sources(
+        GraphBuilder
+          .source("start", "request")
+          .filter(
+            "filter",
+            "#input.field1 == 'right'".spel,
+            nextFalse = {
+              GraphBuilder
+                .buildSimpleVariable("variable 1", "var1", "1".spel)
+                .split(
+                  "Split",
+                  GraphBuilder
+                    .buildSimpleVariable("leftVariableB", "leftVariableB", "'leftVariableB'".spel)
+                    .branchEnd("leftVariableB", "unionLeft"),
+                  GraphBuilder
+                    .buildSimpleVariable("leftVariableA", "leftVariableA", "'leftVariableA'".spel)
+                    .branchEnd("leftVariableA", "unionLeft"),
+                )
+            }
+          )
+          .filter(
+            "filter 1",
+            "true".spel,
+            nextFalse = {
+              GraphBuilder
+                .buildSimpleVariable("rightVariableA", "rightVariableA", "'rightVariableA'".spel)
+                .branchEnd("rightVariableA", "unionRight")
+            }
+          )
+          .buildSimpleVariable("rightVariableB", "rightVariableB", "'rightVariableB'".spel)
+          .branchEnd("rightVariableB", "unionRight"),
+        GraphBuilder
+          .join(
+            "unionLeft",
+            "union",
+            Some("unionLeft"),
+            branchParams = List(
+              "leftVariableA" -> List("Output expression" -> "#leftVariableA".spel),
+              "leftVariableB" -> List("Output expression" -> "#leftVariableB".spel)
+            )
+          )
+          .branchEnd("unionLeft", "unionBeforeEnd"),
+        GraphBuilder
+          .join(
+            "unionRight",
+            "union",
+            Some("unionRight"),
+            branchParams = List(
+              "rightVariableA" -> List("Output expression" -> "#rightVariableA".spel),
+              "rightVariableB" -> List("Output expression" -> "#rightVariableB".spel)
+            )
+          )
+          .branchEnd("unionRight", "unionBeforeEnd"),
+        GraphBuilder
+          .join(
+            "unionBeforeEnd",
+            "union",
+            Some("unionBeforeEnd"),
+            branchParams = List(
+              "unionRight" -> List("Output expression" -> "#unionRight".spel),
+              "unionLeft"  -> List("Output expression" -> "#unionLeft".spel)
+            )
+          )
+          .emptySink("Response", "response", "Raw editor" -> "false".spel, "Value" -> "#unionBeforeEnd".spel),
+      )
 
     def prepareContextId(varValue: String, right: Boolean): ContextId = {
       val unionName = if (right) "unionRight" else "unionLeft"
@@ -231,12 +301,12 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     }
 
     // Scenario go to 'left' nodes, where we have split and later union -> hence two variables
-    val forLeftUnion = runTest(process, ScenarioTestData(List(createTestRecord("left", ""))))
+    val leftUnionResults = runTest(process, ScenarioTestData(List(createTestRecord("left", ""))))
 
-    forLeftUnion.nodeResults.get(NodeId("unionRight")) should not be defined
-    forLeftUnion.nodeResults(NodeId("$edge-leftVariableA-unionLeft")) should have size 1
-    forLeftUnion.nodeResults(NodeId("$edge-leftVariableB-unionLeft")) should have size 1
-    forLeftUnion.externalServiceInvocationResults(NodeId("Response")).map(withMockedTimestamp).toSet shouldBe Set(
+    leftUnionResults.nodeResults.get(NodeId("unionRight")) should not be defined
+    leftUnionResults.nodeResults(NodeId("$edge-leftVariableA-unionLeft")) should have size 1
+    leftUnionResults.nodeResults(NodeId("$edge-leftVariableB-unionLeft")) should have size 1
+    leftUnionResults.externalServiceInvocationResults(NodeId("Response")).map(withMockedTimestamp).toSet shouldBe Set(
       ExternalServiceInvocationResult(
         prepareContextId("leftVariableB", right = false),
         mockedTimestamp,
@@ -251,12 +321,12 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       )
     )
 
-    val forRightUnion = runTest(process, ScenarioTestData(List(createTestRecord("right", ""))))
+    val rightUnionResults = runTest(process, ScenarioTestData(List(createTestRecord("right", ""))))
 
     // Scenario go to 'right' nodes, where we have filter and later union -> hence one variable (B)
-    forRightUnion.nodeResults.get(NodeId("unionLeft")) should not be defined
-    forRightUnion.nodeResults(NodeId("$edge-rightVariableB-unionRight")) should have size 1
-    forRightUnion.externalServiceInvocationResults(NodeId("Response")).map(withMockedTimestamp).toSet shouldBe Set(
+    rightUnionResults.nodeResults.get(NodeId("unionLeft")) should not be defined
+    rightUnionResults.nodeResults(NodeId("$edge-rightVariableB-unionRight")) should have size 1
+    rightUnionResults.externalServiceInvocationResults(NodeId("Response")).map(withMockedTimestamp).toSet shouldBe Set(
       ExternalServiceInvocationResult(
         prepareContextId("rightVariableB", right = true),
         mockedTimestamp,
