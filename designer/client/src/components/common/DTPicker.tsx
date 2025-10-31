@@ -31,7 +31,7 @@ export function DTPicker({
             open={open}
             dateFormat={dateFormat}
             timeFormat={timeFormat}
-            inputProps={{ style, ...inputProps }}
+            inputProps={{ style, onFocusCapture: (e) => e.stopPropagation(), ...inputProps }}
             onChange={onChange}
             value={value}
             locale={i18n.language}
