@@ -18,11 +18,12 @@ type ContextAccordionProps = PropsWithChildren<{
     direction: Direction;
     locked?: boolean;
     showNodes?: boolean;
+    highlightAppear?: boolean;
 }>;
 
 export const ContextAccordion = memo(
     forwardRef<unknown, ContextAccordionProps>(function ContextAccordion(
-        { disabled, expanded, onToggle, children, value, direction, locked, showNodes },
+        { disabled, expanded, onToggle, children, value, direction, locked, showNodes, highlightAppear },
         forwardedRef,
     ) {
         const dispatch = useAppDispatch();
@@ -61,7 +62,7 @@ export const ContextAccordion = memo(
                     },
                 }}
                 ref={ref}
-                animatedAppear
+                animatedAppear={highlightAppear}
             >
                 <AccordionSummary
                     expandIcon={<ExpandMore />}

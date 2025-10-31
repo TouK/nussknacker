@@ -4,7 +4,7 @@ import React from "react";
 import { Transition } from "react-transition-group";
 import type { TransitionProps } from "react-transition-group/Transition";
 
-interface DoubleTransitionProps extends Omit<SlideProps, "in" | "direction"> {
+interface DoubleSlideProps extends Omit<SlideProps, "in" | "direction"> {
     in?: boolean;
     directionIn?: SlideProps["direction"];
     directionOut?: SlideProps["direction"];
@@ -12,10 +12,10 @@ interface DoubleTransitionProps extends Omit<SlideProps, "in" | "direction"> {
     children: React.ReactElement;
 }
 
-export const DoubleTransition: React.FC<DoubleTransitionProps> = ({
+export const DoubleSlide: React.FC<DoubleSlideProps> = ({
     in: inProp,
-    directionIn = "left",
-    directionOut = "right",
+    directionIn = "down",
+    directionOut = "up",
     timeout = 300,
     children,
     ...rest

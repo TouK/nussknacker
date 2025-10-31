@@ -1,23 +1,24 @@
-import { Box, Fade, Stack, Typography } from "@mui/material";
-import type { MouseEvent } from "react";
+import { Box, Fade, Typography } from "@mui/material";
+import type { MouseEvent, PropsWithChildren } from "react";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TransitionGroup } from "react-transition-group";
+import { useInViewRef } from "rooks";
 
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
 import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
-import { getIsLiveDataWorking, getPauseReasons } from "../../../../reducers/selectors/getLiveData";
+import { getIsLiveDataWorking } from "../../../../reducers/selectors/getLiveData";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { ContextAccordion } from "./ContextAccordion";
 import { ContextTree } from "./ContextTree";
-import { CountsForNodes } from "./CountsForNodes";
-import { DoubleTransition } from "./DoubleTransition";
+import { DoubleSlide } from "./DoubleSlide";
 import { EmptyListIndicator } from "./EmptyListIndicator";
-import { useInputOutputContext } from "./InputOutputContext";
 import { LiveDataLoadingIndicator } from "./LiveDataLoadingIndicator";
+import { useVariableContext } from "./useVariableContext";
+import { VariableContextTreeHeader } from "./VariableContextTreeHeader";
 
 export type Direction = "input" | "output";
-type ValuesContextTreeProps = {
+export type ValuesContextTreeProps = {
     direction?: Direction;
     onIsEmptyChange?: (value: boolean) => void;
 };
@@ -28,69 +29,63 @@ export type VariableContextType = ResultContextJson & {
     disabled?: boolean;
 };
 
-function useVariableContext(direction: "input" | "output") {
-    const {
-        state: { inputDataSetId, outputDataSetId, inputVariables },
-        dispatch,
-        getAvailableContexts,
-        inputNodesIds,
-        outputNodesIds,
-    } = useInputOutputContext();
+const Data = memo(function Data({
+    data,
+    direction,
+    selectedContextCache,
+    setContext,
+    availableContexts,
+    showNodes,
+    inputVariables,
+    children,
+}: PropsWithChildren<{
+    data: VariableContextType[];
+    direction: "input" | "output";
+    selectedContextCache: ResultContextJson & { nodeIds: string[]; error?: string; disabled?: boolean };
+    setContext: (context: VariableContextType) => void;
+    availableContexts: VariableContextType[];
+    showNodes: boolean;
+    inputVariables: string[];
+}>) {
+    const isLiveDataWorking = useAppSelector(getIsLiveDataWorking);
+    const [enterVisible, setEnterVisible] = useState(true);
+    const [exitVisible, setExitVisible] = useState(false);
+    const [ref] = useInViewRef(([{ target, boundingClientRect }]) => {
+        const parent = target.parentElement.offsetParent.getBoundingClientRect();
 
-    const value = useMemo(() => (direction === "input" ? inputDataSetId : outputDataSetId), [direction, inputDataSetId, outputDataSetId]);
-    const [availableContexts, hiddenAvailableContexts] = useMemo(() => {
-        const r = getAvailableContexts(direction);
-        const contexts = r[0].sort((b, a) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        setEnterVisible(boundingClientRect.top - parent.top + 300 > 0);
+        setExitVisible(parent.bottom - boundingClientRect.bottom + 100 > 0);
+    });
 
-        const pageSize = 30;
-        if (contexts.length > pageSize) {
-            const sliced = contexts.filter((r) => !r.disabled).slice(0, pageSize);
-            return [sliced, r[1] - sliced.length];
-        }
+    const onEntering = useCallback((node: HTMLElement, isAppearing: boolean) => {
+        node.classList.add("highlight");
+    }, []);
 
-        return [contexts, r[1] - contexts.length];
-    }, [direction, getAvailableContexts]);
-    const enabledContexts = useMemo(() => availableContexts.filter((c) => !c.disabled), [availableContexts]);
-
-    const [selectedContextCache, setSelectedContextCache] = useState<VariableContextType>(null);
-
-    const liveDataPausedBy = useAppSelector(getPauseReasons);
-    useEffect(() => {
-        setSelectedContextCache((selected) => {
-            if (enabledContexts.find((r) => r.id === selected?.id)) return selected;
-            if (liveDataPausedBy.includes(direction === "input" ? Initiator.inputAccordion : Initiator.outputAccordion)) {
-                return enabledContexts[0];
-            }
-            return selected;
-        });
-    }, [direction, enabledContexts, liveDataPausedBy]);
-
-    const setContext = useCallback(
-        (context: VariableContextType) => {
-            setSelectedContextCache(context);
-            dispatch({
-                type: direction === "input" ? "selectInputContext" : "selectOutputContext",
-                context,
-            });
-        },
-        [direction, dispatch],
+    return (
+        <Box sx={{ position: "relative", zIndex: 1 }} ref={(i: HTMLElement) => ref(i)}>
+            {children}
+            <TransitionGroup enter={enterVisible} exit={exitVisible} appear={false}>
+                {data.map((r, index) => (
+                    <DoubleSlide key={r.id + r.timestamp} timeout={400} mountOnEnter unmountOnExit onEntering={onEntering}>
+                        <ContextAccordion
+                            key={r.id + r.timestamp}
+                            value={r}
+                            direction={direction}
+                            disabled={r.disabled}
+                            expanded={selectedContextCache?.id === r.id && !r.disabled}
+                            onToggle={setContext}
+                            locked={index >= availableContexts.length}
+                            showNodes={showNodes}
+                        >
+                            {direction === "output" ? <>{r.error}</> : null}
+                            <ContextTree context={r} oldFields={direction === "output" ? inputVariables : []} />
+                        </ContextAccordion>
+                    </DoubleSlide>
+                ))}
+            </TransitionGroup>
+        </Box>
     );
-
-    const transitionNodesIds = useMemo(() => {
-        const transitions = direction === "input" ? inputNodesIds : outputNodesIds;
-        return transitions.filter(({ id, results }) => id || results?.length);
-    }, [direction, inputNodesIds, outputNodesIds]);
-
-    return {
-        value,
-        selectedContextCache,
-        availableContexts,
-        hiddenAvailableContexts,
-        setContext,
-        inputVariables,
-        transitionNodesIds,
-    };
-}
+});
 
 export const VariableContextTree = memo(function ValuesContextTree({
     onIsEmptyChange,
@@ -121,7 +116,13 @@ export const VariableContextTree = memo(function ValuesContextTree({
         [dispatch, transitionNodesIds],
     );
 
-    const isLiveDataWorking = useAppSelector(getIsLiveDataWorking);
+    const data = useMemo(
+        () =>
+            !selectedContextCache || availableContexts.find((r) => r.id === selectedContextCache.id)
+                ? availableContexts
+                : [...availableContexts, selectedContextCache],
+        [availableContexts, selectedContextCache],
+    );
 
     return (
         <Box
@@ -136,61 +137,18 @@ export const VariableContextTree = memo(function ValuesContextTree({
             <Fade in={availableContexts.length < 1} timeout={1000} mountOnEnter unmountOnExit>
                 <EmptyListIndicator />
             </Fade>
-            <Stack
-                spacing={1}
-                sx={{
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 0,
-                    padding: 1,
-                }}
+            <VariableContextTreeHeader direction={direction} transitionNodesIds={transitionNodesIds} />
+            <Data
+                data={data}
+                direction={direction}
+                selectedContextCache={selectedContextCache}
+                setContext={setContext}
+                availableContexts={availableContexts}
+                showNodes={showNodes}
+                inputVariables={inputVariables}
             >
-                <Typography variant="subtitle1">{direction === "input" ? "Input variables" : "Output variables"}</Typography>
-                <CountsForNodes
-                    nodes={transitionNodesIds.map(({ id, totalCount, results }) => ({
-                        id,
-                        count: totalCount ?? results?.length,
-                    }))}
-                    input={direction === "input"}
-                />
-            </Stack>
-
-            <Box sx={{ position: "relative", zIndex: 1 }}>
                 <LiveDataLoadingIndicator noLabel={direction === "input"} />
-                <TransitionGroup>
-                    {(!selectedContextCache || availableContexts.find((r) => r.id === selectedContextCache.id)
-                        ? availableContexts
-                        : [...availableContexts, selectedContextCache]
-                    ).map((r, index) => (
-                        <DoubleTransition
-                            key={r.id + r.timestamp}
-                            directionIn="down"
-                            directionOut="up"
-                            timeout={{
-                                appear: 0,
-                                enter: isLiveDataWorking ? 500 : 0,
-                                exit: isLiveDataWorking ? 400 : 0,
-                            }}
-                            mountOnEnter
-                            unmountOnExit
-                        >
-                            <ContextAccordion
-                                value={r}
-                                direction={direction}
-                                disabled={r.disabled}
-                                expanded={selectedContextCache?.id === r.id && !r.disabled}
-                                onToggle={setContext}
-                                locked={index >= availableContexts.length}
-                                showNodes={showNodes}
-                            >
-                                {direction === "output" ? <>{r.error}</> : null}
-                                <ContextTree context={r} oldFields={direction === "output" ? inputVariables : []} />
-                            </ContextAccordion>
-                        </DoubleTransition>
-                    ))}
-                </TransitionGroup>
-            </Box>
-
+            </Data>
             {hiddenAvailableContexts > 0 ? (
                 <Typography
                     variant="body2"
