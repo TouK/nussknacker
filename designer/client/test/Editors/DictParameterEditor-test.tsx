@@ -1,13 +1,11 @@
 import { jest } from "@jest/globals";
-import { configureStore } from "@reduxjs/toolkit";
 
 import { render, screen } from "@testing-library/react";
 import * as React from "react";
-import { Provider } from "react-redux";
 import { DictParameterEditor } from "../../src/components/graph/node-modal/editors/expression/DictParameterEditor/DictParameterEditor";
 import { nodeInputWithError } from "../../src/components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
-import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
 import { mockFieldErrors, mockFormatter, mockValueChange } from "./helpers";
+import { TestProviders } from "./TestProviders";
 
 jest.mock("react-i18next", () => ({
     useTranslation: () => ({
@@ -16,24 +14,10 @@ jest.mock("react-i18next", () => ({
     }),
 }));
 
-const store = configureStore({
-    reducer: (state) => state,
-    preloadedState: {
-        graphReducer: { present: { scenario: {} } },
-    },
-    devTools: false,
-});
-
-const ComponentWrapper = ({ children }) => (
-    <NuThemeProvider>
-        <Provider store={store}>{children}</Provider>
-    </NuThemeProvider>
-);
-
 describe("DictParameterEditor", () => {
     it("should display validation error when the field contain errors", () => {
         render(
-            <ComponentWrapper>
+            <TestProviders>
                 <DictParameterEditor
                     readOnly={false}
                     className={""}
@@ -44,7 +28,7 @@ describe("DictParameterEditor", () => {
                     showValidation={true}
                     editorConfig={{ dictId: "long_dict" }}
                 />
-            </ComponentWrapper>,
+            </TestProviders>,
         );
 
         expect(screen.getByRole("combobox")).toHaveClass(nodeInputWithError);
@@ -53,7 +37,7 @@ describe("DictParameterEditor", () => {
 
     it("should not show validation error when the field not contain errors", () => {
         render(
-            <ComponentWrapper>
+            <TestProviders>
                 <DictParameterEditor
                     readOnly={false}
                     className={""}
@@ -64,7 +48,7 @@ describe("DictParameterEditor", () => {
                     showValidation={true}
                     editorConfig={{ dictId: "long_dict" }}
                 />
-            </ComponentWrapper>,
+            </TestProviders>,
         );
 
         expect(screen.getByRole("combobox")).not.toHaveClass(nodeInputWithError);

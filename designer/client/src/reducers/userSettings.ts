@@ -1,4 +1,4 @@
-import { persistReducer, createTransform } from "redux-persist";
+import { createTransform, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 
 import type { Reducer } from "../actions/reduxTypes";
@@ -29,7 +29,9 @@ type SettingsNames =
     | "scenario.showLiveDataAnimations"
     | "editor.showRangeMessages"
     | "toolbar.autoSaveDuringDeployRedeploy"
-    | "editor.showResetToDefaultButton";
+    | "editor.showResetToDefaultButton"
+    | "assistant.showHelp"
+    | "assistant.includeScenarioData";
 
 export type UserSettings = Partial<Record<SettingsNames, boolean>>;
 
@@ -61,6 +63,8 @@ const getDefaultUserSettings = (): UserSettings => ({
     "toolbar.autoSaveDuringDeployRedeploy": getInitialUserFlag("toolbar.autoSaveDuringDeployRedeploy", false),
     "editor.showRangeMessages": getInitialUserFlag("editor.showRangeMessages"),
     "editor.showResetToDefaultButton": getInitialUserFlag("editor.showResetToDefaultButton"),
+    "assistant.showHelp": getInitialUserFlag("assistant.showHelp", true),
+    "assistant.includeScenarioData": getInitialUserFlag("assistant.includeScenarioData", false),
 });
 
 /**

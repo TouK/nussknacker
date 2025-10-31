@@ -1,18 +1,18 @@
 import * as React from "react";
 
 import { render, screen } from "@testing-library/react";
-import { DurationEditor, duration } from "../../src/components/graph/node-modal/editors/expression/Duration/DurationEditor";
-import { TimeRange } from "../../src/components/graph/node-modal/editors/expression/Duration/TimeRangeComponent";
-import { mockFormatter, mockFieldErrors, mockValueChange } from "./helpers";
-import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
-import { FormatterType, typeFormatters } from "../../src/components/graph/node-modal/editors/expression/Formatter";
 import type { Duration } from "../../src/components/graph/node-modal/editors/expression/Duration/DurationEditor";
+import { duration, DurationEditor } from "../../src/components/graph/node-modal/editors/expression/Duration/DurationEditor";
+import { TimeRange } from "../../src/components/graph/node-modal/editors/expression/Duration/TimeRangeComponent";
+import { mockFieldErrors, mockFormatter, mockValueChange } from "./helpers";
+import { FormatterType, typeFormatters } from "../../src/components/graph/node-modal/editors/expression/Formatter";
 import { EditorType } from "../../src/components/graph/node-modal/editors/expression/types";
+import { TestProviders } from "./TestProviders";
 
 describe(DurationEditor.name, () => {
     it("should display validation error when the field is required", () => {
         render(
-            <NuThemeProvider>
+            <TestProviders>
                 <DurationEditor
                     readOnly={false}
                     isMarked={false}
@@ -26,7 +26,7 @@ describe(DurationEditor.name, () => {
                     showValidation={true}
                     formatter={mockFormatter}
                 />
-            </NuThemeProvider>,
+            </TestProviders>,
         );
 
         expect(screen.getByText("validation error")).toBeInTheDocument();

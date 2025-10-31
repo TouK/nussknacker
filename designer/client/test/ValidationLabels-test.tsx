@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { NuThemeProvider } from "../src/containers/theme/nuThemeProvider";
 import ValidationLabels from "../src/components/modals/ValidationLabels";
+import { TestProviders } from "./Editors/TestProviders";
 
 describe(ValidationLabels.name, () => {
     it("should display validation error when error available", () => {
@@ -15,9 +15,9 @@ describe(ValidationLabels.name, () => {
 
         //when
         render(
-            <NuThemeProvider>
+            <TestProviders>
                 <ValidationLabels fieldErrors={fieldErrors} />
-            </NuThemeProvider>,
+            </TestProviders>,
         );
 
         //then
@@ -36,9 +36,9 @@ describe(ValidationLabels.name, () => {
 
         //when
         render(
-            <NuThemeProvider>
+            <TestProviders>
                 <ValidationLabels fieldErrors={fieldErrors} validationLabelInfo={validationLabelInfo} />
-            </NuThemeProvider>,
+            </TestProviders>,
         );
 
         //then
@@ -61,9 +61,9 @@ describe(ValidationLabels.name, () => {
 
         //when
         render(
-            <NuThemeProvider>
+            <TestProviders>
                 <ValidationLabels fieldErrors={fieldErrors} validationLabelInfo={validationLabelInfo} />
-            </NuThemeProvider>,
+            </TestProviders>,
         );
 
         //then

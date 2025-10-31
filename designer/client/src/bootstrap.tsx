@@ -29,21 +29,21 @@ const root = createRoot(rootContainer);
 
 const Root = () => (
     <>
-        <AiAssistantProvider>
-            <NuThemeProvider>
-                <ErrorBoundary>
-                    <StoreProvider>
-                        <SettingsProvider>
-                            <NussknackerInitializer>
-                                <BuildInfoProvider>
+        <NuThemeProvider>
+            <ErrorBoundary>
+                <StoreProvider>
+                    <SettingsProvider>
+                        <NussknackerInitializer>
+                            <BuildInfoProvider>
+                                <AiAssistantProvider>
                                     <RouterProvider router={router} />
-                                </BuildInfoProvider>
-                            </NussknackerInitializer>
-                        </SettingsProvider>
-                    </StoreProvider>
-                </ErrorBoundary>
-            </NuThemeProvider>
-        </AiAssistantProvider>
+                                </AiAssistantProvider>
+                            </BuildInfoProvider>
+                        </NussknackerInitializer>
+                    </SettingsProvider>
+                </StoreProvider>
+            </ErrorBoundary>
+        </NuThemeProvider>
 
         <GlideGridPortal />
     </>

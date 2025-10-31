@@ -3,13 +3,13 @@ import * as React from "react";
 import { CronEditor } from "../../src/components/graph/node-modal/editors/expression/Cron/CronEditor";
 import { render, screen } from "@testing-library/react";
 import { mockFieldErrors, mockFormatter, mockValueChange } from "./helpers";
-import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
 import { nodeInputWithError } from "../../src/components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import { TestProviders } from "./TestProviders";
 
 describe(CronEditor.name, () => {
     it("should display validation error when the field is required", () => {
         render(
-            <NuThemeProvider>
+            <TestProviders>
                 <CronEditor
                     readOnly={false}
                     className={""}
@@ -20,7 +20,7 @@ describe(CronEditor.name, () => {
                     formatter={mockFormatter}
                     showValidation={true}
                 />
-            </NuThemeProvider>,
+            </TestProviders>,
         );
 
         expect(screen.getByRole("textbox")).toHaveClass(nodeInputWithError);
