@@ -1,17 +1,12 @@
 import { Box, Fade, Typography } from "@mui/material";
-import type { MouseEvent, PropsWithChildren } from "react";
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import type { MouseEvent } from "react";
+import React, { memo, useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { TransitionGroup } from "react-transition-group";
-import { useInViewRef } from "rooks";
 
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
 import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
-import { getIsLiveDataWorking } from "../../../../reducers/selectors/getLiveData";
-import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
-import { ContextAccordion } from "./ContextAccordion";
-import { ContextTree } from "./ContextTree";
-import { DoubleSlide } from "./DoubleSlide";
+import { useAppDispatch } from "../../../../store/storeHelpers";
+import { ContextData } from "./ContextData";
 import { EmptyListIndicator } from "./EmptyListIndicator";
 import { LiveDataLoadingIndicator } from "./LiveDataLoadingIndicator";
 import { useVariableContext } from "./useVariableContext";
@@ -28,64 +23,6 @@ export type VariableContextType = ResultContextJson & {
     error?: string;
     disabled?: boolean;
 };
-
-const Data = memo(function Data({
-    data,
-    direction,
-    selectedContextCache,
-    setContext,
-    availableContexts,
-    showNodes,
-    inputVariables,
-    children,
-}: PropsWithChildren<{
-    data: VariableContextType[];
-    direction: "input" | "output";
-    selectedContextCache: ResultContextJson & { nodeIds: string[]; error?: string; disabled?: boolean };
-    setContext: (context: VariableContextType) => void;
-    availableContexts: VariableContextType[];
-    showNodes: boolean;
-    inputVariables: string[];
-}>) {
-    const isLiveDataWorking = useAppSelector(getIsLiveDataWorking);
-    const [enterVisible, setEnterVisible] = useState(true);
-    const [exitVisible, setExitVisible] = useState(false);
-    const [ref] = useInViewRef(([{ target, boundingClientRect }]) => {
-        const parent = target.parentElement.offsetParent.getBoundingClientRect();
-
-        setEnterVisible(boundingClientRect.top - parent.top + 300 > 0);
-        setExitVisible(parent.bottom - boundingClientRect.bottom + 100 > 0);
-    });
-
-    const onEntering = useCallback((node: HTMLElement, isAppearing: boolean) => {
-        node.classList.add("highlight");
-    }, []);
-
-    return (
-        <Box sx={{ position: "relative", zIndex: 1 }} ref={(i: HTMLElement) => ref(i)}>
-            {children}
-            <TransitionGroup enter={enterVisible} exit={exitVisible} appear={false}>
-                {data.map((r, index) => (
-                    <DoubleSlide key={r.id + r.timestamp} timeout={400} mountOnEnter unmountOnExit onEntering={onEntering}>
-                        <ContextAccordion
-                            key={r.id + r.timestamp}
-                            value={r}
-                            direction={direction}
-                            disabled={r.disabled}
-                            expanded={selectedContextCache?.id === r.id && !r.disabled}
-                            onToggle={setContext}
-                            locked={index >= availableContexts.length}
-                            showNodes={showNodes}
-                        >
-                            {direction === "output" ? <>{r.error}</> : null}
-                            <ContextTree context={r} oldFields={direction === "output" ? inputVariables : []} />
-                        </ContextAccordion>
-                    </DoubleSlide>
-                ))}
-            </TransitionGroup>
-        </Box>
-    );
-});
 
 export const VariableContextTree = memo(function ValuesContextTree({
     onIsEmptyChange,
@@ -138,17 +75,17 @@ export const VariableContextTree = memo(function ValuesContextTree({
                 <EmptyListIndicator />
             </Fade>
             <VariableContextTreeHeader direction={direction} transitionNodesIds={transitionNodesIds} />
-            <Data
+            <ContextData
                 data={data}
                 direction={direction}
-                selectedContextCache={selectedContextCache}
+                selectedContextCache={selectedContextCache?.id}
                 setContext={setContext}
-                availableContexts={availableContexts}
+                availableContexts={availableContexts.length}
                 showNodes={showNodes}
                 inputVariables={inputVariables}
             >
                 <LiveDataLoadingIndicator noLabel={direction === "input"} />
-            </Data>
+            </ContextData>
             {hiddenAvailableContexts > 0 ? (
                 <Typography
                     variant="body2"
