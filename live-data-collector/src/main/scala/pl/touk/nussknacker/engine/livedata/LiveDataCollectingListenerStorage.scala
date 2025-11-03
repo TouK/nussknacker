@@ -6,13 +6,14 @@ import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerStorage.Nod
 import java.time.{Clock, Instant}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
+import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters._
 import scala.math.Ordered.orderingToOrdered
 
 private[livedata] class LiveDataCollectingListenerStorage(
     maxNumberOfRecords: Int,
-    retentionTimeInMinutes: Int,
-    throughputTimeWindowInSeconds: Int,
+    retentionTime: Duration,
+    throughputTimeWindow: Duration,
 )(implicit clock: Clock) {
 
   private val lastUpdatedAt = new AtomicReference(Instant.now)
@@ -28,7 +29,7 @@ private[livedata] class LiveDataCollectingListenerStorage(
   private val exceptions = new ConcurrentHashMap[NodeId, RingBufferWithTotalCount[ExceptionResult]]
 
   private val transitionsSlidingWindowCounter: SlidingWindowCounter[NodeTransition] =
-    new SlidingWindowCounter[NodeTransition](Instant.now, throughputTimeWindowInSeconds)
+    new SlidingWindowCounter[NodeTransition](Instant.now, throughputTimeWindow)
 
   def getLastUpdatedAt: Instant = lastUpdatedAt.get()
 
@@ -78,7 +79,7 @@ private[livedata] class LiveDataCollectingListenerStorage(
   }
 
   private def latestValues[T](values: RingBufferWithTotalCount[T], timestampExtractor: T => Instant): List[T] = {
-    val cutoff = Instant.now.minusSeconds(retentionTimeInMinutes * 60)
+    val cutoff = Instant.now.minusSeconds(retentionTime.toSeconds)
     values.values.filter(record => timestampExtractor(record) >= cutoff)
   }
 

@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.livedata
 
 import java.time.{Clock, Instant}
-import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.{ConcurrentLinkedQueue, ConcurrentSkipListMap}
+import java.util.concurrent.atomic.AtomicLong
+import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters._
 
 private[livedata] class SlidingWindowCounter[T](
     counterCreatedAt: Instant,
-    windowSizeSeconds: Int
+    throughputTimeWindow: Duration
 )(implicit clock: Clock) {
 
   private val buckets = new ConcurrentSkipListMap[Long, ConcurrentLinkedQueue[T]]()
@@ -24,7 +25,7 @@ private[livedata] class SlidingWindowCounter[T](
     cleanOldBuckets(currentEpochSecond)
 
     // We want to calculate correct throughput just after the scenario is started
-    val windowStart = Math.max(counterCreatedAt.getEpochSecond, currentEpochSecond - windowSizeSeconds)
+    val windowStart = Math.max(counterCreatedAt.getEpochSecond, currentEpochSecond - throughputTimeWindow.toSeconds)
     // We don't want to use the results from the second, that is currently in progress, because they may be incomplete
     // That is why the `windowsEnd` is the previous second, not the current one
     val windowEnd        = currentEpochSecond - 1
@@ -52,7 +53,7 @@ private[livedata] class SlidingWindowCounter[T](
     // Clean old buckets at most once per second, not on each call
     // We clean buckets older than [currentEpochSecond - windowSizeSeconds] (non-inclusive)
     if (lastCleaned.getAndSet(now) != now) {
-      buckets.headMap(now - windowSizeSeconds).clear()
+      buckets.headMap(now - throughputTimeWindow.toSeconds).clear()
     }
   }
 

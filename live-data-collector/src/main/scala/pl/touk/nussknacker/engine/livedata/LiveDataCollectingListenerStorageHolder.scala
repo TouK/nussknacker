@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import java.time.Clock
 import scala.compat.java8.FunctionConverters._
+import scala.concurrent.duration.Duration
 
 object LiveDataCollectingListenerStorageHolder {
 
@@ -23,13 +24,13 @@ object LiveDataCollectingListenerStorageHolder {
   private[livedata] def withStorage(
       processName: ProcessName,
       maxNumberOfRecords: Int,
-      retentionTimeInMinutes: Int,
-      throughputTimeWindowInSeconds: Int,
+      retentionTime: Duration,
+      throughputTimeWindow: Duration,
   )(actionOnStorage: LiveDataCollectingListenerStorage => Unit): Unit = {
     val storage = listenerStorages.get(
       processName,
       asJavaFunction((_: ProcessName) =>
-        new LiveDataCollectingListenerStorage(maxNumberOfRecords, retentionTimeInMinutes, throughputTimeWindowInSeconds)
+        new LiveDataCollectingListenerStorage(maxNumberOfRecords, retentionTime, throughputTimeWindow)
       )
     )
     actionOnStorage(storage)

@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.engine.testmode.TestInterpreterRunner
 
 import java.time.Instant
+import scala.concurrent.duration.Duration
 import scala.util.Try
 
 // This class must be serializable. It means, that when deserializing, we lose the reference to it.
@@ -21,8 +22,8 @@ class LiveDataCollectingListener private[livedata] (
     deploymentId: Option[DeploymentId],
     uploaderConfig: Option[LiveDataUploaderConfig],
     maxNumberOfRecords: Int,
-    retentionTimeInMinutes: Int,
-    throughputTimeWindowInSeconds: Int,
+    retentionTime: Duration,
+    throughputTimeWindow: Duration,
 ) extends ProcessListener
     with Serializable {
 
@@ -130,8 +131,8 @@ class LiveDataCollectingListener private[livedata] (
     LiveDataCollectingListenerStorageHolder.withStorage(
       processName = processIdWithName.name,
       maxNumberOfRecords = maxNumberOfRecords,
-      retentionTimeInMinutes = retentionTimeInMinutes,
-      throughputTimeWindowInSeconds = throughputTimeWindowInSeconds
+      retentionTime = retentionTime,
+      throughputTimeWindow = throughputTimeWindow
     )(actionOnStorage)
     uploaderConfig.foreach(LiveDataUploaderHolder.ensureLiveDataUploaderIsActive(processIdWithName, deploymentId, _))
   }
@@ -183,8 +184,8 @@ object LiveDataCollectingListener extends LazyLogging {
       deploymentIdOpt,
       liveDataUploaderConfigOpt,
       liveDataEnabledConfig.maxNumberOfRecords,
-      liveDataEnabledConfig.retentionTimeInMinutes,
-      liveDataEnabledConfig.throughputTimeWindowInSeconds
+      liveDataEnabledConfig.retentionTime,
+      liveDataEnabledConfig.throughputTimeWindow
     )
   }
 

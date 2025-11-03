@@ -29,6 +29,7 @@ import java.net.URI
 import java.nio.file.{Files, Paths}
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
+import scala.concurrent.duration._
 
 class RemoteFlinkDeploymentManagerSpec extends BaseFlinkDeploymentManagerSpec {
   override protected val useMiniClusterForDeployment: Boolean = false
@@ -92,8 +93,8 @@ trait BaseFlinkDeploymentManagerSpec
       deploymentIdOpt = None,
       liveDataEnabledConfig = LiveDataPreviewMode.Enabled(
         maxNumberOfRecords = configuredMaxNumbersOfRecords,
-        retentionTimeInMinutes = 60,
-        throughputTimeWindowInSeconds = 60,
+        retentionTime = 60 minutes,
+        throughputTimeWindow = 60 seconds,
         liveDataStorage = LiveDataPreviewMode.LiveDataStorage.DesignerJvm
       ),
       skipLiveDataUploaderWithReason = None

@@ -32,6 +32,7 @@ import pl.touk.nussknacker.test.config.{
 
 import java.time.Instant
 import java.util.UUID
+import scala.concurrent.duration._
 import scala.util.Try
 
 class ScenarioLiveDataApiHttpServiceSpec
@@ -106,8 +107,8 @@ class ScenarioLiveDataApiHttpServiceSpec
         deploymentIdOpt = None,
         liveDataEnabledConfig = LiveDataPreviewMode.Enabled(
           maxNumberOfRecords = 10,
-          retentionTimeInMinutes = 1,
-          throughputTimeWindowInSeconds = 10,
+          retentionTime = 1 minute,
+          throughputTimeWindow = 10 seconds,
           liveDataStorage = LiveDataPreviewMode.LiveDataStorage.DesignerJvm
         ),
         skipLiveDataUploaderWithReason = None
