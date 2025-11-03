@@ -13,6 +13,14 @@ const getOffsetParent: (el?: HTMLElement) => HTMLElement = (el?: HTMLElement): H
     return el?.offsetParent as HTMLElement;
 };
 
+function getClosestParent(selector: string) {
+    function closestParent(el: HTMLElement = document.body): HTMLElement | null {
+        if (el?.nodeType !== 1) return null;
+        return el.matches(selector) ? el : closestParent(el.parentElement);
+    }
+    return closestParent;
+}
+
 export function Sizer({ overflowY, offsetParent, ...props }: SizerProps) {
     const { observe, height, unobserve } = useSize();
     const ref = useRef<HTMLElement>();
@@ -22,7 +30,7 @@ export function Sizer({ overflowY, offsetParent, ...props }: SizerProps) {
             ref.current = instance;
             if (!offsetParent) return observe(getOffsetParent(instance));
             if (typeof offsetParent === "function") return observe(offsetParent(instance));
-            observe(document.querySelector(offsetParent));
+            return observe(getClosestParent(offsetParent)(instance));
         },
         [observe, offsetParent, unobserve],
     );
