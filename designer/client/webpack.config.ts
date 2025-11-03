@@ -69,6 +69,7 @@ const config: Configuration = {
         ignored: /^(?!.*\/src\/).*$/,
     },
     devServer: {
+        server: process.env.HTTPS === "true" ? "https" : "http",
         client: {
             overlay: false,
         },
@@ -157,7 +158,9 @@ const config: Configuration = {
                 },
             },
             "/static": {
-                target: `http://localhost:${PORT}`,
+                target: `this proxy`,
+                router: (req) => `${req.protocol}://${req.headers["host"]}`,
+                secure: false,
                 changeOrigin: true,
                 pathRewrite: {
                     "^/static": "/",

@@ -57,11 +57,11 @@ object PeriodicStateStatus {
     )
 
   val statusTooltipsPF: PartialFunction[StateStatus, String] = { case ScheduledStatus(nextRunAt) =>
-    s"Scheduled at ${nextRunAt.pretty}"
+    s"Scheduled for ${nextRunAt.pretty}"
   }
 
   val statusDescriptionsPF: PartialFunction[StateStatus, String] = { case ScheduledStatus(nextRunAt) =>
-    s"Scheduled at ${nextRunAt.pretty}"
+    s"Scheduled for ${nextRunAt.pretty}"
   }
 
   val customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map(

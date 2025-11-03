@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import type { TextContentPart } from "@assistant-ui/react";
+import type { TextMessagePart } from "@assistant-ui/react";
 import type { AxiosError, AxiosResponse } from "axios";
 import axios from "axios";
 import FileSaver from "file-saver";
@@ -1027,7 +1027,7 @@ export class HttpService {
         return api.get<ActivitiesResponse>(`/processes/${scenarioName}/activity/activities`);
     }
 
-    sendChatMessage(message: TextContentPart, abortSignal: AbortSignal, threadId: string) {
+    sendChatMessage(message: TextMessagePart, abortSignal: AbortSignal, threadId: string) {
         const headers = {
             "Content-Type": "application/json",
             Accept: "text/event-stream",

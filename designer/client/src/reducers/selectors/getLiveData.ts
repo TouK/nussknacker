@@ -3,12 +3,13 @@ import { createSelector } from "reselect";
 import type { Initiator } from "../../actions/nk/liveData";
 import { getNodeDetails } from "../../components/graph/node-modal/NodeDetailsContent/getNodeDetails";
 import type { NodeTransitionResult } from "../../http/resultsWithCountsDto";
+import type { LiveData } from "../graph/liveData";
 import type { RootState } from "../index";
 import { getGraph, getSavedScenario, getScenario, getTestResults, isCurrentVersionDeployed } from "./graph";
 import { isGraphUpdated } from "./helpers";
 
 const EMPTY = [];
-const getLiveData = (state: RootState) => state.liveData;
+const getLiveData = (state: RootState): LiveData => state.liveData;
 
 export const getVisibleDataType = createSelector(getGraph, (graph) => graph.visibleDataType || null);
 export const isReadyForLiveData = createSelector(

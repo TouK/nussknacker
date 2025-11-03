@@ -4,7 +4,6 @@ import { Box, styled } from "@mui/material";
 import { Allotment } from "allotment";
 import type { AllotmentHandle } from "allotment/dist/types/src/allotment";
 import { produce } from "immer";
-import { sum } from "lodash";
 import type { PropsWithChildren } from "react";
 import React, { memo, useCallback, useRef, useState } from "react";
 
@@ -17,11 +16,12 @@ const shadowClassName = css({
     zIndex: 10,
 });
 
-const Wrapper = styled(Box)({
+const Wrapper = styled(Box)(({ theme }) => ({
     width: "100%",
     height: "100%",
     position: "relative",
-});
+    "--focus-border": theme.palette.primary.dark,
+}));
 
 export type Side = "right" | "left";
 
@@ -37,7 +37,8 @@ export type SidesState<K extends Side = Side> = {
 
 export const InputOutputLayout = memo(function InputOutputWrapper({ children }: PropsWithChildren) {
     const moveHandle = useRef<HTMLButtonElement>();
-    const defaultSizes = [300, 900, 300];
+    const defaultSize = 272;
+    const defaultSizes = [0, 900, 0];
     const sizes = useRef<number[]>(defaultSizes);
     const ref = useRef<AllotmentHandle>();
 
@@ -75,7 +76,7 @@ export const InputOutputLayout = memo(function InputOutputWrapper({ children }: 
         (index: number, collapsedSize: number, shouldCollapse = sizes.current[index] > collapseThreshold) => {
             const currentSize = sizes.current[index];
             const prevSize = prevSizes.current[index];
-            const defaultSize = 0.2 * sum(sizes.current);
+
             const newSize = shouldCollapse ? collapsedSize : Math.max(prevSize, defaultSize);
             const updatedCenter = sizes.current[1] + (shouldCollapse ? currentSize : collapsedSize) - newSize;
 
@@ -88,12 +89,12 @@ export const InputOutputLayout = memo(function InputOutputWrapper({ children }: 
                 }),
             );
         },
-        [collapseThreshold],
+        [collapseThreshold, defaultSize],
     );
 
     const [sidesState, setSidesState] = useState<SidesState>({
-        left: { side: "left", collapsed: false, hidden: false },
-        right: { side: "right", collapsed: false, hidden: false },
+        left: { side: "left", collapsed: false, hidden: true },
+        right: { side: "right", collapsed: false, hidden: true },
     });
 
     const onChange = useCallback(
@@ -131,9 +132,10 @@ export const InputOutputLayout = memo(function InputOutputWrapper({ children }: 
                     draft[side].hidden = isEmpty;
                 }),
             );
-            if (isEmpty) {
-                togglePanel(side === "left" ? 0 : 2, 0, true);
-            }
+            // delay initial show
+            setTimeout(() => {
+                togglePanel(side === "left" ? 0 : 2, 0, isEmpty);
+            }, 500);
         },
         [togglePanel],
     );
@@ -144,16 +146,16 @@ export const InputOutputLayout = memo(function InputOutputWrapper({ children }: 
 
     return (
         <Wrapper>
-            <Allotment ref={ref} onChange={onChange} defaultSizes={defaultSizes} onDragEnd={onChangeEnd}>
+            <Allotment separator={false} ref={ref} onChange={onChange} defaultSizes={defaultSizes} onDragEnd={onChangeEnd}>
                 <Allotment.Pane
-                    preferredSize={sidesState.right.hidden ? "40%" : "20%"}
+                    preferredSize={sidesState.left.hidden ? 0 : defaultSize}
                     minSize={sidesState.left.hidden ? 0 : collapsedSize}
                     maxSize={sidesState.left.hidden ? 0 : Infinity}
                     visible={!sidesState.left.hidden}
                 >
                     <SidePane sideState={sidesState.left} onIsEmptyChange={onIsEmptyChange} />
                 </Allotment.Pane>
-                <Allotment.Pane preferredSize="60%" minSize={820} className={shadowClassName}>
+                <Allotment.Pane minSize={820} className={shadowClassName}>
                     {sidesState.left.hidden ? null : (
                         <PanelButton
                             side={sidesState.left.side}
@@ -179,7 +181,7 @@ export const InputOutputLayout = memo(function InputOutputWrapper({ children }: 
                     {children}
                 </Allotment.Pane>
                 <Allotment.Pane
-                    preferredSize={sidesState.left.hidden ? "40%" : "20%"}
+                    preferredSize={sidesState.right.hidden ? 0 : defaultSize}
                     minSize={sidesState.right.hidden ? 0 : collapsedSize}
                     maxSize={sidesState.right.hidden ? 0 : Infinity}
                     visible={!sidesState.right.hidden}

@@ -7,6 +7,7 @@ import type { SquashHistoryActions } from "../reducers/graph/historySquash";
 import type { ProcessActivityActions } from "../reducers/processActivity";
 import type { ScenariosActions } from "../reducers/scenarios";
 import type { ActionTypes } from "./actionTypes";
+import type { AssistantActions } from "./assistantActions";
 import type { CountsActions } from "./nk/displayProcessCounts";
 import type { TestsActions } from "./nk/displayTestResults";
 import type { PropertiesActions } from "./nk/editProperties";
@@ -24,6 +25,7 @@ import type { UserSettingsActions } from "./nk/userSettings";
 import type { SettingsActions } from "./settingsActions";
 
 export type TypedAction =
+    | AssistantActions
     | CloudDataActions
     | CountsActions
     | GetScenarioActivitiesAction
