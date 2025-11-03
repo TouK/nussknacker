@@ -1,6 +1,6 @@
 import { css } from "@emotion/css";
 import type { DefaultContentProps } from "@touk/window-manager";
-import { DefaultContent } from "@touk/window-manager";
+import { DefaultContent, useWindowManager } from "@touk/window-manager";
 import type { FooterButtonProps } from "@touk/window-manager/cjs/components/window/footer";
 import type { PropsWithChildren, ReactElement } from "react";
 import React, { forwardRef, useMemo, useState } from "react";
@@ -27,6 +27,7 @@ export const WindowContent = forwardRef<HTMLDivElement, WindowContentProps>(func
     { children, icon, subheader, buttons = [], closeWithEsc, ...props },
     ref,
 ): JSX.Element {
+    const { frontWindow } = useWindowManager();
     const classnames = useMemo(
         () => ({
             footer: css({
@@ -45,7 +46,7 @@ export const WindowContent = forwardRef<HTMLDivElement, WindowContentProps>(func
                 props.close();
             }
         },
-        { when: closeWithEsc },
+        { when: closeWithEsc && props.data.id === frontWindow },
     );
 
     const [stableIcon] = useState(icon);
@@ -53,8 +54,8 @@ export const WindowContent = forwardRef<HTMLDivElement, WindowContentProps>(func
 
     const components = useMemo<DefaultContentProps["components"]>(
         () => ({
-            Header: StyledHeader,
-            Content: StyledContent,
+            Header: (props) => <StyledHeader {...props} />,
+            Content: (props) => <StyledContent {...props} />,
             HeaderTitle: (headerProps) => <IconModalHeader {...headerProps} startIcon={stableIcon} subheader={stableSubheader} />,
             FooterButton: LoadingButton,
             ...props.components,
