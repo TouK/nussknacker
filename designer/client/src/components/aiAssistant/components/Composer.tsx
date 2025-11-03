@@ -1,67 +1,36 @@
 import { useComposerRuntime, useThread } from "@assistant-ui/react";
-import { styled } from "@mui/material";
+import { Stack, styled } from "@mui/material";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { addListenerTyped, useAppDispatch } from "../../../store/storeHelpers";
 import { LoadingButton } from "../../../windowManager/LoadingButton";
 import { TextAreaNode } from "../../FormElements";
-import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";
-import { nodeInput, nodeValue } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
-import { UseScrollToBottom } from "./useScrollToBottom";
+import { nodeInput } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 
-const StyledRoot = styled("div")(({ theme }) => ({
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "flex-end",
-    margin: theme.spacing(0, 2),
-    "& .MuiLoadingButton-root": {
-        marginRight: 0,
-    },
-    position: "relative", // ensure proper positioning
-}));
-
-const StyledTextArea = styled(TextAreaNode)(({ theme }) => ({
-    marginBottom: theme.spacing(1.125),
-}));
-
-const resetInputHeight = (textarea: HTMLTextAreaElement) => {
-    if (textarea) {
-        // Resetting styles
-        textarea.style.marginTop = "0";
-        textarea.style.height = "auto";
-    }
-};
+const StyledTextArea = styled(TextAreaNode)({
+    fontSize: 14,
+    paddingBlock: "0.5em",
+    overflowX: "hidden",
+    overflowY: "auto",
+    maxHeight: "30vh",
+    resize: "none",
+});
 
 const adjustInputHeight = (textarea: HTMLTextAreaElement) => {
-    if (textarea) {
-        resetInputHeight(textarea);
-
-        // Define modal maximum height (50vh)
-        const modalMaxHeight = window.innerHeight * 0.5;
-
-        // Calculate new height and cap it if needed
-        let newHeight = textarea.scrollHeight;
-        if (newHeight > modalMaxHeight) {
-            newHeight = modalMaxHeight;
-            textarea.style.overflowY = "auto";
-        } else {
-            textarea.style.overflowY = "hidden";
-        }
-
-        textarea.style.height = `${newHeight}px`;
-
-        // Anchor the bottom by shifting the extra height upward
-        const baseHeight = 38; // adjust base height as needed
-        const diff = newHeight - baseHeight;
-        if (newHeight < modalMaxHeight) {
-            textarea.style.marginTop = `-${diff}px`;
-        }
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    const { paddingBottom, paddingTop, maxHeight } = getComputedStyle(textarea);
+    let height = textarea.getBoundingClientRect().height;
+    const paddingY = Math.max(0, parseFloat(paddingTop)) + Math.max(0, parseFloat(paddingBottom));
+    const lh = height - paddingY;
+    while (textarea.scrollHeight > height && height < (parseFloat(maxHeight) || window.innerHeight * 0.5)) {
+        textarea.style.height = `${height + lh}px`;
+        height = height + lh;
     }
 };
 
 export const Composer = () => {
     const { send, setText, cancel } = useComposerRuntime();
-    const { scrollToBottom, provideBottomSpacer } = UseScrollToBottom();
     const dispatch = useAppDispatch();
 
     const [message, setMessage] = useState("");
@@ -84,12 +53,10 @@ export const Composer = () => {
             return;
         }
 
-        provideBottomSpacer();
-        scrollToBottom();
         send();
         setMessage("");
-        resetInputHeight(textAreaRef.current);
-    }, [isSendDisabled, provideBottomSpacer, scrollToBottom, send]);
+        adjustInputHeight(textAreaRef.current);
+    }, [isSendDisabled, send]);
 
     const handleCancel = useCallback(() => {
         cancel();
@@ -111,37 +78,40 @@ export const Composer = () => {
     }, [dispatch]);
 
     useEffect(() => {
-        scrollToBottom();
-    }, [scrollToBottom]);
+        adjustInputHeight(textAreaRef.current);
+    }, []);
 
     return (
-        <StyledRoot data-no-focus-lock>
-            <NodeTable sx={{ margin: 0, marginRight: "16px", width: "100%" }}>
-                <div className={nodeValue}>
-                    <StyledTextArea
-                        autoFocus
-                        onFocus={(e) => {
-                            // Disable nk-windows focus event which move second window when opened, to the background on input clicks
-                            e.stopPropagation();
-                        }}
-                        ref={textAreaRef}
-                        autoComplete="off"
-                        name="message"
-                        placeholder="Message AI Assistant, e.g. what is a scenario?"
-                        value={message}
-                        className={nodeInput}
-                        onChange={handleChange}
-                        onKeyDown={handleKeyDownOnInput}
-                        rows={1}
-                        style={{ resize: "none", overflow: "hidden" }}
-                    />
-                </div>
-            </NodeTable>
-            {isRunning ? (
-                <LoadingButton title="Cancel" action={handleCancel} />
-            ) : (
-                <LoadingButton disabled={!message} title="Send" action={handleSend} />
-            )}
-        </StyledRoot>
+        <Stack
+            component="footer"
+            spacing={1}
+            direction="row"
+            sx={{
+                paddingX: 2,
+                paddingY: 1.5,
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+            }}
+            data-no-focus-lock
+        >
+            <Stack sx={{ flex: 1, alignSelf: "center" }}>
+                <StyledTextArea
+                    ref={textAreaRef}
+                    autoComplete="off"
+                    name="message"
+                    placeholder="Message AI Assistant, e.g. what is a scenario?"
+                    value={message}
+                    className={nodeInput}
+                    onChange={handleChange}
+                    onKeyDown={handleKeyDownOnInput}
+                    rows={1}
+                />
+            </Stack>
+            <LoadingButton
+                title={isRunning ? "Cancel" : "Send"}
+                action={isRunning ? handleCancel : handleSend}
+                disabled={isRunning ? false : !message}
+            />
+        </Stack>
     );
 };
