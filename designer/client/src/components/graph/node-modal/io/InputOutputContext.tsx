@@ -26,7 +26,7 @@ type Action =
           context: VariableContextType;
       };
 
-type ResultsWithId = NodeTransitionResult & { id: string };
+export type ResultsWithId = NodeTransitionResult & { id: string };
 type ContextType = {
     state: InputOutputState;
     dispatch: React.Dispatch<Action>;

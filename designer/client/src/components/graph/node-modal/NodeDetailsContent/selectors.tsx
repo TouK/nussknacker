@@ -6,10 +6,10 @@ import type { RootState } from "../../../../reducers";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/getProcessDefinitionData";
 import { getScenario, getScenarioGraph } from "../../../../reducers/selectors/graph";
 import type { UIParameter } from "../../../../types/definition";
-import type { NodeId, NodeType } from "../../../../types/node";
+import type { NodeId, NodeType, Parameter } from "../../../../types/node";
 import type { UiScenarioProperties } from "../../../../types/scenarioGraph";
 import type { NodeValidationError } from "../../../../types/validation";
-import { getNodeDetails } from "./getNodeDetails";
+import { getNodeDetails, getNodesDetails } from "./getNodeDetails";
 
 const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);
 
@@ -79,10 +79,18 @@ export const getVariableTypes = createSelector(
     (nodeResults) => (originalNodeId) => ProcessUtils.getVariablesFromValidation(nodeResults, originalNodeId) || {},
 );
 
-export const getDynamicParametersChanged =
-    (state: RootState) =>
-    (nodeId: string): string[] | undefined => {
-        const nodeDetails = getNodeDetails(state);
-        const nodeDetail = nodeDetails(nodeId);
-        return nodeDetail?.changingDynamicParameters;
-    };
+export const getDynamicParametersChanged = createSelector(
+    getNodesDetails,
+    (_: RootState, { node }: { node: NodeType }) => node.id,
+    (nodeDetails, nodeId) => {
+        return nodeDetails[nodeId]?.changingDynamicParameters;
+    },
+);
+
+export const getIsParameterStable = createSelector(
+    getDynamicParametersChanged,
+    (_: RootState, { param }: { param: Parameter }) => param.name,
+    (changingDynamicParameters, paramName) => {
+        return !changingDynamicParameters?.length || changingDynamicParameters.includes(paramName);
+    },
+);
