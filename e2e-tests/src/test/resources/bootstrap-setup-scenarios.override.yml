@@ -50,7 +50,7 @@ services:
   # E2E tests should use ephemeral storage, and not use the persistent volume, that is defined in underlying docker-compose file
   postgres:
     volumes:
-      - /var/lib/postgresql/data
+      - /var/lib/postgresql
 
 volumes:
   nussknacker_designer_shared_configuration:
