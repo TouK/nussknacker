@@ -13,11 +13,11 @@ import { SendRequestButton } from "./node-action-buttons/SendRequestButton";
 import { ParameterExpressionField } from "./ParameterExpressionField";
 import type { ParametersListProps, ParameterWithIndex } from "./parametersList";
 
-interface Props extends ParametersListProps {
+export type ParametersListFieldProps = ParametersListProps & {
     paramWithIndex: ParameterWithIndex;
-}
+};
 
-export const ParametersListField = (props: Props) => {
+export const ParametersListField = (props: ParametersListFieldProps) => {
     const { node, getListFieldPath, paramWithIndex, parameterDefinitions, setProperty } = props;
     const handleGetListFieldPath = useCallback(
         (index: number) => {
