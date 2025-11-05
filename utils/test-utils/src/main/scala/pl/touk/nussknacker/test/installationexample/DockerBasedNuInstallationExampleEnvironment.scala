@@ -58,8 +58,7 @@ class DockerBasedInstallationExampleNuEnvironment(
       // There is no way currently to automatically capture logs from containers before all services from the docker
       // compose started. When one of the services is not healthy, there won't be any logs captured. That's why we do
       // the capture manually.
-      // todo: commented out to check whether it causes logs to overflow on CI pipeline
-      // captureAllContainerLogs()
+      captureAllContainerLogs()
       throw ex
     case Success(()) =>
   }
