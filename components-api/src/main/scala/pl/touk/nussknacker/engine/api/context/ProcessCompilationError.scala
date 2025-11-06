@@ -4,7 +4,7 @@ import cats.Applicative
 import cats.data.{NonEmptyList, ValidatedNel}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, ParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, ParameterEditor, SelectOption}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -287,6 +287,18 @@ object ProcessCompilationError {
       InvalidPropertyFixedValue(paramName, label, value, values, nodeId)
 
   }
+
+  final case class MultiSelectUnallowedValue(
+      value: String,
+      allowedValues: List[SelectOption],
+      paramName: ParameterName,
+      nodeId: NodeId
+  ) extends PartSubGraphCompilationError
+      with InASingleNode
+
+  final case class MultiSelectInvalidFormat(message: String, paramName: ParameterName, nodeId: NodeId)
+      extends PartSubGraphCompilationError
+      with InASingleNode
 
   final case class OverwrittenVariable(variableName: String, nodeId: NodeId, paramName: Option[ParameterName])
       extends PartSubGraphCompilationError

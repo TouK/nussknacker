@@ -639,18 +639,19 @@ lazy val flinkDevModel = (project in flink("management/dev-model"))
     extensionsApi,
     commonComponents,
     flinkSchemedKafkaComponentsUtils,
-    flinkComponentsUtils % Provided,
+    flinkComponentsUtils   % Provided,
     // We use some components for testing with embedded engine, because of that we need dependency to this api
     // It has to be in the default, Compile scope because all components are eagerly loaded so it will be loaded also
     // on the Flink side where this library is missing
     liteComponentsApi,
     defaultHelpers,
-    componentsUtils      % Provided,
+    componentsUtils        % Provided,
     // TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
-    scenarioCompiler     % Provided,
-    flinkExecutor        % Test,
-    flinkTestUtils       % Test,
-    kafkaTestUtils       % Test
+    scenarioCompiler       % Provided,
+    flinkExecutor          % Test,
+    flinkTestUtils         % Test,
+    flinkComponentsTestkit % Test,
+    kafkaTestUtils         % Test
   )
 
 lazy val flinkDevModelJava = (project in flink("management/dev-model-java"))

@@ -96,3 +96,7 @@ case object CronParameterEditor extends ParameterEditor with StaticParameterEdit
     dictId: String // dictId must be present in ExpressionConfigDefinition.dictionaries
 ) extends ParameterEditor
     with StaticParameterEditor
+
+@JsonCodec case class MultiSelectEditor(possibleValues: List[SelectOption])
+    extends ParameterEditor
+    with StaticParameterEditor
