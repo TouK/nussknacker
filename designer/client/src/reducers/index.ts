@@ -25,7 +25,6 @@ import type { ToolbarsStates } from "./toolbars";
 import { toolbars } from "./toolbars";
 import type { UiState } from "./ui";
 import { reducer as ui } from "./ui";
-import type { UserSettings } from "./userSettings";
 import { userSettings } from "./userSettings";
 
 export const rootReducer = combineReducers({
@@ -56,7 +55,7 @@ export type RootState = {
     backendNotifications: BackendNotificationState;
     notifications: NotificationsState;
     toolbars: ToolbarsStates;
-    userSettings: UserSettings;
+    userSettings: ReturnType<typeof userSettings>;
     nodeDetails: NodeDetailsState;
     scenarioState: ProcessStateType;
     cloudData: ReturnType<typeof cloudData>;

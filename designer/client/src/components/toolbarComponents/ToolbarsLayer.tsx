@@ -6,8 +6,8 @@ import React, { useCallback, useEffect, useMemo } from "react";
 
 import { moveToolbar, registerToolbars } from "../../actions/nk/toolbars";
 import { PanelSide } from "../../actions/nk/ui/panelSide";
-import { useUserSettings } from "../../common/userSettings";
 import { getCapabilities } from "../../reducers/selectors/other";
+import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { ToolbarsSide } from "../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import { WindowKind } from "../../windowManager/WindowKind";
@@ -25,16 +25,14 @@ import { DRAGGABLE_LIST_CLASSNAME, ToolbarsContainer } from "./ToolbarsContainer
 export function useToolbarsVisibility(toolbars: Toolbar[]) {
     const { editFrontend } = useAppSelector(getCapabilities);
     const [showSurvey] = useSurvey();
-    const [userSettings] = useUserSettings();
 
     const hiddenToolbars = useMemo<Record<string, boolean>>(
         () => ({
             "survey-panel": !showSurvey,
             "creator-panel": !editFrontend,
             "creator-panel-dynamic": !editFrontend,
-            "user-settings-panel": !userSettings["debug.userSettingsVisible"],
         }),
-        [editFrontend, showSurvey, userSettings],
+        [editFrontend, showSurvey],
     );
 
     return useMemo(
@@ -61,7 +59,7 @@ const AbsolutePanel = styled(Box)(({ theme }) => ({
 }));
 
 function useShowFloatingToolbar() {
-    const [settings] = useUserSettings();
+    const settings = useAppSelector(getUserSettings);
     const { windows } = useWindowManager();
     const autoApply = settings["node.autoApply"];
     return useMemo(() => {

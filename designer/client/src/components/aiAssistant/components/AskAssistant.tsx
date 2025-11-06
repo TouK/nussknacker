@@ -4,9 +4,9 @@ import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 import { assistantAsk } from "../../../actions/assistantActions";
-import { useUserSettings } from "../../../common/userSettings";
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
+import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 
 export type AskAssistantProps = PropsWithChildren<{ question: string; realPrompt?: string }>;
@@ -16,7 +16,7 @@ function AskAssistant({ question, realPrompt = question, children }: AskAssistan
     const dispatch = useAppDispatch();
     const graph = useAppSelector(getScenarioGraph);
     const { status } = useAppSelector(getProcessState);
-    const [settings] = useUserSettings();
+    const settings = useAppSelector(getUserSettings);
 
     const onClick = useCallback(() => {
         dispatch(

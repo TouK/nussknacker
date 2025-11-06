@@ -6,9 +6,9 @@ import {
     nodeValidationDynamicParametersLoading,
     validateNodeData,
 } from "../../../actions/nk/nodeDetails";
-import { useUserSettings } from "../../../common/userSettings";
 import type { RootState } from "../../../reducers";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
+import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { Edge } from "../../../types/edge";
 import type { NodeType, Parameter } from "../../../types/node";
@@ -81,7 +81,7 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     const getBranchVariableTypes = useAppSelector(getFindAvailableBranchVariables);
     const processName = useAppSelector(getProcessName);
     const processProperties = useAppSelector(getProcessProperties);
-    const [settings] = useUserSettings();
+    const settings = useAppSelector(getUserSettings);
     const autoApply = settings["node.autoApply"];
 
     const variableTypes = useAppSelector((s: RootState) => getFindAvailableVariables(s)?.(node.id), isEqual);

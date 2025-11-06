@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 
 import { CopyIconButton } from "../../../common/copyToClipboard/CopyIconButton";
 import { useCopyClipboard } from "../../../common/copyToClipboard/useCopyToClipboard";
-import { useUserSettings } from "../../../common/userSettings";
 import { getIsRunning } from "../../../reducers/selectors/scenarioState";
+import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../store/storeHelpers";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { GenerateNewEndpoint } from "./node-action-buttons/GenerateNewEndpoint";
@@ -29,7 +29,7 @@ export const ParametersListField = (props: ParametersListFieldProps) => {
     const isRunning = useAppSelector(getIsRunning);
     const { t } = useTranslation();
     const [isCopied, copy] = useCopyClipboard();
-    const [settings] = useUserSettings();
+    const settings = useAppSelector(getUserSettings);
 
     if (paramWithIndex.param.name === "Endpoint") {
         const displayCopyValueEndAdornment = paramWithIndex.param.name === "Endpoint" && node.type === "Source";
