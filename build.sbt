@@ -1596,8 +1596,8 @@ lazy val componentsApi = (project in file("components-api"))
         "com.google.code.findbugs"       % "jsr305"                        % findBugsV,
         "com.softwaremill.sttp.client3" %% "core"                          % sttpV,
         "org.scalatestplus"             %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test,
-        "com.typesafe.slick"            %% "slick"                         % slickV,
-        "com.github.tminglei"           %% "slick-pg"                      % slickPgV,
+        "com.typesafe.slick"            %% "slick"                         % slickV         % Optional,
+        "com.github.tminglei"           %% "slick-pg"                      % slickPgV       % Optional,
       )
     }
   )
