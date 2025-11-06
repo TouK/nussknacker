@@ -15,7 +15,8 @@ import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedExpressionValueWithIcon,
   ParameterCategory,
-  ParameterEditor
+  ParameterEditor,
+  SelectOption
 }
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
   CellError,
@@ -716,6 +717,7 @@ object NodesApiEndpoints {
     implicit lazy val nodeValidationErrorSchema: Schema[NodeValidationError]   = Schema.derived
     implicit lazy val fixedExpressionValueSchema: Schema[FixedExpressionValue] = Schema.derived
     implicit lazy val fixedExpressionValueWithIconSchema: Schema[FixedExpressionValueWithIcon] = Schema.derived
+    implicit lazy val selectOptionValueSchema: Schema[SelectOption]                            = Schema.derived
     implicit lazy val expressionSchema: Schema[Expression]                                     = Schema.derived
 
     implicit lazy val caretPosition2dSchema: Schema[CaretPosition2d] = Schema.derived

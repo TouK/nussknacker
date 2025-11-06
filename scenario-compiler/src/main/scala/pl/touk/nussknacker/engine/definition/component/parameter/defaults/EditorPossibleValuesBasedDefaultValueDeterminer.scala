@@ -30,6 +30,7 @@ protected object EditorPossibleValuesBasedDefaultValueDeterminer extends Paramet
     case SpelTemplateParameterEditor | SqlParameterEditor => Some(Expression.spelTemplate(""))
     case TabularTypedDataEditor => Some(Expression.tabularDataDefinition(TabularTypedData.empty.stringify))
     case _: DictParameterEditor => Some(Expression(Language.DictKeyWithLabel, ""))
+    case _: MultiSelectEditor   => Some(Expression.json("[]"))
     // These are handled above in defaultForFixedParameterEditor
     case _: FixedValuesParameterEditor | _: FixedValuesWithIconParameterEditor |
         _: FixedValuesWithRadioParameterEditor =>

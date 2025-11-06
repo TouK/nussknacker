@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.api.definition
 
 import cats.data.Validated
-import cats.data.Validated.{invalid, valid}
+import cats.data.Validated.{invalid, valid, Invalid}
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.parser._
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.definition.JsonValidator.error
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ParameterValueCompileTimeValidation}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -15,6 +16,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import java.util.ServiceLoader
 import java.util.regex.Pattern
 import scala.collection.concurrent.TrieMap
+import scala.collection.convert.Wrappers.SeqWrapper
 import scala.util.Try
 
 trait Validator {
@@ -261,6 +263,53 @@ case object JsonValidator extends ParameterValidator {
       "Please fill field with valid json",
       paramName,
       nodeId
+    )
+
+}
+
+case class MultiSelectFixedValuesValidator(possibleSelectOptions: List[SelectOption]) extends ParameterValidator {
+
+  val possibleValues: List[Any] = possibleSelectOptions.map(_.value)
+
+  override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
+      implicit nodeId: NodeId
+  ): Validated[PartSubGraphCompilationError, Unit] = {
+    value match {
+      case Some(chosenValues: SeqWrapper[_]) =>
+        chosenValues.underlying.find(el => !possibleValues.contains(el)) match {
+          case Some(unallowedValue: String) =>
+            invalid(
+              MultiSelectUnallowedValue(
+                unallowedValue,
+                possibleSelectOptions,
+                paramName,
+                nodeId
+              )
+            )
+          case Some(otherUnallowedValue) =>
+            invalid(
+              invalidFormatError(
+                s"Expected only String type elements in JSON List, got: ${otherUnallowedValue.toString}",
+                paramName,
+                nodeId
+              )
+            )
+          case None =>
+            valid(())
+        }
+      case Some(other) => invalid(invalidFormatError(s"Expected a List, got value: $other", paramName, nodeId))
+      case None =>
+        invalid(
+          invalidFormatError(s"Unexpected value from parsing expression: ${expression.expression}", paramName, nodeId)
+        )
+    }
+  }
+
+  private def invalidFormatError(message: String, paramName: ParameterName, nodeId: NodeId) =
+    MultiSelectInvalidFormat(
+      message,
+      paramName,
+      nodeId,
     )
 
 }

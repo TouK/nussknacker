@@ -13,8 +13,8 @@ object EditorBasedLanguageDeterminer {
           FixedValuesParameterEditor(_) | FixedValuesWithIconParameterEditor(_) |
           FixedValuesWithRadioParameterEditor(_) =>
         Expression.Language.Spel
-      case JsonParameterEditor         => Expression.Language.Json
-      case JsonTemplateParameterEditor => Expression.Language.JsonTemplate
+      case JsonParameterEditor | MultiSelectEditor(_) => Expression.Language.Json
+      case JsonTemplateParameterEditor                => Expression.Language.JsonTemplate
       case SqlParameterEditor | SpelTemplateParameterEditor =>
         Expression.Language.SpelTemplate
       case DictParameterEditor(_) =>

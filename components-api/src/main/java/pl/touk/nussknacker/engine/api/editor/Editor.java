@@ -20,6 +20,14 @@ public @interface Editor {
     LabeledExpression[] possibleValues() default {};
 
     /**
+     * This field should be used only with {@link EditorType#MULTI_SELECT_EDITOR}
+     */
+    // TODO: renames: - rename
+    //  possibleValues -> allowedExpressions/possibleExpressions
+    //  possibleMultiSelectValues -> allowedValues/possibleValues
+    MultiSelectValueOption[] possibleMultiSelectValues() default {};
+
+    /**
      * This field should be used only with {@link EditorType#DURATION_EDITOR} or {@link EditorType#PERIOD_EDITOR}
      */
     ChronoUnit[] timeRangeComponents() default {};

@@ -57,6 +57,13 @@ object EditorExtractor {
       case EditorType.TYPED_TABULAR_DATA_EDITOR => TabularTypedDataEditor
       case EditorType.SPEL_EDITOR               => SpelParameterEditor
       case EditorType.JSON_TEMPLATE_EDITOR      => JsonTemplateParameterEditor
+      case EditorType.MULTI_SELECT_EDITOR =>
+        MultiSelectEditor(
+          editor
+            .possibleMultiSelectValues()
+            .map(option => SelectOption(option.value(), option.label()))
+            .toList
+        )
     }
   }
 
