@@ -15,7 +15,13 @@ object ContextTypeHelpers {
     ConcreteCaseClassTypeInfo(
       ("id", contextIdInfo),
       ("variables", variables),
-      ("parentContext", parentCtx)
+      ("parentContext", parentCtx),
+      (
+        "traceId",
+        new OptionTypeInfo[String, Option[String]](
+          TypeInformation.of(classOf[String])
+        )
+      )
     )
 
   def infoFromVariablesAndParentOption(

@@ -32,8 +32,14 @@ trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
     record => {
       val context = Context(contextIdGenerator.nextContextId())
       Validated
-        .fromEither(Try(transform(record)).toEither)
-        .map(contextVariables => context.withVariables(contextVariables.variables))
+        .fromEither(Try((transform(record), traceId(record))).toEither)
+        .map { case (contextVariables, traceId) =>
+          val contextWithVariables = context.withVariables(contextVariables.variables)
+
+          traceId
+            .map(contextWithVariables.withTraceId)
+            .getOrElse(contextWithVariables)
+        }
         .leftMap(ex =>
           NuExceptionInfo(
             Some(NodeComponentInfo(componentContext.nodeId, ComponentType.Source, "unknown")),
@@ -44,6 +50,9 @@ trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
         .toValidatedNel
     }
 
-  def transform(record: T): ContextVariables
+  // for extending classes purpose
+  protected def traceId(record: T): Option[String] = None
+
+  protected def transform(record: T): ContextVariables
 
 }

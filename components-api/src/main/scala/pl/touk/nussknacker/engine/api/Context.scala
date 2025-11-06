@@ -4,10 +4,10 @@ import scala.jdk.CollectionConverters._
 
 object Context {
 
-  def apply(id: ContextId): Context = Context(id, Map.empty, None)
+  def apply(id: ContextId): Context = Context(id, Map.empty, None, None)
 
   def apply(id: ContextId, variables: Map[String, Any]): Context =
-    Context(id, variables, None)
+    Context(id, variables, None, None)
 
   // The dummy Context should only be used in test suites, perhaps also Nu scenario test mechanism or examples
   def dummy: Context = Context(ContextId.dummy)
@@ -83,7 +83,9 @@ object ContextId {
 case class Context(
     id: ContextId,
     variables: Map[String, Any],
-    parentContext: Option[Context]
+    parentContext: Option[Context],
+    // FIXME: it's an experimental feature, it still doesn't work with aggregations
+    traceId: Option[String]
 ) {
 
   def withContextIdPathPart(nodeId: String, transformation: String): Context =
@@ -112,8 +114,11 @@ case class Context(
   def withVariables(otherVariables: Map[String, Any]): Context =
     copy(variables = variables ++ otherVariables)
 
+  def withTraceId(traceId: String): Context =
+    copy(traceId = Some(traceId))
+
   def pushNewContext(variables: Map[String, Any]): Context = {
-    Context(id, variables, Some(this))
+    Context(id, variables, Some(this), traceId)
   }
 
   // it returns all variables from context including parent tree

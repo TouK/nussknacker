@@ -49,7 +49,8 @@ object RowConversions {
     Context(
       deserializeContextId(row.getField(0).asInstanceOf[String]),
       rowToScalaMap(row.getField(1).asInstanceOf[Row]),
-      Option(row).filter(_.getArity >= 3).map(_.getField(2).asInstanceOf[Row]).map(rowToContext)
+      Option(row).filter(_.getArity >= 3).map(_.getField(2).asInstanceOf[Row]).map(rowToContext),
+      None
     )
   }
 
