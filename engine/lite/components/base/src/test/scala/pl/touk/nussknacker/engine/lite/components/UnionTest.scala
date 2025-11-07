@@ -101,7 +101,7 @@ object TypedSourceFactory extends SourceFactory with UnboundedStreamComponent {
 
       override def createTransformation[F[_]: Monad](
           evaluateLazyParameter: customComponentTypes.CustomComponentContext[F]
-      ): Any => ValidatedNel[ErrorType, Context] = ???
+      ): (Any, Map[String, String]) => ValidatedNel[ErrorType, Context] = ???
 
       override def returnType: typing.TypingResult = value.returnType
     }

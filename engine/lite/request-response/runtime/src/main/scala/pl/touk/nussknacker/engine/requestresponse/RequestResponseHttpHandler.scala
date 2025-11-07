@@ -26,7 +26,7 @@ class RequestResponseHttpHandler[Effect[_]: Monad](
   def invoke(request: HttpRequest, entity: Array[Byte]): Effect[Either[NonEmptyList[ErrorType], Json]] = {
     for {
       input         <- tryInvoke(tryToParse(request, entity))
-      rawResult     <- EitherT(invokeInterpreter(input))
+      rawResult     <- EitherT(invokeInterpreter(input, request))
       encoderResult <- tryInvoke(encoder.toJsonResponse(input, rawResult))
     } yield encoderResult
   }.value
@@ -46,7 +46,10 @@ class RequestResponseHttpHandler[Effect[_]: Monad](
   private val source  = requestResponseInterpreter.source
   private val encoder = source.responseEncoder.getOrElse(DefaultResponseEncoder)
 
-  private def invokeInterpreter(input: Any) = requestResponseInterpreter.invokeToOutput(input).map(_.toEither)
+  private def invokeInterpreter(input: Any, request: HttpRequest) = {
+    val headers = request.headers.map(h => h.name() -> h.value()).toMap
+    requestResponseInterpreter.invokeToOutput(input, headers).map(_.toEither)
+  }
 
   private def tryInvoke[T](value: => T): EitherT[Effect, NonEmptyList[ErrorType], T] =
     EitherT.fromEither[Effect](

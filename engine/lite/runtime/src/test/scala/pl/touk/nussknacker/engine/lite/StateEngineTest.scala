@@ -6,6 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ContextId
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.sample.{SampleInput, SimpleSourceFactory, SourceFailure}
 import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -17,7 +18,7 @@ class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
     val results = sample.run(
       sampleScenarioWithState,
       ScenarioInputBatch(List(0, 1, 2, 3).zipWithIndex.map { case (value, idx) =>
-        (SourceId("start"), SampleInput(idx.toString, value))
+        (SourceId("start"), SampleInput(idx.toString, value), LiteSource.EmptyHeaders)
       }),
       Map("test" -> 10)
     )
@@ -39,7 +40,7 @@ class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
     val results = sample.run(
       sampleScenarioWithFailingSource,
       ScenarioInputBatch(List(0, 1, 2, 3).zipWithIndex.map { case (value, idx) =>
-        (SourceId("start"), SampleInput(idx.toString, value))
+        (SourceId("start"), SampleInput(idx.toString, value), LiteSource.EmptyHeaders)
       }),
       Map("test" -> 10)
     )

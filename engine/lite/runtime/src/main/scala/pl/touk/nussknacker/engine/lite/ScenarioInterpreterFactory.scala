@@ -188,7 +188,7 @@ object ScenarioInterpreterFactory {
 
     def compile: CompilationResult[ScenarioInterpreterType] = {
       val emptyPartInvocation: ScenarioInterpreterType = (inputs: ScenarioInputBatch[Input]) =>
-        Monoid.combineAll(inputs.value.map { case (source, _) =>
+        Monoid.combineAll(inputs.value.map { case (source, _, _) =>
           Monad[F].pure[ResultType[PartResult]](
             Writer(
               NuExceptionInfo(
@@ -204,11 +204,11 @@ object ScenarioInterpreterFactory {
       def computeNextSourceInvocation(
           base: ScenarioInterpreterType,
           nextSource: SourcePart,
-          next: Input => F[ResultType[PartResult]]
+          next: (Input, Map[String, String]) => F[ResultType[PartResult]]
       ): ScenarioInputBatch[Input] => InterpreterOutputType = (inputs: ScenarioInputBatch[Input]) =>
         Monoid.combineAll(inputs.value.map {
-          case (source, ctx) if source.value == nextSource.id => next(ctx)
-          case other                                          => base(ScenarioInputBatch(other :: Nil))
+          case (source, ctx, headers) if source.value == nextSource.id => next(ctx, headers)
+          case other                                                   => base(ScenarioInputBatch(other :: Nil))
         })
 
       // here we rely on the fact that parts are sorted correctly (see ProcessCompiler.compileSources)
@@ -232,12 +232,11 @@ object ScenarioInterpreterFactory {
                     computeNextSourceInvocation(
                       interpreter,
                       a,
-                      compiledSource andThen { validatedCtx =>
-                        validatedCtx.fold(
+                      (in: Input, headers: Map[String, String]) =>
+                        compiledSource(in, headers).fold(
                           errs => Monad[F].pure(Writer(errs.toList, List.empty)),
                           ctx => part(DataBatch(List(ctx)))
                         )
-                      }
                     )
                   )
                 }
@@ -420,7 +419,7 @@ object ScenarioInterpreterFactory {
 
     private def compileSource(
         sourcePart: SourcePart
-    ): ValidatedNel[ProcessCompilationError, Input => ValidatedNel[ErrorType, Context]] = {
+    ): ValidatedNel[UnsupportedPart, (Input, Map[String, String]) => ValidatedNel[ErrorType, Context]] = {
       val SourcePart(sourceObj, node, _, _, _) = sourcePart
       val validatedSource = (sourceObj, node.data) match {
         case (s: LiteSource[Input @unchecked], _) => Valid(s)
@@ -440,7 +439,7 @@ object ScenarioInterpreterFactory {
 
           override def createTransformation[T[_]: Monad](
               evaluateLazyParameter: CustomComponentContext[T]
-          ): Input => ValidatedNel[ErrorType, Context] = { input =>
+          ): (Input, Map[String, String]) => ValidatedNel[ErrorType, Context] = { (input, _) =>
             Valid(
               Context(
                 ContextId(processCompilerData.jobData.metaData.name.value, evaluateLazyParameter.nodeId, 0, 0),
