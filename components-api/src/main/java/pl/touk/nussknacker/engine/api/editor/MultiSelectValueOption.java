@@ -9,7 +9,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MultiSelectValueOption {
 
-    // TODO: try to change it to Any type
     String value();
 
     String label();
