@@ -410,7 +410,8 @@ object ScenarioInterpreterFactory {
               Context(
                 ContextId(fragmentInputDef.id, evaluateLazyParameter.nodeId, 0, 0),
                 input.asInstanceOf[Map[String, Any]],
-                None
+                None,
+                None,
               )
             )
           }

@@ -30,7 +30,7 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
 
   private val variables = Map(VariableConstants.InputVariableName -> Map("name" -> "lcl", "age" -> 36))
 
-  private val context = Context(ContextId.dummy, variables, None)
+  private val context = Context(ContextId.dummy, variables, None, Some(TraceId.generate()))
 
   private val exception = NuExceptionInfo(
     Some(NodeComponentInfo("nodeId", ComponentType.Service, "componentName")),
