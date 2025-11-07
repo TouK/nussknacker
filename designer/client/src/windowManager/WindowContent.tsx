@@ -3,7 +3,7 @@ import type { DefaultContentProps } from "@touk/window-manager";
 import { DefaultContent, useWindowManager } from "@touk/window-manager";
 import type { FooterButtonProps } from "@touk/window-manager/cjs/components/window/footer";
 import type { PropsWithChildren, ReactElement } from "react";
-import React, { forwardRef, useMemo, useState } from "react";
+import React, { forwardRef, useCallback, useMemo, useState } from "react";
 import { useKey } from "rooks";
 
 import { StyledContent, StyledHeader } from "../components/graph/node-modal/node/StyledHeader";
@@ -52,15 +52,22 @@ export const WindowContent = forwardRef<HTMLDivElement, WindowContentProps>(func
     const [stableIcon] = useState(icon);
     const [stableSubheader] = useState(subheader);
 
+    const CustomHeaderTitle: DefaultContentProps["components"]["HeaderTitle"] = useCallback(
+        (headerProps) => {
+            return <IconModalHeader {...headerProps} startIcon={stableIcon} subheader={stableSubheader} />;
+        },
+        [stableIcon, stableSubheader],
+    );
+
     const components = useMemo<DefaultContentProps["components"]>(
         () => ({
-            Header: (props) => <StyledHeader {...props} />,
-            Content: (props) => <StyledContent {...props} />,
-            HeaderTitle: (headerProps) => <IconModalHeader {...headerProps} startIcon={stableIcon} subheader={stableSubheader} />,
+            Header: StyledHeader,
+            Content: StyledContent,
+            HeaderTitle: CustomHeaderTitle,
             FooterButton: LoadingButton,
             ...props.components,
         }),
-        [stableIcon, stableSubheader, props.components],
+        [CustomHeaderTitle, props.components],
     );
 
     return (
