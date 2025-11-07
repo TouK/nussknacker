@@ -90,16 +90,24 @@ object RequestResponseInterpreter {
       case more => throw new IllegalArgumentException(s"More than one source for request-response: ${more.map(_._1)}")
     }
 
-    private def invoke(input: Any): Effect[ValidatedNel[ErrorType, List[EndResult[AnyRef]]]] = {
-      val inputBatch = ScenarioInputBatch((sourceId -> input) :: Nil)
+    private def invoke(
+        input: Any,
+        headers: Map[String, String]
+    ): Effect[ValidatedNel[ErrorType, List[EndResult[AnyRef]]]] = {
+      val inputBatch = ScenarioInputBatch((sourceId, input, headers) :: Nil)
       statelessScenarioInterpreter.invoke(inputBatch).map { case WriterT((errors, results)) =>
         NonEmptyList.fromList(errors).map(Invalid(_)).getOrElse(Valid(results))
       }
     }
 
-    def invokeToOutput(input: Any): Effect[ValidatedNel[ErrorType, List[Any]]] = invocationMetrics.measureTime {
-      invoke(input).map(_.map(_.map(_.result)))
-    }
+    // back compatibility purposes
+    def invokeToOutput(input: Any): Effect[ValidatedNel[ErrorType, List[Any]]] =
+      invokeToOutput(input, Map.empty[String, String])
+
+    def invokeToOutput(input: Any, headers: Map[String, String]): Effect[ValidatedNel[ErrorType, List[Any]]] =
+      invocationMetrics.measureTime {
+        invoke(input, headers).map(_.map(_.map(_.result)))
+      }
 
     def open(): Unit = statelessScenarioInterpreter.open(context)
 

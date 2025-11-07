@@ -81,7 +81,14 @@ class EnricherService extends Service {
       collector: ServiceInvocationCollector,
       context: Context
   ): Future[Response] = {
-    Future.successful(Response(s"alamakota-${context.id}"))
+    Future.successful {
+      val base = s"alamakota-${context.id}"
+      Response(
+        context.traceId
+          .map(ti => s"$base-$ti")
+          .getOrElse(base)
+      )
+    }
   }
 
 }

@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.definition.{Parameter, TypedNodeDependency
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema

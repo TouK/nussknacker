@@ -197,8 +197,8 @@ object sample {
 
       override def createTransformation[F[_]: Monad](
           evaluateLazyParameter: CustomComponentContext[F]
-      ): SampleInput => ValidatedNel[ErrorType, Context] =
-        input => Valid(Context(dummyContextId(input.contextId), Map("input" -> input.value), None, Some(traceId)))
+      ): (SampleInput, Map[String, String]) => ValidatedNel[ErrorType, Context] =
+        (input, _) => Valid(Context(dummyContextId(input.contextId), Map("input" -> input.value), None, Some(traceId)))
 
       override def testRecordParser: TestRecordParser[SampleInput] = (testRecords: List[TestRecord]) =>
         testRecords.map { testRecord =>
@@ -217,8 +217,8 @@ object sample {
 
       override def createTransformation[F[_]: Monad](
           evaluateLazyParameter: CustomComponentContext[F]
-      ): SampleInput => ValidatedNel[ErrorType, Context] =
-        input => {
+      ): (SampleInput, Map[String, String]) => ValidatedNel[ErrorType, Context] =
+        (input, _) => {
           if (input.value == 1) {
             Invalid(
               NuExceptionInfo(
@@ -246,8 +246,8 @@ object sample {
 
       override def createTransformation[F[_]: Monad](
           evaluateLazyParameter: CustomComponentContext[F]
-      ): SampleInputWithListAndMap => ValidatedNel[ErrorType, Context] =
-        input => Valid(Context(input.contextId, Map("input" -> input.asInstanceOf[Any]), None, None))
+      ): (SampleInputWithListAndMap, Map[String, String]) => ValidatedNel[ErrorType, Context] =
+        (input, _) => Valid(Context(input.contextId, Map("input" -> input.asInstanceOf[Any]), None, None))
 
       override def testParametersDefinition: List[Parameter] = List(
         Parameter(ParameterName("contextId"), Typed.apply[String]),

@@ -12,7 +12,7 @@ object interpreterTypes {
 
   case class SourceId(value: String)
 
-  case class ScenarioInputBatch[Input](value: List[(SourceId, Input)])
+  case class ScenarioInputBatch[Input](value: List[(SourceId, Input, Map[String, String])])
 
   case class EndResult[Result](nodeId: NodeId, context: Context, result: Result)
 
