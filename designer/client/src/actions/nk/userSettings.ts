@@ -1,4 +1,4 @@
-import { getUserSettings } from "../../reducers/selectors/userSettings";
+import { getUserSettingsValues } from "../../reducers/selectors/userSettings";
 import type { Setting, UserSettings } from "../../reducers/userSettings";
 import { getDefaultUserSettings } from "../../reducers/userSettings";
 import type { Action, ThunkAction } from "../reduxTypes";
@@ -11,21 +11,24 @@ export function userSettingSet(key: Setting, value: boolean | string): Action {
     };
 }
 
-export function userSettingsRotate(key: Setting, values = ["default", false, true]): ThunkAction {
+function nextIndex<T>(options: T[], selected: T): number {
+    const index = options.indexOf(selected);
+    if (index === -1) return 1;
+    return (index + 1) % options.length;
+}
+
+export function userSettingsRotate(key: Setting, values = ["default", true, false]): ThunkAction {
     return (dispatch, getState) => {
-        const current = getUserSettings(getState(), false)[key];
-        const index = Math.max(
-            0,
-            values.findIndex((v) => v === current),
-        );
-        dispatch(userSettingSet(key, values[(index + 1) % values.length]));
+        const current = getUserSettingsValues(getState(), false)[key];
+        const nextValue = values[nextIndex(values, current)];
+        dispatch(userSettingSet(key, nextValue));
     };
 }
 
 export function userSettingsToggle(settings: Setting[]): ThunkAction {
-    return (dispatch, getState) => {
+    return (dispatch) => {
         settings.forEach((setting) => {
-            dispatch(userSettingsRotate(setting, [true, false]));
+            dispatch(userSettingsRotate(setting, [false, true]));
         });
     };
 }

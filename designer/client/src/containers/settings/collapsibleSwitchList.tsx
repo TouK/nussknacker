@@ -49,6 +49,14 @@ function SwitchElement({
     );
 }
 
+function isNestedObject(finalValue: Primitive | NestedRecord) {
+    return (
+        typeof finalValue === "object" &&
+        finalValue !== null &&
+        !(Object.prototype.hasOwnProperty.call(finalValue, "isDefault") && Object.prototype.hasOwnProperty.call(finalValue, "value"))
+    );
+}
+
 const CollapsibleSwitchList = ({ data, onToggle, basePath = "", level = 0, flattenSingleChild = true }: CollapsibleSwitchListProps) => {
     const [openKeys, setOpenKeys] = useState<Record<string, boolean>>({});
 
@@ -74,19 +82,17 @@ const CollapsibleSwitchList = ({ data, onToggle, basePath = "", level = 0, flatt
         <List disablePadding>
             {Object.entries(data)
                 .sort(([a], [b]) => a.localeCompare(b))
-                .sort(([, a], [, b]) => Object.keys(b).length - Object.keys(a).length)
+                .sort(([, a], [, b]) => {
+                    const aLength = isNestedObject(b) ? Object.keys(b).length : 0;
+                    const bLength = isNestedObject(a) ? Object.keys(a).length : 0;
+                    return aLength - bLength;
+                })
                 .map(([key, value]) => {
                     const [currentPath, finalValue] =
                         flattenSingleChild && typeof value === "object" && value !== null
                             ? flattenPath(value as NestedRecord, key)
                             : [key, value];
-                    const isNestedObject =
-                        typeof finalValue === "object" &&
-                        finalValue !== null &&
-                        !(
-                            Object.prototype.hasOwnProperty.call(finalValue, "isDefault") &&
-                            Object.prototype.hasOwnProperty.call(finalValue, "value")
-                        );
+                    const isNested = isNestedObject(finalValue);
                     const string = flattenSingleChild ? currentPath : key;
                     const label = string
                         .split(".")
@@ -94,7 +100,7 @@ const CollapsibleSwitchList = ({ data, onToggle, basePath = "", level = 0, flatt
                         .join(" — ");
                     const fullPath = basePath ? `${basePath}.${currentPath}` : currentPath;
                     const expanded = openKeys[currentPath];
-                    return isNestedObject ? (
+                    return isNested ? (
                         <Fragment key={currentPath}>
                             <ListItem disablePadding>
                                 <ListItemButton onClick={() => toggleOpen(currentPath)} sx={{ pl: 2 + level * 2 }}>
@@ -126,7 +132,7 @@ const CollapsibleSwitchList = ({ data, onToggle, basePath = "", level = 0, flatt
                     ) : (
                         <Fragment key={currentPath}>
                             <ListItem disablePadding>
-                                <ListItemButton onClick={isNestedObject ? null : () => onToggle(fullPath)} sx={{ pl: 2 + level * 2 }}>
+                                <ListItemButton onClick={isNested ? null : () => onToggle(fullPath)} sx={{ pl: 2 + level * 2 }}>
                                     <ListItemText primary={label} />
                                     <SwitchElement value={finalValue as Primitive} onChange={(v) => onToggle(fullPath, v)} />
                                 </ListItemButton>

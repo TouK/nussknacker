@@ -4,17 +4,17 @@ import React, { useEffect, useState } from "react";
 
 import type { SettingsData } from "../actions/nk/assignSettings";
 import { assignSettings } from "../actions/nk/assignSettings";
-import { userSettingsSetInitial, userSettingsToggle } from "../actions/nk/userSettings";
+import { userSettingSet, userSettingsSetInitial, userSettingsToggle } from "../actions/nk/userSettings";
 import LoaderSpinner from "../components/spinner/Spinner";
 import HttpService from "../http/HttpService/instance";
 import { getUserSettings } from "../reducers/selectors/userSettings";
-import type { Setting, UserSettings } from "../reducers/userSettings";
+import type { UserSettings } from "../reducers/userSettings";
 import { waitForWindowValue } from "../reducers/waitForWindowValue";
 import { useAppDispatch, useAppSelector } from "../store/storeHelpers";
 
 declare global {
     interface Window {
-        $setUserFlag: (flag: Setting) => void;
+        $toggleUserFlag?: <K extends keyof UserSettings>(flag: K, value?: UserSettings[K]) => void;
         $initialUserFlags?: UserSettings;
     }
 }
@@ -24,8 +24,12 @@ export function SettingsProvider({ children }: PropsWithChildren<unknown>): JSX.
     const dispatch = useAppDispatch();
 
     useEffect(() => {
-        window.$setUserFlag = (flag) => {
-            dispatch(userSettingsToggle([flag]));
+        window.$toggleUserFlag = (flag, value) => {
+            if (value !== undefined) {
+                dispatch(userSettingSet(flag, value));
+            } else {
+                dispatch(userSettingsToggle([flag]));
+            }
         };
         waitForWindowValue("$initialUserFlags").then((flags) => {
             dispatch(userSettingsSetInitial(flags));
