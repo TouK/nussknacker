@@ -1,15 +1,19 @@
 import { Clear, Search } from "@mui/icons-material";
 import { IconButton, InputAdornment, TextField } from "@mui/material";
 import { isEmpty } from "lodash";
-import React from "react";
+import React, { useRef } from "react";
 
 export function SearchField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+    const ref = useRef<HTMLInputElement>();
     return (
         <TextField
+            inputRef={ref}
             value={value}
             onChange={(event) => onChange(event.target.value)}
             variant="outlined"
-            size="small"
+            onClick={() => {
+                ref.current.focus();
+            }}
             InputProps={{
                 autoComplete: "off",
                 startAdornment: (
@@ -25,9 +29,14 @@ export function SearchField({ value, onChange }: { value: string; onChange: (val
                     </InputAdornment>
                 ),
             }}
-            sx={{
-                width: "40%",
-            }}
+            sx={(theme) => ({
+                flex: 1,
+                transition: theme.transitions.create("max-width"),
+                maxWidth: 160,
+                "&:focus-within, &:has(input[value]:not([value='']))": {
+                    maxWidth: "50%",
+                },
+            })}
         />
     );
 }
