@@ -136,6 +136,7 @@ object TestProcess {
       ResultContext(context.id, timestamp, context.variables.map { case (k, v) => k -> variableEncoder(v) })
   }
 
+  // We don't pass here traceId - it's intentional
   case class ResultContext[T](id: ContextId, timestamp: Instant, variables: Map[String, T]) {
     def variableTyped[U <: T](name: String): Option[U] = variables.get(name).map(_.asInstanceOf[U])
   }

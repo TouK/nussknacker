@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.lite.api
 
 import cats.{~>, Monad}
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.api.{Context, NodeId}
+import pl.touk.nussknacker.engine.api.{Context, NodeId, TraceId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.{Sink, Source}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -25,11 +25,20 @@ object customComponentTypes {
       capabilityTransformer: CapabilityTransformer[F]
   )
 
+  object LiteSource {
+    val DefaultTraceIdHeader: String = "trace-id"
+    val EmptyHeaders                 = Map.empty[String, String]
+  }
+
   trait LiteSource[Input] extends Source {
+
+    // protected for overriding purposes
+    protected def extractTraceId(headers: Map[String, String]): Option[TraceId] =
+      headers.get(LiteSource.DefaultTraceIdHeader).map(TraceId(_))
 
     def createTransformation[F[_]: Monad](
         evaluateLazyParameter: CustomComponentContext[F]
-    ): Input => ValidatedNel[ErrorType, Context]
+    ): (Input, Map[String, String]) => ValidatedNel[ErrorType, Context]
 
   }
 

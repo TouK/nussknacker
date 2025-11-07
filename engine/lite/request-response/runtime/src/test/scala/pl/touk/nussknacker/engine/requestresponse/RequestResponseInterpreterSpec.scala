@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.requestresponse
 
-import cats.data.{NonEmptyList, ValidatedNel}
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.Validated.Valid
+import cats.data.ValidatedNel
 import com.typesafe.config.ConfigFactory
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.RuntimeMode
-import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId, ProcessVersion, TraceId}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, NodeComponentInfo, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.components.LiteBaseComponentProvider
 import pl.touk.nussknacker.engine.lite.components.requestresponse.RequestResponseComponentProvider
@@ -36,6 +37,8 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  private val traceId = TraceId.generate().toString
+
   test("run scenario in request response mode") {
 
     val scenario = ScenarioBuilder
@@ -50,7 +53,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val contextId = firstIdForFirstSource(scenario)
     val result    = runScenario(scenario, Request1("a", "b"), creator)
 
-    result shouldBe Valid(List(Response(s"alamakota-$contextId")))
+    result shouldBe Valid(List(Response(s"alamakota-$contextId-$traceId")))
     creator.processorService.invocationsCount.get() shouldBe 1
   }
 
@@ -87,7 +90,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       val contextId = firstIdForFirstSource(scenario)
       val result    = invokeInterpreter(interpreter, Request1("a", "b"))
 
-      result shouldBe Valid(List(Response(s"alamakota-$contextId")))
+      result shouldBe Valid(List(Response(s"alamakota-$contextId-$traceId")))
       creator.processorService.invocationsCount.get() shouldBe 1
 
       eventually {
@@ -276,7 +279,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       case NuExceptionInfo(
             Some(NodeComponentInfo(NodeId("sinkId"), Some(ComponentId(ComponentType.Sink, "unknown")))),
             SinkException("FailingSink failed"),
-            Context(`contextId`, variables, None, None),
+            Context(`contextId`, variables, None, Some(traceId)),
             _,
             _
           ) :: Nil if variables == Map("input" -> Request1("a", "b")) =>
@@ -425,8 +428,10 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     interpreter
   }
 
-  private def invokeInterpreter(interpreter: InterpreterType, input: Any) = {
-    interpreter.invokeToOutput(input).futureValue
+  private def invokeInterpreter(interpreter: InterpreterType, input: Any): ValidatedNel[ErrorType, List[Any]] = {
+    interpreter
+      .invokeToOutput(input, Map(LiteSource.DefaultTraceIdHeader -> traceId))
+      .futureValue
   }
 
   private def firstIdForFirstSource(scenario: CanonicalProcess): ContextId =

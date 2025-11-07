@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestCommonFormatJsonRecord, ScenarioTestData, ScenarioTestRecord}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
@@ -96,7 +95,7 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
               testDataPreparer.prepareRecordsForTest(source, scenarioTestRecords)
             val recordsFromCommonTestDataFormat = decodeCommonFormatRecords(scenarioTestRecords, nodeId)
             (recordsFromSourceSpecificTestDataFormat ++ recordsFromCommonTestDataFormat)
-              .map(record => sourceId -> record)
+              .map(record => (sourceId, record, Map.empty[String, String]))
           }
       )
 

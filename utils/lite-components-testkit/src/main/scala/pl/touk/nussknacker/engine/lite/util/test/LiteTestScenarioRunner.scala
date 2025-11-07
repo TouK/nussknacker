@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
@@ -106,7 +107,8 @@ class LiteTestScenarioRunner(
     val testSource = ComponentDefinition(TestScenarioRunner.testDataSource, new SimpleSourceFactory(Typed[INPUT]))
     val testSink   = ComponentDefinition(TestScenarioRunner.testResultSink, SimpleSinkFactory)
     val inputId    = scenario.nodes.head.id
-    val inputBatch = ScenarioInputBatch(data.map(d => (SourceId(inputId), d: Any)))
+    // TODO: Add passing headers
+    val inputBatch = ScenarioInputBatch(data.map(d => (SourceId(inputId), d: Any, LiteSource.EmptyHeaders)))
     val jobData    = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
 
     val allComponents = testSource ::
