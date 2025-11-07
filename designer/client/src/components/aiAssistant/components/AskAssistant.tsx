@@ -1,20 +1,22 @@
 import { Button } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React, { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
 import { assistantAsk } from "../../../actions/assistantActions";
-import { useUserSettings } from "../../../common/userSettings";
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
+import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 
 export type AskAssistantProps = PropsWithChildren<{ question: string; realPrompt?: string }>;
 
 function AskAssistant({ question, realPrompt = question, children }: AskAssistantProps) {
+    const { t } = useTranslation();
     const dispatch = useAppDispatch();
     const graph = useAppSelector(getScenarioGraph);
     const { status } = useAppSelector(getProcessState);
-    const [settings] = useUserSettings();
+    const settings = useAppSelector(getUserSettings);
 
     const onClick = useCallback(() => {
         dispatch(
@@ -48,7 +50,7 @@ function AskAssistant({ question, realPrompt = question, children }: AskAssistan
                 whiteSpace: "nowrap",
             })}
         >
-            {children || `explain?`}
+            {children || t("assistant.ask", `explain?`)}
         </Button>
     );
 }

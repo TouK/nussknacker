@@ -1,6 +1,6 @@
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import { Button, styled, Zoom } from "@mui/material";
-import { useOverflow } from "@touk/window-manager";
+import { useContentScroll } from "@touk/window-manager";
 import React from "react";
 import { useDebouncedValue } from "rooks";
 
@@ -21,10 +21,10 @@ function useDelayedIn(show: boolean | unknown, delay = 500) {
 }
 
 export const ScrollToBottomButton = () => {
-    const overflow = useOverflow();
+    const { hasBottomOverflow, scrollToBottom } = useContentScroll();
     return (
-        <Zoom in={useDelayedIn(overflow.scrollToBottom)}>
-            <StyledScrollButton variant="contained" size="small" onClick={overflow.scrollToBottom}>
+        <Zoom in={useDelayedIn(hasBottomOverflow())}>
+            <StyledScrollButton variant="contained" size="small" onClick={scrollToBottom}>
                 <ArrowDownwardIcon />
             </StyledScrollButton>
         </Zoom>

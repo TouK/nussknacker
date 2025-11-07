@@ -1,8 +1,8 @@
 import loadable from "@loadable/component";
 import React from "react";
 
-import { useUserSettings } from "../../../common/userSettings";
 import { getIsAssitantEnabled } from "../../../reducers/selectors/settings";
+import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { AskAssistantProps } from "./AskAssistant";
 
@@ -16,7 +16,7 @@ export const AiAssistantButton = () => {
 const AskAssistant = loadable(() => import("./AskAssistant"), { fallback: null });
 export const AskAssistantButton = (props: AskAssistantProps) => {
     const assistantEnabld = useAppSelector(getIsAssitantEnabled);
-    const [settings] = useUserSettings();
+    const settings = useAppSelector(getUserSettings);
 
     if (!assistantEnabld || !settings["assistant.showHelp"]) return null;
     return <AskAssistant {...props} />;

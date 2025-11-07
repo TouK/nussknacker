@@ -2,7 +2,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 
 import type ProcessUtils from "../../../common/ProcessUtils";
-import { useUserSettings } from "../../../common/userSettings";
+import { getUserSettings } from "../../../reducers/selectors/userSettings";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { UIParameter } from "../../../types/definition";
 import type { NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
@@ -38,7 +39,7 @@ export function EnricherProcessor({
     showValidation?: boolean;
 }): JSX.Element {
     const { t } = useTranslation();
-    const [settings] = useUserSettings();
+    const settings = useAppSelector(getUserSettings);
     const showMockFieldOnEnrichers = settings["node.showMockFieldOnEnrichers"];
 
     const showMockField = showMockFieldOnEnrichers && node.type === "Enricher" && node.service.id !== "decision-table";

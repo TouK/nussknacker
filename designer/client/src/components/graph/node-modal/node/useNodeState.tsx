@@ -6,8 +6,8 @@ import { useDebounce } from "rooks";
 import { editNode } from "../../../../actions/nk/editNode";
 import { nodeValidationDynamicParametersLoaded } from "../../../../actions/nk/nodeDetails";
 import { PendingPromise } from "../../../../common/PendingPromise";
-import { useUserSettings } from "../../../../common/userSettings";
 import { getScenario } from "../../../../reducers/selectors/graph";
+import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import type { Edge } from "../../../../types/edge";
 import type { NodeType } from "../../../../types/node";
@@ -40,7 +40,7 @@ const NODE_UPDATE_DEBOUNCE_TIMEOUT = 1500;
 export function useNodeState(data: NodeDetailsMeta): NodeState {
     const dispatch = useAppDispatch();
     const [nodeId, setNodeId] = useState<string>(data.node.id);
-    const [settings] = useUserSettings();
+    const settings = useAppSelector(getUserSettings);
     const autoApply = settings["node.autoApply"];
 
     const scenarioFromGlobalStore = useAppSelector(getScenario);

@@ -3,7 +3,6 @@ import { alpha, css, styled } from "@mui/material";
 import { blend } from "@mui/system";
 import type { CSSProperties } from "react";
 
-import { useUserSettings } from "../../common/userSettings";
 import { blendLighten, getNodeBorderColor } from "../../containers/theme/helpers";
 import { stickyNotesAdvancedStyles } from "./EspNode/stickyNote/advancedStickyNoteConfig";
 import { stickyNotesBasicStyles } from "./EspNode/stickyNote/basicStickyNoteConfig";

@@ -40,6 +40,8 @@ export const ThreadSuggestions = () => {
     if (messages.length === 0) {
         return <ThreadWelcome.Message message={"Welcome! How can I help you get started?"} />;
     }
+
+    if (!suggestions.length) return null;
     return (
         <StyledThreadSuggestionsContainer>
             {suggestions.map((suggestion, index) => (

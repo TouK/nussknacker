@@ -1,7 +1,6 @@
 import { alpha, GlobalStyles, useTheme } from "@mui/material";
 import React, { useEffect, useMemo, useRef } from "react";
 
-import { useUserSettings } from "../../common/userSettings";
 import { useGraph } from "../../components/graph/GraphContext";
 import type { NodeTransitionResult } from "../../http/resultsWithCountsDto";
 import {
@@ -10,6 +9,7 @@ import {
     getLiveDataNextUpdate,
     getNodeTransitionResults,
 } from "../../reducers/selectors/getLiveData";
+import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../store/storeHelpers";
 
 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -49,7 +49,7 @@ export function LiveDataThroughputs() {
 
     const graphGetter = useGraph();
 
-    const [settings] = useUserSettings();
+    const settings = useAppSelector(getUserSettings);
     const showAnimations = settings["scenario.showLiveDataAnimations"];
     const isWorking = useAppSelector(getIsLiveDataWorking);
     const enabled = showAnimations && isWorking;

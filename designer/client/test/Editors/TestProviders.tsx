@@ -20,6 +20,10 @@ const store = configureStore({
             },
         },
         graphReducer: { present: { scenario: {} } },
+        userSettings: {
+            defaults: {},
+            values: {},
+        },
     },
     devTools: false,
 });
