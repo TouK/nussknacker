@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.{Case, DeadEndingData, EndingNodeData}
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
@@ -103,7 +104,7 @@ class MetricsTest extends AnyFunSuite with Matchers {
     sample.run(
       scenario,
       ScenarioInputBatch(input.zipWithIndex.map { case (value, idx) =>
-        (SourceId(sourceId), SampleInput(idx.toString, value))
+        (SourceId(sourceId), SampleInput(idx.toString, value), LiteSource.EmptyHeaders)
       }),
       Map.empty,
       new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
