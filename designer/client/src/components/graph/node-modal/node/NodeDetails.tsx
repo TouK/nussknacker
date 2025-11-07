@@ -2,7 +2,7 @@ import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager
 import { DefaultComponents as Window } from "@touk/window-manager";
 import type { DefaultContentProps } from "@touk/window-manager/cjs/components/window/DefaultContent";
 import type { HeaderButtonCloseProps } from "@touk/window-manager/cjs/components/window/header/HeaderButtonClose";
-import React, { useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import urljoin from "url-join";
 
@@ -141,19 +141,37 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const settings = useAppSelector(getUserSettings);
     const [PortalWrapper, portalRef] = usePortal();
 
+    const Content: DefaultContentProps["components"]["Content"] = useCallback(
+        (props) => {
+            return <InputOutputContent {...props} ref={portalRef} />;
+        },
+        [portalRef],
+    );
+
+    const Footer: DefaultContentProps["components"]["Footer"] = useCallback(
+        (props) => {
+            return (
+                <PortalWrapper>
+                    <Window.Footer {...props} />
+                </PortalWrapper>
+            );
+        },
+        [PortalWrapper],
+    );
+
+    const HeaderButtonClose: DefaultContentProps["components"]["HeaderButtonClose"] = useCallback(
+        (props) => {
+            return <CloseButton {...props} editStateRef={editStateRef} />;
+        },
+        [editStateRef],
+    );
+
     const components: DefaultContentProps["components"] = useMemo(() => {
-        return settings["node.showInputsAndOutputs"]
-            ? {
-                  Content: (props) => <InputOutputContent {...props} ref={portalRef} />,
-                  Footer: (props) => (
-                      <PortalWrapper>
-                          <Window.Footer {...props} />
-                      </PortalWrapper>
-                  ),
-                  HeaderButtonClose: (props) => <CloseButton {...props} editStateRef={editStateRef} />,
-              }
-            : { HeaderButtonClose: (props) => <CloseButton {...props} editStateRef={editStateRef} /> };
-    }, [settings, portalRef, PortalWrapper, editStateRef]);
+        if (settings["node.showInputsAndOutputs"]) {
+            return { Content, Footer, HeaderButtonClose };
+        }
+        return { HeaderButtonClose };
+    }, [settings, Content, Footer, HeaderButtonClose]);
 
     const dispatch = useAppDispatch();
     useEffect(() => {
