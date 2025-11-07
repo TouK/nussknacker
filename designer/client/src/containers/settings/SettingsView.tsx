@@ -41,28 +41,20 @@ function SettingsView() {
                     justifyContent: "space-between",
                     alignItems: "baseline",
                 }}
+                spacing={3}
             >
                 <Typography variant="h4">{t("views.settings.header", "Settings")}</Typography>
-                <SearchField value={filter} onChange={setFilter} />
-            </Stack>
-            <Stack
-                direction="row"
-                sx={{
-                    paddingX: 1.5,
-                    justifyContent: "flex-end",
-                    alignItems: "center",
-                }}
-            >
                 <Button
                     color="warning"
                     size="small"
                     disabled={Object.values(rawValues).length <= 0}
-                    onClick={(e) => {
+                    onClick={() => {
                         dispatch({ type: "USERSETTINGS_RESET" });
                     }}
                 >
-                    RESET TO DEFAULTS
+                    reset to all defaults
                 </Button>
+                <SearchField value={filter} onChange={setFilter} />
             </Stack>
             <CollapsibleSwitchList
                 data={values}
