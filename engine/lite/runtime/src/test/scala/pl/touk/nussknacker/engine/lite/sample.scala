@@ -190,13 +190,15 @@ object sample {
 
   object SimpleSourceFactory extends SourceFactory with UnboundedStreamComponent {
 
+    val traceId: TraceId = TraceId.generate()
+
     @MethodToInvoke
     def create(): Source = new LiteSource[SampleInput] with SourceTestSupport[SampleInput] {
 
       override def createTransformation[F[_]: Monad](
           evaluateLazyParameter: CustomComponentContext[F]
       ): SampleInput => ValidatedNel[ErrorType, Context] =
-        input => Valid(Context(dummyContextId(input.contextId), Map("input" -> input.value), None))
+        input => Valid(Context(dummyContextId(input.contextId), Map("input" -> input.value), None, Some(traceId)))
 
       override def testRecordParser: TestRecordParser[SampleInput] = (testRecords: List[TestRecord]) =>
         testRecords.map { testRecord =>
@@ -226,7 +228,7 @@ object sample {
               )
             ).toValidatedNel
           } else {
-            Valid(Context(dummyContextId(input.contextId), Map("input" -> input.value), None))
+            Valid(Context(dummyContextId(input.contextId), Map("input" -> input.value), None, None))
           }
         }
 
@@ -245,7 +247,7 @@ object sample {
       override def createTransformation[F[_]: Monad](
           evaluateLazyParameter: CustomComponentContext[F]
       ): SampleInputWithListAndMap => ValidatedNel[ErrorType, Context] =
-        input => Valid(Context(input.contextId, Map("input" -> input.asInstanceOf[Any]), None))
+        input => Valid(Context(input.contextId, Map("input" -> input.asInstanceOf[Any]), None, None))
 
       override def testParametersDefinition: List[Parameter] = List(
         Parameter(ParameterName("contextId"), Typed.apply[String]),

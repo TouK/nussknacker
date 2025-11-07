@@ -276,7 +276,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       case NuExceptionInfo(
             Some(NodeComponentInfo("sinkId", Some(ComponentId(ComponentType.Sink, "unknown")))),
             SinkException("FailingSink failed"),
-            Context(`contextId`, variables, None),
+            Context(`contextId`, variables, None, None),
             _,
             _
           ) :: Nil if variables == Map("input" -> Request1("a", "b")) =>
