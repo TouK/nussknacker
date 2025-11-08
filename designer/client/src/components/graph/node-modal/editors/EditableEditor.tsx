@@ -1,5 +1,5 @@
 import { cx } from "@emotion/css";
-import { Box, FormLabel } from "@mui/material";
+import { FormLabel, styled } from "@mui/material";
 import { isEmpty } from "lodash";
 import type { ReactNode } from "react";
 import React, { forwardRef, useMemo } from "react";
@@ -101,14 +101,18 @@ function EditableEditorRow({
             <>
                 {fieldLabel ? renderFieldLabel?.(fieldLabel) : <FormLabel />}
                 <EditableEditor {...props} />
-                {endAdornment && (
-                    <Box display={"flex"} mt={0.5} justifyContent={"center"} ml={0.5} sx={{ cursor: "pointer" }}>
-                        {endAdornment}
-                    </Box>
-                )}
+                {endAdornment && <EndAdornment>{endAdornment}</EndAdornment>}
             </>
         </FormControl>
     );
 }
+
+const EndAdornment = styled("div")(({ theme }) => ({
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "flex-start",
+    marginTop: theme.spacing(0.5),
+    marginLeft: theme.spacing(0.5),
+}));
 
 export default EditableEditorRow;

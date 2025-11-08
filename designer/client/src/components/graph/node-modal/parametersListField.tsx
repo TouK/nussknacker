@@ -1,15 +1,8 @@
-import { Box } from "@mui/material";
-import React, { useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import React, { useMemo } from "react";
 
-import { CopyIconButton } from "../../../common/copyToClipboard/CopyIconButton";
-import { useCopyClipboard } from "../../../common/copyToClipboard/useCopyToClipboard";
-import { getIsRunning } from "../../../reducers/selectors/scenarioState";
-import { getUserSettings } from "../../../reducers/selectors/userSettings";
-import { useAppSelector } from "../../../store/storeHelpers";
-import { getValidationErrorsForField } from "./editors/Validators";
-import { GenerateNewEndpoint } from "./node-action-buttons/GenerateNewEndpoint";
-import { SendRequestButton } from "./node-action-buttons/SendRequestButton";
+import type { NodeType, Parameter } from "../../../types/node";
+import { DataSampleFieldWrapper } from "./dataSampleFieldWrapper";
+import { CopyEndpoint, EndpointFieldWrapper } from "./endpointFieldWrapper";
 import { ParameterExpressionField } from "./ParameterExpressionField";
 import type { ParametersListProps, ParameterWithIndex } from "./parametersList";
 
@@ -17,92 +10,36 @@ export type ParametersListFieldProps = ParametersListProps & {
     paramWithIndex: ParameterWithIndex;
 };
 
-export const ParametersListField = (props: ParametersListFieldProps) => {
-    const { node, getListFieldPath, paramWithIndex, parameterDefinitions, setProperty } = props;
-    const handleGetListFieldPath = useCallback(
-        (index: number) => {
-            return getListFieldPath(index);
-        },
-        [getListFieldPath],
-    );
+function isSourceEndpoint(node: NodeType, param: Parameter) {
+    return node.type === "Source" && param.name === "Endpoint";
+}
 
-    const isRunning = useAppSelector(getIsRunning);
-    const { t } = useTranslation();
-    const [isCopied, copy] = useCopyClipboard();
-    const settings = useAppSelector(getUserSettings);
+function isSourceDataSample(node: NodeType, param: Parameter) {
+    return node.type === "Source" && param.name === "Data sample";
+}
 
-    if (paramWithIndex.param.name === "Endpoint") {
-        const displayCopyValueEndAdornment = paramWithIndex.param.name === "Endpoint" && node.type === "Source";
-        const displayGenerateEndpointButton =
-            paramWithIndex.param.name === "Endpoint" && node.type === "Source" && settings["node.showGenerateEndpointButton"];
+export const ParametersListField = ({ getListFieldPath, paramWithIndex, ...props }: ParametersListFieldProps) => {
+    const { node } = props;
+    const { index, param } = paramWithIndex;
 
-        return (
-            <>
-                <ParameterExpressionField
-                    listFieldPath={handleGetListFieldPath(paramWithIndex.index)}
-                    parameter={paramWithIndex.param}
-                    endAdornment={
-                        displayCopyValueEndAdornment && (
-                            <CopyIconButton
-                                onClick={() => {
-                                    const possibleValues = parameterDefinitions.find(
-                                        (parameterDefinition) => parameterDefinition.name === "Endpoint",
-                                    ).editors[0].possibleValues;
+    const listFieldPath = useMemo(() => getListFieldPath(index), [getListFieldPath, index]);
 
-                                    const selectedValue = possibleValues.find(
-                                        (possibleValue) => possibleValue.expression === paramWithIndex.param.expression.expression,
-                                    );
-                                    copy(selectedValue.label);
-                                }}
-                                isCopied={isCopied}
-                            />
-                        )
-                    }
-                    {...props}
-                />
-                {/*
-                 * TODO: Remove it when the backend is ready and action buttons will be send by default
-                 */}
-                {displayGenerateEndpointButton && (
-                    <Box display={"flex"} justifyContent={"flex-end"}>
-                        <GenerateNewEndpoint
-                            node={node}
-                            handleNewEndpointGenerated={(topic: string) => {
-                                const expressionProperty = "expression.expression";
-                                const expressionPath = `${getListFieldPath(paramWithIndex.index)}.${expressionProperty}`;
+    const FieldWrapper = useMemo(() => {
+        if (isSourceEndpoint(node, param)) return EndpointFieldWrapper;
+        if (isSourceDataSample(node, param)) return DataSampleFieldWrapper;
+    }, [node, param]);
 
-                                setProperty(expressionPath, topic);
-                            }}
-                        />
-                    </Box>
-                )}
-            </>
-        );
-    }
-
-    const displaySendRequestButton =
-        paramWithIndex.param.name === "Data sample" &&
-        node.type === "Source" &&
-        node.id === "HTTP Endpoint" &&
-        settings["node.showSendRequestButton"];
+    const endAdornment = useMemo(() => {
+        if (isSourceEndpoint(node, param)) return <CopyEndpoint parameter={param} parameterDefinitions={props.parameterDefinitions} />;
+    }, [node, param, props.parameterDefinitions]);
 
     return (
-        <>
-            <ParameterExpressionField
-                listFieldPath={handleGetListFieldPath(paramWithIndex.index)}
-                parameter={paramWithIndex.param}
-                {...props}
-            />
-            {displaySendRequestButton && (
-                <Box display={"flex"} justifyContent={"flex-end"}>
-                    <SendRequestButton
-                        disabled={getValidationErrorsForField(props.errors, paramWithIndex.param.name).length > 0 || !isRunning}
-                        infoTooltip={!isRunning && t("node.actions.sendRequest.tooltip.deployScenarioFirst", "Deploy your scenario first")}
-                        expression={paramWithIndex.param.expression.expression}
-                        node={node}
-                    />
-                </Box>
-            )}
-        </>
+        <ParameterExpressionField
+            listFieldPath={listFieldPath}
+            parameter={param}
+            FieldWrapper={FieldWrapper}
+            {...props}
+            endAdornment={endAdornment}
+        />
     );
 };
