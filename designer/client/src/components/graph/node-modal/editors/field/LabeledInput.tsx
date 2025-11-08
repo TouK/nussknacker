@@ -1,8 +1,8 @@
-import { FormControl } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React from "react";
 
 import { nodeValue } from "../../NodeDetailsContent/NodeTableStyled";
+import { FormControl } from "../FormControl";
 import type { InputProps } from "./Input";
 import Input from "./Input";
 

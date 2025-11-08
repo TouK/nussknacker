@@ -1,4 +1,4 @@
-import { FormControl, FormLabel, styled } from "@mui/material";
+import { FormLabel, styled } from "@mui/material";
 import React from "react";
 
 import ProcessUtils from "../../../common/ProcessUtils";
@@ -7,6 +7,7 @@ import type { UIParameter } from "../../../types/definition";
 import type { NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import ExpressionField from "./editors/expression/ExpressionField";
+import { FormControl } from "./editors/FormControl";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 

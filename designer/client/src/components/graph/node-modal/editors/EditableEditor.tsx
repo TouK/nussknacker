@@ -1,5 +1,5 @@
 import { cx } from "@emotion/css";
-import { Box, FormControl, FormLabel } from "@mui/material";
+import { Box, FormLabel } from "@mui/material";
 import { isEmpty } from "lodash";
 import type { ReactNode } from "react";
 import React, { forwardRef, useMemo } from "react";
@@ -14,6 +14,7 @@ import { spelFormatters } from "./expression/Formatter";
 import type { ExpressionObj } from "./expression/types";
 import { EditorType, ExpressionLang } from "./expression/types";
 import { FieldSwitch } from "./field/FieldSwitch";
+import { FormControl } from "./FormControl";
 import type { Editor } from "./types";
 import type { FieldError, PossibleValue } from "./Validators";
 

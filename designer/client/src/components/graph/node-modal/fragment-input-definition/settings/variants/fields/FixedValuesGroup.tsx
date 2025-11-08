@@ -1,7 +1,8 @@
-import { FormControl, FormControlLabel, Radio, RadioGroup, Typography, useTheme } from "@mui/material";
+import { FormControlLabel, Radio, RadioGroup, Typography } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
+import { FormControl } from "../../../../editors/FormControl";
 import type { AnyValueWithSuggestionsParameterVariant, FixedListParameterVariant, onChangeType } from "../../../item/types";
 import { FixedValuesType } from "../../../item/types";
 import { SettingLabelStyled } from "./StyledSettingsComponnets";

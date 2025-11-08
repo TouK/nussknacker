@@ -1,9 +1,9 @@
-import { FormControl } from "@mui/material";
 import { isNil } from "lodash";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
 import type { NodeValidationError } from "../../../../../../../types/validation";
+import { FormControl } from "../../../../editors/FormControl";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import type { Option } from "../../../FieldsSelect";
 import type { onChangeType, PermittedTypeParameterVariant, ValueEditor } from "../../../item/types";

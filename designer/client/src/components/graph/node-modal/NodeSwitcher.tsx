@@ -1,4 +1,3 @@
-import { FormControl } from "@mui/material";
 import React, { useCallback, useEffect, useMemo } from "react";
 
 import ProcessUtils from "../../../common/ProcessUtils";
@@ -11,6 +10,7 @@ import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { editors } from "./editors/expression/Editor";
 import type { ExpressionObj } from "./editors/expression/types";
 import { EditorType, ExpressionLang } from "./editors/expression/types";
+import { FormControl } from "./editors/FormControl";
 import { FieldLabel } from "./FieldLabel";
 import type { NodeGroupContentProps } from "./node/NodeGroupContent";
 import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
