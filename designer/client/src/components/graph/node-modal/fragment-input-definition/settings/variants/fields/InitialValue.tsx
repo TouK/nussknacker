@@ -1,4 +1,3 @@
-import { FormControl } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -6,11 +5,12 @@ import type { VariableTypes } from "../../../../../../../types/validation";
 import { DictParameterEditor } from "../../../../editors/expression/DictParameterEditor/DictParameterEditor";
 import { SpelEditor } from "../../../../editors/expression/SpelEditor";
 import { ExpressionLang } from "../../../../editors/expression/types";
+import { FormControl } from "../../../../editors/FormControl";
 import type { FieldError } from "../../../../editors/Validators";
-import { FixedValuesType } from "../../../item/types";
 import type { FixedValuesOption, FragmentInputParameter, onChangeType } from "../../../item/types";
-import { TypeSelect } from "../../../TypeSelect";
+import { FixedValuesType } from "../../../item/types";
 import type { Option } from "../../../TypeSelect";
+import { TypeSelect } from "../../../TypeSelect";
 import { SettingLabelStyled } from "./StyledSettingsComponnets";
 
 interface InitialValue {

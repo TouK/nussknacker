@@ -1,4 +1,3 @@
-import { FormControl } from "@mui/material";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -8,6 +7,7 @@ import type { ReturnedType } from "../../../../../../../types/scenarioGraph";
 import type { NodeValidationError, VariableTypes } from "../../../../../../../types/validation";
 import EditableEditor from "../../../../editors/EditableEditor";
 import Input from "../../../../editors/field/Input";
+import { FormControl } from "../../../../editors/FormControl";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { nodeValue } from "../../../../NodeDetailsContent/NodeTableStyled";
 import type { FieldName, onChangeType, ValueCompileTimeValidation } from "../../../item/types";

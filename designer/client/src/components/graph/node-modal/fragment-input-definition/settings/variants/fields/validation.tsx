@@ -1,19 +1,20 @@
-import { Box, FormControl, FormControlLabel, Typography } from "@mui/material";
+import { Box, FormControlLabel, Typography } from "@mui/material";
 import { t } from "i18next";
 import React from "react";
 
 import type { NodeValidationError, VariableTypes } from "../../../../../../../types/validation";
 import { ExpressionLang } from "../../../../editors/expression/types";
+import { FormControl } from "../../../../editors/FormControl";
 import { nodeValue } from "../../../../NodeDetailsContent/NodeTableStyled";
 import type {
-    onChangeType,
-    AnyValueWithSuggestionsParameterVariant,
     AnyValueParameterVariant,
+    AnyValueWithSuggestionsParameterVariant,
     DefaultParameterVariant,
+    onChangeType,
     ValueCompileTimeValidation,
 } from "../../../item/types";
 import { useSettings } from "../../SettingsProvider";
-import { SettingLabelStyled, CustomSwitch } from "./StyledSettingsComponnets";
+import { CustomSwitch, SettingLabelStyled } from "./StyledSettingsComponnets";
 import ValidationFields from "./ValidationFields";
 
 interface Validation {

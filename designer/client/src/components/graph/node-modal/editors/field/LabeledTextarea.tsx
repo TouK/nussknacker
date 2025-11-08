@@ -1,4 +1,3 @@
-import { FormControl } from "@mui/material";
 import { isEmpty } from "lodash";
 import React from "react";
 
@@ -6,6 +5,7 @@ import type { TextAreaWithFocusProps } from "../../../../FormElements";
 import { TextArea } from "../../../../FormElements";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeValue } from "../../NodeDetailsContent/NodeTableStyled";
+import { FormControl } from "../FormControl";
 import type { LabeledInputProps } from "./LabeledInput";
 
 export interface LabeledTextareaProps

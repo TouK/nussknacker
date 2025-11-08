@@ -1,9 +1,10 @@
 import { cx } from "@emotion/css";
-import { Box, FormControl } from "@mui/material";
+import { Box } from "@mui/material";
 import React, { useId } from "react";
 
 import { NodeInput } from "../../../../FormElements";
 import { nodeValue } from "../../NodeDetailsContent/NodeTableStyled";
+import { FormControl } from "../FormControl";
 import type { LabeledInputProps } from "./LabeledInput";
 
 export interface CheckboxProps extends Pick<LabeledInputProps, "children" | "autoFocus" | "isMarked" | "onChange" | "readOnly"> {

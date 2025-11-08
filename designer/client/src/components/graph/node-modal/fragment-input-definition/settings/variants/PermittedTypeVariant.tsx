@@ -1,8 +1,9 @@
-import { FormControl, FormControlLabel } from "@mui/material";
+import { FormControlLabel } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
 import type { NodeValidationError, VariableTypes } from "../../../../../../types/validation";
+import { FormControl } from "../../../editors/FormControl";
 import type { onChangeType, PermittedTypeParameterVariant } from "../../item/types";
 import { InputMode, isAnyValueParameter, isAnyValueWithSuggestionsParameter, isFixedListParameter } from "../../item/types";
 import InputModeSelect from "./fields/InputModeSelect";

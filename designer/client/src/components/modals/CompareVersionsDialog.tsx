@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import { css, cx } from "@emotion/css";
-import { FormControl, FormLabel } from "@mui/material";
+import { FormLabel } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps, WindowType } from "@touk/window-manager";
 import i18next from "i18next";
 import { keys } from "lodash";
@@ -18,6 +18,7 @@ import type { NodeType, StickyNoteNodeType } from "../../types/node";
 import { WindowContent } from "../../windowManager/WindowContent";
 import { WindowKind } from "../../windowManager/WindowKind";
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent";
+import { FormControl } from "../graph/node-modal/editors/FormControl";
 import type { Option } from "../graph/node-modal/fragment-input-definition/TypeSelect";
 import { TypeSelect } from "../graph/node-modal/fragment-input-definition/TypeSelect";
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
