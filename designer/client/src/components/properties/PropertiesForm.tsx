@@ -8,6 +8,7 @@ import type { PropertiesType } from "../../types/node";
 import type { NodeValidationError } from "../../types/validation";
 import { DescriptionField } from "../graph/node-modal/DescriptionField";
 import { FieldType } from "../graph/node-modal/editors/field/Field";
+import { FieldLabelProvider } from "../graph/node-modal/editors/RenderFieldLabel";
 import { FieldLabel } from "../graph/node-modal/FieldLabel";
 import NodeAdditionalInfoBox from "../graph/node-modal/NodeAdditionalInfoBox";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
@@ -33,42 +34,49 @@ export const PropertiesForm = ({ errors = [], handleSetEditedProperties, editedP
         [scenarioPropertiesConfig],
     );
 
+    const renderFieldLabel1 = (paramName: string) => <FieldLabel title={paramName} label={paramName} />;
+
     return (
         <NodeTable>
             <NameField errors={errors} onChange={handleSetEditedProperties} readOnly={readOnly} value={editedProperties.name} />
-            {scenarioPropertiesSorted.map(([propName, propConfig]) => (
-                <ScenarioProperty
-                    key={propName}
-                    showSwitch={showSwitch}
+            {scenarioPropertiesSorted.map(([propName, propConfig]) => {
+                const renderFieldLabel2 = () => (
+                    <FieldLabel title={propConfig.label} label={propConfig.label} hintText={propConfig.hintText} />
+                );
+                return (
+                    <FieldLabelProvider value={renderFieldLabel2} key={propName}>
+                        <ScenarioProperty
+                            showSwitch={showSwitch}
+                            showValidation
+                            propertyName={propName}
+                            propertyConfig={propConfig}
+                            errors={errors}
+                            onChange={handleSetEditedProperties}
+                            editedNode={editedProperties}
+                            readOnly={readOnly}
+                        />
+                    </FieldLabelProvider>
+                );
+            })}
+            <FieldLabelProvider value={renderFieldLabel1}>
+                <DescriptionField
+                    isEditMode={!readOnly}
                     showValidation
-                    propertyName={propName}
-                    propertyConfig={propConfig}
+                    node={editedProperties}
+                    setProperty={handleSetEditedProperties}
                     errors={errors}
-                    onChange={handleSetEditedProperties}
-                    renderFieldLabel={() => <FieldLabel title={propConfig.label} label={propConfig.label} hintText={propConfig.hintText} />}
-                    editedNode={editedProperties}
-                    readOnly={readOnly}
                 />
-            ))}
-            <DescriptionField
-                isEditMode={!readOnly}
-                showValidation
-                node={editedProperties}
-                renderFieldLabel={(paramName) => <FieldLabel title={paramName} label={paramName} />}
-                setProperty={handleSetEditedProperties}
-                errors={errors}
-            />
-            <NodeField
-                isEditMode={!readOnly}
-                showValidation
-                node={editedProperties}
-                renderFieldLabel={(paramName) => <FieldLabel title={paramName} label={paramName} />}
-                setProperty={handleSetEditedProperties}
-                errors={errors}
-                fieldType={FieldType.checkbox}
-                fieldName={"additionalFields.showDescription"}
-                description={"Show description each time scenario is opened"}
-            />
+                <NodeField
+                    isEditMode={!readOnly}
+                    showValidation
+                    node={editedProperties}
+                    setProperty={handleSetEditedProperties}
+                    errors={errors}
+                    fieldType={FieldType.checkbox}
+                    fieldName={"additionalFields.showDescription"}
+                    description={"Show description each time scenario is opened"}
+                />
+            </FieldLabelProvider>
             <NodeAdditionalInfoBox node={editedProperties} handleGetAdditionalInfo={HttpService.getPropertiesAdditionalInfo} />
         </NodeTable>
     );

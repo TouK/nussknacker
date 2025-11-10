@@ -17,7 +17,7 @@ export function StaticExpressionField({
     isEditMode,
     node,
     parameterDefinitions,
-    renderFieldLabel,
+
     setProperty,
     showSwitch,
     showValidation,
@@ -28,7 +28,7 @@ export function StaticExpressionField({
     isEditMode?: boolean;
     node: NodeType;
     parameterDefinitions: UIParameter[];
-    renderFieldLabel: (paramName: string) => JSX.Element;
+
     setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
@@ -48,7 +48,6 @@ export function StaticExpressionField({
             parameterDefinition={findParamDefinitionByName(parameterDefinitions, fieldName)}
             setNodeDataAt={setProperty}
             testResultsToShow={testResultsState.testResultsToShow}
-            renderFieldLabel={renderFieldLabel}
             variableTypes={variableTypes}
             fieldErrors={getValidationErrorsForField(errors, `$${fieldName}`)}
         />

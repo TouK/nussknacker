@@ -5,6 +5,7 @@ import type { NodeValidationError } from "../../../types/validation";
 import { default as EditableEditor } from "../../graph/node-modal/editors/EditableEditor";
 import type { ExpressionObj } from "../../graph/node-modal/editors/expression/types";
 import { ExpressionLang } from "../../graph/node-modal/editors/expression/types";
+import { FieldLabelProvider } from "../../graph/node-modal/editors/RenderFieldLabel";
 import { getValidationErrorsForField } from "../../graph/node-modal/editors/Validators";
 import { FieldLabel } from "../../graph/node-modal/FieldLabel";
 
@@ -26,22 +27,23 @@ export function GroupedActionParameter(props: Props): JSX.Element {
         [onChange, nodeIds, parameterName],
     );
 
+    const renderFieldLabel = () => (
+        <FieldLabel title={parameterConfig.label} label={parameterConfig.label} hintText={parameterConfig.hintText} />
+    );
     return (
-        <EditableEditor
-            key={parameterName}
-            editors={[parameterConfig.editor]}
-            fieldLabel={parameterConfig.label || parameterName}
-            onValueChange={onValueChange}
-            expressionObj={expressionObj}
-            renderFieldLabel={() => (
-                <FieldLabel title={parameterConfig.label} label={parameterConfig.label} hintText={parameterConfig.hintText} />
-            )}
-            readOnly={false}
-            showSwitch={false}
-            showValidation={true}
-            //ScenarioProperties do not use any variables
-            variableTypes={{}}
-            fieldErrors={getValidationErrorsForField(errors, parameterName)}
-        />
+        <FieldLabelProvider value={renderFieldLabel} key={parameterName}>
+            <EditableEditor
+                editors={[parameterConfig.editor]}
+                fieldLabel={parameterConfig.label || parameterName}
+                onValueChange={onValueChange}
+                expressionObj={expressionObj}
+                readOnly={false}
+                showSwitch={false}
+                showValidation={true}
+                //ScenarioProperties do not use any variables
+                variableTypes={{}}
+                fieldErrors={getValidationErrorsForField(errors, parameterName)}
+            />
+        </FieldLabelProvider>
     );
 }

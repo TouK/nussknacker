@@ -1,12 +1,12 @@
 import { isEmpty, isEqual } from "lodash";
 import React, { useMemo } from "react";
 
+import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { UIParameter } from "../../../types/definition";
 import type { Edge } from "../../../types/edge";
 import { EdgeKind } from "../../../types/edge";
 import type { NodeType } from "../../../types/node";
-import type { ProcessDefinitionData } from "../../../types/scenarioGraph";
 import type { NodeValidationError, VariableTypes } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
 import { EdgesDndComponent } from "./EdgesDndComponent";
@@ -25,8 +25,6 @@ interface Props {
     isEditMode?: boolean;
     node: NodeType;
     parameterDefinitions: UIParameter[];
-    processDefinitionData?: ProcessDefinitionData;
-    renderFieldLabel: (paramName: string) => JSX.Element;
     setEditedEdges: (edges: Edge[]) => void;
     setProperty: SetProperty;
     showSwitch?: boolean;
@@ -40,14 +38,13 @@ export function Switch({
     isEditMode,
     node,
     parameterDefinitions,
-    processDefinitionData,
-    renderFieldLabel,
     setEditedEdges,
     setProperty,
     showSwitch,
     showValidation,
     variableTypes,
 }: Props): JSX.Element {
+    const processDefinitionData = useAppSelector(getProcessDefinitionData);
     const definition = useMemo(
         () => processDefinitionData.componentGroups?.flatMap((g) => g.components).find((c) => c.node.type === node.type)?.node,
         [node.type, processDefinitionData.componentGroups],
@@ -91,14 +88,7 @@ export function Switch({
     );
     return (
         <>
-            <IdField
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                node={node}
-                renderFieldLabel={renderFieldLabel}
-                setProperty={setProperty}
-                errors={errors}
-            />
+            <IdField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
             {showExpression ? (
                 <StaticExpressionField
                     isEditMode={isEditMode}
@@ -108,7 +98,6 @@ export function Switch({
                     variableTypes={variableTypes}
                     parameterDefinitions={parameterDefinitions}
                     errors={errors}
-                    renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     fieldLabel={"Expression (deprecated)"}
                 />
@@ -118,7 +107,6 @@ export function Switch({
                     isEditMode={isEditMode}
                     showValidation={showValidation}
                     node={node}
-                    renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     fieldType={FieldType.input}
                     fieldLabel={"exprVal (deprecated)"}
@@ -143,7 +131,6 @@ export function Switch({
                 isEditMode={isEditMode}
                 showValidation={showValidation}
                 node={node}
-                renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 errors={errors}
             />

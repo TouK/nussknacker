@@ -2,13 +2,14 @@
 import type { PropsWithChildren } from "react";
 import React from "react";
 
-import type ProcessUtils from "../../../common/ProcessUtils";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { UIParameter } from "../../../types/definition";
 import type { NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
 import { IdField } from "./IdField";
 import { findParameters } from "./NodeDetailsContent/helpers";
+import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 import { ParametersListAdvanced } from "./parametersListAdvanced";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
@@ -16,11 +17,9 @@ const getListFieldPath = (index: number) => `ref.parameters[${index}]`;
 
 interface SourceSinkCommonProps {
     errors: NodeValidationError[];
-    findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;
     node: NodeType;
     parameterDefinitions: UIParameter[];
-    renderFieldLabel: (paramName: string) => JSX.Element;
     setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
@@ -29,25 +28,17 @@ interface SourceSinkCommonProps {
 export const SourceSinkCommon = ({
     children,
     errors,
-    findAvailableVariables,
     isEditMode,
     node,
     parameterDefinitions,
-    renderFieldLabel,
     setProperty,
     showSwitch,
     showValidation,
 }: PropsWithChildren<SourceSinkCommonProps>): JSX.Element => {
+    const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     return (
         <>
-            <IdField
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                node={node}
-                renderFieldLabel={renderFieldLabel}
-                setProperty={setProperty}
-                errors={errors}
-            />
+            <IdField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
             <ParametersListAdvanced
                 parameters={findParameters(node)}
                 isEditMode={isEditMode}
@@ -57,7 +48,6 @@ export const SourceSinkCommon = ({
                 findAvailableVariables={findAvailableVariables}
                 parameterDefinitions={parameterDefinitions}
                 errors={errors}
-                renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 getListFieldPath={getListFieldPath}
             >
@@ -66,7 +56,6 @@ export const SourceSinkCommon = ({
                     isEditMode={isEditMode}
                     showValidation={showValidation}
                     node={node}
-                    renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     errors={errors}
                 />

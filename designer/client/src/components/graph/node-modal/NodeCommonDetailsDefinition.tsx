@@ -5,6 +5,7 @@ import type { Field, NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
 import LabeledInput from "./editors/field/LabeledInput";
+import { FieldLabelConsumer } from "./editors/RenderFieldLabel";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { IdField } from "./IdField";
 import { useDiffMark } from "./PathsToMark";
@@ -15,7 +16,7 @@ export interface NodeDetailsProps<F extends Field> {
     setProperty?: SetProperty;
     readOnly?: boolean;
     showValidation: boolean;
-    renderFieldLabel: (label: string) => React.ReactNode;
+
     errors: NodeValidationError[];
 }
 
@@ -25,7 +26,7 @@ interface NodeCommonDetailsDefinitionProps<F extends Field> extends PropsWithChi
 }
 
 export function NodeCommonDetailsDefinition<F extends Field>({ children, ...props }: NodeCommonDetailsDefinitionProps<F>): JSX.Element {
-    const { node, setProperty, readOnly, showValidation, renderFieldLabel, errors, outputField, outputName } = props;
+    const { node, setProperty, readOnly, showValidation, errors, outputField, outputName } = props;
 
     const onInputChange = useCallback(
         (path: string, event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -38,14 +39,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
 
     return (
         <>
-            <IdField
-                node={node}
-                isEditMode={!readOnly}
-                showValidation={showValidation}
-                renderFieldLabel={renderFieldLabel}
-                setProperty={setProperty}
-                errors={errors}
-            />
+            <IdField node={node} isEditMode={!readOnly} showValidation={showValidation} setProperty={setProperty} errors={errors} />
             {outputField && outputName && (
                 <LabeledInput
                     value={node[outputField]}
@@ -55,7 +49,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
                     showValidation={showValidation}
                     fieldErrors={getValidationErrorsForField(errors, outputField)}
                 >
-                    {renderFieldLabel(outputName)}
+                    <FieldLabelConsumer text={outputName} />
                 </LabeledInput>
             )}
 
@@ -65,7 +59,6 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
                 isEditMode={!readOnly}
                 showValidation={showValidation}
                 node={node}
-                renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 errors={errors}
             />

@@ -8,6 +8,7 @@ import type { NodeOrPropertiesType, NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import NodeUtils from "../NodeUtils";
 import Field, { FieldType } from "./editors/field/Field";
+import { FieldLabelConsumer } from "./editors/RenderFieldLabel";
 import { extendErrors, getValidationErrorsForField, uniqueScenarioValueValidator } from "./editors/Validators";
 import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableStyled";
 import { useDiffMark } from "./PathsToMark";
@@ -16,7 +17,7 @@ import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 interface IdFieldProps {
     isEditMode?: boolean;
     node: NodeOrPropertiesType;
-    renderFieldLabel: (paramName: string) => React.ReactNode;
+
     setProperty?: SetProperty;
     showValidation?: boolean;
     errors: NodeValidationError[];
@@ -39,7 +40,7 @@ export function applyIdFromFakeName({ id, ...editedNode }: EditedNode): NodeType
 
 export const getProcessNodesIds = createSelector(getScenarioGraph, (p) => NodeUtils.nodesFromScenarioGraph(p).map((n) => n.id));
 
-export function IdField({ isEditMode, node, renderFieldLabel, setProperty, showValidation, errors }: IdFieldProps): JSX.Element {
+export function IdField({ isEditMode, node, setProperty, showValidation, errors }: IdFieldProps): JSX.Element {
     const nodes = useAppSelector(getProcessNodesIds);
     const [otherNodes] = useState(() => nodes.filter((n) => n !== node[propName]));
 
@@ -66,7 +67,7 @@ export function IdField({ isEditMode, node, renderFieldLabel, setProperty, showV
             value={value}
             autoFocus
         >
-            {renderFieldLabel("Name")}
+            <FieldLabelConsumer text="Name" />
         </Field>
     );
 }

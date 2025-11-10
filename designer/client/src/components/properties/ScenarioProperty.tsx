@@ -20,13 +20,13 @@ interface Props {
         newValue: PropertiesType["additionalFields"]["properties"][K],
         defaultValue?: PropertiesType["additionalFields"]["properties"][K],
     ) => void;
-    renderFieldLabel: (paramName: string) => JSX.Element;
+
     readOnly: boolean;
     errors: NodeValidationError[];
 }
 
 export default function ScenarioProperty(props: Props) {
-    const { showSwitch, showValidation, propertyName, propertyConfig, errors, editedNode, onChange, renderFieldLabel, readOnly } = props;
+    const { showSwitch, showValidation, propertyName, propertyConfig, errors, editedNode, onChange, readOnly } = props;
 
     const propertyPath = `additionalFields.properties.${propertyName}`;
     const current = get(editedNode, propertyPath) || "";
@@ -41,7 +41,6 @@ export default function ScenarioProperty(props: Props) {
             fieldLabel={propertyConfig.label || propertyName}
             onValueChange={onValueChange}
             expressionObj={expressionObj}
-            renderFieldLabel={renderFieldLabel}
             readOnly={readOnly}
             key={propertyName}
             showSwitch={showSwitch}

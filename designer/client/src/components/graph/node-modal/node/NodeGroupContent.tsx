@@ -8,7 +8,7 @@ import type { Edge } from "../../../../types/edge";
 import type { NodeType } from "../../../../types/node";
 import NodeUtils from "../../NodeUtils";
 import { NodeDetailsContent } from "../NodeDetailsContent";
-import { useNodeAdjust } from "../useNodeTypeDetailsContentLogic";
+import { useNodeAdjust } from "../useNodeAdjust";
 import { ContentSize } from "./ContentSize";
 import { FragmentContent } from "./FragmentContent";
 import { getNodeErrors } from "./selectors";

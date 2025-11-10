@@ -25,7 +25,6 @@ type Props = {
     parameterDefinition: UIParameter;
     setNodeDataAt: <T>(propToMutate: string, newValue: T, defaultValue?: T) => void;
     testResultsToShow: NodeResultsForContext;
-    renderFieldLabel: (paramName: string) => ReactNode;
     variableTypes: VariableTypes;
     fieldErrors: FieldError[];
     endAdornment?: ReactNode;
@@ -43,7 +42,6 @@ function ExpressionField(props: Props): JSX.Element {
         parameterDefinition,
         setNodeDataAt,
         testResultsToShow,
-        renderFieldLabel,
         variableTypes,
         fieldErrors,
         endAdornment,
@@ -75,7 +73,6 @@ function ExpressionField(props: Props): JSX.Element {
                 paramType={parameterDefinition?.typ}
                 defaultValue={parameterDefinition?.defaultValue}
                 expressionObj={expressionObj}
-                renderFieldLabel={renderFieldLabel}
                 isMarked={isMarked(exprTextPath)}
                 showSwitch={showSwitch}
                 readOnly={readOnly}
@@ -94,7 +91,6 @@ function ExpressionField(props: Props): JSX.Element {
                 editors={editors}
                 paramType={parameterDefinition?.typ}
                 defaultValue={parameterDefinition?.defaultValue}
-                renderFieldLabel={renderFieldLabel}
                 fieldLabel={fieldLabel}
                 expressionObj={expressionObj}
                 isMarked={isMarked(exprTextPath)}

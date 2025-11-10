@@ -13,7 +13,6 @@ interface DescriptionFieldProps {
     isEditMode?: boolean;
     node: NodeOrPropertiesType;
     readonly?: boolean;
-    renderFieldLabel: (paramName: string) => React.ReactNode;
     setProperty: SetProperty;
     showValidation?: boolean;
     errors: NodeValidationError[];
@@ -25,7 +24,6 @@ export function DescriptionField({
     isEditMode,
     node,
     readonly,
-    renderFieldLabel,
     setProperty,
     showValidation,
     errors,
@@ -34,7 +32,6 @@ export function DescriptionField({
         <NodeField
             autoFocus={autoFocus}
             defaultValue={defaultValue}
-            renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
             node={node}
             isEditMode={isEditMode}
