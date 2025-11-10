@@ -1,6 +1,6 @@
 import { css, cx } from "@emotion/css";
 import { InfoOutlined } from "@mui/icons-material";
-import { Box, FormGroup, FormLabel, Link, Typography } from "@mui/material";
+import { Box, FormGroup, Link, Typography } from "@mui/material";
 import { isEmpty } from "lodash";
 import React, { useCallback } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -14,7 +14,7 @@ import type { NodeValidationError } from "../types/validation";
 import type { ChangeableValue } from "./ChangeableValue";
 import { CustomRadio } from "./customRadio/CustomRadio";
 import Input from "./graph/node-modal/editors/field/Input";
-import { FormControl } from "./graph/node-modal/editors/FormControl";
+import { FormControl, FormLabel } from "./graph/node-modal/editors/FormControl";
 import { getValidationErrorsForField } from "./graph/node-modal/editors/Validators";
 import type { Option } from "./graph/node-modal/fragment-input-definition/TypeSelect";
 import { TypeSelect } from "./graph/node-modal/fragment-input-definition/TypeSelect";

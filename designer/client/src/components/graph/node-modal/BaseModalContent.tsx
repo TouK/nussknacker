@@ -1,4 +1,3 @@
-import { FormLabel } from "@mui/material";
 import PropTypes from "prop-types";
 import type { PropsWithChildren } from "react";
 import React from "react";
@@ -9,7 +8,7 @@ import { EdgeKind } from "../../../types/edge";
 import type { NodeValidationError } from "../../../types/validation";
 import { NodeInput } from "../../FormElements";
 import { EdgeTypeSelect } from "./EdgeTypeSelect";
-import { FormControl } from "./editors/FormControl";
+import { FormControl, FormLabel } from "./editors/FormControl";
 import { NodeTable } from "./NodeDetailsContent/NodeTable";
 import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 import NodeErrors from "./NodeErrors";
