@@ -8,7 +8,7 @@ import { EdgeKind } from "../../../types/edge";
 import type { NodeValidationError } from "../../../types/validation";
 import { NodeInput } from "../../FormElements";
 import { EdgeTypeSelect } from "./EdgeTypeSelect";
-import { FormControl, FormLabel } from "./editors/FormControl";
+import { NodeRow } from "./node/NodeRow";
 import { NodeTable } from "./NodeDetailsContent/NodeTable";
 import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 import NodeErrors from "./NodeErrors";
@@ -41,24 +41,21 @@ export default function BaseModalContent(props: PropsWithChildren<Props>): JSX.E
     return (
         <NodeTable>
             <NodeErrors errors={edgeErrors} message={"Edge has errors"} />
-            <FormControl>
-                <FormLabel>{t("baseModalContent.label.from", "From")}</FormLabel>
+            <NodeRow label={t("baseModalContent.label.from", "From")}>
                 <div className={nodeValue}>
                     <NodeInput readOnly={true} type="text" value={edge.from} />
                 </div>
-            </FormControl>
-            <FormControl>
-                <FormLabel>{t("baseModalContent.label.to", "To")}</FormLabel>
+            </NodeRow>
+            <NodeRow label={t("baseModalContent.label.to", "To")}>
                 <div className={nodeValue}>
                     <NodeInput readOnly={true} type="text" value={edge.to} />
                 </div>
-            </FormControl>
-            <FormControl>
-                <FormLabel>{t("baseModalContent.label.type", "Type")}</FormLabel>
+            </NodeRow>
+            <NodeRow label={t("baseModalContent.label.type", "Type")}>
                 <div className={`${nodeValue}${isMarked("edgeType.type") ? " marked" : ""}`}>
                     <EdgeTypeSelect id="processCategory" readOnly={readOnly} edge={edge} onChange={changeEdgeTypeValue} options={types} />
                 </div>
-            </FormControl>
+            </NodeRow>
             {props.children}
         </NodeTable>
     );

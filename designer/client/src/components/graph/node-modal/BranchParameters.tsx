@@ -7,8 +7,9 @@ import type { UIParameter } from "../../../types/definition";
 import type { NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import ExpressionField from "./editors/expression/ExpressionField";
-import { FormControl, FormLabel } from "./editors/FormControl";
+import { FormLabel } from "./editors/FormControl";
 import { getValidationErrorsForField } from "./editors/Validators";
+import { NodeRow } from "./node/NodeRow";
 import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 
 const StyledFieldControl = styled("div")(() => ({
@@ -47,8 +48,7 @@ export default function BranchParameters({
             {branchParameters?.map((param) => {
                 const paramName = param.name;
                 return (
-                    <FormControl key={paramName}>
-                        <FormLabel title={paramName}>{paramName}:</FormLabel>
+                    <NodeRow key={paramName} label={paramName}>
                         <div className={nodeValue}>
                             <StyledFieldControl className="fieldsControl">
                                 {node.branchParameters.map((branchParameter, branchIndex) => {
@@ -90,7 +90,7 @@ export default function BranchParameters({
                                 })}
                             </StyledFieldControl>
                         </div>
-                    </FormControl>
+                    </NodeRow>
                 );
             })}
         </>
