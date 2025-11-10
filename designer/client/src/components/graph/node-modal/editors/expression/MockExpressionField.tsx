@@ -11,11 +11,11 @@ import { useDiffMark } from "../../PathsToMark";
 import { useTestResults } from "../../TestResultsWrapper";
 import ExpressionTestResults from "../../tests/ExpressionTestResults";
 import EditableEditor from "../EditableEditor";
+import { FieldLabelProvider } from "../RenderFieldLabel";
 import { getValidationErrorsForField } from "../Validators";
 import type { OnValueChange } from "./Editor";
 import type { ExpressionObj } from "./types";
-import { ExpressionLang } from "./types";
-import { EditorType } from "./types";
+import { EditorType, ExpressionLang } from "./types";
 
 const MOCK_EXPRESSION_IN_NODE_NAME = "mockExpression";
 const MOCK_EXPRESSION_PARAMETER_NAME = "$mockExpression";
@@ -83,20 +83,21 @@ function MockExpressionField(props: Props): JSX.Element {
 
     return (
         <ExpressionTestResults fieldName={MOCK_EXPRESSION_PARAMETER_NAME} resultsToShow={testResultsState.testResultsToShow}>
-            <EditableEditor
-                editors={MockExpressionParameter.editors}
-                paramType={MockExpressionParameter.typ}
-                renderFieldLabel={renderMockExpressionParameterLabel}
-                fieldLabel={"unused"}
-                expressionObj={mockExpression}
-                isMarked={isMarked(EXPRESSION_TEXT_PATH)}
-                showValidation={showValidation}
-                showSwitch={showSwitch}
-                readOnly={readOnly}
-                variableTypes={variableTypes}
-                onValueChange={onValueChange}
-                fieldErrors={getValidationErrorsForField(errors, MOCK_EXPRESSION_PARAMETER_NAME)}
-            />
+            <FieldLabelProvider value={renderMockExpressionParameterLabel}>
+                <EditableEditor
+                    editors={MockExpressionParameter.editors}
+                    paramType={MockExpressionParameter.typ}
+                    fieldLabel={"unused"}
+                    expressionObj={mockExpression}
+                    isMarked={isMarked(EXPRESSION_TEXT_PATH)}
+                    showValidation={showValidation}
+                    showSwitch={showSwitch}
+                    readOnly={readOnly}
+                    variableTypes={variableTypes}
+                    onValueChange={onValueChange}
+                    fieldErrors={getValidationErrorsForField(errors, MOCK_EXPRESSION_PARAMETER_NAME)}
+                />
+            </FieldLabelProvider>
         </ExpressionTestResults>
     );
 }

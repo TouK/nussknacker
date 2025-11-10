@@ -1,13 +1,14 @@
 import React, { useCallback } from "react";
 
-import type ProcessUtils from "../../../common/ProcessUtils";
+import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { UIParameter } from "../../../types/definition";
 import type { NodeType } from "../../../types/node";
-import type { ProcessDefinitionData } from "../../../types/scenarioGraph";
 import type { NodeValidationError } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
 import { IdField } from "./IdField";
+import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 import OutputParametersList from "./OutputParametersList";
 import { ParameterExpressionField } from "./ParameterExpressionField";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
@@ -15,51 +16,26 @@ import { useParametersList } from "./useParametersList";
 
 interface FragmentInput {
     errors: NodeValidationError[];
-    findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;
     node: NodeType;
     parameterDefinitions: UIParameter[];
-    processDefinitionData?: ProcessDefinitionData;
-    renderFieldLabel: (paramName: string) => JSX.Element;
     setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
 }
 
 export function FragmentInput(props: FragmentInput): JSX.Element {
-    const {
-        errors,
-        findAvailableVariables,
-        isEditMode,
-        node,
-        parameterDefinitions,
-        processDefinitionData,
-        renderFieldLabel,
-        setProperty,
-        showSwitch,
-        showValidation,
-    } = props;
+    const { errors, isEditMode, node, parameterDefinitions, setProperty, showSwitch, showValidation } = props;
+    const findAvailableVariables = useAppSelector(getFindAvailableVariables);
+    const processDefinitionData = useAppSelector(getProcessDefinitionData);
+
     const setNodeState = useCallback((newParams) => setProperty("ref.parameters", newParams), [setProperty]);
     const parameters = useParametersList(node, processDefinitionData, isEditMode, setNodeState);
 
     return (
         <>
-            <IdField
-                node={node}
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                renderFieldLabel={renderFieldLabel}
-                setProperty={setProperty}
-                errors={errors}
-            />
-            <DisableField
-                node={node}
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                renderFieldLabel={renderFieldLabel}
-                setProperty={setProperty}
-                errors={errors}
-            />
+            <IdField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
+            <DisableField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
             {parameters.map((param, index) => (
                 <ParameterExpressionField
                     key={`${param.name}-${index}`}
@@ -70,7 +46,6 @@ export function FragmentInput(props: FragmentInput): JSX.Element {
                     node={node}
                     isEditMode={isEditMode}
                     showValidation={showValidation}
-                    renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     parameter={param}
                     listFieldPath={`ref.parameters[${index}]`}
@@ -81,7 +56,6 @@ export function FragmentInput(props: FragmentInput): JSX.Element {
                 errors={errors}
                 isEditMode={isEditMode}
                 showValidation={showValidation}
-                renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 processDefinitionData={processDefinitionData}
             />
@@ -89,7 +63,6 @@ export function FragmentInput(props: FragmentInput): JSX.Element {
                 node={node}
                 isEditMode={isEditMode}
                 showValidation={showValidation}
-                renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 errors={errors}
             />

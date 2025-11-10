@@ -67,7 +67,7 @@ export const CustomSwitch = styled(Switch)`
     }
 `;
 
-export const fieldLabel = ({ label, required = false, hintText }: { label: string; required?: boolean; hintText?: string }) => (
+export const FieldLabel = ({ label, required = false, hintText }: { label: string; required?: boolean; hintText?: string }) => (
     <SettingLabelStyled required={required}>
         {label}
         {hintText && <StyledNodeTip variant={"hover"} title={hintText} />}

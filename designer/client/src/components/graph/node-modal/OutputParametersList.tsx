@@ -1,4 +1,5 @@
 import { isEmpty } from "lodash";
+import type { PropsWithChildren } from "react";
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -7,6 +8,7 @@ import type { NodeType } from "../../../types/node";
 import type { ComponentDefinition, ProcessDefinitionData } from "../../../types/scenarioGraph";
 import type { NodeValidationError } from "../../../types/validation";
 import Field, { FieldType } from "./editors/field/Field";
+import { FieldLabelConsumer } from "./editors/RenderFieldLabel";
 import type { FieldError } from "./editors/Validators";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { NodeRow } from "./node/NodeRow";
@@ -14,18 +16,17 @@ import { nodeInput, nodeInputWithError, nodeValue } from "./NodeDetailsContent/N
 import { useDiffMark } from "./PathsToMark";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
-type OutputFieldProps = {
+type OutputFieldProps = PropsWithChildren<{
     autoFocus?: boolean;
     value: string;
     fieldProperty: string;
     fieldType: FieldType;
     isEditMode?: boolean;
     readonly?: boolean;
-    renderedFieldLabel: JSX.Element;
     onChange: (value: string) => void;
     showValidation?: boolean;
     fieldErrors: FieldError[];
-};
+}>;
 
 function OutputField({
     autoFocus,
@@ -34,10 +35,10 @@ function OutputField({
     fieldType,
     isEditMode,
     readonly,
-    renderedFieldLabel,
     onChange,
     showValidation,
     fieldErrors,
+    children,
 }: OutputFieldProps): JSX.Element {
     const readOnly = !isEditMode || readonly;
 
@@ -56,7 +57,7 @@ function OutputField({
             value={value}
             onChange={onChange}
         >
-            {renderedFieldLabel}
+            {children}
         </Field>
     );
 }
@@ -69,12 +70,12 @@ export default function OutputParametersList({
     errors,
     isEditMode,
     showValidation,
-    renderFieldLabel,
+
     setProperty,
 }: {
     editedNode: NodeType;
     processDefinitionData: ProcessDefinitionData;
-    renderFieldLabel: (paramName: string) => JSX.Element;
+
     setProperty: SetProperty;
     errors?: NodeValidationError[];
     showValidation?: boolean;
@@ -137,7 +138,6 @@ export default function OutputParametersList({
                             isEditMode={isEditMode}
                             showValidation={showValidation}
                             value={value === undefined ? name : value}
-                            renderedFieldLabel={renderFieldLabel(name)}
                             onChange={(value) =>
                                 setVariableNames((prevState) => ({
                                     ...prevState,
@@ -147,7 +147,9 @@ export default function OutputParametersList({
                             fieldType={FieldType.input}
                             fieldProperty={name}
                             fieldErrors={getValidationErrorsForField(errors, `${outputVariablePath}.${name}`)}
-                        />
+                        >
+                            <FieldLabelConsumer text={name} />
+                        </OutputField>
                     ))}
                 </div>
             </div>

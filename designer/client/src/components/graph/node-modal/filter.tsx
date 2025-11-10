@@ -20,7 +20,6 @@ export function Filter({
     isEditMode,
     node,
     parameterDefinitions,
-    renderFieldLabel,
     setEditedEdges,
     setProperty,
     showSwitch,
@@ -32,7 +31,6 @@ export function Filter({
     isEditMode?: boolean;
     node: NodeType;
     parameterDefinitions: UIParameter[];
-    renderFieldLabel: (paramName: string) => JSX.Element;
     setEditedEdges: (edges: Edge[]) => void;
     setProperty: SetProperty;
     showSwitch?: boolean;
@@ -41,16 +39,8 @@ export function Filter({
     const [, isCompareView] = useDiffMark();
     return (
         <>
-            <IdField
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                node={node}
-                setProperty={setProperty}
-                renderFieldLabel={renderFieldLabel}
-                errors={errors}
-            />
+            <IdField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
             <StaticExpressionField
-                renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldLabel={"Condition"}
                 parameterDefinitions={parameterDefinitions}
@@ -61,14 +51,7 @@ export function Filter({
                 isEditMode={isEditMode}
                 node={node}
             />
-            <DisableField
-                node={node}
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                renderFieldLabel={renderFieldLabel}
-                setProperty={setProperty}
-                errors={errors}
-            />
+            <DisableField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
             {!isCompareView ? (
                 <EdgesDndComponent
                     label={"Outputs"}
@@ -87,7 +70,6 @@ export function Filter({
                 node={node}
                 isEditMode={isEditMode}
                 showValidation={showValidation}
-                renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 errors={errors}
             />

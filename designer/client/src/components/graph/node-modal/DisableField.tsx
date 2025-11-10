@@ -12,7 +12,6 @@ interface DisableFieldProps {
     isEditMode?: boolean;
     node: NodeType;
     readonly?: boolean;
-    renderFieldLabel: (paramName: string) => JSX.Element;
     setProperty: SetProperty;
     showValidation?: boolean;
     errors: NodeValidationError[];
@@ -24,7 +23,6 @@ export function DisableField({
     isEditMode,
     node,
     readonly,
-    renderFieldLabel,
     setProperty,
     showValidation,
     errors,
@@ -33,7 +31,6 @@ export function DisableField({
         <NodeField
             autoFocus={autoFocus}
             defaultValue={defaultValue}
-            renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
             node={node}
             isEditMode={isEditMode}

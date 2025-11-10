@@ -110,7 +110,7 @@ describe("CompareVersionsDialog", () => {
             fireEvent.click(screen.getByText(remoteItemText));
         });
 
-        expect(await screen.findByText("Difference to pick")).toBeInTheDocument();
+        expect(await screen.findByText("Difference to pick:")).toBeInTheDocument();
         expect(await screen.findByText(remoteItemText)).toBeInTheDocument();
     });
 
@@ -152,7 +152,7 @@ describe("CompareVersionsDialog", () => {
             fireEvent.click(screen.getByText(historyItemText));
         });
 
-        expect(await screen.findByText("Difference to pick")).toBeInTheDocument();
+        expect(await screen.findByText("Difference to pick:")).toBeInTheDocument();
         expect(await screen.findByText(historyItemText)).toBeInTheDocument();
     });
 });

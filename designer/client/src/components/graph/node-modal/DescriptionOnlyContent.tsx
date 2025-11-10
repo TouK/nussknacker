@@ -31,7 +31,6 @@ export function DescriptionOnlyContent({ fieldPath, preview, properties, onChang
         >
             <NodeField
                 autoFocus
-                renderFieldLabel={() => null}
                 setProperty={onChange}
                 node={properties}
                 isEditMode={true}

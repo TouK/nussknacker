@@ -6,6 +6,7 @@ import type { NodeOrPropertiesType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import type { FieldType } from "./editors/field/Field";
 import Field from "./editors/field/Field";
+import { FieldLabelConsumer } from "./editors/RenderFieldLabel";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableStyled";
 import { useDiffMark } from "./PathsToMark";
@@ -20,7 +21,7 @@ type NodeFieldProps<N extends string, V> = {
     isEditMode?: boolean;
     node: NodeOrPropertiesType;
     readonly?: boolean;
-    renderFieldLabel: (paramName: string) => React.ReactNode;
+
     setProperty: SetProperty;
     showValidation?: boolean;
     errors: NodeValidationError[];
@@ -36,7 +37,7 @@ export function NodeField<N extends string, V>({
     isEditMode,
     node,
     readonly,
-    renderFieldLabel,
+
     setProperty,
     showValidation,
     errors,
@@ -66,7 +67,7 @@ export function NodeField<N extends string, V>({
             onChange={onChange}
             description={description}
         >
-            {renderFieldLabel(fieldLabel)}
+            <FieldLabelConsumer text={fieldLabel} />
         </Field>
     );
 }

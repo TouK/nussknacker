@@ -15,17 +15,15 @@ export function VariableBuilder({
     isEditMode,
     node,
     removeElement,
-    renderFieldLabel,
     setProperty,
     showValidation,
     variableTypes,
 }: {
-    addElement: (...args: any[]) => any;
+    addElement: (...args: unknown[]) => unknown;
     errors: NodeValidationError[];
     isEditMode?: boolean;
     node: NodeType;
     removeElement: (property: keyof NodeType, uuid: string) => void;
-    renderFieldLabel: (paramName: string) => JSX.Element;
     setProperty: SetProperty;
     showValidation?: boolean;
     variableTypes?: VariableTypes;
@@ -33,7 +31,6 @@ export function VariableBuilder({
     const nodeExpressionType = useAppSelector((state: RootState) => getNodeExpressionType(state)(node.id), isEqual);
     return (
         <MapVariable
-            renderFieldLabel={renderFieldLabel}
             removeElement={removeElement}
             setProperty={setProperty}
             node={node}

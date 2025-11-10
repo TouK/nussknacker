@@ -22,7 +22,7 @@ export type ParameterExpressionFieldProps = {
     isEditMode?: boolean;
     node: NodeType;
     parameterDefinitions: UIParameter[];
-    renderFieldLabel: (paramName: string) => JSX.Element;
+
     setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
@@ -39,7 +39,7 @@ export function ParameterExpressionField({ FieldWrapper, ...props }: ParameterEx
         node,
         parameter,
         parameterDefinitions,
-        renderFieldLabel,
+
         setProperty,
         showSwitch,
         showValidation,
@@ -70,7 +70,6 @@ export function ParameterExpressionField({ FieldWrapper, ...props }: ParameterEx
                 parameterDefinition={findParamDefinitionByName(parameterDefinitions, parameter.name)}
                 setNodeDataAt={setProperty}
                 testResultsToShow={testResultsState.testResultsToShow}
-                renderFieldLabel={renderFieldLabel}
                 variableTypes={variableTypes}
                 fieldErrors={getValidationErrorsForField(errors, parameter.name)}
                 endAdornment={endAdornment}
@@ -84,7 +83,7 @@ export function ParameterExpressionField({ FieldWrapper, ...props }: ParameterEx
             node,
             parameter.name,
             parameterDefinitions,
-            renderFieldLabel,
+
             setProperty,
             showSwitch,
             showValidation,
