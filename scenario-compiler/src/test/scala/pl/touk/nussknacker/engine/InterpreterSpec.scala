@@ -1278,7 +1278,7 @@ object InterpreterSpec {
     override def invoke(eagerParameters: Map[ParameterName, Any])(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
-        contextId: ContextId,
+        context: Context,
         metaData: MetaData,
         componentUseContext: ComponentUseContext
     ): Future[AnyRef] = {
@@ -1302,7 +1302,7 @@ object InterpreterSpec {
     override def invoke(params: Map[ParameterName, Any])(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
-        contextId: ContextId,
+        context: Context,
         metaData: MetaData,
         componentUseContext: ComponentUseContext
     ): Future[AnyRef] = {
@@ -1324,7 +1324,7 @@ object InterpreterSpec {
     override def invoke(eagerParameters: Map[ParameterName, Any])(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
-        contextId: ContextId,
+        context: Context,
         metaData: MetaData,
         componentUseContext: ComponentUseContext
     ): Future[Any] = {

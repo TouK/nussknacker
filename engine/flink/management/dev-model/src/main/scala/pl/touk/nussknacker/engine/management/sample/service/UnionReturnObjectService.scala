@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
-import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
+import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
@@ -16,7 +16,7 @@ object UnionReturnObjectService extends EagerServiceWithStaticParametersAndRetur
   override def invoke(eagerParameters: Map[ParameterName, Any])(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      contextId: ContextId,
+      context: Context,
       metaData: MetaData,
       componentUseContext: ComponentUseContext
   ): Future[Any] =
