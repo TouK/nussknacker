@@ -1,9 +1,8 @@
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { FormLabel } from "@mui/material";
 import React, { useRef, useState } from "react";
 
 import type { Variable } from "../../../../http/resultsWithCountsDto";
-import { FormControl } from "../editors/FormControl";
+import { FormControl, FormLabel } from "../editors/FormControl";
 import { HIDDEN_TEXTAREA_PIXEL_HEIGHT } from "../NodeDetailsContent/NodeTableStyled";
 import TestValue from "./TestValue";
 

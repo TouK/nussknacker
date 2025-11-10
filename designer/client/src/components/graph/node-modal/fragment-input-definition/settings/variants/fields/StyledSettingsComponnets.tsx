@@ -1,7 +1,8 @@
-import { alpha, css, FormLabel, styled, Switch } from "@mui/material";
+import { alpha, css, styled, Switch } from "@mui/material";
 import React from "react";
 
 import { blendLighten } from "../../../../../../../containers/theme/helpers";
+import { FormLabel } from "../../../../editors/FormControl";
 import { StyledNodeTip } from "../../../../FieldLabel";
 
 export const SettingsWrapper = styled("div")(({ theme }) => ({

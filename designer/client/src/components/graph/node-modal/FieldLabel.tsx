@@ -1,10 +1,11 @@
-import { Box, FormLabel, styled, Typography } from "@mui/material";
+import { Box, styled, Typography } from "@mui/material";
 import React from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
 import ProcessUtils from "../../../common/ProcessUtils";
 import type { UIParameter } from "../../../types/definition";
 import { PlaceholderIconFallbackComponent } from "../../common/error-boundary/fallbackComponent/PlaceholderIconFallbackComponent";
+import { FormLabel } from "./editors/FormControl";
 import { InfoTooltip } from "./editors/InfoTooltip/InfoTooltip";
 import { findParamDefinitionByName } from "./parameterHelpers";
 

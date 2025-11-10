@@ -1,4 +1,3 @@
-import { FormLabel } from "@mui/material";
 import { isEmpty } from "lodash";
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,7 +7,7 @@ import type { NodeType } from "../../../types/node";
 import type { ComponentDefinition, ProcessDefinitionData } from "../../../types/scenarioGraph";
 import type { NodeValidationError } from "../../../types/validation";
 import Field, { FieldType } from "./editors/field/Field";
-import { FormControl } from "./editors/FormControl";
+import { FormControl, FormLabel } from "./editors/FormControl";
 import type { FieldError } from "./editors/Validators";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { nodeInput, nodeInputWithError, nodeValue } from "./NodeDetailsContent/NodeTableStyled";

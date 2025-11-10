@@ -1,12 +1,12 @@
 import { Download } from "@mui/icons-material";
 import InfoIcon from "@mui/icons-material/Info";
-import { Box, FormLabel, Link } from "@mui/material";
+import { Box, Link } from "@mui/material";
 import { isEmpty, isObject, join } from "lodash";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
 import type { NodeId } from "../../../../types/node";
-import { FormControl } from "../editors/FormControl";
+import { FormControl, FormLabel } from "../editors/FormControl";
 import { InfoTooltip } from "../editors/InfoTooltip/InfoTooltip";
 import { useTestResults } from "../TestResultsWrapper";
 import TestResultsVariables from "./TestResultsVariables";
