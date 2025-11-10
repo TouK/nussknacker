@@ -17,9 +17,9 @@ import type { NodeType, StickyNoteNodeType } from "../../types/node";
 import { WindowContent } from "../../windowManager/WindowContent";
 import { WindowKind } from "../../windowManager/WindowKind";
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent";
-import { FormControl, FormLabel } from "../graph/node-modal/editors/FormControl";
 import type { Option } from "../graph/node-modal/fragment-input-definition/TypeSelect";
 import { TypeSelect } from "../graph/node-modal/fragment-input-definition/TypeSelect";
+import { NodeRow } from "../graph/node-modal/node/NodeRow";
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDetailsContent } from "../graph/node-modal/NodeDetailsContent";
 import { PathsToMarkProvider } from "../graph/node-modal/PathsToMark";
@@ -229,8 +229,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
 
     return (
         <>
-            <FormControl>
-                <FormLabel>Version to compare</FormLabel>
+            <NodeRow label="Version to compare">
                 <TypeSelect
                     readOnly={Boolean(predefinedOtherVersion)}
                     autoFocus={true}
@@ -240,11 +239,10 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                     options={versionOptions}
                     fieldErrors={[]}
                 />
-            </FormControl>
+            </NodeRow>
             {state.otherVersion ? (
                 <div>
-                    <FormControl>
-                        <FormLabel>Difference to pick</FormLabel>
+                    <NodeRow label="Difference to pick">
                         <TypeSelect
                             id="differentVersion"
                             onChange={(value) => setState({ ...state, currentDiffId: value })}
@@ -252,7 +250,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                             options={differenceOptions}
                             fieldErrors={[]}
                         />
-                    </FormControl>
+                    </NodeRow>
                     {state.currentDiffId ? printDiff(state.currentDiffId) : null}
                 </div>
             ) : null}

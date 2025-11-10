@@ -7,9 +7,9 @@ import type { NodeType } from "../../../types/node";
 import type { ComponentDefinition, ProcessDefinitionData } from "../../../types/scenarioGraph";
 import type { NodeValidationError } from "../../../types/validation";
 import Field, { FieldType } from "./editors/field/Field";
-import { FormControl, FormLabel } from "./editors/FormControl";
 import type { FieldError } from "./editors/Validators";
 import { getValidationErrorsForField } from "./editors/Validators";
+import { NodeRow } from "./node/NodeRow";
 import { nodeInput, nodeInputWithError, nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 import { useDiffMark } from "./PathsToMark";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
@@ -124,10 +124,11 @@ export default function OutputParametersList({
     }
 
     return (
-        <FormControl key="outputVariableNames">
-            <FormLabel title={t("parameterOutputs.outputsTitle", "Fragment outputs names")}>
-                {t("parameterOutputs.outputsText", "Outputs names:")}
-            </FormLabel>
+        <NodeRow
+            key="outputVariableNames"
+            label={t("parameterOutputs.outputsText", "Outputs names:")}
+            title={t("parameterOutputs.outputsTitle", "Fragment outputs names")}
+        >
             <div className={nodeValue}>
                 <div className="fieldsControl">
                     {entries.map(([name, value]) => (
@@ -150,6 +151,6 @@ export default function OutputParametersList({
                     ))}
                 </div>
             </div>
-        </FormControl>
+        </NodeRow>
     );
 }
