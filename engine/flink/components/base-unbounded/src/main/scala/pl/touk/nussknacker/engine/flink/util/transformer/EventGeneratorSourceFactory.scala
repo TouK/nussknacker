@@ -138,7 +138,7 @@ object EventGeneratorSourceFactory
   }
 
   private def prepareOutputValidationContext(inputContext: ValidationContext, valueType: typing.TypingResult) = {
-    inputContext.withVariableUnsafe(InputVariableName, valueType)
+    inputContext.withVariableUnsafe(InputVariableName, valueType.withoutValue)
   }
 
   @nowarn("cat=deprecation")
