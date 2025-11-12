@@ -1,19 +1,55 @@
-import type { UserSettings } from "../../reducers/userSettings";
+import { getUserSettingsValues } from "../../reducers/selectors/userSettings";
+import type { Setting, UserSettings } from "../../reducers/userSettings";
+import { getDefaultUserSettings } from "../../reducers/userSettings";
+import type { Action, ThunkAction } from "../reduxTypes";
 
-type ToggleSettingsAction = { type: "TOGGLE_SETTINGS"; settings: Array<keyof UserSettings> };
-type SetSettingsAction = { type: "SET_SETTINGS"; settings: UserSettings };
-
-export function toggleSettings(settings: Array<keyof UserSettings>): ToggleSettingsAction {
+export function userSettingSet(key: Setting, value: boolean | string): Action {
     return {
-        type: "TOGGLE_SETTINGS",
-        settings,
-    };
-}
-export function setSettings(settings: UserSettings): SetSettingsAction {
-    return {
-        type: "SET_SETTINGS",
-        settings,
+        type: "USERSETTING_SET",
+        key,
+        value,
     };
 }
 
-export type UserSettingsActions = ToggleSettingsAction | SetSettingsAction;
+function nextIndex<T>(options: T[], selected: T): number {
+    const index = options.indexOf(selected);
+    if (index === -1) return 1;
+    return (index + 1) % options.length;
+}
+
+export function userSettingsRotate(key: Setting, values = ["default", true, false]): ThunkAction {
+    return (dispatch, getState) => {
+        const current = getUserSettingsValues(getState(), false)[key];
+        const nextValue = values[nextIndex(values, current)];
+        dispatch(userSettingSet(key, nextValue));
+    };
+}
+
+export function userSettingsToggle(settings: Setting[]): ThunkAction {
+    return (dispatch) => {
+        settings.forEach((setting) => {
+            dispatch(userSettingsRotate(setting, [false, true]));
+        });
+    };
+}
+
+export function userSettingsSetInitial(flags: UserSettings): Action {
+    return {
+        type: "USERSETTINGS_DEFAULTS_LOADED",
+        settings: getDefaultUserSettings(flags),
+    };
+}
+
+export type UserSettingsActions =
+    | {
+          type: "USERSETTINGS_RESET";
+      }
+    | {
+          type: "USERSETTING_SET";
+          key: Setting;
+          value: boolean | string;
+      }
+    | {
+          type: "USERSETTINGS_DEFAULTS_LOADED";
+          settings: UserSettings;
+      };

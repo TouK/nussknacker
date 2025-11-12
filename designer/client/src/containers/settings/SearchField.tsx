@@ -8,8 +8,10 @@ export function SearchField({ value, onChange }: { value: string; onChange: (val
         <TextField
             value={value}
             onChange={(event) => onChange(event.target.value)}
-            variant="standard"
+            variant="outlined"
+            size="small"
             InputProps={{
+                autoComplete: "off",
                 startAdornment: (
                     <InputAdornment position="start">
                         <Search />
@@ -22,6 +24,9 @@ export function SearchField({ value, onChange }: { value: string; onChange: (val
                         </IconButton>
                     </InputAdornment>
                 ),
+            }}
+            sx={{
+                width: "40%",
             }}
         />
     );

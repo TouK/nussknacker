@@ -6,8 +6,10 @@ import React, { forwardRef, useEffect, useMemo, useRef } from "react";
 import type ReactAce from "react-ace/lib/ace";
 import { useMergeRefs } from "rooks";
 
-import { useUserSettings } from "../../../../../common/userSettings";
-import type { UserSettings } from "../../../../../reducers/userSettings";
+import { userSettingsToggle } from "../../../../../actions/nk/userSettings";
+import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
+import type { Setting } from "../../../../../reducers/userSettings";
+import { useAppDispatch, useAppSelector } from "../../../../../store/storeHelpers";
 import type { AceKeyCommand, AceWrapperProps } from "./AceWrapper";
 import AceWrapper from "./AceWrapper";
 import { useAceDndTarget } from "./useAceDndTarget";
@@ -16,9 +18,10 @@ export default forwardRef(function AceWithSettings(
     props: Omit<AceWrapperProps, "noWrap" | "showLines">,
     ref: ForwardedRef<ReactAce>,
 ): JSX.Element {
-    const [userSettings, toggleSettings] = useUserSettings();
+    const userSettings = useAppSelector(getUserSettings);
+    const dispatch = useAppDispatch();
 
-    const [showLinesName, noWrapName] = useMemo<(keyof UserSettings)[]>(
+    const [showLinesName, noWrapName] = useMemo<Setting[]>(
         () => [`editor.${props.inputProps.language}.showLines`, `editor.${props.inputProps.language}.noWrap`],
         [props],
     );
@@ -28,17 +31,21 @@ export default forwardRef(function AceWithSettings(
             {
                 name: "showLines",
                 bindKey: { win: "F1", mac: "F1" },
-                exec: () => toggleSettings([showLinesName]),
+                exec: () => {
+                    dispatch(userSettingsToggle([showLinesName]));
+                },
                 readonly: true,
             },
             {
                 name: "noWrap",
                 bindKey: { win: "F2", mac: "F2" },
-                exec: () => toggleSettings([noWrapName]),
+                exec: () => {
+                    dispatch(userSettingsToggle([noWrapName]));
+                },
                 readonly: true,
             },
         ],
-        [toggleSettings, showLinesName, noWrapName],
+        [dispatch, showLinesName, noWrapName],
     );
 
     const editorRef = useRef<ReactAce>();

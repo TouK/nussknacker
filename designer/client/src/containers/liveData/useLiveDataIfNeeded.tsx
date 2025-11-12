@@ -1,10 +1,10 @@
 import { useEffect, useMemo } from "react";
 
 import { Initiator, startLiveData, stopLiveData } from "../../actions/nk/liveData";
-import { useUserSettings } from "../../common/userSettings";
 import { VisibleDataType } from "../../reducers/graph/types";
 import { getHasPauseReasons, getVisibleDataType, isReadyForLiveData } from "../../reducers/selectors/getLiveData";
 import { getHasOpenedNodeWindows } from "../../reducers/selectors/getWindowsIdMapping";
+import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 
 export function useLiveDataIfNeeded() {
@@ -17,7 +17,7 @@ export function useLiveDataIfNeeded() {
         }
     }, [dispatch, visibleDataType]);
 
-    const [settings] = useUserSettings();
+    const settings = useAppSelector(getUserSettings);
     const autoEnableLiveData = settings["scenario.autoEnableLiveData"];
     const readyForResults = useAppSelector(isReadyForLiveData);
     const hasOpenedNodeWindow = useAppSelector(getHasOpenedNodeWindows);

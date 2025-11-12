@@ -7,12 +7,12 @@ import { useTranslation } from "react-i18next";
 import urljoin from "url-join";
 
 import { nodeDetailsClosed, nodeDetailsOpened } from "../../../../actions/nk/nodeDetails";
-import { useUserSettings } from "../../../../common/userSettings";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
 import type { RootState } from "../../../../reducers";
 import { removeHistorySnapshot, takeHistorySnapshot } from "../../../../reducers/graph/historySquash";
 import { getCreatorType } from "../../../../reducers/selectors/getCreator";
+import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import type { Edge } from "../../../../types/edge";
 import type { NodeType } from "../../../../types/node";
@@ -55,7 +55,7 @@ export function useNodeDetailsButtons({
     readOnly?: boolean;
 }) {
     const { t } = useTranslation();
-    const [settings] = useUserSettings();
+    const settings = useAppSelector(getUserSettings);
 
     const autoApply = settings["node.autoApply"];
     const showInputsAndOutputs = settings["node.showInputsAndOutputs"];
@@ -138,7 +138,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const titleData = useTitleData(node);
     const buttons = useMemo(() => [openFragment, cancel, apply].filter(Boolean) as WindowButtonProps[], [apply, cancel, openFragment]);
 
-    const [settings] = useUserSettings();
+    const settings = useAppSelector(getUserSettings);
     const [PortalWrapper, portalRef] = usePortal();
 
     const components: DefaultContentProps["components"] = useMemo(() => {

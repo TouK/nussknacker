@@ -6,7 +6,15 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{ContextIdPathPart, DisplayJsonWithEncoder, JobData, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{
+  ContextId,
+  ContextIdPathPart,
+  DisplayJsonWithEncoder,
+  JobData,
+  NodeId,
+  ProcessVersion
+}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestSourceSpecificFormatJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -205,6 +213,128 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     endNodeIdInvocationResult.contextId shouldBe contextIdGenForNodeId(process, NodeId("collect1")).nextContextId()
 
     endNodeIdInvocationResult.value shouldBe variable(List("aa", "bb"))
+  }
+
+  test("scenario with multiple unions should work properly") {
+    val process = ScenarioBuilder
+      .requestResponse("unionTest", "unionTest")
+      .additionalFields(properties =
+        Map(
+          "inputSchema" -> """{"type": "object", "properties": {"field1": {"type": "string"}, "field2": {"type": "string"}}}""",
+          "outputSchema" -> "{}"
+        )
+      )
+      .sources(
+        GraphBuilder
+          .source("start", "request")
+          .filter(
+            "filter",
+            "#input.field1 == 'right'".spel,
+            nextFalse = {
+              GraphBuilder
+                .buildSimpleVariable("variable 1", "var1", "1".spel)
+                .split(
+                  "Split",
+                  GraphBuilder
+                    .buildSimpleVariable("leftVariableB", "leftVariableB", "'leftVariableB'".spel)
+                    .branchEnd("leftVariableB", "unionLeft"),
+                  GraphBuilder
+                    .buildSimpleVariable("leftVariableA", "leftVariableA", "'leftVariableA'".spel)
+                    .branchEnd("leftVariableA", "unionLeft"),
+                )
+            }
+          )
+          .filter(
+            "filter 1",
+            "true".spel,
+            nextFalse = {
+              GraphBuilder
+                .buildSimpleVariable("rightVariableA", "rightVariableA", "'rightVariableA'".spel)
+                .branchEnd("rightVariableA", "unionRight")
+            }
+          )
+          .buildSimpleVariable("rightVariableB", "rightVariableB", "'rightVariableB'".spel)
+          .branchEnd("rightVariableB", "unionRight"),
+        GraphBuilder
+          .join(
+            "unionLeft",
+            "union",
+            Some("unionLeft"),
+            branchParams = List(
+              "leftVariableA" -> List("Output expression" -> "#leftVariableA".spel),
+              "leftVariableB" -> List("Output expression" -> "#leftVariableB".spel)
+            )
+          )
+          .branchEnd("unionLeft", "unionBeforeEnd"),
+        GraphBuilder
+          .join(
+            "unionRight",
+            "union",
+            Some("unionRight"),
+            branchParams = List(
+              "rightVariableA" -> List("Output expression" -> "#rightVariableA".spel),
+              "rightVariableB" -> List("Output expression" -> "#rightVariableB".spel)
+            )
+          )
+          .branchEnd("unionRight", "unionBeforeEnd"),
+        GraphBuilder
+          .join(
+            "unionBeforeEnd",
+            "union",
+            Some("unionBeforeEnd"),
+            branchParams = List(
+              "unionRight" -> List("Output expression" -> "#unionRight".spel),
+              "unionLeft"  -> List("Output expression" -> "#unionLeft".spel)
+            )
+          )
+          .emptySink("Response", "response", "Raw editor" -> "false".spel, "Value" -> "#unionBeforeEnd".spel),
+      )
+
+    def prepareContextId(varValue: String, right: Boolean): ContextId = {
+      val unionName = if (right) "unionRight" else "unionLeft"
+      val splitPart = if (right) Nil else List(ContextIdPathPart(NodeId("Split"), varValue))
+      val contextIdPath = splitPart ++ List(
+        ContextIdPathPart(NodeId(unionName), varValue),
+        ContextIdPathPart(NodeId("unionBeforeEnd"), unionName)
+      )
+      ContextId(ProcessName("unionTest"), NodeId("start"), 0, 0, contextIdPath)
+    }
+
+    // Scenario go to 'left' nodes, where we have split and later union -> hence two variables
+    val leftUnionResults = runTest(process, ScenarioTestData(List(createTestRecord("left", ""))))
+
+    leftUnionResults.nodeResults.get(NodeId("unionRight")) should not be defined
+    leftUnionResults.nodeResults(NodeId("$edge-leftVariableA-unionLeft")) should have size 1
+    leftUnionResults.nodeResults(NodeId("$edge-leftVariableB-unionLeft")) should have size 1
+    leftUnionResults.externalServiceInvocationResults(NodeId("Response")).map(withMockedTimestamp).toSet shouldBe Set(
+      ExternalServiceInvocationResult(
+        prepareContextId("leftVariableB", right = false),
+        mockedTimestamp,
+        "Response",
+        variable("leftVariableB")
+      ),
+      ExternalServiceInvocationResult(
+        prepareContextId("leftVariableA", right = false),
+        mockedTimestamp,
+        "Response",
+        variable("leftVariableA")
+      )
+    )
+
+    val rightUnionResults = runTest(process, ScenarioTestData(List(createTestRecord("right", ""))))
+
+    // Scenario go to 'right' nodes, where we have filter and later union -> hence one variable (B)
+    rightUnionResults.nodeResults.get(NodeId("unionLeft")) should not be defined
+    rightUnionResults.nodeResults(NodeId("$edge-rightVariableB-unionRight")) should have size 1
+    rightUnionResults.externalServiceInvocationResults(NodeId("Response")).map(withMockedTimestamp).toSet shouldBe Set(
+      ExternalServiceInvocationResult(
+        prepareContextId("rightVariableB", right = true),
+        mockedTimestamp,
+        "Response",
+        variable("rightVariableB")
+      ),
+    )
+
   }
 
   private def createTestRecord(field1: String, field2: String) = {

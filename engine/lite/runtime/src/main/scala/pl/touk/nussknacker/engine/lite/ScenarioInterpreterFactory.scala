@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, Proces
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ServiceExecutionContext, Source}
+import pl.touk.nussknacker.engine.api.process.{ServiceExecutionContext, Source}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -95,10 +95,10 @@ object ScenarioInterpreterFactory {
       implicit val engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies =
         EngineScenarioCompilationDependencies.empty
       compilerData.compile(process).andThen { compiledProcess =>
-        val components = extractComponents(compiledProcess.sources.toList)
-        val sources    = collectSources(components)
+        val startParts = extractStartParts(compiledProcess.sources.toList)
+        val sources    = collectSources(startParts)
 
-        val lifecycle = compilerData.lifecycle(allNodes) ++ components.values.collect { case lifecycle: Lifecycle =>
+        val lifecycle = compilerData.lifecycle(allNodes) ++ startParts.values.collect { case lifecycle: Lifecycle =>
           lifecycle
         }
         InvokerCompiler[F, Input, Res](
@@ -114,13 +114,13 @@ object ScenarioInterpreterFactory {
       }
     }
 
-  private def extractComponents(parts: List[ProcessPart]): Map[String, Any] = {
+  private def extractStartParts(parts: List[ProcessPart]): Map[String, Any] = {
     parts.foldLeft(Map.empty[String, Any]) { (acc, part) =>
       part match {
         case source: SourcePart =>
-          acc + (source.id -> source.obj) ++ extractComponents(source.nextParts)
+          acc + (source.id -> source.obj) ++ extractStartParts(source.nextParts)
         case custom: CustomNodePart =>
-          acc + (custom.id -> custom.transformer) ++ extractComponents(custom.nextParts)
+          acc + (custom.id -> custom.transformer) ++ extractStartParts(custom.nextParts)
         case sink: SinkPart =>
           acc + (sink.id -> sink.obj)
       }
@@ -128,7 +128,8 @@ object ScenarioInterpreterFactory {
   }
 
   private def collectSources(componentById: Map[String, Any]): Map[SourceId, Source] = componentById.collect {
-    case (id, a: Source) => (SourceId(id), a)
+    case (id, a: Source) =>
+      (SourceId(id), a)
   }
 
   private case class ScenarioInterpreterImpl[F[_], Input, Res <: AnyRef](
@@ -167,8 +168,17 @@ object ScenarioInterpreterFactory {
       runtimeMode: RuntimeMode,
       capabilityTransformer: CapabilityTransformer[F],
   )(implicit ec: ExecutionContext, shape: InterpreterShape[F]) {
+
+    private case class PartsComputedToPassAndRun(
+        resultPointingToThis: List[JoinResult],
+        resultPointingToOthers: List[PartResult],
+        endResults: List[PartResult]
+    )
+
+    private case class JoinCompilationResult[K](nodeId: NodeId, transformationResult: CompilationResult[K])
+
     // we collect errors and also typing results of sinks
-    type CompilationResult[K] = ValidatedNel[ProcessCompilationError, WithSinkTypes[K]]
+    private type CompilationResult[K] = ValidatedNel[ProcessCompilationError, WithSinkTypes[K]]
 
     private type InterpreterOutputType = F[ResultType[PartResult]]
 
@@ -178,7 +188,7 @@ object ScenarioInterpreterFactory {
 
     def compile: CompilationResult[ScenarioInterpreterType] = {
       val emptyPartInvocation: ScenarioInterpreterType = (inputs: ScenarioInputBatch[Input]) =>
-        Monoid.combineAll(inputs.value.map { case (source, input) =>
+        Monoid.combineAll(inputs.value.map { case (source, _) =>
           Monad[F].pure[ResultType[PartResult]](
             Writer(
               NuExceptionInfo(
@@ -207,10 +217,10 @@ object ScenarioInterpreterFactory {
           Valid(Writer(Map.empty[NodeId, TypingResult], emptyPartInvocation))
         ) {
           case (resultSoFar, join: CustomNodePart) =>
-            val compiledTransformer = compileJoinTransformer(join)
-            resultSoFar.product(compiledTransformer).map {
+            val joinCompilationResult = compileJoinTransformer(join)
+            resultSoFar.product(joinCompilationResult.transformationResult).map {
               case (WriterT((types, interpreterMap)), WriterT((types2, part))) =>
-                val result = computeNextJoinInvocation(interpreterMap, part)
+                val result = computeNextJoinInvocation(interpreterMap, joinCompilationResult.nodeId, part)
                 Writer(types ++ types2, result)
             }
           case (resultSoFar, a: SourcePart) =>
@@ -269,13 +279,14 @@ object ScenarioInterpreterFactory {
             partInvoker(compiled, List()).map(prepareResponse(compiled, sink))
           }
         case CustomNodePart(transformerObj, node, _, validationContext, parts, _) =>
+          val nodeId = NodeId(node.id)
           val validatedTransformer = transformerObj match {
             case t: LiteCustomComponent => Valid(t)
-            case _                      => Invalid(NonEmptyList.of(UnsupportedPart(NodeId(node.id))))
+            case _                      => Invalid(NonEmptyList.of(UnsupportedPart(nodeId)))
           }
           validatedTransformer.andThen { transformer =>
             val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
-            result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(NodeId(node.id)))))
+            result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(nodeId))))
           }
       }
 
@@ -360,10 +371,13 @@ object ScenarioInterpreterFactory {
       results
     }
 
-    // First we compute scenario parts compiled so far. Then we search for JoinResults and invoke joinPart
-    // We know that we'll find all results pointing to join, because we sorted the parts
+    // First we compute scenario parts compiled so far. Then we search for JoinResults and invoke joinPart.
+    // Due to PartSort.sort done in ProcessCompilerBase.compileSources we have guarantee that join part will be put in order after parts that that references to them (in branches).
+    // Still, because of possibility to create nested/parallel unions, we have to invoke currently iterated join only for part results that refer to current join,
+    // and pass other results further (they should be caught by joins which were put later due to topological sort).
     private def computeNextJoinInvocation(
         computedInterpreter: ScenarioInterpreterType,
+        currentNodeId: NodeId,
         joinPartToInvoke: JoinDataBatch => InterpreterOutputType
     ): ScenarioInterpreterType = { (inputBatch: ScenarioInputBatch[Input]) =>
       {
@@ -371,32 +385,55 @@ object ScenarioInterpreterFactory {
           passingErrors[PartResult, PartResult](
             results,
             successes => {
-              val resultsPointingToJoin = JoinDataBatch(
-                successes
-                  .collect { case e: JoinResult => (BranchId(e.reference.branchId), e.context) }
-              )
-              val endResults: ResultType[PartResult] =
-                Writer(Nil, successes.collect { case e: EndPartResult[Res @unchecked] => e })
-              joinPartToInvoke(resultsPointingToJoin).map(_ |+| endResults)
+              val resultsAccordingToCurrentNode = partitionPartResultsAccordingToCurrentNode(successes, currentNodeId)
+              val resultsToPassThrough: ResultType[PartResult] =
+                Writer(
+                  Nil,
+                  resultsAccordingToCurrentNode.resultPointingToOthers ++ resultsAccordingToCurrentNode.endResults
+                )
+              resultsAccordingToCurrentNode.resultPointingToThis match {
+                case Nil =>
+                  Monad[F].pure(
+                    resultsToPassThrough
+                  ) // The join was called, but not one that was expected - skip invocation
+                case results =>
+                  val branchesToInvoke = results.map { p => (BranchId(p.reference.branchId), p.context) }
+                  joinPartToInvoke(JoinDataBatch(branchesToInvoke)).map(_ |+| resultsToPassThrough)
+              }
             }
           )
         }
       }
     }
 
+    private def partitionPartResultsAccordingToCurrentNode(
+        partResults: List[PartResult],
+        currentNodeId: NodeId
+    ): PartsComputedToPassAndRun = {
+      val resultPointingToThis: List[JoinResult] = partResults.collect {
+        case e: JoinResult if e.reference.joinId == currentNodeId.id => e
+      }
+      val resultPointingToOthers: List[PartResult] = partResults.collect {
+        case e: JoinResult if e.reference.joinId != currentNodeId.id => e
+      }
+      val endResults: List[PartResult] = partResults.collect { case e: EndPartResult[Res @unchecked] => e }
+      PartsComputedToPassAndRun(resultPointingToThis, resultPointingToOthers, endResults)
+    }
+
     private def compileSource(
         sourcePart: SourcePart
     ): ValidatedNel[ProcessCompilationError, Input => ValidatedNel[ErrorType, Context]] = {
       val SourcePart(sourceObj, node, _, _, _) = sourcePart
+      val nodeId                               = NodeId(node.id)
       val validatedSource = (sourceObj, node.data) match {
         case (s: LiteSource[Input @unchecked], _) => Valid(s)
         // Used only in fragment testing, when FragmentInputDefinition is available
-        case (_: Source, fragmentInputDef: FragmentInputDefinition) if runtimeMode == RuntimeMode.Test =>
+        case (_: Source, _: FragmentInputDefinition) if runtimeMode == RuntimeMode.Test =>
           sourceForFragmentInputTesting
-        case _ => Invalid(NonEmptyList.of(UnsupportedPart(NodeId(node.id))))
+        case _ => Invalid(NonEmptyList.of(UnsupportedPart(nodeId)))
       }
       validatedSource.map { source =>
-        source.createTransformation(customComponentContext(NodeId(node.id)))
+        source.createTransformation(customComponentContext(nodeId))
       }
     }
 
@@ -404,8 +441,8 @@ object ScenarioInterpreterFactory {
       Valid(
         new LiteSource[Input] {
 
-          override def createTransformation[F[_]: Monad](
-              evaluateLazyParameter: CustomComponentContext[F]
+          override def createTransformation[T[_]: Monad](
+              evaluateLazyParameter: CustomComponentContext[T]
           ): Input => ValidatedNel[ErrorType, Context] = { input =>
             Valid(
               Context(
@@ -421,17 +458,19 @@ object ScenarioInterpreterFactory {
 
     private def compileJoinTransformer(
         customNodePart: CustomNodePart
-    ): CompilationResult[JoinDataBatch => InterpreterOutputType] = {
+    ): JoinCompilationResult[JoinDataBatch => InterpreterOutputType] = {
       val CustomNodePart(transformerObj, node, _, validationContext, parts, _) = customNodePart
+      val nodeId                                                               = NodeId(node.id)
       val validatedTransformer = transformerObj match {
         case t: LiteJoinCustomComponent                               => Valid(t)
         case JoinContextTransformation(_, t: LiteJoinCustomComponent) => Valid(t)
-        case _ => Invalid(NonEmptyList.of(UnsupportedPart(NodeId(node.id))))
+        case _ => Invalid(NonEmptyList.of(UnsupportedPart(nodeId)))
       }
-      validatedTransformer.andThen { transformer =>
+      val transformationResult = validatedTransformer.andThen { transformer =>
         val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
-        result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(NodeId(node.id)))))
+        result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(nodeId))))
       }
+      JoinCompilationResult(nodeId, transformationResult)
     }
 
     // TODO: this is too complex, rewrite F[ResultType[T]] => WriterT[F, List[ErrorType], List[T]]

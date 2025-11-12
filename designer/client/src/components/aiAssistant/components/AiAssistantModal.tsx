@@ -55,7 +55,7 @@ function CustomizedThread({ children }: PropsWithChildren) {
                 components={useMemo<ThreadConfig["components"]>(
                     () => ({
                         UserMessage,
-                        Composer: () => <></>,
+                        Composer: () => null,
                         AssistantMessage,
                         ThreadWelcome: ThreadSuggestions,
                     }),
