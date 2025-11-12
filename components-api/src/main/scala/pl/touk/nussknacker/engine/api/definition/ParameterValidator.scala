@@ -1,23 +1,20 @@
 package pl.touk.nussknacker.engine.api.definition
 
 import cats.data.Validated
-import cats.data.Validated.{invalid, valid, Invalid}
+import cats.data.Validated.{invalid, valid}
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.parser._
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.JsonValidator.error
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ParameterValueCompileTimeValidation}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 import java.util.ServiceLoader
 import java.util.regex.Pattern
-import scala.collection.compat.toTraversableLikeExtensionMethods
 import scala.collection.concurrent.TrieMap
-import scala.collection.convert.Wrappers.SeqWrapper
 import scala.util.Try
 
 trait Validator {
@@ -275,9 +272,11 @@ case class MultiSelectFixedValuesValidator(possibleSelectOptions: List[SelectOpt
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
+    import scala.jdk.CollectionConverters._
     value match {
-      case Some(chosenValues: SeqWrapper[_]) =>
-        val (stringsElements, nonStringElements): (Seq[String], Seq[Any]) = chosenValues.underlying.partitionMap {
+      case Some(jList: java.util.List[_]) =>
+        val scalaSeq = jList.asScala.toList
+        val (stringsElements, nonStringElements): (List[String], List[Any]) = scalaSeq.partitionMap {
           case s: String => Left(s)
           case other     => Right(other)
         }
