@@ -6323,7 +6323,18 @@ components:
         possibleValues:
           type: array
           items:
-            $ref: '#/components/schemas/SelectOption'
+            $ref: '#/components/schemas/MultiSelectFixedValue'
+    MultiSelectFixedValue:
+      title: MultiSelectFixedValue
+      type: object
+      required:
+      - value
+      - label
+      properties:
+        value:
+          type: string
+        label:
+          type: string
     NextSwitch:
       title: NextSwitch
       type: object
@@ -7438,17 +7449,6 @@ components:
       - nodeId
       properties:
         nodeId:
-          type: string
-    SelectOption:
-      title: SelectOption
-      type: object
-      required:
-      - value
-      - label
-      properties:
-        value:
-          type: string
-        label:
           type: string
     ServiceRef:
       title: ServiceRef

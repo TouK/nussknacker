@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface MultiSelectValueOption {
+public @interface MultiSelectLabeledValue {
 
     String value();
 

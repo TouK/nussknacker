@@ -61,7 +61,7 @@ object EditorExtractor {
         MultiSelectEditor(
           editor
             .possibleMultiSelectValues()
-            .map(option => SelectOption(option.value(), option.label()))
+            .map(option => MultiSelectFixedValue(option.value(), option.label()))
             .toList
         )
     }

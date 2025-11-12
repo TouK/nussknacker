@@ -25,7 +25,7 @@ public @interface Editor {
     // TODO: renames: - rename
     //  possibleValues -> allowedExpressions/possibleExpressions
     //  possibleMultiSelectValues -> allowedValues/possibleValues
-    MultiSelectValueOption[] possibleMultiSelectValues() default {};
+    MultiSelectLabeledValue[] possibleMultiSelectValues() default {};
 
     /**
      * This field should be used only with {@link EditorType#DURATION_EDITOR} or {@link EditorType#PERIOD_EDITOR}
