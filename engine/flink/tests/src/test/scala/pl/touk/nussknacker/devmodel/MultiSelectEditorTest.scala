@@ -1,33 +1,24 @@
-package pl.touk.nussknacker.engine.process
+package pl.touk.nussknacker.devmodel
 
 import com.typesafe.config.ConfigFactory
-import io.circe.Json
 import io.circe.syntax.EncoderOps
 import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.{ClassLoaderModelData, ConfigWithUnresolvedVersion}
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  ExpressionParserCompilationError,
-  JsonRequiredParameter,
-  MultiSelectInvalidFormat,
-  MultiSelectUnallowedValue
-}
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MultiSelectInvalidFormat, MultiSelectUnallowedValue}
+import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType, MultiSelectLabeledValue}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.classloader.ModelClassLoader
-import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkTestScenarioRunnerExt
-import pl.touk.nussknacker.engine.management.sample.service.MultiSelectEditorService
-import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
+
+import scala.concurrent.Future
 
 class MultiSelectEditorTest extends AnyFunSuite with FlinkSpec with Matchers with LoneElement {
 
@@ -36,7 +27,7 @@ class MultiSelectEditorTest extends AnyFunSuite with FlinkSpec with Matchers wit
   private lazy val testScenarioRunner =
     TestScenarioRunner
       .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)
-      .withExtraComponents(ComponentDefinition("multipleSelectEditorService", MultiSelectEditorService) :: Nil)
+      .withExtraComponents(ComponentDefinition("multipleSelectEditorService", MultiSelectEditorServiceForTest) :: Nil)
       .build()
 
   override protected def afterAll(): Unit = {
@@ -82,6 +73,26 @@ class MultiSelectEditorTest extends AnyFunSuite with FlinkSpec with Matchers wit
       )
       .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#serviceOut".spel)
     testScenarioRunner.runWithData[Int, AnyRef](scenario, List(1))
+  }
+
+}
+
+object MultiSelectEditorServiceForTest extends Service with Serializable {
+
+  @MethodToInvoke
+  def invoke(
+              @ParamName("multiSelectParam")
+              @Editor(
+                `type` = EditorType.MULTI_SELECT_EDITOR,
+                possibleMultiSelectValues = Array(
+                  new MultiSelectLabeledValue(value = "option1", label = "option1"),
+                  new MultiSelectLabeledValue(value = "option2", label = "option2")
+                )
+              )
+              @Editor(`type` = EditorType.JSON_EDITOR)
+              multiSelect: Any,
+            ): Future[Any] = {
+    Future.successful(multiSelect)
   }
 
 }
