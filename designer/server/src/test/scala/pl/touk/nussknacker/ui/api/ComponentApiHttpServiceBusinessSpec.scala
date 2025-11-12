@@ -175,6 +175,7 @@ class ComponentApiHttpServiceBusinessSpec
     "streaming-service-meetingservice",
     "streaming-service-modelconfigreader",
     "streaming-service-multipleparamsservice",
+    "streaming-service-multipleselecteditorservice",
     "streaming-service-optionaltypesservice",
     "streaming-service-paramservice",
     "streaming-service-providedcomponent-component-v1",
