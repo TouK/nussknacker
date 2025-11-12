@@ -54,17 +54,24 @@ class FromJsonTypingResultBasedDecoder extends LazyLogging {
     typ match {
       case _ if cursor.value == Json.Null => Right(null)
       case TypedNull                      => Right(null)
-      case TypedObjectWithValue(_, value) => Right(value)
-      case `intClass`                     => cursor.as[Int]
-      case `shortClass`                   => cursor.as[Short]
-      case `longClass`                    => cursor.as[Long]
-      case `floatClass`                   => cursor.as[Float]
-      case `doubleClass`                  => cursor.as[Double]
-      case `booleanClass`                 => cursor.as[Boolean]
-      case `stringClass`                  => cursor.as[String]
-      case `byteClass`                    => cursor.as[Byte]
-      case `bigIntegerClass`              => cursor.as[BigInteger]
-      case `bigDecimalClass`              => cursor.as[java.math.BigDecimal]
+      case TypedObjectWithValue(typ, expectedValue) =>
+        decodeValue(typ, cursor).flatMap { decodedValue =>
+          if (decodedValue == expectedValue) {
+            Right(decodedValue)
+          } else {
+            handleDecodingError(s"Expected value: [$expectedValue]", cursor)
+          }
+        }
+      case `intClass`        => cursor.as[Int]
+      case `shortClass`      => cursor.as[Short]
+      case `longClass`       => cursor.as[Long]
+      case `floatClass`      => cursor.as[Float]
+      case `doubleClass`     => cursor.as[Double]
+      case `booleanClass`    => cursor.as[Boolean]
+      case `stringClass`     => cursor.as[String]
+      case `byteClass`       => cursor.as[Byte]
+      case `bigIntegerClass` => cursor.as[BigInteger]
+      case `bigDecimalClass` => cursor.as[java.math.BigDecimal]
 
       // date-time types
       case `instantClass`        => cursor.as[String].flatMap(handleExceptionAsDecodingFailureF(Instant.parse))
@@ -160,6 +167,18 @@ class FromJsonTypingResultBasedDecoder extends LazyLogging {
             s"Target type for json [${json.noSpaces}] decoding is [$unknown] type. For decoding was used simple decoder. Result is [$result]"
           )
           result
+        }
+      case union: TypedUnion =>
+        union.possibleTypes.toList.view.map(decodeValue(_, cursor)).collectFirst { case Right(value) =>
+          value
+        } match {
+          case Some(value) =>
+            Right(value)
+          case None =>
+            handleDecodingError(
+              s"Expected one of [${union.possibleTypes.toList.map(_.display).mkString(", ")}]",
+              cursor
+            )
         }
       case typ => handleDecodingError(s"Decoding of type [$typ] is not supported.", cursor)
     }
