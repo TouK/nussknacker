@@ -101,8 +101,7 @@ case class Context(
     parentContext: Option[Context],
     /**
      * Optional internal tracking ID used for debugging, monitoring, or tracing the execution flow.
-     * For developer use only – not exposed to process designers or end users.
-     * Helps propagate correlation IDs across system components.
+     * For now, not exposed in the Designer part. Helps propagate correlation IDs across system components.
      */
     traceId: Option[TraceId]
 ) {

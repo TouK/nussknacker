@@ -102,8 +102,7 @@ class LiteTestScenarioRunner(
     val testSource = ComponentDefinition(TestScenarioRunner.testDataSource, new SimpleSourceFactory(Typed[INPUT]))
     val testSink   = ComponentDefinition(TestScenarioRunner.testResultSink, SimpleSinkFactory)
     val inputId    = scenario.nodes.head.id
-    // TODO: Add passing headers
-    val inputBatch = ScenarioInputBatch(data.map(d => (SourceId(inputId), d: Any, LiteSource.EmptyHeaders)))
+    val inputBatch = ScenarioInputBatch(data.map(d => (SourceId(inputId), d: Any)))
     val jobData    = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
 
     val allComponents = testSource ::
@@ -141,6 +140,11 @@ private[test] class SimpleSourceFactory(result: TypingResult)
 
       override def transform(record: Any): ContextVariables =
         ContextVariables(Map(VariableConstants.InputVariableName -> record))
+
+      // for tests purposes
+      protected override def extractTraceId(record: Any): Option[TraceId] =
+        Some(TraceId.generate())
+
     }
   }
 

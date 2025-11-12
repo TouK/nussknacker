@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
 import pl.touk.nussknacker.engine.json.swagger.decode.FromJsonSchemaBasedDecoder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawValueParamName
-import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, ResponseEncoder}
+import pl.touk.nussknacker.engine.requestresponse.api.{Request, RequestResponsePostSource, ResponseEncoder}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.utils.encode.SchemaResponseEncoder
 import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
@@ -35,7 +35,7 @@ class JsonSchemaRequestResponseSource(
 ) extends RequestResponsePostSource[Any]
     with LazyLogging
     with ReturningType
-    with SourceTestSupport[Any]
+    with SourceTestSupport[Request[Any]]
     with TestWithParametersSupport[Any] {
 
   protected val openApiDescription: String = s"**scenario name**: ${metaData.name}"
@@ -46,9 +46,9 @@ class JsonSchemaRequestResponseSource(
   // we don't want to block user in some edge cases such as output = input but without redundant fields
   private val validationMode = ValidationMode.lax
 
-  override def parse(parameters: Array[Byte]): Any = {
+  override def parse(parameters: Array[Byte], headers: Map[String, String]): Request[Any] = {
     val parametersString = new String(parameters, StandardCharsets.UTF_8)
-    validateAndReturnTypedMap(parametersString)
+    Request(validateAndReturnTypedMap(parametersString), headers)
   }
 
   private def validateAndReturnTypedMap(parameters: String): Any = {
@@ -64,8 +64,8 @@ class JsonSchemaRequestResponseSource(
     SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(inputSchema).typingResult
   }
 
-  override def testRecordParser: TestRecordParser[Any] = (testRecords: List[TestRecord]) =>
-    testRecords.map { testRecord => validateAndReturnTypedMap(testRecord.json.noSpaces) }
+  override def testRecordParser: TestRecordParser[Request[Any]] = (testRecords: List[TestRecord]) =>
+    testRecords.map { testRecord => Request(validateAndReturnTypedMap(testRecord.json.noSpaces)) }
 
   override def responseEncoder: Option[ResponseEncoder[Any]] = Option(
     new SchemaResponseEncoder(outputSchema, validationMode)

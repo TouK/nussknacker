@@ -18,7 +18,7 @@ class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
     val results = sample.run(
       sampleScenarioWithState,
       ScenarioInputBatch(List(0, 1, 2, 3).zipWithIndex.map { case (value, idx) =>
-        (SourceId("start"), SampleInput(idx.toString, value), LiteSource.EmptyHeaders)
+        (SourceId("start"), SampleInput(idx.toString, value))
       }),
       Map("test" -> 10)
     )
@@ -40,7 +40,7 @@ class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
     val results = sample.run(
       sampleScenarioWithFailingSource,
       ScenarioInputBatch(List(0, 1, 2, 3).zipWithIndex.map { case (value, idx) =>
-        (SourceId("start"), SampleInput(idx.toString, value), LiteSource.EmptyHeaders)
+        (SourceId("start"), SampleInput(idx.toString, value))
       }),
       Map("test" -> 10)
     )

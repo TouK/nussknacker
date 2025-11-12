@@ -23,7 +23,6 @@ import pl.touk.nussknacker.engine.kafka.exception.{
 }
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
-import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{
@@ -137,17 +136,14 @@ class KafkaSingleScenarioTaskRun(
 
   private def prepareRecords(
       records: ConsumerRecords[Array[Byte], Array[Byte]]
-  ): List[(SourceId, ConsumerRecord[Array[Byte], Array[Byte]], Map[String, String])] = {
+  ): List[(SourceId, ConsumerRecord[Array[Byte], Array[Byte]])] = {
     sourceToTopic.toList.flatMap { case (topic, sourcesSubscribedOnTopic) =>
       val forTopic = records.records(topic.name).asScala.toList
       // TODO: try to handle source metrics in more generic way?
       sourcesSubscribedOnTopic.keys.foreach(sourceId =>
         forTopic.foreach(record => sourceMetrics.markElement(sourceId, record.timestamp()))
       )
-      // TODO: Add passing headers
-      sourcesSubscribedOnTopic.keys.toList.flatMap { sourceId =>
-        forTopic.map((sourceId, _, LiteSource.EmptyHeaders))
-      }
+      sourcesSubscribedOnTopic.keys.toList.flatMap { sourceId => forTopic.map((sourceId, _)) }
     }
   }
 
