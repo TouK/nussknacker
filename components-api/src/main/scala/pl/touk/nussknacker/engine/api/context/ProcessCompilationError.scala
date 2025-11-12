@@ -4,7 +4,7 @@ import cats.Applicative
 import cats.data.{NonEmptyList, ValidatedNel}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, ParameterEditor, SelectOption}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, MultiSelectFixedValue, ParameterEditor}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -290,7 +290,7 @@ object ProcessCompilationError {
 
   final case class MultiSelectUnallowedValue(
       value: String,
-      allowedValues: List[SelectOption],
+      allowedValues: List[MultiSelectFixedValue],
       paramName: ParameterName,
       nodeId: NodeId
   ) extends PartSubGraphCompilationError
