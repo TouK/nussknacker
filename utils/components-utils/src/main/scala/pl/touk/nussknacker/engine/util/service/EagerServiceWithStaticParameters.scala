@@ -4,7 +4,6 @@ import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedSingleParameter,
@@ -101,7 +100,7 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
   def invoke(eagerParameters: Map[ParameterName, Any])(
       implicit ec: ExecutionContext,
       collector: InvocationCollectors.ServiceInvocationCollector,
-      contextId: ContextId,
+      context: Context,
       metaData: MetaData,
       componentUseContext: ComponentUseContext
   ): Future[Any]
@@ -126,12 +125,12 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       metaData: MetaData
   ) extends ServiceInvoker {
 
-    override def invoke(context: Context)(
+    override def invoke(ctx: Context)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         componentUseContext: ComponentUseContext,
     ): Future[Any] = {
-      implicit val contextId: ContextId   = context.id
+      implicit val context: Context       = ctx
       implicit val metaImplicit: MetaData = metaData
       val evaluatedLazyParameters         = lazyParameters.map { case (name, value) => (name, value.evaluate(context)) }
       EagerServiceWithStaticParametersAndReturnType.this.invoke(eagerParameters ++ evaluatedLazyParameters)

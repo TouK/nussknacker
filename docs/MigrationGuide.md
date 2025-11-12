@@ -57,6 +57,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
+* [#8723](https://github.com/TouK/nussknacker/pull/8723) Change: Passing `Context` instead of `ContextId` at EagerServiceWithStaticParametersAndReturnType.invoke
 * [#7165](https://github.com/TouK/nussknacker/pull/7165)
     * `pl.touk.nussknacker.engine.api.deployment.DeploymentManager`:
         * new command `DMPerformSingleExecutionCommand`, which must be handled in `DeploymentManager.processCommand` method
