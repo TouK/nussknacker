@@ -95,7 +95,7 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
               testDataPreparer.prepareRecordsForTest(source, scenarioTestRecords)
             val recordsFromCommonTestDataFormat = decodeCommonFormatRecords(scenarioTestRecords, nodeId)
             (recordsFromSourceSpecificTestDataFormat ++ recordsFromCommonTestDataFormat)
-              .map(record => (sourceId, record, Map.empty[String, String]))
+              .map(record => sourceId -> record)
           }
       )
 

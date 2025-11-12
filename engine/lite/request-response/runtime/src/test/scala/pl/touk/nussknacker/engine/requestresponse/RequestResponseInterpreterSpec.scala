@@ -15,12 +15,13 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
-import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
 import pl.touk.nussknacker.engine.lite.components.LiteBaseComponentProvider
 import pl.touk.nussknacker.engine.lite.components.requestresponse.RequestResponseComponentProvider
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
+import pl.touk.nussknacker.engine.requestresponse.api.Request
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -430,7 +431,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
   private def invokeInterpreter(interpreter: InterpreterType, input: Any): ValidatedNel[ErrorType, List[Any]] = {
     interpreter
-      .invokeToOutput(input, Map(LiteSource.DefaultTraceIdHeader -> traceId))
+      .invokeToOutput(Request(input, Map(BaseLiteSource.DefaultTraceIdHeader -> traceId)))
       .futureValue
   }
 

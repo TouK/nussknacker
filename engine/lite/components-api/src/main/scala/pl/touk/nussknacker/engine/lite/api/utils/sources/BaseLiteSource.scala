@@ -14,6 +14,10 @@ import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
 import scala.language.higherKinds
 import scala.util.Try
 
+object BaseLiteSource {
+  val DefaultTraceIdHeader: String = "trace-id"
+}
+
 trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
 
   protected var context: EngineRuntimeContext        = _
@@ -28,12 +32,12 @@ trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
 
   override def createTransformation[F[_]: Monad](
       componentContext: customComponentTypes.CustomComponentContext[F]
-  ): (T, Map[String, String]) => ValidatedNel[ErrorType, Context] =
-    (record, headers) => {
+  ): T => ValidatedNel[ErrorType, Context] =
+    record => {
       val context = Context(contextIdGenerator.nextContextId())
 
       Validated
-        .fromEither(Try((transform(record), extractTraceId(headers))).toEither)
+        .fromEither(Try((transform(record), extractTraceId(record))).toEither)
         .map { case (contextVariables, traceId) =>
           val contextWithVariables = context.withVariables(contextVariables.variables)
 
@@ -50,6 +54,9 @@ trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
         )
         .toValidatedNel
     }
+
+  // for overriding purposes
+  protected def extractTraceId(record: T): Option[TraceId] = None
 
   def transform(record: T): ContextVariables
 

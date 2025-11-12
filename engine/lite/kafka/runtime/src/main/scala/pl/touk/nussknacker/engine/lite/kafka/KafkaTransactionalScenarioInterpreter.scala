@@ -69,8 +69,7 @@ object KafkaTransactionalScenarioInterpreter {
 
   private[kafka] implicit val capability: FixedCapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
 
-  def testRunner(implicit ec: ExecutionContext): TestRunner =
-    new InterpreterTestRunner[Future, Input, AnyRef]
+  def testRunner(implicit ec: ExecutionContext): TestRunner = new InterpreterTestRunner[Future, Input, AnyRef]
 
   def apply(
       modelData: ModelData,
