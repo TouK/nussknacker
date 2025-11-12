@@ -4,6 +4,7 @@ import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 
 import java.time.Instant
+import scala.concurrent.duration._
 
 class SlidingWindowCounterSpec extends AnyFunSuiteLike with Matchers {
 
@@ -12,7 +13,7 @@ class SlidingWindowCounterSpec extends AnyFunSuiteLike with Matchers {
 
   test("return counts when 1 event per second added for each event type") {
     implicit val mutableClock: MutableClock = new MutableClock(startTime)
-    val counter                             = new SlidingWindowCounter[Int](startTime, 10)
+    val counter                             = new SlidingWindowCounter[Int](startTime, 10 seconds)
 
     1 to 10 foreach { _ =>
       1 to 10 foreach { i =>
@@ -36,7 +37,7 @@ class SlidingWindowCounterSpec extends AnyFunSuiteLike with Matchers {
 
   test("throughput is correctly calculated for single event during consecutive seconds") {
     implicit val mutableClock: MutableClock = new MutableClock(startTime)
-    val counter                             = new SlidingWindowCounter[Int](startTime, 10)
+    val counter                             = new SlidingWindowCounter[Int](startTime, 10 seconds)
 
     // Empty result before event is received
     counter.getThroughput.toSet shouldBe Set.empty

@@ -177,15 +177,16 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8042](https://github.com/TouK/nussknacker/pull/8042) Merge OpenAPI components into one with multiple services.
 * [7684](https://github.com/TouK/nussknacker/pull/7684) Add action redeploy. Till now action deploy was responsible for both deploy and redeploy operations. 
   Now they are separated in scenario workflow and UI. Kafka source has different deployment parameters for deploy and redeploy actions.
-* [#8047](https://github.com/TouK/nussknacker/pull/8047) Added functionality of collecting live data samples and node transition throughput, modified in [#8165](https://github.com/TouK/nussknacker/pull/8165)
+* [#8047](https://github.com/TouK/nussknacker/pull/8047) Added functionality of collecting live data samples and node transition throughput, modified in [#8165](https://github.com/TouK/nussknacker/pull/8165) and in [#8702](https://github.com/TouK/nussknacker/pull/8702)
     * live data preview is optional and available for now only for Flink minicluster 
     * there is a new endpoint `/liveData/{scenarioName}`, which returns live data samples and throughput information
     * the functionality can be configured by setting in the 'modelConfig' section of the scenario type:
       ```hocon
-      liveDataPreview {              // optional config section, functionality disabled by default
-        enabled: true                // disabled by default
-        maxNumberOfRecords: 20       // max number of latest live data samples that will be returned, optional, default is 20
-        throughputTimeWindowInSeconds: 60 // the time windows, for which the node transition throughput will be calculated, optional, default is 60
+      liveDataPreview {                  // optional config section, functionality disabled by default
+        enabled: true                    // disabled by default
+        maxNumberOfRecords: 20           // max number of latest live data samples that will be returned, optional, default is 20
+        throughputTimeWindow: 60 seconds // the time window, for which the node transition throughput will be calculated, optional, default is 60 seconds
+        retentionTime: 1 hour            // the live data samples retention time; the stats will be still calculated for the entire scenario lifetime, regardless of this setting, optional, default is 1 hour
       }
       ```
     * [#8208](https://github.com/TouK/nussknacker/pull/8208) added functionality of collecting live data for scenarios running on standalone Flink with synchronisation in Designer DB  
@@ -195,7 +196,8 @@ description: Stay informed with detailed changelogs covering new features, impro
       liveDataPreview {              
         enabled: true               
         maxNumberOfSamples: 20      
-        throughputTimeWindowInSeconds: 60
+        throughputTimeWindow: 60 seconds
+        retentionTime: 1 hour
         storage {  // This section must be configured for standalone FLink
           type: "DESIGNER_DB" // The only storage type available for now
            // Small `uploadIntervalInSeconds` values make the live data preview look more smooth and similar to the Flink MiniCluster version, bigger values are easier on the db

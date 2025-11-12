@@ -124,18 +124,18 @@ object FlinkDeploymentManagerProvider extends LazyLogging {
   ) = {
     if (useMiniClusterForDeployment) {
       liveDataPreviewMode match {
-        case LiveDataPreviewMode.Enabled(_, _, _) =>
+        case LiveDataPreviewMode.Enabled(_, _, _, _) =>
           LiveDataPreviewStoredInDesignerJvm
         case LiveDataPreviewMode.Disabled =>
           NoLiveDataPreviewSupport
       }
     } else {
       liveDataPreviewMode match {
-        case LiveDataPreviewMode.Enabled(_, _, LiveDataStorage.DesignerJvm) =>
+        case LiveDataPreviewMode.Enabled(_, _, _, LiveDataStorage.DesignerJvm) =>
           throw new IllegalArgumentException(
             s"Invalid configuration of live data. Flink deployment manager is configured to use standalone flink, but the db storage is not configured for live data synchronization. Please check modelConfig.liveDataPreview.storage config section."
           )
-        case LiveDataPreviewMode.Enabled(maxSamples, _, storage: LiveDataStorage.DesignerDb) =>
+        case LiveDataPreviewMode.Enabled(maxSamples, _, _, storage: LiveDataStorage.DesignerDb) =>
           LiveDataPreviewStoredInDesignerDb(maxSamples, storage.uploadIntervalInSeconds)
         case LiveDataPreviewMode.Disabled =>
           NoLiveDataPreviewSupport
