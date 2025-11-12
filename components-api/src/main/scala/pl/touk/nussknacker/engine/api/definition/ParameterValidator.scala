@@ -275,6 +275,7 @@ case class MultiSelectFixedValuesValidator(possibleSelectOptions: List[SelectOpt
     import scala.jdk.CollectionConverters._
     value match {
       case Some(jList: java.util.List[_]) =>
+        import scala.collection.compat._
         val scalaSeq = jList.asScala.toList
         val (stringsElements, nonStringElements): (List[String], List[Any]) = scalaSeq.partitionMap {
           case s: String => Left(s)
