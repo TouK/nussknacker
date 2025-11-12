@@ -2,8 +2,7 @@ package pl.touk.nussknacker.engine.management.sample.component
 
 import com.typesafe.config.{Config, ConfigValueFactory}
 import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.engine.ModelConfig
-import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
+import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.api.component.{
   ComponentDefinition,
   ComponentDependencies,
@@ -48,7 +47,7 @@ case class SampleProvidedComponent(param: String) extends EagerServiceWithStatic
   override def invoke(eagerParameters: Map[ParameterName, Any])(
       implicit ec: ExecutionContext,
       collector: InvocationCollectors.ServiceInvocationCollector,
-      contextId: ContextId,
+      context: Context,
       metaData: MetaData,
       componentUseContext: ComponentUseContext
   ): Future[Any] = {

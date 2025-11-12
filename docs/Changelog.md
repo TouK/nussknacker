@@ -15,6 +15,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#8723](https://github.com/TouK/nussknacker/pull/8723) Change: Passing Context instead of ContextId at EagerServiceWithStaticParametersAndReturnType.invoke
 * [#7181](https://github.com/TouK/nussknacker/pull/7181) StickyNotes feature
   * sticky notes are designed to store information inside scenario/fragment, they are separate from graph nodes and do not take part in scenario logic
   * new API available under `processes/{scenarioName}/stickyNotes`
