@@ -5,16 +5,19 @@ import org.apache.kafka.common.header.internals.{RecordHeader, RecordHeaders}
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.TraceId
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
+import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.io.ByteArrayOutputStream
 import java.util.Optional
+import scala.jdk.CollectionConverters._
 
 class UniversalSourceJsonSchemaLiteTest
     extends AnyFunSuite
@@ -77,6 +80,7 @@ class UniversalSourceJsonSchemaLiteTest
       topicParamName.value         -> s"'${inputTopic.name}'".spel,
       schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
     )
+    .processor("correlationId", CorrelationService.ComponentName)
     .emptySink(
       sinkName,
       KafkaUniversalName,
@@ -111,6 +115,7 @@ class UniversalSourceJsonSchemaLiteTest
   test("should read data on json schema based universal source when schemaId in header") {
     // Given
 
+    val traceId  = TraceId.generate()
     val schemaId = runner.registerJsonSchema(inputTopic.toUnspecialized, schema)
     runner.registerJsonSchema(outputTopic.toUnspecialized, schema)
 
@@ -123,7 +128,10 @@ class UniversalSourceJsonSchemaLiteTest
         |  "sex": null
         |}""".stripMargin.getBytes()
 
-    val headers = new RecordHeaders().add(new RecordHeader("value.schemaId", s"$schemaId".getBytes()))
+    val headers = new RecordHeaders()
+      .add(new RecordHeader("value.schemaId", s"$schemaId".getBytes()))
+      .add(new RecordHeader(BaseLiteSource.DefaultTraceIdHeader, traceId.value.getBytes))
+
     val input = new ConsumerRecord(
       inputTopic.name,
       1,
@@ -142,6 +150,7 @@ class UniversalSourceJsonSchemaLiteTest
     val result                                               = runner.runWithRawData(scenario, list).validValue
 
     // Then
+    CorrelationService.traceIdStorage.asScala should contain(traceId)
     parse(new String(input.value())) shouldBe parse(new String(result.successes.head.value()))
   }
 

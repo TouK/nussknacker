@@ -104,7 +104,7 @@ class MetricsTest extends AnyFunSuite with Matchers {
     sample.run(
       scenario,
       ScenarioInputBatch(input.zipWithIndex.map { case (value, idx) =>
-        (SourceId(sourceId), SampleInput(idx.toString, value), LiteSource.EmptyHeaders)
+        (SourceId(sourceId), SampleInput(idx.toString, value))
       }),
       Map.empty,
       new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))

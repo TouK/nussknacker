@@ -88,7 +88,7 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
             val sourceId                     = SourceId(nodeId.id)
             val source                       = getSourceById(sourceId)
             val preparedRecords: List[Input] = testDataPreparer.prepareRecordsForTest(source, scenarioTestRecords)
-            preparedRecords.map(record => (sourceId, record, Map.empty[String, String]))
+            preparedRecords.map(record => sourceId -> record)
           }
       )
 

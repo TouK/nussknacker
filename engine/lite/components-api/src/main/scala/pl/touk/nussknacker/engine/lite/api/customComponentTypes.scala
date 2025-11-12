@@ -25,20 +25,11 @@ object customComponentTypes {
       capabilityTransformer: CapabilityTransformer[F]
   )
 
-  object LiteSource {
-    val DefaultTraceIdHeader: String = "trace-id"
-    val EmptyHeaders                 = Map.empty[String, String]
-  }
-
   trait LiteSource[Input] extends Source {
-
-    // protected for overriding purposes
-    protected def extractTraceId(headers: Map[String, String]): Option[TraceId] =
-      headers.get(LiteSource.DefaultTraceIdHeader).map(TraceId(_))
 
     def createTransformation[F[_]: Monad](
         evaluateLazyParameter: CustomComponentContext[F]
-    ): (Input, Map[String, String]) => ValidatedNel[ErrorType, Context]
+    ): Input => ValidatedNel[ErrorType, Context]
 
   }
 
