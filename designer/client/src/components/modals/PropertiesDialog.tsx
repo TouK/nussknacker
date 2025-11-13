@@ -10,7 +10,6 @@ import { editProperties } from "../../actions/nk/editProperties";
 import { ToolId } from "../../actions/nk/toolWindow";
 import PropertiesSvg from "../../assets/img/properties.svg";
 import HttpService from "../../http/HttpService/instance";
-import type { RootState } from "../../reducers";
 import { getProperties, getScenario } from "../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import type { PropertiesType } from "../../types/node";
@@ -22,7 +21,7 @@ import { ContentSize } from "../graph/node-modal/node/ContentSize";
 import { getPropertiesErrors, getReadOnly } from "../graph/node-modal/node/selectors";
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../graph/node-modal/nodeDetails/SubHeader";
-import { getProcessName, getScenarioPropertiesConfig } from "../graph/node-modal/NodeDetailsContent/selectors";
+import { getProcessName, getScenarioProperties } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { PropertiesForm } from "../properties/PropertiesForm";
 import { useOnToolWindow } from "./useOnToolWindow";
 
@@ -42,30 +41,46 @@ export const NodeDetailsModalIcon = styled(WindowHeaderIconStyled.withComponent(
     backgroundColor: theme.palette.custom.getWindowStyles(WindowKind.editProperties).backgroundColor,
 }));
 
-const PropertiesDialog = ({ ...props }: WindowContentProps) => {
-    const isEditMode = !useAppSelector((s: RootState) => getReadOnly(s, false));
-
-    const { t } = useTranslation();
-    const dispatch = useAppDispatch();
-
-    const globalPropertiesErrors = useAppSelector(getPropertiesErrors);
-    const scenarioProperties = useAppSelector(getScenarioPropertiesConfig);
-    const scenario = useAppSelector(getScenario);
+function usePropertiesValidation(isEditMode: boolean, editedProperties: PropertiesType) {
     const scenarioName = useAppSelector(getProcessName);
-
+    const globalPropertiesErrors = useAppSelector(getPropertiesErrors);
     const [errors, setErrors] = useState<NodeValidationError[]>(isEditMode ? globalPropertiesErrors : []);
-    const { editedProperties, handleSetEditedProperties } = usePropertiesState();
-    const showSwitch = false;
 
     const debouncedValidateProperties = useMemo(() => {
         return debounce((scenarioName, additionalFields, id) => {
-            HttpService.validateProperties(scenarioName, { additionalFields: additionalFields, name: id }).then((data) => {
+            HttpService.validateProperties(scenarioName, {
+                additionalFields: additionalFields,
+                name: id,
+            }).then((data) => {
                 if (data) {
                     setErrors(data.validationErrors);
                 }
             });
         }, 500);
     }, []);
+
+    useEffect(() => {
+        if (!isEditMode) {
+            return;
+        }
+
+        debouncedValidateProperties(scenarioName, editedProperties.additionalFields, editedProperties.name);
+    }, [debouncedValidateProperties, isEditMode, editedProperties.additionalFields, editedProperties.name, scenarioName]);
+
+    return errors;
+}
+
+const PropertiesDialog = ({ ...props }: WindowContentProps) => {
+    const isEditMode = useAppSelector((s) => !getReadOnly(s, false));
+
+    const { t } = useTranslation();
+    const dispatch = useAppDispatch();
+
+    const scenarioProperties = useAppSelector(getScenarioProperties);
+    const scenario = useAppSelector(getScenario);
+
+    const { editedProperties, handleSetEditedProperties } = usePropertiesState();
+    const showSwitch = false;
 
     const apply = useMemo<WindowButtonProps>(() => {
         return {
@@ -85,13 +100,7 @@ const PropertiesDialog = ({ ...props }: WindowContentProps) => {
         };
     }, [props, t]);
 
-    useEffect(() => {
-        if (!isEditMode) {
-            return;
-        }
-
-        debouncedValidateProperties(scenarioName, editedProperties.additionalFields, editedProperties.name);
-    }, [debouncedValidateProperties, isEditMode, editedProperties.additionalFields, editedProperties.name, scenarioName]);
+    const errors = usePropertiesValidation(isEditMode, editedProperties);
 
     useOnToolWindow(ToolId.properties);
 

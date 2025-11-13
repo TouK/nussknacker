@@ -14,10 +14,13 @@ import { getNodeDetails, getNodesDetails } from "./getNodeDetails";
 const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);
 
 const getComponentsDefinition = createSelector(getProcessDefinitionData, (s) => s.components);
-export const getScenarioPropertiesConfig = createSelector(
-    getProcessDefinitionData,
-    (s) => (s.scenarioProperties || {}) as UiScenarioProperties,
-);
+export const getScenarioProperties = createSelector(getProcessDefinitionData, (s) => (s.scenarioProperties || {}) as UiScenarioProperties);
+export const getScenarioPropertiesConfig = createSelector(getScenarioProperties, ({ propertiesConfig = {} }) => {
+    //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
+    const order = Object.keys(propertiesConfig).sort((a, b) => a.localeCompare(b));
+    return { properties: propertiesConfig, order };
+});
+
 const getNodeResults = createSelector(getScenario, (scenario) => ProcessUtils.getNodeResults(scenario));
 export const getFindAvailableBranchVariables = createSelector(getNodeResults, (nodeResults) =>
     ProcessUtils.findVariablesForBranches(nodeResults),

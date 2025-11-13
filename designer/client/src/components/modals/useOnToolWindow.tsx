@@ -3,6 +3,7 @@ import { useCallback, useEffect } from "react";
 
 import type { ToolId } from "../../actions/nk/toolWindow";
 import { toolClosed, toolOpened } from "../../actions/nk/toolWindow";
+import { removeHistorySnapshot, takeHistorySnapshot } from "../../reducers/graph/historySquash";
 import { useAppDispatch } from "../../store/storeHelpers";
 
 export function useOnToolWindow(toolId: ToolId) {
@@ -22,4 +23,11 @@ export function useOnToolWindow(toolId: ToolId) {
     useEffect(() => {
         return onOpen(toolId);
     }, [onOpen, toolId]);
+
+    useEffect(() => {
+        dispatch(takeHistorySnapshot());
+        return () => {
+            dispatch(removeHistorySnapshot());
+        };
+    }, [dispatch]);
 }

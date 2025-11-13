@@ -3,6 +3,7 @@ import type { ThunkAction } from "../reduxTypes";
 
 export enum ToolId {
     properties = "properties",
+    node = "node",
 }
 
 export type ToolWindowActions =
