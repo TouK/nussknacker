@@ -1,10 +1,10 @@
-import { Box } from "@mui/material";
 import React, { useCallback, useMemo } from "react";
 
 import { CopyIconButton } from "../../../common/copyToClipboard/CopyIconButton";
 import { useCopyClipboard } from "../../../common/copyToClipboard/useCopyToClipboard";
 import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../store/storeHelpers";
+import { FieldAddons } from "./fieldAddons";
 import { GenerateNewEndpoint } from "./node-action-buttons/GenerateNewEndpoint";
 import type { FieldWrapperProps, ParameterExpressionFieldProps } from "./ParameterExpressionField";
 
@@ -26,7 +26,15 @@ export function CopyEndpoint({
     return <CopyIconButton onClick={onClick} isCopied={isCopied} />;
 }
 
-export function EndpointFieldWrapper({ children, node, listFieldPath, setProperty, isEditMode }: FieldWrapperProps) {
+export function EndpointFieldWrapper({
+    children,
+    node,
+    listFieldPath,
+    setProperty,
+    isEditMode,
+    showValidation,
+    errors,
+}: FieldWrapperProps) {
     const settings = useAppSelector(getUserSettings);
 
     if (!isEditMode) return <>{children}</>;
@@ -35,19 +43,17 @@ export function EndpointFieldWrapper({ children, node, listFieldPath, setPropert
     return (
         <>
             {children}
-            {
-                <Box display={"flex"} justifyContent={"flex-end"}>
-                    <GenerateNewEndpoint
-                        node={node}
-                        handleNewEndpointGenerated={(topic: string) => {
-                            const expressionProperty = "expression.expression";
-                            const expressionPath = `${listFieldPath}.${expressionProperty}`;
+            <FieldAddons hasError={showValidation && errors.length > 0}>
+                <GenerateNewEndpoint
+                    node={node}
+                    handleNewEndpointGenerated={(topic: string) => {
+                        const expressionProperty = "expression.expression";
+                        const expressionPath = `${listFieldPath}.${expressionProperty}`;
 
-                            setProperty(expressionPath, topic);
-                        }}
-                    />
-                </Box>
-            }
+                        setProperty(expressionPath, topic);
+                    }}
+                />
+            </FieldAddons>
         </>
     );
 }
