@@ -1,18 +1,37 @@
+import { getContextPrompt, getContextRawData } from "../reducers/selectors/assistantSelectors";
+import { getUserSettings } from "../reducers/selectors/userSettings";
 import type { ThunkAction } from "./reduxTypes";
 
 export type AssistantActions =
     | { type: "ASSISTANT_OPEN" }
     | { type: "ASSISTANT_CLOSE" }
     | { type: "ASSISTANT_FOCUS" }
-    | { type: "ASSISTANT_ASK"; question: string; realPrompt?: string };
+    | { type: "ASSISTANT_ASK"; question: string; realPrompt?: string; contextRawData?: string };
 
 const delay = (time = 250) => new Promise((resolve) => setTimeout(resolve, time));
 
-export function assistantAsk(question: string, realPrompt?: string): ThunkAction {
-    return async (dispatch) => {
+export function assistantAsk(question: string, prompt?: string): ThunkAction {
+    return async (dispatch, getState) => {
         dispatch({ type: "ASSISTANT_OPEN" });
         await delay();
-        dispatch({ type: "ASSISTANT_ASK", question, realPrompt });
+
+        const state = getState();
+        const settings = getUserSettings(state);
+        const includeScenarioData = settings["assistant.includeScenarioData"];
+
+        if (prompt && includeScenarioData) {
+            const contextRawData = getContextRawData(state);
+            const contextPrompt = getContextPrompt(state);
+            dispatch({
+                type: "ASSISTANT_ASK",
+                question,
+                realPrompt: `${prompt}. (${contextPrompt})`,
+                contextRawData,
+            });
+        } else {
+            dispatch({ type: "ASSISTANT_ASK", question, realPrompt: prompt });
+        }
+
         dispatch({ type: "ASSISTANT_FOCUS" });
     };
 }

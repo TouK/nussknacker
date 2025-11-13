@@ -1,15 +1,16 @@
 import type { Reducer } from "../actions/reduxTypes";
 import type { EditState } from "../components/graph/node-modal/node/useNodeState";
-import { mergeReducers } from "./mergeReducers";
 
 export type UiState = {
     isToolTipsHighlighted: boolean;
     pendingChanges: Record<string, EditState>;
+    aiContextRawData?: string;
 };
 
 const emptyUiState: UiState = {
     isToolTipsHighlighted: false,
     pendingChanges: {},
+    aiContextRawData: "",
 };
 
 const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
@@ -31,6 +32,16 @@ const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
                 pendingChanges,
             };
         }
+        case "ASSISTANT_ASK":
+            return {
+                ...state,
+                aiContextRawData: action.contextRawData,
+            };
+        case "CLEAR_PROCESS":
+            return {
+                ...state,
+                aiContextRawData: "",
+            };
         default:
             return state;
     }
