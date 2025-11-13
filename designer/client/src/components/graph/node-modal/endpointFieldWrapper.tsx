@@ -26,9 +26,10 @@ export function CopyEndpoint({
     return <CopyIconButton onClick={onClick} isCopied={isCopied} />;
 }
 
-export function EndpointFieldWrapper({ children, node, listFieldPath, setProperty }: FieldWrapperProps) {
+export function EndpointFieldWrapper({ children, node, listFieldPath, setProperty, isEditMode }: FieldWrapperProps) {
     const settings = useAppSelector(getUserSettings);
 
+    if (!isEditMode) return <>{children}</>;
     if (!settings["node.showGenerateEndpointButton"]) return <>{children}</>;
 
     return (
