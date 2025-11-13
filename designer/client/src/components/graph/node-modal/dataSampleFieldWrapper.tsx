@@ -9,12 +9,13 @@ import { getValidationErrorsForField } from "./editors/Validators";
 import { SendRequestButton } from "./node-action-buttons/SendRequestButton";
 import type { FieldWrapperProps } from "./ParameterExpressionField";
 
-export function DataSampleFieldWrapper({ children, node, parameter, errors }: FieldWrapperProps) {
+export function DataSampleFieldWrapper({ children, node, parameter, errors, isEditMode }: FieldWrapperProps) {
     const { t } = useTranslation();
     const isRunning = useAppSelector(getIsRunning);
     const settings = useAppSelector(getUserSettings);
 
     if (!settings["node.showSendRequestButton"]) return <>{children}</>;
+    if (!isEditMode) return <>{children}</>;
 
     return (
         <>
