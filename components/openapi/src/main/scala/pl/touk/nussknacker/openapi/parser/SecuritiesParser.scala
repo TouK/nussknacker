@@ -10,6 +10,8 @@ import pl.touk.nussknacker.openapi.{
   ApiKeyInHeader,
   ApiKeyInQuery,
   ApiKeySecret,
+  BasicAuth,
+  HttpBasicAuthSecret,
   Secret,
   SecurityConfig,
   SecuritySchemeName,
@@ -79,10 +81,12 @@ private[parser] object SecuritiesParser extends LazyLogging {
       secret: Secret
   ): ValidationResult[SwaggerSecurity] = {
     import SecurityScheme.Type._
-    (securityScheme.getType, secret) match {
-      case (APIKEY, apiKeySecret: ApiKeySecret) =>
+    (securityScheme.getType, securityScheme.getScheme, secret) match {
+      case (APIKEY, _, apiKeySecret: ApiKeySecret) =>
         getApiKeySecurity(securityScheme, apiKeySecret).validNel
-      case (otherType: SecurityScheme.Type, _) => {
+      case (HTTP, "basic", httpAuthSecret: HttpBasicAuthSecret) =>
+        BasicAuth(securityScheme.getName, httpAuthSecret.username, httpAuthSecret.password).validNel
+      case (otherType: SecurityScheme.Type, _, _) => {
         val secretClassName = ReflectUtils.simpleNameWithoutSuffix(secret.getClass)
         s"Security type $otherType is not supported yet or ($otherType, $secretClassName) is a mismatch security scheme type and security config pair".invalidNel
       }

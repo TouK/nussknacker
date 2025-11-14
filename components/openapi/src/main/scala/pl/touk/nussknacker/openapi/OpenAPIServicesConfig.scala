@@ -46,7 +46,8 @@ final case class SecuritySchemeName(value: String)
 
 sealed trait Secret
 
-final case class ApiKeySecret(apiKeyValue: String) extends Secret
+final case class ApiKeySecret(apiKeyValue: String)                       extends Secret
+final case class HttpBasicAuthSecret(username: String, password: String) extends Secret
 
 object OpenAPIServicesConfig {
 
@@ -66,10 +67,18 @@ object OpenAPIServicesConfig {
     )
   }
 
+  implicit val basicAuthVR: ValueReader[HttpBasicAuthSecret] = ValueReader.relative { conf =>
+    HttpBasicAuthSecret(
+      username = conf.as[String]("username"),
+      password = conf.as[String]("password"),
+    )
+  }
+
   implicit val secretVR: ValueReader[Secret] = ValueReader.relative { conf =>
     conf.as[String]("type") match {
-      case "apiKey" => conf.rootAs[ApiKeySecret]
-      case typ      => throw new Exception(s"Not supported swagger security type '$typ' in the configuration")
+      case "apiKey"    => conf.rootAs[ApiKeySecret]
+      case "basicAuth" => conf.rootAs[HttpBasicAuthSecret]
+      case typ         => throw new Exception(s"Not supported swagger security type '$typ' in the configuration")
     }
   }
 
