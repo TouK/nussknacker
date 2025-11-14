@@ -11,6 +11,7 @@ import sttp.client3.{Request, Response, SttpBackend}
 import sttp.client3.testing.SttpBackendStub
 import sttp.model.{HeaderNames, StatusCode}
 
+import java.util.Base64
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
@@ -25,12 +26,12 @@ class SecurityTest
     with PatientScalaFutures
     with BaseOpenAPITest {
 
-  private class StubbedOperationLogic(
+  private class StubbedOperationLogic[T <: Secret](
       val operationId: String,
       private val path: List[String],
       val securitySchemeName: SecuritySchemeName,
-      val expectedSecret: ApiKeySecret,
-      val checkSecret: (Request[_, _], ApiKeySecret) => Assertion
+      val expectedSecret: T,
+      val checkSecret: (Request[_, _], T) => Assertion
   ) {
 
     def handleMatchingRequest(request: Request[_, _]): Option[Try[Assertion]] =
@@ -42,8 +43,8 @@ class SecurityTest
 
   }
 
-  private val stubbedSecretCheckingLogics = List[StubbedOperationLogic](
-    new StubbedOperationLogic(
+  private val stubbedSecretApiKeyCheckingLogics = List[StubbedOperationLogic[ApiKeySecret]](
+    new StubbedOperationLogic[ApiKeySecret](
       "headerOperationId",
       "headerPath" :: Nil,
       SecuritySchemeName("headerConfig"),
@@ -51,14 +52,14 @@ class SecurityTest
       (req, expectedSecret) =>
         req.headers.find(_.name == "keyHeader").map(_.value) shouldBe Some(expectedSecret.apiKeyValue)
     ),
-    new StubbedOperationLogic(
+    new StubbedOperationLogic[ApiKeySecret](
       "queryOperationId",
       "queryPath" :: Nil,
       SecuritySchemeName("queryConfig"),
       ApiKeySecret("q1"),
       (req, expectedSecret) => req.uri.params.get("keyParam") shouldBe Some(expectedSecret.apiKeyValue)
     ),
-    new StubbedOperationLogic(
+    new StubbedOperationLogic[ApiKeySecret](
       "cookieOperationId",
       "cookiePath" :: Nil,
       SecuritySchemeName("cookieConfig"),
@@ -70,7 +71,26 @@ class SecurityTest
     ),
   )
 
-  private val definitionMatchingStubbedLogic = "service-security.yml"
+  private val stubbedBasicAuthSecretCheckingLogic = new StubbedOperationLogic[HttpBasicAuthSecret](
+    "basicAuthOperationId",
+    "basicAuthPath" :: Nil,
+    SecuritySchemeName("basicAuthConfig"),
+    HttpBasicAuthSecret("u1", "p1"),
+    (req, expectedSecret) => {
+      val base64UsernamePassword =
+        Base64.getEncoder.encodeToString(s"${expectedSecret.username}:${expectedSecret.password}".getBytes)
+      req.headers.find(_.name == HeaderNames.Authorization).map(_.value) shouldBe Some(
+        s"Basic $base64UsernamePassword"
+      )
+    }
+  )
+
+  private val stubbedSecretCheckingLogics: List[StubbedOperationLogic[_ <: Secret]] =
+    stubbedSecretApiKeyCheckingLogics :+ stubbedBasicAuthSecretCheckingLogic
+
+  private val definitionMatchingStubbedLogic                  = "service-security-all-schemes.yml"
+  private val definitionMatchingStubbedLogicOnlyApiKeySchemes = "service-security-api-key-schemes.yml"
+  private val definitionMatchingStubbedLogicOnlyBasicAuth     = "service-security-basic-auth.yml"
 
   val backend: SttpBackend[Future, Any] = SttpBackendStub.asynchronousFuture.whenAnyRequest
     .thenRespondF { request =>
@@ -106,7 +126,13 @@ class SecurityTest
         definitionMatchingStubbedLogic,
         backend,
         baseConfig.copy(
-          security = stubbedSecretCheckingLogics.map(c => c.securitySchemeName -> ApiKeySecret("bla")).toMap,
+          security = stubbedSecretCheckingLogics
+            .map(l => l.securitySchemeName -> l.expectedSecret)
+            .map {
+              case (name, ApiKeySecret(_))           => name -> ApiKeySecret("wrong")
+              case (name, HttpBasicAuthSecret(_, _)) => name -> HttpBasicAuthSecret("wrongUsername", "wrongPassword")
+            }
+            .toMap,
         )
       )
     stubbedSecretCheckingLogics.foreach { logic =>
@@ -118,11 +144,11 @@ class SecurityTest
     }
   }
 
-  test("common secret configured for any scheme") {
-    stubbedSecretCheckingLogics.foreach { config =>
+  test("common secret configured for any api key scheme") {
+    stubbedSecretApiKeyCheckingLogics.foreach { config =>
       withClue(config.operationId) {
         val enricherWithSingleSecurityConfig = parseToEnrichers(
-          definitionMatchingStubbedLogic,
+          definitionMatchingStubbedLogicOnlyApiKeySchemes,
           backend,
           baseConfig.copy(secret = Some(config.expectedSecret))
         )
@@ -133,13 +159,26 @@ class SecurityTest
     }
   }
 
-  test("common secret configured for any scheme with one operation handling multiple security schemes") {
+  test("secret configured for basic auth matches any basic auth scheme") {
+    withClue(stubbedBasicAuthSecretCheckingLogic.operationId) {
+      val enricherWithSingleSecurityConfig = parseToEnrichers(
+        definitionMatchingStubbedLogicOnlyBasicAuth,
+        backend,
+        baseConfig.copy(secret = Some(stubbedBasicAuthSecretCheckingLogic.expectedSecret))
+      )
+      enricherWithSingleSecurityConfig(ServiceName(stubbedBasicAuthSecretCheckingLogic.operationId))
+        .invoke(context)
+        .futureValue shouldBe TypedMap(Map.empty)
+    }
+  }
+
+  test("common secret configured for any scheme with one operation handling multiple api key schemes") {
     val secretMatchesEveryScheme = ApiKeySecret("single-secret")
     val backend = SttpBackendStub.asynchronousFuture.whenAnyRequest
       .thenRespondF { request =>
         Future {
           val operationsLogicResults =
-            stubbedSecretCheckingLogics
+            stubbedSecretApiKeyCheckingLogics
               .map(logic => logic.operationId -> Try(logic.checkSecret(request, secretMatchesEveryScheme)))
               .toMap
           operationsLogicResults.filter(_._2.isSuccess) should have size 1
