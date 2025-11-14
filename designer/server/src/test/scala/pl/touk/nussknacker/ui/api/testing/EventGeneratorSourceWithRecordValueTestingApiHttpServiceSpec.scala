@@ -47,24 +47,22 @@ class EventGeneratorSourceWithRecordValueTestingApiHttpServiceSpec
        |      {
        |        "name": "$InputVariablesParameterName",
        |        "typ": {
-       |          "display": "Record{input: Record{date: LocalDateTime, someNumber: Integer(5), someString: String(alfa)}}",
+       |          "display": "Record{input: Record{date: LocalDateTime, someNumber: Integer, someString: String}}",
        |          "type": "TypedObjectTypingResult",
        |          "fields": {
        |            "input": {
-       |              "display": "Record{date: LocalDateTime, someNumber: Integer(5), someString: String(alfa)}",
+       |              "display": "Record{date: LocalDateTime, someNumber: Integer, someString: String}",
        |              "type": "TypedObjectTypingResult",
        |              "fields": {
        |                "someNumber": {
-       |                  "value": 5,
-       |                  "display": "Integer(5)",
-       |                  "type": "TypedObjectWithValue",
+       |                  "display": "Integer",
+       |                  "type": "TypedClass",
        |                  "refClazzName": "java.lang.Integer",
        |                  "params": []
        |                },
        |                "someString": {
-       |                  "value": "alfa",
-       |                  "display": "String(alfa)",
-       |                  "type": "TypedObjectWithValue",
+       |                  "display": "String",
+       |                  "type": "TypedClass",
        |                  "refClazzName": "java.lang.String",
        |                  "params": []
        |                },
@@ -101,20 +99,18 @@ class EventGeneratorSourceWithRecordValueTestingApiHttpServiceSpec
        |              "params": []
        |            },
        |            {
-       |              "display": "Record{date: LocalDateTime, someNumber: Integer(5), someString: String(alfa)}",
+       |              "display": "Record{date: LocalDateTime, someNumber: Integer, someString: String}",
        |              "type": "TypedObjectTypingResult",
        |              "fields": {
        |                "someNumber": {
-       |                  "value": 5,
-       |                  "display": "Integer(5)",
-       |                  "type": "TypedObjectWithValue",
+       |                  "display": "Integer",
+       |                  "type": "TypedClass",
        |                  "refClazzName": "java.lang.Integer",
        |                  "params": []
        |                },
        |                "someString": {
-       |                  "value": "alfa",
-       |                  "display": "String(alfa)",
-       |                  "type": "TypedObjectWithValue",
+       |                  "display": "String",
+       |                  "type": "TypedClass",
        |                  "refClazzName": "java.lang.String",
        |                  "params": []
        |                },
@@ -150,7 +146,7 @@ class EventGeneratorSourceWithRecordValueTestingApiHttpServiceSpec
        |        ],
        |        "defaultValue": {
        |          "language": "json",
-       |          "expression": "{\\n  \\"input\\" : {\\n    \\"someNumber\\" : 5,\\n    \\"someString\\" : \\"alfa\\",\\n    \\"date\\" : \\"1900-01-01T00:00:00\\"\\n  }\\n}"
+       |          "expression": "{\\n  \\"input\\" : {\\n    \\"someNumber\\" : 0,\\n    \\"someString\\" : \\"\\",\\n    \\"date\\" : \\"1900-01-01T00:00:00\\"\\n  }\\n}"
        |        },
        |        "additionalVariables": {},
        |        "variablesToHide": [],

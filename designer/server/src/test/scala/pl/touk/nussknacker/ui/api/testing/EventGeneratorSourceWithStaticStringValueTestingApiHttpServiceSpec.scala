@@ -36,13 +36,12 @@ class EventGeneratorSourceWithStaticStringValueTestingApiHttpServiceSpec
        |      {
        |        "name": "$InputVariablesParameterName",
        |        "typ": {
-       |          "display": "Record{input: String(alfa)}",
+       |          "display": "Record{input: String}",
        |          "type": "TypedObjectTypingResult",
        |          "fields": {
        |            "input": {
-       |              "value": "alfa",
-       |              "display": "String(alfa)",
-       |              "type": "TypedObjectWithValue",
+       |              "display": "String",
+       |              "type": "TypedClass",
        |              "refClazzName": "java.lang.String",
        |              "params": []
        |            }
@@ -56,9 +55,8 @@ class EventGeneratorSourceWithStaticStringValueTestingApiHttpServiceSpec
        |              "params": []
        |            },
        |            {
-       |              "value": "alfa",
-       |              "display": "String(alfa)",
-       |              "type": "TypedObjectWithValue",
+       |              "display": "String",
+       |              "type": "TypedClass",
        |              "refClazzName": "java.lang.String",
        |              "params": []
        |            }
@@ -71,7 +69,7 @@ class EventGeneratorSourceWithStaticStringValueTestingApiHttpServiceSpec
        |        ],
        |        "defaultValue": {
        |          "language": "json",
-       |          "expression": "{\\n  \\"input\\" : \\"alfa\\"\\n}"
+       |          "expression": "{\\n  \\"input\\" : \\"\\"\\n}"
        |        },
        |        "additionalVariables": {},
        |        "variablesToHide": [],

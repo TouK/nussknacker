@@ -36,13 +36,12 @@ class EventGeneratorSourceWithStaticIntValueTestingApiHttpServiceSpec
        |      {
        |        "name": "$InputVariablesParameterName",
        |        "typ": {
-       |          "display": "Record{input: Integer(5)}",
+       |          "display": "Record{input: Integer}",
        |          "type": "TypedObjectTypingResult",
        |          "fields": {
        |            "input": {
-       |              "value": 5,
-       |              "display": "Integer(5)",
-       |              "type": "TypedObjectWithValue",
+       |              "display": "Integer",
+       |              "type": "TypedClass",
        |              "refClazzName": "java.lang.Integer",
        |              "params": []
        |            }
@@ -56,9 +55,8 @@ class EventGeneratorSourceWithStaticIntValueTestingApiHttpServiceSpec
        |              "params": []
        |            },
        |            {
-       |              "value": 5,
-       |              "display": "Integer(5)",
-       |              "type": "TypedObjectWithValue",
+       |              "display": "Integer",
+       |              "type": "TypedClass",
        |              "refClazzName": "java.lang.Integer",
        |              "params": []
        |            }
@@ -71,7 +69,7 @@ class EventGeneratorSourceWithStaticIntValueTestingApiHttpServiceSpec
        |        ],
        |        "defaultValue": {
        |          "language": "json",
-       |          "expression": "{\\n  \\"input\\" : 5\\n}"
+       |          "expression": "{\\n  \\"input\\" : 0\\n}"
        |        },
        |        "additionalVariables": {},
        |        "variablesToHide": [],

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Json
+import io.circe.{DecodingFailure, Json}
 import io.circe.syntax.EncoderOps
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -10,6 +10,7 @@ import org.scalatest.prop.Tables.Table
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
 import pl.touk.nussknacker.engine.util.json.{SampleEnum, SampleEnumWithToStringOverridden}
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
@@ -136,6 +137,17 @@ class FromJsonTypingResultBasedDecoderSpec
     encodedJson shouldEqual Json.fromString("DOLOR")
     val decodedValue = FromJsonTypingResultBasedDecoder.decodeValue(Typed[SampleEnum], encodedJson.hcursor).rightValue
     decodedValue shouldBe givenValue
+  }
+
+  test("should decode union of possible values") {
+    val typ                   = Typed(Typed.fromInstance(1), Typed.fromInstance(2), Typed.fromInstance(3))
+    val resultForCorrectValue = FromJsonTypingResultBasedDecoder.decodeValue(typ, Json.fromInt(1).hcursor)
+    resultForCorrectValue.rightValue shouldBe 1
+
+    val resultForInvalidValue = FromJsonTypingResultBasedDecoder.decodeValue(typ, Json.fromInt(4).hcursor)
+    resultForInvalidValue should matchPattern {
+      case Left(DecodingFailure("Expected one of [Integer(1), Integer(2), Integer(3)]", _)) =>
+    }
   }
 
   // This test demonstrates how kafka TimestampType is handled
