@@ -76,11 +76,16 @@ export type NodeAddActions =
     | { type: "MOVE_NODE_REPLACE"; node: NodeType; old: NodeType }
     | { type: "EDIT_LABELS"; labels: string[] };
 
-export function editNode(scenarioBefore: Scenario, before: NodeType, after: NodeType, outputEdges?: Edge[]): ThunkAction {
+export function editNode(
+    scenarioBefore: Scenario,
+    before: NodeType,
+    after: NodeType,
+    outputEdges?: Edge[],
+    controller?: AbortController,
+): ThunkAction {
     return async (dispatch) => {
         const scenarioGraph = await dispatch(calculateProcessAfterChange(scenarioBefore, before, after, outputEdges));
-        const response = await HttpService.validateProcess(scenarioBefore.name, scenarioBefore.name, scenarioGraph);
-
+        const response = await HttpService.validateProcess(scenarioBefore.name, scenarioBefore.name, scenarioGraph, controller);
         dispatch({
             type: "EDIT_NODE",
             before,
