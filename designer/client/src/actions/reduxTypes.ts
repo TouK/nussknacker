@@ -57,5 +57,5 @@ export type Action = UntypedAction | TypedAction;
 
 type State = RootState;
 
-export type ThunkAction<R = void, S = State> = TA<R, S, undefined, Action>;
+export type ThunkAction<R = unknown, S = State> = TA<R, S, undefined, Action>;
 export type Reducer<S> = ReduxReducer<S, Action>;
