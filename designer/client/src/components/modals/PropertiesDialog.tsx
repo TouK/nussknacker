@@ -1,10 +1,9 @@
 import { css } from "@emotion/css";
 import { styled } from "@mui/material";
-import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import type { WindowContentProps } from "@touk/window-manager";
 import { debounce, isEqual } from "lodash";
 import { set } from "lodash/fp";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 
 import { editProperties } from "../../actions/nk/editProperties";
 import { ToolId } from "../../actions/nk/toolWindow";
@@ -14,11 +13,11 @@ import { getProperties, getScenario } from "../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import type { PropertiesType } from "../../types/node";
 import type { NodeValidationError } from "../../types/validation";
-import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { WindowContent } from "../../windowManager/WindowContent";
 import { WindowKind } from "../../windowManager/WindowKind";
 import { ContentSize } from "../graph/node-modal/node/ContentSize";
 import { getPropertiesErrors, getReadOnly } from "../graph/node-modal/node/selectors";
+import { useDialogActions } from "../graph/node-modal/node/useDialogActions";
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../graph/node-modal/nodeDetails/SubHeader";
 import { getProcessName, getScenarioProperties } from "../graph/node-modal/NodeDetailsContent/selectors";
@@ -73,7 +72,6 @@ function usePropertiesValidation(isEditMode: boolean, editedProperties: Properti
 const PropertiesDialog = ({ ...props }: WindowContentProps) => {
     const isEditMode = useAppSelector((s) => !getReadOnly(s, false));
 
-    const { t } = useTranslation();
     const dispatch = useAppDispatch();
 
     const scenarioProperties = useAppSelector(getScenarioProperties);
@@ -82,23 +80,16 @@ const PropertiesDialog = ({ ...props }: WindowContentProps) => {
     const { editedProperties, handleSetEditedProperties } = usePropertiesState();
     const showSwitch = false;
 
-    const apply = useMemo<WindowButtonProps>(() => {
-        return {
-            title: t("dialog.button.apply", "apply"),
-            action: async () => {
-                await dispatch(editProperties(scenario, editedProperties));
-                props.close();
-            },
-        };
-    }, [dispatch, editedProperties, props, scenario, t]);
+    const onApply = useCallback(
+        async () => await dispatch(editProperties(scenario, editedProperties)),
+        [dispatch, editedProperties, scenario],
+    );
 
-    const cancel = useMemo<WindowButtonProps | false>(() => {
-        return {
-            title: t("dialog.button.cancel", "cancel"),
-            action: () => props.close(),
-            className: LoadingButtonTypes.secondaryButton,
-        };
-    }, [props, t]);
+    const { apply, cancel } = useDialogActions({
+        onApply,
+        onClose: props.close,
+        readOnly: !isEditMode,
+    });
 
     const errors = usePropertiesValidation(isEditMode, editedProperties);
 
