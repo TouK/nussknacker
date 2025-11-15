@@ -12,7 +12,7 @@ export function useDialogActions({
     onClose,
     paused,
 }: {
-    onApply: () => Promise<void>;
+    onApply: () => Promise<unknown>;
     onClose: () => void;
     readOnly?: boolean;
     paused?: boolean;
