@@ -1,5 +1,6 @@
 import type { Emitter, Stream } from "kefir";
 import { stream } from "kefir";
+import { isEqual } from "lodash";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Update<T> = T | ((prev: T) => T);
@@ -29,7 +30,10 @@ export function useStream<T, E = unknown>(
 
     useEffect(() => {
         if (!autoUpdate) return;
-        setValue(initialValue);
+        setValue((current) => {
+            const nextValue = typeof initialValue === "function" ? (initialValue as () => T)() : initialValue;
+            return isEqual(current, nextValue) ? current : nextValue;
+        });
     }, [autoUpdate, initialValue]);
 
     useEffect(() => $values.observe(setValue).unsubscribe, [$values]);
