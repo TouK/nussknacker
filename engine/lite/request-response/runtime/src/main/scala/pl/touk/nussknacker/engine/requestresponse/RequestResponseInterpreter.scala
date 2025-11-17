@@ -51,7 +51,8 @@ object RequestResponseInterpreter {
       modelData: ModelData,
       additionalListeners: List[ProcessListener],
       resultCollector: ResultCollector,
-      runtimeMode: RuntimeMode
+      runtimeMode: RuntimeMode,
+      securityConfig: Option[RequestResponseSecurityConfig]
   )(
       implicit ec: ExecutionContext
   ): Validated[NonEmptyList[ProcessCompilationError], RequestResponseScenarioInterpreter[Effect]] = {
@@ -63,15 +64,22 @@ object RequestResponseInterpreter {
         modelData,
         additionalListeners,
         resultCollector,
-        runtimeMode
+        runtimeMode,
       )
-      .map(new RequestResponseScenarioInterpreter(context.prepare(JobData(process.metaData, processVersion)), _))
+      .map(
+        new RequestResponseScenarioInterpreter(
+          context.prepare(JobData(process.metaData, processVersion)),
+          _,
+          securityConfig
+        )
+      )
   }
 
   // TODO: Some smarter type in Input than Context?
   class RequestResponseScenarioInterpreter[Effect[_]: Monad](
       val context: LiteEngineRuntimeContext,
-      statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Effect, Any, AnyRef]
+      statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Effect, Any, AnyRef],
+      securityConfig: Option[RequestResponseSecurityConfig]
   ) extends PathOpenApiDefinitionGenerator
       with AutoCloseable {
 
@@ -137,7 +145,8 @@ object RequestResponseInterpreter {
           sourceDefinition.description,
           sourceDefinition.tags,
           sourceDefinition.definition,
-          responseDefinition
+          responseDefinition,
+          securityConfig
         )
       }
     }
