@@ -21,7 +21,8 @@ class RequestResponseOpenApiGeneratorSpec extends AnyFunSuite with Matchers with
     val definition = generator.generateOpenApiDefinition(
       stubPathDefinitionGenerator,
       serverDescriptions = List.empty,
-      defaultServerUrl
+      defaultServerUrl = defaultServerUrl,
+      securityConfig = None
     )
     val servers      = definition.hcursor.downField("servers").focus.value
     val serversArray = servers.asArray.value
@@ -36,7 +37,8 @@ class RequestResponseOpenApiGeneratorSpec extends AnyFunSuite with Matchers with
     val definition = generator.generateOpenApiDefinition(
       stubPathDefinitionGenerator,
       serverDescriptions = List(OApiServer(urlFromConfig, None), OApiServer(urlFromConfig2, None)),
-      defaultServerUrl
+      defaultServerUrl = defaultServerUrl,
+      securityConfig = None
     )
     val servers      = definition.hcursor.downField("servers").focus.value
     val serversArray = servers.asArray.value

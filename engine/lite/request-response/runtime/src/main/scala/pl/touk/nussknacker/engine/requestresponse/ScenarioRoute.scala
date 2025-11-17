@@ -84,7 +84,7 @@ private[requestresponse] class ScenarioRoute(
     val interpreter = handler.requestResponseInterpreter
     val openApiInfo = interpreter.generateInfoOpenApiDefinitionPart()
     val oApiJson = new RequestResponseOpenApiGenerator(config.definitionMetadata.openApiVersion, openApiInfo)
-      .generateOpenApiDefinition(interpreter, config.definitionMetadata.servers, defaultServerUrl)
+      .generateOpenApiDefinition(interpreter, config.definitionMetadata.servers, defaultServerUrl, config.security)
     val oApiJsonAsString = jsonStringToEntity(oApiJson.spaces2)
 
     get {

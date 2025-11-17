@@ -40,6 +40,7 @@ class RequestResponseRunnableScenarioInterpreter(
     additionalListeners = Nil,
     ProductionServiceInvocationCollector,
     RuntimeMode.Live,
+    requestResponseConfig.security
   )
     .map { i =>
       i.open()

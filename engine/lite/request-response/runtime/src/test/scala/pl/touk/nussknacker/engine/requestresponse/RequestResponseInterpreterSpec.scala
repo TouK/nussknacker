@@ -409,14 +409,15 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
     import FutureBasedRequestResponseScenarioInterpreter._
     val maybeinterpreter = RequestResponseInterpreter[Future](
-      scenario,
-      ProcessVersion.empty,
-      NodesDeploymentData.empty,
-      engineRuntimeContextPreparer,
-      simpleModelData,
-      Nil,
-      ProductionServiceInvocationCollector,
-      RuntimeMode.Live
+      process = scenario,
+      processVersion = ProcessVersion.empty,
+      nodesDeploymentData = NodesDeploymentData.empty,
+      context = engineRuntimeContextPreparer,
+      modelData = simpleModelData,
+      additionalListeners = Nil,
+      resultCollector = ProductionServiceInvocationCollector,
+      runtimeMode = RuntimeMode.Live,
+      securityConfig = None
     )
 
     maybeinterpreter shouldBe Symbol("valid")

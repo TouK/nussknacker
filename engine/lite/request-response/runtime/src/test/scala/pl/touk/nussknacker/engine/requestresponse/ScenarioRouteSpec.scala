@@ -50,15 +50,20 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
 
   private val scenarioName: ProcessName = scenario.name
 
+  private val password = "password"
+  private val securityConfig: RequestResponseSecurityConfig =
+    RequestResponseSecurityConfig(basicAuth = Some(BasicAuthConfig(user = "publisher", password = password)))
+
   private val interpreter = RequestResponseInterpreter[Future](
-    scenario,
-    ProcessVersion.empty.copy(processName = scenarioName),
-    NodesDeploymentData.empty,
-    LiteEngineRuntimeContextPreparer.noOp,
-    modelData,
-    Nil,
-    ProductionServiceInvocationCollector,
-    RuntimeMode.Live,
+    process = scenario,
+    processVersion = ProcessVersion.empty.copy(processName = scenarioName),
+    nodesDeploymentData = NodesDeploymentData.empty,
+    context = LiteEngineRuntimeContextPreparer.noOp,
+    modelData = modelData,
+    additionalListeners = Nil,
+    resultCollector = ProductionServiceInvocationCollector,
+    runtimeMode = RuntimeMode.Live,
+    securityConfig = Some(securityConfig)
   ).valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
 
   private val definitionConfig: OpenApiDefinitionConfig = OpenApiDefinitionConfig(
@@ -68,9 +73,6 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
   private val requestResponseConfig: RequestResponseConfig = RequestResponseConfig(definitionConfig)
   private val openRoutes =
     new ScenarioRoute(new RequestResponseHttpHandler(interpreter), requestResponseConfig, scenarioName).combinedRoute
-  private val password = "password"
-  private val securityConfig: RequestResponseSecurityConfig =
-    RequestResponseSecurityConfig(basicAuth = Some(BasicAuthConfig(user = "publisher", password = password)))
 
   private val securedRoutes = new ScenarioRoute(
     new RequestResponseHttpHandler(interpreter),
@@ -88,7 +90,7 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
     super.afterAll()
   }
 
-  private val expectedOApiDef = parse(s"""{
+  private val expectedUnsecuredOApiDef = parse(s"""{
        |  "openapi" : "$defaultOpenApiVersion",
        |  "info" : {
        |    "title" : "test",
@@ -109,7 +111,7 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
        |          "Nussknacker"
        |        ],
        |        "operationId" : "test",
-      |        "requestBody" : {
+       |        "requestBody" : {
        |          "required" : true,
        |          "content" : {
        |            "application/json" : {
@@ -153,10 +155,93 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
        |  }
        |}""".stripMargin)
 
-  test("get scenario openapi definition") {
+  private val expectedSecuredOApiDef = parse(s"""{
+       |  "openapi" : "$defaultOpenApiVersion",
+       |  "info" : {
+       |    "title" : "test",
+       |    "description" : "description",
+       |    "version" : "1"
+       |  },
+       |  "servers" : [
+       |    {
+       |      "url" : "https://nussknacker.io",
+       |      "description" : "request response test"
+       |    }
+       |  ],
+       |  "paths" : {
+       |    "/" : {
+       |      "post" : {
+       |        "description" : "**scenario name**: test",
+       |        "tags" : [
+       |          "Nussknacker"
+       |        ],
+       |        "operationId" : "test",
+       |        "requestBody" : {
+       |          "required" : true,
+       |          "content" : {
+       |            "application/json" : {
+       |              "schema" : {
+       |                "type" : "object",
+       |                "properties" : {
+       |                  "city" : {
+       |                    "type" : "string",
+       |                    "default" : "Warsaw"
+       |                  }
+       |                }
+       |              }
+       |            }
+       |          }
+       |        },
+       |        "produces" : [
+       |          "application/json"
+       |        ],
+       |        "consumes" : [
+       |          "application/json"
+       |        ],
+       |        "summary" : "test",
+       |        "responses" : {
+       |          "200" : {
+       |            "content" : {
+       |              "application/json" : {
+       |                "schema" : {
+       |                  "type" : "object",
+       |                  "properties" : {
+       |                    "place" : {
+       |                      "type" : "string"
+       |                    }
+       |                  }
+       |                }
+       |              }
+       |            }
+       |          }
+       |        },
+       |        "security": [
+       |          { "basicAuthScheme": [] }
+       |        ]
+       |      }
+       |    }
+       |  },
+       |  "components" : {
+       |    "securitySchemes" : {
+       |      "basicAuthScheme" : {
+       |        "type" : "http",
+       |        "scheme" : "basic"
+       |      }
+       |    }
+       |  }
+       |}""".stripMargin)
+
+  test("get scenario openapi definition for unconfigured auth") {
     Get("/definition") ~> openRoutes ~> check {
       status shouldEqual StatusCodes.OK
-      parse(responseAs[String]) shouldBe expectedOApiDef
+      parse(responseAs[String]) shouldBe expectedUnsecuredOApiDef
+    }
+  }
+
+  test("get scenario openapi definition for basic auth") {
+    Get("/definition") ~> securedRoutes ~> check {
+      status shouldEqual StatusCodes.OK
+      parse(responseAs[String]) shouldBe expectedSecuredOApiDef
     }
   }
 

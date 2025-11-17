@@ -83,7 +83,8 @@ class RequestResponseTestScenarioRunner(
         modelData = modelData,
         additionalListeners = Nil,
         resultCollector = testScenarioCollectorHandler.servicesResultCollector,
-        runtimeMode = runtimeMode
+        runtimeMode = runtimeMode,
+        securityConfig = None
       ).map { interpreter =>
         interpreter.open()
         try {
