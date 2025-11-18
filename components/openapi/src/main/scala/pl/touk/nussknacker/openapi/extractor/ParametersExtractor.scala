@@ -55,7 +55,7 @@ object ParametersExtractor {
         hintText = None,
         labelOpt = None,
         category = ParameterCategory.Standard,
-        changesCanReloadParameters = false,
+        changesCanReloadParameters = Some(false),
         nonImportantForExecution = false,
       ),
       isBodyPart = isBodyPart

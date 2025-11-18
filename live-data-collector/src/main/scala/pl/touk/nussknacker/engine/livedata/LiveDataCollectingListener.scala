@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.engine.testmode.TestInterpreterRunner
 
 import java.time.Instant
+import scala.concurrent.duration.Duration
 import scala.util.Try
 
 // This class must be serializable. It means, that when deserializing, we lose the reference to it.
@@ -21,7 +22,8 @@ class LiveDataCollectingListener private[livedata] (
     deploymentId: Option[DeploymentId],
     uploaderConfig: Option[LiveDataUploaderConfig],
     maxNumberOfRecords: Int,
-    throughputTimeWindowInSeconds: Int,
+    retentionTime: Duration,
+    throughputTimeWindow: Duration,
 ) extends ProcessListener
     with Serializable {
 
@@ -38,10 +40,18 @@ class LiveDataCollectingListener private[livedata] (
       nextNodeId: NodeId,
       context: Context,
       processMetaData: MetaData,
+  ): Unit = transitionToNextNode(nodeId, nextNodeId, context, processMetaData, Instant.now())
+
+  def transitionToNextNode(
+      nodeId: NodeId,
+      nextNodeId: NodeId,
+      context: Context,
+      processMetaData: MetaData,
+      timestamp: Instant,
   ): Unit = performStorageOperation {
     _.addLiveDataSample(
       NodeTransition(nodeId, Some(nextNodeId)),
-      sampleFromContext(context, Instant.now())
+      sampleFromContext(context, timestamp)
     )
   }
 
@@ -121,7 +131,8 @@ class LiveDataCollectingListener private[livedata] (
     LiveDataCollectingListenerStorageHolder.withStorage(
       processName = processIdWithName.name,
       maxNumberOfRecords = maxNumberOfRecords,
-      throughputTimeWindowInSeconds = throughputTimeWindowInSeconds
+      retentionTime = retentionTime,
+      throughputTimeWindow = throughputTimeWindow
     )(actionOnStorage)
     uploaderConfig.foreach(LiveDataUploaderHolder.ensureLiveDataUploaderIsActive(processIdWithName, deploymentId, _))
   }
@@ -173,7 +184,8 @@ object LiveDataCollectingListener extends LazyLogging {
       deploymentIdOpt,
       liveDataUploaderConfigOpt,
       liveDataEnabledConfig.maxNumberOfRecords,
-      liveDataEnabledConfig.throughputTimeWindowInSeconds
+      liveDataEnabledConfig.retentionTime,
+      liveDataEnabledConfig.throughputTimeWindow
     )
   }
 

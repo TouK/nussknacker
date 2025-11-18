@@ -1,11 +1,12 @@
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import InfoIcon from "@mui/icons-material/Info";
 import { Box, FormControl, FormLabel } from "@mui/material";
-import React, { useRef, useState } from "react";
 import type { PropsWithChildren } from "react";
+import React, { useRef, useState } from "react";
 
 import type { NodeResultsForContext } from "../../../../common/TestResultUtils";
-import { useUserSettings } from "../../../../common/userSettings";
+import { getUserSettings } from "../../../../reducers/selectors/userSettings";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { InfoTooltip } from "../editors/InfoTooltip/InfoTooltip";
 import { HIDDEN_TEXTAREA_PIXEL_HEIGHT, nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 import { ExpressionEvaluationResult } from "./ExpressionEvaluationResult";
@@ -23,7 +24,7 @@ export default function ExpressionTestResults(props: PropsWithChildren<Expressio
     const [collapsedTestResults, setCollapsedTestResults] = useState(true);
     const testValue = fieldName ? resultsToShow && resultsToShow.expressionResults[fieldName] : null;
     const PrettyIconComponent = collapsedTestResults ? VisibilityOff : Visibility;
-    const [userSettings] = useUserSettings();
+    const userSettings = useAppSelector(getUserSettings);
     const showInputsAndOutputs = userSettings["node.showInputsAndOutputs"];
 
     return testValue ? (

@@ -49,7 +49,6 @@ import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language.DictKeyWithLabel
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -1316,7 +1315,7 @@ object InterpreterSpec {
     override def invoke(eagerParameters: Map[ParameterName, Any])(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
-        contextId: ContextId,
+        context: Context,
         metaData: MetaData,
         componentUseContext: ComponentUseContext
     ): Future[AnyRef] = {
@@ -1340,7 +1339,7 @@ object InterpreterSpec {
     override def invoke(params: Map[ParameterName, Any])(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
-        contextId: ContextId,
+        context: Context,
         metaData: MetaData,
         componentUseContext: ComponentUseContext
     ): Future[AnyRef] = {
@@ -1362,7 +1361,7 @@ object InterpreterSpec {
     override def invoke(eagerParameters: Map[ParameterName, Any])(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
-        contextId: ContextId,
+        context: Context,
         metaData: MetaData,
         componentUseContext: ComponentUseContext
     ): Future[Any] = {

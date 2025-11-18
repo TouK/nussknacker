@@ -74,7 +74,7 @@ object ParameterExtractor {
       labelOpt = parameterConfig.label,
       category = category,
       // these features are available only for DynamicComponents
-      changesCanReloadParameters = false,
+      changesCanReloadParameters = Some(false),
       nonImportantForExecution = false
     )
   }

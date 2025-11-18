@@ -11,7 +11,6 @@ import ProcessActions from "../toolbars/scenarioActions/ProcessActions";
 import ScenarioDetails from "../toolbars/scenarioDetails/ScenarioDetails";
 import ScenarioStatusPanel from "../toolbars/scenarioDetails/ScenarioStatusPanel";
 import { SearchPanel } from "../toolbars/search/SearchPanel";
-import { UserSettingsPanel } from "../toolbars/UserSettingsPanel";
 import { HorizontalButtonsToolbar } from "./HorizontalButtonsToolbar";
 import type { ToolbarConfig } from "./types";
 
@@ -30,8 +29,6 @@ export function getToolbarComponent(config?: ToolbarConfig): ComponentType<Toolb
             return CreatorPanel;
         case "search-panel":
             return SearchPanel;
-        case "user-settings-panel":
-            return UserSettingsPanel;
         case "survey-panel":
             return lazy(() => import("../toolbars/Survey"));
         case "activities-panel":

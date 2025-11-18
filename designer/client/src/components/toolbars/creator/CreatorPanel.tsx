@@ -7,13 +7,13 @@ import { useTranslation } from "react-i18next";
 
 import { addNodeConnected, addNodeInject, addNodePlain, addNodeReplace } from "../../../actions/nk/editNode";
 import { isDynamic } from "../../../actions/nk/ui/panelSide";
-import { useUserSettings } from "../../../common/userSettings";
 import { getEventTrackingProps } from "../../../containers/event-tracking/helpers";
 import { EventTrackingSelector } from "../../../containers/event-tracking/use-register-tracking-events";
 import { useNodeCreationHandler } from "../../../containers/NodeCreationHandler";
 import { getAdditionalComponents } from "../../../reducers/cloudData";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
+import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { addListenerTyped, useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { Edge } from "../../../types/edge";
 import type { NodeType } from "../../../types/node";
@@ -53,7 +53,7 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
     const clearFilter = useCallback(() => setTextFilter(""), []);
 
     const dispatch = useAppDispatch();
-    const [settings] = useUserSettings();
+    const settings = useAppSelector(getUserSettings);
     const isCloud = useAppSelector(isCloudInstance);
     useEffect(() => {
         if (isCloud && settings["cloud.showIntegrationsCreators"]) {

@@ -1,24 +1,16 @@
 import { ExpandMore } from "@mui/icons-material";
-import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
+import { AccordionDetails, AccordionSummary } from "@mui/material";
 import type { PropsWithChildren } from "react";
-import React, { memo, useLayoutEffect, useRef } from "react";
+import React, { forwardRef, memo, useLayoutEffect, useRef } from "react";
+import { useMergeRefs } from "rooks";
 
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
 import { useAppDispatch } from "../../../../store/storeHelpers";
+import { AccordionStyled } from "./AccordionStyled";
 import { ContextTitle } from "./ContextTitle";
 import type { Direction, VariableContextType } from "./VariableContextTree";
 
-export const ContextAccordion = memo(function ContextAccordion({
-    disabled,
-    expanded,
-    onToggle,
-    children,
-    value,
-    direction,
-    locked,
-    showNodes,
-    newlyAdded,
-}: PropsWithChildren<{
+type ContextAccordionProps = PropsWithChildren<{
     disabled?: boolean;
     expanded?: boolean;
     onToggle: (value: VariableContextType | null) => void;
@@ -26,56 +18,70 @@ export const ContextAccordion = memo(function ContextAccordion({
     direction: Direction;
     locked?: boolean;
     showNodes?: boolean;
-    newlyAdded: boolean;
-}>) {
-    const dispatch = useAppDispatch();
-    const accordionRef = useRef<HTMLDivElement>(null);
+    highlightAppear?: boolean;
+}>;
 
-    useLayoutEffect(() => {
-        if (!expanded || !accordionRef.current) return;
-        setTimeout(() => {
-            accordionRef.current.scrollIntoView({
-                behavior: "smooth",
-                block: "nearest",
-            });
-        }, 500);
-    }, [expanded]);
+export const ContextAccordion = memo(
+    forwardRef<unknown, ContextAccordionProps>(function ContextAccordion(
+        { disabled, expanded, onToggle, children, value, direction, locked, showNodes, highlightAppear },
+        forwardedRef,
+    ) {
+        const dispatch = useAppDispatch();
+        const accordionRef = useRef<HTMLDivElement>(null);
 
-    return (
-        <Accordion
-            disabled={disabled}
-            expanded={expanded}
-            onChange={(event, expanded) => {
-                const initiator = direction === "input" ? Initiator.inputAccordion : Initiator.outputAccordion;
-                if (expanded) {
-                    onToggle(value);
-                    dispatch(stopLiveData(initiator));
-                } else {
-                    onToggle(null);
-                    dispatch(startLiveData(initiator));
-                }
-            }}
-            slotProps={{
-                transition: {
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-ignore
-                    unmountOnExit: true,
-                },
-            }}
-            ref={accordionRef}
-            // disableGutters
-            sx={(theme) => ({
-                boxShadow: newlyAdded
-                    ? `inset 0 0 0 2px ${theme.palette.success.main}, inset 0 0 8px 0px ${theme.palette.success.light}`
-                    : "none",
-                transition: "box-shadow 0.3s ease-in-out",
-                zoom: 0.75,
-            })}
-        >
-            <AccordionSummary expandIcon={<ExpandMore />} sx={{ overflow: "hidden" }}>
-                <ContextTitle reversed={direction === "input"} context={value} locked={locked} showNodes={showNodes} />
-            </AccordionSummary>
-            <AccordionDetails sx={{ padding: 0 }}>{children}</AccordionDetails>
-        </Accordion>
-    );
-});
+        const ref = useMergeRefs(forwardedRef, accordionRef);
+        useLayoutEffect(() => {
+            if (!expanded || !accordionRef.current) return;
+            setTimeout(() => {
+                accordionRef.current.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                });
+            }, 500);
+        }, [expanded]);
+
+        return (
+            <AccordionStyled
+                disabled={disabled}
+                expanded={expanded}
+                onChange={(event, expanded) => {
+                    const initiator = direction === "input" ? Initiator.inputAccordion : Initiator.outputAccordion;
+                    if (expanded) {
+                        onToggle(value);
+                        dispatch(stopLiveData(initiator));
+                    } else {
+                        onToggle(null);
+                        dispatch(startLiveData(initiator));
+                    }
+                }}
+                slotProps={{
+                    transition: {
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-ignore
+                        unmountOnExit: true,
+                    },
+                }}
+                ref={ref}
+                animatedAppear={highlightAppear}
+            >
+                <AccordionSummary
+                    expandIcon={<ExpandMore />}
+                    sx={{
+                        overflow: "hidden",
+                        zoom: 0.75,
+                    }}
+                >
+                    <ContextTitle reversed={direction === "input"} context={value} locked={locked} showNodes={showNodes} />
+                </AccordionSummary>
+                <AccordionDetails
+                    sx={{
+                        padding: 0,
+                        zoom: 0.75,
+                    }}
+                >
+                    {children}
+                </AccordionDetails>
+            </AccordionStyled>
+        );
+    }),
+);

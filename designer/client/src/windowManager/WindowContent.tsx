@@ -1,9 +1,9 @@
 import { css } from "@emotion/css";
 import type { DefaultContentProps } from "@touk/window-manager";
-import { DefaultContent } from "@touk/window-manager";
+import { DefaultContent, useWindowManager } from "@touk/window-manager";
 import type { FooterButtonProps } from "@touk/window-manager/cjs/components/window/footer";
 import type { PropsWithChildren, ReactElement } from "react";
-import React, { useMemo, useState } from "react";
+import React, { forwardRef, useMemo, useState } from "react";
 import { useKey } from "rooks";
 
 import { StyledContent, StyledHeader } from "../components/graph/node-modal/node/StyledHeader";
@@ -23,7 +23,11 @@ export type WindowContentProps = Omit<DefaultContentProps, "buttons"> &
         closeWithEsc?: boolean;
     }>;
 
-export function WindowContent({ children, icon, subheader, buttons = [], closeWithEsc, ...props }: WindowContentProps): JSX.Element {
+export const WindowContent = forwardRef<HTMLDivElement, WindowContentProps>(function WindowContent(
+    { children, icon, subheader, buttons = [], closeWithEsc, ...props },
+    ref,
+): JSX.Element {
+    const { frontWindow } = useWindowManager();
     const classnames = useMemo(
         () => ({
             footer: css({
@@ -42,7 +46,7 @@ export function WindowContent({ children, icon, subheader, buttons = [], closeWi
                 props.close();
             }
         },
-        { when: closeWithEsc },
+        { when: closeWithEsc && props.data.id === frontWindow },
     );
 
     const [stableIcon] = useState(icon);
@@ -50,8 +54,8 @@ export function WindowContent({ children, icon, subheader, buttons = [], closeWi
 
     const components = useMemo<DefaultContentProps["components"]>(
         () => ({
-            Header: StyledHeader,
-            Content: StyledContent,
+            Header: (props) => <StyledHeader {...props} />,
+            Content: (props) => <StyledContent {...props} />,
             HeaderTitle: (headerProps) => <IconModalHeader {...headerProps} startIcon={stableIcon} subheader={stableSubheader} />,
             FooterButton: LoadingButton,
             ...props.components,
@@ -60,8 +64,8 @@ export function WindowContent({ children, icon, subheader, buttons = [], closeWi
     );
 
     return (
-        <DefaultContent {...props} buttons={cleanList(buttons)} components={components} classnames={classnames}>
+        <DefaultContent ref={ref} {...props} buttons={cleanList(buttons)} components={components} classnames={classnames}>
             {children}
         </DefaultContent>
     );
-}
+});

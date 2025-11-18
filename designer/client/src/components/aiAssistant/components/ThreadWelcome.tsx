@@ -1,5 +1,5 @@
 import { useThread } from "@assistant-ui/react";
-import { ThreadWelcome } from "@assistant-ui/react-ui";
+import { ThreadWelcome } from "@assistant-ui/react-ui"; // TODO: "This repo is not actively maintained, these are legacy components and are not up to date."
 import { styled } from "@mui/material";
 import React from "react";
 
@@ -34,11 +34,14 @@ const StyledSuggestion = styled("div")(({ theme }) => ({
 }));
 
 export const ThreadSuggestions = () => {
-    const { messages, suggestions } = useThread();
+    const messages = useThread(({ messages }) => messages);
+    const suggestions = useThread(({ suggestions }) => suggestions);
 
     if (messages.length === 0) {
         return <ThreadWelcome.Message message={"Welcome! How can I help you get started?"} />;
     }
+
+    if (!suggestions.length) return null;
     return (
         <StyledThreadSuggestionsContainer>
             {suggestions.map((suggestion, index) => (

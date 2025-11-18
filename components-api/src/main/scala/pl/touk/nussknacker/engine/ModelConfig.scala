@@ -4,11 +4,15 @@ import cats.data.NonEmptyList
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus.toFicusConfig
 import net.ceedubs.ficus.readers.AnyValReaders._
+import net.ceedubs.ficus.readers.DurationReaders._
 import net.ceedubs.ficus.readers.OptionReader._
 import pl.touk.nussknacker.engine.ModelConfig.{GlobalParametersConfig, JsonLikeValuesEnteringMode, LiveDataPreviewMode}
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode.LiveDataStorage
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, SpelParameterEditor, SpelTemplateParameterEditor}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
+
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.Duration
 
 final case class ModelConfig(
     allowEndingScenarioWithoutSink: Boolean,
@@ -45,7 +49,8 @@ object ModelConfig {
 
     final case class Enabled(
         maxNumberOfRecords: Int,
-        throughputTimeWindowInSeconds: Int,
+        retentionTime: Duration,
+        throughputTimeWindow: Duration,
         liveDataStorage: LiveDataStorage,
     ) extends LiveDataPreviewMode
 
@@ -126,7 +131,16 @@ object ModelConfig {
             config.getAs[Int]("liveDataPreview.maxNumberOfSamples")
           )
           .getOrElse(20),
-        throughputTimeWindowInSeconds = config.getOrElse("liveDataPreview.throughputTimeWindowInSeconds", 60),
+        retentionTime = config
+          .getAs[Long]("liveDataPreview.retentionTimeInMinutes")
+          .map(Duration(_, TimeUnit.MINUTES))
+          .getOrElse(config.getOrElse[Duration]("liveDataPreview.retentionTime", Duration(60, TimeUnit.MINUTES))),
+        throughputTimeWindow = config
+          .getAs[Long]("liveDataPreview.throughputTimeWindowInSeconds")
+          .map(Duration(_, TimeUnit.SECONDS))
+          .getOrElse(
+            config.getOrElse[Duration]("liveDataPreview.throughputTimeWindow", Duration(60, TimeUnit.SECONDS))
+          ),
         liveDataStorage = if (config.hasPath("liveDataPreview.storage")) {
           config.getString("liveDataPreview.storage.type").toUpperCase match {
             case "DESIGNER_DB" =>

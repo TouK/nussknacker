@@ -36,8 +36,9 @@ export const setupStore = () => {
                 .concat(
                     createStateSyncMiddleware({
                         whitelist: [
-                            "TOGGLE_SETTINGS",
-                            "SET_SETTINGS",
+                            "USERSETTING_SET",
+                            "USERSETTINGS_RESET",
+                            "USERSETTINGS_DEFAULTS_LOADED",
                             "REGISTER_TOOLBARS",
                             "RESET_TOOLBARS",
                             "MOVE_TOOLBAR",

@@ -194,6 +194,12 @@ object PrettyValidationErrors {
         invalidPropertyFixedValue(typ, paramName.value, label, value, values, nodeId)
       case CustomNodeError(_, message, paramName) =>
         NodeValidationError(typ, message, message, paramName.map(_.value), NodeValidationErrorType.SaveAllowed, None)
+      case EagerExpressionEvaluationError(message, _, paramName, _) =>
+        node(
+          message = message,
+          description = message,
+          paramName = Some(paramName),
+        )
       case e: DuplicateFragmentOutputNames =>
         node(
           message = s"Fragment output name '${e.duplicatedVarName}' has to be unique",

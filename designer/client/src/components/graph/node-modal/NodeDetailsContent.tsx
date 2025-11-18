@@ -3,12 +3,12 @@ import type { SetStateAction } from "react";
 import React, { useCallback, useMemo } from "react";
 
 import ProcessUtils from "../../../common/ProcessUtils";
-import { useUserSettings } from "../../../common/userSettings";
 import HttpService from "../../../http/HttpService/instance";
 import type { RootState } from "../../../reducers";
 import { getConfiguredAdditionalComponents } from "../../../reducers/selectors/configuredAdditionalComponents";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
 import { getRemoteTenantId, getRemoteWebHost } from "../../../reducers/selectors/isCloudInstance";
+import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { Edge } from "../../../types/edge";
 import type { NodeType } from "../../../types/node";
@@ -42,7 +42,7 @@ export const NodeDetailsContent = ({
     const currentErrors = useAppSelector((state: RootState) => getCurrentErrors(state)(node.id, nodeErrors));
     const [errors, diagramStructureErrors] = useMemo(() => partition(currentErrors, (error) => !!error.fieldName), [currentErrors]);
 
-    const [userSettings] = useUserSettings();
+    const userSettings = useAppSelector(getUserSettings);
 
     const configuredAdditionalComponents = useAppSelector(getConfiguredAdditionalComponents);
     const creatorType = useMemo(() => {

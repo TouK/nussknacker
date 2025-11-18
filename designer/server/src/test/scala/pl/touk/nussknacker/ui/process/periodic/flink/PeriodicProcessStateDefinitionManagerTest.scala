@@ -40,7 +40,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
       processActive = true,
       None
     )
-    statusTooltip(List(deploymentStatus), List.empty) shouldEqual "Scheduled at: 2023-01-01 10:00 status: Scheduled"
+    statusTooltip(List(deploymentStatus), List.empty) shouldEqual "Scheduled for: 2023-01-01 10:00 status: Scheduled"
   }
 
   test("display sorted periodic deployment status for named schedules") {
@@ -67,8 +67,8 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
       None
     )
     statusTooltip(List(firstDeploymentStatus, secDeploymentStatus), List.empty) shouldEqual
-      s"""Schedule ${secScheduleId.scheduleName.display} scheduled at: 2023-01-01 10:00 status: Scheduled,
-         |Schedule ${firstScheduleId.scheduleName.display} scheduled at: 2023-01-01 10:00 status: Deployed""".stripMargin
+      s"""Schedule ${secScheduleId.scheduleName.display} scheduled for: 2023-01-01 10:00 status: Scheduled,
+         |Schedule ${firstScheduleId.scheduleName.display} scheduled for: 2023-01-01 10:00 status: Deployed""".stripMargin
   }
 
   test("not display custom tooltip for perform single execution when latest version is deployed") {

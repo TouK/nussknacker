@@ -177,7 +177,7 @@ object DefinitionsService {
       label = parameter.label,
       requiredParam = Some(!parameter.isOptional),
       category = parameter.category,
-      changesCanReloadParameters = parameter.changesCanReloadParameters,
+      changesCanReloadParameters = parameter.changesCanReloadParameters.getOrElse(false),
       nonImportantForExecution = parameter.nonImportantForExecution
     )
   }

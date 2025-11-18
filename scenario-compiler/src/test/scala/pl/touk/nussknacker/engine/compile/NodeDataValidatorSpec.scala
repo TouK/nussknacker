@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId,
   ParameterAdditionalUIConfig
 }
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
@@ -183,6 +183,20 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       case ValidationPerformed((_: MissingSourceFactory) :: Nil, _, _) =>
     }
 
+  }
+
+  test("should handle gracefully expression evaluation error when using DynamicComponent") {
+    validate(
+      Source(
+        "tst1",
+        SourceRef(
+          "genericParametersSource",
+          List(par("par1", "\"\" + (1 / {}.size)"), par("lazyPar1", "11"), par("a", "'a'"), par("b", "'b'"))
+        )
+      ),
+      Map.empty
+    ) should matchPattern { case ValidationPerformed((_: EagerExpressionEvaluationError) :: Nil, Some(_), _) =>
+    }
   }
 
   test("should validate filter") {
@@ -1582,7 +1596,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         isLazyParameter = true,
         editors = List(SpelParameterEditor),
         defaultValue = Some("0".spel),
-        changesCanReloadParameters = true
+        changesCanReloadParameters = Some(true)
       ),
     Parameter[Any](ParameterName("a")).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel)),
     Parameter[Any](ParameterName("b")).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel))

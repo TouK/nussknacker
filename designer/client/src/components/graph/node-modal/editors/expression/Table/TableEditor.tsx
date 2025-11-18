@@ -441,6 +441,7 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
                 data-testid="table-container"
                 className={className}
                 sx={{
+                    "--sizer-minHeight": "142px",
                     border: "1px solid",
                     borderColor: tableTheme.borderColor,
                 }}

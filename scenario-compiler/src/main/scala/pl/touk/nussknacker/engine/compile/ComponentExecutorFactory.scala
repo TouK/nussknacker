@@ -42,7 +42,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
       }
     val paramsMap = Params.fromParameterEvaluationResultMap(
       deps.compiledParameters.map { case (tp, p) =>
-        p.name -> parameterEvaluator.evaluateParameter(tp, p)
+        p.name -> parameterEvaluator.evaluateParameter(tp, p).toTry.get
       }.toMap
     )
 

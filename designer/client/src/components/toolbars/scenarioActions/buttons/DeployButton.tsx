@@ -5,13 +5,13 @@ import { fetchProcessToDisplay, loadProcessState } from "../../../../actions/nk/
 import { disableToolTipsHighlight, enableToolTipsHighlight } from "../../../../actions/nk/tooltips";
 import notificationActions from "../../../../actions/notificationActions";
 import Icon from "../../../../assets/img/toolbarButtons/deploy.svg";
-import { useUserSettings } from "../../../../common/userSettings";
 import HttpService from "../../../../http/HttpService/instance";
 import type { NodesDeploymentData, ScenarioGraphSource } from "../../../../http/HttpService/types";
 import { getProcessName, getProcessVersionId, getScenarioGraphSource, isDeployVisible } from "../../../../reducers/selectors/graph";
 import { hasError, isDeployPossible, isValidationResultPresent } from "../../../../reducers/selectors/graph2";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getIsDeploying } from "../../../../reducers/selectors/scenarioState";
+import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 import { useWindows } from "../../../../windowManager/useWindows";
@@ -32,7 +32,7 @@ interface DeployPreset {
 }
 
 export default function DeployButton(props: ToolbarButtonProps) {
-    const [settings] = useUserSettings();
+    const settings = useAppSelector(getUserSettings);
 
     const allowQuickDeploy = settings["scenario.allowQuickDeploy"];
 

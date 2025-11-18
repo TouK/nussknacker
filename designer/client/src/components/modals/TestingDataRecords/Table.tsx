@@ -1,17 +1,16 @@
 import type {
+    BaseDrawArgs,
     DataEditorProps,
     DataEditorRef,
+    EditListItem,
     GridCell,
+    GridMouseCellEventArgs,
     GridSelection,
     Item,
-    EditListItem,
-    BaseDrawArgs,
     Theme,
-    GridMouseCellEventArgs,
 } from "@glideapps/glide-data-grid";
-import DataEditor, { CompactSelection, GridCellKind, type CustomRenderer, drawTextCell } from "@glideapps/glide-data-grid";
-import type { ProvideEditorComponent } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
-import type { GridColumn } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
+import DataEditor, { CompactSelection, type CustomRenderer, drawTextCell, GridCellKind } from "@glideapps/glide-data-grid";
+import type { GridColumn, ProvideEditorComponent } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
 import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
 import { useTheme } from "@mui/material";
 import type { PopoverPosition } from "@mui/material/Popover/Popover";
@@ -57,7 +56,7 @@ interface TableProps {
     recordsToAddLimitExceeded?: boolean;
 }
 
-export const TABLE_HEIGHT = "65vh";
+export const TABLE_HEIGHT = "100vh";
 export const TABLE_WIDTH = "100%";
 const TRAILING_ROW_HINT = "Add record";
 const COLUMN_SOURCE_ID = "sourceId";

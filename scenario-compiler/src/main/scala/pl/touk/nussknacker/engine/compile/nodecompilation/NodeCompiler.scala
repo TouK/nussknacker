@@ -190,10 +190,8 @@ class NodeCompiler(
   private def scenarioIsAllowedToEndWithoutSink(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ) = {
-    import scenarioCompilationDependencies._
     lazy val allowEndingScenarioWithoutSink = definitions.allowEndingScenarioWithoutSink
-    lazy val isFragment                     = metaData.typeSpecificData.isFragment
-    allowEndingScenarioWithoutSink && !isFragment
+    allowEndingScenarioWithoutSink
   }
 
   def withLabelsDictTyper: NodeCompiler = {

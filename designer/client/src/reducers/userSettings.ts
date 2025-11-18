@@ -1,105 +1,102 @@
-import { persistReducer, createTransform } from "redux-persist";
+import { persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 
 import type { Reducer } from "../actions/reduxTypes";
-import { isDev } from "../devHelpers";
 
 type SettingsNames =
-    | `editor.${string}.showLines`
-    | `editor.${string}.noWrap`
-    | `survey.${string}.closed`
-    | "node.showAggregateSwitcher"
-    | "node.shortCounts"
-    | "node.showInputsAndOutputs"
-    | "node.showFragmentCreator"
-    | "node.autoApply"
-    | "node.showGenerateEndpointButton"
-    | "node.showSendRequestButton"
-    | "node.showMockFieldOnEnrichers"
-    | "node.advancedStickyNotes"
+    | "assistant.includeScenarioData"
+    | "assistant.showHelp"
     | "cloud.showIntegrationsCreators"
-    | "debug.nodesAsJson"
     | "debug.forceDisableModals"
-    | "debug.userSettingsVisible"
-    | "scenario.allowQuickSave"
-    | "scenario.allowQuickDeploy"
-    | "scenario.allowQuickCancelDeploy"
-    | "scenario.showBreadcrumbs"
-    | "scenario.autoEnableLiveData"
-    | "scenario.showLiveDataAnimations"
+    | "debug.lightTheme"
+    | "debug.nodesAsJson"
     | "editor.showRangeMessages"
+    | "editor.showResetToDefaultButton"
+    | "node.advancedStickyNotes"
+    | "node.autoApply"
+    | "node.shortCounts"
+    | "node.showAggregateSwitcher"
+    | "node.showFragmentCreator"
+    | "node.showGenerateEndpointButton"
+    | "node.showInputsAndOutputs"
+    | "node.showMockFieldOnEnrichers"
+    | "node.showSendRequestButton"
+    | "scenario.allowQuickCancelDeploy"
+    | "scenario.allowQuickDeploy"
+    | "scenario.allowQuickSave"
+    | "scenario.autoEnableLiveData"
+    | "scenario.showBreadcrumbs"
+    | "scenario.showLiveDataAnimations"
     | "toolbar.autoSaveDuringDeployRedeploy"
-    | "editor.showResetToDefaultButton";
+    | `editor.${string}.noWrap`
+    | `editor.${string}.showLines`
+    | `survey.${string}.closed`;
 
-export type UserSettings = Partial<Record<SettingsNames, boolean>>;
-
-const getInitialUserFlag = (flagName: SettingsNames, defaultValue = false): boolean => {
-    return window?.["$initialUserFlags"]?.[flagName] ?? defaultValue;
+type ExtendRecordValue<T extends Record<string, any>, E> = {
+    [K in keyof T]: T[K] | E;
 };
 
-const getDefaultUserSettings = (): UserSettings => ({
-    "node.showAggregateSwitcher": getInitialUserFlag("node.showAggregateSwitcher"),
-    "node.shortCounts": getInitialUserFlag("node.shortCounts"),
-    "node.showInputsAndOutputs": getInitialUserFlag("node.showInputsAndOutputs"),
-    "node.showFragmentCreator": getInitialUserFlag("node.showFragmentCreator"),
-    "node.showGenerateEndpointButton": getInitialUserFlag("node.showGenerateEndpointButton"),
-    "node.showSendRequestButton": getInitialUserFlag("node.showSendRequestButton"),
-    "node.autoApply": getInitialUserFlag("node.autoApply"),
-    "node.showMockFieldOnEnrichers": getInitialUserFlag("node.showMockFieldOnEnrichers"),
-    "node.advancedStickyNotes": getInitialUserFlag("node.advancedStickyNotes"),
-    "cloud.showIntegrationsCreators": getInitialUserFlag("cloud.showIntegrationsCreators"),
-    "debug.nodesAsJson": getInitialUserFlag("debug.nodesAsJson"),
-    "debug.forceDisableModals": getInitialUserFlag("debug.forceDisableModals"),
-    "debug.userSettingsVisible": getInitialUserFlag("debug.userSettingsVisible", isDev),
-    "editor.jsonTemplate.showLines": getInitialUserFlag("editor.jsonTemplate.showLines", true),
-    "scenario.allowQuickSave": getInitialUserFlag("scenario.allowQuickSave"),
-    "scenario.allowQuickDeploy": getInitialUserFlag("scenario.allowQuickDeploy"),
-    "scenario.allowQuickCancelDeploy": getInitialUserFlag("scenario.allowQuickCancelDeploy"),
-    "scenario.showBreadcrumbs": getInitialUserFlag("scenario.showBreadcrumbs"),
-    "scenario.autoEnableLiveData": getInitialUserFlag("scenario.autoEnableLiveData", false),
-    "scenario.showLiveDataAnimations": getInitialUserFlag("scenario.showLiveDataAnimations", true),
-    "toolbar.autoSaveDuringDeployRedeploy": getInitialUserFlag("toolbar.autoSaveDuringDeployRedeploy", false),
-    "editor.showRangeMessages": getInitialUserFlag("editor.showRangeMessages"),
-    "editor.showResetToDefaultButton": getInitialUserFlag("editor.showResetToDefaultButton"),
-});
+export type UserSettings = Partial<Record<SettingsNames, boolean>>;
+export type Setting = keyof UserSettings | NonNullable<string>;
 
-/**
- * @desc The idea is to get default values from the global config and then use them in the reducer unless the user changed the setting manually; in this case, we take a value from local storage.
- * 1. We want to persist in a user setting state in localstorage only if the user has changed it.
- * 2. We don't want to persist the default values.
- * 3. When the value set by the user is the same as the default value, we don't want to persist it.
- */
-const filterInitialValuesTransform = createTransform(
-    (inboundState, key) => {
-        const persistedState = localStorage.getItem("persist:settings");
-        const defaults = getDefaultUserSettings();
+export const getDefaultUserSettings = (initialUserFlags?: UserSettings): UserSettings => {
+    const createFlag = (key: Setting, defaultValue = false): [Setting, boolean] => [key, initialUserFlags?.[key] ?? defaultValue];
+    return Object.fromEntries([
+        createFlag("assistant.includeScenarioData"),
+        createFlag("assistant.showHelp", true),
+        createFlag("cloud.showIntegrationsCreators"),
+        createFlag("debug.forceDisableModals"),
+        createFlag("debug.lightTheme"),
+        createFlag("debug.nodesAsJson"),
+        createFlag("editor.jsonTemplate.showLines", true),
+        createFlag("editor.showRangeMessages"),
+        createFlag("editor.showResetToDefaultButton"),
+        createFlag("node.advancedStickyNotes"),
+        createFlag("node.autoApply"),
+        createFlag("node.shortCounts"),
+        createFlag("node.showAggregateSwitcher"),
+        createFlag("node.showFragmentCreator"),
+        createFlag("node.showGenerateEndpointButton"),
+        createFlag("node.showInputsAndOutputs"),
+        createFlag("node.showMockFieldOnEnrichers"),
+        createFlag("node.showSendRequestButton"),
+        createFlag("scenario.allowQuickCancelDeploy"),
+        createFlag("scenario.allowQuickDeploy"),
+        createFlag("scenario.allowQuickSave"),
+        createFlag("scenario.autoEnableLiveData"),
+        createFlag("scenario.showBreadcrumbs"),
+        createFlag("scenario.showLiveDataAnimations", true),
+        createFlag("toolbar.autoSaveDuringDeployRedeploy"),
+    ]);
+};
 
-        const valueFromLocalStorage = persistedState?.[key];
-        if (valueFromLocalStorage) {
-            return valueFromLocalStorage;
-        }
-
-        const valueSetByTheUserManually = defaults[key] !== inboundState;
-
-        if (valueSetByTheUserManually) {
-            return inboundState;
-        }
-        return undefined;
-    },
-    (outboundState) => outboundState,
-);
-
-const reducer: Reducer<UserSettings> = (state = getDefaultUserSettings(), action) => {
+const reducer: Reducer<{ defaults: UserSettings; values: ExtendRecordValue<UserSettings, "default"> }> = (
+    state = { defaults: getDefaultUserSettings(), values: {} },
+    action,
+) => {
     switch (action.type) {
-        case "SET_SETTINGS":
-            return action.settings;
-        case "TOGGLE_SETTINGS":
-            return action.settings.reduce((value, key) => ({ ...value, [key]: !state[key] }), state);
+        case "USERSETTING_SET":
+            return {
+                ...state,
+                values: {
+                    ...state.values,
+                    [action.key]: action.value,
+                },
+            };
         case "RESET_TOOLBARS":
-            return { ...state, ...getDefaultUserSettings() };
+        case "USERSETTINGS_RESET":
+            return {
+                ...state,
+                values: {},
+            };
+        case "USERSETTINGS_DEFAULTS_LOADED":
+            return {
+                ...state,
+                defaults: action.settings,
+            };
         default:
             return state;
     }
 };
 
-export const userSettings = persistReducer({ key: "settings", storage, transforms: [filterInitialValuesTransform] }, reducer);
+export const userSettings = persistReducer({ key: "settings", storage, blacklist: ["defaults"] }, reducer);

@@ -4,8 +4,8 @@ import { render, screen } from "@testing-library/react";
 import { jest } from "@jest/globals";
 import { DateEditor } from "../../src/components/graph/node-modal/editors/expression/DateTimeEditor/DateEditor";
 import { mockFieldErrors, mockFormatter, mockValueChange } from "./helpers";
-import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
 import { nodeInputWithError } from "../../src/components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import { TestProviders } from "./TestProviders";
 
 jest.mock("react-i18next", () => ({
     useTranslation: () => ({
@@ -17,7 +17,7 @@ jest.mock("react-i18next", () => ({
 describe(DateEditor.name, () => {
     it("should display validation error when the field is required", () => {
         render(
-            <NuThemeProvider>
+            <TestProviders>
                 <DateEditor
                     momentFormat={"YYYY-MM-DD"}
                     readOnly={false}
@@ -30,7 +30,7 @@ describe(DateEditor.name, () => {
                     formatter={mockFormatter}
                     showValidation={true}
                 />
-            </NuThemeProvider>,
+            </TestProviders>,
         );
 
         expect(screen.getByRole("textbox")).toHaveClass(nodeInputWithError);

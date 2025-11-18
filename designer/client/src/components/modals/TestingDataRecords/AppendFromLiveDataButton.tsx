@@ -1,5 +1,5 @@
 import { Box, FormLabel } from "@mui/material";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { NumericInput } from "../../graph/node-modal/editors/expression/NumericInput";
@@ -34,7 +34,7 @@ export const AppendFromLiveDataButton = ({
     }, [maxLiveDataToAppend]);
 
     return (
-        <Box display={"flex"} justifyContent={"flex-start"} mt={2}>
+        <Box display={"flex"} justifyContent={"flex-start"}>
             <Box display={"flex"} justifyContent={"center"} alignItems={"center"} gap={0.5}>
                 <StyledLoadingButton
                     sx={{ mr: 2, fontSize: "14px" }}

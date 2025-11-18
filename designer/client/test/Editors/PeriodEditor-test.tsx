@@ -3,14 +3,14 @@ import * as React from "react";
 import { render, screen } from "@testing-library/react";
 import { PeriodEditor } from "../../src/components/graph/node-modal/editors/expression/Duration/PeriodEditor";
 import { TimeRange } from "../../src/components/graph/node-modal/editors/expression/Duration/TimeRangeComponent";
-import { mockFormatter, mockFieldErrors, mockValueChange } from "./helpers";
-import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
+import { mockFieldErrors, mockFormatter, mockValueChange } from "./helpers";
 import { EditorType } from "../../src/components/graph/node-modal/editors/expression/types";
+import { TestProviders } from "./TestProviders";
 
 describe(PeriodEditor.name, () => {
     it("should display validation error when the field is required", () => {
         render(
-            <NuThemeProvider>
+            <TestProviders>
                 <PeriodEditor
                     readOnly={false}
                     isMarked={false}
@@ -24,7 +24,7 @@ describe(PeriodEditor.name, () => {
                     showValidation={true}
                     formatter={mockFormatter}
                 />
-            </NuThemeProvider>,
+            </TestProviders>,
         );
 
         expect(screen.getByText("validation error")).toBeInTheDocument();
