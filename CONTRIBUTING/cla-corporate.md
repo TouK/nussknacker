@@ -47,10 +47,7 @@ Telephone:
 </pre>
 
 You accept and agree to the following terms and conditions for Your
-present and future Contributions submitted to Nussknacker. In
-return, Nussknacker shall not use Your Contributions in a way that
-is contrary to the public benefit or inconsistent with its nonprofit
-status and bylaws in effect at the time of the Contribution. Except
+present and future Contributions submitted to Nussknacker. Except
 for the license granted herein to Nussknacker and recipients of
 software distributed by Nussknacker, You reserve all right, title,
 and interest in and to Your Contributions.

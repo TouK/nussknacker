@@ -2,9 +2,25 @@
 
 ## How to get involved?
 
+We appreciate your contributions and your help in keeping Nussknacker open and healthy for the community.
+
 All forms of contribution are welcome, including:
 - Bug reports, proposals: https://github.com/TouK/nussknacker/issues/new/choose
 - Pull requests: https://github.com/TouK/nussknacker/pulls
+
+### Contributor License Agreement (CLA)
+
+To contribute to the Nussknacker project, we require a signed Contributor License Agreement (CLA).  
+This applies to both individual contributors and companies whose employees contribute on their behalf.
+
+Before submitting a pull request, please:
+
+1. Review the appropriate CLA (Individual or Corporate).
+2. Sign the form.
+3. Send the signed document to enterprise@nussknacker.io
+
+All CLA templates can be found [here:](https://github.com/TouK/nussknacker/tree/master/CONTRIBUTING).
+
 
 ## Release strategy
 
