@@ -2579,7 +2579,7 @@ private object UIProcessValidatorSpec {
     override def invoke(eagerParameters: Map[ParameterName, Any])(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
-        contextId: ContextId,
+        context: Context,
         metaData: MetaData,
         componentUseContext: ComponentUseContext
     ): Future[Any] = {
