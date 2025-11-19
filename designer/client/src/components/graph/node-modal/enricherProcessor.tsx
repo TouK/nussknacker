@@ -1,7 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import type ProcessUtils from "../../../common/ProcessUtils";
 import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { UIParameter } from "../../../types/definition";
@@ -13,32 +12,30 @@ import MockExpressionField from "./editors/expression/MockExpressionField";
 import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { findParameters } from "./NodeDetailsContent/helpers";
+import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 import { NodeField } from "./NodeField";
 import { ParametersListAdvanced } from "./parametersListAdvanced";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 export function EnricherProcessor({
     errors,
-    findAvailableVariables,
     isEditMode,
     node,
     parameterDefinitions,
-    renderFieldLabel,
     setProperty,
     showSwitch,
     showValidation,
 }: {
     errors: NodeValidationError[];
-    findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;
     node: NodeType;
     parameterDefinitions: UIParameter[];
-    renderFieldLabel: (paramName: string) => JSX.Element;
     setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
 }): JSX.Element {
     const { t } = useTranslation();
+    const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     const settings = useAppSelector(getUserSettings);
     const showMockFieldOnEnrichers = settings["node.showMockFieldOnEnrichers"];
 
@@ -46,14 +43,7 @@ export function EnricherProcessor({
 
     return (
         <>
-            <IdField
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                node={node}
-                setProperty={setProperty}
-                renderFieldLabel={renderFieldLabel}
-                errors={errors}
-            />
+            <IdField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
             <ParametersListAdvanced
                 parameters={findParameters(node)}
                 isEditMode={isEditMode}
@@ -63,7 +53,6 @@ export function EnricherProcessor({
                 findAvailableVariables={findAvailableVariables}
                 parameterDefinitions={parameterDefinitions}
                 errors={errors}
-                renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 getListFieldPath={(index: number) => `service.parameters[${index}]`}
             >
@@ -72,7 +61,6 @@ export function EnricherProcessor({
                         isEditMode={isEditMode}
                         showValidation={showValidation}
                         node={node}
-                        renderFieldLabel={renderFieldLabel}
                         setProperty={setProperty}
                         fieldType={FieldType.input}
                         fieldLabel={t("nodes.enricher.output", "Output variable name")}
@@ -85,7 +73,6 @@ export function EnricherProcessor({
                         node={node}
                         isEditMode={isEditMode}
                         showValidation={showValidation}
-                        renderFieldLabel={renderFieldLabel}
                         setProperty={setProperty}
                         errors={errors}
                     />
@@ -94,7 +81,6 @@ export function EnricherProcessor({
                     node={node}
                     isEditMode={isEditMode}
                     showValidation={showValidation}
-                    renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     errors={errors}
                 />

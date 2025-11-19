@@ -1,9 +1,9 @@
-import { FormControl } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React from "react";
 
 import { CustomCompleterAceEditor } from "../expression/CustomCompleterAceEditor";
 import { ExpressionLang } from "../expression/types";
+import { FormControl } from "../FormControl";
 import type { FieldProps } from "./Field";
 
 type MarkdownFormControlProps = Omit<FieldProps, "type"> &

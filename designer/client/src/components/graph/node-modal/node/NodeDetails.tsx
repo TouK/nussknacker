@@ -2,23 +2,22 @@ import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager
 import { DefaultComponents as Window } from "@touk/window-manager";
 import type { DefaultContentProps } from "@touk/window-manager/cjs/components/window/DefaultContent";
 import type { HeaderButtonCloseProps } from "@touk/window-manager/cjs/components/window/header/HeaderButtonClose";
-import React, { useEffect, useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import urljoin from "url-join";
 
-import { nodeDetailsClosed, nodeDetailsOpened } from "../../../../actions/nk/nodeDetails";
+import { ToolId } from "../../../../actions/nk/toolWindow";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
 import type { RootState } from "../../../../reducers";
-import { removeHistorySnapshot, takeHistorySnapshot } from "../../../../reducers/graph/historySquash";
 import { getCreatorType } from "../../../../reducers/selectors/getCreator";
 import { getUserSettings } from "../../../../reducers/selectors/userSettings";
-import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import type { Edge } from "../../../../types/edge";
 import type { NodeType } from "../../../../types/node";
-import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 import { WindowContent } from "../../../../windowManager/WindowContent";
 import type { WindowKind } from "../../../../windowManager/WindowKind";
+import { useOnToolWindow } from "../../../modals/useOnToolWindow";
 import type { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
 import type { EditedNode } from "../IdField";
@@ -29,6 +28,7 @@ import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubhead
 import { EditStateFeedback } from "./EditStateFeedback";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
+import { useDialogActions } from "./useDialogActions";
 import type { EditState } from "./useNodeState";
 import { useNodeState } from "./useNodeState";
 
@@ -54,35 +54,9 @@ export function useNodeDetailsButtons({
     close: () => void;
     readOnly?: boolean;
 }) {
-    const { t } = useTranslation();
-    const settings = useAppSelector(getUserSettings);
-
-    const autoApply = settings["node.autoApply"];
-    const showInputsAndOutputs = settings["node.showInputsAndOutputs"];
-
-    const apply = useMemo<WindowButtonProps | false>(() => {
-        if (readOnly) return false;
-        if (autoApply) return false;
-        return {
-            title: t("dialog.button.apply", "apply"),
-            action: () =>
-                performNodeEdit(editedNode, outputEdges).then(() => {
-                    close();
-                }),
-            disabled: !editedNode["$id" in editedNode ? "$id" : "id"]?.length,
-        };
-    }, [autoApply, close, editedNode, outputEdges, performNodeEdit, readOnly, t]);
-
-    const cancel = useMemo<WindowButtonProps | false>(() => {
-        if (autoApply && showInputsAndOutputs) return false;
-        return {
-            title: autoApply ? t("dialog.button.close", "close") : t("dialog.button.cancel", "cancel"),
-            action: () => close(),
-            className: LoadingButtonTypes.secondaryButton,
-        };
-    }, [autoApply, close, showInputsAndOutputs, t]);
-
-    return { apply, cancel };
+    const applyDisabled = useMemo(() => !editedNode["$id" in editedNode ? "$id" : "id"]?.length, [editedNode]);
+    const onApply = useCallback(() => performNodeEdit(editedNode, outputEdges), [performNodeEdit, editedNode, outputEdges]);
+    return useDialogActions({ readOnly, onApply, onClose: close, paused: applyDisabled });
 }
 
 function useTitleData(node: NodeType) {
@@ -141,34 +115,39 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const settings = useAppSelector(getUserSettings);
     const [PortalWrapper, portalRef] = usePortal();
 
+    const Content: DefaultContentProps["components"]["Content"] = useCallback(
+        (props) => {
+            return <InputOutputContent {...props} ref={portalRef} />;
+        },
+        [portalRef],
+    );
+
+    const Footer: DefaultContentProps["components"]["Footer"] = useCallback(
+        (props) => {
+            return (
+                <PortalWrapper>
+                    <Window.Footer {...props} />
+                </PortalWrapper>
+            );
+        },
+        [PortalWrapper],
+    );
+
+    const HeaderButtonClose: DefaultContentProps["components"]["HeaderButtonClose"] = useCallback(
+        (props) => {
+            return <CloseButton {...props} editStateRef={editStateRef} />;
+        },
+        [editStateRef],
+    );
+
     const components: DefaultContentProps["components"] = useMemo(() => {
-        return settings["node.showInputsAndOutputs"]
-            ? {
-                  Content: (props) => <InputOutputContent {...props} ref={portalRef} />,
-                  Footer: (props) => (
-                      <PortalWrapper>
-                          <Window.Footer {...props} />
-                      </PortalWrapper>
-                  ),
-                  HeaderButtonClose: (props) => <CloseButton {...props} editStateRef={editStateRef} />,
-              }
-            : { HeaderButtonClose: (props) => <CloseButton {...props} editStateRef={editStateRef} /> };
-    }, [settings, portalRef, PortalWrapper, editStateRef]);
+        if (settings["node.showInputsAndOutputs"]) {
+            return { Content, Footer, HeaderButtonClose };
+        }
+        return { HeaderButtonClose };
+    }, [settings, Content, Footer, HeaderButtonClose]);
 
-    const dispatch = useAppDispatch();
-    useEffect(() => {
-        dispatch(nodeDetailsOpened(node.id, data.id));
-        return () => {
-            dispatch(nodeDetailsClosed(node.id, data.id));
-        };
-    }, [data.id, dispatch, node.id]);
-
-    useEffect(() => {
-        dispatch(takeHistorySnapshot());
-        return () => {
-            dispatch(removeHistorySnapshot());
-        };
-    }, [dispatch]);
+    useOnToolWindow(ToolId.node, node.id);
 
     //no process? no nodes? no window contents! no errors for whole tree!
     if (!scenario?.scenarioGraph.nodes) {

@@ -1,12 +1,13 @@
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import InfoIcon from "@mui/icons-material/Info";
-import { Box, FormControl, FormLabel } from "@mui/material";
+import { Box } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React, { useRef, useState } from "react";
 
 import type { NodeResultsForContext } from "../../../../common/TestResultUtils";
 import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../../store/storeHelpers";
+import { FormControl, FormLabel } from "../editors/FormControl";
 import { InfoTooltip } from "../editors/InfoTooltip/InfoTooltip";
 import { HIDDEN_TEXTAREA_PIXEL_HEIGHT, nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 import { ExpressionEvaluationResult } from "./ExpressionEvaluationResult";

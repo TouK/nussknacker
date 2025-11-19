@@ -30,7 +30,7 @@ export const getTesting = createSelector(getGraph, (g) => g.testing);
 
 export const getNodes = createSelector(getScenarioGraph, (g) => g.nodes);
 
-export const getScenarioLabels = createSelector(getGraph, (g) => g.scenario.labels);
+export const getScenarioLabels = createSelector(getGraph, (g) => g.scenario.labels || []);
 
 export const getProcessName = createSelector(getScenario, (d) => d?.name);
 export const getProcessUnsavedNewName = createSelector(getScenarioGraph, (g) => g.properties?.name);

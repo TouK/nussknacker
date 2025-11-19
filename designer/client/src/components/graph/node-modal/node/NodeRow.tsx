@@ -1,17 +1,24 @@
-import { FormControl, FormLabel } from "@mui/material";
 import type { HTMLAttributes } from "react";
 import React, { forwardRef } from "react";
 
+import { FormControl, FormLabel } from "../editors/FormControl";
+
 interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "color"> {
     label?: string;
+    title?: string;
+    required?: boolean;
 }
 
 export const NodeRow = forwardRef<HTMLDivElement, Props>(function FieldRow(props, ref): JSX.Element {
-    const { label, className, children, ...passProps } = props;
+    const { label, className, children, required, title, ...passProps } = props;
     return (
         <FormControl ref={ref} className={className} {...passProps}>
             <>
-                {label && <FormLabel title={label}>{label}:</FormLabel>}
+                {label && (
+                    <FormLabel required={required} title={title || label}>
+                        {label}:
+                    </FormLabel>
+                )}
                 {children}
             </>
         </FormControl>

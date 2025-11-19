@@ -6,7 +6,7 @@ import { CustomNode } from "./customNode";
 import { useTestResults } from "./TestResultsWrapper";
 
 export function JoinNode(props: CustomNodeProps): JSX.Element {
-    const { errors, findAvailableVariables, isEditMode, node, parameterDefinitions, setProperty, showSwitch, showValidation } = props;
+    const { errors, isEditMode, node, parameterDefinitions, setProperty, showSwitch, showValidation } = props;
     const testResultsState = useTestResults();
     return (
         <CustomNode {...props}>
@@ -19,7 +19,6 @@ export function JoinNode(props: CustomNodeProps): JSX.Element {
                 parameterDefinitions={parameterDefinitions}
                 setNodeDataAt={setProperty}
                 testResultsToShow={testResultsState.testResultsToShow}
-                findAvailableVariables={findAvailableVariables}
             />
         </CustomNode>
     );

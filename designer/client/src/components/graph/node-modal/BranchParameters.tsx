@@ -1,14 +1,18 @@
-import { FormControl, FormLabel, styled } from "@mui/material";
+import { styled } from "@mui/material";
 import React from "react";
 
 import ProcessUtils from "../../../common/ProcessUtils";
 import type { NodeResultsForContext } from "../../../common/TestResultUtils";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { UIParameter } from "../../../types/definition";
 import type { NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import ExpressionField from "./editors/expression/ExpressionField";
+import { FieldLabelProvider } from "./editors/RenderFieldLabel";
 import { getValidationErrorsForField } from "./editors/Validators";
+import { NodeRow } from "./node/NodeRow";
 import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
+import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 
 const StyledFieldControl = styled("div")(() => ({
     ".MuiFormControl-root": {
@@ -20,7 +24,6 @@ export interface BranchParametersProps {
     parameterDefinitions: UIParameter[];
     errors: NodeValidationError[];
     setNodeDataAt: <T>(propToMutate: string, newValue: T, defaultValue?: T) => void;
-    findAvailableVariables: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     testResultsToShow: NodeResultsForContext;
     isEditMode?: boolean;
     showValidation?: boolean;
@@ -36,18 +39,17 @@ export default function BranchParameters({
     parameterDefinitions,
     setNodeDataAt,
     testResultsToShow,
-    findAvailableVariables,
 }: BranchParametersProps): JSX.Element {
     //TODO: maybe we can rely only on node?
     const branchParameters = parameterDefinitions?.filter((p) => p.branchParam);
+    const findAvailableVariables = useAppSelector(getFindAvailableVariables);
 
     return (
-        <>
+        <FieldLabelProvider>
             {branchParameters?.map((param) => {
                 const paramName = param.name;
                 return (
-                    <FormControl key={paramName}>
-                        <FormLabel title={paramName}>{paramName}:</FormLabel>
+                    <NodeRow key={paramName} label={paramName}>
                         <div className={nodeValue}>
                             <StyledFieldControl className="fieldsControl">
                                 {node.branchParameters.map((branchParameter, branchIndex) => {
@@ -81,7 +83,6 @@ export default function BranchParameters({
                                             parameterDefinition={param}
                                             setNodeDataAt={setNodeDataAt}
                                             testResultsToShow={testResultsToShow}
-                                            renderFieldLabel={(paramName) => <FormLabel>{paramName}</FormLabel>}
                                             variableTypes={variables}
                                             fieldErrors={getValidationErrorsForField(errors, fieldName)}
                                         />
@@ -89,9 +90,9 @@ export default function BranchParameters({
                                 })}
                             </StyledFieldControl>
                         </div>
-                    </FormControl>
+                    </NodeRow>
                 );
             })}
-        </>
+        </FieldLabelProvider>
     );
 }

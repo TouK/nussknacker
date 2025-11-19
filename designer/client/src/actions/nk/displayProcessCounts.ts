@@ -43,7 +43,7 @@ export function fetchAndDisplayProcessCounts(params: {
     from: Moment;
     to: Moment;
     refreshIn?: number | false;
-}): ThunkAction<Promise<void>> {
+}): ThunkAction {
     const { processName, from, to, refreshIn = false } = params;
     return async (dispatch, getState) => {
         clearTimeout(refreshTimeout);

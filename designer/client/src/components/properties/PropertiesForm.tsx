@@ -1,74 +1,66 @@
-import { sortBy } from "lodash";
-import type { ComponentProps } from "react";
-import React, { useMemo } from "react";
+import React from "react";
 
 import HttpService from "../../http/HttpService/instance";
-import { useAppSelector } from "../../store/storeHelpers";
 import type { PropertiesType } from "../../types/node";
+import type { PropertiesConfigKeys } from "../../types/scenarioGraph";
 import type { NodeValidationError } from "../../types/validation";
 import { DescriptionField } from "../graph/node-modal/DescriptionField";
 import { FieldType } from "../graph/node-modal/editors/field/Field";
+import { FieldLabelProvider } from "../graph/node-modal/editors/RenderFieldLabel";
 import { FieldLabel } from "../graph/node-modal/FieldLabel";
 import NodeAdditionalInfoBox from "../graph/node-modal/NodeAdditionalInfoBox";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
-import { getScenarioPropertiesConfig } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { NodeField } from "../graph/node-modal/NodeField";
 import { NameField } from "./NameField";
-import ScenarioProperty from "./ScenarioProperty";
+import { PropertiesFormFields } from "./PropertiesFormFields";
+import type { ScenarioPropertyProps } from "./ScenarioProperty";
 
-interface Props {
+export interface PropertiesFormProps {
     errors?: NodeValidationError[];
-    handleSetEditedProperties?: ComponentProps<typeof ScenarioProperty>["onChange"];
+    handleSetEditedProperties?: ScenarioPropertyProps["onChange"];
     editedProperties: PropertiesType;
     showSwitch?: boolean;
+    pick?: PropertiesConfigKeys[];
 }
-export const PropertiesForm = ({ errors = [], handleSetEditedProperties, editedProperties, showSwitch = false }: Props) => {
+
+export const PropertiesForm = ({
+    pick,
+    errors = [],
+    handleSetEditedProperties,
+    editedProperties,
+    showSwitch = false,
+}: PropertiesFormProps) => {
     const readOnly = !handleSetEditedProperties;
-    const scenarioProperties = useAppSelector(getScenarioPropertiesConfig);
-    const scenarioPropertiesConfig = useMemo(() => scenarioProperties?.propertiesConfig ?? {}, [scenarioProperties?.propertiesConfig]);
-
-    //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
-    const scenarioPropertiesSorted = useMemo(
-        () => sortBy(Object.entries(scenarioPropertiesConfig), ([name]) => name),
-        [scenarioPropertiesConfig],
-    );
-
     return (
         <NodeTable>
-            <NameField errors={errors} onChange={handleSetEditedProperties} readOnly={readOnly} value={editedProperties.name} />
-            {scenarioPropertiesSorted.map(([propName, propConfig]) => (
-                <ScenarioProperty
-                    key={propName}
+            <FieldLabelProvider value={(paramName) => <FieldLabel label={paramName} />}>
+                <NameField errors={errors} onChange={handleSetEditedProperties} readOnly={readOnly} value={editedProperties.name} />
+                <PropertiesFormFields
+                    pick={pick}
                     showSwitch={showSwitch}
-                    showValidation
-                    propertyName={propName}
-                    propertyConfig={propConfig}
                     errors={errors}
-                    onChange={handleSetEditedProperties}
-                    renderFieldLabel={() => <FieldLabel title={propConfig.label} label={propConfig.label} hintText={propConfig.hintText} />}
-                    editedNode={editedProperties}
+                    handleSetEditedProperties={handleSetEditedProperties}
+                    editedProperties={editedProperties}
                     readOnly={readOnly}
                 />
-            ))}
-            <DescriptionField
-                isEditMode={!readOnly}
-                showValidation
-                node={editedProperties}
-                renderFieldLabel={(paramName) => <FieldLabel title={paramName} label={paramName} />}
-                setProperty={handleSetEditedProperties}
-                errors={errors}
-            />
-            <NodeField
-                isEditMode={!readOnly}
-                showValidation
-                node={editedProperties}
-                renderFieldLabel={(paramName) => <FieldLabel title={paramName} label={paramName} />}
-                setProperty={handleSetEditedProperties}
-                errors={errors}
-                fieldType={FieldType.checkbox}
-                fieldName={"additionalFields.showDescription"}
-                description={"Show description each time scenario is opened"}
-            />
+                <DescriptionField
+                    isEditMode={!readOnly}
+                    showValidation
+                    node={editedProperties}
+                    setProperty={handleSetEditedProperties}
+                    errors={errors}
+                />
+                <NodeField
+                    isEditMode={!readOnly}
+                    showValidation
+                    node={editedProperties}
+                    setProperty={handleSetEditedProperties}
+                    errors={errors}
+                    fieldType={FieldType.checkbox}
+                    fieldName={"additionalFields.showDescription"}
+                    description={"Show description each time scenario is opened"}
+                />
+            </FieldLabelProvider>
             <NodeAdditionalInfoBox node={editedProperties} handleGetAdditionalInfo={HttpService.getPropertiesAdditionalInfo} />
         </NodeTable>
     );

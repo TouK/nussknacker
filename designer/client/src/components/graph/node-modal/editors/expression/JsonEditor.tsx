@@ -55,17 +55,15 @@ export const JsonEditor: SimpleEditor<Props> = ({
     const THEME = "nussknacker";
 
     const InputAdornmentEnd = useMemo(() => {
+        if (!defaultValue) return;
+        if (readOnly) return;
+
         const defaultValueObject =
             typeof defaultValue === "string" ? { expression: defaultValue, language: ExpressionLang.JSON } : defaultValue; // defaultValue can be a string in case of Properties
-        const defaultValueIsDifferentThanCurrentValue = defaultValue !== value;
-        const showResetToDefaultButton = defaultValue && defaultValueIsDifferentThanCurrentValue;
-
-        if (!showResetToDefaultButton) {
-            return;
-        }
+        if (defaultValueObject.expression === value) return;
 
         return <ResetToDefaultButton defaultValue={defaultValueObject} handleChange={onChange} />;
-    }, [defaultValue, onChange, value]);
+    }, [defaultValue, onChange, readOnly, value]);
 
     return (
         <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>

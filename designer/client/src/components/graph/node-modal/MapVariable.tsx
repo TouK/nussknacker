@@ -14,7 +14,7 @@ export interface MapVariableProps<F extends Field> {
     setProperty?: SetProperty;
     readOnly?: boolean;
     showValidation: boolean;
-    renderFieldLabel: (label: string) => React.ReactNode;
+
     errors: NodeValidationError[];
     removeElement: (namespace: string, uuid: string) => void;
     addElement: (property: string, element: F) => void;

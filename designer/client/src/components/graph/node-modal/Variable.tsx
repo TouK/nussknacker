@@ -11,6 +11,7 @@ import EditableEditor from "./editors/EditableEditor";
 import type { ExpressionObj } from "./editors/expression/types";
 import { EditorType } from "./editors/expression/types";
 import LabeledInput from "./editors/field/LabeledInput";
+import { FieldLabelConsumer } from "./editors/RenderFieldLabel";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { IdField } from "./IdField";
 import { getExpressionType, getNodeTypingInfo } from "./NodeDetailsContent/selectors";
@@ -31,18 +32,9 @@ interface Props {
     errors: NodeValidationError[];
     showSwitch?: boolean;
     variableTypes: VariableTypes;
-    renderFieldLabel: (paramName: string) => JSX.Element;
 }
 
-export default function Variable({
-    node,
-    setProperty,
-    isEditMode,
-    showValidation,
-    errors,
-    variableTypes,
-    renderFieldLabel,
-}: Props): JSX.Element {
+export default function Variable({ node, setProperty, isEditMode, showValidation, errors, variableTypes }: Props): JSX.Element {
     const onExpressionChange = useCallback((value: ExpressionObj) => setProperty("value", value), [setProperty]);
     const [isMarked] = useDiffMark();
     const inferredVariableType = useAppSelector((state: RootState) => {
@@ -61,14 +53,7 @@ export default function Variable({
 
     return (
         <>
-            <IdField
-                node={node}
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                renderFieldLabel={renderFieldLabel}
-                setProperty={setProperty}
-                errors={errors}
-            />
+            <IdField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
             <LabeledInput
                 value={node.varName}
                 onChange={(event) => setProperty("varName", event.target.value)}
@@ -77,12 +62,11 @@ export default function Variable({
                 showValidation={showValidation}
                 fieldErrors={getValidationErrorsForField(errors, "varName")}
             >
-                {renderFieldLabel("Variable Name")}
+                <FieldLabelConsumer text="Variable Name" />
             </LabeledInput>
             <EditableEditor
                 editors={editors}
                 fieldLabel={"Expression"}
-                renderFieldLabel={renderFieldLabel}
                 expressionObj={node.value}
                 onValueChange={onExpressionChange}
                 readOnly={readOnly}
@@ -95,7 +79,6 @@ export default function Variable({
                 isEditMode={!readOnly}
                 showValidation={showValidation}
                 node={node}
-                renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 errors={errors}
             />

@@ -1,11 +1,10 @@
+import { combine } from "kefir";
 import { identity, isEqual } from "lodash";
 import type React from "react";
-import { type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
-import { useDebounce } from "rooks";
+import { type SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { editNode } from "../../../../actions/nk/editNode";
 import { nodeValidationDynamicParametersLoaded } from "../../../../actions/nk/nodeDetails";
-import { PendingPromise } from "../../../../common/PendingPromise";
 import { getScenario } from "../../../../reducers/selectors/graph";
 import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
@@ -16,7 +15,9 @@ import NodeUtils from "../../NodeUtils";
 import type { EditedNode } from "../IdField";
 import { applyIdFromFakeName } from "../IdField";
 import type { NodeDetailsMeta } from "./NodeDetails";
+import { useCallbackRef } from "./useCallbackRef";
 import { useEditState } from "./useEditState";
+import { useStream } from "./useStream";
 
 export type EditState = "idle" | "processing" | "pending" | "error";
 export type NodeState = {
@@ -26,7 +27,6 @@ export type NodeState = {
     outputEdges: Edge[];
     onChange: (node: React.SetStateAction<EditedNode>, edges?: React.SetStateAction<Edge[]>) => void;
     performNodeEdit: (editedNode: EditedNode, outputEdges: Edge[]) => Promise<void>;
-    isTouched: boolean;
     editState: EditState;
     editStateRef: React.RefObject<EditState>;
 };
@@ -35,13 +35,14 @@ export function getEdgesForNode(scenario: Scenario, node: NodeType) {
     return scenario.scenarioGraph.edges.filter(({ from }) => from === node.id);
 }
 
-const NODE_UPDATE_DEBOUNCE_TIMEOUT = 1500;
+const NODE_UPDATE_DEBOUNCE_TIMEOUT = 500;
 
 export function useNodeState(data: NodeDetailsMeta): NodeState {
     const dispatch = useAppDispatch();
-    const [nodeId, setNodeId] = useState<string>(data.node.id);
     const settings = useAppSelector(getUserSettings);
     const autoApply = settings["node.autoApply"];
+
+    const [nodeId, setNodeId] = useState<string>(data.node.id);
 
     const scenarioFromGlobalStore = useAppSelector(getScenario);
     const nodeFromGlobalStore = useMemo(
@@ -51,41 +52,24 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
 
     const scenario = useMemo(() => scenarioFromGlobalStore || data.scenario, [data.scenario, scenarioFromGlobalStore]);
     const node = useMemo(() => nodeFromGlobalStore || data.node, [data.node, nodeFromGlobalStore]);
+    const edges = useMemo(() => getEdgesForNode(scenario, node), [node, scenario]);
 
-    const [editedNode, setEditedNode] = useState<EditedNode>(node);
-    const [outputEdges, setOutputEdges] = useState<Edge[]>(() => getEdgesForNode(scenario, node));
     const [status, setStatus, editStateRef] = useEditState();
 
-    const setEditedNodeWithDebounce = useDebounce((node) => {
-        setEditedNode((currentNode) => (isEqual(currentNode, node) ? currentNode : node));
-    }, NODE_UPDATE_DEBOUNCE_TIMEOUT);
+    const [node$, emitNode, editedNode] = useStream(node, true);
+    const [edges$, emitEdges, outputEdges] = useStream(edges, true);
 
-    useEffect(() => {
-        setEditedNodeWithDebounce.cancel();
+    const abortControllerRef = useRef<AbortController>(null);
 
-        if (editStateRef.current === "processing") return;
-
-        setNodeId(node.id);
-        setEditedNodeWithDebounce(node);
-    }, [editStateRef, node, setEditedNodeWithDebounce]);
-
-    useEffect(() => {
-        setOutputEdges((currentOutputEdges) => {
-            const edgesForNode = getEdgesForNode(scenario, node);
-            return isEqual(currentOutputEdges, edgesForNode) ? currentOutputEdges : edgesForNode;
-        });
-    }, [node, scenario]);
-
-    const performNodeEdit = useCallback(
+    const [performNodeEditRef, performNodeEdit] = useCallbackRef(
         async (editedNode: EditedNode, outputEdges: Edge[]) => {
+            const controller = new AbortController();
+            abortControllerRef.current = controller;
+
             setStatus("processing");
             try {
                 const after = applyIdFromFakeName(editedNode);
-                // Webpack yield that awaits is unnecessary,
-                // but in fact without this await,
-                // we don't wait to editNode finish and the dialog is closed before resolve of the call,
-                // which causes a bug with a form update
-                await dispatch(editNode(scenario, node, after, outputEdges));
+                await dispatch(editNode(scenario, node, after, outputEdges, controller));
                 if (autoApply) {
                     setNodeId(after.id);
                 }
@@ -94,56 +78,60 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
                 console.error(e);
                 setStatus("error");
             } finally {
-                if (autoApply) {
+                if (!controller.signal.aborted && autoApply) {
                     dispatch(nodeValidationDynamicParametersLoaded(node.id));
                 }
             }
         },
-        [setStatus, dispatch, scenario, node, autoApply],
+        [autoApply, dispatch, node, scenario, setStatus],
     );
-    const performNodeEditDebounced = useDebounce(performNodeEdit, NODE_UPDATE_DEBOUNCE_TIMEOUT);
 
-    const isTouched = useMemo(() => node !== editedNode, [editedNode, node]);
+    const [isTouchedRef] = useCallbackRef(
+        (editedNode, outputEdges) => {
+            return !isEqual(node, editedNode) || !isEqual(edges, outputEdges);
+        },
+        [edges, node],
+    );
 
     const onChange = useCallback(
         (nodeChange: SetStateAction<EditedNode>, edgesChange: SetStateAction<Edge[]> = identity) => {
-            setEditedNodeWithDebounce.cancel();
-            performNodeEditDebounced.cancel();
-
-            const editedNode$ = new PendingPromise<[EditedNode, boolean]>();
-            const outputEdges$ = new PendingPromise<[Edge[], boolean]>();
-
-            setEditedNode((currentEditedNode) => {
-                let nextEditedNode = typeof nodeChange === "function" ? nodeChange(currentEditedNode) : nodeChange;
-                const equal = isEqual(currentEditedNode, nextEditedNode);
-                if (equal) {
-                    nextEditedNode = currentEditedNode;
-                }
-                editedNode$.resolve([nextEditedNode, !equal]);
-                return nextEditedNode;
-            });
-
-            setOutputEdges((currentOutputEdges) => {
-                let nextOutputEdges = typeof edgesChange === "function" ? edgesChange(currentOutputEdges) : edgesChange;
-                const equal = isEqual(currentOutputEdges, nextOutputEdges);
-                if (equal) {
-                    nextOutputEdges = currentOutputEdges;
-                }
-                outputEdges$.resolve([nextOutputEdges, !equal]);
-                return nextOutputEdges;
-            });
-
-            if (autoApply) {
-                Promise.all([editedNode$, outputEdges$]).then(([[node, nodeChanged], [edges, edgesChanged]]) => {
-                    if (!nodeChanged && !edgesChanged) return;
-
-                    setStatus("pending");
-                    performNodeEditDebounced(node, edges);
-                });
-            }
+            emitNode(nodeChange);
+            emitEdges(edgesChange);
         },
-        [autoApply, performNodeEditDebounced, setEditedNodeWithDebounce, setStatus],
+        [emitEdges, emitNode],
     );
+
+    const change$ = useMemo(
+        () =>
+            combine([node$, edges$])
+                .map(([node, edges]) => ({ node, edges }))
+                .toProperty(),
+        [edges$, node$],
+    );
+
+    useEffect(() => {
+        if (!autoApply) return;
+        const subscription = change$.observe(({ node, edges }) => {
+            abortControllerRef.current?.abort();
+            if (isTouchedRef.current(node, edges)) {
+                setStatus("pending");
+            } else {
+                setStatus("idle");
+            }
+        });
+        return subscription.unsubscribe;
+    }, [autoApply, change$, isTouchedRef, setStatus]);
+
+    useEffect(() => {
+        if (!autoApply) return;
+        const subscription = change$
+            .debounce(NODE_UPDATE_DEBOUNCE_TIMEOUT)
+            .skipDuplicates((a, b) => isEqual(a.node, b.node) && isEqual(a.edges, b.edges))
+            .observe(({ node, edges }) => {
+                performNodeEditRef.current(node, edges);
+            });
+        return subscription.unsubscribe;
+    }, [autoApply, change$, performNodeEditRef]);
 
     return {
         scenario,
@@ -152,7 +140,6 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
         outputEdges,
         onChange,
         performNodeEdit,
-        isTouched,
         editState: status,
         editStateRef,
     };

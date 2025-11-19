@@ -6,6 +6,7 @@ import type { Edge } from "../../../types/edge";
 import type { NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import { CustomNode } from "./customNode";
+import { FieldLabelProvider } from "./editors/RenderFieldLabel";
 import { EnricherProcessor } from "./enricherProcessor";
 import { Filter } from "./filter";
 import FragmentInputDefinition from "./fragment-input-definition/FragmentInputDefinition";
@@ -18,7 +19,18 @@ import { Sink } from "./sink";
 import { Source } from "./source";
 import { Split } from "./split";
 import { Switch } from "./switch";
-import { useNodeTypeDetailsContentLogic } from "./useNodeTypeDetailsContentLogic";
+import type { Prettify } from "./useNodeTypeDetailsContentLogic";
+import {
+    useAddElement,
+    useIsEditMode,
+    useParameterDefinitions,
+    useRemoveElement,
+    useRenderFieldLabel,
+    useSetEditedEdges,
+    useSetProperty,
+    useValidation,
+    useVariableTypes,
+} from "./useNodeTypeDetailsContentLogic";
 import Variable from "./Variable";
 import { VariableBuilder } from "./variableBuilder";
 
@@ -31,33 +43,27 @@ export type NodeTypeDetailsContentProps = {
     errors: NodeValidationError[];
 };
 
-export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTypeDetailsContentProps): JSX.Element {
-    const {
-        isEditMode,
-        processDefinitionData,
-        findAvailableVariables,
-        variableTypes,
-        setEditedEdges,
-        parameterDefinitions,
-        renderFieldLabel,
-        removeElement,
-        addElement,
-        setProperty,
-        node,
-        edges,
-        showValidation,
-    } = useNodeTypeDetailsContentLogic(props);
+type NodeDetailsProps = Prettify<NodeTypeDetailsContentProps>;
+
+function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange }: NodeDetailsProps) {
+    const variableTypes = useVariableTypes({ node });
+    const parameterDefinitions = useParameterDefinitions({ node });
+    const setProperty = useSetProperty({ onChange, node });
+    const isEditMode = useIsEditMode({ onChange });
+    const setEditedEdges = useSetEditedEdges({ onChange });
+    const addElement = useAddElement({ onChange });
+    const removeElement = useRemoveElement({ onChange });
+
+    useValidation({ edges, node, showValidation });
 
     switch (node.type) {
         case "Source":
             return (
                 <Source
                     errors={errors}
-                    findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}
                     node={node}
                     parameterDefinitions={parameterDefinitions}
-                    renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     showSwitch={showSwitch}
                     showValidation={showValidation}
@@ -67,11 +73,9 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
             return (
                 <Sink
                     errors={errors}
-                    findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}
                     node={node}
                     parameterDefinitions={parameterDefinitions}
-                    renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     showSwitch={showSwitch}
                     showValidation={showValidation}
@@ -85,7 +89,6 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
                     isEditMode={isEditMode}
                     node={node as NodeType<FragmentInputParameter>}
                     removeElement={removeElement}
-                    renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     showValidation={showValidation}
                     variableTypes={variableTypes}
@@ -99,7 +102,6 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
                     isEditMode={isEditMode}
                     node={node}
                     removeElement={removeElement}
-                    renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     showValidation={showValidation}
                     variableTypes={variableTypes}
@@ -114,7 +116,6 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
                     isEditMode={isEditMode}
                     node={node}
                     parameterDefinitions={parameterDefinitions}
-                    renderFieldLabel={renderFieldLabel}
                     setEditedEdges={setEditedEdges}
                     setProperty={setProperty}
                     showSwitch={showSwitch}
@@ -126,11 +127,9 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
             return (
                 <EnricherProcessor
                     errors={errors}
-                    findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}
                     node={node}
                     parameterDefinitions={parameterDefinitions}
-                    renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     showSwitch={showSwitch}
                     showValidation={showValidation}
@@ -140,12 +139,9 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
             return (
                 <FragmentInput
                     errors={errors}
-                    findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}
                     node={node}
                     parameterDefinitions={parameterDefinitions}
-                    processDefinitionData={processDefinitionData}
-                    renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     showSwitch={showSwitch}
                     showValidation={showValidation}
@@ -155,12 +151,9 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
             return (
                 <JoinNode
                     errors={errors}
-                    findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}
                     node={node}
                     parameterDefinitions={parameterDefinitions}
-                    processDefinitionData={processDefinitionData}
-                    renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     showSwitch={showSwitch}
                     showValidation={showValidation}
@@ -170,12 +163,9 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
             return (
                 <CustomNode
                     errors={errors}
-                    findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}
                     node={node}
                     parameterDefinitions={parameterDefinitions}
-                    processDefinitionData={processDefinitionData}
-                    renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     showSwitch={showSwitch}
                     showValidation={showValidation}
@@ -189,7 +179,6 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
                     isEditMode={isEditMode}
                     node={node}
                     removeElement={removeElement}
-                    renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     showValidation={showValidation}
                     variableTypes={variableTypes}
@@ -202,7 +191,6 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
                     errors={errors}
                     isEditMode={isEditMode}
                     node={node}
-                    renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     showValidation={showValidation}
                     variableTypes={variableTypes}
@@ -216,8 +204,6 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
                     isEditMode={isEditMode}
                     node={node}
                     parameterDefinitions={parameterDefinitions}
-                    processDefinitionData={processDefinitionData}
-                    renderFieldLabel={renderFieldLabel}
                     setEditedEdges={setEditedEdges}
                     setProperty={setProperty}
                     showSwitch={showSwitch}
@@ -226,26 +212,33 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
                 />
             );
         case "Split":
-            return (
-                <Split
-                    errors={errors}
-                    isEditMode={isEditMode}
-                    node={node}
-                    renderFieldLabel={renderFieldLabel}
-                    setProperty={setProperty}
-                    showValidation={showValidation}
-                />
-            );
+            return <Split errors={errors} isEditMode={isEditMode} node={node} setProperty={setProperty} showValidation={showValidation} />;
         default:
             return (
                 <NodeDetailsFallback
                     errors={errors}
                     node={node}
-                    renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     isEditMode={isEditMode}
                     showValidation={showValidation}
                 />
             );
     }
+}
+
+export function NodeTypeDetailsContent(props: NodeTypeDetailsContentProps): JSX.Element {
+    const { errors, showSwitch, onChange, edges, node, showValidation } = props;
+    const renderFieldLabel = useRenderFieldLabel({ node });
+    return (
+        <FieldLabelProvider value={renderFieldLabel}>
+            <NodeDetails
+                node={node}
+                errors={errors}
+                edges={edges}
+                showSwitch={showSwitch}
+                showValidation={showValidation}
+                onChange={onChange}
+            />
+        </FieldLabelProvider>
+    );
 }

@@ -1,4 +1,4 @@
-import { Box, Button, CircularProgress, FormControl, Stack } from "@mui/material";
+import { Box, Button, CircularProgress, Stack } from "@mui/material";
 import { debounce } from "lodash";
 import React, { useMemo, useRef, useState } from "react";
 import type AceEditor from "react-ace";
@@ -14,6 +14,7 @@ import type { NodeValidationError, VariableTypes } from "../../../../../../../ty
 import { useDelayedEnterAction } from "../../../../../../toolbars/scenarioDetails/useDelayedEnterAction";
 import { SpelEditor } from "../../../../editors/expression/SpelEditor";
 import { ExpressionLang } from "../../../../editors/expression/types";
+import { FormControl } from "../../../../editors/FormControl";
 import { getValidationErrorsForField, mandatoryValueValidator, uniqueValueValidator } from "../../../../editors/Validators";
 import type { FieldName, FixedValuesOption, onChangeType } from "../../../item/types";
 import { useSettings } from "../../SettingsProvider";

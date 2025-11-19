@@ -1,8 +1,6 @@
 import { defaultsDeep } from "lodash";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 
-import { getScenarioGraph } from "../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../store/storeHelpers";
 import type { Edge } from "../../../types/edge";
 import { EdgeKind } from "../../../types/edge";
 import type { NodeValidationError, VariableTypes } from "../../../types/validation";
@@ -13,6 +11,8 @@ import type { EdgeTypeOption } from "./EdgeTypeSelect";
 import { ExpressionLang } from "./editors/expression/types";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { NodeRowFieldsProvider } from "./node-row-fields-provider/NodeRowFieldsProvider";
+import type { WithTempId } from "./tempId";
+import { useStateWithTempId, withTempId } from "./tempId";
 
 interface EdgeType extends Partial<EdgeTypeOption> {
     value: EdgeKind;
@@ -30,16 +30,6 @@ interface Props {
     ordered?: boolean;
     variableTypes?: VariableTypes;
     errors: NodeValidationError[];
-}
-
-export type WithTempId<T> = T & { _id?: string };
-
-//mutate to avoid unnecessary renders
-function withFakeId(edge: WithTempId<Edge>): WithTempId<Edge> {
-    if (!edge._id) {
-        edge._id = `id${Math.random()}`;
-    }
-    return edge;
 }
 
 function getDefaultEdgeType(kind: EdgeKind): Edge["edgeType"] {
@@ -67,11 +57,7 @@ function withDefaults<T extends Edge>(edge: Partial<T>): T {
 
 export function EdgesDndComponent(props: Props): JSX.Element {
     const { nodeId, label, readOnly, value, onChange, ordered, variableTypes, errors } = props;
-    const process = useAppSelector(getScenarioGraph);
-    const [edges, setEdges] = useState<WithTempId<Edge>[]>(() => {
-        const edges1 = value || process.edges.filter(({ from }) => from === nodeId);
-        return edges1.map((edge) => withFakeId({ ...edge }));
-    });
+    const [edges, setEdges] = useStateWithTempId(value, onChange);
 
     const edgeTypes = useMemo(
         () => props.edgeTypes.map((t) => ({ ...t, label: t.label || NodeUtils.edgeTypeLabel(t.value) })),
@@ -86,23 +72,18 @@ export function EdgesDndComponent(props: Props): JSX.Element {
     const replaceEdge = useCallback(
         (current: WithTempId<Edge>) => (next: WithTempId<Edge>) => {
             if (current !== next) {
-                setEdges((edges) => edges.map((e) => (e === current ? withFakeId(withDefaults(next)) : e)));
+                setEdges((edges) => edges.map((e) => (e === current ? withTempId(withDefaults(next)) : e)));
             }
         },
-        [],
+        [setEdges],
     );
 
-    const removeEdge = useCallback((n, uuid: string) => setEdges((edges) => edges.filter((e) => e._id !== uuid)), []);
+    const removeEdge = useCallback((n, uuid: string) => setEdges((edges) => edges.filter((e) => e._id !== uuid)), [setEdges]);
 
     const addEdge = useCallback(() => {
         const [{ value: type }] = availableTypes;
-        setEdges((edges) => edges.concat(withFakeId(withDefaults({ from: nodeId, edgeType: { type } }))));
-    }, [availableTypes, nodeId]);
-
-    useEffect(() => {
-        // let's remove fake _id  to avoid rerenders on mount, since there is no _id in the initial state from teh backend
-        onChange?.(edges?.map(({ _id, ...edge }) => ({ ...edge, to: edge.to || _id })));
-    }, [edges, onChange]);
+        setEdges((edges) => edges.concat(withTempId(withDefaults({ from: nodeId, edgeType: { type } }))));
+    }, [availableTypes, nodeId, setEdges]);
 
     const edgeItems = useMemo(() => {
         return edges.map((edge, index, array) => {

@@ -1,4 +1,3 @@
-import { FormControl } from "@mui/material";
 import React, { useCallback, useContext } from "react";
 
 import { editors } from "../../graph/node-modal/editors/expression/Editor";
@@ -6,6 +5,7 @@ import { spelFormatters } from "../../graph/node-modal/editors/expression/Format
 import type { ExpressionObj } from "../../graph/node-modal/editors/expression/types";
 import { ExpressionLang } from "../../graph/node-modal/editors/expression/types";
 import { FieldSwitch } from "../../graph/node-modal/editors/field/FieldSwitch";
+import { FormControl } from "../../graph/node-modal/editors/FormControl";
 import { getValidationErrorsForField } from "../../graph/node-modal/editors/Validators";
 import { ParamFieldLabel } from "../../graph/node-modal/FieldLabel";
 import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";

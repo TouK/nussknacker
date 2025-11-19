@@ -500,15 +500,20 @@ export class HttpService {
     }
 
     //to prevent closing edit node modal and corrupting graph display
-    validateProcess(processName: string, unsavedOrCurrentName: string, scenarioGraph: ScenarioGraph) {
+    validateProcess(processName: string, unsavedOrCurrentName: string, scenarioGraph: ScenarioGraph, controller?: AbortController) {
         const request = {
             processName: unsavedOrCurrentName,
             scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph),
         };
-        return api.post(`/processValidation/${encodeURIComponent(processName)}`, request).catch((error) => {
-            this.#addError(i18next.t("notification.error.fatalValidationError", "Fatal validation error, cannot save"), error, true);
-            return Promise.reject(error);
-        });
+        return api
+            .post(`/processValidation/${encodeURIComponent(processName)}`, request, {
+                signal: controller?.signal,
+            })
+            .catch((error) => {
+                if (axios.isCancel(error)) return Promise.reject(error);
+                this.#addError(i18next.t("notification.error.fatalValidationError", "Fatal validation error, cannot save"), error, true);
+                return Promise.reject(error);
+            });
     }
 
     validateNode(processName: string, node: ValidationRequest): Promise<ValidationData | void> {

@@ -27,10 +27,14 @@ export interface UIScenarioProperty {
     hintText?: string;
 }
 
+export type PropertiesConfigKeys = "inputSchema" | "outputSchema" | "slug" | (string & NonNullable<unknown>);
+export type PropertiesConfig = { [key in PropertiesConfigKeys]: UIScenarioProperty };
+
 export interface UiScenarioProperties {
-    propertiesConfig: { [key: string]: UIScenarioProperty };
+    propertiesConfig: PropertiesConfig;
     docsUrl?: string;
 }
+
 //"ReturnType" is builtin type alias
 export interface ReturnedType {
     display: string;

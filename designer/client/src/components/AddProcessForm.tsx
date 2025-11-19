@@ -1,6 +1,6 @@
 import { css, cx } from "@emotion/css";
 import { InfoOutlined } from "@mui/icons-material";
-import { Box, FormControl, FormGroup, FormLabel, Link, Typography } from "@mui/material";
+import { Box, FormGroup, Link, Typography } from "@mui/material";
 import { isEmpty } from "lodash";
 import React, { useCallback } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -17,6 +17,7 @@ import Input from "./graph/node-modal/editors/field/Input";
 import { getValidationErrorsForField } from "./graph/node-modal/editors/Validators";
 import type { Option } from "./graph/node-modal/fragment-input-definition/TypeSelect";
 import { TypeSelect } from "./graph/node-modal/fragment-input-definition/TypeSelect";
+import { NodeRow } from "./graph/node-modal/node/NodeRow";
 import { NodeTable } from "./graph/node-modal/NodeDetailsContent/NodeTable";
 import { nodeValue } from "./graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import ValidationLabels from "./modals/ValidationLabels";
@@ -76,8 +77,7 @@ export function AddProcessForm({
             )}
         >
             <NodeTable>
-                <FormControl>
-                    <FormLabel required>{t("addProcessForm.label.processingMode", "Processing mode")}</FormLabel>
+                <NodeRow required label={t("addProcessForm.label.processingMode", "Processing mode")}>
                     <span className={nodeValue}>
                         <FormGroup
                             row
@@ -129,7 +129,7 @@ export function AddProcessForm({
                             </Trans>
                         </Typography>
                     </span>
-                </FormControl>
+                </NodeRow>
                 {displayContactSupportMessage ? (
                     <Box ml={formLabelWidth} display={"flex"} mt={3}>
                         <InfoOutlined />
@@ -142,8 +142,7 @@ export function AddProcessForm({
                     </Box>
                 ) : (
                     <>
-                        <FormControl>
-                            <FormLabel required>{t("addProcessForm.label.name", "Name")}</FormLabel>
+                        <NodeRow required label={t("addProcessForm.label.name", "Name")}>
                             <div className={nodeValue}>
                                 <Input
                                     type="text"
@@ -157,10 +156,9 @@ export function AddProcessForm({
                                     showValidation={true}
                                 />
                             </div>
-                        </FormControl>
+                        </NodeRow>
                         {!isEmpty(categories) && (
-                            <FormControl>
-                                <FormLabel required>{t("addProcessForm.label.category", "Category")}</FormLabel>
+                            <NodeRow required label={t("addProcessForm.label.category", "Category")}>
                                 <Box flex={1} width="100%">
                                     <TypeSelect
                                         id="processCategory"
@@ -190,11 +188,10 @@ export function AddProcessForm({
                                         </Trans>
                                     </Typography>
                                 </Box>
-                            </FormControl>
+                            </NodeRow>
                         )}
                         {!isEmpty(engines) && (
-                            <FormControl>
-                                <FormLabel required>{t("addProcessForm.label.engine", "Engine")}</FormLabel>
+                            <NodeRow required label={t("addProcessForm.label.engine", "Engine")}>
                                 <Box flex={1} width="100%">
                                     <TypeSelect
                                         id="processEngine"
@@ -224,7 +221,7 @@ export function AddProcessForm({
                                         </Trans>
                                     </Typography>
                                 </Box>
-                            </FormControl>
+                            </NodeRow>
                         )}
                     </>
                 )}

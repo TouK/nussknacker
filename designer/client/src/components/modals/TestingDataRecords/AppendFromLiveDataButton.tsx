@@ -1,8 +1,9 @@
-import { Box, FormLabel } from "@mui/material";
+import { Box } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { NumericInput } from "../../graph/node-modal/editors/expression/NumericInput";
+import { FormLabel } from "../../graph/node-modal/editors/FormControl";
 import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
 import { StyledLoadingButton } from "../../graph/node-modal/node-action-buttons/StyledLoadingButton";
 

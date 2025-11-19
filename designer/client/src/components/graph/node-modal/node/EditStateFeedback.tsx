@@ -46,10 +46,15 @@ const SuccessAlert = styled(Alert)(({ theme }) => ({
 
 export function EditStateFeedback({ editState }: { editState: EditState }) {
     const prev = useRef(editState);
-    const [idleVisible, setIdleVisible] = useState(false);
-    useTimeoutWhen(() => setIdleVisible(false), 1000, idleVisible);
+
+    const [successVisible, setSuccessVisible] = useState(false);
+    const pendingVisible = !successVisible && editState !== "idle";
+
+    useTimeoutWhen(() => setSuccessVisible(false), 1000, successVisible);
     useEffect(() => {
-        setIdleVisible(editState === "idle" && prev.current && prev.current !== "idle");
+        const isIdle = editState === "idle";
+        const wasWorking = prev.current && prev.current === "processing";
+        setSuccessVisible(wasWorking && isIdle);
         prev.current = editState;
     }, [editState]);
 
@@ -57,10 +62,10 @@ export function EditStateFeedback({ editState }: { editState: EditState }) {
 
     return (
         <>
-            <Toast isVisible={!idleVisible && editState !== "idle"}>
+            <Toast isVisible={pendingVisible}>
                 <Alert>{t("node.edit.pending", "pending changes...")}</Alert>
             </Toast>
-            <Toast isVisible={idleVisible}>
+            <Toast isVisible={successVisible}>
                 <SuccessAlert>{t("node.edit.applied", "changes applied")}</SuccessAlert>
             </Toast>
         </>

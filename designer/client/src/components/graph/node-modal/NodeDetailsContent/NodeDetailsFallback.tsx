@@ -7,7 +7,6 @@ import type { SetProperty } from "../useNodeTypeDetailsContentLogic";
 
 export function NodeDetailsFallback(props: {
     node: NodeType;
-    renderFieldLabel: (paramName: string) => JSX.Element;
     setProperty: SetProperty;
     isEditMode?: boolean;
     showValidation?: boolean;
@@ -16,6 +15,7 @@ export function NodeDetailsFallback(props: {
     return (
         <>
             <IdField {...props} errors={props.errors} />
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             <span>Node type not known.</span>
         </>
     );

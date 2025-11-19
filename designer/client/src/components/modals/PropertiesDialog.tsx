@@ -1,28 +1,26 @@
 import { css } from "@emotion/css";
 import { styled } from "@mui/material";
-import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import type { WindowContentProps } from "@touk/window-manager";
 import { debounce, isEqual } from "lodash";
 import { set } from "lodash/fp";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 
 import { editProperties } from "../../actions/nk/editProperties";
 import { ToolId } from "../../actions/nk/toolWindow";
 import PropertiesSvg from "../../assets/img/properties.svg";
 import HttpService from "../../http/HttpService/instance";
-import type { RootState } from "../../reducers";
 import { getProperties, getScenario } from "../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import type { PropertiesType } from "../../types/node";
 import type { NodeValidationError } from "../../types/validation";
-import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { WindowContent } from "../../windowManager/WindowContent";
 import { WindowKind } from "../../windowManager/WindowKind";
 import { ContentSize } from "../graph/node-modal/node/ContentSize";
 import { getPropertiesErrors, getReadOnly } from "../graph/node-modal/node/selectors";
+import { useDialogActions } from "../graph/node-modal/node/useDialogActions";
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../graph/node-modal/nodeDetails/SubHeader";
-import { getProcessName, getScenarioPropertiesConfig } from "../graph/node-modal/NodeDetailsContent/selectors";
+import { getProcessName, getScenarioProperties } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { PropertiesForm } from "../properties/PropertiesForm";
 import { useOnToolWindow } from "./useOnToolWindow";
 
@@ -42,48 +40,23 @@ export const NodeDetailsModalIcon = styled(WindowHeaderIconStyled.withComponent(
     backgroundColor: theme.palette.custom.getWindowStyles(WindowKind.editProperties).backgroundColor,
 }));
 
-const PropertiesDialog = ({ ...props }: WindowContentProps) => {
-    const isEditMode = !useAppSelector((s: RootState) => getReadOnly(s, false));
-
-    const { t } = useTranslation();
-    const dispatch = useAppDispatch();
-
-    const globalPropertiesErrors = useAppSelector(getPropertiesErrors);
-    const scenarioProperties = useAppSelector(getScenarioPropertiesConfig);
-    const scenario = useAppSelector(getScenario);
+function usePropertiesValidation(isEditMode: boolean, editedProperties: PropertiesType) {
     const scenarioName = useAppSelector(getProcessName);
-
+    const globalPropertiesErrors = useAppSelector(getPropertiesErrors);
     const [errors, setErrors] = useState<NodeValidationError[]>(isEditMode ? globalPropertiesErrors : []);
-    const { editedProperties, handleSetEditedProperties } = usePropertiesState();
-    const showSwitch = false;
 
     const debouncedValidateProperties = useMemo(() => {
         return debounce((scenarioName, additionalFields, id) => {
-            HttpService.validateProperties(scenarioName, { additionalFields: additionalFields, name: id }).then((data) => {
+            HttpService.validateProperties(scenarioName, {
+                additionalFields: additionalFields,
+                name: id,
+            }).then((data) => {
                 if (data) {
                     setErrors(data.validationErrors);
                 }
             });
         }, 500);
     }, []);
-
-    const apply = useMemo<WindowButtonProps>(() => {
-        return {
-            title: t("dialog.button.apply", "apply"),
-            action: async () => {
-                await dispatch(editProperties(scenario, editedProperties));
-                props.close();
-            },
-        };
-    }, [dispatch, editedProperties, props, scenario, t]);
-
-    const cancel = useMemo<WindowButtonProps | false>(() => {
-        return {
-            title: t("dialog.button.cancel", "cancel"),
-            action: () => props.close(),
-            className: LoadingButtonTypes.secondaryButton,
-        };
-    }, [props, t]);
 
     useEffect(() => {
         if (!isEditMode) {
@@ -92,6 +65,33 @@ const PropertiesDialog = ({ ...props }: WindowContentProps) => {
 
         debouncedValidateProperties(scenarioName, editedProperties.additionalFields, editedProperties.name);
     }, [debouncedValidateProperties, isEditMode, editedProperties.additionalFields, editedProperties.name, scenarioName]);
+
+    return errors;
+}
+
+const PropertiesDialog = ({ ...props }: WindowContentProps) => {
+    const isEditMode = useAppSelector((s) => !getReadOnly(s, false));
+
+    const dispatch = useAppDispatch();
+
+    const scenarioProperties = useAppSelector(getScenarioProperties);
+    const scenario = useAppSelector(getScenario);
+
+    const { editedProperties, handleSetEditedProperties } = usePropertiesState();
+    const showSwitch = false;
+
+    const onApply = useCallback(
+        async () => await dispatch(editProperties(scenario, editedProperties)),
+        [dispatch, editedProperties, scenario],
+    );
+
+    const { apply, cancel } = useDialogActions({
+        onApply,
+        onClose: props.close,
+        readOnly: !isEditMode,
+    });
+
+    const errors = usePropertiesValidation(isEditMode, editedProperties);
 
     useOnToolWindow(ToolId.properties);
 

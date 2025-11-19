@@ -1,10 +1,9 @@
 import { cx } from "@emotion/css";
-import { Box, FormControl, FormLabel } from "@mui/material";
+import { styled } from "@mui/material";
 import { isEmpty } from "lodash";
 import type { ReactNode } from "react";
 import React, { forwardRef, useMemo } from "react";
 
-import type { UnknownFunction } from "../../../../types/common";
 import type { TypingResult } from "../../../../types/definition";
 import type { VariableTypes } from "../../../../types/validation";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
@@ -14,6 +13,8 @@ import { spelFormatters } from "./expression/Formatter";
 import type { ExpressionObj } from "./expression/types";
 import { EditorType, ExpressionLang } from "./expression/types";
 import { FieldSwitch } from "./field/FieldSwitch";
+import { FormControl, FormLabel } from "./FormControl";
+import { FieldLabelConsumer } from "./RenderFieldLabel";
 import type { Editor } from "./types";
 import type { FieldError, PossibleValue } from "./Validators";
 
@@ -81,13 +82,12 @@ EditableEditor.displayName = "EditableEditor";
 
 function EditableEditorRow({
     rowClassName,
-    renderFieldLabel,
+
     fieldLabel,
     endAdornment,
     ...props
 }: Props & {
     rowClassName?: string;
-    renderFieldLabel?: UnknownFunction;
 }): JSX.Element {
     return (
         <FormControl
@@ -98,16 +98,20 @@ function EditableEditorRow({
             }}
         >
             <>
-                {fieldLabel ? renderFieldLabel?.(fieldLabel) : <FormLabel />}
+                {fieldLabel ? <FieldLabelConsumer text={fieldLabel} /> : <FormLabel />}
                 <EditableEditor {...props} />
-                {endAdornment && (
-                    <Box display={"flex"} mt={0.5} justifyContent={"center"} ml={0.5} sx={{ cursor: "pointer" }}>
-                        {endAdornment}
-                    </Box>
-                )}
+                {endAdornment && <EndAdornment>{endAdornment}</EndAdornment>}
             </>
         </FormControl>
     );
 }
+
+const EndAdornment = styled("div")(({ theme }) => ({
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "flex-start",
+    marginTop: theme.spacing(0.5),
+    marginLeft: theme.spacing(0.5),
+}));
 
 export default EditableEditorRow;

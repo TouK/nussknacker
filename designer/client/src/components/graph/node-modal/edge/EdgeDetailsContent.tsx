@@ -1,10 +1,10 @@
-import { FormLabel } from "@mui/material";
-import React, { useCallback } from "react";
+import React from "react";
 
 import type { Edge, EdgeType } from "../../../../types/edge";
 import { EdgeKind } from "../../../../types/edge";
 import BaseModalContent from "../BaseModalContent";
 import EditableEditor from "../editors/EditableEditor";
+import { FieldLabelProvider } from "../editors/RenderFieldLabel";
 import { useDiffMark } from "../PathsToMark";
 
 interface Props {
@@ -27,7 +27,6 @@ export default function EdgeDetailsContent({
     variableTypes,
 }: Props): JSX.Element | null {
     const [isMarked] = useDiffMark();
-    const renderFieldLabel = useCallback((label) => <FormLabel>{label}</FormLabel>, []);
 
     switch (edge.edgeType?.type) {
         case EdgeKind.switchDefault: {
@@ -54,18 +53,19 @@ export default function EdgeDetailsContent({
                     isMarked={isMarked}
                     changeEdgeTypeValue={changeEdgeTypeValue}
                 >
-                    <EditableEditor
-                        variableTypes={variableTypes}
-                        fieldLabel={"Expression"}
-                        renderFieldLabel={renderFieldLabel}
-                        expressionObj={expressionObj}
-                        readOnly={readOnly}
-                        isMarked={isMarked("edgeType.condition.expression")}
-                        showValidation={showValidation}
-                        showSwitch={showSwitch}
-                        onValueChange={({ expression }) => changeEdgeTypeCondition(expression)}
-                        fieldErrors={[]}
-                    />
+                    <FieldLabelProvider>
+                        <EditableEditor
+                            variableTypes={variableTypes}
+                            fieldLabel={"Expression"}
+                            expressionObj={expressionObj}
+                            readOnly={readOnly}
+                            isMarked={isMarked("edgeType.condition.expression")}
+                            showValidation={showValidation}
+                            showSwitch={showSwitch}
+                            onValueChange={({ expression }) => changeEdgeTypeCondition(expression)}
+                            fieldErrors={[]}
+                        />
+                    </FieldLabelProvider>
                 </BaseModalContent>
             );
         }
