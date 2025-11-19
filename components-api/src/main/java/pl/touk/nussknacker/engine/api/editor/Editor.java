@@ -22,9 +22,6 @@ public @interface Editor {
     /**
      * This field should be used only with {@link EditorType#MULTI_SELECT_EDITOR}
      */
-    // TODO: renames: - rename
-    //  possibleValues -> allowedExpressions/possibleExpressions
-    //  possibleMultiSelectValues -> allowedValues/possibleValues
     MultiSelectLabeledValue[] possibleMultiSelectValues() default {};
 
     /**

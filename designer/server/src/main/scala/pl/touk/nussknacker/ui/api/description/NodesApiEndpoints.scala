@@ -717,8 +717,25 @@ object NodesApiEndpoints {
     implicit lazy val nodeValidationErrorSchema: Schema[NodeValidationError]   = Schema.derived
     implicit lazy val fixedExpressionValueSchema: Schema[FixedExpressionValue] = Schema.derived
     implicit lazy val fixedExpressionValueWithIconSchema: Schema[FixedExpressionValueWithIcon] = Schema.derived
-    implicit lazy val selectOptionValueSchema: Schema[MultiSelectFixedValue]                   = Schema.derived
-    implicit lazy val expressionSchema: Schema[Expression]                                     = Schema.derived
+
+    implicit lazy val selectOptionValueSchema: Schema[MultiSelectFixedValue] = Schema(
+      SProduct(
+        List(
+          SProductField[MultiSelectFixedValue, Any](
+            FieldName("value"),
+            Schema.any,
+            obj => Some(obj.value)
+          ),
+          SProductField[MultiSelectFixedValue, String](
+            FieldName("label"),
+            Schema.schemaForString,
+            obj => Some(obj.label)
+          )
+        )
+      )
+    )
+
+    implicit lazy val expressionSchema: Schema[Expression] = Schema.derived
 
     implicit lazy val caretPosition2dSchema: Schema[CaretPosition2d] = Schema.derived
 

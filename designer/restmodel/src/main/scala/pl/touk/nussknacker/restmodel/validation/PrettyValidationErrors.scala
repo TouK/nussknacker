@@ -194,7 +194,7 @@ object PrettyValidationErrors {
         invalidPropertyFixedValue(typ, paramName.value, label, value, values, nodeId)
       case MultiSelectUnallowedValue(value, allowedOptions, paramName, _) =>
         val message =
-          s"Value: '$value' is not allowed. Only allowed values are: ${allowedOptions.map(_.label).mkString(", ")}"
+          s"Value: '${value.spaces2}' is not allowed. Only allowed values are: ${allowedOptions.map(_.label).mkString(", ")}"
         node(
           message = message,
           description = message,

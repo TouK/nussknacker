@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.context
 
 import cats.Applicative
 import cats.data.{NonEmptyList, ValidatedNel}
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, MultiSelectFixedValue, ParameterEditor}
@@ -289,7 +290,7 @@ object ProcessCompilationError {
   }
 
   final case class MultiSelectUnallowedValue(
-      value: String,
+      value: Json,
       allowedValues: List[MultiSelectFixedValue],
       paramName: ParameterName,
       nodeId: NodeId
