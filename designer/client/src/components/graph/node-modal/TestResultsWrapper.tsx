@@ -31,18 +31,19 @@ export function TestResultsWrapper({
     showTestResults?: boolean;
 }>): JSX.Element {
     const results = useAppSelector(getTestResults);
+    const userSettings = useAppSelector(getUserSettings);
+    const showInputsAndOutputs = userSettings["node.showInputsAndOutputs"];
+
     const nodeResults = useMemo(() => {
         if (showTestResults) {
-            return TestResultUtils.resultsForNode(results, nodeId);
+            return TestResultUtils.resultsForNode(results, nodeId, showInputsAndOutputs);
         }
         return null;
-    }, [nodeId, results, showTestResults]);
+    }, [nodeId, results, showTestResults, showInputsAndOutputs]);
 
     const [testResultsState, setTestResultsState] = useState<StateForSelectTestResults>(
         TestResultUtils.stateForSelectTestResults(nodeResults),
     );
-    const userSettings = useAppSelector(getUserSettings);
-    const showInputsAndOutputs = userSettings["node.showInputsAndOutputs"];
 
     const io = useInputOutputContext();
     useEffect(() => {

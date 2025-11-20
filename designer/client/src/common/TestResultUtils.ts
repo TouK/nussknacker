@@ -57,8 +57,8 @@ export interface NodeResultsForContext {
 
 //TODO move it to backend
 class TestResultUtils {
-    resultsForNode = (testResults: TestResultsDto, nodeId: NodeId): NodeTestResults | null => {
-        const nodeResults = this._nodeResults(testResults, nodeId);
+    resultsForNode = (testResults: TestResultsDto, nodeId: NodeId, withDestinationNodeResults: boolean): NodeTestResults | null => {
+        const nodeResults = this._nodeResults(testResults, nodeId, withDestinationNodeResults);
         if (nodeResults) {
             return {
                 nodeResults,
@@ -88,11 +88,11 @@ class TestResultUtils {
         return testResults && this.availableContexts(testResults).length > 0;
     };
 
-    private _nodeResults(results: TestResultsDto, nodeId: NodeId): ResultContextJson[] {
+    private _nodeResults(results: TestResultsDto, nodeId: NodeId, withDestinationNodeResults: boolean): ResultContextJson[] {
         return (
             results?.nodeTransitionResults
                 //TODO: Let's find a better way to get All node results, and get rid of this destinationNodeId and sourceNodeId filer
-                ?.filter((r) => r.destinationNodeId === nodeId || r.sourceNodeId === nodeId)
+                ?.filter((r) => (withDestinationNodeResults && r.destinationNodeId === nodeId) || r.sourceNodeId === nodeId)
                 .flatMap(({ results }) => results) || []
         );
     }
