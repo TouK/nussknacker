@@ -119,7 +119,7 @@ object MultiSelectDynamicParametersBasedComponent extends EagerService with Sing
 
   private val multiSelectParameterName = ParameterName("multiSelectParam")
 
-  import scala.jdk.CollectionConverters.{asJavaIterableConverter, mapAsJavaMapConverter}
+  import scala.jdk.CollectionConverters._
 
   private val multiSelectParameter = Parameter
     .optional[Any](multiSelectParameterName)
