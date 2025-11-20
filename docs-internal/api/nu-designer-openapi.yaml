@@ -3272,289 +3272,6 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/processes/{scenarioName}/{versionId}/activity/comments:
-    post:
-      tags:
-      - Activities
-      summary: Add scenario comment
-      operationId: postApiProcessesScenarionameVersionidActivityComments
-      parameters:
-      - name: Nu-Impersonate-User-Identity
-        in: header
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: versionId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          text/plain:
-            schema:
-              type: string
-        required: true
-      responses:
-        '200':
-          description: ''
-        '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: path parameter versionId'
-          content:
-            text/plain:
-              schema:
-                type: string
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                CannotAuthenticateUser:
-                  value: The supplied authentication is invalid
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                InsufficientPermission:
-                  value: The supplied authentication is not authorized to access this
-                    resource
-                ImpersonationMissingPermission:
-                  value: The supplied authentication is not authorized to impersonate
-        '404':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
-        '501':
-          description: Impersonation is not supported for defined authentication mechanism
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
-      deprecated: true
-      security:
-      - {}
-      - httpAuth: []
-  /api/processes/{scenarioName}/activity/comments/{commentId}:
-    delete:
-      tags:
-      - Activities
-      summary: Delete process comment
-      operationId: deleteApiProcessesScenarionameActivityCommentsCommentid
-      parameters:
-      - name: Nu-Impersonate-User-Identity
-        in: header
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: commentId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        '200':
-          description: ''
-        '400':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Invalid comment
-                  value: Comment is required.
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                CannotAuthenticateUser:
-                  value: The supplied authentication is invalid
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                InsufficientPermission:
-                  value: The supplied authentication is not authorized to access this
-                    resource
-                ImpersonationMissingPermission:
-                  value: The supplied authentication is not authorized to impersonate
-        '404':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
-        '500':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                anyOf:
-                - type: string
-                - type: string
-              examples:
-                Example:
-                  summary: 'Unable to edit comment for activity with id: {commentId}'
-                  value: 'Unable to delete comment for activity with id: a76d6eba-9b6c-4d97-aaa1-984a23f88019'
-        '501':
-          description: Impersonation is not supported for defined authentication mechanism
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
-      deprecated: true
-      security:
-      - {}
-      - httpAuth: []
-  /api/processes/{scenarioName}/activity:
-    get:
-      tags:
-      - Activities
-      summary: Scenario activity
-      operationId: getApiProcessesScenarionameActivity
-      parameters:
-      - name: Nu-Impersonate-User-Identity
-        in: header
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProcessActivity'
-              examples:
-                Example:
-                  summary: Display scenario activity
-                  value:
-                    comments:
-                    - id: 1
-                      processVersionId: 1
-                      content: some comment
-                      user: test
-                      createDate: '2024-01-17T14:21:17Z'
-                    attachments:
-                    - id: 1
-                      processVersionId: 1
-                      fileName: some_file.txt
-                      user: test
-                      createDate: '2024-01-17T14:21:17Z'
-        '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
-          content:
-            text/plain:
-              schema:
-                type: string
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                CannotAuthenticateUser:
-                  value: The supplied authentication is invalid
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                InsufficientPermission:
-                  value: The supplied authentication is not authorized to access this
-                    resource
-                ImpersonationMissingPermission:
-                  value: The supplied authentication is not authorized to impersonate
-        '404':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
-        '501':
-          description: Impersonation is not supported for defined authentication mechanism
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
-      deprecated: true
-      security:
-      - {}
-      - httpAuth: []
   /api/processes/{scenarioName}/activity/attachments/{attachmentId}:
     get:
       tags:
@@ -3940,6 +3657,289 @@ paths:
                   summary: Cannot authenticate impersonated user as impersonation
                     is not supported by the authentication mechanism
                   value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/processes/{scenarioName}/{versionId}/activity/comments:
+    post:
+      tags:
+      - Activities
+      summary: Add scenario comment
+      operationId: postApiProcessesScenarionameVersionidActivityComments
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: versionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter versionId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      deprecated: true
+      security:
+      - {}
+      - httpAuth: []
+  /api/processes/{scenarioName}/activity/comments/{commentId}:
+    delete:
+      tags:
+      - Activities
+      summary: Delete process comment
+      operationId: deleteApiProcessesScenarionameActivityCommentsCommentid
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Invalid comment
+                  value: Comment is required.
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '500':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                anyOf:
+                - type: string
+                - type: string
+              examples:
+                Example:
+                  summary: 'Unable to edit comment for activity with id: {commentId}'
+                  value: 'Unable to delete comment for activity with id: a76d6eba-9b6c-4d97-aaa1-984a23f88019'
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      deprecated: true
+      security:
+      - {}
+      - httpAuth: []
+  /api/processes/{scenarioName}/activity:
+    get:
+      tags:
+      - Activities
+      summary: Scenario activity
+      operationId: getApiProcessesScenarionameActivity
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessActivity'
+              examples:
+                Example:
+                  summary: Display scenario activity
+                  value:
+                    comments:
+                    - id: 1
+                      processVersionId: 1
+                      content: some comment
+                      user: test
+                      createDate: '2024-01-17T14:21:17Z'
+                    attachments:
+                    - id: 1
+                      processVersionId: 1
+                      fileName: some_file.txt
+                      user: test
+                      createDate: '2024-01-17T14:21:17Z'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      deprecated: true
       security:
       - {}
       - httpAuth: []
