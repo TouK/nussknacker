@@ -270,7 +270,7 @@ case object JsonValidator extends ParameterValidator {
 case class MultiSelectFixedValuesValidator(possibleSelectValues: List[MultiSelectFixedValue])
     extends ParameterValidator {
 
-  private val possibleValues: List[Json] = possibleSelectValues.map(_.json)
+  private val possibleValues: List[Json] = possibleSelectValues.map(_.value)
 
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId

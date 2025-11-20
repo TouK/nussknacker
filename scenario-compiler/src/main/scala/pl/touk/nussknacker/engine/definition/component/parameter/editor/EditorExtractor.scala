@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.editor
 
 import cats.data.NonEmptyList
+import io.circe.Json
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
@@ -61,7 +62,7 @@ object EditorExtractor {
         MultiSelectEditor(
           editor
             .possibleMultiSelectValues()
-            .map(option => MultiSelectFixedValue(option.value(), option.label()))
+            .map(option => MultiSelectFixedValue(Json.fromString(option.value()), option.label()))
             .toList
         )
     }

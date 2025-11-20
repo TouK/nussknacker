@@ -6323,14 +6323,17 @@ components:
         possibleValues:
           type: array
           items:
-            type: object
-            required:
-            - value
-            - label
-            properties:
-              value: {}
-              label:
-                type: string
+            $ref: '#/components/schemas/MultiSelectFixedValue'
+    MultiSelectFixedValue:
+      title: MultiSelectFixedValue
+      type: object
+      required:
+      - value
+      - label
+      properties:
+        value: {}
+        label:
+          type: string
     NextSwitch:
       title: NextSwitch
       type: object

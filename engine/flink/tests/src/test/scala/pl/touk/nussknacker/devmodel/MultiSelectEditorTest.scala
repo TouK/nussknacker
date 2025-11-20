@@ -127,10 +127,10 @@ object MultiSelectDynamicParametersBasedComponent extends EagerService with Sing
       editors = List(
         MultiSelectEditor(
           List(
-            MultiSelectFixedValue("stringOption", "stringOption"),
-            MultiSelectFixedValue(3, "intOption"),
-            MultiSelectFixedValue(List(1, 2, 3).asJava, "listOption"),
-            MultiSelectFixedValue(Map("key" -> "value").asJava, "recordOption")
+            MultiSelectFixedValue(Json.fromString("stringOption"), "stringOption"),
+            MultiSelectFixedValue(Json.fromInt(3), "intOption"),
+            MultiSelectFixedValue(Json.arr(Json.fromInt(1), Json.fromInt(2), Json.fromInt(3)), "listOption"),
+            MultiSelectFixedValue(Json.obj("key" -> Json.fromString("value")), "recordOption")
           )
         )
       )
