@@ -20,8 +20,7 @@ export function useStream<T, E = unknown>(
 
         const $values = input
             .scan((prev, next) => (typeof next === "function" ? (next as (p: T) => T)(prev) : next), initialRef.current)
-            .skipDuplicates()
-            .spy();
+            .skipDuplicates(isEqual);
 
         const emit = (v: Update<T>) => emitter?.value(v);
 
@@ -30,11 +29,11 @@ export function useStream<T, E = unknown>(
 
     useEffect(() => {
         if (!autoUpdate) return;
-        setValue((current) => {
+        emit((current) => {
             const nextValue = typeof initialValue === "function" ? (initialValue as () => T)() : initialValue;
             return isEqual(current, nextValue) ? current : nextValue;
         });
-    }, [autoUpdate, initialValue]);
+    }, [autoUpdate, emit, initialValue]);
 
     useEffect(() => $values.observe(setValue).unsubscribe, [$values]);
 
