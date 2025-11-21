@@ -1,7 +1,6 @@
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import { DefaultComponents as Window } from "@touk/window-manager";
 import type { DefaultContentProps } from "@touk/window-manager/cjs/components/window/DefaultContent";
-import type { HeaderButtonCloseProps } from "@touk/window-manager/cjs/components/window/header/HeaderButtonClose";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import urljoin from "url-join";
@@ -25,11 +24,11 @@ import { InputOutputContent } from "../io/InputOutputContent";
 import { InputOutputContextProvider } from "../io/InputOutputContext";
 import { usePortal } from "../io/usePortal";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
+import { CloseButtonWithEditLock } from "./CloseButtonWithEditLock";
 import { EditStateFeedback } from "./EditStateFeedback";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
 import { useDialogActions } from "./useDialogActions";
-import type { EditState } from "./useNodeState";
 import { useNodeState } from "./useNodeState";
 
 export type NodeDetailsMeta = {
@@ -73,20 +72,6 @@ function useTitleData(node: NodeType) {
         subheader: <NodeDetailsModalSubheader node={node} />,
     };
 }
-
-const CloseButton = ({ closeDialog, editStateRef }: HeaderButtonCloseProps & { editStateRef: React.RefObject<EditState> }) => {
-    return (
-        <Window.HeaderButtonClose
-            closeDialog={() => {
-                function close(i = 0) {
-                    if (editStateRef?.current === "idle" || i >= 10) return closeDialog();
-                    setTimeout(() => close(++i), 200);
-                }
-                close();
-            }}
-        />
-    );
-};
 
 function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const { t } = useTranslation();
@@ -135,7 +120,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
 
     const HeaderButtonClose: DefaultContentProps["components"]["HeaderButtonClose"] = useCallback(
         (props) => {
-            return <CloseButton {...props} editStateRef={editStateRef} />;
+            return <CloseButtonWithEditLock {...props} editStateRef={editStateRef} />;
         },
         [editStateRef],
     );

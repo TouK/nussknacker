@@ -54,7 +54,7 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
     const node = useMemo(() => nodeFromGlobalStore || data.node, [data.node, nodeFromGlobalStore]);
     const edges = useMemo(() => getEdgesForNode(scenario, node), [node, scenario]);
 
-    const [status, setStatus, editStateRef] = useEditState();
+    const [editState, setStatus, editStateRef] = useEditState();
 
     const [node$, emitNode, editedNode] = useStream(node, true);
     const [edges$, emitEdges, outputEdges] = useStream(edges, true);
@@ -65,7 +65,6 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
         async (editedNode: EditedNode, outputEdges: Edge[]) => {
             const controller = new AbortController();
             abortControllerRef.current = controller;
-
             setStatus("processing");
             try {
                 const after = applyIdFromFakeName(editedNode);
@@ -134,7 +133,7 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
         outputEdges,
         onChange,
         performNodeEdit,
-        editState: status,
+        editState,
         editStateRef,
     };
 }
