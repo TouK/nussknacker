@@ -52,7 +52,7 @@ object TransformStateTransformer extends CustomStreamTransformer with ExplicitUi
           setUidToNodeIdIfNeed(
             ctx,
             stream
-              .groupBy(groupBy, groupByParameterName)
+              .groupBy(groupBy, groupByParameterName, preserveContext = true)
               .process(
                 new TransformStateFunction[String](
                   ctx.lazyParameterHelper,

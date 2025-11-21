@@ -17,6 +17,29 @@ object richflink {
 
     def groupBy(
         groupBy: LazyParameter[CharSequence],
+        groupByParameterName: ParameterName,
+        preserveContext: Boolean,
+    )(implicit ctx: FlinkCustomNodeContext): KeyedStream[ValueWithContext[String], String] = {
+      val mapper = new StringKeyOnlyMapper(
+        ctx.lazyParameterHelper,
+        groupBy,
+        groupByParameterName,
+        KeyOptions(allowNullableKeys = false)
+      )
+      if (preserveContext) {
+        dataStream
+          .flatMap(mapper, ctx.valueWithContextInfo.forClass[String])
+          .keyBy((k: ValueWithContext[String]) => k.value)
+      } else {
+        dataStream
+          .flatMap(mapper, ctx.valueWithContextInfo.forClass[String])
+          .map(new ClearUserVariables)
+          .keyBy((k: ValueWithContext[String]) => k.value)
+      }
+    }
+
+    def groupBy(
+        groupBy: LazyParameter[CharSequence],
         groupByParameterName: ParameterName
     )(implicit ctx: FlinkCustomNodeContext): KeyedStream[ValueWithContext[String], String] =
       dataStream
@@ -47,7 +70,6 @@ object richflink {
         KeyOptions(allowNullableKeys = false),
         value
       )
-
       if (preserveContext) {
         dataStream
           .flatMap(keyedValueMapper, typeInfo)
@@ -78,9 +100,8 @@ object richflink {
 
   }
 
-  private class ClearUserVariables[K, V]
-      extends MapFunction[ValueWithContext[KeyedValue[K, V]], ValueWithContext[KeyedValue[K, V]]] {
-    override def map(value: ValueWithContext[KeyedValue[K, V]]): ValueWithContext[KeyedValue[K, V]] =
+  private class ClearUserVariables[T] extends MapFunction[ValueWithContext[T], ValueWithContext[T]] {
+    override def map(value: ValueWithContext[T]): ValueWithContext[T] =
       value.copy(context = value.context.clearUserVariables)
   }
 
