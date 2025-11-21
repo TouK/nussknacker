@@ -101,13 +101,7 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
         [emitEdges, emitNode],
     );
 
-    const change$ = useMemo(
-        () =>
-            combine([node$, edges$])
-                .map(([node, edges]) => ({ node, edges }))
-                .toProperty(),
-        [edges$, node$],
-    );
+    const change$ = useMemo(() => combine([node$, edges$]).map(([node, edges]) => ({ node, edges })), [edges$, node$]);
 
     useEffect(() => {
         if (!autoApply) return;
