@@ -35,11 +35,11 @@ const calculateProperties = (scenario: Scenario, changedProperties: PropertiesTy
     };
 };
 
-export function editProperties(changedProperties: PropertiesType): ThunkAction {
+export function editProperties(changedProperties: PropertiesType, controller?: AbortController): ThunkAction {
     return async (dispatch, getState) => {
         const scenario = getScenario(getState());
         const scenarioGraph = await dispatch(calculateProperties(scenario, changedProperties));
-        const response = await HttpService.validateProcess(scenario.name, scenarioGraph.properties.name, scenarioGraph);
+        const response = await HttpService.validateProcess(scenario.name, scenarioGraph.properties.name, scenarioGraph, controller);
 
         dispatch({
             type: "EDIT_PROPERTIES",
