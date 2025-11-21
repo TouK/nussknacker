@@ -5,14 +5,12 @@ import { DefaultComponents } from "@touk/window-manager";
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { editProperties } from "../../../../actions/nk/editProperties";
-import { getScenario } from "../../../../reducers/selectors/graph";
-import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import type { NodeType } from "../../../../types/node";
 import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 import { WindowContent } from "../../../../windowManager/WindowContent";
 import type { WindowKind } from "../../../../windowManager/WindowKind";
-import { usePropertiesState } from "../../../modals/PropertiesDialog";
+import { usePropertiesState } from "../../../modals/usePropertiesState";
 import type { Scenario } from "../../../Process/types";
 import { DescriptionOnlyContent } from "../DescriptionOnlyContent";
 import { getReadOnly } from "./selectors";
@@ -26,9 +24,7 @@ function DescriptionDialog(props: DescriptionDialogProps): JSX.Element {
     const { t } = useTranslation();
     const { editMode, close } = props;
     const readOnly = useAppSelector(getReadOnly);
-    const dispatch = useAppDispatch();
-    const scenario = useAppSelector(getScenario);
-    const { currentProperties, editedProperties, handleSetEditedProperties, isTouched } = usePropertiesState();
+    const { currentProperties, editedProperties, handleSetEditedProperties, isTouched, manualApply } = usePropertiesState();
 
     const [previewMode, setPreviewMode] = useState(!editMode || readOnly);
 
@@ -40,12 +36,12 @@ function DescriptionDialog(props: DescriptionDialogProps): JSX.Element {
         return {
             title: t("dialog.button.apply", "apply"),
             action: async () => {
-                await dispatch(editProperties(scenario, editedProperties));
+                await manualApply();
                 close();
             },
             disabled: !editedProperties.name?.length,
         };
-    }, [readOnly, previewMode, isTouched, t, editedProperties, dispatch, scenario, close]);
+    }, [close, editedProperties.name?.length, isTouched, manualApply, previewMode, readOnly, t]);
 
     const cancel = useMemo<WindowButtonProps | false>(() => {
         if (previewMode && !isTouched) return false;

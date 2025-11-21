@@ -35,7 +35,7 @@ export function getEdgesForNode(scenario: Scenario, node: NodeType) {
     return scenario.scenarioGraph.edges.filter(({ from }) => from === node.id);
 }
 
-const NODE_UPDATE_DEBOUNCE_TIMEOUT = 500;
+export const NODE_UPDATE_DEBOUNCE_TIMEOUT = 500;
 
 export function useNodeState(data: NodeDetailsMeta): NodeState {
     const dispatch = useAppDispatch();
