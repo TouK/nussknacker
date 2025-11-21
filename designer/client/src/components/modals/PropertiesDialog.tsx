@@ -1,16 +1,13 @@
 import { css } from "@emotion/css";
 import { styled } from "@mui/material";
 import type { WindowContentProps } from "@touk/window-manager";
-import { debounce, isEqual } from "lodash";
-import { set } from "lodash/fp";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { debounce } from "lodash";
+import React, { useEffect, useMemo, useState } from "react";
 
-import { editProperties } from "../../actions/nk/editProperties";
 import { ToolId } from "../../actions/nk/toolWindow";
 import PropertiesSvg from "../../assets/img/properties.svg";
 import HttpService from "../../http/HttpService/instance";
-import { getProperties, getScenario } from "../../reducers/selectors/graph";
-import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
+import { useAppSelector } from "../../store/storeHelpers";
 import type { PropertiesType } from "../../types/node";
 import type { NodeValidationError } from "../../types/validation";
 import { WindowContent } from "../../windowManager/WindowContent";
@@ -23,18 +20,7 @@ import { NodeDocs } from "../graph/node-modal/nodeDetails/SubHeader";
 import { getProcessName, getScenarioProperties } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { PropertiesForm } from "../properties/PropertiesForm";
 import { useOnToolWindow } from "./useOnToolWindow";
-
-export const usePropertiesState = () => {
-    const currentProperties = useAppSelector(getProperties);
-    const [editedProperties, setEditedProperties] = useState<PropertiesType>(currentProperties);
-    const isTouched = useMemo(() => !isEqual(currentProperties, editedProperties), [currentProperties, editedProperties]);
-
-    const handleSetEditedProperties = useCallback((label: string | number, value: string) => {
-        setEditedProperties((prevState) => set<typeof editedProperties>(label, value, prevState) as unknown as typeof editedProperties);
-    }, []);
-
-    return { currentProperties, editedProperties, handleSetEditedProperties, isTouched };
-};
+import { usePropertiesState } from "./usePropertiesState";
 
 export const NodeDetailsModalIcon = styled(WindowHeaderIconStyled.withComponent(PropertiesSvg))(({ theme }) => ({
     backgroundColor: theme.palette.custom.getWindowStyles(WindowKind.editProperties).backgroundColor,
@@ -72,21 +58,13 @@ function usePropertiesValidation(isEditMode: boolean, editedProperties: Properti
 const PropertiesDialog = ({ ...props }: WindowContentProps) => {
     const isEditMode = useAppSelector((s) => !getReadOnly(s, false));
 
-    const dispatch = useAppDispatch();
-
     const scenarioProperties = useAppSelector(getScenarioProperties);
-    const scenario = useAppSelector(getScenario);
 
-    const { editedProperties, handleSetEditedProperties } = usePropertiesState();
     const showSwitch = false;
-
-    const onApply = useCallback(
-        async () => await dispatch(editProperties(scenario, editedProperties)),
-        [dispatch, editedProperties, scenario],
-    );
+    const { editedProperties, handleSetEditedProperties, manualApply } = usePropertiesState();
 
     const { apply, cancel } = useDialogActions({
-        onApply,
+        onApply: manualApply,
         onClose: props.close,
         readOnly: !isEditMode,
     });

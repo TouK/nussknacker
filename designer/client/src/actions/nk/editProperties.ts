@@ -1,6 +1,7 @@
 import { alignFragmentWithSchema } from "../../components/graph/utils/fragmentSchemaAligner";
 import type { Scenario } from "../../components/Process/types";
 import HttpService from "../../http/HttpService/instance";
+import { getScenario } from "../../reducers/selectors/graph";
 import type { PropertiesType } from "../../types/node";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
 import type { ValidationResult } from "../../types/validation";
@@ -34,8 +35,9 @@ const calculateProperties = (scenario: Scenario, changedProperties: PropertiesTy
     };
 };
 
-export function editProperties(scenario: Scenario, changedProperties: PropertiesType): ThunkAction {
-    return async (dispatch) => {
+export function editProperties(changedProperties: PropertiesType): ThunkAction {
+    return async (dispatch, getState) => {
+        const scenario = getScenario(getState());
         const scenarioGraph = await dispatch(calculateProperties(scenario, changedProperties));
         const response = await HttpService.validateProcess(scenario.name, scenarioGraph.properties.name, scenarioGraph);
 
