@@ -35,7 +35,7 @@ class DelayTransformer extends CustomStreamTransformer with ExplicitUidInOperato
         Option(key)
           .map { _ =>
             stream
-              .groupBy(key, keyParameterName)(ctx)
+              .groupBy(key, keyParameterName, preserveContext = true)(ctx)
           }
           .getOrElse {
             stream

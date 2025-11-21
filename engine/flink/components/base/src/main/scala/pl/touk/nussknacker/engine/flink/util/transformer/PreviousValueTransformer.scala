@@ -29,7 +29,7 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
       setUidToNodeIdIfNeed(
         ctx,
         start
-          .groupBy(key, keyParameterName)(ctx)
+          .groupBy(key, keyParameterName, preserveContext = true)(ctx)
           .flatMap(
             new PreviousValueFunction(value, ctx.lazyParameterHelper, valueTypeInfo),
             ctx.valueWithContextInfo.forType(valueTypeInfo)

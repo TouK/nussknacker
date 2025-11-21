@@ -38,22 +38,6 @@ object richflink {
       }
     }
 
-    def groupBy(
-        groupBy: LazyParameter[CharSequence],
-        groupByParameterName: ParameterName
-    )(implicit ctx: FlinkCustomNodeContext): KeyedStream[ValueWithContext[String], String] =
-      dataStream
-        .flatMap(
-          new StringKeyOnlyMapper(
-            ctx.lazyParameterHelper,
-            groupBy,
-            groupByParameterName,
-            KeyOptions(allowNullableKeys = false)
-          ),
-          ctx.valueWithContextInfo.forClass[String]
-        )
-        .keyBy((k: ValueWithContext[String]) => k.value)
-
     def groupByWithValue[T <: AnyRef: TypeTag, K <: AnyRef: TypeTag](
         groupBy: LazyParameter[K],
         groupByParameterName: ParameterName,
