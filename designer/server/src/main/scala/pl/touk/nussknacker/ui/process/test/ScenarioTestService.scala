@@ -16,15 +16,12 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCrea
 import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.Source
-import pl.touk.nussknacker.engine.api.test.{
-  ScenarioTestCommonFormatJsonRecord,
-  ScenarioTestData,
-  ScenarioTestSourceSpecificFormatJsonRecord
-}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestCommonFormatJsonRecord, ScenarioTestData, ScenarioTestSourceSpecificFormatJsonRecord, TestCaseScenarioTestData}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
 import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
+import pl.touk.nussknacker.engine.graph.Test
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder.TestRecordVariablesDecodingError
@@ -256,6 +253,30 @@ class ScenarioTestService(
 
       _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
     } yield ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))).value
+  }
+
+  def performTest(
+                   scenarioGraph: ScenarioGraph,
+                   processVersion: ProcessVersion,
+                   isFragment: Boolean,
+                   test: Test,
+                 )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
+    val canonical = toCanonicalProcess(
+      scenarioGraph,
+      processVersion,
+      isFragment
+    )
+    val scenarioTestData = TestCaseScenarioTestData(test)
+    (for {
+      testResults <- EitherT.liftF(
+        testExecutorService.testProcess(
+          processVersion,
+          canonical,
+          scenarioTestData,
+        )
+      )
+      _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
+    } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))).value
   }
 
   def performTest(

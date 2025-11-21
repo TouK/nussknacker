@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.{Test, node}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
@@ -84,6 +84,7 @@ case class CanonicalProcess(
     nodes: List[CanonicalNode],
     additionalBranches: List[List[CanonicalNode]] = List.empty,
     stickyNotes: List[StickyNote] = List.empty,
+    tests: List[Test] = List.empty // todo: for now put here only to be stored and versioned together with process version
 ) extends CanonicalTreeNode {
 
   import CanonicalProcess._
