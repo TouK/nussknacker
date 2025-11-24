@@ -57,8 +57,8 @@ export interface NodeResultsForContext {
 
 //TODO move it to backend
 class TestResultUtils {
-    resultsForNode = (testResults: TestResultsDto, nodeId: NodeId, withDestinationNodeResults: boolean): NodeTestResults | null => {
-        const nodeResults = this._nodeResults(testResults, nodeId, withDestinationNodeResults);
+    resultsForNode = (testResults: TestResultsDto, nodeId: NodeId, useNodeInputsOnly: boolean): NodeTestResults | null => {
+        const nodeResults = this._nodeResults(testResults, nodeId, useNodeInputsOnly);
         if (nodeResults) {
             return {
                 nodeResults,
@@ -88,13 +88,29 @@ class TestResultUtils {
         return testResults && this.availableContexts(testResults).length > 0;
     };
 
-    private _nodeResults(results: TestResultsDto, nodeId: NodeId, withDestinationNodeResults: boolean): ResultContextJson[] {
-        return (
-            results?.nodeTransitionResults
-                //TODO: Let's find a better way to get All node results, and get rid of this destinationNodeId and sourceNodeId filer
-                ?.filter((r) => (withDestinationNodeResults && r.destinationNodeId === nodeId) || r.sourceNodeId === nodeId)
-                .flatMap(({ results }) => results) || []
-        );
+    private _nodeResults(results: TestResultsDto, nodeId: NodeId, useNodeInputsOnly: boolean): ResultContextJson[] {
+        const allNodesTransitionResults = results?.nodeTransitionResults || [];
+
+        if (!useNodeInputsOnly) {
+            return (
+                allNodesTransitionResults
+                    //TODO: Let's find a better way to get All node results, and get rid of this destinationNodeId and sourceNodeId filer
+                    .filter((r) => r.destinationNodeId === nodeId || r.sourceNodeId === nodeId)
+                    .flatMap(({ results }) => results)
+            );
+        } else {
+            // In the previous testing mode, each node displayed only its own input variables.
+            // Now the input variables must be taken from transitions where this node is the destination.
+            // However, source nodes, by definition, may not have any inbound transitions.
+            // In those cases, we fall back to using transitions where this node appears as the source.
+            const inboundTransitions = allNodesTransitionResults.filter((r) => r.destinationNodeId === nodeId);
+
+            const outboundTransitions = allNodesTransitionResults.filter((r) => r.sourceNodeId === nodeId);
+
+            const transitions = inboundTransitions.length != 0 ? inboundTransitions : outboundTransitions;
+
+            return transitions.flatMap(({ results }) => results);
+        }
     }
 
     private _expressionEvaluationResults(results: TestResultsDto, nodeId: NodeId): ExpressionEvaluationResultJson[] {

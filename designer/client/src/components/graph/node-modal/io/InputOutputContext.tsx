@@ -118,7 +118,7 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
 
     const getError = useCallback(
         (destinationNodeId: string, contextId: string) =>
-            TestResultUtils.resultsForNode(testResults, destinationNodeId, true)?.errors?.find(({ context }) => context.id === contextId),
+            TestResultUtils.resultsForNode(testResults, destinationNodeId, false)?.errors?.find(({ context }) => context.id === contextId),
         [testResults],
     );
 

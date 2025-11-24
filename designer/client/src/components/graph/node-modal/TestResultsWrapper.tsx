@@ -36,7 +36,7 @@ export function TestResultsWrapper({
 
     const nodeResults = useMemo(() => {
         if (showTestResults) {
-            return TestResultUtils.resultsForNode(results, nodeId, showInputsAndOutputs);
+            return TestResultUtils.resultsForNode(results, nodeId, !showInputsAndOutputs);
         }
         return null;
     }, [nodeId, results, showTestResults, showInputsAndOutputs]);
