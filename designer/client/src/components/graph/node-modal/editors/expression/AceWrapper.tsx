@@ -4,7 +4,7 @@ import { Box } from "@mui/material";
 import type { Ace } from "ace-builds";
 import { trimStart } from "lodash";
 import type { ForwardedRef, ReactNode } from "react";
-import React, { forwardRef, useMemo } from "react";
+import React, { forwardRef } from "react";
 import type ReactAce from "react-ace/lib/ace";
 import type { IAceEditorProps } from "react-ace/lib/ace";
 import type { ICommand } from "react-ace/lib/types";
@@ -132,6 +132,33 @@ function handleTab(editor: Ace.Editor, shiftKey?: boolean): boolean {
     element?.focus();
 }
 
+export const DEFAULT_COMMANDS: AceKeyCommand[] = [
+    {
+        name: "find",
+        bindKey: {
+            win: "Ctrl-F",
+            mac: "Command-F",
+        },
+        exec: () => false,
+    },
+    {
+        name: "focusNext",
+        bindKey: {
+            win: "Tab",
+            mac: "Tab",
+        },
+        exec: (editor) => handleTab(editor),
+    },
+    {
+        name: "focusPrevious",
+        bindKey: {
+            win: "Shift-Tab",
+            mac: "Shift-Tab",
+        },
+        exec: (editor) => handleTab(editor, true),
+    },
+];
+
 function editorLangToMode(language: ExpressionLang | string, editorMode?: EditorMode): string {
     if (editorMode) {
         return editorMode.valueOf();
@@ -157,36 +184,6 @@ export default forwardRef(function AceWrapper(
     ref: ForwardedRef<ReactAce>,
 ): JSX.Element {
     const { language, readOnly, rows = 1, editorMode, InputAdornmentEnd, useAceWorker } = inputProps;
-
-    const DEFAULT_COMMANDS = useMemo<AceKeyCommand[]>(
-        () => [
-            {
-                name: "find",
-                bindKey: {
-                    win: "Ctrl-F",
-                    mac: "Command-F",
-                },
-                exec: () => false,
-            },
-            {
-                name: "focusNext",
-                bindKey: {
-                    win: "Tab",
-                    mac: "Tab",
-                },
-                exec: (editor) => handleTab(editor),
-            },
-            {
-                name: "focusPrevious",
-                bindKey: {
-                    win: "Shift-Tab",
-                    mac: "Shift-Tab",
-                },
-                exec: (editor) => handleTab(editor, true),
-            },
-        ],
-        [],
-    );
 
     return (
         <>
