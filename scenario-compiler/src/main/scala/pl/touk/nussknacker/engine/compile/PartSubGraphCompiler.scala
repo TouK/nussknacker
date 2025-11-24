@@ -42,7 +42,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         expressionsTypingInfo: Map[String, ExpressionTypingInfo]
     ) =
       CompilationResult(
-        Map(n.id -> NodeTypingInfo(inputContext.validationContext, expressionsTypingInfo, None)),
+        Map(n.id -> NodeTypingInfo(inputContext.validationContext, expressionsTypingInfo, None, None)),
         validated
       )
 
@@ -130,7 +130,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         parameters: Option[List[Parameter]]
     ) =
       CompilationResult(
-        Map(nodeId.id -> NodeTypingInfo(inputContext.validationContext, expressionsTypingInfo, parameters)),
+        Map(nodeId.id -> NodeTypingInfo(inputContext.validationContext, expressionsTypingInfo, parameters, None)),
         validated
       )
 
@@ -196,7 +196,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         parameters: Option[List[Parameter]]
     ) =
       CompilationResult(
-        Map(data.id -> NodeTypingInfo(inputContext.validationContext, expressionsTypingInfo, parameters)),
+        Map(data.id -> NodeTypingInfo(inputContext.validationContext, expressionsTypingInfo, parameters, None)),
         validated
       )
 
@@ -318,7 +318,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
           .map(Some(_))
       case splittednode.PartRef(ref) =>
         CompilationResult(
-          Map(ref -> NodeTypingInfo(inputContext.validationContext, Map.empty, None)),
+          Map(ref -> NodeTypingInfo(inputContext.validationContext, Map.empty, None, None)),
           Valid(compiledgraph.node.PartRef(ref))
         )
           .map(Some(_))

@@ -175,5 +175,5 @@ case class NodeTypingInfo(
     // Currently only parameters for dynamic nodes (implemented by DynamicComponent) are returned
     // They are used on FE, to faster display correct node details modal (without need for additional validation request to BE)
     parameters: Option[List[Parameter]],
-    outputTyping: Option[TypingResult]
+    outputTyping: Option[TypingResult] //todo: this is only needed to ensure in test compilation that mock expression match type that is returned from processor/enricher
 )

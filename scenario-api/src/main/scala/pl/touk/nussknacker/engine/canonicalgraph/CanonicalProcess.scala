@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.{Test, node}
+import pl.touk.nussknacker.engine.graph.{TestCase, node}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
@@ -78,13 +78,13 @@ object CanonicalProcess {
 
 //in fact with branches/join this form is not canonical anymore - graph can be represented in more than way
 case class CanonicalProcess(
-    metaData: MetaData,
-    // separation of nodes and additionalBranches is just for compatibility of stored json
-    // DON'T use these fields, rely on allStartNodes or mapAllNodes instead.
-    nodes: List[CanonicalNode],
-    additionalBranches: List[List[CanonicalNode]] = List.empty,
-    stickyNotes: List[StickyNote] = List.empty,
-    tests: List[Test] = List.empty // todo: for now put here only to be stored and versioned together with process version
+                             metaData: MetaData,
+                             // separation of nodes and additionalBranches is just for compatibility of stored json
+                             // DON'T use these fields, rely on allStartNodes or mapAllNodes instead.
+                             nodes: List[CanonicalNode],
+                             additionalBranches: List[List[CanonicalNode]] = List.empty,
+                             stickyNotes: List[StickyNote] = List.empty,
+//                             tests: List[TestCase] = List.empty // todo: for now put here only to be stored and versioned together with process version
 ) extends CanonicalTreeNode {
 
   import CanonicalProcess._

@@ -3,76 +3,49 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.syntax.all._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParserCompilationError, InputData, Mock, TestConfigurationRefersToNotExistingNode}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParserCompilationError, Mock, TestConfigurationRefersToNotExistingNode}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, NodeId, ParamName}
-import pl.touk.nussknacker.engine.compiledgraph.{CompiledAssertion, CompiledEnricherMock, CompiledTest, CompiledTestSourceInput}
+import pl.touk.nussknacker.engine.compiledgraph.{CompiledAssertion, CompiledEnricherMock, CompiledTest}
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
-import pl.touk.nussknacker.engine.graph.{Assertion, EnricherMock, Test, TestSourceInput}
+import pl.touk.nussknacker.engine.graph.{Assertion, EnricherMock, TestCase}
 import pl.touk.nussknacker.engine.testmode.TestProcess.{AssertionResult, FailedAssertion, SuccessfulAssertion}
 
 class TestCompiler(expressionCompiler: ExpressionCompiler) {
 
   // todo: take care what should be done when scenario is only partially compiled (there were some errors)
 
-  def compile(test: Test, typing: Map[String, NodeTypingInfo]): ValidatedNel[ProcessCompilationError, CompiledTest] = {
-    val sources = test.inputs
-      .map { case (sourceId, inputDataRecords) =>
-        compileInputRecords(NodeId(sourceId), inputDataRecords, typing, test.id).map(sourceId -> _)
-      }
-      .toList
-      .sequence
-
-    val mocks = test.mocks
+  //todo: to decide where should be input data validation (especially in context of validation during edition and saving)
+  def compile(test: TestCase, typing: Map[String, NodeTypingInfo]): ValidatedNel[ProcessCompilationError, CompiledTest] = {
+    val mocksV = test.mocks
       .map { case (nodeId, mock) =>
         compileMock(NodeId(nodeId), mock, typing, test.id).map(nodeId -> _)
       }
       .toList
       .sequence
 
-    val assertions = test.assertions
+    val assertionsV = test.assertions
       .map { case (node, assertions) =>
         compileAssertions(NodeId(node), assertions, typing, test.id).map(node -> _)
       }
       .toList
       .sequence
 
-    ProcessCompilationError.ValidatedNelApplicative.map3(
-      sources,
-      mocks,
-      assertions
-    ) { (validSources, validMocks, validAssertions) =>
+    ProcessCompilationError.ValidatedNelApplicative.map2(
+      mocksV,
+      assertionsV
+    ) { (validMocks, validAssertions) =>
       CompiledTest(
         test.id,
-        validSources.toMap,
+        test.inputs,
         validMocks.toMap,
         validAssertions.toMap
       )
     }
-  }
-
-  private def compileInputRecords(
-                                   nodeId: NodeId,
-                                   testSourceInputs: List[TestSourceInput],
-                                   nodesTyping: Map[String, NodeTypingInfo],
-                                   testId: String
-                                 ): ValidatedNel[ProcessCompilationError, List[CompiledTestSourceInput]] = {
-    validateTypingExistence(nodeId, nodesTyping, testId, InputData).andThen { _ =>
-      testSourceInputs.map(compileInputRecord(nodeId, _)).sequence
-    }
-  }
-
-  private def compileInputRecord(
-                                  nodeId: NodeId,
-                                  testSourceInput: TestSourceInput
-                                ): ValidatedNel[ProcessCompilationError, CompiledTestSourceInput] = {
-    expressionCompiler
-      .compile(testSourceInput.expression, None, ValidationContext.empty, Unknown)(nodeId)
-      .map(e => CompiledTestSourceInput(e.expression))
   }
 
   private def compileMock(

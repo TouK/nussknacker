@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.test
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.graph.TestCase
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import java.time.Instant
@@ -26,7 +27,7 @@ case class ScenarioTestParametersRecord(sourceId: NodeId, parameterExpressions: 
 /**
  * Holds test records for a scenario. The difference to [[TestData]] is that records are assigned to the individual sources in the scenario.
  */
-case class ScenarioTestData(inputRecords: List[ScenarioTestRecord]) {
+case class ScenarioTestData(inputRecords: List[ScenarioTestRecord], test: Option[TestCase] = None) {
 
   def commonFormatRecords(nodeId: NodeId): List[(ScenarioTestCommonFormatJsonRecord, Int)] = {
     inputRecords.zipWithIndex.collect { case (record @ ScenarioTestCommonFormatJsonRecord(`nodeId`, _, _), index) =>

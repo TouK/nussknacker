@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClu
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.schemedkafka.SchemedKafkaScenarioTestingSpec._
 import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
-import pl.touk.nussknacker.engine.graph.{Test, TestSourceInput}
+import pl.touk.nussknacker.engine.graph.{TestCase, TestSourceInput}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.JsonTemplate
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
@@ -290,7 +290,7 @@ class SchemedKafkaScenarioTestingSpec
       .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta".spel)
 
     val scenarioTestData = TestCaseScenarioTestData(
-      Test(
+      TestCase(
         "someTest",
         Map(
           "start" -> List(
