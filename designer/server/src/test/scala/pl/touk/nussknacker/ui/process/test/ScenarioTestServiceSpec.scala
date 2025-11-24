@@ -17,12 +17,8 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.validationHelpers.{
-  GenericParametersSource,
-  GenericParametersSourceNoGenerate,
-  GenericParametersSourceNoTestSupport,
-  SourceWithTestParameters
-}
+import pl.touk.nussknacker.engine.compile.validationHelpers.{GenericParametersSource, GenericParametersSourceNoGenerate, GenericParametersSourceNoTestSupport, SourceWithTestParameters}
+import pl.touk.nussknacker.engine.graph.TestCase
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -32,12 +28,14 @@ import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.MissingSourceError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.TestingCapabilitiesError.NoSourcesError
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatSerDe
+import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 import java.time.Instant
+import scala.concurrent.Await
 
 class ScenarioTestServiceSpec
-    extends AnyFunSuite
+  extends AnyFunSuite
     with Matchers
     with OptionValues
     with EitherValuesDetailedMessage
@@ -60,10 +58,10 @@ class ScenarioTestServiceSpec
   object SourceGeneratingEmptyTimestamp extends GenericParametersSource {
 
     override def implementation(
-        params: Params,
-        dependencies: List[NodeDependencyValue],
-        finalState: Option[List[String]]
-    ): process.Source = {
+                                 params: Params,
+                                 dependencies: List[NodeDependencyValue],
+                                 finalState: Option[List[String]]
+                               ): process.Source = {
 
       new Source with SourceTestSupport[ProcessingType] with TestDataGenerator with LiveDataProvider {
 
@@ -88,10 +86,10 @@ class ScenarioTestServiceSpec
   object SourceGeneratingEmptyData extends GenericParametersSource {
 
     override def implementation(
-        params: Params,
-        dependencies: List[NodeDependencyValue],
-        finalState: Option[List[String]]
-    ): process.Source = {
+                                 params: Params,
+                                 dependencies: List[NodeDependencyValue],
+                                 finalState: Option[List[String]]
+                               ): process.Source = {
 
       new process.Source with SourceTestSupport[String] with TestDataGenerator {
 
@@ -106,7 +104,7 @@ class ScenarioTestServiceSpec
   private val allFormats = Table("format", TestDataFormat.SourceSpecific, TestDataFormat.CommonFormat)
 
   private val sourceSpecificFormatTestService = prepareScenarioTestService(TestDataFormat.SourceSpecific)
-  private val commonFormatTestService         = prepareScenarioTestService(TestDataFormat.CommonFormat)
+  private val commonFormatTestService = prepareScenarioTestService(TestDataFormat.CommonFormat)
 
   test("should detect capabilities for empty scenario") {
     val scenario = CanonicalProcess(MetaData("empty", StreamMetaData()), List.empty)
@@ -519,7 +517,7 @@ class ScenarioTestServiceSpec
 
     forAll(allFormats) { format =>
       val testService = prepareScenarioTestService(format)
-      val serde       = TestTestDataFormatSerDeFactory.create(format)
+      val serde = TestTestDataFormatSerDeFactory.create(format)
       forEvery(testCases) { (scenario, size, expectedSize, expectedSizeBySourceId) =>
         val liveDataRecords =
           testService
@@ -667,7 +665,7 @@ class ScenarioTestServiceSpec
         "source1",
         "genericSourceWithTestParameters",
         "par1" -> "a".spelTemplate,
-        "a"    -> "42".spel
+        "a" -> "42".spel
       )
       .emptySink("end", "dead-end")
     val processVersion = processVersionFor(scenarioWithMultipleParams)
@@ -701,6 +699,39 @@ class ScenarioTestServiceSpec
               |}""".stripMargin.jsonExpression
       }
     }
+  }
+
+  test("should run test case") {
+    import scala.concurrent.ExecutionContext.Implicits._
+    import scala.concurrent.duration._
+    val scenarioRecords = PreliminaryScenarioRecords(
+      NonEmptyList(
+        CommonFormatPreliminaryScenarioRecord(
+          sourceId = NodeId("source1"),
+          variables = Map("input" -> Json.fromString("record 1")),
+          upstreamTimestamp = Some(Instant.ofEpochMilli(1))
+        ),
+        Nil,
+      )
+    )
+
+    val preliminaryRecordsSerDe = new PreliminaryScenarioRecordsSerDe(None, None, CommonDataFormatSerDe)
+    val serializedRecords: SerializedScenarioRecordsContent = preliminaryRecordsSerDe.serialize(scenarioRecords)
+      .getOrElse(throw new RuntimeException("Error during records serialization"))
+
+    val testCase = TestCase("someTest", serializedRecords.content, Map.empty, Map.empty)
+
+    val scenario = createScenarioWithSingleSource()
+
+    val result = Await.result(
+      commonFormatTestService.performTestCase(scenario.toScenarioGraph,
+      processVersionFor(scenario),
+      isFragment = false,
+      testCase),
+      20 seconds
+    )
+
+    result
   }
 
   private def prepareScenarioTestService(testDataFormat: TestDataFormat.Value): ScenarioTestService =

@@ -261,11 +261,6 @@ class ScenarioTestService(
                        isFragment: Boolean,
                        test: TestCase,
                  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
-    val canonical = toCanonicalProcess(
-      scenarioGraph,
-      processVersion,
-      isFragment
-    )
     (for {
       preliminaryScenarioTestRecords <- EitherT.fromEither[Future](
         preliminaryScenarioRecordsSerDe
