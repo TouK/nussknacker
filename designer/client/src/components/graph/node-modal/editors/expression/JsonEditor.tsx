@@ -1,7 +1,7 @@
 import { cx } from "@emotion/css";
 import { Box } from "@mui/material";
 import { isEmpty } from "lodash";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
@@ -40,7 +40,12 @@ export const JsonEditor: SimpleEditor<Props> = ({
     isMarked,
     defaultValue,
 }: Props) => {
-    const [value, setValue] = useState(expressionObj.expression.replace(/^["'](.*)["']$/, ""));
+    const storedExpression = useMemo(() => expressionObj.expression.replace(/^["'](.*)["']$/, ""), [expressionObj.expression]);
+    const [value, setValue] = useState(storedExpression);
+    useEffect(() => {
+        setValue(storedExpression);
+    }, [storedExpression]);
+
     const { annotations, markers, hasRangeText, setAnnotationsOnLoad } = useAceEditorRangeMessages(fieldErrors);
 
     const onChange = useCallback(
