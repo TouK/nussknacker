@@ -8,7 +8,7 @@ import { nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsCo
 import type { ParamType } from "../types";
 import type { FieldError } from "../Validators";
 import { setupAceEditorSnippets } from "./AceEditorJsonBasedSnippets";
-import { DEFAULT_OPTIONS } from "./AceWrapper";
+import { DEFAULT_COMMANDS, DEFAULT_OPTIONS } from "./AceWrapper";
 import type { OnValueChange, SimpleEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import { ResetToDefaultButton } from "./ResetToDefaultButton";
@@ -102,6 +102,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
                         // We don't want to check syntax correctness with ace
                         useWorker: false,
                     }}
+                    commands={DEFAULT_COMMANDS}
                     annotations={annotations}
                     markers={markers}
                 />
