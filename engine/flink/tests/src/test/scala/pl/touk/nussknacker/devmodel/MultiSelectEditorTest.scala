@@ -98,7 +98,7 @@ class MultiSelectEditorTest extends AnyFunSuite with FlinkSpec with Matchers wit
   def evaluateMutliSelectParameterByRunningScenario(
       jsonExpressionString: String,
       multiSelectComponentName: String = "multiSelectDynamicParametersBasedComponent"
-  ): RunnerListResult[AnyRef] = {
+  ): RunnerListResult[Json] = {
     val scenario = ScenarioBuilder
       .streaming("testScenario")
       .parallelism(1)
@@ -110,7 +110,7 @@ class MultiSelectEditorTest extends AnyFunSuite with FlinkSpec with Matchers wit
         "multiSelectParam" -> jsonExpressionString.jsonExpression
       )
       .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#serviceOut".spel)
-    testScenarioRunner.runWithData[Int, AnyRef](scenario, List(1))
+    testScenarioRunner.runWithData[Int, Json](scenario, List(1))
   }
 
 }
@@ -122,7 +122,7 @@ object MultiSelectDynamicParametersBasedComponent extends EagerService with Sing
   import scala.jdk.CollectionConverters._
 
   private val multiSelectParameter = Parameter
-    .optional[Any](multiSelectParameterName)
+    .optional[Json](multiSelectParameterName)
     .copy(
       editors = List(
         MultiSelectEditor(
@@ -159,7 +159,7 @@ object MultiSelectDynamicParametersBasedComponent extends EagerService with Sing
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
           componentUseContext: ComponentUseContext
-      ): Future[Any] = Future(paramValue)
+      ): Future[Json] = Future(paramValue)
     }
   }
 
@@ -179,9 +179,8 @@ object MultiSelectAnnotationBasedComponent extends Service with Serializable {
           new MultiSelectLabeledValue(value = "option2", label = "option2")
         )
       )
-      @Editor(`type` = EditorType.JSON_EDITOR)
-      multiSelect: Any,
-  ): Future[Any] = {
+      multiSelect: Json,
+  ): Future[Json] = {
     Future.successful(multiSelect)
   }
 

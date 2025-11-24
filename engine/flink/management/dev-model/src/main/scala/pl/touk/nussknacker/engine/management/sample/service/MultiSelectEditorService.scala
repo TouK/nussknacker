@@ -21,8 +21,8 @@ object MultiSelectEditorService extends Service with Serializable {
         )
       )
       @Editor(`type` = EditorType.JSON_EDITOR)
-      multiSelect: Any,
-  ): Future[Any] = {
+      multiSelect: Json,
+  ): Future[Json] = {
     Future.successful(multiSelect)
   }
 
