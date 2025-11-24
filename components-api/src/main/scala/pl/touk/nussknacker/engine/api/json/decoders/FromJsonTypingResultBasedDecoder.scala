@@ -159,6 +159,9 @@ class FromJsonTypingResultBasedDecoder extends LazyLogging {
           s"Decoding of non-Map based records (runtime type: ${nonMapRuntimeObjType.display}) is not supported.",
           cursor
         )
+      case TypedClass(`JsonClass`, _) =>
+        // When Json is expected, json is not decoded, passed as io.circe class
+        cursor.as[Json]
       case unknown @ Unknown(_) =>
         /// For Unknown we fallback to generic json to any conversion. It won't work for some types such as LocalDate but for others should work correctly
         cursor.as[Json].map { json =>
