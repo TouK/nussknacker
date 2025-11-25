@@ -17,12 +17,13 @@ export function DataSampleFieldWrapper({ children, node, parameter, errors, isEd
     if (!settings["node.showSendRequestButton"]) return <>{children}</>;
     if (!isEditMode) return <>{children}</>;
 
+    const fieldErrors = getValidationErrorsForField(errors, parameter.name);
     return (
         <>
             {children}
-            <FieldAddons hasError={showValidation && errors.length > 0}>
+            <FieldAddons hasError={showValidation && fieldErrors.length > 0}>
                 <SendRequestButton
-                    disabled={!isRunning ? true : getValidationErrorsForField(errors, parameter.name).length > 0}
+                    disabled={!isRunning ? true : fieldErrors.length > 0}
                     infoTooltip={
                         !isRunning ? t("node.actions.sendRequest.tooltip.deployScenarioFirst", "Deploy your scenario first") : null
                     }
