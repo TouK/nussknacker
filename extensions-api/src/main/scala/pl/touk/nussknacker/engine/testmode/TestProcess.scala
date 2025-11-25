@@ -13,13 +13,19 @@ object TestProcess {
       expressionEvaluationResults: Map[NodeId, List[ExpressionEvaluationResult[T]]],
       externalServiceInvocationResults: Map[NodeId, List[ExternalServiceInvocationResult[T]]],
       exceptions: List[ExceptionResult[T]],
-      assertionsResults: Map[String, List[AssertionResult]]
+      assertionsResults: Map[String, List[AssertionResult]],
+      originalNodeResults: Map[NodeId, List[
+        ResultContext[Any]
+      ]], // todo: for assertions verification we have to keep original instances
   ) {
 
     def updateNodeResult(nodeId: NodeId, context: Context, variableEncoder: Any => T): TestResults[T] =
-      copy(nodeResults =
-        nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ ResultContext
-          .fromContext(context, Instant.now(), variableEncoder)))
+      copy(
+        nodeResults = nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ ResultContext
+          .fromContext(context, Instant.now(), variableEncoder))),
+        originalNodeResults =
+          originalNodeResults + (nodeId -> (originalNodeResults.getOrElse(nodeId, List()) :+ ResultContext
+            .fromContext(context, Instant.now(), identity))),
       )
 
     def updateNodeOutputResult(
@@ -87,7 +93,8 @@ object TestProcess {
 
   object TestResults {
 
-    def empty[T]: TestResults[T] = TestResults[T](Map.empty, Map.empty, Map.empty, Map.empty, List.empty, Map.empty)
+    def empty[T]: TestResults[T] =
+      TestResults[T](Map.empty, Map.empty, Map.empty, Map.empty, List.empty, Map.empty, Map.empty)
 
     def aggregate[T](testResults: Iterable[TestResults[T]]): TestResults[T] = {
       TestResults[T](
@@ -96,7 +103,8 @@ object TestProcess {
         expressionEvaluationResults = mergeMaps(testResults.map(_.expressionEvaluationResults)),
         externalServiceInvocationResults = mergeMaps(testResults.map(_.externalServiceInvocationResults)),
         exceptions = testResults.flatMap(_.exceptions).toList,
-        assertionsResults = mergeMaps(testResults.map(_.assertionsResults))
+        assertionsResults = mergeMaps(testResults.map(_.assertionsResults)),
+        originalNodeResults = mergeMaps(testResults.map(_.originalNodeResults)),
       )
     }
 
@@ -141,7 +149,6 @@ object TestProcess {
   case class ResultContext[T](id: ContextId, timestamp: Instant, variables: Map[String, T]) {
     def variableTyped[U <: T](name: String): Option[U] = variables.get(name).map(_.asInstanceOf[U])
   }
-
 
   sealed trait AssertionResult
 
