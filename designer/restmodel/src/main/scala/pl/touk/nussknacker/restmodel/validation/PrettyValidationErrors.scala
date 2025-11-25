@@ -192,6 +192,20 @@ object PrettyValidationErrors {
       case UnknownProperty(paramName, _)                => unknownProperty(typ, paramName.value)
       case InvalidPropertyFixedValue(paramName, label, value, values, nodeId) =>
         invalidPropertyFixedValue(typ, paramName.value, label, value, values, nodeId)
+      case MultiSelectUnallowedValue(value, allowedOptions, paramName, _) =>
+        val message =
+          s"Value: '${value.spaces2}' is not allowed. Only allowed values are: ${allowedOptions.map(_.label).mkString(", ")}"
+        node(
+          message = message,
+          description = message,
+          paramName = Some(paramName)
+        )
+      case MultiSelectInvalidFormat(message, paramName, _) =>
+        node(
+          message = message,
+          description = message,
+          paramName = Some(paramName)
+        )
       case CustomNodeError(_, message, paramName) =>
         NodeValidationError(typ, message, message, paramName.map(_.value), NodeValidationErrorType.SaveAllowed, None)
       case EagerExpressionEvaluationError(message, _, paramName, _) =>

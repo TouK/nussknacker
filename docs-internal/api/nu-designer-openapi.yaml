@@ -6316,6 +6316,24 @@ components:
           type: string
         isFragment:
           type: boolean
+    MultiSelectEditor:
+      title: MultiSelectEditor
+      type: object
+      properties:
+        possibleValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/MultiSelectFixedValue'
+    MultiSelectFixedValue:
+      title: MultiSelectFixedValue
+      type: object
+      required:
+      - value
+      - label
+      properties:
+        value: {}
+        label:
+          type: string
     NextSwitch:
       title: NextSwitch
       type: object
@@ -6938,6 +6956,7 @@ components:
       - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
       - $ref: '#/components/schemas/JsonTemplateParameterEditor'
+      - $ref: '#/components/schemas/MultiSelectEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/SpelParameterEditor'
       - $ref: '#/components/schemas/SpelTemplateParameterEditor'
@@ -7500,6 +7519,7 @@ components:
       - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
       - $ref: '#/components/schemas/JsonTemplateParameterEditor'
+      - $ref: '#/components/schemas/MultiSelectEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/StaticStringParameterEditor'
       - $ref: '#/components/schemas/TextareaParameterEditor'

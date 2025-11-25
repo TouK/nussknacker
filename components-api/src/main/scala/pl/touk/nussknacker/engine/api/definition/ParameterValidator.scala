@@ -1,13 +1,15 @@
 package pl.touk.nussknacker.engine.api.definition
 
 import cats.data.Validated
-import cats.data.Validated.{invalid, valid}
+import cats.data.Validated.{invalid, valid, Invalid}
+import io.circe.Json
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.parser._
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ParameterValueCompileTimeValidation}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -262,6 +264,59 @@ case object JsonValidator extends ParameterValidator {
       paramName,
       nodeId
     )
+
+}
+
+case class MultiSelectFixedValuesValidator(possibleSelectValues: List[MultiSelectFixedValue])
+    extends ParameterValidator {
+
+  private val possibleValues: List[Json] = possibleSelectValues.map(_.value)
+
+  override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
+      implicit nodeId: NodeId
+  ): Validated[PartSubGraphCompilationError, Unit] = {
+    import scala.jdk.CollectionConverters._
+    parse(expression.expression) match {
+      case Right(json) =>
+        json.asArray match {
+          case Some(elements) => ensureOnlyPossibleElements(paramName, elements.toList)
+          case None           => invalid(invalidFormatError(paramName, nodeId, s"Expected a List, got value: $json"))
+        }
+      case Left(error) =>
+        invalid(
+          invalidFormatError(
+            paramName,
+            nodeId,
+            s"Could not parse expression as JSON: ${expression.expression}. Error: $error"
+          )
+        )
+    }
+  }
+
+  private def ensureOnlyPossibleElements(parameterName: ParameterName, elements: List[Json])(
+      implicit nodeId: NodeId
+  ): Validated[PartSubGraphCompilationError, Unit] = {
+    elements
+      .find(!possibleValues.contains(_))
+      .map(unallowedValue => invalid(unallowedValueError(parameterName, nodeId, unallowedValue)))
+      .getOrElse(valid(()))
+  }
+
+  private def invalidFormatError(paramName: ParameterName, nodeId: NodeId, message: String) =
+    MultiSelectInvalidFormat(
+      message,
+      paramName,
+      nodeId,
+    )
+
+  private def unallowedValueError(parameterName: ParameterName, nodeId: NodeId, unallowedValue: Json) = {
+    MultiSelectUnallowedValue(
+      unallowedValue,
+      possibleSelectValues,
+      parameterName,
+      nodeId
+    )
+  }
 
 }
 

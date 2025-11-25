@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedExpressionValueWithIcon,
+  MultiSelectFixedValue,
   ParameterCategory,
   ParameterEditor
 }
@@ -716,7 +717,13 @@ object NodesApiEndpoints {
     implicit lazy val nodeValidationErrorSchema: Schema[NodeValidationError]   = Schema.derived
     implicit lazy val fixedExpressionValueSchema: Schema[FixedExpressionValue] = Schema.derived
     implicit lazy val fixedExpressionValueWithIconSchema: Schema[FixedExpressionValueWithIcon] = Schema.derived
-    implicit lazy val expressionSchema: Schema[Expression]                                     = Schema.derived
+
+    implicit lazy val selectOptionValueSchema: Schema[MultiSelectFixedValue] = {
+      import sttp.tapir.json.circe._
+      Schema.derived
+    }
+
+    implicit lazy val expressionSchema: Schema[Expression] = Schema.derived
 
     implicit lazy val caretPosition2dSchema: Schema[CaretPosition2d] = Schema.derived
 

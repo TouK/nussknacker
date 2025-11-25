@@ -199,6 +199,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "dynamicService"                 -> categories(new DynamicService),
       "customValidatedService"         -> categories(new CustomValidatedService),
       "serviceWithDictParameterEditor" -> categories(new ServiceWithDictParameterEditor),
+      "multipleSelectEditorService"    -> categories(MultiSelectEditorService),
       "modelConfigReader"              -> categories(new ModelConfigReaderService(modelConfig.underlyingConfig)),
       "log"                            -> all(LoggingService)
     )

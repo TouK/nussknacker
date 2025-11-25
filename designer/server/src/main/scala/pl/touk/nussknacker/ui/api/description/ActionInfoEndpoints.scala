@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedExpressionValueWithIcon,
+  MultiSelectFixedValue,
   StaticParameterEditor,
   StaticStringParameterEditor
 }
@@ -122,6 +123,7 @@ object ActionInfoEndpoints {
           NodesApiEndpoints.Dtos.fixedExpressionValueSchema
         implicit val fixedExpressionWithIconSchema: Schema[FixedExpressionValueWithIcon] =
           NodesApiEndpoints.Dtos.fixedExpressionValueWithIconSchema
+        implicit val selectOptionSchema: Schema[MultiSelectFixedValue] = NodesApiEndpoints.Dtos.selectOptionValueSchema
         implicit val parameterEditorSchema: Schema[StaticParameterEditor]    = Schema.derived
         implicit val parameterSchema: Schema[UiActionParameterConfigDto]     = Schema.derived
         implicit val nodeParametersSchema: Schema[UiActionNodeParametersDto] = Schema.derived
