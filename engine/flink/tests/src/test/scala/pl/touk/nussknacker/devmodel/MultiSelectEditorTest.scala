@@ -98,7 +98,7 @@ class MultiSelectEditorTest extends AnyFunSuite with FlinkSpec with Matchers wit
   def evaluateMutliSelectParameterByRunningScenario(
       jsonExpressionString: String,
       multiSelectComponentName: String = "multiSelectDynamicParametersBasedComponent"
-  ): RunnerListResult[Json] = {
+  ): RunnerListResult[AnyRef] = {
     val scenario = ScenarioBuilder
       .streaming("testScenario")
       .parallelism(1)
@@ -110,7 +110,7 @@ class MultiSelectEditorTest extends AnyFunSuite with FlinkSpec with Matchers wit
         "multiSelectParam" -> jsonExpressionString.jsonExpression
       )
       .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#serviceOut".spel)
-    testScenarioRunner.runWithData[Int, Json](scenario, List(1))
+    testScenarioRunner.runWithData[Int, AnyRef](scenario, List(1))
   }
 
 }
@@ -122,7 +122,9 @@ object MultiSelectDynamicParametersBasedComponent extends EagerService with Sing
   import scala.jdk.CollectionConverters._
 
   private val multiSelectParameter = Parameter
-    .optional[Json](multiSelectParameterName)
+    // When defining a `MULTI_SELECT_EDITON` parameter, the expected type should be set to `Any`, not `io.circe.Json`,
+    // even though the runtime value will be `io.circe.Json`
+    .optional[Any](multiSelectParameterName)
     .copy(
       editors = List(
         MultiSelectEditor(
@@ -179,8 +181,11 @@ object MultiSelectAnnotationBasedComponent extends Service with Serializable {
           new MultiSelectLabeledValue(value = "option2", label = "option2")
         )
       )
-      multiSelect: Json,
-  ): Future[Json] = {
+      @Editor(`type` = EditorType.JSON_EDITOR)
+      // When defining a `MULTI_SELECT_EDITON` parameter, the expected type should be set to `Any`, not `io.circe.Json`,
+      // even though the runtime value will be `io.circe.Json`
+      multiSelect: Any,
+  ): Future[Any] = {
     Future.successful(multiSelect)
   }
 

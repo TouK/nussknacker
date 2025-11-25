@@ -21,8 +21,10 @@ object MultiSelectEditorService extends Service with Serializable {
         )
       )
       @Editor(`type` = EditorType.JSON_EDITOR)
-      multiSelect: Json,
-  ): Future[Json] = {
+      // When defining a `MULTI_SELECT_EDITON` parameter, the expected type should be set to `Any`, not `io.circe.Json`,
+      // even though the runtime value will be `io.circe.Json`
+      multiSelect: Any,
+  ): Future[Any] = {
     Future.successful(multiSelect)
   }
 
