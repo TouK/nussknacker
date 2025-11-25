@@ -7,7 +7,7 @@ import { useAppSelector } from "../../../../store/storeHelpers";
 export const LiveDataLoadingIndicator = memo(function ContextAccordion({ noLabel }: { noLabel?: boolean }) {
     const isLiveDataWorking = useAppSelector(getLiveDataNextUpdate);
     return (
-        <Fade in={isLiveDataWorking} mountOnEnter unmountOnExit>
+        <Fade in={Boolean(isLiveDataWorking)} mountOnEnter unmountOnExit>
             <Stack
                 direction="row"
                 p={1}
