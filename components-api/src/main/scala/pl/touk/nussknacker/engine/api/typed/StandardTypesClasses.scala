@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.api.typed
 
-import io.circe.Json
-
 import java.lang
 import java.math.BigInteger
 import java.nio.charset.Charset
@@ -52,8 +50,6 @@ object StandardTypesClasses {
   val AvroIndexedRecordClassName = "org.apache.avro.generic.IndexedRecord"
 
   val FlinkTableApiRowClassName = "org.apache.flink.types.Row"
-
-  val JsonClass: Class[_] = classOf[Json]
 
   val CollectionClass: Class[_] = classOf[java.util.Collection[_]]
 
