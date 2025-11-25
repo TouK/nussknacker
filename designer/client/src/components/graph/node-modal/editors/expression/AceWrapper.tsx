@@ -11,7 +11,7 @@ import type { ICommand } from "react-ace/lib/types";
 import type { IAceOptions, IEditorProps } from "react-ace/src/types";
 
 import type { FieldError } from "../Validators";
-import AceEditor from "./ace";
+import { AceEditor } from "./ace";
 import type { EditorMode } from "./types";
 import { ExpressionLang } from "./types";
 
@@ -42,6 +42,7 @@ export const DEFAULT_OPTIONS: IAceOptions = {
     indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
     enableSnippets: false,
     fontSize: 14,
+    tabSize: 2,
     highlightActiveLine: false,
     highlightGutterLine: true,
 };

@@ -6,7 +6,7 @@ import "ace-builds/src-noconflict/mode-json";
 import "ace-builds/src-noconflict/snippets/json";
 import "ace-builds/src-noconflict/mode-jsx";
 import ace from "ace-builds";
-import AceEditor from "react-ace";
+import _AceEditor from "react-ace";
 
 import "../../../../../brace/mode/spel";
 import "../../../../../brace/mode/spelTemplate";
@@ -15,7 +15,8 @@ import "../../../../../brace/mode/sql";
 import "../../../../../brace/mode/plainText";
 import "../../../../../brace/theme/nussknacker";
 
-export default AceEditor;
+export const AceEditor = _AceEditor;
+export type AceEditorType = _AceEditor;
 
 /**
  * There is a problem with Ace editor tooltip positioning in the modal, because of modal transform property.
@@ -25,12 +26,5 @@ const Tooltip = ace.require("ace/tooltip").Tooltip;
 const originalInit = Tooltip.prototype.$init;
 Tooltip.prototype.$init = function () {
     this.$parentNode = document.body;
-
-    originalInit.call(this);
-};
-
-Tooltip.prototype.setHtml = function (html) {
-    if (this.getElement()) {
-        this.getElement().innerHTML = html;
-    }
+    return originalInit.call(this);
 };

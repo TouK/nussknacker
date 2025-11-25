@@ -12,7 +12,7 @@ import { nodeInputCss } from "../../../../NodeInput";
 import { nodeInput, nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import type { FieldError } from "../Validators";
 import { setupAceEditorSnippets } from "./AceEditorJsonBasedSnippets";
-import AceEditor from "./AceWithSettings";
+import AceWithSettings from "./AceWithSettings";
 import type { AceWrapperInputProps } from "./AceWrapper";
 import type { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
 import type { ExpressionLang } from "./types";
@@ -64,7 +64,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                     ])}
                     sx={{ position: "relative" }}
                 >
-                    <AceEditor
+                    <AceWithSettings
                         onLoad={(editor) => {
                             setAnnotationsOnLoad();
                             setupAceEditorSnippets(editor);
