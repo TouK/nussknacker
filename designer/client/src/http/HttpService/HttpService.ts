@@ -710,24 +710,30 @@ export class HttpService {
         return promise;
     }
 
-    fetchProcessLiveData(processName: string, showErrors: boolean): Promise<AxiosResponse<ResultsWithCountsDto>> {
-        return api.get<ResultsWithCountsDto>(`/liveData/${encodeURIComponent(processName)}`).catch((error) => {
-            if (axios.isAxiosError(error) && error.response) {
-                const status = error.response.status;
-                if (showErrors) {
-                    if (status === 422) {
-                        this.#addError(
-                            i18next.t("notification.error.liveDataNotSupported", "Live data is not supported for this scenario"),
-                            error,
-                            true,
-                        );
-                    } else {
-                        this.#addError(i18next.t("notification.error.failedToFetchLiveData", "Cannot fetch live data"), error, true);
+    fetchProcessLiveData(
+        processName: string,
+        showErrors: boolean,
+        controller?: AbortController,
+    ): Promise<AxiosResponse<ResultsWithCountsDto>> {
+        return api
+            .get<ResultsWithCountsDto>(`/liveData/${encodeURIComponent(processName)}`, { signal: controller?.signal })
+            .catch((error) => {
+                if (axios.isAxiosError(error) && error.response) {
+                    const status = error.response.status;
+                    if (showErrors) {
+                        if (status === 422) {
+                            this.#addError(
+                                i18next.t("notification.error.liveDataNotSupported", "Live data is not supported for this scenario"),
+                                error,
+                                true,
+                            );
+                        } else {
+                            this.#addError(i18next.t("notification.error.failedToFetchLiveData", "Cannot fetch live data"), error, true);
+                        }
                     }
                 }
-            }
-            throw error;
-        });
+                throw error;
+            });
     }
 
     //to prevent closing edit node modal and corrupting graph display
