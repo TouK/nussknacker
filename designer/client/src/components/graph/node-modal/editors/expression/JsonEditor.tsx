@@ -48,7 +48,9 @@ export const JsonEditor: SimpleEditor<Props> = ({
     }, [storedExpression]);
 
     const language = ExpressionLang.JSON;
-    const { annotations, markers, hasRangeText, setAnnotationsOnLoad } = useAceEditorRangeMessages(fieldErrors);
+    const settings = useAppSelector(getUserSettings);
+    const showLines = Boolean(settings[`editor.${language}.showLines`]);
+    const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(fieldErrors, showLines);
 
     const onChange = useCallback(
         (newValue: string) => {
@@ -69,9 +71,6 @@ export const JsonEditor: SimpleEditor<Props> = ({
         return <ResetToDefaultButton defaultValue={defaultValueObject} handleChange={onChange} />;
     }, [defaultValue, onChange, readOnly, value]);
 
-    const userSettings = useAppSelector(getUserSettings);
-    const showLines = Boolean(userSettings[`editor.${language}.showLines`]);
-
     return (
         <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
             <Box
@@ -87,7 +86,6 @@ export const JsonEditor: SimpleEditor<Props> = ({
             >
                 <AceWithSettings
                     onLoad={(editor) => {
-                        setAnnotationsOnLoad();
                         setupAceEditorSnippets(editor);
                     }}
                     onChange={onChange}
@@ -104,7 +102,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
                     fieldErrors={fieldErrors}
                 />
             </Box>
-            {showValidation && (!showLines || !hasRangeText) && <ValidationLabels fieldErrors={fieldErrors} />}
+            {showValidation && !hasRangeText && <ValidationLabels fieldErrors={fieldErrors} />}
         </Box>
     );
 };

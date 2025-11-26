@@ -4,7 +4,6 @@ import { CopyIconButton } from "../../../common/copyToClipboard/CopyIconButton";
 import { useCopyClipboard } from "../../../common/copyToClipboard/useCopyToClipboard";
 import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../store/storeHelpers";
-import { getValidationErrorsForField } from "./editors/Validators";
 import { FieldAddons } from "./fieldAddons";
 import { GenerateNewEndpoint } from "./node-action-buttons/GenerateNewEndpoint";
 import type { FieldWrapperProps, ParameterExpressionFieldProps } from "./ParameterExpressionField";
@@ -34,15 +33,13 @@ export function EndpointFieldWrapper({
     setProperty,
     isEditMode,
     showValidation,
-    errors,
-    parameter,
+    fieldErrors,
 }: FieldWrapperProps) {
     const settings = useAppSelector(getUserSettings);
 
     if (!isEditMode) return <>{children}</>;
     if (!settings["node.showGenerateEndpointButton"]) return <>{children}</>;
 
-    const fieldErrors = getValidationErrorsForField(errors, parameter.name);
     return (
         <>
             {children}

@@ -5,12 +5,17 @@ import type { UIParameter } from "../../../types/definition";
 import type { NodeId, NodeType, Parameter } from "../../../types/node";
 import type { NodeValidationError, VariableTypes } from "../../../types/validation";
 import ExpressionField from "./editors/expression/ExpressionField";
+import type { FieldError } from "./editors/Validators";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { findParamDefinitionByName } from "./parameterHelpers";
 import { useTestResults } from "./TestResultsWrapper";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
-export type FieldWrapperProps = PropsWithChildren<Omit<ParameterExpressionFieldProps, "FieldWrapper">>;
+export type FieldWrapperProps = PropsWithChildren<
+    Omit<ParameterExpressionFieldProps, "FieldWrapper"> & {
+        fieldErrors: FieldError[];
+    }
+>;
 
 export type ParameterExpressionFieldProps = {
     listFieldPath: string;
@@ -57,8 +62,9 @@ export function ParameterExpressionField({ FieldWrapper, ...props }: ParameterEx
         [findAvailableVariables, node.id, parameter.name, parameterDefinitions],
     );
 
-    const field = useMemo(
-        () => (
+    const fieldErrors = getValidationErrorsForField(errors, parameter.name);
+    const field = useMemo(() => {
+        return (
             <ExpressionField
                 fieldName={parameter.name}
                 fieldLabel={parameter.name}
@@ -71,26 +77,30 @@ export function ParameterExpressionField({ FieldWrapper, ...props }: ParameterEx
                 setNodeDataAt={setProperty}
                 testResultsToShow={testResultsState.testResultsToShow}
                 variableTypes={variableTypes}
-                fieldErrors={getValidationErrorsForField(errors, parameter.name)}
+                fieldErrors={fieldErrors}
                 endAdornment={endAdornment}
             />
-        ),
-        [
-            endAdornment,
-            errors,
-            isEditMode,
-            listFieldPath,
-            node,
-            parameter.name,
-            parameterDefinitions,
+        );
+    }, [
+        endAdornment,
+        fieldErrors,
+        isEditMode,
+        listFieldPath,
+        node,
+        parameter.name,
+        parameterDefinitions,
+        setProperty,
+        showSwitch,
+        showValidation,
+        testResultsState.testResultsToShow,
+        variableTypes,
+    ]);
 
-            setProperty,
-            showSwitch,
-            showValidation,
-            testResultsState.testResultsToShow,
-            variableTypes,
-        ],
+    return FieldWrapper ? (
+        <FieldWrapper {...props} fieldErrors={fieldErrors}>
+            {field}
+        </FieldWrapper>
+    ) : (
+        <>{field}</>
     );
-
-    return FieldWrapper ? <FieldWrapper {...props}>{field}</FieldWrapper> : <>{field}</>;
 }

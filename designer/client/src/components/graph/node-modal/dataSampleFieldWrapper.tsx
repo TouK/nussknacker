@@ -4,24 +4,26 @@ import { useTranslation } from "react-i18next";
 import { getIsRunning } from "../../../reducers/selectors/scenarioState";
 import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../store/storeHelpers";
-import { getValidationErrorsForField } from "./editors/Validators";
+import { useAceEditorRangeMessages } from "./editors/expression/useAceEditorRangeMessages";
 import { FieldAddons } from "./fieldAddons";
 import { SendRequestButton } from "./node-action-buttons/SendRequestButton";
 import type { FieldWrapperProps } from "./ParameterExpressionField";
 
-export function DataSampleFieldWrapper({ children, node, parameter, errors, isEditMode, showValidation }: FieldWrapperProps) {
+export function DataSampleFieldWrapper({ children, node, parameter, isEditMode, showValidation, fieldErrors }: FieldWrapperProps) {
     const { t } = useTranslation();
     const isRunning = useAppSelector(getIsRunning);
     const settings = useAppSelector(getUserSettings);
+    const showLines = Boolean(settings[`editor.${parameter.expression.language}.showLines`]);
+
+    const { hasRangeText } = useAceEditorRangeMessages(fieldErrors, showLines);
 
     if (!settings["node.showSendRequestButton"]) return <>{children}</>;
     if (!isEditMode) return <>{children}</>;
 
-    const fieldErrors = getValidationErrorsForField(errors, parameter.name);
     return (
         <>
             {children}
-            <FieldAddons hasError={showValidation && fieldErrors.length > 0}>
+            <FieldAddons hasError={showValidation && fieldErrors.length > 0 && !hasRangeText}>
                 <SendRequestButton
                     disabled={!isRunning ? true : fieldErrors.length > 0}
                     infoTooltip={
