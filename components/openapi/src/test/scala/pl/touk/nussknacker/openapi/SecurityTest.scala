@@ -150,7 +150,7 @@ class SecurityTest
         val enricherWithSingleSecurityConfig = parseToEnrichers(
           definitionMatchingStubbedLogicOnlyApiKeySchemes,
           backend,
-          baseConfig.copy(secret = Some(config.expectedSecret))
+          baseConfig.copy(secrets = List(config.expectedSecret))
         )
         enricherWithSingleSecurityConfig(ServiceName(config.operationId))
           .invoke(context)
@@ -164,7 +164,7 @@ class SecurityTest
       val enricherWithSingleSecurityConfig = parseToEnrichers(
         definitionMatchingStubbedLogicOnlyBasicAuth,
         backend,
-        baseConfig.copy(secret = Some(stubbedBasicAuthSecretCheckingLogic.expectedSecret))
+        baseConfig.copy(secrets = List(stubbedBasicAuthSecretCheckingLogic.expectedSecret))
       )
       enricherWithSingleSecurityConfig(ServiceName(stubbedBasicAuthSecretCheckingLogic.operationId))
         .invoke(context)
@@ -188,7 +188,7 @@ class SecurityTest
     val enricherWithSingleSecurityConfig = parseToEnrichers(
       "multiple-schemes-for-single-operation.yml",
       backend,
-      baseConfig.copy(secret = Some(secretMatchesEveryScheme))
+      baseConfig.copy(secrets = List(secretMatchesEveryScheme))
     )
     enricherWithSingleSecurityConfig(ServiceName("root"))
       .invoke(context)
