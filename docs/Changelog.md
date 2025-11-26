@@ -15,6 +15,9 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#8720](https://github.com/TouK/nussknacker/pull/8720) In those aggregates, that do not require preserving context, the context is now cleaned before grouping:
+  * it is done by removing user variables
+  * it improves performance, because the unneeded, full context is no longer serialized and transmitted by Flink
 * [#8723](https://github.com/TouK/nussknacker/pull/8723) Change: Passing Context instead of ContextId at EagerServiceWithStaticParametersAndReturnType.invoke
 * [#7181](https://github.com/TouK/nussknacker/pull/7181) StickyNotes feature
   * sticky notes are designed to store information inside scenario/fragment, they are separate from graph nodes and do not take part in scenario logic
