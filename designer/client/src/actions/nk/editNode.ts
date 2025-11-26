@@ -86,7 +86,7 @@ export function editNode(
     return async (dispatch) => {
         const scenarioGraph = await dispatch(calculateProcessAfterChange(scenarioBefore, before, after, outputEdges));
         const response = await HttpService.validateProcess(scenarioBefore.name, scenarioBefore.name, scenarioGraph, controller);
-        dispatch({
+        return dispatch({
             type: "EDIT_NODE",
             before,
             after,

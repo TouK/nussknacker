@@ -20,6 +20,7 @@ import {
     getProcessProperties,
 } from "./NodeDetailsContent/selectors";
 import type { NodeTypeDetailsContentProps } from "./NodeTypeDetailsContent";
+import { cleanProperties, isRequestSource } from "./requestSourceAddons";
 import { setImmutable } from "./setImmutable";
 import type { Paths, PathValue } from "./typeHelpers";
 
@@ -40,20 +41,24 @@ export function useValidation({ node, edges, showValidation }: Pick<NodeTypeDeta
 
     useEffect(() => {
         if (!showValidation) return;
+        let nodeData = node;
+        if (isRequestSource(node)) {
+            nodeData = cleanProperties(nodeData);
+        }
         dispatch(
             validateNodeData(
                 processName,
                 {
                     //see NODES_CONNECTED/NODES_DISCONNECTED
                     outgoingEdges: edges.filter((e) => e.to != ""),
-                    nodeData: node,
+                    nodeData,
                     processProperties,
-                    branchVariableTypes: getBranchVariableTypes(node.id),
+                    branchVariableTypes: getBranchVariableTypes(nodeData.id),
                     variableTypes,
                 },
                 () => {
                     if (autoApply) return;
-                    dispatch(nodeValidationDynamicParametersLoaded(node.id));
+                    dispatch(nodeValidationDynamicParametersLoaded(nodeData.id));
                 },
             ),
         );

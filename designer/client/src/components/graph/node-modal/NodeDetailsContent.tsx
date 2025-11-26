@@ -3,7 +3,6 @@ import type { SetStateAction } from "react";
 import React, { useCallback, useMemo } from "react";
 
 import ProcessUtils from "../../../common/ProcessUtils";
-import HttpService from "../../../http/HttpService/instance";
 import type { RootState } from "../../../reducers";
 import { getConfiguredAdditionalComponents } from "../../../reducers/selectors/configuredAdditionalComponents";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
@@ -13,10 +12,10 @@ import { useAppSelector } from "../../../store/storeHelpers";
 import type { Edge } from "../../../types/edge";
 import type { NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
-import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox";
+import { NodeAdditionalInfo } from "./NodeAdditionalInfo";
 import { DebugNodeInspector } from "./NodeDetailsContent/DebugNodeInspector";
 import { NodeTable } from "./NodeDetailsContent/NodeTable";
-import { getCurrentErrors } from "./NodeDetailsContent/selectors";
+import { getNodeErrors } from "./NodeDetailsContent/selectors";
 import NodeErrors from "./NodeErrors";
 import { NodeSwitcher } from "./NodeSwitcher";
 import { NodeTypeDetailsContent } from "./NodeTypeDetailsContent";
@@ -39,7 +38,7 @@ export const NodeDetailsContent = ({
     showSwitch?: boolean;
     showTestResults?: boolean;
 }): JSX.Element => {
-    const currentErrors = useAppSelector((state: RootState) => getCurrentErrors(state)(node.id, nodeErrors));
+    const currentErrors = useAppSelector((state: RootState) => getNodeErrors(state, { node, nodeErrors }));
     const [errors, diagramStructureErrors] = useMemo(() => partition(currentErrors, (error) => !!error.fieldName), [currentErrors]);
 
     const userSettings = useAppSelector(getUserSettings);
@@ -92,7 +91,7 @@ export const NodeDetailsContent = ({
                     showSwitch={showSwitch}
                 />
             </TestResultsWrapper>
-            <NodeAdditionalInfoBox node={node} handleGetAdditionalInfo={HttpService.getNodeAdditionalInfo} />
+            <NodeAdditionalInfo node={node} />
             {userSettings["debug.nodesAsJson"] && <DebugNodeInspector node={node} />}
         </NodeTable>
     );
