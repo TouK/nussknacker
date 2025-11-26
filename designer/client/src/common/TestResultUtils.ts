@@ -70,6 +70,10 @@ class TestResultUtils {
         return null;
     };
 
+    errorsForNode = (testResults: TestResultsDto, nodeId: NodeId): ExceptionResultJson[] => {
+        return this._errors(testResults, nodeId);
+    };
+
     stateForSelectTestResults = (testResults?: NodeTestResults, id?: string): StateForSelectTestResults => {
         if (this.hasTestResults(testResults)) {
             return {
@@ -89,12 +93,11 @@ class TestResultUtils {
     };
 
     private _nodeResults(results: TestResultsDto, nodeId: NodeId): ResultContextJson[] {
-        return (
-            results?.nodeTransitionResults
-                //TODO: Let's find a better way to get All node results, and get rid of this destinationNodeId and sourceNodeId filer
-                ?.filter((r) => r.destinationNodeId === nodeId || r.sourceNodeId === nodeId)
-                .flatMap(({ results }) => results) || []
-        );
+        const allNodesTransitionResults = results?.nodeTransitionResults || [];
+        const inboundTransitions = allNodesTransitionResults.filter((r) => r.destinationNodeId === nodeId);
+        const outboundTransitions = allNodesTransitionResults.filter((r) => r.sourceNodeId === nodeId);
+        const transitions = inboundTransitions.length != 0 ? inboundTransitions : outboundTransitions;
+        return transitions.flatMap(({ results }) => results);
     }
 
     private _expressionEvaluationResults(results: TestResultsDto, nodeId: NodeId): ExpressionEvaluationResultJson[] {
