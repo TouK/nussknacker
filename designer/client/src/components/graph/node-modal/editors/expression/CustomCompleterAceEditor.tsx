@@ -41,15 +41,14 @@ export type CustomCompleterAceEditorProps = {
 export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): JSX.Element {
     const { className, isMarked, showValidation, fieldErrors, validationLabelInfo, completer, isLoading, enableLiveAutocompletion } = props;
     const { value, onValueChange, ref, ...inputProps } = props.inputProps;
-    const userSettings = useAppSelector(getUserSettings);
-
-    const showLines = Boolean(userSettings[`editor.${props.inputProps.language}.showLines`]);
-
     const [editorFocused, setEditorFocused] = useState(false);
-
     const onChange = useCallback((value: string) => onValueChange(value), [onValueChange]);
     const editorFocus = useCallback((editorFocused: boolean) => () => setEditorFocused(editorFocused), []);
-    const { annotations, markers, hasRangeText, setAnnotationsOnLoad } = useAceEditorRangeMessages(fieldErrors);
+
+    const settings = useAppSelector(getUserSettings);
+    const showLines = Boolean(settings[`editor.${props.inputProps.language}.showLines`]);
+
+    const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(fieldErrors, showLines);
 
     return (
         <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
@@ -66,7 +65,6 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                 >
                     <AceWithSettings
                         onLoad={(editor) => {
-                            setAnnotationsOnLoad();
                             setupAceEditorSnippets(editor);
                         }}
                         ref={ref}
@@ -97,9 +95,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                     <LoadingFeedback color="warning" inflate={0.25} />
                 </Fade>
             </Box>
-            {showValidation && (!showLines || !hasRangeText) && (
-                <ValidationLabels fieldErrors={fieldErrors} validationLabelInfo={validationLabelInfo} />
-            )}
+            {showValidation && !hasRangeText && <ValidationLabels fieldErrors={fieldErrors} validationLabelInfo={validationLabelInfo} />}
         </Box>
     );
 }
