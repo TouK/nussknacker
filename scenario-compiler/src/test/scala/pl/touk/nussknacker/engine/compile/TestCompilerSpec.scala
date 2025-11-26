@@ -46,19 +46,19 @@ class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
     val test = TestCase(
       "someTest",
       inputs = "", //todo
-      mocks = Map("enricher1" -> EnricherMock(Expression(Spel, "'someMockedOutput'"))),
-      assertions = Map("sink1" -> List(Assertion("#TESTS.assertEquals(#results.size, 1)")))
+      mocks = Map(NodeId("enricher1") -> EnricherMock(Expression(Spel, "'someMockedOutput'"))),
+      assertions = Map(NodeId("sink1") -> List(Assertion("#TESTS.assertEquals(#results.size, 1)")))
     )
 
     val testCompilationResult = compileScenarioWithTests(scenario, test)
 
     inside(testCompilationResult) { case Valid(compiledTest) =>
       compiledTest.mocks.size shouldBe 1
-      compiledTest.mocks("enricher1").expression.original shouldBe "'someMockedOutput'"
+      compiledTest.mocks(NodeId("enricher1")).expression.original shouldBe "'someMockedOutput'"
 
       compiledTest.assertions.size shouldBe 1
-      compiledTest.assertions("sink1").size shouldBe 1
-      compiledTest.assertions("sink1").head.expression.original shouldBe "#TESTS.assertEquals(#results.size, 1)"
+      compiledTest.assertions(NodeId("sink1")).size shouldBe 1
+      compiledTest.assertions(NodeId("sink1")).head.expression.original shouldBe "#TESTS.assertEquals(#results.size, 1)"
     }
   }
 
@@ -72,8 +72,8 @@ class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
     val test = TestCase(
       "someTest",
       inputs = "", //todo
-      mocks = Map("notExistingEnricher" -> EnricherMock(Expression(Spel, "'someMockedOutput'"))),
-      assertions = Map("notExistingSink" -> List(Assertion("#TESTS.assertEquals(#results.size, 1)")))
+      mocks = Map(NodeId("notExistingEnricher") -> EnricherMock(Expression(Spel, "'someMockedOutput'"))),
+      assertions = Map(NodeId("notExistingSink") -> List(Assertion("#TESTS.assertEquals(#results.size, 1)")))
     )
 
     val testCompilationResult = compileScenarioWithTests(scenario, test)

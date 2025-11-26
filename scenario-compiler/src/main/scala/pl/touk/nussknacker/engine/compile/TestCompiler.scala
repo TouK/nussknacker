@@ -23,14 +23,14 @@ class TestCompiler(expressionCompiler: ExpressionCompiler) {
   def compile(test: TestCase, typing: Map[String, NodeTypingInfo]): ValidatedNel[ProcessCompilationError, CompiledTest] = {
     val mocksV = test.mocks
       .map { case (nodeId, mock) =>
-        compileMock(NodeId(nodeId), mock, typing, test.id).map(nodeId -> _)
+        compileMock(nodeId, mock, typing, test.id).map(nodeId -> _)
       }
       .toList
       .sequence
 
     val assertionsV = test.assertions
       .map { case (node, assertions) =>
-        compileAssertions(NodeId(node), assertions, typing, test.id).map(node -> _)
+        compileAssertions(node, assertions, typing, test.id).map(node -> _)
       }
       .toList
       .sequence

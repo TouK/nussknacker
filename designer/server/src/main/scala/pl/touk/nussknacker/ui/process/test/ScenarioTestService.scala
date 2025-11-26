@@ -32,6 +32,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceP
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ExpressionsToTestDataConversionError
+import pl.touk.nussknacker.ui.process.test.testcase.{AssertionVerifier, NoopAssertionVerifier}
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -41,13 +42,14 @@ import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioTestService(
-    testDataSettings: TestDataSettings,
-    modelData: ModelData,
-    engineScenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies],
-    processResolver: UIProcessResolver,
-    // These dependencies are needed for scenario testing execution
-    processCounter: ProcessCounter,
-    testExecutorService: ScenarioTestExecutorService,
+                           testDataSettings: TestDataSettings,
+                           modelData: ModelData,
+                           engineScenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies],
+                           processResolver: UIProcessResolver,
+                           // These dependencies are needed for scenario testing execution
+                           processCounter: ProcessCounter,
+                           testExecutorService: ScenarioTestExecutorService,
+                           assertionVerifier: AssertionVerifier = new NoopAssertionVerifier,
 ) extends LazyLogging {
 
   private val commonModelDataInfoProvider = new CommonModelDataInfoProvider(modelData)
@@ -281,7 +283,8 @@ class ScenarioTestService(
       )
 
       _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
-    } yield ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))).value
+      testResultsWithAssertionResults = verifyAssertions(test, testResults)
+    } yield ResultsWithCounts(Instant.now(), testResultsWithAssertionResults, computeCounts(canonical, isFragment, testResults))).value
   }
 
   def performTest(
@@ -448,6 +451,12 @@ class ScenarioTestService(
         )
       }
       .getOrElse(Right(()))
+  }
+
+  private def verifyAssertions(test: TestCase, testResults: TestResults[Json]): TestResults[Json] = {
+    testResults.copy(assertionsResults =
+      assertionVerifier.verify(test.assertions, testResults.originalNodeResults)
+    )
   }
 
   private def computeCounts(canonical: CanonicalProcess, isFragment: Boolean, results: TestResults[_])(

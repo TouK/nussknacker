@@ -770,7 +770,7 @@ class ScenarioTestServiceSpec
       serializedRecords.content,
       Map.empty,
       Map(
-        "someSource" -> List(
+        NodeId("someSource") -> List(
           Assertion("#TEST.assertEquals(#contexts[0].someVariable, 'foo')"),
           Assertion("#TEST.assertEquals(#contexts[1].someVariable, 'foo')")
         )
@@ -791,7 +791,7 @@ class ScenarioTestServiceSpec
       )
       .getOrElse(throw new RuntimeException("Error during performing test"))
 
-    result.results.assertionsResults("someSource") shouldBe List(
+    result.results.assertionsResults(NodeId("someSource")) shouldBe List(
       SuccessfulAssertion,
       FailedAssertion("Expected: foo but found bar")
     )

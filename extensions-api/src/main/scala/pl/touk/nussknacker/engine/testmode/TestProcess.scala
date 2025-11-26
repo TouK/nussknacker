@@ -13,7 +13,7 @@ object TestProcess {
       expressionEvaluationResults: Map[NodeId, List[ExpressionEvaluationResult[T]]],
       externalServiceInvocationResults: Map[NodeId, List[ExternalServiceInvocationResult[T]]],
       exceptions: List[ExceptionResult[T]],
-      assertionsResults: Map[String, List[AssertionResult]],
+      assertionsResults: Map[NodeId, List[AssertionResult]],
       originalNodeResults: Map[NodeId, List[
         ResultContext[Any]
       ]], // todo: for assertions verification we have to keep original instances
