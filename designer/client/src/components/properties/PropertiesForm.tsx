@@ -1,6 +1,5 @@
 import React from "react";
 
-import HttpService from "../../http/HttpService/instance";
 import type { PropertiesType } from "../../types/node";
 import type { PropertiesConfigKeys } from "../../types/scenarioGraph";
 import type { NodeValidationError } from "../../types/validation";
@@ -8,7 +7,7 @@ import { DescriptionField } from "../graph/node-modal/DescriptionField";
 import { FieldType } from "../graph/node-modal/editors/field/Field";
 import { FieldLabelProvider } from "../graph/node-modal/editors/RenderFieldLabel";
 import { FieldLabel } from "../graph/node-modal/FieldLabel";
-import NodeAdditionalInfoBox from "../graph/node-modal/NodeAdditionalInfoBox";
+import { PropertiesAdditionalInfo } from "../graph/node-modal/NodeAdditionalInfo";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { NodeField } from "../graph/node-modal/NodeField";
 import { NameField } from "./NameField";
@@ -61,7 +60,7 @@ export const PropertiesForm = ({
                     description={"Show description each time scenario is opened"}
                 />
             </FieldLabelProvider>
-            <NodeAdditionalInfoBox node={editedProperties} handleGetAdditionalInfo={HttpService.getPropertiesAdditionalInfo} />
+            <PropertiesAdditionalInfo />
         </NodeTable>
     );
 };

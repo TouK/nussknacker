@@ -14,8 +14,9 @@ import api from "../../api";
 import type { UserData } from "../../common/models/User";
 import SystemUtils from "../../common/SystemUtils";
 import { withoutHackOfEmptyEdges } from "../../components/graph/GraphPartialsInTS/EdgeUtils";
+import type { AdditionalInfo } from "../../components/graph/node-modal/AdditionalInfoBox";
 import type { ExpressionSuggestion } from "../../components/graph/node-modal/editors/expression/ExpressionSuggester";
-import type { AdditionalInfo } from "../../components/graph/node-modal/NodeAdditionalInfoBox";
+import { cleanProperties, isRequestSource } from "../../components/graph/node-modal/requestSourceAddons";
 import { extractStickyNotesFromNodes } from "../../components/graph/utils/stickyNotesUtils";
 import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../../components/Labels/types";
 import type { TestingDataRecords, TestingDataRecordsRequestData } from "../../components/modals/TestingDataRecords/Table";
@@ -609,8 +610,13 @@ export class HttpService {
     }
 
     getNodeAdditionalInfo(processName: string, node: NodeType, controller?: AbortController): Promise<AdditionalInfo | null> {
+        let nodeData = node;
+        if (isRequestSource(node)) {
+            nodeData = cleanProperties(nodeData);
+            // return this.getPropertiesAdditionalInfo(processName);
+        }
         return api
-            .post<AdditionalInfo>(`/nodes/${encodeURIComponent(processName)}/additionalInfo`, node, {
+            .post<AdditionalInfo>(`/nodes/${encodeURIComponent(processName)}/additionalInfo`, nodeData, {
                 signal: controller?.signal,
             })
             .then((res) => res.data)

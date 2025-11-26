@@ -1,5 +1,6 @@
 import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 
+import { getAdditionalFields } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";
 import type { NodeState } from "./node/useNodeState";
@@ -13,14 +14,15 @@ export function useNodeAdjust(
     onChange?: NodeState["onChange"],
 ): [adjustedNode: typeof node, adjustedOnChange: typeof onChange] {
     const getParameterDefinitions = useAppSelector(getDynamicParameterDefinitions);
+    const { properties: storedProperties } = useAppSelector(getAdditionalFields);
 
     const adjustNode = useCallback(
         (node: NodeType) => {
             const parameterDefinitions = getParameterDefinitions(node);
-            const adjustedNode = adjustParameters(node, parameterDefinitions);
+            const adjustedNode = adjustParameters(node, parameterDefinitions, storedProperties);
             return generateUUIDs(adjustedNode, ["fields", "parameters"]);
         },
-        [getParameterDefinitions],
+        [getParameterDefinitions, storedProperties],
     );
 
     const adjustFn = useRef(adjustNode);

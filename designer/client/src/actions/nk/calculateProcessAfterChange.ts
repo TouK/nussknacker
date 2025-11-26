@@ -1,3 +1,10 @@
+import { produce } from "immer";
+
+import {
+    cleanProperties,
+    isRequestSource,
+    nodePropertiesToScenarioProperties,
+} from "../../components/graph/node-modal/requestSourceAddons";
 import { cleanupNodeInputEdges, mapProcessWithNewNode, replaceNodeOutputEdges } from "../../components/graph/utils/graphUtils";
 import type { Scenario } from "../../components/Process/types";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
@@ -10,11 +17,22 @@ import type { ThunkAction } from "../reduxTypes";
 export function calculateProcessAfterChange(
     scenario: Scenario,
     before: NodeType,
-    after: NodeType,
+    _after: NodeType,
     outputEdges: Edge[],
 ): ThunkAction<Promise<ScenarioGraph>> {
     return async (_, getState) => {
         let changedGraph = scenario.scenarioGraph;
+        let after = _after;
+
+        if (isRequestSource(after)) {
+            changedGraph = produce(changedGraph, (scenarioGraph) => {
+                scenarioGraph.properties.additionalFields.properties = {
+                    ...scenarioGraph.properties.additionalFields.properties,
+                    ...nodePropertiesToScenarioProperties(after),
+                };
+            });
+            after = cleanProperties(after);
+        }
 
         changedGraph = cleanupNodeInputEdges(changedGraph, before, after);
         if (outputEdges) {

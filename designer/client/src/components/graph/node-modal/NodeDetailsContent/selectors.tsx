@@ -6,16 +6,18 @@ import type { RootState } from "../../../../reducers";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/getProcessDefinitionData";
 import { getScenario, getScenarioGraph } from "../../../../reducers/selectors/graph";
 import type { UIParameter } from "../../../../types/definition";
-import type { NodeId, NodeType, Parameter } from "../../../../types/node";
-import type { UiScenarioProperties } from "../../../../types/scenarioGraph";
+import type { NodeType, Parameter } from "../../../../types/node";
+import type { PropertiesConfig, UiScenarioProperties } from "../../../../types/scenarioGraph";
 import type { NodeValidationError } from "../../../../types/validation";
+import { getPropertiesErrors } from "../node/selectors";
+import { appendPropertiesErrors, getScenarioPropertiesDef, isRequestSource } from "../requestSourceAddons";
 import { getNodeDetails, getNodesDetails } from "./getNodeDetails";
 
 const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);
 
 const getComponentsDefinition = createSelector(getProcessDefinitionData, (s) => s.components);
 export const getScenarioProperties = createSelector(getProcessDefinitionData, (s) => (s.scenarioProperties || {}) as UiScenarioProperties);
-export const getScenarioPropertiesConfig = createSelector(getScenarioProperties, ({ propertiesConfig = {} }) => {
+export const getScenarioPropertiesConfig = createSelector(getScenarioProperties, ({ propertiesConfig = {} as PropertiesConfig }) => {
     //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
     const order = Object.keys(propertiesConfig).sort((a, b) => a.localeCompare(b));
     return { properties: propertiesConfig, order };
@@ -53,25 +55,45 @@ export const getNodeExpressionType = createSelector(getExpressionType, getNodeTy
 });
 export const getProcessProperties = createSelector(getScenarioGraph, (s) => s.properties);
 export const getProcessName = createSelector(getScenario, (s) => s.name);
-export const getCurrentErrors = createSelector(
+
+const getCurrentErrors = createSelector(
     getValidationPerformed,
     getValidationErrors,
-    (validationPerformed, validationErrors) =>
-        (originalNodeId: NodeId, nodeErrors: NodeValidationError[] = []) =>
-            validationPerformed(originalNodeId) ? validationErrors(originalNodeId) : nodeErrors,
+    (_: RootState, props: { node: NodeType; nodeErrors: NodeValidationError[] }) => props,
+    (validationPerformed, validationErrors, { node, nodeErrors = [] }) =>
+        validationPerformed(node.id) ? validationErrors(node.id) : nodeErrors,
 );
+export const getNodeErrors = createSelector(
+    getCurrentErrors,
+    getPropertiesErrors,
+    (_: RootState, props: { node: NodeType }) => props.node,
+    (currentErrors, propertiesErrors, node) => {
+        if (isRequestSource(node)) {
+            return appendPropertiesErrors(currentErrors, propertiesErrors);
+        }
+        return currentErrors;
+    },
+);
+
 export const getDynamicParameterDefinitions = createDeepEqualSelector(
     getValidationPerformed,
     getDetailsParameters,
     getResultParameters,
     getComponentsDefinition,
-    (validationPerformed, detailsParameters, resultParameters, components) => (node: NodeType) => {
-        const dynamicParameterDefinitions = validationPerformed(node.id) ? detailsParameters(node.id) : resultParameters(node.id);
-        if (!dynamicParameterDefinitions) {
-            return ProcessUtils.extractComponentDefinition(node, components)?.parameters;
-        }
-        return dynamicParameterDefinitions || null;
-    },
+    getScenarioPropertiesConfig,
+    (validationPerformed, detailsParameters, resultParameters, components, { order, properties }) =>
+        (node: NodeType): UIParameter[] => {
+            const isValidationPerformed = validationPerformed(node.id);
+            const dynamicParameterDefinitions = isValidationPerformed ? detailsParameters(node.id) : resultParameters(node.id);
+
+            const parameters = dynamicParameterDefinitions || ProcessUtils.extractComponentDefinition(node, components)?.parameters;
+
+            if (isRequestSource(node)) {
+                return [...parameters, ...getScenarioPropertiesDef(properties, order)];
+            }
+
+            return parameters;
+        },
 );
 
 export const getFindAvailableVariables = createSelector(getComponentsDefinition, getScenario, (processDefinition, scenario) =>

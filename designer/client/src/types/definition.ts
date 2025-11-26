@@ -52,7 +52,7 @@ export interface UIParameter {
     };
     additionalVariables: TypingInfo;
     variablesToHide: Array<string>;
-    branchParam: boolean;
+    branchParam?: boolean;
     hintText?: string;
     label: string;
     category?: ParameterCategory;
