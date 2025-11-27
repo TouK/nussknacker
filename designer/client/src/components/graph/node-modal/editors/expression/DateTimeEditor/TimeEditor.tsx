@@ -7,8 +7,9 @@ import type { ExtendedEditor } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
 import { FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import type { ExpressionObj } from "../types";
-import { DatepickerEditor } from "./DatepickerEditor";
+import { EditorType } from "../types";
 import type { DatepickerEditorProps } from "./DatepickerEditor";
+import { DatepickerEditor } from "./DatepickerEditor";
 
 const timeFormat = "HH:mm:ss";
 const isParseable = (expression: ExpressionObj): boolean => {
@@ -28,13 +29,13 @@ export const TimeEditor: ExtendedEditor<TimeEditorProps> = (props: TimeEditorPro
             dateFormat={null}
             timeFormat={timeFormat}
             formatter={dateFormatter}
-            language={editorsParameters.TimeParameterEditor.language}
+            language={editorsParameters[EditorType.TIME].language}
         />
     );
 };
 
 TimeEditor.notSwitchableToHint = () =>
     i18next.t("editors.LocalTime.notSwitchableToHint", "Expression must be valid time to switch to {{editorName}} mode", {
-        editorName: editorsParameters.TimeParameterEditor.displayName,
+        editorName: editorsParameters[EditorType.TIME].displayName,
     });
 TimeEditor.isSwitchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj) || isEmpty(expressionObj.expression);

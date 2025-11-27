@@ -5,7 +5,7 @@ import { editorsParameters } from "./editorsParameters";
 import type { SpelEditorProps } from "./SpelEditor";
 import { SpelEditor } from "./SpelEditor";
 import { isQuoted } from "./SpelQuotesUtils";
-import { EditorMode, ExpressionLang, type ExpressionObj } from "./types";
+import { EditorMode, EditorType, ExpressionLang, type ExpressionObj } from "./types";
 
 export const SpelTemplateEditor: ExtendedEditor<SpelEditorProps> = (props: SpelEditorProps) => {
     const { expressionObj, rows = 1, ...passProps } = props;
@@ -13,7 +13,7 @@ export const SpelTemplateEditor: ExtendedEditor<SpelEditorProps> = (props: SpelE
     const value = useMemo(
         () => ({
             expression: expressionObj?.expression,
-            language: editorsParameters.SpelTemplateParameterEditor.language,
+            language: editorsParameters[EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR].language,
         }),
         [expressionObj],
     );
@@ -24,7 +24,7 @@ export const SpelTemplateEditor: ExtendedEditor<SpelEditorProps> = (props: SpelE
             expressionObj={value}
             rows={rows}
             editorMode={EditorMode.SpELTemplate}
-            language={editorsParameters.SpelTemplateParameterEditor.language}
+            language={editorsParameters[EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR].language}
         />
     );
 };

@@ -6,9 +6,10 @@ import React, { useCallback, useMemo } from "react";
 import type { FieldError } from "../../Validators";
 import type { ExtendedEditor, OnValueChange } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
-import { FormatterType, typeFormatters } from "../Formatter";
 import type { Formatter } from "../Formatter";
+import { FormatterType, typeFormatters } from "../Formatter";
 import type { ExpressionObj } from "../types";
+import { EditorType } from "../types";
 import TimeRangeEditor from "./TimeRangeEditor";
 
 export type Duration = {
@@ -79,7 +80,7 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
             fieldErrors={fieldErrors}
             expression={expressionObj.expression}
             isMarked={isMarked}
-            language={editorsParameters.DurationParameterEditor.language}
+            language={editorsParameters[EditorType.DURATION_EDITOR].language}
         />
     );
 };
@@ -91,7 +92,7 @@ DurationEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.duration.noSwitchableToHint",
         "Expression must match pattern T(java.time.Duration).parse('P(n)DT(n)H(n)M') to switch to {{editorName}} mode",
-        { editorName: editorsParameters.DurationParameterEditor.displayName },
+        { editorName: editorsParameters[EditorType.DURATION_EDITOR].displayName },
     );
 
 export function duration(decodeExecResult) {

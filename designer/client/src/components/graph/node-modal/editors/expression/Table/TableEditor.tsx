@@ -25,6 +25,7 @@ import ValidationLabels from "../../../../../modals/ValidationLabels";
 import type { EditorProps, ExtendedEditor } from "../Editor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { editorsParameters } from "../editorsParameters";
+import { EditorType } from "../types";
 import { CellMenu, DeleteColumnMenuItem, DeleteRowMenuItem, ResetColumnWidthMenuItem } from "./CellMenu";
 import { isDatePickerCell } from "./customCells/DatePicker";
 import { customRenderers } from "./customRenderers";
@@ -118,7 +119,7 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
 
     useEffect(() => {
         if (rawExpression !== expressionObj.expression) {
-            onValueChange({ expression: rawExpression, language: editorsParameters.TabularTypedDataEditor.language });
+            onValueChange({ expression: rawExpression, language: editorsParameters[EditorType.TABLE_EDITOR].language });
         }
     }, [expressionObj.expression, onValueChange, rawExpression]);
 
@@ -570,5 +571,5 @@ export const TableEditor: ExtendedEditor = ({ className, ...props }: EditorProps
 TableEditor.isSwitchableTo = () => true; // TODO: implement
 TableEditor.notSwitchableToHint = () =>
     i18next.t("editors.table.notSwitchableToHint", `Expression must match schema to switch to {{}} mode`, {
-        editorName: editorsParameters.TabularTypedDataEditor.displayName,
+        editorName: editorsParameters[EditorType.TABLE_EDITOR].displayName,
     });

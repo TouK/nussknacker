@@ -7,6 +7,7 @@ import { editorsParameters } from "./editorsParameters";
 import type { Formatter } from "./Formatter";
 import { FormatterType, typeFormatters } from "./Formatter";
 import type { ExpressionObj } from "./types";
+import { EditorType } from "./types";
 
 type Props = {
     expressionObj: ExpressionObj;
@@ -27,7 +28,7 @@ export const StaticStringEditor: SimpleEditor<Props> = (props: Props) => {
             onChange={(event) =>
                 onValueChange({
                     expression: stringFormatter.encode(event.target.value),
-                    language: editorsParameters.StaticStringParameterEditor.language,
+                    language: editorsParameters[EditorType.STATIC_STRING_PARAMETER_EDITOR].language,
                 })
             }
             value={stringFormatter.decode(expressionObj.expression) as string}
