@@ -75,7 +75,7 @@ const AiAssistantModal = loadable(() => import("../components/aiAssistant/compon
     fallback: <LoaderSpinner show />,
 });
 
-const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
+const contentGetter = (props: WindowContentProps<WindowKind>) => {
     switch (props.data.kind) {
         case WindowKind.addFragment:
             return <AddProcessDialog {...props} isFragment />;
