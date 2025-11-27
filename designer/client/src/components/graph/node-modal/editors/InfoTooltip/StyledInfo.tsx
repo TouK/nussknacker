@@ -1,5 +1,6 @@
 import InfoIcon from "@mui/icons-material/Info";
 import { styled } from "@mui/material";
+import React from "react";
 
 export const StyledInfo = styled(InfoIcon)(() => ({
     cursor: "pointer",
@@ -7,12 +8,12 @@ export const StyledInfo = styled(InfoIcon)(() => ({
     height: "1rem",
 }));
 
-export const StyledInfoChildrenWrapper = styled("span")(() => ({
+// disable svg <title> behavior
+function Span(props: React.DetailedHTMLProps<React.HTMLAttributes<HTMLSpanElement>, HTMLSpanElement>) {
+    return <span title="" {...props} />;
+}
+
+export const StyledInfoChildrenWrapper = styled(Span)(() => ({
     display: "inherit",
     height: "fit-content",
 }));
-
-StyledInfoChildrenWrapper.defaultProps = {
-    // disable svg <title> behavior
-    title: "",
-};

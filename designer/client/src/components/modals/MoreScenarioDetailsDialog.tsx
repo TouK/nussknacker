@@ -1,4 +1,5 @@
-import { Box, Skeleton, styled, Typography } from "@mui/material";
+import type { TypographyProps } from "@mui/material";
+import { Typography, Box, styled } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import i18next from "i18next";
 import { capitalize, startCase } from "lodash";
@@ -17,12 +18,9 @@ import { useGetAllCombinations } from "../useGetAllCombinations";
 
 const ItemWrapperStyled = styled("div")({ display: "grid", gridAutoColumns: "minmax(0, 1fr)", gridAutoFlow: "column" });
 
-const ItemLabelStyled = styled(Typography)({ display: "flex", justifyContent: "flex-end", marginRight: "8px" });
+const Typo = (props: TypographyProps) => <Typography variant="caption" fontWeight={300} {...props} />;
 
-ItemLabelStyled.defaultProps = {
-    variant: "caption",
-    fontWeight: 300,
-};
+const ItemLabelStyled = styled(Typo)({ display: "flex", justifyContent: "flex-end", marginRight: "8px" });
 
 interface Props {
     scenario: Scenario;
