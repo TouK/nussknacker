@@ -22,6 +22,7 @@ import type { ToolbarActions } from "./nk/toolbars";
 import type { ToolWindowActions } from "./nk/toolWindow";
 import type { UiActions } from "./nk/ui/uiActions";
 import type { UserSettingsActions } from "./nk/userSettings";
+import type { ValidationsActions } from "./nk/validationsActions";
 import type { SettingsActions } from "./settingsActions";
 
 export type TypedAction =
@@ -47,7 +48,8 @@ export type TypedAction =
     | UiActions
     | UpdateScenarioActivitiesAction
     | UpdateTestCapabilitiesAction
-    | UserSettingsActions;
+    | UserSettingsActions
+    | ValidationsActions;
 
 export interface UntypedAction {
     type: Exclude<ActionTypes, TypedAction["type"]>;

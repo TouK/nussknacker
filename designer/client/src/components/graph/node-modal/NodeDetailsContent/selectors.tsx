@@ -9,7 +9,7 @@ import type { UIParameter } from "../../../../types/definition";
 import type { NodeType, Parameter } from "../../../../types/node";
 import type { PropertiesConfig, UiScenarioProperties } from "../../../../types/scenarioGraph";
 import type { NodeValidationError } from "../../../../types/validation";
-import { getPropertiesErrors } from "../node/selectors";
+import { getCurrentPropertiesErrors } from "../node/selectors";
 import { appendPropertiesErrors, getScenarioPropertiesDef, isRequestSource } from "../requestSourceAddons";
 import { getNodeDetails, getNodesDetails } from "./getNodeDetails";
 
@@ -65,7 +65,7 @@ const getCurrentErrors = createSelector(
 );
 export const getNodeErrors = createSelector(
     getCurrentErrors,
-    getPropertiesErrors,
+    getCurrentPropertiesErrors,
     (_: RootState, props: { node: NodeType }) => props.node,
     (currentErrors, propertiesErrors, node) => {
         if (isRequestSource(node)) {

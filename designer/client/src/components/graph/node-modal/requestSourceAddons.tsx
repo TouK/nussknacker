@@ -1,5 +1,7 @@
+import { produce } from "immer";
+
 import type { UIParameter } from "../../../types/definition";
-import type { NodeType } from "../../../types/node";
+import type { NodeType, PropertiesType } from "../../../types/node";
 import type { PropertiesConfig, PropertiesConfigKeys } from "../../../types/scenarioGraph";
 import type { NodeValidationError } from "../../../types/validation";
 import { editorsParameters } from "./editors/expression/editorsParameters";
@@ -22,6 +24,15 @@ export function cleanProperties(nodeData: NodeType) {
 export function nodePropertiesToScenarioProperties(nodeData: NodeType) {
     const parameters = nodeData.ref.parameters.filter(({ name }) => isRequestParameter(name));
     return Object.fromEntries(parameters.map((p) => [p.name, p.expression.expression]));
+}
+
+export function appendNodeDataToProperties(processProperties: PropertiesType, nodeData: NodeType): PropertiesType {
+    return produce(processProperties, (draft) => {
+        draft.additionalFields.properties = {
+            ...draft.additionalFields.properties,
+            ...nodePropertiesToScenarioProperties(nodeData),
+        };
+    });
 }
 
 export function scenarioPropertiesToNodeProperties(properties: { inputSchema: string; outputSchema: string; slug: string }) {

@@ -7,3 +7,7 @@ const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);
 
 export const getNodesDetails = (state: RootState) => state.nodeDetails;
 export const getNodeDetails = createDeepEqualSelector(getNodesDetails, (nodeDetails) => (nodeId: string) => nodeDetails[nodeId]);
+
+export const getPropertiesDetails = createDeepEqualSelector(getNodesDetails, (nodeDetails) => {
+    return nodeDetails[".properties"];
+});

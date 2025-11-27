@@ -5,6 +5,7 @@ import type { RootState } from "../../../../reducers";
 import { getScenario } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import type { NodeId } from "../../../../types/node";
+import { getPropertiesDetails } from "../NodeDetailsContent/getNodeDetails";
 
 export const getNodeErrors = createSelector(
     getScenario,
@@ -14,10 +15,13 @@ export const getNodeErrors = createSelector(
     },
 );
 
-export const getPropertiesErrors = createSelector(
-    getScenario,
-    (process) => ProcessUtils.getValidationErrors(process)?.processPropertiesErrors || [],
-);
+const getPropertiesErrors = createSelector(getScenario, (process) => {
+    return ProcessUtils.getValidationErrors(process)?.processPropertiesErrors || [];
+});
+
+export const getCurrentPropertiesErrors = createSelector(getPropertiesErrors, getPropertiesDetails, (propertiesErrors, nodeDetails) => {
+    return nodeDetails?.validationErrors || propertiesErrors;
+});
 
 export const getReadOnly = createSelector(
     (state: RootState, fromProps?: boolean) => fromProps,

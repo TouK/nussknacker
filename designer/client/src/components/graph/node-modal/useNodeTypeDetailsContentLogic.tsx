@@ -17,10 +17,8 @@ import {
     getFindAvailableBranchVariables,
     getFindAvailableVariables,
     getProcessName,
-    getProcessProperties,
 } from "./NodeDetailsContent/selectors";
 import type { NodeTypeDetailsContentProps } from "./NodeTypeDetailsContent";
-import { cleanProperties, isRequestSource } from "./requestSourceAddons";
 import { setImmutable } from "./setImmutable";
 import type { Paths, PathValue } from "./typeHelpers";
 
@@ -32,7 +30,6 @@ export function useValidation({ node, edges, showValidation }: Pick<NodeTypeDeta
     const dispatch = useAppDispatch();
     const getBranchVariableTypes = useAppSelector(getFindAvailableBranchVariables);
     const processName = useAppSelector(getProcessName);
-    const processProperties = useAppSelector(getProcessProperties);
 
     const settings = useAppSelector(getUserSettings);
     const autoApply = settings["node.autoApply"];
@@ -41,28 +38,22 @@ export function useValidation({ node, edges, showValidation }: Pick<NodeTypeDeta
 
     useEffect(() => {
         if (!showValidation) return;
-        let nodeData = node;
-        if (isRequestSource(node)) {
-            nodeData = cleanProperties(nodeData);
-        }
         dispatch(
             validateNodeData(
-                processName,
                 {
                     //see NODES_CONNECTED/NODES_DISCONNECTED
                     outgoingEdges: edges.filter((e) => e.to != ""),
-                    nodeData,
-                    processProperties,
-                    branchVariableTypes: getBranchVariableTypes(nodeData.id),
+                    nodeData: node,
+                    branchVariableTypes: getBranchVariableTypes(node.id),
                     variableTypes,
                 },
                 () => {
                     if (autoApply) return;
-                    dispatch(nodeValidationDynamicParametersLoaded(nodeData.id));
+                    dispatch(nodeValidationDynamicParametersLoaded(node.id));
                 },
             ),
         );
-    }, [dispatch, edges, getBranchVariableTypes, node, processName, processProperties, showValidation, variableTypes, autoApply]);
+    }, [autoApply, dispatch, edges, getBranchVariableTypes, node, processName, showValidation, variableTypes]);
 }
 
 export function useVariableTypes({ node }: Pick<NodeTypeDetailsContentProps, "node">) {
