@@ -9,7 +9,7 @@ import { PromptContent } from "../../../windowManager/PromptContent";
 import { CommentInput } from "../../comment/CommentInput";
 import { useSaveScenario } from "./useSaveScenario";
 
-export function SaveScenarioDialog(props: WindowContentProps): JSX.Element {
+export function SaveScenarioDialog(props: WindowContentProps): React.JSX.Element {
     const { handleSaveScenarioAction } = useSaveScenario();
 
     const [comment, setState] = useState("");

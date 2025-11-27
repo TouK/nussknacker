@@ -20,7 +20,7 @@ import type { ToggleProcessActionModalData } from "../DeployProcessDialog";
 import ProcessDialogWarnings from "../ProcessDialogWarnings";
 import { AdvancedParameters } from "./AdvancedParameters";
 
-export function DeployWithParametersDialog(props: WindowContentProps<WindowKind, ToggleProcessActionModalData>): JSX.Element {
+export function DeployWithParametersDialog(props: WindowContentProps<WindowKind, ToggleProcessActionModalData>): React.JSX.Element {
     // TODO: get rid of meta
     const {
         meta: { action, displayWarnings, actionName },

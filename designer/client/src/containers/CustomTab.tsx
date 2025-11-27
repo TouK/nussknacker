@@ -11,7 +11,7 @@ export function StarRedirect({ to, push }: { to: string; push?: boolean }) {
     return <Navigate to={rest.length ? `${to}/${rest}` : to} replace={!push} />;
 }
 
-export function CustomTab(): JSX.Element {
+export function CustomTab(): React.JSX.Element {
     const { id } = useParams<{ id: string }>();
     return <CustomTabPage id={id} />;
 }

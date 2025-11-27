@@ -7,7 +7,7 @@ import { getAuthenticationSettings } from "../reducers/selectors/settings";
 import { useAppDispatch, useAppSelector } from "../store/storeHelpers";
 import { AuthInitializer } from "./Auth/AuthInitializer";
 
-function NussknackerInitializer({ children }: PropsWithChildren<unknown>): JSX.Element {
+function NussknackerInitializer({ children }: PropsWithChildren<unknown>): React.JSX.Element {
     const dispatch = useAppDispatch();
 
     const onAuth = useCallback(

@@ -9,7 +9,7 @@ interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "color"> {
     required?: boolean;
 }
 
-export const NodeRow = forwardRef<HTMLDivElement, Props>(function FieldRow(props, ref): JSX.Element {
+export const NodeRow = forwardRef<HTMLDivElement, Props>(function FieldRow(props, ref): React.JSX.Element {
     const { label, className, children, required, title, ...passProps } = props;
     return (
         <FormControl ref={ref} className={className} {...passProps}>

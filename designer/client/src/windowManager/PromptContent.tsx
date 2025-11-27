@@ -10,7 +10,7 @@ import { LoadingButton } from "./LoadingButton";
 
 const HeaderPlaceholder = () => <header>{/*grid placeholder*/}</header>;
 
-export function PromptContent({ children, ...props }: PropsWithChildren<DefaultContentProps>): JSX.Element {
+export function PromptContent({ children, ...props }: PropsWithChildren<DefaultContentProps>): React.JSX.Element {
     const theme = useTheme();
     const classnames = useMemo(() => {
         const content = css({

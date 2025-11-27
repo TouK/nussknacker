@@ -14,7 +14,7 @@ const FullSizeBorderlessIFrame = styled("iframe")(({ theme }) => ({
     minHeight: 0,
 }));
 
-export function FrameDialog(props: WindowContentProps<WindowKind, string>): JSX.Element {
+export function FrameDialog(props: WindowContentProps<WindowKind, string>): React.JSX.Element {
     const {
         data: { meta },
     } = props;

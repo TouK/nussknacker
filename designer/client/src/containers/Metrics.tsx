@@ -27,7 +27,7 @@ function useMetricsUrl(processName?: ProcessName): string {
     }, [processName, processingType, settings]);
 }
 
-function Metrics(): JSX.Element {
+function Metrics(): React.JSX.Element {
     const { processName } = useParams<{ processName: string }>();
     const url = useMetricsUrl(processName);
     return <CustomTabWrapper tab={{ url, type: "IFrame", accessTokenInQuery: { enabled: true, parameterName: "auth_token" } }} />;

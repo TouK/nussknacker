@@ -56,7 +56,7 @@ export function TypeSelect({
     fieldErrors = [],
     menuIsOpen = false,
     ...props
-}: RowSelectProps): JSX.Element {
+}: RowSelectProps): React.JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
     const theme = useTheme();
 

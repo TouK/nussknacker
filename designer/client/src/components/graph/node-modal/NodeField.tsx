@@ -42,7 +42,7 @@ export function NodeField<N extends string, V>({
     showValidation,
     errors,
     description,
-}: NodeFieldProps<N, V>): JSX.Element {
+}: NodeFieldProps<N, V>): React.JSX.Element {
     const readOnly = !isEditMode || readonly;
     const value = useMemo(() => get(node, fieldName, null) ?? defaultValue, [defaultValue, fieldName, node]);
     const fieldErrors = useMemo(() => getValidationErrorsForField(errors, fieldName), [errors, fieldName]);

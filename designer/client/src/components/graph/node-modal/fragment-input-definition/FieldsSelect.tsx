@@ -26,7 +26,7 @@ interface FieldsSelectProps {
     errors: NodeValidationError[];
 }
 
-export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
+export function FieldsSelect(props: FieldsSelectProps): React.JSX.Element {
     const { fields, label, namespace, options, onChange, variableTypes, removeField, addField, readOnly, showValidation, errors } = props;
 
     const ItemElement = useCallback(

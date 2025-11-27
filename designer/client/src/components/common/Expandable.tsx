@@ -5,8 +5,8 @@ import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import type { Theme } from "@mui/material/styles";
 import type { SxProps } from "@mui/system";
-import React from "react";
 import type { PropsWithChildren } from "react";
+import React from "react";
 
 interface Props {
     componentId: string;
@@ -27,7 +27,7 @@ export function Expandable({
     expandIconSx = { color: "text.secondary" },
     typographySx = { typography: "body2", color: "text.secondary" },
     detailsSx,
-}: PropsWithChildren<Props>): JSX.Element {
+}: PropsWithChildren<Props>): React.JSX.Element {
     const accordionOnChange = onChange ? (_: any, isExpanded: boolean) => onChange(isExpanded) : undefined;
     return (
         <Accordion

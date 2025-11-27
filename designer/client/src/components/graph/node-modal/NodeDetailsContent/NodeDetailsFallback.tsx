@@ -11,7 +11,7 @@ export function NodeDetailsFallback(props: {
     isEditMode?: boolean;
     showValidation?: boolean;
     errors: NodeValidationError[];
-}): JSX.Element {
+}): React.JSX.Element {
     return (
         <>
             <IdField {...props} errors={props.errors} />

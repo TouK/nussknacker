@@ -7,7 +7,7 @@ import { TextAreaNode } from "../FormElements";
 
 type Props = DetailedHTMLProps<TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement>;
 
-export const CommentInput = ({ onChange, value, defaultValue, ...props }: Props): JSX.Element => {
+export const CommentInput = ({ onChange, value, defaultValue, ...props }: Props): React.JSX.Element => {
     const { t } = useTranslation();
     return (
         <TextAreaNode

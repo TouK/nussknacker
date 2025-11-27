@@ -46,7 +46,7 @@ export function AddProcessForm({
     engines,
     processingModes,
     displayContactSupportMessage,
-}: AddProcessFormProps): JSX.Element {
+}: AddProcessFormProps): React.JSX.Element {
     const { t } = useTranslation();
     const onFieldChange = useCallback(
         (field: keyof FormValue, next: string) => {

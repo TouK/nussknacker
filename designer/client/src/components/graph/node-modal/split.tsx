@@ -20,7 +20,7 @@ export function Split({
     setProperty: SetProperty;
     showValidation?: boolean;
     errors: NodeValidationError[];
-}): JSX.Element {
+}): React.JSX.Element {
     return (
         <>
             <IdField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />

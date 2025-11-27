@@ -59,7 +59,7 @@ export const ProcessGraph = forwardRef<
     {
         capabilities: Capabilities;
     }
->(function ProcessGraph({ capabilities }, forwardedRef): JSX.Element {
+>(function ProcessGraph({ capabilities }, forwardedRef): React.JSX.Element {
     const scenario = useAppSelector(getScenario);
     const processCounts = useAppSelector(getProcessCounts);
     const layout = useAppSelector(getLayout);

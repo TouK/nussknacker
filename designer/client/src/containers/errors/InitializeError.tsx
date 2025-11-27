@@ -12,7 +12,7 @@ interface ErrorProps {
     button?: string;
 }
 
-export function InitializeError({ error, retry }: InitErrorComponentProps): JSX.Element {
+export function InitializeError({ error, retry }: InitErrorComponentProps): React.JSX.Element {
     const { t } = useTranslation();
     const errorProps = useMemo<ErrorProps>(() => {
         switch (error) {

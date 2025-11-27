@@ -116,7 +116,7 @@ const Spacer = styled("span")(({ theme }) => ({
     },
 }));
 
-export function Menu(): JSX.Element {
+export function Menu(): React.JSX.Element {
     const tabs = useAppSelector(getTabs);
     const loggedUser = useAppSelector(getLoggedUser);
 

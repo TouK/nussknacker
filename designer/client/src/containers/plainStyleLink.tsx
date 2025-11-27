@@ -10,7 +10,7 @@ export function isExternalUrl(maybeUrl: unknown): maybeUrl is string {
     return isString(maybeUrl) && externalUrlRe.test(maybeUrl);
 }
 
-export function PlainStyleLink({ disabled, to, ...props }: LinkProps & { disabled?: boolean }): JSX.Element {
+export function PlainStyleLink({ disabled, to, ...props }: LinkProps & { disabled?: boolean }): React.JSX.Element {
     const className = cx(
         css({
             "&, &:hover, &:focus": {

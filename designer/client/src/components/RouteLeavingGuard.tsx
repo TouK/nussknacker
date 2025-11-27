@@ -43,7 +43,7 @@ export function useRouteLeavingGuard(when: boolean) {
     }, [showModal, state]);
 }
 
-export function RouteLeavingGuard({ when }: { when?: boolean }): JSX.Element {
+export function RouteLeavingGuard({ when }: { when?: boolean }): React.JSX.Element {
     useRouteLeavingGuard(when);
     return null;
 }

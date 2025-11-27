@@ -14,7 +14,7 @@ const ModalContent = styled("div")({
     },
 });
 
-export function FakeFormWindow({ children }: PropsWithChildren<unknown>): JSX.Element {
+export function FakeFormWindow({ children }: PropsWithChildren<unknown>): React.JSX.Element {
     return (
         <ModalContent>
             <NodeTable className="fieldsControl">{children}</NodeTable>

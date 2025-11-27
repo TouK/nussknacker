@@ -14,7 +14,7 @@ export interface CheckboxProps extends Pick<LabeledInputProps, "children" | "aut
     description?: string;
 }
 
-export default function Checkbox(props: CheckboxProps): JSX.Element {
+export default function Checkbox(props: CheckboxProps): React.JSX.Element {
     const { className, description, children, autoFocus, isMarked, value, onChange, readOnly } = props;
     const id = useId();
     return (

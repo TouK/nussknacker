@@ -15,7 +15,7 @@ export function CalculateCountsForm({
 }: {
     value: CountsState;
     onChange: React.Dispatch<React.SetStateAction<CountsState>>;
-}): JSX.Element {
+}): React.JSX.Element {
     const { t } = useTranslation();
     const { from, to, refresh } = value;
 

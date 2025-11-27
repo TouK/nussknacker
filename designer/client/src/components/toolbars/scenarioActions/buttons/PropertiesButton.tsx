@@ -24,7 +24,7 @@ export function useOpenProperties() {
     );
 }
 
-function PropertiesButton(props: ToolbarButtonProps): JSX.Element {
+function PropertiesButton(props: ToolbarButtonProps): React.JSX.Element {
     const { t } = useTranslation();
     const { disabled, type } = props;
     const propertiesErrors = useAppSelector(hasPropertiesErrors);

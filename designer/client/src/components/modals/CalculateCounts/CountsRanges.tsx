@@ -14,7 +14,7 @@ interface RangesProps {
     onChange: (value: [Moment, Moment], refresh?: number | null) => void;
 }
 
-export function CountsRanges({ label, onChange }: RangesProps): JSX.Element {
+export function CountsRanges({ label, onChange }: RangesProps): React.JSX.Element {
     const { t } = useTranslation<string>();
     const processName = useAppSelector(getProcessName);
     const processCategory = useAppSelector(getProcessingType);

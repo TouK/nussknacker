@@ -88,7 +88,7 @@ function EditableEditorRow({
     ...props
 }: Props & {
     rowClassName?: string;
-}): JSX.Element {
+}): React.JSX.Element {
     return (
         <FormControl
             className={cx(rowClassName && rowClassName)}

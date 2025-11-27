@@ -24,7 +24,7 @@ export function Source({
     parameterDefinitions,
     isEditMode,
     showValidation,
-}: SourceProps): JSX.Element {
+}: SourceProps): React.JSX.Element {
     return (
         <SourceSinkCommon
             isEditMode={isEditMode}

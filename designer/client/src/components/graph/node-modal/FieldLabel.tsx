@@ -20,7 +20,7 @@ type FieldLabelProps = {
     hintText?: string;
 };
 
-export function FieldLabel({ title, label, type, hintText }: FieldLabelProps): JSX.Element {
+export function FieldLabel({ title, label, type, hintText }: FieldLabelProps): React.JSX.Element {
     return (
         <>
             <FormLabel sx={{ lineHeight: "15px" }} title={title || label}>
@@ -54,7 +54,7 @@ interface Props {
     paramName: string;
     parameterDefinitions: UIParameter[];
 }
-function ParamFieldLabelComponent({ paramName, parameterDefinitions }: Props): JSX.Element {
+function ParamFieldLabelComponent({ paramName, parameterDefinitions }: Props): React.JSX.Element {
     const parameter = findParamDefinitionByName(parameterDefinitions, paramName);
     const label = parameter?.label || paramName; // Fallback to paramName is for hard-coded parameters like Description
     const readableType = ProcessUtils.humanReadableType(parameter?.typ || null);

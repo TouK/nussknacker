@@ -30,7 +30,7 @@ type Props = {
     endAdornment?: ReactNode;
 };
 
-function ExpressionField(props: Props): JSX.Element {
+function ExpressionField(props: Props): React.JSX.Element {
     const {
         fieldName,
         fieldLabel,

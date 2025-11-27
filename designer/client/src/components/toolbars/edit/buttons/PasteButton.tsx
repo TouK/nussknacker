@@ -24,7 +24,7 @@ function FakeInput(props: TransparentBoxProps) {
     return <TransparentBox {...props} contentEditable onInput={clearInput} />;
 }
 
-function PasteButton(props: ToolbarButtonProps): JSX.Element {
+function PasteButton(props: ToolbarButtonProps): React.JSX.Element {
     const { t } = useTranslation();
     const { paste } = useSelectionActions();
     const { disabled, type } = props;

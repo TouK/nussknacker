@@ -17,7 +17,15 @@ interface SinkProps {
     showValidation?: boolean;
 }
 
-export function Sink({ errors, isEditMode, node, parameterDefinitions, setProperty, showSwitch, showValidation }: SinkProps): JSX.Element {
+export function Sink({
+    errors,
+    isEditMode,
+    node,
+    parameterDefinitions,
+    setProperty,
+    showSwitch,
+    showValidation,
+}: SinkProps): React.JSX.Element {
     return (
         <SourceSinkCommon
             isEditMode={isEditMode}

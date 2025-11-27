@@ -38,7 +38,7 @@ export type CustomCompleterAceEditorProps = {
     enableLiveAutocompletion?: boolean;
 };
 
-export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): JSX.Element {
+export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): React.JSX.Element {
     const { className, isMarked, showValidation, fieldErrors, validationLabelInfo, completer, isLoading, enableLiveAutocompletion } = props;
     const { value, onValueChange, ref, ...inputProps } = props.inputProps;
     const [editorFocused, setEditorFocused] = useState(false);

@@ -11,7 +11,7 @@ export const isInputEvent = (event: Event): boolean => isInputTarget(event?.targ
 
 type KeyboardShortcutsMap = Record<string, (event: KeyboardEvent) => void>;
 
-export function BindKeyboardShortcuts({ disabled }: { disabled?: boolean }): JSX.Element {
+export function BindKeyboardShortcuts({ disabled }: { disabled?: boolean }): React.JSX.Element {
     const userActions = useSelectionActions();
     const { trackEvent } = useEventTracking();
 

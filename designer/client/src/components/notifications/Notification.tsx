@@ -14,7 +14,7 @@ interface Props {
     type: AlertColor;
 }
 
-export default function Notification({ icon, message, type }: Props): JSX.Element {
+export default function Notification({ icon, message, type }: Props): React.JSX.Element {
     const { t } = useTranslation();
 
     const alertContent = (

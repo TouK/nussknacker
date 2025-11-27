@@ -11,7 +11,7 @@ import type { ToolbarButtonProps } from "../../types";
 
 type Props = ToolbarButtonProps;
 
-function CompareButton(props: Props): JSX.Element {
+function CompareButton(props: Props): React.JSX.Element {
     const { disabled, type } = props;
     const isSingleVersion = useAppSelector(hasOneVersion);
     const available = !disabled && !isSingleVersion;
