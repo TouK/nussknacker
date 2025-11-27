@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import { head, uniq, values } from "lodash";
+import { head, isEqual, omit, uniq, uniqWith, values } from "lodash";
 
 import type {
     ExceptionResultJson,
@@ -96,7 +96,12 @@ class TestResultUtils {
         const inboundTransitions = allNodesTransitionResults.filter((r) => r.destinationNodeId === nodeId);
         const outboundTransitions = allNodesTransitionResults.filter((r) => r.sourceNodeId === nodeId);
         const transitions = inboundTransitions.length != 0 ? inboundTransitions : outboundTransitions;
-        return transitions.flatMap(({ results }) => results);
+        const resultsFromTransitions = transitions.flatMap(({ results }) => results);
+        // After a fragment usage node, two outgoing transitions are produced:
+        // 1) one from the direct output usage (with test results for fragment usage)
+        // 2) one from fragment output (with test results for fragment output)
+        // For the next node, these became inbound transitions that are identical except for the timestamp field, so we remove such duplicates here
+        return uniqWith(resultsFromTransitions, (a, b) => isEqual(omit(a, "timestamp"), omit(b, "timestamp")));
     }
 
     private _invocationResults(results: TestResultsDto, nodeId: NodeId): ExpressionInvocationResultJson[] {
