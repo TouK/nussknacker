@@ -311,7 +311,8 @@ function getNode(nameOrAlias: string, end?: boolean) {
 }
 
 function openNodeWindow(nameOrAlias: string, end?: boolean) {
-    cy.intercept("POST", "/api/nodes/*/additionalInfo").as("additionalInfo");
+    // in Request (rr) "properties" data is used
+    cy.intercept("POST", "/api/*/*/additionalInfo").as("additionalInfo");
     cy.intercept("POST", "/api/nodes/*/validation").as("nodeValidation");
 
     cy.getNode(nameOrAlias, end).dblclick();
