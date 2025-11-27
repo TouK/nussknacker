@@ -1,5 +1,6 @@
-import { css, styled, Typography } from "@mui/material";
+import { css, styled, Typography, type TypographyProps } from "@mui/material";
 import i18next from "i18next";
+import React from "react";
 
 export const PanelScenarioDetails = styled("div")(
     ({ theme }) => css`
@@ -24,14 +25,12 @@ export const ScenarioDetailsItemWrapper = styled("div")(
     `,
 );
 
-export const ProcessName = styled(Typography)({
+const Typo = (props: TypographyProps) => <Typography title={i18next.t("panels.scenarioDetails.tooltip.name", "Name")} {...props} />;
+
+export const ProcessName = styled(Typo)({
     overflow: "hidden",
     textOverflow: "ellipsis",
 });
-
-ProcessName.defaultProps = {
-    title: i18next.t("panels.scenarioDetails.tooltip.name", "Name"),
-};
 
 export const ProcessRename = styled(ProcessName)(({ theme }) => ({
     color: theme.palette.warning.main,
