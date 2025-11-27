@@ -52,7 +52,7 @@ function getDefaultEdge(kind: EdgeKind): Edge {
 }
 
 function withDefaults<T extends Edge>(edge: Partial<T>): T {
-    return defaultsDeep(edge, getDefaultEdge(edge.edgeType?.type));
+    return defaultsDeep(edge, getDefaultEdge(EdgeKind[edge.edgeType?.type]));
 }
 
 export function EdgesDndComponent(props: Props): React.JSX.Element {
