@@ -1,5 +1,4 @@
 import i18next from "i18next";
-import type { PropsWithChildren } from "react";
 import React from "react";
 import type { ErrorBoundaryProps } from "react-error-boundary";
 import { ErrorBoundary as ErrorBoundaryLibrary } from "react-error-boundary";
@@ -15,7 +14,7 @@ export const messages = {
 export function ErrorBoundary({
     children,
     FallbackComponent,
-}: Partial<Pick<ErrorBoundaryProps, "children" | "FallbackComponent">>): JSX.Element {
+}: Partial<Pick<ErrorBoundaryProps, "children" | "FallbackComponent">>): React.JSX.Element {
     return (
         <ErrorBoundaryLibrary FallbackComponent={FallbackComponent || FullPageErrorBoundaryFallbackComponent}>
             {children}

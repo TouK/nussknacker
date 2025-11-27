@@ -20,7 +20,7 @@ export function useTabData(id: string) {
     return useMemo(() => customTabs.find((tab) => tab.id === id), [customTabs, id]);
 }
 
-export function CustomTabPage<P extends Record<string, unknown>>({ id, ...props }: { id?: string } & P): JSX.Element {
+export function CustomTabPage<P extends Record<string, unknown>>({ id, ...props }: { id?: string } & P): React.JSX.Element {
     const tab = useTabData(id);
     return tab ? <CustomTabWrapper tab={tab} {...props} /> : <Navigate to="/404" />;
 }

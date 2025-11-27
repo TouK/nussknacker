@@ -45,7 +45,7 @@ export function Map<F extends Field>({
     showValidation,
     variableTypes,
     errors,
-}: MapProps<F>): JSX.Element {
+}: MapProps<F>): React.JSX.Element {
     const [isMarked] = useDiffMark();
 
     const appendTypeInfo = useCallback(

@@ -6,7 +6,7 @@ import { useSelectionActions } from "../../../graph/SelectionContextProvider";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
-function CopyButton(props: ToolbarButtonProps): JSX.Element {
+function CopyButton(props: ToolbarButtonProps): React.JSX.Element {
     const { copy } = useSelectionActions();
     const { t } = useTranslation();
     const { disabled, type } = props;

@@ -26,7 +26,7 @@ export type WindowContentProps = Omit<DefaultContentProps, "buttons"> &
 export const WindowContent = forwardRef<HTMLDivElement, WindowContentProps>(function WindowContent(
     { children, icon, subheader, buttons = [], closeWithEsc, ...props },
     ref,
-): JSX.Element {
+): React.JSX.Element {
     const { frontWindow } = useWindowManager();
     const classnames = useMemo(
         () => ({

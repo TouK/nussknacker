@@ -4,7 +4,7 @@ import React, { createContext, useCallback, useContext } from "react";
 
 const PathsToMarkContext = createContext<string[] | null>(null);
 
-export const PathsToMarkProvider = ({ value = [], children }: PropsWithChildren<{ value?: string[] }>): JSX.Element => {
+export const PathsToMarkProvider = ({ value = [], children }: PropsWithChildren<{ value?: string[] }>): React.JSX.Element => {
     return <PathsToMarkContext.Provider value={value}>{children}</PathsToMarkContext.Provider>;
 };
 

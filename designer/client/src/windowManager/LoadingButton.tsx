@@ -9,7 +9,7 @@ export enum LoadingButtonTypes {
     "tertiaryButton" = "tertiary-button",
 }
 
-export const LoadingButton = (props: FooterButtonProps): JSX.Element => {
+export const LoadingButton = (props: FooterButtonProps): React.JSX.Element => {
     const { className, action, title, disabled } = props;
     const [loading, setLoading] = useState(false);
     const onClick = useCallback(async () => {

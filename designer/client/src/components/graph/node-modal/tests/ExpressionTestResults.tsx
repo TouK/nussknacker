@@ -18,7 +18,7 @@ interface ExpressionTestResultsProps {
     resultsToShow: NodeResultsForContext;
 }
 
-export default function ExpressionTestResults(props: PropsWithChildren<ExpressionTestResultsProps>): JSX.Element {
+export default function ExpressionTestResults(props: PropsWithChildren<ExpressionTestResultsProps>): React.JSX.Element {
     const { fieldName, resultsToShow } = props;
     const testValueRef: React.Ref<HTMLTextAreaElement> = useRef(null);
     const fitsMaxHeight = testValueRef?.current ? testValueRef.current.scrollHeight <= HIDDEN_TEXTAREA_PIXEL_HEIGHT : true;

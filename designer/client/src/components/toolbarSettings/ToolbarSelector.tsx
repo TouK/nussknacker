@@ -25,7 +25,7 @@ function safeParse(value: string) {
     }
 }
 
-export const toolbarSelector = ({ horizontal, ...props }: ToolbarSelectorProps): JSX.Element => {
+export const toolbarSelector = ({ horizontal, ...props }: ToolbarSelectorProps): React.JSX.Element => {
     const Component = horizontal ? getToolbarHorizontalComponent(props) : getToolbarComponent(props);
 
     if (!Component) return null;

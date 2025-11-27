@@ -21,7 +21,7 @@ export interface ConfirmDialogData {
 export function GenericConfirmDialog({
     children,
     ...props
-}: PropsWithChildren<WindowContentProps<WindowKind, ConfirmDialogData>>): JSX.Element {
+}: PropsWithChildren<WindowContentProps<WindowKind, ConfirmDialogData>>): React.JSX.Element {
     // TODO: get rid of meta
     const { meta } = props.data;
 

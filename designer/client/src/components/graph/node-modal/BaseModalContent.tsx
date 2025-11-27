@@ -29,7 +29,7 @@ BaseModalContent.propTypes = {
     changeEdgeTypeValue: PropTypes.func,
 };
 
-export default function BaseModalContent(props: PropsWithChildren<Props>): JSX.Element {
+export default function BaseModalContent(props: PropsWithChildren<Props>): React.JSX.Element {
     const { t } = useTranslation();
     const { edge, edgeErrors, readOnly, isMarked, changeEdgeTypeValue } = props;
 

@@ -33,7 +33,7 @@ export function EnricherProcessor({
     setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
-}): JSX.Element {
+}): React.JSX.Element {
     const { t } = useTranslation();
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     const settings = useAppSelector(getUserSettings);

@@ -39,7 +39,7 @@ export default function BranchParameters({
     parameterDefinitions,
     setNodeDataAt,
     testResultsToShow,
-}: BranchParametersProps): JSX.Element {
+}: BranchParametersProps): React.JSX.Element {
     //TODO: maybe we can rely only on node?
     const branchParameters = parameterDefinitions?.filter((p) => p.branchParam);
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);

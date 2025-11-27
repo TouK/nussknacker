@@ -37,7 +37,7 @@ export function CustomNode({
     setProperty,
     showSwitch,
     showValidation,
-}: PropsWithChildren<CustomNodeProps>): JSX.Element {
+}: PropsWithChildren<CustomNodeProps>): React.JSX.Element {
     const processDefinitionData = useAppSelector(getProcessDefinitionData);
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     const hasOutputVar = useMemo(

@@ -19,7 +19,7 @@ interface MapValueProps {
     validationLabelInfo?: string;
 }
 
-export default React.memo(function MapValue(props: MapValueProps): JSX.Element {
+export default React.memo(function MapValue(props: MapValueProps): React.JSX.Element {
     const { value, isMarked, showValidation, readOnly, onChange, fieldErrors, variableTypes, validationLabelInfo } = props;
 
     return (

@@ -13,7 +13,10 @@ export interface InfoDialogData {
     confirmText?: string;
 }
 
-export function GenericInfoDialog({ children, ...props }: PropsWithChildren<WindowContentProps<WindowKind, InfoDialogData>>): JSX.Element {
+export function GenericInfoDialog({
+    children,
+    ...props
+}: PropsWithChildren<WindowContentProps<WindowKind, InfoDialogData>>): React.JSX.Element {
     const dialogData: InfoDialogData = props.data.meta;
 
     const { t } = useTranslation();

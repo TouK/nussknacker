@@ -34,7 +34,7 @@ interface Props {
     variableTypes: VariableTypes;
 }
 
-export default function Variable({ node, setProperty, isEditMode, showValidation, errors, variableTypes }: Props): JSX.Element {
+export default function Variable({ node, setProperty, isEditMode, showValidation, errors, variableTypes }: Props): React.JSX.Element {
     const onExpressionChange = useCallback((value: ExpressionObj) => setProperty("value", value), [setProperty]);
     const [isMarked] = useDiffMark();
     const inferredVariableType = useAppSelector((state: RootState) => {

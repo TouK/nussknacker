@@ -43,7 +43,7 @@ export function Switch({
     showSwitch,
     showValidation,
     variableTypes,
-}: Props): JSX.Element {
+}: Props): React.JSX.Element {
     const processDefinitionData = useAppSelector(getProcessDefinitionData);
     const definition = useMemo(
         () => processDefinitionData.componentGroups?.flatMap((g) => g.components).find((c) => c.node.type === node.type)?.node,

@@ -8,7 +8,7 @@ interface Props extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElem
     marked?: boolean; //mark change in diff
 }
 
-function Value({ children, className, marked, ...props }: Props): JSX.Element {
+function Value({ children, className, marked, ...props }: Props): React.JSX.Element {
     return (
         <div className={cx(nodeValue, className, { marked })} {...props}>
             {children}

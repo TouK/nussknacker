@@ -53,7 +53,7 @@ export const RemoteModuleTab = <CP extends RemoteComponentProps>({
 }: {
     url: ModuleUrl;
     componentProps: CP;
-}): JSX.Element => {
+}): React.JSX.Element => {
     const [urlValue, scope] = useMemo(() => splitUrl(url), [url]);
     return (
         <ErrorBoundary FallbackComponent={() => <NotFound />}>
@@ -106,7 +106,7 @@ function useExtednedComponentProps<P extends Record<string, any>>(props: P) {
     );
 }
 
-export const DynamicTab = memo(function DynamicComponent<P extends BaseTab>({ tab, ...props }: P): JSX.Element {
+export const DynamicTab = memo(function DynamicComponent<P extends BaseTab>({ tab, ...props }: P): React.JSX.Element {
     const componentProps = useExtednedComponentProps(props);
     switch (tab.type) {
         case "Remote":

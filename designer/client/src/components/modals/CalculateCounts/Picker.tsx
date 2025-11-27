@@ -19,7 +19,7 @@ const DTPickerWrapper = styled("div")`
     margin: 0;
 `;
 
-export function Picker({ label, onChange, value }: PickerProps): JSX.Element {
+export function Picker({ label, onChange, value }: PickerProps): React.JSX.Element {
     const { i18n } = useTranslation();
     const isValid = useMemo(() => moment(value).isValid(), [value]);
     const datePickerStyle = useMemo(

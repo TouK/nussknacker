@@ -30,7 +30,7 @@ interface FieldsRow {
     className?: string;
 }
 
-export function FieldsRow({ index, uuid, className, children }: PropsWithChildren<FieldsRow>): JSX.Element {
+export function FieldsRow({ index, uuid, className, children }: PropsWithChildren<FieldsRow>): React.JSX.Element {
     const { readOnly, remove } = useFieldsContext();
     const onClick = useCallback(() => remove?.(uuid), [uuid, remove]);
     return (

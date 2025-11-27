@@ -11,7 +11,7 @@ export interface InitErrorComponentProps extends PropsWithChildren<unknown> {
     retry: () => void;
 }
 
-export function InitErrorComponent(props: InitErrorComponentProps): JSX.Element {
+export function InitErrorComponent(props: InitErrorComponentProps): React.JSX.Element {
     return (
         <I18nextProvider i18n={i18n}>
             <InitializeError {...props} />

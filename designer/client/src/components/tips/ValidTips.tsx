@@ -5,7 +5,11 @@ import React from "react";
 import TestingMode from "../../assets/img/icons/testingMode.svg";
 import ValidTip from "./ValidTip";
 
-export default function ValidTips(props: { loading: boolean; hasNeitherErrorsNorWarnings?: boolean; testing?: boolean }): JSX.Element {
+export default function ValidTips(props: {
+    loading: boolean;
+    hasNeitherErrorsNorWarnings?: boolean;
+    testing?: boolean;
+}): React.JSX.Element {
     const { loading, hasNeitherErrorsNorWarnings, testing } = props;
     const theme = useTheme();
 

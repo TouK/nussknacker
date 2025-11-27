@@ -34,7 +34,7 @@ export function useFieldsContext(): FieldsContext {
     return fieldsContext;
 }
 
-export function NodeRowFieldsProvider({ children, errors = [], ...props }: PropsWithChildren<NodeRowFieldsProps>): JSX.Element {
+export function NodeRowFieldsProvider({ children, errors = [], ...props }: PropsWithChildren<NodeRowFieldsProps>): React.JSX.Element {
     const { label, path, onFieldAdd, onFieldRemove, readOnly } = props;
     const [isOpen, setIsOpen] = useState<Record<string, boolean>>({});
 

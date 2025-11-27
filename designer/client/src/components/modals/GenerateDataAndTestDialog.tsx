@@ -23,7 +23,7 @@ import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { nodeInput, nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import ValidationLabels from "./ValidationLabels";
 
-function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
+function GenerateDataAndTestDialog(props: WindowContentProps): React.JSX.Element {
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
     const maxSize = useAppSelector(getFeatureSettings).testDataSettings.maxSamplesCount;

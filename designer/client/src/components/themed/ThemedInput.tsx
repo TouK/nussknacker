@@ -16,7 +16,7 @@ export type InputProps = ValueFieldProps<string> & {
 export const ThemedInput = forwardRef(function ThemedInput(
     { value, onChange, placeholder, className, ...props }: InputProps,
     ref: Ref<HTMLInputElement>,
-): JSX.Element {
+): React.JSX.Element {
     return (
         <NodeInput
             ref={ref}

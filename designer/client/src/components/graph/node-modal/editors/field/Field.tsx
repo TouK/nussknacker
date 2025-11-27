@@ -30,7 +30,7 @@ export interface FieldProps {
     description?: string;
 }
 
-export default memo(function Field({ type, children, ...props }: PropsWithChildren<FieldProps>): JSX.Element {
+export default memo(function Field({ type, children, ...props }: PropsWithChildren<FieldProps>): React.JSX.Element {
     switch (type) {
         case FieldType.input:
             return (

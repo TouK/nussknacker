@@ -25,7 +25,7 @@ export default function EdgeDetailsContent({
     showValidation,
     showSwitch,
     variableTypes,
-}: Props): JSX.Element | null {
+}: Props): React.JSX.Element | null {
     const [isMarked] = useDiffMark();
 
     switch (edge.edgeType?.type) {

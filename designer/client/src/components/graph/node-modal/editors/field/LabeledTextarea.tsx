@@ -12,7 +12,7 @@ export interface LabeledTextareaProps
     extends Pick<LabeledInputProps, "value" | "isMarked" | "children" | "showValidation" | "fieldErrors">,
         Pick<TextAreaWithFocusProps, "className" | "autoFocus" | "onChange" | "readOnly" | "cols" | "rows"> {}
 
-export default function LabeledTextarea(props: LabeledTextareaProps): JSX.Element {
+export default function LabeledTextarea(props: LabeledTextareaProps): React.JSX.Element {
     const { value, className, isMarked, rows = 1, cols = 50, children, showValidation, fieldErrors, ...passProps } = props;
 
     const lineEndPattern = /\r\n|\r|\n/;

@@ -39,7 +39,7 @@ function OutputField({
     showValidation,
     fieldErrors,
     children,
-}: OutputFieldProps): JSX.Element {
+}: OutputFieldProps): React.JSX.Element {
     const readOnly = !isEditMode || readonly;
 
     const className = !showValidation || isEmpty(fieldErrors) ? nodeInput : `${nodeInput} ${nodeInputWithError}`;
@@ -80,7 +80,7 @@ export default function OutputParametersList({
     errors?: NodeValidationError[];
     showValidation?: boolean;
     isEditMode?: boolean;
-}): JSX.Element {
+}): React.JSX.Element {
     const currentVariableNames = editedNode.ref?.outputVariableNames;
 
     const componentDefinition: ComponentDefinition = useMemo(

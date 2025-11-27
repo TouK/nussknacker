@@ -9,7 +9,7 @@ interface MapKeyProps extends Omit<InputProps, "onChange"> {
     onChange?: (value: string) => void;
 }
 
-export default function MapKey(props: MapKeyProps): JSX.Element {
+export default function MapKey(props: MapKeyProps): React.JSX.Element {
     const { onChange, ...passProps } = props;
     return (
         <NodeValue className={cx("fieldName", passProps.className)}>

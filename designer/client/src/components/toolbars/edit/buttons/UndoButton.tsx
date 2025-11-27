@@ -8,7 +8,7 @@ import { useSelectionActions } from "../../../graph/SelectionContextProvider";
 import type { ToolbarButtonProps } from "../../types";
 import { CounterToolbarButton } from "./CounterToolbarButton";
 
-function UndoButton(props: ToolbarButtonProps): JSX.Element {
+function UndoButton(props: ToolbarButtonProps): React.JSX.Element {
     const { undo } = useSelectionActions();
     const [past] = useAppSelector(getHistoryCounts);
     const { t } = useTranslation();

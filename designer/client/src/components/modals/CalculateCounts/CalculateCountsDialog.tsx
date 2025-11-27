@@ -28,7 +28,7 @@ const initState = (): CountsState => {
     };
 };
 
-function CountsDialog({ children, ...props }: PropsWithChildren<WindowContentProps>): JSX.Element {
+function CountsDialog({ children, ...props }: PropsWithChildren<WindowContentProps>): React.JSX.Element {
     const { t } = useTranslation();
     const [state, setState] = useState(initState);
     const processName = useAppSelector(getProcessName);

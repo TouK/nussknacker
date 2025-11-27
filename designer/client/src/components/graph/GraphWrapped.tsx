@@ -17,7 +17,7 @@ import type { GraphProps } from "./types";
 import { usePortMagnetToggle } from "./usePortMagnetToggle";
 
 // Graph wrapped to make partial (for now) refactor to TS and hooks
-export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwardedRef): JSX.Element {
+export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwardedRef): React.JSX.Element {
     const { openNodeWindow } = useWindows();
     const userSettings = useAppSelector(getUserSettings);
     const pristine = useAppSelector(isPristine);

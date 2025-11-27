@@ -34,7 +34,7 @@ export function useFragmentInputDefinitionTypeOptions() {
     };
 }
 
-export default function FragmentInputDefinition(props: Props): JSX.Element {
+export default function FragmentInputDefinition(props: Props): React.JSX.Element {
     const { removeElement, addElement, variableTypes, ...passProps } = props;
     const { node, setProperty, isEditMode, showValidation } = passProps;
 

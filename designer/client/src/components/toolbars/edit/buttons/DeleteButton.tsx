@@ -6,7 +6,7 @@ import { useSelectionActions } from "../../../graph/SelectionContextProvider";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
-function DeleteButton(props: ToolbarButtonProps): JSX.Element {
+function DeleteButton(props: ToolbarButtonProps): React.JSX.Element {
     const { t } = useTranslation();
     const { delete: remove } = useSelectionActions();
     const { disabled, type } = props;

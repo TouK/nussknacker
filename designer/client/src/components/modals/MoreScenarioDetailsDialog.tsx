@@ -29,7 +29,7 @@ interface Props {
     processState: ProcessStateType;
 }
 
-function MoreScenarioDetailsDialog(props: WindowContentProps<WindowKind, Props>): JSX.Element {
+function MoreScenarioDetailsDialog(props: WindowContentProps<WindowKind, Props>): React.JSX.Element {
     const { scenario, processState } = props.data.meta;
 
     const { t } = useTranslation();

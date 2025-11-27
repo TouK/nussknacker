@@ -34,7 +34,7 @@ export const SourceSinkCommon = ({
     setProperty,
     showSwitch,
     showValidation,
-}: PropsWithChildren<SourceSinkCommonProps>): JSX.Element => {
+}: PropsWithChildren<SourceSinkCommonProps>): React.JSX.Element => {
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     return (
         <>
