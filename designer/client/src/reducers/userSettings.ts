@@ -48,6 +48,7 @@ export const getDefaultUserSettings = (initialUserFlags?: UserSettings): UserSet
         createFlag("debug.forceDisableModals"),
         createFlag("debug.lightTheme"),
         createFlag("debug.nodesAsJson"),
+        createFlag("editor.json.showLines", true),
         createFlag("editor.jsonTemplate.showLines", true),
         createFlag("editor.showRangeMessages"),
         createFlag("editor.showResetToDefaultButton"),
