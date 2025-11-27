@@ -12,8 +12,8 @@ import type { FixedValuesOption } from "../../fragment-input-definition/item/typ
 import type { FieldError } from "../Validators";
 import type { ExtendedEditor, OnValueChange } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
-import { EditorType } from "./types";
 import type { ExpressionObj } from "./types";
+import { EditorType } from "./types";
 
 type Props = {
     editorConfig: $TodoType;
@@ -83,7 +83,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
                 onChange={(event) =>
                     onValueChange({
                         expression: event.target.value,
-                        language: editorsParameters.FixedValuesWithRadioParameterEditor.language,
+                        language: editorsParameters[EditorType.FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR].language,
                     })
                 }
             >
@@ -99,7 +99,10 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
                 value={currentOption}
                 classNamePrefix={"test"}
                 onChange={(newValue) =>
-                    onValueChange({ expression: newValue.value, language: editorsParameters.FixedValuesParameterEditor.language })
+                    onValueChange({
+                        expression: newValue.value,
+                        language: editorsParameters[EditorType.FIXED_VALUES_PARAMETER_EDITOR].language,
+                    })
                 }
                 options={options}
                 formatOptionLabel={(option) =>
@@ -157,5 +160,5 @@ FixedValuesEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.fixedValues.notSwitchableToHint",
         "Expression must be one of the predefined values to switch to {{editorName}} mode",
-        { editorName: editorsParameters.FixedValuesParameterEditor.displayName },
+        { editorName: editorsParameters[EditorType.FIXED_VALUES_PARAMETER_EDITOR].displayName },
     );

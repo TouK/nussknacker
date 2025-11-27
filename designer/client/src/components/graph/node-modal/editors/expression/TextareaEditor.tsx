@@ -5,10 +5,9 @@ import { Textarea } from "../field/Textarea";
 import type { FieldError } from "../Validators";
 import type { ExtendedEditor, OnValueChange } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
-import { FormatterType, typeFormatters } from "./Formatter";
 import type { Formatter } from "./Formatter";
-import { ExpressionLang } from "./types";
-import type { EditorType } from "./types";
+import { FormatterType, typeFormatters } from "./Formatter";
+import { EditorType, ExpressionLang } from "./types";
 
 type Props = {
     expressionObj: $TodoType;
@@ -51,7 +50,7 @@ export const TextareaEditor: ExtendedEditor<Props> = ({
             onChange={(event) =>
                 onValueChange({
                     expression: stringFormatter.encode(event.target.value),
-                    language: editorsParameters.TextareaParameterEditor.language,
+                    language: editorsParameters[EditorType.TEXTAREA_PARAMETER_EDITOR].language,
                 })
             }
             value={stringFormatter.decode(expressionObj.expression) as string}
@@ -81,5 +80,5 @@ TextareaEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.textarea.notSwitchableToHint",
         "Expression must be a string literal i.e. text surrounded by quotation marks to switch to {{editorName}} mode",
-        { editorName: editorsParameters.TextareaParameterEditor.displayName },
+        { editorName: editorsParameters[EditorType.TEXTAREA_PARAMETER_EDITOR].displayName },
     );

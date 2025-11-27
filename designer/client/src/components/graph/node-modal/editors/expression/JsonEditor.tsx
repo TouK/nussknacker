@@ -15,7 +15,7 @@ import type { OnValueChange, SimpleEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import { ResetToDefaultButton } from "./ResetToDefaultButton";
 import type { ExpressionObj } from "./types";
-import { ExpressionLang } from "./types";
+import { EditorType, ExpressionLang } from "./types";
 import { useAceEditorRangeMessages } from "./useAceEditorRangeMessages";
 
 type Props = {
@@ -55,7 +55,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
     const onChange = useCallback(
         (newValue: string) => {
             setValue(newValue);
-            onValueChange({ expression: newValue, language: editorsParameters.JsonParameterEditor.language });
+            onValueChange({ expression: newValue, language: editorsParameters[EditorType.JSON_PARAMETER_EDITOR].language });
         },
         [onValueChange],
     );

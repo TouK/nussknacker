@@ -10,7 +10,7 @@ import type { SpelEditorProps } from "./SpelEditor";
 import { SpelEditor } from "./SpelEditor";
 import { isQuoted } from "./SpelQuotesUtils";
 import type { ExpressionObj } from "./types";
-import { EditorMode, ExpressionLang } from "./types";
+import { EditorMode, EditorType, ExpressionLang } from "./types";
 
 interface SyntaxMode extends Ace.SyntaxMode {
     $highlightRules: {
@@ -97,7 +97,7 @@ export const SqlEditor: ExtendedEditor<Props> = (props: Props) => {
             className={className}
             rows={6}
             editorMode={EditorMode.SQL}
-            language={editorsParameters.SqlParameterEditor.language}
+            language={editorsParameters[EditorType.SQL_PARAMETER_EDITOR].language}
         />
     );
 };
@@ -115,5 +115,5 @@ SqlEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.textarea.notSwitchableToHint",
         "Expression must be a string literal i.e. text surrounded by quotation marks to switch to {{editorName}} mode",
-        { editorName: editorsParameters.SqlParameterEditor.displayName },
+        { editorName: editorsParameters[EditorType.SQL_PARAMETER_EDITOR].displayName },
     );

@@ -15,7 +15,7 @@ import { ExpressionSuggest } from "./ExpressionSuggest";
 import { ResetToDefaultButton } from "./ResetToDefaultButton";
 import { addQuotesToExpression } from "./SpelQuotesUtils";
 import type { ExpressionObj } from "./types";
-import { EditorMode, ExpressionLang } from "./types";
+import { EditorMode, EditorType, ExpressionLang } from "./types";
 
 export type SpelEditorProps = {
     expressionObj: ExpressionObj;
@@ -56,7 +56,7 @@ const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<
         validationLabelInfo,
         editorMode,
         placeholder,
-        language = editorsParameters.SpelParameterEditor.language,
+        language = editorsParameters[EditorType.SPEL_PARAMETER_EDITOR].language,
         defaultValue,
     } = props;
 
