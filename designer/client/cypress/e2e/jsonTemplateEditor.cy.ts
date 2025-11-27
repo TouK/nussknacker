@@ -27,7 +27,7 @@ describe("JSON template editor", () => {
         cy.get("@editor").within(() => {
             cy.window().then((win) => {
                 const aceEditor = (win as any).ace.edit(Cypress.$(".ace_editor")[0]);
-                expect(aceEditor.getValue()).to.eq('{\n    "key1": "#{ # }"\n}');
+                expect(aceEditor.getValue()).to.eq('{\n  "key1": "#{ # }"\n}');
             });
         });
     });
