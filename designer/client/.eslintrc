@@ -103,7 +103,7 @@
         {
             "files": ["**/*.ts"],
             "parserOptions": {
-                "project": "tsconfig.json"
+                "project": "eslint.tsconfig.json"
             }
         },
         {
