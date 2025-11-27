@@ -75,11 +75,11 @@ export interface ActivitiesResponse {
         user: string;
         date: string;
         scenarioVersionId: number;
-        comment?: ActivityComment;
+        comment?: ActivityComment | null;
         attachment?: ActivityAttachment;
-        overrideDisplayableName?: string;
-        overrideSupportedActions?: string[];
-        overrideIcon?: string;
+        overrideDisplayableName?: string | null;
+        overrideSupportedActions?: string[] | null;
+        overrideIcon?: string | null;
         additionalFields: ActivityAdditionalFields[];
     }[];
 }
