@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import { head, uniq, values } from "lodash";
+import { head, isEqual, omit, uniq, uniqWith, values } from "lodash";
 
 import type {
     ExceptionResultJson,
@@ -97,7 +97,8 @@ class TestResultUtils {
         const inboundTransitions = allNodesTransitionResults.filter((r) => r.destinationNodeId === nodeId);
         const outboundTransitions = allNodesTransitionResults.filter((r) => r.sourceNodeId === nodeId);
         const transitions = inboundTransitions.length != 0 ? inboundTransitions : outboundTransitions;
-        return transitions.flatMap(({ results }) => results);
+        const resultsFromTransitions = transitions.flatMap(({ results }) => results);
+        return uniqWith(resultsFromTransitions, (a, b) => isEqual(omit(a, "timestamp"), omit(b, "timestamp")));
     }
 
     private _expressionEvaluationResults(results: TestResultsDto, nodeId: NodeId): ExpressionEvaluationResultJson[] {
