@@ -35,7 +35,7 @@ export function getEdgesForNode(scenario: Scenario, node: NodeType) {
     return scenario.scenarioGraph.edges.filter(({ from }) => from === node.id);
 }
 
-const NODE_UPDATE_DEBOUNCE_TIMEOUT = 500;
+export const NODE_UPDATE_DEBOUNCE_TIMEOUT = 500;
 
 export function useNodeState(data: NodeDetailsMeta): NodeState {
     const dispatch = useAppDispatch();
@@ -54,7 +54,7 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
     const node = useMemo(() => nodeFromGlobalStore || data.node, [data.node, nodeFromGlobalStore]);
     const edges = useMemo(() => getEdgesForNode(scenario, node), [node, scenario]);
 
-    const [status, setStatus, editStateRef] = useEditState();
+    const [editState, setStatus, editStateRef] = useEditState();
 
     const [node$, emitNode, editedNode] = useStream(node, true);
     const [edges$, emitEdges, outputEdges] = useStream(edges, true);
@@ -65,7 +65,6 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
         async (editedNode: EditedNode, outputEdges: Edge[]) => {
             const controller = new AbortController();
             abortControllerRef.current = controller;
-
             setStatus("processing");
             try {
                 const after = applyIdFromFakeName(editedNode);
@@ -101,13 +100,7 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
         [emitEdges, emitNode],
     );
 
-    const change$ = useMemo(
-        () =>
-            combine([node$, edges$])
-                .map(([node, edges]) => ({ node, edges }))
-                .toProperty(),
-        [edges$, node$],
-    );
+    const change$ = useMemo(() => combine([node$, edges$]).map(([node, edges]) => ({ node, edges })), [edges$, node$]);
 
     useEffect(() => {
         if (!autoApply) return;
@@ -140,7 +133,7 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
         outputEdges,
         onChange,
         performNodeEdit,
-        editState: status,
+        editState,
         editStateRef,
     };
 }

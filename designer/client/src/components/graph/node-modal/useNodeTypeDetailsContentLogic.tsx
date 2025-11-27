@@ -17,7 +17,6 @@ import {
     getFindAvailableBranchVariables,
     getFindAvailableVariables,
     getProcessName,
-    getProcessProperties,
 } from "./NodeDetailsContent/selectors";
 import type { NodeTypeDetailsContentProps } from "./NodeTypeDetailsContent";
 import { setImmutable } from "./setImmutable";
@@ -31,7 +30,6 @@ export function useValidation({ node, edges, showValidation }: Pick<NodeTypeDeta
     const dispatch = useAppDispatch();
     const getBranchVariableTypes = useAppSelector(getFindAvailableBranchVariables);
     const processName = useAppSelector(getProcessName);
-    const processProperties = useAppSelector(getProcessProperties);
 
     const settings = useAppSelector(getUserSettings);
     const autoApply = settings["node.autoApply"];
@@ -42,12 +40,10 @@ export function useValidation({ node, edges, showValidation }: Pick<NodeTypeDeta
         if (!showValidation) return;
         dispatch(
             validateNodeData(
-                processName,
                 {
                     //see NODES_CONNECTED/NODES_DISCONNECTED
                     outgoingEdges: edges.filter((e) => e.to != ""),
                     nodeData: node,
-                    processProperties,
                     branchVariableTypes: getBranchVariableTypes(node.id),
                     variableTypes,
                 },
@@ -57,7 +53,7 @@ export function useValidation({ node, edges, showValidation }: Pick<NodeTypeDeta
                 },
             ),
         );
-    }, [dispatch, edges, getBranchVariableTypes, node, processName, processProperties, showValidation, variableTypes, autoApply]);
+    }, [autoApply, dispatch, edges, getBranchVariableTypes, node, processName, showValidation, variableTypes]);
 }
 
 export function useVariableTypes({ node }: Pick<NodeTypeDetailsContentProps, "node">) {

@@ -1,18 +1,19 @@
 import { cx } from "@emotion/css";
 import { Box } from "@mui/material";
 import { isEmpty } from "lodash";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
+import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
+import { useAppSelector } from "../../../../../store/storeHelpers";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import type { ParamType } from "../types";
 import type { FieldError } from "../Validators";
 import { setupAceEditorSnippets } from "./AceEditorJsonBasedSnippets";
-import { DEFAULT_OPTIONS } from "./AceWrapper";
+import AceWithSettings from "./AceWithSettings";
 import type { OnValueChange, SimpleEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import { ResetToDefaultButton } from "./ResetToDefaultButton";
-import { StyledAceEditor } from "./StyledAceEditor";
 import type { ExpressionObj } from "./types";
 import { ExpressionLang } from "./types";
 import { useAceEditorRangeMessages } from "./useAceEditorRangeMessages";
@@ -40,19 +41,24 @@ export const JsonEditor: SimpleEditor<Props> = ({
     isMarked,
     defaultValue,
 }: Props) => {
-    const [value, setValue] = useState(expressionObj.expression.replace(/^["'](.*)["']$/, ""));
-    const { annotations, markers, hasRangeText, setAnnotationsOnLoad } = useAceEditorRangeMessages(fieldErrors);
+    const storedExpression = useMemo(() => expressionObj.expression.replace(/^["'](.*)["']$/, ""), [expressionObj.expression]);
+    const [value, setValue] = useState(storedExpression);
+    useEffect(() => {
+        setValue(storedExpression);
+    }, [storedExpression]);
+
+    const language = ExpressionLang.JSON;
+    const settings = useAppSelector(getUserSettings);
+    const showLines = Boolean(settings[`editor.${language}.showLines`]);
+    const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(fieldErrors, showLines);
 
     const onChange = useCallback(
         (newValue: string) => {
             setValue(newValue);
-
             onValueChange({ expression: newValue, language: editorsParameters.JsonParameterEditor.language });
         },
         [onValueChange],
     );
-
-    const THEME = "nussknacker";
 
     const InputAdornmentEnd = useMemo(() => {
         if (!defaultValue) return;
@@ -74,49 +80,27 @@ export const JsonEditor: SimpleEditor<Props> = ({
                     isMarked && "marked",
                     readOnly && "read-only",
                 ])}
-                sx={{ position: "relative" }}
+                sx={{
+                    position: "relative",
+                }}
             >
-                <StyledAceEditor
+                <AceWithSettings
                     onLoad={(editor) => {
-                        setAnnotationsOnLoad();
                         setupAceEditorSnippets(editor);
                     }}
-                    readOnly={readOnly}
-                    mode={"json"}
-                    width={"100%"}
-                    minLines={5}
-                    maxLines={50}
-                    codeTheme={THEME}
                     onChange={onChange}
                     value={value}
-                    showPrintMargin={false}
-                    cursorStart={-1} //line start
-                    wrapEnabled={true}
-                    showGutter={true}
-                    setOptions={{
-                        ...DEFAULT_OPTIONS,
-                        enableLiveAutocompletion: false,
-                        enableBasicAutocompletion: false,
-                        showLineNumbers: true,
-                        tabSize: 2,
-                        // We don't want to check syntax correctness with ace
-                        useWorker: false,
+                    inputProps={{
+                        language,
+                        readOnly,
+                        InputAdornmentEnd,
+                        rows: 5,
                     }}
+                    enableLiveAutocompletion={false}
                     annotations={annotations}
                     markers={markers}
+                    fieldErrors={fieldErrors}
                 />
-                {InputAdornmentEnd && (
-                    <Box
-                        aria-label={"InputAdornmentEnd"}
-                        sx={{
-                            position: "absolute",
-                            right: "8px",
-                            top: "9px",
-                        }}
-                    >
-                        {InputAdornmentEnd}
-                    </Box>
-                )}
             </Box>
             {showValidation && !hasRangeText && <ValidationLabels fieldErrors={fieldErrors} />}
         </Box>

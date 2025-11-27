@@ -1,18 +1,19 @@
-import { omit } from "lodash";
-
 import type { Action } from "../actions/reduxTypes";
 import type { TypingResult, UIParameter } from "../types/definition";
+import type { NodeId } from "../types/node";
 import type { NodeValidationError } from "../types/validation";
 
-export type NodeDetailsState = Record<
-    string,
-    {
-        parameters: UIParameter[];
-        expressionType?: TypingResult;
-        validationErrors: NodeValidationError[];
-        validationPerformed: boolean;
-        changingDynamicParameters: string[];
-    }
+export type NodeDetailsState = Partial<
+    Record<
+        ".properties" | NodeId,
+        {
+            parameters: UIParameter[];
+            expressionType?: TypingResult;
+            validationErrors: NodeValidationError[];
+            validationPerformed: boolean;
+            changingDynamicParameters: string[];
+        }
+    >
 >;
 
 export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetailsState {
@@ -59,6 +60,19 @@ export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetai
                 [nodeId]: {
                     ...state[nodeId],
                     ...validationData,
+                },
+            };
+        }
+
+        case "PROPERTIES_VALIDATION_UPDATED": {
+            return {
+                ...state,
+                ".properties": {
+                    parameters: [],
+                    expressionType: null,
+                    validationErrors: action.errors,
+                    validationPerformed: true,
+                    changingDynamicParameters: [],
                 },
             };
         }

@@ -156,9 +156,8 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                     {availableEditorsOptions.map((option, index) => (
                         <StyledTab
                             aria-disabled={option.isDisabled}
-                            disableFocusRipple
-                            disableRipple
                             disableTouchRipple
+                            disabled={availableEditorsOptions.length <= 1}
                             key={index}
                             label={option.label?.toLowerCase()}
                             value={option.value}

@@ -1,14 +1,14 @@
 import { debounce } from "lodash";
 
-import { applyIdFromFakeName } from "../../components/graph/node-modal/IdField";
 import { getNodeDetails } from "../../components/graph/node-modal/NodeDetailsContent/getNodeDetails";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
-import HttpService from "../../http/HttpService/instance";
+import type { AppDispatch } from "../../store/storeHelpers";
 import type { TypingResult, UIParameter } from "../../types/definition";
 import type { Edge } from "../../types/edge";
-import type { NodeId, NodeType, PropertiesType } from "../../types/node";
+import type { NodeType, PropertiesType } from "../../types/node";
 import type { NodeValidationError, VariableTypes } from "../../types/validation";
 import type { ThunkAction } from "../reduxTypes";
+import { validateNode } from "./validationsActions";
 
 type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED"; validationData: ValidationData; nodeId: string };
 type NodeDetailsOpened = { type: "NODE_DETAILS_OPENED"; nodeId: string; windowId: string };
@@ -98,36 +98,26 @@ export function nodeDetailsClosed(nodeId: string, windowId: string): ThunkAction
 
 //we don't return ThunkAction here as it would not work correctly with debounce
 //TODO: use sth better, how long should be timeout?
-const validate = debounce(
+const validateDebounced = debounce(
     async (
-        processName: string,
-        validationRequestData: ValidationRequest,
-        callback: (nodeId: NodeId, data?: ValidationData | void) => void,
+        dispatch: AppDispatch,
+        validationRequestData: Omit<ValidationRequest, "processProperties">,
+        callback: (data?: ValidationData | void) => void,
     ) => {
-        const validate = (node: NodeType) => HttpService.validateNode(processName, { ...validationRequestData, nodeData: node });
-
-        const nodeId = validationRequestData.nodeData.id;
-        const nodeWithChangedName = applyIdFromFakeName(validationRequestData.nodeData);
-        const data = await validate(nodeWithChangedName);
-        callback(nodeId, data);
+        const data = await dispatch(validateNode(validationRequestData));
+        callback(data);
     },
     500,
 );
 
 export function validateNodeData(
-    processName: string,
-    validationRequestData: ValidationRequest,
-    callback?: ({ status }: { status: "allowDataUpdate" | "unknown" }) => void,
+    validationRequestData: Omit<ValidationRequest, "processProperties">,
+    callback?: (status: "allowDataUpdate" | "unknown") => void,
 ): ThunkAction {
     return (dispatch, getState) => {
-        validate(processName, validationRequestData, (nodeId, data) => {
-            const allowDataUpdate = data && getNodeDetails(getState())(nodeId);
-            // node details view creates this on open and removes after close
-            if (allowDataUpdate) {
-                dispatch(nodeValidationDataUpdated(nodeId, data));
-            }
-
-            callback?.({ status: allowDataUpdate ? "allowDataUpdate" : "unknown" });
+        validateDebounced(dispatch, validationRequestData, (data) => {
+            const allowDataUpdate = data && getNodeDetails(getState())(validationRequestData.nodeData.id);
+            callback?.(allowDataUpdate ? "allowDataUpdate" : "unknown");
         });
     };
 }

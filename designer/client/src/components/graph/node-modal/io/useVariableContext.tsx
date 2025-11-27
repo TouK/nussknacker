@@ -20,6 +20,10 @@ export function useVariableContext(direction: Direction) {
         const r = getAvailableContexts(direction);
         const contexts = r[0].sort((b, a) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
+        if (contexts.length < 1) {
+            return [contexts, 0];
+        }
+
         const pageSize = 30;
         if (contexts.length > pageSize) {
             const sliced = contexts.filter((r) => !r.disabled).slice(0, pageSize);

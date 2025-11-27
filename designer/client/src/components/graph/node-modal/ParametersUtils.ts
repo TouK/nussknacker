@@ -2,6 +2,8 @@ import { get } from "lodash";
 
 import type { UIParameter } from "../../../types/definition";
 import type { NodeType } from "../../../types/node";
+import type { ProcessAdditionalFields } from "../../../types/scenarioGraph";
+import { isRequestSource, scenarioPropertiesToNodeProperties } from "./requestSourceAddons";
 import { setImmutable } from "./setImmutable";
 
 const parametersPath = (node) => {
@@ -23,14 +25,23 @@ const parametersPath = (node) => {
 
 //We want to change parameters in node based on current node definition. This function can be used in
 //two cases: dynamic parameters handling and automatic node migrations (e.g. in fragments)
-export function adjustParameters(node: Readonly<NodeType>, parameterDefinitions: Readonly<UIParameter[]>): NodeType {
+export function adjustParameters(
+    node: Readonly<NodeType>,
+    parameterDefinitions: Readonly<UIParameter[]>,
+    properties: ProcessAdditionalFields["properties"],
+): NodeType {
     const path = parametersPath(node);
 
     if (!path || !parameterDefinitions) {
         return node;
     }
 
-    const currentParameters = get(node, path);
+    let currentParameters;
+    currentParameters = get(node, path);
+    if (isRequestSource(node)) {
+        currentParameters = currentParameters.concat(scenarioPropertiesToNodeProperties(properties));
+    }
+
     //TODO: currently dynamic branch parameters are *not* supported...
     const adjustedParameters = parameterDefinitions
         .filter((def) => !def.branchParam)

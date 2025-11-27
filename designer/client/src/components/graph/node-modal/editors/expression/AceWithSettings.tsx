@@ -14,10 +14,9 @@ import type { AceKeyCommand, AceWrapperProps } from "./AceWrapper";
 import AceWrapper from "./AceWrapper";
 import { useAceDndTarget } from "./useAceDndTarget";
 
-export default forwardRef(function AceWithSettings(
-    props: Omit<AceWrapperProps, "noWrap" | "showLines">,
-    ref: ForwardedRef<ReactAce>,
-): JSX.Element {
+export type AceWithSettingsProps = Omit<AceWrapperProps, "noWrap" | "showLines">;
+
+export default forwardRef(function AceWithSettings(props: AceWithSettingsProps, ref: ForwardedRef<ReactAce>): JSX.Element {
     const userSettings = useAppSelector(getUserSettings);
     const dispatch = useAppDispatch();
 

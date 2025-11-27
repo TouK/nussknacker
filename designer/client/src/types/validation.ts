@@ -40,6 +40,7 @@ type CellError = {
     rowIndex: number;
     errorMessage: string;
 };
+
 type TabularDataDefinitionParserErrorDetails = {
     cellErrors: CellError[];
     type: "TabularDataDefinitionParserErrorDetails";

@@ -1,5 +1,4 @@
-import type { Ace } from "ace-builds";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import type { IMarker } from "react-ace/lib/types";
 import type { Annotation } from "react-ace/types";
 import { v4 as uuid4 } from "uuid";
@@ -8,62 +7,89 @@ import { getUserSettings } from "../../../../../reducers/selectors/userSettings"
 import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { FieldError } from "../Validators";
 
-export function useAceEditorRangeMessages(fieldErrors: FieldError[]) {
+type ErrorCoords = {
+    start: { row: number; column: number };
+    end?: { row: number; column: number };
+};
+
+function extractLineAndColumnFromMessage(message: string): { line: number; column: number } | null {
+    let match;
+
+    // pattern: "... [character 16 line 37]"
+    match = message.match(/\[\s*character\s+(\d+)\s*line\s+(\d+)\s*]/i);
+    if (match) {
+        const line = parseInt(match[2], 10);
+        const column = parseInt(match[1], 10);
+        return { line, column };
+    }
+
+    // pattern: "... (line 37, column 15)"
+    match = message.match(/\(line\s+(\d+),\s*column\s+(\d+)\)/i);
+    if (match) {
+        const line = parseInt(match[1], 10);
+        const column = parseInt(match[2], 10);
+        return { line, column };
+    }
+
+    return null;
+}
+
+function extractErrorRange(error: FieldError): ErrorCoords | null {
+    if (error.details?.type === "CoordinatesBasedTextRange") {
+        return error.details;
+    }
+
+    const lineAndColumn = extractLineAndColumnFromMessage(error.message);
+    if (lineAndColumn) {
+        return { start: { row: lineAndColumn.line - 1, column: lineAndColumn.column - 1 } };
+    }
+
+    return null;
+}
+
+export function useAceEditorRangeMessages(fieldErrors: FieldError[], showLines?: boolean) {
     const userSettings = useAppSelector(getUserSettings);
     const showRangeMessages = userSettings["editor.showRangeMessages"];
+
+    const rangeErrors = useMemo(
+        () =>
+            fieldErrors
+                .map((error) => {
+                    const range = extractErrorRange(error);
+                    return range ? { range, error } : null;
+                })
+                .filter(Boolean),
+        [fieldErrors],
+    );
 
     const annotations: Annotation[] = useMemo(() => {
         if (!showRangeMessages) {
             return [];
         }
 
-        return fieldErrors
-            .map(
-                (error) =>
-                    error?.details?.type === "CoordinatesBasedTextRange" && {
-                        uuid: uuid4(), // Unique identifier for the annotation to fix issue, when annotations are not updated when, line is updated, but annotations object is the same
-                        row: error.details.start.row,
-                        column: error.details.start.column,
-                        type: "error",
-                        text: error.message,
-                    },
-            )
-            .filter(Boolean);
-    }, [fieldErrors, showRangeMessages]);
+        return rangeErrors.map(({ error, range }) => ({
+            uuid: uuid4(),
+            row: range.start.row,
+            column: range.start.column,
+            type: "error",
+            text: error.message,
+        }));
+    }, [rangeErrors, showRangeMessages]);
 
     const markers: IMarker[] = useMemo(() => {
-        if (!showRangeMessages) {
-            return [];
-        }
+        return rangeErrors.map(({ range }) => ({
+            uuid: uuid4(),
+            startRow: range.start.row,
+            startCol: range.start.column,
+            endRow: range.end ? range.end.row : range.start.row,
+            endCol: range.end ? range.end.column : range.start.column + 1,
+            className: "ace-error-marker",
+            type: "text" as const,
+            inFront: false,
+        }));
+    }, [rangeErrors]);
 
-        return fieldErrors
-            .map(
-                (error) =>
-                    error?.details?.type === "CoordinatesBasedTextRange" &&
-                    error.details && {
-                        uuid: uuid4(), // Unique identifier for the marker to fix issue, when markers are not updated when, line is updated, but markers object is the same
-                        startRow: error.details.start.row,
-                        startCol: error.details.start.column,
-                        endRow: error.details.end.row,
-                        endCol: error.details.end.column,
-                        className: "ace-error-marker",
-                        type: "text" as const,
-                        inFront: false,
-                    },
-            )
-            .filter(Boolean);
-    }, [fieldErrors, showRangeMessages]);
+    const hasRangeText = showLines && annotations.length > 0 && markers.length > 0;
 
-    const setAnnotationsOnLoad = useCallback(
-        () => (editor: Ace.Editor) => {
-            if (annotations.length > 0) {
-                editor.session.setAnnotations(annotations);
-            }
-        },
-        [annotations],
-    );
-
-    const hasRangeText = annotations.length > 0 && markers.length > 0;
-
-    return { annotations, markers, hasRangeText, setAnnotationsOnLoad };
+    return { annotations, markers, hasRangeText };
 }

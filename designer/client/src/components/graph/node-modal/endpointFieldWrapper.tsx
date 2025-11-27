@@ -33,7 +33,7 @@ export function EndpointFieldWrapper({
     setProperty,
     isEditMode,
     showValidation,
-    errors,
+    fieldErrors,
 }: FieldWrapperProps) {
     const settings = useAppSelector(getUserSettings);
 
@@ -43,7 +43,7 @@ export function EndpointFieldWrapper({
     return (
         <>
             {children}
-            <FieldAddons hasError={showValidation && errors.length > 0}>
+            <FieldAddons hasError={showValidation && fieldErrors.length > 0}>
                 <GenerateNewEndpoint
                     node={node}
                     handleNewEndpointGenerated={(topic: string) => {

@@ -14,8 +14,8 @@ import api from "../../api";
 import type { UserData } from "../../common/models/User";
 import SystemUtils from "../../common/SystemUtils";
 import { withoutHackOfEmptyEdges } from "../../components/graph/GraphPartialsInTS/EdgeUtils";
+import type { AdditionalInfo } from "../../components/graph/node-modal/AdditionalInfoBox";
 import type { ExpressionSuggestion } from "../../components/graph/node-modal/editors/expression/ExpressionSuggester";
-import type { AdditionalInfo } from "../../components/graph/node-modal/NodeAdditionalInfoBox";
 import { extractStickyNotesFromNodes } from "../../components/graph/utils/stickyNotesUtils";
 import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../../components/Labels/types";
 import type { TestingDataRecords, TestingDataRecordsRequestData } from "../../components/modals/TestingDataRecords/Table";
@@ -594,9 +594,12 @@ export class HttpService {
         return promise;
     }
 
-    validateProperties(processName: string, propertiesRequest: PropertiesValidationRequest): Promise<ValidationData | void> {
+    validateProperties(
+        processName: string,
+        { name = processName, additionalFields }: PropertiesValidationRequest,
+    ): Promise<ValidationData | void> {
         return api
-            .post(`/properties/${encodeURIComponent(processName)}/validation`, propertiesRequest)
+            .post(`/properties/${encodeURIComponent(processName)}/validation`, { name, additionalFields })
             .then((res) => res.data)
             .catch((error) => {
                 this.#addError(
@@ -710,24 +713,30 @@ export class HttpService {
         return promise;
     }
 
-    fetchProcessLiveData(processName: string, showErrors: boolean): Promise<AxiosResponse<ResultsWithCountsDto>> {
-        return api.get<ResultsWithCountsDto>(`/liveData/${encodeURIComponent(processName)}`).catch((error) => {
-            if (axios.isAxiosError(error) && error.response) {
-                const status = error.response.status;
-                if (showErrors) {
-                    if (status === 422) {
-                        this.#addError(
-                            i18next.t("notification.error.liveDataNotSupported", "Live data is not supported for this scenario"),
-                            error,
-                            true,
-                        );
-                    } else {
-                        this.#addError(i18next.t("notification.error.failedToFetchLiveData", "Cannot fetch live data"), error, true);
+    fetchProcessLiveData(
+        processName: string,
+        showErrors: boolean,
+        controller?: AbortController,
+    ): Promise<AxiosResponse<ResultsWithCountsDto>> {
+        return api
+            .get<ResultsWithCountsDto>(`/liveData/${encodeURIComponent(processName)}`, { signal: controller?.signal })
+            .catch((error) => {
+                if (axios.isAxiosError(error) && error.response) {
+                    const status = error.response.status;
+                    if (showErrors) {
+                        if (status === 422) {
+                            this.#addError(
+                                i18next.t("notification.error.liveDataNotSupported", "Live data is not supported for this scenario"),
+                                error,
+                                true,
+                            );
+                        } else {
+                            this.#addError(i18next.t("notification.error.failedToFetchLiveData", "Cannot fetch live data"), error, true);
+                        }
                     }
                 }
-            }
-            throw error;
-        });
+                throw error;
+            });
     }
 
     //to prevent closing edit node modal and corrupting graph display

@@ -12,10 +12,11 @@ export type ScenarioGraph = {
 };
 
 export type Category = string;
+export type PropertiesConfigKeys = "inputSchema" | "outputSchema" | "slug" | (string & NonNullable<unknown>);
 
 export type ProcessAdditionalFields = {
     description?: string | null;
-    properties: { [key: string]: string };
+    properties: { [key in PropertiesConfigKeys]: string };
     metaDataType: string;
     showDescription?: boolean;
 };
@@ -27,7 +28,6 @@ export interface UIScenarioProperty {
     hintText?: string;
 }
 
-export type PropertiesConfigKeys = "inputSchema" | "outputSchema" | "slug" | (string & NonNullable<unknown>);
 export type PropertiesConfig = { [key in PropertiesConfigKeys]: UIScenarioProperty };
 
 export interface UiScenarioProperties {
