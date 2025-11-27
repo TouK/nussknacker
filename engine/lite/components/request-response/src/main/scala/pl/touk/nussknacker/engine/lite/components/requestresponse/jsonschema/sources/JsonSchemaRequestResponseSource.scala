@@ -36,7 +36,7 @@ class JsonSchemaRequestResponseSource(
     with LazyLogging
     with ReturningType
     with SourceTestSupport[Request[Any]]
-    with TestWithParametersSupport[Any] {
+    with TestWithParametersSupport[Request[Any]] {
 
   protected val openApiDescription: String = s"**scenario name**: ${metaData.name}"
 
@@ -79,8 +79,8 @@ class JsonSchemaRequestResponseSource(
       )
   }
 
-  override def parametersToTestData(params: Map[ParameterName, AnyRef]): Any = {
-    handleSchemaWithUnionTypes(params)
+  override def parametersToTestData(params: Map[ParameterName, AnyRef]): Request[Any] = {
+    Request(handleSchemaWithUnionTypes(params))
   }
 
   // TODO handle anyOf, allOf, oneOf schemas better than 'first matched schema' - now it works kinda' like "anyOf" for all combined schemas
