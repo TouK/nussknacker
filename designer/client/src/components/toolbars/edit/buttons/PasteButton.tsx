@@ -30,7 +30,7 @@ function PasteButton(props: ToolbarButtonProps): React.JSX.Element {
     const { disabled, type } = props;
     const available = !disabled && paste;
 
-    const ref = useRef<HTMLButtonElement & HTMLDivElement>();
+    const ref = useRef<HTMLButtonElement & HTMLDivElement>(null);
 
     return (
         <>

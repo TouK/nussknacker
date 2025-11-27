@@ -28,7 +28,7 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
     const theme = useTheme();
     const translation = useTranslation();
     const { trackEvent } = useEventTracking();
-    const graphRef = useRef<Graph>();
+    const graphRef = useRef<Graph>(null);
     const ref = useForkRef(graphRef, forwardedRef);
     const areAdvancedStickyNotesEnabled = userSettings["node.advancedStickyNotes"];
 

@@ -339,7 +339,7 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
         });
     }, []);
 
-    const ref = useRef<DataEditorRef>();
+    const ref = useRef<DataEditorRef>(null);
     const cellErrors = useMemo(
         () =>
             fieldErrors.flatMap(

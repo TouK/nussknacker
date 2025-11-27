@@ -60,7 +60,7 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
             dispatch(getAdditionalComponents());
         }
     }, [dispatch, isCloud, settings]);
-    const searchRef = useRef<Focusable>();
+    const searchRef = useRef<Focusable>(null);
 
     const { isOpened, toggleCollapse, side } = useSidePanel();
 

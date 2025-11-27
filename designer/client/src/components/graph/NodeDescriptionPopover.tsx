@@ -20,7 +20,7 @@ const useTimeout = <A extends Array<unknown>>(
     start: (...args: A) => () => void;
     stop: () => void;
 } => {
-    const timer = useRef<NodeJS.Timeout>();
+    const timer = useRef<NodeJS.Timeout>(null);
 
     const stop = useCallback(() => {
         if (timer.current) {
@@ -57,8 +57,8 @@ const useEnterLeaveEvents = (
         outerSelector: string;
     },
 ) => {
-    const lastView = useRef<dia.CellView>();
-    const lastEl = useRef<Element | null>();
+    const lastView = useRef<dia.CellView>(null);
+    const lastEl = useRef<Element | null>(null);
 
     useEffect(() => {
         const graph = graphRef.current;

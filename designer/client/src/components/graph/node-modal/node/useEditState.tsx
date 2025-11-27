@@ -18,7 +18,7 @@ export function useEditState(): [EditState, (value?: EditState) => void, Mutable
     const id = useId();
 
     const editState = useAppSelector((state: RootState) => getPendingChanges(state)[id]);
-    const editStateRef = useRef<EditState>();
+    const editStateRef = useRef<EditState>(null);
 
     const setState = useCallback(
         (value?: EditState) => {

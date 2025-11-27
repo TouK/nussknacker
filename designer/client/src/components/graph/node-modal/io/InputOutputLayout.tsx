@@ -36,11 +36,11 @@ export type SidesState<K extends Side = Side> = {
 };
 
 export const InputOutputLayout = memo(function InputOutputWrapper({ children }: PropsWithChildren) {
-    const moveHandle = useRef<HTMLButtonElement>();
+    const moveHandle = useRef<HTMLButtonElement>(null);
     const defaultSize = 272;
     const defaultSizes = [0, 900, 0];
     const sizes = useRef<number[]>(defaultSizes);
-    const ref = useRef<AllotmentHandle>();
+    const ref = useRef<AllotmentHandle>(null);
 
     const startPos = useRef(null);
 

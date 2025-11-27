@@ -26,7 +26,7 @@ export function SearchPanel(props: ToolbarPanelProps): ReactElement {
     }, []);
     const [advancedOptionsCollapsed, setAdvancedOptionsCollapsed] = useState(false);
 
-    const searchRef = useRef<Focusable>();
+    const searchRef = useRef<Focusable>(null);
 
     useEffect(() => {
         setAdvancedOptionsCollapsed(false);

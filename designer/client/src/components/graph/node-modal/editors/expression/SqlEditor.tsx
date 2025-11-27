@@ -33,7 +33,7 @@ export interface Props extends Omit<SpelEditorProps, "language"> {
 }
 
 function useAliasUsageHighlight(token = "alias") {
-    const ref = useRef<ReactAce>();
+    const ref = useRef<ReactAce>(null);
 
     const toggleTokenizerWorkingClass = useCallback((value: boolean) => {
         ref.current?.refEditor?.classList.toggle("tokenizer-working", value);

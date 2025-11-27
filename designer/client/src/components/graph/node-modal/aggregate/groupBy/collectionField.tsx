@@ -16,7 +16,7 @@ type CollectionFieldProps = ValueFieldProps<string[]> & {
 };
 
 export function CollectionField({ value, onChange, variableTypes, disabled }: CollectionFieldProps) {
-    const ref = useRef<ReactAce>();
+    const ref = useRef<ReactAce>(null);
 
     const [values, controller] = useArrayState(value);
     const [expression, setExpression] = useState("");

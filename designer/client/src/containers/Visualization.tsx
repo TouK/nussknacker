@@ -141,7 +141,7 @@ function Visualization() {
     const dispatch = useAppDispatch();
     const { showBoundary } = useErrorBoundary();
 
-    const graphRef = useRef<Graph>();
+    const graphRef = useRef<Graph>(null);
     const getGraphInstance = useCallback(() => graphRef.current, [graphRef]);
 
     const [dataResolved, setDataResolved] = useState(false);

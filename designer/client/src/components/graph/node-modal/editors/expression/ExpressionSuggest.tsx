@@ -20,7 +20,7 @@ function useDeepMemo<T>(factory: () => T, deps: React.DependencyList): T {
     const ref = useRef<{
         value: T;
         deps: React.DependencyList;
-    }>();
+    }>(null);
 
     if (!ref.current || !isEqual(deps, ref.current.deps)) {
         ref.current = {
