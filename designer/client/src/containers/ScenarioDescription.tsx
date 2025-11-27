@@ -92,7 +92,7 @@ export const ScenarioDescription = () => {
 
     const openDescription = useOpenDescription();
 
-    const ref = useRef<HTMLButtonElement>();
+    const ref = useRef<HTMLButtonElement>(null);
 
     const handleOpenDescription = useCallback(() => {
         const wait = waitForStablePosition(ref, 250);

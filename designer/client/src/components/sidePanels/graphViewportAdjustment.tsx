@@ -7,7 +7,7 @@ import type { Graph } from "../graph/Graph";
 import { useGraph } from "../graph/GraphContext";
 
 export function useRectObserver(): [ref: React.MutableRefObject<HTMLDivElement>, rect: DOMRect] {
-    const ref = useRef<HTMLDivElement>();
+    const ref = useRef<HTMLDivElement>(null);
     const [rect, setRect] = useState<DOMRect>(() => ref.current?.getBoundingClientRect());
 
     const options = useMemo(

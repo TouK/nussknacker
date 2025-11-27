@@ -141,7 +141,7 @@ function getDraggingBindings(actions: SnapDragActions, stop: () => void): AnyEve
 
 // Original @hello-pangea/dnd sensor with delay
 export default function useKeyboardSensor(api: SensorAPI, delayPromiseGetter: (draggableId: DraggableId) => DelayPromise) {
-    const delayPromise = useRef<DelayPromise>();
+    const delayPromise = useRef<DelayPromise>(null);
     const unbindEventsRef = useRef<() => void>(noop);
 
     const startCaptureBinding: KeyboardEventBinding = useMemo(

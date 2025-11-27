@@ -51,7 +51,7 @@ export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon
         marginLeft: size / 4,
     });
 
-    const ref = useRef<HTMLInputElement>();
+    const ref = useRef<HTMLInputElement>(null);
     const focus = useCallback(
         (options?: FocusOptions) => {
             const input = ref.current;

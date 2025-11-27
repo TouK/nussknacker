@@ -59,7 +59,7 @@ function useClipboardParse() {
 }
 
 function useClipboardPermission(): boolean | string {
-    const clipboardPermission = useRef<PermissionStatus>();
+    const clipboardPermission = useRef<PermissionStatus>(null);
     const [state, setState] = useState<"denied" | "granted" | "prompt">();
     const [text, setText] = useState("");
     const [content, setContent] = useState<{ edges: Edge[]; nodes: NodeType[] }>(null);

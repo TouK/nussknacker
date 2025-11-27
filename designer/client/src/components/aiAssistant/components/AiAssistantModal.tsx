@@ -35,7 +35,7 @@ const StyledAiAssistant = styled("div")(({ theme }) => ({
 }));
 
 function CustomizedThread({ children }: PropsWithChildren) {
-    const elRef = useRef<HTMLElement>();
+    const elRef = useRef<HTMLElement>(null);
     const lastHeight = useRef<number>(0);
     const onResize = useCallback(() => {
         if (!elRef.current) return;

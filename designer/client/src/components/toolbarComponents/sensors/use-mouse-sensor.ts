@@ -209,7 +209,7 @@ function isInteractive(target: EventTarget) {
 
 // Original @hello-pangea/dnd sensor with delay
 export default function useMouseSensor(api: SensorAPI, delayPromiseGetter: (draggableId: DraggableId) => DelayPromise) {
-    const delayPromise = useRef<DelayPromise>();
+    const delayPromise = useRef<DelayPromise>(null);
     const phaseRef = useRef<Phase>(idle);
     const unbindEventsRef = useRef<() => void>(noop);
 

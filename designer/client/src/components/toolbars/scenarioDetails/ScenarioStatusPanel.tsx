@@ -13,7 +13,7 @@ const ScenarioStatusPanel = memo(function ScenarioStatusPanel({ buttonsVariant, 
     const [buttonsVisible, setButtonsVisible] = useState<HTMLButtonElement | null>(null);
     const handleProps = useDragHandler();
 
-    const ref = useRef<HTMLDivElement>();
+    const ref = useRef<HTMLDivElement>(null);
 
     return (
         <ToolbarWrapper {...props} title={i18next.t("panels.scenarioDetails.title", "Scenario details")} disableCollapse>
