@@ -31,15 +31,13 @@ export const GenerateNewEndpoint = ({ node, handleNewEndpointGenerated }: Props)
             await new Promise<void>((resolve) => {
                 dispatch(
                     validateNodeData(
-                        scenarioName,
                         {
                             outgoingEdges: scenarioGraph.edges,
                             nodeData: node,
-                            processProperties: scenarioGraph.properties,
                             branchVariableTypes: getBranchVariableTypes(node.id),
                             variableTypes,
                         },
-                        ({ status }) => {
+                        (status) => {
                             if (status === "allowDataUpdate") {
                                 handleNewEndpointGenerated(newTopic);
                             }
@@ -51,16 +49,7 @@ export const GenerateNewEndpoint = ({ node, handleNewEndpointGenerated }: Props)
         } catch (error) {
             console.error("Error sending request:", error);
         }
-    }, [
-        dispatch,
-        getBranchVariableTypes,
-        handleNewEndpointGenerated,
-        node,
-        scenarioGraph.edges,
-        scenarioGraph.properties,
-        scenarioName,
-        variableTypes,
-    ]);
+    }, [dispatch, getBranchVariableTypes, handleNewEndpointGenerated, node, scenarioGraph.edges, scenarioName, variableTypes]);
 
     return <StyledLoadingButton title={t("node.actions.generateNewEndpoint", "Generate New Endpoint")} action={handleSendHttpRequest} />;
 };

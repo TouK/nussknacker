@@ -594,9 +594,12 @@ export class HttpService {
         return promise;
     }
 
-    validateProperties(processName: string, propertiesRequest: PropertiesValidationRequest): Promise<ValidationData | void> {
+    validateProperties(
+        processName: string,
+        { name = processName, additionalFields }: PropertiesValidationRequest,
+    ): Promise<ValidationData | void> {
         return api
-            .post(`/properties/${encodeURIComponent(processName)}/validation`, propertiesRequest)
+            .post(`/properties/${encodeURIComponent(processName)}/validation`, { name, additionalFields })
             .then((res) => res.data)
             .catch((error) => {
                 this.#addError(

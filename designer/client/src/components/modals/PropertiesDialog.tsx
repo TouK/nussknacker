@@ -2,26 +2,25 @@ import { css } from "@emotion/css";
 import { styled } from "@mui/material";
 import type { WindowContentProps } from "@touk/window-manager";
 import type { DefaultContentProps } from "@touk/window-manager/cjs/components/window/DefaultContent";
-import { debounce } from "lodash";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
+import { useDebounceFn } from "rooks";
 
 import { ToolId } from "../../actions/nk/toolWindow";
+import { validateScenarioProperties } from "../../actions/nk/validationsActions";
 import PropertiesSvg from "../../assets/img/properties.svg";
-import HttpService from "../../http/HttpService/instance";
 import { getUserSettings } from "../../reducers/selectors/userSettings";
-import { useAppSelector } from "../../store/storeHelpers";
+import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import type { PropertiesType } from "../../types/node";
-import type { NodeValidationError } from "../../types/validation";
 import { WindowContent } from "../../windowManager/WindowContent";
 import { WindowKind } from "../../windowManager/WindowKind";
 import { CloseButtonWithEditLock } from "../graph/node-modal/node/CloseButtonWithEditLock";
 import { ContentSize } from "../graph/node-modal/node/ContentSize";
 import { EditStateFeedback } from "../graph/node-modal/node/EditStateFeedback";
-import { getPropertiesErrors, getReadOnly } from "../graph/node-modal/node/selectors";
+import { getCurrentPropertiesErrors, getReadOnly } from "../graph/node-modal/node/selectors";
 import { useDialogActions } from "../graph/node-modal/node/useDialogActions";
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../graph/node-modal/nodeDetails/SubHeader";
-import { getProcessName, getScenarioProperties } from "../graph/node-modal/NodeDetailsContent/selectors";
+import { getScenarioProperties } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { PropertiesForm } from "../properties/PropertiesForm";
 import { useOnToolWindow } from "./useOnToolWindow";
 import { usePropertiesState } from "./usePropertiesState";
@@ -31,30 +30,15 @@ export const NodeDetailsModalIcon = styled(WindowHeaderIconStyled.withComponent(
 }));
 
 function usePropertiesValidation(isEditMode: boolean, editedProperties: PropertiesType) {
-    const scenarioName = useAppSelector(getProcessName);
-    const globalPropertiesErrors = useAppSelector(getPropertiesErrors);
-    const [errors, setErrors] = useState<NodeValidationError[]>(isEditMode ? globalPropertiesErrors : []);
+    const dispatch = useAppDispatch();
+    const errors = useAppSelector(getCurrentPropertiesErrors);
 
-    const debouncedValidateProperties = useMemo(() => {
-        return debounce((scenarioName, additionalFields, id) => {
-            HttpService.validateProperties(scenarioName, {
-                additionalFields: additionalFields,
-                name: id,
-            }).then((data) => {
-                if (data) {
-                    setErrors(data.validationErrors);
-                }
-            });
-        }, 500);
-    }, []);
+    const [debouncedValidateProperties] = useDebounceFn((props: PropertiesType) => dispatch(validateScenarioProperties(props)), 500);
 
     useEffect(() => {
-        if (!isEditMode) {
-            return;
-        }
-
-        debouncedValidateProperties(scenarioName, editedProperties.additionalFields, editedProperties.name);
-    }, [debouncedValidateProperties, isEditMode, editedProperties.additionalFields, editedProperties.name, scenarioName]);
+        if (!isEditMode) return;
+        debouncedValidateProperties(editedProperties);
+    }, [debouncedValidateProperties, editedProperties, isEditMode]);
 
     return errors;
 }

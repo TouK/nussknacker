@@ -78,6 +78,6 @@ export type PropertiesType = {
     additionalFields: ProcessAdditionalFields;
 };
 
-export type NodeId = NodeType["id"];
+export type NodeId = NodeType["id"] & NonNullable<unknown>;
 
 export type NodeOrPropertiesType = NodeType | PropertiesType;
