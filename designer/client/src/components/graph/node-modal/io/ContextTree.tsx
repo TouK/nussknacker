@@ -59,7 +59,9 @@ function DraggableValue({
     return (
         <Box
             component="span"
-            ref={drag}
+            ref={(i: HTMLElement) => {
+                drag(i);
+            }}
             sx={{
                 cursor: disabled ? "default" : "grab",
                 "&:active": {
