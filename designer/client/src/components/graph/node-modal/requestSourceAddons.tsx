@@ -1,19 +1,18 @@
 import { produce } from "immer";
 
 import type { UIParameter } from "../../../types/definition";
+import { ParameterCategory } from "../../../types/definition";
 import type { NodeType, PropertiesType } from "../../../types/node";
 import type { PropertiesConfig, PropertiesConfigKeys } from "../../../types/scenarioGraph";
 import type { NodeValidationError } from "../../../types/validation";
 import { editorsParameters } from "./editors/expression/editorsParameters";
-
-const REQUEST_PARAMETERS: PropertiesConfigKeys[] = ["slug", "inputSchema", "outputSchema"];
 
 export function isRequestSource(node: NodeType) {
     return node.type === "Source" && node.ref?.typ === "request";
 }
 
 function isRequestParameter(name: PropertiesConfigKeys) {
-    return REQUEST_PARAMETERS.includes(name);
+    return ["slug", "inputSchema", "outputSchema"].includes(name);
 }
 
 export function cleanProperties(nodeData: NodeType) {
@@ -47,7 +46,7 @@ export function scenarioPropertiesToNodeProperties(properties: { inputSchema: st
 export function getScenarioPropertiesDef(properties: PropertiesConfig, order: string[]) {
     return order
         .filter((name) => isRequestParameter(name))
-        .map((name: string): UIParameter => {
+        .map((name): UIParameter => {
             const { defaultValue, editor, hintText, label } = properties[name];
             return {
                 name,
@@ -58,6 +57,7 @@ export function getScenarioPropertiesDef(properties: PropertiesConfig, order: st
                 typ: null,
                 additionalVariables: {},
                 variablesToHide: [],
+                category: name === "inputSchema" ? ParameterCategory.Standard : ParameterCategory.Advanced,
             };
         });
 }
