@@ -5,7 +5,7 @@ import { editorsParameters } from "./editorsParameters";
 import type { SpelEditorProps } from "./SpelEditor";
 import { SpelEditor } from "./SpelEditor";
 import { addQuotesToExpression } from "./SpelQuotesUtils";
-import { EditorMode, ExpressionLang, type ExpressionObj } from "./types";
+import { EditorMode, EditorType, ExpressionLang, type ExpressionObj } from "./types";
 
 export const JsonTemplateEditor: ExtendedEditor<SpelEditorProps> = (props: SpelEditorProps) => {
     const { expressionObj, rows = 5, ...passProps } = props;
@@ -13,7 +13,7 @@ export const JsonTemplateEditor: ExtendedEditor<SpelEditorProps> = (props: SpelE
     const value = useMemo(
         () => ({
             expression: expressionObj.expression,
-            language: editorsParameters.JsonTemplateParameterEditor.language,
+            language: editorsParameters[EditorType.JSON_TEMPLATE_PARAMETER_EDITOR].language,
         }),
         [expressionObj],
     );
@@ -24,7 +24,7 @@ export const JsonTemplateEditor: ExtendedEditor<SpelEditorProps> = (props: SpelE
             expressionObj={value}
             rows={rows}
             editorMode={EditorMode.JsonTemplate}
-            language={editorsParameters.JsonTemplateParameterEditor.language}
+            language={editorsParameters[EditorType.JSON_TEMPLATE_PARAMETER_EDITOR].language}
         />
     );
 };

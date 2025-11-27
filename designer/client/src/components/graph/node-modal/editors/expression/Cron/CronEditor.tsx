@@ -8,9 +8,10 @@ import Input from "../../field/Input";
 import type { FieldError } from "../../Validators";
 import type { ExtendedEditor, OnValueChange } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
-import { FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import type { Formatter } from "../Formatter";
+import { FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import type { ExpressionObj } from "../types";
+import { EditorType } from "../types";
 import { CronEditorStyled } from "./CronEditorStyled";
 
 export type CronExpression = string;
@@ -70,7 +71,7 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
     }, [open]);
 
     useEffect(() => {
-        onValueChange({ expression: encode(value), language: editorsParameters.CronParameterEditor.language });
+        onValueChange({ expression: encode(value), language: editorsParameters[EditorType.CRON_EDITOR].language });
     }, [encode, onValueChange, value]);
 
     const onInputFocus = () => {
@@ -111,5 +112,5 @@ CronEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.cron.notSwitchableToHint",
         "Expression must match pattern new com.cronutils.parser.CronParser(T(com.cronutils.model.definition.CronDefinitionBuilder).instanceDefinitionFor(T(com.cronutils.model.CronType).QUARTZ)).parse('* * * * * * *') to switch to {{editorName}} mode",
-        { editorName: editorsParameters.CronParameterEditor.displayName },
+        { editorName: editorsParameters[EditorType.CRON_EDITOR].displayName },
     );

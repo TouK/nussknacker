@@ -19,7 +19,7 @@ import type { FieldError } from "../../Validators";
 import type { ExtendedEditor, OnValueChange } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
 import type { ExpressionObj } from "../types";
-import { ExpressionLang } from "../types";
+import { EditorType, ExpressionLang } from "../types";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -132,7 +132,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 onChange={(_, value) => {
                     onValueChange({
                         expression: value ? JSON.stringify(value) : "",
-                        language: editorsParameters.DictParameterEditor.language,
+                        language: editorsParameters[EditorType.DICT_PARAMETER_EDITOR].language,
                     });
                     setValue(value);
                     setOpen(false);

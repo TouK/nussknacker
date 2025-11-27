@@ -6,9 +6,10 @@ import React, { useCallback, useMemo } from "react";
 import type { FieldError } from "../../Validators";
 import type { ExtendedEditor, OnValueChange } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
-import { FormatterType, typeFormatters } from "../Formatter";
 import type { Formatter } from "../Formatter";
+import { FormatterType, typeFormatters } from "../Formatter";
 import type { ExpressionObj } from "../types";
+import { EditorType } from "../types";
 import TimeRangeEditor from "./TimeRangeEditor";
 
 export type Period = {
@@ -77,7 +78,7 @@ export const PeriodEditor: ExtendedEditor<Props> = (props: Props) => {
             fieldErrors={fieldErrors}
             expression={expressionObj.expression}
             isMarked={isMarked}
-            language={editorsParameters.PeriodParameterEditor.language}
+            language={editorsParameters[EditorType.PERIOD_EDITOR].language}
         />
     );
 };
@@ -89,5 +90,5 @@ PeriodEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.period.notSwitchableToHint",
         "Expression must match pattern T(java.time.Period).parse('P(n)Y(n)M(n)W(n)D') to switch to {{editorName}} mode",
-        { editorName: editorsParameters.PeriodParameterEditor.displayName },
+        { editorName: editorsParameters[EditorType.PERIOD_EDITOR].displayName },
     );
