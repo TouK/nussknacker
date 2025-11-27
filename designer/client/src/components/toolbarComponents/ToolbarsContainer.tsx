@@ -188,7 +188,7 @@ export function ToolbarsContainer(props: Props): React.JSX.Element {
         [availableToolbars, draggedId],
     );
 
-    const ref = useRef();
+    const ref = useRef(null);
 
     const dropDisabled = useMemo(() => {
         if (disableDnd) return true;

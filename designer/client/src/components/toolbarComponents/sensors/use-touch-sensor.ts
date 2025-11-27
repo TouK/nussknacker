@@ -276,7 +276,7 @@ function getHandleBindings({ cancel, completed, getPhase }: GetBindingArgs): Any
 
 // Original @hello-pangea/dnd sensor with delay and workaround for touchmove
 export default function useTouchSensor(api: SensorAPI, delayPromiseGetter: (draggableId: DraggableId) => DelayPromise) {
-    const delayPromise = useRef<DelayPromise>();
+    const delayPromise = useRef<DelayPromise>(null);
     const phaseRef = useRef<Phase>(idle);
     const unbindEventsRef = useRef<() => void>(noop);
 

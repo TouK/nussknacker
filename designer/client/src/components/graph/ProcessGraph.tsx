@@ -65,7 +65,7 @@ export const ProcessGraph = forwardRef<
     const layout = useAppSelector(getLayout);
     const { getPaperPreviewRect, getPaperPreviewOffset } = usePreviewOffset();
 
-    const graph = useRef<Graph>();
+    const graph = useRef<Graph>(null);
     useImperativeHandle(forwardedRef, () => graph.current);
 
     const [{ isDraggingOver }, connectDropTarget] = useDrop<NodeType, ElementDropResult, { isDraggingOver: boolean }>(

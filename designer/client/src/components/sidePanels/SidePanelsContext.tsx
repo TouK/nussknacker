@@ -52,7 +52,7 @@ function useSideState(configId: string, side: PanelSide): SideState {
     const isEmpty = getIsEmpty(side, positions);
 
     const [fullSize, setFullSize] = useState(true);
-    const ref = useRef<HTMLDivElement>();
+    const ref = useRef<HTMLDivElement>(null);
 
     const draggableId = useContext(DraggableIdContext);
     const isDragging = !isDynamic(side) && Boolean(draggableId);

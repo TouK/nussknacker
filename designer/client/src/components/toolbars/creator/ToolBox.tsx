@@ -19,7 +19,7 @@ import Tool from "./Tool";
 import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
 
 function StyledToolbox(props: Omit<BoxProps, "sx" | "ref">) {
-    const ref = useRef<HTMLDivElement>();
+    const ref = useRef<HTMLDivElement>(null);
     return (
         <Box
             {...props}

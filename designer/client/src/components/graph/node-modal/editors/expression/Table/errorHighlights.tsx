@@ -34,7 +34,7 @@ export interface CellError {
 
 export function useErrorHighlights(cellErrors: CellError[], tableRef: React.MutableRefObject<DataEditorRef>) {
     const { palette } = useTheme();
-    const positionRef = useRef<DOMRectInit>();
+    const positionRef = useRef<DOMRectInit>(null);
     const [tooltipMessage, setTooltipMessage] = useState<string>(null);
     const [tooltipOpen, setTooltipOpen] = useState<boolean>(null);
 

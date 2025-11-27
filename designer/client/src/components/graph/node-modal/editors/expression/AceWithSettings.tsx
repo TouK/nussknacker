@@ -47,7 +47,7 @@ export default forwardRef(function AceWithSettings(props: AceWithSettingsProps, 
         [dispatch, showLinesName, noWrapName],
     );
 
-    const editorRef = useRef<ReactAce>();
+    const editorRef = useRef<ReactAce>(null);
     useEffect(() => {
         const editor = editorRef.current?.editor;
         const selection = editor?.session.selection;

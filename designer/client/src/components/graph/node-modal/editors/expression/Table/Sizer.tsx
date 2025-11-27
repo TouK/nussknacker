@@ -23,7 +23,7 @@ function getClosestParent(selector: string) {
 
 export function Sizer({ overflowY, offsetParent, ...props }: SizerProps) {
     const { observe, height, unobserve } = useSize();
-    const ref = useRef<HTMLElement>();
+    const ref = useRef<HTMLElement>(null);
     const refCallback = useCallback(
         (instance?: HTMLElement) => {
             unobserve();

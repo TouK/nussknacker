@@ -23,7 +23,7 @@ export function RemoteModuleDialog<P extends NonNullable<unknown>>({
         data: { meta: passProps },
     } = props;
 
-    const ref = useRef<RemoteModuleDialogRef>();
+    const ref = useRef<RemoteModuleDialogRef>(null);
 
     const closeAction = useCallback(async () => {
         await Promise.all([ref.current?.closeAction?.()]);
