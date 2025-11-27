@@ -19,7 +19,7 @@ export type ComponentPreviewProps = {
     isOver?: boolean;
 };
 
-export function ComponentPreview({ node, isActive, isOver }: ComponentPreviewProps): JSX.Element {
+export function ComponentPreview({ node, isActive, isOver }: ComponentPreviewProps): React.JSX.Element {
     const theme = useTheme();
 
     const nodeStyles = css({

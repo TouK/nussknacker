@@ -11,7 +11,7 @@ export interface ImageWithFallbackProps extends DetailedHTMLProps<ImgHTMLAttribu
     FallbackComponent?: ComponentType;
 }
 
-function ImageWithFallback({ src, FallbackComponent, ...props }: ImageWithFallbackProps): JSX.Element {
+function ImageWithFallback({ src, FallbackComponent, ...props }: ImageWithFallbackProps): React.JSX.Element {
     const [error, setError] = useState(() => !src);
 
     useEffect(() => {
@@ -27,7 +27,7 @@ function ImageWithFallback({ src, FallbackComponent, ...props }: ImageWithFallba
 
 export type UrlIconProps = InlineSvgProps & ImageWithFallbackProps;
 
-export default function UrlIcon({ FallbackComponent = PlaceholderIconFallbackComponent, ...props }: UrlIconProps): JSX.Element {
+export default function UrlIcon({ FallbackComponent = PlaceholderIconFallbackComponent, ...props }: UrlIconProps): React.JSX.Element {
     switch (true) {
         case /\.svg$/i.test(props.src):
             return <InlineSvg {...props} FallbackComponent={FallbackComponent} />;

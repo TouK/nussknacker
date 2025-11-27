@@ -19,7 +19,7 @@ declare global {
     }
 }
 
-export function SettingsProvider({ children }: PropsWithChildren<unknown>): JSX.Element {
+export function SettingsProvider({ children }: PropsWithChildren<unknown>): React.JSX.Element {
     const [data, setData] = useState<SettingsData>(null);
     const dispatch = useAppDispatch();
 

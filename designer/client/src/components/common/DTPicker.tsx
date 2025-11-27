@@ -24,7 +24,7 @@ export function DTPicker({
     value,
     open,
     sx,
-}: DateTimePicker.DatetimepickerProps & { sx?: SxProps }): JSX.Element {
+}: DateTimePicker.DatetimepickerProps & { sx?: SxProps }): React.JSX.Element {
     const { i18n } = useTranslation();
     return (
         <DTPickerStyled

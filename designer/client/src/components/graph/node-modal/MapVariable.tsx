@@ -22,7 +22,7 @@ export interface MapVariableProps<F extends Field> {
     expressionType?: Partial<TypedObjectTypingResult>;
 }
 
-function MapVariable<F extends Field>(props: MapVariableProps<F>): JSX.Element {
+function MapVariable<F extends Field>(props: MapVariableProps<F>): React.JSX.Element {
     const { removeElement, addElement, variableTypes, expressionType, errors, ...passProps } = props;
     const { node, ...mapProps } = passProps;
 

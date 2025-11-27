@@ -11,7 +11,7 @@ interface TestResultsVariablesProps {
     result: Variable;
 }
 
-export default function TestResultsVariables(props: TestResultsVariablesProps): JSX.Element {
+export default function TestResultsVariables(props: TestResultsVariablesProps): React.JSX.Element {
     const { labelText, result } = props;
     const testValueRef: React.Ref<HTMLTextAreaElement> = useRef(null);
     const fitsMaxHeight = testValueRef?.current ? testValueRef.current.scrollHeight <= HIDDEN_TEXTAREA_PIXEL_HEIGHT : true;

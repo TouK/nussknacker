@@ -8,7 +8,7 @@ import { useSelectionActions } from "../../../graph/SelectionContextProvider";
 import type { ToolbarButtonProps } from "../../types";
 import { CounterToolbarButton } from "./CounterToolbarButton";
 
-function RedoButton(props: ToolbarButtonProps): JSX.Element {
+function RedoButton(props: ToolbarButtonProps): React.JSX.Element {
     const { redo } = useSelectionActions();
     const [, future] = useAppSelector(getHistoryCounts);
     const { t } = useTranslation();

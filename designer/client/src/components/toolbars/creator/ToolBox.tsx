@@ -139,7 +139,7 @@ export type ToolBoxProps = {
     };
 };
 
-export default function ToolBox({ data = [], filters = [], ...props }: ToolBoxProps): JSX.Element {
+export default function ToolBox({ data = [], filters = [], ...props }: ToolBoxProps): React.JSX.Element {
     const { t } = useTranslation();
     const definitionData = useSelector(getProcessDefinitionData);
 

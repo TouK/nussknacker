@@ -19,7 +19,7 @@ interface RangesButtonsProps {
     limit?: number;
 }
 
-export function CountsRangesButtons({ children, ranges, onChange, limit = -1 }: PropsWithChildren<RangesButtonsProps>): JSX.Element {
+export function CountsRangesButtons({ children, ranges, onChange, limit = -1 }: PropsWithChildren<RangesButtonsProps>): React.JSX.Element {
     const { t } = useTranslation();
     const changeHandler = useCallback(
         (range: Range) => {

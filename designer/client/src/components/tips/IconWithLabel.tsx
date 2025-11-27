@@ -3,7 +3,13 @@ import { useTheme } from "@mui/material";
 import type { ComponentType, SVGProps } from "react";
 import React from "react";
 
-export function IconWithLabel({ icon: Icon, message }: { icon: ComponentType<SVGProps<SVGSVGElement>>; message: string }): JSX.Element {
+export function IconWithLabel({
+    icon: Icon,
+    message,
+}: {
+    icon: ComponentType<SVGProps<SVGSVGElement>>;
+    message: string;
+}): React.JSX.Element {
     const theme = useTheme();
     return (
         <div className={css({ display: "flex", alignItems: "center" })}>

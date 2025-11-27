@@ -25,7 +25,10 @@ interface NodeCommonDetailsDefinitionProps<F extends Field> extends PropsWithChi
     outputField?: string;
 }
 
-export function NodeCommonDetailsDefinition<F extends Field>({ children, ...props }: NodeCommonDetailsDefinitionProps<F>): JSX.Element {
+export function NodeCommonDetailsDefinition<F extends Field>({
+    children,
+    ...props
+}: NodeCommonDetailsDefinitionProps<F>): React.JSX.Element {
     const { node, setProperty, readOnly, showValidation, errors, outputField, outputName } = props;
 
     const onInputChange = useCallback(

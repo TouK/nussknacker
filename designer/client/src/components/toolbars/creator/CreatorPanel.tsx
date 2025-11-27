@@ -46,7 +46,7 @@ const AddGroupElement = <P extends NonNullable<{ url: ModuleUrl; componentGroup:
     ) : null;
 };
 
-export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps): JSX.Element {
+export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps): React.JSX.Element {
     const { t } = useTranslation();
     const [filters, setFilters] = useState<ToolBoxProps["filters"]>([]);
     const [textFilter, setTextFilter] = useState("");

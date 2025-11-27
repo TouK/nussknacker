@@ -72,7 +72,7 @@ function DraggableValue({
     );
 }
 
-export function ContextTree({ context, oldFields = [] }: { context: ResultContextJson; oldFields?: string[] }): JSX.Element {
+export function ContextTree({ context, oldFields = [] }: { context: ResultContextJson; oldFields?: string[] }): React.JSX.Element {
     const data = useMemo(() => mapValues(context?.variables, (v) => v?.pretty), [context?.variables]);
     const keys = useMemo(() => Object.keys(data), [data]);
     const { extend, treeStyle } = useJsonTreeTheme();

@@ -15,7 +15,7 @@ import type { Scenario } from "../../../Process/types";
 import { FragmentGraphPreview } from "../../fragmentGraph";
 import NodeUtils from "../../NodeUtils";
 
-export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNodeType }): JSX.Element {
+export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNodeType }): React.JSX.Element {
     const processCounts = useAppSelector(getProcessCounts);
     const processDefinitionData = useAppSelector(getProcessDefinitionData);
 

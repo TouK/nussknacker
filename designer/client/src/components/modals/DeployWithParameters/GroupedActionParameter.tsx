@@ -18,7 +18,7 @@ interface Props {
     errors: NodeValidationError[];
 }
 
-export function GroupedActionParameter(props: Props): JSX.Element {
+export function GroupedActionParameter(props: Props): React.JSX.Element {
     const { nodeIds, parameterName, parameterConfig, errors, parameterValue, onChange } = props;
 
     const expressionObj = { expression: parameterValue, value: parameterValue, language: ExpressionLang.String };

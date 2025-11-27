@@ -104,7 +104,7 @@ const prepareNotifications =
         });
     };
 
-export function Notifications(): JSX.Element {
+export function Notifications(): React.JSX.Element {
     const reactNotifications = useAppSelector(getNotifications);
     const dispatch = useAppDispatch();
     const { handleChangeConnectionError } = useChangeConnectionError();

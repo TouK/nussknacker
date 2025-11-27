@@ -29,7 +29,7 @@ export type ToggleProcessActionModalData = {
     actionName?: string;
 };
 
-export function DeployProcessDialog(props: WindowContentProps<WindowKind, ToggleProcessActionModalData>): JSX.Element {
+export function DeployProcessDialog(props: WindowContentProps<WindowKind, ToggleProcessActionModalData>): React.JSX.Element {
     // TODO: get rid of meta
     const {
         meta: { action, displayWarnings },

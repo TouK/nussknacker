@@ -6,7 +6,7 @@ import React from "react";
 import type { NodeValidationError } from "../../../types/validation";
 import { InfoTooltip } from "./editors/InfoTooltip/InfoTooltip";
 
-export default function NodeErrors(props: { errors: NodeValidationError[]; message: string }): JSX.Element {
+export default function NodeErrors(props: { errors: NodeValidationError[]; message: string }): React.JSX.Element {
     const { errors = [], message: errorMessage } = props;
 
     if (!errors.length) {

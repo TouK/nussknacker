@@ -68,7 +68,7 @@ function useShowFloatingToolbar() {
     }, [autoApply, windows]);
 }
 
-const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
+const ToolbarsLayer = (props: ToolbarsLayerProps): React.JSX.Element => {
     const dispatch = useAppDispatch();
     const { toolbars, configId, children, externalLayerWrapper: ExternalLayerWrapper = React.Fragment } = props;
 

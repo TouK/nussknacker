@@ -40,7 +40,7 @@ export function applyIdFromFakeName({ id, ...editedNode }: EditedNode): NodeType
 
 export const getProcessNodesIds = createSelector(getScenarioGraph, (p) => NodeUtils.nodesFromScenarioGraph(p).map((n) => n.id));
 
-export function IdField({ isEditMode, node, setProperty, showValidation, errors }: IdFieldProps): JSX.Element {
+export function IdField({ isEditMode, node, setProperty, showValidation, errors }: IdFieldProps): React.JSX.Element {
     const nodes = useAppSelector(getProcessNodesIds);
     const [otherNodes] = useState(() => nodes.filter((n) => n !== node[propName]));
 
