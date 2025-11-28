@@ -18,6 +18,8 @@ import { WindowContent } from "../../../../windowManager/WindowContent";
 import type { WindowKind } from "../../../../windowManager/WindowKind";
 import { useOnToolWindow } from "../../../modals/useOnToolWindow";
 import type { Scenario } from "../../../Process/types";
+import { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
+import { useToolbarHasButton } from "../../../toolbarSettings/useToolbarConfig";
 import NodeUtils from "../../NodeUtils";
 import type { EditedNode } from "../IdField";
 import { InputOutputContent } from "../io/InputOutputContent";
@@ -26,7 +28,9 @@ import { usePortal } from "../io/usePortal";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
 import { CloseButtonWithEditLock } from "./CloseButtonWithEditLock";
 import { EditStateFeedback } from "./EditStateFeedback";
-import { NodeGroupContent } from "./NodeGroupContent";
+import { GeneralContent } from "./NodeContent/GeneralContent";
+import { TabsWrapper } from "./NodeContent/TabsWrapper";
+import { TestingContent } from "./NodeContent/TestingContent";
 import { getReadOnly } from "./selectors";
 import { useDialogActions } from "./useDialogActions";
 import { useNodeState } from "./useNodeState";
@@ -77,6 +81,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const { t } = useTranslation();
     const { close, data } = props;
     const readOnly = useAppSelector((s: RootState) => getReadOnly(s, props.readOnly));
+    const IsTestingScenarioVisible = useToolbarHasButton(CustomButtonTypes.scenarioTest);
 
     const { node, editedNode, onChange, scenario, outputEdges, performNodeEdit, editState, editStateRef } = useNodeState(data.meta);
     const { cancel, apply } = useNodeDetailsButtons({ editedNode, outputEdges, performNodeEdit, close, readOnly });
@@ -142,8 +147,26 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     return (
         <InputOutputContextProvider nodeId={editedNode.id}>
             {settings["node.autoApply"] ? <EditStateFeedback editState={editState} /> : null}
+
             <WindowContent {...props} closeWithEsc={editState === "idle"} buttons={buttons} {...titleData} components={components}>
-                <NodeGroupContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />
+                {IsTestingScenarioVisible ? (
+                    <TabsWrapper
+                        tabs={[
+                            {
+                                label: "General",
+                                content: (
+                                    <GeneralContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />
+                                ),
+                            },
+                            {
+                                label: "Testing",
+                                content: <TestingContent />,
+                            },
+                        ]}
+                    />
+                ) : (
+                    <GeneralContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />
+                )}
             </WindowContent>
         </InputOutputContextProvider>
     );

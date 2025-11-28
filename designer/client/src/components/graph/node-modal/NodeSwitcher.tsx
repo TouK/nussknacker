@@ -12,11 +12,11 @@ import type { ExpressionObj } from "./editors/expression/types";
 import { EditorType, ExpressionLang } from "./editors/expression/types";
 import { FormControl } from "./editors/FormControl";
 import { FieldLabel } from "./FieldLabel";
-import type { NodeGroupContentProps } from "./node/NodeGroupContent";
+import type { GeneralContentProps } from "./node/NodeContent/GeneralContent";
 import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 import { replaceNodeData } from "./NodeSwitcherUtils";
 
-type NodeSwitcherProps = NodeGroupContentProps & {
+type NodeSwitcherProps = GeneralContentProps & {
     componentsNamesToSelect: string[];
     creatorType: string;
     onCreate: () => void;

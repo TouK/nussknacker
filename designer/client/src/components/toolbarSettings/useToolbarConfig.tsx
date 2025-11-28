@@ -5,6 +5,7 @@ import { getToolbarsConfig } from "../../reducers/selectors/toolbars";
 import type { ToolbarsSide } from "../../reducers/toolbars";
 import { useAppSelector } from "../../store/storeHelpers";
 import type { Toolbar } from "../toolbarComponents/toolbar";
+import type { BuiltinButtonTypes, CustomButtonTypes } from "./buttons/buttonsMap";
 import { toolbarSelector } from "./ToolbarSelector";
 import type { ToolbarConfig, ToolbarsConfig } from "./types";
 
@@ -27,4 +28,11 @@ export function useToolbarConfig(): [Toolbar[], string] {
         const { id, ...toolbarsCollection } = config;
         return [parseCollection(toolbarsCollection), id];
     }, [config]);
+}
+
+export function useToolbarHasButton(buttonType: BuiltinButtonTypes | CustomButtonTypes): boolean {
+    const [toolbars] = useToolbarConfig();
+    return useMemo(() => {
+        return toolbars.some((toolbar) => toolbar.buttons?.some((button) => button.type === buttonType));
+    }, [buttonType, toolbars]);
 }
