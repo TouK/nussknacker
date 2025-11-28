@@ -16,6 +16,7 @@ import { FixedValuesEditor } from "./FixedValuesEditor";
 import type { Formatter } from "./Formatter";
 import { JsonEditor } from "./JsonEditor";
 import { JsonTemplateEditor } from "./JsonTemplateEditor";
+import { MultiSelectFixedValuesEditor } from "./MultiSelectFixedValuesEditor";
 import { SpelEditor } from "./SpelEditor";
 import { SpelTemplateEditor } from "./SpelTemplateEditor";
 import { SqlEditor } from "./SqlEditor";
@@ -84,6 +85,7 @@ export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
     [EditorType.DATE_TIME]: DateTimeEditor,
     [EditorType.DURATION_EDITOR]: DurationEditor,
     [EditorType.FIXED_VALUES_PARAMETER_EDITOR]: FixedValuesEditor,
+    [EditorType.MULTI_SELECT_EDITOR]: MultiSelectFixedValuesEditor,
     [EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR]: FixedValuesEditor,
     [EditorType.FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR]: FixedValuesEditor,
     [EditorType.JSON_PARAMETER_EDITOR]: JsonEditor,
