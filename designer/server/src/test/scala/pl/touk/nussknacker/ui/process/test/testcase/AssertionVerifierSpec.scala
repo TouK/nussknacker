@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compiledgraph.{CompiledAssertion, CompiledTestCase}
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -46,23 +45,36 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
       "someNode" -> NodeTypingData(Map("someVariable" -> Typed.fromInstance("bar")), None, Map.empty, None)
     )
 
-    val testCase = TestCase("dummy", "dummy", Map.empty, Map(
-      NodeId("someNode") -> List(
-        Assertion("#TESTS.assertEquals('valid', #contexts[0].someVariable)"),
-        Assertion("#TESTS.assertEquals('valid', #contexts[1].someVariable)"),
+    val testCase = TestCase(
+      "dummy",
+      "dummy",
+      Map.empty,
+      Map(
+        NodeId("someNode") -> List(
+          Assertion("#TESTS.assertEquals('valid', #contexts[0].someVariable)"),
+          Assertion("#TESTS.assertEquals('valid', #contexts[1].someVariable)"),
+        )
       )
-    ))
+    )
 
-    val compiledTestCase = testCompiler.compile(testCase, scenarioTyping).fold(errors => throw new IllegalStateException(s"Test compilation errors: $errors"), identity)
+    val compiledTestCase = testCompiler
+      .compile(testCase, scenarioTyping)
+      .fold(errors => throw new IllegalStateException(s"Test compilation errors: $errors"), identity)
     val verifier = new AssertionVerifierImpl()
 
     val results = verifier.verify(
       compiledTestCase,
-      Map(NodeId("someNode") -> List(
-        ResultContext[Any](ContextId.dummy, Instant.now(), Map("someVariable" -> "valid")),
-        ResultContext[Any](ContextId.dummy, Instant.now(), Map("someVariable" -> "invalid")),
-      )))
-    results.toList shouldBe List(NodeId("someNode") -> List(SuccessfulAssertion, FailedAssertion("")))
+      Map(
+        NodeId("someNode") -> List(
+          ResultContext[Any](ContextId.dummy, Instant.now(), Map("someVariable" -> "valid")),
+          ResultContext[Any](ContextId.dummy, Instant.now(), Map("someVariable" -> "invalid")),
+        )
+      )
+    )
+
+    results.toList shouldBe List(
+      NodeId("someNode") -> List(SuccessfulAssertion, FailedAssertion("Expected: [valid] but found [invalid]"))
+    )
   }
 
 }

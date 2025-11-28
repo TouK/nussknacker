@@ -1,48 +1,36 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.all._
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParserCompilationError, Mock, TestConfigurationRefersToNotExistingNode}
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, NodeId, ParamName}
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  ExpressionParserCompilationError,
+  Mock,
+  TestConfigurationRefersToNotExistingNode
+}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledAssertion, CompiledEnricherMock, CompiledTestCase}
-import pl.touk.nussknacker.engine.definition.globalvariables.{ExpressionConfigDefinition, GlobalVariableDefinitionWithImplementation}
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
+import pl.touk.nussknacker.engine.graph.{Assertion, EnricherMock, TestCase}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
-import pl.touk.nussknacker.engine.graph.{Assertion, EnricherMock, TestCase}
 import pl.touk.nussknacker.engine.testmode.TestProcess.{AssertionResult, FailedAssertion, SuccessfulAssertion}
-import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 
-//class TestCompiler(modelData: ModelData) {
 class TestCompiler(expressionCompiler: ExpressionCompiler) {
 
-//  private val expressionConfig: ExpressionConfigDefinition = {
-//    val originalExpressionConfig = modelData.modelDefinition.expressionConfig
-//    originalExpressionConfig.copy(globalVariables = originalExpressionConfig.globalVariables +
-//      ("TESTS" -> GlobalVariableDefinitionWithImplementation(tests)))
-//  }
-
-//  private val expressionCompiler = ExpressionCompiler.withoutOptimization(
-//    modelData.modelClassLoader,
-//    modelData.designerDictServices.dictRegistry,
-//    expressionConfig,
-//    modelData.modelDefinitionWithClasses.classDefinitions,
-//    ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(expressionConfig))
-//  ).withLabelsDictTyper
-
-  //todo: take care what should be done when scenario is only partially compiled (there were some errors)
-  //todo: to decide where should be input data validation (especially in context of validation during edition and saving)
-  def compile(testCase: TestCase, scenarioTypingResult: Map[String, NodeTypingData]): ValidatedNel[ProcessCompilationError, CompiledTestCase] = {
+  // todo: take care what should be done when scenario is only partially compiled (there were some errors)
+  // todo: to decide where should be input data validation (especially in context of validation during edition and saving)
+  def compile(
+      testCase: TestCase,
+      scenarioTypingResult: Map[String, NodeTypingData]
+  ): ValidatedNel[ProcessCompilationError, CompiledTestCase] = {
     val mocksV = testCase.mocks
-      .filter(_ => false) //todo: disabled
+      .filter(_ => false) // todo: disabled
       .map { case (nodeId, mock) =>
         compileMock(nodeId, mock, scenarioTypingResult, testCase.id).map(nodeId -> _)
       }
@@ -70,11 +58,11 @@ class TestCompiler(expressionCompiler: ExpressionCompiler) {
   }
 
   private def compileMock(
-                           nodeId: NodeId,
-                           mock: EnricherMock,
-                           nodesTyping: Map[String, NodeTypingData],
-                           testId: String
-                         ) = {
+      nodeId: NodeId,
+      mock: EnricherMock,
+      nodesTyping: Map[String, NodeTypingData],
+      testId: String
+  ) = {
     validateTypingExistence(nodeId, nodesTyping, testId, Mock).andThen(typing =>
       compileEnricherMockExpression(
         mock.expression,
@@ -86,7 +74,7 @@ class TestCompiler(expressionCompiler: ExpressionCompiler) {
   }
 
   private def compileEnricherMockExpression(expression: Expression, expectedType: TypingResult, ctx: ValidationContext)(
-    implicit nodeId: NodeId
+      implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, CompiledExpression] = {
     expressionCompiler
       .compile(expression, Some(ParameterName("$mockExpression")), ctx, expectedType) match {
@@ -107,34 +95,35 @@ class TestCompiler(expressionCompiler: ExpressionCompiler) {
             )
           )
         }
-      case invalid@Invalid(_) => invalid
+      case invalid @ Invalid(_) => invalid
     }
   }
 
   private def compileAssertions(
-                                 nodeId: NodeId,
-                                 assertions: List[Assertion],
-                                 nodesTyping: Map[String, NodeTypingData],
-                                 testId: String
-                               ): ValidatedNel[ProcessCompilationError, List[CompiledAssertion]] = {
+      nodeId: NodeId,
+      assertions: List[Assertion],
+      nodesTyping: Map[String, NodeTypingData],
+      testId: String
+  ): ValidatedNel[ProcessCompilationError, List[CompiledAssertion]] = {
     validateTypingExistence(nodeId, nodesTyping, testId, ProcessCompilationError.Assertion).andThen { typing =>
-      val ctx = ValidationContext(
-        localVariables = typing.variableTypes
-      )
+      val ctx = ValidationContext.empty
         .withVariablesUnsafe(
-          "contexts" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Unknown)),
-          "TESTS" -> Typed.fromInstance(tests) //todo: to ensure if there is no issues with that
+          "contexts" -> Typed.genericTypeClass(
+            classOf[java.util.List[_]],
+            List(Typed.record(typing.variableTypes))
+          ), // todo: filter out global vars?
+          "TESTS" -> Typed.fromInstance(tests) // todo: to ensure if there is no issues with that
         )
       assertions.map(compileAssertionExpression(nodeId, ctx, _)).sequence
     }
   }
 
   private def validateTypingExistence(
-                                       nodeId: NodeId,
-                                       nodesTyping: Map[String, NodeTypingData],
-                                       testId: String,
-                                       contextTestConfigurationPart: ProcessCompilationError.TestConfigurationPart
-                                     ) = {
+      nodeId: NodeId,
+      nodesTyping: Map[String, NodeTypingData],
+      testId: String,
+      contextTestConfigurationPart: ProcessCompilationError.TestConfigurationPart
+  ) = {
     nodesTyping
       .get(nodeId.id)
       .map(Valid(_))
@@ -164,10 +153,11 @@ trait TestsFunctions extends HideToString {
 
   @Documentation(description = "Check whether two objects are equals")
   def assertEquals(@ParamName("expected") expected: Any, @ParamName("actual") actual: Any): AssertionResult = {
-    if (expected == actual) {
-      FailedAssertion(s"Expected: $expected but found $actual")
+    if (expected != actual) {
+      FailedAssertion(s"Expected: [$expected] but found [$actual]")
+    } else {
+      SuccessfulAssertion
     }
-    SuccessfulAssertion
   }
 
 }
