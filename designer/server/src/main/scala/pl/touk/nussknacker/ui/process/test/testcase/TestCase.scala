@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.graph
+package pl.touk.nussknacker.ui.process.test.testcase
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.NodeId

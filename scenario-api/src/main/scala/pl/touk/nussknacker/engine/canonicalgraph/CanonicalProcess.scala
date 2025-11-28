@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.{TestCase, node}
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 

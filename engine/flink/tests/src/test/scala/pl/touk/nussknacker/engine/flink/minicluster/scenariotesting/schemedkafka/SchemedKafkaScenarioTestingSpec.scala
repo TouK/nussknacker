@@ -23,7 +23,6 @@ import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClu
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.schemedkafka.SchemedKafkaScenarioTestingSpec._
 import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
-import pl.touk.nussknacker.engine.graph.{TestCase, TestSourceInput}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.JsonTemplate
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
@@ -41,6 +40,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties, VeryPatientScalaFutures}
+import pl.touk.nussknacker.ui.process.test.testcase.{TestCase, TestSourceInput}
 
 import java.time.Instant
 import java.util.Collections

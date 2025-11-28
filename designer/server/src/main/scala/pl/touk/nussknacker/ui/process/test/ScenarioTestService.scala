@@ -21,7 +21,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalPro
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
-import pl.touk.nussknacker.engine.graph.TestCase
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder.TestRecordVariablesDecodingError
@@ -34,7 +33,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceP
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ExpressionsToTestDataConversionError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
-import pl.touk.nussknacker.ui.process.test.testcase.{AssertionVerifier, CompiledTestCase, NoopAssertionVerifier, TestCaseCompiler}
+import pl.touk.nussknacker.ui.process.test.testcase.{AssertionVerifier, CompiledTestCase, NoopAssertionVerifier, TestCase, TestCaseCompiler}
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -289,7 +288,7 @@ class ScenarioTestService(
       compiledTestCase = compileTestCase(test, nodeContextsTyping)
 
       testResults <- EitherT(
-        performTestWithDeserializedRecords(processVersion, canonical, scenarioTestData.copy(test = Some(test)))
+        performTestWithDeserializedRecords(processVersion, canonical, scenarioTestData)
       )
 
       _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))

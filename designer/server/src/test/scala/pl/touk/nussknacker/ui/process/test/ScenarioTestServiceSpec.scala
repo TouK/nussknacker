@@ -23,7 +23,6 @@ import pl.touk.nussknacker.engine.compile.validationHelpers.{
   GenericParametersSourceNoTestSupport,
   SourceWithTestParameters
 }
-import pl.touk.nussknacker.engine.graph.{Assertion, TestCase}
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess
@@ -36,6 +35,7 @@ import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.MissingSourceError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.TestingCapabilitiesError.NoSourcesError
+import pl.touk.nussknacker.ui.process.test.testcase.{Assertion, TestCase}
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatSerDe
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
