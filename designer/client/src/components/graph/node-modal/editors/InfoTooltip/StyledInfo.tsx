@@ -1,6 +1,6 @@
 import InfoIcon from "@mui/icons-material/Info";
 import { styled } from "@mui/material";
-import React from "react";
+import React, { forwardRef } from "react";
 
 export const StyledInfo = styled(InfoIcon)(() => ({
     cursor: "pointer",
@@ -9,9 +9,12 @@ export const StyledInfo = styled(InfoIcon)(() => ({
 }));
 
 // disable svg <title> behavior
-function Span(props: React.DetailedHTMLProps<React.HTMLAttributes<HTMLSpanElement>, HTMLSpanElement>) {
-    return <span title="" {...props} />;
-}
+const Span = forwardRef(function Span(
+    props: React.DetailedHTMLProps<React.HTMLAttributes<HTMLSpanElement>, HTMLSpanElement>,
+    forwardedRef: React.Ref<HTMLSpanElement>,
+) {
+    return <span ref={forwardedRef} title="" {...props} />;
+});
 
 export const StyledInfoChildrenWrapper = styled(Span)(() => ({
     display: "inherit",
