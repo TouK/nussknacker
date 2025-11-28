@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.compiledgraph
+package pl.touk.nussknacker.ui.process.test.testcase
 
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression

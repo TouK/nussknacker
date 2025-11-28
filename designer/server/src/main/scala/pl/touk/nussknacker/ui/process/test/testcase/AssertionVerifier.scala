@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
 import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId}
-import pl.touk.nussknacker.engine.compiledgraph.{CompiledAssertion, CompiledTestCase}
 import pl.touk.nussknacker.engine.testmode.TestProcess.{AssertionResult, FailedAssertion, ResultContext}
 
 import scala.collection.JavaConverters.{mapAsJavaMapConverter, seqAsJavaListConverter}
