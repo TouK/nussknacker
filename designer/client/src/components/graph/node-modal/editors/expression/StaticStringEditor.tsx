@@ -2,7 +2,8 @@ import React from "react";
 
 import Input from "../field/Input";
 import type { FieldError } from "../Validators";
-import type { OnValueChange, SimpleEditor } from "./Editor";
+import type { OnValueChange } from "./Editor";
+import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { Formatter } from "./Formatter";
 import { FormatterType, typeFormatters } from "./Formatter";
@@ -18,7 +19,7 @@ type Props = {
     showValidation: boolean;
 };
 
-export const StaticStringEditor: SimpleEditor<Props> = (props: Props) => {
+export const StaticStringEditor = prepareEditor<Props>((props: Props) => {
     const { expressionObj, onValueChange, formatter, ...passProps } = props;
     const stringFormatter = formatter == null ? typeFormatters[FormatterType.String] : formatter;
 
@@ -34,4 +35,4 @@ export const StaticStringEditor: SimpleEditor<Props> = (props: Props) => {
             value={stringFormatter.decode(expressionObj.expression) as string}
         />
     );
-};
+});

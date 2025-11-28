@@ -3,7 +3,8 @@ import { isEmpty } from "lodash";
 import React from "react";
 
 import type { FieldError } from "../Validators";
-import type { ExtendedEditor, OnValueChange } from "./Editor";
+import type { OnValueChange } from "./Editor";
+import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import { FixedValuesEditor } from "./FixedValuesEditor";
 import type { ExpressionObj } from "./types";
@@ -28,35 +29,31 @@ const parseable = (expressionObj) => {
     return (expression === "true" || expression === "false") && language === SUPPORTED_LANGUAGE;
 };
 
-export const BoolEditor: ExtendedEditor<Props> = ({
-    expressionObj,
-    readOnly,
-    onValueChange,
-    className,
-    fieldErrors,
-    showValidation = true,
-}: Props) => {
-    const trueValue = { expression: TRUE_EXPRESSION, label: i18next.t("common.true", "true") };
-    const falseValue = { expression: FALSE_EXPRESSION, label: i18next.t("common.false", "false") };
+export const BoolEditor = prepareEditor<Props>(
+    ({ expressionObj, readOnly, onValueChange, className, fieldErrors, showValidation = true }) => {
+        const trueValue = { expression: TRUE_EXPRESSION, label: i18next.t("common.true", "true") };
+        const falseValue = { expression: FALSE_EXPRESSION, label: i18next.t("common.false", "false") };
 
-    return (
-        <FixedValuesEditor
-            editorConfig={{
-                type: EditorType.FIXED_VALUES_PARAMETER_EDITOR,
-                possibleValues: [trueValue, falseValue],
-            }}
-            expressionObj={expressionObj}
-            onValueChange={onValueChange}
-            readOnly={readOnly}
-            className={className}
-            fieldErrors={fieldErrors}
-            showValidation={showValidation}
-        />
-    );
-};
-
-BoolEditor.isSwitchableTo = (expressionObj) => parseable(expressionObj) || isEmpty(expressionObj.expression);
-BoolEditor.notSwitchableToHint = () =>
-    i18next.t("editors.bool.notSwitchableToHint", "Expression must be equal to true or false to switch to {{displayName}} mode", {
-        displayName: editorsParameters[EditorType.BOOL_PARAMETER_EDITOR].displayName,
-    });
+        return (
+            <FixedValuesEditor
+                editorConfig={{
+                    type: EditorType.FIXED_VALUES_PARAMETER_EDITOR,
+                    possibleValues: [trueValue, falseValue],
+                }}
+                expressionObj={expressionObj}
+                onValueChange={onValueChange}
+                readOnly={readOnly}
+                className={className}
+                fieldErrors={fieldErrors}
+                showValidation={showValidation}
+            />
+        );
+    },
+    {
+        isSwitchableTo: (expressionObj) => parseable(expressionObj) || isEmpty(expressionObj.expression),
+        notSwitchableToHint: () =>
+            i18next.t("editors.bool.notSwitchableToHint", "Expression must be equal to true or false to switch to {{displayName}} mode", {
+                displayName: editorsParameters[EditorType.BOOL_PARAMETER_EDITOR].displayName,
+            }),
+    },
+);
