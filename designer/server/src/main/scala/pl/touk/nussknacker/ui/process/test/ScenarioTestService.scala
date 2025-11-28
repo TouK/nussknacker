@@ -35,7 +35,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceP
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ExpressionsToTestDataConversionError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
-import pl.touk.nussknacker.ui.process.test.testcase.{AssertionVerifier, NoopAssertionVerifier, TestCompiler}
+import pl.touk.nussknacker.ui.process.test.testcase.{AssertionVerifier, NoopAssertionVerifier, TestCaseCompiler}
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -286,8 +286,8 @@ class ScenarioTestService(
       scenarioTestData <- EitherT.fromEither[Future](prepareTestData(preliminaryScenarioTestRecords, canonical))
 
       // compile process/validate process to gather node typing needed for assertion expressions compilation
-      nodesTyping = compileScenarioAndExtractVariableTyping(scenarioGraph, processVersion, isFragment)
-      compiledTestCase = compileTestCase(test, nodesTyping)
+      nodeContextsTyping = compileScenarioAndExtractNodeContextsTyping(scenarioGraph, processVersion, isFragment)
+      compiledTestCase = compileTestCase(test, nodeContextsTyping)
 
       testResults <- EitherT(
         performTestWithDeserializedRecords(processVersion, canonical, scenarioTestData.copy(test = Some(test)))
@@ -298,7 +298,7 @@ class ScenarioTestService(
     } yield ResultsWithCounts(Instant.now(), testResultsWithAssertionResults, computeCounts(canonical, isFragment, testResults))).value
   }
 
-  private def compileScenarioAndExtractVariableTyping(scenarioGraph: ScenarioGraph,
+  private def compileScenarioAndExtractNodeContextsTyping(scenarioGraph: ScenarioGraph,
                                                       processVersion: ProcessVersion,
                                                       isFragment: Boolean)(implicit user: LoggedUser): Map[String, NodeTypingData] = {
     val validationResult = uiProcessValidator.validate(scenarioGraph, processVersion, isFragment)
@@ -311,7 +311,7 @@ class ScenarioTestService(
   }
 
   private def compileTestCase(test: TestCase, nodesTyping: Map[String, NodeTypingData]): CompiledTestCase = {
-    val testCompiler = new TestCompiler(expressionCompiler)
+    val testCompiler = new TestCaseCompiler(expressionCompiler)
     //todo: to be decided if the operation can be called directly by rest api not by designer
     testCompiler.compile(test, nodesTyping)
       .getOrElse(throw new IllegalStateException("Should not happen - only valid scenario should be allowed to be tested by designer"))

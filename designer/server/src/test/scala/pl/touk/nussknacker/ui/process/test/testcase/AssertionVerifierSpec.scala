@@ -2,10 +2,10 @@ package pl.touk.nussknacker.ui.process.test.testcase
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
@@ -38,7 +38,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     )
   )
 
-  private val testCompiler = new TestCompiler(expressionCompiler)
+  private val testCompiler = new TestCaseCompiler(expressionCompiler)
 
   test("should run assertions on test nodes results") {
     val scenarioTyping: Map[String, NodeTypingData] = Map(

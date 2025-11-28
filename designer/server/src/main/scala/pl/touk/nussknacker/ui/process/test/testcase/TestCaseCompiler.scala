@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
 import pl.touk.nussknacker.engine.testmode.TestProcess.{AssertionResult, FailedAssertion, SuccessfulAssertion}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 
-class TestCompiler(expressionCompiler: ExpressionCompiler) {
+class TestCaseCompiler(expressionCompiler: ExpressionCompiler) {
 
   // todo: take care what should be done when scenario is only partially compiled (there were some errors)
   // todo: to decide where should be input data validation (especially in context of validation during edition and saving)

@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompila
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 
-class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
+class TestCaseCompilerSpec extends AnyFunSuite with Matchers with Inside {
 
   private val baseDefinition = ModelDefinitionBuilder.empty
     .withUnboundedStreamSource("sourceWithUnknown", Some(Unknown))
@@ -35,7 +35,7 @@ class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
     .withSink("sink")
     .build
   private val modelDefinitionWithClasses = ModelDefinitionWithClasses(baseDefinition)
-  private val testCompiler: TestCompiler = {
+  private val testCompiler: TestCaseCompiler = {
 
     val expressionCompiler = ExpressionCompiler.withOptimization(
       getClass.getClassLoader,
@@ -46,7 +46,7 @@ class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
         GlobalVariablesPreparer.apply(modelDefinitionWithClasses.modelDefinition.expressionConfig)
       )
     )
-    new TestCompiler(expressionCompiler)
+    new TestCaseCompiler(expressionCompiler)
   }
 
   test("should compile valid test for scenario") {
