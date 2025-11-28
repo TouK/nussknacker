@@ -9,16 +9,17 @@ import cats.syntax.list._
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.{DecodingFailure, Json}
-import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ScenarioCompilationErrors}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ScenarioCompilationErrors}
 import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestCommonFormatJsonRecord, ScenarioTestData, ScenarioTestSourceSpecificFormatJsonRecord}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.compiledgraph.CompiledTestCase
 import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.graph.TestCase
@@ -27,16 +28,19 @@ import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder.TestRecordVariablesDecodingError
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ListUtil
+import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ExpressionsToTestDataConversionError
-import pl.touk.nussknacker.ui.process.test.testcase.{AssertionVerifier, NoopAssertionVerifier}
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
+import pl.touk.nussknacker.ui.process.test.testcase.{AssertionVerifier, NoopAssertionVerifier, TestCompiler}
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
+import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
@@ -49,8 +53,9 @@ class ScenarioTestService(
                            // These dependencies are needed for scenario testing execution
                            processCounter: ProcessCounter,
                            testExecutorService: ScenarioTestExecutorService,
+                           uiProcessValidator: UIProcessValidator,
                            assertionVerifier: AssertionVerifier = new NoopAssertionVerifier,
-) extends LazyLogging {
+                         ) extends LazyLogging {
 
   private val commonModelDataInfoProvider = new CommonModelDataInfoProvider(modelData)
 
@@ -62,13 +67,15 @@ class ScenarioTestService(
     testDataFormatSerDe = testDataFormatHandler.serDe
   )
 
+  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
+
   def getTestingCapabilities(
-      scenarioGraph: ScenarioGraph,
-      processVersion: ProcessVersion,
-  ): Either[TestingCapabilitiesError, TestingCapabilities] = {
+                              scenarioGraph: ScenarioGraph,
+                              processVersion: ProcessVersion,
+                            ): Either[TestingCapabilitiesError, TestingCapabilities] = {
     val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
-    val jobData   = JobData(canonical.metaData, processVersion)
-    val sources   = canonical.collectAllSources
+    val jobData = JobData(canonical.metaData, processVersion)
+    val sources = canonical.collectAllSources
 
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       for {
@@ -107,13 +114,13 @@ class ScenarioTestService(
   }
 
   def validateAndGetTestParametersDefinition(
-      scenarioGraph: ScenarioGraph,
-      processVersion: ProcessVersion,
-      isFragment: Boolean
-  )(implicit user: LoggedUser): Either[ParametersDefinitionError, Map[NodeId, List[Parameter]]] = {
+                                              scenarioGraph: ScenarioGraph,
+                                              processVersion: ProcessVersion,
+                                              isFragment: Boolean
+                                            )(implicit user: LoggedUser): Either[ParametersDefinitionError, Map[NodeId, List[Parameter]]] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
-    val jobData   = JobData(canonical.metaData, processVersion)
-    val sources   = canonical.collectAllSources
+    val jobData = JobData(canonical.metaData, processVersion)
+    val sources = canonical.collectAllSources
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       val compiledSourcesById =
         sources.map(source => NodeId(source.id) -> commonModelDataInfoProvider.nodeCompiler.compileNode(source))
@@ -135,15 +142,15 @@ class ScenarioTestService(
   }
 
   def fetchSourcesLiveData(
-      scenarioGraph: ScenarioGraph,
-      processVersion: ProcessVersion,
-      isFragment: Boolean,
-      maxNumberOfRecords: Int
-  )(
-      implicit user: LoggedUser
-  ): Either[FetchLiveDataError, SerializedScenarioRecordsContent] = {
+                            scenarioGraph: ScenarioGraph,
+                            processVersion: ProcessVersion,
+                            isFragment: Boolean,
+                            maxNumberOfRecords: Int
+                          )(
+                            implicit user: LoggedUser
+                          ): Either[FetchLiveDataError, SerializedScenarioRecordsContent] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
-    val jobData   = JobData(canonical.metaData, processVersion)
+    val jobData = JobData(canonical.metaData, processVersion)
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       for {
         _ <- validateRecordsCount(maxNumberOfRecords)(FetchLiveDataError.TooManyRecordsRequestedError)
@@ -182,12 +189,12 @@ class ScenarioTestService(
   }
 
   def fetchSourceLiveData(
-      metaData: MetaData,
-      sourceNodeData: SourceNodeData,
-      maxNumberOfRecords: Int
-  ): Either[FetchLiveDataError, SerializedScenarioRecordsContent] = {
+                           metaData: MetaData,
+                           sourceNodeData: SourceNodeData,
+                           maxNumberOfRecords: Int
+                         ): Either[FetchLiveDataError, SerializedScenarioRecordsContent] = {
     val jobData = JobData(metaData, ProcessVersion.empty)
-    val nodeId  = NodeId(sourceNodeData.id)
+    val nodeId = NodeId(sourceNodeData.id)
 
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       for {
@@ -218,10 +225,10 @@ class ScenarioTestService(
   }
 
   private def compileSource(
-      source: SourceNodeData
-  )(
-      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
-  ): ValidatedNel[(NodeId, NonEmptyList[ProcessCompilationError]), (NodeId, Source)] = {
+                             source: SourceNodeData
+                           )(
+                             implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+                           ): ValidatedNel[(NodeId, NonEmptyList[ProcessCompilationError]), (NodeId, Source)] = {
     val nodeId = NodeId(source.id)
     commonModelDataInfoProvider.nodeCompiler
       .compileNode(source)
@@ -233,11 +240,11 @@ class ScenarioTestService(
   }
 
   def performTest(
-      scenarioGraph: ScenarioGraph,
-      processVersion: ProcessVersion,
-      isFragment: Boolean,
-      parameterTestData: TestSourceParameters,
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
+                   scenarioGraph: ScenarioGraph,
+                   processVersion: ProcessVersion,
+                   isFragment: Boolean,
+                   parameterTestData: TestSourceParameters,
+                 )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
     (for {
       testData <- EitherT.fromEither[Future][PerformTestError, ScenarioTestData](
@@ -262,7 +269,7 @@ class ScenarioTestService(
                        processVersion: ProcessVersion,
                        isFragment: Boolean,
                        test: TestCase,
-                 )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
+                     )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
     (for {
       preliminaryScenarioTestRecords <- EitherT.fromEither[Future](
         preliminaryScenarioRecordsSerDe
@@ -278,21 +285,50 @@ class ScenarioTestService(
 
       scenarioTestData <- EitherT.fromEither[Future](prepareTestData(preliminaryScenarioTestRecords, canonical))
 
+      // compile process/validate process to gather node typing needed for assertion expressions compilation
+      nodesTyping = compileScenarioAndExtractVariableTyping(scenarioGraph, processVersion, isFragment)
+      compiledTestCase = compileTestCase(test, nodesTyping)
+
       testResults <- EitherT(
-        performTestWithDeserializedRecords(processVersion, canonical, scenarioTestData.copy(test=Some(test)))
+        performTestWithDeserializedRecords(processVersion, canonical, scenarioTestData.copy(test = Some(test)))
       )
 
       _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
-      testResultsWithAssertionResults = verifyAssertions(test, testResults)
+      testResultsWithAssertionResults = verifyAssertions(compiledTestCase, testResults)
     } yield ResultsWithCounts(Instant.now(), testResultsWithAssertionResults, computeCounts(canonical, isFragment, testResults))).value
   }
 
+  private def compileScenarioAndExtractVariableTyping(scenarioGraph: ScenarioGraph,
+                                                      processVersion: ProcessVersion,
+                                                      isFragment: Boolean)(implicit user: LoggedUser): Map[String, NodeTypingData] = {
+    val validationResult = uiProcessValidator.validate(scenarioGraph, processVersion, isFragment)
+    if (validationResult.hasErrors) {
+      //todo: to be decided if the operation can be called directly by rest api not by designer
+      throw new IllegalStateException("Should not happen - only valid scenario should be allowed to be tested by designer")
+    }
+
+    validationResult.nodeResults
+  }
+
+  private def compileTestCase(test: TestCase, nodesTyping: Map[String, NodeTypingData]): CompiledTestCase = {
+    val testCompiler = new TestCompiler(expressionCompiler)
+    //todo: to be decided if the operation can be called directly by rest api not by designer
+    testCompiler.compile(test, nodesTyping)
+      .getOrElse(throw new IllegalStateException("Should not happen - only valid scenario should be allowed to be tested by designer"))
+  }
+
+  private def verifyAssertions(test: CompiledTestCase, testResults: TestResults[Json]): TestResults[Json] = {
+    testResults.copy(assertionsResults =
+      assertionVerifier.verify(test, testResults.originalNodeResults)
+    )
+  }
+
   def performTest(
-      scenarioGraph: ScenarioGraph,
-      processVersion: ProcessVersion,
-      isFragment: Boolean,
-      serializedTestRecordsContent: SerializedScenarioRecordsContent,
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
+                   scenarioGraph: ScenarioGraph,
+                   processVersion: ProcessVersion,
+                   isFragment: Boolean,
+                   serializedTestRecordsContent: SerializedScenarioRecordsContent,
+                 )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
     (for {
       preliminaryScenarioTestRecords <- EitherT.fromEither[Future](
         preliminaryScenarioRecordsSerDe
@@ -317,10 +353,10 @@ class ScenarioTestService(
   }
 
   private def performTestWithDeserializedRecords(
-      processVersion: ProcessVersion,
-      canonical: CanonicalProcess,
-      scenarioTestData: ScenarioTestData
-  )(implicit ec: ExecutionContext, user: LoggedUser) = {
+                                                  processVersion: ProcessVersion,
+                                                  canonical: CanonicalProcess,
+                                                  scenarioTestData: ScenarioTestData
+                                                )(implicit ec: ExecutionContext, user: LoggedUser) = {
     testExecutorService
       .testProcess(
         processVersion,
@@ -348,17 +384,17 @@ class ScenarioTestService(
   private def toPerformTestError(decodingError: TestRecordVariablesDecodingError): PerformTestError = {
     decodingError match {
       case CommonTestDataFormatVariablesDecoder
-            .UnexpectedVariableInTestRecordError(variableName, sourceId, testRecordIndex) =>
+      .UnexpectedVariableInTestRecordError(variableName, sourceId, testRecordIndex) =>
         PerformTestError.UnexpectedVariableInTestRecordError(variableName, sourceId, testRecordIndex)
       case CommonTestDataFormatVariablesDecoder
-            .TestRecordVariableDecodingError(
-              variableName,
-              variableType,
-              encodedVariable,
-              cause,
-              sourceId,
-              testRecordIndex,
-            ) =>
+      .TestRecordVariableDecodingError(
+      variableName,
+      variableType,
+      encodedVariable,
+      cause,
+      sourceId,
+      testRecordIndex,
+      ) =>
         PerformTestError
           .TestRecordVariableDecodingError(
             variableName,
@@ -372,19 +408,19 @@ class ScenarioTestService(
   }
 
   private[test] def prepareTestData(
-      preliminaryScenarioRecords: PreliminaryScenarioRecords,
-      scenario: CanonicalProcess
-  ): Either[PerformTestError, ScenarioTestData] = {
+                                     preliminaryScenarioRecords: PreliminaryScenarioRecords,
+                                     scenario: CanonicalProcess
+                                   ): Either[PerformTestError, ScenarioTestData] = {
     import cats.implicits._
 
     val allScenarioSourceIds = scenario.collectAllSources.map(n => NodeId(n.id)).toSet
     preliminaryScenarioRecords.records.zipWithIndex
       .map {
         case (SourceSpecificFormatPreliminaryScenarioRecord(sourceId, record, timestamp), _)
-            if allScenarioSourceIds.contains(sourceId) =>
+          if allScenarioSourceIds.contains(sourceId) =>
           Right(ScenarioTestSourceSpecificFormatJsonRecord(sourceId, record, timestamp))
         case (CommonFormatPreliminaryScenarioRecord(sourceId, variables, timestamp), _)
-            if allScenarioSourceIds.contains(sourceId) =>
+          if allScenarioSourceIds.contains(sourceId) =>
           Right(ScenarioTestCommonFormatJsonRecord(sourceId, variables, timestamp))
         case (record, recordIdx) =>
           Left(PerformTestError.MissingSourceError(record.sourceId, recordIdx))
@@ -394,11 +430,11 @@ class ScenarioTestService(
   }
 
   def resultsWithCounts(
-      testResults: TestResults[Json],
-      scenarioGraph: ScenarioGraph,
-      processVersion: ProcessVersion,
-      isFragment: Boolean,
-  )(implicit user: LoggedUser): ResultsWithCounts = {
+                         testResults: TestResults[Json],
+                         scenarioGraph: ScenarioGraph,
+                         processVersion: ProcessVersion,
+                         isFragment: Boolean,
+                       )(implicit user: LoggedUser): ResultsWithCounts = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
     ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))
   }
@@ -416,10 +452,10 @@ class ScenarioTestService(
   }
 
   private def toCanonicalProcess(
-      scenarioGraph: ScenarioGraph,
-      processVersion: ProcessVersion,
-      isFragment: Boolean,
-  )(implicit user: LoggedUser): CanonicalProcess = {
+                                  scenarioGraph: ScenarioGraph,
+                                  processVersion: ProcessVersion,
+                                  isFragment: Boolean,
+                                )(implicit user: LoggedUser): CanonicalProcess = {
     processResolver.validateAndResolve(
       scenarioGraph,
       processVersion,
@@ -453,14 +489,8 @@ class ScenarioTestService(
       .getOrElse(Right(()))
   }
 
-  private def verifyAssertions(test: TestCase, testResults: TestResults[Json]): TestResults[Json] = {
-    testResults.copy(assertionsResults =
-      assertionVerifier.verify(test.assertions, testResults.originalNodeResults)
-    )
-  }
-
   private def computeCounts(canonical: CanonicalProcess, isFragment: Boolean, results: TestResults[_])(
-      implicit loggedUser: LoggedUser
+    implicit loggedUser: LoggedUser
   ): Map[NodeId, NodeCount] = {
     val counts = results.nodeResults.map { case (key, nresults) =>
       key -> RawCount(
@@ -472,7 +502,7 @@ class ScenarioTestService(
   }
 
   private def withScenarioCompilationDependencies[T](jobData: JobData)(
-      f: ScenarioCompilationDependencies => T
+    f: ScenarioCompilationDependencies => T
   ) =
     engineScenarioCompilationDependenciesResource
       .use { engineScenarioCompilationDependencies =>
@@ -492,8 +522,8 @@ object ScenarioTestService {
     case object NoSourcesError extends TestingCapabilitiesError
 
     case class SourcesCompilationError(
-        nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
-    ) extends TestingCapabilitiesError
+                                        nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
+                                      ) extends TestingCapabilitiesError
 
   }
 
@@ -502,8 +532,8 @@ object ScenarioTestService {
   object ParametersDefinitionError {
 
     final case class SourcesCompilationError(
-        nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
-    ) extends ParametersDefinitionError
+                                              nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
+                                            ) extends ParametersDefinitionError
 
     final case class TestingWithCustomInputNotSupportedError(nodeId: NodeId) extends ParametersDefinitionError
 
@@ -514,13 +544,16 @@ object ScenarioTestService {
   object FetchLiveDataError {
 
     final case class SourcesCompilationError(
-        nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
-    ) extends FetchLiveDataError
+                                              nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
+                                            ) extends FetchLiveDataError
 
-    final case object NoLiveDataAvailableError          extends FetchLiveDataError
+    final case object NoLiveDataAvailableError extends FetchLiveDataError
+
     final case object LiveDataFetchingNotSupportedError extends FetchLiveDataError
+
     final case class ScenarioRecordsSerializationError(cause: PreliminaryScenarioRecordsSerDe.SerializationError)
-        extends FetchLiveDataError
+      extends FetchLiveDataError
+
     final case class TooManyRecordsRequestedError(maxRecordsCount: Int) extends FetchLiveDataError
   }
 
@@ -528,25 +561,26 @@ object ScenarioTestService {
 
   object PerformTestError {
     final case class DeserializationError(cause: PreliminaryScenarioRecordsSerDe.DeserializationError)
-        extends PerformTestError
+      extends PerformTestError
 
     final case class ExpressionsToTestDataConversionError(
-        cause: TestDataFormatHandler.ExpressionsToTestDataConversionError
-    ) extends PerformTestError
+                                                           cause: TestDataFormatHandler.ExpressionsToTestDataConversionError
+                                                         ) extends PerformTestError
 
     final case class UnexpectedVariableInTestRecordError(variableName: String, sourceId: NodeId, testRecordIndex: Int)
-        extends PerformTestError
+      extends PerformTestError
 
     final case class TestRecordVariableDecodingError(
-        variableName: String,
-        variableType: TypingResult,
-        encodedVariable: Json,
-        cause: DecodingFailure,
-        sourceId: NodeId,
-        testRecordIndex: Int,
-    ) extends PerformTestError
+                                                      variableName: String,
+                                                      variableType: TypingResult,
+                                                      encodedVariable: Json,
+                                                      cause: DecodingFailure,
+                                                      sourceId: NodeId,
+                                                      testRecordIndex: Int,
+                                                    ) extends PerformTestError
 
-    final case class MissingSourceError(sourceId: NodeId, recordIndex: Int)                extends PerformTestError
+    final case class MissingSourceError(sourceId: NodeId, recordIndex: Int) extends PerformTestError
+
     final case class TestResultsSizeExceededError(approxSizeInBytes: Long, maxBytes: Long) extends PerformTestError
   }
 

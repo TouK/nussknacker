@@ -79,7 +79,8 @@ object ValidationResults {
       // parameters, because we have a hardcoded parameters for built-in components
       // We could return just a TypingResult (without intermediateResults) but it would require copying of nested
       // structures. Because of that, we remove these information on the encoding level
-      typingInfo: Map[String, ExpressionTypingInfo]
+      typingInfo: Map[String, ExpressionTypingInfo],
+      outputTyping: Option[TypingResult] = None //todo
   )
 
   @JsonCodec final case class ValidationErrors(

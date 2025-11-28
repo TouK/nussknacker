@@ -108,7 +108,8 @@ object ProcessingTypeServices {
       scenarioCompilationDependenciesResource,
       processResolver,
       counter,
-      new ScenarioTestExecutorServiceImpl(scenarioResolver, deploymentManager)
+      new ScenarioTestExecutorServiceImpl(scenarioResolver, deploymentManager),
+      scenarioValidator
     )
     val actionInfoService = new ActionInfoService(
       new ModelDataActionInfoProvider(

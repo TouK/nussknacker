@@ -299,7 +299,8 @@ trait NuResourcesTest
       new ScenarioTestExecutorServiceImpl(
         new ScenarioResolver(sampleResolver(), Streaming.stringify),
         deploymentManager
-      )
+      ),
+      null, //todo
     )
 
   protected def deployRoute() =

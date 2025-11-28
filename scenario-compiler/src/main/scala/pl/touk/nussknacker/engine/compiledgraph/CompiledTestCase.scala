@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.compiledgraph
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 
-final case class CompiledTest(
+final case class CompiledTestCase(
                                id: String,
                                inputs: String,
                                mocks: Map[NodeId, CompiledEnricherMock],

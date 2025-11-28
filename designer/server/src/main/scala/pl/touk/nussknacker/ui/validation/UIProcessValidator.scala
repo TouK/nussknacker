@@ -196,7 +196,8 @@ class UIProcessValidator(
   private def nodeInfoToResult(typingInfo: NodeTypingInfo) = NodeTypingData(
     typingInfo.inputValidationContext.localVariables,
     typingInfo.parameters.map(_.map(DefinitionsService.createUIParameter)),
-    typingInfo.expressionsTypingInfo
+    typingInfo.expressionsTypingInfo,
+    typingInfo.outputTyping
   )
 
   private def warningValidation(process: ScenarioGraph): ValidationResult = {

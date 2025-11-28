@@ -747,6 +747,7 @@ class ScenarioTestServiceSpec
       TestFactory.processResolver(),
       processCounter = new ProcessCounter(new StubFragmentRepository(Map.empty)),
       testExecutorService = mockedTestExecutorService,
+      TestFactory.processValidator()
     )
 
     val scenarioRecords = PreliminaryScenarioRecords(
@@ -811,6 +812,7 @@ class ScenarioTestServiceSpec
       // These dependencies are needed for test execution which is not tested here
       processCounter = null,
       testExecutorService = null,
+      uiProcessValidator = null
     )
 
   private def createScenarioWithSingleSource(sourceComponentId: String = "genericSource"): CanonicalProcess = {
