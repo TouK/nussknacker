@@ -3,7 +3,7 @@ import i18next from "i18next";
 import React, { useCallback, useLayoutEffect, useRef } from "react";
 import type ReactAce from "react-ace/lib/ace";
 
-import type { ExtendedEditor } from "./Editor";
+import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { Formatter } from "./Formatter";
 import type { SpelEditorProps } from "./SpelEditor";
@@ -84,24 +84,6 @@ function useAliasUsageHighlight(token = "alias") {
     return ref;
 }
 
-export const SqlEditor: ExtendedEditor<Props> = (props: Props) => {
-    const { expressionObj, onValueChange, className, ...passProps } = props;
-    const ref = useAliasUsageHighlight();
-
-    return (
-        <SpelEditor
-            {...passProps}
-            ref={ref}
-            onValueChange={onValueChange}
-            expressionObj={expressionObj}
-            className={className}
-            rows={6}
-            editorMode={EditorMode.SQL}
-            language={editorsParameters[EditorType.SQL_PARAMETER_EDITOR].language}
-        />
-    );
-};
-
 const splitConcats = (value: string) => {
     return value.split(/\s*\+\s*/gm);
 };
@@ -110,10 +92,31 @@ export const isSwitchableTo = ({ expression, language }: ExpressionObj): boolean
     return language === ExpressionLang.SpEL && splitConcats(expression.trim()).some(isQuoted);
 };
 
-SqlEditor.isSwitchableTo = isSwitchableTo;
-SqlEditor.notSwitchableToHint = () =>
-    i18next.t(
-        "editors.textarea.notSwitchableToHint",
-        "Expression must be a string literal i.e. text surrounded by quotation marks to switch to {{editorName}} mode",
-        { editorName: editorsParameters[EditorType.SQL_PARAMETER_EDITOR].displayName },
-    );
+export const SqlEditor = prepareEditor<Props>(
+    (props) => {
+        const { expressionObj, onValueChange, className, ...passProps } = props;
+        const ref = useAliasUsageHighlight();
+
+        return (
+            <SpelEditor
+                {...passProps}
+                ref={ref}
+                onValueChange={onValueChange}
+                expressionObj={expressionObj}
+                className={className}
+                rows={6}
+                editorMode={EditorMode.SQL}
+                language={editorsParameters[EditorType.SQL_PARAMETER_EDITOR].language}
+            />
+        );
+    },
+    {
+        isSwitchableTo,
+        notSwitchableToHint: () =>
+            i18next.t(
+                "editors.textarea.notSwitchableToHint",
+                "Expression must be a string literal i.e. text surrounded by quotation marks to switch to {{editorName}} mode",
+                { editorName: editorsParameters[EditorType.SQL_PARAMETER_EDITOR].displayName },
+            ),
+    },
+);

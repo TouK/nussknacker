@@ -3,7 +3,7 @@ import { isEmpty } from "lodash";
 import moment from "moment";
 import React from "react";
 
-import type { ExtendedEditor } from "../Editor";
+import { prepareEditor } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
 import { FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import type { ExpressionObj } from "../types";
@@ -19,24 +19,27 @@ const isParseable = (expression: ExpressionObj): boolean => {
 
 type DateEditorProps = Omit<DatepickerEditorProps, "dateFormat" | "expressionType">;
 
-export const DateEditor: ExtendedEditor<DateEditorProps> = (props: DateEditorProps) => {
-    const { formatter } = props;
-    const dateFormatter = formatter == null ? typeFormatters[FormatterType.Date] : formatter;
+export const DateEditor = prepareEditor<DateEditorProps>(
+    (props) => {
+        const { formatter } = props;
+        const dateFormatter = formatter == null ? typeFormatters[FormatterType.Date] : formatter;
 
-    return (
-        <DatepickerEditor
-            {...props}
-            momentFormat={dateFormat}
-            dateFormat={dateFormat}
-            timeFormat={null}
-            formatter={dateFormatter}
-            language={editorsParameters[EditorType.DATE].language}
-        />
-    );
-};
-
-DateEditor.notSwitchableToHint = () =>
-    i18next.t("editors.LocalDate.notSwitchableToHint", "Expression must be valid date to switch to {{editorName}} mode", {
-        editorName: editorsParameters[EditorType.DATE].displayName,
-    });
-DateEditor.isSwitchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj) || isEmpty(expressionObj.expression);
+        return (
+            <DatepickerEditor
+                {...props}
+                momentFormat={dateFormat}
+                dateFormat={dateFormat}
+                timeFormat={null}
+                formatter={dateFormatter}
+                language={editorsParameters[EditorType.DATE].language}
+            />
+        );
+    },
+    {
+        isSwitchableTo: (expressionObj: ExpressionObj) => isParseable(expressionObj) || isEmpty(expressionObj.expression),
+        notSwitchableToHint: () =>
+            i18next.t("editors.LocalDate.notSwitchableToHint", "Expression must be valid date to switch to {{editorName}} mode", {
+                editorName: editorsParameters[EditorType.DATE].displayName,
+            }),
+    },
+);

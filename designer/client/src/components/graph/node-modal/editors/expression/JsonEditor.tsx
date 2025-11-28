@@ -11,7 +11,8 @@ import type { ParamType } from "../types";
 import type { FieldError } from "../Validators";
 import { setupAceEditorSnippets } from "./AceEditorJsonBasedSnippets";
 import AceWithSettings from "./AceWithSettings";
-import type { OnValueChange, SimpleEditor } from "./Editor";
+import type { OnValueChange } from "./Editor";
+import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import { ResetToDefaultButton } from "./ResetToDefaultButton";
 import type { ExpressionObj } from "./types";
@@ -31,78 +32,71 @@ type Props = {
     defaultValue?: ExpressionObj | string;
 };
 
-export const JsonEditor: SimpleEditor<Props> = ({
-    onValueChange,
-    className,
-    expressionObj,
-    fieldErrors,
-    showValidation,
-    readOnly,
-    isMarked,
-    defaultValue,
-}: Props) => {
-    const storedExpression = useMemo(() => expressionObj.expression.replace(/^["'](.*)["']$/, ""), [expressionObj.expression]);
-    const [value, setValue] = useState(storedExpression);
-    useEffect(() => {
-        setValue(storedExpression);
-    }, [storedExpression]);
+export const JsonEditor = prepareEditor<Props>(
+    ({ onValueChange, className, expressionObj, fieldErrors, showValidation, readOnly, isMarked, defaultValue }: Props) => {
+        const storedExpression = useMemo(() => expressionObj.expression.replace(/^["'](.*)["']$/, ""), [expressionObj.expression]);
+        const [value, setValue] = useState(storedExpression);
+        useEffect(() => {
+            setValue(storedExpression);
+        }, [storedExpression]);
 
-    const language = ExpressionLang.JSON;
-    const settings = useAppSelector(getUserSettings);
-    const showLines = Boolean(settings[`editor.${language}.showLines`]);
-    const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(fieldErrors, showLines);
+        const language = ExpressionLang.JSON;
+        const settings = useAppSelector(getUserSettings);
+        const showLines = Boolean(settings[`editor.${language}.showLines`]);
+        const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(fieldErrors, showLines);
 
-    const onChange = useCallback(
-        (newValue: string) => {
-            setValue(newValue);
-            onValueChange({ expression: newValue, language: editorsParameters[EditorType.JSON_PARAMETER_EDITOR].language });
-        },
-        [onValueChange],
-    );
+        const onChange = useCallback(
+            (newValue: string) => {
+                setValue(newValue);
+                onValueChange({ expression: newValue, language: editorsParameters[EditorType.JSON_PARAMETER_EDITOR].language });
+            },
+            [onValueChange],
+        );
 
-    const InputAdornmentEnd = useMemo(() => {
-        if (!defaultValue) return;
-        if (readOnly) return;
+        const InputAdornmentEnd = useMemo(() => {
+            if (!defaultValue) return;
+            if (readOnly) return;
 
-        const defaultValueObject =
-            typeof defaultValue === "string" ? { expression: defaultValue, language: ExpressionLang.JSON } : defaultValue; // defaultValue can be a string in case of Properties
-        if (defaultValueObject.expression === value) return;
+            const defaultValueObject =
+                typeof defaultValue === "string" ? { expression: defaultValue, language: ExpressionLang.JSON } : defaultValue; // defaultValue can be a string in case of Properties
+            if (defaultValueObject.expression === value) return;
 
-        return <ResetToDefaultButton defaultValue={defaultValueObject} handleChange={onChange} />;
-    }, [defaultValue, onChange, readOnly, value]);
+            return <ResetToDefaultButton defaultValue={defaultValueObject} handleChange={onChange} />;
+        }, [defaultValue, onChange, readOnly, value]);
 
-    return (
-        <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
-            <Box
-                className={cx([
-                    rowAceEditor,
-                    showValidation && !isEmpty(fieldErrors) && nodeInputWithError,
-                    isMarked && "marked",
-                    readOnly && "read-only",
-                ])}
-                sx={{
-                    position: "relative",
-                }}
-            >
-                <AceWithSettings
-                    onLoad={(editor) => {
-                        setupAceEditorSnippets(editor);
+        return (
+            <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
+                <Box
+                    className={cx([
+                        rowAceEditor,
+                        showValidation && !isEmpty(fieldErrors) && nodeInputWithError,
+                        isMarked && "marked",
+                        readOnly && "read-only",
+                    ])}
+                    sx={{
+                        position: "relative",
                     }}
-                    onChange={onChange}
-                    value={value}
-                    inputProps={{
-                        language,
-                        readOnly,
-                        InputAdornmentEnd,
-                        rows: 5,
-                    }}
-                    enableLiveAutocompletion={false}
-                    annotations={annotations}
-                    markers={markers}
-                    fieldErrors={fieldErrors}
-                />
+                >
+                    <AceWithSettings
+                        onLoad={(editor) => {
+                            setupAceEditorSnippets(editor);
+                        }}
+                        onChange={onChange}
+                        value={value}
+                        inputProps={{
+                            language,
+                            readOnly,
+                            InputAdornmentEnd,
+                            rows: 5,
+                        }}
+                        enableLiveAutocompletion={false}
+                        annotations={annotations}
+                        markers={markers}
+                        fieldErrors={fieldErrors}
+                    />
+                </Box>
+                {showValidation && !hasRangeText && <ValidationLabels fieldErrors={fieldErrors} />}
             </Box>
-            {showValidation && !hasRangeText && <ValidationLabels fieldErrors={fieldErrors} />}
-        </Box>
-    );
-};
+        );
+    },
+);

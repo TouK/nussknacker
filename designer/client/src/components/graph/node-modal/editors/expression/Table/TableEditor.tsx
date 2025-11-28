@@ -22,7 +22,8 @@ import ProcessUtils from "../../../../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../../../../reducers/selectors/getProcessDefinitionData";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
-import type { EditorProps, ExtendedEditor } from "../Editor";
+import type { EditorProps } from "../Editor";
+import { prepareEditor } from "../Editor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { editorsParameters } from "../editorsParameters";
 import { EditorType } from "../types";
@@ -557,19 +558,22 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
     );
 };
 
-export const TableEditor: ExtendedEditor = ({ className, ...props }: EditorProps) => {
-    return (
-        <Box className={className}>
-            <Box display="flex">
-                <Table {...props} />
+export const TableEditor = prepareEditor(
+    ({ className, ...props }: EditorProps) => {
+        return (
+            <Box className={className}>
+                <Box display="flex">
+                    <Table {...props} />
+                </Box>
+                {props.showValidation && <ValidationLabels fieldErrors={props.fieldErrors} />}
             </Box>
-            {props.showValidation && <ValidationLabels fieldErrors={props.fieldErrors} />}
-        </Box>
-    );
-};
-
-TableEditor.isSwitchableTo = () => true; // TODO: implement
-TableEditor.notSwitchableToHint = () =>
-    i18next.t("editors.table.notSwitchableToHint", `Expression must match schema to switch to {{}} mode`, {
-        editorName: editorsParameters[EditorType.TABLE_EDITOR].displayName,
-    });
+        );
+    },
+    {
+        isSwitchableTo: () => true, // TODO: implement
+        notSwitchableToHint: () =>
+            i18next.t("editors.table.notSwitchableToHint", `Expression must match schema to switch to {{}} mode`, {
+                editorName: editorsParameters[EditorType.TABLE_EDITOR].displayName,
+            }),
+    },
+);
