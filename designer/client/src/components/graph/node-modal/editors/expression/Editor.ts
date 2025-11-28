@@ -1,4 +1,4 @@
-import type { ForwardRefExoticComponent, LegacyRef, ReactNode } from "react";
+import type { ComponentType, LegacyRef, ReactNode } from "react";
 
 import type { VariableTypes } from "../../../../../types/validation";
 import type { FieldError } from "../Validators";
@@ -24,35 +24,51 @@ import { TextareaEditor } from "./TextareaEditor";
 import type { ExpressionLang, ExpressionObj } from "./types";
 import { EditorType } from "./types";
 
-export type EditorProps = {
-    onValueChange: OnValueChange;
-    type?: EditorType;
-    editorConfig?: EditorConfig;
-    className?: string;
-    fieldErrors: FieldError[];
-    formatter?: Formatter;
-    expressionInfo?: ReactNode;
+type BaseEditorProps = {
     expressionObj: ExpressionObj;
+    onValueChange: OnValueChange;
+    fieldErrors: FieldError[];
     readOnly?: boolean;
     showSwitch?: boolean;
     showValidation?: boolean;
+};
+
+export type EditorProps = BaseEditorProps & {
+    editorConfig?: EditorConfig;
+    type?: EditorType;
+    className?: string;
+    formatter?: Formatter;
+    expressionInfo?: ReactNode;
     variableTypes?: VariableTypes;
     ref?: LegacyRef<unknown>;
     rows?: number;
 };
 
-export type SimpleEditor<P extends EditorProps = EditorProps> =
-    | React.ComponentType<P & EditorProps>
-    | ForwardRefExoticComponent<P & EditorProps>;
+type SimpleEditor<P = EditorProps> = P extends EditorProps ? ComponentType<P & EditorProps> : never;
 
-export type ExtendedEditor<P extends EditorProps = EditorProps> = SimpleEditor<P> & {
-    isSwitchableTo: (expressionObj: P["expressionObj"], editorConfig: P["editorConfig"]) => boolean;
-    parseValueOnEditorChange?: (expressionObject: ExpressionObj, newLanguage: ExpressionLang) => ExpressionObj;
-    notSwitchableToHint: () => string;
-};
+type Addons<P> = P extends EditorProps
+    ? {
+          isSwitchableTo: (expressionObj: P["expressionObj"], editorConfig: P["editorConfig"]) => boolean;
+          notSwitchableToHint: () => string;
+          parseValueOnEditorChange?: (expressionObj: P["expressionObj"], nextLanguage: ExpressionLang) => ExpressionObj;
+      }
+    : never;
+
+type ExtendedEditor<P = EditorProps> = SimpleEditor<P> & Addons<P>;
+
+type WithoutDeprecated<P> = P extends {
+    __xxx: number;
+}
+    ? never
+    : P & EditorProps;
+
+export function prepareEditor<P>(Component: SimpleEditor<WithoutDeprecated<P>>, addons?: Addons<WithoutDeprecated<P>>) {
+    if (!addons) return Component;
+    return Object.assign(Component, addons) as ExtendedEditor<WithoutDeprecated<P>>;
+}
 
 export function isExtendedEditor(editor: SimpleEditor | ExtendedEditor): editor is ExtendedEditor {
-    return (editor as ExtendedEditor)?.isSwitchableTo !== undefined;
+    return "isSwitchableTo" in editor;
 }
 
 export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
