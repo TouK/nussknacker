@@ -12,7 +12,7 @@ import type {
 import DataEditor, { CompactSelection, type CustomRenderer, drawTextCell, GridCellKind } from "@glideapps/glide-data-grid";
 import type { GridColumn, ProvideEditorComponent } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
 import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
-import { useTheme } from "@mui/material";
+import { Box, useTheme } from "@mui/material";
 import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
@@ -271,7 +271,13 @@ export const Table: React.FC<TableProps> = ({
     }, []);
 
     return (
-        <>
+        <Box
+            sx={{
+                "--sizer-height-cutout": "140px",
+                "--sizer-minHeight": "300px",
+                display: "flex",
+            }}
+        >
             <Sizer
                 offsetParent={`[data-testid="window"] section`}
                 overflowY={false}
@@ -326,6 +332,6 @@ export const Table: React.FC<TableProps> = ({
                 )}
             </Sizer>
             {tooltipElement}
-        </>
+        </Box>
     );
 };
