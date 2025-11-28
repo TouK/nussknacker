@@ -11,12 +11,16 @@ import { PreloadedIcon } from "../../../../toolbars/creator/ComponentIcon";
 import type { FixedValuesOption } from "../../fragment-input-definition/item/types";
 import type { FieldError } from "../Validators";
 import type { ExtendedEditor, OnValueChange } from "./Editor";
+import type { EditorConfigForType } from "./EditorConfig";
 import { editorsParameters } from "./editorsParameters";
 import type { ExpressionObj } from "./types";
 import { EditorType } from "./types";
 
 type Props = {
-    editorConfig: $TodoType;
+    editorConfig:
+        | EditorConfigForType<EditorType.FIXED_VALUES_PARAMETER_EDITOR>
+        | EditorConfigForType<EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR>
+        | EditorConfigForType<EditorType.FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR>;
     expressionObj: ExpressionObj;
     onValueChange: OnValueChange;
     readOnly: boolean;

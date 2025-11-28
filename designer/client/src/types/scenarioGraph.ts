@@ -1,4 +1,4 @@
-import type { Editor } from "../components/graph/node-modal/editors/types";
+import type { EditorConfig } from "../components/graph/node-modal/editors/expression/EditorConfig";
 import type { ComponentGroup } from "./component";
 import type { TypingResult, UIParameter } from "./definition";
 import type { Edge, EdgeType } from "./edge";
@@ -23,7 +23,7 @@ export type ProcessAdditionalFields = {
 
 export interface UIScenarioProperty {
     defaultValue?: string;
-    editor: Editor;
+    editor: EditorConfig;
     label?: string;
     hintText?: string;
 }

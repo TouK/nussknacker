@@ -38,11 +38,13 @@ export const BoolEditor: ExtendedEditor<Props> = ({
 }: Props) => {
     const trueValue = { expression: TRUE_EXPRESSION, label: i18next.t("common.true", "true") };
     const falseValue = { expression: FALSE_EXPRESSION, label: i18next.t("common.false", "false") };
-    const editorConfig = { possibleValues: [trueValue, falseValue] };
 
     return (
         <FixedValuesEditor
-            editorConfig={editorConfig}
+            editorConfig={{
+                type: EditorType.FIXED_VALUES_PARAMETER_EDITOR,
+                possibleValues: [trueValue, falseValue],
+            }}
             expressionObj={expressionObj}
             onValueChange={onValueChange}
             readOnly={readOnly}

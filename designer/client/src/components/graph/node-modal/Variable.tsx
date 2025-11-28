@@ -45,12 +45,6 @@ export default function Variable({ node, setProperty, isEditMode, showValidation
     });
     const readOnly = !isEditMode;
 
-    const editors = [
-        { type: EditorType.SPEL_PARAMETER_EDITOR },
-        { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR },
-        { type: EditorType.JSON_TEMPLATE_PARAMETER_EDITOR },
-    ];
-
     return (
         <>
             <IdField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
@@ -65,7 +59,11 @@ export default function Variable({ node, setProperty, isEditMode, showValidation
                 <FieldLabelConsumer text="Variable Name" />
             </LabeledInput>
             <EditableEditor
-                editors={editors}
+                editors={[
+                    { type: EditorType.SPEL_PARAMETER_EDITOR },
+                    { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR },
+                    { type: EditorType.JSON_TEMPLATE_PARAMETER_EDITOR },
+                ]}
                 fieldLabel={"Expression"}
                 expressionObj={node.value}
                 onValueChange={onExpressionChange}

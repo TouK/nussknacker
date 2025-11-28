@@ -7,6 +7,7 @@ import { v4 as uuid4 } from "uuid";
 
 import { useAppSelector } from "../../../../store/storeHelpers";
 import { DndItems } from "../../../common/dndItems/DndItems";
+import { EditorType } from "../editors/expression/types";
 import { FieldsRow } from "../fragment-input-definition/FieldsRow";
 import { NodeRowFieldsProvider } from "../node-row-fields-provider/NodeRowFieldsProvider";
 import { getFindAvailableVariables } from "../NodeDetailsContent/selectors";
@@ -33,8 +34,14 @@ export type AggregateValue = WithUuid<AggRow>;
 
 export function AggregatorField({ parameterDefinitions, node, isEditMode, showValidation }: FieldWrapperProps) {
     const aggregators = useMemo(() => {
-        const definition = findParamDefinitionByName(parameterDefinitions, "aggregator");
-        return definition.editors[0].possibleValues || [];
+        const { editors } = findParamDefinitionByName(parameterDefinitions, "aggregator");
+        // this for is workaround for ts<5 to narrow type
+        for (const editor of editors) {
+            if (editor.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR) {
+                return editor.possibleValues;
+            }
+        }
+        return [];
     }, [parameterDefinitions]);
 
     const { aggregator } = useContext(AggregateContext);

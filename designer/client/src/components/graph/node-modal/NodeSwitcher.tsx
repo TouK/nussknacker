@@ -91,6 +91,7 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
     const editorConfig = useMemo(() => {
         const possibleValues = componentsToSelect.map((c) => ({ expression: c.componentId, label: c.label }));
         return {
+            type: EditorType.FIXED_VALUES_PARAMETER_EDITOR,
             possibleValues: onCreate
                 ? [
                       {
@@ -100,7 +101,7 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
                       ...possibleValues,
                   ]
                 : possibleValues,
-        };
+        } as const;
     }, [componentsToSelect, onCreate]);
 
     if (!creatorType) return null;
