@@ -10,6 +10,7 @@ import { TimeEditor } from "./DateTimeEditor/TimeEditor";
 import { DictParameterEditor } from "./DictParameterEditor/DictParameterEditor";
 import { DurationEditor } from "./Duration/DurationEditor";
 import { PeriodEditor } from "./Duration/PeriodEditor";
+import type { EditorConfig } from "./EditorConfig";
 import { FixedValuesEditor } from "./FixedValuesEditor";
 import type { Formatter } from "./Formatter";
 import { JsonEditor } from "./JsonEditor";
@@ -26,7 +27,7 @@ import { EditorType } from "./types";
 export type EditorProps = {
     onValueChange: OnValueChange;
     type?: EditorType;
-    editorConfig?: Record<string, unknown>;
+    editorConfig?: EditorConfig;
     className?: string;
     fieldErrors: FieldError[];
     formatter?: Formatter;
@@ -45,7 +46,7 @@ export type SimpleEditor<P extends EditorProps = EditorProps> =
     | ForwardRefExoticComponent<P & EditorProps>;
 
 export type ExtendedEditor<P extends EditorProps = EditorProps> = SimpleEditor<P> & {
-    isSwitchableTo: (expressionObj: ExpressionObj, editorConfig) => boolean;
+    isSwitchableTo: (expressionObj: P["expressionObj"], editorConfig: P["editorConfig"]) => boolean;
     parseValueOnEditorChange?: (expressionObject: ExpressionObj, newLanguage: ExpressionLang) => ExpressionObj;
     notSwitchableToHint: () => string;
 };

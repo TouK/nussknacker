@@ -7,11 +7,12 @@ import { useTranslation } from "react-i18next";
 import { blendDarken, getBorderColor } from "../../../../../containers/theme/helpers";
 import type { Option } from "../../fragment-input-definition/TypeSelect";
 import { editors, isExtendedEditor } from "../expression/Editor";
+import type { EditorConfig } from "../expression/EditorConfig";
 import { editorsParameters } from "../expression/editorsParameters";
 import type { ExpressionObj } from "../expression/types";
 import { EditorType } from "../expression/types";
 import { InfoTooltip } from "../InfoTooltip/InfoTooltip";
-import type { Editor, ParamType } from "../types";
+import type { ParamType } from "../types";
 
 const StyledTab = styled(Tab)(({ theme }) => ({
     fontSize: "0.65rem",
@@ -37,7 +38,7 @@ const StyledTab = styled(Tab)(({ theme }) => ({
     },
 }));
 
-const SINGLE_EDITOR_TO_DISPLAY: Editor["type"][] = [
+const SINGLE_EDITOR_TO_DISPLAY: EditorConfig["type"][] = [
     EditorType.CRON_EDITOR,
     EditorType.JSON_PARAMETER_EDITOR,
     EditorType.SPEL_PARAMETER_EDITOR,
@@ -87,9 +88,9 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
         [readOnly, allowsSwitch, t],
     );
 
-    const [selectedEditorType, setSelectedEditorType] = useState<Editor["type"]>(
+    const [selectedEditorType, setSelectedEditorType] = useState<EditorConfig["type"]>(
         () =>
-            availableEditors.find((editor: Editor) => {
+            availableEditors.find((editor: EditorConfig) => {
                 const editorParameters = editorsParameters[editor.type];
 
                 return editorParameters?.language === expressionObj.language && allowsSwitch(editor);

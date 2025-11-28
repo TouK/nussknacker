@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { VariableTypes } from "../../../../../../../types/validation";
 import { DictParameterEditor } from "../../../../editors/expression/DictParameterEditor/DictParameterEditor";
 import { SpelEditor } from "../../../../editors/expression/SpelEditor";
-import { ExpressionLang } from "../../../../editors/expression/types";
+import { EditorType, ExpressionLang } from "../../../../editors/expression/types";
 import { FormControl } from "../../../../editors/FormControl";
 import type { FieldError } from "../../../../editors/Validators";
 import type { FixedValuesOption, FragmentInputParameter, onChangeType } from "../../../item/types";
@@ -55,7 +55,7 @@ export default function InitialValue({ onChange, item, path, options, readOnly, 
                     onValueChange={(value) =>
                         onChange(`${path}.initialValue`, { label: item.valueEditor.dictId, expression: value.expression })
                     }
-                    editorConfig={{ dictId: item.valueEditor.dictId }}
+                    editorConfig={{ type: EditorType.DICT_PARAMETER_EDITOR, dictId: item.valueEditor.dictId }}
                     readOnly={!item.valueEditor.dictId}
                 />
             ) : (

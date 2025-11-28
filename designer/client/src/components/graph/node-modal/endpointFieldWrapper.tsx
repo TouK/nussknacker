@@ -4,6 +4,7 @@ import { CopyIconButton } from "../../../common/copyToClipboard/CopyIconButton";
 import { useCopyClipboard } from "../../../common/copyToClipboard/useCopyToClipboard";
 import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../store/storeHelpers";
+import { EditorType } from "./editors/expression/types";
 import { FieldAddons } from "./fieldAddons";
 import { GenerateNewEndpoint } from "./node-action-buttons/GenerateNewEndpoint";
 import type { FieldWrapperProps, ParameterExpressionFieldProps } from "./ParameterExpressionField";
@@ -18,9 +19,14 @@ export function CopyEndpoint({
     const expression = parameter.expression.expression;
 
     const onClick = useCallback(() => {
-        const possibleValues = parameterDefinition.editors[0].possibleValues;
-        const selectedValue = possibleValues.find((v) => v.expression === expression);
-        copy(selectedValue.label);
+        // this for is workaround for ts<5 to narrow type
+        for (const editor of parameterDefinition.editors) {
+            if (editor.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR) {
+                const selectedValue = editor.possibleValues.find((v) => v.expression === expression);
+                copy(selectedValue.label);
+                return;
+            }
+        }
     }, [parameterDefinition.editors, copy, expression]);
 
     return <CopyIconButton onClick={onClick} isCopied={isCopied} />;
