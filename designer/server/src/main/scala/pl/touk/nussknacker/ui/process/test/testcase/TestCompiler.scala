@@ -40,18 +40,18 @@ class TestCompiler(expressionCompiler: ExpressionCompiler) {
 
   //todo: take care what should be done when scenario is only partially compiled (there were some errors)
   //todo: to decide where should be input data validation (especially in context of validation during edition and saving)
-  def compile(test: TestCase, typing: Map[String, NodeTypingData]): ValidatedNel[ProcessCompilationError, CompiledTestCase] = {
-    val mocksV = test.mocks
+  def compile(testCase: TestCase, scenarioTypingResult: Map[String, NodeTypingData]): ValidatedNel[ProcessCompilationError, CompiledTestCase] = {
+    val mocksV = testCase.mocks
       .filter(_ => false) //todo: disabled
       .map { case (nodeId, mock) =>
-        compileMock(nodeId, mock, typing, test.id).map(nodeId -> _)
+        compileMock(nodeId, mock, scenarioTypingResult, testCase.id).map(nodeId -> _)
       }
       .toList
       .sequence
 
-    val assertionsV = test.assertions
+    val assertionsV = testCase.assertions
       .map { case (node, assertions) =>
-        compileAssertions(node, assertions, typing, test.id).map(node -> _)
+        compileAssertions(node, assertions, scenarioTypingResult, testCase.id).map(node -> _)
       }
       .toList
       .sequence
@@ -61,8 +61,8 @@ class TestCompiler(expressionCompiler: ExpressionCompiler) {
       assertionsV
     ) { (validMocks, validAssertions) =>
       CompiledTestCase(
-        test.id,
-        test.inputs,
+        testCase.id,
+        testCase.inputs,
         validMocks.toMap,
         validAssertions.toMap
       )
