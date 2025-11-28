@@ -1,7 +1,7 @@
 //types from pl.touk.nussknacker.ui.definition
 
+import type { EditorConfig } from "../components/graph/node-modal/editors/expression/EditorConfig";
 import type { ExpressionLang } from "../components/graph/node-modal/editors/expression/types";
-import type { Editor } from "../components/graph/node-modal/editors/types";
 
 interface TypingResultBase {
     value?: string | number | boolean;
@@ -45,7 +45,7 @@ export type TypingResult = UnknownTyping | SingleTypingResult | UnionTyping;
 export interface UIParameter {
     name: string;
     typ: TypingResult;
-    editors?: Editor[];
+    editors?: EditorConfig[];
     defaultValue: {
         language: ExpressionLang | string;
         expression: string;

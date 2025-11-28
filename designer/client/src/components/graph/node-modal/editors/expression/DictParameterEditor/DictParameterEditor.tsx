@@ -17,6 +17,7 @@ import ValidationLabels from "../../../../../modals/ValidationLabels";
 import { nodeInput, nodeInputWithError, nodeValue } from "../../../NodeDetailsContent/NodeTableStyled";
 import type { FieldError } from "../../Validators";
 import type { ExtendedEditor, OnValueChange } from "../Editor";
+import type { EditorConfigForType } from "../EditorConfig";
 import { editorsParameters } from "../editorsParameters";
 import type { ExpressionObj } from "../types";
 import { EditorType, ExpressionLang } from "../types";
@@ -25,7 +26,7 @@ interface Props {
     expressionObj: ExpressionObj;
     onValueChange: OnValueChange;
     fieldErrors: FieldError[];
-    editorConfig: $TodoType;
+    editorConfig: EditorConfigForType<EditorType.DICT_PARAMETER_EDITOR>;
     showValidation: boolean;
     readOnly: boolean;
 }

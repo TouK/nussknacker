@@ -9,13 +9,13 @@ import type { VariableTypes } from "../../../../types/validation";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 import type { OnValueChange } from "./expression/Editor";
 import { editors as editorsClasses } from "./expression/Editor";
+import type { EditorConfig } from "./expression/EditorConfig";
 import { spelFormatters } from "./expression/Formatter";
 import type { ExpressionObj } from "./expression/types";
 import { EditorType, ExpressionLang } from "./expression/types";
 import { FieldSwitch } from "./field/FieldSwitch";
 import { FormControl, FormLabel } from "./FormControl";
 import { FieldLabelConsumer } from "./RenderFieldLabel";
-import type { Editor } from "./types";
 import type { FieldError, PossibleValue } from "./Validators";
 
 interface Props {
@@ -24,7 +24,7 @@ interface Props {
     fieldLabel?: string;
     readOnly?: boolean;
     valueClassName?: string;
-    editors?: Editor[];
+    editors?: EditorConfig[];
     paramType?: TypingResult;
     values?: Array<PossibleValue>;
     isMarked?: boolean;
@@ -41,8 +41,8 @@ interface Props {
 export const EditableEditor = forwardRef((props: Props, ref) => {
     const { expressionObj, valueClassName, editors, paramType, fieldErrors = [], validationLabelInfo } = props;
 
-    const availableEditors: Editor[] = useMemo(
-        (): Editor[] => (isEmpty(editors) ? [{ type: EditorType.SPEL_PARAMETER_EDITOR }] : editors),
+    const availableEditors: EditorConfig[] = useMemo(
+        (): EditorConfig[] => (isEmpty(editors) ? [{ type: EditorType.SPEL_PARAMETER_EDITOR }] : editors),
         [editors],
     );
 
