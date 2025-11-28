@@ -1,6 +1,6 @@
 import { css, styled, Typography, type TypographyProps } from "@mui/material";
 import i18next from "i18next";
-import React from "react";
+import React, { forwardRef } from "react";
 
 export const PanelScenarioDetails = styled("div")(
     ({ theme }) => css`
@@ -25,7 +25,9 @@ export const ScenarioDetailsItemWrapper = styled("div")(
     `,
 );
 
-const Typo = (props: TypographyProps) => <Typography title={i18next.t("panels.scenarioDetails.tooltip.name", "Name")} {...props} />;
+const Typo = forwardRef(function Typo(props: TypographyProps, forwardedRef: React.Ref<HTMLElement>) {
+    return <Typography ref={forwardedRef} title={i18next.t("panels.scenarioDetails.tooltip.name", "Name")} {...props} />;
+});
 
 export const ProcessName = styled(Typo)({
     overflow: "hidden",

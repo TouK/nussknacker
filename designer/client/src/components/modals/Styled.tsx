@@ -1,7 +1,9 @@
 import { styled, Typography, type TypographyProps } from "@mui/material";
-import React from "react";
+import React, { forwardRef } from "react";
 
-const Typo = (props: TypographyProps) => <Typography variant="subtitle1" {...props} />;
+const Typo = forwardRef(function Typo(props: TypographyProps, forwardedRef: React.Ref<HTMLElement>) {
+    return <Typography ref={forwardedRef} variant="subtitle1" {...props} />;
+});
 
 export const VersionHeader = styled(Typo)(({ theme }) => ({
     margin: theme.spacing(2, 4),

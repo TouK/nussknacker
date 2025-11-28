@@ -4,7 +4,7 @@ import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager
 import i18next from "i18next";
 import { capitalize, startCase } from "lodash";
 import moment from "moment";
-import React, { useMemo } from "react";
+import React, { forwardRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import NuLogoIcon from "../../assets/img/nussknacker-logo-icon.svg";
@@ -18,7 +18,9 @@ import { useGetAllCombinations } from "../useGetAllCombinations";
 
 const ItemWrapperStyled = styled("div")({ display: "grid", gridAutoColumns: "minmax(0, 1fr)", gridAutoFlow: "column" });
 
-const Typo = (props: TypographyProps) => <Typography variant="caption" fontWeight={300} {...props} />;
+const Typo = forwardRef(function Typo(props: TypographyProps, forwardedRef: React.Ref<HTMLElement>) {
+    return <Typography ref={forwardedRef} variant="caption" fontWeight={300} {...props} />;
+});
 
 const ItemLabelStyled = styled(Typo)({ display: "flex", justifyContent: "flex-end", marginRight: "8px" });
 
