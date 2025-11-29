@@ -13,7 +13,7 @@ import type { ReturnedType } from "../../../../../../../types/scenarioGraph";
 import type { NodeValidationError, VariableTypes } from "../../../../../../../types/validation";
 import { useDelayedEnterAction } from "../../../../../../toolbars/scenarioDetails/useDelayedEnterAction";
 import { SpelEditor } from "../../../../editors/expression/SpelEditor";
-import { ExpressionLang } from "../../../../editors/expression/types";
+import { EditorType, ExpressionLang } from "../../../../editors/expression/types";
 import { FormControl } from "../../../../editors/FormControl";
 import { getValidationErrorsForField, mandatoryValueValidator, uniqueValueValidator } from "../../../../editors/Validators";
 import type { FieldName, FixedValuesOption, onChangeType } from "../../../item/types";
@@ -190,6 +190,7 @@ export const UserDefinedListInput = ({
                         validationLabelInfo={
                             temporaryValuesTyping && <CircularProgress size={"1rem"} sx={(theme) => ({ marginTop: theme.spacing(0.5) })} />
                         }
+                        editorConfig={{ type: EditorType.SPEL_PARAMETER_EDITOR }}
                         expressionObj={{ language: ExpressionLang.SpEL, expression: temporaryListItem }}
                         onValueChange={(value) => {
                             setTemporaryListItem(value.expression.trim());

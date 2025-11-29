@@ -32,10 +32,10 @@ type BaseEditorProps = {
     readOnly?: boolean;
     showSwitch?: boolean;
     showValidation?: boolean;
+    editorConfig: EditorConfig;
 };
 
 export type EditorProps = BaseEditorProps & {
-    editorConfig?: EditorConfig;
     className?: string;
     formatter?: Formatter;
     expressionInfo?: ReactNode;
@@ -56,7 +56,7 @@ type Addons<P> = P extends EditorProps
 
 type ExtendedEditor<P = EditorProps> = SimpleEditor<P> & Addons<P>;
 
-type Cleaned<P> = WithoutDeprecated<P, BaseEditorProps>;
+type Cleaned<P> = WithoutDeprecated<P, NonNullable<unknown>>;
 
 export function prepareEditor<P>(Component: SimpleEditor<Cleaned<P>>, addons?: Addons<Cleaned<P>>) {
     if (!addons) return Component;
