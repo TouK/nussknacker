@@ -3,8 +3,6 @@ import { isEmpty } from "lodash";
 import moment from "moment";
 import React, { useCallback, useMemo } from "react";
 
-import type { FieldError } from "../../Validators";
-import type { OnValueChange } from "../Editor";
 import { prepareEditor } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
 import type { Formatter } from "../Formatter";
@@ -21,10 +19,6 @@ export type Duration = {
 };
 
 type Props = {
-    onValueChange: OnValueChange;
-    fieldErrors: FieldError[];
-    showValidation: boolean;
-    readOnly: boolean;
     isMarked: boolean;
     editorConfig: $TodoType;
     formatter: Formatter;

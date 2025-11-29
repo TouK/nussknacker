@@ -2,19 +2,13 @@ import i18next from "i18next";
 import { isEmpty } from "lodash";
 import React from "react";
 
-import type { FieldError } from "../Validators";
-import type { OnValueChange } from "./Editor";
 import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import { FixedValuesEditor } from "./FixedValuesEditor";
 import { EditorType, ExpressionLang } from "./types";
 
 type Props = {
-    onValueChange: OnValueChange;
-    readOnly: boolean;
     className: string;
-    fieldErrors: FieldError[];
-    showValidation: boolean;
 };
 
 const SUPPORTED_LANGUAGE = ExpressionLang.SpEL;

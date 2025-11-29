@@ -1,12 +1,12 @@
+import type { PropsOf } from "@emotion/react";
 import React, { forwardRef } from "react";
 import type ReactAce from "react-ace/lib/ace";
 
-import type { SpelEditorProps } from "../../editors/expression/SpelEditor";
 import { SpelEditor } from "../../editors/expression/SpelEditor";
 import type { ExpressionObj } from "../../editors/expression/types";
 import { ExpressionLang } from "../../editors/expression/types";
 
-type EditorProps = Omit<SpelEditorProps, "expressionObj" | "onValueChange" | "fieldErrors"> & {
+type EditorProps = Omit<PropsOf<typeof SpelEditor>, "expressionObj" | "onValueChange" | "fieldErrors"> & {
     value: string;
     onChange: (value: ExpressionObj) => void;
 };
