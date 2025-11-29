@@ -7,11 +7,9 @@ import type { OnValueChange } from "./Editor";
 import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import { FixedValuesEditor } from "./FixedValuesEditor";
-import type { ExpressionObj } from "./types";
 import { EditorType, ExpressionLang } from "./types";
 
 type Props = {
-    expressionObj: ExpressionObj;
     onValueChange: OnValueChange;
     readOnly: boolean;
     className: string;

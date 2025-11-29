@@ -24,7 +24,6 @@ import type { ExpressionObj } from "../types";
 import { EditorType, ExpressionLang } from "../types";
 
 interface Props {
-    expressionObj: ExpressionObj;
     onValueChange: OnValueChange;
     fieldErrors: FieldError[];
     editorConfig: EditorConfigForType<EditorType.DICT_PARAMETER_EDITOR>;

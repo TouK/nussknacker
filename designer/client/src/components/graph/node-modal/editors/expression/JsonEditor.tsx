@@ -20,7 +20,6 @@ import { EditorType, ExpressionLang } from "./types";
 import { useAceEditorRangeMessages } from "./useAceEditorRangeMessages";
 
 type Props = {
-    expressionObj: ExpressionObj;
     onValueChange: OnValueChange;
     className: string;
     showValidation?: boolean;
@@ -33,7 +32,7 @@ type Props = {
 };
 
 export const JsonEditor = prepareEditor<Props>(
-    ({ onValueChange, className, expressionObj, fieldErrors, showValidation, readOnly, isMarked, defaultValue }: Props) => {
+    ({ onValueChange, className, expressionObj, fieldErrors, showValidation, readOnly, isMarked, defaultValue }) => {
         const storedExpression = useMemo(() => expressionObj.expression.replace(/^["'](.*)["']$/, ""), [expressionObj.expression]);
         const [value, setValue] = useState(storedExpression);
         useEffect(() => {

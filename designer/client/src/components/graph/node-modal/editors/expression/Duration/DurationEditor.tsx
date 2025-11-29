@@ -21,7 +21,6 @@ export type Duration = {
 };
 
 type Props = {
-    expressionObj: ExpressionObj;
     onValueChange: OnValueChange;
     fieldErrors: FieldError[];
     showValidation: boolean;

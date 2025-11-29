@@ -22,7 +22,6 @@ type Props = {
         | EditorConfigForType<EditorType.FIXED_VALUES_PARAMETER_EDITOR>
         | EditorConfigForType<EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR>
         | EditorConfigForType<EditorType.FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR>;
-    expressionObj: ExpressionObj;
     onValueChange: OnValueChange;
     readOnly: boolean;
     className: string;
