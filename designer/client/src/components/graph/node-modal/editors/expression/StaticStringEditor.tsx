@@ -7,11 +7,9 @@ import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { Formatter } from "./Formatter";
 import { FormatterType, typeFormatters } from "./Formatter";
-import type { ExpressionObj } from "./types";
 import { EditorType } from "./types";
 
 type Props = {
-    expressionObj: ExpressionObj;
     onValueChange: OnValueChange;
     className: string;
     formatter: Formatter;
@@ -19,7 +17,7 @@ type Props = {
     showValidation: boolean;
 };
 
-export const StaticStringEditor = prepareEditor<Props>((props: Props) => {
+export const StaticStringEditor = prepareEditor<Props>((props) => {
     const { expressionObj, onValueChange, formatter, ...passProps } = props;
     const stringFormatter = formatter == null ? typeFormatters[FormatterType.String] : formatter;
 

@@ -57,7 +57,7 @@ type Addons<P> = P extends EditorProps
 type ExtendedEditor<P = EditorProps> = SimpleEditor<P> & Addons<P>;
 
 type WithoutDeprecated<P> = P extends {
-    __xxx: number;
+    expressionObj: ExpressionObj;
 }
     ? never
     : P & EditorProps;

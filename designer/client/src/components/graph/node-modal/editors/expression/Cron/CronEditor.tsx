@@ -18,7 +18,6 @@ import { CronEditorStyled } from "./CronEditorStyled";
 export type CronExpression = string;
 
 type Props = {
-    expressionObj: ExpressionObj;
     onValueChange: OnValueChange;
     fieldErrors: FieldError[];
     showValidation: boolean;

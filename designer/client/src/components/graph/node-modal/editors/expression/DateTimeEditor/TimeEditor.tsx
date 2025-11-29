@@ -16,7 +16,7 @@ const isParseable = (expression: ExpressionObj): boolean => {
     const date = spelFormatters[FormatterType.Time].decode(expression.expression);
     return date && moment(date, timeFormat).isValid();
 };
-type TimeEditorProps = Omit<DatepickerEditorProps, "dateFormat" | "expressionType" | "language">;
+type TimeEditorProps = Omit<DatepickerEditorProps, "dateFormat" | "expressionType" | "language" | "expressionObj">;
 
 export const TimeEditor = prepareEditor<TimeEditorProps>(
     (props) => {

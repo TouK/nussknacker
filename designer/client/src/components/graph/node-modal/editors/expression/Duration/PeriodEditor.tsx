@@ -20,7 +20,6 @@ export type Period = {
 };
 
 type Props = {
-    expressionObj: ExpressionObj;
     onValueChange: OnValueChange;
     fieldErrors: FieldError[];
     showValidation: boolean;

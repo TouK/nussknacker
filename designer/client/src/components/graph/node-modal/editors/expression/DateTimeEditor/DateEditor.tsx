@@ -17,7 +17,7 @@ const isParseable = (expression: ExpressionObj): boolean => {
     return date && moment(date, dateFormat).isValid();
 };
 
-type DateEditorProps = Omit<DatepickerEditorProps, "dateFormat" | "expressionType">;
+type DateEditorProps = Omit<DatepickerEditorProps, "dateFormat" | "expressionType" | "expressionObj">;
 
 export const DateEditor = prepareEditor<DateEditorProps>(
     (props) => {
