@@ -2,8 +2,6 @@ import i18next from "i18next";
 import React from "react";
 
 import { Textarea } from "../field/Textarea";
-import type { FieldError } from "../Validators";
-import type { OnValueChange } from "./Editor";
 import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { Formatter } from "./Formatter";
@@ -11,18 +9,13 @@ import { FormatterType, typeFormatters } from "./Formatter";
 import { EditorType, ExpressionLang } from "./types";
 
 type Props = {
-    onValueChange: OnValueChange;
     onFocus?: () => void;
     className?: string;
     inputClassName?: string;
     formatter?: Formatter;
-    fieldErrors: FieldError[];
-    showValidation: boolean;
     isMarked?: boolean;
     autoFocus?: boolean;
     placeholder?: string;
-    readOnly?: boolean;
-    type?: EditorType;
 };
 
 export const TextareaEditor = prepareEditor<Props>(
@@ -39,7 +32,6 @@ export const TextareaEditor = prepareEditor<Props>(
         showValidation,
         placeholder,
         readOnly,
-        type,
     }) => {
         const stringFormatter = formatter == null ? typeFormatters[FormatterType.String] : formatter;
 
@@ -62,7 +54,6 @@ export const TextareaEditor = prepareEditor<Props>(
                 onFocus={onFocus}
                 placeholder={placeholder}
                 readOnly={readOnly}
-                type={type}
             />
         );
     },

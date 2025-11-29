@@ -1,8 +1,6 @@
 import React from "react";
 
 import Input from "../field/Input";
-import type { FieldError } from "../Validators";
-import type { OnValueChange } from "./Editor";
 import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { Formatter } from "./Formatter";
@@ -10,11 +8,8 @@ import { FormatterType, typeFormatters } from "./Formatter";
 import { EditorType } from "./types";
 
 type Props = {
-    onValueChange: OnValueChange;
     className: string;
     formatter: Formatter;
-    fieldErrors: FieldError[];
-    showValidation: boolean;
 };
 
 export const StaticStringEditor = prepareEditor<Props>((props) => {

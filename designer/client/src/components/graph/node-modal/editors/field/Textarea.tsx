@@ -18,7 +18,6 @@ interface Props {
     placeholder: string;
     formattedValue: string;
     className: string;
-    type: string;
     inputClassName: string;
     onFocus: () => void;
     fieldErrors: FieldError[];

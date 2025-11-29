@@ -9,8 +9,6 @@ import { selectStyled } from "../../../../../stylesheets/SelectStyled";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { PreloadedIcon } from "../../../../toolbars/creator/ComponentIcon";
 import type { FixedValuesOption } from "../../fragment-input-definition/item/types";
-import type { FieldError } from "../Validators";
-import type { OnValueChange } from "./Editor";
 import { prepareEditor } from "./Editor";
 import type { EditorConfigForType } from "./EditorConfig";
 import { editorsParameters } from "./editorsParameters";
@@ -22,12 +20,8 @@ type Props = {
         | EditorConfigForType<EditorType.FIXED_VALUES_PARAMETER_EDITOR>
         | EditorConfigForType<EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR>
         | EditorConfigForType<EditorType.FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR>;
-    onValueChange: OnValueChange;
-    readOnly: boolean;
     className: string;
     param?: $TodoType;
-    showValidation: boolean;
-    fieldErrors: FieldError[];
 };
 
 interface Option {

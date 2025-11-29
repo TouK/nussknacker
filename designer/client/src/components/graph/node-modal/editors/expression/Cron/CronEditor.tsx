@@ -5,8 +5,6 @@ import Cron from "react-cron-generator";
 
 import { nodeValue } from "../../../NodeDetailsContent/NodeTableStyled";
 import Input from "../../field/Input";
-import type { FieldError } from "../../Validators";
-import type { OnValueChange } from "../Editor";
 import { prepareEditor } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
 import type { Formatter } from "../Formatter";
@@ -18,10 +16,6 @@ import { CronEditorStyled } from "./CronEditorStyled";
 export type CronExpression = string;
 
 type Props = {
-    onValueChange: OnValueChange;
-    fieldErrors: FieldError[];
-    showValidation: boolean;
-    readOnly: boolean;
     isMarked: boolean;
     formatter: Formatter;
 };

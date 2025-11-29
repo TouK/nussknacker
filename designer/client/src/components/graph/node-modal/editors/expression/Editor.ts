@@ -11,6 +11,7 @@ import { DictParameterEditor } from "./DictParameterEditor/DictParameterEditor";
 import { DurationEditor } from "./Duration/DurationEditor";
 import { PeriodEditor } from "./Duration/PeriodEditor";
 import type { EditorConfig } from "./EditorConfig";
+import type { PrintMissingProps, WithoutDeprecated } from "./EditorTypeHelpers";
 import { FixedValuesEditor } from "./FixedValuesEditor";
 import type { Formatter } from "./Formatter";
 import { JsonEditor } from "./JsonEditor";
@@ -35,7 +36,6 @@ type BaseEditorProps = {
 
 export type EditorProps = BaseEditorProps & {
     editorConfig?: EditorConfig;
-    type?: EditorType;
     className?: string;
     formatter?: Formatter;
     expressionInfo?: ReactNode;
@@ -44,7 +44,7 @@ export type EditorProps = BaseEditorProps & {
     rows?: number;
 };
 
-type SimpleEditor<P = EditorProps> = P extends EditorProps ? ComponentType<P & EditorProps> : never;
+type SimpleEditor<P = EditorProps> = P extends EditorProps ? ComponentType<P & EditorProps> : PrintMissingProps<P>;
 
 type Addons<P> = P extends EditorProps
     ? {
@@ -52,19 +52,15 @@ type Addons<P> = P extends EditorProps
           notSwitchableToHint: () => string;
           parseValueOnEditorChange?: (expressionObj: P["expressionObj"], nextLanguage: ExpressionLang) => ExpressionObj;
       }
-    : never;
+    : PrintMissingProps<P>;
 
 type ExtendedEditor<P = EditorProps> = SimpleEditor<P> & Addons<P>;
 
-type WithoutDeprecated<P> = P extends {
-    expressionObj: ExpressionObj;
-}
-    ? never
-    : P & EditorProps;
+type Cleaned<P> = WithoutDeprecated<P, BaseEditorProps>;
 
-export function prepareEditor<P>(Component: SimpleEditor<WithoutDeprecated<P>>, addons?: Addons<WithoutDeprecated<P>>) {
+export function prepareEditor<P>(Component: SimpleEditor<Cleaned<P>>, addons?: Addons<Cleaned<P>>) {
     if (!addons) return Component;
-    return Object.assign(Component, addons) as ExtendedEditor<WithoutDeprecated<P>>;
+    return Object.assign(Component, addons) as ExtendedEditor<Cleaned<P>>;
 }
 
 export function isExtendedEditor(editor: SimpleEditor | ExtendedEditor): editor is ExtendedEditor {

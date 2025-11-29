@@ -8,10 +8,8 @@ import { useAppSelector } from "../../../../../store/storeHelpers";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import type { ParamType } from "../types";
-import type { FieldError } from "../Validators";
 import { setupAceEditorSnippets } from "./AceEditorJsonBasedSnippets";
 import AceWithSettings from "./AceWithSettings";
-import type { OnValueChange } from "./Editor";
 import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import { ResetToDefaultButton } from "./ResetToDefaultButton";
@@ -20,12 +18,8 @@ import { EditorType, ExpressionLang } from "./types";
 import { useAceEditorRangeMessages } from "./useAceEditorRangeMessages";
 
 type Props = {
-    onValueChange: OnValueChange;
     className: string;
-    showValidation?: boolean;
-    fieldErrors: FieldError[];
     fieldName: string;
-    readOnly?: boolean;
     isMarked?: boolean;
     param?: ParamType;
     defaultValue?: ExpressionObj | string;

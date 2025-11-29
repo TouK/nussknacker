@@ -7,8 +7,6 @@ import { useTranslation } from "react-i18next";
 import { tryParseOrNull } from "../../../../../common/JsonUtils";
 import type { VariableTypes } from "../../../../../types/validation";
 import { InfoTooltip } from "../InfoTooltip/InfoTooltip";
-import type { FieldError } from "../Validators";
-import type { OnValueChange } from "./Editor";
 import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { ExpressionSuggestProps } from "./ExpressionSuggest";
@@ -19,11 +17,7 @@ import type { ExpressionObj } from "./types";
 import { EditorMode, EditorType, ExpressionLang } from "./types";
 
 export type SpelEditorProps = {
-    fieldErrors: FieldError[];
     isMarked?: boolean;
-    showValidation?: boolean;
-    readOnly?: boolean;
-    onValueChange: OnValueChange;
     rows?: number;
     cols?: number;
     className?: string;

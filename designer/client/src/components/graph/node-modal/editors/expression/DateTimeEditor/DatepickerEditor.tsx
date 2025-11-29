@@ -14,13 +14,13 @@ import type { ExpressionLang, ExpressionObj } from "../types";
 
 export interface DatepickerEditorProps {
     expressionObj: ExpressionObj;
-    readOnly: boolean;
+    readOnly?: boolean;
     className: string;
     onValueChange: OnValueChange;
     fieldErrors: FieldError[];
-    showValidation: boolean;
+    showValidation?: boolean;
     isMarked: boolean;
-    editorFocused: boolean;
+    editorFocused?: boolean;
     formatter: Formatter;
     momentFormat: string;
     dateFormat?: string;
