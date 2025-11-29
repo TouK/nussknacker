@@ -5,7 +5,7 @@ import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/gr
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeValidationError } from "../../../types/validation";
 import { JsonEditor } from "../../graph/node-modal/editors/expression/JsonEditor";
-import { ExpressionLang } from "../../graph/node-modal/editors/expression/types";
+import { EditorType, ExpressionLang } from "../../graph/node-modal/editors/expression/types";
 import type { VariablesCell } from "./CellContent";
 import type { TestingDataRecords } from "./Table";
 
@@ -43,6 +43,9 @@ export const VariablesEditor = ({ value, onChange }: Props) => {
                 className={""}
                 fieldErrors={validationErrors}
                 showValidation
+                editorConfig={{
+                    type: EditorType.JSON_PARAMETER_EDITOR,
+                }}
             />
         </>
     );

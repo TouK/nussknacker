@@ -66,6 +66,7 @@ export default function InitialValue({ onChange, item, path, options, readOnly, 
                     readOnly={readOnly}
                     showValidation={validationEnabled}
                     fieldErrors={fieldErrors}
+                    editorConfig={{ type: EditorType.SPEL_PARAMETER_EDITOR }}
                 />
             )}
         </FormControl>
