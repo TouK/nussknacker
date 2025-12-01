@@ -1,5 +1,11 @@
 import React from "react";
 
+import { InputData } from "./TestingContentElements/InputData";
+
 export const TestingContent = () => {
-    return <div>works</div>;
+    return (
+        <div>
+            <InputData />
+        </div>
+    );
 };
