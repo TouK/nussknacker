@@ -33,7 +33,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceP
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ExpressionsToTestDataConversionError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
-import pl.touk.nussknacker.ui.process.test.testcase.{AssertionVerifier, CompiledTestCase, NoopAssertionVerifier, TestCase, TestCaseCompiler}
+import pl.touk.nussknacker.ui.process.test.testcase._
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -297,12 +297,12 @@ class ScenarioTestService(
   }
 
   private def compileScenarioAndExtractNodeContextsTyping(scenarioGraph: ScenarioGraph,
-                                                      processVersion: ProcessVersion,
-                                                      isFragment: Boolean)(implicit user: LoggedUser): Map[String, NodeTypingData] = {
+                                                          processVersion: ProcessVersion,
+                                                          isFragment: Boolean)(implicit user: LoggedUser): Map[String, NodeTypingData] = {
     val validationResult = uiProcessValidator.validate(scenarioGraph, processVersion, isFragment)
     if (validationResult.hasErrors) {
       //todo: to be decided if the operation can be called directly by rest api not by designer
-      throw new IllegalStateException("Should not happen - only valid scenario should be allowed to be tested by designer")
+      throw new IllegalStateException(s"Should not happen - only valid scenario should be allowed to be tested by designer. Scenario has errors: ${validationResult.errors}")
     }
 
     validationResult.nodeResults
@@ -316,9 +316,8 @@ class ScenarioTestService(
   }
 
   private def verifyAssertions(test: CompiledTestCase, testResults: TestResults[Json]): TestResults[Json] = {
-    testResults.copy(assertionsResults =
-      assertionVerifier.verify(test, testResults.originalNodeResults)
-    )
+    val assertionsResults = assertionVerifier.verify(test, testResults.originalNodeResults)
+    testResults.copy(assertionsResults = assertionsResults)
   }
 
   def performTest(
