@@ -7,9 +7,7 @@ import { editorsParameters } from "./editorsParameters";
 import { FixedValuesEditor } from "./FixedValuesEditor";
 import { EditorType, ExpressionLang } from "./types";
 
-type Props = {
-    className: string;
-};
+type Props = NonNullable<unknown>;
 
 const SUPPORTED_LANGUAGE = ExpressionLang.SpEL;
 const TRUE_EXPRESSION = "true";

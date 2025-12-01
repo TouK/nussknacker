@@ -5,7 +5,6 @@ import type ReactAce from "react-ace/lib/ace";
 
 import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
-import type { Formatter } from "./Formatter";
 import type { SpelEditorProps } from "./SpelEditor";
 import { SpelEditor } from "./SpelEditor";
 import { isQuoted } from "./SpelQuotesUtils";
@@ -28,9 +27,7 @@ interface EditSession extends Ace.EditSession {
     getMode(): SyntaxMode;
 }
 
-export interface Props extends Omit<SpelEditorProps, "language"> {
-    formatter: Formatter;
-}
+export type Props = Omit<SpelEditorProps, "language">;
 
 function useAliasUsageHighlight(token = "alias") {
     const ref = useRef<ReactAce>(null);

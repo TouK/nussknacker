@@ -18,7 +18,6 @@ import { EditorType, ExpressionLang } from "./types";
 import { useAceEditorRangeMessages } from "./useAceEditorRangeMessages";
 
 type Props = {
-    className: string;
     fieldName: string;
     isMarked?: boolean;
     param?: ParamType;
