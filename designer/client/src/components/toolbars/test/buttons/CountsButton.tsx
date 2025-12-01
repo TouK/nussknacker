@@ -28,7 +28,7 @@ function CountsButton(props: ToolbarButtonProps) {
             loadingVariant={"determinate"}
             loadingProgress={percent}
             name={t("panels.actions.test-counts.name", "counts")}
-            title={t("panels.actions.test-counts.button.title", "count node invocations in given period")}
+            title={t("panels.actions.test-counts.button.title", "Show number of processed data records")}
             icon={<Icon />}
             disabled={disabled}
             onClick={() =>
