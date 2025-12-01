@@ -17,31 +17,28 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.validationHelpers.{
-  GenericParametersSource,
-  GenericParametersSourceNoGenerate,
-  GenericParametersSourceNoTestSupport,
-  SourceWithTestParameters
-}
+import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.compile.validationHelpers.{GenericParametersSink, GenericParametersSource, GenericParametersSourceNoGenerate, GenericParametersSourceNoTestSupport, SourceWithTestParameters}
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess.{FailedAssertion, ResultContext, SuccessfulAssertion}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
-import pl.touk.nussknacker.test.mock.StubFragmentRepository
-import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.MissingSourceError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.TestingCapabilitiesError.NoSourcesError
-import pl.touk.nussknacker.ui.process.test.testcase.{Assertion, TestCase}
+import pl.touk.nussknacker.ui.process.test.testcase.{Assertion, AssertionVerifierImpl, TestCase}
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatSerDe
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.time.Instant
+import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 class ScenarioTestServiceSpec
@@ -62,6 +59,7 @@ class ScenarioTestServiceSpec
       ComponentDefinition("genericSourceWithTestParameters", new SourceWithTestParameters),
       ComponentDefinition("sourceEmptyTimestamp", SourceGeneratingEmptyTimestamp),
       ComponentDefinition("sourceGeneratingEmptyData", SourceGeneratingEmptyData),
+      ComponentDefinition("genericParametersSink", GenericParametersSink),
     )
   )
 
@@ -714,16 +712,7 @@ class ScenarioTestServiceSpec
   test("should run test case") {
     import scala.concurrent.ExecutionContext.Implicits._
     import scala.concurrent.duration._
-
     val now = Instant.now()
-    val mockedTestResult = TestProcess.TestResults
-      .empty[Json]
-      .copy(
-        originalNodeResults = Map(
-          NodeId("someSource") -> (ResultContext[Any](ContextId.dummy, now, Map("someVariable" -> "foo")) ::
-            ResultContext[Any](ContextId.dummy, now, Map("someVariable" -> "bar")) :: Nil)
-        )
-      )
 
     val mockedTestExecutorService = new ScenarioTestExecutorService() {
       override def testProcess(
@@ -731,7 +720,22 @@ class ScenarioTestServiceSpec
           canonicalProcess: CanonicalProcess,
           scenarioTestData: ScenarioTestData
       )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestProcess.TestResults[Json]] = {
-        Future.successful(mockedTestResult)
+        scenarioTestData.commonFormatRecords(NodeId("source1")) shouldBe List(
+          (ScenarioTestCommonFormatJsonRecord(NodeId("source1"), Map("input" -> Json.fromString("record 1")), None), 0),
+          (ScenarioTestCommonFormatJsonRecord(NodeId("source1"), Map("input" -> Json.fromString("record 2")), None), 1),
+        )
+        Future.successful(TestProcess.TestResults
+          .empty[Json]
+          .copy(
+            originalNodeResults = Map(
+              NodeId("end") -> (
+                ResultContext[Any](ContextId.dummy, now, Map("otherNameThanInput" -> Map("a" -> "foo").asJava)) ::
+                ResultContext[Any](ContextId.dummy, now, Map("otherNameThanInput" -> Map("a" -> "bar").asJava)) ::
+                  Nil
+                )
+            )
+          )
+        )
       }
     }
 
@@ -747,7 +751,8 @@ class ScenarioTestServiceSpec
       TestFactory.processResolver(),
       processCounter = new ProcessCounter(new StubFragmentRepository(Map.empty)),
       testExecutorService = mockedTestExecutorService,
-      TestFactory.processValidator()
+      ProcessTestData.testProcessValidator(validator= ProcessValidator.default(new StubModelDataWithModelDefinition(modelData.modelDefinition))),
+      new AssertionVerifierImpl()
     )
 
     val scenarioRecords = PreliminaryScenarioRecords(
@@ -755,30 +760,37 @@ class ScenarioTestServiceSpec
         CommonFormatPreliminaryScenarioRecord(
           sourceId = NodeId("source1"),
           variables = Map("input" -> Json.fromString("record 1")),
-          upstreamTimestamp = Some(Instant.ofEpochMilli(1))
+          upstreamTimestamp = None
         ),
-        Nil,
+        CommonFormatPreliminaryScenarioRecord(
+          sourceId = NodeId("source1"),
+          variables = Map("input" -> Json.fromString("record 2")),
+          upstreamTimestamp = None
+        ) :: Nil,
       )
     )
 
-    val preliminaryRecordsSerDe = new PreliminaryScenarioRecordsSerDe(None, None, CommonDataFormatSerDe)
-    val serializedRecords: SerializedScenarioRecordsContent = preliminaryRecordsSerDe
+    val serializedRecords: SerializedScenarioRecordsContent = new PreliminaryScenarioRecordsSerDe(None, None, CommonDataFormatSerDe)
       .serialize(scenarioRecords)
       .getOrElse(throw new RuntimeException("Error during records serialization"))
+
+    val scenario =
+      ScenarioBuilder
+        .streaming("single source scenario")
+        .source("source1", "genericSource", "par1" -> "'a'".spel, "a" -> "42".spel)
+        .emptySink("end", "genericParametersSink", "par1" -> "'dummy'".spel, "dummy" -> "1L".spel)
 
     val testCase = TestCase(
       "someTest",
       serializedRecords.content,
       Map.empty,
       Map(
-        NodeId("someSource") -> List(
-          Assertion("#TEST.assertEquals(#contexts[0].someVariable, 'foo')"),
-          Assertion("#TEST.assertEquals(#contexts[1].someVariable, 'foo')")
+        NodeId("end") -> List(
+          Assertion("#TESTS.assertEquals(#contexts[0].otherNameThanInput.a, 'foo')"),
+          Assertion("#TESTS.assertEquals(#contexts[1].otherNameThanInput.a, 'foo')")
         )
       )
     )
-
-    val scenario = createScenarioWithSingleSource()
 
     val result = Await
       .result(
@@ -792,9 +804,9 @@ class ScenarioTestServiceSpec
       )
       .getOrElse(throw new RuntimeException("Error during performing test"))
 
-    result.results.assertionsResults(NodeId("someSource")) shouldBe List(
+    result.results.assertionsResults(NodeId("end")) shouldBe List(
       SuccessfulAssertion,
-      FailedAssertion("Expected: foo but found bar")
+      FailedAssertion("Expected: [bar] but found [foo]")
     )
   }
 

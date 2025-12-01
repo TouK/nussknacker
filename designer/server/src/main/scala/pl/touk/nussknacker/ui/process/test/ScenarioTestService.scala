@@ -312,7 +312,7 @@ class ScenarioTestService(
     val testCompiler = new TestCaseCompiler(expressionCompiler)
     //todo: to be decided if the operation can be called directly by rest api not by designer
     testCompiler.compile(test, nodesTyping)
-      .getOrElse(throw new IllegalStateException("Should not happen - only valid scenario should be allowed to be tested by designer"))
+      .fold(errors => throw new IllegalStateException(s"Should not happen - only valid test configuration should be allowed to be tested by designer Test configuration has errors: $errors"), identity)
   }
 
   private def verifyAssertions(test: CompiledTestCase, testResults: TestResults[Json]): TestResults[Json] = {
