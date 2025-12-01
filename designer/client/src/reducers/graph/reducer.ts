@@ -100,7 +100,13 @@ function adjustEdges(
 
 // scenario name is used as fake property in form so we should init it on load
 const appendScenarioNameToProperties = produce((scenario: Scenario) => {
-    scenario.scenarioGraph.properties.name = scenario.name;
+    scenario.scenarioGraph = {
+        ...scenario.scenarioGraph,
+        properties: {
+            ...scenario.scenarioGraph?.properties,
+            name: scenario.name,
+        },
+    };
 });
 
 const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
