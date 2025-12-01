@@ -1,5 +1,5 @@
 import { Box, type TooltipProps } from "@mui/material";
-import type { ForwardedRef, ReactNode } from "react";
+import type { ReactNode } from "react";
 import React, { forwardRef, useCallback, useMemo } from "react";
 import type ReactAce from "react-ace/lib/ace";
 import { useTranslation } from "react-i18next";
@@ -42,8 +42,8 @@ function looksLikeSpelTemplateExpression(expr: string): boolean {
     return /#\{[\s\S]*?\}/.test(trimmed); // #{ ... }
 }
 
-export const SpelEditor = prepareEditor<SpelEditorProps>(
-    forwardRef(function SpelEditorComponent(props, forwardedRef: ForwardedRef<ReactAce>) {
+export const SpelEditor = prepareEditor<SpelEditorProps, ReactAce>(
+    forwardRef(function SpelEditorComponent(props, forwardedRef) {
         const { t } = useTranslation();
         const {
             expressionObj,
