@@ -10,16 +10,18 @@ import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
 import type { RootState } from "../../../../reducers";
 import { getCreatorType } from "../../../../reducers/selectors/getCreator";
+import { getTestResultsLoading } from "../../../../reducers/selectors/graph";
 import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import type { Edge } from "../../../../types/edge";
 import type { NodeType } from "../../../../types/node";
 import { WindowContent } from "../../../../windowManager/WindowContent";
 import type { WindowKind } from "../../../../windowManager/WindowKind";
+import { useTestingScenarioEnabled } from "../../../modals/TestingDataRecords/useTestingScenarioEnabled";
 import { useOnToolWindow } from "../../../modals/useOnToolWindow";
 import type { Scenario } from "../../../Process/types";
 import { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
-import { useToolbarHasButton } from "../../../toolbarSettings/useToolbarConfig";
+import { useGetButtonFromToolbar } from "../../../toolbarSettings/useToolbarConfig";
 import NodeUtils from "../../NodeUtils";
 import type { EditedNode } from "../IdField";
 import { InputOutputContent } from "../io/InputOutputContent";
@@ -81,7 +83,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const { t } = useTranslation();
     const { close, data } = props;
     const readOnly = useAppSelector((s: RootState) => getReadOnly(s, props.readOnly));
-    const IsTestingScenarioVisible = useToolbarHasButton(CustomButtonTypes.scenarioTest);
+    const buttonFromToolbar = useGetButtonFromToolbar(CustomButtonTypes.scenarioTest);
 
     const { node, editedNode, onChange, scenario, outputEdges, performNodeEdit, editState, editStateRef } = useNodeState(data.meta);
     const { cancel, apply } = useNodeDetailsButtons({ editedNode, outputEdges, performNodeEdit, close, readOnly });
@@ -101,6 +103,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
 
     const titleData = useTitleData(node);
     const buttons = useMemo(() => [openFragment, cancel, apply].filter(Boolean) as WindowButtonProps[], [apply, cancel, openFragment]);
+    const testResultsLoading = useAppSelector(getTestResultsLoading);
 
     const settings = useAppSelector(getUserSettings);
     const [PortalWrapper, portalRef] = usePortal();
@@ -139,6 +142,8 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
 
     useOnToolWindow(ToolId.node, node.id);
 
+    const testingScenarioEnabled = useTestingScenarioEnabled({ disabled: buttonFromToolbar.disabled });
+
     //no process? no nodes? no window contents! no errors for whole tree!
     if (!scenario?.scenarioGraph.nodes) {
         return null;
@@ -149,7 +154,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
             {settings["node.autoApply"] ? <EditStateFeedback editState={editState} /> : null}
 
             <WindowContent {...props} closeWithEsc={editState === "idle"} buttons={buttons} {...titleData} components={components}>
-                {IsTestingScenarioVisible ? (
+                {testingScenarioEnabled ? (
                     <TabsWrapper
                         tabs={[
                             {
@@ -161,6 +166,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
                             {
                                 label: "Testing",
                                 content: <TestingContent node={editedNode} />,
+                                isLoading: testResultsLoading,
                             },
                         ]}
                     />

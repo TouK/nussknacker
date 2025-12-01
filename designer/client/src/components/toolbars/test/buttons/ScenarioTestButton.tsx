@@ -5,20 +5,14 @@ import { useTranslation } from "react-i18next";
 import { testScenarioWithDataRecords } from "../../../../actions/nk/displayTestResults";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { convertViewportUnitToPixels } from "../../../../common/convertViewportUnitToPixels";
-import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
-import {
-    getTestCapabilities,
-    getTestingDataRecords,
-    getTestResultsLoading,
-    isLatestProcessVersion,
-} from "../../../../reducers/selectors/graph";
+import { getTestingDataRecords, getTestResultsLoading } from "../../../../reducers/selectors/graph";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../windowManager/WindowKind";
 import { getHasPendingChanges } from "../../../graph/node-modal/node/useEditState";
-import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
 import type { TestingData, TestingViewParams } from "../../../modals/TestingDataRecords/Dialog";
+import { useTestingScenarioEnabled } from "../../../modals/TestingDataRecords/useTestingScenarioEnabled";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import { ButtonsVariant, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons/ToolbarButtons";
 import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer";
@@ -74,16 +68,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
         return testingEventsParameters ? presets[1] : presets[0];
     }, [presets, testingEventsParameters]);
 
-    // Availability of adhoc testing
-    const adhocTestIsAvailable = useAdhocTestingAvailability(disabled);
-
-    // Availability of live data testing
-    const testCapabilities = useAppSelector(getTestCapabilities);
-    const processIsLatestVersion = useAppSelector(isLatestProcessVersion);
-    const testFromLiveDataIsAvailable =
-        !disabled && processIsLatestVersion && testCapabilities?.testWithLiveData.status === TestCapabilityStatus.AVAILABLE;
-
-    const atLeastOneTypeOfTestIsAvailable = adhocTestIsAvailable || testFromLiveDataIsAvailable;
+    const testingScenarioEnabled = useTestingScenarioEnabled({ disabled });
 
     const hasPendingChanges = useAppSelector(getHasPendingChanges);
 
@@ -125,7 +110,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                   "panels.actions.scenarioTest.button.testing-not-available-in-current-state-title",
                   "Scenario testing is not supported for scenario in current state",
               )
-            : !atLeastOneTypeOfTestIsAvailable
+            : !testingScenarioEnabled
             ? t(
                   "panels.actions.scenarioTest.button.testing-not-available-for-current-sources-title",
                   "Scenario testing is not supported for currently configured sources",
@@ -175,7 +160,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                 };
             }}
             isLoading={isLoading}
-            disabled={!atLeastOneTypeOfTestIsAvailable || hasPendingChanges || isLoading}
+            disabled={!testingScenarioEnabled || hasPendingChanges || isLoading}
             onClick={() => openDialog(presetActionOnButtonClick)}
             type={type}
             presets={presets}

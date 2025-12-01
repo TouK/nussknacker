@@ -4,6 +4,7 @@ import React, { useState } from "react";
 interface TabDef {
     label: string;
     content: React.ReactNode;
+    isLoading?: boolean;
 }
 
 interface Props {
@@ -32,7 +33,7 @@ export const TabsWrapper = ({ tabs }: Props) => {
                 }}
             >
                 {tabs.map((t, i) => (
-                    <Tab key={i} label={t.label} id={`tab-${i}`} aria-controls={`tabpanel-${i}`} />
+                    <Tab key={i} label={t.label} id={`tab-${i}`} aria-controls={`tabpanel-${i}`} disabled={t.isLoading} />
                 ))}
             </Tabs>
             {tabs[value].content}

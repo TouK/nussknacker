@@ -8,9 +8,5 @@ interface Props {
 }
 
 export const TestingContent = ({ node }: Props) => {
-    return (
-        <div>
-            <InputData sourceId={node.id} />
-        </div>
-    );
+    return <div>{node.type === "Source" && <InputData sourceId={node.id} />}</div>;
 };
