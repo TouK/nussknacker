@@ -160,7 +160,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
                             },
                             {
                                 label: "Testing",
-                                content: <TestingContent />,
+                                content: <TestingContent node={editedNode} />,
                             },
                         ]}
                     />

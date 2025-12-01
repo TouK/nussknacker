@@ -1,23 +1,25 @@
 import React, { useMemo } from "react";
 
-import { getTestCapabilities, getTestingDataRecords } from "../../../../../../reducers/selectors/graph";
+import { getTestCapabilities, getTestingDataRecordsForSingleSource } from "../../../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
 import { Table } from "../../../../../modals/TestingDataRecords/Table";
 import { useDataRecordsTableActions } from "../../../../../modals/TestingDataRecords/useDataRecordsTableActions";
 import { ContentSize } from "../../ContentSize";
 
-export const InputData = () => {
-    const testingDataRecords = useAppSelector(getTestingDataRecords);
+interface Props {
+    sourceId: string;
+}
+
+export const InputData = ({ sourceId }: Props) => {
+    const testingDataRecords = useAppSelector((state) => getTestingDataRecordsForSingleSource(state, sourceId));
 
     const { cellErrors, handleRowAdded, dataRecords, handleRowMoved, handleRowsDeleted, handleRowUpdated } = useDataRecordsTableActions({
         testingDataRecords: testingDataRecords || [],
     });
-    const testCapabilities = useAppSelector(getTestCapabilities);
-    const defaultParameter = testCapabilities.testWithParameters.sourceParameters[0];
 
-    const sourceOptions = useMemo(
-        () => testCapabilities.testWithParameters.sourceParameters.flatMap((sourceParameter) => sourceParameter.sourceId),
-        [testCapabilities.testWithParameters.sourceParameters],
+    const testCapabilities = useAppSelector(getTestCapabilities);
+    const defaultParameter = testCapabilities.testWithParameters.sourceParameters.find(
+        (sourceParameter) => sourceParameter.sourceId === sourceId,
     );
 
     const defaultDataRecord = useMemo(
@@ -42,7 +44,7 @@ export const InputData = () => {
                 onRowsDeleted={handleRowsDeleted}
                 onRowUpdated={handleRowUpdated}
                 data={dataRecords}
-                sourceOptions={sourceOptions}
+                sourceOptions={[sourceId]}
                 sourceParameters={testCapabilities.testWithParameters.sourceParameters}
             />
         </ContentSize>

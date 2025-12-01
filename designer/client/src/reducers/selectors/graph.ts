@@ -70,6 +70,13 @@ export const isArchivePossible = createSelector(
 );
 export const getTestCapabilities = createSelector(getGraph, (g) => g.testCapabilities);
 export const getTestingDataRecords = createSelector(getTesting, (g) => g.testingDataRecords);
+
+const getSourceId = (_: unknown, sourceId: string) => sourceId;
+export const getTestingDataRecordsForSingleSource = createSelector(
+    [getTestingDataRecords, getSourceId],
+    (testingDataRecords, sourceId: string) => testingDataRecords?.filter((r) => r.sourceId === sourceId),
+);
+
 export const getTestParameters = createSelector(getGraph, (g) => g.testFormParameters || ([] as TestFormParameters[]));
 export const getTestResults = createSelector(getTesting, (g) => g.testResults);
 export const getTestResultsLoading = createSelector(getTesting, (g) => g.testResultsLoading);
