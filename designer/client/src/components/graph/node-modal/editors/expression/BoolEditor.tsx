@@ -19,7 +19,7 @@ const parseable = (expressionObj) => {
     return (expression === "true" || expression === "false") && language === SUPPORTED_LANGUAGE;
 };
 
-export const BoolEditor = prepareEditor<Props>(
+export const BoolEditor = prepareEditor(
     ({ expressionObj, readOnly, onValueChange, className, fieldErrors, showValidation = true }) => {
         const trueValue = { expression: TRUE_EXPRESSION, label: i18next.t("common.true", "true") };
         const falseValue = { expression: FALSE_EXPRESSION, label: i18next.t("common.false", "false") };

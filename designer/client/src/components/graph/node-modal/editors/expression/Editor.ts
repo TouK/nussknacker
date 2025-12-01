@@ -1,4 +1,4 @@
-import type { ComponentType, LegacyRef, ReactNode } from "react";
+import type { ComponentType, ForwardRefExoticComponent, PropsWithoutRef, ReactNode, RefAttributes } from "react";
 
 import type { VariableTypes } from "../../../../../types/validation";
 import type { Prettify } from "../../useNodeTypeDetailsContentLogic";
@@ -12,7 +12,6 @@ import { DictParameterEditor } from "./DictParameterEditor/DictParameterEditor";
 import { DurationEditor } from "./Duration/DurationEditor";
 import { PeriodEditor } from "./Duration/PeriodEditor";
 import type { EditorConfig } from "./EditorConfig";
-import type { PrintMissingProps, WithoutDeprecated } from "./EditorTypeHelpers";
 import { FixedValuesEditor } from "./FixedValuesEditor";
 import type { Formatter } from "./Formatter";
 import { JsonEditor } from "./JsonEditor";
@@ -41,34 +40,34 @@ export type CustomEditorProps = {
     editorConfig: EditorConfig;
     expressionInfo?: ReactNode;
     variableTypes?: VariableTypes;
-    ref?: LegacyRef<unknown>;
     rows?: number;
 };
 
 export type EditorProps = BaseEditorProps & CustomEditorProps;
 
-type SimpleEditor<P = EditorProps> = P extends EditorProps ? ComponentType<P & EditorProps> : PrintMissingProps<P>;
+type GetProps<C> = Prettify<EditorProps & PropsWithoutRef<C extends ComponentType<infer P> ? P : C>>;
+type GetComp<C> = C extends ComponentType<infer P> ? ComponentType<P> : ComponentType<C>;
 
-type Addons<P> = P extends EditorProps
-    ? {
-          isSwitchableTo: (expressionObj: P["expressionObj"], editorConfig: P["editorConfig"]) => boolean;
-          notSwitchableToHint: () => string;
-          parseValueOnEditorChange?: (expressionObj: P["expressionObj"], nextLanguage: ExpressionLang) => ExpressionObj;
-      }
-    : PrintMissingProps<P>;
+type SimpleEditor<C = EditorProps, P extends EditorProps = GetProps<C>> = GetComp<C> & ComponentType<P>;
 
-type ExtendedEditor<P = EditorProps> = SimpleEditor<P> & Addons<P>;
+type Addons<C = EditorProps, P extends EditorProps = GetProps<C>> = {
+    isSwitchableTo: (expressionObj: P["expressionObj"], editorConfig: P["editorConfig"]) => boolean;
+    notSwitchableToHint: () => string;
+    parseValueOnEditorChange?: (expressionObj: P["expressionObj"], nextLanguage: ExpressionLang) => ExpressionObj;
+};
 
-type Cleaned<P> = WithoutDeprecated<P, BaseEditorProps>;
+type ExtendedEditor<C = EditorProps> = SimpleEditor<C> & Addons<C>;
 
-export function prepareEditor<P>(Component: SimpleEditor<Cleaned<P>>): SimpleEditor<Prettify<P & Cleaned<P>>>;
-export function prepareEditor<P>(Component: SimpleEditor<Cleaned<P>>, addons: Addons<Cleaned<P>>): ExtendedEditor<Prettify<P & Cleaned<P>>>;
-export function prepareEditor<P>(
-    Component: SimpleEditor<Cleaned<P>>,
-    addons?: Addons<Cleaned<P>>,
-): SimpleEditor<P & Cleaned<P>> | ExtendedEditor<P & Cleaned<P>> {
-    if (!addons) return Component as SimpleEditor<P & Cleaned<P>>;
-    return Object.assign(Component, addons) as ExtendedEditor<P & Cleaned<P>>;
+export function prepareEditor<C, R = C extends RefAttributes<infer R> ? R : unknown>(
+    Component: unknown extends R
+        ? C extends ComponentType
+            ? C
+            : ComponentType<C & EditorProps>
+        : ForwardRefExoticComponent<GetProps<C> & RefAttributes<R>>,
+    addons?: Addons<typeof Component>,
+) {
+    if (!addons) return Component as SimpleEditor<typeof Component>;
+    return Object.assign(Component, addons) as ExtendedEditor<typeof Component>;
 }
 
 export function isExtendedEditor(editor: SimpleEditor | ExtendedEditor): editor is ExtendedEditor {
