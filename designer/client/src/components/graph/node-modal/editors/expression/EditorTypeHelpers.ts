@@ -21,4 +21,8 @@ type SplitToUnion<T> = {
     [K in keyof T]: { [P in K]: T[K] };
 }[keyof T];
 
-export type WithoutDeprecated<P, E> = P extends SplitToUnion<E> ? PrintNotAllowedProps<P, E> : P & EditorProps;
+export type WithoutDeprecated<P, E> = keyof P extends never
+    ? EditorProps
+    : P extends SplitToUnion<E>
+    ? PrintNotAllowedProps<P, E>
+    : P & EditorProps;

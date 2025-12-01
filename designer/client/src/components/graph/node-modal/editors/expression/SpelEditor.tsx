@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { tryParseOrNull } from "../../../../../common/JsonUtils";
 import type { VariableTypes } from "../../../../../types/validation";
+import type { Prettify } from "../../useNodeTypeDetailsContentLogic";
 import { InfoTooltip } from "../InfoTooltip/InfoTooltip";
 import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
@@ -20,7 +21,6 @@ export type SpelEditorProps = {
     isMarked?: boolean;
     rows?: number;
     cols?: number;
-    className?: string;
     variableTypes: VariableTypes;
     validationLabelInfo?: ReactNode;
     editorMode?: EditorMode;
@@ -73,7 +73,7 @@ export const SpelEditor = prepareEditor<SpelEditorProps>(
         const value = useMemo(() => expressionObj.expression, [expressionObj.expression]);
 
         const inputProps = useMemo<ExpressionSuggestProps["inputProps"]>(() => {
-            const properties: ExpressionSuggestProps["inputProps"] = {
+            const properties: Prettify<ExpressionSuggestProps["inputProps"]> = {
                 rows,
                 cols,
                 value,

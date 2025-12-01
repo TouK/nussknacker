@@ -1,6 +1,7 @@
 import type { ComponentType, LegacyRef, ReactNode } from "react";
 
 import type { VariableTypes } from "../../../../../types/validation";
+import type { Prettify } from "../../useNodeTypeDetailsContentLogic";
 import type { FieldError } from "../Validators";
 import { BoolEditor } from "./BoolEditor";
 import { CronEditor } from "./Cron/CronEditor";
@@ -32,17 +33,19 @@ type BaseEditorProps = {
     readOnly?: boolean;
     showSwitch?: boolean;
     showValidation?: boolean;
-    editorConfig: EditorConfig;
-};
-
-export type EditorProps = BaseEditorProps & {
     className?: string;
     formatter?: Formatter;
+};
+
+export type CustomEditorProps = {
+    editorConfig: EditorConfig;
     expressionInfo?: ReactNode;
     variableTypes?: VariableTypes;
     ref?: LegacyRef<unknown>;
     rows?: number;
 };
+
+export type EditorProps = BaseEditorProps & CustomEditorProps;
 
 type SimpleEditor<P = EditorProps> = P extends EditorProps ? ComponentType<P & EditorProps> : PrintMissingProps<P>;
 
@@ -56,11 +59,16 @@ type Addons<P> = P extends EditorProps
 
 type ExtendedEditor<P = EditorProps> = SimpleEditor<P> & Addons<P>;
 
-type Cleaned<P> = WithoutDeprecated<P, NonNullable<unknown>>;
+type Cleaned<P> = WithoutDeprecated<P, BaseEditorProps>;
 
-export function prepareEditor<P>(Component: SimpleEditor<Cleaned<P>>, addons?: Addons<Cleaned<P>>) {
-    if (!addons) return Component;
-    return Object.assign(Component, addons) as ExtendedEditor<Cleaned<P>>;
+export function prepareEditor<P>(Component: SimpleEditor<Cleaned<P>>): SimpleEditor<Prettify<P & Cleaned<P>>>;
+export function prepareEditor<P>(Component: SimpleEditor<Cleaned<P>>, addons: Addons<Cleaned<P>>): ExtendedEditor<Prettify<P & Cleaned<P>>>;
+export function prepareEditor<P>(
+    Component: SimpleEditor<Cleaned<P>>,
+    addons?: Addons<Cleaned<P>>,
+): SimpleEditor<P & Cleaned<P>> | ExtendedEditor<P & Cleaned<P>> {
+    if (!addons) return Component as SimpleEditor<P & Cleaned<P>>;
+    return Object.assign(Component, addons) as ExtendedEditor<P & Cleaned<P>>;
 }
 
 export function isExtendedEditor(editor: SimpleEditor | ExtendedEditor): editor is ExtendedEditor {

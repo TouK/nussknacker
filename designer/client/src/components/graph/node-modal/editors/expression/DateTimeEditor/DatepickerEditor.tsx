@@ -15,7 +15,7 @@ import type { ExpressionLang, ExpressionObj } from "../types";
 export interface DatepickerEditorProps {
     expressionObj: ExpressionObj;
     readOnly?: boolean;
-    className: string;
+    className?: string;
     onValueChange: OnValueChange;
     fieldErrors: FieldError[];
     showValidation?: boolean;

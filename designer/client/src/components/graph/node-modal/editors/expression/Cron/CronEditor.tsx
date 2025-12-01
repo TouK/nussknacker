@@ -7,7 +7,6 @@ import { nodeValue } from "../../../NodeDetailsContent/NodeTableStyled";
 import Input from "../../field/Input";
 import { prepareEditor } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
-import type { Formatter } from "../Formatter";
 import { FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import type { ExpressionObj } from "../types";
 import { EditorType } from "../types";
@@ -17,7 +16,6 @@ export type CronExpression = string;
 
 type Props = {
     isMarked: boolean;
-    formatter: Formatter;
 };
 
 // we have to pass some value to <Cron/> component

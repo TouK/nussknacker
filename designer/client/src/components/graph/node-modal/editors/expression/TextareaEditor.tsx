@@ -4,15 +4,12 @@ import React from "react";
 import { Textarea } from "../field/Textarea";
 import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
-import type { Formatter } from "./Formatter";
 import { FormatterType, typeFormatters } from "./Formatter";
 import { EditorType, ExpressionLang } from "./types";
 
 type Props = {
     onFocus?: () => void;
-    className?: string;
     inputClassName?: string;
-    formatter?: Formatter;
     isMarked?: boolean;
     autoFocus?: boolean;
     placeholder?: string;

@@ -22,7 +22,7 @@ import ProcessUtils from "../../../../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../../../../reducers/selectors/getProcessDefinitionData";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
-import type { EditorProps } from "../Editor";
+import type { CustomEditorProps, EditorProps } from "../Editor";
 import { prepareEditor } from "../Editor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { editorsParameters } from "../editorsParameters";
@@ -558,8 +558,8 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
     );
 };
 
-export const TableEditor = prepareEditor(
-    ({ className, ...props }: EditorProps) => {
+export const TableEditor = prepareEditor<CustomEditorProps>(
+    ({ className, ...props }) => {
         return (
             <Box className={className}>
                 <Box display="flex">

@@ -5,7 +5,6 @@ import React, { useCallback, useMemo } from "react";
 
 import { prepareEditor } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
-import type { Formatter } from "../Formatter";
 import { FormatterType, typeFormatters } from "../Formatter";
 import type { ExpressionObj } from "../types";
 import { EditorType } from "../types";
@@ -20,7 +19,6 @@ export type Period = {
 type Props = {
     isMarked: boolean;
     editorConfig: $TodoType;
-    formatter: Formatter;
 };
 
 const SPEL_PERIOD_SWITCHABLE_TO_REGEX =
