@@ -299,6 +299,7 @@ description: Stay informed with detailed changelogs covering new features, impro
   * sttp 3.9.8 -> 3.11.0
   * Tapir 1.11.7 -> 1.11.12
 * [#8606](https://github.com/TouK/nussknacker/pull/8606) `Testkit`: Added `TestNodeCompiler`
+* [#8733](https://github.com/TouK/nussknacker/pull/8733) Added support for Basic Authentication in OpenAPI Enricher
 
 ## 1.18
 
