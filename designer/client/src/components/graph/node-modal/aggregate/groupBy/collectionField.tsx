@@ -8,6 +8,7 @@ import type { VariableTypes } from "../../../../../types/validation";
 import type { ValueFieldProps } from "../../../../valueField";
 import { rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import { Editor } from "./editor";
+import { SpelChip } from "./spelChip";
 import { ValuesList } from "./valuesList";
 
 type CollectionFieldProps = ValueFieldProps<string[]> & {
@@ -125,7 +126,7 @@ export function CollectionField({ value, onChange, variableTypes, disabled }: Co
                 />
             </Collapse>
             <Collapse in={itemsVisible}>
-                <ValuesList values={values} onRemove={onRemove} onEdit={onEdit} />
+                <ValuesList values={values} onRemove={onRemove} onEdit={onEdit} ChipComponent={SpelChip} />
             </Collapse>
         </Stack>
     );
