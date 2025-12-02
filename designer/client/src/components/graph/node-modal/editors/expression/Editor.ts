@@ -1,4 +1,4 @@
-import type { ComponentType, ForwardRefExoticComponent, PropsWithoutRef, ReactNode, RefAttributes } from "react";
+import type { ComponentType, ForwardRefExoticComponent, PropsWithoutRef, RefAttributes } from "react";
 
 import type { VariableTypes } from "../../../../../types/validation";
 import type { Prettify } from "../../useNodeTypeDetailsContentLogic";
@@ -34,16 +34,11 @@ type BaseEditorProps = {
     showValidation?: boolean;
     className?: string;
     formatter?: Formatter;
-};
-
-export type CustomEditorProps = {
-    editorConfig: EditorConfig;
-    expressionInfo?: ReactNode;
     variableTypes?: VariableTypes;
-    rows?: number;
+    editorConfig: EditorConfig;
 };
 
-export type EditorProps = BaseEditorProps & CustomEditorProps;
+export type EditorProps = BaseEditorProps;
 
 type GetProps<C> = Prettify<EditorProps & PropsWithoutRef<C extends ComponentType<infer P> ? P : C>>;
 type GetComp<C> = C extends ComponentType<infer P> ? ComponentType<P> : ComponentType<C>;
@@ -58,20 +53,28 @@ type Addons<C = EditorProps, P extends EditorProps = GetProps<C>> = {
 
 type ExtendedEditor<C = EditorProps> = SimpleEditor<C> & Addons<C>;
 
-export function prepareEditor<C, R = C extends RefAttributes<infer R> ? R : unknown>(
-    Component: unknown extends R
-        ? C extends ComponentType
-            ? C
-            : ComponentType<C & EditorProps>
-        : ForwardRefExoticComponent<GetProps<C> & RefAttributes<R>>,
+type InferRef<C> = C extends RefAttributes<infer R> ? R : unknown;
+type InferComp<C, R = InferRef<C>> = unknown extends R
+    ? C extends ComponentType
+        ? C
+        : ComponentType<GetProps<C>>
+    : ForwardRefExoticComponent<GetProps<C> & RefAttributes<R>>;
+
+export function prepareEditor<C, R = InferRef<C>>(Component: InferComp<C, R>): SimpleEditor<typeof Component>;
+export function prepareEditor<C, R = InferRef<C>>(
+    Component: InferComp<C, R>,
+    addons: Addons<typeof Component>,
+): ExtendedEditor<typeof Component>;
+export function prepareEditor<C, R = InferRef<C>>(
+    Component: InferComp<C, R>,
     addons?: Addons<typeof Component>,
-) {
+): SimpleEditor<typeof Component> | ExtendedEditor<typeof Component> {
     if (!addons) return Component as SimpleEditor<typeof Component>;
     return Object.assign(Component, addons) as ExtendedEditor<typeof Component>;
 }
 
 export function isExtendedEditor(editor: SimpleEditor | ExtendedEditor): editor is ExtendedEditor {
-    return "isSwitchableTo" in editor;
+    return (editor as ExtendedEditor)?.isSwitchableTo !== undefined;
 }
 
 export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
@@ -94,7 +97,7 @@ export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
     [EditorType.DICT_PARAMETER_EDITOR]: DictParameterEditor,
     [EditorType.TABLE_EDITOR]: TableEditor,
     [EditorType.JSON_TEMPLATE_PARAMETER_EDITOR]: JsonTemplateEditor,
-};
+} as const;
 
 export type OnValueChange = {
     (expression: ExpressionObj): void;

@@ -69,7 +69,6 @@ export const EditableEditor = (props: Props) => {
                         className={`${valueClassName ? valueClassName : nodeValue}`}
                         fieldErrors={fieldErrors}
                         formatter={formatter}
-                        expressionInfo={validationLabelInfo}
                     />
                 );
             }}
