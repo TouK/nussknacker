@@ -442,8 +442,7 @@ class ManagementResourcesSpec
     }
   }
 
-
-  test("run test case") {
+  test("run test case - successful") {
     val testDataContent =
       """[
         |  {"sourceId":"startProcess","variables":{"input":["ala"]}},
@@ -453,7 +452,7 @@ class ManagementResourcesSpec
 
     val testCase = TestCase("dummy", testDataContent, Map.empty, Map(NodeId("endsuffix") -> List(
       Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])"),
-      Assertion("#TESTS.assertEquals('bela', #contexts[1].input[0])"),
+      Assertion("#TESTS.assertEquals('ala', #contexts[1].input[0])"),
     )))
     runTestCase(ProcessTestData.sampleScenario, testCase) ~> check {
       status shouldEqual StatusCodes.OK
@@ -470,8 +469,10 @@ class ManagementResourcesSpec
         .downField("assertionsResults")
         .downField("endsuffix")
         .downN(1)
-        .downField("type")
-        .focus shouldBe Some(Json.fromString("SuccessfulAssertion"))
+        .focus shouldBe Some(Json.obj(
+        "type" -> Json.fromString("FailedAssertion"),
+        "message" -> Json.fromString("Expected: [ala] but found [bela]")
+      ))
     }
   }
 

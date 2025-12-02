@@ -25,6 +25,8 @@ class NoopAssertionVerifier extends AssertionVerifier {
 
 }
 
+//todo: differences pretty printer (e.g. rendering arrays as spel arrays not java)
+//todo: better equality checking
 class AssertionVerifierImpl extends AssertionVerifier {
 
   override def verify(
