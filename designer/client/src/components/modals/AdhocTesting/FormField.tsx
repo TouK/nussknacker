@@ -63,7 +63,6 @@ export function FormField({ name }: { name: string }) {
                                 className={nodeValue}
                                 fieldErrors={getValidationErrorsForField(errors, name)}
                                 formatter={formatter}
-                                expressionInfo={null}
                                 onValueChange={setParam(name)}
                                 expressionObj={value[name]}
                                 readOnly={false}

@@ -21,20 +21,19 @@ const isParseable = (expression: ExpressionObj): boolean => {
 
 type DateTimeEditorProps = Omit<
     DatepickerEditorProps,
-    | "dateFormat"
-    | "expressionType"
-    | "formatter"
     | "className"
+    | "dateFormat"
     | "expressionObj"
-    | "showValidation"
-    | "readOnly"
-    | "onValueChange"
+    | "expressionType"
     | "fieldErrors"
+    | "formatter"
+    | "onValueChange"
+    | "readOnly"
+    | "showValidation"
 >;
 
 export const DateTimeEditor = prepareEditor<DateTimeEditorProps>(
-    (props) => {
-        const { formatter } = props;
+    ({ formatter, ...props }) => {
         const dateFormatter = formatter == null ? typeFormatters[FormatterType.DateTime] : formatter;
 
         return (

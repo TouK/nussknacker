@@ -19,12 +19,12 @@ const isParseable = (expression: ExpressionObj): boolean => {
 
 type DateEditorProps = Omit<
     DatepickerEditorProps,
-    | "dateFormat"
-    | "expressionType"
-    | "formatter"
     | "className"
+    | "dateFormat"
     | "expressionObj"
+    | "expressionType"
     | "fieldErrors"
+    | "formatter"
     | "onValueChange"
     | "readOnly"
     | "showValidation"

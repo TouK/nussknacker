@@ -14,7 +14,7 @@ import { CronEditorStyled } from "./CronEditorStyled";
 
 export type CronExpression = string;
 
-type Props = {
+type CronEditorProps = {
     isMarked: boolean;
 };
 
@@ -22,7 +22,7 @@ type Props = {
 // when expression is empty - this component sets some default cron value and trigger onValueChange - we don't want that
 const NOT_EXISTING_CRON_EXPRESSION = "-1 -1 -1 -1 -1 -1 -1";
 
-export const CronEditor = prepareEditor<Props>(
+export const CronEditor = prepareEditor<CronEditorProps>(
     (props) => {
         const node = useRef(null);
 

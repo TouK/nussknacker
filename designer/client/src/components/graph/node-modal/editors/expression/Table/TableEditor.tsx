@@ -114,7 +114,9 @@ export function useTableEditorTypeOptions() {
     };
 }
 
-export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: EditorProps) => {
+type TableProps = Pick<EditorProps, "expressionObj" | "onValueChange" | "className" | "fieldErrors">;
+
+export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: TableProps) => {
     const tableDateContext = useTableState(expressionObj);
     const [{ rows, columns }, dispatch, rawExpression] = tableDateContext;
 
@@ -559,13 +561,13 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
 };
 
 export const TableEditor = prepareEditor(
-    ({ className, ...props }) => {
+    ({ className, expressionObj, fieldErrors, onValueChange, showValidation }) => {
         return (
             <Box className={className}>
                 <Box display="flex">
-                    <Table {...props} />
+                    <Table expressionObj={expressionObj} fieldErrors={fieldErrors} onValueChange={onValueChange} className={className} />
                 </Box>
-                {props.showValidation && <ValidationLabels fieldErrors={props.fieldErrors} />}
+                {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
             </Box>
         );
     },
