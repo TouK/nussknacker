@@ -6,6 +6,7 @@ import cats.implicits.catsSyntaxTuple2Semigroupal
 import io.circe.Json
 import io.circe.syntax._
 import io.confluent.kafka.schemaregistry.ParsedSchema
+import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.GenericRecord
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -83,7 +84,7 @@ class UniversalKafkaSourceFactory(
   override protected val splitName: String = "partition"
 
   override val typesToExtract: List[TypedClass] =
-    Typed.typedClass[GenericRecord] :: Typed.typedClass[TimestampType] :: Nil
+    Typed.typedClass[GenericRecord] :: Typed.typedClass[TimestampType] :: Typed.typedClass[EnumSymbol] :: Nil
 
   override def contextTransformation(inputContext: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
