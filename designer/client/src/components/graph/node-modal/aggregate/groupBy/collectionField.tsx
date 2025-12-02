@@ -9,14 +9,16 @@ import type { ValueFieldProps } from "../../../../valueField";
 import { rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import { Editor } from "./editor";
 import { SpelChip } from "./spelChip";
+import type { ValuesListProps } from "./valuesList";
 import { ValuesList } from "./valuesList";
 
 type CollectionFieldProps = ValueFieldProps<string[]> & {
     variableTypes: VariableTypes;
     disabled?: boolean;
+    isValueValid?: ValuesListProps["isValid"];
 };
 
-export function CollectionField({ value, onChange, variableTypes, disabled }: CollectionFieldProps) {
+export function CollectionField({ value, onChange, variableTypes, disabled, isValueValid = () => true }: CollectionFieldProps) {
     const ref = useRef<ReactAce>(null);
 
     const [values, controller] = useArrayState(value);
@@ -126,7 +128,7 @@ export function CollectionField({ value, onChange, variableTypes, disabled }: Co
                 />
             </Collapse>
             <Collapse in={itemsVisible}>
-                <ValuesList values={values} onRemove={onRemove} onEdit={onEdit} ChipComponent={SpelChip} />
+                <ValuesList values={values} onRemove={onRemove} onEdit={onEdit} ChipComponent={SpelChip} isValid={isValueValid} />
             </Collapse>
         </Stack>
     );

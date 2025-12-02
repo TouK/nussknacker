@@ -5,7 +5,7 @@ import React, { useCallback } from "react";
 
 import { getTabindexedElements } from "../../editors/expression/AceWrapper";
 
-type ValuesListProps = {
+export type ValuesListProps = {
     values: string[];
     onRemove?: (i: number) => void;
     onEdit?: (i: number) => void;
