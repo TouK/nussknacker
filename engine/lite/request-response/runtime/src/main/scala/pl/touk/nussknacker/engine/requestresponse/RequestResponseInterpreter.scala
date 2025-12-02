@@ -157,6 +157,9 @@ object RequestResponseInterpreter {
   }
 
   def testRunner[Effect[_]: Monad: InterpreterShape: CapabilityTransformer: EffectUnwrapper]: TestRunner =
-    new InterpreterTestRunner[Effect, Context, AnyRef]
+    new InterpreterTestRunner[Effect, Request[Any], AnyRef] {
+      override protected def prepareCommonRecordForTest(record: Any): Request[Any] =
+        Request(record)
+    }
 
 }

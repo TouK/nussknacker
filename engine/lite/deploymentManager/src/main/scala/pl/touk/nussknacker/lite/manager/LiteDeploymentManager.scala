@@ -8,9 +8,14 @@ import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment.{BaseDeploymentManager, DMTestScenarioCommand}
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
+import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter
 import pl.touk.nussknacker.engine.testmode.TestProcess
 
 import scala.concurrent.{ExecutionContext, Future}
+
+sealed trait LightEngineMode
+object StreamingMode       extends LightEngineMode
+object RequestResponseMode extends LightEngineMode
 
 trait LiteDeploymentManager extends BaseDeploymentManager {
 
@@ -18,12 +23,18 @@ trait LiteDeploymentManager extends BaseDeploymentManager {
 
   protected implicit def executionContext: ExecutionContext
 
+  protected def mode: LightEngineMode
+
   protected def testScenario(command: DMTestScenarioCommand): Future[TestProcess.TestResults[Json]] = {
     Future {
       val currentModelData = modelDataProvider.getCurrentModelData().asInvokableModelData
       currentModelData.withModelClassloaderAsContextClassLoader {
-        // TODO: handle scenario testing in RR as well
-        KafkaTransactionalScenarioInterpreter.testRunner.runTest(
+        val testRunner = mode match {
+          case StreamingMode       => KafkaTransactionalScenarioInterpreter.testRunner
+          case RequestResponseMode => FutureBasedRequestResponseScenarioInterpreter.testRunner
+        }
+
+        testRunner.runTest(
           currentModelData,
           JobData(command.canonicalProcess.metaData, command.processVersion),
           command.scenarioTestData,

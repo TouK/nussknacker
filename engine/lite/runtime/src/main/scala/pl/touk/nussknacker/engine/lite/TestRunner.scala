@@ -133,8 +133,15 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
         record.variables.keySet == Set(VariableConstants.InputVariableName),
         s"Test record should contain '${VariableConstants.InputVariableName}' variable"
       )
-      decoder.decode(record.variables, testRecordIndex)(VariableConstants.InputVariableName).asInstanceOf[Input]
+
+      val value = decoder.decode(record.variables, testRecordIndex)(VariableConstants.InputVariableName)
+      prepareCommonRecordForTest(value)
     }
+  }
+
+  // FIXME: it doesn't work properly with KafkaLight Engine, we should add proper converting method
+  protected def prepareCommonRecordForTest(record: Any): Input = {
+    record.asInstanceOf[Input]
   }
 
   private def collectSinkResults(
