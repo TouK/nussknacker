@@ -1,4 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
+import { produce } from "immer";
 import type { Dictionary } from "lodash";
 import { concat, defaultsDeep, isEqual, partition, sortBy } from "lodash";
 import type { StateWithHistory } from "redux-undo";
@@ -97,6 +98,17 @@ function adjustEdges(
     }, currentEdges);
 }
 
+// scenario name is used as fake property in form so we should init it on load
+const appendScenarioNameToProperties = produce((scenario: Scenario) => {
+    scenario.scenarioGraph = {
+        ...scenario.scenarioGraph,
+        properties: {
+            ...scenario.scenarioGraph?.properties,
+            name: scenario.name,
+        },
+    };
+});
+
 const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
     const currentNodes = state.scenario.scenarioGraph.nodes;
     const currentEdges = state.scenario.scenarioGraph.edges;
@@ -119,8 +131,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         }
         case "UPDATE_IMPORTED_PROCESS": {
             const oldNodeIds = sortBy(currentNodes.map((n) => n.id));
-            const scenarioWithStickyNotes: Scenario = addStickyNotesToNodes(action.scenario);
-            const newNodeids = sortBy(scenarioWithStickyNotes.scenarioGraph.nodes.map((n) => n.id));
+            const adjustedScenario = appendScenarioNameToProperties(addStickyNotesToNodes(action.scenario));
+            const newNodeids = sortBy(adjustedScenario.scenarioGraph.nodes.map((n) => n.id));
             const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null;
 
             return {
@@ -129,7 +141,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 layout: newLayout,
                 scenario: {
                     ...state.scenario,
-                    ...scenarioWithStickyNotes,
+                    ...adjustedScenario,
                 },
             };
         }
@@ -147,12 +159,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "DISPLAY_PROCESS": {
-            const scenario = addStickyNotesToNodes(action.scenario);
+            const adjustedScenario = appendScenarioNameToProperties(addStickyNotesToNodes(action.scenario));
             return {
                 ...state,
-                scenario,
+                scenario: adjustedScenario,
                 scenarioLoading: false,
-                layout: fromMeta(scenario.scenarioGraph),
+                layout: fromMeta(adjustedScenario.scenarioGraph),
             };
         }
         case "CORRECT_INVALID_SCENARIO": {

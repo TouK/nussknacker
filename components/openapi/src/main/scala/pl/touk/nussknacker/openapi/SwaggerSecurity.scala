@@ -28,3 +28,7 @@ final case class ApiKeyInQuery(name: String, key: String) extends SwaggerSecurit
 final case class ApiKeyInCookie(name: String, key: String) extends SwaggerSecurity {
   def addSecurity(request: SwaggerRequestType): SwaggerRequestType = request.cookie(name, key)
 }
+
+final case class BasicAuth(name: String, username: String, password: String) extends SwaggerSecurity {
+  override def addSecurity(request: SwaggerRequestType): SwaggerRequestType = request.auth.basic(username, password)
+}

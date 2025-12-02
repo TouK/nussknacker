@@ -19,34 +19,47 @@ final case class OpenAPIServicesConfig(
     rootUrl: Option[URL] = None,
     // For backward compatibility it is called security. We should probably rename it and bundle together with secret
     private val security: Map[SecuritySchemeName, Secret] = Map.empty,
-    private val secret: Option[Secret] = None,
+    private val secrets: List[Secret] = List.empty,
     componentPrefix: Option[String] = None,
     httpClientConfig: HttpClientConfig = DefaultHttpClientConfig(),
     openApiServicesDiscoveryCacheTtl: FiniteDuration = 30 seconds
 ) {
+
+  require(
+    secrets.collect { case s: ApiKeySecret => s }.size <= 1,
+    "Only one `apiKey` common secret (with unspecified scheme name) is allowed"
+  )
+
+  require(
+    secrets.collect { case s: HttpBasicAuthSecret => s }.size <= 1,
+    "Only one `basicAuth` common secret (with unspecified scheme name) is allowed"
+  )
+
   def securityConfig: SecurityConfig =
-    new SecurityConfig(secretBySchemeName = security, commonSecretForAnyScheme = secret)
+    new SecurityConfig(secretBySchemeName = security, commonSecretsForAnyName = secrets)
 }
 
 final class SecurityConfig(
     secretBySchemeName: Map[SecuritySchemeName, Secret],
-    commonSecretForAnyScheme: Option[Secret]
+    commonSecretsForAnyName: List[Secret]
 ) {
 
-  def secret(schemeName: SecuritySchemeName): Option[Secret] =
-    secretBySchemeName.get(schemeName) orElse commonSecretForAnyScheme
+  def apiKeySecret(schemeName: SecuritySchemeName): Option[ApiKeySecret] =
+    secretBySchemeName.get(schemeName).collectFirst { case a: ApiKeySecret => a } orElse
+      commonSecretsForAnyName.collectFirst { case a: ApiKeySecret => a }
 
-}
+  def httpBasicAuthSecret(schemeName: SecuritySchemeName): Option[HttpBasicAuthSecret] =
+    secretBySchemeName.get(schemeName).collectFirst { case a: HttpBasicAuthSecret => a } orElse
+      commonSecretsForAnyName.collectFirst { case a: HttpBasicAuthSecret => a }
 
-object SecurityConfig {
-  def empty: SecurityConfig = new SecurityConfig(Map.empty, None)
 }
 
 final case class SecuritySchemeName(value: String)
 
 sealed trait Secret
 
-final case class ApiKeySecret(apiKeyValue: String) extends Secret
+final case class ApiKeySecret(apiKeyValue: String)                       extends Secret
+final case class HttpBasicAuthSecret(username: String, password: String) extends Secret
 
 object OpenAPIServicesConfig {
 
@@ -66,10 +79,18 @@ object OpenAPIServicesConfig {
     )
   }
 
+  implicit val basicAuthVR: ValueReader[HttpBasicAuthSecret] = ValueReader.relative { conf =>
+    HttpBasicAuthSecret(
+      username = conf.as[String]("username"),
+      password = conf.as[String]("password"),
+    )
+  }
+
   implicit val secretVR: ValueReader[Secret] = ValueReader.relative { conf =>
     conf.as[String]("type") match {
-      case "apiKey" => conf.rootAs[ApiKeySecret]
-      case typ      => throw new Exception(s"Not supported swagger security type '$typ' in the configuration")
+      case "apiKey"    => conf.rootAs[ApiKeySecret]
+      case "basicAuth" => conf.rootAs[HttpBasicAuthSecret]
+      case typ         => throw new Exception(s"Not supported swagger security type '$typ' in the configuration")
     }
   }
 
@@ -80,7 +101,25 @@ object OpenAPIServicesConfig {
       }
     }
 
-  implicit val openAPIServicesConfigVR: ValueReader[OpenAPIServicesConfig] =
-    ArbitraryTypeReader.arbitraryTypeValueReader[OpenAPIServicesConfig]
+  val backwardsCompatibleSecretsReader: ValueReader[List[Secret]] =
+    (config: Config, path: String) => {
+      val secretsConfValue      = config.as[Option[List[Secret]]]("secrets")
+      val legacySecretConfValue = config.as[Option[Secret]]("secret")
+      (secretsConfValue, legacySecretConfValue) match {
+        case (Some(_), Some(_)) =>
+          throw new RuntimeException(
+            "Both 'secrets' and 'secret' fields cannot be configured at the same time"
+          )
+        case (Some(secrets), None)      => secrets
+        case (None, Some(legacySecret)) => List(legacySecret)
+        case (None, None)               => Nil
+      }
+    }
+
+  implicit val openAPIServicesConfigVR: ValueReader[OpenAPIServicesConfig] = (config: Config, path: String) => {
+    val secrets    = backwardsCompatibleSecretsReader.read(config, path)
+    val baseReader = ArbitraryTypeReader.arbitraryTypeValueReader[OpenAPIServicesConfig]
+    baseReader.read(config, path).copy(secrets = secrets)
+  }
 
 }

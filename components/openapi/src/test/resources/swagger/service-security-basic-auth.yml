@@ -1,0 +1,25 @@
+openapi: "3.1.0"
+info:
+  title: Simple API overview
+  version: 2.0.0
+servers:
+  - url: http://dummy.io
+paths:
+  /basicAuthPath:
+    get:
+      security:
+        - basicAuthConfig: [ ]
+      responses:
+        '200':
+          description: "-"
+          content:
+            application/json:
+              schema:
+                type: object
+      operationId: basicAuthOperationId
+components:
+  schemas: {}
+  securitySchemes:
+    basicAuthConfig:
+      type: http
+      scheme: basic

@@ -29,14 +29,14 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
 
     val parsedConfig = config.as[OpenAPIServicesConfig]
     parsedConfig.securityConfig
-      .secret(SecuritySchemeName("apikeySecurityScheme"))
+      .apiKeySecret(SecuritySchemeName("apikeySecurityScheme"))
       .value shouldEqual ApiKeySecret(apiKeyValue = "34534asfdasf")
     parsedConfig.securityConfig
-      .secret(SecuritySchemeName("apikeySecurityScheme2"))
+      .apiKeySecret(SecuritySchemeName("apikeySecurityScheme2"))
       .value shouldEqual ApiKeySecret(apiKeyValue = "123")
   }
 
-  test("should parse common apikey secret for any scheme") {
+  test("should parse common apikey secret for any scheme with single secret field") {
     val config = ConfigFactory.parseString("""url: "http://foo"
                                              |secret {
                                              |  type: "apiKey"
@@ -45,11 +45,68 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
 
     val parsedConfig = config.as[OpenAPIServicesConfig]
     parsedConfig.securityConfig
-      .secret(SecuritySchemeName("someScheme"))
+      .apiKeySecret(SecuritySchemeName("someScheme"))
       .value shouldEqual ApiKeySecret(apiKeyValue = "34534asfdasf")
     parsedConfig.securityConfig
-      .secret(SecuritySchemeName("someOtherScheme"))
+      .apiKeySecret(SecuritySchemeName("someOtherScheme"))
       .value shouldEqual ApiKeySecret(apiKeyValue = "34534asfdasf")
+  }
+
+  test("should parse common secrets") {
+    val config = ConfigFactory.parseString("""url: "http://foo"
+                                             |secrets: [
+                                             |  {
+                                             |    type: "apiKey"
+                                             |    apiKeyValue: "34534asfdasf"
+                                             |  },
+                                             |  {
+                                             |    type: "basicAuth"
+                                             |    username: "u1"
+                                             |    password: "p1"
+                                             |  }
+                                             |]""".stripMargin)
+
+    val parsedConfig = config.as[OpenAPIServicesConfig]
+    parsedConfig.securityConfig
+      .apiKeySecret(SecuritySchemeName("someScheme"))
+      .value shouldEqual ApiKeySecret(apiKeyValue = "34534asfdasf")
+    parsedConfig.securityConfig
+      .httpBasicAuthSecret(SecuritySchemeName("someOtherScheme"))
+      .value shouldEqual HttpBasicAuthSecret(username = "u1", password = "p1")
+  }
+
+  test("should not allow secret and secrets config keys at the same time") {
+    val config = ConfigFactory.parseString("""url: "http://foo"
+                                             |secret: {
+                                             |  type: "apiKey"
+                                             |  apiKeyValue: "34534asfdasf"
+                                             |},
+                                             |secrets: [
+                                             |  {
+                                             |    type: "apiKey"
+                                             |    apiKeyValue: "34534asfdasf"
+                                             |  }
+                                             |]""".stripMargin)
+    intercept[RuntimeException] {
+      config.as[OpenAPIServicesConfig]
+    }.getMessage shouldBe "Both 'secrets' and 'secret' fields cannot be configured at the same time"
+  }
+
+  test("should not allow multiple common secrets of same type") {
+    val config = ConfigFactory.parseString("""url: "http://foo"
+                                             |secrets: [
+                                             |  {
+                                             |    type: "apiKey"
+                                             |    apiKeyValue: "34534asfdasf"
+                                             |  },
+                                             |  {
+                                             |    type: "apiKey"
+                                             |    apiKeyValue: "34534asfdasf"
+                                             |  }
+                                             |]""".stripMargin)
+    intercept[RuntimeException] {
+      config.as[OpenAPIServicesConfig]
+    }.getMessage shouldBe "requirement failed: Only one `apiKey` common secret (with unspecified scheme name) is allowed"
   }
 
   test("should parse combined apikey secret for each scheme and common apikey secret for any scheme") {
@@ -67,10 +124,10 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
 
     val parsedConfig = config.as[OpenAPIServicesConfig]
     parsedConfig.securityConfig
-      .secret(SecuritySchemeName("someScheme"))
+      .apiKeySecret(SecuritySchemeName("someScheme"))
       .value shouldEqual ApiKeySecret(apiKeyValue = "123")
     parsedConfig.securityConfig
-      .secret(SecuritySchemeName("someOtherScheme"))
+      .apiKeySecret(SecuritySchemeName("someOtherScheme"))
       .value shouldEqual ApiKeySecret(apiKeyValue = "234")
   }
 
