@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.lite.manager.{LightEngineMode, LiteDeploymentManager, RequestResponseMode, StreamingMode}
+import pl.touk.nussknacker.lite.manager.{LiteDeploymentManager, LiteEngineMode, RequestResponseMode, StreamingMode}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -231,7 +231,7 @@ class EmbeddedDeploymentManager(
 
   }
 
-  override protected def mode: LightEngineMode = deploymentStrategy match {
+  override protected def mode: LiteEngineMode = deploymentStrategy match {
     case _: RequestResponseDeploymentStrategy => RequestResponseMode
     case _                                    => StreamingMode
   }

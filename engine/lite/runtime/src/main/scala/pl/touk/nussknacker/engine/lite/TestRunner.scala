@@ -135,13 +135,13 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
       )
 
       val value = decoder.decode(record.variables, testRecordIndex)(VariableConstants.InputVariableName)
-      prepareCommonRecordForTest(value)
+      transformToEngineSpecificInputRecord(value)
     }
   }
 
-  // FIXME: it doesn't work properly with KafkaLight Engine, we should add proper converting method
-  protected def prepareCommonRecordForTest(record: Any): Input = {
-    record.asInstanceOf[Input]
+  // FIXME: it doesn't work properly with KafkaLite Engine, we should add proper converting method
+  protected def transformToEngineSpecificInputRecord(testRecord: Any): Input = {
+    testRecord.asInstanceOf[Input]
   }
 
   private def collectSinkResults(

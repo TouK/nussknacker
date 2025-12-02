@@ -158,8 +158,8 @@ object RequestResponseInterpreter {
 
   def testRunner[Effect[_]: Monad: InterpreterShape: CapabilityTransformer: EffectUnwrapper]: TestRunner =
     new InterpreterTestRunner[Effect, Request[Any], AnyRef] {
-      override protected def prepareCommonRecordForTest(record: Any): Request[Any] =
-        Request(record)
+      override protected def transformToEngineSpecificInputRecord(testRecord: Any): Request[Any] =
+        Request(testRecord)
     }
 
 }

@@ -13,9 +13,9 @@ import pl.touk.nussknacker.engine.testmode.TestProcess
 
 import scala.concurrent.{ExecutionContext, Future}
 
-sealed trait LightEngineMode
-object StreamingMode       extends LightEngineMode
-object RequestResponseMode extends LightEngineMode
+sealed trait LiteEngineMode
+object StreamingMode       extends LiteEngineMode
+object RequestResponseMode extends LiteEngineMode
 
 trait LiteDeploymentManager extends BaseDeploymentManager {
 
@@ -23,7 +23,7 @@ trait LiteDeploymentManager extends BaseDeploymentManager {
 
   protected implicit def executionContext: ExecutionContext
 
-  protected def mode: LightEngineMode
+  protected def mode: LiteEngineMode
 
   protected def testScenario(command: DMTestScenarioCommand): Future[TestProcess.TestResults[Json]] = {
     Future {
