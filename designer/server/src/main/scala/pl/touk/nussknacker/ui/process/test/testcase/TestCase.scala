@@ -2,8 +2,11 @@ package pl.touk.nussknacker.ui.process.test.testcase
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
+
+@JsonCodec final case class ScenarioWithTestCase(scenario: ScenarioGraph, testCase: TestCase)
 
 @JsonCodec final case class TestCase(
                                   id: String,

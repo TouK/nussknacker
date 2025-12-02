@@ -11,7 +11,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.BeMatcher
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
@@ -31,6 +31,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
+import pl.touk.nussknacker.ui.process.test.testcase.{Assertion, TestCase}
 
 import java.time.Instant
 
@@ -438,6 +439,39 @@ class ManagementResourcesSpec
         .downField("pretty")
         .downN(0)
         .focus shouldBe Some(Json.fromString("ala"))
+    }
+  }
+
+
+  test("run test case") {
+    val testDataContent =
+      """[
+        |  {"sourceId":"startProcess","variables":{"input":["ala"]}},
+        |  {"sourceId":"startProcess","variables":{"input":["bela"]}}
+        |]""".stripMargin
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
+
+    val testCase = TestCase("dummy", testDataContent, Map.empty, Map(NodeId("endsuffix") -> List(
+      Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])"),
+      Assertion("#TESTS.assertEquals('bela', #contexts[1].input[0])"),
+    )))
+    runTestCase(ProcessTestData.sampleScenario, testCase) ~> check {
+      status shouldEqual StatusCodes.OK
+
+      val responseJson = responseAs[Json]
+      responseJson.hcursor
+        .downField("assertionsResults")
+        .downField("endsuffix")
+        .downN(0)
+        .downField("type")
+        .focus shouldBe Some(Json.fromString("SuccessfulAssertion"))
+
+      responseJson.hcursor
+        .downField("assertionsResults")
+        .downField("endsuffix")
+        .downN(1)
+        .downField("type")
+        .focus shouldBe Some(Json.fromString("SuccessfulAssertion"))
     }
   }
 

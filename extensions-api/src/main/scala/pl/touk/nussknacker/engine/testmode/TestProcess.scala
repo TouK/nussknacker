@@ -13,10 +13,9 @@ object TestProcess {
       expressionEvaluationResults: Map[NodeId, List[ExpressionEvaluationResult[T]]],
       externalServiceInvocationResults: Map[NodeId, List[ExternalServiceInvocationResult[T]]],
       exceptions: List[ExceptionResult[T]],
-      assertionsResults: Map[NodeId, List[AssertionResult]],
       originalNodeResults: Map[NodeId, List[
         ResultContext[Any]
-      ]], // todo: for assertions verification we have to keep original instances
+      ]],
   ) {
 
     def updateNodeResult(nodeId: NodeId, context: Context, variableEncoder: Any => T): TestResults[T] =
@@ -94,7 +93,7 @@ object TestProcess {
   object TestResults {
 
     def empty[T]: TestResults[T] =
-      TestResults[T](Map.empty, Map.empty, Map.empty, Map.empty, List.empty, Map.empty, Map.empty)
+      TestResults[T](Map.empty, Map.empty, Map.empty, Map.empty, List.empty, Map.empty)
 
     def aggregate[T](testResults: Iterable[TestResults[T]]): TestResults[T] = {
       TestResults[T](
@@ -103,7 +102,6 @@ object TestProcess {
         expressionEvaluationResults = mergeMaps(testResults.map(_.expressionEvaluationResults)),
         externalServiceInvocationResults = mergeMaps(testResults.map(_.externalServiceInvocationResults)),
         exceptions = testResults.flatMap(_.exceptions).toList,
-        assertionsResults = mergeMaps(testResults.map(_.assertionsResults)),
         originalNodeResults = mergeMaps(testResults.map(_.originalNodeResults)),
       )
     }
@@ -152,7 +150,7 @@ object TestProcess {
 
   sealed trait AssertionResult
 
-  object SuccessfulAssertion extends AssertionResult
+  case object SuccessfulAssertion extends AssertionResult
 
   // todo: mby message can be easily hidden
   case class FailedAssertion(message: String) extends AssertionResult

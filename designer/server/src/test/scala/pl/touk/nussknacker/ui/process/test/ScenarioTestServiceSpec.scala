@@ -804,7 +804,7 @@ class ScenarioTestServiceSpec
       )
       .getOrElse(throw new RuntimeException("Error during performing test"))
 
-    result.results.assertionsResults(NodeId("end")) shouldBe List(
+    result.assertionsResults(NodeId("end")) shouldBe List(
       SuccessfulAssertion,
       FailedAssertion("Expected: [bar] but found [foo]")
     )

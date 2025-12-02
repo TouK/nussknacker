@@ -4,17 +4,15 @@ import io.circe.{Decoder, DecodingFailure, Encoder, Json, JsonObject}
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.generic.semiauto.deriveEncoder
 import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
-import pl.touk.nussknacker.engine.testmode.TestProcess.{
-  ExceptionResult,
-  ExpressionEvaluationResult,
-  ExternalServiceInvocationResult,
-  ResultContext
-}
+import pl.touk.nussknacker.engine.testmode.TestProcess.{AssertionResult, ExceptionResult, ExpressionEvaluationResult, ExternalServiceInvocationResult, ResultContext}
 
 object ResultsWithCountsDtoCodecs {
 
   import io.circe.syntax._
   import pl.touk.nussknacker.engine.api.CirceUtil._
+
+  implicit val assertionResultEncoder: Encoder[AssertionResult] =
+    deriveConfiguredEncoder
 
   implicit val resultsWithCountsEncoder: Encoder[ResultsWithCountsDto] =
     deriveConfiguredEncoder

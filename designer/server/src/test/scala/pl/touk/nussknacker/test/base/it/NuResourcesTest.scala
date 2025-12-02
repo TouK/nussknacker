@@ -7,7 +7,7 @@ import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
-import io.circe.{parser, Decoder, Encoder, Json}
+import io.circe.{Decoder, Encoder, Json, parser}
 import io.circe.syntax._
 import io.dropwizard.metrics5.MetricRegistry
 import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
@@ -38,12 +38,7 @@ import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithSimplifiedDe
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
-import pl.touk.nussknacker.test.mock.{
-  MockDeploymentManager,
-  MockManagerProvider,
-  TestProcessChangeListener,
-  WithTestDeploymentManagerClassLoader
-}
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider, TestProcessChangeListener, WithTestDeploymentManagerClassLoader}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.scalas.PekkoHttpExtensions.toRequestEntity
@@ -54,9 +49,7 @@ import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
-import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
-  ScenarioStatusProvider => OldApproachScenarioStatusProvider
-}
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{ScenarioStatusProvider => OldApproachScenarioStatusProvider}
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.livedata.LiveDataRepository
 import pl.touk.nussknacker.ui.process.newdeployment.{ScenarioStatusProvider => NewApproachScenarioStatusProvider}
@@ -66,6 +59,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
+import pl.touk.nussknacker.ui.process.test.testcase.{AssertionVerifierImpl, ScenarioWithTestCase, TestCase}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
@@ -300,7 +294,8 @@ trait NuResourcesTest
         new ScenarioResolver(sampleResolver(), Streaming.stringify),
         deploymentManager
       ),
-      null, //todo
+      flinkProcessValidator(),
+      new AssertionVerifierImpl,
     )
 
   protected def deployRoute() =
@@ -489,6 +484,22 @@ trait NuResourcesTest
       "scenarioGraph" -> scenarioGraph.asJson.noSpaces
     )()
     Post(s"/processManagement/test/${scenario.name}", multiPart) ~> withPermissions(
+      deployRoute(),
+      Permission.Deploy,
+      Permission.Read
+    )
+  }
+
+  protected def runTestCase(scenario: CanonicalProcess, testCase: TestCase): RouteTestResult = {
+    implicit val timeout: RouteTestTimeout = RouteTestTimeout(10.seconds.dilated)
+
+    val scenarioGraph = scenario.toScenarioGraph
+
+    val body = HttpEntity(
+      ContentTypes.`application/json`,
+      ScenarioWithTestCase(scenarioGraph, testCase).asJson.noSpaces
+    )
+    Post(s"/processManagement/testCase/${scenario.name}", body) ~> withPermissions(
       deployRoute(),
       Permission.Deploy,
       Permission.Read

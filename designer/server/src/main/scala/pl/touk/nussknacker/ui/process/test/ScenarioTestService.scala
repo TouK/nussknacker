@@ -292,8 +292,12 @@ class ScenarioTestService(
       )
 
       _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
-      testResultsWithAssertionResults = verifyAssertions(compiledTestCase, testResults)
-    } yield ResultsWithCounts(Instant.now(), testResultsWithAssertionResults, computeCounts(canonical, isFragment, testResults))).value
+    } yield ResultsWithCounts(
+      Instant.now(),
+      testResults,
+      computeCounts(canonical, isFragment, testResults),
+      assertionVerifier.verify(compiledTestCase, testResults.originalNodeResults)
+    )).value
   }
 
   private def compileScenarioAndExtractNodeContextsTyping(scenarioGraph: ScenarioGraph,
@@ -313,11 +317,6 @@ class ScenarioTestService(
     //todo: to be decided if the operation can be called directly by rest api not by designer
     testCompiler.compile(test, nodesTyping)
       .fold(errors => throw new IllegalStateException(s"Should not happen - only valid test configuration should be allowed to be tested by designer Test configuration has errors: $errors"), identity)
-  }
-
-  private def verifyAssertions(test: CompiledTestCase, testResults: TestResults[Json]): TestResults[Json] = {
-    val assertionsResults = assertionVerifier.verify(test, testResults.originalNodeResults)
-    testResults.copy(assertionsResults = assertionsResults)
   }
 
   def performTest(

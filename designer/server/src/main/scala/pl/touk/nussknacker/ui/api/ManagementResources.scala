@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.{parser, Decoder, Encoder}
+import io.circe.{Decoder, Encoder, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
 import org.apache.pekko.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCode, StatusCodes}
@@ -14,13 +14,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.deployment.LatestVersion
-import pl.touk.nussknacker.restmodel.{
-  CancelRequest,
-  DeployRequest,
-  DeployResponse,
-  RunOffScheduleRequest,
-  RunOffScheduleResponse
-}
+import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest, DeployResponse, RunOffScheduleRequest, RunOffScheduleResponse}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
@@ -30,6 +24,7 @@ import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.test.testcase.{ScenarioWithTestCase, TestCase}
 import pl.touk.nussknacker.ui.process.test.{ScenarioTestService, SerializedScenarioRecordsContent}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -217,6 +212,39 @@ class ManagementResources(
                 }
               }
             }
+          }
+        } ~
+        path("testCase" / ProcessNameSegment) { processName =>
+          (post & processDetailsForName(
+            processName
+          ) & skipResultsPerTransitionQueryParam & skipResultsPerNodeQueryParam & entity(as[ScenarioWithTestCase])) { //todo: do skipResultsPerTransitionQueryParam and skipResultsPerNodeQueryParam parameters are needed?
+            (details, skipResultsPerTransition, skipResultsPerNode, scenarioWithTestCase) =>
+              canDeploy(details.idWithNameUnsafe) {
+                complete {
+                  measureTime("testCase", metricRegistry) {
+                    scenarioTestServices
+                      .forProcessingTypeUnsafe(details.processingType)
+                      .performTestCase(
+                        scenarioWithTestCase.scenario,
+                        details.processVersionUnsafe,
+                        details.isFragment,
+                        scenarioWithTestCase.testCase
+                      )
+                      .flatMap {
+                        case Left(error) =>
+                          Future.failed(PerformTestDesignerError(TestingApiErrorMessages.from(error)))
+                        case Right(value) =>
+                          mapResultsToHttpResponse(
+                            ResultsWithCountsDto.from(
+                              resultsWithCounts = value,
+                              skipResultsPerNode = SkipResultsPerNode(skipResultsPerNode),
+                              skipResultsPerTransition = SkipResultsPerTransition(skipResultsPerTransition),
+                            )
+                          )
+                      }
+                  }
+                }
+              }
           }
         } ~
         // TODO: maybe Write permission is enough here?
