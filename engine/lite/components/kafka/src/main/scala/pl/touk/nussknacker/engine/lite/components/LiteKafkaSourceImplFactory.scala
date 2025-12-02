@@ -18,8 +18,6 @@ import pl.touk.nussknacker.engine.schemedkafka.source.KafkaSourceImplFactory
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 import pl.touk.nussknacker.engine.util.watermarkstrategy.WatermarkStrategyOptions
 
-import java.time.Instant
-
 class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
 
   override def createSource(

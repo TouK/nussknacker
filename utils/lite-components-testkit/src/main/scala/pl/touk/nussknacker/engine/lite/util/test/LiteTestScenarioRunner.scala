@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
@@ -146,6 +147,11 @@ private[test] class SimpleSourceFactory(result: TypingResult)
 
       override def transform(record: Any): ContextVariables =
         ContextVariables(Map(VariableConstants.InputVariableName -> record))
+
+      // for tests purposes
+      protected override def extractTraceId(record: Any): Option[TraceId] =
+        Some(TraceId.generate())
+
     }
   }
 
