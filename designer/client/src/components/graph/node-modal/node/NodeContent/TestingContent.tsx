@@ -1,5 +1,6 @@
 import { Typography } from "@mui/material";
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../../../store/storeHelpers";
@@ -14,10 +15,13 @@ interface Props {
 }
 
 export const TestingContent = ({ node, onChange }: Props) => {
+    const { t } = useTranslation();
     const { getViewForNode } = useTestingContentRenderer();
     const view = getViewForNode(node, onChange);
 
-    return view || <Typography p={2}>No testing settings available for selected node</Typography>;
+    return (
+        view || <Typography p={2}>{t("testingContent.noSettingsAvailable", "No testing settings available for selected node")}</Typography>
+    );
 };
 
 export function useTestingContentRenderer() {
