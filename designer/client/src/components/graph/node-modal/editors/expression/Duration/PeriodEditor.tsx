@@ -16,7 +16,7 @@ export type Period = {
     days: number;
 };
 
-type Props = {
+type PeriodEditorProps = {
     isMarked: boolean;
     editorConfig: $TodoType;
 };
@@ -29,7 +29,7 @@ const NONE_PERIOD = {
     days: () => null,
 };
 
-export const PeriodEditor = prepareEditor<Props>(
+export const PeriodEditor = prepareEditor<PeriodEditorProps>(
     (props) => {
         const { expressionObj, onValueChange, fieldErrors, showValidation, readOnly, isMarked, editorConfig, formatter } = props;
 
