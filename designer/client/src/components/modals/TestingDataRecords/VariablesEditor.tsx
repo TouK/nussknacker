@@ -9,11 +9,11 @@ import { EditorType, ExpressionLang } from "../../graph/node-modal/editors/expre
 import type { VariablesCell } from "./CellContent";
 import type { TestingDataRecords } from "./Table";
 
-interface Props {
+interface VariablesEditorProps {
     value: VariablesCell;
     onChange: (cell: VariablesCell) => void;
 }
-export const VariablesEditor = ({ value, onChange }: Props) => {
+export const VariablesEditor = ({ value, onChange }: VariablesEditorProps) => {
     const [validationErrors, setValidationErrors] = useState<NodeValidationError[]>([]);
     const scenarioName = useAppSelector(getProcessName);
     const scenarioGraph = useAppSelector(getScenarioGraph);
@@ -32,21 +32,19 @@ export const VariablesEditor = ({ value, onChange }: Props) => {
     }, [handleValidateData, value]);
 
     return (
-        <>
-            <JsonEditor
-                fieldName={"Input variables"}
-                expressionObj={{ expression: value.data.value, language: ExpressionLang.JSON }}
-                onValueChange={({ expression }) => {
-                    onChange({ ...value, copyData: expression, data: { ...value.data, value: expression } });
-                    handleValidateData({ sourceId: value.data.sourceId, variables: expression });
-                }}
-                className={""}
-                fieldErrors={validationErrors}
-                showValidation
-                editorConfig={{
-                    type: EditorType.JSON_PARAMETER_EDITOR,
-                }}
-            />
-        </>
+        <JsonEditor
+            fieldName={"Input variables"}
+            expressionObj={{ expression: value.data.value, language: ExpressionLang.JSON }}
+            onValueChange={({ expression }) => {
+                onChange({ ...value, copyData: expression, data: { ...value.data, value: expression } });
+                handleValidateData({ sourceId: value.data.sourceId, variables: expression });
+            }}
+            className={""}
+            fieldErrors={validationErrors}
+            showValidation
+            editorConfig={{
+                type: EditorType.JSON_PARAMETER_EDITOR,
+            }}
+        />
     );
 };

@@ -193,7 +193,7 @@ Use autocompletion to explore available options. To read more see [Documentation
         },
         notSwitchableToHint: () =>
             "The string-template-based input must be a literal value without embedded expressions to switch to expression mode",
-        parseValueOnEditorChange: ({ expression, language }: ExpressionObj, newLanguage) => {
+        parseValueOnEditorChange: ({ expression, language }, newLanguage) => {
             if (language === ExpressionLang.DictKeyWithLabel) {
                 return {
                     language: newLanguage,

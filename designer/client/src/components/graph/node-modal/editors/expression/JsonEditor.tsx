@@ -17,14 +17,14 @@ import type { ExpressionObj } from "./types";
 import { EditorType, ExpressionLang } from "./types";
 import { useAceEditorRangeMessages } from "./useAceEditorRangeMessages";
 
-type Props = {
+type JsonEditorProps = {
     fieldName: string;
     isMarked?: boolean;
     param?: ParamType;
     defaultValue?: ExpressionObj | string;
 };
 
-export const JsonEditor = prepareEditor<Props>(
+export const JsonEditor = prepareEditor<JsonEditorProps>(
     ({ onValueChange, className, expressionObj, fieldErrors, showValidation, readOnly, isMarked, defaultValue }) => {
         const storedExpression = useMemo(() => expressionObj.expression.replace(/^["'](.*)["']$/, ""), [expressionObj.expression]);
         const [value, setValue] = useState(storedExpression);

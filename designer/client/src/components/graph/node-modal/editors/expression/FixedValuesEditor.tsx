@@ -15,7 +15,7 @@ import { editorsParameters } from "./editorsParameters";
 import type { ExpressionObj } from "./types";
 import { EditorType } from "./types";
 
-type Props = {
+type FixedValuesEditorProps = {
     editorConfig:
         | EditorConfigForType<EditorType.FIXED_VALUES_PARAMETER_EDITOR>
         | EditorConfigForType<EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR>
@@ -57,7 +57,7 @@ const truncateOptionLabel = (optionLabel: string) => {
     return optionLabel?.replace(/-gateway\.(?:staging-cloud|cloud)\.nussknacker\.io\/topics/g, "(...)nussknacker.io"); // It will change URL https://light-pink-silkworm-gateway.staging-cloud.nussknacker.io/topics/http.example-input to https://light-pink-silkworm(...)nussknacker.io/http.example-input
 };
 
-export const FixedValuesEditor = prepareEditor<Props>(
+export const FixedValuesEditor = prepareEditor<FixedValuesEditorProps>(
     (props) => {
         const handleCurrentOption = (expressionObj: ExpressionObj, options: Option[]): Option => {
             return (
@@ -162,7 +162,7 @@ export const FixedValuesEditor = prepareEditor<Props>(
         );
     },
     {
-        isSwitchableTo: (expressionObj: ExpressionObj, editorConfig) =>
+        isSwitchableTo: (expressionObj, editorConfig) =>
             editorConfig.possibleValues.map((v) => v.expression).includes(expressionObj.expression) || isEmpty(expressionObj.expression),
         notSwitchableToHint: () =>
             i18next.t(
