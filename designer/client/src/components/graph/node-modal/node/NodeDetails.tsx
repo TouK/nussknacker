@@ -28,6 +28,7 @@ import { InputOutputContent } from "../io/InputOutputContent";
 import { InputOutputContextProvider } from "../io/InputOutputContext";
 import { usePortal } from "../io/usePortal";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
+import { TestResultsWrapper } from "../TestResultsWrapper";
 import { CloseButtonWithEditLock } from "./CloseButtonWithEditLock";
 import { EditStateFeedback } from "./EditStateFeedback";
 import { GeneralContent } from "./NodeContent/GeneralContent";
@@ -142,7 +143,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
 
     useOnToolWindow(ToolId.node, node.id);
 
-    const testingScenarioEnabled = useTestingScenarioEnabled({ disabled: buttonFromToolbar.disabled });
+    const testingScenarioEnabled = useTestingScenarioEnabled({ disabled: buttonFromToolbar?.disabled });
 
     //no process? no nodes? no window contents! no errors for whole tree!
     if (!scenario?.scenarioGraph.nodes) {
@@ -165,7 +166,11 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
                             },
                             {
                                 label: "Testing",
-                                content: <TestingContent node={editedNode} />,
+                                content: (
+                                    <TestResultsWrapper nodeId={editedNode.id}>
+                                        <TestingContent node={editedNode} onChange={readOnly ? undefined : onChange} />
+                                    </TestResultsWrapper>
+                                ),
                                 isLoading: testResultsLoading,
                             },
                         ]}

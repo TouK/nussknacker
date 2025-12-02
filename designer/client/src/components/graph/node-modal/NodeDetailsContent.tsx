@@ -1,9 +1,7 @@
-import { partition } from "lodash";
 import type { SetStateAction } from "react";
 import React, { useCallback, useMemo } from "react";
 
 import ProcessUtils from "../../../common/ProcessUtils";
-import type { RootState } from "../../../reducers";
 import { getConfiguredAdditionalComponents } from "../../../reducers/selectors/configuredAdditionalComponents";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
 import { getRemoteTenantId, getRemoteWebHost } from "../../../reducers/selectors/isCloudInstance";
@@ -11,21 +9,19 @@ import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { Edge } from "../../../types/edge";
 import type { NodeType } from "../../../types/node";
-import type { NodeValidationError } from "../../../types/validation";
 import { NodeAdditionalInfo } from "./NodeAdditionalInfo";
 import { DebugNodeInspector } from "./NodeDetailsContent/DebugNodeInspector";
 import { NodeTable } from "./NodeDetailsContent/NodeTable";
-import { getNodeErrors } from "./NodeDetailsContent/selectors";
 import NodeErrors from "./NodeErrors";
 import { NodeSwitcher } from "./NodeSwitcher";
 import { NodeTypeDetailsContent } from "./NodeTypeDetailsContent";
 import { TestResultsWrapper } from "./TestResultsWrapper";
+import { useGetNodeErrors } from "./useNodeTypeDetailsContentLogic";
 
 export const NodeDetailsContent = ({
     node,
     edges,
     onChange,
-    nodeErrors,
     showValidation,
     showSwitch,
     showTestResults,
@@ -33,13 +29,11 @@ export const NodeDetailsContent = ({
     node: NodeType;
     edges?: Edge[];
     onChange?: (node: SetStateAction<NodeType>, edges?: SetStateAction<Edge[]>) => void;
-    nodeErrors?: NodeValidationError[];
     showValidation?: boolean;
     showSwitch?: boolean;
     showTestResults?: boolean;
 }): JSX.Element => {
-    const currentErrors = useAppSelector((state: RootState) => getNodeErrors(state, { node, nodeErrors }));
-    const [errors, diagramStructureErrors] = useMemo(() => partition(currentErrors, (error) => !!error.fieldName), [currentErrors]);
+    const [errors, diagramStructureErrors] = useGetNodeErrors(node);
 
     const userSettings = useAppSelector(getUserSettings);
 

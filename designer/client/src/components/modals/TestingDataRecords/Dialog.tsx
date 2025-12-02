@@ -17,7 +17,7 @@ import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeD
 import { AppendFromLiveDataButton } from "./AppendFromLiveDataButton";
 import { LimitExceededWarning } from "./LimitExceededWarning";
 import { Table } from "./Table";
-import { useDataRecordsTableActions } from "./useDataRecordsTableActions";
+import { useDataRecordsActions } from "./useDataRecordsActions";
 
 type DocsLink = {
     url: string;
@@ -63,18 +63,10 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
         [defaultParameter],
     );
 
-    const {
-        dataRecords,
-        recordsErrors,
-        cellErrors,
-        handleRowUpdated,
-        handleGenerateTestData,
-        handleRowsDeleted,
-        handleRowAdded,
-        handleRowMoved,
-    } = useDataRecordsTableActions({
-        testingDataRecords: testingDataRecords || [],
-    });
+    const { recordsErrors, cellErrors, handleRowUpdated, handleGenerateTestData, handleRowsDeleted, handleRowAdded, handleRowMoved } =
+        useDataRecordsActions({
+            testingDataRecords,
+        });
 
     const sourceOptions = useMemo(
         () => testCapabilities.testWithParameters.sourceParameters.flatMap((sourceParameter) => sourceParameter.sourceId),
@@ -86,7 +78,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
         [recordsErrors],
     );
 
-    const disableTestButton = dataRecords.length === 0 || cellErrors.length > 0;
+    const disableTestButton = testingDataRecords.length === 0 || cellErrors.length > 0;
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("testingForm.cancelButton.label", "Cancel"), action: () => close(), classname: LoadingButtonTypes.secondaryButton },
@@ -95,7 +87,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                 title: t("testingForm.testButton.label", "Test"),
                 action: () => {
                     try {
-                        dispatch(testScenarioWithDataRecords(dataRecords));
+                        dispatch(testScenarioWithDataRecords(testingDataRecords));
                         close();
                     } catch (e) {
                         console.error(e.message);
@@ -103,7 +95,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                 },
             },
         ],
-        [close, disableTestButton, dispatch, dataRecords, t],
+        [close, disableTestButton, dispatch, testingDataRecords, t],
     );
 
     return (
@@ -131,7 +123,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                     <Table
                         sourceOptions={sourceOptions}
                         sourceParameters={testCapabilities.testWithParameters.sourceParameters}
-                        data={dataRecords}
+                        data={testingDataRecords}
                         cellErrors={cellErrors}
                         onRowUpdated={handleRowUpdated}
                         onRowAdded={handleRowAdded}
@@ -144,7 +136,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                     <AppendFromLiveDataButton
                         handleGenerateTestData={handleGenerateTestData}
                         maxTestingRecords={maxTestingRecords}
-                        currentRecordsNumber={dataRecords.length}
+                        currentRecordsNumber={testingDataRecords.length}
                         recordsToAddLimitExceeded={recordsToAddLimitExceeded}
                     />
                 </Stack>

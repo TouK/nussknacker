@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from "react";
 
+import { setTestingEventsParameters } from "../../../actions/nk/displayTestResults";
 import HttpService from "../../../http/HttpService/instance";
 import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../reducers/selectors/settings";
-import { useAppSelector } from "../../../store/storeHelpers";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import type { TestingDataRecords } from "./Table";
 import { mapGeneratedTestingDataToTableFormat } from "./utils";
@@ -14,13 +15,13 @@ interface Props {
     testingDataRecords: TestingDataRecords[];
 }
 
-export const useDataRecordsTableActions = ({ testingDataRecords }: Props) => {
-    const [dataRecords, setDataRecords] = useState<TestingDataRecords[]>(testingDataRecords);
+export const useDataRecordsActions = ({ testingDataRecords }: Props) => {
     const [cellErrors, setCellErrors] = useState<CellError[]>([]);
     const [recordsErrors, setRecordsErrors] = useState<RecordError[]>([]);
     const maxTestingRecords = useAppSelector(getMaxTestingRecords);
     const scenarioName = useAppSelector(getProcessName);
     const scenarioGraph = useAppSelector(getScenarioGraph);
+    const dispatch = useAppDispatch();
 
     const validateForCount = React.useCallback(
         (nextCount: number) => {
@@ -39,15 +40,15 @@ export const useDataRecordsTableActions = ({ testingDataRecords }: Props) => {
 
     const handleGenerateTestData = useCallback(
         async (numberOfSamples: number) => {
-            const nextCount = dataRecords.length + (numberOfSamples || 1); // we treat 0 as 1 to run validation when limit exceeded
+            const nextCount = testingDataRecords.length + (numberOfSamples || 1); // we treat 0 as 1 to run validation when limit exceeded
             if (!validateForCount(nextCount)) return;
 
             if (numberOfSamples > 0) {
                 const { data } = await HttpService.generatedTestData(scenarioName, scenarioGraph, numberOfSamples);
-                setDataRecords((prevState) => [...prevState, ...data.map(mapGeneratedTestingDataToTableFormat)]);
+                dispatch(setTestingEventsParameters((prevState) => [...prevState, ...data.map(mapGeneratedTestingDataToTableFormat)]));
             }
         },
-        [dataRecords.length, validateForCount, scenarioName, scenarioGraph],
+        [testingDataRecords.length, validateForCount, scenarioName, scenarioGraph, dispatch],
     );
 
     const validateEditedRow = React.useCallback(
@@ -71,23 +72,26 @@ export const useDataRecordsTableActions = ({ testingDataRecords }: Props) => {
 
     const handleRowAdded = React.useCallback(
         (rowIndex: number, row: TestingDataRecords) => {
-            const nextCount = dataRecords.length + 1;
+            const nextCount = testingDataRecords.length + 1;
             if (!validateForCount(nextCount)) return;
 
-            setDataRecords((prev) => {
-                const next = [...prev];
-                if (rowIndex === next.length) next.push(row);
-                else next.splice(rowIndex, 0, row);
-                return next;
-            });
+            dispatch(
+                setTestingEventsParameters((prev) => {
+                    const next = [...prev];
+                    if (rowIndex === next.length) next.push(row);
+                    else next.splice(rowIndex, 0, row);
+                    return next;
+                }),
+            );
+
             setCellErrors((prev) => prev.map((e) => (e.y >= rowIndex ? { ...e, y: e.y + 1 } : e)));
         },
-        [dataRecords.length, validateForCount],
+        [dispatch, testingDataRecords.length, validateForCount],
     );
 
     const handleRowUpdated = React.useCallback(
         (rowIndex: number, row: TestingDataRecords) => {
-            setDataRecords((prev) => {
+            setTestingEventsParameters((prev) => {
                 const next = [...prev];
                 if (rowIndex >= next.length) {
                     for (let i = next.length; i <= rowIndex; i++) {
@@ -107,9 +111,9 @@ export const useDataRecordsTableActions = ({ testingDataRecords }: Props) => {
             if (!deletedRows.length) return;
             const deletedSet = new Set(deletedRows);
             const sorted = [...deletedRows].sort((a, b) => a - b);
-            const nextCount = Math.max(0, dataRecords.length - deletedRows.length);
+            const nextCount = Math.max(0, testingDataRecords.length - deletedRows.length);
 
-            setDataRecords((prev) => prev.filter((_, i) => !deletedSet.has(i)));
+            dispatch(setTestingEventsParameters((prev) => prev.filter((_, i) => !deletedSet.has(i))));
             setCellErrors((prev) =>
                 prev
                     .filter((e) => !deletedSet.has(e.y))
@@ -121,21 +125,25 @@ export const useDataRecordsTableActions = ({ testingDataRecords }: Props) => {
 
             validateForCount(nextCount);
         },
-        [dataRecords.length, validateForCount],
+        [dispatch, testingDataRecords.length, validateForCount],
     );
 
-    const handleRowMoved = React.useCallback((fromIndex: number, toIndex: number) => {
-        setDataRecords((prev) => {
-            if (!prev || fromIndex < 0 || toIndex < 0 || fromIndex >= prev.length || toIndex > prev.length) return prev;
-            const next = [...prev];
-            const [moved] = next.splice(fromIndex, 1);
-            next.splice(toIndex, 0, moved);
-            return next;
-        });
-    }, []);
+    const handleRowMoved = React.useCallback(
+        (fromIndex: number, toIndex: number) => {
+            dispatch(
+                setTestingEventsParameters((prev) => {
+                    if (!prev || fromIndex < 0 || toIndex < 0 || fromIndex >= prev.length || toIndex > prev.length) return prev;
+                    const next = [...prev];
+                    const [moved] = next.splice(fromIndex, 1);
+                    next.splice(toIndex, 0, moved);
+                    return next;
+                }),
+            );
+        },
+        [dispatch],
+    );
 
     return {
-        dataRecords,
         cellErrors,
         recordsErrors,
         handleRowAdded,

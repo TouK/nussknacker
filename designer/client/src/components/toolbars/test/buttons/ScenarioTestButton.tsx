@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { testScenarioWithDataRecords } from "../../../../actions/nk/displayTestResults";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { convertViewportUnitToPixels } from "../../../../common/convertViewportUnitToPixels";
-import { getTestingDataRecords, getTestResultsLoading } from "../../../../reducers/selectors/graph";
+import { getTestingDataRecords, getTestResultsLoading, hasTestingDataRecordsDefined } from "../../../../reducers/selectors/graph";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager/useWindows";
@@ -42,6 +42,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { t } = useTranslation();
     const { open } = useWindows();
     const testingEventsParameters = useAppSelector(getTestingDataRecords);
+    const testingDataRecordsDefined = useAppSelector(hasTestingDataRecordsDefined);
     const dispatch = useAppDispatch();
 
     const handleRerunLastTest = useCallback(() => {
@@ -57,16 +58,16 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
             {
                 label: t("testingForm.retest.menu.label", "Rerun last test"),
                 value: RERUN_LAST_TEST,
-                isDisabled: !testingEventsParameters,
+                isDisabled: !testingDataRecordsDefined,
             },
         ];
-    }, [t, testingEventsParameters]);
+    }, [t, testingDataRecordsDefined]);
 
     const isLoading = useAppSelector(getTestResultsLoading);
 
     const presetActionOnButtonClick = useMemo(() => {
-        return testingEventsParameters ? presets[1] : presets[0];
-    }, [presets, testingEventsParameters]);
+        return testingDataRecordsDefined ? presets[1] : presets[0];
+    }, [presets, testingDataRecordsDefined]);
 
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled });
 
@@ -120,7 +121,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     return (
         <ToolbarButton
             name={
-                testingEventsParameters
+                testingDataRecordsDefined
                     ? t("panels.actions.scenarioTest.button.nameAlt", "Rerun test")
                     : name || t("panels.actions.scenarioTest.button.name", "Test")
             }

@@ -3,7 +3,7 @@ import React, { useMemo } from "react";
 import { getTestCapabilities, getTestingDataRecordsForSingleSource } from "../../../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
 import { Table } from "../../../../../modals/TestingDataRecords/Table";
-import { useDataRecordsTableActions } from "../../../../../modals/TestingDataRecords/useDataRecordsTableActions";
+import { useDataRecordsActions } from "../../../../../modals/TestingDataRecords/useDataRecordsActions";
 import { ContentSize } from "../../ContentSize";
 
 interface Props {
@@ -13,8 +13,8 @@ interface Props {
 export const InputData = ({ sourceId }: Props) => {
     const testingDataRecords = useAppSelector((state) => getTestingDataRecordsForSingleSource(state, sourceId));
 
-    const { cellErrors, handleRowAdded, dataRecords, handleRowMoved, handleRowsDeleted, handleRowUpdated } = useDataRecordsTableActions({
-        testingDataRecords: testingDataRecords || [],
+    const { cellErrors, handleRowAdded, handleRowMoved, handleRowsDeleted, handleRowUpdated } = useDataRecordsActions({
+        testingDataRecords,
     });
 
     const testCapabilities = useAppSelector(getTestCapabilities);
@@ -43,7 +43,7 @@ export const InputData = ({ sourceId }: Props) => {
                 onRowMoved={handleRowMoved}
                 onRowsDeleted={handleRowsDeleted}
                 onRowUpdated={handleRowUpdated}
-                data={dataRecords}
+                data={testingDataRecords}
                 sourceOptions={[sourceId]}
                 sourceParameters={testCapabilities.testWithParameters.sourceParameters}
             />

@@ -5,7 +5,7 @@ import { mapDataRecordsToRunTestsFormat } from "../../components/modals/TestingD
 import HttpService from "../../http/HttpService/instance";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
 import type { ResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
-import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
+import { getProcessName, getScenarioGraph, getTestingDataRecords } from "../../reducers/selectors/graph";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
 import type { Action, ThunkAction } from "../reduxTypes";
 import { displayProcessCounts } from "./displayProcessCounts";
@@ -49,7 +49,6 @@ export function testScenarioWithDataRecords(testingEventsParameters: TestingData
             testingEventsParameters.map(mapDataRecordsToRunTestsFormat),
         ).then(({ data }) => ({
             testResults: data,
-            testingEventsParameters: testingEventsParameters,
         })),
     );
 }
@@ -87,7 +86,6 @@ function wrapWithTestAction(
     ) => Promise<{
         testResults: ResultsWithCountsDto;
         testData?: SourceWithParametersTest;
-        testingEventsParameters?: TestingDataRecords[];
     }>,
 ): ThunkAction {
     return (dispatch, getState) => {
@@ -96,9 +94,7 @@ function wrapWithTestAction(
         const scenarioGraph = getScenarioGraph(state);
         const processName = getProcessName(state);
         fn(processName, scenarioGraph)
-            .then(({ testResults, testData, testingEventsParameters }) =>
-                dispatch(displayTestResults(testResults, testData, testingEventsParameters)),
-            )
+            .then(({ testResults, testData }) => dispatch(displayTestResults(testResults, testData)))
             .catch(() => dispatch({ type: "TEST_RESULTS_FAILED" }));
     };
 }
@@ -111,24 +107,23 @@ export function displayTestResultsDetails(testResults: TestResultsDto, testData?
     };
 }
 
-export function setTestingEventsParameters(testingEventsParameters: TestingDataRecords[]): Action {
-    return {
-        type: "SET_TESTING_EVENTS_PARAMETERS",
-        testingEventsParameters,
+export function setTestingEventsParameters(updater: (prev: TestingDataRecords[]) => TestingDataRecords[]): ThunkAction {
+    return (dispatch, getState) => {
+        const state = getState();
+        const prev = getTestingDataRecords(state);
+        const next = updater(prev);
+
+        dispatch({
+            type: "SET_TESTING_EVENTS_PARAMETERS",
+            testingEventsParameters: next,
+        });
     };
 }
 
-function displayTestResults(
-    { counts, results }: ResultsWithCountsDto,
-    testData?: SourceWithParametersTest,
-    testingEventsParameters?: TestingDataRecords[],
-): ThunkAction {
+function displayTestResults({ counts, results }: ResultsWithCountsDto, testData?: SourceWithParametersTest): ThunkAction {
     return (dispatch) => {
         dispatch(displayProcessCounts(counts));
         dispatch(displayTestResultsDetails(results, testData));
-        if (testingEventsParameters) {
-            dispatch(setTestingEventsParameters(testingEventsParameters));
-        }
     };
 }
 
