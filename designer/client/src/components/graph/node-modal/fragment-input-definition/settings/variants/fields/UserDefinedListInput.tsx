@@ -63,7 +63,7 @@ export const UserDefinedListInput = ({
         if (filteredItemsList) {
             handleChangeFixedValuesList(filteredItemsList);
 
-            const initialValueOnTheList = filteredItemsList.find((filteredItemsList) => filteredItemsList.label !== initialValue.label);
+            const initialValueOnTheList = filteredItemsList.find((filteredItemsList) => filteredItemsList.label !== initialValue?.label);
 
             if (!initialValueOnTheList) {
                 onChange(`${path}.initialValue`, null);
