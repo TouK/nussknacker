@@ -84,6 +84,11 @@ export const MultiSelectFixedValuesEditor = prepareEditor<{ editorConfig: Editor
                             padding: 0,
                             paddingRight: 3,
                         },
+                        "&, &.Mui-focused": {
+                            ".MuiOutlinedInput-notchedOutline": {
+                                borderWidth: 1,
+                            },
+                        },
                     }}
                 >
                     {editorConfig.possibleValues.map(({ label, value }) => (
