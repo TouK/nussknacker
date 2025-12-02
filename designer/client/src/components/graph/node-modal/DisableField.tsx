@@ -26,7 +26,7 @@ export function DisableField({
     setProperty,
     showValidation,
     errors,
-}: DisableFieldProps): JSX.Element {
+}: DisableFieldProps): React.JSX.Element {
     return (
         <NodeField
             autoFocus={autoFocus}

@@ -22,9 +22,11 @@ import ProcessUtils from "../../../../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../../../../reducers/selectors/getProcessDefinitionData";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
-import type { EditorProps, ExtendedEditor } from "../Editor";
+import type { EditorProps } from "../Editor";
+import { prepareEditor } from "../Editor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { editorsParameters } from "../editorsParameters";
+import { EditorType } from "../types";
 import { CellMenu, DeleteColumnMenuItem, DeleteRowMenuItem, ResetColumnWidthMenuItem } from "./CellMenu";
 import { isDatePickerCell } from "./customCells/DatePicker";
 import { customRenderers } from "./customRenderers";
@@ -112,13 +114,15 @@ export function useTableEditorTypeOptions() {
     };
 }
 
-export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: EditorProps) => {
+type TableProps = Pick<EditorProps, "expressionObj" | "onValueChange" | "className" | "fieldErrors">;
+
+export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: TableProps) => {
     const tableDateContext = useTableState(expressionObj);
     const [{ rows, columns }, dispatch, rawExpression] = tableDateContext;
 
     useEffect(() => {
         if (rawExpression !== expressionObj.expression) {
-            onValueChange({ expression: rawExpression, language: editorsParameters.TabularTypedDataEditor.language });
+            onValueChange({ expression: rawExpression, language: editorsParameters[EditorType.TABLE_EDITOR].language });
         }
     }, [expressionObj.expression, onValueChange, rawExpression]);
 
@@ -338,7 +342,7 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
         });
     }, []);
 
-    const ref = useRef<DataEditorRef>();
+    const ref = useRef<DataEditorRef>(null);
     const cellErrors = useMemo(
         () =>
             fieldErrors.flatMap(
@@ -556,19 +560,22 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
     );
 };
 
-export const TableEditor: ExtendedEditor = ({ className, ...props }: EditorProps) => {
-    return (
-        <Box className={className}>
-            <Box display="flex">
-                <Table {...props} />
+export const TableEditor = prepareEditor(
+    ({ className, expressionObj, fieldErrors, onValueChange, showValidation }) => {
+        return (
+            <Box className={className}>
+                <Box display="flex">
+                    <Table expressionObj={expressionObj} fieldErrors={fieldErrors} onValueChange={onValueChange} className={className} />
+                </Box>
+                {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
             </Box>
-            {props.showValidation && <ValidationLabels fieldErrors={props.fieldErrors} />}
-        </Box>
-    );
-};
-
-TableEditor.isSwitchableTo = () => true; // TODO: implement
-TableEditor.notSwitchableToHint = () =>
-    i18next.t("editors.table.notSwitchableToHint", `Expression must match schema to switch to {{}} mode`, {
-        editorName: editorsParameters.TabularTypedDataEditor.displayName,
-    });
+        );
+    },
+    {
+        isSwitchableTo: () => true, // TODO: implement
+        notSwitchableToHint: () =>
+            i18next.t("editors.table.notSwitchableToHint", `Expression must match schema to switch to {{}} mode`, {
+                editorName: editorsParameters[EditorType.TABLE_EDITOR].displayName,
+            }),
+    },
+);

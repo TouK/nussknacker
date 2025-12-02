@@ -27,7 +27,7 @@ export function DescriptionField({
     setProperty,
     showValidation,
     errors,
-}: DescriptionFieldProps): JSX.Element {
+}: DescriptionFieldProps): React.JSX.Element {
     return (
         <NodeField
             autoFocus={autoFocus}

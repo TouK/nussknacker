@@ -46,7 +46,7 @@ const AddGroupElement = <P extends NonNullable<{ url: ModuleUrl; componentGroup:
     ) : null;
 };
 
-export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps): JSX.Element {
+export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps): React.JSX.Element {
     const { t } = useTranslation();
     const [filters, setFilters] = useState<ToolBoxProps["filters"]>([]);
     const [textFilter, setTextFilter] = useState("");
@@ -60,7 +60,7 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
             dispatch(getAdditionalComponents());
         }
     }, [dispatch, isCloud, settings]);
-    const searchRef = useRef<Focusable>();
+    const searchRef = useRef<Focusable>(null);
 
     const { isOpened, toggleCollapse, side } = useSidePanel();
 

@@ -24,7 +24,7 @@ interface FragmentInput {
     showValidation?: boolean;
 }
 
-export function FragmentInput(props: FragmentInput): JSX.Element {
+export function FragmentInput(props: FragmentInput): React.JSX.Element {
     const { errors, isEditMode, node, parameterDefinitions, setProperty, showSwitch, showValidation } = props;
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     const processDefinitionData = useAppSelector(getProcessDefinitionData);

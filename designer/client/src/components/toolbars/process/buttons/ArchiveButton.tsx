@@ -10,7 +10,7 @@ import { CapabilitiesToolbarButton } from "../../../toolbarComponents/Capabiliti
 import type { ToolbarButtonProps } from "../../types";
 import { useArchiveHelper } from "./useArchiveHelper";
 
-function ArchiveButton({ disabled, type }: ToolbarButtonProps): JSX.Element {
+function ArchiveButton({ disabled, type }: ToolbarButtonProps): React.JSX.Element {
     const processName = useAppSelector(getProcessName);
     const { confirmArchiveCallback } = useArchiveHelper(processName);
     const archivePossible = useAppSelector(isArchivePossible);

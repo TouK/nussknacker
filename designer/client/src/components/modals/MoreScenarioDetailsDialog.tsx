@@ -1,9 +1,10 @@
-import { Box, Skeleton, styled, Typography } from "@mui/material";
+import type { TypographyProps } from "@mui/material";
+import { Typography, Box, styled } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import i18next from "i18next";
 import { capitalize, startCase } from "lodash";
 import moment from "moment";
-import React, { useMemo } from "react";
+import React, { forwardRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import NuLogoIcon from "../../assets/img/nussknacker-logo-icon.svg";
@@ -17,19 +18,18 @@ import { useGetAllCombinations } from "../useGetAllCombinations";
 
 const ItemWrapperStyled = styled("div")({ display: "grid", gridAutoColumns: "minmax(0, 1fr)", gridAutoFlow: "column" });
 
-const ItemLabelStyled = styled(Typography)({ display: "flex", justifyContent: "flex-end", marginRight: "8px" });
+const Typo = forwardRef(function Typo(props: TypographyProps, forwardedRef: React.Ref<HTMLElement>) {
+    return <Typography ref={forwardedRef} variant="caption" fontWeight={300} {...props} />;
+});
 
-ItemLabelStyled.defaultProps = {
-    variant: "caption",
-    fontWeight: 300,
-};
+const ItemLabelStyled = styled(Typo)({ display: "flex", justifyContent: "flex-end", marginRight: "8px" });
 
 interface Props {
     scenario: Scenario;
     processState: ProcessStateType;
 }
 
-function MoreScenarioDetailsDialog(props: WindowContentProps<WindowKind, Props>): JSX.Element {
+function MoreScenarioDetailsDialog(props: WindowContentProps<WindowKind, Props>): React.JSX.Element {
     const { scenario, processState } = props.data.meta;
 
     const { t } = useTranslation();

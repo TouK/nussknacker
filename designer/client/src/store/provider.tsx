@@ -9,7 +9,7 @@ import { waitForFirstValue } from "./waitForFirstValue";
 
 const { store, persistor } = setupStore();
 
-export const StoreProvider = ({ children }: PropsWithChildren<unknown>): JSX.Element => (
+export const StoreProvider = ({ children }: PropsWithChildren<unknown>): React.JSX.Element => (
     <Provider store={store}>
         <PersistGate loading={null} persistor={persistor}>
             {children}

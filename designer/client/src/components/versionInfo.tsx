@@ -27,7 +27,7 @@ function useTimer(): [(t: number) => Promise<number>, () => void] {
     return [start, stop];
 }
 
-export function VersionInfo({ t = 3000 }: { t?: number }): JSX.Element {
+export function VersionInfo({ t = 3000 }: { t?: number }): React.JSX.Element {
     const buildInfo = useBuildInfo();
     const variedVersions = __BUILD_VERSION__ !== buildInfo?.version;
 

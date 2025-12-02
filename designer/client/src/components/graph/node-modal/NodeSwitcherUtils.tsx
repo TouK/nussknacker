@@ -68,7 +68,7 @@ function adjustEdges(outputEdges: Edge[], nextNode: NodeType, processDefinitionD
         }
         case "Switch": {
             return outputEdges.map((edge) => {
-                if ([EdgeKind.switchNext, EdgeKind.switchDefault].includes(edge.edgeType?.type)) {
+                if ([EdgeKind.switchNext, EdgeKind.switchDefault].includes(EdgeKind[edge.edgeType?.type])) {
                     return edge;
                 }
                 return {
@@ -94,7 +94,7 @@ function adjustEdges(outputEdges: Edge[], nextNode: NodeType, processDefinitionD
                 });
 
             return outputEdges.map((edge) => {
-                if ([EdgeKind.fragmentOutput].includes(edge.edgeType?.type) && names.includes(edge.edgeType?.name)) {
+                if ([EdgeKind.fragmentOutput].includes(EdgeKind[edge.edgeType?.type]) && names.includes(edge.edgeType?.name)) {
                     return edge;
                 }
                 return {

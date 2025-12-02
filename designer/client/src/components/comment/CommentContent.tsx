@@ -45,7 +45,7 @@ const withHighlightText = (text: string, searchWords: string[], theme: Theme) =>
     });
 };
 
-function CommentContent({ commentSettings, content, searchWords, variant = "caption" }: Props): JSX.Element {
+function CommentContent({ commentSettings, content, searchWords, variant = "caption" }: Props): React.JSX.Element {
     const theme = useTheme();
     const newContent = useMemo(() => {
         if (isEmpty(commentSettings)) {

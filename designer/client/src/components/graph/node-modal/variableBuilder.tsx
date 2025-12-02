@@ -27,7 +27,7 @@ export function VariableBuilder({
     setProperty: SetProperty;
     showValidation?: boolean;
     variableTypes?: VariableTypes;
-}): JSX.Element {
+}): React.JSX.Element {
     const nodeExpressionType = useAppSelector((state: RootState) => getNodeExpressionType(state)(node.id), isEqual);
     return (
         <MapVariable

@@ -17,7 +17,7 @@ import type { GraphProps } from "./types";
 import { usePortMagnetToggle } from "./usePortMagnetToggle";
 
 // Graph wrapped to make partial (for now) refactor to TS and hooks
-export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwardedRef): JSX.Element {
+export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwardedRef): React.JSX.Element {
     const { openNodeWindow } = useWindows();
     const userSettings = useAppSelector(getUserSettings);
     const pristine = useAppSelector(isPristine);
@@ -28,7 +28,7 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
     const theme = useTheme();
     const translation = useTranslation();
     const { trackEvent } = useEventTracking();
-    const graphRef = useRef<Graph>();
+    const graphRef = useRef<Graph>(null);
     const ref = useForkRef(graphRef, forwardedRef);
     const areAdvancedStickyNotesEnabled = userSettings["node.advancedStickyNotes"];
 

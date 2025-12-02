@@ -20,7 +20,7 @@ import { TipPanelStyled } from "./Styled";
 import ValidTips from "./ValidTips";
 import Warnings from "./Warnings";
 
-export default function Tips(props: ToolbarPanelProps): JSX.Element {
+export default function Tips(props: ToolbarPanelProps): React.JSX.Element {
     const { openNodeWindow } = useWindows();
     const scenario = useAppSelector(getScenario);
 

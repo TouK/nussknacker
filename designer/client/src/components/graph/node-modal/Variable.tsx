@@ -34,7 +34,7 @@ interface Props {
     variableTypes: VariableTypes;
 }
 
-export default function Variable({ node, setProperty, isEditMode, showValidation, errors, variableTypes }: Props): JSX.Element {
+export default function Variable({ node, setProperty, isEditMode, showValidation, errors, variableTypes }: Props): React.JSX.Element {
     const onExpressionChange = useCallback((value: ExpressionObj) => setProperty("value", value), [setProperty]);
     const [isMarked] = useDiffMark();
     const inferredVariableType = useAppSelector((state: RootState) => {
@@ -44,12 +44,6 @@ export default function Variable({ node, setProperty, isEditMode, showValidation
         return ProcessUtils.humanReadableType(varExprType);
     });
     const readOnly = !isEditMode;
-
-    const editors = [
-        { type: EditorType.SPEL_PARAMETER_EDITOR },
-        { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR },
-        { type: EditorType.JSON_TEMPLATE_PARAMETER_EDITOR },
-    ];
 
     return (
         <>
@@ -65,7 +59,11 @@ export default function Variable({ node, setProperty, isEditMode, showValidation
                 <FieldLabelConsumer text="Variable Name" />
             </LabeledInput>
             <EditableEditor
-                editors={editors}
+                editors={[
+                    { type: EditorType.SPEL_PARAMETER_EDITOR },
+                    { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR },
+                    { type: EditorType.JSON_TEMPLATE_PARAMETER_EDITOR },
+                ]}
                 fieldLabel={"Expression"}
                 expressionObj={node.value}
                 onValueChange={onExpressionChange}

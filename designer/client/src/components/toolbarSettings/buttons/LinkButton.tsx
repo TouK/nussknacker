@@ -15,7 +15,7 @@ export interface LinkButtonProps {
     disabled?: boolean;
 }
 
-function LinkButton({ url, icon, name, title, disabled, type }: LinkButtonProps): JSX.Element {
+function LinkButton({ url, icon, name, title, disabled, type }: LinkButtonProps): React.JSX.Element {
     return (
         <PlainStyleLink disabled={disabled} to={url} tabIndex={-1}>
             <ToolbarButton

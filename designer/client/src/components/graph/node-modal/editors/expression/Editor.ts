@@ -1,6 +1,7 @@
-import type { ForwardRefExoticComponent, LegacyRef, ReactNode } from "react";
+import type { ComponentType, ForwardRefExoticComponent, PropsWithoutRef, RefAttributes } from "react";
 
 import type { VariableTypes } from "../../../../../types/validation";
+import type { Prettify } from "../../useNodeTypeDetailsContentLogic";
 import type { FieldError } from "../Validators";
 import { BoolEditor } from "./BoolEditor";
 import { CronEditor } from "./Cron/CronEditor";
@@ -10,6 +11,7 @@ import { TimeEditor } from "./DateTimeEditor/TimeEditor";
 import { DictParameterEditor } from "./DictParameterEditor/DictParameterEditor";
 import { DurationEditor } from "./Duration/DurationEditor";
 import { PeriodEditor } from "./Duration/PeriodEditor";
+import type { EditorConfig } from "./EditorConfig";
 import { FixedValuesEditor } from "./FixedValuesEditor";
 import type { Formatter } from "./Formatter";
 import { JsonEditor } from "./JsonEditor";
@@ -23,32 +25,53 @@ import { TextareaEditor } from "./TextareaEditor";
 import type { ExpressionLang, ExpressionObj } from "./types";
 import { EditorType } from "./types";
 
-export type EditorProps = {
-    onValueChange: OnValueChange;
-    type?: EditorType;
-    editorConfig?: Record<string, unknown>;
-    className?: string;
-    fieldErrors: FieldError[];
-    formatter?: Formatter;
-    expressionInfo?: ReactNode;
+type BaseEditorProps = {
     expressionObj: ExpressionObj;
+    onValueChange: OnValueChange;
+    fieldErrors: FieldError[];
     readOnly?: boolean;
     showSwitch?: boolean;
     showValidation?: boolean;
+    className?: string;
+    formatter?: Formatter;
     variableTypes?: VariableTypes;
-    ref?: LegacyRef<unknown>;
-    rows?: number;
+    editorConfig: EditorConfig;
 };
 
-export type SimpleEditor<P extends EditorProps = EditorProps> =
-    | React.ComponentType<P & EditorProps>
-    | ForwardRefExoticComponent<P & EditorProps>;
+export type EditorProps = BaseEditorProps;
 
-export type ExtendedEditor<P extends EditorProps = EditorProps> = SimpleEditor<P> & {
-    isSwitchableTo: (expressionObj: ExpressionObj, editorConfig) => boolean;
-    parseValueOnEditorChange?: (expressionObject: ExpressionObj, newLanguage: ExpressionLang) => ExpressionObj;
+type GetProps<C> = Prettify<EditorProps & PropsWithoutRef<C extends ComponentType<infer P> ? P : C>>;
+type GetComp<C> = C extends ComponentType<infer P> ? ComponentType<P> : ComponentType<C>;
+
+type SimpleEditor<C = EditorProps, P extends EditorProps = GetProps<C>> = GetComp<C> & ComponentType<P>;
+
+type Addons<C = EditorProps, P extends EditorProps = GetProps<C>> = {
+    isSwitchableTo: (expressionObj: P["expressionObj"], editorConfig: P["editorConfig"]) => boolean;
     notSwitchableToHint: () => string;
+    parseValueOnEditorChange?: (expressionObj: P["expressionObj"], nextLanguage: ExpressionLang) => ExpressionObj;
 };
+
+type ExtendedEditor<C = EditorProps> = SimpleEditor<C> & Addons<C>;
+
+type InferRef<C> = C extends RefAttributes<infer R> ? R : unknown;
+type InferComp<C, R = InferRef<C>> = unknown extends R
+    ? C extends ComponentType
+        ? C
+        : ComponentType<GetProps<C>>
+    : ForwardRefExoticComponent<GetProps<C> & RefAttributes<R>>;
+
+export function prepareEditor<C, R = InferRef<C>>(Component: InferComp<C, R>): SimpleEditor<typeof Component>;
+export function prepareEditor<C, R = InferRef<C>>(
+    Component: InferComp<C, R>,
+    addons: Addons<typeof Component>,
+): ExtendedEditor<typeof Component>;
+export function prepareEditor<C, R = InferRef<C>>(
+    Component: InferComp<C, R>,
+    addons?: Addons<typeof Component>,
+): SimpleEditor<typeof Component> | ExtendedEditor<typeof Component> {
+    if (!addons) return Component as SimpleEditor<typeof Component>;
+    return Object.assign(Component, addons) as ExtendedEditor<typeof Component>;
+}
 
 export function isExtendedEditor(editor: SimpleEditor | ExtendedEditor): editor is ExtendedEditor {
     return (editor as ExtendedEditor)?.isSwitchableTo !== undefined;
@@ -74,7 +97,7 @@ export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
     [EditorType.DICT_PARAMETER_EDITOR]: DictParameterEditor,
     [EditorType.TABLE_EDITOR]: TableEditor,
     [EditorType.JSON_TEMPLATE_PARAMETER_EDITOR]: JsonTemplateEditor,
-};
+} as const;
 
 export type OnValueChange = {
     (expression: ExpressionObj): void;

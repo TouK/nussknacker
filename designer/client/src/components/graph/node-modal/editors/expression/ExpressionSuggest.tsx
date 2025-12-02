@@ -20,7 +20,7 @@ function useDeepMemo<T>(factory: () => T, deps: React.DependencyList): T {
     const ref = useRef<{
         value: T;
         deps: React.DependencyList;
-    }>();
+    }>(null);
 
     if (!ref.current || !isEqual(deps, ref.current.deps)) {
         ref.current = {
@@ -32,7 +32,7 @@ function useDeepMemo<T>(factory: () => T, deps: React.DependencyList): T {
     return ref.current.value;
 }
 
-export function ExpressionSuggest(props: ExpressionSuggestProps): JSX.Element {
+export function ExpressionSuggest(props: ExpressionSuggestProps): React.JSX.Element {
     const { className, isMarked, showValidation, inputProps, fieldErrors, variableTypes, validationLabelInfo } = props;
 
     const definitionData = useAppSelector(getProcessDefinitionData);

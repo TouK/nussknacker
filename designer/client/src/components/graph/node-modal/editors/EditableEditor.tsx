@@ -2,20 +2,20 @@ import { cx } from "@emotion/css";
 import { styled } from "@mui/material";
 import { isEmpty } from "lodash";
 import type { ReactNode } from "react";
-import React, { forwardRef, useMemo } from "react";
+import React, { useMemo } from "react";
 
 import type { TypingResult } from "../../../../types/definition";
 import type { VariableTypes } from "../../../../types/validation";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 import type { OnValueChange } from "./expression/Editor";
 import { editors as editorsClasses } from "./expression/Editor";
+import type { EditorConfig } from "./expression/EditorConfig";
 import { spelFormatters } from "./expression/Formatter";
 import type { ExpressionObj } from "./expression/types";
 import { EditorType, ExpressionLang } from "./expression/types";
 import { FieldSwitch } from "./field/FieldSwitch";
 import { FormControl, FormLabel } from "./FormControl";
 import { FieldLabelConsumer } from "./RenderFieldLabel";
-import type { Editor } from "./types";
 import type { FieldError, PossibleValue } from "./Validators";
 
 interface Props {
@@ -24,7 +24,7 @@ interface Props {
     fieldLabel?: string;
     readOnly?: boolean;
     valueClassName?: string;
-    editors?: Editor[];
+    editors?: EditorConfig[];
     paramType?: TypingResult;
     values?: Array<PossibleValue>;
     isMarked?: boolean;
@@ -38,11 +38,11 @@ interface Props {
     defaultValue?: ExpressionObj | string;
 }
 
-export const EditableEditor = forwardRef((props: Props, ref) => {
+export const EditableEditor = (props: Props) => {
     const { expressionObj, valueClassName, editors, paramType, fieldErrors = [], validationLabelInfo } = props;
 
-    const availableEditors: Editor[] = useMemo(
-        (): Editor[] => (isEmpty(editors) ? [{ type: EditorType.SPEL_PARAMETER_EDITOR }] : editors),
+    const availableEditors: EditorConfig[] = useMemo(
+        (): EditorConfig[] => (isEmpty(editors) ? [{ type: EditorType.SPEL_PARAMETER_EDITOR }] : editors),
         [editors],
     );
 
@@ -65,20 +65,16 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
                 return (
                     <Editor
                         {...props}
-                        ref={ref}
                         editorConfig={selectedEditor}
                         className={`${valueClassName ? valueClassName : nodeValue}`}
                         fieldErrors={fieldErrors}
                         formatter={formatter}
-                        expressionInfo={validationLabelInfo}
                     />
                 );
             }}
         </FieldSwitch>
     );
-});
-
-EditableEditor.displayName = "EditableEditor";
+};
 
 function EditableEditorRow({
     rowClassName,
@@ -88,7 +84,7 @@ function EditableEditorRow({
     ...props
 }: Props & {
     rowClassName?: string;
-}): JSX.Element {
+}): React.JSX.Element {
     return (
         <FormControl
             className={cx(rowClassName && rowClassName)}

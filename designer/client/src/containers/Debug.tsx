@@ -14,7 +14,7 @@ const defaultNodeRenderer = ({ depth, name, data, isNonenumerable, expanded }) =
     );
 };
 
-export function Debug({ data, name }: { data: any; name?: string }): JSX.Element {
+export function Debug({ data, name }: { data: any; name?: string }): React.JSX.Element {
     return (
         <div style={{ zoom: 2 }}>
             <Inspector expandLevel={1} theme="chromeDark" data={data} name={name} nodeRenderer={defaultNodeRenderer} />

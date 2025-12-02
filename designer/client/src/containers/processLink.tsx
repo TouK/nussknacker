@@ -8,6 +8,6 @@ import { PlainStyleLink } from "./plainStyleLink";
 export function ProcessLink({
     processName,
     ...props
-}: PropsWithChildren<{ processName: ProcessName; className?: string; title?: string }>): JSX.Element {
+}: PropsWithChildren<{ processName: ProcessName; className?: string; title?: string }>): React.JSX.Element {
     return <PlainStyleLink to={visualizationUrl(processName)} {...props} />;
 }

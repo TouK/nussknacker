@@ -59,13 +59,13 @@ export const ProcessGraph = forwardRef<
     {
         capabilities: Capabilities;
     }
->(function ProcessGraph({ capabilities }, forwardedRef): JSX.Element {
+>(function ProcessGraph({ capabilities }, forwardedRef): React.JSX.Element {
     const scenario = useAppSelector(getScenario);
     const processCounts = useAppSelector(getProcessCounts);
     const layout = useAppSelector(getLayout);
     const { getPaperPreviewRect, getPaperPreviewOffset } = usePreviewOffset();
 
-    const graph = useRef<Graph>();
+    const graph = useRef<Graph>(null);
     useImperativeHandle(forwardedRef, () => graph.current);
 
     const [{ isDraggingOver }, connectDropTarget] = useDrop<NodeType, ElementDropResult, { isDraggingOver: boolean }>(

@@ -73,7 +73,9 @@ function Tool({ label, nodeModel, highlights = [], disabled, tooltip, onClick, o
         <InfoTooltip title={isTruncated ? label : ""} variant={"hover"}>
             <div
                 className={cx("tool", { disabled })}
-                ref={drag}
+                ref={(i) => {
+                    drag(i);
+                }}
                 onClick={onClick && ((e) => onClick(item, e))}
                 data-testid={`component:${label}`}
             >

@@ -53,7 +53,7 @@ type Props = {
     errors: NodeValidationError[];
 };
 
-function MockExpressionField(props: Props): JSX.Element {
+function MockExpressionField(props: Props): React.JSX.Element {
     const { editedNode, isEditMode, showValidation, showSwitch, findAvailableVariables, setNodeDataAt, errors } = props;
     const [mockExpression, setMockExpression] = useState(() => {
         return get(editedNode, MOCK_EXPRESSION_IN_NODE_NAME) || { expression: "", language: ExpressionLang.JsonTemplate };
@@ -74,7 +74,7 @@ function MockExpressionField(props: Props): JSX.Element {
         [setNodeDataAt],
     );
 
-    const renderMockExpressionParameterLabel = (): JSX.Element => {
+    const renderMockExpressionParameterLabel = (): React.JSX.Element => {
         return <FieldLabel label={t("nodes.enricher.mockExpression", "Mock")} hintText={MOCK_EXPRESSION_HINT_TEXT} />;
     };
 

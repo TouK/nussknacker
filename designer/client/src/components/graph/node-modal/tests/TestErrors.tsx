@@ -7,7 +7,7 @@ import { InfoTooltip } from "../editors/InfoTooltip/InfoTooltip";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 import { useTestResults } from "../TestResultsWrapper";
 
-export default function TestErrors(): JSX.Element {
+export default function TestErrors(): React.JSX.Element {
     const results = useTestResults();
 
     if (!results.testResultsToShow?.error) {

@@ -10,7 +10,7 @@ export type LabeledInputProps = PropsWithChildren<
     Pick<InputProps, "placeholder" | "isMarked" | "readOnly" | "value" | "autoFocus" | "showValidation" | "fieldErrors" | "onChange">
 >;
 
-export default function LabeledInput({ children, ...props }: LabeledInputProps): JSX.Element {
+export default function LabeledInput({ children, ...props }: LabeledInputProps): React.JSX.Element {
     return (
         <FormControl>
             {children}

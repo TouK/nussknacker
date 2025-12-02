@@ -226,7 +226,7 @@ function NodeDetails({ node, errors, showSwitch, showValidation, edges, onChange
     }
 }
 
-export function NodeTypeDetailsContent(props: NodeTypeDetailsContentProps): JSX.Element {
+export function NodeTypeDetailsContent(props: NodeTypeDetailsContentProps): React.JSX.Element {
     const { errors, showSwitch, onChange, edges, node, showValidation } = props;
     const renderFieldLabel = useRenderFieldLabel({ node });
     return (

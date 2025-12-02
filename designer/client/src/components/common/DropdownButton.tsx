@@ -20,7 +20,7 @@ export interface DropdownButtonProps<T> {
     wrapperStyle?: CSSProperties;
 }
 
-export function DropdownButton<T>(props: PropsWithChildren<ButtonProps & DropdownButtonProps<T>>): JSX.Element {
+export function DropdownButton<T>(props: PropsWithChildren<ButtonProps & DropdownButtonProps<T>>): React.JSX.Element {
     const [isOpen, setIsOpen] = useState<boolean>();
     const { options, onRangeSelect: onSelect, children, onClick, wrapperStyle, ...buttonProps } = props;
     const theme = useTheme();

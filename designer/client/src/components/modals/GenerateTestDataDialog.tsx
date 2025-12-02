@@ -24,7 +24,7 @@ import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { nodeInput, nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import ValidationLabels from "./ValidationLabels";
 
-function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
+function GenerateTestDataDialog(props: WindowContentProps): React.JSX.Element {
     const { t } = useTranslation();
     const processName = useAppSelector(getProcessName);
     const scenarioGraph = useAppSelector(getScenarioGraph);

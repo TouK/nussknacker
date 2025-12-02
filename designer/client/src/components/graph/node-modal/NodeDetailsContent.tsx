@@ -37,7 +37,7 @@ export const NodeDetailsContent = ({
     showValidation?: boolean;
     showSwitch?: boolean;
     showTestResults?: boolean;
-}): JSX.Element => {
+}): React.JSX.Element => {
     const currentErrors = useAppSelector((state: RootState) => getNodeErrors(state, { node, nodeErrors }));
     const [errors, diagramStructureErrors] = useMemo(() => partition(currentErrors, (error) => !!error.fieldName), [currentErrors]);
 

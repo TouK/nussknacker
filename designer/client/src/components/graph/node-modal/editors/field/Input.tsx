@@ -20,7 +20,7 @@ export interface InputProps
     showValidation?: boolean;
 }
 
-export default function Input(props: InputProps): JSX.Element {
+export default function Input(props: InputProps): React.JSX.Element {
     const {
         isMarked,
         showValidation,

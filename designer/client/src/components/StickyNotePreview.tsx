@@ -16,7 +16,7 @@ const PREVIEW_SCALE = 0.9;
 const ACTIVE_ROTATION = 2;
 const INACTIVE_SCALE = 1.5;
 
-export function StickyNotePreview({ isActive, isOver }: { isActive?: boolean; isOver?: boolean }): JSX.Element {
+export function StickyNotePreview({ isActive, isOver }: { isActive?: boolean; isOver?: boolean }): React.JSX.Element {
     const theme = useTheme();
     const scale = isOver ? 1 : PREVIEW_SCALE;
     const rotation = isActive ? (isOver ? -ACTIVE_ROTATION : ACTIVE_ROTATION) : 0;

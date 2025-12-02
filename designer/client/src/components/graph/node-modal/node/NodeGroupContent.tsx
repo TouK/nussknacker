@@ -20,7 +20,7 @@ export interface NodeGroupContentProps {
     onChange?: NodeState["onChange"];
 }
 
-export const NodeGroupContent = memo(function NodeGroupContent({ node, edges, onChange }: NodeGroupContentProps): JSX.Element {
+export const NodeGroupContent = memo(function NodeGroupContent({ node, edges, onChange }: NodeGroupContentProps): React.JSX.Element {
     const errors = useAppSelector((state: RootState) => {
         return getNodeErrors(state, node.id);
     }, isEqual);

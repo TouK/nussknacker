@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { DefaultFullScreenMessage } from "./DefaultFullScreenMessage";
 import WarningNotFound from "./images/warning-occurred.svg";
 
-export function NotFound(props: { message?: string }): JSX.Element {
+export function NotFound(props: { message?: string }): React.JSX.Element {
     const { t } = useTranslation();
 
     const message = props.message || t("error.NotFound.defaultMessage", "That page can’t be found...");

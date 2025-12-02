@@ -1,44 +1,45 @@
 import React, { useMemo } from "react";
 
-import type { ExtendedEditor } from "./Editor";
+import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { SpelEditorProps } from "./SpelEditor";
 import { SpelEditor } from "./SpelEditor";
 import { addQuotesToExpression } from "./SpelQuotesUtils";
-import { EditorMode, ExpressionLang, type ExpressionObj } from "./types";
+import { EditorMode, EditorType, ExpressionLang, type ExpressionObj } from "./types";
 
-export const JsonTemplateEditor: ExtendedEditor<SpelEditorProps> = (props: SpelEditorProps) => {
-    const { expressionObj, rows = 5, ...passProps } = props;
+export const JsonTemplateEditor = prepareEditor<SpelEditorProps>(
+    (props) => {
+        const { expressionObj, rows = 5, ...passProps } = props;
 
-    const value = useMemo(
-        () => ({
-            expression: expressionObj.expression,
-            language: editorsParameters.JsonTemplateParameterEditor.language,
-        }),
-        [expressionObj],
-    );
+        const value = useMemo(
+            () => ({
+                expression: expressionObj.expression,
+                language: editorsParameters[EditorType.JSON_TEMPLATE_PARAMETER_EDITOR].language,
+            }),
+            [expressionObj],
+        );
 
-    return (
-        <SpelEditor
-            {...passProps}
-            expressionObj={value}
-            rows={rows}
-            editorMode={EditorMode.JsonTemplate}
-            language={editorsParameters.JsonTemplateParameterEditor.language}
-        />
-    );
-};
+        return (
+            <SpelEditor
+                {...passProps}
+                expressionObj={value}
+                rows={rows}
+                editorMode={EditorMode.JsonTemplate}
+                language={editorsParameters[EditorType.JSON_TEMPLATE_PARAMETER_EDITOR].language}
+            />
+        );
+    },
+    {
+        parseValueOnEditorChange: ({ expression, language }: ExpressionObj, newLanguage) => {
+            if (language === ExpressionLang.SpELTemplate) {
+                return { expression: addQuotesToExpression({ expression, language: newLanguage }), language: newLanguage };
+            }
 
-JsonTemplateEditor.parseValueOnEditorChange = ({ expression, language }: ExpressionObj, newLanguage) => {
-    if (language === ExpressionLang.SpELTemplate) {
-        return { expression: addQuotesToExpression({ expression, language: newLanguage }), language: newLanguage };
-    }
-
-    return { expression, language: newLanguage };
-};
-
-JsonTemplateEditor.isSwitchableTo = () => {
-    return true;
-};
-
-JsonTemplateEditor.notSwitchableToHint = () => "";
+            return { expression, language: newLanguage };
+        },
+        isSwitchableTo: () => {
+            return true;
+        },
+        notSwitchableToHint: () => "",
+    },
+);

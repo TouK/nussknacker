@@ -52,10 +52,10 @@ function getDefaultEdge(kind: EdgeKind): Edge {
 }
 
 function withDefaults<T extends Edge>(edge: Partial<T>): T {
-    return defaultsDeep(edge, getDefaultEdge(edge.edgeType?.type));
+    return defaultsDeep(edge, getDefaultEdge(EdgeKind[edge.edgeType?.type]));
 }
 
-export function EdgesDndComponent(props: Props): JSX.Element {
+export function EdgesDndComponent(props: Props): React.JSX.Element {
     const { nodeId, label, readOnly, value, onChange, ordered, variableTypes, errors } = props;
     const [edges, setEdges] = useStateWithTempId(value, onChange);
 

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { StyledButton } from "../../../styledButton";
 
-export function RemoveButton({ onClick }: { onClick: () => void }): JSX.Element {
+export function RemoveButton({ onClick }: { onClick: () => void }): React.JSX.Element {
     const { t } = useTranslation();
     return (
         <StyledButton title={t("node.row.remove.title", "Remove field")} onClick={onClick}>

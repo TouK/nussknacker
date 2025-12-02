@@ -22,7 +22,7 @@ interface AddProcessDialogProps extends WindowContentProps {
     errors?: NodeValidationError[];
 }
 
-export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
+export function AddProcessDialog(props: AddProcessDialogProps): React.JSX.Element {
     const { t } = useTranslation();
     const { isFragment = false, errors = [], ...passProps } = props;
     const nameValidators = useProcessNameValidators();
