@@ -17,6 +17,8 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 
 import java.time.Instant
 
+//todo: try to compare to arrays/lists
+//todo: try to use some global in assertion like CONV.toAny()
 class AssertionVerifierSpec extends AnyFunSuite with Matchers {
 
   private val baseDefinition = ModelDefinitionBuilder.empty
@@ -38,12 +40,15 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
   )
 
   private val testCompiler = new TestCaseCompiler(expressionCompiler)
+  private val verifier = new AssertionVerifierImpl()
+
+  private val scenarioTyping: Map[String, NodeTypingData] = Map(
+    "someNode" -> NodeTypingData(
+      Map("someVariable" -> Typed.fromInstance("bar")
+      ), None, Map.empty, None)
+  )
 
   test("should run assertions on test nodes results") {
-    val scenarioTyping: Map[String, NodeTypingData] = Map(
-      "someNode" -> NodeTypingData(Map("someVariable" -> Typed.fromInstance("bar")), None, Map.empty, None)
-    )
-
     val testCase = TestCase(
       "dummy",
       "dummy",
@@ -56,23 +61,32 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val compiledTestCase = testCompiler
-      .compile(testCase, scenarioTyping)
-      .fold(errors => throw new IllegalStateException(s"Test compilation errors: $errors"), identity)
-    val verifier = new AssertionVerifierImpl()
-
-    val results = verifier.verify(
-      compiledTestCase,
-      Map(
-        NodeId("someNode") -> List(
-          ResultContext[Any](ContextId.dummy, Instant.now(), Map("someVariable" -> "valid")),
-          ResultContext[Any](ContextId.dummy, Instant.now(), Map("someVariable" -> "invalid")),
-        )
+    val nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]] = Map(
+      NodeId("someNode") -> List(
+        ResultContext[Any](ContextId.dummy, Instant.now(), Map("someVariable" -> "valid")),
+        ResultContext[Any](ContextId.dummy, Instant.now(), Map("someVariable" -> "invalid")),
       )
     )
 
+    val results = verifyForTestCase(
+      testCase,
+      nodesResultsAfterTestRun
+    )
+
     results.toList shouldBe List(
-      NodeId("someNode") -> List(SuccessfulAssertion, FailedAssertion("Expected: [valid] but found [invalid]"))
+      NodeId("someNode") -> List(
+        SuccessfulAssertion,
+        FailedAssertion("Expected: [valid] but found [invalid]"))
+    )
+  }
+
+  private def verifyForTestCase(testCase: TestCase, nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]]) = {
+    val compiledTestCase = testCompiler
+      .compile(testCase, scenarioTyping)
+      .fold(errors => throw new IllegalStateException(s"Test compilation errors: $errors"), identity)
+    verifier.verify(
+      compiledTestCase,
+      nodesResultsAfterTestRun
     )
   }
 

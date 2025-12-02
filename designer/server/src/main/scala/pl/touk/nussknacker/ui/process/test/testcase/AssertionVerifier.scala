@@ -43,7 +43,6 @@ class AssertionVerifierImpl extends AssertionVerifier {
       nodeId: NodeId,
       results: Map[NodeId, List[ResultContext[Any]]]
   ): AssertionResult = {
-    // todo: test contextId?
     val contextsForNode = prepareResultsEvaluationContext(nodeId, results)
 
     val context: Context = Context(ContextId.dummy, Map("contexts" -> contextsForNode))
