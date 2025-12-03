@@ -1,0 +1,115 @@
+{
+    "metaData": {
+        "id": "e2e-001-multiselect-test-process",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "parallelism": "1",
+                "checkpointIntervalInSeconds": "",
+                "numberOfThreads": "1",
+                "spillStateToDisk": "true",
+                "environment": "test",
+                "useAsyncInterpretation": ""
+            },
+            "metaDataType": "StreamMetaData",
+            "showDescription": false
+        }
+    },
+    "nodes": [
+        {
+            "id": "Event Generator",
+            "ref": {
+                "typ": "event-generator",
+                "parameters": [
+                    {
+                        "name": "schedule",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT1M')"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "1"
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "expression": {
+                            "language": "jsonTemplate",
+                            "expression": "{\n\t\"sampleField\": \"#{ #UTIL.uuid }\",\n\t\"dateTime\": \"#{ #DATE.now }\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}"
+                        }
+                    },
+                    {
+                        "name": "Event time",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "#DATE.now"
+                        }
+                    },
+                    {
+                        "name": "Max out-of-orderness",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT10S')"
+                        }
+                    }
+                ]
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 183,
+                    "y": -103
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "id": "Service",
+            "service": {
+                "id": "multipleSelectEditorService",
+                "parameters": [
+                    {
+                        "name": "multiSelectParam",
+                        "expression": {
+                            "language": "json",
+                            "expression": "[\"option1\",\"option2\", \"wrong\"]"
+                        }
+                    }
+                ]
+            },
+            "output": "multipleselecteditorservice_output",
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 180
+                }
+            },
+            "mockExpression": null,
+            "type": "Enricher"
+        },
+        {
+            "id": "Dead End",
+            "ref": {
+                "typ": "dead-end",
+                "parameters": []
+            },
+            "endResult": null,
+            "isDisabled": null,
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 97,
+                    "y": 416
+                }
+            },
+            "type": "Sink"
+        }
+    ],
+    "additionalBranches": [],
+    "stickyNotes": []
+}
