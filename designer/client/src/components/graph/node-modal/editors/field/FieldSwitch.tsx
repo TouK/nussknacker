@@ -5,6 +5,8 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { blendDarken, getBorderColor } from "../../../../../containers/theme/helpers";
+import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
+import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { Option } from "../../fragment-input-definition/TypeSelect";
 import { editors, isExtendedEditor } from "../expression/Editor";
 import type { EditorConfig } from "../expression/EditorConfig";
@@ -26,7 +28,6 @@ const StyledTab = styled(Tab)(({ theme }) => ({
         background: blendDarken(theme.palette.primary.main, 0.3),
     },
     "&[aria-disabled='true']": {
-        pointerEvents: "none",
         cursor: "default",
         background: theme.palette.action.disabledBackground,
         "&:hover": {
@@ -59,6 +60,8 @@ interface Props {
 
 export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, children, readOnly, showSwitch = true }: Props) => {
     const { t } = useTranslation();
+    const settings = useAppSelector(getUserSettings);
+
     const allowsSwitch = useCallback(
         (checkedEditor: ParamType["editors"][number]) => {
             const editor = editors[checkedEditor.type];
@@ -145,7 +148,6 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                         const editorParameters = editorsParameters[selectedEditor.type];
                         const editorComponent = editors[selectedEditor.type];
                         const editorWithParseValueMethod = isExtendedEditor(editorComponent) && editorComponent.parseValueOnEditorChange;
-
                         onValueChange(
                             editorWithParseValueMethod
                                 ? editorComponent?.parseValueOnEditorChange(expressionObj, editorParameters.language)
@@ -176,6 +178,12 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                                 }),
                             }}
                             iconPosition="end"
+                            onClickCapture={(event) => {
+                                if (event.target !== event.currentTarget) return;
+                                if (settings["editor.allowForceSwitch"] && (event.altKey || event.ctrlKey || event.metaKey)) return;
+                                if (!option.isDisabled) return;
+                                event.stopPropagation();
+                            }}
                             icon={
                                 option.hint && (
                                     <div>

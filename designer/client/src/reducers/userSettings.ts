@@ -12,6 +12,7 @@ type SettingsNames =
     | "debug.nodesAsJson"
     | "editor.showRangeMessages"
     | "editor.showResetToDefaultButton"
+    | "editor.allowForceSwitch"
     | "node.advancedStickyNotes"
     | "node.autoApply"
     | "node.shortCounts"
@@ -52,6 +53,7 @@ export const getDefaultUserSettings = (initialUserFlags?: UserSettings): UserSet
         createFlag("editor.jsonTemplate.showLines", true),
         createFlag("editor.showRangeMessages"),
         createFlag("editor.showResetToDefaultButton"),
+        createFlag("editor.allowForceSwitch"),
         createFlag("node.advancedStickyNotes"),
         createFlag("node.autoApply"),
         createFlag("node.shortCounts"),
