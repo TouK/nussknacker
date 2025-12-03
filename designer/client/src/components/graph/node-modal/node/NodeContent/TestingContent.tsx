@@ -6,7 +6,7 @@ import { getUserSettings } from "../../../../../reducers/selectors/userSettings"
 import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { NodeTypeDetailsContentProps } from "../../NodeTypeDetailsContent";
 import type { NodeState } from "../useNodeState";
-import { InputData } from "./TestingContentElements/InputData";
+import { InputDataRecords } from "./TestingContentElements/InputDataRecords";
 import { MockResponse } from "./TestingContentElements/mockResponse";
 
 export interface TestingContentProps extends Pick<NodeTypeDetailsContentProps, "node" | "edges"> {
@@ -29,7 +29,7 @@ export function useTestingContentRenderer() {
     const CONFIG: { when: (node: TestingContentProps["node"]) => boolean; render: (props: TestingContentProps) => React.JSX.Element }[] = [
         {
             when: (node) => node.type === "Source",
-            render: ({ node }) => <InputData sourceId={node.id} />,
+            render: ({ node }) => <InputDataRecords sourceId={node.id} />,
         },
         {
             when: (node) => settings["node.showMockFieldOnEnrichers"] && node.type === "Enricher" && node.service.id !== "decision-table",
