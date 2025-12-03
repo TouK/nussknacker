@@ -37,7 +37,7 @@ export function BindKeyboardShortcuts({ disabled }: { disabled?: boolean }): Rea
                     : eventWithStatistics({ selector: EventTrackingSelector.UndoScenarioChanges }, userActions.undo?.(e)),
             DELETE: (e) => eventWithStatistics({ selector: EventTrackingSelector.DeleteNodes }, userActions.delete(e)),
             BACKSPACE: (e) => eventWithStatistics({ selector: EventTrackingSelector.DeleteNodes }, userActions.delete(e)),
-            ESCAPE: (e) => eventWithStatistics({ selector: EventTrackingSelector.DeselectAllNodes }, userActions.deselectAll(e)),
+            ESCAPE: (e) => eventWithStatistics({ selector: EventTrackingSelector.DeselectAllNodes }, userActions.deselectAll?.(e)),
         }),
         [eventWithStatistics, userActions],
     );

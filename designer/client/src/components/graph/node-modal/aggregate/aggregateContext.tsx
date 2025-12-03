@@ -102,15 +102,15 @@ export const AggregateContextProvider = ({ children, node, setProperty, errors }
 
         fieldErrors.forEach((e) => {
             const details = e.details;
-            if (details.type === "CoordinatesBasedTextRange") {
-                const range = ranges.find((r) => r.from <= details.start.column && r.to >= details.end.column);
-                if (!range) return;
+            if (details?.type !== "CoordinatesBasedTextRange") return;
 
-                if (errorsByValue.has(range.value)) {
-                    errorsByValue.get(range.value).push(e);
-                } else {
-                    errorsByValue.set(range.value, [e]);
-                }
+            const range = ranges.find((r) => r.from <= details.start.column && r.to >= details.end.column);
+            if (!range) return;
+
+            if (errorsByValue.has(range.value)) {
+                errorsByValue.get(range.value).push(e);
+            } else {
+                errorsByValue.set(range.value, [e]);
             }
         });
 
