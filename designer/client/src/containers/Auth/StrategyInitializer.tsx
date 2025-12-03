@@ -14,7 +14,7 @@ interface Props {
     errorComponent: React.ComponentType<InitErrorComponentProps>;
 }
 
-export function StrategyInitializer(props: PropsWithChildren<Props>): JSX.Element {
+export function StrategyInitializer(props: PropsWithChildren<Props>): React.JSX.Element {
     const { children, onAuthFulfilled, strategy, errorComponent: ErrorHandleComponent } = props;
     const [error, setError] = useState<number>(null);
     const [initialized, setInitialized] = useState<boolean>(false);

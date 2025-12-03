@@ -13,6 +13,34 @@ import { isStickyNoteElement } from "./GraphPartialsInTS/cellUtils";
 import { MarkdownStyled } from "./node-modal/MarkdownStyled";
 import { Events } from "./types";
 
+const watchForCover = (getElement: () => Element, callback: (covered: boolean) => void) => {
+    let lastState = false;
+
+    const observer = new MutationObserver(() => {
+        const element = getElement();
+        if (!element) return;
+
+        const rect = element.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const topElement = document.elementFromPoint(centerX, centerY);
+        const isCovered = topElement !== null && topElement !== element && !element.contains(topElement);
+
+        if (isCovered !== lastState) {
+            callback(isCovered);
+            lastState = isCovered;
+        }
+    });
+
+    observer.observe(document.body, {
+        attributes: true,
+        childList: true,
+        subtree: true,
+    });
+
+    return () => observer.disconnect();
+};
+
 const useTimeout = <A extends Array<unknown>>(
     callback: (...args: A) => void,
     time: number,
@@ -20,7 +48,7 @@ const useTimeout = <A extends Array<unknown>>(
     start: (...args: A) => () => void;
     stop: () => void;
 } => {
-    const timer = useRef<NodeJS.Timeout>();
+    const timer = useRef<NodeJS.Timeout>(null);
 
     const stop = useCallback(() => {
         if (timer.current) {
@@ -57,8 +85,8 @@ const useEnterLeaveEvents = (
         outerSelector: string;
     },
 ) => {
-    const lastView = useRef<dia.CellView>();
-    const lastEl = useRef<Element | null>();
+    const lastView = useRef<dia.CellView>(null);
+    const lastEl = useRef<Element | null>(null);
 
     useEffect(() => {
         const graph = graphRef.current;
@@ -162,6 +190,14 @@ export function NodeDescriptionPopover(props: NodeDescriptionPopoverProps) {
         innerSelector: "[joint-selector=testResultsGroup]",
         outerSelector: "[model-id]",
     });
+
+    useEffect(() => {
+        if (!open) return;
+        return watchForCover(
+            () => lastTarget.current,
+            () => leaveTimer.start(),
+        );
+    }, [leaveTimer, open]);
 
     useEffect(() => {
         const graph = graphRef.current;

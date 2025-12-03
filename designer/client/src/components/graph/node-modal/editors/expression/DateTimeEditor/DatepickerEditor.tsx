@@ -13,19 +13,19 @@ import type { Formatter } from "../Formatter";
 import type { ExpressionLang, ExpressionObj } from "../types";
 
 export interface DatepickerEditorProps {
-    expressionObj: ExpressionObj;
-    readOnly: boolean;
-    className: string;
-    onValueChange: OnValueChange;
-    fieldErrors: FieldError[];
-    showValidation: boolean;
-    isMarked: boolean;
-    editorFocused: boolean;
-    formatter: Formatter;
-    momentFormat: string;
+    className?: string;
     dateFormat?: string;
-    timeFormat?: string;
+    editorFocused?: boolean;
+    expressionObj: ExpressionObj;
+    fieldErrors: FieldError[];
+    formatter: Formatter;
+    isMarked: boolean;
     language?: ExpressionLang;
+    momentFormat: string;
+    onValueChange: OnValueChange;
+    readOnly?: boolean;
+    showValidation?: boolean;
+    timeFormat?: string;
 }
 
 export function DatepickerEditor(props: DatepickerEditorProps) {

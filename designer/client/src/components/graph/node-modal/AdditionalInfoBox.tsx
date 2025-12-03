@@ -23,7 +23,7 @@ interface MarkdownAdditionalInfo {
     content: string;
 }
 
-export default function AdditionalInfoBox(props: Props): JSX.Element {
+export default function AdditionalInfoBox(props: Props): React.JSX.Element {
     const { node, handleGetAdditionalInfo } = props;
     const processName = useAppSelector(getProcessName);
 

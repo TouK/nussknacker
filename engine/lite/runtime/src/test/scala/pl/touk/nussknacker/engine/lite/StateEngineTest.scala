@@ -7,8 +7,9 @@ import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
-import pl.touk.nussknacker.engine.lite.sample.{SampleInput, SourceFailure}
+import pl.touk.nussknacker.engine.lite.sample.{SampleInput, SimpleSourceFactory, SourceFailure}
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 //TODO: test for test-from-file
@@ -29,6 +30,10 @@ class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
       ContextId(ProcessName("2"), NodeId(""), 0, 0) -> "2:14.0",
       ContextId(ProcessName("3"), NodeId(""), 0, 0) -> "3:20.0"
     )
+
+    // simple test verify traceId
+    results.value.map(_.context.traceId).toSet shouldBe Set(Some(SimpleSourceFactory.traceId))
+
     results.written.map(_.context.id) shouldBe List(ContextId(ProcessName("1"), NodeId(""), 0, 0))
   }
 

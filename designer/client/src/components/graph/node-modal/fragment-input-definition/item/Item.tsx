@@ -29,7 +29,7 @@ interface ItemProps {
     errors: NodeValidationError[];
 }
 
-export function Item(props: ItemProps): JSX.Element {
+export function Item(props: ItemProps): React.JSX.Element {
     const { index, item, namespace, variableTypes, readOnly, showValidation, onChange, options, errors } = props;
     const { getIsOpen, toggleIsOpen } = useFieldsContext();
 

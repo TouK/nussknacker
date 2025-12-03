@@ -27,7 +27,7 @@ export type VariableContextType = ResultContextJson & {
 export const VariableContextTree = memo(function ValuesContextTree({
     onIsEmptyChange,
     direction = "input",
-}: ValuesContextTreeProps): JSX.Element {
+}: ValuesContextTreeProps): React.JSX.Element {
     const { availableContexts, hiddenAvailableContexts, setContext, inputVariables, transitionNodesIds, selectedContextCache } =
         useVariableContext(direction);
 

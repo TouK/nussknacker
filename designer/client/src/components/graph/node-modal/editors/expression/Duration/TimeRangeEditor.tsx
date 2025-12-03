@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import type { FieldError } from "../../Validators";
 import type { OnValueChange } from "../Editor";
 import type { ExpressionLang } from "../types";
-import { ExpressionObj } from "../types";
 import type { Duration } from "./DurationEditor";
 import type { Period } from "./PeriodEditor";
 import type { TimeRange } from "./TimeRangeComponent";
@@ -22,7 +21,7 @@ type Props = {
     language: ExpressionLang;
 };
 
-export default function TimeRangeEditor(props: Props): JSX.Element {
+export default function TimeRangeEditor(props: Props): React.JSX.Element {
     const { encode, decode, onValueChange, editorConfig, readOnly, showValidation, fieldErrors, expression, isMarked, language } = props;
 
     const components = editorConfig.timeRangeComponents as Array<TimeRange>;

@@ -1,11 +1,11 @@
 import { styled } from "@mui/material";
 import React from "react";
-import type { Location} from "react-router-dom";
+import type { Location } from "react-router-dom";
 import { NavLink, useLocation } from "react-router-dom";
 
 import type { DynamicTabData } from "../../containers/DynamicTab";
 
-function UnstyledTabElement({ tab, ...props }: { tab: DynamicTabData; className?: string }): JSX.Element {
+function UnstyledTabElement({ tab, ...props }: { tab: DynamicTabData; className?: string }): React.JSX.Element {
     const { id, type, title } = tab;
     const tabNavigationUrl = getTabNavigationUrl(tab, useLocation());
     switch (type) {

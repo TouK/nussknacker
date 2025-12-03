@@ -43,7 +43,7 @@ const Logo = styled(Nussknacker)({
     height: "1.125em",
 });
 
-export function MenuBar(): JSX.Element {
+export function MenuBar(): React.JSX.Element {
     const settings = useAppSelector(getUserSettings);
 
     const showBreadcrumbs = settings["scenario.showBreadcrumbs"];

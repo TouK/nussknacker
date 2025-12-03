@@ -18,7 +18,7 @@ export function AuthInitializer({
     onAuthFulfilled,
     children,
     errorComponent = ({ children }) => <>{children}</>,
-}: PropsWithChildren<Props>): JSX.Element {
+}: PropsWithChildren<Props>): React.JSX.Element {
     const [strategy, setStrategy] = useState<Strategy>();
     return authenticationSettings ? (
         <StrategySelector authenticationSettings={authenticationSettings} onChange={setStrategy}>

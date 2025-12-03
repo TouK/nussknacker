@@ -183,7 +183,7 @@ export default forwardRef(function AceWrapper(
         ...props
     }: AceWrapperProps,
     ref: ForwardedRef<ReactAce>,
-): JSX.Element {
+): React.JSX.Element {
     const { language, readOnly, rows = 1, editorMode, InputAdornmentEnd, useAceWorker } = inputProps;
 
     return (

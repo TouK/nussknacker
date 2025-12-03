@@ -19,7 +19,7 @@ interface Props {
     options: EdgeTypeOption[];
 }
 
-export function EdgeTypeSelect(props: Props): JSX.Element {
+export function EdgeTypeSelect(props: Props): React.JSX.Element {
     const { readOnly, edge, onChange, id, options } = props;
     return (
         <TypeSelect

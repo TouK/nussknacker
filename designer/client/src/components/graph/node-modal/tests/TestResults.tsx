@@ -11,7 +11,7 @@ import { InfoTooltip } from "../editors/InfoTooltip/InfoTooltip";
 import { useTestResults } from "../TestResultsWrapper";
 import TestResultsVariables from "./TestResultsVariables";
 
-export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element {
+export default function TestResults({ nodeId }: { nodeId: NodeId }): React.JSX.Element {
     const { t } = useTranslation();
     const results = useTestResults();
 

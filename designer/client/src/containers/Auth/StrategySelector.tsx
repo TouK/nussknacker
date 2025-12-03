@@ -10,7 +10,7 @@ interface Props {
     authenticationSettings: AuthenticationSettings;
 }
 
-export function StrategySelector({ authenticationSettings, children, onChange }: PropsWithChildren<Props>): JSX.Element {
+export function StrategySelector({ authenticationSettings, children, onChange }: PropsWithChildren<Props>): React.JSX.Element {
     const { strategy: strategyName } = authenticationSettings;
     const strategyConstructor = useMemo(() => strategyName && STRATEGIES[strategyName], [strategyName]);
     const strategy = useMemo(

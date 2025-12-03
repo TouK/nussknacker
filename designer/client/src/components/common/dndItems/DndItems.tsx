@@ -16,7 +16,7 @@ interface DndListProps<I> extends ItemsProps<I> {
     onDestinationChange?: (index: number | null) => void;
 }
 
-export function DndItems<I>(props: DndListProps<I>): JSX.Element {
+export function DndItems<I>(props: DndListProps<I>): React.JSX.Element {
     const { items, onChange, onDestinationChange, disabled } = props;
 
     const moveItem = useCallback(

@@ -1,17 +1,11 @@
 import type { TypingResult } from "../../../../types/definition";
-import type { PossibleValue } from "../aggregate/aggregatorFieldsStack";
-import type { EditorMode, EditorType } from "./expression/types";
-
-export type Editor = {
-    type: `${EditorType}`;
-    dictId?: string;
-    possibleValues?: PossibleValue[];
-};
+import type { EditorConfig } from "./expression/EditorConfig";
+import type { EditorMode } from "./expression/types";
 
 export type ParamType = {
     name?: string;
     typ?: TypingResult;
-    editors?: Editor[];
+    editors?: EditorConfig[];
     defaultValue: {
         language: EditorMode | string;
         expression: string;

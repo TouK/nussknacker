@@ -32,7 +32,7 @@ export const NodeDetailsContent = ({
     showValidation?: boolean;
     showSwitch?: boolean;
     showTestResults?: boolean;
-}): JSX.Element => {
+}): React.JSX.Element => {
     const [errors, diagramStructureErrors] = useGetNodeErrors(node);
 
     const userSettings = useAppSelector(getUserSettings);

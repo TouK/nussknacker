@@ -145,7 +145,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     val source     = createSource(combinedSchema)
     val parameters = Map(SinkRawValueParamName -> parse("{\"errorCode\": 20}").toOption.get)
 
-    source.parametersToTestData(parameters) shouldBe TypedMap(Map("errorCode" -> 20L))
+    source.parametersToTestData(parameters).value shouldBe TypedMap(Map("errorCode" -> 20L))
   }
 
 }

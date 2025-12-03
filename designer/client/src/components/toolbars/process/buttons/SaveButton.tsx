@@ -27,7 +27,7 @@ interface SavePreset {
     isDisabled?: boolean;
 }
 
-function SaveButton(props: ToolbarButtonProps): JSX.Element {
+function SaveButton(props: ToolbarButtonProps): React.JSX.Element {
     const settings = useAppSelector(getUserSettings);
 
     const allowQuickSave = settings["scenario.allowQuickSave"];

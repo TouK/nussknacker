@@ -1,15 +1,14 @@
-import { styled, Typography } from "@mui/material";
+import { styled, Typography, type TypographyProps } from "@mui/material";
+import React, { forwardRef } from "react";
 
-export const VersionHeader = styled(
-    Typography,
-    {},
-)(({ theme }) => ({
+const Typo = forwardRef(function Typo(props: TypographyProps, forwardedRef: React.Ref<HTMLElement>) {
+    return <Typography ref={forwardedRef} variant="subtitle1" {...props} />;
+});
+
+export const VersionHeader = styled(Typo)(({ theme }) => ({
     margin: theme.spacing(2, 4),
 }));
 
-VersionHeader.defaultProps = {
-    variant: "subtitle1",
-};
 export const CompareModal = styled("div")`
     font-size: 15px;
     font-weight: 700;

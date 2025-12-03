@@ -7,6 +7,6 @@ import type { WindowKind } from "../windowManager/WindowKind";
 
 export type DialogWithChildrenProps = { children: ReactNode };
 
-export function DialogWithChildren({ ...props }: WindowContentProps<WindowKind, DialogWithChildrenProps>): JSX.Element {
+export function DialogWithChildren({ ...props }: WindowContentProps<WindowKind, DialogWithChildrenProps>): React.JSX.Element {
     return <WindowContent {...props}>{props.data.meta.children}</WindowContent>;
 }

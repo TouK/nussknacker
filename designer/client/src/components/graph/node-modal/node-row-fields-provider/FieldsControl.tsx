@@ -7,7 +7,7 @@ interface FieldsControlProps {
     readOnly?: boolean;
 }
 
-export function FieldsControl(props: PropsWithChildren<FieldsControlProps>): JSX.Element {
+export function FieldsControl(props: PropsWithChildren<FieldsControlProps>): React.JSX.Element {
     const { readOnly, children } = props;
 
     return (

@@ -18,7 +18,7 @@ interface NodeErrorsLinkSectionProps {
     scenario: Scenario;
 }
 
-export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps): JSX.Element {
+export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps): React.JSX.Element {
     const { nodeIds, message, showDetails, scenario } = props;
     const separator = ", ";
 

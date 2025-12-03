@@ -1573,8 +1573,8 @@ lazy val liteDeploymentManager = (project in lite("deploymentManager"))
     name := "nussknacker-lite-deploymentManager"
   )
   .dependsOn(
-    liteEngineKafkaRuntime,       // for tests mechanism purpose
-    requestResponseComponentsApi, // for rr scenario properties
+    liteEngineKafkaRuntime, // for tests mechanism purpose
+    requestResponseRuntime, // for tests mechanism purpose
     deploymentManagerApi % Provided
   )
 

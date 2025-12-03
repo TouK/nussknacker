@@ -4,7 +4,7 @@ import { isEmpty } from "lodash";
 import React, { useRef } from "react";
 
 export function SearchField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-    const ref = useRef<HTMLInputElement>();
+    const ref = useRef<HTMLInputElement>(null);
     return (
         <TextField
             inputRef={ref}

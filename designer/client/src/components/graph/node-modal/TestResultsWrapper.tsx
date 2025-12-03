@@ -29,7 +29,7 @@ export function TestResultsWrapper({
 }: PropsWithChildren<{
     nodeId: NodeId;
     showTestResults?: boolean;
-}>): JSX.Element {
+}>): React.JSX.Element {
     const results = useAppSelector(getTestResults);
     const nodeResults = useMemo(() => {
         if (showTestResults) {

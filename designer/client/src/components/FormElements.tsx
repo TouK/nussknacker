@@ -22,7 +22,7 @@ export const TextAreaNode = styled(TextArea)(nodeInputCss);
 
 export type ButtonProps = DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>;
 
-export function Button({ className, onClick, ...props }: ButtonProps): JSX.Element {
+export function Button({ className, onClick, ...props }: ButtonProps): React.JSX.Element {
     return (
         <button
             {...props}

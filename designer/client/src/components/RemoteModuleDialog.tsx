@@ -18,12 +18,12 @@ export type RemoteModuleDialogRef = NonNullable<{
 export function RemoteModuleDialog<P extends NonNullable<unknown>>({
     close,
     ...props
-}: WindowContentProps<WindowKind, { url: ModuleUrl } & P>): JSX.Element {
+}: WindowContentProps<WindowKind, { url: ModuleUrl } & P>): React.JSX.Element {
     const {
         data: { meta: passProps },
     } = props;
 
-    const ref = useRef<RemoteModuleDialogRef>();
+    const ref = useRef<RemoteModuleDialogRef>(null);
 
     const closeAction = useCallback(async () => {
         await Promise.all([ref.current?.closeAction?.()]);

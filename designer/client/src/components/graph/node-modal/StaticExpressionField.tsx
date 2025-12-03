@@ -32,7 +32,7 @@ export function StaticExpressionField({
     setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
-}): JSX.Element {
+}): React.JSX.Element {
     const fieldName = "expression";
     const expressionProperty = "expression";
     const testResultsState = useTestResults();

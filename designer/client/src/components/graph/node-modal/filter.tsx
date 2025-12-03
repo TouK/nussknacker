@@ -35,7 +35,7 @@ export function Filter({
     setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
-}): JSX.Element {
+}): React.JSX.Element {
     const [, isCompareView] = useDiffMark();
     return (
         <>

@@ -42,7 +42,7 @@ export function ToolboxComponentGroup({
     flatten,
     highlights = [],
     toolSelect,
-}: ToolboxComponentGroupProps): JSX.Element {
+}: ToolboxComponentGroupProps): React.JSX.Element {
     const dispatch = useAppDispatch();
     const closedComponentGroups = useAppSelector(getClosedComponentGroups);
     const { name } = componentGroup;

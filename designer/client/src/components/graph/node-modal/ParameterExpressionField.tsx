@@ -35,7 +35,7 @@ export type ParameterExpressionFieldProps = {
 };
 
 //this is for "dynamic" parameters in sources, sinks, services etc.
-export function ParameterExpressionField({ FieldWrapper, ...props }: ParameterExpressionFieldProps): JSX.Element {
+export function ParameterExpressionField({ FieldWrapper, ...props }: ParameterExpressionFieldProps): React.JSX.Element {
     const {
         errors,
         findAvailableVariables,

@@ -26,7 +26,7 @@ import type { Paths, PathValue } from "./typeHelpers";
 
 type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never;
 export type SetProperty<O = NodeType> = <P extends Paths<O>, V extends PathValue<O, P>>(path: P, value: V, fallbackValue?: V) => void;
-export type Prettify<T> = { [K in keyof T]: T[K] };
+export type Prettify<T> = T extends any ? { [K in keyof T]: T[K] } : never;
 
 export function useValidation({ node, edges, showValidation }: Pick<NodeTypeDetailsContentProps, "node" | "edges" | "showValidation">) {
     const dispatch = useAppDispatch();

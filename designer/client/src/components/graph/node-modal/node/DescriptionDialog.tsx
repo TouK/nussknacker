@@ -21,7 +21,7 @@ interface DescriptionDialogProps extends WindowContentProps<WindowKind, { node: 
     editMode?: boolean;
 }
 
-function DescriptionDialog(props: DescriptionDialogProps): JSX.Element {
+function DescriptionDialog(props: DescriptionDialogProps): React.JSX.Element {
     const { t } = useTranslation();
     const { editMode, close } = props;
     const readOnly = useAppSelector(getReadOnly);

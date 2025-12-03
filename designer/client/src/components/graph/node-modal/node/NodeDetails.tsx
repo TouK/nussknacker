@@ -80,7 +80,7 @@ function useTitleData(node: NodeType) {
     };
 }
 
-function NodeDetails(props: NodeDetailsProps): JSX.Element {
+function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     const { t } = useTranslation();
     const { close, data } = props;
     const readOnly = useAppSelector((s: RootState) => getReadOnly(s, props.readOnly));

@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestCommonFormatJsonRecord, ScenarioTestData, ScenarioTestRecord}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
@@ -134,8 +133,15 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
         record.variables.keySet == Set(VariableConstants.InputVariableName),
         s"Test record should contain '${VariableConstants.InputVariableName}' variable"
       )
-      decoder.decode(record.variables, testRecordIndex)(VariableConstants.InputVariableName).asInstanceOf[Input]
+
+      val value = decoder.decode(record.variables, testRecordIndex)(VariableConstants.InputVariableName)
+      transformToEngineSpecificInputRecord(value)
     }
+  }
+
+  // FIXME: it doesn't work properly with KafkaLite Engine, we should add proper converting method
+  protected def transformToEngineSpecificInputRecord(testRecord: Any): Input = {
+    testRecord.asInstanceOf[Input]
   }
 
   private def collectSinkResults(

@@ -16,7 +16,7 @@ import { useAceDndTarget } from "./useAceDndTarget";
 
 export type AceWithSettingsProps = Omit<AceWrapperProps, "noWrap" | "showLines">;
 
-export default forwardRef(function AceWithSettings(props: AceWithSettingsProps, ref: ForwardedRef<ReactAce>): JSX.Element {
+export default forwardRef(function AceWithSettings(props: AceWithSettingsProps, ref: ForwardedRef<ReactAce>): React.JSX.Element {
     const userSettings = useAppSelector(getUserSettings);
     const dispatch = useAppDispatch();
 
@@ -47,7 +47,7 @@ export default forwardRef(function AceWithSettings(props: AceWithSettingsProps, 
         [dispatch, showLinesName, noWrapName],
     );
 
-    const editorRef = useRef<ReactAce>();
+    const editorRef = useRef<ReactAce>(null);
     useEffect(() => {
         const editor = editorRef.current?.editor;
         const selection = editor?.session.selection;

@@ -6,7 +6,7 @@ import { hasWarnings } from "../../reducers/selectors/graph2";
 import { useAppSelector } from "../../store/storeHelpers";
 import { IconWithLabel } from "../tips/IconWithLabel";
 
-function ProcessDialogWarnings(): JSX.Element {
+function ProcessDialogWarnings(): React.JSX.Element {
     const processHasWarnings = useAppSelector(hasWarnings);
     return processHasWarnings ? (
         <Typography variant={"body2"} sx={(theme) => ({ color: theme.palette.warning.main, marginTop: "20px", marginBottom: "10px" })}>

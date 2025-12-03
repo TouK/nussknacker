@@ -75,7 +75,7 @@ export function DefaultFullScreenMessage({
     description,
     children,
     Image = ErrorOccurredSvg,
-}: PropsWithChildren<Props>): JSX.Element {
+}: PropsWithChildren<Props>): React.JSX.Element {
     return (
         <StylesWrapper>
             <div className="position-wrapper">

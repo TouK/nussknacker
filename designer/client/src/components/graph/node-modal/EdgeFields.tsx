@@ -32,7 +32,7 @@ interface Props {
     fieldErrors: FieldError[];
 }
 
-export function EdgeFields(props: Props): JSX.Element {
+export function EdgeFields(props: Props): React.JSX.Element {
     const { t } = useTranslation();
     const { readOnly, value, index, onChange, edges, types, variableTypes, fieldErrors } = props;
     const scenarioGraph = useAppSelector(getScenarioGraph);

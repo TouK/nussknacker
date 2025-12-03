@@ -14,7 +14,7 @@ export interface TestResultsSelectProps {
     onChange: (testResults?: StateForSelectTestResults) => void;
 }
 
-export default function TestResultsSelect(props: TestResultsSelectProps): JSX.Element {
+export default function TestResultsSelect(props: TestResultsSelectProps): React.JSX.Element {
     const { results, value, onChange } = props;
 
     const theme = useTheme();

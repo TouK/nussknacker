@@ -12,7 +12,7 @@ export function CopyTooltip({
 }: PropsWithChildren<{
     text: string;
     title: string;
-}>): JSX.Element {
+}>): React.JSX.Element {
     const [isCopied, copy] = useCopyClipboard();
     return (
         <Tooltip

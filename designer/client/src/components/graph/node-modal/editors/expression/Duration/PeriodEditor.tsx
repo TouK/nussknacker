@@ -3,12 +3,11 @@ import { isEmpty } from "lodash";
 import moment from "moment";
 import React, { useCallback, useMemo } from "react";
 
-import type { FieldError } from "../../Validators";
-import type { ExtendedEditor, OnValueChange } from "../Editor";
+import { prepareEditor } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
 import { FormatterType, typeFormatters } from "../Formatter";
-import type { Formatter } from "../Formatter";
 import type { ExpressionObj } from "../types";
+import { EditorType } from "../types";
 import TimeRangeEditor from "./TimeRangeEditor";
 
 export type Period = {
@@ -17,15 +16,9 @@ export type Period = {
     days: number;
 };
 
-type Props = {
-    expressionObj: ExpressionObj;
-    onValueChange: OnValueChange;
-    fieldErrors: FieldError[];
-    showValidation: boolean;
-    readOnly: boolean;
+type PeriodEditorProps = {
     isMarked: boolean;
     editorConfig: $TodoType;
-    formatter: Formatter;
 };
 
 const SPEL_PERIOD_SWITCHABLE_TO_REGEX =
@@ -36,58 +29,61 @@ const NONE_PERIOD = {
     days: () => null,
 };
 
-export const PeriodEditor: ExtendedEditor<Props> = (props: Props) => {
-    const { expressionObj, onValueChange, fieldErrors, showValidation, readOnly, isMarked, editorConfig, formatter } = props;
+export const PeriodEditor = prepareEditor<PeriodEditorProps>(
+    (props) => {
+        const { expressionObj, onValueChange, fieldErrors, showValidation, readOnly, isMarked, editorConfig, formatter } = props;
 
-    const periodFormatter = useMemo(() => (formatter == null ? typeFormatters[FormatterType.Period] : formatter), [formatter]);
+        const periodFormatter = useMemo(() => (formatter == null ? typeFormatters[FormatterType.Period] : formatter), [formatter]);
 
-    const isValueNotNullAndNotZero = useCallback((value: number) => value != null && value != 0, []);
+        const isValueNotNullAndNotZero = useCallback((value: number) => value != null && value != 0, []);
 
-    const isPeriodDefined = useCallback(
-        (period: Period): boolean =>
-            isValueNotNullAndNotZero(period.years) || isValueNotNullAndNotZero(period.months) || isValueNotNullAndNotZero(period.days),
-        [isValueNotNullAndNotZero],
-    );
-    const encode = useCallback(
-        (period: Period): string => (isPeriodDefined(period) ? periodFormatter.encode(period) : ""),
-        [isPeriodDefined, periodFormatter],
-    );
+        const isPeriodDefined = useCallback(
+            (period: Period): boolean =>
+                isValueNotNullAndNotZero(period.years) || isValueNotNullAndNotZero(period.months) || isValueNotNullAndNotZero(period.days),
+            [isValueNotNullAndNotZero],
+        );
+        const encode = useCallback(
+            (period: Period): string => (isPeriodDefined(period) ? periodFormatter.encode(period) : ""),
+            [isPeriodDefined, periodFormatter],
+        );
 
-    const decode = useCallback(
-        (expression: string): Period => {
-            const result = periodFormatter.decode(expression);
-            const period = result == null || typeof result !== "string" ? NONE_PERIOD : moment.duration(result);
-            return {
-                years: period.years(),
-                months: period.months(),
-                days: period.days(),
-            };
-        },
-        [periodFormatter],
-    );
+        const decode = useCallback(
+            (expression: string): Period => {
+                const result = periodFormatter.decode(expression);
+                const period = result == null || typeof result !== "string" ? NONE_PERIOD : moment.duration(result);
+                return {
+                    years: period.years(),
+                    months: period.months(),
+                    days: period.days(),
+                };
+            },
+            [periodFormatter],
+        );
 
-    return (
-        <TimeRangeEditor
-            encode={encode}
-            decode={decode}
-            onValueChange={onValueChange}
-            editorConfig={editorConfig}
-            readOnly={readOnly}
-            showValidation={showValidation}
-            fieldErrors={fieldErrors}
-            expression={expressionObj.expression}
-            isMarked={isMarked}
-            language={editorsParameters.PeriodParameterEditor.language}
-        />
-    );
-};
+        return (
+            <TimeRangeEditor
+                encode={encode}
+                decode={decode}
+                onValueChange={onValueChange}
+                editorConfig={editorConfig}
+                readOnly={readOnly}
+                showValidation={showValidation}
+                fieldErrors={fieldErrors}
+                expression={expressionObj.expression}
+                isMarked={isMarked}
+                language={editorsParameters[EditorType.PERIOD_EDITOR].language}
+            />
+        );
+    },
+    {
+        isSwitchableTo: (expressionObj: ExpressionObj) =>
+            SPEL_PERIOD_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || isEmpty(expressionObj.expression),
 
-PeriodEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
-    SPEL_PERIOD_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || isEmpty(expressionObj.expression);
-
-PeriodEditor.notSwitchableToHint = () =>
-    i18next.t(
-        "editors.period.notSwitchableToHint",
-        "Expression must match pattern T(java.time.Period).parse('P(n)Y(n)M(n)W(n)D') to switch to {{editorName}} mode",
-        { editorName: editorsParameters.PeriodParameterEditor.displayName },
-    );
+        notSwitchableToHint: () =>
+            i18next.t(
+                "editors.period.notSwitchableToHint",
+                "Expression must match pattern T(java.time.Period).parse('P(n)Y(n)M(n)W(n)D') to switch to {{editorName}} mode",
+                { editorName: editorsParameters[EditorType.PERIOD_EDITOR].displayName },
+            ),
+    },
+);

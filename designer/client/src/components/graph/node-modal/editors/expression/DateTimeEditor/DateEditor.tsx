@@ -3,12 +3,13 @@ import { isEmpty } from "lodash";
 import moment from "moment";
 import React from "react";
 
-import type { ExtendedEditor } from "../Editor";
+import { prepareEditor } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
 import { FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import type { ExpressionObj } from "../types";
-import { DatepickerEditor } from "./DatepickerEditor";
+import { EditorType } from "../types";
 import type { DatepickerEditorProps } from "./DatepickerEditor";
+import { DatepickerEditor } from "./DatepickerEditor";
 
 const dateFormat = "YYYY-MM-DD";
 const isParseable = (expression: ExpressionObj): boolean => {
@@ -16,26 +17,40 @@ const isParseable = (expression: ExpressionObj): boolean => {
     return date && moment(date, dateFormat).isValid();
 };
 
-type DateEditorProps = Omit<DatepickerEditorProps, "dateFormat" | "expressionType">;
+type DateEditorProps = Omit<
+    DatepickerEditorProps,
+    | "className"
+    | "dateFormat"
+    | "expressionObj"
+    | "expressionType"
+    | "fieldErrors"
+    | "formatter"
+    | "onValueChange"
+    | "readOnly"
+    | "showValidation"
+>;
 
-export const DateEditor: ExtendedEditor<DateEditorProps> = (props: DateEditorProps) => {
-    const { formatter } = props;
-    const dateFormatter = formatter == null ? typeFormatters[FormatterType.Date] : formatter;
+export const DateEditor = prepareEditor<DateEditorProps>(
+    (props) => {
+        const { formatter } = props;
+        const dateFormatter = formatter == null ? typeFormatters[FormatterType.Date] : formatter;
 
-    return (
-        <DatepickerEditor
-            {...props}
-            momentFormat={dateFormat}
-            dateFormat={dateFormat}
-            timeFormat={null}
-            formatter={dateFormatter}
-            language={editorsParameters.DateParameterEditor.language}
-        />
-    );
-};
-
-DateEditor.notSwitchableToHint = () =>
-    i18next.t("editors.LocalDate.notSwitchableToHint", "Expression must be valid date to switch to {{editorName}} mode", {
-        editorName: editorsParameters.DateParameterEditor.displayName,
-    });
-DateEditor.isSwitchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj) || isEmpty(expressionObj.expression);
+        return (
+            <DatepickerEditor
+                {...props}
+                momentFormat={dateFormat}
+                dateFormat={dateFormat}
+                timeFormat={null}
+                formatter={dateFormatter}
+                language={editorsParameters[EditorType.DATE].language}
+            />
+        );
+    },
+    {
+        isSwitchableTo: (expressionObj: ExpressionObj) => isParseable(expressionObj) || isEmpty(expressionObj.expression),
+        notSwitchableToHint: () =>
+            i18next.t("editors.LocalDate.notSwitchableToHint", "Expression must be valid date to switch to {{editorName}} mode", {
+                editorName: editorsParameters[EditorType.DATE].displayName,
+            }),
+    },
+);
