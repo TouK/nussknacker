@@ -168,7 +168,7 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
                                 label: "Testing",
                                 content: (
                                     <TestResultsWrapper nodeId={editedNode.id}>
-                                        <TestingContent node={editedNode} onChange={readOnly ? undefined : onChange} />
+                                        <TestingContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />
                                     </TestResultsWrapper>
                                 ),
                                 isLoading: testResultsLoading,

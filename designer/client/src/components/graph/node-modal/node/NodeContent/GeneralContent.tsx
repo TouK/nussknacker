@@ -16,7 +16,7 @@ export interface GeneralContentProps {
     onChange?: NodeState["onChange"];
 }
 
-export const GeneralContent = memo(function NodeGroupContent({ node, edges, onChange }: GeneralContentProps): JSX.Element {
+export const GeneralContent = memo(function NodeGroupContent({ node, edges, onChange }: GeneralContentProps): React.JSX.Element {
     const [adjustedNode, adjustedOnChange] = useNodeAdjust(node, onChange);
 
     return (

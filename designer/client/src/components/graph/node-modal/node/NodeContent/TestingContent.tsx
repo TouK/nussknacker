@@ -4,20 +4,19 @@ import { useTranslation } from "react-i18next";
 
 import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../../../store/storeHelpers";
-import type { NodeType } from "../../../../../types/node";
+import type { NodeTypeDetailsContentProps } from "../../NodeTypeDetailsContent";
 import type { NodeState } from "../useNodeState";
 import { InputData } from "./TestingContentElements/InputData";
 import { MockResponse } from "./TestingContentElements/mockResponse";
 
-interface Props {
-    node: NodeType;
+export interface TestingContentProps extends Pick<NodeTypeDetailsContentProps, "node" | "edges"> {
     onChange?: NodeState["onChange"];
 }
 
-export const TestingContent = ({ node, onChange }: Props) => {
+export const TestingContent = ({ node, edges, onChange }: TestingContentProps) => {
     const { t } = useTranslation();
     const { getViewForNode } = useTestingContentRenderer();
-    const view = getViewForNode(node, onChange);
+    const view = getViewForNode({ node, edges, onChange });
 
     return (
         view || <Typography p={2}>{t("testingContent.noSettingsAvailable", "No testing settings available for selected node")}</Typography>
@@ -27,21 +26,20 @@ export const TestingContent = ({ node, onChange }: Props) => {
 export function useTestingContentRenderer() {
     const settings = useAppSelector(getUserSettings);
 
-    const CONFIG = [
+    const CONFIG: { when: (node: TestingContentProps["node"]) => boolean; render: (props: TestingContentProps) => React.JSX.Element }[] = [
         {
-            when: (node: NodeType) => node.type === "Source",
-            render: (node: NodeType) => <InputData sourceId={node.id} />,
+            when: (node) => node.type === "Source",
+            render: ({ node }) => <InputData sourceId={node.id} />,
         },
         {
-            when: (node: NodeType) =>
-                settings["node.showMockFieldOnEnrichers"] && node.type === "Enricher" && node.service.id !== "decision-table",
-            render: (node: NodeType, onChange?: NodeState["onChange"]) => <MockResponse node={node} onChange={onChange} />,
+            when: (node) => settings["node.showMockFieldOnEnrichers"] && node.type === "Enricher" && node.service.id !== "decision-table",
+            render: ({ node, edges, onChange }) => <MockResponse node={node} edges={edges} onChange={onChange} />,
         },
     ];
 
-    const getViewForNode = (node: NodeType, onChange?: NodeState["onChange"]) => {
+    const getViewForNode = ({ node, edges, onChange }: TestingContentProps) => {
         const matched = CONFIG.find((cfg) => cfg.when(node));
-        return matched?.render(node, onChange) ?? null;
+        return matched?.render({ node, edges, onChange }) ?? null;
     };
 
     return { getViewForNode };
