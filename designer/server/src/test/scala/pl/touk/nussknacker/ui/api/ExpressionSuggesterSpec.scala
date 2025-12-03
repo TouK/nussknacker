@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import org.apache.avro.generic.GenericData.EnumSymbol
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -123,6 +124,7 @@ class ExpressionSuggesterSpec
         Map("canBe" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Boolean]), "canBe", None))),
         Map.empty
       ),
+      classDefinitionExtractor.extract(classOf[EnumSymbol]),
     )
   )
 
@@ -379,6 +381,14 @@ class ExpressionSuggesterSpec
       suggestion("quaxString", Typed[String]),
       suggestion("toString", Typed[String]),
     )
+  }
+
+  test("should suggest methods for avro EnumSymbol") {
+    suggestions(
+      expressionSuggester,
+      Map("enum" -> Typed.typedClass[EnumSymbol]),
+      Expression.spel("#enum.")
+    ) shouldBe List(suggestion("toString", Typed[String]))
   }
 
   test("should suggest in complex expression #1") {
@@ -817,6 +827,7 @@ class ExpressionSuggesterSpec
       suggestion("Currency", Typed[Currency]),
       suggestion("Double", Typed[Double]),
       suggestion("Duration", Typed[Duration]),
+      suggestion("EnumSymbol", Typed[EnumSymbol]),
       suggestion("Float", Typed[Float]),
       suggestion("Instant", Typed[Instant]),
       suggestion("Integer", Typed[Integer]),

@@ -228,6 +228,10 @@ object ClassExtractionSettings {
       MemberNamePredicate(
         SuperClassPredicate(ClassNamePredicate("org.apache.avro.generic.IndexedRecord")),
         Set("getSchema", "compareTo", "put")
+      ),
+      MemberNamePredicate(
+        SuperClassPredicate(ClassNamePredicate("org.apache.avro.generic.GenericData$EnumSymbol")),
+        Set("getSchema", "compareTo")
       )
     )
 
