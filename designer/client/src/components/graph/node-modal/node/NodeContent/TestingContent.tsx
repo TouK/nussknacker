@@ -7,7 +7,7 @@ import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { NodeTypeDetailsContentProps } from "../../NodeTypeDetailsContent";
 import type { NodeState } from "../useNodeState";
 import { InputDataRecords } from "./TestingContentElements/InputDataRecords";
-import { MockResponse } from "./TestingContentElements/mockResponse";
+import { MockResponse } from "./TestingContentElements/MockResponse";
 
 export interface TestingContentProps extends Pick<NodeTypeDetailsContentProps, "node" | "edges"> {
     onChange?: NodeState["onChange"];

@@ -36,7 +36,9 @@ export const TabsWrapper = ({ tabs }: Props) => {
                     <Tab key={i} label={t.label} id={`tab-${i}`} aria-controls={`tabpanel-${i}`} disabled={t.isLoading} />
                 ))}
             </Tabs>
-            {tabs[value].content}
+            <div role="tabpanel" id={`tabpanel-${value}`} aria-labelledby={`tab-${value}`}>
+                {tabs[value].content}
+            </div>
         </>
     );
 };
