@@ -27,6 +27,7 @@ export enum EditorType {
     BOOL_PARAMETER_EDITOR = "BoolParameterEditor",
     STATIC_STRING_PARAMETER_EDITOR = "StaticStringParameterEditor",
     FIXED_VALUES_PARAMETER_EDITOR = "FixedValuesParameterEditor",
+    MULTI_SELECT_EDITOR = "MultiSelectEditor",
     FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR = "FixedValuesWithIconParameterEditor",
     FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR = "FixedValuesWithRadioParameterEditor",
     DATE = "DateParameterEditor",

@@ -1,7 +1,9 @@
-import { Chip, FormHelperText } from "@mui/material";
+import { FormHelperText } from "@mui/material";
 import React from "react";
 
 import type { NodeValidationError } from "../../../../../../../types/validation";
+import { SpelChip } from "../../../../aggregate/groupBy/spelChip";
+import { ValuesList } from "../../../../aggregate/groupBy/valuesList";
 import type { FieldName, FixedValuesOption } from "../../../item/types";
 import type { Option } from "../../../TypeSelect";
 import { ListItemContainer, ListItemWrapper } from "./StyledSettingsComponnets";
@@ -17,20 +19,17 @@ export const ListItems = ({ items, handleDelete, errors = [], fieldName }: ListI
     return (
         <ListItemContainer>
             <ListItemWrapper>
-                {items.map((item, index) => {
-                    const hasError = errors.some((error) => error.fieldName === fieldName);
+                <ValuesList
+                    values={items.map(({ label }) => label)}
+                    onRemove={handleDelete}
+                    isValid={() => {
+                        // FIXME: moved as is but this doesn't look right
+                        return !errors.some((error) => error.fieldName === fieldName);
+                    }}
+                    ChipComponent={SpelChip}
+                    sx={{ marginLeft: 0, marginTop: 0 }}
+                />
 
-                    return (
-                        <Chip
-                            color={hasError ? "error" : undefined}
-                            variant="outlined"
-                            sx={{ marginRight: "10px", marginBottom: "10px" }}
-                            key={index}
-                            label={item.label}
-                            onDelete={handleDelete && (() => handleDelete(index))}
-                        />
-                    );
-                })}
                 {errors
                     ?.filter((error) => error.fieldName === fieldName)
                     .map((error, index) => {

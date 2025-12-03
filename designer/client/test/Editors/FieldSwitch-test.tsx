@@ -1,8 +1,9 @@
-import * as React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
-import { FieldSwitch } from "../../src/components/graph/node-modal/editors/field/FieldSwitch";
-import { EditorType, ExpressionLang } from "../../src/components/graph/node-modal/editors/expression/types";
 import { jest } from "@jest/globals";
+import { fireEvent, render, screen } from "@testing-library/react";
+import * as React from "react";
+import { EditorType, ExpressionLang } from "../../src/components/graph/node-modal/editors/expression/types";
+import { FieldSwitch } from "../../src/components/graph/node-modal/editors/field/FieldSwitch";
+import { TestProviders } from "./TestProviders";
 
 jest.mock("react-i18next", () => ({
     useTranslation: () => ({
@@ -20,13 +21,15 @@ describe("FieldSwitch", () => {
         (expression, expectedExpression) => {
             const mockOnValueChange = jest.fn();
             render(
-                <FieldSwitch
-                    expressionObj={{ expression, language: ExpressionLang.SpEL }}
-                    availableEditors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }, { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR }]}
-                    onValueChange={mockOnValueChange}
-                >
-                    children
-                </FieldSwitch>,
+                <TestProviders>
+                    <FieldSwitch
+                        expressionObj={{ expression, language: ExpressionLang.SpEL }}
+                        availableEditors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }, { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR }]}
+                        onValueChange={mockOnValueChange}
+                    >
+                        children
+                    </FieldSwitch>
+                </TestProviders>,
             );
 
             fireEvent.click(screen.getByRole("tab", { name: "string template" }));
@@ -48,13 +51,15 @@ describe("FieldSwitch", () => {
         (expression, expectedExpression) => {
             const mockOnValueChange = jest.fn();
             render(
-                <FieldSwitch
-                    expressionObj={{ expression, language: ExpressionLang.SpELTemplate }}
-                    availableEditors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }, { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR }]}
-                    onValueChange={mockOnValueChange}
-                >
-                    children
-                </FieldSwitch>,
+                <TestProviders>
+                    <FieldSwitch
+                        expressionObj={{ expression, language: ExpressionLang.SpELTemplate }}
+                        availableEditors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }, { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR }]}
+                        onValueChange={mockOnValueChange}
+                    >
+                        children
+                    </FieldSwitch>
+                </TestProviders>,
             );
 
             fireEvent.click(screen.getByRole("tab", { name: "expression" }));
@@ -76,16 +81,18 @@ describe("FieldSwitch", () => {
         (expression, expectedExpression) => {
             const mockOnValueChange = jest.fn();
             render(
-                <FieldSwitch
-                    expressionObj={{ expression, language: ExpressionLang.SpELTemplate }}
-                    availableEditors={[
-                        { type: EditorType.JSON_TEMPLATE_PARAMETER_EDITOR },
-                        { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR },
-                    ]}
-                    onValueChange={mockOnValueChange}
-                >
-                    children
-                </FieldSwitch>,
+                <TestProviders>
+                    <FieldSwitch
+                        expressionObj={{ expression, language: ExpressionLang.SpELTemplate }}
+                        availableEditors={[
+                            { type: EditorType.JSON_TEMPLATE_PARAMETER_EDITOR },
+                            { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR },
+                        ]}
+                        onValueChange={mockOnValueChange}
+                    >
+                        children
+                    </FieldSwitch>
+                </TestProviders>,
             );
 
             fireEvent.click(screen.getByRole("tab", { name: "json template" }));
@@ -107,13 +114,15 @@ describe("FieldSwitch", () => {
     ])("should verify that expression switch field option is disabled when %s expression", (expression, isDisabled) => {
         const mockOnValueChange = jest.fn();
         render(
-            <FieldSwitch
-                expressionObj={{ expression, language: ExpressionLang.SpELTemplate }}
-                availableEditors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }, { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR }]}
-                onValueChange={mockOnValueChange}
-            >
-                children
-            </FieldSwitch>,
+            <TestProviders>
+                <FieldSwitch
+                    expressionObj={{ expression, language: ExpressionLang.SpELTemplate }}
+                    availableEditors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }, { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR }]}
+                    onValueChange={mockOnValueChange}
+                >
+                    children
+                </FieldSwitch>
+            </TestProviders>,
         );
 
         expect(screen.getByRole("tab", { name: "expression" })).toHaveAttribute("aria-disabled", String(isDisabled));
@@ -132,13 +141,15 @@ describe("FieldSwitch", () => {
         (expression, isDisabled) => {
             const mockOnValueChange = jest.fn();
             render(
-                <FieldSwitch
-                    expressionObj={{ expression, language: ExpressionLang.SpEL }}
-                    availableEditors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }, { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR }]}
-                    onValueChange={mockOnValueChange}
-                >
-                    children
-                </FieldSwitch>,
+                <TestProviders>
+                    <FieldSwitch
+                        expressionObj={{ expression, language: ExpressionLang.SpEL }}
+                        availableEditors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }, { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR }]}
+                        onValueChange={mockOnValueChange}
+                    >
+                        children
+                    </FieldSwitch>
+                </TestProviders>,
             );
 
             expect(screen.getByRole("tab", { name: "string template" })).toHaveAttribute("aria-disabled", String(isDisabled));
@@ -164,16 +175,18 @@ describe("FieldSwitch", () => {
         (expression, isDisabled) => {
             const mockOnValueChange = jest.fn();
             render(
-                <FieldSwitch
-                    expressionObj={{ expression, language: ExpressionLang.JsonTemplate }}
-                    availableEditors={[
-                        { type: EditorType.JSON_TEMPLATE_PARAMETER_EDITOR },
-                        { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR },
-                    ]}
-                    onValueChange={mockOnValueChange}
-                >
-                    children
-                </FieldSwitch>,
+                <TestProviders>
+                    <FieldSwitch
+                        expressionObj={{ expression, language: ExpressionLang.JsonTemplate }}
+                        availableEditors={[
+                            { type: EditorType.JSON_TEMPLATE_PARAMETER_EDITOR },
+                            { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR },
+                        ]}
+                        onValueChange={mockOnValueChange}
+                    >
+                        children
+                    </FieldSwitch>
+                </TestProviders>,
             );
 
             expect(screen.getByRole("tab", { name: "string template" })).toHaveAttribute("aria-disabled", String(isDisabled));

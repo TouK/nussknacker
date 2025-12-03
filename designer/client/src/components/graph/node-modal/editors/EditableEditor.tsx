@@ -39,7 +39,7 @@ interface Props {
 }
 
 export const EditableEditor = (props: Props) => {
-    const { expressionObj, valueClassName, editors, paramType, fieldErrors = [], validationLabelInfo } = props;
+    const { expressionObj, valueClassName, editors, paramType, fieldErrors = [] } = props;
 
     const availableEditors: EditorConfig[] = useMemo(
         (): EditorConfig[] => (isEmpty(editors) ? [{ type: EditorType.SPEL_PARAMETER_EDITOR }] : editors),
