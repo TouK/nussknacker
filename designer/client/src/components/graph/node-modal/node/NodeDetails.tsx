@@ -104,7 +104,6 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
 
     const titleData = useTitleData(node);
     const buttons = useMemo(() => [openFragment, cancel, apply].filter(Boolean) as WindowButtonProps[], [apply, cancel, openFragment]);
-    const testResultsLoading = useAppSelector(getTestResultsLoading);
 
     const settings = useAppSelector(getUserSettings);
     const [PortalWrapper, portalRef] = usePortal();
@@ -171,7 +170,6 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
                                         <TestingContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />
                                     </TestResultsWrapper>
                                 ),
-                                isLoading: testResultsLoading,
                             },
                         ]}
                     />
