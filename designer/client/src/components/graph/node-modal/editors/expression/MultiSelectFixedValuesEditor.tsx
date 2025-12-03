@@ -64,32 +64,15 @@ export const MultiSelectFixedValuesEditor = prepareEditor<{ editorConfig: Editor
         );
 
         return (
-            <Box
-                sx={{
-                    display: "grid",
-                    margin: "-1px", // FIXME: other fields have outline instead of border, so we need to compensate for that
-                }}
-            >
+            <Box sx={{ display: "grid" }}>
                 <Select
+                    variant="outlined"
                     multiple
                     value={values}
                     onChange={handleChange}
-                    input={<OutlinedInput />}
                     renderValue={renderValue}
                     error={showValidation && fieldErrors.length > 0}
-                    sx={{
-                        borderRadius: 0,
-                        minHeight: 35,
-                        ".MuiOutlinedInput-input.MuiSelect-select": {
-                            padding: 0,
-                            paddingRight: 3,
-                        },
-                        "&, &.Mui-focused": {
-                            ".MuiOutlinedInput-notchedOutline": {
-                                borderWidth: 1,
-                            },
-                        },
-                    }}
+                    sx={{ minHeight: 35 }}
                 >
                     {editorConfig.possibleValues.map(({ label, value }) => (
                         <MenuItem key={value} value={value}>
