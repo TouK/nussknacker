@@ -4,6 +4,8 @@ import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.Suite
+import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke, Service, TraceId}
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
@@ -13,13 +15,34 @@ import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormat
 import pl.touk.nussknacker.engine.util.test.{RunListResult, RunResult, TestScenarioRunner}
 
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+import scala.concurrent.Future
 
 trait FunctionalTestMixin extends KafkaSpec { self: Suite =>
   import LiteKafkaTestScenarioRunner._
 
+  case object CorrelationService extends Service {
+
+    val ComponentName = "correlationService"
+
+    val traceIdStorage: java.util.Set[TraceId] = ConcurrentHashMap.newKeySet[TraceId]()
+
+    @MethodToInvoke
+    def invoke()(implicit context: Context): Future[Unit] = {
+      context.traceId.forall(traceId => traceIdStorage.add(traceId))
+      Future.successful(())
+    }
+
+  }
+
   protected lazy val runner: LiteKafkaTestScenarioRunner =
     TestScenarioRunner
       .kafkaLiteBased(resolveConfig(ConfigFactory.empty()))
+      .withExtraComponents(
+        List(
+          ComponentDefinition(CorrelationService.ComponentName, CorrelationService)
+        )
+      )
       .build()
 
   protected val sourceName = "my-source"

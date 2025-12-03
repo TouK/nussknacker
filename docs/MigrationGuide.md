@@ -57,6 +57,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
+* [#8719](https://github.com/TouK/nussknacker/pull/8719) Feature: Add possibility to pass trace id to Context
+  * added optional `traceId` field at `Context`, default None
+  * Fro now `RequestResponseSource` transforms `Record[T]` instead T as a record
 * [#8723](https://github.com/TouK/nussknacker/pull/8723) Change: Passing `Context` instead of `ContextId` at EagerServiceWithStaticParametersAndReturnType.invoke
 * [#7165](https://github.com/TouK/nussknacker/pull/7165)
     * `pl.touk.nussknacker.engine.api.deployment.DeploymentManager`:
