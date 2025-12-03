@@ -35,9 +35,7 @@ describe("JSON template editor", () => {
     it("should reset values to the default on reset button click", () => {
         cy.visitNewProcess(seed, "jsonTemplateEditor", "Category1");
 
-        cy.window().then((win) => {
-            win["$toggleUserFlag"]("editor.showResetToDefaultButton");
-        });
+        cy.toggleUserFlag("editor.showResetToDefaultButton");
 
         cy.getNode("Event Generator").should("be.visible").trigger("dblclick");
         cy.get("[title='value']").next().find(".ace_editor").should("be.visible").parent().as("editor");
@@ -61,8 +59,6 @@ describe("JSON template editor", () => {
             });
         });
 
-        cy.window().then((win) => {
-            win["$toggleUserFlag"]("editor.showResetToDefaultButton");
-        });
+        cy.toggleUserFlag("editor.showResetToDefaultButton");
     });
 });
