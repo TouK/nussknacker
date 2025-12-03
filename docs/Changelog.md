@@ -15,6 +15,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#8758](https://github.com/TouK/nussknacker/pull/8758) Fix: Determining whether QuestDB is enabled
 * [#8719](https://github.com/TouK/nussknacker/pull/8719) Feature: Add possibility to pass trace id to Context
 * [#8720](https://github.com/TouK/nussknacker/pull/8720) In those aggregates, that do not require preserving context, the context is now cleaned before grouping:
   * it is done by removing user variables

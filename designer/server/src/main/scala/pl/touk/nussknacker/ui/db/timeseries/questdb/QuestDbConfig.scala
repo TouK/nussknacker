@@ -30,29 +30,30 @@ object QuestDbConfig {
       queueCapacity: Int
   )
 
-  def parse(config: Config): QuestDbConfig = config.getAsWithLogging[Boolean]("questDbSettings.enabled") match {
-    case Some(false) => Disabled
-    case _ =>
-      Enabled(
-        instanceId = config.getAsWithLogging[String]("questDbSettings.instanceId").getOrElse("designer-statistics"),
-        directory = config.getAsWithLogging[String]("questDbSettings.directory"),
-        tasksExecutionDelay = config
-          .getAsWithLogging[FiniteDuration]("questDbSettings.tasksExecutionDelay")
-          .getOrElse(30 seconds),
-        retentionDelay = config
-          .getAsWithLogging[FiniteDuration]("questDbSettings.retentionDelay")
-          .getOrElse(24 hours),
-        poolConfig = config
-          .getAsWithLogging[QuestDbPoolConfig]("questDbSettings.poolConfig")
-          .getOrElse(
-            QuestDbPoolConfig(
-              corePoolSize = 2,
-              maxPoolSize = 4,
-              keepAliveTimeInSeconds = 60,
-              queueCapacity = 8
+  def parse(config: Config): QuestDbConfig =
+    config.getAsWithLogging[Boolean]("questDbSettings.enabled").filter(_ == true) match {
+      case None => Disabled
+      case _ =>
+        Enabled(
+          instanceId = config.getAsWithLogging[String]("questDbSettings.instanceId").getOrElse("designer-statistics"),
+          directory = config.getAsWithLogging[String]("questDbSettings.directory"),
+          tasksExecutionDelay = config
+            .getAsWithLogging[FiniteDuration]("questDbSettings.tasksExecutionDelay")
+            .getOrElse(30 seconds),
+          retentionDelay = config
+            .getAsWithLogging[FiniteDuration]("questDbSettings.retentionDelay")
+            .getOrElse(24 hours),
+          poolConfig = config
+            .getAsWithLogging[QuestDbPoolConfig]("questDbSettings.poolConfig")
+            .getOrElse(
+              QuestDbPoolConfig(
+                corePoolSize = 2,
+                maxPoolSize = 4,
+                keepAliveTimeInSeconds = 60,
+                queueCapacity = 8
+              )
             )
-          )
-      )
-  }
+        )
+    }
 
 }
