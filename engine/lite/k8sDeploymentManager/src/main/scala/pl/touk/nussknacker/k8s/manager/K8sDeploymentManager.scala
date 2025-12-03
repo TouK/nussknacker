@@ -17,7 +17,7 @@ import pl.touk.nussknacker.k8s.manager.deployment._
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
 import pl.touk.nussknacker.k8s.manager.ingress.IngressPreparer
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
-import pl.touk.nussknacker.lite.manager.LiteDeploymentManager
+import pl.touk.nussknacker.lite.manager.{LiteDeploymentManager, LiteEngineMode, RequestResponseMode, StreamingMode}
 import skuber.{
   ConfigMap,
   LabelSelector,
@@ -390,6 +390,13 @@ class K8sDeploymentManager(
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
   override def liveDataPreviewSupport: LiveDataPreviewSupport = NoLiveDataPreviewSupport
+
+  override protected def mode: LiteEngineMode = rawConfig.getString("mode") match {
+    case "streaming"        => StreamingMode
+    case "request-response" => RequestResponseMode
+    case other              => throw new IllegalArgumentException(s"Unsupported mode: $other")
+  }
+
 }
 
 object K8sDeploymentManager {

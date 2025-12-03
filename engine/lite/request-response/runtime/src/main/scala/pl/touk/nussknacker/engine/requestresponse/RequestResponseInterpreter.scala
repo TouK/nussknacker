@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
-import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSource
+import pl.touk.nussknacker.engine.requestresponse.api.{Request, RequestResponseSource}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
 import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.requestresponse.openapi.{
@@ -90,16 +90,19 @@ object RequestResponseInterpreter {
       case more => throw new IllegalArgumentException(s"More than one source for request-response: ${more.map(_._1)}")
     }
 
-    private def invoke(input: Any): Effect[ValidatedNel[ErrorType, List[EndResult[AnyRef]]]] = {
-      val inputBatch = ScenarioInputBatch((sourceId -> input) :: Nil)
+    private def invoke(
+        input: Request[Any]
+    ): Effect[ValidatedNel[ErrorType, List[EndResult[AnyRef]]]] = {
+      val inputBatch = ScenarioInputBatch((sourceId, input.asInstanceOf[Any]) :: Nil)
       statelessScenarioInterpreter.invoke(inputBatch).map { case WriterT((errors, results)) =>
         NonEmptyList.fromList(errors).map(Invalid(_)).getOrElse(Valid(results))
       }
     }
 
-    def invokeToOutput(input: Any): Effect[ValidatedNel[ErrorType, List[Any]]] = invocationMetrics.measureTime {
-      invoke(input).map(_.map(_.map(_.result)))
-    }
+    def invokeToOutput(input: Request[Any]): Effect[ValidatedNel[ErrorType, List[Any]]] =
+      invocationMetrics.measureTime {
+        invoke(input).map(_.map(_.map(_.result)))
+      }
 
     def open(): Unit = statelessScenarioInterpreter.open(context)
 
@@ -145,6 +148,6 @@ object RequestResponseInterpreter {
   }
 
   def testRunner[Effect[_]: Monad: InterpreterShape: CapabilityTransformer: EffectUnwrapper]: TestRunner =
-    new InterpreterTestRunner[Effect, Context, AnyRef]
+    new InterpreterTestRunner[Effect, Request[Any], AnyRef]
 
 }

@@ -1,17 +1,32 @@
 package pl.touk.nussknacker.engine.api
 
+import java.util.UUID
 import scala.jdk.CollectionConverters._
 
 object Context {
 
-  def apply(id: ContextId): Context = Context(id, Map.empty, None)
+  def apply(id: ContextId): Context = Context(id, Map.empty, None, None)
 
   def apply(id: ContextId, variables: Map[String, Any]): Context =
-    Context(id, variables, None)
+    Context(id, variables, None, None)
 
   // The dummy Context should only be used in test suites, perhaps also Nu scenario test mechanism or examples
   def dummy: Context = Context(ContextId.dummy)
 
+}
+
+object TraceId {
+
+  def generate() =
+    TraceId(UUID.randomUUID())
+
+  def apply(uuid: UUID) =
+    new TraceId(uuid.toString)
+
+}
+
+final case class TraceId(value: String) {
+  override def toString: String = value
 }
 
 final case class ContextId private (
@@ -83,7 +98,12 @@ object ContextId {
 case class Context(
     id: ContextId,
     variables: Map[String, Any],
-    parentContext: Option[Context]
+    parentContext: Option[Context],
+    /**
+     * Optional internal tracking ID used for debugging, monitoring, or tracing the execution flow.
+     * For now, not exposed in the Designer part. Helps propagate correlation IDs across system components.
+     */
+    traceId: Option[TraceId]
 ) {
 
   def withContextIdPathPart(nodeId: String, transformation: String): Context =
@@ -112,9 +132,15 @@ case class Context(
   def withVariables(otherVariables: Map[String, Any]): Context =
     copy(variables = variables ++ otherVariables)
 
+  def withTraceId(value: TraceId): Context =
+    copy(traceId = Some(value))
+
   def pushNewContext(variables: Map[String, Any]): Context = {
-    Context(id, variables, Some(this))
+    Context(id, variables, Some(this), traceId)
   }
+
+  def unsafeTraceId: TraceId =
+    traceId.getOrElse(throw new IllegalArgumentException(s"Context $id doesn't contain traceId field."))
 
   // it returns all variables from context including parent tree
   def allVariables: Map[String, Any] = {

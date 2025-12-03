@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.lite.api.utils.sources
 
 import cats.Monad
 import cats.data.{Validated, ValidatedNel}
-import pl.touk.nussknacker.engine.api.{Context, Lifecycle, NodeId}
+import pl.touk.nussknacker.engine.api.{Context, Lifecycle, NodeId, TraceId}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ContextVariables
@@ -13,6 +13,10 @@ import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
 
 import scala.language.higherKinds
 import scala.util.Try
+
+object BaseLiteSource {
+  val DefaultTraceIdHeader: String = "trace-id"
+}
 
 trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
 
@@ -31,9 +35,16 @@ trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
   ): T => ValidatedNel[ErrorType, Context] =
     record => {
       val context = Context(contextIdGenerator.nextContextId())
+
       Validated
-        .fromEither(Try(transform(record)).toEither)
-        .map(contextVariables => context.withVariables(contextVariables.variables))
+        .fromEither(Try((transform(record), extractTraceId(record))).toEither)
+        .map { case (contextVariables, traceId) =>
+          val contextWithVariables = context.withVariables(contextVariables.variables)
+
+          traceId
+            .map(contextWithVariables.withTraceId)
+            .getOrElse(contextWithVariables)
+        }
         .leftMap(ex =>
           NuExceptionInfo(
             Some(NodeComponentInfo(componentContext.nodeId, ComponentType.Source, "unknown")),
@@ -43,6 +54,9 @@ trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
         )
         .toValidatedNel
     }
+
+  // for overriding purposes
+  protected def extractTraceId(record: T): Option[TraceId] = None
 
   def transform(record: T): ContextVariables
 

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.typeinformation.internal
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.ListTypeInfo
-import pl.touk.nussknacker.engine.api.{Context, ContextId, ContextIdPathPart}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, ContextIdPathPart, TraceId}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.option.OptionTypeInfo
 import pl.touk.nussknacker.engine.flink.typeinformation.{ConcreteCaseClassTypeInfo, FixedValueTypeInformationHelper}
 
@@ -15,7 +15,8 @@ object ContextTypeHelpers {
     ConcreteCaseClassTypeInfo(
       ("id", contextIdInfo),
       ("variables", variables),
-      ("parentContext", parentCtx)
+      ("parentContext", parentCtx),
+      ("traceId", traceIdOptionTypeInfo),
     )
 
   def infoFromVariablesAndParentOption(
@@ -44,5 +45,12 @@ object ContextTypeHelpers {
       ("value", TypeInformation.of(classOf[String])),
     )
   }
+
+  private val traceIdTypeInfo: TypeInformation[TraceId] =
+    ConcreteCaseClassTypeInfo(("value", TypeInformation.of(classOf[String])))
+
+  private val traceIdOptionTypeInfo = new OptionTypeInfo[TraceId, Option[TraceId]](
+    traceIdTypeInfo
+  )
 
 }
