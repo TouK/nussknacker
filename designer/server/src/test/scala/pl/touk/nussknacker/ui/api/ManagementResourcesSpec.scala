@@ -442,7 +442,7 @@ class ManagementResourcesSpec
     }
   }
 
-  test("run test case - successful") {
+  test("run test case") {
     val testDataContent =
       """[
         |  {"sourceId":"startProcess","variables":{"input":["ala"]}},

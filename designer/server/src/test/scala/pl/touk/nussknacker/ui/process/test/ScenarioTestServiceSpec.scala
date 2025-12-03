@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess.{FailedAssertion, ResultContext, SuccessfulAssertion}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
@@ -751,8 +752,8 @@ class ScenarioTestServiceSpec
       TestFactory.processResolver(),
       processCounter = new ProcessCounter(new StubFragmentRepository(Map.empty)),
       testExecutorService = mockedTestExecutorService,
-      ProcessTestData.testProcessValidator(validator= ProcessValidator.default(new StubModelDataWithModelDefinition(modelData.modelDefinition))),
-      new AssertionVerifierImpl()
+      ProcessTestData.testProcessValidator(validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelData.modelDefinition))),
+      new AssertionVerifierImpl(GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig))
     )
 
     val scenarioRecords = PreliminaryScenarioRecords(

@@ -26,6 +26,7 @@ import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder.TestRecordVariablesDecodingError
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ListUtil
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import pl.touk.nussknacker.ui.api.TestDataSettings
@@ -66,6 +67,7 @@ class ScenarioTestService(
   )
 
   private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
+  private val testCaseGlobalVariablesPreparer = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
 
   def getTestingCapabilities(
                               scenarioGraph: ScenarioGraph,
@@ -266,26 +268,27 @@ class ScenarioTestService(
                        scenarioGraph: ScenarioGraph,
                        processVersion: ProcessVersion,
                        isFragment: Boolean,
-                       test: TestCase,
+                       testCase: TestCase,
                      )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
+    val jobData = JobData(scenarioGraph.toMetaData(processVersion.processName), processVersion)
+    val canonical = toCanonicalProcess(
+      scenarioGraph,
+      processVersion,
+      isFragment
+    )
+
     (for {
       preliminaryScenarioTestRecords <- EitherT.fromEither[Future](
         preliminaryScenarioRecordsSerDe
-          .deserialize(SerializedScenarioRecordsContent(test.inputs))
+          .deserialize(SerializedScenarioRecordsContent(testCase.inputs))
           .leftMap[PerformTestError](PerformTestError.DeserializationError)
-      )
-
-      canonical = toCanonicalProcess(
-        scenarioGraph,
-        processVersion,
-        isFragment
       )
 
       scenarioTestData <- EitherT.fromEither[Future](prepareTestData(preliminaryScenarioTestRecords, canonical))
 
       // compile process/validate process to gather node typing needed for assertion expressions compilation
       nodeContextsTyping = compileScenarioAndExtractNodeContextsTyping(scenarioGraph, processVersion, isFragment)
-      compiledTestCase = compileTestCase(test, nodeContextsTyping)
+      compiledTestCase = compileTestCase(testCase, nodeContextsTyping, jobData)
 
       testResults <- EitherT(
         performTestWithDeserializedRecords(processVersion, canonical, scenarioTestData)
@@ -296,7 +299,7 @@ class ScenarioTestService(
       Instant.now(),
       testResults,
       computeCounts(canonical, isFragment, testResults),
-      assertionVerifier.verify(compiledTestCase, testResults.originalNodeResults)
+      assertionVerifier.verify(compiledTestCase, testResults.originalNodeResults, jobData)
     )).value
   }
 
@@ -312,10 +315,10 @@ class ScenarioTestService(
     validationResult.nodeResults
   }
 
-  private def compileTestCase(test: TestCase, nodesTyping: Map[String, NodeTypingData]): CompiledTestCase = {
-    val testCompiler = new TestCaseCompiler(expressionCompiler)
+  private def compileTestCase(test: TestCase, nodesTyping: Map[String, NodeTypingData], jobData: JobData): CompiledTestCase = {
+    val testCompiler = new TestCaseCompiler(expressionCompiler, testCaseGlobalVariablesPreparer)
     //todo: to be decided if the operation can be called directly by rest api not by designer
-    testCompiler.compile(test, nodesTyping)
+    testCompiler.compile(test, nodesTyping, jobData)
       .fold(errors => throw new IllegalStateException(s"Should not happen - only valid test configuration should be allowed to be tested by designer Test configuration has errors: $errors"), identity)
   }
 

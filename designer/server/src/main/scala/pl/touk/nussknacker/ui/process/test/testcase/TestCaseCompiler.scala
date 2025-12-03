@@ -3,13 +3,9 @@ package pl.touk.nussknacker.ui.process.test.testcase
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.all._
-import pl.touk.nussknacker.engine.api.{Documentation, HideToString, NodeId, ParamName}
+import pl.touk.nussknacker.engine.api.{Documentation, HideToString, JobData, NodeId, ParamName}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  ExpressionParserCompilationError,
-  Mock,
-  TestConfigurationRefersToNotExistingNode
-}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParserCompilationError, Mock, TestConfigurationRefersToNotExistingNode}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -17,15 +13,16 @@ import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
 import pl.touk.nussknacker.engine.testmode.TestProcess.{AssertionResult, FailedAssertion, SuccessfulAssertion}
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 
-class TestCaseCompiler(expressionCompiler: ExpressionCompiler) {
+class TestCaseCompiler(expressionCompiler: ExpressionCompiler, globalVariablesPreparer: GlobalVariablesPreparer) {
 
-  // todo: take care what should be done when scenario is only partially compiled (there were some errors)
   // todo: to decide where should be input data validation (especially in context of validation during edition and saving)
   def compile(
       testCase: TestCase,
-      scenarioTypingResult: Map[String, NodeTypingData]
+      scenarioTypingResult: Map[String, NodeTypingData],
+      jobData: JobData
   ): ValidatedNel[ProcessCompilationError, CompiledTestCase] = {
     val mocksV = testCase.mocks
       .filter(_ => false) // todo: disabled
@@ -37,7 +34,7 @@ class TestCaseCompiler(expressionCompiler: ExpressionCompiler) {
 
     val assertionsV = testCase.assertions
       .map { case (node, assertions) =>
-        compileAssertions(node, assertions, scenarioTypingResult, testCase.id).map(node -> _)
+        compileAssertions(node, assertions, scenarioTypingResult, testCase.id, jobData).map(node -> _)
       }
       .toList
       .sequence
@@ -77,7 +74,6 @@ class TestCaseCompiler(expressionCompiler: ExpressionCompiler) {
     expressionCompiler
       .compile(expression, Some(ParameterName("$mockExpression")), ctx, expectedType) match {
       case Valid(typedExpression) =>
-        // todo: this verification probably should be moved to JsonTemplateParser
         if (typedExpression.typingInfo.typingResult.canBeLooselyAssignedTo(expectedType)) {
           Valid(typedExpression.expression)
         } else {
@@ -101,16 +97,17 @@ class TestCaseCompiler(expressionCompiler: ExpressionCompiler) {
       nodeId: NodeId,
       assertions: List[Assertion],
       nodesTyping: Map[String, NodeTypingData],
-      testId: String
+      testId: String,
+      jobData: JobData
   ): ValidatedNel[ProcessCompilationError, List[CompiledAssertion]] = {
     validateTypingExistence(nodeId, nodesTyping, testId, ProcessCompilationError.Assertion).andThen { typing =>
-      val ctx = ValidationContext.empty
+      val ctx = globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData)
         .withVariablesUnsafe(
           "contexts" -> Typed.genericTypeClass(
             classOf[java.util.List[_]],
             List(Typed.record(typing.variableTypes))
-          ), // todo: filter out global vars?
-          "TESTS" -> Typed.fromInstance(tests) // todo: to ensure if there is no issues with that
+          ),
+          "TESTS" -> Typed.fromInstance(tests)
         )
       assertions.map(compileAssertionExpression(nodeId, ctx, _)).sequence
     }

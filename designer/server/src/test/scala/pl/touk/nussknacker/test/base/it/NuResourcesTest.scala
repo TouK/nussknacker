@@ -28,6 +28,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
@@ -295,7 +296,7 @@ trait NuResourcesTest
         deploymentManager
       ),
       flinkProcessValidator(),
-      new AssertionVerifierImpl,
+      new AssertionVerifierImpl(GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)),
     )
 
   protected def deployRoute() =

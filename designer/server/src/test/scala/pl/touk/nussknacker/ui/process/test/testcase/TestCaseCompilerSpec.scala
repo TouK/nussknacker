@@ -1,16 +1,14 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
 import cats.data.Validated
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.Validated.Valid
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{InputData, Mock, TestConfigurationRefersToNotExistingNode}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo, ProcessCompiler, ProcessValidator}
@@ -35,17 +33,17 @@ class TestCaseCompilerSpec extends AnyFunSuite with Matchers with Inside {
     .build
   private val modelDefinitionWithClasses = ModelDefinitionWithClasses(baseDefinition)
   private val testCompiler: TestCaseCompiler = {
-
+    val globalVariablesPreparer = GlobalVariablesPreparer.apply(modelDefinitionWithClasses.modelDefinition.expressionConfig)
     val expressionCompiler = ExpressionCompiler.withOptimization(
       getClass.getClassLoader,
       new SimpleDictRegistry(Map.empty),
       modelDefinitionWithClasses.modelDefinition.expressionConfig,
       modelDefinitionWithClasses.classDefinitions,
       ExpressionEvaluator.unOptimizedEvaluator(
-        GlobalVariablesPreparer.apply(modelDefinitionWithClasses.modelDefinition.expressionConfig)
+        globalVariablesPreparer
       )
     )
-    new TestCaseCompiler(expressionCompiler)
+    new TestCaseCompiler(expressionCompiler, globalVariablesPreparer)
   }
 
   test("should compile valid test for scenario") {
@@ -92,34 +90,36 @@ class TestCaseCompilerSpec extends AnyFunSuite with Matchers with Inside {
     val testCompilationResult = compileScenarioWithTests(scenario, test)
 
     //todo
-//    inside(testCompilationResult) { case Invalid(errors) =>
-//      errors.size shouldBe 3
-//      assert(
-//        errors.toList.contains(
-//          TestConfigurationRefersToNotExistingNode(NodeId("notExistingSource"), test.id, InputData)
-//        )
-//      )
-//      assert(
-//        errors.toList.contains(TestConfigurationRefersToNotExistingNode(NodeId("notExistingEnricher"), test.id, Mock))
-//      )
-//      assert(
-//        errors.toList.contains(
-//          TestConfigurationRefersToNotExistingNode(
-//            NodeId("notExistingSink"),
-//            test.id,
-//            ProcessCompilationError.Assertion
-//          )
-//        )
-//      )
-//    }
+    //    inside(testCompilationResult) { case Invalid(errors) =>
+    //      errors.size shouldBe 3
+    //      assert(
+    //        errors.toList.contains(
+    //          TestConfigurationRefersToNotExistingNode(NodeId("notExistingSource"), test.id, InputData)
+    //        )
+    //      )
+    //      assert(
+    //        errors.toList.contains(TestConfigurationRefersToNotExistingNode(NodeId("notExistingEnricher"), test.id, Mock))
+    //      )
+    //      assert(
+    //        errors.toList.contains(
+    //          TestConfigurationRefersToNotExistingNode(
+    //            NodeId("notExistingSink"),
+    //            test.id,
+    //            ProcessCompilationError.Assertion
+    //          )
+    //        )
+    //      )
+    //    }
   }
 
   private def compileScenarioWithTests(scenario: CanonicalProcess, test: TestCase) = {
     val typing = compileScenarioForTyping(scenario)
+    val jobData = JobData(MetaData("someScenario", StreamMetaData()), ProcessVersion.empty)
 
     val testCompilationResult = testCompiler.compile(
       test,
-      typing
+      typing,
+      jobData
     )
     testCompilationResult
   }
