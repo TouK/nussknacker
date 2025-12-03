@@ -74,7 +74,7 @@ export const getTestingDataRecords = createSelector(getTesting, (g) => g.testing
 const getSourceId = (_: unknown, sourceId: string) => sourceId;
 export const getTestingDataRecordsForSingleSource = createSelector(
     [getTestingDataRecords, getSourceId],
-    (testingDataRecords, sourceId: string) => testingDataRecords?.filter((r) => r.sourceId === sourceId),
+    (testingDataRecords, sourceId: string) => testingDataRecords.filter((r) => r.sourceId === sourceId),
 );
 export const hasTestingDataRecordsDefined = createSelector(getTestingDataRecords, (testingDataRecords) => testingDataRecords.length > 0);
 

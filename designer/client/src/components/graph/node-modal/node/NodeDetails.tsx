@@ -10,7 +10,6 @@ import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
 import type { RootState } from "../../../../reducers";
 import { getCreatorType } from "../../../../reducers/selectors/getCreator";
-import { getTestResultsLoading } from "../../../../reducers/selectors/graph";
 import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import type { Edge } from "../../../../types/edge";
@@ -158,13 +157,13 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
                     <TabsWrapper
                         tabs={[
                             {
-                                label: "General",
+                                label: t("nodeDetails.tabs.general.name", "General"),
                                 content: (
                                     <GeneralContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />
                                 ),
                             },
                             {
-                                label: "Testing",
+                                label: t("nodeDetails.tabs.testing.name", "Testing"),
                                 content: (
                                     <TestResultsWrapper nodeId={editedNode.id}>
                                         <TestingContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />

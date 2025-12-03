@@ -21,9 +21,7 @@ export const InputDataRecords = ({ sourceId }: Props) => {
     const testingDataRecords = useAppSelector((state) => getTestingDataRecordsForSingleSource(state, sourceId));
 
     const { cellErrors, recordsErrors, handleRowAdded, handleRowMoved, handleRowsDeleted, handleRowUpdated, handleGenerateTestData } =
-        useDataRecordsActions({
-            testingDataRecords,
-        });
+        useDataRecordsActions();
 
     const testCapabilities = useAppSelector(getTestCapabilities);
     const defaultParameter = testCapabilities.testWithParameters.sourceParameters.find(

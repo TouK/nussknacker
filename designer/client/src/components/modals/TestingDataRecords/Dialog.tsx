@@ -64,9 +64,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
     );
 
     const { recordsErrors, cellErrors, handleRowUpdated, handleGenerateTestData, handleRowsDeleted, handleRowAdded, handleRowMoved } =
-        useDataRecordsActions({
-            testingDataRecords,
-        });
+        useDataRecordsActions();
 
     const sourceOptions = useMemo(
         () => testCapabilities.testWithParameters.sourceParameters.flatMap((sourceParameter) => sourceParameter.sourceId),
