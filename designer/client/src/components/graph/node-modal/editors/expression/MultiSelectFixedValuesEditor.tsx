@@ -1,5 +1,5 @@
 import type { SelectChangeEvent } from "@mui/material";
-import { Box, Chip, MenuItem, OutlinedInput, Select } from "@mui/material";
+import { Box, Chip, MenuItem, Select } from "@mui/material";
 import i18next from "i18next";
 import { isEqual, uniq } from "lodash";
 import React, { useCallback, useEffect } from "react";
@@ -20,10 +20,12 @@ function getExpressionFromValues(values: string[]) {
 }
 
 export const MultiSelectFixedValuesEditor = prepareEditor<{ editorConfig: EditorConfigForType<EditorType.MULTI_SELECT_EDITOR> }>(
-    ({ editorConfig, expressionObj, onValueChange, showValidation, fieldErrors }) => {
+    ({ editorConfig, expressionObj, onValueChange, showValidation, fieldErrors, defaultValue }) => {
         const [value$, emit, values] = useStream<string[]>(() => {
             try {
-                return JSON.parse(expressionObj.expression);
+                const parsed = JSON.parse(expressionObj.expression);
+                if (Array.isArray(parsed)) return parsed;
+                return JSON.parse(typeof defaultValue === "string" ? defaultValue : defaultValue.expression);
             } catch {
                 return [];
             }
