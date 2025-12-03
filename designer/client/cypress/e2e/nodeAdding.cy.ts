@@ -26,9 +26,7 @@ describe("Node adding", () => {
         });
         cy.visitNewProcess(seed);
         cy.get("[data-testid=graphPage]", { timeout: 20000 }).as("graph");
-        cy.window().then((win) => {
-            win["$toggleUserFlag"]("survey.welcome.closed");
-        });
+        cy.toggleUserFlag("survey.welcome.closed");
         cy.get("[title='toggle left panel']").click();
     });
 

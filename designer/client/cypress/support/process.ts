@@ -19,6 +19,7 @@ declare global {
             postFormData: typeof postFormData;
             visitProcess: typeof visitProcess;
             getNode: typeof getNode;
+            toggleUserFlag: typeof toggleUserFlag;
             openNodeWindow: typeof openNodeWindow;
             dragNode: typeof dragNode;
             layoutScenario: typeof layoutScenario;
@@ -310,6 +311,12 @@ function getNode(nameOrAlias: string, end?: boolean) {
     );
 }
 
+function toggleUserFlag(flag: string, value?: boolean | undefined) {
+    return cy.window().then((win) => {
+        win["$toggleUserFlag"](flag, value);
+    });
+}
+
 function openNodeWindow(nameOrAlias: string, end?: boolean) {
     // in Request (rr) "properties" data is used
     cy.intercept("POST", "/api/*/*/additionalInfo").as("additionalInfo");
@@ -420,6 +427,7 @@ Cypress.Commands.add("addLabelsToNewProcess", addLabelsToNewProcess);
 Cypress.Commands.add("postFormData", postFormData);
 Cypress.Commands.add("visitProcess", visitProcess);
 Cypress.Commands.add("getNode", getNode);
+Cypress.Commands.add("toggleUserFlag", toggleUserFlag);
 Cypress.Commands.add("openNodeWindow", openNodeWindow);
 Cypress.Commands.add("dragNode", dragNode);
 Cypress.Commands.add("layoutScenario", layoutScenario);
