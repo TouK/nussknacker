@@ -15615,6 +15615,21 @@
     }
   },
   {
+    "clazzName": {"refClazzName": "org.apache.avro.generic.GenericData$EnumSymbol"},
+    "methods": {
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
     "clazzName": {"refClazzName": "org.apache.avro.generic.GenericRecord"},
     "methods": {
       "get": [
