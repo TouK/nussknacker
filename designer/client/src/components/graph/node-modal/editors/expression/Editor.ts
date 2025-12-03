@@ -28,6 +28,7 @@ import { EditorType } from "./types";
 
 type BaseEditorProps = {
     expressionObj: ExpressionObj;
+    defaultValue?: ExpressionObj | string;
     onValueChange: OnValueChange;
     fieldErrors: FieldError[];
     readOnly?: boolean;
