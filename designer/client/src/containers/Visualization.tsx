@@ -89,7 +89,12 @@ function useCountsIfNeeded() {
     const from = searchParams.get("from");
     const to = searchParams.get("to");
     const refresh = searchParams.get("refresh");
+
+    // Prevents the counts from being initialized more than once
+    const hasRunRef = useRef(false);
+
     useEffect(() => {
+        if (hasRunRef.current) return;
         if (!scenario?.name || scenario.isFragment) return;
 
         const countParams = extractCountParams({
@@ -98,7 +103,7 @@ function useCountsIfNeeded() {
             refresh,
         });
         if (!countParams) return;
-
+        hasRunRef.current = true;
         dispatch(
             fetchAndDisplayProcessCounts({
                 processName: scenario.name,
