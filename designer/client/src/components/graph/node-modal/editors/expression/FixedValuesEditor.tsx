@@ -1,15 +1,14 @@
-import { cx } from "@emotion/css";
-import { FormControlLabel, Radio, RadioGroup, styled } from "@mui/material";
+import { styled } from "@mui/material";
 import i18next from "i18next";
 import { isEmpty } from "lodash";
 import React, { useCallback, useMemo } from "react";
 
 import { PreloadedIcon } from "../../../../toolbars/creator/ComponentIcon";
 import type { FixedValuesOption } from "../../fragment-input-definition/item/types";
-import type { OnValueChange } from "./Editor";
 import { prepareEditor } from "./Editor";
 import type { EditorConfigForType } from "./EditorConfig";
 import { editorsParameters } from "./editorsParameters";
+import { RadioVariant } from "./FixedValuesEditor_RadioVariant";
 import { SelectVariant } from "./FixedValuesEditor_SelectVariant";
 import type { ExpressionObj } from "./types";
 import { EditorType } from "./types";
@@ -56,39 +55,6 @@ export const truncateOptionLabel = (optionLabel: string) => {
     // TODO: Until we want have a better endpoint naming, we need to truncate it on the frontend side. Remove this logic when Backend ready
     return optionLabel?.replace(/-gateway\.(?:staging-cloud|cloud)\.nussknacker\.io\/topics/g, "(...)nussknacker.io"); // It will change URL https://light-pink-silkworm-gateway.staging-cloud.nussknacker.io/topics/http.example-input to https://light-pink-silkworm(...)nussknacker.io/http.example-input
 };
-
-function RadioVariant({
-    className,
-    currentOption,
-    onValueChange,
-    options,
-    param,
-}: {
-    className?: string;
-    currentOption: Option;
-    onValueChange: OnValueChange;
-    options: Option[];
-    param?: FixedValuesEditorProps["param"];
-}) {
-    return (
-        <div className={cx(className)}>
-            <RadioGroup
-                value={currentOption.value}
-                onChange={(event) =>
-                    onValueChange({
-                        expression: event.target.value,
-                        language: editorsParameters[EditorType.FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR].language,
-                    })
-                }
-            >
-                {options.map((option: Option) => {
-                    const label = option.value === param?.defaultValue ? `${option.label} (default)` : option.label;
-                    return <FormControlLabel key={option.value} value={option.value} control={<Radio />} label={label} />;
-                })}
-            </RadioGroup>
-        </div>
-    );
-}
 
 export const FixedValuesEditor = prepareEditor<FixedValuesEditorProps>(
     ({ className, editorConfig, expressionObj, fieldErrors, onValueChange, param, readOnly, showValidation }) => {
