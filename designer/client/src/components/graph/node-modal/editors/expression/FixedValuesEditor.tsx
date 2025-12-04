@@ -1,23 +1,20 @@
 import { cx } from "@emotion/css";
-import { FormControlLabel, Radio, RadioGroup, Stack, styled, useTheme } from "@mui/material";
+import { FormControlLabel, Radio, RadioGroup, styled } from "@mui/material";
 import i18next from "i18next";
 import { isEmpty } from "lodash";
 import React, { useCallback, useMemo } from "react";
-import Creatable from "react-select/creatable";
 
-import { selectStyled } from "../../../../../stylesheets/SelectStyled";
-import ValidationLabels from "../../../../modals/ValidationLabels";
 import { PreloadedIcon } from "../../../../toolbars/creator/ComponentIcon";
 import type { FixedValuesOption } from "../../fragment-input-definition/item/types";
-import type { FieldError } from "../Validators";
 import type { OnValueChange } from "./Editor";
 import { prepareEditor } from "./Editor";
 import type { EditorConfigForType } from "./EditorConfig";
 import { editorsParameters } from "./editorsParameters";
+import { SelectVariant } from "./FixedValuesEditor_SelectVariant";
 import type { ExpressionObj } from "./types";
 import { EditorType } from "./types";
 
-type FixedValuesEditorProps = {
+export type FixedValuesEditorProps = {
     editorConfig:
         | EditorConfigForType<EditorType.FIXED_VALUES_PARAMETER_EDITOR>
         | EditorConfigForType<EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR>
@@ -25,13 +22,13 @@ type FixedValuesEditorProps = {
     param?: $TodoType; // TODO: really used?
 };
 
-interface Option {
+export interface Option {
     label: string;
     value: string;
     icon: string | null;
 }
 
-function getOptions(values: FixedValuesOption[]): Option[] {
+export function getOptions(values: FixedValuesOption[]): Option[] {
     return values.map((value) => ({
         value: value.expression,
         label: value.label,
@@ -39,7 +36,7 @@ function getOptions(values: FixedValuesOption[]): Option[] {
     }));
 }
 
-const NodeIcon = styled(PreloadedIcon)({
+export const NodeIcon = styled(PreloadedIcon)({
     minWidth: "1.5em",
     maxWidth: "1.5em",
     minHeight: "1.5em",
@@ -47,7 +44,7 @@ const NodeIcon = styled(PreloadedIcon)({
     alignSelf: "center",
 });
 
-const StyledOptionLabel = styled("div")({
+export const StyledOptionLabel = styled("div")({
     width: "100%",
     lineHeight: "18px",
     whiteSpace: "pre-wrap",
@@ -55,7 +52,7 @@ const StyledOptionLabel = styled("div")({
     overflowWrap: "break-word",
 });
 
-const truncateOptionLabel = (optionLabel: string) => {
+export const truncateOptionLabel = (optionLabel: string) => {
     // TODO: Until we want have a better endpoint naming, we need to truncate it on the frontend side. Remove this logic when Backend ready
     return optionLabel?.replace(/-gateway\.(?:staging-cloud|cloud)\.nussknacker\.io\/topics/g, "(...)nussknacker.io"); // It will change URL https://light-pink-silkworm-gateway.staging-cloud.nussknacker.io/topics/http.example-input to https://light-pink-silkworm(...)nussknacker.io/http.example-input
 };
@@ -89,89 +86,6 @@ function RadioVariant({
                     return <FormControlLabel key={option.value} value={option.value} control={<Radio />} label={label} />;
                 })}
             </RadioGroup>
-        </div>
-    );
-}
-
-function SelectVariant({
-    className,
-    currentOption,
-    fieldErrors,
-    onValueChange,
-    options,
-    readOnly,
-    showValidation,
-}: {
-    className?: string;
-    currentOption: Option;
-    fieldErrors: FieldError[];
-    onValueChange: OnValueChange;
-    options: Option[];
-    readOnly?: boolean;
-    showValidation?: boolean;
-}) {
-    const theme = useTheme();
-
-    const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption, indicatorSeparator, dropdownIndicator } =
-        selectStyled(theme);
-
-    return (
-        <div className={cx(className)}>
-            <Creatable
-                value={currentOption}
-                classNamePrefix={"test"}
-                onChange={(newValue) =>
-                    onValueChange({
-                        expression: newValue.value,
-                        language: editorsParameters[EditorType.FIXED_VALUES_PARAMETER_EDITOR].language,
-                    })
-                }
-                options={options}
-                formatOptionLabel={(option) =>
-                    option.icon ? (
-                        <Stack direction={"row"} alignItems={"center"} spacing={1}>
-                            <NodeIcon src={option.icon} />
-                            <StyledOptionLabel role="option">{truncateOptionLabel(option.label)}</StyledOptionLabel>
-                        </Stack>
-                    ) : (
-                        <StyledOptionLabel role="option">{truncateOptionLabel(option.label)}</StyledOptionLabel>
-                    )
-                }
-                isDisabled={readOnly}
-                formatCreateLabel={(x) => x}
-                menuPortalTarget={document.body}
-                createOptionPosition={"first"}
-                styles={{
-                    input: (base) => ({ ...input(base) }),
-                    control: (base, props) => ({
-                        ...control(base, props.isFocused, props.isDisabled, !isEmpty(fieldErrors)),
-                    }),
-                    dropdownIndicator: (base) => ({
-                        ...dropdownIndicator(base),
-                    }),
-                    indicatorSeparator: (base) => ({
-                        ...indicatorSeparator(base),
-                    }),
-                    menu: (base) => ({
-                        ...menu(base),
-                    }),
-                    menuPortal: (base) => ({
-                        ...menuPortal(base),
-                    }),
-                    menuList: (base) => ({
-                        ...menuList(base),
-                    }),
-                    option: (base, props) => ({
-                        ...menuOption(base, props.isSelected, props.isDisabled),
-                    }),
-                    valueContainer: (base) => ({
-                        ...valueContainer(base),
-                    }),
-                    singleValue: (base) => ({ ...singleValue(base, readOnly) }),
-                }}
-            />
-
-            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
         </div>
     );
 }
