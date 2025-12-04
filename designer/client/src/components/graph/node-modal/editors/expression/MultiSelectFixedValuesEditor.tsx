@@ -66,7 +66,7 @@ export const MultiSelectFixedValuesEditor = prepareEditor<{ editorConfig: Editor
         );
 
         return (
-            <Box sx={{ display: "grid" }}>
+            <Box sx={{ display: "grid", flex: 1 }}>
                 <Select
                     variant="outlined"
                     multiple
