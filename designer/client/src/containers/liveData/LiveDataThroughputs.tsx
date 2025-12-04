@@ -107,7 +107,9 @@ export function LiveDataThroughputs() {
             const events = newEvents.filter(isMatchingModel);
             let el = graphInstance.processGraphPaper.findViewByModel(model)?.el;
             if (isSafari) {
+                // <g> not allowed for animation/filter
                 el = el.getElementsByTagName("rect")[0];
+                if (!el) return;
             }
 
             const nodeInputThroughput = enabled

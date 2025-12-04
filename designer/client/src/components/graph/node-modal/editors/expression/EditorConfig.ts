@@ -29,6 +29,13 @@ type ExtendedEditorConfig =
           possibleValues: FixedValuesOption[];
       }
     | {
+          type: EditorType.MULTI_SELECT_EDITOR;
+          possibleValues: {
+              value: string;
+              label: string;
+          }[];
+      }
+    | {
           type: EditorType.DURATION_EDITOR | EditorType.PERIOD_EDITOR;
           timeRangeComponents: TimeRange[];
       }

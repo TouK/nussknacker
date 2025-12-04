@@ -24,7 +24,7 @@ const ScenarioStatusPanel = memo(function ScenarioStatusPanel({ buttonsVariant, 
                     sx={(theme) => ({
                         position: "absolute",
                         top: theme.spacing(1),
-                        right: theme.spacing(1),
+                        right: theme.spacing(1.25),
                         borderRadius: theme.spacing(0.5),
                     })}
                 >
@@ -36,7 +36,11 @@ const ScenarioStatusPanel = memo(function ScenarioStatusPanel({ buttonsVariant, 
                 anchorEl={buttonsVisible}
                 anchorOrigin={{
                     vertical: "bottom",
-                    horizontal: "left",
+                    horizontal: "right",
+                }}
+                transformOrigin={{
+                    vertical: "top",
+                    horizontal: "right",
                 }}
                 onClose={() => setButtonsVisible(null)}
                 keepMounted

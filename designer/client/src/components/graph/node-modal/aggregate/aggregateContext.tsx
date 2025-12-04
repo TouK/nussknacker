@@ -87,15 +87,41 @@ export const AggregateContextProvider = ({ children, node, setProperty, errors }
         [groupByPath, serializeGroupBy, setProperty],
     );
 
-    const groupBy = useMemo(
-        () => ({
+    const groupBy = useMemo(() => {
+        const errorsByValue = new Map<string, NodeValidationError[]>();
+        const fieldErrors = errors.filter(({ fieldName }) => ["groupBy"].includes(fieldName));
+        const expression: string = serializeGroupBy(groupByValues);
+
+        let cursor = 0;
+        const ranges = groupByValues.map((value) => {
+            const from = expression.indexOf(value, cursor);
+            const to = from + value.length;
+            cursor = from !== -1 ? to : cursor;
+            return { value, from, to };
+        });
+
+        fieldErrors.forEach((e) => {
+            const details = e.details;
+            if (details?.type !== "CoordinatesBasedTextRange") return;
+
+            const range = ranges.find((r) => r.from <= details.start.column && r.to >= details.end.column);
+            if (!range) return;
+
+            if (errorsByValue.has(range.value)) {
+                errorsByValue.get(range.value).push(e);
+            } else {
+                errorsByValue.set(range.value, [e]);
+            }
+        });
+
+        return {
             values: groupByValues,
             onChange: onGroupByChange,
             isMarked: diffMark(groupByPath),
-            fieldErrors: errors.filter(({ fieldName }) => ["groupBy"].includes(fieldName)),
-        }),
-        [diffMark, errors, groupByPath, groupByValues, onGroupByChange],
-    );
+            fieldErrors: fieldErrors,
+            errorsByValue,
+        };
+    }, [diffMark, errors, groupByPath, groupByValues, onGroupByChange, serializeGroupBy]);
 
     return (
         <AggregateContext.Provider
@@ -118,8 +144,8 @@ type FieldContext<T> = {
 
 export const AggregateContext = createContext<{
     aggregator: FieldContext<AggregateValue>;
-    groupBy: FieldContext<string>;
+    groupBy: FieldContext<string> & { errorsByValue: Map<string, NodeValidationError[]> };
 }>({
     aggregator: { values: null },
-    groupBy: { values: null },
+    groupBy: { values: null, errorsByValue: new Map() },
 });

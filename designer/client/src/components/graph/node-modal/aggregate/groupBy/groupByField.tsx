@@ -9,7 +9,7 @@ import type { FieldWrapperProps } from "../../ParameterExpressionField";
 import { AggregateContext } from "../aggregateContext";
 import { CollectionField } from "./collectionField";
 
-export function GroupByField({ node, isEditMode }: FieldWrapperProps) {
+export function GroupByField({ node, isEditMode, showValidation, parameter }: FieldWrapperProps) {
     const { groupBy } = useContext(AggregateContext);
 
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
@@ -18,7 +18,13 @@ export function GroupByField({ node, isEditMode }: FieldWrapperProps) {
     return (
         <NodeRow label={"groupBy"}>
             <NodeValue>
-                <CollectionField value={groupBy.values} onChange={groupBy.onChange} variableTypes={variableTypes} disabled={isEditMode} />
+                <CollectionField
+                    value={groupBy.values}
+                    onChange={groupBy.onChange}
+                    variableTypes={variableTypes}
+                    disabled={isEditMode}
+                    isValueValid={showValidation ? (value) => !groupBy.errorsByValue.has(value) : undefined}
+                />
                 <ValidationLabels fieldErrors={groupBy.fieldErrors} />
             </NodeValue>
         </NodeRow>
