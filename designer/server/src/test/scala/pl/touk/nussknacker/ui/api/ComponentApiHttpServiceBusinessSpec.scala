@@ -170,6 +170,7 @@ class ComponentApiHttpServiceBusinessSpec
     "streaming-service-enricher",
     "streaming-service-enrichernullresult",
     "streaming-service-env",
+    "streaming-service-hiddenparamtypeservice",
     "streaming-service-listreturnobjectservice",
     "streaming-service-log",
     "streaming-service-meetingservice",

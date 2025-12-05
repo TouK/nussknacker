@@ -57,6 +57,7 @@ object ParametersExtractor {
         category = ParameterCategory.Standard,
         changesCanReloadParameters = Some(false),
         nonImportantForExecution = false,
+        displayType = true,
       ),
       isBodyPart = isBodyPart
     )

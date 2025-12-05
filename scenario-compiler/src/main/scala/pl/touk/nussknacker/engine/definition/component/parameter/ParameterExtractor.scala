@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition.component.parameter
 
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api
-import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, ParamName}
+import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, HideType, LazyParameter, ParamName}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -58,6 +58,8 @@ object ParameterExtractor {
       .extract(parameterData, parameterConfig)
       .getOrElse(ParameterCategory.Standard)
 
+    val displayType = Option(p.getAnnotation(classOf[HideType])).forall(_ => false)
+
     Parameter(
       name = name,
       typ = paramType,
@@ -75,7 +77,8 @@ object ParameterExtractor {
       category = category,
       // these features are available only for DynamicComponents
       changesCanReloadParameters = Some(false),
-      nonImportantForExecution = false
+      nonImportantForExecution = false,
+      displayType = displayType
     )
   }
 

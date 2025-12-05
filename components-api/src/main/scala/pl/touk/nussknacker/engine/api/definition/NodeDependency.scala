@@ -95,6 +95,7 @@ object Parameter {
       category = ParameterCategory.Standard,
       changesCanReloadParameters = None,
       nonImportantForExecution = false,
+      displayType = true,
     )
 
   def optional[T: TypeTag: NotNothing](name: ParameterName): Parameter =
@@ -120,6 +121,7 @@ object Parameter {
       category = ParameterCategory.Standard,
       changesCanReloadParameters = None,
       nonImportantForExecution = false,
+      displayType = true,
     )
 
 }
@@ -153,7 +155,8 @@ case class Parameter(
     labelOpt: Option[String],
     category: ParameterCategory,
     changesCanReloadParameters: Option[Boolean],
-    nonImportantForExecution: Boolean
+    nonImportantForExecution: Boolean,
+    displayType: Boolean
 ) extends NodeDependency {
 
   def copy(
@@ -203,6 +206,7 @@ case class Parameter(
       category: ParameterCategory = this.category,
       changesCanReloadParameters: Option[Boolean] = this.changesCanReloadParameters,
       nonImportantForExecution: Boolean = this.nonImportantForExecution,
+      displayType: Boolean = this.displayType,
   ): Parameter = {
     new Parameter(
       name = name,
@@ -221,6 +225,7 @@ case class Parameter(
       category = category,
       changesCanReloadParameters = changesCanReloadParameters,
       nonImportantForExecution = nonImportantForExecution,
+      displayType = displayType,
     )
   }
 
@@ -241,6 +246,7 @@ case class Parameter(
       category: ParameterCategory,
       changesCanReloadParameters: Option[Boolean],
       nonImportantForExecution: Boolean,
+      displayType: Boolean,
   ): Parameter = {
     new Parameter(
       name = name,
@@ -259,6 +265,7 @@ case class Parameter(
       category = category,
       changesCanReloadParameters = changesCanReloadParameters,
       nonImportantForExecution = nonImportantForExecution,
+      displayType = displayType,
     )
   }
 
@@ -292,6 +299,7 @@ case class Parameter(
       category = ParameterCategory.Standard,
       changesCanReloadParameters = None,
       nonImportantForExecution = false,
+      displayType = true
     )
   }
 
