@@ -6334,6 +6334,14 @@ components:
         value: {}
         label:
           type: string
+        description:
+          type:
+          - string
+          - 'null'
+        group:
+          type:
+          - string
+          - 'null'
     NextSwitch:
       title: NextSwitch
       type: object
