@@ -1,41 +1,33 @@
+import { FormControlLabel, Switch } from "@mui/material";
 import i18next from "i18next";
 import { isEmpty } from "lodash";
 import React from "react";
 
 import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
-import { FixedValuesEditor } from "./FixedValuesEditor";
 import { EditorType, ExpressionLang } from "./types";
 
-type Props = NonNullable<unknown>;
-
-const SUPPORTED_LANGUAGE = ExpressionLang.SpEL;
 const TRUE_EXPRESSION = "true";
 const FALSE_EXPRESSION = "false";
 
-const parseable = (expressionObj) => {
-    const expression = expressionObj.expression;
-    const language = expressionObj.language;
-    return (expression === "true" || expression === "false") && language === SUPPORTED_LANGUAGE;
+const parseable = ({ expression, language }) => {
+    return [TRUE_EXPRESSION, FALSE_EXPRESSION].includes(expression) && language === ExpressionLang.SpEL;
 };
 
 export const BoolEditor = prepareEditor(
-    ({ expressionObj, readOnly, onValueChange, className, fieldErrors, showValidation = true }) => {
-        const trueValue = { expression: TRUE_EXPRESSION, label: i18next.t("common.true", "true") };
-        const falseValue = { expression: FALSE_EXPRESSION, label: i18next.t("common.false", "false") };
-
+    ({ expressionObj, onValueChange, readOnly }) => {
         return (
-            <FixedValuesEditor
-                editorConfig={{
-                    type: EditorType.FIXED_VALUES_PARAMETER_EDITOR,
-                    possibleValues: [trueValue, falseValue],
+            <FormControlLabel
+                disabled={readOnly}
+                control={<Switch />}
+                label={null}
+                checked={expressionObj?.expression === TRUE_EXPRESSION}
+                onChange={(e, checked) => {
+                    onValueChange({
+                        language: ExpressionLang.SpEL,
+                        expression: checked ? TRUE_EXPRESSION : FALSE_EXPRESSION,
+                    });
                 }}
-                expressionObj={expressionObj}
-                onValueChange={onValueChange}
-                readOnly={readOnly}
-                className={className}
-                fieldErrors={fieldErrors}
-                showValidation={showValidation}
             />
         );
     },
