@@ -7,7 +7,7 @@ import { getProcessDefinitionData } from "../../../reducers/selectors/getProcess
 import { getNodes } from "../../../reducers/selectors/graph";
 import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
-import { editors } from "./editors/expression/Editor";
+import { EditorByType } from "./editors/expression/EditorByType";
 import type { ExpressionObj } from "./editors/expression/types";
 import { EditorType, ExpressionLang } from "./editors/expression/types";
 import { FormControl } from "./editors/FormControl";
@@ -40,8 +40,6 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
             dispatch(getConfiguredAdditionalComponents());
         }
     }, [dispatch, isCloud, processDefinitionData]);
-
-    const Editor = editors[EditorType.FIXED_VALUES_PARAMETER_EDITOR];
 
     const nodes = useAppSelector(getNodes);
 
@@ -91,7 +89,6 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
     const editorConfig = useMemo(() => {
         const possibleValues = componentsToSelect.map((c) => ({ expression: c.componentId, label: c.label }));
         return {
-            type: EditorType.FIXED_VALUES_PARAMETER_EDITOR,
             possibleValues: onCreate
                 ? [
                       {
@@ -108,8 +105,9 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
     return (
         <FormControl sx={{ padding: "16px", marginX: "-16px", background: "rgba(0,0,0,.25)" }}>
             <FieldLabel label={"Component"} />
-            <Editor
-                editorConfig={editorConfig}
+            <EditorByType
+                type={EditorType.FIXED_VALUES_PARAMETER_EDITOR}
+                config={editorConfig}
                 className={nodeValue}
                 fieldErrors={[]}
                 onValueChange={onValueChange}
