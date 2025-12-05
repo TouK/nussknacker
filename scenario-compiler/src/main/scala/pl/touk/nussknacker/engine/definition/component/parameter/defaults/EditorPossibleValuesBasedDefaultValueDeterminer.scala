@@ -47,6 +47,7 @@ protected object EditorPossibleValuesBasedDefaultValueDeterminer extends Paramet
     case DateTimeParameterEditor     => None
     case BoolParameterEditor         => None
     case TextareaParameterEditor     => None
+    case SpelExpressionsListEditor   => None
   }
 
 }

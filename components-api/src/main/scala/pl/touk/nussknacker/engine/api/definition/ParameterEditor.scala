@@ -100,3 +100,5 @@ case object CronParameterEditor extends ParameterEditor with StaticParameterEdit
 @JsonCodec case class MultiSelectEditor(possibleValues: List[MultiSelectFixedValue])
     extends ParameterEditor
     with StaticParameterEditor
+
+case object SpelExpressionsListEditor extends ParameterEditor

@@ -30,7 +30,7 @@ object sampleTransformers {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(
-        @ParamName("groupBy") groupBy: LazyParameter[AnyRef],
+        @ParamName("groupBy") @Editor(`type` = EditorType.SPEL_EXPRESSIONS_LIST_EDITOR) groupBy: LazyParameter[AnyRef],
         @ParamName("aggregator")
         @AdditionalVariables(Array(new AdditionalVariable(name = "AGG", clazz = classOf[AggregateHelper])))
         @Editor(
@@ -90,7 +90,7 @@ object sampleTransformers {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(
-        @ParamName("groupBy") groupBy: LazyParameter[AnyRef],
+        @ParamName("groupBy") @Editor(`type` = EditorType.SPEL_EXPRESSIONS_LIST_EDITOR) groupBy: LazyParameter[AnyRef],
         @ParamName("aggregator")
         @AdditionalVariables(Array(new AdditionalVariable(name = "AGG", clazz = classOf[AggregateHelper])))
         @Editor(
@@ -154,7 +154,7 @@ object sampleTransformers {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(
-        @ParamName("groupBy") groupBy: LazyParameter[AnyRef],
+        @ParamName("groupBy") @Editor(`type` = EditorType.SPEL_EXPRESSIONS_LIST_EDITOR) groupBy: LazyParameter[AnyRef],
         @ParamName("aggregator")
         @AdditionalVariables(Array(new AdditionalVariable(name = "AGG", clazz = classOf[AggregateHelper])))
         @Editor(

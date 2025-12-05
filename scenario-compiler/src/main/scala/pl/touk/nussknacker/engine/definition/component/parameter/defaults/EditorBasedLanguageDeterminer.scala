@@ -11,7 +11,7 @@ object EditorBasedLanguageDeterminer {
       case BoolParameterEditor | DateParameterEditor | TimeParameterEditor | DateTimeParameterEditor |
           TextareaParameterEditor | DurationParameterEditor(_) | PeriodParameterEditor(_) | CronParameterEditor |
           FixedValuesParameterEditor(_) | FixedValuesWithIconParameterEditor(_) |
-          FixedValuesWithRadioParameterEditor(_) =>
+          FixedValuesWithRadioParameterEditor(_) | SpelExpressionsListEditor =>
         Expression.Language.Spel
       case JsonParameterEditor | MultiSelectEditor(_) => Expression.Language.Json
       case JsonTemplateParameterEditor                => Expression.Language.JsonTemplate
