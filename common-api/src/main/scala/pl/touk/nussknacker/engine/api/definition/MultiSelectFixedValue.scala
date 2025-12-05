@@ -7,5 +7,5 @@ import io.circe.generic.JsonCodec
     value: Json,
     label: String,
     description: Option[String] = None,
-    icon: Option[String] = None
+    group: Option[String] = None,
 )

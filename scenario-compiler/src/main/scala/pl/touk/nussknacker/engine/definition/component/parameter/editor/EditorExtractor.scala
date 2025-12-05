@@ -67,7 +67,7 @@ object EditorExtractor {
                 value = Json.fromString(option.value()),
                 label = option.label(),
                 description = Option(option.description()).filterNot(_.isBlank),
-                icon = Option(option.icon()).filterNot(_.isBlank),
+                group = Option(option.group()).filterNot(_.isBlank),
               )
             )
             .toList

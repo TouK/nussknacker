@@ -30,6 +30,6 @@ public @interface MultiSelectLabeledValue {
 
     String description() default "";
 
-    String icon() default "";
+    String group() default "";
 
 }
