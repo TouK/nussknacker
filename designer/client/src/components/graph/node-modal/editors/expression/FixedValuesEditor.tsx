@@ -8,7 +8,6 @@ import type { FixedValuesOption } from "../../fragment-input-definition/item/typ
 import { prepareEditor } from "./Editor";
 import type { EditorConfigForType } from "./EditorConfig";
 import { editorsParameters } from "./editorsParameters";
-import { RadioVariant } from "./FixedValuesEditor_RadioVariant";
 import { ReactSelectCreatableVariant as SelectVariant } from "./FixedValuesEditor_ReactSelectCreatableVariant";
 import type { ExpressionObj } from "./types";
 import { EditorType } from "./types";
@@ -16,9 +15,7 @@ import { EditorType } from "./types";
 export type FixedValuesEditorProps = {
     editorConfig:
         | EditorConfigForType<EditorType.FIXED_VALUES_PARAMETER_EDITOR>
-        | EditorConfigForType<EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR>
-        | EditorConfigForType<EditorType.FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR>;
-    param?: $TodoType; // TODO: really used?
+        | EditorConfigForType<EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR>;
 };
 
 export interface Option {
@@ -56,7 +53,7 @@ export const truncateOptionLabel = (optionLabel: string) => {
     return optionLabel?.replace(/-gateway\.(?:staging-cloud|cloud)\.nussknacker\.io\/topics/g, "(...)nussknacker.io"); // It will change URL https://light-pink-silkworm-gateway.staging-cloud.nussknacker.io/topics/http.example-input to https://light-pink-silkworm(...)nussknacker.io/http.example-input
 };
 
-const handleCurrentOption = (expressionObj: ExpressionObj, options: Option[]): Option => {
+export const handleCurrentOption = (expressionObj: ExpressionObj, options: Option[]): Option => {
     // just leave undefined and let the user explicitly select one
     if (!expressionObj) return null;
 
@@ -73,19 +70,7 @@ const handleCurrentOption = (expressionObj: ExpressionObj, options: Option[]): O
 };
 
 export const FixedValuesEditor = prepareEditor<FixedValuesEditorProps>(
-    ({ className, editorConfig, expressionObj, fieldErrors, onValueChange, param, readOnly, showValidation }) => {
-        if (editorConfig.type === EditorType.FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR) {
-            return (
-                <RadioVariant
-                    className={className}
-                    currentOption={handleCurrentOption(expressionObj, getOptions(editorConfig.possibleValues))}
-                    onValueChange={onValueChange}
-                    options={getOptions(editorConfig.possibleValues)}
-                    param={param}
-                />
-            );
-        }
-
+    ({ className, editorConfig, expressionObj, fieldErrors, onValueChange, readOnly, showValidation }) => {
         return (
             <SelectVariant
                 className={className}
