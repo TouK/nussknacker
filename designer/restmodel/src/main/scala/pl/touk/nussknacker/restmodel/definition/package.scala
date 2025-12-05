@@ -32,7 +32,7 @@ package object definition {
 
   @JsonCodec final case class UIParameter(
       name: String,
-      typ: TypingResult,
+      typ: Option[TypingResult],
       editors: List[ParameterEditor],
       // It is used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
       defaultValue: Expression,

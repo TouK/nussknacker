@@ -167,7 +167,7 @@ object DefinitionsService {
   def createUIParameter(parameter: Parameter): UIParameter = {
     UIParameter(
       name = parameter.name.value,
-      typ = toUIType(parameter.typ),
+      typ = if (parameter.displayType) Some(toUIType(parameter.typ)) else None,
       editors = parameter.finalEditors,
       defaultValue = parameter.finalDefaultValue,
       additionalVariables = parameter.additionalVariables.mapValuesNow(_.typingResult),
