@@ -7892,7 +7892,6 @@ components:
       type: object
       required:
       - name
-      - typ
       - defaultValue
       - additionalVariables
       - branchParam
@@ -7904,15 +7903,17 @@ components:
         name:
           type: string
         typ:
-          oneOf:
-          - $ref: '#/components/schemas/TypedClass'
-          - $ref: '#/components/schemas/TypedDict'
-          - $ref: '#/components/schemas/TypedNull'
-          - $ref: '#/components/schemas/TypedObjectTypingResult'
-          - $ref: '#/components/schemas/TypedObjectWithValue'
-          - $ref: '#/components/schemas/TypedTaggedValue'
-          - $ref: '#/components/schemas/TypedUnion'
-          - $ref: '#/components/schemas/Unknown'
+          anyOf:
+          - oneOf:
+            - $ref: '#/components/schemas/TypedClass'
+            - $ref: '#/components/schemas/TypedDict'
+            - $ref: '#/components/schemas/TypedNull'
+            - $ref: '#/components/schemas/TypedObjectTypingResult'
+            - $ref: '#/components/schemas/TypedObjectWithValue'
+            - $ref: '#/components/schemas/TypedTaggedValue'
+            - $ref: '#/components/schemas/TypedUnion'
+            - $ref: '#/components/schemas/Unknown'
+          - type: 'null'
         editors:
           type: array
           items:
