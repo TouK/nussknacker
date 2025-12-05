@@ -62,7 +62,14 @@ object EditorExtractor {
         MultiSelectEditor(
           editor
             .possibleMultiSelectValues()
-            .map(option => MultiSelectFixedValue(Json.fromString(option.value()), option.label()))
+            .map(option =>
+              MultiSelectFixedValue(
+                value = Json.fromString(option.value()),
+                label = option.label(),
+                description = Option(option.description()).filterNot(_.isBlank),
+                icon = Option(option.icon()).filterNot(_.isBlank),
+              )
+            )
             .toList
         )
     }

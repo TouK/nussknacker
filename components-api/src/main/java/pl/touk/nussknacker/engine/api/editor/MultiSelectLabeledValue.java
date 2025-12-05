@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.editor;
 
+import javax.annotation.Nullable;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -26,4 +27,9 @@ public @interface MultiSelectLabeledValue {
     String value();
 
     String label();
+
+    String description() default "";
+
+    String icon() default "";
+
 }
