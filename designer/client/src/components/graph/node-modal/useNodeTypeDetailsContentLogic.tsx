@@ -1,4 +1,4 @@
-import { get, identity, isEqual } from "lodash";
+import { get, identity, isEqual, partition } from "lodash";
 import React, { type SetStateAction, useCallback, useEffect, useMemo } from "react";
 
 import {
@@ -12,6 +12,8 @@ import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { Edge } from "../../../types/edge";
 import type { NodeType, Parameter } from "../../../types/node";
 import { ParamFieldLabel } from "./FieldLabel";
+import { getNodeErrors } from "./node/selectors";
+import { getNodeErrors as getNodeCurrentErrors } from "./NodeDetailsContent/selectors";
 import {
     getDynamicParameterDefinitions,
     getFindAvailableBranchVariables,
@@ -145,4 +147,16 @@ export function useRenderFieldLabel({ node }: Pick<NodeTypeDetailsContentProps, 
 
 export function useIsEditMode({ onChange }: Pick<NodeTypeDetailsContentProps, "onChange">) {
     return !!onChange;
+}
+
+export function useGetNodeErrors(node: NodeType) {
+    const nodeErrors = useAppSelector((state: RootState) => {
+        return getNodeErrors(state, node.id);
+    }, isEqual);
+
+    const currentErrors = useAppSelector((state: RootState) => getNodeCurrentErrors(state, { node, nodeErrors }));
+
+    const [errors, diagramStructureErrors] = useMemo(() => partition(currentErrors, (error) => !!error.fieldName), [currentErrors]);
+
+    return [errors, diagramStructureErrors];
 }

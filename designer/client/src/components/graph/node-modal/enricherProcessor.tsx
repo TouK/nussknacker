@@ -1,14 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { UIParameter } from "../../../types/definition";
 import type { NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
-import MockExpressionField from "./editors/expression/MockExpressionField";
 import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { findParameters } from "./NodeDetailsContent/helpers";
@@ -36,10 +34,6 @@ export function EnricherProcessor({
 }): React.JSX.Element {
     const { t } = useTranslation();
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
-    const settings = useAppSelector(getUserSettings);
-    const showMockFieldOnEnrichers = settings["node.showMockFieldOnEnrichers"];
-
-    const showMockField = showMockFieldOnEnrichers && node.type === "Enricher" && node.service.id !== "decision-table";
 
     return (
         <>
@@ -84,17 +78,6 @@ export function EnricherProcessor({
                     setProperty={setProperty}
                     errors={errors}
                 />
-                {showMockField ? (
-                    <MockExpressionField
-                        isEditMode={isEditMode}
-                        editedNode={node}
-                        showValidation={showValidation}
-                        showSwitch={showSwitch}
-                        findAvailableVariables={findAvailableVariables}
-                        setNodeDataAt={setProperty}
-                        errors={errors}
-                    />
-                ) : null}
             </ParametersListAdvanced>
         </>
     );

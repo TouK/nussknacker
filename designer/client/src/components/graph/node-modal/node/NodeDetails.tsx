@@ -16,17 +16,23 @@ import type { Edge } from "../../../../types/edge";
 import type { NodeType } from "../../../../types/node";
 import { WindowContent } from "../../../../windowManager/WindowContent";
 import type { WindowKind } from "../../../../windowManager/WindowKind";
+import { useTestingScenarioEnabled } from "../../../modals/TestingDataRecords/useTestingScenarioEnabled";
 import { useOnToolWindow } from "../../../modals/useOnToolWindow";
 import type { Scenario } from "../../../Process/types";
+import { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
+import { useGetButtonFromToolbar } from "../../../toolbarSettings/useToolbarConfig";
 import NodeUtils from "../../NodeUtils";
 import type { EditedNode } from "../IdField";
 import { InputOutputContent } from "../io/InputOutputContent";
 import { InputOutputContextProvider } from "../io/InputOutputContext";
 import { usePortal } from "../io/usePortal";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
+import { TestResultsWrapper } from "../TestResultsWrapper";
 import { CloseButtonWithEditLock } from "./CloseButtonWithEditLock";
 import { EditStateFeedback } from "./EditStateFeedback";
-import { NodeGroupContent } from "./NodeGroupContent";
+import { GeneralContent } from "./NodeContent/GeneralContent";
+import { TabsWrapper } from "./NodeContent/TabsWrapper";
+import { TestingContent } from "./NodeContent/TestingContent";
 import { getReadOnly } from "./selectors";
 import { useDialogActions } from "./useDialogActions";
 import { useNodeState } from "./useNodeState";
@@ -77,6 +83,7 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     const { t } = useTranslation();
     const { close, data } = props;
     const readOnly = useAppSelector((s: RootState) => getReadOnly(s, props.readOnly));
+    const buttonFromToolbar = useGetButtonFromToolbar(CustomButtonTypes.scenarioTest);
 
     const { node, editedNode, onChange, scenario, outputEdges, performNodeEdit, editState, editStateRef } = useNodeState(data.meta);
     const { cancel, apply } = useNodeDetailsButtons({ editedNode, outputEdges, performNodeEdit, close, readOnly });
@@ -134,6 +141,8 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
 
     useOnToolWindow(ToolId.node, node.id);
 
+    const testingScenarioEnabled = useTestingScenarioEnabled({ disabled: buttonFromToolbar?.disabled });
+
     //no process? no nodes? no window contents! no errors for whole tree!
     if (!scenario?.scenarioGraph.nodes) {
         return null;
@@ -142,8 +151,30 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     return (
         <InputOutputContextProvider nodeId={editedNode.id}>
             {settings["node.autoApply"] ? <EditStateFeedback editState={editState} /> : null}
+
             <WindowContent {...props} closeWithEsc={editState === "idle"} buttons={buttons} {...titleData} components={components}>
-                <NodeGroupContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />
+                {testingScenarioEnabled ? (
+                    <TabsWrapper
+                        tabs={[
+                            {
+                                label: t("nodeDetails.tabs.general.name", "General"),
+                                content: (
+                                    <GeneralContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />
+                                ),
+                            },
+                            {
+                                label: t("nodeDetails.tabs.testing.name", "Testing"),
+                                content: (
+                                    <TestResultsWrapper nodeId={editedNode.id}>
+                                        <TestingContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />
+                                    </TestResultsWrapper>
+                                ),
+                            },
+                        ]}
+                    />
+                ) : (
+                    <GeneralContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />
+                )}
             </WindowContent>
         </InputOutputContextProvider>
     );

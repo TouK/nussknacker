@@ -1,10 +1,12 @@
-import { flatMap, uniqBy } from "lodash";
+import { find, flatMap, uniqBy } from "lodash";
 import { useMemo } from "react";
 
 import { getToolbarsConfig } from "../../reducers/selectors/toolbars";
 import type { ToolbarsSide } from "../../reducers/toolbars";
 import { useAppSelector } from "../../store/storeHelpers";
 import type { Toolbar } from "../toolbarComponents/toolbar";
+import type { BuiltinButtonTypes, CustomButtonTypes } from "./buttons/buttonsMap";
+import type { ToolbarButton } from "./buttons/types";
 import { toolbarSelector } from "./ToolbarSelector";
 import type { ToolbarConfig, ToolbarsConfig } from "./types";
 
@@ -27,4 +29,14 @@ export function useToolbarConfig(): [Toolbar[], string] {
         const { id, ...toolbarsCollection } = config;
         return [parseCollection(toolbarsCollection), id];
     }, [config]);
+}
+
+export function useGetButtonFromToolbar(buttonType: BuiltinButtonTypes | CustomButtonTypes): ToolbarButton | undefined {
+    const [toolbars] = useToolbarConfig();
+    return useMemo(() => {
+        return find(
+            flatMap(toolbars, (toolbar) => toolbar.buttons || []),
+            (button) => button.type === buttonType,
+        );
+    }, [buttonType, toolbars]);
 }
