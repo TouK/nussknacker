@@ -13,7 +13,7 @@ import type { Option } from "./FixedValuesEditor";
 import { NodeIcon, StyledOptionLabel, truncateOptionLabel } from "./FixedValuesEditor";
 import { EditorType } from "./types";
 
-export function SelectVariant({
+export function ReactSelectCreatableVariant({
     className,
     currentOption,
     fieldErrors,

@@ -1,7 +1,7 @@
 import { styled } from "@mui/material";
 import i18next from "i18next";
 import { isEmpty } from "lodash";
-import React, { useCallback, useMemo } from "react";
+import React from "react";
 
 import { PreloadedIcon } from "../../../../toolbars/creator/ComponentIcon";
 import type { FixedValuesOption } from "../../fragment-input-definition/item/types";
@@ -9,7 +9,7 @@ import { prepareEditor } from "./Editor";
 import type { EditorConfigForType } from "./EditorConfig";
 import { editorsParameters } from "./editorsParameters";
 import { RadioVariant } from "./FixedValuesEditor_RadioVariant";
-import { SelectVariant } from "./FixedValuesEditor_SelectVariant";
+import { ReactSelectCreatableVariant as SelectVariant } from "./FixedValuesEditor_ReactSelectCreatableVariant";
 import type { ExpressionObj } from "./types";
 import { EditorType } from "./types";
 
@@ -56,29 +56,31 @@ export const truncateOptionLabel = (optionLabel: string) => {
     return optionLabel?.replace(/-gateway\.(?:staging-cloud|cloud)\.nussknacker\.io\/topics/g, "(...)nussknacker.io"); // It will change URL https://light-pink-silkworm-gateway.staging-cloud.nussknacker.io/topics/http.example-input to https://light-pink-silkworm(...)nussknacker.io/http.example-input
 };
 
+const handleCurrentOption = (expressionObj: ExpressionObj, options: Option[]): Option => {
+    // just leave undefined and let the user explicitly select one
+    if (!expressionObj) return null;
+
+    // current value with label taken from options
+    const found = options.find((option) => option.value === expressionObj.expression);
+    if (found) return found;
+
+    // current value is no longer valid option? Show it anyway, let user know. Validation should take care
+    return {
+        value: expressionObj.expression,
+        label: expressionObj.expression,
+        icon: null,
+    };
+};
+
 export const FixedValuesEditor = prepareEditor<FixedValuesEditorProps>(
     ({ className, editorConfig, expressionObj, fieldErrors, onValueChange, param, readOnly, showValidation }) => {
-        const handleCurrentOption = useCallback((expressionObj: ExpressionObj, options: Option[]): Option => {
-            return (
-                (expressionObj && options.find((option) => option.value === expressionObj.expression)) || // current value with label taken from options
-                (expressionObj && { value: expressionObj.expression, label: expressionObj.expression, icon: null }) || // current value is no longer valid option? Show it anyway, let user know. Validation should take care
-                null
-            ); // just leave undefined and let the user explicitly select one
-        }, []);
-
-        const options = useMemo<Option[]>(() => getOptions(editorConfig.possibleValues), [editorConfig.possibleValues]);
-        const currentOption = useMemo<Option>(
-            () => handleCurrentOption(expressionObj, options),
-            [expressionObj, handleCurrentOption, options],
-        );
-
         if (editorConfig.type === EditorType.FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR) {
             return (
                 <RadioVariant
                     className={className}
-                    currentOption={currentOption}
+                    currentOption={handleCurrentOption(expressionObj, getOptions(editorConfig.possibleValues))}
                     onValueChange={onValueChange}
-                    options={options}
+                    options={getOptions(editorConfig.possibleValues)}
                     param={param}
                 />
             );
@@ -87,10 +89,10 @@ export const FixedValuesEditor = prepareEditor<FixedValuesEditorProps>(
         return (
             <SelectVariant
                 className={className}
-                currentOption={currentOption}
+                currentOption={handleCurrentOption(expressionObj, getOptions(editorConfig.possibleValues))}
                 fieldErrors={fieldErrors}
                 onValueChange={onValueChange}
-                options={options}
+                options={getOptions(editorConfig.possibleValues)}
                 readOnly={readOnly}
                 showValidation={showValidation}
             />
