@@ -33,6 +33,8 @@ type ExtendedEditorConfig =
           possibleValues: {
               value: string;
               label: string;
+              group?: string;
+              description?: string;
           }[];
       }
     | {
