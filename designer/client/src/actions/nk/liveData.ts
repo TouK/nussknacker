@@ -7,6 +7,7 @@ import { getHasPauseReasons, getIsLiveDataWorking, getVisibleDataType, isReadyFo
 import { getScenario } from "../../reducers/selectors/graph";
 import type { ThunkAction } from "../reduxTypes";
 import { AbortControllersStack } from "./abortControllersStack";
+import { hideTestRunDetails } from "./process";
 
 export enum Initiator {
     tests = "tests",
@@ -77,6 +78,7 @@ function fetchAndDisplayLiveData(showErrors = false, refresh = REFRESH_TIME): Th
 
 export function startLiveData(initiator: Initiator = null, showErrors = false): ThunkAction {
     return async (dispatch, getState) => {
+        dispatch(hideTestRunDetails());
         await dispatch({ type: "LIVE_DATA_START", initiator });
         AbortControllersStack.abortAll();
         if (!getHasPauseReasons(getState())) {

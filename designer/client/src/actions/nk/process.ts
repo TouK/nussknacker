@@ -93,10 +93,15 @@ export function clearProcess(): ThunkAction {
     };
 }
 
+export function hideTestRunDetails(): ThunkAction {
+    return (dispatch, getState) => {
+        replaceSearchQuery(omit(["from", "to", "refresh"]));
+        dispatch({ type: "HIDE_RUN_PROCESS_DETAILS" });
+    };
+}
 export function hideRunProcessDetails(): ThunkAction {
-    replaceSearchQuery(omit(["from", "to", "refresh"]));
     return (dispatch, getState) => {
         dispatch(stopLiveData());
-        dispatch({ type: "HIDE_RUN_PROCESS_DETAILS" });
+        dispatch(hideTestRunDetails());
     };
 }
