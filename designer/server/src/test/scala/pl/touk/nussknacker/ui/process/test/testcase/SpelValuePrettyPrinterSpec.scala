@@ -2,20 +2,28 @@ package pl.touk.nussknacker.ui.process.test.testcase
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.ui.process.test.testcase.SpelValuePrettyPrinter.prettyPrintValue
 
 class SpelValuePrettyPrinterSpec extends AnyFunSuite with Matchers {
 
   test("print like a SpEL literal values") {
-    prettyPrintValue(java.util.List.of("a", "b", "c")) shouldBe "{a, b, c}"
-    prettyPrintValue(java.util.List.of(java.util.List.of("a"))) shouldBe "{{a}}"
-    prettyPrintValue(java.util.List.of()) shouldBe "{}"
-    prettyPrintValue(java.util.Map.of("a", 1234)) shouldBe "{a: 1234}"
-    prettyPrintValue(java.util.Map.of("a", java.util.Map.of("b", 1234))) shouldBe "{a: {b: 1234}}"
-    prettyPrintValue(java.util.Map.of()) shouldBe "{:}"
-    prettyPrintValue(Array("a", "b", "c")) shouldBe "{a, b, c}" // in spel there is no array literal so we print it as a list literal
-    prettyPrintValue(Array(Array("a"))) shouldBe "{{a}}"
-    prettyPrintValue(Array[String]()) shouldBe "{}"
+    forAll(
+      Table(
+        ("valueToPrint", "expectedOutput"),
+        (java.util.List.of("a", "b", "c"), "{a, b, c}"),
+        (java.util.List.of(java.util.List.of("a")), "{{a}}"),
+        (java.util.List.of(), "{}"),
+        (java.util.Map.of("a", 1234), "{a: 1234}"),
+        (java.util.Map.of("a", java.util.Map.of("b", 1234)), "{a: {b: 1234}}"),
+        (java.util.Map.of(), "{:}"),
+        (Array("a", "b", "c"), "{a, b, c}"), // in spel there is no array literal so we print it as a list literal,
+        (Array(Array("a")), "{{a}}"),
+        (Array[String](), "{}"),
+      )
+    ) { (valueToPrint, expectedOutput) =>
+      prettyPrintValue(valueToPrint) shouldBe expectedOutput
+    }
   }
 
 }
