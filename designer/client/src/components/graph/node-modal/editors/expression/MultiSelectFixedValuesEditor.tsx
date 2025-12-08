@@ -3,10 +3,11 @@ import { Autocomplete, Box, Checkbox, Chip, ListItemText, MenuItem, Stack, TextF
 import { createFilterOptions } from "@mui/material/Autocomplete";
 import i18next from "i18next";
 import { isEqual, uniq } from "lodash";
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import type { ArrayElement } from "type-fest";
 
 import ValidationLabels from "../../../../modals/ValidationLabels";
+import { SearchHighlighter } from "../../../../toolbars/creator/SearchHighlighter";
 import { useStream } from "../../node/useStream";
 import { prepareEditor } from "./Editor";
 import type { EditorConfigForType } from "./EditorConfig";
@@ -25,7 +26,9 @@ type Option = ArrayElement<EditorConfigForType<EditorType.MULTI_SELECT_EDITOR>["
 
 const filterOptions = createFilterOptions({
     matchFrom: "any",
-    stringify: (option: Option) => `${option.label} ${option.value} ${option.description}`,
+    ignoreAccents: true,
+    ignoreCase: true,
+    stringify: (option: Option) => `${option.label} ${option.description}`,
 });
 
 function ItemCheckbox(props: CheckboxProps) {
@@ -38,6 +41,7 @@ function ItemLabel(props: TypographyProps) {
 
 export const MultiSelectFixedValuesEditor = prepareEditor<{ editorConfig: EditorConfigForType<EditorType.MULTI_SELECT_EDITOR> }>(
     ({ editorConfig, expressionObj, onValueChange, showValidation, fieldErrors, defaultValue }) => {
+        const [input, setInput] = useState<string>("");
         const [value$, emit, values] = useStream<string[]>(() => {
             try {
                 const parsed = JSON.parse(expressionObj.expression);
@@ -85,19 +89,27 @@ export const MultiSelectFixedValuesEditor = prepareEditor<{ editorConfig: Editor
                     options={editorConfig.possibleValues}
                     value={selectedOptions}
                     onChange={handleChange}
+                    onInputChange={(_, input) => setInput(input)}
                     isOptionEqualToValue={(option, value) => option.value === value.value}
                     getOptionLabel={({ label, value }) => label || value}
                     groupBy={groups.length > 1 ? (option) => option.group : undefined}
                     filterOptions={filterOptions}
+                    autoHighlight
                     renderInput={(params) => <TextField {...params} variant="outlined" error={showValidation && fieldErrors.length > 0} />}
                     renderOption={(props, option, { selected }) => (
                         <li {...props}>
                             <ItemCheckbox checked={selected} />
                             <ListItemText
-                                primary={<ItemLabel>{option.label}</ItemLabel>}
+                                primary={
+                                    <ItemLabel>
+                                        <SearchHighlighter highlights={[input]}>{option.label}</SearchHighlighter>
+                                    </ItemLabel>
+                                }
                                 secondary={
                                     <Typography variant="overline" component={LineClamp} lines={2}>
-                                        {option.description}
+                                        <SearchHighlighter highlights={[input]} typographyStyle={{ fontWeight: "normal" }}>
+                                            {option.description}
+                                        </SearchHighlighter>
                                     </Typography>
                                 }
                             />

@@ -8,16 +8,20 @@ export function SearchHighlighter({
     highlights = [],
     className,
     typographyStyle = {},
+    highlighterStyle = {},
     title,
     ...props
 }: {
     children: string;
     highlights: string[];
     className?: string;
-    typographyStyle?: CSSProperties;
+    typographyStyle?: CSSProperties | ((theme: Theme) => CSSProperties);
+    highlightStyle?: CSSProperties | ((theme: Theme) => CSSProperties);
     title?: string;
 }) {
     const theme = useTheme();
+    const unhighlightStyle = typeof typographyStyle === "function" ? typographyStyle(theme) : typographyStyle;
+    const highlightOverrideStyle = typeof highlightStyle === "function" ? highlightStyle(theme) : highlightStyle;
     return (
         <Highlighter
             className={className}
@@ -26,12 +30,13 @@ export function SearchHighlighter({
             searchWords={highlights}
             autoEscape
             highlightTag={`span`}
-            unhighlightStyle={typographyStyle}
+            unhighlightStyle={unhighlightStyle}
             highlightStyle={{
-                ...typographyStyle,
+                fontWeight: "bold",
+                ...unhighlightStyle,
                 color: theme.palette.warning.main,
                 background: theme.palette.background.paper,
-                fontWeight: "bold",
+                ...highlightOverrideStyle,
             }}
             title={title}
             {...props}
