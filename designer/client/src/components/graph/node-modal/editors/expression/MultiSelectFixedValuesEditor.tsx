@@ -107,7 +107,14 @@ export const MultiSelectFixedValuesEditor = prepareEditor<{ editorConfig: Editor
                                 }
                                 secondary={
                                     <Typography variant="overline" component={LineClamp} lines={2}>
-                                        <SearchHighlighter highlights={[input]} typographyStyle={{ fontWeight: "normal" }}>
+                                        <SearchHighlighter
+                                            highlights={[input]}
+                                            sx={{
+                                                ".Highlighter-highlight": {
+                                                    fontWeight: "inherit",
+                                                },
+                                            }}
+                                        >
                                             {option.description}
                                         </SearchHighlighter>
                                     </Typography>

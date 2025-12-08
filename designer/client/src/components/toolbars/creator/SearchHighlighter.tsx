@@ -1,45 +1,38 @@
-import { useTheme } from "@mui/material";
-import type { CSSProperties } from "react";
+import { styled } from "@mui/material";
+import type { DetailedHTMLProps, HTMLAttributes, PropsWithoutRef } from "react";
 import React from "react";
 import Highlighter from "react-highlight-words";
 
-export function SearchHighlighter({
-    children,
-    highlights = [],
-    className,
-    typographyStyle = {},
-    highlighterStyle = {},
-    title,
-    ...props
-}: {
+interface HighlighterComponentProps extends PropsWithoutRef<DetailedHTMLProps<HTMLAttributes<HTMLSpanElement>, HTMLSpanElement>> {
     children: string;
     highlights: string[];
-    className?: string;
-    typographyStyle?: CSSProperties | ((theme: Theme) => CSSProperties);
-    highlightStyle?: CSSProperties | ((theme: Theme) => CSSProperties);
-    title?: string;
-}) {
-    const theme = useTheme();
-    const unhighlightStyle = typeof typographyStyle === "function" ? typographyStyle(theme) : typographyStyle;
-    const highlightOverrideStyle = typeof highlightStyle === "function" ? highlightStyle(theme) : highlightStyle;
-    return (
+}
+
+function HighlighterComponent({ children, highlights = [], className, ...props }: HighlighterComponentProps) {
+    const classNamePrefix = `Highlighter`;
+    return highlights.filter(Boolean).length > 0 ? (
         <Highlighter
-            className={className}
-            aria-label={`tool:${children}`}
+            className={`${classNamePrefix}-root ${className}`}
             textToHighlight={children || ""}
             searchWords={highlights}
             autoEscape
             highlightTag={`span`}
-            unhighlightStyle={unhighlightStyle}
-            highlightStyle={{
-                fontWeight: "bold",
-                ...unhighlightStyle,
-                color: theme.palette.warning.main,
-                background: theme.palette.background.paper,
-                ...highlightOverrideStyle,
-            }}
-            title={title}
+            activeClassName={`${classNamePrefix}-active`}
+            highlightClassName={`${classNamePrefix}-highlight`}
+            unhighlightClassName={`${classNamePrefix}-unhighlight`}
             {...props}
         />
+    ) : (
+        <span className={`${classNamePrefix}-root ${classNamePrefix}-pristine ${className}`} {...props}>
+            {children}
+        </span>
     );
 }
+
+export const SearchHighlighter = styled(HighlighterComponent)(({ theme }) => ({
+    ".Highlighter-highlight": {
+        fontWeight: "bold",
+        color: theme.palette.warning.main,
+        background: theme.palette.background.paper,
+    },
+}));
