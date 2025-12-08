@@ -45,6 +45,25 @@ const withHighlightText = (text: string, searchWords: string[], theme: Theme) =>
     });
 };
 
+export function useHighlightedContent(content: string, searchWords: string[]) {
+    const theme = useTheme();
+    const sanitizedContent = useMemo(
+        () =>
+            xss(content, {
+                whiteList: {
+                    // eslint-disable-next-line i18next/no-literal-string
+                    a: ["href", "title", "target", "class"],
+                },
+            }),
+        [content],
+    );
+
+    return useMemo(
+        () => (searchWords?.length > 0 ? withHighlightText(sanitizedContent, searchWords, theme) : sanitizedContent),
+        [sanitizedContent, searchWords, theme],
+    );
+}
+
 function CommentContent({ commentSettings, content, searchWords, variant = "caption" }: Props): React.JSX.Element {
     const theme = useTheme();
     const newContent = useMemo(() => {
@@ -66,21 +85,7 @@ function CommentContent({ commentSettings, content, searchWords, variant = "capt
         }
     }, [commentSettings, content, theme]);
 
-    const sanitizedContent = useMemo(
-        () =>
-            xss(newContent, {
-                whiteList: {
-                    // eslint-disable-next-line i18next/no-literal-string
-                    a: ["href", "title", "target", "class"],
-                },
-            }),
-        [newContent],
-    );
-
-    const __html = useMemo(
-        () => (searchWords?.length > 0 ? withHighlightText(sanitizedContent, searchWords, theme) : sanitizedContent),
-        [sanitizedContent, searchWords, theme],
-    );
+    const __html = useHighlightedContent(newContent, searchWords);
 
     return (
         <PanelComment>

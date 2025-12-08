@@ -8,7 +8,8 @@ import { blendDarken, getBorderColor } from "../../../../../containers/theme/hel
 import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { Option } from "../../fragment-input-definition/TypeSelect";
-import { editors, isExtendedEditor } from "../expression/Editor";
+import { isExtendedEditor } from "../expression/Editor";
+import { getEditorByType } from "../expression/EditorByType";
 import type { EditorConfig } from "../expression/EditorConfig";
 import { editorsParameters } from "../expression/editorsParameters";
 import type { ExpressionObj } from "../expression/types";
@@ -64,7 +65,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
 
     const allowsSwitch = useCallback(
         (checkedEditor: ParamType["editors"][number]) => {
-            const editor = editors[checkedEditor.type];
+            const editor = getEditorByType(checkedEditor.type);
 
             return isExtendedEditor(editor) ? editor.isSwitchableTo(expressionObj, checkedEditor) : true;
         },
@@ -73,7 +74,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
 
     const getHint = useCallback(
         (checkedEditor: ParamType["editors"][number]) => {
-            const editor = editors[checkedEditor.type];
+            const editor = getEditorByType(checkedEditor.type);
             if (readOnly) {
                 return t("editors.default.hint", "Switching is disabled. You are in read-only mode");
             }
@@ -146,7 +147,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                     onChange={(_, value: string) => {
                         const selectedEditor = availableEditors.find((editor) => editor.type === value);
                         const editorParameters = editorsParameters[selectedEditor.type];
-                        const editorComponent = editors[selectedEditor.type];
+                        const editorComponent = getEditorByType(selectedEditor.type);
                         const editorWithParseValueMethod = isExtendedEditor(editorComponent) && editorComponent.parseValueOnEditorChange;
                         onValueChange(
                             editorWithParseValueMethod

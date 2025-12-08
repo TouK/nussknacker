@@ -1,6 +1,6 @@
 import React, { useCallback, useContext } from "react";
 
-import { editors } from "../../graph/node-modal/editors/expression/Editor";
+import { EditorByType } from "../../graph/node-modal/editors/expression/EditorByType";
 import { spelFormatters } from "../../graph/node-modal/editors/expression/Formatter";
 import type { ExpressionObj } from "../../graph/node-modal/editors/expression/types";
 import { ExpressionLang } from "../../graph/node-modal/editors/expression/types";
@@ -54,12 +54,11 @@ export function FormField({ name }: { name: string }) {
                     readOnly={false}
                     showSwitch={true}
                 >
-                    {(selectedEditor) => {
-                        const Editor = editors[selectedEditor.type];
-
+                    {({ type, ...editorConfig }) => {
                         return (
-                            <Editor
-                                editorConfig={selectedEditor}
+                            <EditorByType
+                                type={type}
+                                config={editorConfig}
                                 className={nodeValue}
                                 fieldErrors={getValidationErrorsForField(errors, name)}
                                 formatter={formatter}

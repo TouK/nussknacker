@@ -268,26 +268,17 @@ export const nuTheme = (mode: PaletteMode, setMode: Dispatch<SetStateAction<Pale
                         marginTop: theme.spacing(0.5),
                         backgroundColor: theme.palette.background.paper,
                     }),
-                },
-            },
-            MuiSelect: {
-                styleOverrides: {
-                    root: ({ theme }) => ({
-                        borderRadius: 0,
-                        margin: "-1px", // FIXME: other fields have outline instead of border, so we need to compensate for that
+                    inputRoot: ({ theme }) => ({
                         "&.Mui-error .MuiOutlinedInput-notchedOutline": {
                             borderColor: theme.palette.error.light,
                         },
-                        "&, &.Mui-focused": {
-                            ".MuiOutlinedInput-notchedOutline": {
-                                borderWidth: 1,
-                            },
-                        },
                     }),
-                    select: ({ theme }) => ({
-                        padding: 0,
-                        paddingRight: theme.spacing(3),
-                    }),
+                },
+                defaultProps: {
+                    slotProps: {
+                        popper: { container: document.body },
+                        paper: { elevation: 8 },
+                    },
                 },
             },
             MuiChip: {

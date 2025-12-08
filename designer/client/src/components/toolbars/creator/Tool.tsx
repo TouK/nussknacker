@@ -81,7 +81,9 @@ function Tool({ label, nodeModel, highlights = [], disabled, tooltip, onClick, o
             >
                 <div className="toolWrapper">
                     <ComponentIcon node={nodeModel} className="toolIcon" />
-                    <SearchHighlighter highlights={highlights}>{label}</SearchHighlighter>
+                    <SearchHighlighter highlights={highlights} aria-label={`tool:${label}`}>
+                        {label}
+                    </SearchHighlighter>
                     {tooltip ? <InfoTooltip variant={"hover"} title={tooltip} /> : ""}
                 </div>
             </div>

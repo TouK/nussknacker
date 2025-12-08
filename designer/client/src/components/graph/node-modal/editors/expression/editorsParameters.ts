@@ -11,7 +11,7 @@ export const editorsParameters: Record<EditorType, { displayName: string; langua
         language: ExpressionLang.SpEL,
     },
     [EditorType.MULTI_SELECT_EDITOR]: {
-        displayName: "Multi Select",
+        displayName: "Multiple Fixed Values",
         language: ExpressionLang.JSON,
     },
     [EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR]: {

@@ -8,7 +8,7 @@ import type { TypingResult } from "../../../../types/definition";
 import type { VariableTypes } from "../../../../types/validation";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 import type { OnValueChange } from "./expression/Editor";
-import { editors as editorsClasses } from "./expression/Editor";
+import { EditorByType } from "./expression/EditorByType";
 import type { EditorConfig } from "./expression/EditorConfig";
 import { spelFormatters } from "./expression/Formatter";
 import type { ExpressionObj } from "./expression/types";
@@ -59,13 +59,12 @@ export const EditableEditor = (props: Props) => {
             readOnly={props.readOnly}
             showSwitch={props.showSwitch}
         >
-            {(selectedEditor) => {
-                const Editor = editorsClasses[selectedEditor.type];
-
+            {({ type, ...editorConfig }) => {
                 return (
-                    <Editor
+                    <EditorByType
+                        type={type}
+                        config={editorConfig}
                         {...props}
-                        editorConfig={selectedEditor}
                         className={`${valueClassName ? valueClassName : nodeValue}`}
                         fieldErrors={fieldErrors}
                         formatter={formatter}

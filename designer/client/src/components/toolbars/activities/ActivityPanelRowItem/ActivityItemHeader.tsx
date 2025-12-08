@@ -280,6 +280,7 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
                         textWrap: "noWrap",
                         padding: !openVersionEnable && theme.spacing(0, 1),
                     })}
+                    aria-label={`tool:${text}`}
                 >
                     {text}
                 </Typography>

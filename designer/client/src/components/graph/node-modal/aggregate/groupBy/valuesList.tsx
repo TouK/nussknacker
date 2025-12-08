@@ -74,19 +74,15 @@ export function ValuesList({
             }}
             {...props}
         >
-            {values.map((value, index) => {
-                return (
-                    <ChipComponent
-                        key={index}
-                        size="small"
-                        variant="outlined"
-                        color={isValid(value) ? "default" : "error"}
-                        label={getLabel(value, index)}
-                        onDelete={onDelete(index)}
-                        onClick={onClick(index)}
-                    />
-                );
-            })}
+            {values.map((value, index) => (
+                <ChipComponent
+                    key={index}
+                    color={isValid(value) ? "default" : "error"}
+                    label={getLabel(value, index)}
+                    onDelete={onDelete(index)}
+                    onClick={onClick(index)}
+                />
+            ))}
         </Stack>
     );
 }
