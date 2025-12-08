@@ -9,7 +9,7 @@ import HttpService from "../../http/HttpService/instance";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
 import type { Action, ThunkAction } from "../reduxTypes";
-import { stopLiveData } from "./liveData";
+import { Initiator, stopLiveData } from "./liveData";
 
 export type ScenarioActions =
     | { type: "PENDING_SCENARIO_ACTION"; action: PredefinedActionName }
@@ -101,7 +101,7 @@ export function hideTestRunDetails(): ThunkAction {
 }
 export function hideRunProcessDetails(): ThunkAction {
     return (dispatch, getState) => {
-        dispatch(stopLiveData());
+        dispatch(stopLiveData(Initiator.button));
         dispatch(hideTestRunDetails());
     };
 }

@@ -58,13 +58,6 @@ export const liveData: Reducer<LiveData> = (state = {}, action) => {
                 working: true,
             };
         }
-        case "HIDE_RUN_PROCESS_DETAILS": {
-            return {
-                ...state,
-                nextIn: null,
-                working: false,
-            };
-        }
         default:
             return state;
     }

@@ -434,10 +434,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 visibleDataType: null,
                 processCounts: null,
                 processCountsRefresh: null,
-                testing: {
-                    ...state.testing,
-                    testResults: null,
-                },
             };
         }
         default:
