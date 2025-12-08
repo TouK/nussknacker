@@ -287,7 +287,7 @@ class ScenarioTestService(
       scenarioTestData <- EitherT.fromEither[Future](prepareTestData(preliminaryScenarioTestRecords, canonical))
 
       // compile process/validate process to gather node typing needed for assertion expressions compilation
-      nodeContextsTyping = compileScenarioAndExtractNodeContextsTyping(scenarioGraph, processVersion, isFragment)
+      nodeContextsTyping = compileScenarioAndExtractNodeContextsTyping(scenarioGraph, processVersion, isFragment) //todo: toCanonicalProcess already does validation under the hood?
       compiledTestCase = compileTestCase(testCase, nodeContextsTyping, jobData)
 
       testResults <- EitherT(

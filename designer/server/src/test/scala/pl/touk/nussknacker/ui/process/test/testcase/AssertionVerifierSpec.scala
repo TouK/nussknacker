@@ -17,9 +17,9 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 
 import java.time.Instant
+import java.util
 
 //todo: try to compare to arrays/lists
-//todo: try to use some global in assertion like CONV.toAny()
 class AssertionVerifierSpec extends AnyFunSuite with Matchers {
 
   private val baseDefinition = ModelDefinitionBuilder.empty
@@ -48,8 +48,9 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
   private val scenarioTyping: Map[String, NodeTypingData] = Map(
     "someNode" -> NodeTypingData(
       Map(
-        "someVariable" -> Typed.fromInstance("bar")
-
+        "someVariable" -> Typed.fromInstance("bar"),
+        "someJavaList" -> Typed.fromInstance(new util.ArrayList[String]()),
+        "someArray" -> Typed.fromInstance(new Array[String](1))
       ), None, Map.empty, None)
   )
 
@@ -96,11 +97,28 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
           Assertion("#TESTS.assertEquals({}, {})"),
           Assertion("#TESTS.assertEquals({:}, {:})"),
           Assertion("#TESTS.assertEquals(#CONV.toAny('abc'), 'abc')"),
+          Assertion("#TESTS.assertEquals({'foo'}, #contexts[0].someJavaList)"),
+          Assertion("#TESTS.assertEquals({'foo'}, {'foo'})"),
+          Assertion("#TESTS.assertEquals({'foo': 'bar'}, {'foo': 'bar'})"),
+          Assertion("#TESTS.assertEquals(1, 1L)"),
+          Assertion("#TESTS.assertEquals(null, null)"),
+          Assertion("#TESTS.assertEquals({'foo'}, {})"),
+          Assertion("#TESTS.assertEquals('1,2,3'.split(','), '1,2,3'.split(','))"), // comparing arrays
+          Assertion("#TESTS.assertEquals('1,2'.split(','), '1,2,3'.split(','))"),
+          Assertion("#TESTS.assertEquals({'1','2','3'}, '1,2,3'.split(','))"), // comparing arrays with SpEL inline lists
+          Assertion("#TESTS.assertEquals({'a': 1}, {:})"),
+          Assertion("#TESTS.assertEquals({'1,2'.split(',')}, {'1,2'.split(',')})"),
         )
       )
     )
 
-    val nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]] = Map()
+    val nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]] = Map(
+      NodeId("someNode") -> List(
+        ResultContext[Any](ContextId.dummy, Instant.now(), Map(
+          "someJavaList" -> createSingletonArrayList("foo"),
+        )),
+      )
+    )
 
     val results = verifyForTestCase(
       testCase,
@@ -112,6 +130,17 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
         SuccessfulAssertion,
         SuccessfulAssertion,
         SuccessfulAssertion,
+        SuccessfulAssertion,
+        SuccessfulAssertion,
+        SuccessfulAssertion,
+        SuccessfulAssertion,
+        SuccessfulAssertion,
+        SuccessfulAssertion,
+        FailedAssertion("Expected: [{foo}] but found [{}]"),
+        SuccessfulAssertion,
+        FailedAssertion("Expected: [{1, 2}] but found [{1, 2, 3}]"),
+        SuccessfulAssertion,
+        FailedAssertion("Expected: [{a: 1}] but found [{:}]"),
         SuccessfulAssertion,
       )
     )
@@ -127,6 +156,12 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
       nodesResultsAfterTestRun,
       jobData
     )
+  }
+
+  private def createSingletonArrayList[T](element: T): java.util.ArrayList[T] = {
+    val list = new util.ArrayList[T]()
+    list.add(element)
+    list
   }
 
 }
