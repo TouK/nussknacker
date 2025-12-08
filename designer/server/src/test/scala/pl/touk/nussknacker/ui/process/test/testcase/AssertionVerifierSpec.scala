@@ -2,6 +2,8 @@ package pl.touk.nussknacker.ui.process.test.testcase
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatest.prop.Tables.Table
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -19,7 +21,6 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import java.time.Instant
 import java.util
 
-//todo: try to compare to arrays/lists
 class AssertionVerifierSpec extends AnyFunSuite with Matchers {
 
   private val baseDefinition = ModelDefinitionBuilder.empty
@@ -54,7 +55,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
       ), None, Map.empty, None)
   )
 
-  test("should run assertions on test nodes results") {
+  test("should run assertions on test nodes results and return assertion result for each assertion") {
     val testCase = TestCase(
       "dummy",
       "dummy",
@@ -86,64 +87,45 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     )
   }
 
-  test("edge cases") {
-    val testCase = TestCase(
-      "dummy",
-      "dummy",
-      Map.empty,
-      Map(
-        NodeId("someNode") -> List(
-          Assertion("#TESTS.assertEquals('valid', 'valid')"),
-          Assertion("#TESTS.assertEquals({}, {})"),
-          Assertion("#TESTS.assertEquals({:}, {:})"),
-          Assertion("#TESTS.assertEquals(#CONV.toAny('abc'), 'abc')"),
-          Assertion("#TESTS.assertEquals({'foo'}, #contexts[0].someJavaList)"),
-          Assertion("#TESTS.assertEquals({'foo'}, {'foo'})"),
-          Assertion("#TESTS.assertEquals({'foo': 'bar'}, {'foo': 'bar'})"),
-          Assertion("#TESTS.assertEquals(1, 1L)"),
-          Assertion("#TESTS.assertEquals(null, null)"),
-          Assertion("#TESTS.assertEquals({'foo'}, {})"),
-          Assertion("#TESTS.assertEquals('1,2,3'.split(','), '1,2,3'.split(','))"), // comparing arrays
-          Assertion("#TESTS.assertEquals('1,2'.split(','), '1,2,3'.split(','))"),
-          Assertion("#TESTS.assertEquals({'1','2','3'}, '1,2,3'.split(','))"), // comparing arrays with SpEL inline lists
-          Assertion("#TESTS.assertEquals({'a': 1}, {:})"),
-          Assertion("#TESTS.assertEquals({'1,2'.split(',')}, {'1,2'.split(',')})"),
+  test("should properly compare various types used in SpEL") {
+    forAll(Table(
+      ("assertion", "result"),
+      ("#TESTS.assertEquals('valid', 'valid')", SuccessfulAssertion),
+      ("#TESTS.assertEquals({}, {})", SuccessfulAssertion),
+      ("#TESTS.assertEquals({:}, {:})", SuccessfulAssertion),
+      ("#TESTS.assertEquals(#CONV.toAny('abc'), 'abc')", SuccessfulAssertion),
+      ("#TESTS.assertEquals({'foo'}, #contexts[0].someJavaList)", SuccessfulAssertion),
+      ("#TESTS.assertEquals({'foo'}, {'foo'})", SuccessfulAssertion),
+      ("#TESTS.assertEquals({'foo': 'bar'}, {'foo': 'bar'})", SuccessfulAssertion),
+      ("#TESTS.assertEquals(1, 1L)", SuccessfulAssertion),
+      ("#TESTS.assertEquals(null, null)", SuccessfulAssertion),
+      ("#TESTS.assertEquals({'foo'}, {})", FailedAssertion("Expected: [{foo}] but found [{}]")),
+      ("#TESTS.assertEquals('1,2,3'.split(','), '1,2,3'.split(','))", SuccessfulAssertion), // comparing arrays
+      ("#TESTS.assertEquals('1,2'.split(','), '1,2,3'.split(','))", FailedAssertion("Expected: [{1, 2}] but found [{1, 2, 3}]")),
+      ("#TESTS.assertEquals({'1','2','3'}, '1,2,3'.split(','))", SuccessfulAssertion), // comparing arrays with SpEL inline lists
+      ("#TESTS.assertEquals({'a': 1}, {:})", FailedAssertion("Expected: [{a: 1}] but found [{:}]")),
+      ("#TESTS.assertEquals({'1,2'.split(',')}, {'1,2'.split(',')})", SuccessfulAssertion),
+    )) { (assertion, result) =>
+      val testCase = TestCase(
+        "dummy",
+        "dummy",
+        Map.empty,
+        Map(
+          NodeId("someNode") -> List(
+            Assertion(assertion),
+          )
         )
       )
-    )
-
-    val nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]] = Map(
-      NodeId("someNode") -> List(
-        ResultContext[Any](ContextId.dummy, Instant.now(), Map(
-          "someJavaList" -> createSingletonArrayList("foo"),
-        )),
+      val nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]] = Map(
+        NodeId("someNode") -> List(
+          ResultContext[Any](ContextId.dummy, Instant.now(), Map(
+            "someJavaList" -> createSingletonArrayList("foo"),
+          )),
+        )
       )
-    )
 
-    val results = verifyForTestCase(
-      testCase,
-      nodesResultsAfterTestRun
-    )
-
-    results.toList shouldBe List(
-      NodeId("someNode") -> List(
-        SuccessfulAssertion,
-        SuccessfulAssertion,
-        SuccessfulAssertion,
-        SuccessfulAssertion,
-        SuccessfulAssertion,
-        SuccessfulAssertion,
-        SuccessfulAssertion,
-        SuccessfulAssertion,
-        SuccessfulAssertion,
-        FailedAssertion("Expected: [{foo}] but found [{}]"),
-        SuccessfulAssertion,
-        FailedAssertion("Expected: [{1, 2}] but found [{1, 2, 3}]"),
-        SuccessfulAssertion,
-        FailedAssertion("Expected: [{a: 1}] but found [{:}]"),
-        SuccessfulAssertion,
-      )
-    )
+      verifyForTestCase(testCase, nodesResultsAfterTestRun).toList shouldBe List(NodeId("someNode") -> List(result))
+    }
   }
 
   private def verifyForTestCase(testCase: TestCase, nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]]) = {
