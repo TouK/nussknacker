@@ -291,10 +291,6 @@ export const nuTheme = (mode: PaletteMode, setMode: Dispatch<SetStateAction<Pale
                         },
                     }),
                 },
-                defaultProps: {
-                    size: "small",
-                    variant: "outlined",
-                },
             },
         },
         custom,

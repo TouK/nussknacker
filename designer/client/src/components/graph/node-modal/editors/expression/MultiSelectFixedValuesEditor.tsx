@@ -131,6 +131,8 @@ export const MultiSelectFixedValuesEditor = prepareEditor<{ editorConfig: Editor
                                     {...itemProps}
                                     label={option.label || option.value}
                                     color={editorConfig.possibleValues.some((p) => p.value === option.value) ? "default" : "error"}
+                                    size="small"
+                                    variant="outlined"
                                 />
                             );
                         })

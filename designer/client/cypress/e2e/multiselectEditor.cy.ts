@@ -18,7 +18,7 @@ describe("Multiselect fixed editor", () => {
 
         // force switch mode to display invalid data
         cy.toggleUserFlag("editor.allowForceSwitch", true);
-        cy.get("@editor").contains("button", "multi select").click({ altKey: true });
+        cy.get("@editor").contains("button", "multiple fixed values").click({ altKey: true });
         cy.get("@editor").matchImage({ maxDiffThreshold });
     });
 
@@ -37,12 +37,24 @@ describe("Multiselect fixed editor", () => {
 
         cy.get("@editor").contains("button", "json").click();
         cy.get("@editor").matchImage({ maxDiffThreshold });
-        cy.get("@editor").contains("button", "multi select").click();
+        cy.get("@editor").contains("button", "multiple fixed values").click();
 
         cy.contains("[role='button']", "option1").should("be.visible").find('[data-testid="CancelIcon"]').click();
         cy.contains("[role='button']", "option2").should("be.visible").find('[data-testid="CancelIcon"]').click();
         cy.contains("option1").should("not.exist");
         cy.contains("option2").should("not.exist");
         cy.get("@editor").matchImage({ maxDiffThreshold });
+    });
+
+    it("should search and group values", () => {
+        cy.visitNewProcess(seed, "multiselect_empty");
+        cy.getNode("Service").should("be.visible").trigger("dblclick");
+        cy.get("[title='multiSelectGroupingParam']").next().should("be.visible").as("editor");
+
+        cy.get("@editor").find("input").parent().as("select");
+        cy.get("@select").click().type("quasi");
+        cy.get("@editor").matchImage({ maxDiffThreshold, screenshotConfig: { padding: [10, 10, 350, 10] } });
+        cy.get("@select").type("{enter}");
+        cy.get("@editor").matchImage({ maxDiffThreshold, screenshotConfig: { padding: [10, 10, 350, 10] } });
     });
 });
