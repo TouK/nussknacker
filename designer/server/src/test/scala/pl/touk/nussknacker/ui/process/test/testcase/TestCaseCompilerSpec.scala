@@ -151,5 +151,4 @@ class TestCaseCompilerSpec extends AnyFunSuite with Matchers with Inside {
     typingInfo.expressionsTypingInfo
   )
 
-
 }

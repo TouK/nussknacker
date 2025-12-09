@@ -476,6 +476,40 @@ class ManagementResourcesSpec
     }
   }
 
+  test("running test case with invalid test configuration (assertion on not existing node) should return bad request") {
+    val testDataContent =
+      """[
+        |  {"sourceId":"startProcess","variables":{"input":["ala"]}},
+        |  {"sourceId":"startProcess","variables":{"input":["bela"]}}
+        |]""".stripMargin
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
+
+    val invalidTestCase = TestCase("dummy", testDataContent, Map.empty, Map(NodeId("someNotExistingNode") -> List(
+      Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])"),
+    )))
+    runTestCase(ProcessTestData.sampleScenario, invalidTestCase) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      responseAs[String] shouldBe "Test case configuration contains errors: TestConfigurationRefersToNotExistingNode(someNotExistingNode,dummy,Assertion)"
+    }
+  }
+
+  test("running test case with invalid scenario should return bad request") {
+    val testDataContent =
+      """[
+        |  {"sourceId":"source","variables":{"input":["ala"]}},
+        |  {"sourceId":"source","variables":{"input":["bela"]}}
+        |]""".stripMargin
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
+
+    val testCase = TestCase("dummy", testDataContent, Map.empty, Map.empty)
+    runTestCase(ProcessTestData.invalidProcess, testCase) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      val responseAsString = responseAs[String]
+      //todo: should we return something more structured than toString of errors?
+      responseAsString.startsWith("Only scenario without validation errors can be tested. Errors: ") shouldBe true
+    }
+  }
+
   test("nodeTransitionResults returned in test results should include null variables") {
     val scenario = ScenarioBuilder
       .streaming(ProcessTestData.sampleProcessName.value)

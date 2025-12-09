@@ -28,11 +28,11 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ListUtil
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationErrors}
 import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ExpressionsToTestDataConversionError
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.{ExpressionsToTestDataConversionError, ScenarioValidationError, TestCaseCompilationError}
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
 import pl.touk.nussknacker.ui.process.test.testcase._
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
@@ -283,12 +283,11 @@ class ScenarioTestService(
           .deserialize(SerializedScenarioRecordsContent(testCase.inputs))
           .leftMap[PerformTestError](PerformTestError.DeserializationError)
       )
-
       scenarioTestData <- EitherT.fromEither[Future](prepareTestData(preliminaryScenarioTestRecords, canonical))
-
       // compile process/validate process to gather node typing needed for assertion expressions compilation
-      nodeContextsTyping = compileScenarioAndExtractNodeContextsTyping(scenarioGraph, processVersion, isFragment) //todo: toCanonicalProcess already does validation under the hood?
-      compiledTestCase = compileTestCase(testCase, nodeContextsTyping, jobData)
+      //todo: toCanonicalProcess already does validation under the hood?
+      nodeContextsTyping <- EitherT.fromEither[Future](compileScenarioAndExtractNodeContextsTyping(scenarioGraph, processVersion, isFragment))
+      compiledTestCase <- EitherT.fromEither[Future](compileTestCase(testCase, nodeContextsTyping, jobData))
 
       testResults <- EitherT(
         performTestWithDeserializedRecords(processVersion, canonical, scenarioTestData)
@@ -305,21 +304,19 @@ class ScenarioTestService(
 
   private def compileScenarioAndExtractNodeContextsTyping(scenarioGraph: ScenarioGraph,
                                                           processVersion: ProcessVersion,
-                                                          isFragment: Boolean)(implicit user: LoggedUser): Map[String, NodeTypingData] = {
+                                                          isFragment: Boolean)(implicit user: LoggedUser): Either[ScenarioValidationError, Map[String, NodeTypingData]] = {
     val validationResult = uiProcessValidator.validate(scenarioGraph, processVersion, isFragment)
     if (validationResult.hasErrors) {
-      //todo: to be decided if the operation can be called directly by rest api not by designer
-      throw new IllegalStateException(s"Should not happen - only valid scenario should be allowed to be tested by designer. Scenario has errors: ${validationResult.errors}")
+      Left(ScenarioValidationError(validationResult.errors))
+    } else {
+      Right(validationResult.nodeResults)
     }
-
-    validationResult.nodeResults
   }
 
-  private def compileTestCase(test: TestCase, nodesTyping: Map[String, NodeTypingData], jobData: JobData): CompiledTestCase = {
+  private def compileTestCase(test: TestCase, nodesTyping: Map[String, NodeTypingData], jobData: JobData): Either[TestCaseCompilationError, CompiledTestCase] = {
     val testCompiler = new TestCaseCompiler(expressionCompiler, testCaseGlobalVariablesPreparer)
-    //todo: to be decided if the operation can be called directly by rest api not by designer
     testCompiler.compile(test, nodesTyping, jobData)
-      .fold(errors => throw new IllegalStateException(s"Should not happen - only valid test configuration should be allowed to be tested by designer Test configuration has errors: $errors"), identity)
+      .fold(errors => Left(TestCaseCompilationError(errors)), Right(_))
   }
 
   def performTest(
@@ -581,6 +578,11 @@ object ScenarioTestService {
     final case class MissingSourceError(sourceId: NodeId, recordIndex: Int) extends PerformTestError
 
     final case class TestResultsSizeExceededError(approxSizeInBytes: Long, maxBytes: Long) extends PerformTestError
+
+    final case class TestCaseCompilationError(errors: NonEmptyList[ProcessCompilationError]) extends PerformTestError
+
+    final case class ScenarioValidationError(errors: ValidationErrors) extends PerformTestError
+
   }
 
 }
