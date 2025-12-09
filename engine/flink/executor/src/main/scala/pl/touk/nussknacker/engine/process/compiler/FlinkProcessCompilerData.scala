@@ -4,6 +4,7 @@ import cats.data._
 import cats.data.Validated.{Invalid, Valid}
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import org.apache.flink.api.connector.sink2.WriterInitContext
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.{Interpreter, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.JobData
@@ -19,6 +20,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.flink.FlinkScenarioCompilationDependencies
+import pl.touk.nussknacker.engine.flink.api.{FlinkEngineContext, RuntimeCtx}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
@@ -44,7 +46,7 @@ class FlinkProcessCompilerData(
   def open(runtimeContext: RuntimeContext, nodesToUse: List[_ <: NodeData]): Unit = {
     val lifecycle = compilerData.lifecycle(nodesToUse)
     lifecycle.foreach {
-      _.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext, runtimeMode))
+      _.open(FlinkEngineRuntimeContextImpl(jobData, RuntimeCtx(runtimeContext), runtimeMode))
     }
   }
 
@@ -95,9 +97,9 @@ class FlinkProcessCompilerData(
 
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
 
-  def prepareExceptionHandler(runtimeContext: RuntimeContext): FlinkExceptionHandler = {
+  def prepareExceptionHandler(flinkEngineContext: FlinkEngineContext): FlinkExceptionHandler = {
     exceptionHandler.open(
-      FlinkEngineRuntimeContextImpl(jobData, runtimeContext, runtimeMode)
+      FlinkEngineRuntimeContextImpl(jobData, flinkEngineContext, runtimeMode)
     )
     exceptionHandler
   }
