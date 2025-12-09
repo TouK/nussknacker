@@ -64,6 +64,7 @@ final case class HttpBasicAuthSecret(username: String, password: String) extends
 object OpenAPIServicesConfig {
 
   import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
   import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 
   import HttpClientConfig._
@@ -73,23 +74,10 @@ object OpenAPIServicesConfig {
 
   implicit val regexReader: ValueReader[Regex] = (config: Config, path: String) => new Regex(config.getString(path))
 
-  implicit val apiKeyVR: ValueReader[ApiKeySecret] = ValueReader.relative { conf =>
-    ApiKeySecret(
-      apiKeyValue = conf.as[String]("apiKeyValue")
-    )
-  }
-
-  implicit val basicAuthVR: ValueReader[HttpBasicAuthSecret] = ValueReader.relative { conf =>
-    HttpBasicAuthSecret(
-      username = conf.as[String]("username"),
-      password = conf.as[String]("password"),
-    )
-  }
-
   implicit val secretVR: ValueReader[Secret] = ValueReader.relative { conf =>
     conf.as[String]("type") match {
-      case "apiKey"    => conf.rootAs[ApiKeySecret]
-      case "basicAuth" => conf.rootAs[HttpBasicAuthSecret]
+      case "apiKey"    => conf.as[ApiKeySecret]
+      case "basicAuth" => conf.as[HttpBasicAuthSecret]
       case typ         => throw new Exception(s"Not supported swagger security type '$typ' in the configuration")
     }
   }
@@ -121,5 +109,7 @@ object OpenAPIServicesConfig {
     val baseReader = ArbitraryTypeReader.arbitraryTypeValueReader[OpenAPIServicesConfig]
     baseReader.read(config, path).copy(secrets = secrets)
   }
+
+  def parse(config: Config): OpenAPIServicesConfig = config.as[OpenAPIServicesConfig]
 
 }
