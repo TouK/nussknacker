@@ -1,6 +1,7 @@
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import { DefaultComponents as Window } from "@touk/window-manager";
 import type { DefaultContentProps } from "@touk/window-manager/cjs/components/window/DefaultContent";
+import { uniq } from "lodash";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import urljoin from "url-join";
@@ -141,6 +142,10 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
 
     useOnToolWindow(ToolId.node, node.id);
 
+    const nodeId = useMemo(() => {
+        return uniq([editedNode.$id, editedNode.id, node.id].filter(Boolean));
+    }, [editedNode.$id, editedNode.id, node.id]);
+
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled: buttonFromToolbar?.disabled });
 
     //no process? no nodes? no window contents! no errors for whole tree!
@@ -149,7 +154,7 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     }
 
     return (
-        <InputOutputContextProvider nodeId={editedNode.id}>
+        <InputOutputContextProvider nodeId={nodeId}>
             {settings["node.autoApply"] ? <EditStateFeedback editState={editState} /> : null}
 
             <WindowContent {...props} closeWithEsc={editState === "idle"} buttons={buttons} {...titleData} components={components}>

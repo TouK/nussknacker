@@ -3,7 +3,7 @@ import type { Dictionary } from "lodash";
 import { cloneDeep, mapValues, reject, snakeCase, zipObject } from "lodash";
 
 import type { NodesWithPositions } from "../../actions/nk/node";
-import type { Layout, NodePosition } from "../../actions/nk/ui/layout";
+import type { NodePosition } from "../../actions/nk/ui/layout";
 import { snapToInt } from "../../actions/nk/ui/layout";
 import ProcessUtils from "../../common/ProcessUtils";
 import { ExpressionLang } from "../../components/graph/node-modal/editors/expression/types";
@@ -15,10 +15,27 @@ import type { NodeId, NodeType } from "../../types/node";
 import type { ProcessDefinitionData } from "../../types/scenarioGraph";
 import type { GraphState } from "./types";
 
-export function updateLayoutAfterNodeIdChange(layout: Layout, oldId: NodeId, newId: NodeId): Layout {
-    if (oldId === newId) return layout;
-    return layout.filter((n) => newId !== n.id).map((n) => (oldId === n.id ? { ...n, id: newId } : n));
-}
+export const getUpdateStateAfterNodeIdChange = (currentId: NodeId, nextId: NodeId) =>
+    produce((draft: GraphState) => {
+        const { layout, testing, selectionState } = draft;
+        if (layout) {
+            layout.forEach((n) => {
+                if (currentId === n.id) n.id = nextId;
+            });
+        }
+        if (testing.testResults) {
+            const { expressionEvaluationResults, nodeTransitionResults } = testing.testResults;
+            expressionEvaluationResults[nextId] = expressionEvaluationResults[currentId];
+            nodeTransitionResults?.forEach((r) => {
+                if (r.sourceNodeId === currentId) r.sourceNodeId = nextId;
+                if (r.destinationNodeId === currentId) r.destinationNodeId = nextId;
+            });
+        }
+        const selected = selectionState.findIndex((c) => c === currentId);
+        if (selected !== -1) {
+            selectionState[selected] = nextId;
+        }
+    });
 
 export function updateAfterNodeDelete({ layout, scenario, ...state }: GraphState, idToDelete: NodeId) {
     return {

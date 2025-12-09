@@ -42,16 +42,22 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
     const settings = useAppSelector(getUserSettings);
     const autoApply = settings["node.autoApply"];
 
-    const [nodeId, setNodeId] = useState<string>(data.node.id);
+    const openedNode = data?.node;
+    const [nodeId, setNodeId] = useState<string>(openedNode?.id);
 
     const scenarioFromGlobalStore = useAppSelector(getScenario);
-    const nodeFromGlobalStore = useMemo(
-        () => NodeUtils.getNodeById(nodeId, scenarioFromGlobalStore.scenarioGraph),
+
+    const scenario = useMemo(() => scenarioFromGlobalStore || data.scenario, [data.scenario, scenarioFromGlobalStore]);
+    const [node, setNode] = useState(openedNode);
+    useEffect(
+        () =>
+            setNode((current) => {
+                const nextNode = NodeUtils.getNodeById(nodeId, scenarioFromGlobalStore.scenarioGraph) || current;
+                return isEqual(nextNode, current) ? current : nextNode;
+            }),
         [nodeId, scenarioFromGlobalStore.scenarioGraph],
     );
 
-    const scenario = useMemo(() => scenarioFromGlobalStore || data.scenario, [data.scenario, scenarioFromGlobalStore]);
-    const node = useMemo(() => nodeFromGlobalStore || data.node, [data.node, nodeFromGlobalStore]);
     const edges = useMemo(() => getEdgesForNode(scenario, node), [node, scenario]);
 
     const [editState, setStatus, editStateRef] = useEditState();

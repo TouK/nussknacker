@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 type Update<T> = T | ((prev: T) => T);
 
 export function useStream<T, E = unknown>(
-    initialValue?: T | (() => T),
+    initialValue?: T | ((c?: T) => T),
     autoUpdate?: boolean,
 ): [Stream<T, E>, (value: Update<T>) => void, T] {
     const [currentValue, setValue] = useState<T>(initialValue);
@@ -30,7 +30,7 @@ export function useStream<T, E = unknown>(
     useEffect(() => {
         if (!autoUpdate) return;
         emit((current) => {
-            const nextValue = typeof initialValue === "function" ? (initialValue as () => T)() : initialValue;
+            const nextValue = typeof initialValue === "function" ? (initialValue as (c?: T) => T)(current) : initialValue;
             return isEqual(current, nextValue) ? current : nextValue;
         });
     }, [autoUpdate, emit, initialValue]);
