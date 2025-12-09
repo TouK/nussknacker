@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
 import io.circe.Json
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -18,7 +19,6 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   StandardFlinkSource,
   StandardFlinkSourceFunctionUtils
 }
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
 import scala.annotation.nowarn
 
@@ -62,7 +62,7 @@ class CsvSource
       CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|")
     }
 
-  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Array[String]]] = timestampAssigner
+  override def watermarkStrategyForTest: Option[WatermarkStrategy[Array[String]]] = watermarkStrategy
 
   override def returnType: typing.TypingResult = Typed.fromDetailedType[Array[String]]
 

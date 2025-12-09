@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
 import io.circe.Json
-import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId, Params, ServiceInvoker, VariableConstants}
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
+import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId, Params, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
@@ -12,7 +13,6 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
 import java.time.Instant
@@ -52,7 +52,7 @@ object GenericSourceWithCustomTestingSupport
 
     new CollectionSource[ProcessingType](
       list = elementsValue,
-      timestampAssigner = None,
+      watermarkStrategy = None,
       returnType = Typed[ProcessingType],
     ) with TestDataGenerator
       with FlinkSourceTestSupport[ProcessingType]
@@ -81,7 +81,7 @@ object GenericSourceWithCustomTestingSupport
           CirceUtil.decodeJsonUnsafe[String](testRecord.json)
         }
 
-      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
+      override def watermarkStrategyForTest: Option[WatermarkStrategy[String]] = watermarkStrategy
 
       override def testParametersDefinition: List[Parameter] = elementsParamDeclaration.createParameter() :: Nil
 

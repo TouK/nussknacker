@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.state.ValueStateDescriptor
-import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
@@ -21,11 +22,9 @@ import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
-import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
-import pl.touk.nussknacker.engine.flink.util.keyed.KeyOptions
+import pl.touk.nussknacker.engine.flink.util.keyed.{KeyOptions, StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.UnionWithMemoTransformer.KeyField
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -37,8 +36,8 @@ import java.util
 object UnionWithMemoTransformer extends UnionWithMemoTransformer(None)
 
 class UnionWithMemoTransformer(
-    timestampAssigner: Option[
-      TimestampWatermarkHandler[TimestampedValue[ValueWithContext[StringKeyedValue[util.Map[String, AnyRef]]]]]
+    watermarkStrategy: Option[
+      WatermarkStrategy[TimestampedValue[ValueWithContext[StringKeyedValue[util.Map[String, AnyRef]]]]]
     ]
 ) extends CustomStreamTransformer
     with UnboundedStreamComponent
@@ -114,8 +113,8 @@ class UnionWithMemoTransformer(
             }
             val connectedStream = keyedInputStreams.reduce(_.connectAndMerge(_))
 
-            val afterOptionalAssigner = timestampAssigner
-              .map(new TimestampAssignmentHelper(_)(processedTypeInfo).assignWatermarks(connectedStream))
+            val afterOptionalAssigner = watermarkStrategy
+              .map(new TimestampAssignmentHelper(_)(processedTypeInfo).assignTimestampsAndWatermarks(connectedStream))
               .getOrElse(connectedStream)
 
             setUidToNodeIdIfNeed(

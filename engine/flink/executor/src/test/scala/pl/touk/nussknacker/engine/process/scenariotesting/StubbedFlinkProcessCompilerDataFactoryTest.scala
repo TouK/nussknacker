@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.scenariotesting
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory._
 import io.circe.Json
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{CirceUtil, JobData, NodeId, ProcessVersion}
@@ -18,7 +19,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.part.SourcePart
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -179,7 +179,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
       extends CollectionSource[Int](List.empty, None, Typed.fromDetailedType[Int])
       with FlinkSourceTestSupport[Int]
       with TestWithParametersSupport[Int] {
-    override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Int]] = None
+    override def watermarkStrategyForTest: Option[WatermarkStrategy[Int]] = None
 
     override def testRecordParser: TestRecordParser[Int] = (testRecords: List[TestRecord]) =>
       testRecords.map { testRecord =>
@@ -195,7 +195,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
   object SampleTestSupportSource
       extends CollectionSource[Int](List.empty, None, Typed.fromDetailedType[Int])
       with FlinkSourceTestSupport[Int] {
-    override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Int]] = None
+    override def watermarkStrategyForTest: Option[WatermarkStrategy[Int]] = None
 
     override def testRecordParser: TestRecordParser[Int] = (testRecords: List[TestRecord]) =>
       testRecords.map { testRecord =>

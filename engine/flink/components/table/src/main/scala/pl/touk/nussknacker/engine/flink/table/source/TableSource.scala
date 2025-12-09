@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.table.source
 
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.{DataTypes, Schema}
@@ -20,7 +21,6 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkSource,
   FlinkSourceTestSupport
 }
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
@@ -117,7 +117,7 @@ class TableSource(
     row
   }
 
-  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Row]] = None
+  override def watermarkStrategyForTest: Option[WatermarkStrategy[Row]] = None
 
   override def testRecordParser: TestRecordParser[Row] = {
     val tableDataParserSchema = {

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer.join
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.streaming.api.datastream.DataStream
@@ -26,12 +27,10 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.api.typeinfo.option.OptionTypeInfo
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
-import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
-import pl.touk.nussknacker.engine.flink.util.keyed.KeyOptions
+import pl.touk.nussknacker.engine.flink.util.keyed.{KeyOptions, StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
@@ -46,7 +45,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 
 class FullOuterJoinTransformer(
-    timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]]
+    watermarkStrategy: Option[WatermarkStrategy[TimestampedValue[ValueWithContext[AnyRef]]]]
 ) extends CustomStreamTransformer
     with JoinDynamicComponent
     with ExplicitUidInOperatorsSupport
@@ -204,8 +203,8 @@ class FullOuterJoinTransformer(
         .process(aggregatorFunction, outputTypeInfo)
         .setUidWithName(context, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
 
-      timestampAssigner
-        .map(new TimestampAssignmentHelper(_)(outputTypeInfo).assignWatermarks(stream))
+      watermarkStrategy
+        .map(new TimestampAssignmentHelper(_)(outputTypeInfo).assignTimestampsAndWatermarks(stream))
         .getOrElse(stream)
     }
   }

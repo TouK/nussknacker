@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.connector.source.Boundedness
 import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -11,7 +12,6 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   StandardFlinkSource,
   StandardFlinkSourceFunctionUtils
 }
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
 import scala.annotation.nowarn
@@ -19,7 +19,7 @@ import scala.jdk.CollectionConverters._
 
 case class CollectionSource[T](
     list: List[T],
-    override val timestampAssigner: Option[TimestampWatermarkHandler[T]],
+    override val watermarkStrategy: Option[WatermarkStrategy[T]],
     override val returnType: TypingResult,
     boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED
 ) extends StandardFlinkSource[T]

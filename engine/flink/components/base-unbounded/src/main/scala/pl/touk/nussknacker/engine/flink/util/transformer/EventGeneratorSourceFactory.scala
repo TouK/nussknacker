@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.{HCursor, Json}
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
@@ -29,7 +30,6 @@ import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordPars
 import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler.ContextWithEventTime
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
@@ -236,7 +236,7 @@ object EventGeneratorSourceFactory
           params: Map[ParameterName, AnyRef],
       ): AnyRef = generateSample()
 
-      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[AnyRef]] = None
+      override def watermarkStrategyForTest: Option[WatermarkStrategy[AnyRef]] = None
 
       private def generateSample(): AnyRef = value.evaluate(Context.dummy)
 

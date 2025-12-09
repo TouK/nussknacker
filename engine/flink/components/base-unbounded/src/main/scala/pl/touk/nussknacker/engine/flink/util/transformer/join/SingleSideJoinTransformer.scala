@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.join
 
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
@@ -18,11 +19,14 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
-import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper, StringKeyOnlyMapper}
-import pl.touk.nussknacker.engine.flink.util.keyed.KeyOptions
+import pl.touk.nussknacker.engine.flink.util.keyed.{
+  KeyOptions,
+  StringKeyedValue,
+  StringKeyedValueMapper,
+  StringKeyOnlyMapper
+}
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
@@ -35,7 +39,7 @@ import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.FiniteDuration
 
 class SingleSideJoinTransformer(
-    timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]]
+    watermarkStrategy: Option[WatermarkStrategy[TimestampedValue[ValueWithContext[AnyRef]]]]
 ) extends CustomStreamTransformer
     with JoinDynamicComponent
     with ExplicitUidInOperatorsSupport
@@ -180,10 +184,10 @@ class SingleSideJoinTransformer(
           .process(aggregatorFunction)
           .setUidWithName(context, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
 
-        timestampAssigner
+        watermarkStrategy
           .map(
             new TimestampAssignmentHelper(_)(context.valueWithContextInfo.forType[AnyRef](outputType))
-              .assignWatermarks(statefulStreamWithUid)
+              .assignTimestampsAndWatermarks(statefulStreamWithUid)
           )
           .getOrElse(statefulStreamWithUid)
       }

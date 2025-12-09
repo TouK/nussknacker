@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.co.CoMapFunction
@@ -22,7 +23,6 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomJoinTransformation,
   FlinkCustomNodeContext
 }
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 
 object UnionTransformer extends UnionTransformer(None) {
@@ -75,12 +75,12 @@ object UnionTransformer extends UnionTransformer(None) {
 /**
   * It creates union of joined data streams. Produced variable will be of type of value expression
   *
-  * @param timestampAssigner Optional timestamp assigner that will be used on connected stream.
+  * @param watermarkStrategy Optional WatermarkStrategy that will be used on connected stream.
   *                          Make notice that Flink produces min watermark(left stream watermark, right stream watermark)
   *                          for connected streams. In some cases, when you have some time-based aggregation after union,
   *                          you would like to redefine this logic.
   */
-class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]])
+class UnionTransformer(watermarkStrategy: Option[WatermarkStrategy[TimestampedValue[ValueWithContext[AnyRef]]]])
     extends CustomStreamTransformer
     with LazyLogging
     with Serializable {
@@ -114,10 +114,10 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
               )
             )
 
-            timestampAssigner
+            watermarkStrategy
               .map(
                 new TimestampAssignmentHelper[ValueWithContext[AnyRef]](_)(context.valueWithContextInfo.forUnknown)
-                  .assignWatermarks(connectedStream)
+                  .assignTimestampsAndWatermarks(connectedStream)
               )
               .getOrElse(connectedStream)
           }
