@@ -7,16 +7,17 @@ import org.apache.pekko.http.scaladsl.model.{ContentTypeRange, ContentTypes, Htt
 import org.apache.pekko.http.scaladsl.server
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.BeMatcher
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId, StreamMetaData}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionName}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.graph.node.SubsequentNode
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.restmodel.DeployRequest
@@ -31,13 +32,13 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
-import pl.touk.nussknacker.ui.process.test.testcase.{Assertion, TestCase}
+import pl.touk.nussknacker.ui.process.test.testcase.{Assertion, EnricherMock, TestCase}
 
 import java.time.Instant
 
 // TODO: all these tests should be migrated to ManagementApiHttpServiceBusinessSpec or ManagementApiHttpServiceSecuritySpec
 class ManagementResourcesSpec
-    extends AnyFunSuite
+  extends AnyFunSuite
     with ScalatestRouteTest
     with FailFastCirceSupport
     with Matchers
@@ -198,10 +199,10 @@ class ManagementResourcesSpec
       ) ~> check {
         status shouldBe StatusCodes.OK
         // TODO: remove Deployment:, Stop: after adding custom icons
-        val expectedDeployComment                = "deployComment"
-        val expectedStopComment                  = "cancelComment"
+        val expectedDeployComment = "deployComment"
+        val expectedStopComment = "cancelComment"
         val expectedDeployCommentInLegacyService = s"Deployment: $expectedDeployComment"
-        val expectedStopCommentInLegacyService   = s"Stop: $expectedStopComment"
+        val expectedStopCommentInLegacyService = s"Stop: $expectedStopComment"
         getActivity(ProcessTestData.sampleScenario.name) ~> check {
           val comments = responseAs[Dtos.Legacy.ProcessActivity].comments.sortBy(_.id)
           comments.map(_.content) shouldBe List(
@@ -288,7 +289,7 @@ class ManagementResourcesSpec
       .emptySink(
         "end",
         "kafka-string",
-        TopicParamName.value     -> "'end.topic'".spel,
+        TopicParamName.value -> "'end.topic'".spel,
         SinkValueParamName.value -> "#input".spel
       )
 
@@ -309,8 +310,8 @@ class ManagementResourcesSpec
         "logger",
         "log",
         "message" -> "Current #{#input}".spelTemplate,
-        "logger"  -> "'deployment-test'".spel,
-        "level"   -> "T(org.slf4j.event.Level).DEBUG".spel
+        "logger" -> "'deployment-test'".spel,
+        "level" -> "T(org.slf4j.event.Level).DEBUG".spel
       )
       .emptySink("end", "monitor")
     saveCanonicalProcessAndAssertSuccess(scenario)
@@ -331,7 +332,7 @@ class ManagementResourcesSpec
       .emptySink(
         "end",
         "kafka-string",
-        TopicParamName.value     -> "'end.topic'".spel,
+        TopicParamName.value -> "'end.topic'".spel,
         SinkValueParamName.value -> "#output".spel
       )
     saveCanonicalProcessAndAssertSuccess(invalidScenario)
@@ -477,6 +478,52 @@ class ManagementResourcesSpec
     }
   }
 
+  test("run test case with mocked service") {
+    val testDataContent =
+      """[
+        |  {"sourceId":"startProcess","variables":{"input":["ala"]}}
+        |]""".stripMargin
+
+    val scenario = ScenarioBuilder
+      .streaming(ProcessTestData.sampleProcessName.value)
+      .parallelism(1)
+      .source("startProcess", "csv-source")
+      .enricher("someEnricher", "out1", "paramService", "param" -> "'a'".spel)
+      .filter("input", "#input != null".spel)
+      .to(GraphBuilder
+        .buildVariable("message" + "suffix", "output", "message" -> "'message'".spel)
+        .emptySink(
+          "end" + "suffix",
+          "kafka-string",
+          TopicParamName.value -> "'end.topic'".spel,
+          SinkValueParamName.value -> "#output".spel
+        ))
+
+    saveCanonicalProcessAndAssertSuccess(scenario)
+
+    val testCase = TestCase("dummy", testDataContent,
+      mocks = Map(
+        NodeId("someEnricher") -> EnricherMock(Expression(Spel, "'b'"))
+      ),
+      assertions = Map(
+        NodeId("endsuffix") -> List(
+          Assertion("#TESTS.assertEquals('b', #contexts[0].out1)"),
+        )
+      )
+    )
+    runTestCase(scenario, testCase) ~> check {
+      status shouldEqual StatusCodes.OK
+
+      val responseJson = responseAs[Json]
+      responseJson.hcursor
+        .downField("assertionsResults")
+        .downField("endsuffix")
+        .downN(0)
+        .downField("type")
+        .focus shouldBe Some(Json.fromString("SuccessfulAssertion"))
+    }
+  }
+
   test("running test case with invalid test configuration (assertion on not existing node) should return bad request") {
     val testDataContent =
       """[
@@ -519,7 +566,7 @@ class ManagementResourcesSpec
       .emptySink(
         "end",
         "kafka-string",
-        TopicParamName.value     -> "'end.topic'".spel,
+        TopicParamName.value -> "'end.topic'".spel,
         SinkValueParamName.value -> "'foo'".spel
       )
     saveCanonicalProcessAndAssertSuccess(scenario)
@@ -560,7 +607,7 @@ class ManagementResourcesSpec
       .emptySink(
         "end",
         "kafka-string",
-        TopicParamName.value     -> "'end.topic'".spel,
+        TopicParamName.value -> "'end.topic'".spel,
         SinkValueParamName.value -> "''".spel
       )
     val testDataContent =
@@ -587,7 +634,7 @@ class ManagementResourcesSpec
         .emptySink(
           "end",
           "kafka-string",
-          TopicParamName.value     -> "'end.topic'".spel,
+          TopicParamName.value -> "'end.topic'".spel,
           SinkValueParamName.value -> "''".spel
         )
     }
@@ -628,7 +675,7 @@ class ManagementResourcesSpec
         .emptySink(
           "end",
           "kafka-string",
-          TopicParamName.value     -> "'end.topic'".spel,
+          TopicParamName.value -> "'end.topic'".spel,
           SinkValueParamName.value -> "''".spel
         )
     }

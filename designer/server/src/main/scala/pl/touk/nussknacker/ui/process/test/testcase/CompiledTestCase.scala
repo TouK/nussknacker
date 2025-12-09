@@ -5,7 +5,6 @@ import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 
 final case class CompiledTestCase(
                                id: String,
-                               inputs: String,
                                mocks: Map[NodeId, CompiledEnricherMock],
                                assertions: Map[NodeId, List[CompiledAssertion]],
                              )

@@ -27,6 +27,7 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest}
@@ -140,12 +141,14 @@ trait NuResourcesTest
     deploymentManagersClassLoader
   )
 
-  private val modelData =
-    ModelData(
+  private val modelData = {
+    val data = ModelData(
       processingTypeConfig,
       modelDependencies,
       modelClassLoaderProvider.forProcessingTypeUnsafe(Streaming.stringify)
     )
+    data
+  }
 
   private val deploymentData =
     new DeploymentData(
@@ -295,7 +298,7 @@ trait NuResourcesTest
         new ScenarioResolver(sampleResolver(), Streaming.stringify),
         deploymentManager
       ),
-      flinkProcessValidator(),
+      ProcessTestData.testProcessValidator(validator = ProcessValidator.default(modelData)),
       new AssertionVerifierImpl(GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)),
     )
 

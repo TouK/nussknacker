@@ -48,7 +48,6 @@ class TestCaseCompiler(expressionCompiler: ExpressionCompiler, globalVariablesPr
     ) { (validMocks, validAssertions) =>
       CompiledTestCase(
         testCase.id,
-        testCase.inputs,
         validMocks.toMap,
         validAssertions.toMap
       )

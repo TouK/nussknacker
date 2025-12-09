@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalPro
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder.TestRecordVariablesDecodingError
@@ -271,11 +272,15 @@ class ScenarioTestService(
                        testCase: TestCase,
                      )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
     val jobData = JobData(scenarioGraph.toMetaData(processVersion.processName), processVersion)
+    val graphWithConfiguredMocs = substituteMocks(scenarioGraph, testCase.mocks)
     val canonical = toCanonicalProcess(
-      scenarioGraph,
+      graphWithConfiguredMocs,
       processVersion,
       isFragment
     )
+
+    // todo: not existing node for mock validation?
+
 
     (for {
       preliminaryScenarioTestRecords <- EitherT.fromEither[Future](
@@ -300,6 +305,17 @@ class ScenarioTestService(
       computeCounts(canonical, isFragment, testResults),
       assertionVerifier.verify(compiledTestCase, testResults.originalNodeResults, jobData)
     )).value
+  }
+
+  private def substituteMocks(scenarioGraph: ScenarioGraph, mocks: Map[NodeId, EnricherMock]): ScenarioGraph = {
+    val nodesWithSubstitutions = scenarioGraph.nodes.map {
+      case nodeData@(enricher: node.Enricher) =>
+        val enricherMockOpt = mocks.get(NodeId(nodeData.id)).map(_.expression)
+        // we use provided mock or the one specified in original scenario
+        enricher.copy(mockExpression = enricherMockOpt.orElse(enricher.mockExpression))
+      case data => data
+    }
+    scenarioGraph.copy(nodes = nodesWithSubstitutions)
   }
 
   private def compileScenarioAndExtractNodeContextsTyping(scenarioGraph: ScenarioGraph,

@@ -20,5 +20,6 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 
 @JsonCodec final case class EnricherMock(expression: Expression)
 
+//todo: it should be expression with language?
 @JsonCodec final case class Assertion(expression: String)
 
