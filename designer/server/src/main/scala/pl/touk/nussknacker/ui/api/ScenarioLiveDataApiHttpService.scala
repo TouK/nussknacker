@@ -100,12 +100,14 @@ class ScenarioLiveDataApiHttpService(
   ): Map[NodeId, NodeCount] = {
     val incomingCounts =
       liveData.nodeTransitions.toList
+        .filter(_._1.isDirectTransition)
         .flatMap { case (transition, data) => transition.destinationNodeId.map(_ -> data.totalCount) }
         .toGroupedMap
         .mapValuesNow(_.sum)
 
     val outgoingCounts =
       liveData.nodeTransitions.toList
+        .filter(_._1.isDirectTransition)
         .map { case (transition, data) => transition.sourceNodeId -> data.totalCount }
         .toGroupedMap
         .mapValuesNow(_.sum)
