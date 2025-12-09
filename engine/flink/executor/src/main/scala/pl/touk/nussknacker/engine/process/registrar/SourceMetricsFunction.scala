@@ -4,6 +4,7 @@ import org.apache.flink.api.common.functions.OpenContext
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.RuntimeMode
+import pl.touk.nussknacker.engine.flink.api.RuntimeCtx
 import pl.touk.nussknacker.engine.process.compiler.MetricsProviderForFlink.createMetricsProvider
 import pl.touk.nussknacker.engine.util.metrics.common.OneSourceMetrics
 
@@ -16,7 +17,7 @@ private[registrar] class SourceMetricsFunction[T](
 
   override def open(openContext: OpenContext): Unit = {
     metrics = new OneSourceMetrics(sourceId)
-    val metricsProvider = createMetricsProvider(componentUseContextProvider, getRuntimeContext)
+    val metricsProvider = createMetricsProvider(componentUseContextProvider, RuntimeCtx(getRuntimeContext))
     metrics.registerOwnMetrics(metricsProvider)
   }
 
