@@ -2,17 +2,17 @@ import React, { useCallback, useEffect, useState } from "react";
 
 import type { FieldError } from "../../Validators";
 import type { OnValueChange } from "../Editor";
-import type { ExpressionLang } from "../types";
+import type { EditorConfigForType } from "../EditorConfig";
+import type { EditorType, ExpressionLang } from "../types";
 import type { Duration } from "./DurationEditor";
 import type { Period } from "./PeriodEditor";
-import type { TimeRange } from "./TimeRangeComponent";
 import TimeRangeSection from "./TimeRangeSection";
 
 type Props = {
     encode: (value: Duration | Period) => string;
     decode: ((exp: string) => Duration) | ((exp: string) => Period);
     onValueChange: OnValueChange;
-    editorConfig: $TodoType;
+    editorConfig: EditorConfigForType<EditorType.DURATION_EDITOR> | EditorConfigForType<EditorType.PERIOD_EDITOR>;
     readOnly: boolean;
     showValidation: boolean;
     fieldErrors: FieldError[];
@@ -24,7 +24,7 @@ type Props = {
 export default function TimeRangeEditor(props: Props): React.JSX.Element {
     const { encode, decode, onValueChange, editorConfig, readOnly, showValidation, fieldErrors, expression, isMarked, language } = props;
 
-    const components = editorConfig.timeRangeComponents as Array<TimeRange>;
+    const components = editorConfig.timeRangeComponents;
     const [value, setValue] = useState(() => decode(expression));
 
     const onComponentChange = useCallback(
