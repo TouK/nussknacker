@@ -5,9 +5,9 @@ import org.apache.flink.api.common.functions.{OpenContext, RichFunction, Runtime
 /**
   * Helper for using exception handler.
   *
-  * Be aware that super.open and super.close are not called.
+  * Be aware that `super.open()` is not called.
   */
-trait WithExceptionHandler {
+trait WithExceptionHandler extends AutoCloseable {
   self: RichFunction =>
 
   protected def exceptionHandlerPreparer: RuntimeContext => ExceptionHandler
@@ -18,10 +18,11 @@ trait WithExceptionHandler {
     exceptionHandler = exceptionHandlerPreparer(getRuntimeContext)
   }
 
-  override def close(): Unit = {
+  override abstract def close(): Unit = {
     if (exceptionHandler != null) {
       exceptionHandler.close()
     }
+    super.close()
   }
 
 }

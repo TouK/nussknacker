@@ -94,11 +94,13 @@ class FlinkExceptionHandler(
   }
 
   override def open(context: EngineRuntimeContext): Unit = {
+    super.open(context)
     consumer.open(context)
   }
 
   override def close(): Unit = {
     consumer.close()
+    super.close()
   }
 
 }

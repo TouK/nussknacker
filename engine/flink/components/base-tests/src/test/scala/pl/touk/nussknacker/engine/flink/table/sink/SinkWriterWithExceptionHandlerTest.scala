@@ -8,7 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, MethodToInvoke, ParamName, ValueWithContext}
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.api.FlinkEngineContextOps._
@@ -87,22 +87,9 @@ object CollectSink extends SinkFactory {
     override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): Sink[Integer] = new Sink[Integer] {
 
       override def createWriter(context: WriterInitContext): SinkWriter[Integer] =
-        new SinkWriter[Integer] with SinkWriterWithExceptionHandler[Integer] {
+        new IntegerSink {
           override protected val exceptionHandler: ExceptionHandler =
             flinkNodeContext.exceptionHandlerPreparer.narrowToWriterInitCtx(context)
-
-          override def write(element: Integer, context: SinkWriter.Context): Unit = {
-            val result = exceptionHandler.handling[Double](None, Context.dummy)(
-              if (element != 0) (1.0 / element) else throw new IllegalArgumentException("Dividing by zero")
-            )
-
-            result match {
-              case Some(reciprocalValue) => SinkResultHolder.buffer.add(reciprocalValue)
-              case None                  => ()
-            }
-          }
-
-          override def flush(endOfInput: Boolean): Unit = ()
         }
 
       @nowarn("cat=deprecation")
@@ -112,6 +99,23 @@ object CollectSink extends SinkFactory {
     }
   }
 
+  private abstract class IntegerSink extends SinkWriter[Integer] with SinkWriterWithExceptionHandler[Integer] {
+
+    override def write(element: Integer, context: SinkWriter.Context): Unit = {
+      val result = exceptionHandler.handling[Double](None, Context.dummy)(
+        if (element != 0) (1.0 / element) else throw new IllegalArgumentException("Dividing by zero")
+      )
+
+      result match {
+        case Some(reciprocalValue) => SinkResultHolder.buffer.add(reciprocalValue)
+        case None                  => ()
+      }
+    }
+
+    override def flush(endOfInput: Boolean): Unit = ()
+
+    override def close(): Unit = ()
+  }
 }
 
 object SinkResultHolder {
