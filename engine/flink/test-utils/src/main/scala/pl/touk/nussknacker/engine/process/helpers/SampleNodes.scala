@@ -1179,6 +1179,14 @@ object SampleNodes {
     ): Unit =
       checkValidState("transitionToNextNode")
 
+    override def transitionFromFragmentStartToNodeAfterFragment(
+        nodeId: NodeId,
+        nextNodeId: NodeId,
+        context: Context,
+        processMetaData: MetaData
+    ): Unit =
+      checkValidState("transitionFromFragmentStartToNodeAfterFragment")
+
     override def processingFinishedInNode(
         nodeId: NodeId,
         context: Context,

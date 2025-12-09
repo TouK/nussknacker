@@ -202,4 +202,8 @@ case class LiveDataSample(
     variables: Map[String, Json],
 )
 
-final case class NodeTransition(sourceNodeId: NodeId, destinationNodeId: Option[NodeId])
+final case class NodeTransition(
+    sourceNodeId: NodeId,
+    destinationNodeId: Option[NodeId],
+    isDirectTransition: Boolean,
+)

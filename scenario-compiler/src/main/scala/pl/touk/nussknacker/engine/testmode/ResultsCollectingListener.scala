@@ -54,6 +54,15 @@ private case class ResultsCollectingListenerImpl[T](holderClass: String, runId: 
     updateResults(_.updateNodeOutputResult(nodeId, Some(nextNodeId), context, variableEncoder))
   }
 
+  override def transitionFromFragmentStartToNodeAfterFragment(
+      nodeId: NodeId,
+      nextNodeId: NodeId,
+      context: Context,
+      processMetaData: MetaData
+  ): Unit = {
+    updateResults(_.updateNodeOutputResult(nodeId, Some(nextNodeId), context, variableEncoder))
+  }
+
   override def processingFinishedInNode(
       nodeId: NodeId,
       context: Context,

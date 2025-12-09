@@ -10,6 +10,13 @@ trait ProcessListener extends Lifecycle {
 
   def transitionToNextNode(nodeId: NodeId, nextNodeId: NodeId, context: Context, processMetaData: MetaData): Unit
 
+  def transitionFromFragmentStartToNodeAfterFragment(
+      nodeId: NodeId,
+      nextNodeId: NodeId,
+      context: Context,
+      processMetaData: MetaData
+  ): Unit
+
   def processingFinishedInNode(nodeId: NodeId, context: Context, processMetaData: MetaData): Unit
 
   def endEncountered(nodeId: NodeId, ref: String, context: Context, processMetaData: MetaData): Unit
@@ -45,6 +52,13 @@ trait EmptyProcessListener extends ProcessListener {
       nextNodeId: NodeId,
       context: Context,
       processMetaData: MetaData,
+  ): Unit = ()
+
+  override def transitionFromFragmentStartToNodeAfterFragment(
+      nodeId: NodeId,
+      nextNodeId: NodeId,
+      context: Context,
+      processMetaData: MetaData
   ): Unit = ()
 
   override def processingFinishedInNode(

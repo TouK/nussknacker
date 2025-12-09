@@ -460,6 +460,13 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           processMetaData: MetaData
       ): Unit = ()
 
+      override def transitionFromFragmentStartToNodeAfterFragment(
+          nodeId: NodeId,
+          nextNodeId: NodeId,
+          context: Context,
+          processMetaData: MetaData
+      ): Unit = ()
+
       override def processingFinishedInNode(
           nodeId: NodeId,
           context: Context,

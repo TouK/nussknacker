@@ -40,17 +40,24 @@ class LiveDataCollectingListener private[livedata] (
       nextNodeId: NodeId,
       context: Context,
       processMetaData: MetaData,
-  ): Unit = transitionToNextNode(nodeId, nextNodeId, context, processMetaData, Instant.now())
+  ): Unit = transitionToNextNode(nodeId, nextNodeId, context, Instant.now(), isDirectTransition = true)
+
+  override def transitionFromFragmentStartToNodeAfterFragment(
+      nodeId: NodeId,
+      nextNodeId: NodeId,
+      context: Context,
+      processMetaData: MetaData,
+  ): Unit = transitionToNextNode(nodeId, nextNodeId, context, Instant.now(), isDirectTransition = false)
 
   def transitionToNextNode(
       nodeId: NodeId,
       nextNodeId: NodeId,
       context: Context,
-      processMetaData: MetaData,
       timestamp: Instant,
+      isDirectTransition: Boolean,
   ): Unit = performStorageOperation {
     _.addLiveDataSample(
-      NodeTransition(nodeId, Some(nextNodeId)),
+      NodeTransition(nodeId, Some(nextNodeId), isDirectTransition),
       sampleFromContext(context, timestamp)
     )
   }
@@ -61,7 +68,7 @@ class LiveDataCollectingListener private[livedata] (
       processMetaData: MetaData,
   ): Unit = performStorageOperation {
     _.addLiveDataSample(
-      NodeTransition(nodeId, None),
+      NodeTransition(nodeId, None, isDirectTransition = true),
       sampleFromContext(context, Instant.now())
     )
   }

@@ -130,8 +130,8 @@ class ScenarioLiveDataApiHttpServiceSpec
           ),
           Map("v1" -> Json.obj("a" -> "aaa".asJson, "b" -> 1.asJson))
         ),
-        processMetaData = exampleScenario.metaData,
-        timestamp = Instant.now().minusSeconds(90)
+        timestamp = Instant.now().minusSeconds(90),
+        isDirectTransition = true,
       )
 
       listener.transitionToNextNode(
