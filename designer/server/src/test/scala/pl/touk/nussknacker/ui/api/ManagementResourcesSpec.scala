@@ -442,6 +442,7 @@ class ManagementResourcesSpec
     }
   }
 
+  //todo: test case with multiple inputs
   test("run test case") {
     val testDataContent =
       """[
@@ -499,7 +500,7 @@ class ManagementResourcesSpec
         |  {"sourceId":"source","variables":{"input":["ala"]}},
         |  {"sourceId":"source","variables":{"input":["bela"]}}
         |]""".stripMargin
-    saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)
 
     val testCase = TestCase("dummy", testDataContent, Map.empty, Map.empty)
     runTestCase(ProcessTestData.invalidProcess, testCase) ~> check {
