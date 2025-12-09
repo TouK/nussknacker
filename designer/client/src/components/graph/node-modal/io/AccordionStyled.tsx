@@ -5,11 +5,13 @@ export const AccordionStyled = styled(Accordion, {
     shouldForwardProp: (prop) => prop !== "animatedAppear",
 })<AccordionProps & { animatedAppear: boolean }>(({ theme, expanded, animatedAppear }) => ({
     // gutter sized shadow to mask sticky elements in margin area
-    boxShadow: expanded ? `0 0 0 ${theme.spacing(2)} var(--sidePanelBackground)` : null,
-    "&:first-of-type": {
+    "&:not(&:first-of-type):not(&:last-of-type)": {
+        boxShadow: expanded ? `0 0 0 ${theme.spacing(2)} var(--sidePanelBackground)` : null,
+    },
+    "&:first-of-type:not(&:last-of-type)": {
         boxShadow: expanded ? `0 ${theme.spacing(1)} 0 ${theme.spacing(1)} var(--sidePanelBackground)` : null,
     },
-    "&:last-of-type": {
+    "&:not(&:first-of-type):last-of-type": {
         boxShadow: expanded ? `0 -${theme.spacing(1)} 0 ${theme.spacing(1)} var(--sidePanelBackground)` : null,
     },
     transitionProperty: "transform, box-shadow, margin",
