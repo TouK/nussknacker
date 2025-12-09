@@ -26,11 +26,8 @@ import pl.touk.nussknacker.engine.flink.api.{FlinkEngineContext, RuntimeCtx}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
-  StandardTimestampWatermarkHandler,
-  TimestampWatermarkHandler
-}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler.{
   ContextInitializingFunction,
@@ -224,7 +221,7 @@ class FlinkKafkaSource[K, V](
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] =
     Some(
-      StandardTimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]](
+      TimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]](
         (_.timestamp()): SimpleSerializableTimestampAssigner[ConsumerRecord[K, V]]
       )
     )

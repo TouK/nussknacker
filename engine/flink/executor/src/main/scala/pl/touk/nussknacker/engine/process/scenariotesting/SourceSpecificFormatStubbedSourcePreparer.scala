@@ -2,13 +2,17 @@ package pl.touk.nussknacker.engine.process.scenariotesting
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.connector.source.Boundedness
+import pl.touk.nussknacker.engine.api.{LazyParameter, NodeId}
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{LazyParameter, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.EvaluableLazyParameterCreator
-import pl.touk.nussknacker.engine.flink.api.process.{CustomizableContextInitializerSource, FlinkSource, FlinkSourceTestSupport}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.api.process.{
+  CustomizableContextInitializerSource,
+  FlinkSource,
+  FlinkSourceTestSupport
+}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.testmode.TestDataPreparer
 
@@ -33,11 +37,11 @@ class SourceSpecificFormatStubbedSourcePreparer(
     // crashing time windows
     val improvedAssignerForTest = assignerForTestOpt.orElse(
       Some(
-        new StandardTimestampWatermarkHandler[Object](
+        new TimestampWatermarkHandler[Object](
           WatermarkStrategy
             .forMonotonousTimestamps[Object]()
             .withTimestampAssigner(
-              StandardTimestampWatermarkHandler.toAssigner[Object](e => System.currentTimeMillis())
+              TimestampWatermarkHandler.toAssigner[Object](e => System.currentTimeMillis())
             )
         )
       )

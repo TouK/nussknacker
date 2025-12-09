@@ -34,10 +34,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
-  StandardTimestampWatermarkHandler,
-  TimestampWatermarkHandler
-}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
@@ -1055,10 +1052,10 @@ object SampleNodes {
 
   }
 
-  private val ascendingTimestampExtractor = new StandardTimestampWatermarkHandler[SimpleRecord](
+  private val ascendingTimestampExtractor = new TimestampWatermarkHandler[SimpleRecord](
     WatermarkStrategy
       .forMonotonousTimestamps[SimpleRecord]()
-      .withTimestampAssigner(StandardTimestampWatermarkHandler.toAssigner[SimpleRecord](_.date.getTime))
+      .withTimestampAssigner(TimestampWatermarkHandler.toAssigner[SimpleRecord](_.date.getTime))
   )
 
   private val simpleRecordParser = new TestRecordParser[SimpleRecord] {

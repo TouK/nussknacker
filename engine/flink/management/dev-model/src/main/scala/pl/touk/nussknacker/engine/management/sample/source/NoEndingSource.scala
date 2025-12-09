@@ -13,10 +13,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   StandardFlinkSource,
   StandardFlinkSourceFunctionUtils
 }
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
-  StandardTimestampWatermarkHandler,
-  TimestampWatermarkHandler
-}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
 import java.time.Duration
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
@@ -64,7 +61,7 @@ class NoEndingSource(val implementTimestampAssignerForTest: Boolean)
     None
   else
     Option(
-      StandardTimestampWatermarkHandler
+      TimestampWatermarkHandler
         .boundedOutOfOrderness[String](
           assigner = (_: String) => System.currentTimeMillis(),
           maxOutOfOrderness = Duration.ofMinutes(10),

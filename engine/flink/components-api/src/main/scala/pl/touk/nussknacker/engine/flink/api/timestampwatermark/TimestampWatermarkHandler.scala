@@ -2,30 +2,18 @@ package pl.touk.nussknacker.engine.flink.api.timestampwatermark
 
 import org.apache.flink.api.common.eventtime._
 import org.apache.flink.streaming.api.datastream.DataStream
-import org.apache.flink.streaming.api.functions.{
-  AssignerWithPeriodicWatermarks,
-  AssignerWithPunctuatedWatermarks,
-  TimestampAssigner
-}
 
 import java.time.Duration
-import scala.annotation.nowarn
 
-sealed trait TimestampWatermarkHandler[T] extends Serializable {
+class TimestampWatermarkHandler[T](val strategy: WatermarkStrategy[T]) {
 
-  def assignTimestampAndWatermarks(dataStream: DataStream[T]): DataStream[T]
-
-}
-
-class StandardTimestampWatermarkHandler[T](val strategy: WatermarkStrategy[T]) extends TimestampWatermarkHandler[T] {
-
-  override def assignTimestampAndWatermarks(dataStream: DataStream[T]): DataStream[T] = {
+  def assignTimestampAndWatermarks(dataStream: DataStream[T]): DataStream[T] = {
     dataStream.assignTimestampsAndWatermarks(strategy)
   }
 
 }
 
-object StandardTimestampWatermarkHandler {
+object TimestampWatermarkHandler {
 
   trait SimpleSerializableTimestampAssigner[T] extends Serializable {
 
@@ -62,7 +50,7 @@ object StandardTimestampWatermarkHandler {
       case Some(assigner) => strategyWithOptIdleness.withTimestampAssigner(assigner)
       case None           => strategyWithOptIdleness
     }
-    new StandardTimestampWatermarkHandler(finalStrategyWithOptAssigner)
+    new TimestampWatermarkHandler(finalStrategyWithOptAssigner)
   }
 
   def afterEachEvent[T](assigner: SimpleSerializableTimestampAssigner[T]): TimestampWatermarkHandler[T] = {
@@ -70,7 +58,7 @@ object StandardTimestampWatermarkHandler {
   }
 
   def afterEachEvent[T](assigner: SerializableTimestampAssigner[T]): TimestampWatermarkHandler[T] = {
-    new StandardTimestampWatermarkHandler[T](
+    new TimestampWatermarkHandler[T](
       WatermarkStrategy
         .forGenerator((_: WatermarkGeneratorSupplier.Context) =>
           new WatermarkGenerator[T] {
@@ -84,20 +72,4 @@ object StandardTimestampWatermarkHandler {
     )
   }
 
-}
-
-@nowarn("cat=deprecation")
-class LegacyTimestampWatermarkHandler[T](timestampAssigner: TimestampAssigner[T]) extends TimestampWatermarkHandler[T] {
-
-  override def assignTimestampAndWatermarks(dataStream: DataStream[T]): DataStream[T] = {
-    timestampAssigner match {
-      case periodic: AssignerWithPeriodicWatermarks[T @unchecked] =>
-        dataStream.assignTimestampsAndWatermarks(periodic)
-      case punctuated: AssignerWithPunctuatedWatermarks[T @unchecked] =>
-        dataStream.assignTimestampsAndWatermarks(punctuated)
-    }
-  }
-
-  def extractTimestamp(element: T, recordTimestamp: Long): Long =
-    timestampAssigner.extractTimestamp(element, recordTimestamp)
 }
