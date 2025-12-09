@@ -12,6 +12,7 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId, ValueWithContext}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.flink.api.FlinkEngineContextOps._
 import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
@@ -105,7 +106,7 @@ object EncodeAsTableTypeFunction {
     val alignedType  = ToTableTypeSchemaBasedEncoder.alignTypingResult(valueReturnType, sinkRowType)
     val producedType = TypeInformationDetection.instance.forType[Row](alignedType)
     new EncodeAsTableTypeFunction(
-      flinkNodeContext.exceptionHandlerPreparer,
+      flinkNodeContext.exceptionHandlerPreparer.narrowToRuntimeCtx,
       flinkNodeContext.nodeId,
       sinkRowType,
       producedType

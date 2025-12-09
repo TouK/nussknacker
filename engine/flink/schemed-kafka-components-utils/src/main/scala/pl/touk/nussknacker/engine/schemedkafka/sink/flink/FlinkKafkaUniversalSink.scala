@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInf
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
+import pl.touk.nussknacker.engine.flink.api.FlinkEngineContextOps._
 import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
@@ -90,7 +91,7 @@ class FlinkKafkaUniversalSink(
     private val nodeId = flinkNodeContext.nodeId
 
     protected override val exceptionHandlerPreparer: RuntimeContext => ExceptionHandler =
-      flinkNodeContext.exceptionHandlerPreparer
+      flinkNodeContext.exceptionHandlerPreparer.narrowToRuntimeCtx
 
     @transient private var encodeRecord: Any => AnyRef = _
 

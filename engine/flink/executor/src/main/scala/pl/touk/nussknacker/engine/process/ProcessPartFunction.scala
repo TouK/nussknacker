@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process
 
 import org.apache.flink.api.common.functions.{OpenContext, RichFunction}
+import pl.touk.nussknacker.engine.flink.api.RuntimeCtx
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
@@ -45,7 +46,7 @@ trait ExceptionHandlerFunction extends RichFunction {
 
   override def open(openContext: OpenContext): Unit = {
     compilerData = compilerDataForClassloader(getRuntimeContext.getUserCodeClassLoader)
-    exceptionHandler = compilerData.prepareExceptionHandler(getRuntimeContext)
+    exceptionHandler = compilerData.prepareExceptionHandler(RuntimeCtx(getRuntimeContext))
   }
 
 }
