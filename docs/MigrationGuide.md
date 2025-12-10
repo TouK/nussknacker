@@ -38,6 +38,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `topicsExistenceValidationConfig.validatorConfig.topicsFetchCacheTtl` -> `kafkaAdminConfig.cacheConfig.topicsExpirationTime`
     * `topicsExistenceValidationConfig.validatorConfig.adminClientTimeout` -> `kafkaAdminConfig.clientTimeout`
     * `topicsWithoutSchemaFetchTimeout` -> `kafkaAdminConfig.clientTimeout`
+* [#8523](https://github.com/TouK/nussknacker/pull/8523) Kafka components configuration changes:
+  * Configuration of Kafka components via legacy `modelConfig.kafka` entry is not supported for Flink engine. Use `modelConfig.components.kafka.config` instead.
+  * Configuration of Kafka bootstrap servers via legacy `kafkaAddress` is not supported anymore. Use `kafkaProperties."bootstrap.servers"` instead
 
 ### REST API changes
 
@@ -164,6 +167,16 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `highPriority` become a method instead of parameter
   * `ToJsonEncoder.encode` method now returns `Validated` and is available only for `StrictToJsonEncoder`
   * `ToJsonEncoder.encodeUnsafe` method behave as the previous `ToJsonEncoder.encode` (errors are thrown as Exceptions)
+* [#8523](https://github.com/TouK/nussknacker/pull/8523) Kafka components configuration changes:
+  * `KafkaConfig` was renamed to `KafkaComponentsConfig`
+  * `KafkaComponentsConfig.kafkaProperties` is mandatory now
+  * `KafkaComponentsConfig.kafkaAddress` was removed
+* [#8576](https://github.com/TouK/nussknacker/pull/8576) `NodeId` value class become used more frequently in the API:
+  `NodeComponentInfo`, `ContextId`, `ProcessCompilationError`, `ProcessListener` and `FlinkCustomNodeContext`
+* [#8632](https://github.com/TouK/nussknacker/pull/8632) `DynamicComponent`'s `[T]` generic parameter was replaced with `Implementation` type
+  We recommend to not invoke `DynamicComponent.implemenation()` method directly. To check how component behave during compilation, use `TestNodeCompiler` instead.
+  Read [Testing](../docs/developers_guide/Testing.md) for more info.
+* [#8781](https://github.com/TouK/nussknacker/pull/8781) `WithExceptionHandler` helper trait was removed because it made it easy to unintentionally hide original class' `close` method
 
 ### Other changes
 
@@ -225,6 +238,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#8198](https://github.com/TouK/nussknacker/pull/8198) Support for test data without `sourceId` specified is removed - now, you always have to specify it
 * [#7137](https://github.com/TouK/nussknacker/pull/7137)[#8317](https://github.com/TouK/nussknacker/pull/8317) Updated Flink 1.19.2 -> 1.20.2.
 * [#8209](https://github.com/TouK/nussknacker/pull/8209) Nussknacker now requires flink to be run with replaced `lib/flink-scala_2.12-x.x.x.jar` by `pl.touk:flink-scala` lib for the same scala version as used Nussknacker distribution. We provide prebuild flink docker images on [Docker Hub](https://hub.docker.com/r/touk/flink)    
+* [#8478](https://github.com/TouK/nussknacker/pull/8478) The behavior of `enum` to json encoding has been changed - now it uses `.name()` instead of `.toString()` 
 
 ## In version 1.18.0
 

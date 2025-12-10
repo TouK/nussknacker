@@ -124,7 +124,6 @@ description: Stay informed with detailed changelogs covering new features, impro
   * Added a list of editors to the UIParameter.
 * [#7616](https://github.com/TouK/nussknacker/pull/7616) (K8s DM) Fix for: k8s object name sanitizing strategy sometimes generated invalid object names, in other cases, 
   it generated names with unnecessary characters appended
-* [#7615](https://github.com/TouK/nussknacker/pull/7615) Updated Flink dependency to 1.19.2
 * [#7648](https://github.com/TouK/nussknacker/pull/7648) Strip namespace from topic name in `inputMeta` context variable
 * [#7649](https://github.com/TouK/nussknacker/pull/7649) Renamed 'sticky note' component label to 'Sticky Note' and assigned it to the 'Misc' component group
 * Added test capabilities for Event Generator source
@@ -182,15 +181,16 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8042](https://github.com/TouK/nussknacker/pull/8042) Merge OpenAPI components into one with multiple services.
 * [7684](https://github.com/TouK/nussknacker/pull/7684) Add action redeploy. Till now action deploy was responsible for both deploy and redeploy operations. 
   Now they are separated in scenario workflow and UI. Kafka source has different deployment parameters for deploy and redeploy actions.
-* [#8047](https://github.com/TouK/nussknacker/pull/8047) Added functionality of collecting live data samples and node transition throughput, modified in [#8165](https://github.com/TouK/nussknacker/pull/8165)
+* [#8047](https://github.com/TouK/nussknacker/pull/8047) Added functionality of collecting live data samples and node transition throughput, modified in [#8165](https://github.com/TouK/nussknacker/pull/8165) and in [#8702](https://github.com/TouK/nussknacker/pull/8702)
     * live data preview is optional and available for now only for Flink minicluster 
     * there is a new endpoint `/liveData/{scenarioName}`, which returns live data samples and throughput information
     * the functionality can be configured by setting in the 'modelConfig' section of the scenario type:
       ```hocon
-      liveDataPreview {              // optional config section, functionality disabled by default
-        enabled: true                // disabled by default
-        maxNumberOfRecords: 20       // max number of latest live data samples that will be returned, optional, default is 20
-        throughputTimeWindowInSeconds: 60 // the time windows, for which the node transition throughput will be calculated, optional, default is 60
+      liveDataPreview {                  // optional config section, functionality disabled by default
+        enabled: true                    // disabled by default
+        maxNumberOfRecords: 20           // max number of latest live data samples that will be returned, optional, default is 20
+        throughputTimeWindow: 60 seconds // the time window, for which the node transition throughput will be calculated, optional, default is 60 seconds
+        retentionTime: 1 hour            // the live data samples retention time; the stats will be still calculated for the entire scenario lifetime, regardless of this setting, optional, default is 1 hour
       }
       ```
     * [#8208](https://github.com/TouK/nussknacker/pull/8208) added functionality of collecting live data for scenarios running on standalone Flink with synchronisation in Designer DB  
@@ -200,7 +200,8 @@ description: Stay informed with detailed changelogs covering new features, impro
       liveDataPreview {              
         enabled: true               
         maxNumberOfSamples: 20      
-        throughputTimeWindowInSeconds: 60
+        throughputTimeWindow: 60 seconds
+        retentionTime: 1 hour
         storage {  // This section must be configured for standalone FLink
           type: "DESIGNER_DB" // The only storage type available for now
            // Small `uploadIntervalInSeconds` values make the live data preview look more smooth and similar to the Flink MiniCluster version, bigger values are easier on the db
@@ -217,7 +218,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8116](https://github.com/TouK/nussknacker/pull/8116) Improved Kafka metadata caching: common cache and caching topics when schemaless topics are enabled
 * [#8123](https://github.com/TouK/nussknacker/pull/8123) For now on, it is possible to deploy and save a scenario at the same time.
 * [#8228](https://github.com/TouK/nussknacker/pull/8228) Fixed sorting by scenario status name in component usages view.
-* [#7137](https://github.com/TouK/nussknacker/pull/7137)[#8317](https://github.com/TouK/nussknacker/pull/8317) Updated Flink dependency to 1.20.2
+* [#7615](https://github.com/TouK/nussknacker/pull/7615)[#7137](https://github.com/TouK/nussknacker/pull/7137)[#8317](https://github.com/TouK/nussknacker/pull/8317) Updated Flink dependency to 1.20.2
 * [#8239](https://github.com/TouK/nussknacker/pull/8239) Added a DB reference to the set of services that can be invoked from inside the `CustomHttpServiceProvider` implementation
 * [#8242](https://github.com/TouK/nussknacker/pull/8242) Toolbar buttons can be disabled and their tooltip can be customized based on user roles
     * Example of button configuration, using new settings:
@@ -283,6 +284,24 @@ description: Stay informed with detailed changelogs covering new features, impro
        }
      }
   ```
+* [#8534](https://github.com/TouK/nussknacker/pull/8534) Kafka components: Added support for "PLAIN" Content type for topics without schema 
+* [#8523](https://github.com/TouK/nussknacker/pull/8523) `FlinkTestScenarioRunner`: added asynchronous method allowing scenario testing on Flink engine (`withRunningScenario`) 
+* [#8555](https://github.com/TouK/nussknacker/pull/8555) SpEL: Added implicit conversions between various date types e.g. `Long` -> `Instant`, `OffsetDateTime` -> `LocalDateTime` etc. 
+* [#8540](https://github.com/TouK/nussknacker/pull/8540) Kafka source: Added advanced parameters allowing a user to specify watermark strategy (`Event time`, `Max out-of-orderness`, `Idleness`)  
+* [#8352](https://github.com/TouK/nussknacker/pull/8352) Updated dependencies:
+  * Caffeine Cache 3.1.8 -> 3.2.1
+  * Cats Effect 3.5.4 -> 3.5.7
+  * Cats 2.12.0 -> 2.13.0
+  * Circe 0.14.10 -> 0.14.14
+  * HikariCP 6.2.1 -> 6.3.1
+  * Jackson 2.17.2 -> 2.18.2
+  * Netty 4.1.119.Final -> 4.1.123.Final
+  * PostgreSQL JDBC driver 42.7.4 -> 42.7.7
+  * sttp 3.9.8 -> 3.11.0
+  * Tapir 1.11.7 -> 1.11.12
+* [#8606](https://github.com/TouK/nussknacker/pull/8606) `Testkit`: Added `TestNodeCompiler`
+* [#8733](https://github.com/TouK/nussknacker/pull/8733) Added support for Basic Authentication in OpenAPI Enricher
+* [#8781](https://github.com/TouK/nussknacker/pull/8781) Removed `WithExceptionHandler` trait, it made it easy to unintentionally hide original `close` method
 
 ## 1.18
 
