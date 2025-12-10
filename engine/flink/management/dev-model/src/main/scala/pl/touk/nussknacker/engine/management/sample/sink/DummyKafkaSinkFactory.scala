@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.management.sample.sink
 
 import org.apache.flink.api.common.functions.FlatMapFunction
-import org.apache.flink.streaming.api.functions.sink.{DiscardingSink, SinkFunction}
+import org.apache.flink.api.connector.sink2.{Sink => SinkV2}
+import org.apache.flink.streaming.api.functions.sink.v2.DiscardingSink
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
@@ -32,7 +33,7 @@ object DummyKafkaSinkFactory extends SinkFactory {
       helper.lazyMapFunction(value)
 
     @nowarn("cat=deprecation")
-    override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[Value] =
+    override def toFlinkSink(flinkNodeContext: FlinkCustomNodeContext): SinkV2[Value] =
       new DiscardingSink[AnyRef]
   }
 

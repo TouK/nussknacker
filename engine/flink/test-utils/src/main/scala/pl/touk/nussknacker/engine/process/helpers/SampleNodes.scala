@@ -7,10 +7,10 @@ import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction}
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.connector.sink2.{Sink => SinkV2, SinkWriter}
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.functions.co.{CoMapFunction, RichCoFlatMapFunction}
-import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -34,7 +34,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.WatermarkStrategyUtils
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
@@ -64,8 +63,6 @@ object SampleNodes {
   )
 
   case class SimpleRecordWithPreviousValue(record: SimpleRecord, previous: Long, added: String)
-
-  case class SimpleRecordAcc(id: String, value1: Long, value2: Set[String], date: Date)
 
   @JsonCodec case class SimpleJsonRecord(id: String, field: String)
 
@@ -596,11 +593,16 @@ object SampleNodes {
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
         val afterMap = start
           .flatMap(context.lazyParameterHelper.lazyMapFunction[AnyRef](param))
-        afterMap.addSink(new SinkFunction[ValueWithContext[AnyRef]] {
-          override def invoke(value: ValueWithContext[AnyRef], context: SinkFunction.Context): Unit = {
-            resultsHolder.add(value.value)
+        afterMap.sinkTo((_: SinkV2.InitContext) =>
+          new SinkWriter[ValueWithContext[AnyRef]] {
+            override def write(element: ValueWithContext[AnyRef], context: SinkWriter.Context): Unit =
+              resultsHolder.add(element.value)
+
+            override def flush(endOfInput: Boolean): Unit = {}
+
+            override def close(): Unit = {}
           }
-        })
+        )
         afterMap
       })
 
@@ -619,10 +621,16 @@ object SampleNodes {
       ): FlatMapFunction[Context, ValueWithContext[String]] =
         (ctx, collector) => collector.collect(ValueWithContext(serializableValue, ctx))
 
-      @nowarn("cat=deprecation")
-      override def toFlinkFunction(flinkCustomNodeContext: FlinkCustomNodeContext): SinkFunction[String] =
-        new SinkFunction[String] {
-          override def invoke(value: String, context: SinkFunction.Context): Unit = resultsHolder.add(value)
+      override def toFlinkSink(flinkCustomNodeContext: FlinkCustomNodeContext): SinkV2[String] =
+        new SinkV2[String] {
+          @nowarn("cat=deprecation")
+          override def createWriter(context: SinkV2.InitContext): SinkWriter[String] = new SinkWriter[String] {
+            override def write(element: String, context: SinkWriter.Context): Unit = resultsHolder.add(element)
+
+            override def flush(endOfInput: Boolean): Unit = {}
+
+            override def close(): Unit = {}
+          }
         }
 
       override type Value = String
@@ -655,17 +663,8 @@ object SampleNodes {
     def apply(resultsHolder: => TestResultsHolder[String]): SinkFactory = SinkForType[String](resultsHolder)
   }
 
-  object SinkForLongs {
-    def apply(resultsHolder: => TestResultsHolder[java.lang.Long]): SinkFactory =
-      SinkForType[java.lang.Long](resultsHolder)
-  }
-
   object SinkForAny {
     def apply(resultsHolder: => TestResultsHolder[AnyRef]): SinkFactory = SinkForType[AnyRef](resultsHolder)
-  }
-
-  object EmptyService extends Service with Serializable {
-    def invoke(): Future[Unit] = Future.successful(())
   }
 
   object GenericParametersNode extends CustomStreamTransformer with SingleInputDynamicComponent with Serializable {
@@ -1031,7 +1030,7 @@ object SampleNodes {
           dataStream: DataStream[ValueWithContext[String]],
           flinkNodeContext: FlinkCustomNodeContext
       ): DataStreamSink[_] =
-        dataStream.map(_.value).addSink(new SinkForTypeFunction[String](resultsHolder))
+        dataStream.map(_.value).sinkTo(new FlinkSinkForType[String](resultsHolder))
 
     }
 

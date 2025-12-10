@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.helpers
 
 import com.typesafe.config.Config
-import org.apache.flink.streaming.api.functions.sink.SinkFunction
+import org.apache.flink.api.connector.sink2.{Sink => SinkV2}
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api._
@@ -132,9 +132,9 @@ case object SinkAccessingNodeContext extends EmptySink with Serializable {
   def nodeId: NodeId = _nodeId
 
   @nowarn("cat=deprecation")
-  override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[AnyRef] = {
+  override def toFlinkSink(flinkNodeContext: FlinkCustomNodeContext): SinkV2[AnyRef] = {
     _nodeId = flinkNodeContext.nodeId
-    super.toFlinkFunction(flinkNodeContext)
+    super.toFlinkSink(flinkNodeContext)
   }
 
 }

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.registrar
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.streaming.api.graph.{StreamGraph, StreamNode}
+import org.apache.flink.streaming.runtime.operators.sink.SinkWriterOperatorFactory
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -34,7 +35,8 @@ trait FlinkStreamGraphSpec
 
     def firstSource: StreamNode = graph.getStreamNode(graph.getSourceIDs.asScala.toList.head)
 
-    def sinks: List[StreamNode] = graph.getSinkIDs.asScala.map(graph.getStreamNode).toList
+    def sinks: List[StreamNode] =
+      graph.getStreamNodes.asScala.toList.filter(_.getOperatorFactory.isInstanceOf[SinkWriterOperatorFactory[_, _]])
 
     def traverse(node: StreamNode): LazyList[StreamNode] =
       node #:: node.getOutEdgeIndices.asScala.to(LazyList).map(graph.getStreamNode).flatMap(traverse)
