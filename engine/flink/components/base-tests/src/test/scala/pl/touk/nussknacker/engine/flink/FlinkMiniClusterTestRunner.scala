@@ -4,10 +4,12 @@ import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.SourceFactory
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.WatermarkStrategyUtils
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
-import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
+import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateWindowsConfig
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
@@ -47,10 +49,15 @@ trait FlinkMiniClusterTestRunner { _: FlinkSpec =>
       aggregateWindowsConfig: AggregateWindowsConfig,
       allowEndingScenarioWithoutSink: Boolean,
   ): LocalModelData = {
-    def sourceComponent(data: List[Int]) = SourceFactory.noParamUnboundedStreamFactory[Int](
-      EmitWatermarkAfterEachElementCollectionSource
-        .create[Int](data, _ => Instant.now.toEpochMilli, Duration.ofHours(1))
-    )
+    def sourceComponent(data: List[Int]) = {
+      val watermarkStrategy = WatermarkStrategyUtils.afterEachEvent[Int](
+        (_: Int, _: Long) => Instant.now.toEpochMilli,
+        Duration.ofHours(1)
+      )
+      SourceFactory.noParamUnboundedStreamFactory[Int](
+        CollectionSource(data, Some(watermarkStrategy), Typed.typedClass[Int])
+      )
+    }
     val config =
       if (allowEndingScenarioWithoutSink) {
         ConfigFactory.parseString("""allowEndingScenarioWithoutSink: true""")

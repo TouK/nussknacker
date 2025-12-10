@@ -29,12 +29,15 @@ object WatermarkStrategyUtils {
     }
   }
 
-  def afterEachEvent[T](assigner: SerializableTimestampAssigner[T]): WatermarkStrategy[T] = {
+  def afterEachEvent[T](
+      assigner: SerializableTimestampAssigner[T],
+      maxOutOfOrderness: Duration = Duration.ZERO
+  ): WatermarkStrategy[T] = {
     WatermarkStrategy
       .forGenerator((_: WatermarkGeneratorSupplier.Context) =>
         new WatermarkGenerator[T] {
           override def onEvent(event: T, eventTimestamp: Long, output: WatermarkOutput): Unit = {
-            output.emitWatermark(new Watermark(eventTimestamp))
+            output.emitWatermark(new Watermark(eventTimestamp - maxOutOfOrderness.toMillis))
           }
           override def onPeriodicEmit(output: WatermarkOutput): Unit = {}
         }
