@@ -195,4 +195,25 @@ class SecurityTest
       .futureValue shouldBe TypedMap(Map.empty)
   }
 
+  test(
+    "secret specified by scheme name from 'security' config field takes precedence over common secret from 'secrets' field"
+  ) {
+    stubbedSecretApiKeyCheckingLogics.foreach { config =>
+      withClue(config.operationId) {
+        val commonSecretExpectedToBeUnused = ApiKeySecret("invalid")
+        val enricherWithSingleSecurityConfig = parseToEnrichers(
+          definitionMatchingStubbedLogicOnlyApiKeySchemes,
+          backend,
+          baseConfig.copy(
+            secrets = List(commonSecretExpectedToBeUnused),
+            security = Map(config.securitySchemeName -> config.expectedSecret)
+          )
+        )
+        enricherWithSingleSecurityConfig(ServiceName(config.operationId))
+          .invoke(context)
+          .futureValue shouldBe TypedMap(Map.empty)
+      }
+    }
+  }
+
 }
