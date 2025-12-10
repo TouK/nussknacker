@@ -170,7 +170,7 @@ components {
     security {
       apiKeyInHeader {
         type: "apiKey"
-        apiKeyValue: "34534asfdasf"
+        apiKeyValue: "secretValue"
       }
     }
   }
