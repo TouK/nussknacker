@@ -59,7 +59,7 @@ private class InterpreterInternal[F[_]: Monad](
   }
 
   private def onDirectTransitionToNextNode(nodeId: NodeId, nextNode: Next, ctx: Context): Unit = {
-    val transition = TransitionFromFragmentStartToNodeAfterFragment(nodeId, nextNodeId(nextNode))
+    val transition = DirectTransition(nodeId, nextNodeId(nextNode))
     listeners.foreach(_.transitionToNextNode(transition, ctx, jobData.metaData))
   }
 
