@@ -41,13 +41,12 @@ class LiveDataCollectingListener private[livedata] (
       transition: Transition,
       context: Context,
       processMetaData: MetaData,
-  ): Unit = transitionToNextNode(transition, context, Instant.now(), isDirectTransition = true)
+  ): Unit = transitionToNextNode(transition, context, Instant.now())
 
   def transitionToNextNode(
       transition: Transition,
       context: Context,
       timestamp: Instant,
-      isDirectTransition: Boolean,
   ): Unit = performStorageOperation {
     val nodeTransition = transition match {
       case DirectTransition(nodeId, nextNodeId) =>
