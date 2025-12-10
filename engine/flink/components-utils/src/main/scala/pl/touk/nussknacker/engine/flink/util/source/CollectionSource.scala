@@ -2,16 +2,14 @@ package pl.touk.nussknacker.engine.flink.util.source
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.connector.source.Boundedness
-import org.apache.flink.streaming.api.datastream.DataStreamSource
+import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.FromElementsFunction
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.flink.api.process.{
-  FlinkCustomNodeContext,
-  StandardFlinkSource,
-  StandardFlinkSourceFunctionUtils
-}
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
+import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
 import scala.annotation.nowarn
@@ -19,13 +17,38 @@ import scala.jdk.CollectionConverters._
 
 case class CollectionSource[T](
     list: List[T],
-    override val watermarkStrategy: Option[WatermarkStrategy[T]],
+    watermarkStrategy: Option[WatermarkStrategy[T]],
     override val returnType: TypingResult,
     boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED
-) extends StandardFlinkSource[T]
+) extends FlinkSource
+    with CustomizableContextInitializerSource[T]
     with ReturningType {
 
-  override def sourceStream(
+  override final def contextStream(
+      env: StreamExecutionEnvironment,
+      flinkNodeContext: FlinkCustomNodeContext
+  ): DataStream[Context] = {
+    // 1. set UID and override source name
+    val rawSourceWithUid = sourceStream(env, flinkNodeContext).setUidAndNameToNodeId(flinkNodeContext.nodeId)
+
+    // 2. assign timestamp and watermark policy
+    val rawSourceWithUidAndTimestamp = watermarkStrategy
+      .map(rawSourceWithUid.assignTimestampsAndWatermarks)
+      .getOrElse(rawSourceWithUid)
+
+    // 3. initialize Context and spool Context to the stream
+    rawSourceWithUidAndTimestamp
+      .map(
+        new FlinkContextInitializingFunction(
+          contextInitializer,
+          flinkNodeContext.nodeId,
+          flinkNodeContext.convertToEngineRuntimeContext
+        ),
+        flinkNodeContext.contextTypeInfo
+      )
+  }
+
+  private def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSource[T] = {
@@ -43,11 +66,7 @@ case class CollectionSource[T](
       case Boundedness.BOUNDED =>
         env.fromData(recordsListDependingOnBoundedness(list).asJava, typeInformation)
       case Boundedness.CONTINUOUS_UNBOUNDED =>
-        StandardFlinkSourceFunctionUtils.createSourceStream(
-          env = env,
-          sourceFunction = new FromElementsFunction[T](recordsListDependingOnBoundedness(list).asJava),
-          typeInformation = typeInformation
-        )
+        env.addSource(new FromElementsFunction[T](recordsListDependingOnBoundedness(list).asJava), typeInformation)
     }
   }
 

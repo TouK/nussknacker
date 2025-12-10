@@ -108,11 +108,7 @@ class FlinkKafkaSource[K, V](
   ): DataStreamSource[ConsumerRecord[K, V]] = {
     val consumerGroupId = prepareConsumerGroupId(flinkNodeContext)
     val sourceFunction  = flinkSourceFunction(consumerGroupId, flinkNodeContext)
-    StandardFlinkSourceFunctionUtils.createSourceStream(
-      env = env,
-      sourceFunction = sourceFunction,
-      typeInformation = typeInformation
-    )
+    env.addSource(sourceFunction, typeInformation)
   }
 
   protected lazy val topics: NonEmptyList[TopicName.ForSource] = preparedTopics.map(_.prepared)

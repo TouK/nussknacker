@@ -2,18 +2,14 @@ package pl.touk.nussknacker.engine.management.sample.source
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.datastream.DataStreamSource
+import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
-import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.{CirceUtil, Context}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.flink.api.process.{
-  FlinkCustomNodeContext,
-  FlinkSourceTestSupport,
-  StandardFlinkSource,
-  StandardFlinkSourceFunctionUtils
-}
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
+import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.WatermarkStrategyUtils
 
 import java.time.Duration
@@ -22,13 +18,37 @@ import scala.annotation.nowarn
 
 //this not ending source is more reliable in tests than CollectionSource, which terminates quickly
 class NoEndingSource(val implementWatermarkStrategyForTest: Boolean)
-    extends StandardFlinkSource[String]
+    extends FlinkSource
+    with CustomizableContextInitializerSource[String]
     with FlinkSourceTestSupport[String] {
 
-  @nowarn("cat=deprecation")
-  override def sourceStream(
+  override final def contextStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
+  ): DataStream[Context] = {
+    // 1. set UID and override source name
+    val rawSourceWithUid = sourceStream(env).setUidAndNameToNodeId(flinkNodeContext.nodeId)
+
+    // 2. assign timestamp and watermark policy
+    val rawSourceWithUidAndTimestamp = watermarkStrategy
+      .map(rawSourceWithUid.assignTimestampsAndWatermarks)
+      .getOrElse(rawSourceWithUid)
+
+    // 3. initialize Context and spool Context to the stream
+    rawSourceWithUidAndTimestamp
+      .map(
+        new FlinkContextInitializingFunction(
+          contextInitializer,
+          flinkNodeContext.nodeId,
+          flinkNodeContext.convertToEngineRuntimeContext
+        ),
+        flinkNodeContext.contextTypeInfo
+      )
+  }
+
+  @nowarn("cat=deprecation")
+  private def sourceStream(
+      env: StreamExecutionEnvironment,
   ): DataStreamSource[String] = {
     val flinkSourceFunction: SourceFunction[String] = new SourceFunction[String] {
       var running       = true
@@ -51,23 +71,20 @@ class NoEndingSource(val implementWatermarkStrategyForTest: Boolean)
       }
 
     }
-    StandardFlinkSourceFunctionUtils.createSourceStream(
-      env = env,
-      sourceFunction = flinkSourceFunction,
-      typeInformation = TypeInformation.of(classOf[String])
-    )
+    env.addSource(flinkSourceFunction, TypeInformation.of(classOf[String]))
   }
 
-  override def watermarkStrategy: Option[WatermarkStrategy[String]] = if (!implementWatermarkStrategyForTest)
-    None
-  else
-    Option(
-      WatermarkStrategyUtils
-        .boundedOutOfOrderness[String](
-          assigner = (_: String, _: Long) => System.currentTimeMillis(),
-          maxOutOfOrderness = Duration.ofMinutes(10),
-        )
-    )
+  private val watermarkStrategy: Option[WatermarkStrategy[String]] =
+    if (!implementWatermarkStrategyForTest)
+      None
+    else
+      Option(
+        WatermarkStrategyUtils
+          .boundedOutOfOrderness[String](
+            assigner = (_: String, _: Long) => System.currentTimeMillis(),
+            maxOutOfOrderness = Duration.ofMinutes(10),
+          )
+      )
 
   override def watermarkStrategyForTest: Option[WatermarkStrategy[String]] = watermarkStrategy
 
