@@ -176,6 +176,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#8632](https://github.com/TouK/nussknacker/pull/8632) `DynamicComponent`'s `[T]` generic parameter was replaced with `Implementation` type
   We recommend to not invoke `DynamicComponent.implemenation()` method directly. To check how component behave during compilation, use `TestNodeCompiler` instead.
   Read [Testing](../docs/developers_guide/Testing.md) for more info.
+* [#???]() `WithExceptionHandler` helper trait was removed because it made it easy to unintentionally hide original class' `close` method
 
 ### Other changes
 
