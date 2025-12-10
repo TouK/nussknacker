@@ -10,10 +10,6 @@ import scala.concurrent.duration.DurationInt
 
 class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionValues {
 
-  import net.ceedubs.ficus.Ficus._
-
-  import OpenAPIServicesConfig._
-
   test("should parse apikey secret for each scheme") {
     val config = ConfigFactory.parseString("""url: "http://foo"
                                              |security {
@@ -27,7 +23,7 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
                                              |  }
                                              |}""".stripMargin)
 
-    val parsedConfig = config.as[OpenAPIServicesConfig]
+    val parsedConfig = OpenAPIServicesConfig.parse(config)
     parsedConfig.securityConfig
       .apiKeySecret(SecuritySchemeName("apikeySecurityScheme"))
       .value shouldEqual ApiKeySecret(apiKeyValue = "34534asfdasf")
@@ -43,7 +39,7 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
                                              |  apiKeyValue: "34534asfdasf"
                                              |}""".stripMargin)
 
-    val parsedConfig = config.as[OpenAPIServicesConfig]
+    val parsedConfig = OpenAPIServicesConfig.parse(config)
     parsedConfig.securityConfig
       .apiKeySecret(SecuritySchemeName("someScheme"))
       .value shouldEqual ApiKeySecret(apiKeyValue = "34534asfdasf")
@@ -66,7 +62,7 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
                                              |  }
                                              |]""".stripMargin)
 
-    val parsedConfig = config.as[OpenAPIServicesConfig]
+    val parsedConfig = OpenAPIServicesConfig.parse(config)
     parsedConfig.securityConfig
       .apiKeySecret(SecuritySchemeName("someScheme"))
       .value shouldEqual ApiKeySecret(apiKeyValue = "34534asfdasf")
@@ -88,7 +84,7 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
                                              |  }
                                              |]""".stripMargin)
     intercept[RuntimeException] {
-      config.as[OpenAPIServicesConfig]
+      OpenAPIServicesConfig.parse(config)
     }.getMessage shouldBe "Both 'secrets' and 'secret' fields cannot be configured at the same time"
   }
 
@@ -105,7 +101,7 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
                                              |  }
                                              |]""".stripMargin)
     intercept[RuntimeException] {
-      config.as[OpenAPIServicesConfig]
+      OpenAPIServicesConfig.parse(config)
     }.getMessage shouldBe "requirement failed: Only one `apiKey` common secret (with unspecified scheme name) is allowed"
   }
 
@@ -122,7 +118,7 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
                                              |  apiKeyValue: "234"
                                              |}""".stripMargin)
 
-    val parsedConfig = config.as[OpenAPIServicesConfig]
+    val parsedConfig = OpenAPIServicesConfig.parse(config)
     parsedConfig.securityConfig
       .apiKeySecret(SecuritySchemeName("someScheme"))
       .value shouldEqual ApiKeySecret(apiKeyValue = "123")
@@ -149,8 +145,7 @@ class OpenAPIServicesConfigTest extends AnyFunSuite with Matchers with OptionVal
                                              |}
                                              |  """.stripMargin)
 
-    val parsedConfig = config.as[OpenAPIServicesConfig]
-
+    val parsedConfig = OpenAPIServicesConfig.parse(config)
     parsedConfig.httpClientConfig shouldBe HttpClientConfig(
       timeout = Some(5 seconds),
       connectTimeout = Some(1 seconds),
