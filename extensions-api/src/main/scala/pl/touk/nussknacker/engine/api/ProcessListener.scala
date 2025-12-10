@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api
 
+import pl.touk.nussknacker.engine.api.ProcessListener.Transition
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import scala.util.Try
@@ -8,14 +9,7 @@ trait ProcessListener extends Lifecycle {
 
   def nodeEntered(nodeId: NodeId, context: Context, processMetaData: MetaData): Unit
 
-  def transitionToNextNode(nodeId: NodeId, nextNodeId: NodeId, context: Context, processMetaData: MetaData): Unit
-
-  def transitionFromFragmentStartToNodeAfterFragment(
-      nodeId: NodeId,
-      nextNodeId: NodeId,
-      context: Context,
-      processMetaData: MetaData
-  ): Unit
+  def transitionToNextNode(transition: Transition, context: Context, processMetaData: MetaData): Unit
 
   def processingFinishedInNode(nodeId: NodeId, context: Context, processMetaData: MetaData): Unit
 
@@ -44,21 +38,32 @@ trait ProcessListener extends Lifecycle {
 
 }
 
+object ProcessListener {
+  sealed trait Transition
+
+  object Transition {
+
+    final case class DirectTransition(
+        nodeId: NodeId,
+        nextNodeId: NodeId
+    ) extends Transition
+
+    final case class TransitionFromFragmentStartToNodeAfterFragment(
+        fragmentStartNodeId: NodeId,
+        afterFragmentNodeId: NodeId
+    ) extends Transition
+
+  }
+
+}
+
 trait EmptyProcessListener extends ProcessListener {
   override def nodeEntered(nodeId: NodeId, context: Context, processMetaData: MetaData): Unit = ()
 
   override def transitionToNextNode(
-      nodeId: NodeId,
-      nextNodeId: NodeId,
+      transition: Transition,
       context: Context,
       processMetaData: MetaData,
-  ): Unit = ()
-
-  override def transitionFromFragmentStartToNodeAfterFragment(
-      nodeId: NodeId,
-      nextNodeId: NodeId,
-      context: Context,
-      processMetaData: MetaData
   ): Unit = ()
 
   override def processingFinishedInNode(

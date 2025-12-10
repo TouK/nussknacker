@@ -5,6 +5,8 @@ import io.circe.Json
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode.LiveDataStorage
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.ProcessListener.Transition
+import pl.touk.nussknacker.engine.api.ProcessListener.Transition._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.livedata.LiveDataUploader.LiveDataUploaderConfig
@@ -36,30 +38,24 @@ class LiveDataCollectingListener private[livedata] (
   ): Unit = ()
 
   override def transitionToNextNode(
-      nodeId: NodeId,
-      nextNodeId: NodeId,
+      transition: Transition,
       context: Context,
       processMetaData: MetaData,
-  ): Unit = transitionToNextNode(nodeId, nextNodeId, context, Instant.now(), isDirectTransition = true)
-
-  override def transitionFromFragmentStartToNodeAfterFragment(
-      nodeId: NodeId,
-      nextNodeId: NodeId,
-      context: Context,
-      processMetaData: MetaData,
-  ): Unit = transitionToNextNode(nodeId, nextNodeId, context, Instant.now(), isDirectTransition = false)
+  ): Unit = transitionToNextNode(transition, context, Instant.now(), isDirectTransition = true)
 
   def transitionToNextNode(
-      nodeId: NodeId,
-      nextNodeId: NodeId,
+      transition: Transition,
       context: Context,
       timestamp: Instant,
       isDirectTransition: Boolean,
   ): Unit = performStorageOperation {
-    _.addLiveDataSample(
-      NodeTransition(nodeId, Some(nextNodeId), isDirectTransition),
-      sampleFromContext(context, timestamp)
-    )
+    val nodeTransition = transition match {
+      case DirectTransition(nodeId, nextNodeId) =>
+        NodeTransition(nodeId, Some(nextNodeId), isDirectTransition = true)
+      case TransitionFromFragmentStartToNodeAfterFragment(fragmentStartNodeId, afterFragmentNodeId) =>
+        NodeTransition(fragmentStartNodeId, Some(afterFragmentNodeId), isDirectTransition = false)
+    }
+    _.addLiveDataSample(nodeTransition, sampleFromContext(context, timestamp))
   }
 
   override def processingFinishedInNode(

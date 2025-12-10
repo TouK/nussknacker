@@ -42,8 +42,11 @@ object CollectedLiveData {
   private implicit val instantEncoder: Encoder[Instant] = Encoder.encodeLong.contramap(_.getEpochSecond)
   private implicit val instantDecoder: Decoder[Instant] = Decoder.decodeLong.map(Instant.ofEpochSecond)
 
-  private implicit val nodeTransitionEncoder: Encoder[NodeTransition] = deriveEncoder
-  private implicit val nodeTransitionDecoder: Decoder[NodeTransition] = deriveDecoder
+  private implicit val nodeTransitionCodec: Codec[NodeTransition] =
+    Codec.forProduct3("sourceNodeId", "destinationNodeId", "isDirectTransition")(
+      (sourceNodeId: NodeId, destinationNodeId: Option[NodeId], isDirectTransition: Option[Boolean]) =>
+        NodeTransition(sourceNodeId, destinationNodeId, isDirectTransition.getOrElse(true)),
+    )(t => (t.sourceNodeId, t.destinationNodeId, Some(t.isDirectTransition)))
 
   private implicit val liveDataSampleEncoder: Encoder[LiveDataSample] = deriveEncoder
   private implicit val liveDataSampleDecoder: Decoder[LiveDataSample] = deriveDecoder

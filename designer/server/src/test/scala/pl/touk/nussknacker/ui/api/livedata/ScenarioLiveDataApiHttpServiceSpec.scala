@@ -9,6 +9,7 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
 import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId}
+import pl.touk.nussknacker.engine.api.ProcessListener.Transition.DirectTransition
 import pl.touk.nussknacker.engine.api.component.ComponentType.Source
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.deployment.{LiveDataPreviewStoredInDesignerJvm, NoLiveDataPreviewSupport}
@@ -119,8 +120,7 @@ class ScenarioLiveDataApiHttpServiceSpec
       // - and the sample has timestamp from 1.5 minutes ago
       // - but it is still taken into account in the totalCount that is returned in the response
       listener.transitionToNextNode(
-        nodeId = NodeId("start"),
-        nextNodeId = NodeId("variable"),
+        transition = DirectTransition(NodeId("start"), NodeId("variable")),
         context = Context(
           ContextId(
             scenarioName = ProcessName("mocked-scenario-id"),
@@ -135,8 +135,7 @@ class ScenarioLiveDataApiHttpServiceSpec
       )
 
       listener.transitionToNextNode(
-        nodeId = NodeId("start"),
-        nextNodeId = NodeId("variable"),
+        transition = DirectTransition(NodeId("start"), NodeId("variable")),
         context = Context(
           ContextId(
             scenarioName = ProcessName("mocked-scenario-id"),

@@ -6,6 +6,10 @@ import cats.syntax.all._
 import pl.touk.nussknacker.engine.Interpreter._
 import pl.touk.nussknacker.engine.RuntimeMode.Test
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.ProcessListener.Transition.{
+  DirectTransition,
+  TransitionFromFragmentStartToNodeAfterFragment
+}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{ComponentUseContext, ServiceExecutionContext}
@@ -54,22 +58,21 @@ private class InterpreterInternal[F[_]: Monad](
     NuExceptionInfo(Some(NodeComponentInfoExtractor.fromCompiledNode(node)), _, ctx)
   }
 
-  private def onTransitionToNextNode(nodeId: NodeId, nextNode: Next, ctx: Context): Unit = {
-    val nextNodeId = nextNode match {
-      case NextNode(BranchEnd(definition)) => definition.joinId
-      case other                           => other.id
-    }
-    listeners.foreach(_.transitionToNextNode(nodeId, NodeId(nextNodeId), ctx, jobData.metaData))
+  private def onDirectTransitionToNextNode(nodeId: NodeId, nextNode: Next, ctx: Context): Unit = {
+    val transition = TransitionFromFragmentStartToNodeAfterFragment(nodeId, nextNodeId(nextNode))
+    listeners.foreach(_.transitionToNextNode(transition, ctx, jobData.metaData))
   }
 
   private def onTransitionFromFragmentStartToNodeAfterFragment(nodeId: NodeId, nextNode: Next, ctx: Context): Unit = {
-    val nextNodeId = nextNode match {
-      case NextNode(BranchEnd(definition)) => definition.joinId
-      case other                           => other.id
+    val transition = TransitionFromFragmentStartToNodeAfterFragment(nodeId, nextNodeId(nextNode))
+    listeners.foreach(_.transitionToNextNode(transition, ctx, jobData.metaData))
+  }
+
+  private def nextNodeId(nextNode: Next): NodeId = {
+    nextNode match {
+      case NextNode(BranchEnd(definition)) => NodeId(definition.joinId)
+      case other                           => NodeId(other.id)
     }
-    listeners.foreach(
-      _.transitionFromFragmentStartToNodeAfterFragment(nodeId, NodeId(nextNodeId), ctx, jobData.metaData)
-    )
   }
 
   private def onProcessingFinishedInNode(nodeId: NodeId, ctx: Context): Unit = {
@@ -266,7 +269,7 @@ private class InterpreterInternal[F[_]: Monad](
   }
 
   private def interpretNext(node: Node, next: Next, ctx: Context): F[List[Result[InterpretationResult]]] = {
-    onTransitionToNextNode(NodeId(node.id), next, ctx)
+    onDirectTransitionToNextNode(NodeId(node.id), next, ctx)
     next match {
       case NextNode(node) =>
         interpret(node, ctx)
