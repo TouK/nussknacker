@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.flink.util.source
 
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.functions.source.SourceFunction
+import org.apache.flink.streaming.api.watermark.Watermark
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.BasicContextInitializer
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkSource
 }
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
-import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
 import java.time.Duration
 import java.util.UUID
@@ -27,7 +26,7 @@ import scala.reflect.ClassTag
   * This source allow to add elements after creation or decide when input stream is finished. It also emit watermark after each added element.
   */
 @nowarn("cat=deprecation")
-class BlockingQueueSource[T](returnType: TypingResult, timestampAssigner: AssignerWithPunctuatedWatermarks[T])
+class BlockingQueueSource[T](returnType: TypingResult, extractTimestampFun: T => Long, maxOutOfOrderness: Duration)
     extends FlinkSource
     with Serializable {
 
@@ -41,8 +40,8 @@ class BlockingQueueSource[T](returnType: TypingResult, timestampAssigner: Assign
 
   private def flinkSourceFunction: SourceFunction[T] = {
     // extracted for serialization purpose
-    val copyOfAssigner = timestampAssigner
-    val copyOfId       = id
+    val copyOfExtractTimestampFun = extractTimestampFun
+    val copyOfId                  = id
     new SourceFunction[T] {
 
       @volatile private var isRunning = true
@@ -54,10 +53,10 @@ class BlockingQueueSource[T](returnType: TypingResult, timestampAssigner: Assign
         while (isRunning) {
           Option(queue.poll(100, TimeUnit.MILLISECONDS)).foreach {
             case Some(element) =>
-              val timestamp = copyOfAssigner.extractTimestamp(element, -1)
+              val timestamp = copyOfExtractTimestampFun(element)
               ctx.collectWithTimestamp(element, timestamp)
 
-              val watermark = copyOfAssigner.checkAndGetNextWatermark(element, timestamp)
+              val watermark = new Watermark(timestamp - maxOutOfOrderness.toMillis)
               ctx.emitWatermark(watermark)
             case None =>
               isRunning = false
@@ -100,10 +99,7 @@ object BlockingQueueSource {
       extractTimestampFun: T => Long,
       maxOutOfOrderness: Duration
   ): BlockingQueueSource[T] = {
-    val assigner = new BoundedOutOfOrdernessPunctuatedExtractor[T](maxOutOfOrderness.toMillis) {
-      override def extractTimestamp(element: T, recordTimestamp: Long): Long = extractTimestampFun(element)
-    }
-    new BlockingQueueSource[T](Typed.typedClass[T], assigner)
+    new BlockingQueueSource[T](Typed.typedClass[T], extractTimestampFun, maxOutOfOrderness)
   }
 
 }
