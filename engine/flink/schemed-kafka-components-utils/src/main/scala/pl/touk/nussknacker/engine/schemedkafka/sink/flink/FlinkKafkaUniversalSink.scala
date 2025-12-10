@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.flink.api.FlinkEngineContextOps._
-import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
+import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.flink.util.keyed
@@ -85,13 +85,9 @@ class FlinkKafkaUniversalSink(
   }
 
   class EncodeAvroRecordFunction(flinkNodeContext: FlinkCustomNodeContext)
-      extends RichMapFunction[ValueWithContext[KeyedValue[AnyRef, AnyRef]], KeyedValue[AnyRef, AnyRef]]
-      with WithExceptionHandler {
+      extends RichMapFunction[ValueWithContext[KeyedValue[AnyRef, AnyRef]], KeyedValue[AnyRef, AnyRef]] {
 
-    private val nodeId = flinkNodeContext.nodeId
-
-    protected override val exceptionHandlerPreparer: RuntimeContext => ExceptionHandler =
-      flinkNodeContext.exceptionHandlerPreparer.narrowToRuntimeCtx
+    @transient private var exceptionHandler: ExceptionHandler = _
 
     @transient private var encodeRecord: Any => AnyRef = _
 
@@ -100,16 +96,27 @@ class FlinkKafkaUniversalSink(
       encodeRecord = schemaSupportDispatcher
         .forSchemaType(schema.getParsedSchema.schemaType())
         .formValueEncoder(schema.getParsedSchema, validationMode)
+      exceptionHandler = flinkNodeContext.exceptionHandlerPreparer.narrowToRuntimeCtx(getRuntimeContext)
     }
 
     override def map(ctx: ValueWithContext[KeyedValue[AnyRef, AnyRef]]): KeyedValue[AnyRef, AnyRef] = {
       ctx.value.mapValue { data =>
         exceptionHandler
-          .handling(Some(NodeComponentInfo(nodeId, ComponentType.Sink, "flinkKafkaAvroSink")), ctx.context) {
+          .handling(
+            Some(NodeComponentInfo(flinkNodeContext.nodeId, ComponentType.Sink, "flinkKafkaAvroSink")),
+            ctx.context
+          ) {
             encodeRecord(data)
           }
           .orNull
       }
+    }
+
+    override def close(): Unit = {
+      if (exceptionHandler != null) {
+        exceptionHandler.close()
+      }
+      super.close()
     }
 
   }

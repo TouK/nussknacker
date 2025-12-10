@@ -8,11 +8,11 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, MethodToInvoke, ParamName, ValueWithContext}
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.api.FlinkEngineContextOps._
-import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, SinkWriterWithExceptionHandler}
+import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{
   BasicFlinkSinkV2,
   FlinkCustomNodeContext,
@@ -54,7 +54,7 @@ class SinkWriterWithExceptionHandlerTest
     flinkMiniClusterWithServices.close()
   }
 
-  test("new source handle exceptions properly when using SinkWriterWithExceptionHandler trait") {
+  test("SinkV2 handles exceptions properly when using ExceptionHandler") {
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("source", "source")
@@ -87,8 +87,9 @@ object CollectSink extends SinkFactory {
     override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): Sink[Integer] = new Sink[Integer] {
 
       override def createWriter(context: WriterInitContext): SinkWriter[Integer] =
-        new SinkWriter[Integer] with SinkWriterWithExceptionHandler[Integer] {
-          override protected val exceptionHandler: ExceptionHandler =
+        new SinkWriter[Integer] {
+
+          private val exceptionHandler: ExceptionHandler =
             flinkNodeContext.exceptionHandlerPreparer.narrowToWriterInitCtx(context)
 
           override def write(element: Integer, context: SinkWriter.Context): Unit = {
@@ -103,6 +104,8 @@ object CollectSink extends SinkFactory {
           }
 
           override def flush(endOfInput: Boolean): Unit = ()
+
+          override def close(): Unit = exceptionHandler.close()
         }
 
       @nowarn("cat=deprecation")
