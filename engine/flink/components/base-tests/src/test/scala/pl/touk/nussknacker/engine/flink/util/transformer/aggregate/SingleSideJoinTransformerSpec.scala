@@ -160,7 +160,7 @@ object SingleSideJoinTransformerSpec {
       ComponentDefinition(
         "start-joined",
         SourceFactory.noParamUnboundedStreamFactory[OneRecord](
-          CollectionSource(joinedRecords, Some(watermarkStrategy), Typed.typedClass[TestRecord])
+          CollectionSource(joinedRecords, Some(watermarkStrategy), Typed.typedClass[OneRecord])
         )
       ) ::
       ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink)) ::
