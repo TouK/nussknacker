@@ -2,49 +2,26 @@ import { persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 
 import type { Reducer } from "../actions/reduxTypes";
+import type { ExpressionLang } from "../components/graph/node-modal/editors/expression/types";
+import type { Prettify } from "../components/graph/node-modal/useNodeTypeDetailsContentLogic";
 
-type SettingsNames =
-    // keep sorted
-    | "assistant.includeScenarioData"
-    | "assistant.showHelp"
-    | "cloud.showIntegrationsCreators"
-    | "debug.dontRenderCountsOnNodes"
-    | "debug.forceDisableModals"
-    | "debug.lightTheme"
-    | "debug.nodesAsJson"
-    | "editor.allowForceSwitch"
-    | "editor.showRangeMessages"
-    | "editor.showResetToDefaultButton"
-    | "node.advancedStickyNotes"
-    | "node.autoApply"
-    | "node.shortCounts"
-    | "node.showAggregateSwitcher"
-    | "node.showFragmentCreator"
-    | "node.showGenerateEndpointButton"
-    | "node.showInputsAndOutputs"
-    | "node.showMockFieldOnEnrichers"
-    | "node.showSendRequestButton"
-    | "scenario.allowQuickCancelDeploy"
-    | "scenario.allowQuickDeploy"
-    | "scenario.allowQuickSave"
-    | "scenario.autoEnableLiveData"
-    | "scenario.liveData.showNodeAnimations"
-    | "scenario.liveData.showTransitionAnimations"
-    | "scenario.showBreadcrumbs"
-    | "toolbar.autoSaveDuringDeployRedeploy"
-    | `editor.${string}.noWrap`
-    | `editor.${string}.showLines`
-    | `survey.${string}.closed`;
+// empty default values, not visible on __settings until set
+type DynamicSettingsNames = `editor.${ExpressionLang}.noWrap` | `editor.${ExpressionLang}.showLines` | `survey.${string}.closed`;
 
-type ExtendRecordValue<T extends Record<string, any>, E> = {
+type DeferedString = string & NonNullable<unknown>;
+type KeysOfEntries<T> = T extends Array<[infer U, boolean]> ? U : never;
+type ExtendRecordValue<T extends Record<string, any>, E> = Prettify<{
     [K in keyof T]: T[K] | E;
-};
+}>;
 
-export type UserSettings = Partial<Record<SettingsNames, boolean>>;
-export type Setting = keyof UserSettings | NonNullable<string>;
+export type UserSettings = Partial<Readonly<Prettify<Record<DynamicSettingsNames, boolean> & ReturnType<typeof getDefaultUserSettings>>>>;
+export type Setting = NonNullable<keyof UserSettings>;
 
-export const getDefaultUserSettings = (initialUserFlags?: UserSettings): UserSettings => {
-    const createFlag = (key: Setting, defaultValue = false): [Setting, boolean] => [key, initialUserFlags?.[key] ?? defaultValue];
+export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean>) => {
+    function createFlag<K extends DynamicSettingsNames | DeferedString>(key: K, defaultValue?: boolean): [K, boolean] {
+        return [key, initialUserFlags?.[key] ?? defaultValue];
+    }
+
     const entries = [
         // keep sorted
         createFlag("assistant.includeScenarioData"),
@@ -77,7 +54,7 @@ export const getDefaultUserSettings = (initialUserFlags?: UserSettings): UserSet
         createFlag("scenario.showBreadcrumbs"),
         createFlag("toolbar.autoSaveDuringDeployRedeploy"),
     ];
-    return Object.fromEntries(entries);
+    return Object.fromEntries(entries) as Readonly<Prettify<Record<KeysOfEntries<typeof entries>, boolean>>>;
 };
 
 const reducer: Reducer<{ defaults: UserSettings; values: ExtendRecordValue<UserSettings, "default"> }> = (

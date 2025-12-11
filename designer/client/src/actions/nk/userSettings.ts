@@ -1,4 +1,4 @@
-import { getUserSettingsValues } from "../../reducers/selectors/userSettings";
+import { userSettings } from "../../reducers/selectors/userSettings";
 import type { Setting, UserSettings } from "../../reducers/userSettings";
 import { getDefaultUserSettings } from "../../reducers/userSettings";
 import type { Action, ThunkAction } from "../reduxTypes";
@@ -19,7 +19,7 @@ function nextIndex<T>(options: T[], selected: T): number {
 
 export function userSettingsRotate(key: Setting, values = ["default", true, false]): ThunkAction {
     return (dispatch, getState) => {
-        const current = getUserSettingsValues(getState(), false)[key];
+        const current = userSettings(getState()).values[key];
         const nextValue = values[nextIndex(values, current)];
         dispatch(userSettingSet(key, nextValue));
     };

@@ -20,7 +20,7 @@ function toNested<T>(entries: [string, T][]) {
 
 function SettingsView() {
     const settings = useAppSelector(getUserSettingsMerged);
-    const rawValues = useAppSelector((state) => getUserSettingsValues(state, true));
+    const rawValues = useAppSelector(getUserSettingsValues);
     const [filter, setFilter] = useState("");
 
     const values = useMemo(() => {
