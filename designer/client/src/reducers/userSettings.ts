@@ -8,6 +8,7 @@ type SettingsNames =
     | "assistant.includeScenarioData"
     | "assistant.showHelp"
     | "cloud.showIntegrationsCreators"
+    | "debug.dontRenderCountsOnNodes"
     | "debug.forceDisableModals"
     | "debug.lightTheme"
     | "debug.nodesAsJson"
@@ -44,11 +45,12 @@ export type Setting = keyof UserSettings | NonNullable<string>;
 
 export const getDefaultUserSettings = (initialUserFlags?: UserSettings): UserSettings => {
     const createFlag = (key: Setting, defaultValue = false): [Setting, boolean] => [key, initialUserFlags?.[key] ?? defaultValue];
-    return Object.fromEntries([
+    const entries = [
         // keep sorted
         createFlag("assistant.includeScenarioData"),
         createFlag("assistant.showHelp", true),
         createFlag("cloud.showIntegrationsCreators"),
+        createFlag("debug.dontRenderCountsOnNodes"),
         createFlag("debug.forceDisableModals"),
         createFlag("debug.lightTheme"),
         createFlag("debug.nodesAsJson"),
@@ -74,7 +76,8 @@ export const getDefaultUserSettings = (initialUserFlags?: UserSettings): UserSet
         createFlag("scenario.liveData.showTransitionAnimations", true),
         createFlag("scenario.showBreadcrumbs"),
         createFlag("toolbar.autoSaveDuringDeployRedeploy"),
-    ]);
+    ];
+    return Object.fromEntries(entries);
 };
 
 const reducer: Reducer<{ defaults: UserSettings; values: ExtendRecordValue<UserSettings, "default"> }> = (

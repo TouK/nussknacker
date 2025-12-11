@@ -427,7 +427,7 @@ export class Graph extends React.Component<Props> {
 
     componentDidUpdate(prevProps: Props): void {
         if (!isEmpty(this.props.processCounts) || !isEmpty(prevProps.processCounts)) {
-            this.updateNodesCounts();
+            this.updateNodesCounts(); // TODO: look here for live data animations lag
         }
         if (this.props.isFragment !== true && prevProps.isFragment !== true) {
             if (this.props.isDraggingOver !== prevProps.isDraggingOver) {
