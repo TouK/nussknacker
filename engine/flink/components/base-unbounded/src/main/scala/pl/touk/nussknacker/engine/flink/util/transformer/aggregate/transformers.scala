@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
-import org.apache.flink.annotation.PublicEvolving
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.windowing.assigners.{EventTimeSessionWindows, TumblingEventTimeWindows}
@@ -10,7 +9,7 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import pl.touk.nussknacker.engine.api.{Context => NkContext, _}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.util.richflink._
@@ -23,8 +22,6 @@ import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.Duration
 
 //TODO: think about merging these with TransformStateFunction and/or PreviousValueFunction
-@PublicEvolving // will be only one version for each method, with explicitUidInStatefulOperators = true
-// in the future - see ExplicitUidInOperatorsCompat for more info
 object transformers {
 
   def slidingTransformer(
@@ -35,7 +32,6 @@ object transformers {
       windowLength: Duration,
       variableName: String,
       emitWhenEventLeft: Boolean,
-      explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
   )(implicit nodeId: NodeId): ContextTransformation = {
     val preserveContext = !emitWhenEventLeft
     ContextTransformation
@@ -67,7 +63,7 @@ object transformers {
           start
             .groupByWithValue(groupBy, groupByParameterName, aggregateBy, preserveContext)
             .process(aggregatorFunction, typeInfos.returnedValueTypeInfo)
-            .setUidWithName(ctx, explicitUidInStatefulOperators)
+            .setUidAndNameToNodeId(ctx.nodeId)
         })
       )
   }
@@ -89,7 +85,6 @@ object transformers {
       windowLength,
       variableName,
       TumblingWindowTrigger.OnEnd,
-      ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators,
       windowOffset
     )
   }
@@ -103,7 +98,6 @@ object transformers {
       windowLength: Duration,
       variableName: String,
       tumblingWindowTrigger: TumblingWindowTrigger,
-      explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean,
       windowOffset: Option[Duration]
   )(implicit nodeId: NodeId): ContextTransformation = {
     val preserveContext = tumblingWindowTrigger == TumblingWindowTrigger.OnEvent
@@ -150,7 +144,7 @@ object transformers {
                     fctx.convertToEngineRuntimeContext
                   )
                 )
-          }).setUidWithName(ctx, explicitUidInStatefulOperators)
+          }).setUidAndNameToNodeId(ctx.nodeId)
         })
       )
   }
@@ -193,7 +187,7 @@ object transformers {
               keyedStream.extendedEventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
             case SessionWindowTrigger.OnEnd =>
               keyedStream.extendedWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger, preserveContext)
-          }).setUidWithName(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
+          }).setUidAndNameToNodeId(ctx.nodeId)
         })
       )
   }

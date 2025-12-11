@@ -38,7 +38,6 @@ case class NkGlobalParameters(
 
 //this is part of global parameters that is parsed with typesafe Config (e.g. from application.conf/model.conf)
 case class ConfigGlobalParameters(
-    explicitUidInStatefulOperators: Option[Boolean],
     // TODO: temporary, until we confirm that IOMonad is not causing problems
     useIOMonadInInterpreter: Option[Boolean],
     forceSyncInterpretationForSyncScenarioPart: Option[Boolean],
@@ -146,9 +145,6 @@ object NkGlobalParameters extends LazyLogging {
 
       def encode(params: ConfigGlobalParameters): Map[String, String] = {
         Map(
-          s"$prefix.explicitUidInStatefulOperators" -> params.explicitUidInStatefulOperators
-            .map(_.toString)
-            .orNull,
           s"$prefix.useIOMonadInInterpreter" -> params.useIOMonadInInterpreter
             .map(_.toString)
             .orNull,
@@ -163,7 +159,6 @@ object NkGlobalParameters extends LazyLogging {
         if (mapContainsConfigGlobalParams) {
           Some(
             ConfigGlobalParameters(
-              explicitUidInStatefulOperators = map.get(s"$prefix.explicitUidInStatefulOperators").map(_.toBoolean),
               useIOMonadInInterpreter = map.get(s"$prefix.useIOMonadInInterpreter").map(_.toBoolean),
               forceSyncInterpretationForSyncScenarioPart =
                 map.get(s"$prefix.forceSyncInterpretationForSyncScenarioPart").map(_.toBoolean)

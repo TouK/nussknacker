@@ -22,7 +22,7 @@ class NkGlobalParametersEncoderTest extends AnyFunSuite with Matchers {
         "aUser",
         Some(1)
       ),
-      configParameters = Some(ConfigGlobalParameters(Some(true), Some(true), Some(true))),
+      configParameters = Some(ConfigGlobalParameters(Some(true), Some(true))),
       additionalInformation = Map("additionalInfoKey" -> "additionalInfoVal")
     )
 

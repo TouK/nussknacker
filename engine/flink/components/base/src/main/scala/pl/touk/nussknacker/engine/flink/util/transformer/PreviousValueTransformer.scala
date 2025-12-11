@@ -8,12 +8,12 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.ReturningType
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.util.richflink.FlinkKeyOperations
 
-case object PreviousValueTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
+case object PreviousValueTransformer extends CustomStreamTransformer {
 
   type Value = AnyRef
 
@@ -26,15 +26,13 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
   ): FlinkCustomStreamTransformation with ReturningType = FlinkCustomStreamTransformation(
     (start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       val valueTypeInfo = TypeInformationDetection.instance.forType[AnyRef](value.returnType)
-      setUidToNodeIdIfNeed(
-        ctx,
-        start
-          .groupBy(key, keyParameterName)(ctx)
-          .flatMap(
-            new PreviousValueFunction(value, ctx.lazyParameterHelper, valueTypeInfo),
-            ctx.valueWithContextInfo.forType(valueTypeInfo)
-          )
-      )
+      start
+        .groupBy(key, keyParameterName)(ctx)
+        .flatMap(
+          new PreviousValueFunction(value, ctx.lazyParameterHelper, valueTypeInfo),
+          ctx.valueWithContextInfo.forType(valueTypeInfo)
+        )
+        .setUidAndNameToNodeId(ctx.nodeId)
     },
     value.returnType
   )

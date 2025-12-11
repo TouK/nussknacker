@@ -24,14 +24,12 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.option.OptionTypeInfo
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyOptions, StringKeyedValue, StringKeyedValueMapper}
-import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{MapAggregator, OptionAggregator}
@@ -48,7 +46,6 @@ class FullOuterJoinTransformer(
     watermarkStrategy: Option[WatermarkStrategy[TimestampedValue[ValueWithContext[AnyRef]]]]
 ) extends CustomStreamTransformer
     with JoinDynamicComponent
-    with ExplicitUidInOperatorsSupport
     with WithExplicitTypesToExtract
     with LazyLogging
     with Serializable {
@@ -201,7 +198,7 @@ class FullOuterJoinTransformer(
         .reduce(_.connectAndMerge(_))
         .keyBy((v: ValueWithContext[StringKeyedValue[AnyRef]]) => v.value.key)
         .process(aggregatorFunction, outputTypeInfo)
-        .setUidWithName(context, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
+        .setUidAndNameToNodeId(context.nodeId)
 
       watermarkStrategy
         .map(new TimestampAssignmentHelper(_)(outputTypeInfo).assignTimestampsAndWatermarks(stream))

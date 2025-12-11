@@ -6,7 +6,7 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkCustomStreamTransformation,
@@ -31,7 +31,7 @@ import scala.concurrent.duration._
   * }
   * ```
   */
-object TransformStateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
+object TransformStateTransformer extends CustomStreamTransformer {
 
   private val groupByParameterName = ParameterName("groupBy")
 
@@ -49,20 +49,18 @@ object TransformStateTransformer extends CustomStreamTransformer with ExplicitUi
       .implementedBy(
         FlinkCustomStreamTransformation { (stream, ctx) =>
           implicit val nctx: FlinkCustomNodeContext = ctx
-          setUidToNodeIdIfNeed(
-            ctx,
-            stream
-              .groupBy(groupBy, groupByParameterName)
-              .process(
-                new TransformStateFunction[String](
-                  ctx.lazyParameterHelper,
-                  transformWhen,
-                  newValue,
-                  stateTimeoutSeconds.seconds
-                ),
-                ctx.valueWithContextInfo.forClass[AnyRef](classOf[String])
-              )
-          )
+          stream
+            .groupBy(groupBy, groupByParameterName)
+            .process(
+              new TransformStateFunction[String](
+                ctx.lazyParameterHelper,
+                transformWhen,
+                newValue,
+                stateTimeoutSeconds.seconds
+              ),
+              ctx.valueWithContextInfo.forClass[AnyRef](classOf[String])
+            )
+            .setUidAndNameToNodeId(ctx.nodeId)
         }
       )
 

@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.api.process.{
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.flink.api.{FlinkEngineContext, RuntimeCtx}
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.WatermarkStrategyUtils
@@ -61,7 +61,6 @@ class FlinkKafkaSource[K, V](
     namingStrategy: NamingStrategy,
     override val watermarkStrategyOptions: WatermarkStrategyOptions
 ) extends FlinkSource
-    with ExplicitUidInOperatorsSupport
     with Serializable
     // These mixins below are for scenario testing mechanism using source-specific test data format
     with FlinkSourceTestSupport[ConsumerRecord[K, V]]
@@ -80,12 +79,9 @@ class FlinkKafkaSource[K, V](
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
-    val streamOfRaw = sourceStream(env, flinkNodeContext)
-    // 1. set UID and override source name
-    val rawSourceWithUid = sourceWithUidAndName(streamOfRaw, flinkNodeContext)
-
-    // 2. initialize Context and compute event time
-    rawSourceWithUid
+    val streamOfRaw = sourceStream(env, flinkNodeContext).setUidAndNameToNodeId(flinkNodeContext.nodeId)
+    // 1. initialize Context and compute event time
+    streamOfRaw
       .flatMap(
         ContextInitializingFunction(
           flinkNodeContext.nodeId,
@@ -98,15 +94,14 @@ class FlinkKafkaSource[K, V](
           flinkNodeContext.asOneOutputContext
         )
       )
-      // 3. assign timestamp and watermarks
+      // 2. assign timestamp and watermarks
       .assignTimestampsAndWatermarks(
         FlinkWatermarkStrategyRuntimeHandler.watermarkStrategy(watermarkStrategyOptions)
       )
-      // 4. unwrap context
+      // 3. unwrap context
       .map((ctxWithEventTime: ContextWithEventTime) => ctxWithEventTime.context, flinkNodeContext.contextTypeInfo)
   }
 
-  @nowarn("cat=deprecation")
   private def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext

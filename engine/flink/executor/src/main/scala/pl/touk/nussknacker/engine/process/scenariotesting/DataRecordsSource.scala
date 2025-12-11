@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.livedata.DataRecord
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinfo.option.OptionTypeInfo
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
@@ -30,17 +30,14 @@ class DataRecordsSource(
     sourceOutputValidationContext: ValidationContext,
     watermarkStrategyOptions: Option[WatermarkStrategyOptions],
 ) extends FlinkSource
-    with BaseFlinkSource
-    with ExplicitUidInOperatorsSupport {
+    with BaseFlinkSource {
 
   override final def contextStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
-    val streamOfRaw =
-      sourceWithUidAndName(fromDataProperHandlingEmptyList(env), flinkNodeContext)
-
-    streamOfRaw
+    fromDataProperHandlingEmptyList(env)
+      .setUidAndNameToNodeId(flinkNodeContext.nodeId)
       .flatMap(
         new DataRecordContextInitializingFunction(
           flinkNodeContext.nodeId,

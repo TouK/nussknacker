@@ -7,7 +7,7 @@ import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamSinkExtension
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
 /**
@@ -35,7 +35,7 @@ trait FlinkSink extends Sink with Serializable {
 /**
   * This is basic Flink sink, which just uses single expression from sink definition
   */
-trait BasicFlinkSink extends FlinkSink with ExplicitUidInOperatorsSupport {
+trait BasicFlinkSink extends FlinkSink {
 
   def typeResult: TypingResult = Unknown
 
@@ -52,15 +52,13 @@ trait BasicFlinkSink extends FlinkSink with ExplicitUidInOperatorsSupport {
       dataStream: DataStream[ValueWithContext[Value]],
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSink[_] =
-    setUidToNodeIdIfNeed(
-      flinkNodeContext,
-      dataStream
-        .map(
-          (k: ValueWithContext[Value]) => k.value,
-          TypeInformationDetection.instance.forType(typeResult).asInstanceOf[TypeInformation[Value]]
-        )
-        .sinkTo(toFlinkSink(flinkNodeContext))
-    )
+    dataStream
+      .map(
+        (k: ValueWithContext[Value]) => k.value,
+        TypeInformationDetection.instance.forType(typeResult).asInstanceOf[TypeInformation[Value]]
+      )
+      .sinkTo(toFlinkSink(flinkNodeContext))
+      .setUidAndNameToNodeId(flinkNodeContext.nodeId)
 
   def valueFunction(
       helper: FlinkLazyParameterFunctionHelper

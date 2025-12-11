@@ -1,13 +1,10 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode, UnboundedStreamComponent}
-import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
-import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes.SetOf
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
@@ -20,11 +17,7 @@ object sampleTransformers {
    *
    * You should define `#AGG` global variable, because it is used in editors picked for `aggregateBy` parameter.
    */
-  object SlidingAggregateTransformerV2
-      extends CustomStreamTransformer
-      with UnboundedStreamComponent
-      with ExplicitUidInOperatorsSupport
-      with Serializable {
+  object SlidingAggregateTransformerV2 extends CustomStreamTransformer with UnboundedStreamComponent with Serializable {
 
     private val groupByParameterName = ParameterName("groupBy")
 
@@ -68,8 +61,7 @@ object sampleTransformers {
         aggregator,
         windowDuration,
         variableName,
-        emitWhenEventLeft,
-        explicitUidInStatefulOperators
+        emitWhenEventLeft
       )
     }
 
@@ -83,7 +75,6 @@ object sampleTransformers {
   class TumblingAggregateTransformer(config: AggregateWindowsConfig)
       extends CustomStreamTransformer
       with UnboundedStreamComponent
-      with ExplicitUidInOperatorsSupport
       with Serializable {
 
     private val groupByParameterName = ParameterName("groupBy")
@@ -132,7 +123,6 @@ object sampleTransformers {
         windowDuration,
         variableName,
         trigger,
-        explicitUidInStatefulOperators,
         maybeOffset
       )
     }
@@ -147,7 +137,6 @@ object sampleTransformers {
   object SessionWindowAggregateTransformer
       extends CustomStreamTransformer
       with UnboundedStreamComponent
-      with ExplicitUidInOperatorsSupport
       with Serializable {
 
     private val groupByParameterName = ParameterName("groupBy")
