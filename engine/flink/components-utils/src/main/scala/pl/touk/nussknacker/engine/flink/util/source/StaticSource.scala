@@ -1,47 +1,57 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
-import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
-import org.apache.flink.streaming.api.watermark
+import org.apache.flink.api.connector.source.{Boundedness, ReaderOutput, SourceReader, SourceReaderContext}
+import org.apache.flink.core.io.InputStatus
 
-import scala.annotation.nowarn
+object StaticSource extends SingleSplitSource[String] {
 
-@nowarn("cat=deprecation")
-object StaticSource extends SourceFunction[String] {
-
-  @volatile var buffer = List[Timer]()
+  @volatile var buffer = List[Command]()
 
   @volatile var running = true
 
-  override def cancel(): Unit = {
-    buffer = List()
-    running = false
-  }
+  override def getBoundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED
 
-  override def run(ctx: SourceContext[String]) = {
-    while (running) {
-      synchronized {
-        buffer.reverse.foreach {
-          case Watermark(time) =>
-            ctx.emitWatermark(new watermark.Watermark(time))
-          case a: Data =>
-            ctx.collectWithTimestamp(a.value, a.time)
+  override def createReader(readerContext: SourceReaderContext): SourceReader[String, SingleSplitSource.SingleSplit] =
+    new SingleSplitSource.Reader[String] {
+
+      override def pollNext(output: ReaderOutput[String]): InputStatus = {
+        if (running) {
+          synchronized {
+            buffer.reverse.foreach {
+              case EmitWatermark(time) =>
+                output.emitWatermark(new org.apache.flink.api.common.eventtime.Watermark(time))
+              case a: CollectData =>
+                output.collect(a.value, a.time)
+            }
+            buffer = List()
+          }
+          InputStatus.NOTHING_AVAILABLE
+        } else {
+          InputStatus.END_OF_INPUT
         }
-        buffer = List()
       }
-      Thread.sleep(100)
-    }
-  }
 
-  def add(timer: Timer) = {
+      override def start(): Unit = {
+        running = true
+      }
+
+      override def close(): Unit = {
+        buffer = Nil
+        running = false
+      }
+
+    }
+
+  def add(command: Command): Unit = {
     synchronized {
-      buffer = timer :: buffer
+      buffer = command :: buffer
     }
   }
 
-  sealed trait Timer
+  sealed trait Command
 
-  case class Watermark(time: Long) extends Timer
+  case class EmitWatermark(time: Long) extends Command
 
-  case class Data(time: Long, value: String) extends Timer
+  case class CollectData(time: Long, value: String) extends Command
+
 }

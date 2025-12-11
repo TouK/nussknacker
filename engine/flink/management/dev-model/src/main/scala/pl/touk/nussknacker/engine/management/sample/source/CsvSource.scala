@@ -3,20 +3,19 @@ package pl.touk.nussknacker.engine.management.sample.source
 import io.circe.Json
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
+import org.apache.flink.api.connector.source._
+import org.apache.flink.core.io.InputStatus
+import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import pl.touk.nussknacker.engine.api.{CirceUtil, Context, VariableConstants}
 import pl.touk.nussknacker.engine.api.livedata.{DataRecord, DataRecords, LiveDataProvider}
 import pl.touk.nussknacker.engine.api.process.TestDataGenerator
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process._
-
-import scala.annotation.nowarn
+import pl.touk.nussknacker.engine.flink.util.source.SingleSplitSource
+import pl.touk.nussknacker.engine.flink.util.source.SingleSplitSource.SingleSplit
 
 class CsvSource
     extends FlinkSource
@@ -30,8 +29,14 @@ class CsvSource
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
-    sourceStream(env)
-      .setUidAndNameToNodeId(flinkNodeContext.nodeId)
+    env
+      .fromSource(
+        flinkSource,
+        WatermarkStrategy.noWatermarks(),
+        flinkNodeContext.nodeId.id,
+        TypeInformation.of(classOf[Array[String]])
+      )
+      .uid(flinkNodeContext.nodeId.id)
       .map(
         new FlinkContextInitializingFunction(
           contextInitializer,
@@ -42,18 +47,16 @@ class CsvSource
       )
   }
 
-  @nowarn("cat=deprecation")
-  private def sourceStream(
-      env: StreamExecutionEnvironment,
-  ): DataStreamSource[Array[String]] = {
-    env.addSource(
-      new SourceFunction[Array[String]] {
-        override def cancel(): Unit = {}
+  private def flinkSource: Source[Array[String], _, _] = {
+    new SingleSplitSource[Array[String]] {
+      override def getBoundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED
 
-        override def run(ctx: SourceContext[Array[String]]): Unit = {}
-      },
-      TypeInformation.of(classOf[Array[String]])
-    )
+      override def createReader(readerContext: SourceReaderContext): SourceReader[Array[String], SingleSplit] =
+        new SingleSplitSource.Reader[Array[String]] {
+          override def pollNext(output: ReaderOutput[Array[String]]): InputStatus = InputStatus.END_OF_INPUT
+        }
+
+    }
   }
 
   override def fetchLiveData(maxNumberOfRecords: Int): DataRecords = DataRecords(

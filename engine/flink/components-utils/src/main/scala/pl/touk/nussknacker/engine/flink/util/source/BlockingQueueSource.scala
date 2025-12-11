@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
+import org.apache.flink.api.connector.source.{Boundedness, ReaderOutput, SourceReader, SourceReaderContext}
+import org.apache.flink.core.io.InputStatus
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.api.watermark.Watermark
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.BasicContextInitializer
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -13,11 +14,11 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkSource
 }
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.flink.util.source.BlockingQueueSource.BlockingQueueFlinkSource
 
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue, TimeUnit}
-import scala.annotation.nowarn
 import scala.collection.concurrent.TrieMap
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
@@ -25,7 +26,6 @@ import scala.reflect.ClassTag
 /**
   * This source allow to add elements after creation or decide when input stream is finished. It also emit watermark after each added element.
   */
-@nowarn("cat=deprecation")
 class BlockingQueueSource[T](returnType: TypingResult, extractTimestampFun: T => Long, maxOutOfOrderness: Duration)
     extends FlinkSource
     with Serializable {
@@ -38,44 +38,17 @@ class BlockingQueueSource[T](returnType: TypingResult, extractTimestampFun: T =>
 
   private val contextInitializer = new BasicContextInitializer[T](returnType)
 
-  private def flinkSourceFunction: SourceFunction[T] = {
-    // extracted for serialization purpose
-    val copyOfExtractTimestampFun = extractTimestampFun
-    val copyOfId                  = id
-    new SourceFunction[T] {
-
-      @volatile private var isRunning = true
-
-      private val id = copyOfId
-
-      override def run(ctx: SourceFunction.SourceContext[T]): Unit = {
-        val queue = BlockingQueueSource.getForId[T](id)
-        while (isRunning) {
-          Option(queue.poll(100, TimeUnit.MILLISECONDS)).foreach {
-            case Some(element) =>
-              val timestamp = copyOfExtractTimestampFun(element)
-              ctx.collectWithTimestamp(element, timestamp)
-
-              val watermark = new Watermark(timestamp - maxOutOfOrderness.toMillis)
-              ctx.emitWatermark(watermark)
-            case None =>
-              isRunning = false
-          }
-        }
-      }
-
-      override def cancel(): Unit = isRunning = false
-
-    }
-  }
-
   override def contextStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
     env
-      .addSource(flinkSourceFunction, TypeInformationDetection.instance.forType[T](returnType))
-      .name(s"${flinkNodeContext.metaData.name}-${flinkNodeContext.nodeId}-source")
+      .fromSource(
+        new BlockingQueueFlinkSource[T](id, extractTimestampFun, maxOutOfOrderness),
+        WatermarkStrategy.noWatermarks(),
+        s"${flinkNodeContext.metaData.name}-${flinkNodeContext.nodeId}-source",
+        TypeInformationDetection.instance.forType[T](returnType)
+      )
       .map(
         new FlinkContextInitializingFunction(
           contextInitializer,
@@ -94,6 +67,37 @@ object BlockingQueueSource {
 
   private def getForId[T](id: String): BlockingQueue[Option[T]] =
     queueById.getOrElseUpdate(id, new LinkedBlockingQueue).asInstanceOf[BlockingQueue[Option[T]]]
+
+  private class BlockingQueueFlinkSource[T](id: String, extractTimestampFun: T => Long, maxOutOfOrderness: Duration)
+      extends SingleSplitSource[T] {
+
+    override def getBoundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED
+
+    override def createReader(readerContext: SourceReaderContext): SourceReader[T, SingleSplitSource.SingleSplit] =
+      new SingleSplitSource.Reader[T] {
+
+        private val queue = BlockingQueueSource.getForId[T](id)
+
+        override def pollNext(output: ReaderOutput[T]): InputStatus = {
+          Option(queue.poll(100, TimeUnit.MILLISECONDS)) match {
+            case Some(Some(element)) =>
+              val timestamp = extractTimestampFun(element)
+              output.collect(element, timestamp)
+
+              val watermark =
+                new org.apache.flink.api.common.eventtime.Watermark(timestamp - maxOutOfOrderness.toMillis)
+              output.emitWatermark(watermark)
+              InputStatus.MORE_AVAILABLE
+            case Some(None) =>
+              InputStatus.END_OF_INPUT
+            case None =>
+              InputStatus.NOTHING_AVAILABLE
+          }
+        }
+
+      }
+
+  }
 
   def create[T: ClassTag](
       extractTimestampFun: T => Long,
