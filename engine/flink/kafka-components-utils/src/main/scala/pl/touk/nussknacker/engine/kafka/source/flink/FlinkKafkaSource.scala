@@ -102,6 +102,7 @@ class FlinkKafkaSource[K, V](
       .map((ctxWithEventTime: ContextWithEventTime) => ctxWithEventTime.context, flinkNodeContext.contextTypeInfo)
   }
 
+  @nowarn("cat=deprecation")
   private def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
