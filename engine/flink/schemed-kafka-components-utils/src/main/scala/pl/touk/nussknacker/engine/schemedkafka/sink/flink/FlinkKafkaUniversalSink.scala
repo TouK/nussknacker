@@ -98,7 +98,7 @@ class FlinkKafkaUniversalSink(
       ctx.value.mapValue { data =>
         exceptionHandler
           .handling(
-            Some(NodeComponentInfo(flinkNodeContext.nodeId, ComponentType.Sink, "flinkKafkaAvroSink")),
+            Some(NodeComponentInfo(flinkNodeContext.nodeId, ComponentType.Sink, "flinkKafkaUniversalSink")),
             ctx.context
           ) {
             encodeRecord(data)

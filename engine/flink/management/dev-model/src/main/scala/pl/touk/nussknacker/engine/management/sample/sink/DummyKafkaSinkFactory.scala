@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.flink.api.process.{
 }
 
 import javax.validation.constraints.NotBlank
-import scala.annotation.nowarn
 
 object DummyKafkaSinkFactory extends SinkFactory {
 
@@ -32,7 +31,6 @@ object DummyKafkaSinkFactory extends SinkFactory {
     ): FlatMapFunction[Context, ValueWithContext[Value]] =
       helper.lazyMapFunction(value)
 
-    @nowarn("cat=deprecation")
     override def toFlinkSink(flinkNodeContext: FlinkCustomNodeContext): SinkV2[Value] =
       new DiscardingSink[AnyRef]
   }
