@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStreamOperator}
+import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextInitializer, Source, SourceTestSupport}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 
 /**
   * Source with methods specific for Flink
@@ -46,8 +46,7 @@ trait StandardFlinkSource[Raw]
     extends FlinkSource
     with BaseFlinkSource
     with CustomizableContextInitializerSource[Raw]
-    with CustomizableWatermarkStrategySource[Raw]
-    with ExplicitUidInOperatorsSupport {
+    with CustomizableWatermarkStrategySource[Raw] {
 
   protected def sourceStream(
       env: StreamExecutionEnvironment,
@@ -63,7 +62,7 @@ trait StandardFlinkSource[Raw]
     // 2. assign timestamp and watermark policy
     val rawSourceWithUidAndTimestamp = sourceWithUidAndTimestamp(
       streamOfRaw,
-      flinkNodeContext,
+      flinkNodeContext.nodeId,
       watermarkStrategy,
     )
 
@@ -81,21 +80,14 @@ trait StandardFlinkSource[Raw]
 
 }
 
-trait BaseFlinkSource { this: ExplicitUidInOperatorsSupport =>
+trait BaseFlinkSource {
 
   def sourceWithUidAndTimestamp[T](
       streamOfRaw: DataStream[T],
-      flinkNodeContext: FlinkCustomNodeContext,
+      nodeId: NodeId,
       watermarkStrategy: Option[WatermarkStrategy[T]]
   ): DataStream[T] = {
-    val rawSourceWithUid = streamOfRaw match {
-      case singleOut: SingleOutputStreamOperator[_] =>
-        setUidToNodeIdIfNeed[T](
-          flinkNodeContext,
-          singleOut.name(flinkNodeContext.nodeId.id)
-        )
-      case _ => streamOfRaw
-    }
+    val rawSourceWithUid = streamOfRaw.setUidAndNameToNodeId(nodeId)
     watermarkStrategy
       .map(rawSourceWithUid.assignTimestampsAndWatermarks)
       .getOrElse(rawSourceWithUid)

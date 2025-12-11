@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
@@ -27,7 +27,6 @@ import pl.touk.nussknacker.engine.flink.util.keyed.{
   StringKeyedValueMapper,
   StringKeyOnlyMapper
 }
-import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -42,7 +41,6 @@ class SingleSideJoinTransformer(
     watermarkStrategy: Option[WatermarkStrategy[TimestampedValue[ValueWithContext[AnyRef]]]]
 ) extends CustomStreamTransformer
     with JoinDynamicComponent
-    with ExplicitUidInOperatorsSupport
     with WithExplicitTypesToExtract
     with LazyLogging
     with Serializable {
@@ -182,7 +180,7 @@ class SingleSideJoinTransformer(
           )
           // TODO: Add TypeInfo, it's probably outputType from AggregatorFunctionMixin?
           .process(aggregatorFunction)
-          .setUidWithName(context, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
+          .setUidAndNameToNodeId(context.nodeId)
 
         watermarkStrategy
           .map(

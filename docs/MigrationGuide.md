@@ -41,6 +41,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#8523](https://github.com/TouK/nussknacker/pull/8523) Kafka components configuration changes:
   * Configuration of Kafka components via legacy `modelConfig.kafka` entry is not supported for Flink engine. Use `modelConfig.components.kafka.config` instead.
   * Configuration of Kafka bootstrap servers via legacy `kafkaAddress` is not supported anymore. Use `kafkaProperties."bootstrap.servers"` instead
+* [#8788](https://github.com/TouK/nussknacker/pull/8788) `globalParameters.explicitUidInStatefulOperators` option was removed - 
+  now we always set uid to node id in stateful operators
 
 ### REST API changes
 
@@ -189,6 +191,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `BoundedOutOfOrdernessPunctuatedExtractor` were removed - use `WatermarkStrategyUtils.afterEachEvent` instead
     * `BoundedOutOfOrderPreviousElementAssigner` was removed - use custom `WatermarkStrategy` instead
   * `BasicFlinkSink.toFlinkFunction` was replaced by `toFlinkSink`; the new method returns `sink2.Sink` instead of `SinkFunction`
+* [#8788](https://github.com/TouK/nussknacker/pull/8788) `ExplicitUidInOperatorsSupport` trait was removed. 
+  Use `setUidAndNameToNodeId` extension method available in `DataStreamImplicits` instead 
 
 ### Other changes
 

@@ -10,7 +10,7 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
 
 import java.time.Duration
@@ -19,7 +19,7 @@ import javax.annotation.Nullable
 
 object DelayTransformer extends DelayTransformer
 
-class DelayTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport with Serializable {
+class DelayTransformer extends CustomStreamTransformer with Serializable {
 
   import pl.touk.nussknacker.engine.flink.util.richflink._
 
@@ -45,14 +45,12 @@ class DelayTransformer extends CustomStreamTransformer with ExplicitUidInOperato
               )
               .keyBy((v: ValueWithContext[String]) => v.value)
           }
-      setUidToNodeIdIfNeed(
-        ctx,
-        keyedStream
-          .process(
-            prepareDelayFunction(ctx, delay),
-            ctx.valueWithContextInfo.forNull[AnyRef]
-          )
-      )
+      keyedStream
+        .process(
+          prepareDelayFunction(ctx, delay),
+          ctx.valueWithContextInfo.forNull[AnyRef]
+        )
+        .setUidAndNameToNodeId(ctx.nodeId)
     }
 
   protected def defaultKey(ctx: Context): String = ""

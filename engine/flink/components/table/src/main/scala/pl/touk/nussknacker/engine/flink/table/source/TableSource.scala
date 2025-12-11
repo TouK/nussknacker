@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.livedata.{DataRecord, DataRecords, LiveDat
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{
   CustomizableContextInitializerSource,
   FlinkCustomNodeContext,
@@ -49,7 +49,6 @@ class TableSource(
     environmentForTestingPurposes: StreamTableEnvironment,
     override val watermarkStrategyOptions: WatermarkStrategyOptions
 ) extends FlinkSource
-    with ExplicitUidInOperatorsSupport
     with Serializable
     // These mixins below are for scenario testing mechanism using source-specific test data format
     with FlinkSourceTestSupport[Row]
@@ -81,7 +80,7 @@ class TableSource(
       }
       .getOrElse(selectQuery)
 
-    val streamOfRow = sourceWithUidAndName(tableEnv.toDataStream(finalQuery), flinkNodeContext)
+    val streamOfRow = tableEnv.toDataStream(finalQuery).setUidAndNameToNodeId(flinkNodeContext.nodeId)
 
     streamOfRow
       .flatMap(

@@ -31,8 +31,8 @@ import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordPars
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType, TypedMap}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
@@ -241,27 +241,25 @@ object SampleNodes {
 
   }
 
-  object StateCustomNode extends CustomStreamTransformer with ExplicitUidInOperatorsSupport with Serializable {
+  object StateCustomNode extends CustomStreamTransformer with Serializable {
 
     @MethodToInvoke(returnType = classOf[SimpleRecordWithPreviousValue])
     def execute(
         @ParamName("stringVal") stringVal: String,
         @ParamName("groupBy") groupBy: LazyParameter[String]
     )(implicit nodeId: NodeId, metaData: MetaData, componentUseContext: ComponentUseContext) =
-      FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
-        setUidToNodeIdIfNeed(
-          context,
-          start
-            .flatMap(context.lazyParameterHelper.lazyMapFunction(groupBy))
-            .keyBy((v: ValueWithContext[String]) => v.value)
-            .mapWithState[ValueWithContext[AnyRef], Long] {
-              case (SimpleFromValueWithContext(ctx, sr), Some(oldState)) =>
-                (ValueWithContext(SimpleRecordWithPreviousValue(sr, oldState, stringVal), ctx), Some(sr.value1))
-              case (SimpleFromValueWithContext(ctx, sr), None) =>
-                (ValueWithContext(SimpleRecordWithPreviousValue(sr, 0, stringVal), ctx), Some(sr.value1))
-            }(context.valueWithContextInfo.forUnknown, TypeInformation.of(classOf[Long]))
-        )
-      })
+      FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) =>
+        start
+          .flatMap(context.lazyParameterHelper.lazyMapFunction(groupBy))
+          .keyBy((v: ValueWithContext[String]) => v.value)
+          .mapWithState[ValueWithContext[AnyRef], Long] {
+            case (SimpleFromValueWithContext(ctx, sr), Some(oldState)) =>
+              (ValueWithContext(SimpleRecordWithPreviousValue(sr, oldState, stringVal), ctx), Some(sr.value1))
+            case (SimpleFromValueWithContext(ctx, sr), None) =>
+              (ValueWithContext(SimpleRecordWithPreviousValue(sr, 0, stringVal), ctx), Some(sr.value1))
+          }(context.valueWithContextInfo.forUnknown, TypeInformation.of(classOf[Long]))
+          .setUidAndNameToNodeId(nodeId)
+      )
 
     object SimpleFromValueWithContext {
       def unapply(vwc: ValueWithContext[_]) = Some((vwc.context, vwc.context.apply[SimpleRecord]("input")))

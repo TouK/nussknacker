@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.api.context.{
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
@@ -41,8 +40,7 @@ class UnionWithMemoTransformer(
     ]
 ) extends CustomStreamTransformer
     with UnboundedStreamComponent
-    with Serializable
-    with ExplicitUidInOperatorsSupport {
+    with Serializable {
 
   val KeyField = "key"
 
@@ -117,12 +115,11 @@ class UnionWithMemoTransformer(
               .map(new TimestampAssignmentHelper(_)(processedTypeInfo).assignTimestampsAndWatermarks(connectedStream))
               .getOrElse(connectedStream)
 
-            setUidToNodeIdIfNeed(
-              context,
-              afterOptionalAssigner
-                .keyBy((v: ValueWithContext[KeyedValue[String, util.Map[String, AnyRef]]]) => v.value.key)
-                .process(new UnionMemoFunction(stateTimeout, mapTypeInfo), returnTypeInfo)
-            ).asInstanceOf[SingleOutputStreamOperator[ValueWithContext[AnyRef]]]
+            afterOptionalAssigner
+              .keyBy((v: ValueWithContext[KeyedValue[String, util.Map[String, AnyRef]]]) => v.value.key)
+              .process(new UnionMemoFunction(stateTimeout, mapTypeInfo), returnTypeInfo)
+              .setUidAndNameToNodeId(context.nodeId)
+              .asInstanceOf[SingleOutputStreamOperator[ValueWithContext[AnyRef]]]
           }
 
         }

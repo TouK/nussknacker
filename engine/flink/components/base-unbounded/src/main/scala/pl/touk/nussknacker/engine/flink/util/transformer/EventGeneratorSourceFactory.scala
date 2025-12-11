@@ -28,7 +28,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler.ContextWithEventTime
@@ -153,7 +153,6 @@ object EventGeneratorSourceFactory
     val extractedWatermarkStrategyOptions = extractWatermarkStrategyOptions(params)
 
     new FlinkSource
-      with ExplicitUidInOperatorsSupport
       with ReturningType
       with FlinkSourceTestSupport[AnyRef]
       with TestDataGenerator
@@ -177,11 +176,9 @@ object EventGeneratorSourceFactory
       ): DataStream[Context] = {
         // Without this local variable, flatMap function is not serializable
         val localCount = count
-        sourceWithUidAndName(
-          env
-            .addSource(new PeriodicFunction(schedule)),
-          flinkNodeContext
-        )
+        env
+          .addSource(new PeriodicFunction(schedule))
+          .setUidAndNameToNodeId(flinkNodeContext.nodeId)
           .flatMap(
             (_: Unit, out: Collector[Boolean]) => {
               // This 'true' is a dummy value. It has to exist for each event, but its value is completely ignored.

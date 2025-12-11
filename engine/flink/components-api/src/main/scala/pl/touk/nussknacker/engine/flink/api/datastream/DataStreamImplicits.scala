@@ -1,16 +1,18 @@
 package pl.touk.nussknacker.engine.flink.api.datastream
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
-import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStreamOperator}
+import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.functions.co.CoMapFunction
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 
 import scala.annotation.nowarn
+import scala.language.higherKinds
 
-object DataStreamImplicits {
+object DataStreamImplicits extends LazyLogging {
 
   implicit class DataStreamWithContextExtension(stream: DataStream[Context]) {
 
@@ -25,10 +27,12 @@ object DataStreamImplicits {
 
   }
 
-  implicit class DataStreamExtension[T <: AnyRef](stream: DataStream[T]) {
+  implicit class DataStreamExtension[T](stream: DataStream[T]) {
 
     @nowarn("cat=deprecation")
-    def mapWithState[R: TypeInformation, S: TypeInformation](fun: (T, Option[S]) => (R, Option[S])): DataStream[R] = {
+    def mapWithState[R: TypeInformation, S: TypeInformation](
+        fun: (T, Option[S]) => (R, Option[S])
+    ): SingleOutputStreamOperator[R] = {
       val cleanFun                          = stream.getExecutionEnvironment.clean(fun)
       val stateTypeInfo: TypeInformation[S] = implicitly[TypeInformation[S]]
       val serializer: TypeSerializer[S]     = stateTypeInfo.createSerializer(stream.getExecutionConfig)
@@ -53,6 +57,26 @@ object DataStreamImplicits {
           override def map2(value: T): T = value
         }
       )
+
+    def setUidAndNameToNodeId(nodeId: NodeId): DataStream[T] =
+      stream.setUidAndName(nodeId.id)
+
+    def setUidAndName(id: String): DataStream[T] = {
+      val transformation = stream.getTransformation
+      transformation.setUid(id)
+      transformation.setName(id)
+      stream
+    }
+
+  }
+
+  implicit class DataStreamSinkExtension[T](dataStream: DataStreamSink[T]) {
+
+    def setUidAndNameToNodeId(nodeId: NodeId): DataStreamSink[T] =
+      dataStream.setUidAndName(nodeId.id)
+
+    def setUidAndName(id: String): DataStreamSink[T] =
+      dataStream.uid(id).name(id)
 
   }
 

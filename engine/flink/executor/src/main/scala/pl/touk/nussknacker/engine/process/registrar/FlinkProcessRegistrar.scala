@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.process.registrar
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.connector.sink2.WriterInitContext
 import org.apache.flink.streaming.api.datastream.{AsyncDataStream, DataStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -17,9 +16,10 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.FlinkScenarioCompilationDependencies
-import pl.touk.nussknacker.engine.flink.api.{FlinkEngineContext, NkGlobalParameters, RuntimeCtx, WriterInitCtx}
+import pl.touk.nussknacker.engine.flink.api.{FlinkEngineContext, NkGlobalParameters, RuntimeCtx}
 import pl.touk.nussknacker.engine.flink.api.FlinkEngineContextOps._
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.graph.node.{BranchEndDefinition, NodeData}
@@ -355,7 +355,7 @@ class FlinkProcessRegistrar(
       val shouldUseAsyncInterpretation =
         AsyncInterpretationDeterminer(configParameters, asyncExecutionContextPreparer).determine(node, streamMetaData)
 
-      val resultStream: SingleOutputStreamOperator[InterpretationResult] = if (shouldUseAsyncInterpretation) {
+      val resultStream: DataStream[InterpretationResult] = if (shouldUseAsyncInterpretation) {
         val asyncFunction = new AsyncInterpretationFunction(
           compilerDataForProcessPart(Some(part)),
           node,
@@ -363,18 +363,15 @@ class FlinkProcessRegistrar(
           asyncExecutionContextPreparer,
           useIOMonad
         )
-        ExplicitUidInOperatorsSupport.setUidIfNeedJava[InterpretationResult](
-          ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters),
-          node.id + "-$async"
-        )(
-          AsyncDataStream.orderedWait(
+        AsyncDataStream
+          .orderedWait(
             stream,
             asyncFunction,
             compilerData.processTimeout.toMillis,
             TimeUnit.MILLISECONDS,
             asyncExecutionContextPreparer.bufferSize
           )
-        )
+          .setUidAndName(node.id + "-$async")
       } else {
         val ti = InterpretationResultTypeInformation.create(outputContexts)
         stream.flatMap(
@@ -388,8 +385,11 @@ class FlinkProcessRegistrar(
         )
       }
 
+      resultStream.getTransformation.setName(
+        interpretationOperatorName(metaData, node, name, shouldUseAsyncInterpretation)
+      )
+
       resultStream
-        .name(interpretationOperatorName(metaData, node, name, shouldUseAsyncInterpretation))
         .process(new SplitFunction(outputContexts), TypeInformation.of(classOf[Unit]))
     }
 
