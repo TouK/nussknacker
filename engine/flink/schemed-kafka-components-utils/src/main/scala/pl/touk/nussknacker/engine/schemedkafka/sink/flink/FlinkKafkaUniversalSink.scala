@@ -2,15 +2,14 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
-import org.apache.flink.api.common.functions.{OpenContext, RichMapFunction, RuntimeContext}
+import org.apache.flink.api.common.functions.{OpenContext, RichMapFunction}
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
+import org.apache.flink.api.connector.sink2.Sink
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
-import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.flink.api.FlinkEngineContextOps._
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
@@ -18,15 +17,12 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, Fli
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.flink.util.keyed
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValueMapper, KeyOptions}
-import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsConfig, PartitionByKeyFlinkKafkaSink}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
 import pl.touk.nussknacker.engine.util.KeyedValue
 
-import scala.annotation.nowarn
-
 class FlinkKafkaUniversalSink(
-    preparedTopic: PreparedKafkaTopic[TopicName.ForSink],
     key: LazyParameter[AnyRef],
     keyParameterName: ParameterName,
     value: LazyParameter[AnyRef],
@@ -59,7 +55,7 @@ class FlinkKafkaUniversalSink(
     dataStream
       .map(new EncodeAvroRecordFunction(flinkNodeContext), typeInfo)
       .filter(_.value != null)
-      .addSink(toFlinkFunction)
+      .sinkTo(toFlinkSink)
   }
 
   def prepareValue(
@@ -79,9 +75,8 @@ class FlinkKafkaUniversalSink(
     )
   }
 
-  @nowarn("cat=deprecation")
-  private def toFlinkFunction: SinkFunction[KeyedValue[AnyRef, AnyRef]] = {
-    PartitionByKeyFlinkKafkaProducer(kafkaComponentsConfig, preparedTopic.prepared, serializationSchema, clientId)
+  private def toFlinkSink: Sink[KeyedValue[AnyRef, AnyRef]] = {
+    PartitionByKeyFlinkKafkaSink(kafkaComponentsConfig, serializationSchema, clientId)
   }
 
   class EncodeAvroRecordFunction(flinkNodeContext: FlinkCustomNodeContext)
@@ -102,7 +97,10 @@ class FlinkKafkaUniversalSink(
     override def map(ctx: ValueWithContext[KeyedValue[AnyRef, AnyRef]]): KeyedValue[AnyRef, AnyRef] = {
       ctx.value.mapValue { data =>
         exceptionHandler
-          .handling(Some(NodeComponentInfo(flinkNodeContext.nodeId, ComponentType.Sink, "flinkKafkaAvroSink")), ctx.context) {
+          .handling(
+            Some(NodeComponentInfo(flinkNodeContext.nodeId, ComponentType.Sink, "flinkKafkaUniversalSink")),
+            ctx.context
+          ) {
             encodeRecord(data)
           }
           .orNull
@@ -115,6 +113,7 @@ class FlinkKafkaUniversalSink(
       }
       super.close()
     }
+
   }
 
 }

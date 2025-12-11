@@ -985,8 +985,8 @@ lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" % "flink-connector-kafka" % flinkConnectorKafkaV,
+        "org.apache.flink" % "flink-connector-base"  % flinkV     % Provided,
         "org.apache.flink" % "flink-streaming-java"  % flinkV     % Provided,
-        "org.apache.flink" % "flink-connector-base"  % flinkV     % Test,
         "org.scalatest"   %% "scalatest"             % scalaTestV % Test
       )
     }

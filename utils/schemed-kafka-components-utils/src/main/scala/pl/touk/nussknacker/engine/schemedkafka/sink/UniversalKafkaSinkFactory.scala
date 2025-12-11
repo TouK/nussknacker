@@ -403,7 +403,6 @@ class UniversalKafkaSinkFactory(
     }
 
     implProvider.createSink(
-      preparedTopic,
       key,
       sinkKeyParamName,
       valueLazyParam,

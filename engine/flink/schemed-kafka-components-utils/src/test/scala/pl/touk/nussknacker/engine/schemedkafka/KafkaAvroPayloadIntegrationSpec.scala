@@ -256,7 +256,7 @@ class KafkaAvroPayloadIntegrationSpec extends AnyFunSuite with FlinkKafkaAvroSpe
           val espExceptionInfo = RecordingExceptionConsumer.exceptionsFor(runId).head
 
           espExceptionInfo.nodeComponentInfo shouldBe Some(
-            NodeComponentInfo(NodeId("end"), ComponentType.Sink, "flinkKafkaAvroSink")
+            NodeComponentInfo(NodeId("end"), ComponentType.Sink, "flinkKafkaUniversalSink")
           )
           espExceptionInfo.throwable shouldBe a[AvroRuntimeException]
           espExceptionInfo.throwable.getMessage should include("Not expected null for field: Some(street)")

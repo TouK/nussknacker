@@ -297,9 +297,8 @@ class FlinkProcessRegistrar(
               (ds: ValueWithContext[sink.Value]) => ds.map(prepareTestValueFun),
               customNodeContext.valueWithContextInfo.forUnknown
             )
-            // FIXME: ...
-            .addSink(
-              new CollectingSinkFunction[AnyRef](compilerDataForProcessPart(None), collectingSink, NodeId(part.id))
+            .sinkTo(
+              new CollectingSink[AnyRef](compilerDataForProcessPart(None), collectingSink, NodeId(part.id))
             )
         case _ =>
           sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfoFrom(part), Left(contextBefore)))

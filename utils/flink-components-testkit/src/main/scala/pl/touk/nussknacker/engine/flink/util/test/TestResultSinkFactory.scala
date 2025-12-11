@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.test
 
 import cats.data.NonEmptyList
 import org.apache.flink.api.common.functions.FlatMapFunction
-import org.apache.flink.streaming.api.functions.sink.SinkFunction
+import org.apache.flink.api.connector.sink2.{Sink => SinkV2, SinkWriter}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.flink.api.process.{
@@ -50,20 +50,28 @@ object TestResultSinkFactory {
     ): FlatMapFunction[Context, ValueWithContext[Value]] =
       helper.lazyMapFunction(value)
 
-    @nowarn("cat=deprecation")
-    override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[Value] =
-      new SinkFunction[Value] {
+    override def toFlinkSink(flinkNodeContext: FlinkCustomNodeContext): SinkV2[Value] =
+      new SinkV2[Value] {
 
-        override def invoke(value: Value, context: SinkFunction.Context): Unit = {
-          sinksOutputs.compute(
-            runId,
-            (_: TestRunId, output: NonEmptyList[AnyRef]) => {
-              Option(output) match {
-                case Some(o) => o :+ value
-                case None    => NonEmptyList.one(value)
+        @nowarn("cat=deprecation")
+        override def createWriter(context: SinkV2.InitContext): SinkWriter[Value] = new SinkWriter[Value] {
+
+          override def write(element: AnyRef, context: SinkWriter.Context): Unit = {
+            sinksOutputs.compute(
+              runId,
+              (_: TestRunId, output: NonEmptyList[AnyRef]) => {
+                Option(output) match {
+                  case Some(o) => o :+ element
+                  case None    => NonEmptyList.one(element)
+                }
               }
-            }
-          )
+            )
+          }
+
+          override def flush(endOfInput: Boolean): Unit = {}
+
+          override def close(): Unit = {}
+
         }
 
       }

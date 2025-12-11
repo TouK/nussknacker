@@ -7,14 +7,14 @@ import org.scalatest.{BeforeAndAfterAll, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, MethodToInvoke, ParamName, ValueWithContext}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.api.FlinkEngineContextOps._
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{
-  BasicFlinkSinkV2,
+  BasicFlinkSink,
   FlinkCustomNodeContext,
   FlinkLazyParameterFunctionHelper
 }
@@ -76,7 +76,7 @@ class SinkWriterWithExceptionHandlerTest
 object CollectSink extends SinkFactory {
 
   @MethodToInvoke
-  def invoke(@ParamName("value") value: LazyParameter[Integer]): BasicFlinkSinkV2 = new BasicFlinkSinkV2 {
+  def invoke(@ParamName("value") value: LazyParameter[Integer]): BasicFlinkSink = new BasicFlinkSink {
     override type Value = Integer
 
     override def valueFunction(
@@ -84,7 +84,7 @@ object CollectSink extends SinkFactory {
     ): FlatMapFunction[Context, ValueWithContext[Value]] =
       helper.lazyMapFunction(value)
 
-    override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): Sink[Integer] = new Sink[Integer] {
+    override def toFlinkSink(flinkNodeContext: FlinkCustomNodeContext): Sink[Integer] = new Sink[Integer] {
 
       override def createWriter(context: WriterInitContext): SinkWriter[Integer] =
         new SinkWriter[Integer] {

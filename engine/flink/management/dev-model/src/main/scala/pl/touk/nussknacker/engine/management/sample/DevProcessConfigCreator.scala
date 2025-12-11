@@ -5,7 +5,7 @@ import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.parser.CronParser
 import io.circe.Encoder
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.functions.sink.DiscardingSink
+import org.apache.flink.streaming.api.functions.sink.v2.DiscardingSink
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentConfig, ComponentGroupName, ParameterConfig}

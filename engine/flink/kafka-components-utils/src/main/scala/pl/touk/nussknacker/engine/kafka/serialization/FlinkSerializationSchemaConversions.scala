@@ -2,8 +2,10 @@ package pl.touk.nussknacker.engine.kafka.serialization
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema
 import org.apache.flink.streaming.connectors.kafka
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
@@ -62,10 +64,10 @@ object FlinkSerializationSchemaConversions extends LazyLogging {
 
   }
 
-  @nowarn("cat=deprecation")
   def wrapToFlinkSerializationSchema[T](
       serializationSchema: serialization.KafkaSerializationSchema[T]
-  ): kafka.KafkaSerializationSchema[T] = (element: T, timestamp: lang.Long) =>
-    serializationSchema.serialize(element, timestamp)
+  ): KafkaRecordSerializationSchema[T] =
+    (element: T, _: KafkaRecordSerializationSchema.KafkaSinkContext, timestamp: lang.Long) =>
+      serializationSchema.serialize(element, timestamp)
 
 }

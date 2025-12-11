@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.api
 import org.apache.flink.api.common.JobID
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
-import org.apache.flink.streaming.api.functions.sink.SinkFunction
+import org.apache.flink.streaming.api.functions.sink.v2.DiscardingSink
 import org.apache.flink.util.Collector
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatest.flatspec.AnyFlatSpec
@@ -45,9 +45,7 @@ class EvictableStateTest
         .addSource(StaticSource)
         .keyBy((_: String) => "staticKey")
         .process(new TestOperator)
-        .addSink(new SinkFunction[String] {
-          override def invoke(value: String, context: SinkFunction.Context): Unit = ()
-        })
+        .sinkTo(new DiscardingSink[String])
 
       jobID = {
         // We need to set context loader to avoid forking in sbt

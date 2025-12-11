@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import org.apache.flink.streaming.api.operators.async.AsyncWaitOperatorFactory
+import org.scalatest.LoneElement
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 
-class FlinkStreamingProcessRegistrarOperatorUidSpec extends FlinkStreamGraphSpec {
+class FlinkStreamingProcessRegistrarOperatorUidSpec extends FlinkStreamGraphSpec with LoneElement {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
@@ -17,7 +18,7 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FlinkStreamGraphSpec
 
     val graph = streamGraph(process)
     graph.firstSource.getTransformationUID shouldEqual sourceId
-    graph.sinks.exists(_.getTransformationUID == sinkId) shouldBe true
+    graph.sinks.loneElement.getTransformationUID shouldBe sinkId
   }
 
   test("should set uid for async functions") {
