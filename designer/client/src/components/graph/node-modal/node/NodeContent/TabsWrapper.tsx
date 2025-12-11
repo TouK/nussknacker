@@ -23,7 +23,7 @@ export const TabsWrapper = ({ tabs, hideDisabled, hideIfOne }: Props) => {
     const tabDefs = tabs.filter(({ disabled }) => !disabled || !hideDisabled);
     return (
         <>
-            <Collapse in={!(hideIfOne && tabDefs.length <= 1)}>
+            <Collapse in={tabDefs.length > 1 || !hideIfOne}>
                 <Tabs
                     value={value}
                     onChange={handleChange}
