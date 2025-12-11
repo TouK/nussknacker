@@ -15,7 +15,7 @@ import type { NodeId, NodeType } from "../../types/node";
 import type { ProcessDefinitionData } from "../../types/scenarioGraph";
 import type { GraphState } from "./types";
 
-export const getUpdateStateAfterNodeIdChange = (currentId: NodeId, nextId: NodeId) =>
+export const getUpdateStateAfterNodeIdChange = (currentId: NodeId, nextId: NodeId): ((state: GraphState) => GraphState) =>
     produce((draft: GraphState) => {
         const { layout, testing, selectionState } = draft;
         if (layout) {
