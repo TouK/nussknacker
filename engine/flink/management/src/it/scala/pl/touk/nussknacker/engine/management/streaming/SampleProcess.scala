@@ -19,7 +19,7 @@ object SampleProcess {
       .emptySink("endSend", "sendSms", "Value" -> "'message'".spel)
   }
 
-  def prepareProcessWithNoTimestampAssignerForTest(name: ProcessName): CanonicalProcess = {
+  def prepareProcessWithNoWatermarkStrategyForTest(name: ProcessName): CanonicalProcess = {
     ScenarioBuilder
       .streaming(name.value)
       .source("startProcess", "kafka-transaction-no-test-timestamp-assigner")

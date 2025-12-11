@@ -2,8 +2,9 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
-import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource, SingleOutputStreamOperator}
+import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumerBase}
@@ -26,11 +27,7 @@ import pl.touk.nussknacker.engine.flink.api.{FlinkEngineContext, RuntimeCtx}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
-  StandardTimestampWatermarkHandler,
-  TimestampWatermarkHandler
-}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.WatermarkStrategyUtils
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler.{
   ContextInitializingFunction,
@@ -222,10 +219,10 @@ class FlinkKafkaSource[K, V](
       deserializationSchema.deserialize(formatter.parseRecord(topic, testRecord))
     }
 
-  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] =
+  override def watermarkStrategyForTest: Option[WatermarkStrategy[ConsumerRecord[K, V]]] =
     Some(
-      StandardTimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]](
-        (_.timestamp()): SimpleSerializableTimestampAssigner[ConsumerRecord[K, V]]
+      WatermarkStrategyUtils.afterEachEvent[ConsumerRecord[K, V]]((record: ConsumerRecord[K, V], _) =>
+        record.timestamp()
       )
     )
 

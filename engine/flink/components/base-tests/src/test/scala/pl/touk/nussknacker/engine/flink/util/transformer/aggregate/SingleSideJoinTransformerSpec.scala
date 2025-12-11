@@ -4,7 +4,6 @@ import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.JobID
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -12,15 +11,16 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.WatermarkStrategyUtils
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.function.CoProcessFunctionInterceptor
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
-import pl.touk.nussknacker.engine.flink.util.source.{BlockingQueueSource, EmitWatermarkAfterEachElementCollectionSource}
+import pl.touk.nussknacker.engine.flink.util.source.{BlockingQueueSource, CollectionSource}
 import pl.touk.nussknacker.engine.flink.util.transformer.join.{BranchType, SingleSideJoinTransformer}
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
@@ -33,7 +33,6 @@ import java.util.Collections.{emptyList, singletonList}
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
-import scala.util.Using
 
 class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
@@ -153,12 +152,15 @@ object SingleSideJoinTransformerSpec {
       mainRecordsSource: BlockingQueueSource[OneRecord],
       joinedRecords: List[OneRecord]
   ): List[ComponentDefinition] = {
+    val watermarkStrategy = WatermarkStrategyUtils.afterEachEvent[OneRecord](
+      (record: OneRecord, _: Long) => record.timestamp,
+      Duration.ofHours(1)
+    )
     ComponentDefinition("start-main", SourceFactory.noParamUnboundedStreamFactory[OneRecord](mainRecordsSource)) ::
       ComponentDefinition(
         "start-joined",
         SourceFactory.noParamUnboundedStreamFactory[OneRecord](
-          EmitWatermarkAfterEachElementCollectionSource
-            .create[OneRecord](joinedRecords, _.timestamp, Duration.ofHours(1))
+          CollectionSource(joinedRecords, Some(watermarkStrategy), Typed.typedClass[OneRecord])
         )
       ) ::
       ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink)) ::

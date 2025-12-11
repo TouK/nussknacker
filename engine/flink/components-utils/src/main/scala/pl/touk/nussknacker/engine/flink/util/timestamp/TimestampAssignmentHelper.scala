@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.engine.flink.util.timestamp
 
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions._
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
 import java.util
 
-class TimestampAssignmentHelper[T: TypeInformation](timestampAssigner: TimestampWatermarkHandler[TimestampedValue[T]]) {
+class TimestampAssignmentHelper[T: TypeInformation](watermarkStrategy: WatermarkStrategy[TimestampedValue[T]]) {
 
-  def assignWatermarks(stream: DataStream[T]): DataStream[T] = {
+  def assignTimestampsAndWatermarks(stream: DataStream[T]): DataStream[T] = {
     val valueTypeInfo: TypeInformation[T] = implicitly[TypeInformation[T]]
 
     val timestampAssignmentHelperType: TypeInformation[TimestampedValue[T]] = Types.POJO(
@@ -33,8 +33,8 @@ class TimestampAssignmentHelper[T: TypeInformation](timestampAssigner: Timestamp
         timestampAssignmentHelperType
       )
 
-    timestampAssigner
-      .assignTimestampAndWatermarks(timestampedStream)
+    timestampedStream
+      .assignTimestampsAndWatermarks(watermarkStrategy)
       .map(
         (tv: TimestampedValue[T]) => tv.getValue,
         valueTypeInfo

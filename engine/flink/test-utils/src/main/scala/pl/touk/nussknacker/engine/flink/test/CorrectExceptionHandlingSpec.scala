@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.WatermarkStrategyUtils
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps._
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.node.SourceNode
@@ -81,7 +81,7 @@ object SamplesComponent extends Serializable {
         .toList
       CollectionSource(
         samples,
-        Some(StandardTimestampWatermarkHandler.afterEachEvent[AnyRef]((_: AnyRef) => 1L)),
+        Some(WatermarkStrategyUtils.afterEachEvent[AnyRef]((_, _) => 1L)),
         Typed.fromDetailedType[java.util.List[Int]]
       )
     }

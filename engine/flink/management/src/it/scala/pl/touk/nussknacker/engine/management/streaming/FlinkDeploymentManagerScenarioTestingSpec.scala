@@ -89,12 +89,12 @@ class FlinkDeploymentManagerScenarioTestingSpec
     }
   }
 
-  // this checks that we are setting timestamps in test if source timestampAssigner method returns None
-  it should "set timestamps even if no timestamp assigner is provided by source" in {
+  // this checks that we are setting watermark strategy in test if source watermarkStrategy method returns None
+  it should "set timestamps even if no watermark strategy is provided by source" in {
     val processName    = ProcessName(UUID.randomUUID().toString)
     val processVersion = ProcessVersion.empty.copy(processName = processName)
 
-    val process = SampleProcess.prepareProcessWithNoTimestampAssignerForTest(processName)
+    val process = SampleProcess.prepareProcessWithNoWatermarkStrategyForTest(processName)
 
     whenReady(deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData))) { r =>
       val variablesInNodes = r.nodeResults.map { case (key, values) => (key, values.map(v => (v.id, v.variables))) }

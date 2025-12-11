@@ -34,10 +34,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
-  StandardTimestampWatermarkHandler,
-  TimestampWatermarkHandler
-}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.WatermarkStrategyUtils
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
@@ -76,7 +73,7 @@ object SampleNodes {
 
     @MethodToInvoke
     def create(@ParamName("param") param: Integer) =
-      new CollectionSource[Integer](list = List(param), timestampAssigner = None, returnType = Typed[Integer])
+      new CollectionSource[Integer](list = List(param), watermarkStrategy = None, returnType = Typed[Integer])
 
   }
 
@@ -920,7 +917,7 @@ object SampleNodes {
 
       new CollectionSource(
         list = elementsValue,
-        timestampAssigner = None,
+        watermarkStrategy = None,
         returnType = Typed[String],
       ) with TestDataGenerator with FlinkSourceTestSupport[String] {
         override val contextInitializer: ContextInitializer[ProcessingType] = customContextInitializer
@@ -934,7 +931,7 @@ object SampleNodes {
             CirceUtil.decodeJsonUnsafe[String](testRecord.json)
           }
 
-        override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
+        override def watermarkStrategyForTest: Option[WatermarkStrategy[String]] = watermarkStrategy
       }
     }
 
@@ -1055,11 +1052,10 @@ object SampleNodes {
 
   }
 
-  private val ascendingTimestampExtractor = new StandardTimestampWatermarkHandler[SimpleRecord](
+  private val ascendingTimestampExtractor =
     WatermarkStrategy
       .forMonotonousTimestamps[SimpleRecord]()
-      .withTimestampAssigner(StandardTimestampWatermarkHandler.toAssigner[SimpleRecord](_.date.getTime))
-  )
+      .withTimestampAssigner((record: SimpleRecord, _) => record.date.getTime)
 
   private val simpleRecordParser = new TestRecordParser[SimpleRecord] {
 
@@ -1082,8 +1078,8 @@ object SampleNodes {
     SourceFactory.noParamUnboundedStreamFactory[SimpleRecord](
       new CollectionSource[SimpleRecord](data, Some(ascendingTimestampExtractor), Typed[SimpleRecord])
         with FlinkSourceTestSupport[SimpleRecord] {
-        override def testRecordParser: TestRecordParser[SimpleRecord]                          = simpleRecordParser
-        override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleRecord]] = timestampAssigner
+        override def testRecordParser: TestRecordParser[SimpleRecord]                  = simpleRecordParser
+        override def watermarkStrategyForTest: Option[WatermarkStrategy[SimpleRecord]] = watermarkStrategy
       }
     )
 
@@ -1096,7 +1092,7 @@ object SampleNodes {
           CirceUtil.decodeJsonUnsafe[SimpleJsonRecord](testRecord.json, "invalid request")
         }
 
-      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleJsonRecord]] = timestampAssigner
+      override def watermarkStrategyForTest: Option[WatermarkStrategy[SimpleJsonRecord]] = watermarkStrategy
     }
   )
 
@@ -1119,7 +1115,7 @@ object SampleNodes {
 
         override val returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
 
-        override def timestampAssignerForTest: Option[TimestampWatermarkHandler[TypedMap]] = timestampAssigner
+        override def watermarkStrategyForTest: Option[WatermarkStrategy[TypedMap]] = watermarkStrategy
       }
     }
 

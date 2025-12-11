@@ -6,7 +6,7 @@ import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
-import pl.touk.nussknacker.engine.api.{ContextId, ContextIdPathPart, JobData, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.process._
@@ -14,10 +14,11 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.WatermarkStrategyUtils
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.CaseClassTypeInfoFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
-import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
+import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -25,7 +26,6 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode._
 
 import java.time.Duration
-import scala.jdk.CollectionConverters._
 
 class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
@@ -104,10 +104,14 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
       list: List[TestRecord] = List(),
       collectingListener: ResultsCollectingListener[Any]
   ): LocalModelData = {
+    val watermarkStrategy = WatermarkStrategyUtils.afterEachEvent[TestRecord](
+      (record: TestRecord, _: Long) => record.timestamp,
+      Duration.ofHours(1)
+    )
     val sourceComponent = ComponentDefinition(
       "start",
       SourceFactory.noParamUnboundedStreamFactory[TestRecord](
-        EmitWatermarkAfterEachElementCollectionSource.create[TestRecord](list, _.timestamp, Duration.ofHours(1))
+        CollectionSource(list, Some(watermarkStrategy), Typed.typedClass[TestRecord])
       )
     )
     LocalModelData(

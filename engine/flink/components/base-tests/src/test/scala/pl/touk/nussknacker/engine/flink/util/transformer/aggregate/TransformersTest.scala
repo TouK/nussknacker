@@ -32,9 +32,10 @@ import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProces
 import pl.touk.nussknacker.engine.compile.{CompilationResult, FragmentResolver, ProcessValidator}
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.WatermarkStrategyUtils
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
-import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
+import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TestRecordHours.hoursToMillis
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -65,8 +66,12 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       list: List[TestRecord] = List(),
       aggregateWindowsConfig: AggregateWindowsConfig = AggregateWindowsConfig.Default,
   ): LocalModelData = {
+    val watermarkStrategy = WatermarkStrategyUtils.afterEachEvent[TestRecord](
+      (record: TestRecord, _: Long) => record.timestamp,
+      Duration.ofHours(1)
+    )
     val sourceComponent = SourceFactory.noParamUnboundedStreamFactory[TestRecord](
-      EmitWatermarkAfterEachElementCollectionSource.create[TestRecord](list, _.timestamp, Duration.ofHours(1))
+      CollectionSource(list, Some(watermarkStrategy), Typed.typedClass[TestRecord])
     )
     LocalModelData(
       ConfigFactory.empty(),

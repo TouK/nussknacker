@@ -177,6 +177,17 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   We recommend to not invoke `DynamicComponent.implemenation()` method directly. To check how component behave during compilation, use `TestNodeCompiler` instead.
   Read [Testing](../docs/developers_guide/Testing.md) for more info.
 * [#8781](https://github.com/TouK/nussknacker/pull/8781) `WithExceptionHandler` helper trait was removed because it made it easy to unintentionally hide original class' `close` method
+* [#8778](https://github.com/TouK/nussknacker/pull/8778) Legacy Flink 1.x APIs removal
+  * Custom, Nussknacker's `TimestampWatermarkHandler` abstraction was replaced by Flink's `WatermarkStrategy`
+    * `FlinkSourceTestSupport.timestampAssignerForTest` was renamed to `watermarkStrategyForTest`
+    * `CustomizableTimestampWatermarkHandlerSource` was renamed to `CustomizableWatermarkStrategySource[Raw]`
+    * `StandardTimestampWatermarkHandler` was renamed to `WatermarkStrategyUtils`
+    * Nussknacker's `SimpleSerializableTimestampAssigner` was removed - use Flink's `SimpleSerializableTimestampAssigner` instead
+  * `AssignerWithPunctuatedWatermarks` / `AssignerWithPeriodicWatermarks` interfaces were removed from Nussknacker API
+    * `BlockingQueueSource` now takes `extractTimestampFun: T => Long, maxOutOfOrderness: Duration` instead of `AssignerWithPunctuatedWatermarks[T]`
+    * `EmitWatermarkAfterEachElementCollectionSource` was removed. Use `CollectionSource` combined with `WatermarkStrategyUtils.afterEachEvent`
+    * `BoundedOutOfOrdernessPunctuatedExtractor` were removed - use `WatermarkStrategyUtils.afterEachEvent` instead
+    * `BoundedOutOfOrderPreviousElementAssigner` was removed - use custom `WatermarkStrategy` instead
 
 ### Other changes
 

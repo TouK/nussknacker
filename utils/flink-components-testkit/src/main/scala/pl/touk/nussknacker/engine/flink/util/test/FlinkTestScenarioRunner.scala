@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.{Config, ConfigValueFactory}
 import org.apache.flink.api.common.JobID
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.connector.source.Boundedness
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.scalatest.concurrent.ScalaFutures.{convertScalaFuture, scaled, PatienceConfig}
@@ -16,7 +17,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.{FlinkBaseUnboundedComponentProvider, FlinkScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.flink.api.serialization.SerializersRegistrar
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.minicluster.MiniClusterJobStatusCheckingOps._
 import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
@@ -45,14 +45,14 @@ private object testComponents {
   def testDataSourceComponent[T](
       data: List[T],
       inputType: TypingResult,
-      timestampAssigner: Option[TimestampWatermarkHandler[T]],
+      watermarkStrategy: Option[WatermarkStrategy[T]],
       boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED
   ): ComponentDefinition = ComponentDefinition(
     TestScenarioRunner.testDataSource,
     SourceFactory.noParamUnboundedStreamFactory(
       new CollectionSource[T](
         list = data,
-        timestampAssigner = timestampAssigner,
+        watermarkStrategy = watermarkStrategy,
         returnType = inputType,
         boundedness = boundedness
       ),
@@ -117,7 +117,7 @@ class FlinkTestScenarioRunner(
       scenario: CanonicalProcess,
       data: List[I],
       boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
-      timestampAssigner: Option[TimestampWatermarkHandler[I]] = None,
+      watermarkStrategy: Option[WatermarkStrategy[I]] = None,
       nodesData: NodesDeploymentData = NodesDeploymentData.empty,
       labels: List[String] = List.empty,
   ): RunnerListResult[R] = {
@@ -125,7 +125,7 @@ class FlinkTestScenarioRunner(
       scenario,
       nodesData,
       labels,
-      testDataSourceComponent(data, Typed.typedClass[I], timestampAssigner, boundedness)
+      testDataSourceComponent(data, Typed.typedClass[I], watermarkStrategy, boundedness)
     )
   }
 
@@ -134,7 +134,7 @@ class FlinkTestScenarioRunner(
       data: List[I],
       inputType: TypingResult,
       boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
-      timestampAssigner: Option[TimestampWatermarkHandler[I]] = None,
+      watermarkStrategy: Option[WatermarkStrategy[I]] = None,
       nodesData: NodesDeploymentData = NodesDeploymentData.empty,
       labels: List[String] = List.empty,
   ): RunnerListResult[R] = {
@@ -142,7 +142,7 @@ class FlinkTestScenarioRunner(
       scenario,
       nodesData,
       labels,
-      testDataSourceComponent(data, inputType, timestampAssigner, boundedness)
+      testDataSourceComponent(data, inputType, watermarkStrategy, boundedness)
     )
   }
 

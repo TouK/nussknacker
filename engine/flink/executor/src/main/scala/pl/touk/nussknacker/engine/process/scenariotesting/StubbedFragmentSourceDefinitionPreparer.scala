@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.scenariotesting
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
@@ -21,7 +22,6 @@ import pl.touk.nussknacker.engine.definition.fragment.{
   FragmentParametersDefinitionExtractor
 }
 import pl.touk.nussknacker.engine.flink.api.process.{CustomizableContextInitializerSource, FlinkSourceTestSupport}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 
 // Needed to build source based on FragmentInputDefinition. It allows fragment to be treated as scenario (when it comes to testing)
@@ -53,7 +53,7 @@ class StubbedFragmentSourceDefinitionPreparer(
       with CustomizableContextInitializerSource[Map[String, Any]]
       with FlinkSourceTestSupport[Map[String, Any]]
       with TestWithParametersSupport[Map[String, Any]] {
-      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Map[String, Any]]] = None
+      override def watermarkStrategyForTest: Option[WatermarkStrategy[Map[String, Any]]] = None
 
       override def testRecordParser: TestRecordParser[Map[String, Any]] = ???
 
