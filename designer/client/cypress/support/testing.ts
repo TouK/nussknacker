@@ -9,7 +9,6 @@ declare global {
 
 const addTestRecord = (callback?: () => void) => {
     cy.get('[data-testid="data-grid-canvas"]')
-        .as("canvasTable")
         .should("be.visible")
         .then(($canvas) => {
             const rect = $canvas[0].getBoundingClientRect();
