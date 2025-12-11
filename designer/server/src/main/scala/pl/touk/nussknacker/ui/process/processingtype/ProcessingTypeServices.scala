@@ -1,22 +1,14 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
-import pl.touk.nussknacker.engine.api.component.{
-  AdditionalUIConfigProvider,
-  ComponentAdditionalConfig,
-  DesignerWideComponentId
-}
+import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ComponentAdditionalConfig, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.action.ModelDataActionInfoProvider
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.ui.config.DesignerConfig
-import pl.touk.nussknacker.ui.definition.{
-  AlignedComponentsDefinitionProvider,
-  DefinitionsService,
-  ScenarioPropertiesConfigFinalizer
-}
 import pl.touk.nussknacker.ui.definition.component.ComponentServiceProcessingTypeData
+import pl.touk.nussknacker.ui.definition.{AlignedComponentsDefinitionProvider, DefinitionsService, ScenarioPropertiesConfigFinalizer}
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.{ActionInfoService, ScenarioResolver, ScenarioTestExecutorServiceImpl}
 import pl.touk.nussknacker.ui.process.fragment.{FragmentRepository, FragmentResolver}
@@ -24,12 +16,7 @@ import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
-import pl.touk.nussknacker.ui.validation.{
-  NodeValidator,
-  ParametersValidator,
-  ScenarioLabelsValidator,
-  UIProcessValidator
-}
+import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, ScenarioLabelsValidator, UIProcessValidator}
 
 import scala.concurrent.ExecutionContext
 

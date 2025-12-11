@@ -54,7 +54,6 @@ class ScenarioTestService(
                            processCounter: ProcessCounter,
                            testExecutorService: ScenarioTestExecutorService,
                            uiProcessValidator: UIProcessValidator,
-                           assertionVerifier: AssertionVerifier = new NoopAssertionVerifier,
                          ) extends LazyLogging {
 
   private val commonModelDataInfoProvider = new CommonModelDataInfoProvider(modelData)
@@ -69,6 +68,7 @@ class ScenarioTestService(
 
   private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
   private val testCaseGlobalVariablesPreparer = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
+  private val assertionVerifier: AssertionVerifier = new AssertionVerifier(testCaseGlobalVariablesPreparer)
 
   def getTestingCapabilities(
                               scenarioGraph: ScenarioGraph,

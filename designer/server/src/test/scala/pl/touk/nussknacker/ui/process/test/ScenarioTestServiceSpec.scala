@@ -18,13 +18,12 @@ import pl.touk.nussknacker.engine.api.test._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.compile.validationHelpers.{GenericParametersSink, GenericParametersSource, GenericParametersSourceNoGenerate, GenericParametersSourceNoTestSupport, SourceWithTestParameters}
+import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess.{FailedAssertion, ResultContext, SuccessfulAssertion}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
@@ -32,7 +31,7 @@ import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.MissingSourceError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.TestingCapabilitiesError.NoSourcesError
-import pl.touk.nussknacker.ui.process.test.testcase.{Assertion, AssertionVerifierImpl, TestCase}
+import pl.touk.nussknacker.ui.process.test.testcase.{Assertion, TestCase}
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatSerDe
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -753,8 +752,7 @@ class ScenarioTestServiceSpec
       TestFactory.processResolver(),
       processCounter = new ProcessCounter(new StubFragmentRepository(Map.empty)),
       testExecutorService = mockedTestExecutorService,
-      ProcessTestData.testProcessValidator(validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelData.modelDefinition))),
-      new AssertionVerifierImpl(GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig))
+      ProcessTestData.testProcessValidator(validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelData.modelDefinition)))
     )
 
     val scenarioRecords = PreliminaryScenarioRecords(

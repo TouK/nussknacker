@@ -7,52 +7,31 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.collection.JavaConverters.{mapAsJavaMapConverter, seqAsJavaListConverter}
 
-trait AssertionVerifier {
+
+class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
 
   def verify(
               testCase: CompiledAssertions,
               results: Map[NodeId, List[ResultContext[Any]]],
               jobData: JobData
-  ): Map[NodeId, List[AssertionResult]]
-
-}
-
-class NoopAssertionVerifier extends AssertionVerifier {
-
-  override def verify(
-                       testCase: CompiledAssertions,
-                       results: Map[NodeId, List[ResultContext[Any]]],
-                       jobData: JobData
-  ): Map[NodeId, List[AssertionResult]] = {
-    Map.empty
-  }
-
-}
-
-class AssertionVerifierImpl(globalVariablesPreparer: GlobalVariablesPreparer) extends AssertionVerifier {
-
-  override def verify(
-                       testCase: CompiledAssertions,
-                       results: Map[NodeId, List[ResultContext[Any]]],
-                       jobData: JobData
-  ): Map[NodeId, List[AssertionResult]] = {
+            ): Map[NodeId, List[AssertionResult]] = {
     testCase.assertions.map { case (nodeId, assertions) =>
       nodeId -> assertions.map(assertion => verifySingleAssertions(assertion, nodeId, results, jobData))
     }
   }
 
   private def verifySingleAssertions(
-      assertion: CompiledAssertion,
-      nodeId: NodeId,
-      results: Map[NodeId, List[ResultContext[Any]]],
-      jobData: JobData
-  ): AssertionResult = {
+                                      assertion: CompiledAssertion,
+                                      nodeId: NodeId,
+                                      results: Map[NodeId, List[ResultContext[Any]]],
+                                      jobData: JobData
+                                    ): AssertionResult = {
     val context = prepareEvaluationContext(nodeId, results)
     val globalVariables = globalVariablesPreparer.prepareGlobalVariables(jobData)
       .mapValuesNow(_.obj) + ("TESTS" -> tests)
     try {
       assertion.expression.evaluate[AssertionResult](context, globalVariables) match {
-        case null                             => FailedAssertion("Assertion result can't be null")
+        case null => FailedAssertion("Assertion result can't be null")
         case assertionResult: AssertionResult => assertionResult
       }
     } catch {
@@ -61,9 +40,9 @@ class AssertionVerifierImpl(globalVariablesPreparer: GlobalVariablesPreparer) ex
   }
 
   private def prepareEvaluationContext(
-      nodeId: NodeId,
-      results: Map[NodeId, List[ResultContext[Any]]]
-  ): Context = {
+                                        nodeId: NodeId,
+                                        results: Map[NodeId, List[ResultContext[Any]]]
+                                      ): Context = {
     val resultsForNode = results.getOrElse(nodeId, List.empty)
       .map(_.variables.asJava).asJava
     Context(ContextId.dummy, Map("contexts" -> resultsForNode))

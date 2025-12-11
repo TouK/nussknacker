@@ -46,7 +46,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
 
   private val testCaseGlobalVariablesPreparer = GlobalVariablesPreparer(modelDefinitionWithClasses.modelDefinition.expressionConfig)
   private val testCompiler = new AssertionsCompiler(expressionCompiler, testCaseGlobalVariablesPreparer)
-  private val verifier = new AssertionVerifierImpl(testCaseGlobalVariablesPreparer)
+  private val verifier = new AssertionVerifier(testCaseGlobalVariablesPreparer)
 
   private val scenarioTyping: Map[String, NodeTypingData] = Map(
     "someNode" -> NodeTypingData(
