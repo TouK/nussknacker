@@ -79,10 +79,9 @@ class FlinkKafkaSource[K, V](
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
-    val streamOfRaw = sourceStream(env, flinkNodeContext)
+    val streamOfRaw = sourceStream(env, flinkNodeContext).setUidAndNameToNodeId(flinkNodeContext.nodeId)
     // 1. initialize Context and compute event time
     streamOfRaw
-      .setUidAndNameToNodeId(flinkNodeContext.nodeId)
       .flatMap(
         ContextInitializingFunction(
           flinkNodeContext.nodeId,
@@ -103,7 +102,6 @@ class FlinkKafkaSource[K, V](
       .map((ctxWithEventTime: ContextWithEventTime) => ctxWithEventTime.context, flinkNodeContext.contextTypeInfo)
   }
 
-  @nowarn("cat=deprecation")
   private def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
