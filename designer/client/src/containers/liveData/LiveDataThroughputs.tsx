@@ -1,69 +1,36 @@
-import { alpha, GlobalStyles, useTheme } from "@mui/material";
-import React, { useEffect, useMemo, useRef } from "react";
+import { GlobalStyles } from "@mui/material";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 
 import { useGraph } from "../../components/graph/GraphContext";
-import type { NodeTransitionResult } from "../../http/resultsWithCountsDto";
-import {
-    getIsLiveDataWorking,
-    getLiveDataLastUpdate,
-    getLiveDataNextUpdate,
-    getNodeTransitionResults,
-} from "../../reducers/selectors/getLiveData";
+import { getIsLiveDataWorking, getNodeTransitionResults } from "../../reducers/selectors/getLiveData";
 import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../store/storeHelpers";
-
-const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+import type { DataEvent } from "./animationHelpers";
+import { updateAnimation } from "./animationHelpers";
+import { heatmapColor } from "./heatmapColor";
+import { getElementMatcher, getLinkMatcher, getTransitionMatcher } from "./transitionsHelpers";
 
 const CLASS_NAME = "live-data";
-const DASH_KEYFRAMES: Keyframe[] = [{ strokeDashoffset: 0 }, { strokeDashoffset: 20 }];
 
 export function LiveDataThroughputs() {
-    const theme = useTheme();
-    const PULSE_KEYFRAMES: Keyframe[] = useMemo(
-        () =>
-            isSafari
-                ? [{ offset: 0 }, { offset: 0.025, fill: alpha(theme.palette.primary.main, 0.2) }, { offset: 1 }]
-                : [
-                      { offset: 0, filter: "brightness(1)" },
-                      { offset: 0.025, filter: "brightness(1.5) hue-rotate(20deg)" },
-                      { offset: 1, filter: "brightness(1)" },
-                  ],
-        [theme.palette.primary.main],
-    );
-
-    const PULSE2_KEYFRAMES: Keyframe[] = useMemo(
-        () =>
-            isSafari
-                ? [
-                      { fill: alpha(theme.palette.primary.main, 0.2) },
-                      { fill: alpha(theme.palette.primary.main, 0.5) },
-                      { fill: alpha(theme.palette.primary.main, 0.2) },
-                  ]
-                : [
-                      { filter: "brightness(1.5) hue-rotate(20deg)" },
-                      { filter: "brightness(2.0) hue-rotate(30deg)" },
-                      { filter: "brightness(1.5) hue-rotate(20deg)" },
-                  ],
-        [theme.palette.primary.main],
-    );
-
     const graphGetter = useGraph();
 
     const settings = useAppSelector(getUserSettings);
-    const showAnimations = settings["scenario.showLiveDataAnimations"];
-    const isWorking = useAppSelector(getIsLiveDataWorking);
-    const enabled = showAnimations && isWorking;
+    const showTransitionAnimations = settings["scenario.liveData.showTransitionAnimations"];
+    const showNodeAnimations = settings["scenario.liveData.showNodeAnimations"];
+    const enabled = useAppSelector((state) => (showNodeAnimations || showTransitionAnimations) && getIsLiveDataWorking(state));
 
     useEffect(() => {
-        graphGetter()?.processGraphPaper.el.classList.toggle(CLASS_NAME, enabled);
-    }, [graphGetter, enabled]);
+        const classList = graphGetter()?.processGraphPaper.el.classList;
+        if (!classList) return;
+        classList.toggle(CLASS_NAME, enabled);
+        classList.toggle(`${CLASS_NAME}-node`, enabled && showNodeAnimations);
+        classList.toggle(`${CLASS_NAME}-transition`, enabled && showTransitionAnimations);
+    }, [showTransitionAnimations, showNodeAnimations, enabled, graphGetter]);
 
-    const transitionResults = useAppSelector(getNodeTransitionResults);
-    const nextIn = useAppSelector(getLiveDataNextUpdate);
-    const last = useAppSelector(getLiveDataLastUpdate);
+    const transitionResults = useAppSelector((state) => (enabled ? getNodeTransitionResults(state) : []));
 
-    const flatEvents = useMemo(() => {
-        if (!enabled) return [];
+    const flatEvents: DataEvent[] = useMemo(() => {
         return transitionResults
             .filter(({ sourceNodeId }) => sourceNodeId)
             .flatMap(({ sourceNodeId, destinationNodeId, results }) =>
@@ -75,7 +42,7 @@ export function LiveDataThroughputs() {
                 })),
             )
             .sort((b, a) => a.timestamp - b.timestamp);
-    }, [enabled, transitionResults]);
+    }, [transitionResults]);
 
     const maxThroughput = useMemo(
         () =>
@@ -86,128 +53,83 @@ export function LiveDataThroughputs() {
     );
 
     const lastSeen = useRef(new Date().getTime());
-    const newEvents = useMemo(() => {
+    const newEvents = useMemo<DataEvent[]>(() => {
         const newEvents = flatEvents.filter(({ timestamp }) => timestamp > lastSeen.current);
         lastSeen.current = newEvents[0]?.timestamp || lastSeen.current;
         return newEvents;
     }, [flatEvents]);
 
-    useEffect(() => {
-        const graphInstance = graphGetter();
+    const animate = useCallback(
+        (name: string, el: HTMLElement | SVGElement, throughput?: number, events?: DataEvent[]) => {
+            let animationEnabled = true;
+            switch (name) {
+                case "node":
+                    animationEnabled = showNodeAnimations;
+                    break;
+                case "transition":
+                    animationEnabled = showTransitionAnimations;
+                    break;
+            }
+            updateAnimation(enabled && animationEnabled ? { name, el, throughput, events } : { name, el });
+        },
+        [showTransitionAnimations, showNodeAnimations, enabled],
+    );
 
+    // Nodes animation
+    useLayoutEffect(() => {
+        const graphInstance = graphGetter();
         graphInstance?.graph.getElements().forEach((model) => {
-            const isMatchingModel = ({
-                sourceNodeId,
-                destinationNodeId,
-            }: Pick<NodeTransitionResult, "sourceNodeId" | "destinationNodeId">): boolean => {
-                if (model.hasPort("In")) return model.id === destinationNodeId;
-                if (model.hasPort("Out")) return model.id === sourceNodeId;
-            };
+            const [el] = graphInstance.processGraphPaper.findViewByModel(model).findBySelector(".body");
+
+            const isMatchingModel = getElementMatcher(model);
 
             const events = newEvents.filter(isMatchingModel);
-            let el = graphInstance.processGraphPaper.findViewByModel(model)?.el;
-            if (isSafari) {
-                // <g> not allowed for animation/filter
-                el = el.getElementsByTagName("rect")[0];
-                if (!el) return;
-            }
+            const throughput = transitionResults.filter(isMatchingModel).reduce((sum, { currentThroughput }) => sum + currentThroughput, 0);
 
-            const nodeInputThroughput = enabled
-                ? transitionResults.filter(isMatchingModel).reduce((sum, { currentThroughput }) => sum + currentThroughput, 0)
-                : 0;
-
-            const animations = el.getAnimations().filter(({ id }) => id === "pulse2" || id === "pulse");
-
-            const animation = animations.find((a) => a.id === "pulse2");
-            if (nodeInputThroughput && nodeInputThroughput >= 4) {
-                if (!nextIn) return animation?.cancel();
-                if (animation) return animation.updatePlaybackRate(nodeInputThroughput);
-                el.animate(PULSE2_KEYFRAMES, {
-                    id: "pulse2",
-                    iterations: Infinity,
-                    duration: 50000,
-                    easing: "ease-in-out",
-                    composite: "accumulate",
-                    fill: "forwards",
-                });
-                return;
-            }
-            animation?.cancel();
-            if (enabled) {
-                events.forEach(({ timestamp }) => {
-                    const delay = timestamp - newEvents[newEvents.length - 1].timestamp;
-                    el?.animate(PULSE_KEYFRAMES, {
-                        id: "pulse",
-                        duration: 1000,
-                        delay,
-                        easing: "ease-in-out",
-                        fill: "none",
-                        composite: "accumulate",
-                        playbackRate: nodeInputThroughput,
-                    });
-                });
-            } else {
-                animations.forEach((a) => a.cancel());
-            }
+            animate("node", el, throughput, events);
         });
-    }, [enabled, graphGetter, nextIn, newEvents, transitionResults, PULSE2_KEYFRAMES, PULSE_KEYFRAMES]);
+    }, [animate, graphGetter, newEvents, transitionResults]);
 
-    useEffect(() => {
+    // Links animation
+    useLayoutEffect(() => {
         const graphInstance = graphGetter();
-        const recentEvents = flatEvents.filter(({ timestamp }) => timestamp > last - nextIn);
-
         graphInstance?.graph.getLinks()?.forEach((model) => {
             const [el] = graphInstance.processGraphPaper.findViewByModel(model).findBySelector(".connection");
 
-            const transitionThroughput = transitionResults.find(
-                ({ sourceNodeId, destinationNodeId }) =>
-                    sourceNodeId === model.attributes.edgeData?.from && destinationNodeId === model.attributes.edgeData?.to,
-            );
+            const transition = transitionResults.find(getLinkMatcher(model));
+            const events = newEvents.filter(getTransitionMatcher(transition));
+            const throughput = transition?.currentThroughput;
 
-            const recentEvent = recentEvents.find(
-                ({ sourceNodeId, destinationNodeId }) =>
-                    sourceNodeId === transitionThroughput?.sourceNodeId && destinationNodeId === transitionThroughput?.destinationNodeId,
-            );
+            const enabled = showTransitionAnimations;
+            el.classList.toggle(`${CLASS_NAME}-active`, enabled && throughput > 0);
+            el.style.stroke = enabled
+                ? heatmapColor((throughput || 0) / maxThroughput, [
+                      { v: 0, c: "#333333" },
+                      { v: 0.8, c: "#ffffff" },
+                  ])
+                : null;
 
-            const normalizedThroughput = transitionThroughput && recentEvent ? transitionThroughput.currentThroughput / maxThroughput : 0;
-            el.classList.toggle(CLASS_NAME, normalizedThroughput > 0);
-
-            const animation = el.getAnimations().find((a) => a.id === "dash");
-            if (!enabled) return animation?.cancel();
-            if (!normalizedThroughput) return;
-            if (animation) return animation.updatePlaybackRate(normalizedThroughput);
-            el.animate(DASH_KEYFRAMES, {
-                id: "dash",
-                iterations: Infinity,
-                duration: 300,
-                playbackRate: normalizedThroughput,
-                easing: "linear",
-                direction: "reverse",
-                composite: "replace",
-                fill: "forwards",
-            });
+            animate("transition", el, throughput, events);
         });
-    }, [flatEvents, graphGetter, last, nextIn, maxThroughput, transitionResults, enabled]);
+    }, [animate, showTransitionAnimations, graphGetter, maxThroughput, newEvents, transitionResults]);
 
     return (
         <GlobalStyles
-            styles={(theme) => ({
+            styles={{
                 ".joint-cell.joint-link": {
                     "&& > .connection": {
                         transition: "1s linear",
-                        transitionProperty: "filter, stroke, stroke-width",
-                        [`.${CLASS_NAME} &`]: {
-                            stroke: theme.palette.text.primary,
-                            strokeDasharray: "5 5",
-                            filter: "brightness(0.5)",
-                            [`&.${CLASS_NAME}`]: {
-                                strokeWidth: 2,
-                                filter: "brightness(1)",
+                        transitionProperty: "filter, stroke, stroke-width, stroke-dasharray",
+                        [`.${CLASS_NAME}-transition &`]: {
+                            strokeDasharray: "5 20",
+                            strokeWidth: 3,
+                            [`&.${CLASS_NAME}-active`]: {
+                                strokeDasharray: "20 10",
                             },
                         },
                     },
                 },
-            })}
+            }}
         />
     );
 }
