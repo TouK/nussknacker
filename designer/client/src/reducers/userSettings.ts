@@ -28,6 +28,7 @@ export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean
         createFlag("assistant.showHelp", true),
         createFlag("cloud.showIntegrationsCreators"),
         createFlag("debug.dontRenderCountsOnNodes"),
+        createFlag("debug.editor.forceSpelEditors"),
         createFlag("debug.forceDisableModals"),
         createFlag("debug.lightTheme"),
         createFlag("debug.nodesAsJson"),
