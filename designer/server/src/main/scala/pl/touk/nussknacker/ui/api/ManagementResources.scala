@@ -217,7 +217,7 @@ class ManagementResources(
         path("testCase" / ProcessNameSegment) { processName =>
           (post & processDetailsForName(
             processName
-          ) & skipResultsPerTransitionQueryParam & skipResultsPerNodeQueryParam & entity(as[ScenarioWithTestCase])) { //todo: do skipResultsPerTransitionQueryParam and skipResultsPerNodeQueryParam parameters are needed?
+          ) & skipResultsPerTransitionQueryParam & skipResultsPerNodeQueryParam & entity(as[ScenarioWithTestCase])) {
             (details, skipResultsPerTransition, skipResultsPerNode, scenarioWithTestCase) =>
               canDeploy(details.idWithNameUnsafe) {
                 complete {
