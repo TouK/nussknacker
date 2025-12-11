@@ -39,8 +39,9 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.time.Instant
 import java.util.UUID
-import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
+
 
 class ScenarioTestServiceSpec
     extends AnyFunSuite

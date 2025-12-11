@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.{AssertionResult, FailedA
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
-import scala.collection.JavaConverters.{mapAsJavaMapConverter, seqAsJavaListConverter}
+import scala.jdk.CollectionConverters._
 
 
 class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
