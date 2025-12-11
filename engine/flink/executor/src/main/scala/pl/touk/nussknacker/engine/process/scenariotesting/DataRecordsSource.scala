@@ -29,8 +29,7 @@ class DataRecordsSource(
     dataRecords: List[DataRecord],
     sourceOutputValidationContext: ValidationContext,
     watermarkStrategyOptions: Option[WatermarkStrategyOptions],
-) extends FlinkSource
-    with BaseFlinkSource {
+) extends FlinkSource {
 
   override final def contextStream(
       env: StreamExecutionEnvironment,

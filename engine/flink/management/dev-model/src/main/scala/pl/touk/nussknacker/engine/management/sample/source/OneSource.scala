@@ -1,45 +1,59 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.datastream.DataStreamSource
+import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
-import pl.touk.nussknacker.engine.flink.api.process.{
-  FlinkCustomNodeContext,
-  StandardFlinkSource,
-  StandardFlinkSourceFunctionUtils
-}
+import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
+import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 
 import scala.annotation.nowarn
 
-class OneSource extends StandardFlinkSource[String] {
+class OneSource extends FlinkSource with CustomizableContextInitializerSource[String] {
 
-  @nowarn("cat=deprecation")
-  override def sourceStream(
+  override final def contextStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSource[String] = StandardFlinkSourceFunctionUtils.createSourceStream(
-    env = env,
-    sourceFunction = new SourceFunction[String] {
-      var run     = true
-      var emitted = false
+  ): DataStream[Context] = {
+    sourceStream(env)
+      .setUidAndNameToNodeId(flinkNodeContext.nodeId)
+      .map(
+        new FlinkContextInitializingFunction(
+          contextInitializer,
+          flinkNodeContext.nodeId,
+          flinkNodeContext.convertToEngineRuntimeContext
+        ),
+        flinkNodeContext.contextTypeInfo
+      )
+  }
 
-      override def cancel(): Unit = {
-        run = false
-      }
+  @nowarn("cat=deprecation")
+  private def sourceStream(
+      env: StreamExecutionEnvironment,
+  ): DataStreamSource[String] = {
+    env.addSource(
+      new SourceFunction[String] {
+        var run     = true
+        var emitted = false
 
-      override def run(ctx: SourceContext[String]): Unit = {
-        while (run) {
-          if (!emitted) ctx.collect(DevProcessConfigCreator.oneElementValue)
-          emitted = true
-          Thread.sleep(1000)
+        override def cancel(): Unit = {
+          run = false
         }
-      }
 
-    },
-    typeInformation = TypeInformation.of(classOf[String])
-  )
+        override def run(ctx: SourceContext[String]): Unit = {
+          while (run) {
+            if (!emitted) ctx.collect(DevProcessConfigCreator.oneElementValue)
+            emitted = true
+            Thread.sleep(1000)
+          }
+        }
+
+      },
+      TypeInformation.of(classOf[String])
+    )
+  }
 
 }

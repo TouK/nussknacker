@@ -193,6 +193,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `BasicFlinkSink.toFlinkFunction` was replaced by `toFlinkSink`; the new method returns `sink2.Sink` instead of `SinkFunction`
 * [#8788](https://github.com/TouK/nussknacker/pull/8788) `ExplicitUidInOperatorsSupport` trait was removed. 
   Use `setUidAndNameToNodeId` extension method available in `DataStreamImplicits` instead 
+* [#8786](https://github.com/TouK/nussknacker/pull/8786) `StandardFlinkSource`, `BaseFlinkSource` and `CustomizableWatermarkStrategySource` traits were removed.
+  Use `setUidAndNameToNodeId`, `assignTimestampsAndWatermarks` and context initialization (`FlinkContextInitializingFunction`) directly
 
 ### Other changes
 
