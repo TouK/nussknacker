@@ -148,11 +148,6 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
 
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled: buttonFromToolbar?.disabled });
 
-    //no process? no nodes? no window contents! no errors for whole tree!
-    if (!scenario?.scenarioGraph.nodes) {
-        return null;
-    }
-
     return (
         <InputOutputContextProvider nodeId={nodeId}>
             {settings["node.autoApply"] ? <EditStateFeedback editState={editState} /> : null}
