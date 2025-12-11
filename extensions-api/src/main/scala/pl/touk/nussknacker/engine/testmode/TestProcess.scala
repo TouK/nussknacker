@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.testmode
 
-import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId}
 
 import java.time.Instant
 
@@ -18,14 +18,16 @@ object TestProcess {
       ]],
   ) {
 
-    def updateNodeResult(nodeId: NodeId, context: Context, variableEncoder: Any => T): TestResults[T] =
+    def updateNodeResult(nodeId: NodeId, context: Context, variableEncoder: Any => T): TestResults[T] = {
+      val instantNow = Instant.now()
       copy(
         nodeResults = nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ ResultContext
-          .fromContext(context, Instant.now(), variableEncoder))),
+          .fromContext(context, instantNow, variableEncoder))),
         originalNodeResults =
           originalNodeResults + (nodeId -> (originalNodeResults.getOrElse(nodeId, List()) :+ ResultContext
-            .fromContext(context, Instant.now(), identity))),
+            .fromContext(context, instantNow, identity))),
       )
+    }
 
     def updateNodeOutputResult(
         nodeId: NodeId,
@@ -152,7 +154,6 @@ object TestProcess {
 
   case object SuccessfulAssertion extends AssertionResult
 
-  // todo: mby message can be easily hidden
   case class FailedAssertion(message: String) extends AssertionResult
 
 }
