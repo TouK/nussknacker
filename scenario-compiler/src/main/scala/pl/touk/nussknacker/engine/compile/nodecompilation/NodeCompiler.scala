@@ -585,7 +585,6 @@ class NodeCompiler(
     implicit val nodeId: NodeId  = NodeId(enricher.id)
     val serviceCompilationResult = compileService(enricher, inputContext)
 
-    //todo: this probably should take mockExpression from test?
     val expressionCompilationResult = enricher.mockExpression match {
       case Some(mockExpression) =>
         val expectedType =
