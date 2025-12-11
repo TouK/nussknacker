@@ -35,6 +35,7 @@ import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
 import pl.touk.nussknacker.ui.process.test.testcase.{Assertion, EnricherMock, TestCase}
 
 import java.time.Instant
+import java.util.UUID
 
 // TODO: all these tests should be migrated to ManagementApiHttpServiceBusinessSpec or ManagementApiHttpServiceSecuritySpec
 class ManagementResourcesSpec
@@ -452,9 +453,9 @@ class ManagementResourcesSpec
         |]""".stripMargin
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
 
-    val testCase = TestCase("dummy", testDataContent, Map.empty, Map(NodeId("endsuffix") -> List(
-      Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])"),
-      Assertion("#TESTS.assertEquals('ala', #contexts[1].input[0])"),
+    val testCase = TestCase(UUID.randomUUID(), "dummy", testDataContent, Map.empty, Map(NodeId("endsuffix") -> List(
+      Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
+      Assertion("#TESTS.assertEquals('ala', #contexts[1].input[0])".spel),
     )))
     runTestCase(ProcessTestData.sampleScenario, testCase) ~> check {
       status shouldEqual StatusCodes.OK
@@ -501,13 +502,13 @@ class ManagementResourcesSpec
 
     saveCanonicalProcessAndAssertSuccess(scenario)
 
-    val testCase = TestCase("dummy", testDataContent,
+    val testCase = TestCase(UUID.randomUUID(), "dummy", testDataContent,
       mocks = Map(
-        NodeId("someEnricher") -> EnricherMock(Expression(Spel, "'b'"))
+        NodeId("someEnricher") -> EnricherMock("'b'".spel)
       ),
       assertions = Map(
         NodeId("endsuffix") -> List(
-          Assertion("#TESTS.assertEquals('b', #contexts[0].out1)"),
+          Assertion("#TESTS.assertEquals('b', #contexts[0].out1)".spel),
         )
       )
     )
@@ -532,8 +533,8 @@ class ManagementResourcesSpec
         |]""".stripMargin
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
 
-    val invalidTestCase = TestCase("dummy", testDataContent, Map.empty, Map(NodeId("someNotExistingNode") -> List(
-      Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])"),
+    val invalidTestCase = TestCase(UUID.randomUUID(), "dummy", testDataContent, Map.empty, Map(NodeId("someNotExistingNode") -> List(
+      Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
     )))
     runTestCase(ProcessTestData.sampleScenario, invalidTestCase) ~> check {
       status shouldEqual StatusCodes.BadRequest
@@ -549,7 +550,7 @@ class ManagementResourcesSpec
         |]""".stripMargin
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)
 
-    val testCase = TestCase("dummy", testDataContent, Map.empty, Map.empty)
+    val testCase = TestCase(UUID.randomUUID(), "dummy", testDataContent, Map.empty, Map.empty)
     runTestCase(ProcessTestData.invalidProcess, testCase) ~> check {
       status shouldEqual StatusCodes.BadRequest
       val responseAsString = responseAs[String]

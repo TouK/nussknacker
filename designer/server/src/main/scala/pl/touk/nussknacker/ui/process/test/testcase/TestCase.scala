@@ -5,21 +5,22 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
+import java.util.UUID
+
 
 @JsonCodec final case class ScenarioWithTestCase(scenario: ScenarioGraph, testCase: TestCase)
 
 @JsonCodec final case class TestCase(
-                                  id: String,
-                                  inputs: String,
-                                  mocks: Map[NodeId, EnricherMock],
-                                  assertions: Map[NodeId, List[Assertion]],
-                                )
+                                      id: UUID,
+                                      name: String,
+                                      inputs: String,
+                                      mocks: Map[NodeId, EnricherMock],
+                                      assertions: Map[NodeId, List[Assertion]],
+                                    )
 
-//todo: this is meant to contain serialized CommonFormatPreliminaryScenarioRecord
 @JsonCodec final case class TestSourceInput(serializedContent: String)
 
 @JsonCodec final case class EnricherMock(expression: Expression)
 
-//todo: it should be expression with language?
-@JsonCodec final case class Assertion(expression: String)
+@JsonCodec final case class Assertion(expression: Expression)
 

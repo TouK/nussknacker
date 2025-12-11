@@ -329,8 +329,8 @@ class ScenarioTestService(
     }
   }
 
-  private def compileTestCase(test: TestCase, nodesTyping: Map[String, NodeTypingData], jobData: JobData): Either[TestCaseCompilationError, CompiledTestCase] = {
-    val testCompiler = new TestCaseCompiler(expressionCompiler, testCaseGlobalVariablesPreparer)
+  private def compileTestCase(test: TestCase, nodesTyping: Map[String, NodeTypingData], jobData: JobData): Either[TestCaseCompilationError, CompiledAssertions] = {
+    val testCompiler = new AssertionsCompiler(expressionCompiler, testCaseGlobalVariablesPreparer)
     testCompiler.compile(test, nodesTyping, jobData)
       .fold(errors => Left(TestCaseCompilationError(errors)), Right(_))
   }

@@ -39,6 +39,7 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.time.Instant
+import java.util.UUID
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.concurrent.{Await, ExecutionContext, Future}
 
@@ -782,13 +783,14 @@ class ScenarioTestServiceSpec
         .emptySink("end", "genericParametersSink", "par1" -> "'dummy'".spel, "dummy" -> "1L".spel)
 
     val testCase = TestCase(
+      UUID.randomUUID(),
       "someTest",
       serializedRecords.content,
       Map.empty,
       Map(
         NodeId("end") -> List(
-          Assertion("#TESTS.assertEquals(#contexts[0].otherNameThanInput.a, 'foo')"),
-          Assertion("#TESTS.assertEquals(#contexts[1].otherNameThanInput.a, 'foo')")
+          Assertion("#TESTS.assertEquals(#contexts[0].otherNameThanInput.a, 'foo')".spel),
+          Assertion("#TESTS.assertEquals(#contexts[1].otherNameThanInput.a, 'foo')".spel)
         )
       )
     )

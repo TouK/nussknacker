@@ -1,11 +1,13 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
 import cats.data.Validated
-import cats.data.Validated.Valid
+import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.TestConfigurationRefersToNotExistingNode
 import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -15,8 +17,6 @@ import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo, P
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -24,7 +24,9 @@ import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompila
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 
-class TestCaseCompilerSpec extends AnyFunSuite with Matchers with Inside {
+import java.util.UUID
+
+class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
 
   private val baseDefinition = ModelDefinitionBuilder.empty
     .withUnboundedStreamSource("sourceWithUnknown", Some(Unknown))
@@ -32,7 +34,8 @@ class TestCaseCompilerSpec extends AnyFunSuite with Matchers with Inside {
     .withSink("sink")
     .build
   private val modelDefinitionWithClasses = ModelDefinitionWithClasses(baseDefinition)
-  private val testCompiler: TestCaseCompiler = {
+
+  private val assertionsCompiler: AssertionsCompiler = {
     val globalVariablesPreparer = GlobalVariablesPreparer.apply(modelDefinitionWithClasses.modelDefinition.expressionConfig)
     val expressionCompiler = ExpressionCompiler.withOptimization(
       getClass.getClassLoader,
@@ -43,10 +46,10 @@ class TestCaseCompilerSpec extends AnyFunSuite with Matchers with Inside {
         globalVariablesPreparer
       )
     )
-    new TestCaseCompiler(expressionCompiler, globalVariablesPreparer)
+    new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
   }
 
-  test("should compile valid test for scenario") {
+  test("should compile valid assertions for scenario") {
     val scenario = ScenarioBuilder
       .streaming("process1")
       .source("id1", "sourceWithUnknown")
@@ -55,25 +58,22 @@ class TestCaseCompilerSpec extends AnyFunSuite with Matchers with Inside {
       .emptySink("sink1", "sink")
 
     val test = TestCase(
+      UUID.randomUUID(),
       "someTest",
-      inputs = "", //todo
-      mocks = Map(NodeId("enricher1") -> EnricherMock(Expression(Spel, "'someMockedOutput'"))),
-      assertions = Map(NodeId("sink1") -> List(Assertion("#TESTS.assertEquals(#contexts.size, 1)")))
+      inputs = "",
+      mocks = Map.empty,
+      assertions = Map(NodeId("sink1") -> List(Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel)))
     )
 
-    val testCompilationResult = compileScenarioWithTests(scenario, test)
-
-    inside(testCompilationResult) { case Valid(compiledTest) =>
-      //      compiledTest.mocks.size shouldBe 1 //todo
-      //      compiledTest.mocks(NodeId("enricher1")).expression.original shouldBe "'someMockedOutput'"
-
-      compiledTest.assertions.size shouldBe 1
-      compiledTest.assertions(NodeId("sink1")).size shouldBe 1
-      compiledTest.assertions(NodeId("sink1")).head.expression.original shouldBe "#TESTS.assertEquals(#contexts.size, 1)"
+    val testCompilationResult = compileScenarioWithAssertions(scenario, test)
+    inside(testCompilationResult) { case Valid(compiledAssertions) =>
+      compiledAssertions.assertions.size shouldBe 1
+      compiledAssertions.assertions(NodeId("sink1")).size shouldBe 1
+      compiledAssertions.assertions(NodeId("sink1")).head.expression.original shouldBe "#TESTS.assertEquals(#contexts.size, 1)"
     }
   }
 
-  test("should produce errors for mocks/asserts on missing nodes") {
+  test("should produce errors for assertions on missing nodes") {
     val scenario = ScenarioBuilder
       .streaming("process1")
       .source("id1", "sourceWithUnknown")
@@ -81,47 +81,34 @@ class TestCaseCompilerSpec extends AnyFunSuite with Matchers with Inside {
       .buildSimpleVariable("result-id2", "result", "#input".spel)
       .emptySink("sink1", "sink")
     val test = TestCase(
+      UUID.randomUUID(),
       "someTest",
-      inputs = "", //todo
-      mocks = Map(NodeId("notExistingEnricher") -> EnricherMock(Expression(Spel, "'someMockedOutput'"))),
-      assertions = Map(NodeId("notExistingSink") -> List(Assertion("#TESTS.assertEquals(#contexts.size, 1)")))
+      inputs = "",
+      mocks = Map.empty,
+      assertions = Map(NodeId("notExistingSink") -> List(Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel)))
     )
 
-    val testCompilationResult = compileScenarioWithTests(scenario, test)
+    val testCompilationResult = compileScenarioWithAssertions(scenario, test)
 
-    //todo
-    //    inside(testCompilationResult) { case Invalid(errors) =>
-    //      errors.size shouldBe 3
-    //      assert(
-    //        errors.toList.contains(
-    //          TestConfigurationRefersToNotExistingNode(NodeId("notExistingSource"), test.id, InputData)
-    //        )
-    //      )
-    //      assert(
-    //        errors.toList.contains(TestConfigurationRefersToNotExistingNode(NodeId("notExistingEnricher"), test.id, Mock))
-    //      )
-    //      assert(
-    //        errors.toList.contains(
-    //          TestConfigurationRefersToNotExistingNode(
-    //            NodeId("notExistingSink"),
-    //            test.id,
-    //            ProcessCompilationError.Assertion
-    //          )
-    //        )
-    //      )
-    //    }
+    inside(testCompilationResult) { case Invalid(errors) =>
+      errors.toList shouldBe List(TestConfigurationRefersToNotExistingNode(
+        NodeId("notExistingSink"),
+        test.name,
+        ProcessCompilationError.Assertion
+      ))
+    }
   }
 
-  private def compileScenarioWithTests(scenario: CanonicalProcess, test: TestCase) = {
+  private def compileScenarioWithAssertions(scenario: CanonicalProcess, test: TestCase) = {
     val typing = compileScenarioForTyping(scenario)
     val jobData = JobData(MetaData("someScenario", StreamMetaData()), ProcessVersion.empty)
 
-    val testCompilationResult = testCompiler.compile(
+    val assertionCompilationResult = assertionsCompiler.compile(
       test,
       typing,
       jobData
     )
-    testCompilationResult
+    assertionCompilationResult
   }
 
   private def compileScenarioForTyping(scenario: CanonicalProcess): Map[String, NodeTypingData] = {

@@ -10,9 +10,9 @@ import scala.collection.JavaConverters.{mapAsJavaMapConverter, seqAsJavaListConv
 trait AssertionVerifier {
 
   def verify(
-      testCase: CompiledTestCase,
-      results: Map[NodeId, List[ResultContext[Any]]],
-      jobData: JobData
+              testCase: CompiledAssertions,
+              results: Map[NodeId, List[ResultContext[Any]]],
+              jobData: JobData
   ): Map[NodeId, List[AssertionResult]]
 
 }
@@ -20,23 +20,21 @@ trait AssertionVerifier {
 class NoopAssertionVerifier extends AssertionVerifier {
 
   override def verify(
-      testCase: CompiledTestCase,
-      results: Map[NodeId, List[ResultContext[Any]]],
-      jobData: JobData
+                       testCase: CompiledAssertions,
+                       results: Map[NodeId, List[ResultContext[Any]]],
+                       jobData: JobData
   ): Map[NodeId, List[AssertionResult]] = {
     Map.empty
   }
 
 }
 
-//todo: differences pretty printer (e.g. rendering arrays as spel arrays not java)
-//todo: better equality checking
 class AssertionVerifierImpl(globalVariablesPreparer: GlobalVariablesPreparer) extends AssertionVerifier {
 
   override def verify(
-      testCase: CompiledTestCase,
-      results: Map[NodeId, List[ResultContext[Any]]],
-      jobData: JobData
+                       testCase: CompiledAssertions,
+                       results: Map[NodeId, List[ResultContext[Any]]],
+                       jobData: JobData
   ): Map[NodeId, List[AssertionResult]] = {
     testCase.assertions.map { case (nodeId, assertions) =>
       nodeId -> assertions.map(assertion => verifySingleAssertions(assertion, nodeId, results, jobData))

@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.testmode.TestProcess.{FailedAssertion, ResultContext, SuccessfulAssertion}
 import pl.touk.nussknacker.engine.util.functions.conversion
@@ -20,6 +21,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 
 import java.time.Instant
 import java.util
+import java.util.UUID
 
 class AssertionVerifierSpec extends AnyFunSuite with Matchers {
 
@@ -43,7 +45,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
   )
 
   private val testCaseGlobalVariablesPreparer = GlobalVariablesPreparer(modelDefinitionWithClasses.modelDefinition.expressionConfig)
-  private val testCompiler = new TestCaseCompiler(expressionCompiler, testCaseGlobalVariablesPreparer)
+  private val testCompiler = new AssertionsCompiler(expressionCompiler, testCaseGlobalVariablesPreparer)
   private val verifier = new AssertionVerifierImpl(testCaseGlobalVariablesPreparer)
 
   private val scenarioTyping: Map[String, NodeTypingData] = Map(
@@ -57,13 +59,14 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
 
   test("should run assertions on test nodes results and return assertion result for each assertion") {
     val testCase = TestCase(
+      UUID.randomUUID(),
       "dummy",
       "dummy",
       Map.empty,
       Map(
         NodeId("someNode") -> List(
-          Assertion("#TESTS.assertEquals('valid', #contexts[0].someVariable)"),
-          Assertion("#TESTS.assertEquals('valid', #contexts[1].someVariable)"),
+          Assertion("#TESTS.assertEquals('valid', #contexts[0].someVariable)".spel),
+          Assertion("#TESTS.assertEquals('valid', #contexts[1].someVariable)".spel),
         )
       )
     )
@@ -107,12 +110,13 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
       ("#TESTS.assertEquals({'1,2'.split(',')}, {'1,2'.split(',')})", SuccessfulAssertion),
     )) { (assertion, result) =>
       val testCase = TestCase(
+        UUID.randomUUID(),
         "dummy",
         "dummy",
         Map.empty,
         Map(
           NodeId("someNode") -> List(
-            Assertion(assertion),
+            Assertion(assertion.spel),
           )
         )
       )

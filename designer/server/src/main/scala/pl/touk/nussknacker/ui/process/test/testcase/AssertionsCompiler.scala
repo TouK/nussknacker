@@ -4,14 +4,10 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.syntax.all._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParserCompilationError, Mock, TestConfigurationRefersToNotExistingNode}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.TestConfigurationRefersToNotExistingNode
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
 import pl.touk.nussknacker.engine.testmode.TestProcess.{AssertionResult, FailedAssertion, SuccessfulAssertion}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
@@ -19,80 +15,20 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import java.util
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
-class TestCaseCompiler(expressionCompiler: ExpressionCompiler, globalVariablesPreparer: GlobalVariablesPreparer) {
+class AssertionsCompiler(expressionCompiler: ExpressionCompiler, globalVariablesPreparer: GlobalVariablesPreparer) {
 
-  // todo: to decide where should be input data validation (especially in context of validation during edition and saving)
   def compile(
                testCase: TestCase,
                scenarioTypingResult: Map[String, NodeTypingData],
                jobData: JobData
-             ): ValidatedNel[ProcessCompilationError, CompiledTestCase] = {
-    val mocksV = testCase.mocks
-      .filter(_ => false) // todo: disabled
-      .map { case (nodeId, mock) =>
-        compileMock(nodeId, mock, scenarioTypingResult, testCase.id).map(nodeId -> _)
-      }
-      .toList
-      .sequence
-
-    val assertionsV = testCase.assertions
+             ): ValidatedNel[ProcessCompilationError, CompiledAssertions] = {
+    testCase.assertions
       .map { case (node, assertions) =>
-        compileAssertions(node, assertions, scenarioTypingResult, testCase.id, jobData).map(node -> _)
+        compileAssertions(node, assertions, scenarioTypingResult, testCase.name, jobData).map(node -> _)
       }
       .toList
       .sequence
-
-    ProcessCompilationError.ValidatedNelApplicative.map2(
-      mocksV,
-      assertionsV
-    ) { (validMocks, validAssertions) =>
-      CompiledTestCase(
-        testCase.id,
-        validMocks.toMap,
-        validAssertions.toMap
-      )
-    }
-  }
-
-  private def compileMock(
-                           nodeId: NodeId,
-                           mock: EnricherMock,
-                           nodesTyping: Map[String, NodeTypingData],
-                           testId: String
-                         ) = {
-    validateTypingExistence(nodeId, nodesTyping, testId, Mock).andThen(typing =>
-      compileEnricherMockExpression(
-        mock.expression,
-        typing.outputTyping.getOrElse(throw new IllegalStateException("Output typing for enricher must be provided")),
-        ValidationContext(localVariables = typing.variableTypes)
-      )(nodeId)
-        .map(CompiledEnricherMock(_))
-    )
-  }
-
-  private def compileEnricherMockExpression(expression: Expression, expectedType: TypingResult, ctx: ValidationContext)(
-    implicit nodeId: NodeId
-  ): ValidatedNel[ProcessCompilationError, CompiledExpression] = {
-    expressionCompiler
-      .compile(expression, Some(ParameterName("$mockExpression")), ctx, expectedType) match {
-      case Valid(typedExpression) =>
-        if (typedExpression.typingInfo.typingResult.canBeLooselyAssignedTo(expectedType)) {
-          Valid(typedExpression.expression)
-        } else {
-          Invalid(
-            NonEmptyList.one(
-              ExpressionParserCompilationError(
-                s"Bad expression type, expected: ${expectedType.display}, found: ${typedExpression.typingInfo.typingResult.display}",
-                nodeId,
-                Some(ParameterName("$mockExpression")),
-                expression.expression,
-                None
-              )
-            )
-          )
-        }
-      case invalid@Invalid(_) => invalid
-    }
+      .map(assertions => CompiledAssertions(assertions.toMap))
   }
 
   private def compileAssertions(
@@ -134,7 +70,7 @@ class TestCaseCompiler(expressionCompiler: ExpressionCompiler, globalVariablesPr
   private def compileAssertionExpression(nodeId: NodeId, context: ValidationContext, assertion: Assertion) = {
     expressionCompiler
       .compile(
-        Expression(Spel, assertion.expression),
+        assertion.expression,
         None,
         context,
         Typed.typedClass(classOf[AssertionResult])
@@ -160,6 +96,7 @@ trait TestsFunctions extends HideToString {
     }
   }
 
+  //todo: should it work recursively - e.g for arrays nested in lists?
   private def checkIfSameElements(expected: Any, actual: Any) = {
     if ((expected.isInstanceOf[Array[_]] || expected.isInstanceOf[util.Collection[_]]) &&
       (actual.isInstanceOf[Array[_]] || actual.isInstanceOf[util.Collection[_]])) {
