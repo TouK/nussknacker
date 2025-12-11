@@ -145,13 +145,6 @@ object CompilationResult extends Applicative[CompilationResult] {
               s"This can be a bug in code or duplicated node ids with same expression ids"
           )
         }
-
-        if (x.outputTyping.isDefined && y.outputTyping.isDefined && y.outputTyping != x.outputTyping) {
-          logger.warn(
-            s"Merging different outputTyping: ${x.outputTyping} and ${y.outputTyping}. " +
-              s"This can be a bug in code or duplicated node ids with same expression ids"
-          )
-        }
       }
 
       // we should be lax here because we want to detect duplicate nodes and context can be different then
@@ -160,8 +153,7 @@ object CompilationResult extends Applicative[CompilationResult] {
       NodeTypingInfo(
         y.inputValidationContext,
         x.expressionsTypingInfo ++ y.expressionsTypingInfo,
-        y.parameters.orElse(x.parameters),
-        y.outputTyping.orElse(x.outputTyping)
+        y.parameters.orElse(x.parameters)
       )
     }
 
@@ -174,6 +166,5 @@ case class NodeTypingInfo(
     expressionsTypingInfo: Map[String, ExpressionTypingInfo],
     // Currently only parameters for dynamic nodes (implemented by DynamicComponent) are returned
     // They are used on FE, to faster display correct node details modal (without need for additional validation request to BE)
-    parameters: Option[List[Parameter]],
-    outputTyping: Option[TypingResult] //todo: this is only needed to ensure in test compilation that mock expression match type that is returned from processor/enricher
+    parameters: Option[List[Parameter]]
 )

@@ -1,24 +1,23 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.Applicative
-import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated._
+import cats.data.ValidatedNel
 import cats.instances.list._
 import cats.instances.option._
-import pl.touk.nussknacker.engine.{compiledgraph, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeCompiler, SingleInputNodeInputValidationContext}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
+import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeCompiler, SingleInputNodeInputValidationContext}
 import pl.touk.nussknacker.engine.compiledgraph.node
 import pl.touk.nussknacker.engine.compiledgraph.node.{FragmentUsageEnd, Node}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, SplittedNode}
+import pl.touk.nussknacker.engine.{ScenarioCompilationDependencies, compiledgraph}
 
 class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
 
@@ -42,7 +41,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         expressionsTypingInfo: Map[String, ExpressionTypingInfo]
     ) =
       CompilationResult(
-        Map(n.id -> NodeTypingInfo(inputContext.validationContext, expressionsTypingInfo, None, None)),
+        Map(n.id -> NodeTypingInfo(inputContext.validationContext, expressionsTypingInfo, None)),
         validated
       )
 
@@ -130,7 +129,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         parameters: Option[List[Parameter]]
     ) =
       CompilationResult(
-        Map(nodeId.id -> NodeTypingInfo(inputContext.validationContext, expressionsTypingInfo, parameters, None)),
+        Map(nodeId.id -> NodeTypingInfo(inputContext.validationContext, expressionsTypingInfo, parameters)),
         validated
       )
 
@@ -196,7 +195,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         parameters: Option[List[Parameter]]
     ) =
       CompilationResult(
-        Map(data.id -> NodeTypingInfo(inputContext.validationContext, expressionsTypingInfo, parameters, None)),
+        Map(data.id -> NodeTypingInfo(inputContext.validationContext, expressionsTypingInfo, parameters)),
         validated
       )
 
@@ -318,7 +317,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
           .map(Some(_))
       case splittednode.PartRef(ref) =>
         CompilationResult(
-          Map(ref -> NodeTypingInfo(inputContext.validationContext, Map.empty, None, None)),
+          Map(ref -> NodeTypingInfo(inputContext.validationContext, Map.empty, None)),
           Valid(compiledgraph.node.PartRef(ref))
         )
           .map(Some(_))

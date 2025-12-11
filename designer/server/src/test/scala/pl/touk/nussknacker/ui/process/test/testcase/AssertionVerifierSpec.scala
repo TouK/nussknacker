@@ -54,7 +54,8 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
         "someVariable" -> Typed.fromInstance("bar"),
         "someJavaList" -> Typed.fromInstance(new util.ArrayList[String]()),
         "someArray" -> Typed.fromInstance(new Array[String](1))
-      ), None, Map.empty, None)
+      ), None, Map.empty
+    )
   )
 
   test("should run assertions on test nodes results and return assertion result for each assertion") {

@@ -243,7 +243,7 @@ protected trait ProcessCompilerBase {
       SingleInputNodeInputValidationContext(initialCtx.valueOr(_ => contextWithOnlyGlobalVariables))
     )
     val typesForParts  = validatedSource.typing.mapValuesNow(_.inputValidationContext)
-    val nodeTypingInfo = Map(part.id -> NodeTypingInfo(contextWithOnlyGlobalVariables, typingInfo, parameters, None))
+    val nodeTypingInfo = Map(part.id -> NodeTypingInfo(contextWithOnlyGlobalVariables, typingInfo, parameters))
 
     CompilationResult.map4(
       validatedSource,
@@ -269,7 +269,7 @@ protected trait ProcessCompilerBase {
   ): CompilationResult[part.SinkPart] = {
     val NodeCompilationResult(typingInfo, parameters, _, compiledSink, _) =
       nodeCompiler.compileSink(node.data, SingleInputNodeInputValidationContext(ctx))
-    val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters, None))
+    val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
     CompilationResult.map2(
       sub.validate(node, SingleInputNodeInputValidationContext(ctx)),
       CompilationResult(nodeTypingInfo, compiledSink)
@@ -284,7 +284,7 @@ protected trait ProcessCompilerBase {
   ): CompilationResult[compiledgraph.part.CustomNodePart] = {
     val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) =
       nodeCompiler.compileCustomNodeObject(node, SingleInputNodeInputValidationContext(ctx))
-    val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters, None))
+    val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
 
     CompilationResult
       .map2(
@@ -334,7 +334,7 @@ protected trait ProcessCompilerBase {
     val nextPartsValidation = sub.validate(node, nextPartInputValidationContext)
     val typesForParts       = nextPartsValidation.typing.mapValuesNow(_.inputValidationContext)
     val nodeTypingInfo = Map(
-      node.id -> NodeTypingInfo(ctx.left.getOrElse(contextWithOnlyGlobalVariables), typingInfo, parameters, None)
+      node.id -> NodeTypingInfo(ctx.left.getOrElse(contextWithOnlyGlobalVariables), typingInfo, parameters)
     )
 
     CompilationResult
