@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
 import java.util.Objects
-import scala.jdk.CollectionConverters.{CollectionHasAsScala, MapHasAsScala}
+import scala.jdk.CollectionConverters._
 
 object SpelValuePrettyPrinter {
 
