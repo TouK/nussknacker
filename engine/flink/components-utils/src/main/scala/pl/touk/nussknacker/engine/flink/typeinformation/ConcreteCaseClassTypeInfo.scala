@@ -19,7 +19,7 @@ class ConcreteCaseClassTypeInfo[T <: Product](cls: Class[T], fields: List[(Strin
   // TODO: Remove after upgrade to Flink 2.x
   @nowarn("cat=deprecation")
   override def createSerializer(config: ExecutionConfig): TypeSerializer[T] =
-    throw new IllegalAccessException("This method shouldn't be invoked")
+    createSerializer(config.getSerializerConfig)
 
 }
 
