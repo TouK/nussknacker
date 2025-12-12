@@ -4,10 +4,11 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.{HCursor, Json}
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeinfo.Types
+import org.apache.flink.api.connector.source.util.ratelimit.{RateLimiter, RateLimiterStrategy}
+import org.apache.flink.connector.datagen.source.DataGeneratorSource
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.VariableConstants.InputVariableName
@@ -41,6 +42,7 @@ import pl.touk.nussknacker.engine.util.watermarkstrategy.{
 
 import java.time.{Duration, Instant}
 import java.time.temporal.ChronoUnit
+import java.util.concurrent.{CompletableFuture, TimeUnit}
 import scala.annotation.nowarn
 
 object EventGeneratorSourceFactory
@@ -177,16 +179,17 @@ object EventGeneratorSourceFactory
         // Without this local variable, flatMap function is not serializable
         val localCount = count
         env
-          .addSource(new PeriodicFunction(schedule))
+          .fromSource(
+            flinkSource(schedule),
+            WatermarkStrategy.noWatermarks(),
+            flinkNodeContext.nodeId.id,
+          )
           .setUidAndNameToNodeId(flinkNodeContext.nodeId)
           .flatMap(
-            (_: Unit, out: Collector[Boolean]) => {
-              // This 'true' is a dummy value. It has to exist for each event, but its value is completely ignored.
-              // The type is not important too, it just has to be serializable by Flink.
-              // For each of those dummy values, a new Context will be created.
-              (1 to localCount).foreach(_ => out.collect(true))
+            (_: Void, out: Collector[Void]) => {
+              (1 to localCount).foreach(_ => out.collect(null))
             },
-            TypeInformation.of(classOf[Boolean])
+            Types.VOID
           )
           .flatMap(
             new EventGeneratorContextInitializingFunction(
@@ -250,6 +253,22 @@ object EventGeneratorSourceFactory
     }
   }
 
+  private def flinkSource(schedule: Duration) = {
+    new DataGeneratorSource[Void](
+      (_: java.lang.Long) => null,
+      Long.MaxValue,
+      new RateLimiterStrategy {
+        override def createRateLimiter(parallelism: Int): RateLimiter = () =>
+          CompletableFuture
+            .runAsync(
+              () => (),
+              CompletableFuture.delayedExecutor(schedule.toMillis, TimeUnit.MILLISECONDS)
+            )
+      },
+      Types.VOID
+    )
+  }
+
 }
 
 class EventGeneratorContextInitializingFunction(
@@ -258,7 +277,7 @@ class EventGeneratorContextInitializingFunction(
     valueLazyParam: LazyParameter[AnyRef],
     eventTimeLazyParam: LazyParameter[Instant],
     lazyParamHelper: FlinkLazyParameterFunctionHelper
-) extends FlinkWatermarkStrategyRuntimeHandler.ContextInitializingFunction[Boolean](
+) extends FlinkWatermarkStrategyRuntimeHandler.ContextInitializingFunction[Void](
       nodeId,
       convertToEngineRuntimeContext,
       eventTimeLazyParam,
@@ -274,7 +293,7 @@ class EventGeneratorContextInitializingFunction(
   }
 
   override protected def sourceOutputVariables(
-      input: Boolean,
+      input: Void,
       initialContext: Context
   ): ContextVariables = {
     ContextVariables(
@@ -282,24 +301,6 @@ class EventGeneratorContextInitializingFunction(
         InputVariableName -> valueFun(initialContext)
       )
     )
-  }
-
-}
-
-@nowarn("cat=deprecation")
-class PeriodicFunction(period: Duration) extends SourceFunction[Unit] {
-
-  @volatile private var isRunning = true
-
-  override def run(ctx: SourceFunction.SourceContext[Unit]): Unit = {
-    while (isRunning) {
-      ctx.collect(())
-      Thread.sleep(period.toMillis)
-    }
-  }
-
-  override def cancel(): Unit = {
-    isRunning = false
   }
 
 }
