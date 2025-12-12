@@ -383,7 +383,8 @@ describe("Process", () => {
             // maximize (one way)
             cy.wrap($win)
                 .contains(/^source$/i)
-                .realClick({ clickCount: 2 });
+                .click()
+                .click();
             // restore (second way)
             cy.wait(500);
             cy.wrap($win).get("button[name=zoom]").realClick();
