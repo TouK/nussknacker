@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.connector.source.Source
 import org.apache.flink.connector.datagen.source.DataGeneratorSource
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.api.component.{StaticParameterConfig, UnboundedStreamComponent}
@@ -41,7 +42,7 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
           list: List[Any],
           executionConfig: ExecutionConfig,
           flinkNodeContext: FlinkCustomNodeContext
-      ): DataGeneratorSource[Any] = {
+      ): Source[Any, _, _] = {
         val offsetOpt =
           flinkNodeContext.componentUseContext.deploymentData
             .flatMap(_.get(OFFSET_PARAMETER_NAME.value))

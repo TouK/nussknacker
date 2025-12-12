@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.api.connector.source.Boundedness
+import org.apache.flink.api.connector.source.{Boundedness, Source}
 import org.apache.flink.connector.datagen.functions.FromElementsGeneratorFunction
 import org.apache.flink.connector.datagen.source.DataGeneratorSource
 import org.apache.flink.streaming.api.datastream.DataStream
@@ -22,21 +23,20 @@ case class CollectionSource[T](
     boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED
 ) extends FlinkSource
     with CustomizableContextInitializerSource[T]
-    with ReturningType {
+    with ReturningType
+    with LazyLogging {
 
   override final def contextStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
-    val rawSource = env
+    env
       .fromSource(
         flinkSource(list, env.getConfig, flinkNodeContext),
         watermarkStrategy.getOrElse(WatermarkStrategy.noWatermarks()),
-        flinkNodeContext.nodeId.id
+        flinkNodeContext.nodeId.id,
       )
       .uid(flinkNodeContext.nodeId.id)
-
-    rawSource
       .map(
         new FlinkContextInitializingFunction(
           contextInitializer,
@@ -51,13 +51,34 @@ case class CollectionSource[T](
       list: List[T],
       executionConfig: ExecutionConfig,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataGeneratorSource[T] = {
-    val typeInformation   = TypeInformationDetection.instance.forType[T](returnType)
-    val generatorFunction = new FromElementsGeneratorFunction[T](typeInformation, executionConfig, list.asJava)
+  ): Source[T, _, _] = {
+    val typeInformation  = TypeInformationDetection.instance.forType[T](returnType)
+    val listWithoutNulls = handleNullsInData(list)
+    // DataGeneratorSource which an empty list try to process one element
+    // which ends up with NoSuchElementException in FromElementsGeneratorFunction.tryDeserialize
+    if (listWithoutNulls.isEmpty) {
+      new EmptySource[T](boundedness, typeInformation)
+    } else {
+      val generatorFunction =
+        new FromElementsGeneratorFunction[T](typeInformation, executionConfig, listWithoutNulls.asJava)
 
-    new DataGeneratorSource[T](generatorFunction, list.size, typeInformation) {
-      override def getBoundedness: Boundedness = boundedness
+      val copyOfBoundedness = boundedness
+      new DataGeneratorSource[T](generatorFunction, listWithoutNulls.size, typeInformation) {
+        override def getBoundedness: Boundedness = copyOfBoundedness
+      }
     }
+  }
+
+  // FromElementsGeneratorFunction doesn't accept nulls in the passed collection - see constructor
+  // so we filter them out
+  // TODO: we probably should resolve this problem otherwise either by delivering our own GeneratorFunction
+  //       or checking this collection on early stage, but before we do that we should check every places
+  //       where this source is used
+  private def handleNullsInData(list: List[T]) = {
+    if (list.contains(null)) {
+      logger.warn("Collection passed to CollectionSource contains null. They will be filtered out")
+    }
+    list.filterNot(_ == null)
   }
 
 }
