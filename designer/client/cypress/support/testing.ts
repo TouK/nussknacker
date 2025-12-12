@@ -16,7 +16,7 @@ const addTestRecord = (callback?: () => void) => {
         const clickX = rect.width - 10;
         const clickY = rect.height - 10;
 
-        cy.wrap($canvas).realClick({ x: clickX, y: clickY });
+        cy.wrap($canvas).click(clickX, clickY, { force: true });
         if (callback) {
             callback();
         }
