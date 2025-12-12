@@ -29,8 +29,8 @@ import {
     adjustBranchParametersAfterDisconnect,
     createEdge,
     enrichNodeWithProcessDependentData,
+    getUpdateStateAfterNodeIdChange,
     updateAfterNodeDelete,
-    updateLayoutAfterNodeIdChange,
 } from "./utils";
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
@@ -202,18 +202,15 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return emptyGraphState;
         }
         case "EDIT_NODE": {
-            const newLayout = updateLayoutAfterNodeIdChange(state.layout, action.before.id, action.after.id);
-
-            return {
+            const updateStateAfterNodeIdChange = getUpdateStateAfterNodeIdChange(action.before.id, action.after.id);
+            return updateStateAfterNodeIdChange({
                 ...state,
-                selectionState: state.selectionState.map((current) => (current === action.before.id ? action.after.id : current)),
-                layout: newLayout,
                 scenario: {
                     ...state.scenario,
                     scenarioGraph: { ...action.scenarioGraphAfterChange },
                     validationResult: updateValidationResult(state, action),
                 },
-            };
+            });
         }
         case "EDIT_PROPERTIES": {
             return {
@@ -434,10 +431,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 visibleDataType: null,
                 processCounts: null,
                 processCountsRefresh: null,
-                testing: {
-                    ...state.testing,
-                    testResults: null,
-                },
             };
         }
         default:

@@ -2,58 +2,42 @@ import { persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 
 import type { Reducer } from "../actions/reduxTypes";
+import type { ExpressionLang } from "../components/graph/node-modal/editors/expression/types";
+import type { Prettify } from "../components/graph/node-modal/useNodeTypeDetailsContentLogic";
 
-type SettingsNames =
-    | "assistant.includeScenarioData"
-    | "assistant.showHelp"
-    | "cloud.showIntegrationsCreators"
-    | "debug.forceDisableModals"
-    | "debug.lightTheme"
-    | "debug.nodesAsJson"
-    | "editor.showRangeMessages"
-    | "editor.showResetToDefaultButton"
-    | "editor.allowForceSwitch"
-    | "node.advancedStickyNotes"
-    | "node.autoApply"
-    | "node.shortCounts"
-    | "node.showAggregateSwitcher"
-    | "node.showFragmentCreator"
-    | "node.showGenerateEndpointButton"
-    | "node.showInputsAndOutputs"
-    | "node.showMockFieldOnEnrichers"
-    | "node.showSendRequestButton"
-    | "scenario.allowQuickCancelDeploy"
-    | "scenario.allowQuickDeploy"
-    | "scenario.allowQuickSave"
-    | "scenario.autoEnableLiveData"
-    | "scenario.showBreadcrumbs"
-    | "scenario.showLiveDataAnimations"
-    | "toolbar.autoSaveDuringDeployRedeploy"
-    | `editor.${string}.noWrap`
-    | `editor.${string}.showLines`
-    | `survey.${string}.closed`;
+// empty default values, not visible on __settings until set
+type DynamicSettingsNames = `editor.${ExpressionLang}.noWrap` | `editor.${ExpressionLang}.showLines` | `survey.${string}.closed`;
 
-type ExtendRecordValue<T extends Record<string, any>, E> = {
+type DeferedString = string & NonNullable<unknown>;
+type KeysOfEntries<T> = T extends Array<[infer U, boolean]> ? U : never;
+type ExtendRecordValue<T extends Record<string, any>, E> = Prettify<{
     [K in keyof T]: T[K] | E;
-};
+}>;
 
-export type UserSettings = Partial<Record<SettingsNames, boolean>>;
-export type Setting = keyof UserSettings | NonNullable<string>;
+export type UserSettings = Partial<Readonly<Prettify<Record<DynamicSettingsNames, boolean> & ReturnType<typeof getDefaultUserSettings>>>>;
+export type Setting = NonNullable<keyof UserSettings>;
 
-export const getDefaultUserSettings = (initialUserFlags?: UserSettings): UserSettings => {
-    const createFlag = (key: Setting, defaultValue = false): [Setting, boolean] => [key, initialUserFlags?.[key] ?? defaultValue];
-    return Object.fromEntries([
+export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean>) => {
+    function createFlag<K extends DynamicSettingsNames | DeferedString>(key: K, defaultValue?: boolean): [K, boolean] {
+        return [key, initialUserFlags?.[key] ?? defaultValue];
+    }
+
+    const entries = [
+        // keep sorted
         createFlag("assistant.includeScenarioData"),
         createFlag("assistant.showHelp", true),
         createFlag("cloud.showIntegrationsCreators"),
+        createFlag("debug.dontRenderCountsOnNodes"),
+        createFlag("debug.editor.forceSpelEditors"),
         createFlag("debug.forceDisableModals"),
         createFlag("debug.lightTheme"),
         createFlag("debug.nodesAsJson"),
+        createFlag("debug.scenaro.showNodeAlignToolbar"),
+        createFlag("editor.allowForceSwitch"),
         createFlag("editor.json.showLines", true),
         createFlag("editor.jsonTemplate.showLines", true),
         createFlag("editor.showRangeMessages"),
         createFlag("editor.showResetToDefaultButton"),
-        createFlag("editor.allowForceSwitch"),
         createFlag("node.advancedStickyNotes"),
         createFlag("node.autoApply"),
         createFlag("node.shortCounts"),
@@ -67,10 +51,12 @@ export const getDefaultUserSettings = (initialUserFlags?: UserSettings): UserSet
         createFlag("scenario.allowQuickDeploy"),
         createFlag("scenario.allowQuickSave"),
         createFlag("scenario.autoEnableLiveData"),
+        createFlag("scenario.liveData.showNodeAnimations", true),
+        createFlag("scenario.liveData.showTransitionAnimations", true),
         createFlag("scenario.showBreadcrumbs"),
-        createFlag("scenario.showLiveDataAnimations", true),
         createFlag("toolbar.autoSaveDuringDeployRedeploy"),
-    ]);
+    ];
+    return Object.fromEntries(entries) as Readonly<Prettify<Record<KeysOfEntries<typeof entries>, boolean>>>;
 };
 
 const reducer: Reducer<{ defaults: UserSettings; values: ExtendRecordValue<UserSettings, "default"> }> = (

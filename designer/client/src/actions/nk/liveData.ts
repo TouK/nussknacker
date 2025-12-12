@@ -78,9 +78,11 @@ function fetchAndDisplayLiveData(showErrors = false, refresh = REFRESH_TIME): Th
 
 export function startLiveData(initiator: Initiator = null, showErrors = false): ThunkAction {
     return async (dispatch, getState) => {
-        dispatch(hideTestRunDetails());
-        await dispatch({ type: "LIVE_DATA_START", initiator });
+        dispatch({ type: "LIVE_DATA_START", initiator });
         AbortControllersStack.abortAll();
+        if (!getIsLiveDataWorking(getState())) {
+            dispatch(hideTestRunDetails());
+        }
         if (!getHasPauseReasons(getState())) {
             dispatch(fetchAndDisplayLiveData(showErrors));
         }

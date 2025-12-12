@@ -26,7 +26,7 @@ export const useJsonTreeTheme = () => {
     };
 
     const treeStyle: CSSProperties = {
-        font: `'Roboto Mono','Monaco',monospace`,
+        fontFamily: `'Roboto Mono','Monaco',monospace`,
         fontSize: "0.875rem",
         paddingTop: MuiTheme.spacing(1),
         paddingBottom: MuiTheme.spacing(1),

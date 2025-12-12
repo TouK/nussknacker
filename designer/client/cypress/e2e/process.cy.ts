@@ -388,6 +388,7 @@ describe("Process", () => {
                     .contains(/^source$/i)
                     .dblclick();
                 // restore (second way)
+                cy.wait(500);
                 cy.wrap($win).get("button[name=zoom]").click();
 
                 cy.wrap($win).should(($current) => {

@@ -4,6 +4,7 @@ import moment from "moment";
 import React, { useCallback, useMemo } from "react";
 
 import { prepareEditor } from "../Editor";
+import type { EditorConfigForType } from "../EditorConfig";
 import { editorsParameters } from "../editorsParameters";
 import { FormatterType, typeFormatters } from "../Formatter";
 import type { ExpressionObj } from "../types";
@@ -19,7 +20,7 @@ export type Duration = {
 
 type Props = {
     isMarked: boolean;
-    editorConfig: $TodoType;
+    editorConfig: EditorConfigForType<EditorType.DURATION_EDITOR>;
 };
 
 const SPEL_DURATION_SWITCHABLE_TO_REGEX =

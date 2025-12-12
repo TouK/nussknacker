@@ -1,6 +1,7 @@
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import { DefaultComponents as Window } from "@touk/window-manager";
 import type { DefaultContentProps } from "@touk/window-manager/cjs/components/window/DefaultContent";
+import { uniq } from "lodash";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import urljoin from "url-join";
@@ -31,6 +32,7 @@ import { TestResultsWrapper } from "../TestResultsWrapper";
 import { CloseButtonWithEditLock } from "./CloseButtonWithEditLock";
 import { EditStateFeedback } from "./EditStateFeedback";
 import { GeneralContent } from "./NodeContent/GeneralContent";
+import type { TabDef } from "./NodeContent/TabsWrapper";
 import { TabsWrapper } from "./NodeContent/TabsWrapper";
 import { TestingContent } from "./NodeContent/TestingContent";
 import { getReadOnly } from "./selectors";
@@ -141,40 +143,47 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
 
     useOnToolWindow(ToolId.node, node.id);
 
+    const nodeId = useMemo(() => {
+        return uniq([editedNode.$id, editedNode.id, node.id].filter(Boolean));
+    }, [editedNode.$id, editedNode.id, node.id]);
+
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled: buttonFromToolbar?.disabled });
 
-    //no process? no nodes? no window contents! no errors for whole tree!
-    if (!scenario?.scenarioGraph.nodes) {
-        return null;
-    }
+    const generalContent = useMemo(
+        () => <GeneralContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />,
+        [editedNode, onChange, outputEdges, readOnly],
+    );
+
+    const testingContent = useMemo(
+        () => (
+            <TestResultsWrapper nodeId={editedNode.id}>
+                <TestingContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />
+            </TestResultsWrapper>
+        ),
+        [editedNode, onChange, outputEdges, readOnly],
+    );
+
+    const tabs = useMemo<TabDef[]>(
+        () => [
+            {
+                label: t("nodeDetails.tabs.general.name", "General"),
+                content: generalContent,
+            },
+            {
+                label: t("nodeDetails.tabs.testing.name", "Testing"),
+                content: testingContent,
+                disabled: !testingScenarioEnabled,
+            },
+        ],
+        [generalContent, t, testingContent, testingScenarioEnabled],
+    );
 
     return (
-        <InputOutputContextProvider nodeId={editedNode.id}>
+        <InputOutputContextProvider nodeId={nodeId}>
             {settings["node.autoApply"] ? <EditStateFeedback editState={editState} /> : null}
 
             <WindowContent {...props} closeWithEsc={editState === "idle"} buttons={buttons} {...titleData} components={components}>
-                {testingScenarioEnabled ? (
-                    <TabsWrapper
-                        tabs={[
-                            {
-                                label: t("nodeDetails.tabs.general.name", "General"),
-                                content: (
-                                    <GeneralContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />
-                                ),
-                            },
-                            {
-                                label: t("nodeDetails.tabs.testing.name", "Testing"),
-                                content: (
-                                    <TestResultsWrapper nodeId={editedNode.id}>
-                                        <TestingContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />
-                                    </TestResultsWrapper>
-                                ),
-                            },
-                        ]}
-                    />
-                ) : (
-                    <GeneralContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />
-                )}
+                <TabsWrapper tabs={tabs} hideIfOne hideDisabled />
             </WindowContent>
         </InputOutputContextProvider>
     );

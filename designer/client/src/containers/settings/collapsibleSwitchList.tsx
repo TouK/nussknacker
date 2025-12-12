@@ -6,12 +6,15 @@ import {
     ListItem,
     ListItemButton,
     ListItemText,
+    styled,
     ToggleButton,
     ToggleButtonGroup,
     Typography,
 } from "@mui/material";
 import { capitalize, lowerCase } from "lodash";
 import React, { Fragment, useState } from "react";
+
+import { SearchHighlighter } from "../../components/toolbars/creator/SearchHighlighter";
 
 type Primitive = { value: boolean; isDefault: boolean };
 type NestedRecord = {
@@ -24,6 +27,8 @@ type CollapsibleSwitchListProps = {
     basePath?: string;
     level?: number;
     flattenSingleChild?: boolean;
+    openIfOnly?: boolean;
+    searchStrings?: string[];
 };
 
 function SwitchElement({
@@ -57,7 +62,15 @@ function isNestedObject(finalValue: Primitive | NestedRecord) {
     );
 }
 
-const CollapsibleSwitchList = ({ data, onToggle, basePath = "", level = 0, flattenSingleChild = true }: CollapsibleSwitchListProps) => {
+const CollapsibleSwitchList = ({
+    data,
+    onToggle,
+    basePath = "",
+    level = 0,
+    flattenSingleChild,
+    openIfOnly,
+    searchStrings = [],
+}: CollapsibleSwitchListProps) => {
     const [openKeys, setOpenKeys] = useState<Record<string, boolean>>({});
 
     const toggleOpen = (key: string) => {
@@ -87,7 +100,7 @@ const CollapsibleSwitchList = ({ data, onToggle, basePath = "", level = 0, flatt
                     const bLength = isNestedObject(a) ? Object.keys(a).length : 0;
                     return aLength - bLength;
                 })
-                .map(([key, value]) => {
+                .map(([key, value], index, all) => {
                     const [currentPath, finalValue] =
                         flattenSingleChild && typeof value === "object" && value !== null
                             ? flattenPath(value as NestedRecord, key)
@@ -99,13 +112,16 @@ const CollapsibleSwitchList = ({ data, onToggle, basePath = "", level = 0, flatt
                         .map((string) => capitalize(lowerCase(string)))
                         .join(" — ");
                     const fullPath = basePath ? `${basePath}.${currentPath}` : currentPath;
-                    const expanded = openKeys[currentPath];
+                    const expanded = openKeys[currentPath] || (openIfOnly && all.length === 1);
                     return isNested ? (
                         <Fragment key={currentPath}>
                             <ListItem disablePadding>
                                 <ListItemButton onClick={() => toggleOpen(currentPath)} sx={{ pl: 2 + level * 2 }}>
                                     <ListItemText
-                                        primary={expanded ? <strong>{label}</strong> : label}
+                                        primary={<StyledSearchHighlighter highlights={searchStrings}>{label}</StyledSearchHighlighter>}
+                                        primaryTypographyProps={{
+                                            fontWeight: expanded ? "bold" : null,
+                                        }}
                                         secondary={
                                             expanded ? null : (
                                                 <Typography variant="caption" sx={(theme) => ({ color: theme.palette.primary.main })}>{`${
@@ -126,6 +142,7 @@ const CollapsibleSwitchList = ({ data, onToggle, basePath = "", level = 0, flatt
                                     basePath={fullPath}
                                     level={level + 1}
                                     flattenSingleChild={flattenSingleChild}
+                                    openIfOnly={openIfOnly}
                                 />
                             </Collapse>
                         </Fragment>
@@ -133,7 +150,9 @@ const CollapsibleSwitchList = ({ data, onToggle, basePath = "", level = 0, flatt
                         <Fragment key={currentPath}>
                             <ListItem disablePadding>
                                 <ListItemButton onClick={isNested ? null : () => onToggle(fullPath)} sx={{ pl: 2 + level * 2 }}>
-                                    <ListItemText primary={label} />
+                                    <ListItemText
+                                        primary={<StyledSearchHighlighter highlights={searchStrings}>{label}</StyledSearchHighlighter>}
+                                    />
                                     <SwitchElement value={finalValue as Primitive} onChange={(v) => onToggle(fullPath, v)} />
                                 </ListItemButton>
                             </ListItem>
@@ -145,3 +164,9 @@ const CollapsibleSwitchList = ({ data, onToggle, basePath = "", level = 0, flatt
 };
 
 export default CollapsibleSwitchList;
+
+const StyledSearchHighlighter = styled(SearchHighlighter)({
+    ".Highlighter-highlight": {
+        fontWeight: "inherit",
+    },
+});

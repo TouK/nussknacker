@@ -80,6 +80,7 @@ export function getTestCounts(count: NodeCounts, shortCounts?: boolean): string 
 export const updateNodeCounts =
     (processCounts: ProcessCounts, userSettings: UserSettings, theme: Theme) =>
     (node: shapes.devs.Model): void => {
+        if (userSettings["debug.dontRenderCountsOnNodes"]) return;
         const shortCounts = userSettings["node.shortCounts"];
         const count = processCounts[node.id];
         const hasCounts = !isEmpty(count);

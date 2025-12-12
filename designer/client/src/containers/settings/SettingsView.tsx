@@ -20,13 +20,19 @@ function toNested<T>(entries: [string, T][]) {
 
 function SettingsView() {
     const settings = useAppSelector(getUserSettingsMerged);
-    const rawValues = useAppSelector((state) => getUserSettingsValues(state, true));
+    const rawValues = useAppSelector(getUserSettingsValues);
     const [filter, setFilter] = useState("");
+    const searchStrings = useMemo(() => filter.toLowerCase().split(" "), [filter]);
 
     const values = useMemo(() => {
-        const filtered = Object.entries(settings).filter(([key]) => key.toLowerCase().includes(filter.toLowerCase()));
+        const filtered = Object.entries(settings).filter(([key]) => {
+            const value = key.toLowerCase();
+            return searchStrings.every((string) => {
+                return value.includes(string);
+            });
+        });
         return toNested(filtered);
-    }, [filter, settings]);
+    }, [searchStrings, settings]);
 
     const { t } = useTranslation();
 
@@ -64,6 +70,8 @@ function SettingsView() {
                     );
                 }}
                 flattenSingleChild
+                openIfOnly
+                searchStrings={searchStrings.flatMap((v) => v.split("."))}
             />
         </Stack>
     );

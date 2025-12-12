@@ -4,7 +4,7 @@ import { TransitionGroup } from "react-transition-group";
 import { useInViewRef } from "rooks";
 
 import { ContextAccordion } from "./ContextAccordion";
-import { ContextTree } from "./ContextTree";
+import { ContextDataDisplay } from "./ContextDataDisplay";
 import { DoubleSlide } from "./DoubleSlide";
 import type { Direction, VariableContextType } from "./VariableContextTree";
 
@@ -56,7 +56,7 @@ export const ContextData = memo(function Data({
                             showNodes={showNodes}
                         >
                             {direction === "output" ? <>{r.error}</> : null}
-                            <ContextTree context={r} oldFields={direction === "output" ? inputVariables : []} />
+                            <ContextDataDisplay direction={direction} context={r} inputVariables={inputVariables} />
                         </ContextAccordion>
                     </DoubleSlide>
                 ))}

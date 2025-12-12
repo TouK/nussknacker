@@ -16,6 +16,12 @@ export enum VisibleDataType {
     counts = "counts",
 }
 
+type TestingState = {
+    testResults: TestResultsDto;
+    testResultsLoading?: boolean;
+    testData?: TestData;
+    testingDataRecords?: TestingDataRecords[];
+};
 export type GraphState = {
     scenarioLoading: boolean;
     scenario?: Scenario;
@@ -24,12 +30,7 @@ export type GraphState = {
     testCapabilities?: TestCapabilities;
     testFormParameters?: TestFormParameters[];
     visibleDataType?: VisibleDataType | null;
-    testing: {
-        testResults: TestResultsDto;
-        testResultsLoading?: boolean;
-        testData?: TestData;
-        testingDataRecords?: TestingDataRecords[];
-    };
+    testing: TestingState;
     processCountsRefresh?: RefreshData;
     processCounts: ProcessCounts;
 };

@@ -68,7 +68,7 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
     nodeId,
     children,
 }: PropsWithChildren<{
-    nodeId: string;
+    nodeId: string[];
 }>) {
     const scenario = useAppSelector(getScenarioGraph);
     const testResults = useAppSelector(getTestResults);
@@ -76,23 +76,30 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
     const [state, dispatch] = useReducer(reducer, initialState);
 
     const nodeTransitionResults = useMemo(
-        () => testResults?.nodeTransitionResults?.filter((r) => r.destinationNodeId === nodeId || r.sourceNodeId === nodeId),
+        () =>
+            nodeId.flatMap((nodeId) => {
+                return testResults?.nodeTransitionResults?.filter((r) => r.destinationNodeId === nodeId || r.sourceNodeId === nodeId) || [];
+            }),
         [nodeId, testResults?.nodeTransitionResults],
     );
 
     const inputs = useMemo(() => {
-        const transitionResults = nodeTransitionResults?.filter((r) => r.destinationNodeId === nodeId);
-        const connectedNodes = NodeUtils.getNodesConnectedToInput(nodeId, scenario).map((n) => n.id);
+        const transitionResults = nodeId.flatMap((nodeId) => {
+            return nodeTransitionResults.filter((r) => r.destinationNodeId === nodeId);
+        });
+        const connectedNodes = nodeId.flatMap((nodeId) => NodeUtils.getNodesConnectedToInput(nodeId, scenario).map((n) => n.id));
 
         return connectedNodes.map((id) => ({
             id,
-            ...transitionResults?.find((r) => r.sourceNodeId === id),
+            ...transitionResults.find((r) => r.sourceNodeId === id),
         }));
     }, [nodeId, nodeTransitionResults, scenario]);
 
     const outputs = useMemo(() => {
-        const connectedNodes: (string | null)[] = NodeUtils.getNodesConnectedToOutput(nodeId, scenario).map((n) => n.id);
-        const transitionResults = nodeTransitionResults?.filter((r) => r.sourceNodeId === nodeId);
+        const connectedNodes: (string | null)[] = nodeId.flatMap((nodeId) =>
+            NodeUtils.getNodesConnectedToOutput(nodeId, scenario).map((n) => n.id),
+        );
+        const transitionResults = nodeId.flatMap((nodeId) => nodeTransitionResults.filter((r) => r.sourceNodeId === nodeId));
 
         if (transitionResults?.length) {
             connectedNodes.push(null); // connection to "void"

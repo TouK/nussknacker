@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { get, mapValues } from "lodash";
+import { get } from "lodash";
 import type { PropsWithChildren } from "react";
 import React, { useCallback, useEffect, useMemo } from "react";
 import type { Styling } from "react-base16-styling/src/types";
@@ -9,7 +9,6 @@ import type { KeyPath } from "react-json-tree";
 import { JSONTree } from "react-json-tree";
 
 import { useJsonTreeTheme } from "../../../../containers/theme/useJsonTreeTheme";
-import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
 import { DndTypes } from "../../../DndTypes";
 
 class NotChanged {
@@ -74,8 +73,7 @@ function DraggableValue({
     );
 }
 
-export function ContextTree({ context, oldFields = [] }: { context: ResultContextJson; oldFields?: string[] }): React.JSX.Element {
-    const data = useMemo(() => mapValues(context?.variables, (v) => v?.pretty), [context?.variables]);
+export function ContextTree({ data, oldFields = [] }: { data: Record<string, unknown>; oldFields?: string[] }): React.JSX.Element {
     const keys = useMemo(() => Object.keys(data), [data]);
     const { extend, treeStyle } = useJsonTreeTheme();
 
