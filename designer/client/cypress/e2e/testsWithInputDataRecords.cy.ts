@@ -7,11 +7,11 @@ const verifyTableData = (row: number, col: number, htmlData: unknown) => {
 describe("test with events data", () => {
     const seed = "testsWithEventsData";
 
-    beforeEach(() => {
+    before(() => {
         cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
-    afterEach(() => {
+    after(() => {
         cy.deleteAllTestProcesses({ filter: seed });
     });
 
