@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.windowing.assigners.{EventTimeSessionWindows, TumblingEventTimeWindows}
-import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.EventTimeTrigger
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import pl.touk.nussknacker.engine.api.{Context => NkContext, _}
@@ -17,7 +16,6 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.ExtendedWindo
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.ClosingEndEventTrigger
 import pl.touk.nussknacker.engine.util.KeyedValue
 
-import scala.annotation.nowarn
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.Duration
 
@@ -89,7 +87,6 @@ object transformers {
     )
   }
 
-  @nowarn("cat=deprecation")
   def tumblingTransformer(
       groupBy: LazyParameter[AnyRef],
       groupByParameterName: ParameterName,
@@ -114,7 +111,8 @@ object transformers {
             new UnwrappingAggregateFunction[AnyRef](aggregator, aggregateBy.returnType, identity)
           val offsetMillis = windowOffset.getOrElse(Duration.Zero).toMillis
           val windowDefinition =
-            TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis), Time.milliseconds(offsetMillis))
+            TumblingEventTimeWindows
+              .of(java.time.Duration.ofMillis(windowLength.toMillis), java.time.Duration.ofMillis(offsetMillis))
 
           (tumblingWindowTrigger match {
             case TumblingWindowTrigger.OnEvent =>
@@ -150,7 +148,6 @@ object transformers {
   }
 
   // Experimental component, API may change in the future
-  @nowarn("cat=deprecation")
   def sessionWindowTransformer(
       groupBy: LazyParameter[AnyRef],
       groupByParameterName: ParameterName,
@@ -180,7 +177,7 @@ object transformers {
             .groupByWithValue(groupBy, groupByParameterName, groupByValue, preserveContext)
           val aggregatingFunction =
             new UnwrappingAggregateFunction[(AnyRef, java.lang.Boolean)](aggregator, aggregateBy.returnType, _._1)
-          val windowDefinition = EventTimeSessionWindows.withGap(Time.milliseconds(sessionTimeout.toMillis))
+          val windowDefinition = EventTimeSessionWindows.withGap(java.time.Duration.ofMillis(sessionTimeout.toMillis))
 
           (sessionWindowTrigger match {
             case SessionWindowTrigger.OnEvent =>

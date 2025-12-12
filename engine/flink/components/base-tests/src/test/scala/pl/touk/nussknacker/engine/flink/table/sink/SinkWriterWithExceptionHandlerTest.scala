@@ -108,9 +108,10 @@ object CollectSink extends SinkFactory {
           override def close(): Unit = exceptionHandler.close()
         }
 
+      // TODO: Remove after upgrade to Flink 2.x
       @nowarn("cat=deprecation")
-      def createWriter(context: Sink.InitContext): SinkWriter[Integer] =
-        throw new UnsupportedOperationException("Not implemented")
+      override def createWriter(context: Sink.InitContext): SinkWriter[Integer] =
+        throw new IllegalAccessException("This method shouldn't be invoked")
 
     }
   }

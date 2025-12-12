@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.serialization.SerializerConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.{
   CompositeTypeSerializerUtil,
@@ -46,8 +47,12 @@ abstract class TypedObjectBasedTypeInformation[T: ClassTag](informations: Array[
 
   override def isKeyType: Boolean = false
 
+  // TODO: Remove after upgrade to Flink 2.x
   @nowarn("cat=deprecation")
   override def createSerializer(config: ExecutionConfig): TypeSerializer[T] =
+    createSerializer(config.getSerializerConfig)
+
+  override def createSerializer(config: SerializerConfig): TypeSerializer[T] =
     createSerializer(serializers = informations.map { case (k, v) =>
       (k, v.createSerializer(config))
     })

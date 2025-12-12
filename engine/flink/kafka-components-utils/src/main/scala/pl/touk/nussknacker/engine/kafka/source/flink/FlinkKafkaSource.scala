@@ -67,7 +67,6 @@ class FlinkKafkaSource[K, V](
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
-    // FIXME: exception handling during deserialization
     env
       .fromSource(
         flinkSource(flinkNodeContext),
@@ -152,7 +151,7 @@ class FlinkKafkaSource[K, V](
   ): Source[ConsumerRecord[Array[Byte], Array[Byte]], _, _] = {
     val consumerGroupId = prepareConsumerGroupId(flinkNodeContext)
 
-    // FIXME abr use setStartingOffsets(OffsetsInitializer) instead
+    // TODO setStartingOffsets(OffsetsInitializer) instead of using KafkaUtils
     val offsetResetStrategy =
       flinkNodeContext.componentUseContext.deploymentData
         .flatMap(_.get(OFFSET_RESET_STRATEGY_PARAM_NAME.value))

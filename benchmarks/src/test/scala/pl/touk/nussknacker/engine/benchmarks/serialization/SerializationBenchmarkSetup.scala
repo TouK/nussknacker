@@ -6,7 +6,6 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.core.memory.{DataInputViewStreamWrapper, DataOutputViewStreamWrapper}
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import scala.annotation.nowarn
 
 class SerializationBenchmarkSetup[T](
     typeInfo: TypeInformation[T],
@@ -22,8 +21,7 @@ class SerializationBenchmarkSetup[T](
 
   private val data = new ByteArrayOutputStream(10 * 1024)
 
-  @nowarn("cat=deprecation")
-  private val serializer = typeInfo.createSerializer(config)
+  private val serializer = typeInfo.createSerializer(config.getSerializerConfig)
 
   {
     serializer.serialize(record, new DataOutputViewStreamWrapper(data))

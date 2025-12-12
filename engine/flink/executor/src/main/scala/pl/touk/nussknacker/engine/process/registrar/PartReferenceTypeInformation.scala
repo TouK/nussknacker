@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.serialization.SerializerConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.{CompositeTypeSerializerSnapshot, TypeSerializer, TypeSerializerSnapshot}
 import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
@@ -24,8 +25,12 @@ class PartReferenceTypeInformation extends TypeInformation[PartReference] {
 
   override def isKeyType: Boolean = false
 
+  // TODO: Remove after upgrade to Flink 2.x
   @nowarn("cat=deprecation")
-  override def createSerializer(config: ExecutionConfig): TypeSerializer[PartReference] = {
+  override def createSerializer(config: ExecutionConfig): TypeSerializer[PartReference] =
+    createSerializer(config.getSerializerConfig)
+
+  override def createSerializer(config: SerializerConfig): TypeSerializer[PartReference] = {
     val fragmentOutputFieldsSerializer = new KryoSerializer[Map[String, Any]](classOf[Map[String, Any]], config)
     new PartReferenceSerializer(fragmentOutputFieldsSerializer)
   }

@@ -11,13 +11,10 @@ trait SerializerRegistrar[S <: Serializer[_]] {
 
 }
 
-@deprecated(
-  "Instance-based Kryo serializers registration is deprecated and will be removed in Flink 2.0. " +
-    "Instead of this either standard Flink classes should be passed or TypeInfo mechanism or class-based Kryo serializers should be used. " +
-    "See https://cwiki.apache.org/confluence/display/FLINK/FLIP-398:+Improve+Serialization+Configuration+And+Usage+In+Flink and " +
-    "deprecation notice next to SerializableSerializer for details",
-  "1.18"
-)
+// Instance-based Kryo serializers registration is deprecated and will be removed in Flink 2.0.
+// Instead of this either standard Flink classes should be passed or TypeInfo mechanism or class-based Kryo serializers should be used.
+// See https://cwiki.apache.org/confluence/display/FLINK/FLIP-398:+Improve+Serialization+Configuration+And+Usage+In+Flink and
+// deprecation notice next to SerializableSerializer for details
 class InstanceBasedKryoSerializerRegistrar[T, S <: Serializer[T] with Serializable](
     serializerInstance: S,
     clazz: Class[T]
@@ -32,10 +29,10 @@ class InstanceBasedKryoSerializerRegistrar[T, S <: Serializer[T] with Serializab
 
 }
 
-@nowarn("cat=deprecation")
 class ClassBasedKryoSerializerRegistrar[T, S <: Serializer[T]](serializerClass: Class[S], clazz: Class[T])
     extends SerializerRegistrar[S] {
 
+  @nowarn("cat=deprecation")
   override def registerIn(config: ExecutionConfig): Unit = {
     config.addDefaultKryoSerializer(clazz, serializerClass)
   }

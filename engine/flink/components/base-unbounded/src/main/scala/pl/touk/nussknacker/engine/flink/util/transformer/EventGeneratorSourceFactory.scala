@@ -43,7 +43,6 @@ import pl.touk.nussknacker.engine.util.watermarkstrategy.{
 import java.time.{Duration, Instant}
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.{CompletableFuture, TimeUnit}
-import scala.annotation.nowarn
 
 object EventGeneratorSourceFactory
     extends SourceFactory
@@ -143,7 +142,6 @@ object EventGeneratorSourceFactory
     inputContext.withVariableUnsafe(InputVariableName, valueType.withoutValue)
   }
 
-  @nowarn("cat=deprecation")
   override def implementation(
       params: Params,
       dependencies: List[NodeDependencyValue],

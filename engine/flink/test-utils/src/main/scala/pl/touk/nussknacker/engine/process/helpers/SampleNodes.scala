@@ -7,13 +7,12 @@ import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction}
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.connector.sink2.{Sink => SinkV2, SinkWriter}
+import org.apache.flink.api.connector.sink2.{Sink => SinkV2, SinkWriter, WriterInitContext}
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.functions.co.{CoMapFunction, RichCoFlatMapFunction}
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
-import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.runtime.streamrecord.{RecordAttributes, StreamRecord}
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api
@@ -31,7 +30,6 @@ import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordPars
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType, TypedMap}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
@@ -509,7 +507,6 @@ object SampleNodes {
 
   object TransformerWithTime extends CustomStreamTransformer with Serializable {
 
-    @nowarn("cat=deprecation")
     @MethodToInvoke
     def execute(@OutputVariableName outputVarName: String, @ParamName("seconds") seconds: Int)(
         implicit nodeId: NodeId
@@ -521,7 +518,7 @@ object SampleNodes {
             start
               .map(_ => 1: java.lang.Integer)
               .keyBy((_: java.lang.Integer) => "")
-              .window(TumblingEventTimeWindows.of(Time.seconds(seconds)))
+              .window(TumblingEventTimeWindows.of(java.time.Duration.ofSeconds(seconds)))
               .reduce((k, v) => k + v: java.lang.Integer)
               .map(
                 (i: java.lang.Integer) => ValueWithContext[AnyRef](i, Context.dummy),
@@ -585,20 +582,27 @@ object SampleNodes {
 
     override def canBeEnding: Boolean = true
 
-    @nowarn("cat=deprecation")
     @MethodToInvoke(returnType = classOf[String])
     def execute(@ParamName("param") @Nullable param: LazyParameter[String]) =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
         val afterMap = start
           .flatMap(context.lazyParameterHelper.lazyMapFunction[AnyRef](param))
-        afterMap.sinkTo((_: SinkV2.InitContext) =>
-          new SinkWriter[ValueWithContext[AnyRef]] {
-            override def write(element: ValueWithContext[AnyRef], context: SinkWriter.Context): Unit =
-              resultsHolder.add(element.value)
+        afterMap.sinkTo(
+          new SinkV2[ValueWithContext[AnyRef]] {
+            // TODO: Remove after upgrade to Flink 2.x
+            @nowarn("cat=deprecation")
+            override def createWriter(context: SinkV2.InitContext): SinkWriter[ValueWithContext[AnyRef]] =
+              throw new IllegalAccessException("This method shouldn't be invoked")
 
-            override def flush(endOfInput: Boolean): Unit = {}
+            override def createWriter(context: WriterInitContext): SinkWriter[ValueWithContext[AnyRef]] =
+              new SinkWriter[ValueWithContext[AnyRef]] {
+                override def write(element: ValueWithContext[AnyRef], context: SinkWriter.Context): Unit =
+                  resultsHolder.add(element.value)
 
-            override def close(): Unit = {}
+                override def flush(endOfInput: Boolean): Unit = {}
+
+                override def close(): Unit = {}
+              }
           }
         )
         afterMap
@@ -621,8 +625,12 @@ object SampleNodes {
 
       override def toFlinkSink(flinkCustomNodeContext: FlinkCustomNodeContext): SinkV2[String] =
         new SinkV2[String] {
+          // TODO: Remove after upgrade to Flink 2.x
           @nowarn("cat=deprecation")
-          override def createWriter(context: SinkV2.InitContext): SinkWriter[String] = new SinkWriter[String] {
+          override def createWriter(context: SinkV2.InitContext): SinkWriter[String] =
+            throw new IllegalAccessException("This method shouldn't be invoked")
+
+          override def createWriter(context: WriterInitContext): SinkWriter[String] = new SinkWriter[String] {
             override def write(element: String, context: SinkWriter.Context): Unit = resultsHolder.add(element)
 
             override def flush(endOfInput: Boolean): Unit = {}

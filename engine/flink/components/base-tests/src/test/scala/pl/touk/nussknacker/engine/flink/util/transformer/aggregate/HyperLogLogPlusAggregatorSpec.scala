@@ -14,10 +14,8 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import scala.annotation.nowarn
 import scala.util.Random
 
-@nowarn("cat=deprecation")
 class HyperLogLogPlusAggregatorSpec extends AnyFunSuite with Matchers {
 
   // the aim of this test is to be able to test different parameters easily
@@ -72,15 +70,15 @@ class HyperLogLogPlusAggregatorSpec extends AnyFunSuite with Matchers {
         serializerAssertion: TypeSerializer[_] => Assertion
     ) = {
       val typeInfo   = rawTypeInfo.asInstanceOf[TypeInformation[CardinalityWrapper]]
-      val serializer = typeInfo.createSerializer(ex)
+      val serializer = typeInfo.createSerializer(ex.getSerializerConfig)
 
       val compatibility = serializer
         .snapshotConfiguration()
-        .resolveSchemaCompatibility(typeInfo.createSerializer(ex))
+        .resolveSchemaCompatibility(typeInfo.createSerializer(ex.getSerializerConfig).snapshotConfiguration())
       compatibility.isCompatibleAsIs shouldBe true
 
       val data = new ByteArrayOutputStream(1024)
-      serializer.asInstanceOf[TypeSerializer[CardinalityWrapper]].serialize(ic, new DataOutputViewStreamWrapper(data))
+      serializer.serialize(ic, new DataOutputViewStreamWrapper(data))
       serializerAssertion(serializer)
 
       // We check expected serialized size to avoid surprises when e.g. sth causes switching back to Kryo/Pojo serialization...

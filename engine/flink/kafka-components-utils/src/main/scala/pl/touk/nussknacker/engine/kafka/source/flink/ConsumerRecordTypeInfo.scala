@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
+import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.serialization.SerializerConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnapshot}
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
@@ -15,9 +17,13 @@ class ConsumerRecordTypeInfo[K, V](val keyTypeInfo: TypeInformation[K], val valu
 
   override def getTypeClass: Class[ConsumerRecord[K, V]] = classOf[ConsumerRecord[K, V]]
 
+  // TODO: Remove after upgrade to Flink 2.x
   @nowarn("cat=deprecation")
+  override def createSerializer(config: ExecutionConfig): TypeSerializer[ConsumerRecord[K, V]] =
+    createSerializer(config.getSerializerConfig)
+
   override def createSerializer(
-      config: org.apache.flink.api.common.ExecutionConfig
+      config: SerializerConfig
   ): TypeSerializer[ConsumerRecord[K, V]] = {
     new ConsumerRecordSerializer[K, V](keyTypeInfo.createSerializer(config), valueTypeInfo.createSerializer(config))
   }

@@ -4,7 +4,6 @@ import org.apache.flink.api.common.functions.{OpenContext, RichFlatMapFunction, 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
-import org.apache.flink.streaming.api.functions.sink.DiscardingSink
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.types.logical.RowType
 import org.apache.flink.types.Row
@@ -70,7 +69,9 @@ class TableSink(
       Flink docs show something like this when integrating table api with inserts into dataStream. For details read:
       https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/data_stream_api/.
      */
-    dataStream.addSink(new DiscardingSink())
+    // FIXME abr Variant with SinkV2 causes java.math.BigDecimal cannot be cast to class java.lang.Integer in tests
+    dataStream.addSink(new org.apache.flink.streaming.api.functions.sink.DiscardingSink[ValueWithContext[AnyRef]]())
+//    dataStream.sinkTo(new org.apache.flink.streaming.api.functions.sink.v2.DiscardingSink[ValueWithContext[AnyRef]]())
   }
 
 }
@@ -106,6 +107,7 @@ class EncodeAsTableTypeFunction private (
     }
     super.close()
   }
+
 }
 
 object EncodeAsTableTypeFunction {
