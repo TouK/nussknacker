@@ -67,6 +67,9 @@ export const VariableContextTree = memo(function ValuesContextTree({
                 width: "100%",
                 height: "100%",
                 minWidth: 220,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "flex-start",
             }}
             onMouseEnter={toggleRefresh}
             onMouseLeave={toggleRefresh}
