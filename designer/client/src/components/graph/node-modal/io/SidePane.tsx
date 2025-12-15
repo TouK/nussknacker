@@ -25,7 +25,11 @@ export const SidePane = memo(function SidePane({
                 }}
             >
                 <ErrorBoundary fallback={<div>{`ERROR`}</div>}>
-                    <VariableContextTree direction={sideState.side === "left" ? "input" : "output"} onIsEmptyChange={isEmptyChange} />
+                    <VariableContextTree
+                        paused={sideState.collapsed}
+                        direction={sideState.side === "left" ? "input" : "output"}
+                        onIsEmptyChange={isEmptyChange}
+                    />
                 </ErrorBoundary>
             </SidePanelBox>
             {children}
