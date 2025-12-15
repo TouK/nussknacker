@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
-import org.apache.flink.api.common.eventtime.WatermarkStrategy
+import org.apache.flink.api.common.eventtime.{Watermark, WatermarkStrategy}
 import org.apache.flink.api.connector.source.{Boundedness, ReaderOutput, SourceReader, SourceReaderContext}
 import org.apache.flink.core.io.InputStatus
 import org.apache.flink.streaming.api.datastream.DataStream
@@ -86,7 +86,7 @@ object BlockingQueueSource {
               output.collect(element, timestamp)
 
               val watermark =
-                new org.apache.flink.api.common.eventtime.Watermark(timestamp - maxOutOfOrderness.toMillis)
+                new Watermark(timestamp - maxOutOfOrderness.toMillis)
               output.emitWatermark(watermark)
               InputStatus.MORE_AVAILABLE
             case Some(None) =>
