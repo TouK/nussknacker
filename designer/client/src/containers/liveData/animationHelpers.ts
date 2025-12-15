@@ -41,14 +41,14 @@ export function updateAnimation({
     switch (name) {
         case "node": {
             const color = "rgb(255,150,255)";
-            const fill = alpha(color, 0.04);
-            const fill2 = alpha(color, 0.22);
+            const fill = alpha(color, 0.1);
+            const fillMax = alpha(color, 0.22);
             if (throughput <= 15) {
                 currentAnimation?.cancel();
                 el.animate(
                     [
                         { offset: 0, fill: "transparent" },
-                        { offset: 0.25, fill: fill2 },
+                        { offset: 0.25, fill: fillMax },
                         { offset: 1, fill: "transparent" },
                     ],
                     {
@@ -65,7 +65,7 @@ export function updateAnimation({
                 currentAnimation.updatePlaybackRate(playbackRate);
                 return;
             }
-            el.animate([{ fill: fill }, { fill: fill2 }, { fill: fill }], {
+            el.animate([{ fill }, { fill: fillMax }, { fill }], {
                 id: name,
                 iterations: Infinity,
                 duration: 1000,
