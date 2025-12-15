@@ -54,8 +54,8 @@ case class CollectionSource[T](
   ): Source[T, _, _] = {
     val typeInformation  = TypeInformationDetection.instance.forType[T](returnType)
     val listWithoutNulls = handleNullsInData(list)
-    // DataGeneratorSource which an empty list try to process one element
-    // which ends up with NoSuchElementException in FromElementsGeneratorFunction.tryDeserialize
+    // DataGeneratorSource will throw NoSuchElementException from FromElementsGeneratorFunction.tryDeserialize
+    // when created with an empty element list
     if (listWithoutNulls.isEmpty) {
       new EmptySource[T](boundedness, typeInformation)
     } else {

@@ -17,7 +17,8 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.Clos
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import scala.collection.immutable.SortedMap
-import scala.concurrent.duration.Duration
+import scala.compat.java8.DurationConverters._
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 //TODO: think about merging these with TransformStateFunction and/or PreviousValueFunction
 object transformers {
@@ -27,7 +28,7 @@ object transformers {
       groupByParameterName: ParameterName,
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
-      windowLength: Duration,
+      windowLength: FiniteDuration,
       variableName: String,
       emitWhenEventLeft: Boolean,
   )(implicit nodeId: NodeId): ContextTransformation = {
@@ -71,9 +72,9 @@ object transformers {
       groupByParameterName: ParameterName,
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
-      windowLength: Duration,
+      windowLength: FiniteDuration,
       variableName: String,
-      windowOffset: Option[Duration] = None
+      windowOffset: Option[FiniteDuration] = None
   )(implicit nodeId: NodeId): ContextTransformation = {
     tumblingTransformer(
       groupBy,
@@ -92,10 +93,10 @@ object transformers {
       groupByParameterName: ParameterName,
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
-      windowLength: Duration,
+      windowLength: FiniteDuration,
       variableName: String,
       tumblingWindowTrigger: TumblingWindowTrigger,
-      windowOffset: Option[Duration]
+      windowOffset: Option[FiniteDuration]
   )(implicit nodeId: NodeId): ContextTransformation = {
     val preserveContext = tumblingWindowTrigger == TumblingWindowTrigger.OnEvent
     ContextTransformation
@@ -109,10 +110,10 @@ object transformers {
             .groupByWithValue(groupBy, groupByParameterName, aggregateBy, preserveContext)
           val aggregatingFunction =
             new UnwrappingAggregateFunction[AnyRef](aggregator, aggregateBy.returnType, identity)
-          val offsetMillis = windowOffset.getOrElse(Duration.Zero).toMillis
+          val offsetDuration = windowOffset.getOrElse(Duration.Zero)
           val windowDefinition =
             TumblingEventTimeWindows
-              .of(java.time.Duration.ofMillis(windowLength.toMillis), java.time.Duration.ofMillis(offsetMillis))
+              .of(windowLength.toJava, offsetDuration.toJava)
 
           (tumblingWindowTrigger match {
             case TumblingWindowTrigger.OnEvent =>
@@ -135,7 +136,7 @@ object transformers {
                   new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](
                     aggregator,
                     windowLength.toMillis,
-                    offsetMillis,
+                    offsetDuration.toMillis,
                     nodeId,
                     aggregateBy.returnType,
                     typeInfos.storedTypeInfo,
@@ -153,7 +154,7 @@ object transformers {
       groupByParameterName: ParameterName,
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
-      sessionTimeout: Duration,
+      sessionTimeout: FiniteDuration,
       endSessionCondition: LazyParameter[java.lang.Boolean],
       sessionWindowTrigger: SessionWindowTrigger,
       variableName: String
@@ -177,7 +178,7 @@ object transformers {
             .groupByWithValue(groupBy, groupByParameterName, groupByValue, preserveContext)
           val aggregatingFunction =
             new UnwrappingAggregateFunction[(AnyRef, java.lang.Boolean)](aggregator, aggregateBy.returnType, _._1)
-          val windowDefinition = EventTimeSessionWindows.withGap(java.time.Duration.ofMillis(sessionTimeout.toMillis))
+          val windowDefinition = EventTimeSessionWindows.withGap(sessionTimeout.toJava)
 
           (sessionWindowTrigger match {
             case SessionWindowTrigger.OnEvent =>

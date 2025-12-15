@@ -257,4 +257,11 @@ class EventGeneratorSourceFactorySpec
     countDefinition.editors shouldBe List(SpelParameterEditor)
   }
 
+  test("should compute correctly per seconds frequency used in rate limiting strategy") {
+    EventGeneratorSourceFactory.computePerSecondsFrequency(Duration.ofSeconds(1)) shouldBe Some(1)
+    EventGeneratorSourceFactory.computePerSecondsFrequency(Duration.ofMillis(100)) shouldBe Some(10)
+    EventGeneratorSourceFactory.computePerSecondsFrequency(Duration.ofMinutes(1)) shouldBe Some(1.doubleValue() / 60)
+    EventGeneratorSourceFactory.computePerSecondsFrequency(Duration.ZERO) shouldBe None
+  }
+
 }

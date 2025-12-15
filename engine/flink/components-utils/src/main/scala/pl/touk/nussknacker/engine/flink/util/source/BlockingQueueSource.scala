@@ -46,9 +46,10 @@ class BlockingQueueSource[T](returnType: TypingResult, extractTimestampFun: T =>
       .fromSource(
         new BlockingQueueFlinkSource[T](id, extractTimestampFun, maxOutOfOrderness),
         WatermarkStrategy.noWatermarks(),
-        s"${flinkNodeContext.metaData.name}-${flinkNodeContext.nodeId}-source",
+        flinkNodeContext.nodeId.id,
         TypeInformationDetection.instance.forType[T](returnType)
       )
+      .uid(flinkNodeContext.nodeId.id)
       .map(
         new FlinkContextInitializingFunction(
           contextInitializer,

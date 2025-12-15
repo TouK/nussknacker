@@ -72,8 +72,8 @@ class DataRecordsSource(
   }
 
   private def flinkSource(executionConfig: ExecutionConfig): Source[DataRecord, _, _] = {
-    // DataGeneratorSource which an empty list try to process one element
-    // which ends up with NoSuchElementException in FromElementsGeneratorFunction.tryDeserialize
+    // DataGeneratorSource will throw NoSuchElementException from FromElementsGeneratorFunction.tryDeserialize
+    // when created with an empty element list
     if (dataRecords.isEmpty) {
       new EmptySource[DataRecord](Boundedness.BOUNDED, dataRecordTypeInformation)
     } else {

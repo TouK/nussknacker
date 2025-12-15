@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 object sampleTransformers {
 
@@ -111,9 +111,9 @@ object sampleTransformers {
         @ParamName("emitWhen") trigger: TumblingWindowTrigger,
         @OutputVariableName variableName: String
     )(implicit nodeId: NodeId): ContextTransformation = {
-      val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
+      val windowDuration = FiniteDuration(length.toMillis, TimeUnit.MILLISECONDS)
       val maybeOffset = config.tumblingWindowsOffset
-        .map(j => Duration(j.toMillis, TimeUnit.MILLISECONDS))
+        .map(j => FiniteDuration(j.toMillis, TimeUnit.MILLISECONDS))
         .map(o => AggregateWindowsOffsetProvider.offset(windowDuration, o))
       transformers.tumblingTransformer(
         groupBy,

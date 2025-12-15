@@ -7,11 +7,16 @@ import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.api.connector.source.Source
 import org.apache.flink.connector.kafka.source.KafkaSource
+import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
 import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializationSchema
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.util.Collector
-import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.clients.consumer.{
+  ConsumerConfig,
+  ConsumerRecord,
+  OffsetResetStrategy => FlinkOffsetResetStrategy
+}
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId}
 import pl.touk.nussknacker.engine.api.component.StaticParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesWithRadioParameterEditor, Parameter}
@@ -151,31 +156,57 @@ class FlinkKafkaSource[K, V](
   ): Source[ConsumerRecord[Array[Byte], Array[Byte]], _, _] = {
     val consumerGroupId = prepareConsumerGroupId(flinkNodeContext)
 
-    // TODO setStartingOffsets(OffsetsInitializer) instead of using KafkaUtils
-    val offsetResetStrategy =
-      flinkNodeContext.componentUseContext.deploymentData
-        .flatMap(_.get(OFFSET_RESET_STRATEGY_PARAM_NAME.value))
-        .map(OffsetResetStrategy.withName)
-        .getOrElse(defaultOffsetResetStrategy)
-    logger.info(
-      s"Flink source for scenario ${flinkNodeContext.jobData.processVersion.processName.value} for node ${flinkNodeContext.nodeId} defaultOffsetResetStrategy=${kafkaComponentsConfig.defaultOffsetResetStrategy}, offsetResetStrategy=${offsetResetStrategy}"
-    )
+    val consumerProperties = KafkaUtils.toConsumerProperties(kafkaComponentsConfig, Some(consumerGroupId))
 
-    offsetResetStrategy match {
-      case OffsetResetStrategy.ToLatest =>
-        topics.toList.foreach(t => KafkaUtils.setOffsetToLatest(t.name, consumerGroupId, kafkaComponentsConfig))
-      case OffsetResetStrategy.ToEarliest =>
-        topics.toList.foreach(t => KafkaUtils.setOffsetToEarliest(t.name, consumerGroupId, kafkaComponentsConfig))
-      case OffsetResetStrategy.None =>
-        ()
-    }
+    val offsetResetStrategyFromDeployParams = flinkNodeContext.componentUseContext.deploymentData
+      .flatMap(_.get(OFFSET_RESET_STRATEGY_PARAM_NAME.value))
+      .map(OffsetResetStrategy.withName)
+    val offsetResetStrategy             = offsetResetStrategyFromDeployParams.getOrElse(defaultOffsetResetStrategy)
+    val autoOffsetResetKafkaConfigValue = Option(consumerProperties.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG))
+    logger.info(
+      s"Flink source for scenario ${flinkNodeContext.jobData.processVersion.processName.value} for node ${flinkNodeContext.nodeId} " +
+        s"defaultOffsetResetStrategy=${kafkaComponentsConfig.defaultOffsetResetStrategy}, " +
+        s"offsetResetStrategy=$offsetResetStrategy, " +
+        s"${ConsumerConfig.AUTO_OFFSET_RESET_CONFIG}=$autoOffsetResetKafkaConfigValue"
+    )
+    val startingOffsetInitializer = prepareOffsetInitializer(offsetResetStrategy, autoOffsetResetKafkaConfigValue)
 
     KafkaSource
       .builder()
+      .setStartingOffsets(startingOffsetInitializer)
       .setTopics(topics.map(_.name).toList.asJava)
       .setDeserializer(noopDeserializationSchema)
-      .setProperties(KafkaUtils.toConsumerProperties(kafkaComponentsConfig, Some(consumerGroupId)))
+      .setProperties(consumerProperties)
       .build()
+  }
+
+  private def prepareOffsetInitializer(
+      offsetResetStrategy: OffsetResetStrategy,
+      autoOffsetResetKafkaConfigValue: Option[AnyRef]
+  ) = {
+    offsetResetStrategy match {
+      case OffsetResetStrategy.ToLatest =>
+        OffsetsInitializer.latest()
+      case OffsetResetStrategy.ToEarliest =>
+        OffsetsInitializer.earliest()
+      case OffsetResetStrategy.None =>
+        val missingCommitedOffsetResetStrategy = autoOffsetResetKafkaConfigValue match {
+          case Some("earliest") => FlinkOffsetResetStrategy.EARLIEST
+          case Some("latest")   => FlinkOffsetResetStrategy.LATEST
+          case Some("none")     => FlinkOffsetResetStrategy.NONE
+          case None =>
+            logger.debug(
+              s"No ${ConsumerConfig.AUTO_OFFSET_RESET_CONFIG} kafka config property specified - setting offset reset strategy to ${FlinkOffsetResetStrategy.EARLIEST} "
+            )
+            FlinkOffsetResetStrategy.EARLIEST
+          case Some(other) =>
+            logger.warn(
+              s"Unrecognized ${ConsumerConfig.AUTO_OFFSET_RESET_CONFIG} kafka config property value: $other - setting offset reset strategy to ${FlinkOffsetResetStrategy.EARLIEST} "
+            )
+            FlinkOffsetResetStrategy.EARLIEST
+        }
+        OffsetsInitializer.committedOffsets(missingCommitedOffsetResetStrategy)
+    }
   }
 
   // Flink implementation of testing uses direct output from testDataParser, so we perform deserialization here, in contrast to Lite implementation

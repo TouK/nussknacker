@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.{CommonClientConfigs, KafkaClient}
 import org.apache.kafka.clients.admin.{Admin, AdminClient}
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
-import org.apache.kafka.clients.producer.{Callback, Producer, ProducerConfig, ProducerRecord, RecordMetadata}
+import org.apache.kafka.clients.producer._
 import org.apache.kafka.common.{IsolationLevel, TopicPartition}
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.api.process.TopicName
@@ -13,10 +13,8 @@ import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import java.time
 import java.util.{Collections, Properties}
-import java.util.concurrent.TimeUnit
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.{Await, Future, Promise}
-import scala.concurrent.duration.Duration
+import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Using}
 import scala.util.Using.Releasable
 
@@ -24,7 +22,6 @@ object KafkaUtils extends KafkaUtils
 
 trait KafkaUtils extends LazyLogging {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
   import scala.jdk.CollectionConverters._
 
   val defaultTimeoutMillis = 10000
@@ -57,28 +54,6 @@ trait KafkaUtils extends LazyLogging {
   def sanitizeClientId(originalId: String): String =
     // https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/common/Config.scala#L25-L35
     originalId.replaceAll("[^a-zA-Z0-9\\._\\-]", "_")
-
-  def setOffsetToLatest(topic: String, groupId: String, config: KafkaComponentsConfig): Unit = {
-    val timeoutMillis = readTimeoutForTempConsumer(config)
-    logger.info(s"Setting offset to latest for topic: $topic, groupId: $groupId")
-    val consumerAfterWork = Future {
-      doWithTempKafkaConsumer(config, Some(groupId)) { consumer =>
-        setOffsetToLatest(topic, consumer)
-      }
-    }
-    Await.result(consumerAfterWork, Duration.apply(timeoutMillis, TimeUnit.MILLISECONDS))
-  }
-
-  def setOffsetToEarliest(topic: String, groupId: String, config: KafkaComponentsConfig): Unit = {
-    val timeoutMillis = readTimeoutForTempConsumer(config)
-    logger.info(s"Setting offset to latest for topic: $topic, groupId: $groupId")
-    val consumerAfterWork = Future {
-      doWithTempKafkaConsumer(config, Some(groupId)) { consumer =>
-        setOffsetToEarliest(topic, consumer)
-      }
-    }
-    Await.result(consumerAfterWork, Duration.apply(timeoutMillis, TimeUnit.MILLISECONDS))
-  }
 
   def toProducerProperties(config: KafkaComponentsConfig, clientId: String): Properties = {
     val props: Properties = new Properties

@@ -164,12 +164,10 @@ object EventGeneratorSourceFactory
       override val watermarkStrategyOptions: WatermarkStrategyOptions = extractedWatermarkStrategyOptions
 
       // The stream is created in the following way:
-      // 1. Events are triggered by PeriodicFunction
-      // 2. There are N=`count` events generated for each event triggered by PeriodicFunction
-      // 3. Empty Context is created for each event
-      // 4. The input value is evaluated for each event separately, based on the context
-      // 5. Source id and timestamps are being set for each value
-      // 6. The generated value is added to the context as `input`
+      // 1. Events are triggered by Flink DataGeneratorSource
+      // 2. There are N=`count` events generated for each event triggered by DataGeneratorSource
+      // 3. Context with evaluated input value is created for each event
+      // 4. Timestamp and watermarks are being set for each value
       override final def contextStream(
           env: StreamExecutionEnvironment,
           flinkNodeContext: FlinkCustomNodeContext
@@ -185,6 +183,9 @@ object EventGeneratorSourceFactory
           .setUidAndNameToNodeId(flinkNodeContext.nodeId)
           .flatMap(
             (_: Void, out: Collector[Void]) => {
+              // This 'null' is a dummy value. It has to exist for each event, but its value is completely ignored.
+              // The type is not important too, it just has to be serializable by Flink.
+              // For each of those dummy values, a new Context will be created.
               (1 to localCount).foreach(_ => out.collect(null))
             },
             Types.VOID
@@ -255,16 +256,17 @@ object EventGeneratorSourceFactory
     new DataGeneratorSource[Void](
       (_: java.lang.Long) => null,
       Long.MaxValue,
-      new RateLimiterStrategy {
-        override def createRateLimiter(parallelism: Int): RateLimiter = () =>
-          CompletableFuture
-            .runAsync(
-              () => (),
-              CompletableFuture.delayedExecutor(schedule.toMillis, TimeUnit.MILLISECONDS)
-            )
-      },
+      computePerSecondsFrequency(schedule).map(RateLimiterStrategy.perSecond).getOrElse(RateLimiterStrategy.noOp()),
       Types.VOID
     )
+  }
+
+  private[transformer] def computePerSecondsFrequency(schedule: Duration) = {
+    if (schedule == Duration.ZERO) {
+      None
+    } else {
+      Some(1000.toDouble / schedule.toMillis)
+    }
   }
 
 }

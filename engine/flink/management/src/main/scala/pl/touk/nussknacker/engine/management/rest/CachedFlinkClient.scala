@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy.{CanBeCache
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ExecutionConfig, JobDetails, JobOverview}
 
 import java.io.File
+import scala.compat.java8.DurationConverters.FiniteDurationops
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
@@ -23,7 +24,7 @@ class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDurat
   private val jobsOverviewCache: AsyncCache[String, List[JobOverview]] =
     Caffeine
       .newBuilder()
-      .expireAfterWrite(java.time.Duration.ofMillis(jobsOverviewCacheTTL.toMillis))
+      .expireAfterWrite(jobsOverviewCacheTTL.toJava)
       .buildAsync[String, List[JobOverview]]()
 
   private val jobsConfigCache: Cache[JobID, ExecutionConfig] =

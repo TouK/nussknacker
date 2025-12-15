@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
-import scala.concurrent.duration.{Duration, MILLISECONDS}
+import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
 
 object AggregateWindowsOffsetProvider {
 
-  def offset(windowDuration: Duration, expectedOffset: Duration): Duration = {
-    Duration.apply(expectedOffset.toMillis % windowDuration.toMillis, MILLISECONDS)
+  def offset(windowDuration: FiniteDuration, expectedOffset: FiniteDuration): FiniteDuration = {
+    FiniteDuration(expectedOffset.toMillis % windowDuration.toMillis, MILLISECONDS)
   }
 
 }
