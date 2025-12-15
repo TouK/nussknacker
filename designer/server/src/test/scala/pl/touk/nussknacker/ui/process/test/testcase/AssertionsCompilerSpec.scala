@@ -28,6 +28,8 @@ import java.util.UUID
 
 class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
 
+  import pl.touk.nussknacker.engine.util.Implicits._
+  
   private val baseDefinition = ModelDefinitionBuilder.empty
     .withUnboundedStreamSource("sourceWithUnknown", Some(Unknown))
     .withService("enricher1", Some(Typed[String]), Parameter[String](ParameterName("par1")))
@@ -126,7 +128,7 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
       .compile(scenario)
 
     compilationResult.result match {
-      case Validated.Valid(_) => compilationResult.typing.view.mapValues(nodeInfoToResult).toMap
+      case Validated.Valid(_) => compilationResult.typing.mapValuesNow(nodeInfoToResult).toMap
       case Validated.Invalid(errors) =>
         throw new IllegalStateException(s"Process compilation ended with errors: $errors")
     }

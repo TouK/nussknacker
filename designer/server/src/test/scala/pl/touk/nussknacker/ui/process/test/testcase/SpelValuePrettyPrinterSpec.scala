@@ -12,7 +12,7 @@ class SpelValuePrettyPrinterSpec extends AnyFunSuite with Matchers {
       Table(
         ("valueToPrint", "expectedOutput"),
         (java.util.List.of("a", "b", "c"), "{a, b, c}"),
-        (java.util.List.of(java.util.List.of("a")), "{{a}}"),
+        (java.util.List.of[java.util.List[String]](java.util.List.of[String]("a")), "{{a}}"),
         (java.util.List.of(), "{}"),
         (java.util.Map.of("a", 1234), "{a: 1234}"),
         (java.util.Map.of("a", java.util.Map.of("b", 1234)), "{a: {b: 1234}}"),
