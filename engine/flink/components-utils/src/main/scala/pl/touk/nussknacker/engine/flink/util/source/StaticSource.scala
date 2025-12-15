@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
+import org.apache.flink.api.common.eventtime.Watermark
 import org.apache.flink.api.connector.source.{Boundedness, ReaderOutput, SourceReader, SourceReaderContext}
 import org.apache.flink.core.io.InputStatus
 
@@ -18,10 +19,10 @@ object StaticSource extends SingleSplitSource[String] {
         if (running) {
           synchronized {
             buffer.reverse.foreach {
-              case EmitWatermark(time) =>
-                output.emitWatermark(new org.apache.flink.api.common.eventtime.Watermark(time))
-              case a: CollectData =>
-                output.collect(a.value, a.time)
+              case EmitWatermark(timestamp) =>
+                output.emitWatermark(new Watermark(timestamp))
+              case a: EmitData =>
+                output.collect(a.value, a.timestamp)
             }
             buffer = List()
           }
@@ -50,8 +51,8 @@ object StaticSource extends SingleSplitSource[String] {
 
   sealed trait Command
 
-  case class EmitWatermark(time: Long) extends Command
+  case class EmitWatermark(timestamp: Long) extends Command
 
-  case class CollectData(time: Long, value: String) extends Command
+  case class EmitData(timestamp: Long, value: String) extends Command
 
 }

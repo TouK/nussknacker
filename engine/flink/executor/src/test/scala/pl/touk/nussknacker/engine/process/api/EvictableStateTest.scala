@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.flink.api.state.EvictableStateFunction
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.source.StaticSource
-import pl.touk.nussknacker.engine.flink.util.source.StaticSource.{CollectData, EmitWatermark}
+import pl.touk.nussknacker.engine.flink.util.source.StaticSource.{EmitData, EmitWatermark}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
@@ -68,9 +68,9 @@ class EvictableStateTest
 
   it should "process state normally when no watermark is generated" in {
 
-    StaticSource.add(CollectData(1000, "1"))
-    StaticSource.add(CollectData(2000, "2"))
-    StaticSource.add(CollectData(20000, "3"))
+    StaticSource.add(EmitData(1000, "1"))
+    StaticSource.add(EmitData(2000, "2"))
+    StaticSource.add(EmitData(20000, "3"))
 
     eventually {
       TestOperator.buffer shouldBe List(List("1"), List("1", "2"), List("1", "2", "3"))
@@ -80,11 +80,11 @@ class EvictableStateTest
 
   it should "clear state when watermark recevied" in {
 
-    StaticSource.add(CollectData(1000, "1"))
+    StaticSource.add(EmitData(1000, "1"))
     StaticSource.add(EmitWatermark(3000))
-    StaticSource.add(CollectData(2000, "2"))
+    StaticSource.add(EmitData(2000, "2"))
     StaticSource.add(EmitWatermark(8000))
-    StaticSource.add(CollectData(20000, "3"))
+    StaticSource.add(EmitData(20000, "3"))
 
     eventually {
       TestOperator.buffer shouldBe List(List("1"), List("1", "2"), List("3"))
