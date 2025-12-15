@@ -15,8 +15,8 @@ import type { NodeId, NodeType } from "../../types/node";
 import type { ProcessDefinitionData } from "../../types/scenarioGraph";
 import type { GraphState } from "./types";
 
-export const getUpdateStateAfterNodeIdChange = (currentId: NodeId, nextId: NodeId): ((state: GraphState) => GraphState) =>
-    produce((draft: GraphState) => {
+export const getUpdateStateAfterNodeIdChange = (currentId: NodeId, nextId: NodeId) => (state: GraphState) => {
+    return produce(state, (draft) => {
         const { layout, testing, selectionState } = draft;
         if (layout) {
             layout.forEach((n) => {
@@ -36,6 +36,7 @@ export const getUpdateStateAfterNodeIdChange = (currentId: NodeId, nextId: NodeI
             selectionState[selected] = nextId;
         }
     });
+};
 
 export function updateAfterNodeDelete({ layout, scenario, ...state }: GraphState, idToDelete: NodeId) {
     return {

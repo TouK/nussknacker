@@ -7,14 +7,12 @@ export type ActionTypes =
     | "DELETE_NODES"
     | "NODES_CONNECTED"
     | "NODES_DISCONNECTED"
-    | "VALIDATION_RESULT"
     | "COPY_SELECTION"
     | "CUT_SELECTION"
     | "PASTE_SELECTION"
     | "DELETE_SELECTION"
     | "EXPAND_SELECTION"
     | "RESET_SELECTION"
-    | "EDIT_NODE"
     | "EDIT_LABELS"
     | "SHOW_METRICS"
     | "PROCESS_FETCH"
@@ -22,5 +20,4 @@ export type ActionTypes =
     | "LOADING_FAILED"
     | "TOGGLE_PROCESS_ACTION_MODAL"
     | "TOGGLE_CUSTOM_ACTION"
-    | "ARCHIVED"
-    | "EDIT_PROPERTIES";
+    | "ARCHIVED";

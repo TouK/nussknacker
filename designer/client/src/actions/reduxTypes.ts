@@ -56,6 +56,7 @@ export interface UntypedAction {
 }
 
 export type Action = UntypedAction | TypedAction;
+export type ActionOfType<T extends Action["type"]> = Action & { type: T };
 
 type State = RootState;
 
