@@ -22,6 +22,7 @@ export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean
         return [key, initialUserFlags?.[key] ?? defaultValue];
     }
 
+    // TODO: include all from initialUserFlags
     const entries = [
         // keep sorted
         createFlag("assistant.includeScenarioData"),
@@ -40,6 +41,7 @@ export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean
         createFlag("editor.showResetToDefaultButton"),
         createFlag("node.advancedStickyNotes"),
         createFlag("node.autoApply"),
+        createFlag("node.inputsAndOutputs.showBlinkAnimations", true),
         createFlag("node.shortCounts"),
         createFlag("node.showAggregateSwitcher"),
         createFlag("node.showFragmentCreator"),
