@@ -30,7 +30,7 @@ import pl.touk.nussknacker.engine.util.ListUtil
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationErrors}
-import pl.touk.nussknacker.ui.api.TestDataSettings
+import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.{ExpressionsToTestDataConversionError, ScenarioValidationError, TestCaseCompilationError}
@@ -64,6 +64,13 @@ class ScenarioTestService(
     serializedContentMaxLength = testDataSettings.testDataMaxLength,
     maxRecordsCount = testDataSettings.maxSamplesCount,
     testDataFormatSerDe = testDataFormatHandler.serDe
+  )
+
+  //for test cases only common data format is used - can be removed if we drop source specific format support
+  private val testCasePreliminaryScenarioRecordsSerDe = new PreliminaryScenarioRecordsSerDe(
+    serializedContentMaxLength = testDataSettings.testDataMaxLength,
+    maxRecordsCount = testDataSettings.maxSamplesCount,
+    testDataFormatSerDe = TestDataFormatHandler(TestDataFormat.CommonFormat, modelData).serDe
   )
 
   private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
@@ -281,10 +288,9 @@ class ScenarioTestService(
 
     // todo: not existing node for mock validation?
 
-
     (for {
       preliminaryScenarioTestRecords <- EitherT.fromEither[Future](
-        preliminaryScenarioRecordsSerDe
+        testCasePreliminaryScenarioRecordsSerDe
           .deserialize(SerializedScenarioRecordsContent(testCase.inputs))
           .leftMap[PerformTestError](PerformTestError.DeserializationError)
       )
