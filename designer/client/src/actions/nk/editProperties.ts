@@ -1,20 +1,18 @@
 import { alignFragmentWithSchema } from "../../components/graph/utils/fragmentSchemaAligner";
 import type { Scenario } from "../../components/Process/types";
-import HttpService from "../../http/HttpService/instance";
 import { getScenario } from "../../reducers/selectors/graph";
 import type { PropertiesType } from "../../types/node";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
 import type { ValidationResult } from "../../types/validation";
 import type { ThunkAction } from "../reduxTypes";
+import { preApplyValidation } from "./preApplyValidation";
 import { fetchProcessDefinition } from "./processDefinitionData";
 
-type EditPropertiesAction = {
+export type PropertiesActions = {
     type: "EDIT_PROPERTIES";
-    validationResult: ValidationResult;
+    validationResult?: ValidationResult;
     scenarioGraphAfterChange: ScenarioGraph;
 };
-
-export type PropertiesActions = EditPropertiesAction;
 
 // TODO: We synchronize fragment changes with a scenario in case of properties changes. We need to find a better way to hande it
 function alignFragmentsNodeWithSchema(scenarioGraph: ScenarioGraph, processDefinitionData: ProcessDefinitionData): ScenarioGraph {
@@ -39,11 +37,11 @@ export function editProperties(changedProperties: PropertiesType, controller?: A
     return async (dispatch, getState) => {
         const scenario = getScenario(getState());
         const scenarioGraph = await dispatch(calculateProperties(scenario, changedProperties));
-        const response = await HttpService.validateProcess(scenario.name, scenarioGraph.properties.name, scenarioGraph, controller);
+        const response = await dispatch(preApplyValidation(scenario, scenarioGraph, controller));
 
         dispatch({
             type: "EDIT_PROPERTIES",
-            validationResult: response.data,
+            validationResult: response?.data,
             scenarioGraphAfterChange: scenarioGraph,
         });
     };

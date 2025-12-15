@@ -1,11 +1,12 @@
 import type { g } from "jointjs";
 import { min } from "lodash";
 
+import type { EditedNode } from "../../components/graph/node-modal/IdField";
+import { applyIdFromFakeName } from "../../components/graph/node-modal/IdField";
 import { getEdgesForNode } from "../../components/graph/node-modal/node/useNodeState";
 import { replaceNodeData } from "../../components/graph/node-modal/NodeSwitcherUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import type { Scenario } from "../../components/Process/types";
-import HttpService from "../../http/HttpService/instance";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { updateAfterNodeDelete } from "../../reducers/graph/utils";
 import { isFragmentCreator } from "../../reducers/selectors/appendFragmentCreator";
@@ -19,6 +20,7 @@ import type { ThunkAction } from "../reduxTypes";
 import { calculateProcessAfterChange } from "./calculateProcessAfterChange";
 import { createFragment } from "./createFragment";
 import { injectNode, nodesWithEdgesAdded } from "./node";
+import { preApplyValidation } from "./preApplyValidation";
 
 function replaceNode(before: NodeType, after: NodeType): ThunkAction {
     return async (dispatch, getState) => {
@@ -65,7 +67,7 @@ function calcNodesOffset(nodes: NodeType[], offset: g.PlainPoint) {
 }
 
 export type NodeAddActions =
-    | { type: "EDIT_NODE"; before: NodeType; after: NodeType; validationResult: ValidationResult; scenarioGraphAfterChange: ScenarioGraph }
+    | { type: "EDIT_NODE"; before: NodeType; after: NodeType; validationResult?: ValidationResult; scenarioGraphAfterChange: ScenarioGraph }
     | { type: "ADD_NODE_PLAIN"; node: NodeType; offset: g.PlainPoint }
     | { type: "ADD_NODE_CONNECTED"; node: NodeType; edge: Omit<Edge, "from"> | Omit<Edge, "to">; offset: g.PlainPoint }
     | { type: "ADD_NODE_INJECT"; node: NodeType; edge: Edge; offset: g.PlainPoint }
@@ -79,20 +81,23 @@ export type NodeAddActions =
 export function editNode(
     scenarioBefore: Scenario,
     before: NodeType,
-    after: NodeType,
+    editedNode: EditedNode,
     outputEdges?: Edge[],
     controller?: AbortController,
-): ThunkAction {
+): ThunkAction<Promise<NodeType>> {
     return async (dispatch) => {
+        const after = applyIdFromFakeName(editedNode);
         const scenarioGraph = await dispatch(calculateProcessAfterChange(scenarioBefore, before, after, outputEdges));
-        const response = await HttpService.validateProcess(scenarioBefore.name, scenarioBefore.name, scenarioGraph, controller);
-        return dispatch({
+        const response = await dispatch(preApplyValidation(scenarioBefore, scenarioGraph, controller));
+
+        dispatch({
             type: "EDIT_NODE",
             before,
             after,
-            validationResult: response.data,
+            validationResult: response?.data,
             scenarioGraphAfterChange: scenarioGraph,
         });
+        return after;
     };
 }
 
