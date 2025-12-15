@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
-import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
+import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.serialization.SerializerConfig
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnapshot}
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.internals.{RecordHeader, RecordHeaders}
 import org.apache.kafka.common.record.TimestampType
-import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 
 import java.util.{Objects, Optional}
 import scala.annotation.nowarn
@@ -16,9 +17,13 @@ class ConsumerRecordTypeInfo[K, V](val keyTypeInfo: TypeInformation[K], val valu
 
   override def getTypeClass: Class[ConsumerRecord[K, V]] = classOf[ConsumerRecord[K, V]]
 
+  // TODO: Remove after upgrade to Flink 2.x
   @nowarn("cat=deprecation")
+  override def createSerializer(config: ExecutionConfig): TypeSerializer[ConsumerRecord[K, V]] =
+    createSerializer(config.getSerializerConfig)
+
   override def createSerializer(
-      config: org.apache.flink.api.common.ExecutionConfig
+      config: SerializerConfig
   ): TypeSerializer[ConsumerRecord[K, V]] = {
     new ConsumerRecordSerializer[K, V](keyTypeInfo.createSerializer(config), valueTypeInfo.createSerializer(config))
   }
@@ -201,22 +206,5 @@ class ConsumerRecordSerializer[K, V](val keySerializer: TypeSerializer[K], val v
 
   override def hashCode(): Int =
     Objects.hashCode(keySerializer, valueSerializer)
-
-}
-
-object ConsumerRecordTypeInfo {
-
-  // TODO: Creating TypeInformation for Avro / Json Schema is difficult because of schema evolution, therefore we rely on Kryo, e.g. serializer for GenericRecordWithSchemaId
-  def apply[K, V](config: KafkaComponentsConfig): TypeInformation[ConsumerRecord[K, V]] = {
-    val keyTypeInfo =
-      if (config.useStringForKey) {
-        Types.STRING.asInstanceOf[TypeInformation[K]]
-      } else {
-        Types.GENERIC(classOf[Any]).asInstanceOf[TypeInformation[K]]
-      }
-
-    val valueTypeInfo = Types.GENERIC(classOf[Any]).asInstanceOf[TypeInformation[V]]
-    new ConsumerRecordTypeInfo[K, V](keyTypeInfo, valueTypeInfo)
-  }
 
 }

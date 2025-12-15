@@ -1,18 +1,19 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.api.connector.source.Boundedness
-import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
+import org.apache.flink.api.connector.source.{Boundedness, Source}
+import org.apache.flink.connector.datagen.functions.FromElementsGeneratorFunction
+import org.apache.flink.connector.datagen.source.DataGeneratorSource
+import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.functions.source.FromElementsFunction
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
-import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
 case class CollectionSource[T](
@@ -22,22 +23,20 @@ case class CollectionSource[T](
     boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED
 ) extends FlinkSource
     with CustomizableContextInitializerSource[T]
-    with ReturningType {
+    with ReturningType
+    with LazyLogging {
 
   override final def contextStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
-    // 1. set UID and override source name
-    val rawSourceWithUid = sourceStream(env, flinkNodeContext).setUidAndNameToNodeId(flinkNodeContext.nodeId)
-
-    // 2. assign timestamp and watermark policy
-    val rawSourceWithUidAndTimestamp = watermarkStrategy
-      .map(rawSourceWithUid.assignTimestampsAndWatermarks)
-      .getOrElse(rawSourceWithUid)
-
-    // 3. initialize Context and spool Context to the stream
-    rawSourceWithUidAndTimestamp
+    env
+      .fromSource(
+        flinkSource(list, env.getConfig, flinkNodeContext),
+        watermarkStrategy.getOrElse(WatermarkStrategy.noWatermarks()),
+        flinkNodeContext.nodeId.id,
+      )
+      .uid(flinkNodeContext.nodeId.id)
       .map(
         new FlinkContextInitializingFunction(
           contextInitializer,
@@ -48,37 +47,38 @@ case class CollectionSource[T](
       )
   }
 
-  private def sourceStream(
-      env: StreamExecutionEnvironment,
-      flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSource[T] = {
-    createSourceStream(list, env, flinkNodeContext)
-  }
-
-  @nowarn("cat=deprecation")
-  protected def createSourceStream(
+  protected def flinkSource(
       list: List[T],
-      env: StreamExecutionEnvironment,
+      executionConfig: ExecutionConfig,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSource[T] = {
-    val typeInformation = TypeInformationDetection.instance.forType[T](returnType)
-    boundedness match {
-      case Boundedness.BOUNDED =>
-        env.fromData(recordsListDependingOnBoundedness(list).asJava, typeInformation)
-      case Boundedness.CONTINUOUS_UNBOUNDED =>
-        env.addSource(new FromElementsFunction[T](recordsListDependingOnBoundedness(list).asJava), typeInformation)
+  ): Source[T, _, _] = {
+    val typeInformation  = TypeInformationDetection.instance.forType[T](returnType)
+    val listWithoutNulls = handleNullsInData(list)
+    // DataGeneratorSource will throw NoSuchElementException from FromElementsGeneratorFunction.tryDeserialize
+    // when created with an empty element list
+    if (listWithoutNulls.isEmpty) {
+      new EmptySource[T](boundedness, typeInformation)
+    } else {
+      val generatorFunction =
+        new FromElementsGeneratorFunction[T](typeInformation, executionConfig, listWithoutNulls.asJava)
+
+      val copyOfBoundedness = boundedness
+      new DataGeneratorSource[T](generatorFunction, listWithoutNulls.size, typeInformation) {
+        override def getBoundedness: Boundedness = copyOfBoundedness
+      }
     }
   }
 
-  private def recordsListDependingOnBoundedness(records: List[T]): List[T] = boundedness match {
-    case Boundedness.BOUNDED =>
-      records
-    case Boundedness.CONTINUOUS_UNBOUNDED =>
-      // For some reasons, probable some internal implementation of FromElementsFunction, we skip nulls.
-      // It might be tricky because this null might by important
-      // TODO: document better why we do this + consider other approaches such as: using some other implementation than
-      //       FromElementsFunction or checking if input list has nulls and fast failing instead
-      records.filterNot(_ == null)
+  // FromElementsGeneratorFunction doesn't accept nulls in the passed collection - see constructor
+  // so we filter them out
+  // TODO: we probably should resolve this problem otherwise either by delivering our own GeneratorFunction
+  //       or checking this collection on early stage, but before we do that we should check every places
+  //       where this source is used
+  private def handleNullsInData(list: List[T]) = {
+    if (list.contains(null)) {
+      logger.warn("Collection passed to CollectionSource contains null. They will be filtered out")
+    }
+    list.filterNot(_ == null)
   }
 
 }

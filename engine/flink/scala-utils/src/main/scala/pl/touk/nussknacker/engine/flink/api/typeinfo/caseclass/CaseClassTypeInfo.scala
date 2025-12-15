@@ -31,7 +31,6 @@ import org.apache.flink.api.java.typeutils.TupleTypeInfoBase
 
 import java.util
 import java.util.regex.{Matcher, Pattern}
-import scala.annotation.nowarn
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
 
@@ -245,14 +244,13 @@ abstract class CaseClassTypeInfo[T <: Product](
       logicalKeyFields += fieldId
     }
 
-    @nowarn("cat=deprecation")
     override def createTypeComparator(config: ExecutionConfig): TypeComparator[T] = {
       val maxIndex = logicalKeyFields.max
 
       new CaseClassComparator[T](
         logicalKeyFields.toArray,
         fieldComparators.toArray,
-        types.take(maxIndex + 1).map(_.createSerializer(config))
+        types.take(maxIndex + 1).map(_.createSerializer(config.getSerializerConfig))
       )
     }
 

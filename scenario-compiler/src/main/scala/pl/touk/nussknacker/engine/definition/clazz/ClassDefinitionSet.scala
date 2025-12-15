@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.definition.clazz
 
-import scala.annotation.nowarn
-
 object ClassDefinitionSet {
 
   def apply(classDefinitions: Set[ClassDefinition]): ClassDefinitionSet = {
@@ -44,7 +42,6 @@ case class ClassDefinitionSet(classDefinitionsMap: Map[Class[_], ClassDefinition
   // We do runtime "types-walking" during expression invocation because in ClassDefinitionSet
   // we have some definitions for interface (e.g. List, Map.Entry) but we don't know exact used
   // implementation (like ArrayList or Collections.UnmodifiableMap.UnmodifiableEntrySet.UnmodifiableEntry) so we can't precompute it easily
-  @nowarn("cat=deprecation")
   private def extractAllTypesInHierarchy(clazz: Class[_]): Stream[Class[_]] = {
     lazy val superClass          = Option(clazz.getSuperclass).map(_ #:: Stream.empty).getOrElse(Stream.empty)
     lazy val extractedSuperTypes = (superClass #::: clazz.getInterfaces.toStream).flatMap(extractAllTypesInHierarchy)

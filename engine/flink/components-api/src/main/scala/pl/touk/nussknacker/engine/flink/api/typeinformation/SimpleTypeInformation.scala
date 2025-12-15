@@ -22,12 +22,13 @@ class SimpleTypeInformation[T: ClassTag](typeSerializer: TypeSerializer[T]) exte
 
   override def getTypeClass: Class[T] = classTag[T].runtimeClass.asInstanceOf[Class[T]]
 
+  // TODO: Remove after upgrade to Flink 2.x
   @nowarn("cat=deprecation")
-  override def createSerializer(executionConfig: ExecutionConfig): TypeSerializer[T] = createSerializer(
-    executionConfig.getSerializerConfig
-  )
+  override def createSerializer(config: ExecutionConfig): TypeSerializer[T] =
+    createSerializer(config.getSerializerConfig)
 
-  override def createSerializer(config: SerializerConfig): TypeSerializer[T] = typeSerializer
+  override def createSerializer(config: SerializerConfig): TypeSerializer[T] =
+    typeSerializer
 
   override def hashCode(): Int = getTypeClass.hashCode()
 

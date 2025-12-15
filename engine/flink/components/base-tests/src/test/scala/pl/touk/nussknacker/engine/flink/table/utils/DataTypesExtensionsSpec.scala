@@ -8,14 +8,14 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions.LogicalTypeExtension
 
-import scala.annotation.nowarn
-
-@nowarn("cat=deprecation")
 class DataTypesExtensionsSpec extends AnyFunSuiteLike with Matchers {
 
   test("to typing result conversion for raw type") {
     val anyRefDataType = DataTypes
-      .RAW[AnyRef](classOf[AnyRef], TypeInformation.of(classOf[AnyRef]).createSerializer(new ExecutionConfig()))
+      .RAW[AnyRef](
+        classOf[AnyRef],
+        TypeInformation.of(classOf[AnyRef]).createSerializer(new ExecutionConfig().getSerializerConfig)
+      )
     anyRefDataType.getLogicalType.toTypingResult shouldEqual Unknown
   }
 

@@ -1,20 +1,24 @@
 package pl.touk.nussknacker.engine.process.scenariotesting
 
+import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{FlatMapFunction, OpenContext, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
+import org.apache.flink.api.connector.source.{Boundedness, Source}
+import org.apache.flink.connector.datagen.functions.FromElementsGeneratorFunction
+import org.apache.flink.connector.datagen.source.DataGeneratorSource
+import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.livedata.DataRecord
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
-import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinfo.option.OptionTypeInfo
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
+import pl.touk.nussknacker.engine.flink.util.source.EmptySource
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler.{
   ContextWithEventTime,
@@ -35,8 +39,13 @@ class DataRecordsSource(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
-    fromDataProperHandlingEmptyList(env)
-      .setUidAndNameToNodeId(flinkNodeContext.nodeId)
+    env
+      .fromSource(
+        flinkSource(env.getConfig),
+        WatermarkStrategy.noWatermarks(),
+        flinkNodeContext.nodeId.id,
+      )
+      .uid(flinkNodeContext.nodeId.id)
       .flatMap(
         new DataRecordContextInitializingFunction(
           flinkNodeContext.nodeId,
@@ -62,20 +71,16 @@ class DataRecordsSource(
       .map((ctxWithEventTime: ContextWithEventTime) => ctxWithEventTime.context, flinkNodeContext.contextTypeInfo)
   }
 
-  // env.fromData uses DataGeneratorSource which even for an empty list try to process one element
-  // which ends up with NoSuchElementException in FromElementsGeneratorFunction.tryDeserialize
-  private def fromDataProperHandlingEmptyList(env: StreamExecutionEnvironment): DataStreamSource[DataRecord] = {
+  private def flinkSource(executionConfig: ExecutionConfig): Source[DataRecord, _, _] = {
+    // DataGeneratorSource will throw NoSuchElementException from FromElementsGeneratorFunction.tryDeserialize
+    // when created with an empty element list
     if (dataRecords.isEmpty) {
-      env
-        .fromSource(
-          new EmptySource[DataRecord],
-          WatermarkStrategy.forMonotonousTimestamps(),
-          "Empty Source",
-          dataRecordTypeInformation
-        )
-        .setParallelism(1)
+      new EmptySource[DataRecord](Boundedness.BOUNDED, dataRecordTypeInformation)
     } else {
-      env.fromData(dataRecords.asJava, dataRecordTypeInformation)
+      val generatorFunction =
+        new FromElementsGeneratorFunction[DataRecord](dataRecordTypeInformation, executionConfig, dataRecords.asJava)
+
+      new DataGeneratorSource[DataRecord](generatorFunction, dataRecords.size, dataRecordTypeInformation)
     }
   }
 

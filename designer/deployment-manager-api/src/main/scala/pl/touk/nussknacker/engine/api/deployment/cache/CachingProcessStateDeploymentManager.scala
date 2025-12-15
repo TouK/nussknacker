@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDepend
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
+import scala.compat.java8.DurationConverters.FiniteDurationops
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
@@ -24,7 +25,7 @@ class CachingProcessStateDeploymentManager(
 
   private val cache: AsyncCache[ProcessName, List[DeploymentStatusDetails]] = Caffeine
     .newBuilder()
-    .expireAfterWrite(java.time.Duration.ofMillis(cacheTTL.toMillis))
+    .expireAfterWrite(cacheTTL.toJava)
     .buildAsync[ProcessName, List[DeploymentStatusDetails]]
 
   override def getScenarioDeploymentsStatuses(

@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.engine.management.javasample
 
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
+import org.apache.flink.api.connector.source.{Boundedness, ReaderOutput, SourceReader, SourceReaderContext}
+import org.apache.flink.core.io.InputStatus
+import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.functions.source.SourceFunction
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
-
-import scala.annotation.nowarn
+import pl.touk.nussknacker.engine.flink.util.source.SingleSplitSource
 
 class Objects extends Serializable {
 
@@ -23,8 +23,14 @@ class Objects extends Serializable {
               env: StreamExecutionEnvironment,
               flinkNodeContext: FlinkCustomNodeContext
           ): DataStream[Context] = {
-            sourceStream(env)
-              .setUidAndNameToNodeId(flinkNodeContext.nodeId)
+            env
+              .fromSource(
+                flinkSource,
+                WatermarkStrategy.noWatermarks(),
+                flinkNodeContext.nodeId.id,
+                TypeInformation.of(classOf[Model])
+              )
+              .uid(flinkNodeContext.nodeId.id)
               .map(
                 new FlinkContextInitializingFunction(
                   contextInitializer,
@@ -35,25 +41,20 @@ class Objects extends Serializable {
               )
           }
 
-          @nowarn("cat=deprecation")
-          private def sourceStream(
-              env: StreamExecutionEnvironment
-          ): DataStreamSource[Model] = {
-            env.addSource(
-              new SourceFunction[Model] {
-                override def cancel(): Unit = {}
+          private def flinkSource: SingleSplitSource[Model] = {
+            new SingleSplitSource[Model] {
+              override def getBoundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED
 
-                override def run(ctx: SourceFunction.SourceContext[Model]): Unit = {
-                  while (true) {
-                    Thread.sleep(10000)
+              override def createReader(
+                  readerContext: SourceReaderContext
+              ): SourceReader[Model, SingleSplitSource.SingleSplit] =
+                new SingleSplitSource.Reader[Model] {
+                  override def pollNext(output: ReaderOutput[Model]): InputStatus = {
+                    InputStatus.NOTHING_AVAILABLE
                   }
                 }
-
-              },
-              TypeInformation.of(classOf[Model])
-            )
+            }
           }
-
         }
       )
     )

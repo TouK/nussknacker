@@ -22,13 +22,12 @@ trait FlinkTypeInformationSerializationMixin extends Matchers {
     enableGenericTypes()
   }
 
-  @nowarn("cat=deprecation")
   protected def getSerializeRoundTrip[T](
       record: T,
       typeInfo: TypeInformation[T],
       executionConfig: ExecutionConfig = executionConfigWithoutKryo
   ): T = {
-    val serializer = typeInfo.createSerializer(executionConfig)
+    val serializer = typeInfo.createSerializer(executionConfig.getSerializerConfig)
     getSerializeRoundTripWithSerializers(record, serializer, serializer)
   }
 

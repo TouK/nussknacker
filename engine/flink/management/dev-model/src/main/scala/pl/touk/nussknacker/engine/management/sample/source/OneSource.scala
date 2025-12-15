@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
+import org.apache.flink.api.connector.source._
+import org.apache.flink.core.io.InputStatus
+import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process._
+import pl.touk.nussknacker.engine.flink.util.source.SingleSplitSource
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
-
-import scala.annotation.nowarn
 
 class OneSource extends FlinkSource with CustomizableContextInitializerSource[String] {
 
@@ -18,8 +17,14 @@ class OneSource extends FlinkSource with CustomizableContextInitializerSource[St
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
-    sourceStream(env)
-      .setUidAndNameToNodeId(flinkNodeContext.nodeId)
+    env
+      .fromSource(
+        flinkSource,
+        WatermarkStrategy.noWatermarks(),
+        flinkNodeContext.nodeId.id,
+        TypeInformation.of(classOf[String])
+      )
+      .uid(flinkNodeContext.nodeId.id)
       .map(
         new FlinkContextInitializingFunction(
           contextInitializer,
@@ -30,30 +35,24 @@ class OneSource extends FlinkSource with CustomizableContextInitializerSource[St
       )
   }
 
-  @nowarn("cat=deprecation")
-  private def sourceStream(
-      env: StreamExecutionEnvironment,
-  ): DataStreamSource[String] = {
-    env.addSource(
-      new SourceFunction[String] {
-        var run     = true
+  private def flinkSource: Source[String, _, _] = {
+    new SingleSplitSource[String] {
+
+      override def getBoundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED
+
+      override def createReader(
+          readerContext: SourceReaderContext
+      ): SourceReader[String, SingleSplitSource.SingleSplit] = new SingleSplitSource.Reader[String] {
+
         var emitted = false
 
-        override def cancel(): Unit = {
-          run = false
+        override def pollNext(output: ReaderOutput[String]): InputStatus = {
+          if (!emitted) output.collect(DevProcessConfigCreator.oneElementValue)
+          emitted = true
+          InputStatus.NOTHING_AVAILABLE
         }
-
-        override def run(ctx: SourceContext[String]): Unit = {
-          while (run) {
-            if (!emitted) ctx.collect(DevProcessConfigCreator.oneElementValue)
-            emitted = true
-            Thread.sleep(1000)
-          }
-        }
-
-      },
-      TypeInformation.of(classOf[String])
-    )
+      }
+    }
   }
 
 }

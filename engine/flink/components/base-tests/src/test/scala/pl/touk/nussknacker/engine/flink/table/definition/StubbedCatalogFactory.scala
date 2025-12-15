@@ -27,18 +27,18 @@ object StubbedCatalogFactory {
 
   private val catalog: GenericInMemoryCatalog = populateCatalog(new GenericInMemoryCatalog(catalogName))
 
-  @nowarn("cat=deprecation")
   private def populateCatalog(inMemoryCatalog: GenericInMemoryCatalog): GenericInMemoryCatalog = {
-    val sampleBoundedTable = CatalogTable.of(
-      Schema.newBuilder().column(sampleColumnName, DataTypes.STRING()).build(),
-      null,
-      List.empty[String].asJava,
-      Map(
-        "connector" -> "datagen",
-        // to make it bounded
-        "number-of-rows" -> sampleBoundedTableNumberOfRows.toString
-      ).asJava
-    )
+    val sampleBoundedTable = CatalogTable.newBuilder
+      .schema(Schema.newBuilder().column(sampleColumnName, DataTypes.STRING()).build())
+      .partitionKeys(List.empty[String].asJava)
+      .options(
+        Map(
+          "connector" -> "datagen",
+          // to make it bounded
+          "number-of-rows" -> sampleBoundedTableNumberOfRows.toString
+        ).asJava
+      )
+      .build
     inMemoryCatalog.createTable(sampleBoundedTablePath, sampleBoundedTable, false)
     inMemoryCatalog
   }

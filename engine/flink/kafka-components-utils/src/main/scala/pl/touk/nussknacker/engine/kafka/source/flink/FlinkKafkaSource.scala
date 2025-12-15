@@ -3,41 +3,38 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
-import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
+import org.apache.flink.api.common.functions.RuntimeContext
+import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
+import org.apache.flink.api.connector.source.Source
+import org.apache.flink.connector.kafka.source.KafkaSource
+import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
+import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializationSchema
+import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumerBase}
-import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.{Context, NodeId}
+import org.apache.flink.util.Collector
+import org.apache.kafka.clients.consumer.{
+  ConsumerConfig,
+  ConsumerRecord,
+  OffsetResetStrategy => FlinkOffsetResetStrategy
+}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId}
 import pl.touk.nussknacker.engine.api.component.StaticParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesWithRadioParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{
-  ContextInitializer,
-  TestDataGenerator,
-  TestWithParametersSupport,
-  TopicName
-}
-import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.flink.api.{FlinkEngineContext, RuntimeCtx}
-import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
-import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.WatermarkStrategyUtils
 import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler
-import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler.{
-  ContextInitializingFunction,
-  ContextWithEventTime
-}
+import pl.touk.nussknacker.engine.flink.watermarkstrategy.FlinkWatermarkStrategyRuntimeHandler.ContextWithEventTime
 import pl.touk.nussknacker.engine.kafka._
-import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions
-import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.FlinkDeserializationSchemaWrapper
 import pl.touk.nussknacker.engine.kafka.source.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.{
+  noopDeserializationSchema,
+  FlinkKafkaSourceContextInitializingFunction,
   OFFSET_RESET_STRATEGY_LABEL,
   OFFSET_RESET_STRATEGY_PARAM_NAME
 }
@@ -46,9 +43,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.Universa
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 import pl.touk.nussknacker.engine.util.watermarkstrategy.{WatermarkStrategyOptions, WithWatermarkStrategyOptions}
 
-import java.util
-import java.util.Properties
-import scala.annotation.nowarn
+import java.time.Instant
 import scala.jdk.CollectionConverters._
 
 class FlinkKafkaSource[K, V](
@@ -73,21 +68,25 @@ class FlinkKafkaSource[K, V](
     with KafkaLiveDataProvider[K, V]
     with WithWatermarkStrategyOptions {
 
-  private val typeInformation = ConsumerRecordTypeInfo[K, V](kafkaComponentsConfig)
-
   override def contextStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
-    val streamOfRaw = sourceStream(env, flinkNodeContext).setUidAndNameToNodeId(flinkNodeContext.nodeId)
-    // 1. initialize Context and compute event time
-    streamOfRaw
+    env
+      .fromSource(
+        flinkSource(flinkNodeContext),
+        WatermarkStrategy.noWatermarks(),
+        flinkNodeContext.nodeId.id
+      )
+      .uid(flinkNodeContext.nodeId.id)
+      // 1. deserialize event, initialize Context and compute event time
       .flatMap(
-        ContextInitializingFunction(
+        new FlinkKafkaSourceContextInitializingFunction[K, V](
           flinkNodeContext.nodeId,
           flinkNodeContext.convertToEngineRuntimeContext,
           watermarkStrategyOptions.eventTimeLazyParam,
           flinkNodeContext.lazyParameterHelper,
+          deserializationSchema,
           contextInitializer
         ),
         FlinkWatermarkStrategyRuntimeHandler.contextInitializingFunctionOutputTypeInfo(
@@ -100,16 +99,6 @@ class FlinkKafkaSource[K, V](
       )
       // 3. unwrap context
       .map((ctxWithEventTime: ContextWithEventTime) => ctxWithEventTime.context, flinkNodeContext.contextTypeInfo)
-  }
-
-  @nowarn("cat=deprecation")
-  private def sourceStream(
-      env: StreamExecutionEnvironment,
-      flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSource[ConsumerRecord[K, V]] = {
-    val consumerGroupId = prepareConsumerGroupId(flinkNodeContext)
-    val sourceFunction  = flinkSourceFunction(consumerGroupId, flinkNodeContext)
-    env.addSource(sourceFunction, typeInformation)
   }
 
   protected lazy val topics: NonEmptyList[TopicName.ForSource] = preparedTopics.map(_.prepared)
@@ -162,45 +151,62 @@ class FlinkKafkaSource[K, V](
     )
   }
 
-  @nowarn("cat=deprecation")
-  protected def flinkSourceFunction(
-      consumerGroupId: String,
+  private def flinkSource(
       flinkNodeContext: FlinkCustomNodeContext
-  ): SourceFunction[ConsumerRecord[K, V]] = {
-    val offsetResetStrategy =
-      flinkNodeContext.componentUseContext.deploymentData
-        .flatMap(_.get(OFFSET_RESET_STRATEGY_PARAM_NAME.value))
-        .map(OffsetResetStrategy.withName)
-        .getOrElse(defaultOffsetResetStrategy)
+  ): Source[ConsumerRecord[Array[Byte], Array[Byte]], _, _] = {
+    val consumerGroupId = prepareConsumerGroupId(flinkNodeContext)
+
+    val consumerProperties = KafkaUtils.toConsumerProperties(kafkaComponentsConfig, Some(consumerGroupId))
+
+    val offsetResetStrategyFromDeployParams = flinkNodeContext.componentUseContext.deploymentData
+      .flatMap(_.get(OFFSET_RESET_STRATEGY_PARAM_NAME.value))
+      .map(OffsetResetStrategy.withName)
+    val offsetResetStrategy             = offsetResetStrategyFromDeployParams.getOrElse(defaultOffsetResetStrategy)
+    val autoOffsetResetKafkaConfigValue = Option(consumerProperties.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG))
     logger.info(
-      s"Flink source for scenario ${flinkNodeContext.jobData.processVersion.processName.value} for node ${flinkNodeContext.nodeId} defaultOffsetResetStrategy=${kafkaComponentsConfig.defaultOffsetResetStrategy}, offsetResetStrategy=${offsetResetStrategy}"
+      s"Flink source for scenario ${flinkNodeContext.jobData.processVersion.processName.value} for node ${flinkNodeContext.nodeId} " +
+        s"defaultOffsetResetStrategy=${kafkaComponentsConfig.defaultOffsetResetStrategy}, " +
+        s"offsetResetStrategy=$offsetResetStrategy, " +
+        s"${ConsumerConfig.AUTO_OFFSET_RESET_CONFIG}=$autoOffsetResetKafkaConfigValue"
     )
+    val startingOffsetInitializer = prepareOffsetInitializer(offsetResetStrategy, autoOffsetResetKafkaConfigValue)
 
-    offsetResetStrategy match {
-      case OffsetResetStrategy.ToLatest =>
-        topics.toList.foreach(t => KafkaUtils.setOffsetToLatest(t.name, consumerGroupId, kafkaComponentsConfig))
-      case OffsetResetStrategy.ToEarliest =>
-        topics.toList.foreach(t => KafkaUtils.setOffsetToEarliest(t.name, consumerGroupId, kafkaComponentsConfig))
-      case OffsetResetStrategy.None =>
-        ()
-    }
-
-    createFlinkSource(consumerGroupId, flinkNodeContext)
+    KafkaSource
+      .builder()
+      .setStartingOffsets(startingOffsetInitializer)
+      .setTopics(topics.map(_.name).toList.asJava)
+      .setDeserializer(noopDeserializationSchema)
+      .setProperties(consumerProperties)
+      .build()
   }
 
-  @nowarn("cat=deprecation")
-  protected def createFlinkSource(
-      consumerGroupId: String,
-      flinkNodeContext: FlinkCustomNodeContext
-  ): SourceFunction[ConsumerRecord[K, V]] = {
-    new FlinkKafkaConsumerHandlingExceptions[ConsumerRecord[K, V]](
-      topics.map(_.name).toList.asJava,
-      FlinkSerializationSchemaConversions.wrapToFlinkDeserializationSchema(deserializationSchema, typeInformation),
-      KafkaUtils.toConsumerProperties(kafkaComponentsConfig, Some(consumerGroupId)),
-      flinkNodeContext.exceptionHandlerPreparer,
-      flinkNodeContext.convertToEngineRuntimeContext,
-      flinkNodeContext.nodeId
-    )
+  private def prepareOffsetInitializer(
+      offsetResetStrategy: OffsetResetStrategy,
+      autoOffsetResetKafkaConfigValue: Option[AnyRef]
+  ) = {
+    offsetResetStrategy match {
+      case OffsetResetStrategy.ToLatest =>
+        OffsetsInitializer.latest()
+      case OffsetResetStrategy.ToEarliest =>
+        OffsetsInitializer.earliest()
+      case OffsetResetStrategy.None =>
+        val missingCommitedOffsetResetStrategy = autoOffsetResetKafkaConfigValue match {
+          case Some("earliest") => FlinkOffsetResetStrategy.EARLIEST
+          case Some("latest")   => FlinkOffsetResetStrategy.LATEST
+          case Some("none")     => FlinkOffsetResetStrategy.NONE
+          case None =>
+            logger.debug(
+              s"No ${ConsumerConfig.AUTO_OFFSET_RESET_CONFIG} kafka config property specified - setting offset reset strategy to ${FlinkOffsetResetStrategy.EARLIEST} "
+            )
+            FlinkOffsetResetStrategy.EARLIEST
+          case Some(other) =>
+            logger.warn(
+              s"Unrecognized ${ConsumerConfig.AUTO_OFFSET_RESET_CONFIG} kafka config property value: $other - setting offset reset strategy to ${FlinkOffsetResetStrategy.EARLIEST} "
+            )
+            FlinkOffsetResetStrategy.EARLIEST
+        }
+        OffsetsInitializer.committedOffsets(missingCommitedOffsetResetStrategy)
+    }
   }
 
   // Flink implementation of testing uses direct output from testDataParser, so we perform deserialization here, in contrast to Lite implementation
@@ -254,82 +260,42 @@ object FlinkKafkaSource {
   val OFFSET_RESET_STRATEGY_PARAM_NAME: ParameterName = ParameterName("offsetResetStrategy")
   val OFFSET_RESET_STRATEGY_LABEL: String             = "Offset reset strategy"
 
-}
+  private class FlinkKafkaSourceContextInitializingFunction[K, V](
+      nodeId: NodeId,
+      convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
+      eventTimeLazyParam: LazyParameter[Instant],
+      lazyParamHelper: FlinkLazyParameterFunctionHelper,
+      deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],
+      contextInitializer: ContextInitializer[ConsumerRecord[K, V]]
+  ) extends FlinkWatermarkStrategyRuntimeHandler.ContextInitializingFunction[ConsumerRecord[Array[Byte], Array[Byte]]](
+        nodeId,
+        convertToEngineRuntimeContext,
+        eventTimeLazyParam,
+        lazyParamHelper
+      ) {
 
-// TODO: Tricks like deserializationSchema.setExceptionHandlingData and FlinkKafkaConsumer overriding could be replaced by
-//       making KafkaDeserializationSchema stupid (just producing ConsumerRecord[Array[Byte], Array[Byte]])
-//       and moving deserialization logic to separate flatMap function that would produce Context.
-//       Thanks to that contextInitializer.initContext would be wrapped by exception handling mechanism as well.
-//       It is done this way in lite engine implementation.
-@nowarn("cat=deprecation")
-class FlinkKafkaConsumerHandlingExceptions[T](
-    topics: java.util.List[String],
-    deserializationSchema: FlinkDeserializationSchemaWrapper[T],
-    props: Properties,
-    exceptionHandlerPreparer: FlinkEngineContext => ExceptionHandler,
-    convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
-    nodeId: NodeId
-) extends FlinkKafkaConsumer[T](topics, deserializationSchema, props)
-    with LazyLogging {
-
-  protected var exceptionHandler: ExceptionHandler = _
-
-  private var exceptionPurposeContextIdGenerator: ContextIdGenerator = _
-
-  override def open(openContext: OpenContext): Unit = {
-    patchRestoredState()
-    super.open(openContext)
-    exceptionHandler = exceptionHandlerPreparer(RuntimeCtx(getRuntimeContext))
-    exceptionPurposeContextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId)
-    deserializationSchema.setExceptionHandlingData(exceptionHandler, exceptionPurposeContextIdGenerator, nodeId)
-  }
-
-  override def close(): Unit = {
-    if (exceptionHandler != null) {
-      exceptionHandler.close()
+    override protected def sourceOutputVariables(
+        inputRecord: ConsumerRecord[Array[Byte], Array[Byte]],
+        initialContext: Context
+    ): ContextVariables = {
+      val deserializedRecord = deserializationSchema.deserialize(inputRecord)
+      contextInitializer.convertToInitialVariables(deserializedRecord)
     }
-    super.close()
+
   }
 
-  /**
-   * We observed that [[FlinkKafkaConsumerBase]], in `initializeState()`, may set a non-null but empty `restoredState`
-   * even though the saved state clearly contained proper state data. This makes the `open()` method treat
-   * all partitions as new ones instead of trying to fall back to offsets stored in associated consumer group.
-   *
-   * This may happen when we are changing Kafka source to a different implementation (but still a compatible one),
-   * but also when there are no changes in the scenario. There's possibly some kind of strange state incompatibility,
-   * and Flink accepts the old state from savepoint as compatible, but it restores it as empty state.
-   *
-   * It's impossible to fix Flink's source because it's deprecated and doesn't accept any changes, including bugfixes.
-   *
-   * To work around this issue we patch `restoredState` value to prevent invalid state restores and treat
-   * this situation as a new deployment without state.
-   *
-   * Note that our change may break a source reading from topics indicated by a pattern which, at the time
-   * of snapshot creation, indicates zero partitions. Nussknacker always uses concrete topic names, so for us this
-   * is acceptable.
-   */
-  private def patchRestoredState(): Unit = {
-    assert(
-      this.isInstanceOf[FlinkKafkaConsumerBase[_]],
-      s"$this must be an instance of ${classOf[FlinkKafkaConsumerBase[_]]}"
-    )
-    val restoredStateField = classOf[FlinkKafkaConsumerBase[_]].getDeclaredField("restoredState")
-    restoredStateField.setAccessible(true)
-    restoredStateField.get(this) match {
-      case null => // there is no restored stare
-      case tm: util.TreeMap[_, _] =>
-        if (tm.isEmpty) {
-          logger.warn("Got empty restoredState, patching it to prevent automatic reset to the earliest offsets")
-          // removing state with empty offset list will make the `open` method use its default behavior,
-          // i.e. Kafka fetcher will be initialized using configured `startupMode`
-          restoredStateField.set(this, null)
-        }
-      case other =>
-        throw new RuntimeException(
-          s"Expected restoredState to be of type ${classOf[util.TreeMap[_, _]]} but got ${other.getClass}"
+  private val noopDeserializationSchema =
+    new KafkaRecordDeserializationSchema[ConsumerRecord[Array[Byte], Array[Byte]]] {
+      override def deserialize(
+          record: ConsumerRecord[Array[Byte], Array[Byte]],
+          out: Collector[ConsumerRecord[Array[Byte], Array[Byte]]]
+      ): Unit = out.collect(record)
+
+      override def getProducedType: TypeInformation[ConsumerRecord[Array[Byte], Array[Byte]]] =
+        new ConsumerRecordTypeInfo[Array[Byte], Array[Byte]](
+          Types.PRIMITIVE_ARRAY(Types.BYTE).asInstanceOf[TypeInformation[Array[Byte]]],
+          Types.PRIMITIVE_ARRAY(Types.BYTE).asInstanceOf[TypeInformation[Array[Byte]]]
         )
     }
-  }
 
 }

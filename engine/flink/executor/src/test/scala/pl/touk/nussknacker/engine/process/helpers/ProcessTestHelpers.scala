@@ -21,8 +21,6 @@ import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-import scala.annotation.nowarn
-
 trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
 
   object processInvoker {
@@ -131,7 +129,6 @@ case object SinkAccessingNodeContext extends EmptySink with Serializable {
 
   def nodeId: NodeId = _nodeId
 
-  @nowarn("cat=deprecation")
   override def toFlinkSink(flinkNodeContext: FlinkCustomNodeContext): SinkV2[AnyRef] = {
     _nodeId = flinkNodeContext.nodeId
     super.toFlinkSink(flinkNodeContext)

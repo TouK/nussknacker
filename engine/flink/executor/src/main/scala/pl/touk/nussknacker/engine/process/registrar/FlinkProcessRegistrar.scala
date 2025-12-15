@@ -5,7 +5,6 @@ import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{AsyncDataStream, DataStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.util.OutputTag
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
@@ -18,7 +17,6 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.FlinkScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.flink.api.{FlinkEngineContext, NkGlobalParameters, RuntimeCtx}
 import pl.touk.nussknacker.engine.flink.api.FlinkEngineContextOps._
-import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
@@ -41,7 +39,6 @@ import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import shapeless.syntax.typeable.typeableOps
 
 import java.util.concurrent.TimeUnit
-import scala.annotation.nowarn
 import scala.language.implicitConversions
 
 /*
@@ -59,9 +56,6 @@ class FlinkProcessRegistrar(
 ) extends LazyLogging {
 
   import FlinkProcessRegistrar._
-
-  @nowarn("cat=deprecation")
-  implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
   def register(
       env: StreamExecutionEnvironment,

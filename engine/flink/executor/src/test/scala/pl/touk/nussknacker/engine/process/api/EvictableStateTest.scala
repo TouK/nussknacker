@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.process.api
 
 import org.apache.flink.api.common.JobID
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.state.ValueStateDescriptor
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.functions.sink.v2.DiscardingSink
 import org.apache.flink.util.Collector
@@ -12,13 +14,10 @@ import pl.touk.nussknacker.engine.flink.api.state.EvictableStateFunction
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.source.StaticSource
-import pl.touk.nussknacker.engine.flink.util.source.StaticSource.{Data, Watermark}
+import pl.touk.nussknacker.engine.flink.util.source.StaticSource.{EmitData, EmitWatermark}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-import scala.annotation.nowarn
-
-@nowarn("cat=deprecation")
 class EvictableStateTest
     extends AnyFlatSpec
     with Matchers
@@ -42,7 +41,12 @@ class EvictableStateTest
       env.enableCheckpointing(500)
 
       env
-        .addSource(StaticSource)
+        .fromSource(
+          StaticSource,
+          WatermarkStrategy.noWatermarks(),
+          "static",
+          TypeInformation.of(classOf[String])
+        )
         .keyBy((_: String) => "staticKey")
         .process(new TestOperator)
         .sinkTo(new DiscardingSink[String])
@@ -64,9 +68,9 @@ class EvictableStateTest
 
   it should "process state normally when no watermark is generated" in {
 
-    StaticSource.add(Data(1000, "1"))
-    StaticSource.add(Data(2000, "2"))
-    StaticSource.add(Data(20000, "3"))
+    StaticSource.add(EmitData(1000, "1"))
+    StaticSource.add(EmitData(2000, "2"))
+    StaticSource.add(EmitData(20000, "3"))
 
     eventually {
       TestOperator.buffer shouldBe List(List("1"), List("1", "2"), List("1", "2", "3"))
@@ -76,11 +80,11 @@ class EvictableStateTest
 
   it should "clear state when watermark recevied" in {
 
-    StaticSource.add(Data(1000, "1"))
-    StaticSource.add(Watermark(3000))
-    StaticSource.add(Data(2000, "2"))
-    StaticSource.add(Watermark(8000))
-    StaticSource.add(Data(20000, "3"))
+    StaticSource.add(EmitData(1000, "1"))
+    StaticSource.add(EmitWatermark(3000))
+    StaticSource.add(EmitData(2000, "2"))
+    StaticSource.add(EmitWatermark(8000))
+    StaticSource.add(EmitData(20000, "3"))
 
     eventually {
       TestOperator.buffer shouldBe List(List("1"), List("1", "2"), List("3"))

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.test
 
 import cats.data.NonEmptyList
 import org.apache.flink.api.common.functions.FlatMapFunction
-import org.apache.flink.api.connector.sink2.{Sink => SinkV2, SinkWriter}
+import org.apache.flink.api.connector.sink2.{Sink => SinkV2, SinkWriter, WriterInitContext}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.flink.api.process.{
@@ -53,8 +53,12 @@ object TestResultSinkFactory {
     override def toFlinkSink(flinkNodeContext: FlinkCustomNodeContext): SinkV2[Value] =
       new SinkV2[Value] {
 
+        // TODO: Remove after upgrade to Flink 2.x
         @nowarn("cat=deprecation")
-        override def createWriter(context: SinkV2.InitContext): SinkWriter[Value] = new SinkWriter[Value] {
+        override def createWriter(context: SinkV2.InitContext): SinkWriter[AnyRef] =
+          throw new IllegalAccessException("This method shouldn't be invoked")
+
+        override def createWriter(context: WriterInitContext): SinkWriter[Value] = new SinkWriter[Value] {
 
           override def write(element: AnyRef, context: SinkWriter.Context): Unit = {
             sinksOutputs.compute(

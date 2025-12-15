@@ -10,7 +10,6 @@ import org.scalatest.matchers.must.Matchers
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import scala.annotation.nowarn
 import scala.reflect.{classTag, ClassTag}
 
 class CaseClassSerializationTest extends AnyFunSuite with Matchers {
@@ -49,11 +48,10 @@ class CaseClassSerializationTest extends AnyFunSuite with Matchers {
     deserialized shouldEqual input
   }
 
-  @nowarn("cat=deprecation")
   private def getSerializer[T: ClassTag] =
     TypeExtractor
       .getForClass(classTag[T].runtimeClass.asInstanceOf[Class[T]])
-      .createSerializer(executionConfig)
+      .createSerializer(executionConfig.getSerializerConfig)
 
   private def serializeAndDeserialize[T](serializer: TypeSerializer[T], in: T): T = {
     val outStream  = new ByteArrayOutputStream(bufferSize)

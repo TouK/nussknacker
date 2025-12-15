@@ -39,7 +39,6 @@ import pl.touk.nussknacker.engine.util.functions.{
 
 import java.time.LocalDateTime
 import java.util.{List => JList}
-import scala.annotation.nowarn
 
 object DevProcessConfigCreator {
   val oneElementValue = "One element"
@@ -57,7 +56,6 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   private def all[T](value: T): WithCategories[T] =
     WithCategories(value, "Category1", "Category2", "DevelopmentTests", "Periodic")
 
-  @nowarn("cat=deprecation")
   override def sinkFactories(
       modelConfig: ModelConfig
   ): Map[String, WithCategories[SinkFactory]] = {

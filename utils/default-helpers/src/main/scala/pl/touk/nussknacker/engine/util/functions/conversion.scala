@@ -6,8 +6,6 @@ import pl.touk.nussknacker.engine.api.json.decoders.FromJsonSimpleDecoder
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.util.functions.NumericUtils.ToNumberTypingFunction
 
-import scala.annotation.nowarn
-
 object conversion extends ConversionUtils
 
 trait ConversionUtils extends HideToString {
@@ -22,7 +20,6 @@ trait ConversionUtils extends HideToString {
   // TODO - remove in 1.19
   @Documentation(description = "Deprecated - will be removed in 1.19")
   @GenericType(typingFunction = classOf[ToNumberTypingFunction])
-  @nowarn("cat=deprecation")
   def toNumber(@ParamName("stringOrNumber") stringOrNumber: Any): java.lang.Number =
     numeric.toNumber(stringOrNumber)
 

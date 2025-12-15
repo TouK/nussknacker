@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.kafka.IdlenessConfig.DefaultDuration
 import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig._
 
 import scala.collection.immutable
+import scala.compat.java8.DurationConverters.FiniteDurationops
 import scala.concurrent.duration._
 
 case class SchemaRegistryClientKafkaConfig(
@@ -62,7 +63,7 @@ case class KafkaComponentsConfig(
   def idleTimeoutDuration: Option[java.time.Duration] = {
     val finalIdleConfig = idleTimeout.getOrElse(IdlenessConfig.DefaultConfig)
     if (finalIdleConfig.enabled) {
-      Some(java.time.Duration.ofMillis(finalIdleConfig.duration.toMillis))
+      Some(finalIdleConfig.duration.toJava)
     } else {
       None
     }

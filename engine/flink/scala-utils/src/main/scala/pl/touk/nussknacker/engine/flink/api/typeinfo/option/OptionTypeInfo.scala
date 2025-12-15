@@ -19,6 +19,7 @@ package pl.touk.nussknacker.engine.flink.api.typeinfo.option
 
 import org.apache.flink.annotation.{Public, PublicEvolving, VisibleForTesting}
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.serialization.SerializerConfig
 import org.apache.flink.api.common.typeinfo.{AtomicType, TypeInformation}
 import org.apache.flink.api.common.typeutils.{TypeComparator, TypeSerializer}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.NothingSerializer
@@ -59,14 +60,17 @@ class OptionTypeInfo[A, T <: Option[A]](private val elemTypeInfo: TypeInformatio
     }
   }
 
-  @PublicEvolving
+  // TODO: Remove after upgrade to Flink 2.x
   @nowarn("cat=deprecation")
-  def createSerializer(executionConfig: ExecutionConfig): TypeSerializer[T] = {
+  override def createSerializer(config: ExecutionConfig): TypeSerializer[T] =
+    createSerializer(config.getSerializerConfig)
+
+  override def createSerializer(config: SerializerConfig): TypeSerializer[T] = {
     if (elemTypeInfo == null) {
       // this happens when the type of a DataSet is None, i.e. DataSet[None]
       new OptionSerializer(new NothingSerializer).asInstanceOf[TypeSerializer[T]]
     } else {
-      new OptionSerializer(elemTypeInfo.createSerializer(executionConfig))
+      new OptionSerializer(elemTypeInfo.createSerializer(config))
         .asInstanceOf[TypeSerializer[T]]
     }
   }

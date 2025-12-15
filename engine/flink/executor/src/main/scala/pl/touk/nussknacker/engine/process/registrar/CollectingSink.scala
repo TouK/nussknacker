@@ -36,9 +36,9 @@ private[registrar] class CollectingSink[T](
     }
   }
 
+  // TODO: Remove after upgrade to Flink 2.x
   @nowarn("cat=deprecation")
-  override def createWriter(context: Sink.InitContext): SinkWriter[ValueWithContext[T]] = {
-    throw new UnsupportedOperationException("Not implemented")
-  }
+  override def createWriter(context: Sink.InitContext): SinkWriter[ValueWithContext[T]] =
+    throw new IllegalAccessException("This method shouldn't be invoked")
 
 }

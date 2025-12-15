@@ -23,7 +23,6 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.Fire
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.lang
-import scala.annotation.nowarn
 
 object ExtendedWindowOperator {
   // TODO_PAWEL is it ok, previously StringKeyedValue
@@ -76,7 +75,6 @@ private[aggregate] final case class OnElementWindowContext(
 
 private[aggregate] case object OnTimerWindowContext extends NuWindowContext
 
-@nowarn("cat=deprecation")
 private[aggregate] class ExtendedWindowOperator[A](
     stream: KeyedStream[Input[A], AnyRef],
     fctx: FlinkCustomNodeContext,
@@ -90,11 +88,11 @@ private[aggregate] class ExtendedWindowOperator[A](
       assigner,
       assigner.getWindowSerializer(stream.getExecutionConfig),
       stream.getKeySelector,
-      stream.getKeyType.createSerializer(stream.getExecutionConfig),
+      stream.getKeyType.createSerializer(stream.getExecutionConfig.getSerializerConfig),
       new AggregatingStateDescriptor(
         stateDescriptorName,
         aggregateFunction,
-        types.storedTypeInfo.createSerializer(stream.getExecutionConfig)
+        types.storedTypeInfo.createSerializer(stream.getExecutionConfig.getSerializerConfig)
       ),
       new InternalSingleValueProcessWindowFunction(
         new ValueEmittingWindowFunction(fctx.convertToEngineRuntimeContext, fctx.nodeId, contextHolderRef)

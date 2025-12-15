@@ -9,7 +9,6 @@ import org.apache.flink.streaming.api.functions.co.CoMapFunction
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 
-import scala.annotation.nowarn
 import scala.language.higherKinds
 
 object DataStreamImplicits extends LazyLogging {
@@ -29,13 +28,12 @@ object DataStreamImplicits extends LazyLogging {
 
   implicit class DataStreamExtension[T](stream: DataStream[T]) {
 
-    @nowarn("cat=deprecation")
     def mapWithState[R: TypeInformation, S: TypeInformation](
         fun: (T, Option[S]) => (R, Option[S])
     ): SingleOutputStreamOperator[R] = {
       val cleanFun                          = stream.getExecutionEnvironment.clean(fun)
       val stateTypeInfo: TypeInformation[S] = implicitly[TypeInformation[S]]
-      val serializer: TypeSerializer[S]     = stateTypeInfo.createSerializer(stream.getExecutionConfig)
+      val serializer: TypeSerializer[S] = stateTypeInfo.createSerializer(stream.getExecutionConfig.getSerializerConfig)
 
       val mapper = new RichMapFunction[T, R] with StatefulFunction[T, R, S] {
 
