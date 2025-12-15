@@ -42,7 +42,7 @@ export const ContextData = memo(function Data({
                         filter: "brightness(125%) saturate(250%)",
                     },
                     {
-                        offset: 0.3,
+                        offset: 0.2,
                         backgroundColor: blend(theme.palette.success.main, theme.palette.background.paper, 0.75),
                         filter: "none",
                     },
@@ -52,7 +52,7 @@ export const ContextData = memo(function Data({
                         filter: "none",
                     },
                 ],
-                { duration: 1000, easing: "ease-out" },
+                { duration: 5000, easing: "ease-out" },
             );
         },
         [theme.palette.background.paper, theme.palette.success.main, userSettings],
