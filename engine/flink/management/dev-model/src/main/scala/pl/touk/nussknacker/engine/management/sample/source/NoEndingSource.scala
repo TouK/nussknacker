@@ -1,19 +1,18 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.api.connector.source._
-import org.apache.flink.core.io.InputStatus
+import org.apache.flink.api.connector.source.util.ratelimit.RateLimiterStrategy
+import org.apache.flink.connector.datagen.source.DataGeneratorSource
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.{CirceUtil, Context}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.WatermarkStrategyUtils
-import pl.touk.nussknacker.engine.flink.util.source.SingleSplitSource
 
 import java.time.Duration
-import java.util.concurrent.atomic.AtomicBoolean
 
 //this not ending source is more reliable in tests than CollectionSource, which terminates quickly
 class NoEndingSource(val implementWatermarkStrategyForTest: Boolean)
@@ -53,29 +52,13 @@ class NoEndingSource(val implementWatermarkStrategyForTest: Boolean)
   }
 
   private def flinkSource: Source[String, _, _] = {
-    new SingleSplitSource[String] {
-
-      override def getBoundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED
-
-      override def createReader(
-          readerContext: SourceReaderContext
-      ): SourceReader[String, SingleSplitSource.SingleSplit] = new SingleSplitSource.Reader[String] {
-
-        private val afterFirstRun = new AtomicBoolean(false)
-
-        private val r = new scala.util.Random
-
-        override def pollNext(output: ReaderOutput[String]): InputStatus = {
-          if (afterFirstRun.getAndSet(true)) {
-            output.collect("TestInput" + r.nextInt(10))
-          } else {
-            output.collect("TestInput1")
-          }
-          Thread.sleep(2000)
-          InputStatus.MORE_AVAILABLE
-        }
-      }
-    }
+    val r = new scala.util.Random
+    new DataGeneratorSource[String](
+      (index: java.lang.Long) => if (index == 0) "TestInput1" else "TestInput" + r.nextInt(10),
+      Long.MaxValue,
+      RateLimiterStrategy.perSecond(0.5),
+      Types.STRING
+    )
   }
 
   private val watermarkStrategy: Option[WatermarkStrategy[String]] =
