@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.scenariotesting
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.{Configuration, RestartStrategyOptions}
+import org.apache.flink.configuration.RestartStrategyOptions.RestartStrategyType
 import pl.touk.nussknacker.engine.{ModelConfig, ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._
@@ -236,7 +237,8 @@ class TestFlinkExceptionHandler(
 ) extends FlinkExceptionHandler(metaData, modelConfig, listeners, classLoader) {
 
   override def restartStrategyConfig: Configuration =
-    new Configuration().set(RestartStrategyOptions.RESTART_STRATEGY, "disable")
+    new Configuration()
+      .set(RestartStrategyOptions.RESTART_STRATEGY, RestartStrategyType.NO_RESTART_STRATEGY.getMainValue)
 
   override val consumer: FlinkEspExceptionConsumer = _ => {}
 

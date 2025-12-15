@@ -6,10 +6,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 
-import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
-@nowarn("cat=deprecation")
 class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
 
   private val metaData = MetaData.combineTypeSpecificProperties(
