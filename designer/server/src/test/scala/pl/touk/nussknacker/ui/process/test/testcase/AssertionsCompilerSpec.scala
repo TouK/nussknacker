@@ -1,13 +1,11 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
-import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, Validated}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.TestConfigurationRefersToNotExistingNode
 import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -23,13 +21,14 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import pl.touk.nussknacker.ui.definition.DefinitionsService
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.AssertionConfiguredForNotExistingNodesError
 
 import java.util.UUID
 
 class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
 
   import pl.touk.nussknacker.engine.util.Implicits._
-  
+
   private val baseDefinition = ModelDefinitionBuilder.empty
     .withUnboundedStreamSource("sourceWithUnknown", Some(Unknown))
     .withService("enricher1", Some(Typed[String]), Parameter[String](ParameterName("par1")))
@@ -93,10 +92,8 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
     val testCompilationResult = compileScenarioWithAssertions(scenario, test)
 
     inside(testCompilationResult) { case Invalid(errors) =>
-      errors.toList shouldBe List(TestConfigurationRefersToNotExistingNode(
-        NodeId("notExistingSink"),
-        test.name,
-        ProcessCompilationError.Assertion
+      errors.toList shouldBe List(AssertionConfiguredForNotExistingNodesError(
+        NonEmptyList.one(NodeId("notExistingSink"))
       ))
     }
   }

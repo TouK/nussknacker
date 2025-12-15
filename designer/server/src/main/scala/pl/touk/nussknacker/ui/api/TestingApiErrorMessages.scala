@@ -11,6 +11,7 @@ import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.Deser
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ScenarioValidationError
+import pl.touk.nussknacker.ui.process.test.testcase.Assertion
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 
@@ -67,10 +68,14 @@ object TestingApiErrorMessages {
         TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.id)
       case PerformTestError.TestResultsSizeExceededError(approxSizeInBytes, maxBytes) =>
         TestingApiErrorMessages.testResultsSizeExceeded(approxSizeInBytes, maxBytes)
-      case PerformTestError.TestCaseCompilationError(errors) =>
-        TestingApiErrorMessages.testCaseCompilationErrors(errors)
       case ScenarioValidationError(errors) =>
         TestingApiErrorMessages.scenarioValidationErrors(errors)
+      case PerformTestError.MockConfiguredForNotExistingNodesError(nodeIds) =>
+        TestingApiErrorMessages.mocksConfiguredForNotExistingNodesErrors(nodeIds)
+      case PerformTestError.AssertionConfiguredForNotExistingNodesError(errors) =>
+        TestingApiErrorMessages.assertionsConfiguredForNotExistingNodesErrors(errors)
+      case PerformTestError.AssertionExpressionCompilationError(errors, assertion, node) =>
+        TestingApiErrorMessages.assertionCompilationError(errors, assertion, node)
     }
   }
 
@@ -157,10 +162,16 @@ object TestingApiErrorMessages {
   def testResultsSizeExceeded(approxSizeInBytes: Long, maxBytes: Long) =
     s"Test results size exceeded (approximate size is $approxSizeInBytes B). The maximum permitted size is $maxBytes B. Contact the system administrator to increase this limit."
 
-  private def testCaseCompilationErrors(errors: NonEmptyList[ProcessCompilationError]) =
-    s"Test case configuration contains errors: ${errors.map(_.toString).toList.mkString(", ")}"
-
   private def scenarioValidationErrors(errors: ValidationResults.ValidationErrors) =
     s"Only scenario without validation errors can be tested. Errors: $errors"
+
+  private def mocksConfiguredForNotExistingNodesErrors(notExistingNodeIds: NonEmptyList[NodeId]) =
+    s"Mocks configured for not existing nodes: ${notExistingNodeIds.toList.mkString(", ")}"
+
+  private def assertionsConfiguredForNotExistingNodesErrors(notExistingNodeIds: NonEmptyList[NodeId]) =
+    s"Assertions configured for not existing nodes: ${notExistingNodeIds.toList.mkString(", ")}"
+
+  private def assertionCompilationError(errors: NonEmptyList[ProcessCompilationError], assertion: Assertion, nodeId: NodeId) =
+    s"Assertion compilation error. Node: ${nodeId.id}. Assertion expression: ${assertion.expression.expression}. Errors: ${errors.toList.mkString(", ")}"
 
 }

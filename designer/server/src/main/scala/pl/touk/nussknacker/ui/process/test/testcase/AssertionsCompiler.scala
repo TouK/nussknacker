@@ -1,16 +1,18 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
+import cats.Applicative
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.syntax.all._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.TestConfigurationRefersToNotExistingNode
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.testmode.TestProcess.{AssertionResult, FailedAssertion, SuccessfulAssertion}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.{AssertionConfiguredForNotExistingNodesError, AssertionExpressionCompilationError}
 
 import java.util
 import scala.jdk.CollectionConverters._
@@ -21,24 +23,24 @@ class AssertionsCompiler(expressionCompiler: ExpressionCompiler, globalVariables
                testCase: TestCase,
                scenarioTypingResult: Map[String, NodeTypingData],
                jobData: JobData
-             ): ValidatedNel[ProcessCompilationError, CompiledAssertions] = {
+             ): ValidatedNel[PerformTestError, CompiledAssertions] = {
     testCase.assertions
       .map { case (node, assertions) =>
-        compileAssertions(node, assertions, scenarioTypingResult, testCase.name, jobData).map(node -> _)
+        compileNodeAssertions(node, assertions, scenarioTypingResult, testCase.name, jobData).map(node -> _)
       }
       .toList
       .sequence
       .map(assertions => CompiledAssertions(assertions.toMap))
   }
 
-  private def compileAssertions(
+  private def compileNodeAssertions(
                                  nodeId: NodeId,
                                  assertions: List[Assertion],
                                  nodesTyping: Map[String, NodeTypingData],
                                  testId: String,
                                  jobData: JobData
-                               ): ValidatedNel[ProcessCompilationError, List[CompiledAssertion]] = {
-    validateTypingExistence(nodeId, nodesTyping, testId, ProcessCompilationError.Assertion).andThen { typing =>
+                               ): ValidatedNel[PerformTestError, List[CompiledAssertion]] = {
+    validateTypingExistence(nodeId, nodesTyping, testId).andThen { typing =>
       val ctx = globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData)
         .withVariablesUnsafe(
           "contexts" -> Typed.genericTypeClass(
@@ -47,7 +49,7 @@ class AssertionsCompiler(expressionCompiler: ExpressionCompiler, globalVariables
           ),
           "TESTS" -> Typed.fromInstance(tests)
         )
-      assertions.map(compileAssertionExpression(nodeId, ctx, _)).sequence
+      assertions.map(compileAssertionExpression(nodeId, ctx, _)).traverse(_.toValidatedNel)
     }
   }
 
@@ -55,14 +57,13 @@ class AssertionsCompiler(expressionCompiler: ExpressionCompiler, globalVariables
                                        nodeId: NodeId,
                                        nodesTyping: Map[String, NodeTypingData],
                                        testId: String,
-                                       contextTestConfigurationPart: ProcessCompilationError.TestConfigurationPart
-                                     ) = {
+                                     ): Validated[NonEmptyList[PerformTestError], NodeTypingData] = {
     nodesTyping
       .get(nodeId.id)
       .map(Valid(_))
       .getOrElse(
         Invalid(
-          NonEmptyList.one(TestConfigurationRefersToNotExistingNode(nodeId, testId, contextTestConfigurationPart))
+          NonEmptyList.one(AssertionConfiguredForNotExistingNodesError(NonEmptyList(nodeId, Nil)))
         )
       )
   }
@@ -76,6 +77,11 @@ class AssertionsCompiler(expressionCompiler: ExpressionCompiler, globalVariables
         Typed.typedClass(classOf[AssertionResult])
       )(nodeId)
       .map(e => CompiledAssertion(e.expression))
+      .leftMap(mapExpressionCompilationErrors(_, assertion, nodeId))
+  }
+
+  private def mapExpressionCompilationErrors(errors: NonEmptyList[PartSubGraphCompilationError], assertion: Assertion, nodeId: NodeId) = {
+    AssertionExpressionCompilationError(errors, assertion, nodeId)
   }
 
 }

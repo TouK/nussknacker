@@ -33,7 +33,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingDat
 import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.{ExpressionsToTestDataConversionError, ScenarioValidationError, TestCaseCompilationError}
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.{ExpressionsToTestDataConversionError, MockConfiguredForNotExistingNodesError, ScenarioValidationError, AssertionExpressionCompilationError}
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
 import pl.touk.nussknacker.ui.process.test.testcase._
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
@@ -72,9 +72,9 @@ class ScenarioTestService(
     maxRecordsCount = testDataSettings.maxSamplesCount,
     testDataFormatSerDe = TestDataFormatHandler(TestDataFormat.CommonFormat, modelData).serDe
   )
-
   private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
   private val testCaseGlobalVariablesPreparer = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
+  private val assertionCompiler = new AssertionsCompiler(expressionCompiler, testCaseGlobalVariablesPreparer)
   private val assertionVerifier: AssertionVerifier = new AssertionVerifier(testCaseGlobalVariablesPreparer)
 
   def getTestingCapabilities(
@@ -279,41 +279,49 @@ class ScenarioTestService(
                        testCase: TestCase,
                      )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
     val jobData = JobData(scenarioGraph.toMetaData(processVersion.processName), processVersion)
-    val graphWithConfiguredMocs = substituteMocks(scenarioGraph, testCase.mocks)
-    val canonical = toCanonicalProcess(
-      graphWithConfiguredMocs,
-      processVersion,
-      isFragment
-    )
-
-    // todo: not existing node for mock validation?
-
     (for {
       preliminaryScenarioTestRecords <- EitherT.fromEither[Future](
         testCasePreliminaryScenarioRecordsSerDe
           .deserialize(SerializedScenarioRecordsContent(testCase.inputs))
           .leftMap[PerformTestError](PerformTestError.DeserializationError)
       )
-      scenarioTestData <- EitherT.fromEither[Future](prepareTestData(preliminaryScenarioTestRecords, canonical))
+      graphWithSubstitutedMocks <- EitherT.fromEither[Future](validateAndSubstituteMocks(scenarioGraph, testCase.mocks))
+      canonicalProcess = toCanonicalProcess(
+        graphWithSubstitutedMocks,
+        processVersion,
+        isFragment
+      )
+
+      scenarioTestData <- EitherT.fromEither[Future](prepareTestData(preliminaryScenarioTestRecords, canonicalProcess))
       // compile process/validate process to gather node typing needed for assertion expressions compilation
       //todo: toCanonicalProcess already does validation under the hood?
       nodeContextsTyping <- EitherT.fromEither[Future](compileScenarioAndExtractNodeContextsTyping(scenarioGraph, processVersion, isFragment))
-      compiledTestCase <- EitherT.fromEither[Future](compileTestCase(testCase, nodeContextsTyping, jobData))
-
-      testResults <- EitherT(
-        performTestWithDeserializedRecords(processVersion, canonical, scenarioTestData)
-      )
+      compiledTestCase <- EitherT.fromEither[Future](compileAssertions(testCase, nodeContextsTyping, jobData))
+      testResults <- EitherT(performTestWithDeserializedRecords(processVersion, canonicalProcess, scenarioTestData))
 
       _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
     } yield ResultsWithCounts(
       Instant.now(),
       testResults,
-      computeCounts(canonical, isFragment, testResults),
+      computeCounts(canonicalProcess, isFragment, testResults),
       assertionVerifier.verify(compiledTestCase, testResults.originalNodeResults, jobData)
     )).value
   }
 
-  private def substituteMocks(scenarioGraph: ScenarioGraph, mocks: Map[NodeId, EnricherMock]): ScenarioGraph = {
+  private def validateAndSubstituteMocks(scenarioGraph: ScenarioGraph, mocks: Map[NodeId, EnricherMock]): Either[PerformTestError, ScenarioGraph] = {
+    // check whether there are mocks without matching nodes in scenario
+    val existingNodesId = scenarioGraph.nodes.map(node => NodeId(node.id)).toSet
+    val mockedNodesId = mocks.keySet
+    val notExistingNodesWithMocks = mockedNodesId.diff(existingNodesId)
+
+    if (notExistingNodesWithMocks.nonEmpty) {
+      Left(MockConfiguredForNotExistingNodesError(NonEmptyList.fromListUnsafe(notExistingNodesWithMocks.toList)))
+    } else {
+      Right(substituteMocks(scenarioGraph, mocks))
+    }
+  }
+
+  private def substituteMocks(scenarioGraph: ScenarioGraph, mocks: Map[NodeId, EnricherMock]) = {
     val nodesWithSubstitutions = scenarioGraph.nodes.map {
       case nodeData@(enricher: node.Enricher) =>
         val enricherMockOpt = mocks.get(NodeId(nodeData.id)).map(_.expression)
@@ -335,10 +343,9 @@ class ScenarioTestService(
     }
   }
 
-  private def compileTestCase(test: TestCase, nodesTyping: Map[String, NodeTypingData], jobData: JobData): Either[TestCaseCompilationError, CompiledAssertions] = {
-    val testCompiler = new AssertionsCompiler(expressionCompiler, testCaseGlobalVariablesPreparer)
-    testCompiler.compile(test, nodesTyping, jobData)
-      .fold(errors => Left(TestCaseCompilationError(errors)), Right(_))
+  private def compileAssertions(test: TestCase, nodesTyping: Map[String, NodeTypingData], jobData: JobData): Either[PerformTestError, CompiledAssertions] = {
+    assertionCompiler.compile(test, nodesTyping, jobData)
+      .fold(errors => Left(errors.head), Right(_)) //in case of performing test case we return errors in fail-fast fashion
   }
 
   def performTest(
@@ -601,7 +608,11 @@ object ScenarioTestService {
 
     final case class TestResultsSizeExceededError(approxSizeInBytes: Long, maxBytes: Long) extends PerformTestError
 
-    final case class TestCaseCompilationError(errors: NonEmptyList[ProcessCompilationError]) extends PerformTestError
+    final case class MockConfiguredForNotExistingNodesError(notExistingNodeIds: NonEmptyList[NodeId]) extends PerformTestError
+
+    final case class AssertionConfiguredForNotExistingNodesError(notExistingNodeIds: NonEmptyList[NodeId]) extends PerformTestError
+
+    final case class AssertionExpressionCompilationError(errors: NonEmptyList[ProcessCompilationError], assertion: Assertion, nodeId: NodeId) extends PerformTestError
 
     final case class ScenarioValidationError(errors: ValidationErrors) extends PerformTestError
 

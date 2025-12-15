@@ -16,8 +16,6 @@ import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionN
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.restmodel.DeployRequest
@@ -525,7 +523,7 @@ class ManagementResourcesSpec
     }
   }
 
-  test("running test case with invalid test configuration (assertion on not existing node) should return bad request") {
+  test("assertion on not existing node should return bad request") {
     val testDataContent =
       """[
         |  {"sourceId":"startProcess","variables":{"input":["ala"]}},
@@ -533,12 +531,40 @@ class ManagementResourcesSpec
         |]""".stripMargin
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
 
-    val invalidTestCase = TestCase(UUID.randomUUID(), "dummy", testDataContent, Map.empty, Map(NodeId("someNotExistingNode") -> List(
-      Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
-    )))
+    val invalidTestCase = TestCase(
+      UUID.randomUUID(),
+      "dummy",
+      testDataContent,
+      mocks = Map.empty,
+      assertions = Map(NodeId("someNotExistingNode") -> List(
+        Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
+      )))
     runTestCase(ProcessTestData.sampleScenario, invalidTestCase) ~> check {
       status shouldEqual StatusCodes.BadRequest
-      responseAs[String] shouldBe "Test case configuration contains errors: TestConfigurationRefersToNotExistingNode(someNotExistingNode,dummy,Assertion)"
+      responseAs[String] shouldBe "Assertions configured for not existing nodes: someNotExistingNode"
+    }
+  }
+
+  test("mock on not existing node should return bad request") {
+    val testDataContent =
+      """[
+        |  {"sourceId":"startProcess","variables":{"input":["ala"]}},
+        |  {"sourceId":"startProcess","variables":{"input":["bela"]}}
+        |]""".stripMargin
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
+
+    val invalidTestCase = TestCase(
+      UUID.randomUUID(),
+      "dummy",
+      testDataContent,
+      mocks = Map(
+        NodeId("notExistingEnricher") -> EnricherMock("'b'".spel)
+      ),
+      assertions = Map.empty
+    )
+    runTestCase(ProcessTestData.sampleScenario, invalidTestCase) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      responseAs[String] shouldBe "Mocks configured for not existing nodes: notExistingEnricher"
     }
   }
 
