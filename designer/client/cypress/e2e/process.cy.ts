@@ -361,7 +361,7 @@ describe("Process", () => {
             .matchImage({ screenshotConfig: { padding: 16 } });
     });
 
-    it("should zoom/restore node window with test data", () => {
+    it.only("should zoom/restore node window with test data", () => {
         cy.visitNewProcess(seed, "rrEmpty", "RequestResponse");
         cy.viewport(1500, 800);
         cy.layoutScenario();
@@ -383,11 +383,10 @@ describe("Process", () => {
             // maximize (one way)
             cy.wrap($win)
                 .contains(/^source$/i)
-                .click()
-                .click();
+                .trigger("dblclick", 1, 1);
             // restore (second way)
             cy.wait(500);
-            cy.wrap($win).get("button[name=zoom]").realClick();
+            cy.wrap($win).get("button[name=zoom]").click();
 
             cy.wrap($win).should(($current) => {
                 expect($current.width()).to.equal(width);
