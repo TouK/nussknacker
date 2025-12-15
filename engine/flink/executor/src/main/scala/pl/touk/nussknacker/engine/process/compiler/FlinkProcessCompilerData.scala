@@ -3,8 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import cats.data._
 import cats.data.Validated.{Invalid, Valid}
 import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import org.apache.flink.api.connector.sink2.WriterInitContext
+import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.{Interpreter, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ScenarioCompilationErrors, ValidationContext}
@@ -14,7 +13,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   EvaluableLazyParameterCreatorDeps,
-  NodeCompiler,
   SingleInputNodeInputValidationContext
 }
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -94,7 +92,7 @@ class FlinkProcessCompilerData(
       implicit engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies
   ): CompiledProcessParts = validateOrFail(compileProcess(process))
 
-  def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
+  def restartStrategyConfig: Configuration = exceptionHandler.restartStrategyConfig
 
   def prepareExceptionHandler(flinkEngineContext: FlinkEngineContext): FlinkExceptionHandler = {
     exceptionHandler.open(

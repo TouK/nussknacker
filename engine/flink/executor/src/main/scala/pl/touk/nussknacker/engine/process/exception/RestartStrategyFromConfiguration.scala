@@ -2,15 +2,11 @@ package pl.touk.nussknacker.engine.process.exception
 
 import com.typesafe.config.{Config, ConfigValue, ConfigValueType}
 import org.apache.commons.lang3.StringUtils
-import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import org.apache.flink.api.common.restartstrategy.RestartStrategies.RestartStrategyConfiguration
-import org.apache.flink.configuration.Configuration
+import org.apache.flink.configuration.{Configuration, RestartStrategyOptions}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
-import scala.annotation.nowarn
-import scala.compat.java8.OptionConverters.RichOptionalGeneric
 import scala.jdk.CollectionConverters._
 
 object RestartStrategyFromConfiguration {
@@ -22,8 +18,6 @@ object RestartStrategyFromConfiguration {
   val defaultStrategyPath = "default"
 
   val strategyPath = "strategy"
-
-  private val restartStrategyFlinkConfigPrefix = "restart-strategy"
 
   /*
     restartStrategy {
@@ -44,7 +38,7 @@ object RestartStrategyFromConfiguration {
       }
     }
    */
-  def readFromConfiguration(config: Config, metaData: MetaData): RestartStrategyConfiguration = {
+  def readFromConfiguration(config: Config, metaData: MetaData): Configuration = {
     val restartConfig = config.getConfig(restartStrategyConfigPath)
     val restartConfigName = (for {
       property <- restartConfig.getAs[String](scenarioPropertyPath)
@@ -54,21 +48,18 @@ object RestartStrategyFromConfiguration {
     readFromConfig(restartConfig.getConfig(restartConfigName))
   }
 
-  // We convert HOCON to Flink configuration, so that we can use Flink parsing mechanisms
-  // https://ci.apache.org/projects/flink/flink-docs-release-1.13/docs/dev/execution/task_failure_recovery/
-  @nowarn("cat=deprecation")
-  private def readFromConfig(config: Config): RestartStrategyConfiguration = {
+  private def readFromConfig(config: Config): Configuration = {
     val flinkConfig = new Configuration
-    // restart-strategy.fixed-delay.attempts
-    val strategy = config.getString(strategyPath)
-    flinkConfig.setString(s"$restartStrategyFlinkConfigPrefix.type", strategy)
-    config.entrySet().asScala.foreach { entry =>
-      flinkConfig.setString(s"$restartStrategyFlinkConfigPrefix.$strategy.${entry.getKey}", toString(entry.getValue))
+    val strategy    = config.getString(strategyPath)
+    flinkConfig.setString(s"${RestartStrategyOptions.RESTART_STRATEGY.key()}", strategy)
+    config.entrySet().asScala.filter(e => e.getKey != strategyPath).foreach { entry =>
+      // for example: restart-strategy.fixed-delay.attempts
+      flinkConfig.setString(
+        s"${RestartStrategyOptions.RESTART_STRATEGY_CONFIG_PREFIX}.$strategy.${entry.getKey}",
+        toString(entry.getValue)
+      )
     }
-    RestartStrategies
-      .fromConfiguration(flinkConfig)
-      .asScala
-      .getOrElse(throw new IllegalArgumentException(s"Failed to find configured restart strategy: $strategy"))
+    flinkConfig
   }
 
   private def toString(configValue: ConfigValue): String =

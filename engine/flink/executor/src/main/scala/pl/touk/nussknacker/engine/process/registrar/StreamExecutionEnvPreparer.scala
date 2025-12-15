@@ -5,7 +5,7 @@ import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.runtime.state.StateBackend
 import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.util.{FlinkUserCodeClassLoaders, OutputTag}
+import org.apache.flink.util.OutputTag
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
@@ -50,7 +50,6 @@ class DefaultStreamExecutionEnvPreparer(
 ) extends StreamExecutionEnvPreparer
     with LazyLogging {
 
-  @nowarn("cat=deprecation")
   override def preRegistration(
       env: StreamExecutionEnvironment,
       compilerData: FlinkProcessCompilerData,
@@ -65,7 +64,7 @@ class DefaultStreamExecutionEnvPreparer(
           compilerData.jobData.metaData,
           StreamMetaData()
         )
-    env.setRestartStrategy(compilerData.restartStrategy)
+    env.getConfig.configure(compilerData.restartStrategyConfig, null)
     streamMetaData.parallelism.foreach(env.setParallelism)
 
     configureCheckpoints(env, streamMetaData)
