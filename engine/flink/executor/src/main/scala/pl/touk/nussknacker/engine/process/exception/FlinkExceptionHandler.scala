@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.exception
 
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus.{booleanValueReader, optionValueReader, stringValueReader, toFicusConfig}
-import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
@@ -22,7 +22,6 @@ import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler.{
 import pl.touk.nussknacker.engine.util.exception.DefaultWithExceptionExtractor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
-import scala.annotation.nowarn
 import scala.util.control.NonFatal
 
 /*
@@ -48,8 +47,7 @@ class FlinkExceptionHandler(
     classLoader: ClassLoader
 ) extends ExceptionHandler {
 
-  @nowarn("cat=deprecation")
-  def restartStrategy: RestartStrategies.RestartStrategyConfiguration =
+  def restartStrategyConfig: Configuration =
     RestartStrategyFromConfiguration.readFromConfiguration(modelConfig.underlyingConfig, metaData)
 
   private val baseConfig = modelConfig.underlyingConfig.getConfig(exceptionHandlerConfigPath)

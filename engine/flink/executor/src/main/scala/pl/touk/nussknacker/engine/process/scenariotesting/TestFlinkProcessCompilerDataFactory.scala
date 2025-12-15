@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.process.scenariotesting
 
-import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import org.apache.flink.configuration.{Configuration, RestartStrategyOptions}
+import org.apache.flink.configuration.RestartStrategyOptions.RestartStrategyType
 import pl.touk.nussknacker.engine.{ModelConfig, ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._
@@ -37,8 +37,6 @@ import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataP
 import pl.touk.nussknacker.engine.util.watermarkstrategy.WithWatermarkStrategyOptions
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import shapeless.syntax.typeable.typeableOps
-
-import scala.annotation.nowarn
 
 object TestFlinkProcessCompilerDataFactory {
 
@@ -238,8 +236,9 @@ class TestFlinkExceptionHandler(
     classLoader: ClassLoader
 ) extends FlinkExceptionHandler(metaData, modelConfig, listeners, classLoader) {
 
-  @nowarn("cat=deprecation")
-  override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
+  override def restartStrategyConfig: Configuration =
+    new Configuration()
+      .set(RestartStrategyOptions.RESTART_STRATEGY, RestartStrategyType.NO_RESTART_STRATEGY.getMainValue)
 
   override val consumer: FlinkEspExceptionConsumer = _ => {}
 

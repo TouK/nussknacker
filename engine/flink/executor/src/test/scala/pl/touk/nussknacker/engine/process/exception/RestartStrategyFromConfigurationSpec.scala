@@ -1,17 +1,13 @@
 package pl.touk.nussknacker.engine.process.exception
 
 import com.typesafe.config.ConfigFactory
-import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import org.apache.flink.api.common.restartstrategy.RestartStrategies.RestartStrategyConfiguration
-import org.apache.flink.api.common.time.Time
+import org.apache.flink.configuration.{Configuration, RestartStrategyOptions}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 
-import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
-@nowarn("cat=deprecation")
 class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
 
   private val metaData = MetaData.combineTypeSpecificProperties(
@@ -30,7 +26,12 @@ class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
         "restartStrategy.default.strategy" -> "fixed-delay",
         "restartStrategy.default.attempts" -> 10
       ),
-      RestartStrategies.fixedDelayRestart(10, Time.seconds(1))
+      Configuration.fromMap(
+        Map(
+          RestartStrategyOptions.RESTART_STRATEGY.key()                      -> "fixed-delay",
+          RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_ATTEMPTS.key() -> "10"
+        ).asJava
+      )
     )
 
     testStrategy(
@@ -39,7 +40,12 @@ class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
         "restartStrategy.default.strategy" -> "fixed-delay",
         "restartStrategy.default.attempts" -> 10
       ),
-      RestartStrategies.fixedDelayRestart(10, Time.seconds(1))
+      Configuration.fromMap(
+        Map(
+          RestartStrategyOptions.RESTART_STRATEGY.key()                      -> "fixed-delay",
+          RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_ATTEMPTS.key() -> "10"
+        ).asJava
+      )
     )
 
     testStrategy(
@@ -49,7 +55,11 @@ class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
         "restartStrategy.default.attempts"     -> 10,
         "restartStrategy.oneStrategy.strategy" -> "disable"
       ),
-      RestartStrategies.noRestart()
+      Configuration.fromMap(
+        Map(
+          RestartStrategyOptions.RESTART_STRATEGY.key() -> "disable"
+        ).asJava
+      )
     )
 
     testStrategy(
@@ -59,11 +69,16 @@ class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
         "restartStrategy.default.attempts"     -> 10,
         "restartStrategy.oneStrategy.strategy" -> "disable"
       ),
-      RestartStrategies.fixedDelayRestart(10, Time.seconds(1))
+      Configuration.fromMap(
+        Map(
+          RestartStrategyOptions.RESTART_STRATEGY.key()                      -> "fixed-delay",
+          RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_ATTEMPTS.key() -> "10"
+        ).asJava
+      )
     )
   }
 
-  private def testStrategy(configMap: Map[String, Any], expected: RestartStrategyConfiguration) = {
+  private def testStrategy(configMap: Map[String, Any], expected: Configuration) = {
     val config = ConfigFactory.parseMap(configMap.asJava)
     RestartStrategyFromConfiguration.readFromConfiguration(config, metaData) shouldBe expected
   }

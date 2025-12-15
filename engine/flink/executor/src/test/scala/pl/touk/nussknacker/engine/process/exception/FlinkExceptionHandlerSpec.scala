@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.exception
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import org.apache.flink.configuration.{Configuration, RestartStrategyOptions}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelConfig
@@ -10,10 +10,8 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
 import pl.touk.nussknacker.test.ClassLoaderWithServices
 
-import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
-@nowarn("cat=deprecation")
 class FlinkExceptionHandlerSpec extends AnyFunSuite with Matchers {
 
   private val config = ConfigFactory.parseMap(
@@ -24,7 +22,7 @@ class FlinkExceptionHandlerSpec extends AnyFunSuite with Matchers {
       "exceptionHandler.withRateMeter"   -> false,
       "restartStrategy.default.strategy" -> "fixed-delay",
       "restartStrategy.default.delay"    -> "10 ms",
-      "restartStrategy.default.attempts" -> 10
+      "restartStrategy.default.attempts" -> 11
     ).asJava
   )
 
@@ -42,7 +40,14 @@ class FlinkExceptionHandlerSpec extends AnyFunSuite with Matchers {
   }
 
   test("should load strategy from configuration") {
-    configurableExceptionHandler.restartStrategy shouldBe RestartStrategies.fixedDelayRestart(10, 10)
+    val expectedRestartStrategyConfig = Configuration.fromMap(
+      Map(
+        RestartStrategyOptions.RESTART_STRATEGY.key()                      -> "fixed-delay",
+        RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_DELAY.key()    -> "10 ms",
+        RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_ATTEMPTS.key() -> "11",
+      ).asJava
+    )
+    configurableExceptionHandler.restartStrategyConfig shouldBe expectedRestartStrategyConfig
   }
 
   test("should use handler from configuration") {
