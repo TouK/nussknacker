@@ -62,6 +62,9 @@ export function updateValidationResult(
     state: GraphState,
     action: ActionOfType<"EDIT_NODE" | "EDIT_PROPERTIES" | "VALIDATION_RESULT">,
 ): ValidationResult {
+    if (!action.validationResult) {
+        return state.scenario.validationResult;
+    }
     return {
         ...action.validationResult,
         // nodeResults is sometimes empty although it shouldn't e.g. when SaveNotAllowed errors happen
