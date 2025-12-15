@@ -87,7 +87,7 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     const readOnly = useAppSelector((s: RootState) => getReadOnly(s, props.readOnly));
     const buttonFromToolbar = useGetButtonFromToolbar(CustomButtonTypes.scenarioTest);
 
-    const { node, editedNode, onChange, scenario, outputEdges, performNodeEdit, editState, editStateRef } = useNodeState(data.meta);
+    const { node, editedNode, onChange, outputEdges, performNodeEdit, editState, editStateRef } = useNodeState(data.meta);
     const { cancel, apply } = useNodeDetailsButtons({ editedNode, outputEdges, performNodeEdit, close, readOnly });
 
     const nodeIsFragment = useMemo(() => NodeUtils.nodeIsFragment(editedNode), [editedNode]);

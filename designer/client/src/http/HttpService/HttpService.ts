@@ -39,6 +39,7 @@ import type { AuthenticationSettings } from "../../reducers/settings";
 import type { WithId } from "../../types/common";
 import type { Expression, NodeType } from "../../types/node";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
+import type { ValidationResult } from "../../types/validation";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "../parametersUtils";
 import type { ProcessCounts, ResultsWithCountsDto } from "../resultsWithCountsDto";
 import type {
@@ -506,7 +507,7 @@ export class HttpService {
             scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph),
         };
         return api
-            .post(`/processValidation/${encodeURIComponent(processName)}`, request, {
+            .post<ValidationResult>(`/processValidation/${encodeURIComponent(processName)}`, request, {
                 signal: controller?.signal,
             })
             .catch((error) => {
