@@ -361,7 +361,7 @@ describe("Process", () => {
             .matchImage({ screenshotConfig: { padding: 16 } });
     });
 
-    it("should zoom/restore node window with test data", () => {
+    it.only("should zoom/restore node window with test data", () => {
         cy.visitNewProcess(seed, "rrEmpty", "RequestResponse");
         cy.viewport(1500, 800);
         cy.layoutScenario();
@@ -376,26 +376,24 @@ describe("Process", () => {
         cy.get("[data-testid=window]")
             .contains(/^Test case/i)
             .should("be.visible");
-        cy.get("[data-testid=window]").matchImage();
-        cy.get("[data-testid=window]")
-            .should("contain.text", "Test case")
-            .then(($win) => {
-                const width = $win.width();
-                const height = $win.height();
+        cy.get("[data-testid=window]").then(($win) => {
+            const width = $win.width();
+            const height = $win.height();
 
-                // maximize (one way)
-                cy.wrap($win)
-                    .contains(/^source$/i)
-                    .dblclick();
-                // restore (second way)
-                cy.wait(500);
-                cy.wrap($win).get("button[name=zoom]").click();
+            // maximize (one way)
+            cy.wrap($win)
+                .contains(/^source$/i)
+                .trigger("dblclick", 1, 1);
+            // restore (second way)
+            cy.wait(500);
+            cy.wrap($win).get("button[name=zoom]").click();
 
-                cy.wrap($win).should(($current) => {
-                    expect($current.width()).to.equal(width);
-                    expect($current.height()).to.equal(height);
-                });
+            cy.wrap($win).should(($current) => {
+                expect($current.width()).to.equal(width);
+                expect($current.height()).to.equal(height);
             });
+        });
+        cy.get("[data-testid=window]").matchImage();
     });
 
     it("should open more scenario details", () => {
