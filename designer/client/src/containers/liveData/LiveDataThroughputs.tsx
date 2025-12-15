@@ -1,7 +1,8 @@
 import { GlobalStyles } from "@mui/material";
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { useGraph } from "../../components/graph/GraphContext";
+import { watchForCover } from "../../components/graph/watchForCover";
 import { getIsLiveDataWorking, getNodeTransitionResults } from "../../reducers/selectors/getLiveData";
 import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../store/storeHelpers";
@@ -18,7 +19,19 @@ export function LiveDataThroughputs() {
     const settings = useAppSelector(getUserSettings);
     const showTransitionAnimations = settings["scenario.liveData.showTransitionAnimations"];
     const showNodeAnimations = settings["scenario.liveData.showNodeAnimations"];
-    const enabled = useAppSelector((state) => (showNodeAnimations || showTransitionAnimations) && getIsLiveDataWorking(state));
+    const [covered, setCovered] = useState(false);
+    const _enabled = useAppSelector((state) => (showNodeAnimations || showTransitionAnimations) && getIsLiveDataWorking(state));
+
+    useEffect(() => {
+        if (!_enabled) return;
+        const unsubscrbe = watchForCover(() => graphGetter()?.processGraphPaper.el, setCovered);
+        return () => {
+            unsubscrbe();
+            setCovered(false);
+        };
+    }, [_enabled, graphGetter]);
+
+    const enabled = !covered && _enabled;
 
     useEffect(() => {
         const classList = graphGetter()?.processGraphPaper.el.classList;
