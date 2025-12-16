@@ -6,6 +6,7 @@ import React from "react";
 import { getScenarioGraph } from "../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import NodeUtils from "../../NodeUtils";
+import { Count } from "./Count";
 
 const NULL_OUTPUT_NAME = "Void";
 
@@ -13,11 +14,6 @@ const Path = styled(Chip)(({ theme }) => ({
     borderRadius: theme.spacing(0.8),
     height: "2em",
     userSelect: "none",
-}));
-
-const Count = styled("span")(({ theme }) => ({
-    fontWeight: "bold",
-    fontSize: "1.2em",
 }));
 
 type NodeCount = {
@@ -59,7 +55,7 @@ export function CountsForNodes({ nodes, input }: { nodes: NodeCount[]; input?: b
                         key={id}
                         label={
                             <Stack direction={input ? "row-reverse" : "row"} spacing={0.5} sx={{ alignItems: "center" }}>
-                                {count ? <Count>{Math.abs(count)}</Count> : null}
+                                {typeof count === "number" ? <Count>{count}</Count> : null}
                                 <Arrow />
                                 <span>{id || NULL_OUTPUT_NAME}</span>
                             </Stack>
