@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.compile.validationHelpers._
+import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess
@@ -36,6 +37,7 @@ import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandle
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatSerDe
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
 import java.time.Instant
 import java.util.UUID
@@ -750,11 +752,12 @@ class ScenarioTestServiceSpec
       ),
       modelData,
       Resource.pure(EngineScenarioCompilationDependencies.empty),
-      TestFactory.processResolver(),
+      new UIProcessResolver(
+        ProcessTestData.testProcessValidator(validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelData.modelDefinition))),
+        ProcessDictSubstitutor(new SimpleDictRegistry(Map.empty))
+      ),
       processCounter = new ProcessCounter(new StubFragmentRepository(Map.empty)),
-      testExecutorService = mockedTestExecutorService,
-      ProcessTestData.testProcessValidator(validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelData.modelDefinition)))
-    )
+      testExecutorService = mockedTestExecutorService)
 
     val scenarioRecords = PreliminaryScenarioRecords(
       NonEmptyList(
@@ -804,7 +807,7 @@ class ScenarioTestServiceSpec
         ),
         20 seconds
       )
-      .getOrElse(throw new RuntimeException("Error during performing test"))
+      .fold(e => throw new RuntimeException(s"Error during performing test: $e"), identity)
 
     result.assertionsResults(NodeId("end")) shouldBe List(
       SuccessfulAssertion,
@@ -825,9 +828,7 @@ class ScenarioTestServiceSpec
       TestFactory.processResolver(),
       // These dependencies are needed for test execution which is not tested here
       processCounter = null,
-      testExecutorService = null,
-      uiProcessValidator = null
-    )
+      testExecutorService = null)
 
   private def createScenarioWithSingleSource(sourceComponentId: String = "genericSource"): CanonicalProcess = {
     ScenarioBuilder

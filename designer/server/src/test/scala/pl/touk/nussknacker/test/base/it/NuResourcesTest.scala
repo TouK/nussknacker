@@ -28,6 +28,7 @@ import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest}
@@ -63,6 +64,7 @@ import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.testcase.{ScenarioWithTestCase, TestCase}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
 import slick.dbio.DBIOAction
 
@@ -288,14 +290,15 @@ trait NuResourcesTest
       designerConfig.testDataSettings,
       modelData,
       Resource.pure(EngineScenarioCompilationDependencies.empty),
-      processResolver(),
+      new UIProcessResolver(
+        ProcessTestData.testProcessValidator(validator = ProcessValidator.default(modelData)),
+        ProcessDictSubstitutor(new SimpleDictRegistry(Map.empty))
+      ),
       new ProcessCounter(TestFactory.prepareSampleFragmentRepository()),
       new ScenarioTestExecutorServiceImpl(
         new ScenarioResolver(sampleResolver(), Streaming.stringify),
         deploymentManager
-      ),
-      ProcessTestData.testProcessValidator(validator = ProcessValidator.default(modelData))
-    )
+      ))
 
   protected def deployRoute() =
     new ManagementResources(

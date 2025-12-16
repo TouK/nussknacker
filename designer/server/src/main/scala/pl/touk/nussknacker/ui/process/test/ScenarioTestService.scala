@@ -30,8 +30,8 @@ import pl.touk.nussknacker.engine.util.ListUtil
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationErrors}
-import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
+import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.{ExpressionsToTestDataConversionError, MockConfiguredForNotExistingNodesError, ScenarioValidationError}
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
@@ -40,7 +40,6 @@ import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
-import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
@@ -53,7 +52,6 @@ class ScenarioTestService(
                            // These dependencies are needed for scenario testing execution
                            processCounter: ProcessCounter,
                            testExecutorService: ScenarioTestExecutorService,
-                           uiProcessValidator: UIProcessValidator,
                          ) extends LazyLogging {
 
   private val commonModelDataInfoProvider = new CommonModelDataInfoProvider(modelData)
@@ -286,25 +284,18 @@ class ScenarioTestService(
           .leftMap[PerformTestError](PerformTestError.DeserializationError)
       )
       graphWithSubstitutedMocks <- EitherT.fromEither[Future](validateAndSubstituteMocks(scenarioGraph, testCase.mocks))
-      canonicalProcess = toCanonicalProcess(
-        graphWithSubstitutedMocks,
-        processVersion,
-        isFragment
-      )
+      scenarioWithTyping <- EitherT.fromEither[Future](validateScenario(graphWithSubstitutedMocks, processVersion, isFragment))
 
-      scenarioTestData <- EitherT.fromEither[Future](prepareTestData(preliminaryScenarioTestRecords, canonicalProcess))
-      // compile process/validate process to gather node typing needed for assertion expressions compilation
-      //todo: toCanonicalProcess already does validation under the hood?
-      nodeContextsTyping <- EitherT.fromEither[Future](compileScenarioAndExtractNodeContextsTyping(scenarioGraph, processVersion, isFragment))
-      compiledTestCase <- EitherT.fromEither[Future](compileAssertions(testCase, nodeContextsTyping, jobData))
-      testResults <- EitherT(performTestWithDeserializedRecords(processVersion, canonicalProcess, scenarioTestData))
+      scenarioTestData <- EitherT.fromEither[Future](prepareTestData(preliminaryScenarioTestRecords, scenarioWithTyping.scenario))
+      compiledAssertions <- EitherT.fromEither[Future](compileAssertions(testCase, scenarioWithTyping.nodesTyping, jobData))
+      testResults <- EitherT(performTestWithDeserializedRecords(processVersion, scenarioWithTyping.scenario, scenarioTestData))
 
       _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
     } yield ResultsWithCounts(
       Instant.now(),
       testResults,
-      computeCounts(canonicalProcess, isFragment, testResults),
-      assertionVerifier.verify(compiledTestCase, testResults.originalNodeResults, jobData)
+      computeCounts(scenarioWithTyping.scenario, isFragment, testResults),
+      assertionVerifier.verify(compiledAssertions, testResults.originalNodeResults, jobData)
     )).value
   }
 
@@ -331,14 +322,15 @@ class ScenarioTestService(
     scenarioGraph.copy(nodes = nodesWithSubstitutions)
   }
 
-  private def compileScenarioAndExtractNodeContextsTyping(scenarioGraph: ScenarioGraph,
-                                                          processVersion: ProcessVersion,
-                                                          isFragment: Boolean)(implicit user: LoggedUser): Either[ScenarioValidationError, Map[String, NodeTypingData]] = {
-    val validationResult = uiProcessValidator.validate(scenarioGraph, processVersion, isFragment)
+  private def validateScenario(scenarioGraph: ScenarioGraph,
+                               processVersion: ProcessVersion,
+                               isFragment: Boolean)(implicit user: LoggedUser): Either[ScenarioValidationError, ScenarioWithTyping] = {
+    val validationResult = processResolver.validateBeforeUiResolving(scenarioGraph, processVersion, isFragment)
+    val canonicalProcess = processResolver.resolveExpressions(scenarioGraph, processVersion.processName, validationResult.typingInfo)
     if (validationResult.hasErrors) {
       Left(ScenarioValidationError(validationResult.errors))
     } else {
-      Right(validationResult.nodeResults)
+      Right(ScenarioWithTyping(canonicalProcess, validationResult.nodeResults))
     }
   }
 
@@ -539,6 +531,8 @@ class ScenarioTestService(
 }
 
 object ScenarioTestService {
+
+  private final case class ScenarioWithTyping(scenario: CanonicalProcess, nodesTyping: Map[String, NodeTypingData])
 
   sealed trait TestingCapabilitiesError
 
