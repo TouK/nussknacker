@@ -69,11 +69,11 @@ object TestingApiErrorMessages {
       case PerformTestError.TestResultsSizeExceededError(approxSizeInBytes, maxBytes) =>
         TestingApiErrorMessages.testResultsSizeExceeded(approxSizeInBytes, maxBytes)
       case ScenarioValidationError(errors) =>
-        TestingApiErrorMessages.scenarioValidationErrors(errors)
+        TestingApiErrorMessages.scenarioHasValidationErrors(errors)
       case PerformTestError.MockConfiguredForNotExistingNodesError(nodeIds) =>
-        TestingApiErrorMessages.mocksConfiguredForNotExistingNodesErrors(nodeIds)
+        TestingApiErrorMessages.mocksConfiguredForNotExistingNodes(nodeIds)
       case PerformTestError.AssertionConfiguredForNotExistingNodesError(errors) =>
-        TestingApiErrorMessages.assertionsConfiguredForNotExistingNodesErrors(errors)
+        TestingApiErrorMessages.assertionsConfiguredForNotExistingNodes(errors)
       case PerformTestError.AssertionExpressionCompilationError(errors, assertion, node) =>
         TestingApiErrorMessages.assertionCompilationError(errors, assertion, node)
     }
@@ -162,13 +162,13 @@ object TestingApiErrorMessages {
   def testResultsSizeExceeded(approxSizeInBytes: Long, maxBytes: Long) =
     s"Test results size exceeded (approximate size is $approxSizeInBytes B). The maximum permitted size is $maxBytes B. Contact the system administrator to increase this limit."
 
-  private def scenarioValidationErrors(errors: ValidationResults.ValidationErrors) =
+  private def scenarioHasValidationErrors(errors: ValidationResults.ValidationErrors) =
     s"Only scenario without validation errors can be tested. Errors: $errors"
 
-  private def mocksConfiguredForNotExistingNodesErrors(notExistingNodeIds: NonEmptyList[NodeId]) =
+  private def mocksConfiguredForNotExistingNodes(notExistingNodeIds: NonEmptyList[NodeId]) =
     s"Mocks configured for not existing nodes: ${notExistingNodeIds.toList.mkString(", ")}"
 
-  private def assertionsConfiguredForNotExistingNodesErrors(notExistingNodeIds: NonEmptyList[NodeId]) =
+  private def assertionsConfiguredForNotExistingNodes(notExistingNodeIds: NonEmptyList[NodeId]) =
     s"Assertions configured for not existing nodes: ${notExistingNodeIds.toList.mkString(", ")}"
 
   private def assertionCompilationError(errors: NonEmptyList[ProcessCompilationError], assertion: Assertion, nodeId: NodeId) =
