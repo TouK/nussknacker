@@ -89,6 +89,7 @@ export function LiveDataThroughputs() {
         const graphInstance = graphGetter();
         graphInstance?.graph.getElements().forEach((model) => {
             const [el] = graphInstance.processGraphPaper.findViewByModel(model).findBySelector(".body");
+            if (!el) return;
 
             const isMatchingModel = getElementMatcher(model);
 
@@ -104,6 +105,7 @@ export function LiveDataThroughputs() {
         const graphInstance = graphGetter();
         graphInstance?.graph.getLinks()?.forEach((model) => {
             const [el] = graphInstance.processGraphPaper.findViewByModel(model).findBySelector(".connection");
+            if (!el) return;
 
             const transition = transitionResults.find(getLinkMatcher(model));
             const events = newEvents.filter(getTransitionMatcher(transition));
