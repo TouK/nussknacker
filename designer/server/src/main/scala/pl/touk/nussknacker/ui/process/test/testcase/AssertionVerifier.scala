@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
 import pl.touk.nussknacker.engine.api.{Context, ContextId, JobData, NodeId}
-import pl.touk.nussknacker.engine.testmode.TestProcess.{AssertionResult, FailedAssertion, ResultContext}
+import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 

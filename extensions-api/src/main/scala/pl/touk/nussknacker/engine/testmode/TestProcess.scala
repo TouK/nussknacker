@@ -150,10 +150,4 @@ object TestProcess {
     def variableTyped[U <: T](name: String): Option[U] = variables.get(name).map(_.asInstanceOf[U])
   }
 
-  sealed trait AssertionResult
-
-  case object SuccessfulAssertion extends AssertionResult
-
-  case class FailedAssertion(message: String) extends AssertionResult
-
 }

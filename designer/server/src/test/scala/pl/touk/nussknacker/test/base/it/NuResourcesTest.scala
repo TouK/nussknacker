@@ -140,14 +140,11 @@ trait NuResourcesTest
     deploymentManagersClassLoader
   )
 
-  private val modelData = {
-    val data = ModelData(
-      processingTypeConfig,
-      modelDependencies,
-      modelClassLoaderProvider.forProcessingTypeUnsafe(Streaming.stringify)
-    )
-    data
-  }
+  private val modelData = ModelData(
+    processingTypeConfig,
+    modelDependencies,
+    modelClassLoaderProvider.forProcessingTypeUnsafe(Streaming.stringify)
+  )
 
   private val deploymentData =
     new DeploymentData(

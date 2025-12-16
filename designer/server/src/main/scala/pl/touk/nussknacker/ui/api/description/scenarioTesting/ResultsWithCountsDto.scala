@@ -5,11 +5,9 @@ import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
 import pl.touk.nussknacker.engine.livedata.CollectedLiveData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.ResultsWithCountsDtoCodecs.{
-  ContextIdDto,
-  ContextIdPathPartDto
-}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.ResultsWithCountsDtoCodecs.{ContextIdDto, ContextIdPathPartDto}
 import pl.touk.nussknacker.ui.process.test.ResultsWithCounts
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionResult
 import pl.touk.nussknacker.ui.processreport.NodeCount
 import sttp.tapir.Schema
 

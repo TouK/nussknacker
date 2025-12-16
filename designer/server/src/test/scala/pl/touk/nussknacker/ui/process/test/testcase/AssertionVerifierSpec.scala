@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.engine.testmode.TestProcess.{FailedAssertion, ResultContext, SuccessfulAssertion}
+import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
 import pl.touk.nussknacker.engine.util.functions.conversion
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
@@ -108,7 +108,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
       ("#TESTS.assertEquals('1,2'.split(','), '1,2,3'.split(','))", FailedAssertion("Expected: [{1, 2}] but found [{1, 2, 3}]")),
       ("#TESTS.assertEquals({'1','2','3'}, '1,2,3'.split(','))", SuccessfulAssertion), // comparing arrays with SpEL inline lists
       ("#TESTS.assertEquals({'a': 1}, {:})", FailedAssertion("Expected: [{a: 1}] but found [{:}]")),
-//      ("#TESTS.assertEquals({'1,2'.split(',')}, {'1,2'.split(',')})", SuccessfulAssertion), //todo: for now it doesn't do comparison in recursion
+      // ("#TESTS.assertEquals({'1,2'.split(',')}, {'1,2'.split(',')})", SuccessfulAssertion), //todo: to be discussed whether it should work for nested structures
     )) { (assertion, result) =>
       val testCase = TestCase(
         UUID.randomUUID(),

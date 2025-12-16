@@ -442,7 +442,6 @@ class ManagementResourcesSpec
     }
   }
 
-  //todo: test case with multiple inputs
   test("run test case") {
     val testDataContent =
       """[

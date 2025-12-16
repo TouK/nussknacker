@@ -4,7 +4,8 @@ import io.circe.{Decoder, DecodingFailure, Encoder, Json, JsonObject}
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.generic.semiauto.deriveEncoder
 import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
-import pl.touk.nussknacker.engine.testmode.TestProcess.{AssertionResult, ExceptionResult, ExpressionEvaluationResult, ExternalServiceInvocationResult, ResultContext}
+import pl.touk.nussknacker.engine.testmode.TestProcess.{ExceptionResult, ExpressionEvaluationResult, ExternalServiceInvocationResult, ResultContext}
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionResult
 
 object ResultsWithCountsDtoCodecs {
 
