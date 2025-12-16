@@ -309,7 +309,6 @@ class ScenarioTestService(
   }
 
   private def validateAndSubstituteMocks(scenarioGraph: ScenarioGraph, mocks: Map[NodeId, EnricherMock]): Either[PerformTestError, ScenarioGraph] = {
-    // check whether there are mocks without matching nodes in scenario
     val existingNodesId = scenarioGraph.nodes.map(node => NodeId(node.id)).toSet
     val mockedNodesId = mocks.keySet
     val notExistingNodesWithMocks = mockedNodesId.diff(existingNodesId)
