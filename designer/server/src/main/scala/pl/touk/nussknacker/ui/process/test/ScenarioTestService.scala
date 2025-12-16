@@ -33,7 +33,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingDat
 import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.{ExpressionsToTestDataConversionError, MockConfiguredForNotExistingNodesError, ScenarioValidationError, AssertionExpressionCompilationError}
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.{ExpressionsToTestDataConversionError, MockConfiguredForNotExistingNodesError, ScenarioValidationError}
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
 import pl.touk.nussknacker.ui.process.test.testcase._
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
