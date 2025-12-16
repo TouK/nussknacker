@@ -9,6 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.node.Enricher
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -33,7 +34,7 @@ class DatabaseConnectionPoolingTest
     with Matchers
     with OptionValues {
 
-  private val databaseComponents = DatabaseEnricherComponentProvider.create(
+  private def createDatabaseComponents() = DatabaseEnricherComponentProvider.create(
     ConfigFactory.parseString(
       s"""config {
          |  databaseQueryEnricher {
@@ -43,6 +44,10 @@ class DatabaseConnectionPoolingTest
          |       username: "$username",
          |       password: "$password",
          |       url: "$url"
+         |       # initialSize = maxTotal means that connections will be utilized
+         |       initialSize: 1
+         |       maxTotal: 1
+         |       minimumIdle: 10000
          |     }
          |  }
          |}
@@ -50,24 +55,47 @@ class DatabaseConnectionPoolingTest
     )
   )
 
-  private val nodeCompiler = TestNodeCompiler
-    .liteBased()
-    .withExtraComponents(databaseComponents)
-    .build()
-
-  private val scenarioRunner = TestScenarioRunner
-    .liteBased()
-    .withExtraComponents(databaseComponents)
-    .build()
-
   override def prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE people (id INT, name VARCHAR(40));",
     "INSERT INTO people (id, name) VALUES (1, 'John');",
   )
 
-  test("DatabaseQueryEnricher should use connection pooling during metadata discovery") {
+  test("DatabaseQueryEnricher should use connection pooling during scenario validation and run") {
     ConnectionCountingDriver.clearInvocationsCount()
 
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("source", TestScenarioRunner.testDataSource)
+      .enricher(
+        "query-enricher",
+        "output",
+        "query-enricher",
+        "Query" -> "select * from people where id = ?".spelTemplate,
+        "arg1"  -> "1".spel
+      )
+      .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#output.NAME".spel)
+
+    val scenarioRunner = TestScenarioRunner
+      .liteBased()
+      .withExtraComponents(createDatabaseComponents())
+      .build()
+    val result = scenarioRunner
+      .runWithData[String, String](scenario, List("foo"))
+      .validValue
+
+    result.errors shouldBe empty
+    result.successes.loneElement shouldBe "John"
+    ConnectionCountingDriver.connectInvocationsCount.get() shouldBe <=(2)
+    // expected count is <= 2 because we have one pool used during node compilation and the second one during scenario runtime
+  }
+
+  test("DatabaseQueryEnricher should use connection pooling during node compilation") {
+    ConnectionCountingDriver.clearInvocationsCount()
+
+    val nodeCompiler = TestNodeCompiler
+      .liteBased()
+      .withExtraComponents(createDatabaseComponents())
+      .build()
     def compileEnricherNode() = {
       nodeCompiler.compileNode(
         Enricher(
@@ -85,6 +113,16 @@ class DatabaseConnectionPoolingTest
     }
 
     val compilationResult = compileEnricherNode()
+    checkNodeCompilationResult(compilationResult)
+
+    ConnectionCountingDriver.connectInvocationsCount.get() shouldBe 1
+    compileEnricherNode()
+    ConnectionCountingDriver.connectInvocationsCount.get() shouldBe 1
+  }
+
+  private def checkNodeCompilationResult(
+      compilationResult: NodeCompiler.NodeCompilationResult[NodeCompiler.EnricherCompilationResult]
+  ) = {
     compilationResult.compiledObject shouldBe Symbol("valid")
     val outputType = compilationResult.validationContext.validValue.get("output").value
     outputType shouldBe Typed.record(
@@ -93,28 +131,6 @@ class DatabaseConnectionPoolingTest
         "NAME" -> Typed[String],
       )
     )
-    ConnectionCountingDriver.connectInvocationsCount.get() shouldBe 1
-    compileEnricherNode()
-    ConnectionCountingDriver.connectInvocationsCount.get() shouldBe 1
-
-    val scenario = ScenarioBuilder
-      .streaming("test")
-      .source("source", TestScenarioRunner.testDataSource)
-      .enricher(
-        "query-enricher",
-        "output",
-        "query-enricher",
-        "Query" -> "select * from people where id = ?".spelTemplate,
-        "arg1"  -> "1".spel
-      )
-      .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#output.NAME".spel)
-
-    val result = scenarioRunner
-      .runWithData[String, String](scenario, List("foo"))
-      .validValue
-
-    result.errors shouldBe empty
-    result.successes.loneElement shouldBe "John"
   }
 
 }
