@@ -20,7 +20,7 @@ jobs:
         shell: bash
         run: |
           if [[ $CROSS_BUILD == 'true' ]]; then
-            echo "scala_version_matrix=[\"2.12\",\"2.13\"]" >> $GITHUB_OUTPUT
+            echo "scala_version_matrix=[\"2.13\"]" >> $GITHUB_OUTPUT
           else
             echo "scala_version_matrix=[\"2.13\"]" >> $GITHUB_OUTPUT
           fi

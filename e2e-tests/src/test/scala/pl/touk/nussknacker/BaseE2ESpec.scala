@@ -13,7 +13,7 @@ import java.io.{File => JFile}
 
 // Before running tests in this module, a fresh docker image should be built from sources and placed in the local
 // registry. If you run tests based on this trait in Intellij Idea and the images is not built, you can do it manually:
-// `bash -c "export NUSSKNACKER_SCALA_VERSION=2.12 && sbt dist/Docker/publishLocal"`
+// `bash -c "export NUSSKNACKER_SCALA_VERSION=2.13 && sbt dist/Docker/publishLocal"`
 trait BaseE2ESpec extends BeforeAndAfterAll with BeforeAndAfterEach with LazyLogging {
   this: Suite =>
 

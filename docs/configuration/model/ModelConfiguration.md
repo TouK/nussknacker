@@ -29,7 +29,7 @@ Make sure you have all necessary entries properly configured:
 - `flinkExecutor.jar` for Flink engine. This contains executor of scenarios in Flink cluster.
 
 Note that as classPath elements you can use:
-- full URLs (e.g. "https://repo1.maven.org/maven2/pl/touk/nussknacker/nussknacker-lite-base-components_2.12/1.1.0/nussknacker-lite-base-components_2.12-1.1.0.jar")
+- full URLs (e.g. "https://repo1.maven.org/maven2/pl/touk/nussknacker/nussknacker-lite-base-components_2.13/1.1.0/nussknacker-lite-base-components_2.13-1.1.0.jar")
 - file paths (absolute or relative to Nussknacker installation dir)
 - paths to directories (again, absolute or relative) - in this case all files in the directory will be used (including the ones found in subdirectories).
 

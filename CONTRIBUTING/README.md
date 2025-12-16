@@ -142,7 +142,7 @@ Building:
 
 Run `./runServer.sh` in `designer`Documentation
 
-Changing the version of the Scala is done by setting `NUSSKNACKER_SCALA_VERSION`, e.g. `NUSSKNACKER_SCALA_VERSION=2.12 ./buildServer.sh`
+Changing the version of the Scala is done by setting `NUSSKNACKER_SCALA_VERSION`, e.g. `NUSSKNACKER_SCALA_VERSION=2.13 ./buildServer.sh`
 
 #### Running using integration environment
 
@@ -154,10 +154,6 @@ Use one of the following method:
 You can also customize the setup by adding your changes in separate yaml file:
 * like this: `sbt designer/test:"runMain pl.touk.nussknacker.dev.RunEnvForLocalDesigner --customizeYaml=/tmp/my.override.yml"`
 * or this: `docker compose -f examples/dev/local-testing.docker-compose.yml -f /tmp/my.override.yml up -d`
-
-By default, an environment for Scala 2.13 is prepared. To run one for Scala 2.12:
-* run: `sbt designer/test:"runMain pl.touk.nussknacker.dev.RunEnvForLocalDesigner --scalaV scala212"`
-* or run: `docker compose -f examples/dev/local-testing.docker-compose.yml up -d` 
 
 By default, an environment doesn't start grafana and nginx reverse proxy. If you want to test Nussknacker with grafana run:
 * `sbt designer/test:"runMain pl.touk.nussknacker.dev.RunEnvForLocalDesigner --customizeYaml=examples/dev/nginx.override.yaml"`
