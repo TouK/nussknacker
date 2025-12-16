@@ -558,6 +558,18 @@ class DetectLargeTransactionSpec
              |          }
              |        },
              |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-3",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 3,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "Key",
+             |          "value": null
+             |        },
+             |        {
              |          "contextId": "DetectLargeTransactions-transactions-0-4",
              |          "cid": {
              |            "nid": "transactions",
