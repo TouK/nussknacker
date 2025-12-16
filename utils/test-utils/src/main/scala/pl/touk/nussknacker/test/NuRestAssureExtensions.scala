@@ -106,10 +106,13 @@ trait NuRestAssureExtensions {
 
   implicit class MatchJsonWithRegexValues[T <: ValidatableResponse](validatableResponse: T) {
 
-    def matchJsonWithRegexValuesBody(json: String): ValidatableResponse = {
+    def matchJsonWithRegexValuesBody(
+        json: String,
+        ignoreOrderOfElementsInArrays: Boolean = false
+    ): ValidatableResponse = {
       validatableResponse
         .body(
-          matchJsonWithRegexValues(json)
+          matchJsonWithRegexValues(json, ignoreOrderOfElementsInArrays)
         )
     }
 

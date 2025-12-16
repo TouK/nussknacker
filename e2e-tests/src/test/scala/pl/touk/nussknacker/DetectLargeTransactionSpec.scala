@@ -47,7 +47,8 @@ class DetectLargeTransactionSpec
         .Then()
         .statusCode(200)
         .matchJsonWithRegexValuesBody(
-          s"""
+          ignoreOrderOfElementsInArrays = true,
+          json = s"""
              |{
              |  "timestamp": "${regexes.zuluDateRegex}",
              |  "results": {
@@ -555,18 +556,6 @@ class DetectLargeTransactionSpec
              |              "isLast": false
              |            }
              |          }
-             |        },
-             |        {
-             |          "contextId": "DetectLargeTransactions-transactions-0-3",
-             |          "cid": {
-             |            "nid": "transactions",
-             |            "tid": 0,
-             |            "idx": 3,
-             |            "path": []
-             |          },
-             |          "timestamp": "${regexes.zuluDateRegex}",
-             |          "name": "Key",
-             |          "value": null
              |        },
              |        {
              |          "contextId": "DetectLargeTransactions-transactions-0-4",

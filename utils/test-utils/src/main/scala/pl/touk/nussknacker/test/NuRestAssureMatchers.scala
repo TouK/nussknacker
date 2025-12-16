@@ -27,8 +27,11 @@ trait NuRestAssureMatchers {
   def equalsJson(expectedJsonString: String): Matcher[ValidatableResponse] =
     new EqualsJson(expectedJsonString)
 
-  def matchJsonWithRegexValues(expectedJsonWithRegexValuesString: String): Matcher[ValidatableResponse] =
-    new MatchJsonWithRegexValues(expectedJsonWithRegexValuesString)
+  def matchJsonWithRegexValues(
+      expectedJsonWithRegexValuesString: String,
+      ignoreOrderOfElementsInArrays: Boolean = false
+  ): Matcher[ValidatableResponse] =
+    new MatchJsonWithRegexValues(expectedJsonWithRegexValuesString, ignoreOrderOfElementsInArrays)
 
   def matchAllNdJsonWithRegexValues(expectedJsonWithRegexValuesString: String): Matcher[ValidatableResponse] =
     new MatchNdJsonWithRegexValues(expectedJsonWithRegexValuesString)
@@ -55,8 +58,10 @@ object NuRestAssureMatchers extends NuRestAssureMatchers {
 
   }
 
-  private class MatchJsonWithRegexValues(expectedJsonWithRegexValuesString: String)
-      extends BaseMatcher[ValidatableResponse]
+  private class MatchJsonWithRegexValues(
+      expectedJsonWithRegexValuesString: String,
+      ignoreOrderOfElementsInArrays: Boolean
+  ) extends BaseMatcher[ValidatableResponse]
       with LazyLogging {
 
     private val expectedJson = ujson.read(expectedJsonWithRegexValuesString)
@@ -112,6 +117,26 @@ object NuRestAssureMatchers extends NuRestAssureMatchers {
     }
 
     private def compareArrays(a1: Arr, a2: Arr, parent: JsonValueParent) = {
+      if (ignoreOrderOfElementsInArrays) compareArraysIgnoringOrder(a1, a2, parent)
+      else compareArraysInOrder(a1, a2, parent)
+    }
+
+    private def compareArraysIgnoringOrder(a1: Arr, a2: Arr, parent: JsonValueParent) = {
+      if (a1.value.size != a2.value.size)
+        Validated.Invalid(errorString(s"$a1", s"$a2", parent))
+      else {
+        a2.value.foldLeft(Validated.Valid(()): Validated[String, Unit]) { (acc, elem2) =>
+          acc.andThen { _ =>
+            a1.value.find(elem1 => compareJsons(elem1, elem2, parent).isValid) match {
+              case Some(_) => Validated.Valid(())
+              case None => Validated.Invalid(errorString(s"$elem2", s"no matching element in expected array", parent))
+            }
+          }
+        }
+      }
+    }
+
+    private def compareArraysInOrder(a1: Arr, a2: Arr, parent: JsonValueParent) = {
       if (a1 == a2) {
         Validated.Valid(())
       } else if (a1.value.size == a2.value.size) {
@@ -195,7 +220,7 @@ object NuRestAssureMatchers extends NuRestAssureMatchers {
   }
 
   private class MatchNdJsonWithRegexValues(expectedJsonWithRegexValuesString: String)
-      extends MatchJsonWithRegexValues(expectedJsonWithRegexValuesString) {
+      extends MatchJsonWithRegexValues(expectedJsonWithRegexValuesString, ignoreOrderOfElementsInArrays = false) {
 
     override def matches(actual: Any): Boolean = {
       actual match {
