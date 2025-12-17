@@ -8,7 +8,7 @@ export type LiveData = {
     nextIn?: number;
 };
 
-export const liveData: Reducer<LiveData> = (state = {}, action) => {
+export const liveData: Reducer<LiveData> = (state = { pauseReasons: [Initiator.init] }, action) => {
     switch (action.type) {
         case "DISPLAY_PROCESS_COUNTS": {
             return {
@@ -47,9 +47,10 @@ export const liveData: Reducer<LiveData> = (state = {}, action) => {
             };
         }
         case "LIVE_DATA_START": {
+            const toClean = action.initiator ? [action.initiator] : state.pauseReasons;
             return {
                 ...state,
-                pauseReasons: action.initiator ? (state.pauseReasons || []).filter((r) => r !== action.initiator) : [],
+                pauseReasons: (state.pauseReasons || []).filter((r) => !toClean.includes(r)),
             };
         }
         case "LIVE_DATA_STARTED": {

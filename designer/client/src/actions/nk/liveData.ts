@@ -10,6 +10,7 @@ import { AbortControllersStack } from "./abortControllersStack";
 import { hideTestRunDetails } from "./process";
 
 export enum Initiator {
+    init = "initial",
     tests = "tests",
     button = "button",
     list = "list",
@@ -76,14 +77,14 @@ function fetchAndDisplayLiveData(showErrors = false, refresh = REFRESH_TIME): Th
     };
 }
 
-export function startLiveData(initiator: Initiator = null, showErrors = false): ThunkAction {
+export function startLiveData(initiator: Initiator | null = null, showErrors = false): ThunkAction {
     return async (dispatch, getState) => {
         dispatch({ type: "LIVE_DATA_START", initiator });
         AbortControllersStack.abortAll();
-        if (!getIsLiveDataWorking(getState())) {
-            dispatch(hideTestRunDetails());
-        }
         if (!getHasPauseReasons(getState())) {
+            if (!getIsLiveDataWorking(getState())) {
+                dispatch(hideTestRunDetails());
+            }
             dispatch(fetchAndDisplayLiveData(showErrors));
         }
     };
