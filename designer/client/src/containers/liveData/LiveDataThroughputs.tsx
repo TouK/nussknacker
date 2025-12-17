@@ -136,11 +136,8 @@ export function LiveDataThroughputs() {
                         transition: "1s linear",
                         transitionProperty: "filter, stroke, stroke-width, stroke-dasharray",
                         [`.${CLASS_NAME}-transition &`]: {
-                            strokeDasharray: "5 20",
+                            strokeDasharray: "20 10",
                             strokeWidth: 3,
-                            [`&.${CLASS_NAME}-active`]: {
-                                strokeDasharray: "20 10",
-                            },
                         },
                     },
                 },
