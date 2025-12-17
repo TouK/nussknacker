@@ -1,6 +1,6 @@
 import { Box, Fade, Typography } from "@mui/material";
 import type { MouseEvent } from "react";
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
@@ -39,15 +39,11 @@ export const VariableContextTree = memo(function ValuesContextTree({
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
 
-    const [isEmpty, setIsEmpty] = useState(true);
+    const isEmpty = useMemo(
+        () => transitionNodesIds.length < 1 && nodeIdFilter.length < 1,
+        [nodeIdFilter.length, transitionNodesIds.length],
+    );
     useEffect(() => {
-        setIsEmpty(transitionNodesIds.length < 1 && nodeIdFilter.length < 1);
-    }, [nodeIdFilter.length, transitionNodesIds.length]);
-
-    useEffect(() => {
-        if (isEmpty) {
-            dispatch(startLiveData(direction === "input" ? Initiator.inputAccordion : Initiator.outputAccordion));
-        }
         onIsEmptyChange?.(isEmpty);
     }, [direction, dispatch, isEmpty, onIsEmptyChange]);
 
