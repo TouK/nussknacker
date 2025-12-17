@@ -1,24 +1,16 @@
 package pl.touk.nussknacker.sql.db.schema
 
 import pl.touk.nussknacker.engine.util.ThreadUtils
+import pl.touk.nussknacker.sql.DbEnricherName
 import pl.touk.nussknacker.sql.db.ignite.IgniteMetaDataProvider
 import pl.touk.nussknacker.sql.db.pool.{DBPoolConfig, HikariDataSourceFactory}
-import pl.touk.nussknacker.sql.db.schema.MetaDataProviderFactory.igniteDriverPrefix
 
 import java.sql.Connection
-import java.util.Properties
 
 object MetaDataProviderFactory {
   private val igniteDriverPrefix = "org.apache.ignite.IgniteJdbc"
-}
 
-class MetaDataProviderFactory {
-
-  def create(dbPoolConfig: DBPoolConfig): JdbcMetaDataProvider = {
-    val props = new Properties()
-    dbPoolConfig.dataSourceProperties.foreach { case (k, v) =>
-      props.put(k, v)
-    }
+  def create(dbPoolConfig: DBPoolConfig, dbEnricherName: DbEnricherName): JdbcMetaDataProvider = {
     val ds = ThreadUtils.withContextClassLoader(getClass.getClassLoader) {
       HikariDataSourceFactory(
         dbPoolConfig.copy(
@@ -28,7 +20,8 @@ class MetaDataProviderFactory {
           // have two separate pools (one for metadata and one for runtime) and we want to reduce the risk
           // that we exceed the limit of connections
           maxTotal = 1
-        )
+        ),
+        poolName = dbEnricherName.value + "-metadata"
       )
     }
     val getConnection: () => Connection = () => {

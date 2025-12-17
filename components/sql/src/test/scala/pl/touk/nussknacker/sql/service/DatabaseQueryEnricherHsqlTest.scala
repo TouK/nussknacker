@@ -2,7 +2,7 @@ package pl.touk.nussknacker.sql.service
 
 import org.scalatest.BeforeAndAfterEach
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.sql.db.schema.MetaDataProviderFactory
+import pl.touk.nussknacker.sql.DbEnricherName
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 
 class DatabaseQueryEnricherHsqlTest
@@ -11,7 +11,7 @@ class DatabaseQueryEnricherHsqlTest
     with BeforeAndAfterEach {
 
   override val service =
-    new DatabaseQueryEnricher(hsqlDbPoolConfig, new MetaDataProviderFactory().create(hsqlDbPoolConfig))
+    new DatabaseQueryEnricher(hsqlDbPoolConfig, DbEnricherName("queryEnricher"))
 
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE people (id INT, name VARCHAR(40));",

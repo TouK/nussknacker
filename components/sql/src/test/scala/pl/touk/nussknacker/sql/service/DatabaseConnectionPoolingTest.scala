@@ -2,7 +2,7 @@ package pl.touk.nussknacker.sql.service
 
 import com.typesafe.config.ConfigFactory
 import org.hsqldb.jdbc.JDBCDriver
-import org.scalatest.{BeforeAndAfterAll, OptionValues}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.LoneElement.convertToCollectionLoneElementWrapper
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class DatabaseConnectionPoolingTest
     extends AnyFunSuite
     with BeforeAndAfterAll
+    with BeforeAndAfterEach
     with WithHsqlDB
     with Matchers
     with OptionValues {
@@ -60,9 +61,12 @@ class DatabaseConnectionPoolingTest
     "INSERT INTO people (id, name) VALUES (1, 'John');",
   )
 
-  test("DatabaseQueryEnricher should use connection pooling during scenario validation and run") {
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
     ConnectionCountingDriver.clearInvocationsCount()
+  }
 
+  test("DatabaseQueryEnricher should use connection pooling during scenario validation and run") {
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("source", TestScenarioRunner.testDataSource)
@@ -90,8 +94,6 @@ class DatabaseConnectionPoolingTest
   }
 
   test("DatabaseQueryEnricher should use connection pooling during node compilation") {
-    ConnectionCountingDriver.clearInvocationsCount()
-
     val nodeCompiler = TestNodeCompiler
       .liteBased()
       .withExtraComponents(createDatabaseComponents())
