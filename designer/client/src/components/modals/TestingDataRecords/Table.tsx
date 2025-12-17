@@ -270,6 +270,22 @@ export const Table: React.FC<TableProps> = ({
         }
     }, []);
 
+    const rowsFromSelection = useMemo(() => {
+        if (!selection) return [];
+        const rowsArr = selection.rows && typeof selection.rows.toArray === "function" ? selection.rows.toArray() : [];
+        if (rowsArr.length > 0) return rowsArr.slice().sort((a, b) => a - b);
+
+        return [];
+    }, [selection]);
+
+    const handleRemove = useCallback(() => {
+        if (!onCellDeleted || rowsFromSelection.length === 0) return;
+        onCellDeleted(rowsFromSelection);
+        clearSelection();
+    }, [clearSelection, onCellDeleted, rowsFromSelection]);
+
+    const selectedRowsCount = rowsFromSelection.length;
+
     return (
         <Box
             sx={{
@@ -289,6 +305,15 @@ export const Table: React.FC<TableProps> = ({
                 }}
             >
                 <DataEditor
+                    onDelete={(selection) => {
+                        console.log(selection);
+                        // keep native behaviour when no rows selected
+                        if (selectedRowsCount === 0) return true;
+
+                        handleRemove();
+
+                        return false;
+                    }}
                     ref={ref}
                     columns={tableColumns}
                     getCellContent={getCellContent}
@@ -323,12 +348,7 @@ export const Table: React.FC<TableProps> = ({
                     )}
                 </CellMenu>
                 {selection.rows.length > 0 && (
-                    <TableFooter
-                        selection={selection}
-                        allRowsNumber={data.length}
-                        onDeleteRows={onCellDeleted}
-                        clearSelection={clearSelection}
-                    />
+                    <TableFooter selectedCount={selectedRowsCount} allRowsNumber={data.length} handleRemoveRows={handleRemove} />
                 )}
             </Sizer>
             {tooltipElement}

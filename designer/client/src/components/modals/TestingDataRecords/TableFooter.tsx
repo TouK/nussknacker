@@ -1,41 +1,18 @@
-import type { GridSelection } from "@glideapps/glide-data-grid";
 import { alpha, Box, Button, Typography } from "@mui/material";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 import { Trans, useTranslation } from "react-i18next";
 
 import Remove from "../../../assets/img/toolbarButtons/archive.svg";
 import { getBorderColor } from "../../../containers/theme/helpers";
 
 interface TableFooterProps {
-    selection: GridSelection;
+    selectedCount: number;
     allRowsNumber: number;
-    onDeleteRows: (rows: number[]) => void;
-    clearSelection: () => void;
+    handleRemoveRows: () => void;
 }
 
-export const TableFooter: React.FC<TableFooterProps> = ({ selection, allRowsNumber, onDeleteRows, clearSelection }) => {
+export const TableFooter: React.FC<TableFooterProps> = ({ selectedCount, allRowsNumber, handleRemoveRows }) => {
     const { t } = useTranslation();
-
-    const rowsFromSelection = useMemo(() => {
-        if (!selection) return [];
-        const rowsArr = selection.rows && typeof selection.rows.toArray === "function" ? selection.rows.toArray() : [];
-        if (rowsArr.length > 0) return rowsArr.slice().sort((a, b) => a - b);
-
-        const range = selection.current?.range;
-        if (range && typeof range.y === "number" && typeof range.height === "number") {
-            return Array.from({ length: range.height }, (_, i) => range.y + i);
-        }
-
-        return [];
-    }, [selection]);
-
-    const selectedCount = rowsFromSelection.length;
-
-    const handleRemove = useCallback(() => {
-        if (!onDeleteRows || rowsFromSelection.length === 0) return;
-        onDeleteRows(rowsFromSelection);
-        clearSelection();
-    }, [clearSelection, onDeleteRows, rowsFromSelection]);
 
     return (
         <Box
@@ -69,7 +46,7 @@ export const TableFooter: React.FC<TableFooterProps> = ({ selection, allRowsNumb
             <Button
                 variant={"text"}
                 sx={(theme) => ({ color: theme.palette.text.primary, textTransform: "capitalize" })}
-                onClick={handleRemove}
+                onClick={handleRemoveRows}
             >
                 <Box width={"24px"} height={"24px"}>
                     <Remove />
