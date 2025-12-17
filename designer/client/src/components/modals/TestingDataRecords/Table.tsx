@@ -348,12 +348,7 @@ export const Table: React.FC<TableProps> = ({
                     )}
                 </CellMenu>
                 {selection.rows.length > 0 && (
-                    <TableFooter
-                        selectedCount={selectedRowsCount}
-                        allRowsNumber={data.length}
-                        handleRemoveRows={handleRemove}
-                        clearSelection={clearSelection}
-                    />
+                    <TableFooter selectedCount={selectedRowsCount} allRowsNumber={data.length} handleRemoveRows={handleRemove} />
                 )}
             </Sizer>
             {tooltipElement}

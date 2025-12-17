@@ -9,16 +9,10 @@ interface TableFooterProps {
     selectedCount: number;
     allRowsNumber: number;
     handleRemoveRows: () => void;
-    clearSelection: () => void;
 }
 
-export const TableFooter: React.FC<TableFooterProps> = ({ selectedCount, allRowsNumber, handleRemoveRows, clearSelection }) => {
+export const TableFooter: React.FC<TableFooterProps> = ({ selectedCount, allRowsNumber, handleRemoveRows }) => {
     const { t } = useTranslation();
-
-    const handleRemove = useCallback(() => {
-        handleRemoveRows();
-        clearSelection();
-    }, [clearSelection, handleRemoveRows]);
 
     return (
         <Box
@@ -52,7 +46,7 @@ export const TableFooter: React.FC<TableFooterProps> = ({ selectedCount, allRows
             <Button
                 variant={"text"}
                 sx={(theme) => ({ color: theme.palette.text.primary, textTransform: "capitalize" })}
-                onClick={handleRemove}
+                onClick={handleRemoveRows}
             >
                 <Box width={"24px"} height={"24px"}>
                     <Remove />
