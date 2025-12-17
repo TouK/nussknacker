@@ -23,7 +23,5 @@ The docker from sources is built and published in local registry and then the be
 
 ## Running in sbt:
 ```bash
-bash -c "export NUSSKNACKER_SCALA_VERSION=2.12 && sbt \"benchmarks/test:runMain pl.touk.nussknacker.engine.benchmarks.e2e.FlinkSteamingScenarioBenchmark 10000000\""
+bash -c "export NUSSKNACKER_SCALA_VERSION=2.13 && sbt \"benchmarks/test:runMain pl.touk.nussknacker.engine.benchmarks.e2e.FlinkSteamingScenarioBenchmark 10000000\""
 ```
-
-> :warning: **Warning:** At the moment they support only Scala 2.12-based Nu-stack

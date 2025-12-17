@@ -14,16 +14,14 @@ import scala.util.Try
 import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 
-val scala212 = "2.12.20"
 val scala213 = "2.13.16"
 
 lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
   case None | Some("2.13") => scala213
-  case Some("2.12")        => scala212
   case Some(unsupported)   => throw new IllegalArgumentException(s"Nu doesn't support $unsupported Scala version")
 }
 
-lazy val supportedScalaVersions = List(scala212, scala213)
+lazy val supportedScalaVersions = List(scala213)
 
 lazy val scalaFixV = "0.14.2"
 
@@ -135,17 +133,6 @@ val externalDepsTestsSettings =
 
 val ignoreExternalDepsTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalatest.tags.Network")
 
-def forScalaVersion[T](version: String)(provide: PartialFunction[(Int, Int), T]): T = {
-  CrossVersion.partialVersion(version) match {
-    case Some((major, minor)) if provide.isDefinedAt((major.toInt, minor.toInt)) =>
-      provide((major.toInt, minor.toInt))
-    case Some(_)                                                                 =>
-      throw new IllegalArgumentException(s"Scala version $version is not handled")
-    case None                                                                    =>
-      throw new IllegalArgumentException(s"Invalid Scala version $version")
-  }
-}
-
 lazy val commonSettings =
   publishSettings ++
     Seq(
@@ -158,10 +145,6 @@ lazy val commonSettings =
       // We ignore k8s tests to keep development setup low-dependency
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
       addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.3" cross CrossVersion.full),
-      libraryDependencies ++= forScalaVersion(scalaVersion.value) {
-        case (2, 12) => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
-        case _       => Seq()
-      },
       semanticdbEnabled                := true,
       semanticdbVersion                := "4.13.2",
       scalacOptions                    := Seq(
@@ -175,17 +158,9 @@ lazy val commonSettings =
         "-language:existentials",
         "-release",
         "11",
-      ) ++ forScalaVersion(scalaVersion.value) {
-        case (2, 12) =>
-          Seq(
-            "-Ypartial-unification",
-          )
-        case (2, 13) =>
-          Seq(
-            "-Ymacro-annotations",
-            "-Wconf:cat=deprecation:silent"
-          )
-      },
+        "-Ymacro-annotations",
+        "-Wconf:cat=deprecation:silent"
+      ),
       Compile / compile / javacOptions := Seq(
         "-Xlint:deprecation",
         "-Xlint:unchecked",
@@ -341,6 +316,7 @@ val enumeratumV               = "1.9.0"
 val ujsonV                    = "4.2.1"
 val igniteV                   = "2.10.0"
 val retryV                    = "0.3.6"
+val restAssuredV              = "5.5.0"
 
 // depending on scala version one of this jar lays in Flink lib dir
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[Configuration] = None) =
@@ -842,13 +818,7 @@ lazy val benchmarks = (project in file("benchmarks"))
     Jmh / dependencyClasspath            := (Test / dependencyClasspath).value,
     Jmh / generateJmhSourcesAndResources := (Jmh / generateJmhSourcesAndResources).dependsOn(Test / compile).value,
   )
-  .settings {
-    // TODO: it'd be better to use scalaVersion here, but for some reason it's hard to disable existing task dynamically
-    forScalaVersion(defaultScalaV) {
-      case (2, 12) => doExecuteMainFromTestSources
-      case (2, 13) => executeMainFromTestSourcesNotSupported
-    }
-  }
+  .settings(doExecuteMainFromTestSources)
   .dependsOn(
     designer,
     extensionsApi,
@@ -864,14 +834,6 @@ lazy val doExecuteMainFromTestSources = Seq(
   (Test / runMain) := (Test / runMain)
     .dependsOn(distribution / Docker / publishLocal)
     .evaluated
-)
-
-lazy val executeMainFromTestSourcesNotSupported = Seq(
-  (Test / runMain) := {
-    streams.value.log.info(
-      "E2E benchmarks are skipped for Scala 2.13 because Nu installation example is currently based on Scala 2.12"
-    )
-  }
 )
 
 lazy val kafkaUtils = (project in utils("kafka-utils"))
@@ -1025,10 +987,7 @@ lazy val componentsUtils = (project in utils("components-utils"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-components-utils",
-    libraryDependencies ++= forScalaVersion(scalaVersion.value) {
-      case (2, 13) => Seq("org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4" % Test)
-      case _       => Seq()
-    }
+    libraryDependencies ++= Seq("org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4" % Test)
   )
   .dependsOn(componentsApi, commonUtils, testUtils % Test)
 
@@ -1149,22 +1108,10 @@ lazy val testUtils = (project in utils("test-utils"))
         "com.softwaremill.sttp.tapir"   %% "tapir-core"                % tapirV,
         "com.softwaremill.sttp.tapir"   %% "tapir-apispec-docs"        % tapirV,
         "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"        % openapiCirceYamlV,
-      ) ++ restAssuredDependency(scalaVersion.value)
+        "io.rest-assured"                % "scala-support"             % restAssuredV,
+      )
     }
   )
-
-// rest-assured is not cross compiled, so we have to use different versions
-def restAssuredDependency(scalaVersion: String) = forScalaVersion(scalaVersion) {
-  case (2, 12) =>
-    Seq(
-      "io.rest-assured"     % "scala-support" % "4.0.0",
-      // groovy 2.5.6 which comes with rest assured doesn't work on jdk 17
-      "org.codehaus.groovy" % "groovy"        % "2.5.10",
-      "org.codehaus.groovy" % "groovy-xml"    % "2.5.10",
-      "org.codehaus.groovy" % "groovy-json"   % "2.5.10"
-    )
-  case (2, 13) => Seq("io.rest-assured" % "scala-support" % "5.5.0")
-}
 
 lazy val jsonUtils = (project in utils("json-utils"))
   .settings(commonSettings)
@@ -2133,14 +2080,9 @@ lazy val designer = (project in file("designer/server"))
         "io.circe"                      %% "circe-yaml"                       % circeYamlV           % Test,
         "com.github.scopt"              %% "scopt"                            % "4.1.0"              % Test,
         "org.questdb"                    % "questdb"                          % "7.4.2",
-      ) ++ forScalaVersion(scalaVersion.value) {
-        case (2, 13) =>
-          Seq(
-            "org.scala-lang.modules" %% "scala-parallel-collections" % "1.2.0",
-            "org.scala-lang.modules" %% "scala-xml"                  % scalaXmlV
-          )
-        case _       => Seq()
-      }
+        "org.scala-lang.modules"        %% "scala-parallel-collections"       % "1.2.0",
+        "org.scala-lang.modules"        %% "scala-xml"                        % scalaXmlV,
+      )
     }
   )
   .dependsOn(
@@ -2168,13 +2110,7 @@ lazy val e2eTests = (project in file("e2e-tests"))
   .settings(commonSettings)
   .configs(SlowTests)
   .settings(slowTestsSettings)
-  .settings {
-    // TODO: it'd be better to use scalaVersion here, but for some reason it's hard to disable existing task dynamically
-    forScalaVersion(defaultScalaV) {
-      case (2, 12) => doTest
-      case (2, 13) => doNotTest
-    }
-  }
+  .settings(doTest)
   .settings(
     libraryDependencies ++= {
       Seq(
@@ -2182,10 +2118,10 @@ lazy val e2eTests = (project in file("e2e-tests"))
         "ch.qos.logback"              % "logback-classic"                % logbackV             % Test,
         "com.typesafe.scala-logging" %% "scala-logging"                  % scalaLoggingV        % Test,
         "org.scalatest"              %% "scalatest"                      % scalaTestV           % Test,
+        "io.rest-assured"             % "scala-support"                  % restAssuredV         % Test,
         "com.dimafeng"               %% "testcontainers-scala-scalatest" % testContainersScalaV % Test,
         "com.lihaoyi"                %% "ujson"                          % ujsonV               % Test,
-      ) ++
-        restAssuredDependency(scalaVersion.value)
+      )
     }
   )
   .enablePlugins(BuildInfoPlugin)
@@ -2196,14 +2132,6 @@ lazy val doTest = Seq(
   Test / testOptions += Tests.Setup { () =>
     streams.value.log.info("Building Nu Designer docker image from the sources for a sake of E2E tests")
     (distribution / Docker / publishLocal).value.a
-  }
-)
-
-lazy val doNotTest = Seq(
-  Test / test := {
-    streams.value.log.info(
-      "E2E tests are skipped for Scala 2.13 because Nu installation example is currently based on Scala 2.12"
-    )
   }
 )
 

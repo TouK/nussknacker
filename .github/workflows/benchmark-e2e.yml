@@ -16,7 +16,7 @@ jobs:
       - uses: sbt/setup-sbt@v1
       - name: Run benchmarks
         run: |
-          bash -c "export NUSSKNACKER_SCALA_VERSION=2.12 && sbt \"benchmarks/test:runMain pl.touk.nussknacker.engine.benchmarks.e2e.FlinkSteamingScenarioBenchmark 10000000\""
+          bash -c "export NUSSKNACKER_SCALA_VERSION=2.13 && sbt \"benchmarks/test:runMain pl.touk.nussknacker.engine.benchmarks.e2e.FlinkSteamingScenarioBenchmark 10000000\""
       - name: Store benchmark results
         uses: actions/upload-artifact@v4
         with:
