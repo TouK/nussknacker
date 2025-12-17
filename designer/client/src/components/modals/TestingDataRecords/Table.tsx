@@ -275,11 +275,6 @@ export const Table: React.FC<TableProps> = ({
         const rowsArr = selection.rows && typeof selection.rows.toArray === "function" ? selection.rows.toArray() : [];
         if (rowsArr.length > 0) return rowsArr.slice().sort((a, b) => a - b);
 
-        const range = selection.current?.range;
-        if (range && typeof range.y === "number" && typeof range.height === "number") {
-            return Array.from({ length: range.height }, (_, i) => range.y + i);
-        }
-
         return [];
     }, [selection]);
 
@@ -289,7 +284,7 @@ export const Table: React.FC<TableProps> = ({
         clearSelection();
     }, [clearSelection, onCellDeleted, rowsFromSelection]);
 
-    const selectedCount = rowsFromSelection.length;
+    const selectedRowsCount = rowsFromSelection.length;
 
     return (
         <Box
@@ -310,7 +305,11 @@ export const Table: React.FC<TableProps> = ({
                 }}
             >
                 <DataEditor
-                    onDelete={() => {
+                    onDelete={(selection) => {
+                        console.log(selection);
+                        // keep native behaviour when no rows selected
+                        if (selectedRowsCount === 0) return true;
+
                         handleRemove();
 
                         return false;
@@ -350,7 +349,7 @@ export const Table: React.FC<TableProps> = ({
                 </CellMenu>
                 {selection.rows.length > 0 && (
                     <TableFooter
-                        selectedCount={selectedCount}
+                        selectedCount={selectedRowsCount}
                         allRowsNumber={data.length}
                         handleRemoveRows={handleRemove}
                         clearSelection={clearSelection}
