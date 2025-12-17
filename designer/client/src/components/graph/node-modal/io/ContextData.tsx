@@ -1,5 +1,4 @@
 import { Box, Slide, useTheme } from "@mui/material";
-import { blend } from "@mui/system";
 import React, { memo, type PropsWithChildren, useCallback } from "react";
 import { TransitionGroup } from "react-transition-group";
 
@@ -36,26 +35,10 @@ export const ContextData = memo(function Data({
         (node: HTMLElement, isAppearing: boolean) => {
             if (isAppearing) return;
             if (!userSettings["node.inputsAndOutputs.showBlinkAnimations"]) return;
-            node.animate(
-                [
-                    {
-                        offset: 0,
-                        backgroundColor: blend(theme.palette.success.main, theme.palette.background.paper, 0.75),
-                        filter: "brightness(125%) saturate(250%)",
-                    },
-                    {
-                        offset: 0.3,
-                        backgroundColor: blend(theme.palette.success.main, theme.palette.background.paper, 0.75),
-                        filter: "none",
-                    },
-                    {
-                        offset: 1,
-                        backgroundColor: theme.palette.background.paper,
-                        filter: "none",
-                    },
-                ],
-                { duration: 3000, easing: "ease-out" },
-            );
+            node.animate([{ backgroundColor: theme.palette.success.main }, { backgroundColor: theme.palette.background.paper }], {
+                duration: 3000,
+                easing: "cubic-bezier(0, 0.55, 0.45, 1)",
+            });
         },
         [theme.palette.background.paper, theme.palette.success.main, userSettings],
     );
