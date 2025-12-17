@@ -59,8 +59,11 @@ export function LiveDataThroughputs() {
 
     const maxThroughput = useMemo(
         () =>
-            transitionResults.reduce((max, link) => {
-                return Math.max(max, link.currentThroughput, 0.1);
+            transitionResults.reduce((max, transition) => {
+                if (transition.sourceNodeId && transition.destinationNodeId) {
+                    return Math.max(max, transition.currentThroughput, 0.1);
+                }
+                return max;
             }, 0),
         [transitionResults],
     );
