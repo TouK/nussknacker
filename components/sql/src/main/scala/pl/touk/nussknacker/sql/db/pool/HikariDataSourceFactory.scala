@@ -18,6 +18,7 @@ object HikariDataSourceFactory {
     conf.dataSourceProperties.foreach { case (name, value) =>
       hikariConf.addDataSourceProperty(name, value)
     }
+    hikariConf.setRegisterMbeans(conf.registerMbeans)
     new HikariDataSource(hikariConf)
   }
 

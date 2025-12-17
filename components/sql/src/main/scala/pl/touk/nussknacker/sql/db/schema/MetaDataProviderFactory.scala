@@ -19,7 +19,9 @@ object MetaDataProviderFactory {
           // We limit the pool to 1 connection instead of using original dbPoolConfig.maxTotal because we
           // have two separate pools (one for metadata and one for runtime) and we want to reduce the risk
           // that we exceed the limit of connections
-          maxTotal = 1
+          maxTotal = 1,
+          // We don't want to monitor this pool because it is not used operationally
+          registerMbeans = false
         ),
         poolName = dbEnricherName.value + "-metadata"
       )
