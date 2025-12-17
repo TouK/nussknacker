@@ -24,7 +24,7 @@ export function LiveDataThroughputs() {
 
     useEffect(() => {
         if (!_enabled) return;
-        const unsubscrbe = watchForCover(() => graphGetter().processGraphPaper.el, setCovered);
+        const unsubscrbe = watchForCover(() => graphGetter()?.processGraphPaper.el, setCovered);
         return () => {
             unsubscrbe();
             setCovered(false);
