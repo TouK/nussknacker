@@ -17,7 +17,7 @@ export type Direction = "input" | "output";
 export type ValuesContextTreeProps = {
     direction?: Direction;
     onIsEmptyChange?: (value: boolean) => void;
-    paused?: boolean;
+    invisible?: boolean;
 };
 
 export type VariableContextType = ResultContextJson & {
@@ -29,7 +29,7 @@ export type VariableContextType = ResultContextJson & {
 export const VariableContextTree = memo(function ValuesContextTree({
     onIsEmptyChange,
     direction = "input",
-    paused,
+    invisible,
 }: ValuesContextTreeProps): React.JSX.Element {
     const { filter: nodeIdFilter } = useFilterContext();
 
@@ -56,22 +56,22 @@ export const VariableContextTree = memo(function ValuesContextTree({
         (e: MouseEvent) => {
             const isEmpty = transitionNodesIds.flatMap(({ results = [] }) => results).length < 1;
             if (!isEmpty) {
-                return dispatch(e.type === "mouseenter" && !paused ? stopLiveData(Initiator.list) : startLiveData(Initiator.list));
+                return dispatch(e.type === "mouseenter" && !invisible ? stopLiveData(Initiator.list) : startLiveData(Initiator.list));
             }
         },
-        [paused, dispatch, transitionNodesIds],
+        [invisible, dispatch, transitionNodesIds],
     );
 
     const dataRef = useRef<VariableContextType[]>([]);
     const data = useMemo(() => {
-        if (!paused) {
+        if (!invisible) {
             dataRef.current =
                 !selectedContextCache || availableContexts.find((r) => r.id === selectedContextCache.id)
                     ? availableContexts
                     : [...availableContexts, selectedContextCache];
         }
         return dataRef.current;
-    }, [availableContexts, paused, selectedContextCache]);
+    }, [availableContexts, invisible, selectedContextCache]);
 
     return (
         <Box
@@ -99,7 +99,7 @@ export const VariableContextTree = memo(function ValuesContextTree({
                 showNodes={showNodes}
                 inputVariables={inputVariables}
             >
-                {paused ? null : <LiveDataLoadingIndicator noLabel={direction === "input"} />}
+                {invisible ? null : <LiveDataLoadingIndicator noLabel={direction === "input"} />}
             </ContextData>
             {hiddenAvailableContexts > 0 ? (
                 <Typography

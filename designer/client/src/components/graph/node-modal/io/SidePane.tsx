@@ -28,7 +28,7 @@ export const SidePane = memo(function SidePane({
                 <ErrorBoundary fallback={<div>{`ERROR`}</div>}>
                     <FilterProvider>
                         <VariableContextTree
-                            paused={sideState.collapsed}
+                            invisible={sideState.collapsed}
                             direction={sideState.side === "left" ? "input" : "output"}
                             onIsEmptyChange={isEmptyChange}
                         />
