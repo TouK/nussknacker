@@ -6,7 +6,7 @@ import { useAppSelector } from "../../../../store/storeHelpers";
 import { useInputOutputContext } from "./InputOutputContext";
 import type { Direction, VariableContextType } from "./VariableContextTree";
 
-export function useVariableContext(direction: Direction) {
+export function useVariableContext(direction: Direction, filter?: string[]) {
     const {
         state: { inputDataSetId, outputDataSetId, inputVariables },
         dispatch,
@@ -17,8 +17,8 @@ export function useVariableContext(direction: Direction) {
 
     const value = useMemo(() => (direction === "input" ? inputDataSetId : outputDataSetId), [direction, inputDataSetId, outputDataSetId]);
     const [availableContexts, hiddenAvailableContexts] = useMemo(() => {
-        const r = getAvailableContexts(direction);
-        const contexts = r[0].sort((b, a) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        const [values, count] = getAvailableContexts(direction, filter);
+        const contexts = values.sort((b, a) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
         if (contexts.length < 1) {
             return [contexts, 0];
@@ -27,11 +27,11 @@ export function useVariableContext(direction: Direction) {
         const pageSize = 30;
         if (contexts.length > pageSize) {
             const sliced = contexts.filter((r) => !r.disabled).slice(0, pageSize);
-            return [sliced, r[1] - sliced.length];
+            return [sliced, count - sliced.length];
         }
 
-        return [contexts, r[1] - contexts.length];
-    }, [direction, getAvailableContexts]);
+        return [contexts, count - contexts.length];
+    }, [direction, filter, getAvailableContexts]);
     const enabledContexts = useMemo(() => availableContexts.filter((c) => !c.disabled), [availableContexts]);
 
     const [selectedContextCache, setSelectedContextCache] = useState<VariableContextType>(null);
