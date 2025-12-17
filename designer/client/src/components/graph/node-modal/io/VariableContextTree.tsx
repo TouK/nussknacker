@@ -5,7 +5,8 @@ import { useTranslation } from "react-i18next";
 
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
 import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
-import { useAppDispatch } from "../../../../store/storeHelpers";
+import { getIsTestingMode } from "../../../../reducers/selectors/graph";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { ContextData } from "./ContextData";
 import { EmptyListIndicator } from "./EmptyListIndicator";
 import { LiveDataLoadingIndicator } from "./LiveDataLoadingIndicator";
@@ -33,24 +34,25 @@ export const VariableContextTree = memo(function ValuesContextTree({
 
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
+    const isTestingMode = useAppSelector(getIsTestingMode);
 
     useEffect(() => {
         const isEmpty = transitionNodesIds.length < 1;
-        if (isEmpty) {
+        if (isEmpty && !isTestingMode) {
             dispatch(startLiveData(direction === "input" ? Initiator.inputAccordion : Initiator.outputAccordion));
         }
         onIsEmptyChange?.(isEmpty);
-    }, [direction, dispatch, onIsEmptyChange, transitionNodesIds.length]);
+    }, [direction, dispatch, isTestingMode, onIsEmptyChange, transitionNodesIds.length]);
 
     const showNodes = transitionNodesIds.length > 1;
     const toggleRefresh = useCallback(
         (e: MouseEvent) => {
             const isEmpty = transitionNodesIds.flatMap(({ results = [] }) => results).length < 1;
-            if (!isEmpty) {
+            if (!isEmpty && !isTestingMode) {
                 return dispatch(e.type === "mouseenter" ? stopLiveData(Initiator.list) : startLiveData(Initiator.list));
             }
         },
-        [dispatch, transitionNodesIds],
+        [dispatch, isTestingMode, transitionNodesIds],
     );
 
     const data = useMemo(
