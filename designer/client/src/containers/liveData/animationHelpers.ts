@@ -61,7 +61,7 @@ export function updateAnimation({
                 return;
             }
             const playbackRate = Math.min(8, throughput) / 10;
-            if (currentAnimation) {
+            if (currentAnimation && currentAnimation.effect.getTiming().iterations >= Infinity) {
                 currentAnimation.updatePlaybackRate(playbackRate);
                 return;
             }
@@ -88,7 +88,7 @@ export function updateAnimation({
                 return;
             }
             const playbackRate = Math.min(10, throughput);
-            if (currentAnimation) {
+            if (currentAnimation && currentAnimation.effect.getTiming().iterations >= Infinity) {
                 currentAnimation.updatePlaybackRate(playbackRate);
                 return;
             }
