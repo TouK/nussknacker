@@ -281,7 +281,7 @@ val configV                 = "1.4.4"
 val dropWizardV             = "5.0.0-rc15"
 val scalaCollectionsCompatV = "2.13.0"
 val testContainersScalaV    = "0.43.0"
-val testContainersJavaV     = "1.21.3"
+val testContainersJavaV     = "1.21.4"
 val nettyV                  = "4.1.123.Final"
 val nettyReactiveStreamsV   = "2.0.12"
 
