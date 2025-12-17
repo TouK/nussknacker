@@ -55,6 +55,8 @@ export const setupStore = () => {
                         "NODES_DISCONNECTED",
                         "NODES_WITH_EDGES_ADDED",
                         "STICKY_NOTE_UPDATED",
+                        "NODE_DETAILS_CLOSED",
+                        "TOOL_CLOSED",
                     ]),
                 ),
         devTools: {

@@ -13,7 +13,6 @@ import type { NodeType } from "../../../../types/node";
 import type { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
 import type { EditedNode } from "../IdField";
-import { applyIdFromFakeName } from "../IdField";
 import type { NodeDetailsMeta } from "./NodeDetails";
 import { useCallbackRef } from "./useCallbackRef";
 import { useEditState } from "./useEditState";
@@ -73,11 +72,8 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
             abortControllerRef.current = controller;
             setStatus("processing");
             try {
-                const after = applyIdFromFakeName(editedNode);
-                await dispatch(editNode(scenario, node, after, outputEdges, controller));
-                if (autoApply) {
-                    setNodeId(after.id);
-                }
+                const after = await dispatch(editNode(scenario, node, editedNode, outputEdges, controller));
+                if (autoApply) setNodeId(after.id);
                 setStatus("idle");
             } catch (e) {
                 console.error(e);

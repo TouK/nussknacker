@@ -5,7 +5,7 @@ import { concat, defaultsDeep, isEqual, partition, sortBy } from "lodash";
 import type { StateWithHistory } from "redux-undo";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction } from "redux-undo";
 
-import type { Action, Reducer } from "../../actions/reduxTypes";
+import type { Action, ActionOfType, Reducer } from "../../actions/reduxTypes";
 import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { addStickyNotesToNodes, StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
@@ -58,7 +58,13 @@ const emptyGraphState: GraphState = {
     },
 };
 
-export function updateValidationResult(state: GraphState, action: { validationResult: ValidationResult }): ValidationResult {
+export function updateValidationResult(
+    state: GraphState,
+    action: ActionOfType<"EDIT_NODE" | "EDIT_PROPERTIES" | "VALIDATION_RESULT">,
+): ValidationResult {
+    if (!action.validationResult) {
+        return state.scenario.validationResult;
+    }
     return {
         ...action.validationResult,
         // nodeResults is sometimes empty although it shouldn't e.g. when SaveNotAllowed errors happen
@@ -108,6 +114,13 @@ const appendScenarioNameToProperties = produce((scenario: Scenario) => {
         },
     };
 });
+
+const updateStateAfterEdit = (state: GraphState, action: ActionOfType<"EDIT_NODE" | "EDIT_PROPERTIES">) => {
+    return produce(state, (draft) => {
+        draft.scenario.scenarioGraph = action.scenarioGraphAfterChange;
+        draft.scenario.validationResult = updateValidationResult(draft, action);
+    });
+};
 
 const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
     const currentNodes = state.scenario.scenarioGraph.nodes;
@@ -203,24 +216,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         }
         case "EDIT_NODE": {
             const updateStateAfterNodeIdChange = getUpdateStateAfterNodeIdChange(action.before.id, action.after.id);
-            return updateStateAfterNodeIdChange({
-                ...state,
-                scenario: {
-                    ...state.scenario,
-                    scenarioGraph: { ...action.scenarioGraphAfterChange },
-                    validationResult: updateValidationResult(state, action),
-                },
-            });
+            return updateStateAfterNodeIdChange(updateStateAfterEdit(state, action));
         }
         case "EDIT_PROPERTIES": {
-            return {
-                ...state,
-                scenario: {
-                    ...state.scenario,
-                    scenarioGraph: { ...action.scenarioGraphAfterChange },
-                    validationResult: updateValidationResult(state, action),
-                },
-            };
+            return updateStateAfterEdit(state, action);
         }
         case "EDIT_LABELS": {
             return {
