@@ -1,6 +1,6 @@
 import { Box, Fade, Typography } from "@mui/material";
 import type { MouseEvent } from "react";
-import React, { memo, useCallback, useEffect, useMemo, useRef } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
@@ -8,6 +8,7 @@ import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
 import { useAppDispatch } from "../../../../store/storeHelpers";
 import { ContextData } from "./ContextData";
 import { EmptyListIndicator } from "./EmptyListIndicator";
+import { useFilterContext } from "./FilterContext";
 import { LiveDataLoadingIndicator } from "./LiveDataLoadingIndicator";
 import { useVariableContext } from "./useVariableContext";
 import { VariableContextTreeHeader } from "./VariableContextTreeHeader";
@@ -30,19 +31,25 @@ export const VariableContextTree = memo(function ValuesContextTree({
     direction = "input",
     invisible,
 }: ValuesContextTreeProps): React.JSX.Element {
+    const { filter: nodeIdFilter } = useFilterContext();
+
     const { availableContexts, hiddenAvailableContexts, setContext, inputVariables, transitionNodesIds, selectedContextCache } =
-        useVariableContext(direction);
+        useVariableContext(direction, nodeIdFilter);
 
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
 
+    const [isEmpty, setIsEmpty] = useState(true);
     useEffect(() => {
-        const isEmpty = transitionNodesIds.length < 1;
+        setIsEmpty(transitionNodesIds.length < 1 && nodeIdFilter.length < 1);
+    }, [nodeIdFilter.length, transitionNodesIds.length]);
+
+    useEffect(() => {
         if (isEmpty) {
             dispatch(startLiveData(direction === "input" ? Initiator.inputAccordion : Initiator.outputAccordion));
         }
         onIsEmptyChange?.(isEmpty);
-    }, [direction, dispatch, onIsEmptyChange, transitionNodesIds.length]);
+    }, [direction, dispatch, isEmpty, onIsEmptyChange]);
 
     const showNodes = transitionNodesIds.length > 1;
     const toggleRefresh = useCallback(
@@ -79,7 +86,7 @@ export const VariableContextTree = memo(function ValuesContextTree({
             onMouseEnter={toggleRefresh}
             onMouseLeave={toggleRefresh}
         >
-            <Fade in={availableContexts.length < 1} timeout={1000} mountOnEnter unmountOnExit>
+            <Fade in={availableContexts.length < 1 && nodeIdFilter.length < 1} timeout={1000} mountOnEnter unmountOnExit>
                 <EmptyListIndicator />
             </Fade>
             <VariableContextTreeHeader direction={direction} transitionNodesIds={transitionNodesIds} />

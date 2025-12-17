@@ -3,6 +3,7 @@ import { blend } from "@mui/system";
 import React, { memo, type PropsWithChildren, useCallback } from "react";
 import { TransitionGroup } from "react-transition-group";
 
+import { getIsLiveDataWorking } from "../../../../reducers/selectors/getLiveData";
 import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import { ContextAccordion } from "./ContextAccordion";
@@ -29,6 +30,7 @@ export const ContextData = memo(function Data({
 }>) {
     const theme = useTheme();
     const userSettings = useAppSelector(getUserSettings);
+    const isLiveDataWorking = useAppSelector(getIsLiveDataWorking);
 
     const onEntering = useCallback(
         (node: HTMLElement, isAppearing: boolean) => {
@@ -77,7 +79,7 @@ export const ContextData = memo(function Data({
             }}
         >
             {children}
-            <TransitionGroup exit={false} appear={false} component={null}>
+            <TransitionGroup exit={false} appear={false} enter={isLiveDataWorking} component={null}>
                 {data.map((r, index) => (
                     <Slide
                         key={r.id + r.timestamp}
