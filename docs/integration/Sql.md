@@ -49,6 +49,7 @@ myDatabasePool {
 | timeout              | string (Duration format) | false    | 30s     | Connection timeout                                                     |
 | schema               | string                   | false    |         | Schema to be set on connections                                        |
 | dataSourceProperties | string-string map        | false    |         | DataSource or java.sql.Driver properties                               |
+| registerMbeans       | boolean                  | false    | true    | Determine if JMX MBeans should be registered                           |
 
 > As a user you have to provide the database driver. 
 > It should be placed in Flink's /lib folder (/opt/flink/lib), more info can be found in [Flink Documentation](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/debugging/debugging_classloading/#unloading-of-dynamically-loaded-classes-in-user-code).

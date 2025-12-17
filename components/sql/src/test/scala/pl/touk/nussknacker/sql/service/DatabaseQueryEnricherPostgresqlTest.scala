@@ -2,18 +2,18 @@ package pl.touk.nussknacker.sql.service
 
 import org.scalatest.BeforeAndAfterEach
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.sql.db.schema.MetaDataProviderFactory
+import pl.touk.nussknacker.sql.DbEnricherName
 import pl.touk.nussknacker.sql.utils.BasePostgresqlQueryEnricherTest
 
-import java.time.{LocalDate, LocalDateTime, LocalTime, ZonedDateTime, ZoneId}
+import java.time._
 
 class DatabaseQueryEnricherPostgresqlTest
     extends BasePostgresqlQueryEnricherTest
     with DatabaseQueryEnricherQueryWithEnricher
     with BeforeAndAfterEach {
 
-  override val service =
-    new DatabaseQueryEnricher(postgresqlDbPoolConfig, new MetaDataProviderFactory().create(postgresqlDbPoolConfig))
+  override lazy val service =
+    new DatabaseQueryEnricher(postgresqlDbPoolConfig, DbEnricherName("queryEnricher"))
 
   override val preparePostgresqlDDLs: List[String] = List(
     "CREATE TABLE people (id INT, name VARCHAR(40));",

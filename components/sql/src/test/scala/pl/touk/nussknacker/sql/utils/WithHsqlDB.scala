@@ -13,10 +13,10 @@ trait WithHsqlDB {
 
   val dbName: String = UUID.randomUUID().toString
 
-  private val driverClassName = "org.hsqldb.jdbc.JDBCDriver"
-  private val username        = "SA"
-  private val url             = s"jdbc:hsqldb:mem:$dbName"
-  private val password        = ""
+  protected val driverClassName = "org.hsqldb.jdbc.JDBCDriver"
+  protected val username        = "SA"
+  protected val url             = s"jdbc:hsqldb:mem:$dbName"
+  protected val password        = ""
 
   val hsqlConfigValues: Map[String, String] = Map(
     "driverClassName" -> driverClassName,

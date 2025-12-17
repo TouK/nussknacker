@@ -13,4 +13,5 @@ final case class DBPoolConfig(
     timeout: Duration = FiniteDuration(30, TimeUnit.SECONDS),
     schema: Option[String] = None,
     dataSourceProperties: Map[String, String] = Map.empty,
+    registerMbeans: Boolean = true
 )

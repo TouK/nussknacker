@@ -3,8 +3,9 @@ package pl.touk.nussknacker.sql.service
 import pl.touk.nussknacker.engine.api.{Context, Params}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.sql.DbEnricherName
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
-import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
+import pl.touk.nussknacker.sql.db.schema.TableDefinition
 import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.cacheTTLParamName
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 
@@ -21,7 +22,7 @@ class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
   )
 
   override val service =
-    new DatabaseQueryEnricher(hsqlDbPoolConfig, new MetaDataProviderFactory().create(hsqlDbPoolConfig))
+    new DatabaseQueryEnricher(hsqlDbPoolConfig, DbEnricherName("queryEnricher"))
 
   test("DatabaseQueryEnricher#implementation with cache") {
     val query = "select * from persons where id = ?"
