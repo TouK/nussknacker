@@ -67,7 +67,9 @@ object EventGeneratorSourceFactory
     .withCreator(
       _.copy(
         editors = List(
-          new DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS))
+          new DurationParameterEditor(
+            List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS, ChronoUnit.MILLIS)
+          )
         ),
         defaultValue = Some("T(java.time.Duration).parse('PT1M')".spel)
       )
