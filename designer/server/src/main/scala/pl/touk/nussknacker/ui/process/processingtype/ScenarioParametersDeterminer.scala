@@ -50,13 +50,9 @@ object ScenarioParametersDeterminer {
   def determineEngineSetupNames(
       nameInputDatas: Map[ProcessingType, EngineNameInputData]
   ): Map[ProcessingType, EngineSetupName] = {
-    // Sort by ProcessingType in order to make engine name consistent across Scala 2.12 and Scala 2.13
-    val grouped = nameInputDatas.toList
-      .sortBy(_._1)
-      .map { case (processingType, in) =>
-        (in.nameSpecifiedInConfig.getOrElse(in.defaultName), in.identity) -> processingType
-      }
-      .toGroupedMap
+    val grouped = nameInputDatas.toList.map { case (processingType, in) =>
+      (in.nameSpecifiedInConfig.getOrElse(in.defaultName), in.identity) -> processingType
+    }.toGroupedMap
 
     grouped
       .foldLeft((ListMap.empty[ProcessingType, EngineSetupName], Map.empty[EngineSetupName, Int])) {

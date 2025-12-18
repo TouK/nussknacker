@@ -114,7 +114,7 @@ with detailed instructions how to run Nussknacker with some of the older version
 - [nussknacker-helm](https://github.com/TouK/nussknacker-helm) - Helm chart of the project                     
 - [nussknacker-flink-compatibility](https://github.com/TouK/nussknacker-flink-compatibility) - Toolbox providing backward compatibility for older Flink's versions
 - [nussknacker-benchmarks](https://github.com/TouK/nussknacker-benchmarks) - micro and e2e benchmarks visualization
-- [flink-scala](https://github.com/TouK/flink-scala) - our patch for Flink, required if you want to use Nussknacker built with Scala 2.13 or >=2.12.8
+- [flink-scala](https://github.com/TouK/flink-scala) - our patch for Flink
                                                    
 
 ## Contributing

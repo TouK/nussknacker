@@ -70,7 +70,7 @@ object ExtensionMethods {
         clazz -> definition.copy(
           methods = definition.methods ++ extensionMethodsDefinitions.flatMap(_.extractDefinitions(clazz, set))
         )
-      }.toMap // .toMap is needed by scala 2.12
+      }
     )
   }
 
