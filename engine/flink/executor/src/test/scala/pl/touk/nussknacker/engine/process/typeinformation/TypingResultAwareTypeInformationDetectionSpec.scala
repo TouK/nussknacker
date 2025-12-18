@@ -44,7 +44,6 @@ import java.util.{Currency, Locale, UUID}
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
-@nowarn("cat=deprecation")
 class TypingResultAwareTypeInformationDetectionSpec
     extends AnyFunSuite
     with Matchers
@@ -211,7 +210,7 @@ class TypingResultAwareTypeInformationDetectionSpec
     val incompatibleTypingResult =
       Typed.record(Map("intF" -> Typed[Int], "strF" -> Typed[Long]), Typed.typedClass[Map[String, Any]])
 
-    val oldSerializer =
+    val serializer =
       detection.forType(typingResult).createSerializer(executionConfigWithoutKryo.getSerializerConfig)
 
     val compatibleSerializer =
@@ -222,16 +221,18 @@ class TypingResultAwareTypeInformationDetectionSpec
       detection
         .forType(incompatibleTypingResult)
         .createSerializer(executionConfigWithoutKryo.getSerializerConfig)
-    val oldSerializerSnapshot = oldSerializer.snapshotConfiguration()
+    val serializerSnapshot = serializer.snapshotConfiguration()
 
-    oldSerializerSnapshot
-      .resolveSchemaCompatibility(oldSerializer.snapshotConfiguration())
+    serializerSnapshot
+      .resolveSchemaCompatibility(serializerSnapshot)
       .isCompatibleAsIs shouldBe true
-    oldSerializerSnapshot
-      .resolveSchemaCompatibility(compatibleSerializer.snapshotConfiguration())
+    compatibleSerializer
+      .snapshotConfiguration()
+      .resolveSchemaCompatibility(serializerSnapshot)
       .isCompatibleAfterMigration shouldBe true
-    oldSerializerSnapshot
-      .resolveSchemaCompatibility(incompatibleSerializer.snapshotConfiguration())
+    incompatibleSerializer
+      .snapshotConfiguration()
+      .resolveSchemaCompatibility(serializerSnapshot)
       .isIncompatible shouldBe true
   }
 
@@ -246,6 +247,7 @@ class TypingResultAwareTypeInformationDetectionSpec
     val oldSerializerSnapshot = oldSerializer.snapshotConfiguration()
 
     // we prepare ExecutionConfig with different Kryo config, it causes need to reconfigure kryo serializer, used for SomeTestClass
+    @nowarn("cat=deprecation")
     val newExecutionConfig = new ExecutionConfig {
       registerTypeWithKryoSerializer(classOf[CustomTypedObject], classOf[DummySerializer])
     }
@@ -253,7 +255,7 @@ class TypingResultAwareTypeInformationDetectionSpec
       detection
         .forType[Map[String, Any]](typingResult)
         .createSerializer(newExecutionConfig.getSerializerConfig)
-    val compatibility = oldSerializerSnapshot.resolveSchemaCompatibility(newSerializer)
+    val compatibility = newSerializer.snapshotConfiguration().resolveSchemaCompatibility(oldSerializerSnapshot)
 
     compatibility.isCompatibleWithReconfiguredSerializer shouldBe true
     val reconfigured = compatibility.getReconfiguredSerializer
@@ -278,9 +280,17 @@ class TypingResultAwareTypeInformationDetectionSpec
       detection.forType(removeField).createSerializer(executionConfigWithoutKryo.getSerializerConfig)
     val oldSerializerSnapshot = oldSerializer.snapshotConfiguration()
 
-    oldSerializerSnapshot.resolveSchemaCompatibility(oldSerializer).isCompatibleAsIs shouldBe true
-    oldSerializerSnapshot.resolveSchemaCompatibility(addFieldSerializer).isCompatibleAfterMigration shouldBe true
-    oldSerializerSnapshot.resolveSchemaCompatibility(removeFieldSerializer).isCompatibleAfterMigration shouldBe true
+    oldSerializerSnapshot
+      .resolveSchemaCompatibility(oldSerializerSnapshot)
+      .isCompatibleAsIs shouldBe true
+    addFieldSerializer
+      .snapshotConfiguration()
+      .resolveSchemaCompatibility(oldSerializerSnapshot)
+      .isCompatibleAfterMigration shouldBe true
+    removeFieldSerializer
+      .snapshotConfiguration()
+      .resolveSchemaCompatibility(oldSerializerSnapshot)
+      .isCompatibleAfterMigration shouldBe true
   }
 
   test("return type info for LocalDate, LocalTime and LocalDateTime even if type info registration is disabled") {

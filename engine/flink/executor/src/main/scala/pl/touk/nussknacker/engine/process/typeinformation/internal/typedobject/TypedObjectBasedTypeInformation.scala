@@ -10,7 +10,6 @@ import org.apache.flink.api.common.typeutils.{
   TypeSerializerSchemaCompatibility,
   TypeSerializerSnapshot
 }
-import org.apache.flink.api.common.typeutils.CompositeTypeSerializerUtil.IntermediateCompatibilityResult
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 
 import scala.annotation.nowarn
@@ -132,8 +131,6 @@ abstract class TypedObjectBasedTypeSerializer[T](val serializers: Array[(String,
 
 abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnapshot[T] with LazyLogging {
 
-  private val constructIntermediateCompatibilityResultMethodName = "constructIntermediateCompatibilityResult"
-
   protected var serializersSnapshots: Array[(String, TypeSerializerSnapshot[_])] = _
 
   override def getCurrentVersion: Int = 1
@@ -161,99 +158,72 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
     they are, but key sets are not equals, we return "ready after migration" - so map should be deserialized with old
     serializer and then serialized with new. Some keys would be null, some would be lost.
     if nonEqualKeysCompatible == false we require keys in new and old serializer are the same
-
    */
-  @nowarn("cat=deprecation")
-  override def resolveSchemaCompatibility(newSerializer: TypeSerializer[T]): TypeSerializerSchemaCompatibility[T] = {
-    if (newSerializer.snapshotConfiguration().getClass != getClass) {
+  override def resolveSchemaCompatibility(
+      oldSerializerSnapshot: TypeSerializerSnapshot[T]
+  ): TypeSerializerSchemaCompatibility[T] = {
+    if (oldSerializerSnapshot.getClass != getClass) {
       TypeSerializerSchemaCompatibility.incompatible()
     } else {
-      val newSerializerAsTyped = newSerializer.asInstanceOf[TypedObjectBasedTypeSerializer[T]]
-      val newSerializers       = newSerializerAsTyped.serializers
-      val currentKeys          = serializersSnapshots.map(_._1)
-      val newKeys              = newSerializers.map(_._1)
-      val commons              = currentKeys.intersect(newKeys)
+      val oldSerializerSnapshotAsTyped = oldSerializerSnapshot.asInstanceOf[TypedObjectBasedSerializerSnapshot[T]]
+      val oldSerializersSnapshots      = oldSerializerSnapshotAsTyped.serializersSnapshots
+      val oldKeys                      = oldSerializersSnapshots.map(_._1)
+      val newKeys                      = serializersSnapshots.map(_._1)
+      val commons                      = oldKeys.intersect(newKeys)
 
-      val newSerializersToUse: Array[(String, TypeSerializer[_])] = newSerializers.filter(k => commons.contains(k._1))
-      val snapshotsToUse = serializersSnapshots.filter(k => commons.contains(k._1))
+      val oldSnapshotsToUse: Array[(String, TypeSerializerSnapshot[_])] =
+        oldSerializersSnapshots.filter(k => commons.contains(k._1))
+      val newSnapshotsToUse = serializersSnapshots.filter(k => commons.contains(k._1))
 
-      val fieldsCompatibility = constructIntermediateCompatibilityResultProxied(
-        newSerializersToUse.map(_._2),
-        snapshotsToUse.map(_._2)
+      val fieldsCompatibility = CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(
+        newSnapshotsToUse.map(_._2),
+        oldSnapshotsToUse.map(_._2)
       )
 
       // We construct detailed message to show when there are compatibility issues
-      def fieldsCompatibilityMessage: String = newSerializersToUse
-        .zip(snapshotsToUse)
-        .map { case ((name, serializer), (_, snapshot)) =>
-          s"$name compatibility is ${snapshot
+      def fieldsCompatibilityMessage: String = newSnapshotsToUse
+        .zip(oldSnapshotsToUse)
+        .map { case ((name, newSnapshot), (_, oldSnapshot)) =>
+          s"$name compatibility is ${newSnapshot
               .asInstanceOf[TypeSerializerSnapshot[AnyRef]]
-              .resolveSchemaCompatibility(serializer.asInstanceOf[TypeSerializer[AnyRef]])}"
+              .resolveSchemaCompatibility(oldSnapshot.asInstanceOf[TypeSerializerSnapshot[AnyRef]])}"
         }
         .mkString(", ")
 
-      if (currentKeys sameElements newKeys) {
+      if (oldKeys sameElements newKeys) {
         if (fieldsCompatibility.isCompatibleAsIs) {
-          logger.debug(s"Schema is compatible for keys ${currentKeys.mkString(", ")}")
+          logger.debug(s"Schema is compatible for keys ${commons.mkString(", ")}")
           TypeSerializerSchemaCompatibility.compatibleAsIs()
         } else if (fieldsCompatibility.isCompatibleWithReconfiguredSerializer) {
           logger.info(s"Schema is compatible after serializer reconfiguration")
-          val newSerializer = restoreSerializer(newKeys.zip(fieldsCompatibility.getNestedSerializers))
+          val newSerializer = restoreSerializer(commons.zip(fieldsCompatibility.getNestedSerializers))
           TypeSerializerSchemaCompatibility.compatibleWithReconfiguredSerializer(newSerializer)
         } else if (fieldsCompatibility.isCompatibleAfterMigration) {
           logger.info(
-            s"Schema migration needed, as fields are equal (${currentKeys.mkString(", ")}), but fields compatibility is [$fieldsCompatibilityMessage] - returning compatibleAfterMigration"
+            s"Schema migration needed, as fields are equal (${commons.mkString(", ")}), but fields compatibility is [$fieldsCompatibilityMessage] - returning compatibleAfterMigration"
           )
           TypeSerializerSchemaCompatibility.compatibleAfterMigration()
         } else {
           logger.info(
-            s"Schema is incompatible, as fields are equal (${currentKeys.mkString(", ")}), but fields compatibility is [$fieldsCompatibilityMessage] - returning incompatible"
+            s"Schema is incompatible, as fields are equal (${commons.mkString(", ")}), but fields compatibility is [$fieldsCompatibilityMessage] - returning incompatible"
           )
           TypeSerializerSchemaCompatibility.incompatible()
         }
       } else if (fieldsCompatibility.isIncompatible) {
         logger.info(
-          s"Schema is incompatible, as fields are not equal (old keys: ${currentKeys
+          s"Schema is incompatible, as fields are not equal (old keys: ${oldKeys
               .mkString(", ")}, new keys: ${newKeys.mkString(", ")}), " +
             s" and fields compatibility is [$fieldsCompatibilityMessage] - returning incompatible"
         )
         TypeSerializerSchemaCompatibility.incompatible()
       } else {
         logger.info(
-          s"Schema migration needed, as fields are not equal (old keys: ${currentKeys
+          s"Schema migration needed, as fields are not equal (old keys: ${oldKeys
               .mkString(", ")}, new keys: ${newKeys.mkString(", ")}), " +
             s" fields compatibility is [$fieldsCompatibilityMessage] - returning compatibleAfterMigration"
         )
         TypeSerializerSchemaCompatibility.compatibleAfterMigration()
       }
-    }
-  }
-
-  private def constructIntermediateCompatibilityResultProxied(
-      newNestedSerializers: Array[TypeSerializer[_]],
-      nestedSerializerSnapshots: Array[TypeSerializerSnapshot[_]]
-  ): IntermediateCompatibilityResult[_] = {
-    // signature of CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult has been changed between flink 1.18/1.19
-    // Because of contract of serialization/deserialization of TypeSerializerSnapshot in can't be easily provided by TypeInformationDetection SPI mechanism
-    try {
-      val newMethod = classOf[CompositeTypeSerializerUtil].getMethod(
-        constructIntermediateCompatibilityResultMethodName,
-        classOf[Array[TypeSerializerSnapshot[_]]],
-        classOf[Array[TypeSerializerSnapshot[_]]]
-      )
-      newMethod
-        .invoke(null, newNestedSerializers.map(_.snapshotConfiguration()), nestedSerializerSnapshots)
-        .asInstanceOf[IntermediateCompatibilityResult[_]]
-    } catch {
-      case _: NoSuchMethodException =>
-        val oldMethod = classOf[CompositeTypeSerializerUtil].getMethod(
-          constructIntermediateCompatibilityResultMethodName,
-          classOf[Array[TypeSerializer[_]]],
-          classOf[Array[TypeSerializerSnapshot[_]]]
-        )
-        oldMethod
-          .invoke(null, newNestedSerializers, nestedSerializerSnapshots)
-          .asInstanceOf[IntermediateCompatibilityResult[_]]
     }
   }
 
