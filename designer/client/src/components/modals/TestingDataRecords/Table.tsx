@@ -297,7 +297,7 @@ export const Table: React.FC<TableProps> = ({
         const col = tableColumns[columnIndex];
 
         return { removedCellColumnId: col.id, removedCellRowIndex: columnRowIndex };
-    }, []);
+    }, [tableColumns]);
 
     const onDeleteTableRow = useCallback(
         (selection: GridSelection) => {
