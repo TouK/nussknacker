@@ -1585,8 +1585,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     Parameter[String](ParameterName("par1"))
       .copy(
         editors = List(
-          SpelTemplateParameterEditor,
           SpelParameterEditor,
+          SpelTemplateParameterEditor,
         ),
         defaultValue = Some("realDefault".spel),
         labelOpt = Some("Parameter 1")
