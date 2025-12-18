@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.serialization
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
+import org.apache.flink.configuration.{Configuration, PipelineOptions}
 import org.apache.flink.core.memory.{DataInputViewStreamWrapper, DataOutputViewStreamWrapper}
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
@@ -12,15 +13,13 @@ import scala.annotation.nowarn
 
 trait FlinkTypeInformationSerializationMixin extends Matchers {
 
-  @nowarn("cat=deprecation")
-  protected val executionConfigWithoutKryo: ExecutionConfig = new ExecutionConfig {
-    disableGenericTypes()
-  }
+  protected val executionConfigWithoutKryo: ExecutionConfig = new ExecutionConfig(
+    new Configuration().set[java.lang.Boolean](PipelineOptions.GENERIC_TYPES, false)
+  )
 
-  @nowarn("cat=deprecation")
-  protected val executionConfigWithKryo: ExecutionConfig = new ExecutionConfig {
-    enableGenericTypes()
-  }
+  protected val executionConfigWithKryo: ExecutionConfig = new ExecutionConfig(
+    new Configuration().set[java.lang.Boolean](PipelineOptions.GENERIC_TYPES, true)
+  )
 
   protected def getSerializeRoundTrip[T](
       record: T,
