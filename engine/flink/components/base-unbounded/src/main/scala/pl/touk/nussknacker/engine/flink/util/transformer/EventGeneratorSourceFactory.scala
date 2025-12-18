@@ -69,7 +69,7 @@ object EventGeneratorSourceFactory
           new DurationParameterEditor(
             List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS, ChronoUnit.MILLIS)
           ),
-          SqlParameterEditor
+          SpelParameterEditor
         ),
         defaultValue = Some("T(java.time.Duration).parse('PT1M')".spel)
       )

@@ -1068,7 +1068,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
               IncompatibleParameterDefinitionModification(
                 ParameterName("static"),
                 `DictKeyWithLabel`,
-                List(SpelTemplateParameterEditor, SpelParameterEditor),
+                List(SpelParameterEditor, SpelTemplateParameterEditor),
                 NodeId("eager1")
               ) :: Nil
             ) =>
