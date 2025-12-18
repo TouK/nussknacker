@@ -290,7 +290,6 @@ export const Table: React.FC<TableProps> = ({
         <Box
             sx={{
                 "--sizer-height-cutout": "140px",
-                "--sizer-minHeight": "300px",
                 display: "flex",
             }}
         >
@@ -327,7 +326,6 @@ export const Table: React.FC<TableProps> = ({
                     smoothScrollY
                     theme={tableTheme}
                     width={TABLE_WIDTH}
-                    height={TABLE_HEIGHT}
                     gridSelection={selection}
                     onCellContextMenu={onDataEditorCellContextMenu}
                     getRowThemeOverride={getRowThemeOverride}

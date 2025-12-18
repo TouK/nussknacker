@@ -50,7 +50,7 @@ export const InputDataRecords = ({ sourceId }: Props) => {
             <Typography m={0} variant="h5">
                 {t("testingDialog.label.inputDataRecords", "Input data records")}
             </Typography>
-            <ContentSize sx={{ height: "60vh", padding: 0 }}>
+            <ContentSize sx={{ padding: 0 }}>
                 <Table
                     cellErrors={cellErrors}
                     defaultDataRecord={defaultDataRecord}
