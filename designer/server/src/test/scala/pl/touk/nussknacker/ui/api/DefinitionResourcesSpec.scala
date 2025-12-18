@@ -254,7 +254,7 @@ class DefinitionResourcesSpec
       )
       val initialExpressions =
         parameters.map(_.hcursor.downField("expression").downField("expression").focus.value.asString.value)
-      initialExpressions shouldEqual List("'SMS'", "", "")
+      initialExpressions shouldEqual List("'SMS'", "''", "''")
     }
   }
 

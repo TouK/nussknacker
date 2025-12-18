@@ -80,7 +80,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       ),
       "paramStringEditor"     -> List(SpelTemplateParameterEditor),
       "paramRawEditor"        -> List(SpelParameterEditor),
-      "paramNoExplicitEditor" -> List(SpelTemplateParameterEditor, SpelParameterEditor)
+      "paramNoExplicitEditor" -> List(SpelParameterEditor, SpelTemplateParameterEditor)
     )
   }
 

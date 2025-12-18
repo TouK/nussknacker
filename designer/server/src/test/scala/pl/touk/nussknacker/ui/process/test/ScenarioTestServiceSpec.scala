@@ -689,7 +689,7 @@ class ScenarioTestServiceSpec
       format match {
         case TestDataFormat.SourceSpecific =>
           parametersForSource1.map(_.name.value) shouldBe List("par1", "lazyPar1", "a")
-          parametersForSource1.find(_.name.value == "par1").value.defaultValue.value shouldBe "".spelTemplate
+          parametersForSource1.find(_.name.value == "par1").value.defaultValue.value shouldBe "''".spel
           parametersForSource1.find(_.name.value == "a").value.defaultValue.value shouldBe "0".spel
         case TestDataFormat.CommonFormat =>
           parametersForSource1.map(_.name) shouldBe List(InputVariablesParameterName)
