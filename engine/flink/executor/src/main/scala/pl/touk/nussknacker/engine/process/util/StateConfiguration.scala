@@ -1,26 +1,24 @@
 package pl.touk.nussknacker.engine.process.util
 
-import org.apache.flink.contrib.streaming.state.{EmbeddedRocksDBStateBackend, PredefinedOptions}
-import org.apache.flink.runtime.state.AbstractStateBackend
+import org.apache.flink.configuration.{Configuration, StateBackendOptions}
+import org.apache.flink.contrib.streaming.state.PredefinedOptions.SPINNING_DISK_OPTIMIZED
+import org.apache.flink.contrib.streaming.state.RocksDBOptions
 
 object StateConfiguration {
 
-  def prepareRocksDBStateBackend(config: RocksDBStateBackendConfig): AbstractStateBackend = {
-
-    val rocksDBStateBackend = new EmbeddedRocksDBStateBackend(config.incrementalCheckpoints)
-    config.dbStoragePath.foreach(rocksDBStateBackend.setDbStoragePath)
-    rocksDBStateBackend.setPredefinedOptions(PredefinedOptions.SPINNING_DISK_OPTIMIZED)
-    rocksDBStateBackend
-
+  def prepareRocksDBStateBackendFlinkConfiguration(config: RocksDBStateBackendConfig): Configuration = {
+    val configuration = new Configuration()
+    configuration.set(StateBackendOptions.STATE_BACKEND, "rocksdb")
+    configuration.set(RocksDBOptions.PREDEFINED_OPTIONS, SPINNING_DISK_OPTIMIZED.name)
+    config.dbStoragePath.foreach { path =>
+      configuration.set(RocksDBOptions.LOCAL_DIRECTORIES, path)
+    }
+    configuration
   }
 
   case class RocksDBStateBackendConfig(
       enable: Boolean,
-      // deprecated - Not needed after Flink 1.13, but used in compatibility layer
-      // for earlier versions of Flink
-      checkpointDataUri: Option[String],
-      dbStoragePath: Option[String],
-      incrementalCheckpoints: Boolean = true
+      dbStoragePath: Option[String]
   )
 
 }
