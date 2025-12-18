@@ -76,6 +76,9 @@ export const getTestingDataRecordsForSingleSource = createSelector(
     [getTestingDataRecords, getSourceId],
     (testingDataRecords, sourceId: string) => testingDataRecords.filter((r) => r.sourceId === sourceId),
 );
+
+export const getTestingAssertions = createSelector(getTesting, (g) => g.testingAssertions || []);
+
 export const hasTestingDataRecordsDefined = createSelector(getTestingDataRecords, (testingDataRecords) => testingDataRecords.length > 0);
 
 export const getTestParameters = createSelector(getGraph, (g) => g.testFormParameters || ([] as TestFormParameters[]));

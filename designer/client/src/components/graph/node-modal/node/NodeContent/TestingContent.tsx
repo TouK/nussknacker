@@ -6,6 +6,7 @@ import { getUserSettings } from "../../../../../reducers/selectors/userSettings"
 import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { NodeTypeDetailsContentProps } from "../../NodeTypeDetailsContent";
 import type { NodeState } from "../useNodeState";
+import { Assertions } from "./TestingContentElements/Assertions";
 import { InputDataRecords } from "./TestingContentElements/InputDataRecords";
 import { MockResponse } from "./TestingContentElements/MockResponse";
 
@@ -33,7 +34,16 @@ export function useTestingContentRenderer() {
         },
         {
             when: (node) => settings["node.showMockFieldOnEnrichers"] && node.type === "Enricher" && node.service.id !== "decision-table",
-            render: ({ node, edges, onChange }) => <MockResponse node={node} edges={edges} onChange={onChange} />,
+            render: ({ node, edges, onChange }) => (
+                <>
+                    <MockResponse node={node} edges={edges} onChange={onChange} />
+                    <Assertions />
+                </>
+            ),
+        },
+        {
+            when: () => true,
+            render: ({ node, edges, onChange }) => <Assertions />,
         },
     ];
 

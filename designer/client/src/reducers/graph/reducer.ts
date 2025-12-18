@@ -55,6 +55,7 @@ const emptyGraphState: GraphState = {
         testResultsLoading: false,
         testData: null,
         testingDataRecords: null,
+        testingAssertions: null,
     },
 };
 
@@ -412,6 +413,15 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 testing: {
                     ...state.testing,
                     testingDataRecords: action.testingEventsParameters,
+                },
+            };
+        }
+        case "SET_TESTING_ASSERTIONS": {
+            return {
+                ...state,
+                testing: {
+                    ...state.testing,
+                    testingAssertions: action.testingAssertions,
                 },
             };
         }

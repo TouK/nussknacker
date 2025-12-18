@@ -1,6 +1,7 @@
 import type { RefreshData } from "../../actions/nk/displayProcessCounts";
 import type { Layout } from "../../actions/nk/ui/layout";
 import type { TestCapabilities, TestFormParameters } from "../../common/TestResultUtils";
+import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import type { Scenario } from "../../components/Process/types";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
@@ -21,6 +22,7 @@ type TestingState = {
     testResultsLoading?: boolean;
     testData?: TestData;
     testingDataRecords?: TestingDataRecords[];
+    testingAssertions?: ExpressionObj[];
 };
 export type GraphState = {
     scenarioLoading: boolean;
