@@ -50,9 +50,13 @@ object ScenarioParametersDeterminer {
   def determineEngineSetupNames(
       nameInputDatas: Map[ProcessingType, EngineNameInputData]
   ): Map[ProcessingType, EngineSetupName] = {
-    val grouped = nameInputDatas.toList.map { case (processingType, in) =>
-      (in.nameSpecifiedInConfig.getOrElse(in.defaultName), in.identity) -> processingType
-    }.toGroupedMap
+    // Sort engines by ProcessingType in order to the ordering deterministic
+    val grouped = nameInputDatas.toList
+      .sortBy(_._1)
+      .map { case (processingType, in) =>
+        (in.nameSpecifiedInConfig.getOrElse(in.defaultName), in.identity) -> processingType
+      }
+      .toGroupedMap
 
     grouped
       .foldLeft((ListMap.empty[ProcessingType, EngineSetupName], Map.empty[EngineSetupName, Int])) {
