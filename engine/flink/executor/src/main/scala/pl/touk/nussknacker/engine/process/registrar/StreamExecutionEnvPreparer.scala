@@ -64,7 +64,7 @@ class DefaultStreamExecutionEnvPreparer(
           compilerData.jobData.metaData,
           StreamMetaData()
         )
-    env.getConfig.configure(compilerData.restartStrategyConfig, null)
+    env.configure(compilerData.restartStrategyConfig, null)
     streamMetaData.parallelism.foreach(env.setParallelism)
 
     configureCheckpoints(env, streamMetaData)
@@ -72,18 +72,13 @@ class DefaultStreamExecutionEnvPreparer(
     (jobConfig.rocksDB, streamMetaData.spillStateToDisk) match {
       case (Some(config), Some(true)) if config.enable =>
         logger.info("Using RocksDB state backend")
-        configureRocksDBBackend(env, config)
+        env.configure(StateConfiguration.prepareRocksDBStateBackendFlinkConfiguration(config), null)
       case (None, Some(true)) =>
         // TODO: handle non-configured rocksDB more transparently e.g. hide checkbox on FE?
         logger.warn("RocksDB not configured, cannot use spillStateToDisk")
       case _ =>
         logger.info("Using default state backend configured by cluster")
     }
-  }
-
-  @nowarn("cat=deprecation")
-  private def configureRocksDBBackend(env: StreamExecutionEnvironment, config: RocksDBStateBackendConfig): Unit = {
-    env.setStateBackend(StateConfiguration.prepareRocksDBStateBackend(config).asInstanceOf[StateBackend])
   }
 
   private def configureCheckpoints(env: StreamExecutionEnvironment, streamMetaData: StreamMetaData): Unit = {
