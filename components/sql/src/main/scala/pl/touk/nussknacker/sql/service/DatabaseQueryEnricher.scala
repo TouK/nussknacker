@@ -16,9 +16,10 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
+import pl.touk.nussknacker.sql.DbEnricherName
 import pl.touk.nussknacker.sql.db.pool.{DBPoolConfig, HikariDataSourceFactory}
 import pl.touk.nussknacker.sql.db.query._
-import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, DbParameterMetaData, SqlDialect, TableDefinition}
+import pl.touk.nussknacker.sql.db.schema._
 
 import java.sql.{SQLException, SQLSyntaxErrorException}
 import java.time.Duration
@@ -76,7 +77,7 @@ TODO:
 1. Named parameters. Maybe we can make use of Spring's NamedJdbcParameterTemplate?
 2. Typed parameters - currently we type them as Objects/Unknowns
  */
-class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvider: DbMetaDataProvider)
+class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, dbEnricherName: DbEnricherName)
     extends EagerService
     with TimeMeasuringService
     with SingleInputDynamicComponent
@@ -84,12 +85,14 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
 
   import DatabaseQueryEnricher._
 
-  override protected def serviceName: String = "dbQueryEnricher"
+  override protected def serviceName: String = dbEnricherName.value
 
   override type Implementation = ServiceInvoker
 
   override type State = TransformationState
 
+  protected lazy val dbMetaDataProvider: JdbcMetaDataProvider =
+    MetaDataProviderFactory.create(dbPoolConfig, dbEnricherName)
   protected lazy val sqlDialect                       = new SqlDialect(dbMetaDataProvider.getDialectMetaData)
   override val nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: metaData :: Nil
 
@@ -108,7 +111,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
 
   override def open(engineRuntimeContext: EngineRuntimeContext): Unit = {
     try
-      dataSource = HikariDataSourceFactory(dbPoolConfig)
+      dataSource = HikariDataSourceFactory(dbPoolConfig, poolName = dbEnricherName.value + "-runtime")
     finally
       super.open(engineRuntimeContext)
   }

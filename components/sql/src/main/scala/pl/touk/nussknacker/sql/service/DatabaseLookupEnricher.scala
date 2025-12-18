@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParame
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.sql.DbEnricherName
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.{QueryArgument, QueryArguments, SingleResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, SchemaDefinition, TableDefinition}
@@ -46,8 +47,8 @@ object DatabaseLookupEnricher {
 
 }
 
-class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbMetaDataProvider)
-    extends DatabaseQueryEnricher(dBPoolConfig, dbMetaDataProvider)
+class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbEnricherName: DbEnricherName)
+    extends DatabaseQueryEnricher(dBPoolConfig, dbEnricherName)
     with LazyLogging {
 
   private def tableParam(): Parameter = {

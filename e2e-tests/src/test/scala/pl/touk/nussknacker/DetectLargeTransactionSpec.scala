@@ -47,7 +47,8 @@ class DetectLargeTransactionSpec
         .Then()
         .statusCode(200)
         .matchJsonWithRegexValuesBody(
-          s"""
+          ignoreOrderOfElementsInArrays = true,
+          json = s"""
              |{
              |  "timestamp": "${regexes.zuluDateRegex}",
              |  "results": {

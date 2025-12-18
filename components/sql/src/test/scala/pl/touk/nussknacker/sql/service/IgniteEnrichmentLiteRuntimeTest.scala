@@ -40,9 +40,9 @@ class IgniteEnrichmentLiteRuntimeTest
     ).asJava
   )
 
-  private val components = DatabaseEnricherComponentProvider.create(config)
+  private lazy val components = DatabaseEnricherComponentProvider.create(config)
 
-  private val testScenarioRunner = TestScenarioRunner
+  private lazy val testScenarioRunner = TestScenarioRunner
     .liteBased()
     .withExtraComponents(components)
     .build()

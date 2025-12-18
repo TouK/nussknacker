@@ -2,8 +2,9 @@ package pl.touk.nussknacker.sql.service
 
 import pl.touk.nussknacker.engine.api.{Context, Params}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.sql.DbEnricherName
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
-import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
+import pl.touk.nussknacker.sql.db.schema.TableDefinition
 import pl.touk.nussknacker.sql.service.DatabaseLookupEnricher.KeyValueParamName
 import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.cacheTTLParamName
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
@@ -16,7 +17,7 @@ class DatabaseLookupEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
   import scala.jdk.CollectionConverters._
 
   override val service =
-    new DatabaseLookupEnricher(hsqlDbPoolConfig, new MetaDataProviderFactory().create(hsqlDbPoolConfig))
+    new DatabaseLookupEnricher(hsqlDbPoolConfig, DbEnricherName("lookupEnricher"))
 
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
