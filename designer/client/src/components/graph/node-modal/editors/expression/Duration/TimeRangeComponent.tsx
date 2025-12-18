@@ -47,7 +47,7 @@ const components: Record<string, TimeRangeComponentType> = {
         fieldName: "seconds",
     },
     [TimeRange.Millis]: {
-        label: "millis",
+        label: "ms",
         fieldName: "milliseconds",
     },
 };

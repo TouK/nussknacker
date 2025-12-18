@@ -5,7 +5,7 @@ import io.circe.{HCursor, Json}
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.Types
-import org.apache.flink.api.connector.source.util.ratelimit.{RateLimiter, RateLimiterStrategy}
+import org.apache.flink.api.connector.source.util.ratelimit.RateLimiterStrategy
 import org.apache.flink.connector.datagen.source.DataGeneratorSource
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -42,7 +42,6 @@ import pl.touk.nussknacker.engine.util.watermarkstrategy.{
 
 import java.time.{Duration, Instant}
 import java.time.temporal.ChronoUnit
-import java.util.concurrent.{CompletableFuture, TimeUnit}
 
 object EventGeneratorSourceFactory
     extends SourceFactory
@@ -69,7 +68,8 @@ object EventGeneratorSourceFactory
         editors = List(
           new DurationParameterEditor(
             List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS, ChronoUnit.MILLIS)
-          )
+          ),
+          SqlParameterEditor
         ),
         defaultValue = Some("T(java.time.Duration).parse('PT1M')".spel)
       )
