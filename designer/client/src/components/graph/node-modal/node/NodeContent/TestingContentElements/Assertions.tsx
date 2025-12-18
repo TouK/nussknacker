@@ -1,4 +1,4 @@
-import { Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -21,6 +21,13 @@ export const Assertions = () => {
         dispatch(setTestingAssertions((prev) => prev.concat({ expression: "", language: "spel" })));
     }, [dispatch]);
 
+    const removeAssertion = useCallback(
+        (index: number) => {
+            dispatch(setTestingAssertions((prev) => prev.filter((_, i) => i !== index)));
+        },
+        [dispatch],
+    );
+
     const editAssertion = useCallback(
         (index: number, updated: Partial<{ expression: string; language: string }>) => {
             dispatch(setTestingAssertions((prev) => prev.map((item, i) => (i === index ? { ...item, ...updated } : item))));
@@ -29,20 +36,25 @@ export const Assertions = () => {
     );
 
     return (
-        <Stack p={2} gap={2}>
+        <Stack p={3} gap={2}>
             <Typography m={0} variant="h5">
                 {t("testingDialog.label.assertions", "Assertions")}
             </Typography>
             {testingAssertions.map((expressionObj, index) => (
-                <NodeTable key={index} sx={settings["node.showInputsAndOutputs"] ? { margin: "0 8px" } : undefined}>
-                    <EditableEditor
-                        editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
-                        expressionObj={expressionObj}
-                        variableTypes={{}}
-                        onValueChange={(expression) => editAssertion(index, expression)}
-                        fieldErrors={[]}
-                    />
-                </NodeTable>
+                <Box key={index} display={"flex"} alignItems={"end"}>
+                    <NodeTable sx={{ flex: 1, m: 0 }}>
+                        <EditableEditor
+                            editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
+                            expressionObj={expressionObj}
+                            variableTypes={{}}
+                            onValueChange={(expression) => editAssertion(index, expression)}
+                            fieldErrors={[]}
+                        />
+                    </NodeTable>
+                    <StyledButton title={t("node.row.remove.title", "Remove field")} onClick={() => removeAssertion(index)} sx={{ ml: 1 }}>
+                        {t("node.row.remove.text", "-")}
+                    </StyledButton>
+                </Box>
             ))}
 
             <StyledButton title={t("node.row.add.title", "Add field")} onClick={addAssertion} sx={{ mt: 2 }}>
