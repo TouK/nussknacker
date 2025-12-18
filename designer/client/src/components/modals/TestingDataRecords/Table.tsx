@@ -309,7 +309,6 @@ export const Table: React.FC<TableProps> = ({
                 return false;
             }
 
-            console.log(selectedRowsCount);
             if (selectedRowsCount > 0) {
                 handleRemoveSelectedRows();
                 return false;
