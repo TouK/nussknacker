@@ -70,8 +70,8 @@ class TableSink(
       https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/data_stream_api/.
      */
     // TODO Variant with SinkV2 causes java.math.BigDecimal cannot be cast to class java.lang.Integer in tests
-    dataStream.addSink(new org.apache.flink.streaming.api.functions.sink.DiscardingSink[ValueWithContext[AnyRef]]())
-//    dataStream.sinkTo(new org.apache.flink.streaming.api.functions.sink.v2.DiscardingSink[ValueWithContext[AnyRef]]())
+//    dataStream.addSink(new org.apache.flink.streaming.api.functions.sink.DiscardingSink[ValueWithContext[AnyRef]]())
+    dataStream.sinkTo(new org.apache.flink.streaming.api.functions.sink.v2.DiscardingSink[ValueWithContext[AnyRef]]())
   }
 
 }
