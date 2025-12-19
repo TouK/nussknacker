@@ -278,13 +278,47 @@ export const Table: React.FC<TableProps> = ({
         return [];
     }, [selection]);
 
-    const handleRemove = useCallback(() => {
+    const handleRemoveSelectedRows = useCallback(() => {
         if (!onCellDeleted || rowsFromSelection.length === 0) return;
         onCellDeleted(rowsFromSelection);
         clearSelection();
     }, [clearSelection, onCellDeleted, rowsFromSelection]);
 
     const selectedRowsCount = rowsFromSelection.length;
+
+    const getDeletedColumn = useCallback(({ current }: GridSelection) => {
+        const currentCell = current?.cell;
+        if (!currentCell) {
+            return { removedCellColumnId: undefined, removedCellRowIndex: undefined };
+        }
+        const columnIndex = currentCell[0];
+        const columnRowIndex = currentCell[1];
+
+        const col = tableColumns[columnIndex];
+
+        return { removedCellColumnId: col.id, removedCellRowIndex: columnRowIndex };
+    }, [tableColumns]);
+
+    const onDeleteTableRow = useCallback(
+        (selection: GridSelection) => {
+            const { removedCellColumnId, removedCellRowIndex } = getDeletedColumn(selection);
+
+            // Remove whole row when sourceId column value removed
+            if (removedCellColumnId === "sourceId") {
+                onCellDeleted([removedCellRowIndex]);
+                return false;
+            }
+
+            if (selectedRowsCount > 0) {
+                handleRemoveSelectedRows();
+                return false;
+            }
+
+            // keep native behaviour when no rows selected
+            return true;
+        },
+        [getDeletedColumn, handleRemoveSelectedRows, onCellDeleted, selectedRowsCount],
+    );
 
     return (
         <Box
@@ -304,15 +338,7 @@ export const Table: React.FC<TableProps> = ({
                 }}
             >
                 <DataEditor
-                    onDelete={(selection) => {
-                        console.log(selection);
-                        // keep native behaviour when no rows selected
-                        if (selectedRowsCount === 0) return true;
-
-                        handleRemove();
-
-                        return false;
-                    }}
+                    onDelete={onDeleteTableRow}
                     ref={ref}
                     columns={tableColumns}
                     getCellContent={getCellContent}
@@ -346,7 +372,11 @@ export const Table: React.FC<TableProps> = ({
                     )}
                 </CellMenu>
                 {selection.rows.length > 0 && (
-                    <TableFooter selectedCount={selectedRowsCount} allRowsNumber={data.length} handleRemoveRows={handleRemove} />
+                    <TableFooter
+                        selectedCount={selectedRowsCount}
+                        allRowsNumber={data.length}
+                        handleRemoveRows={handleRemoveSelectedRows}
+                    />
                 )}
             </Sizer>
             {tooltipElement}
