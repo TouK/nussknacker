@@ -20,8 +20,8 @@ import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeData
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
+import scala.collection.parallel.CollectionConverters._
 import scala.collection.parallel.ExecutionContextTaskSupport
-import scala.collection.parallel.immutable.ParVector
 import scala.concurrent.{ExecutionContext, Future}
 
 class TestModelMigrations(
@@ -113,8 +113,7 @@ class TestModelMigrations(
   private def processInParallel(input: List[MigratedProcessDetails], batchingExecutionContext: ExecutionContext)(
       process: MigratedProcessDetails => TestMigrationResult
   ): List[TestMigrationResult] = {
-    // We create ParVector manually instead of calling par for compatibility with Scala 2.12
-    val parallelCollection = new ParVector(input.toVector)
+    val parallelCollection = input.toVector.par
     parallelCollection.tasksupport = new ExecutionContextTaskSupport(batchingExecutionContext)
     parallelCollection.map(process).toList
   }

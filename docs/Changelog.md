@@ -307,6 +307,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8775](https://github.com/TouK/nussknacker/pull/8775) [#8808](https://github.com/TouK/nussknacker/pull/8808) `BoolParameterEditor` displayed as toggle switch, using `BoolParameterEditor` for boolean parameters
 * [#8808](https://github.com/TouK/nussknacker/pull/8808) Added possibility to pass `ChronoUnit.MILLIS` in `DurationParameterEditor.timeRangeComponents`
 * [#8808](https://github.com/TouK/nussknacker/pull/8808) `Event generator` component: ability to specify `schedule` up to millis 
+* [#8803](https://github.com/TouK/nussknacker/pull/8803) Nussknacker is now built only against Scala 2.13, removed Scala 2.12 cross-compile
 
 ## 1.18
 

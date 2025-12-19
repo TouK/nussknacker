@@ -36,13 +36,14 @@ class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) {
       getConversion(className).exists(_.canConvert(target))
 
   private def to(target: Any, className: String): Any =
-    orElse(tryCast(target, className), tryConvert(target, className)) match {
+    tryCast(target, className).orElse(tryConvert(target, className)) match {
       case Right(value) => value
       case Left(ex) => throw new IllegalStateException(s"Cannot cast or convert value: $target to: '$className'", ex)
     }
 
   private def toOrNull(target: Any, className: String): Any =
-    orElse(tryCast(target, className), tryConvert(target, className))
+    tryCast(target, className)
+      .orElse(tryConvert(target, className))
       .getOrElse(null)
 
   private def tryCast(target: Any, className: String): Either[Throwable, Any] = getClass(className) match {
@@ -56,13 +57,6 @@ class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) {
   private def tryConvert(target: Any, className: String): Either[Throwable, Any] =
     getConversion(className)
       .flatMap(_.convertEither(target))
-
-  // scala 2.12 does not support either.orElse
-  private def orElse(e1: Either[Throwable, Any], e2: => Either[Throwable, Any]): Either[Throwable, Any] =
-    e1 match {
-      case Left(_)      => e2
-      case r @ Right(_) => r
-    }
 
   private def getReturnTypeClassOrThrow(className: String): Class[_] =
     getClass(className).getOrElse(throw new IllegalArgumentException(s"Cannot find class with name: $className"))
