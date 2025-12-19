@@ -106,7 +106,7 @@ private case class ResultsCollectingListenerImpl[T](holderClass: String, runId: 
 
 private object NoopResultsCollectingListener extends ResultsCollectingListener[Any] with EmptyProcessListener {
   override def results: TestResults[Any] =
-    TestResults(Map.empty, Map.empty, Map.empty, Map.empty, List.empty)
+    TestResults(Map.empty, Map.empty, Map.empty, Map.empty, List.empty, Map.empty)
 
   override def clean(): Unit = {}
 
@@ -147,7 +147,7 @@ object ResultsCollectingListenerHolder {
 
   private def registerListener[T](variableEncoder: Any => T): ResultsCollectingListener[T] = {
     val runId = TestRunId.generate
-    results.put(runId, TestResults(Map(), Map(), Map(), Map(), List()))
+    results.put(runId, TestResults(Map(), Map(), Map(), Map(), List(), Map()))
     ResultsCollectingListenerImpl(getClass.getCanonicalName, runId, variableEncoder)
   }
 

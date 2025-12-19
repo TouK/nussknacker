@@ -11,12 +11,11 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.BeMatcher
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.graph.node.SubsequentNode
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.restmodel.DeployRequest
@@ -31,8 +30,10 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
+import pl.touk.nussknacker.ui.process.test.testcase.{Assertion, EnricherMock, TestCase}
 
 import java.time.Instant
+import java.util.UUID
 
 // TODO: all these tests should be migrated to ManagementApiHttpServiceBusinessSpec or ManagementApiHttpServiceSecuritySpec
 class ManagementResourcesSpec
@@ -438,6 +439,166 @@ class ManagementResourcesSpec
         .downField("pretty")
         .downN(0)
         .focus shouldBe Some(Json.fromString("ala"))
+    }
+  }
+
+  test("run test case") {
+    val testDataContent =
+      """[
+        |  {"sourceId":"startProcess","variables":{"input":["ala"]}},
+        |  {"sourceId":"startProcess","variables":{"input":["bela"]}}
+        |]""".stripMargin
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
+
+    val testCase = TestCase(
+      UUID.randomUUID(),
+      "dummy",
+      testDataContent,
+      Map.empty,
+      Map(
+        NodeId("endsuffix") -> List(
+          Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
+          Assertion("#TESTS.assertEquals('ala', #contexts[1].input[0])".spel),
+        )
+      )
+    )
+    runTestCase(ProcessTestData.sampleScenario, testCase) ~> check {
+      status shouldEqual StatusCodes.OK
+
+      val responseJson = responseAs[Json]
+      responseJson.hcursor
+        .downField("assertionsResults")
+        .downField("endsuffix")
+        .downN(0)
+        .downField("type")
+        .focus shouldBe Some(Json.fromString("SuccessfulAssertion"))
+
+      responseJson.hcursor
+        .downField("assertionsResults")
+        .downField("endsuffix")
+        .downN(1)
+        .focus shouldBe Some(
+        Json.obj(
+          "type"    -> Json.fromString("FailedAssertion"),
+          "message" -> Json.fromString("Expected: [ala] but found [bela]")
+        )
+      )
+    }
+  }
+
+  test("run test case with mocked service") {
+    val testDataContent =
+      """[
+        |  {"sourceId":"startProcess","variables":{"input":["ala"]}}
+        |]""".stripMargin
+
+    val scenario = ScenarioBuilder
+      .streaming(ProcessTestData.sampleProcessName.value)
+      .parallelism(1)
+      .source("startProcess", "csv-source")
+      .enricher("someEnricher", "out1", "paramService", "param" -> "'a'".spel)
+      .filter("input", "#input != null".spel)
+      .to(
+        GraphBuilder
+          .buildVariable("message" + "suffix", "output", "message" -> "'message'".spel)
+          .emptySink(
+            "end" + "suffix",
+            "kafka-string",
+            TopicParamName.value     -> "'end.topic'".spel,
+            SinkValueParamName.value -> "#output".spel
+          )
+      )
+
+    saveCanonicalProcessAndAssertSuccess(scenario)
+
+    val testCase = TestCase(
+      UUID.randomUUID(),
+      "dummy",
+      testDataContent,
+      mocks = Map(
+        NodeId("someEnricher") -> EnricherMock("'b'".spel)
+      ),
+      assertions = Map(
+        NodeId("endsuffix") -> List(
+          Assertion("#TESTS.assertEquals('b', #contexts[0].out1)".spel),
+        )
+      )
+    )
+    runTestCase(scenario, testCase) ~> check {
+      status shouldEqual StatusCodes.OK
+
+      val responseJson = responseAs[Json]
+      responseJson.hcursor
+        .downField("assertionsResults")
+        .downField("endsuffix")
+        .downN(0)
+        .downField("type")
+        .focus shouldBe Some(Json.fromString("SuccessfulAssertion"))
+    }
+  }
+
+  test("assertion on not existing node should return bad request") {
+    val testDataContent =
+      """[
+        |  {"sourceId":"startProcess","variables":{"input":["ala"]}},
+        |  {"sourceId":"startProcess","variables":{"input":["bela"]}}
+        |]""".stripMargin
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
+
+    val invalidTestCase = TestCase(
+      UUID.randomUUID(),
+      "dummy",
+      testDataContent,
+      mocks = Map.empty,
+      assertions = Map(
+        NodeId("someNotExistingNode") -> List(
+          Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
+        )
+      )
+    )
+    runTestCase(ProcessTestData.sampleScenario, invalidTestCase) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      responseAs[String] shouldBe "Assertions configured for not existing nodes: someNotExistingNode"
+    }
+  }
+
+  test("mock on not existing node should return bad request") {
+    val testDataContent =
+      """[
+        |  {"sourceId":"startProcess","variables":{"input":["ala"]}},
+        |  {"sourceId":"startProcess","variables":{"input":["bela"]}}
+        |]""".stripMargin
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
+
+    val invalidTestCase = TestCase(
+      UUID.randomUUID(),
+      "dummy",
+      testDataContent,
+      mocks = Map(
+        NodeId("notExistingEnricher") -> EnricherMock("'b'".spel)
+      ),
+      assertions = Map.empty
+    )
+    runTestCase(ProcessTestData.sampleScenario, invalidTestCase) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      responseAs[String] shouldBe "Mocks configured for not existing nodes: notExistingEnricher"
+    }
+  }
+
+  test("running test case with invalid scenario should return bad request") {
+    val testDataContent =
+      """[
+        |  {"sourceId":"source","variables":{"input":["ala"]}},
+        |  {"sourceId":"source","variables":{"input":["bela"]}}
+        |]""".stripMargin
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.invalidProcess)
+
+    val testCase = TestCase(UUID.randomUUID(), "dummy", testDataContent, Map.empty, Map.empty)
+    runTestCase(ProcessTestData.invalidProcess, testCase) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      val responseAsString = responseAs[String]
+      // todo: should we return something more structured than toString of errors?
+      responseAsString.startsWith("Only scenario without validation errors can be tested. Errors: ") shouldBe true
     }
   }
 

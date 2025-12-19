@@ -737,7 +737,8 @@ class DetectLargeTransactionSpec
              |      "errors": 0,
              |      "fragmentCounts": {}
              |    }
-             |  }
+             |  },
+             |  "assertionsResults": {}
              |}""".stripMargin
         )
     }

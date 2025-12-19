@@ -23,18 +23,27 @@ import pl.touk.nussknacker.engine.api.test.{
 }
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder.TestRecordVariablesDecodingError
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ListUtil
-import pl.touk.nussknacker.ui.api.TestDataSettings
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationErrors}
+import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ExpressionsToTestDataConversionError
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.{
+  ExpressionsToTestDataConversionError,
+  MockConfiguredForNotExistingNodesError,
+  ScenarioValidationError
+}
+import pl.touk.nussknacker.ui.process.test.testcase._
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -62,6 +71,18 @@ class ScenarioTestService(
     maxRecordsCount = testDataSettings.maxSamplesCount,
     testDataFormatSerDe = testDataFormatHandler.serDe
   )
+
+  // for test cases only common data format is used - can be removed if we drop source specific format support
+  private val testCasePreliminaryScenarioRecordsSerDe = new PreliminaryScenarioRecordsSerDe(
+    serializedContentMaxLength = testDataSettings.testDataMaxLength,
+    maxRecordsCount = testDataSettings.maxSamplesCount,
+    testDataFormatSerDe = TestDataFormatHandler(TestDataFormat.CommonFormat, modelData).serDe
+  )
+
+  private val expressionCompiler              = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
+  private val testCaseGlobalVariablesPreparer = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
+  private val assertionCompiler = new AssertionsCompiler(expressionCompiler, testCaseGlobalVariablesPreparer)
+  private val assertionVerifier: AssertionVerifier = new AssertionVerifier(testCaseGlobalVariablesPreparer)
 
   def getTestingCapabilities(
       scenarioGraph: ScenarioGraph,
@@ -258,6 +279,95 @@ class ScenarioTestService(
     } yield ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))).value
   }
 
+  def performTestCase(
+      scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
+      isFragment: Boolean,
+      testCase: TestCase,
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
+    val jobData = JobData(scenarioGraph.toMetaData(processVersion.processName), processVersion)
+    (for {
+      preliminaryScenarioTestRecords <- EitherT.fromEither[Future](
+        testCasePreliminaryScenarioRecordsSerDe
+          .deserialize(SerializedScenarioRecordsContent(testCase.inputs))
+          .leftMap[PerformTestError](PerformTestError.DeserializationError)
+      )
+      graphWithSubstitutedMocks <- EitherT.fromEither[Future](validateAndSubstituteMocks(scenarioGraph, testCase.mocks))
+      scenarioWithTyping <- EitherT.fromEither[Future](
+        validateScenario(graphWithSubstitutedMocks, processVersion, isFragment)
+      )
+
+      scenarioTestData <- EitherT.fromEither[Future](
+        prepareTestData(preliminaryScenarioTestRecords, scenarioWithTyping.scenario)
+      )
+      compiledAssertions <- EitherT.fromEither[Future](
+        compileAssertions(testCase, scenarioWithTyping.nodesTyping, jobData)
+      )
+      testResults <- EitherT(
+        performTestWithDeserializedRecords(processVersion, scenarioWithTyping.scenario, scenarioTestData)
+      )
+
+      _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
+    } yield ResultsWithCounts(
+      Instant.now(),
+      testResults,
+      computeCounts(scenarioWithTyping.scenario, isFragment, testResults),
+      assertionVerifier.verify(compiledAssertions, testResults.originalNodeResults, jobData)
+    )).value
+  }
+
+  private def validateAndSubstituteMocks(
+      scenarioGraph: ScenarioGraph,
+      mocks: Map[NodeId, EnricherMock]
+  ): Either[PerformTestError, ScenarioGraph] = {
+    val existingNodesId           = scenarioGraph.nodes.map(node => NodeId(node.id)).toSet
+    val mockedNodesId             = mocks.keySet
+    val notExistingNodesWithMocks = mockedNodesId.diff(existingNodesId)
+
+    if (notExistingNodesWithMocks.nonEmpty) {
+      Left(MockConfiguredForNotExistingNodesError(NonEmptyList.fromListUnsafe(notExistingNodesWithMocks.toList)))
+    } else {
+      Right(substituteMocks(scenarioGraph, mocks))
+    }
+  }
+
+  private def substituteMocks(scenarioGraph: ScenarioGraph, mocks: Map[NodeId, EnricherMock]) = {
+    val nodesWithSubstitutions = scenarioGraph.nodes.map {
+      case nodeData @ (enricher: node.Enricher) =>
+        val enricherMockOpt = mocks.get(NodeId(nodeData.id)).map(_.expression)
+        // we use provided mock or the one specified in original scenario
+        enricher.copy(mockExpression = enricherMockOpt.orElse(enricher.mockExpression))
+      case data => data
+    }
+    scenarioGraph.copy(nodes = nodesWithSubstitutions)
+  }
+
+  private def validateScenario(scenarioGraph: ScenarioGraph, processVersion: ProcessVersion, isFragment: Boolean)(
+      implicit user: LoggedUser
+  ): Either[ScenarioValidationError, ScenarioWithTyping] = {
+    val validationResult = processResolver.validateBeforeUiResolving(scenarioGraph, processVersion, isFragment)
+    val canonicalProcess =
+      processResolver.resolveExpressions(scenarioGraph, processVersion.processName, validationResult.typingInfo)
+    if (validationResult.hasErrors) {
+      Left(ScenarioValidationError(validationResult.errors))
+    } else {
+      Right(ScenarioWithTyping(canonicalProcess, validationResult.nodeResults))
+    }
+  }
+
+  private def compileAssertions(
+      test: TestCase,
+      nodesTyping: Map[String, NodeTypingData],
+      jobData: JobData
+  ): Either[PerformTestError, CompiledAssertions] = {
+    assertionCompiler
+      .compile(test, nodesTyping, jobData)
+      .fold(
+        errors => Left(errors.head),
+        Right(_)
+      ) // in case of performing test case we return errors in fail-fast fashion
+  }
+
   def performTest(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
@@ -451,6 +561,8 @@ class ScenarioTestService(
 
 object ScenarioTestService {
 
+  private final case class ScenarioWithTyping(scenario: CanonicalProcess, nodesTyping: Map[String, NodeTypingData])
+
   sealed trait TestingCapabilitiesError
 
   object TestingCapabilitiesError {
@@ -482,10 +594,13 @@ object ScenarioTestService {
         nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
     ) extends FetchLiveDataError
 
-    final case object NoLiveDataAvailableError          extends FetchLiveDataError
+    final case object NoLiveDataAvailableError extends FetchLiveDataError
+
     final case object LiveDataFetchingNotSupportedError extends FetchLiveDataError
+
     final case class ScenarioRecordsSerializationError(cause: PreliminaryScenarioRecordsSerDe.SerializationError)
         extends FetchLiveDataError
+
     final case class TooManyRecordsRequestedError(maxRecordsCount: Int) extends FetchLiveDataError
   }
 
@@ -511,8 +626,24 @@ object ScenarioTestService {
         testRecordIndex: Int,
     ) extends PerformTestError
 
-    final case class MissingSourceError(sourceId: NodeId, recordIndex: Int)                extends PerformTestError
+    final case class MissingSourceError(sourceId: NodeId, recordIndex: Int) extends PerformTestError
+
     final case class TestResultsSizeExceededError(approxSizeInBytes: Long, maxBytes: Long) extends PerformTestError
+
+    final case class MockConfiguredForNotExistingNodesError(notExistingNodeIds: NonEmptyList[NodeId])
+        extends PerformTestError
+
+    final case class AssertionConfiguredForNotExistingNodesError(notExistingNodeIds: NonEmptyList[NodeId])
+        extends PerformTestError
+
+    final case class AssertionExpressionCompilationError(
+        errors: NonEmptyList[ProcessCompilationError],
+        assertion: Assertion,
+        nodeId: NodeId
+    ) extends PerformTestError
+
+    final case class ScenarioValidationError(errors: ValidationErrors) extends PerformTestError
+
   }
 
 }

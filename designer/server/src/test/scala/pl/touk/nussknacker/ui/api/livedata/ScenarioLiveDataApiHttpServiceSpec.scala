@@ -96,7 +96,8 @@ class ScenarioLiveDataApiHttpServiceSpec
              |      "errors": 0,
              |      "fragmentCounts": {}
              |    }
-             |  }
+             |  },
+             |  "assertionsResults": {}
              |}""".stripMargin
         )
     }
@@ -337,7 +338,8 @@ class ScenarioLiveDataApiHttpServiceSpec
              |      "fragmentCounts": {
              |      }
              |    }
-             |  }
+             |  },
+             |  "assertionsResults": {}
              |}""".stripMargin
         )
     }
