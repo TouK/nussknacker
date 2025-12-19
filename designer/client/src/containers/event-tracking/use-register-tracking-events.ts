@@ -67,6 +67,7 @@ enum ClickEventsSelector {
     ScenarioActivitiesEditComment = "SCENARIO_ACTIVITIES_EDIT_COMMENT",
     ScenarioActivitiesOpenVersion = "SCENARIO_ACTIVITIES_OPEN_VERSION",
     LiveData = "LIVE_DATA",
+    SnowSnow = "SNOW_SNOW",
 }
 
 enum SearchEventsSelector {

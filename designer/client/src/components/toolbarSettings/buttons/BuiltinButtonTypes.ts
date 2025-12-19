@@ -28,4 +28,5 @@ export enum BuiltinButtonTypes {
     viewZoomIn = "view-zoom-in",
     viewZoomOut = "view-zoom-out",
     viewReset = "view-reset",
+    snowSnow = "snow-snow",
 }

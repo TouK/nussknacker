@@ -26,6 +26,7 @@ type SettingsNames =
     | "scenario.showBreadcrumbs"
     | "scenario.autoEnableLiveData"
     | "scenario.showLiveDataAnimations"
+    | "scenario.isItSnowing"
     | "editor.showRangeMessages"
     | "toolbar.autoSaveDuringDeployRedeploy"
     | "editor.showResetToDefaultButton";
@@ -56,6 +57,7 @@ const getDefaultUserSettings = (): UserSettings => ({
     "scenario.showBreadcrumbs": getInitialUserFlag("scenario.showBreadcrumbs"),
     "scenario.autoEnableLiveData": getInitialUserFlag("scenario.autoEnableLiveData", false),
     "scenario.showLiveDataAnimations": getInitialUserFlag("scenario.showLiveDataAnimations", true),
+    "scenario.isItSnowing": getInitialUserFlag("scenario.isItSnowing", false),
     "toolbar.autoSaveDuringDeployRedeploy": getInitialUserFlag("toolbar.autoSaveDuringDeployRedeploy", false),
     "editor.showRangeMessages": getInitialUserFlag("editor.showRangeMessages"),
     "editor.showResetToDefaultButton": getInitialUserFlag("editor.showResetToDefaultButton"),

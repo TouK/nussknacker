@@ -28,6 +28,7 @@ import GenerateButton from "../../toolbars/test/buttons/GenerateButton";
 import HideButton from "../../toolbars/test/buttons/HideButton";
 import { LiveDataButton } from "../../toolbars/test/buttons/LiveDataButton";
 import ScenarioTestButton from "../../toolbars/test/buttons/ScenarioTestButton";
+import SnowSnowButton from "../../toolbars/test/buttons/SnowSnowButton";
 import { ResetViewButton } from "../../toolbars/view/buttons/ResetViewButton";
 import { ZoomInButton } from "../../toolbars/view/buttons/ZoomInButton";
 import { ZoomOutButton } from "../../toolbars/view/buttons/ZoomOutButton";
@@ -77,4 +78,5 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
     [BuiltinButtonTypes.generateAndTest]: GenerateAndTestButton,
     [CustomButtonTypes.scenarioTest]: ScenarioTestButton,
     [BuiltinButtonTypes.liveData]: LiveDataButton,
+    [BuiltinButtonTypes.snowSnow]: SnowSnowButton,
 };
