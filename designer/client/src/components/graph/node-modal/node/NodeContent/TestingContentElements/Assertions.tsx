@@ -4,15 +4,14 @@ import { useTranslation } from "react-i18next";
 
 import { setTestingAssertions } from "../../../../../../actions/nk/displayTestResults";
 import { getTestingAssertions } from "../../../../../../reducers/selectors/graph";
-import { getUserSettings } from "../../../../../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
 import { StyledButton } from "../../../../styledButton";
 import { EditableEditor } from "../../../editors/EditableEditor";
 import { EditorType } from "../../../editors/expression/types";
 import { NodeTable } from "../../../NodeDetailsContent/NodeTable";
+import { AssertionStatus } from "./AssertionStatus";
 
 export const Assertions = () => {
-    const settings = useAppSelector(getUserSettings);
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
     const testingAssertions = useAppSelector(getTestingAssertions);
@@ -54,6 +53,9 @@ export const Assertions = () => {
                     <StyledButton title={t("node.row.remove.title", "Remove field")} onClick={() => removeAssertion(index)} sx={{ ml: 1 }}>
                         {t("node.row.remove.text", "-")}
                     </StyledButton>
+                    <Box sx={{ mb: 0.5, ml: 1, display: "flex", alignItems: "center" }}>
+                        <AssertionStatus status={"error"} message={"message"} />
+                    </Box>
                 </Box>
             ))}
 
