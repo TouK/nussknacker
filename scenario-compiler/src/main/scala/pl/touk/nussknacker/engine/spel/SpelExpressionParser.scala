@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.TemplateEvaluationResult
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
+import pl.touk.nussknacker.engine.api.typed.ConversionNecessaryForTypeAssignment
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
@@ -52,7 +53,7 @@ class SpelExpressionParser(
         }
         .andThen { case (parsed, collectedTypingResult) =>
           validateResultTypeIfNeeded(collectedTypingResult, expectedType)
-            .map(_ => (parsed, collectedTypingResult))
+            .map((parsed, _))
         }
         .map { case (parsed, collectedTypingResult) =>
           TypedExpression(
@@ -103,11 +104,18 @@ class SpelExpressionParser(
   private def validateResultTypeIfNeeded(
       collected: CollectedTypingResult,
       expectedType: TypingResult,
-  ): ValidatedNel[ExpressionParseError, Unit] = {
+  ): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     if (expectedType == Typed[SpelExpressionRepr] || expectedType == Typed[TemplateEvaluationResult]) {
-      Valid(())
+      Valid(collected)
     } else {
-      ExpressionParser.validateResultTypeMatchExpectedType(collected.finalResult.typingResult, expectedType)
+      ExpressionParser
+        .validateResultTypeMatchExpectedType(collected.finalResult.typingResult, expectedType)
+        .map {
+          case ConversionNecessaryForTypeAssignment.NoConvertionIsNeeded =>
+            collected
+          case ConversionNecessaryForTypeAssignment.ConvertionIsNeeded(typeAfterConversion) =>
+            collected.withFinalTypingResult(typeAfterConversion)
+        }
     }
   }
 
