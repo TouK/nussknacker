@@ -2,6 +2,8 @@
 import { produce } from "immer";
 import type { Dictionary } from "lodash";
 import { concat, defaultsDeep, isEqual, partition, sortBy } from "lodash";
+import { createTransform, persistReducer } from "redux-persist";
+import storage from "redux-persist/lib/storage";
 import type { StateWithHistory } from "redux-undo";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction } from "redux-undo";
 
@@ -50,13 +52,7 @@ const emptyGraphState: GraphState = {
     testFormParameters: null,
     selectionState: [],
     processCounts: {},
-    testing: {
-        testResults: null,
-        testResultsLoading: false,
-        testData: null,
-        testingDataRecords: null,
-        testingAssertions: null,
-    },
+    testing: {},
 };
 
 export function updateValidationResult(
@@ -139,7 +135,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 ...state,
                 testing: {
                     ...state.testing,
-                    testResultsLoading: true,
+                    [state.scenario.name]: {
+                        ...state.testing[state.scenario.name],
+                        testResultsLoading: true,
+                    },
                 },
             };
         }
@@ -202,7 +201,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 ...state,
                 testing: {
                     ...state.testing,
-                    testResultsLoading: false,
+                    [state.scenario.name]: {
+                        ...state.testing[state.scenario.name],
+                        testResultsLoading: false,
+                    },
                 },
             };
         }
@@ -213,7 +215,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "CLEAR_PROCESS": {
-            return emptyGraphState;
+            return { emptyGraphState, testing: state.testing };
         }
         case "EDIT_NODE": {
             const updateStateAfterNodeIdChange = getUpdateStateAfterNodeIdChange(action.before.id, action.after.id);
@@ -369,7 +371,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 processCountsRefresh: action.refresh,
                 testing: {
                     ...state.testing,
-                    testResults: null,
+                    [state.scenario.name]: {
+                        ...state.testing[state.scenario.name],
+                        testResults: null,
+                    },
                 },
             };
         }
@@ -387,7 +392,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 processCountsRefresh: null,
                 testing: {
                     ...state.testing,
-                    testResults: action.results?.results || null,
+                    [state.scenario.name]: {
+                        ...state.testing[state.scenario.name],
+                        testResults: action.results?.results || null,
+                    },
                 },
             };
         }
@@ -397,12 +405,15 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 visibleDataType: VisibleDataType.test,
                 testing: {
                     ...state.testing,
-                    testData: {
-                        ...state.testing.testData,
-                        [action.testData?.sourceId]: action.testData?.parameterExpressions,
+                    [state.scenario.name]: {
+                        ...state.testing[state.scenario.name],
+                        testData: {
+                            ...state.testing.testData,
+                            [action.testData?.sourceId]: action.testData?.parameterExpressions,
+                        },
+                        testResultsLoading: false,
+                        testResults: action.testResults,
                     },
-                    testResultsLoading: false,
-                    testResults: action.testResults,
                 },
                 scenarioLoading: false,
             };
@@ -412,7 +423,11 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 ...state,
                 testing: {
                     ...state.testing,
-                    testingDataRecords: action.testingEventsParameters,
+                    ...state.testing,
+                    [state.scenario.name]: {
+                        ...state.testing[state.scenario.name],
+                        testingDataRecords: action.testingEventsParameters,
+                    },
                 },
             };
         }
@@ -421,7 +436,11 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 ...state,
                 testing: {
                     ...state.testing,
-                    testingAssertions: action.testingAssertions,
+                    ...state.testing,
+                    [state.scenario.name]: {
+                        ...state.testing[state.scenario.name],
+                        testingAssertions: action.testingAssertions,
+                    },
                 },
             };
         }
@@ -447,14 +466,32 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
     }
 };
 
-const reducer: Reducer<GraphState> = mergeReducers(graphReducer, {
-    scenario: {
-        scenarioGraph: {
-            nodes,
-        },
+const testingTransform = createTransform(
+    // inbound (state -> persisted)
+    (inboundState: any, key, state) => {
+        console.log("state", state);
+
+        return inboundState;
     },
-    selectionState,
-});
+    // outbound (persisted -> state)
+    (outboundState: any, key, state) => {
+        console.log("outboundState", state);
+
+        return outboundState;
+    },
+);
+
+const reducer: Reducer<GraphState> = persistReducer(
+    { key: "testing", storage, whitelist: ["testing"], transforms: [testingTransform] },
+    mergeReducers(graphReducer, {
+        scenario: {
+            scenarioGraph: {
+                nodes,
+            },
+        },
+        selectionState,
+    }),
+);
 
 export type GraphStateWithHistory = StateWithHistory<GraphState> & {
     snapshots: number[];

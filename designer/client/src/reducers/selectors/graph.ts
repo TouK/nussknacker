@@ -2,6 +2,7 @@ import { isEmpty, isEqual } from "lodash";
 import { createSelector } from "reselect";
 
 import type { TestFormParameters } from "../../common/TestResultUtils";
+import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils";
 import type { Scenario } from "../../components/Process/types";
 import { isStatusRunning } from "../../components/Process/types";
@@ -26,7 +27,7 @@ export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scena
     },
 });
 
-export const getTesting = createSelector(getGraph, (g) => g.testing);
+export const getTesting = createSelector(getGraph, (g) => g.testing[g.scenario.name] || {});
 
 export const getNodes = createSelector(getScenarioGraph, (g) => g.nodes);
 
@@ -77,7 +78,14 @@ export const getTestingDataRecordsForSingleSource = createSelector(
     (testingDataRecords, sourceId: string) => testingDataRecords.filter((r) => r.sourceId === sourceId),
 );
 
-export const getTestingAssertions = createSelector(getTesting, (g) => g.testingAssertions || []);
+export const getTestingAssertions = createSelector(getTesting, (g) => g.testingAssertions || {});
+
+const getNodeId = (_: unknown, sourceId: string) => sourceId;
+export const getTestingAssertionForNode = createSelector(
+    getTestingAssertions,
+    getNodeId,
+    (testingAssertions, nodeId): ExpressionObj[] | undefined => testingAssertions[nodeId] || [],
+);
 
 export const hasTestingDataRecordsDefined = createSelector(getTestingDataRecords, (testingDataRecords) => testingDataRecords.length > 0);
 

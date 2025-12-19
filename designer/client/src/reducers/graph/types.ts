@@ -22,7 +22,7 @@ type TestingState = {
     testResultsLoading?: boolean;
     testData?: TestData;
     testingDataRecords?: TestingDataRecords[];
-    testingAssertions?: ExpressionObj[];
+    testingAssertions?: Record<string, ExpressionObj[]>;
 };
 export type GraphState = {
     scenarioLoading: boolean;
@@ -32,7 +32,7 @@ export type GraphState = {
     testCapabilities?: TestCapabilities;
     testFormParameters?: TestFormParameters[];
     visibleDataType?: VisibleDataType | null;
-    testing: TestingState;
+    testing: Record<string, TestingState>;
     processCountsRefresh?: RefreshData;
     processCounts: ProcessCounts;
 };

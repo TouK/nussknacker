@@ -6,7 +6,13 @@ import { mapDataRecordsToRunTestsFormat } from "../../components/modals/TestingD
 import HttpService from "../../http/HttpService/instance";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
 import type { ResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
-import { getProcessName, getScenarioGraph, getTestingAssertions, getTestingDataRecords } from "../../reducers/selectors/graph";
+import {
+    getProcessName,
+    getScenarioGraph,
+    getTestingAssertionForNode,
+    getTestingAssertions,
+    getTestingDataRecords,
+} from "../../reducers/selectors/graph";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
 import type { Action, ThunkAction } from "../reduxTypes";
 import { displayProcessCounts } from "./displayProcessCounts";
@@ -81,7 +87,7 @@ export type TestsActions =
       }
     | {
           type: "SET_TESTING_ASSERTIONS";
-          testingAssertions: ExpressionObj[];
+          testingAssertions: Record<string, ExpressionObj[]>;
       };
 
 function wrapWithTestAction(
@@ -125,15 +131,16 @@ export function setTestingEventsParameters(updater: (prev: TestingDataRecords[])
     };
 }
 
-export function setTestingAssertions(updater: (prev: ExpressionObj[]) => ExpressionObj[]): ThunkAction {
+export function setTestingAssertions(nodeId: string, updater: (prev: ExpressionObj[]) => ExpressionObj[]): ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
-        const prev = getTestingAssertions(state);
+        const prev = getTestingAssertionForNode(state, nodeId);
         const next = updater(prev);
 
+        const testingAssertions = getTestingAssertions(state);
         dispatch({
             type: "SET_TESTING_ASSERTIONS",
-            testingAssertions: next,
+            testingAssertions: { ...testingAssertions, [nodeId]: next },
         });
     };
 }

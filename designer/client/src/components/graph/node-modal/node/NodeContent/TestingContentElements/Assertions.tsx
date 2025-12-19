@@ -3,35 +3,40 @@ import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 import { setTestingAssertions } from "../../../../../../actions/nk/displayTestResults";
-import { getTestingAssertions } from "../../../../../../reducers/selectors/graph";
+import { getTestingAssertionForNode } from "../../../../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
+import type { NodeType } from "../../../../../../types/node";
 import { StyledButton } from "../../../../styledButton";
 import { EditableEditor } from "../../../editors/EditableEditor";
 import { EditorType } from "../../../editors/expression/types";
 import { NodeTable } from "../../../NodeDetailsContent/NodeTable";
 import { AssertionStatus } from "./AssertionStatus";
 
-export const Assertions = () => {
+interface Props {
+    node: NodeType;
+}
+
+export const Assertions = ({ node }: Props) => {
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
-    const testingAssertions = useAppSelector(getTestingAssertions);
+    const testingAssertions = useAppSelector((state) => getTestingAssertionForNode(state, node.id));
 
     const addAssertion = useCallback(() => {
-        dispatch(setTestingAssertions((prev) => prev.concat({ expression: "", language: "spel" })));
-    }, [dispatch]);
+        dispatch(setTestingAssertions(node.id, (prev) => prev.concat({ expression: "", language: "spel" })));
+    }, [dispatch, node.id]);
 
     const removeAssertion = useCallback(
         (index: number) => {
-            dispatch(setTestingAssertions((prev) => prev.filter((_, i) => i !== index)));
+            dispatch(setTestingAssertions(node.id, (prev) => prev.filter((_, i) => i !== index)));
         },
-        [dispatch],
+        [dispatch, node.id],
     );
 
     const editAssertion = useCallback(
         (index: number, updated: Partial<{ expression: string; language: string }>) => {
-            dispatch(setTestingAssertions((prev) => prev.map((item, i) => (i === index ? { ...item, ...updated } : item))));
+            dispatch(setTestingAssertions(node.id, (prev) => prev.map((item, i) => (i === index ? { ...item, ...updated } : item))));
         },
-        [dispatch],
+        [dispatch, node.id],
     );
 
     return (
