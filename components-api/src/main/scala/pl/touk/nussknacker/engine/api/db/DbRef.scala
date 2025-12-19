@@ -12,9 +12,8 @@ trait NuJdbcProfile extends JdbcProfile {
 
   val apiWithEnforcedSchema: ApiWithEnforcedSchema = new ApiWithEnforcedSchema {}
 
-  trait ApiWithEnforcedSchema extends super.API {
-    abstract class TableWithSchema[T](tag: Tag, tableName: String)
-        extends super.Table[T](tag, Some(schemaName), tableName)
+  trait ApiWithEnforcedSchema extends super.JdbcAPI {
+    abstract class TableWithSchema[T](tag: Tag, tableName: String) extends Table[T](tag, Some(schemaName), tableName)
   }
 
 }

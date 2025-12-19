@@ -43,9 +43,6 @@ class ConfluentKafkaAvroSerializer(
     serialize(avroSchemaOpt, topic, data, isKey, headers)
   }
 
-  // It is a work-around for two different close() methods (one throws IOException and another not) in AbstractKafkaSchemaSerDe and in Serializer
-  // It is needed only for scala 2.12
-  override def close(): Unit = {}
 }
 
 object ConfluentKafkaAvroSerializer {

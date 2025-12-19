@@ -50,7 +50,7 @@ object ScenarioParametersDeterminer {
   def determineEngineSetupNames(
       nameInputDatas: Map[ProcessingType, EngineNameInputData]
   ): Map[ProcessingType, EngineSetupName] = {
-    // Sort by ProcessingType in order to make engine name consistent across Scala 2.12 and Scala 2.13
+    // Sort engines by ProcessingType in order to the ordering deterministic
     val grouped = nameInputDatas.toList
       .sortBy(_._1)
       .map { case (processingType, in) =>

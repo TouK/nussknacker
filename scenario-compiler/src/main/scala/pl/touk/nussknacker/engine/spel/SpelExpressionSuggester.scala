@@ -528,19 +528,12 @@ private class NuSpelNode private (
     val allInPosition = (this :: children.flatMap(_.findNodeInPosition(position)))
       .filter(_.adjustedTextRange.containsPosition(position))
     for {
-      // scala 2.12 is missing minOption and findLast
-      shortest <- minOption(allInPosition.map(e => e.positionLength))
-      last     <- allInPosition.reverse.find(e => e.positionLength == shortest)
+      shortest <- allInPosition.map(e => e.positionLength).minOption
+      last     <- allInPosition.findLast(e => e.positionLength == shortest)
     } yield last
   }
 
   private val adjustedTextRange = spelNode.adjustedTextRange(spelExpressionTextRange)
-
-  private def minOption(seq: Seq[Int]): Option[Int] = if (seq.isEmpty) {
-    None
-  } else {
-    Some(seq.min)
-  }
 
   private def positionLength: Int = spelNode.getEndPosition - spelNode.getStartPosition
 

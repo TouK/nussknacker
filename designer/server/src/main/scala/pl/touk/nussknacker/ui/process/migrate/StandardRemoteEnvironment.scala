@@ -17,8 +17,8 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, ScenarioGraphComparator}
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
 
+import scala.collection.parallel.CollectionConverters._
 import scala.collection.parallel.ExecutionContextTaskSupport
-import scala.collection.parallel.immutable.ParVector
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
@@ -131,8 +131,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       .map(_.name)
       .grouped(config.batchSize)
       .toVector
-    // We create ParVector manually instead of calling par for compatibility with Scala 2.12
-    val parallelCollection = new ParVector(groupedBasicProcesses)
+    val parallelCollection = groupedBasicProcesses.par
     parallelCollection.tasksupport = new ExecutionContextTaskSupport(batchingExecutionContext)
     val fetchProcessDetailsOperation = parallelCollection.map(processesGroup => {
       Await.result(fetchProcessesDetails(processesGroup).value, config.batchTimeout)
