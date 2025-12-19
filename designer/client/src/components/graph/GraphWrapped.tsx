@@ -7,7 +7,6 @@ import { useEventTracking } from "../../containers/event-tracking/use-event-trac
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { getProcessCategory, getSelectionState, isPristine } from "../../reducers/selectors/graph";
 import { getLoggedUser } from "../../reducers/selectors/settings";
-import { getUi } from "../../reducers/selectors/ui";
 import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../store/storeHelpers";
 import { useWindows } from "../../windowManager/useWindows";
