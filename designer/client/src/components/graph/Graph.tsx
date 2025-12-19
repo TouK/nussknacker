@@ -6,7 +6,6 @@ import React from "react";
 import { createPortal } from "react-dom";
 import type { UseTranslationResponse } from "react-i18next";
 import Snowfall from "react-snowfall";
-import { getUi } from "src/reducers/selectors/ui";
 
 import { moveNodeInject, moveNodePlain, moveNodeReplace } from "../../actions/nk/editNode";
 import { nodesConnected, nodesDisconnected, stickyNoteSetErrors, stickyNoteUpdated } from "../../actions/nk/node";
@@ -21,7 +20,6 @@ import { EventTrackingSelector, EventTrackingType } from "../../containers/event
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import type { UserSettings } from "../../reducers/userSettings";
-import { useAppSelector } from "../../store/storeHelpers";
 import type { Edge } from "../../types/edge";
 import type { NodeId, NodeType } from "../../types/node";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
@@ -52,7 +50,6 @@ import type { GraphProps } from "./types";
 import { Events } from "./types";
 import { filterDragHovered, setDraggedOver } from "./utils/dragHelpers";
 import { handleGraphEvent } from "./utils/graphUtils";
-
 
 /**
  * WARNING: DO NOT EXTEND OR MODIFY THIS COMPONENT!
