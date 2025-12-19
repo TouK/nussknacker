@@ -4,6 +4,7 @@ import storage from "redux-persist/lib/storage";
 import type { Reducer } from "../actions/reduxTypes";
 import type { ExpressionLang } from "../components/graph/node-modal/editors/expression/types";
 import type { Prettify } from "../components/graph/node-modal/useNodeTypeDetailsContentLogic";
+import { SNOW_SNOW_FLAG } from "../containers/SnowSnow";
 
 // empty default values, not visible on __settings until set
 type DynamicSettingsNames = `editor.${ExpressionLang}.noWrap` | `editor.${ExpressionLang}.showLines` | `survey.${string}.closed`;
@@ -54,7 +55,7 @@ export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean
         createFlag("scenario.liveData.showNodeAnimations", true),
         createFlag("scenario.liveData.showTransitionAnimations", true),
         createFlag("scenario.showBreadcrumbs"),
-        createFlag("Let it snow!❄️🎄🎅🏼☃️", false),
+        createFlag(SNOW_SNOW_FLAG, false),
         createFlag("toolbar.autoSaveDuringDeployRedeploy"),
     ];
     return Object.fromEntries(entries) as Readonly<Prettify<Record<KeysOfEntries<typeof entries>, boolean>>>;

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useIntervalWhen } from "rooks";
 
 import { userSettingsToggle } from "../../../../actions/nk/userSettings";
+import { SNOW_SNOW_FLAG } from "../../../../containers/SnowSnow";
 import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
@@ -30,10 +31,10 @@ function SnowSnowButton(props: ToolbarButtonProps) {
     return (
         <ToolbarButton
             {...props}
-            name={t("panels.actions.snow-snow.name", "Let it snow!❄️🎄🎅🏼☃️")}
+            name={t("panels.actions.snow-snow.name", SNOW_SNOW_FLAG)}
             icon={<Icon sx={{ width: "auto", padding: "5%" }} />}
-            onClick={() => dispatch(userSettingsToggle(["Let it snow!❄️🎄🎅🏼☃️"]))}
-            isActive={userSettings["Let it snow!❄️🎄🎅🏼☃️"]}
+            onClick={() => dispatch(userSettingsToggle([SNOW_SNOW_FLAG]))}
+            isActive={userSettings[SNOW_SNOW_FLAG]}
         />
     );
 }
