@@ -54,6 +54,7 @@ export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean
         createFlag("scenario.liveData.showNodeAnimations", true),
         createFlag("scenario.liveData.showTransitionAnimations", true),
         createFlag("scenario.showBreadcrumbs"),
+        createFlag("scenario.isItSnowing", false),
         createFlag("toolbar.autoSaveDuringDeployRedeploy"),
     ];
     return Object.fromEntries(entries) as Readonly<Prettify<Record<KeysOfEntries<typeof entries>, boolean>>>;
