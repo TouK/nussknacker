@@ -3,7 +3,10 @@ import { dia, g, shapes } from "jointjs";
 import "jointjs/dist/joint.min.css";
 import { cloneDeep, debounce, isEmpty, isEqual, keys, without } from "lodash";
 import React from "react";
+import { createPortal } from "react-dom";
 import type { UseTranslationResponse } from "react-i18next";
+import Snowfall from "react-snowfall";
+import { getUi } from "src/reducers/selectors/ui";
 
 import { moveNodeInject, moveNodePlain, moveNodeReplace } from "../../actions/nk/editNode";
 import { nodesConnected, nodesDisconnected, stickyNoteSetErrors, stickyNoteUpdated } from "../../actions/nk/node";
@@ -18,6 +21,7 @@ import { EventTrackingSelector, EventTrackingType } from "../../containers/event
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import type { UserSettings } from "../../reducers/userSettings";
+import { useAppSelector } from "../../store/storeHelpers";
 import type { Edge } from "../../types/edge";
 import type { NodeId, NodeType } from "../../types/node";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
@@ -48,6 +52,7 @@ import type { GraphProps } from "./types";
 import { Events } from "./types";
 import { filterDragHovered, setDraggedOver } from "./utils/dragHelpers";
 import { handleGraphEvent } from "./utils/graphUtils";
+
 
 /**
  * WARNING: DO NOT EXTEND OR MODIFY THIS COMPONENT!
@@ -81,6 +86,7 @@ type Props = GraphProps & {
     theme: Theme;
     translation: UseTranslationResponse<any, any>;
     handleStatisticsEvent: (event: TrackEventParams) => void;
+    isItSnowing: boolean;
 };
 
 function handleActionOnLongPress<T extends dia.CellView>(
@@ -575,6 +581,18 @@ export class Graph extends React.Component<Props> {
         const { divId, isFragment } = this.props;
         return (
             <>
+                {this.props.isItSnowing &&
+                    createPortal(
+                        <Snowfall
+                            style={{
+                                position: "fixed",
+                                inset: 0,
+                                zIndex: 9999, // higher than JointJS
+                                pointerEvents: "none",
+                            }}
+                        />,
+                        document.body,
+                    )}
                 {/* for now this can't use theme nor other dynamic props to maintain reference with jointjs. */}
                 <PaperContainer ref={this.setEspGraphRef} onResize={isFragment ? () => this.fit() : null} id={divId} />
                 {!isFragment && <ComponentDragPreview scale={() => this.zoom} />}

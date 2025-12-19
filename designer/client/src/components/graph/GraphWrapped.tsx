@@ -7,6 +7,7 @@ import { useEventTracking } from "../../containers/event-tracking/use-event-trac
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { getProcessCategory, getSelectionState, isPristine } from "../../reducers/selectors/graph";
 import { getLoggedUser } from "../../reducers/selectors/settings";
+import { getUi } from "../../reducers/selectors/ui";
 import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../store/storeHelpers";
 import { useWindows } from "../../windowManager/useWindows";
@@ -31,6 +32,7 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
     const graphRef = useRef<Graph>(null);
     const ref = useForkRef(graphRef, forwardedRef);
     const areAdvancedStickyNotesEnabled = userSettings["node.advancedStickyNotes"];
+    const { isItSnowing: isSnowing } = useAppSelector(getUi);
 
     usePortMagnetToggle(graphRef);
 
@@ -50,6 +52,7 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
                     theme={theme}
                     translation={translation}
                     handleStatisticsEvent={trackEvent}
+                    isItSnowing={isSnowing}
                 />
             </GraphStyledWrapper>
             <NodeDescriptionPopover graphRef={graphRef} />

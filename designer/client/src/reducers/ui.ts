@@ -5,12 +5,14 @@ export type UiState = {
     isToolTipsHighlighted: boolean;
     pendingChanges: Record<string, EditState>;
     aiContextRawData?: string;
+    isItSnowing: boolean;
 };
 
 const emptyUiState: UiState = {
     isToolTipsHighlighted: false,
     pendingChanges: {},
     aiContextRawData: "",
+    isItSnowing: true,
 };
 
 const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
