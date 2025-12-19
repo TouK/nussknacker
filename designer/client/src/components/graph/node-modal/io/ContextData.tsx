@@ -1,11 +1,12 @@
-import { Box } from "@mui/material";
-import React, { memo, type PropsWithChildren, useCallback, useState } from "react";
+import { Box, Slide, useTheme } from "@mui/material";
+import React, { memo, type PropsWithChildren, useCallback } from "react";
 import { TransitionGroup } from "react-transition-group";
-import { useInViewRef } from "rooks";
 
+import { getIsLiveDataWorking } from "../../../../reducers/selectors/getLiveData";
+import { getUserSettings } from "../../../../reducers/selectors/userSettings";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { ContextAccordion } from "./ContextAccordion";
 import { ContextDataDisplay } from "./ContextDataDisplay";
-import { DoubleSlide } from "./DoubleSlide";
 import type { Direction, VariableContextType } from "./VariableContextTree";
 
 export const ContextData = memo(function Data({
@@ -26,25 +27,50 @@ export const ContextData = memo(function Data({
     showNodes: boolean;
     inputVariables: string[];
 }>) {
-    const [enterVisible, setEnterVisible] = useState(true);
-    const [exitVisible, setExitVisible] = useState(false);
-    const [ref] = useInViewRef(([{ target, boundingClientRect }]) => {
-        const parent = target.parentElement.offsetParent.getBoundingClientRect();
+    const theme = useTheme();
+    const userSettings = useAppSelector(getUserSettings);
+    const isLiveDataWorking = useAppSelector(getIsLiveDataWorking);
 
-        setEnterVisible(boundingClientRect.top - parent.top + 300 > 0);
-        setExitVisible(parent.bottom - boundingClientRect.bottom + 100 > 0);
-    });
-
-    const onEntering = useCallback((node: HTMLElement, isAppearing: boolean) => {
-        node.classList.add("highlight");
+    const onEntering = useCallback(
+        (node: HTMLElement, isAppearing: boolean) => {
+            if (isAppearing) return;
+            if (!userSettings["node.inputsAndOutputs.showBlinkAnimations"]) return;
+            node.animate([{ backgroundColor: theme.palette.success.main }, { backgroundColor: theme.palette.background.paper }], {
+                duration: 3000,
+                easing: "cubic-bezier(0, 0.55, 0.45, 1)",
+            });
+        },
+        [theme.palette.background.paper, theme.palette.success.main, userSettings],
+    );
+    const onEntered = useCallback((node: HTMLElement, isAppearing: boolean) => {
+        if (isAppearing) return;
+        node.removeAttribute("style");
     }, []);
 
     return (
-        <Box sx={{ position: "relative", zIndex: 1 }} ref={(i: HTMLElement) => ref(i)}>
+        <Box
+            sx={{
+                position: "relative",
+                zIndex: 1,
+                flex: 1,
+                "&::before": {
+                    content: "''",
+                    position: "absolute",
+                    inset: 0,
+                    background: "linear-gradient(transparent 0%, var(--sidePanelBackground) 2.5em, var(--sidePanelBackground) 100%)",
+                },
+            }}
+        >
             {children}
-            <TransitionGroup enter={enterVisible} exit={exitVisible} appear={false}>
+            <TransitionGroup exit={false} appear={false} enter={isLiveDataWorking} component={null}>
                 {data.map((r, index) => (
-                    <DoubleSlide key={r.id + r.timestamp} timeout={400} mountOnEnter unmountOnExit onEntering={onEntering}>
+                    <Slide
+                        key={r.id + r.timestamp}
+                        timeout={Math.max(0, 600 - index * 200)}
+                        direction="down"
+                        onEntering={onEntering}
+                        onEntered={onEntered}
+                    >
                         <ContextAccordion
                             key={r.id + r.timestamp}
                             value={r}
@@ -58,7 +84,7 @@ export const ContextData = memo(function Data({
                             {direction === "output" ? <>{r.error}</> : null}
                             <ContextDataDisplay direction={direction} context={r} inputVariables={inputVariables} />
                         </ContextAccordion>
-                    </DoubleSlide>
+                    </Slide>
                 ))}
             </TransitionGroup>
         </Box>

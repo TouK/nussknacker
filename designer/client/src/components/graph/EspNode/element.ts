@@ -73,7 +73,7 @@ export function getStringWidth(str = "", pxPerChar = 8, padding = 7): number {
 export function getTestCounts(count: NodeCounts, shortCounts?: boolean): string {
     if (!count) return "";
     if (typeof count.all !== "number") return "?";
-    if (shortCounts) return millify(count.all);
+    if (shortCounts) return millify(count.all, { precision: 0 });
     return count.all.toLocaleString() || "0";
 }
 
