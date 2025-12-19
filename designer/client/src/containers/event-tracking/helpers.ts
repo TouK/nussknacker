@@ -121,6 +121,9 @@ export const mapToolbarButtonToStatisticsEvent = (
         case BuiltinButtonTypes.liveData: {
             return EventTrackingSelector.LiveData;
         }
+        case BuiltinButtonTypes.snowSnow: {
+            return EventTrackingSelector.SnowSnow;
+        }
         default: {
             const exhaustiveCheck: never = btnType;
 
