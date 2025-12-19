@@ -16,7 +16,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
 
   private val metaData: MetaData = MetaData("test1", RequestResponseMetaData(None))
 
-  case class SimplifiedParam(name: String, typingResult: TypingResult, editors: List[ParameterEditor])
+  case class SimplifiedParam(name: String, typingResult: TypingResult)
 
   private def createSource(rawSchema: String) = {
     val schema = JsonSchemaBuilder.parseSchema(rawSchema)
@@ -39,16 +39,12 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     val expectedParameters = List(
       SimplifiedParam(
         "name",
-        Typed[String],
-        List(
-          SpelTemplateParameterEditor,
-          SpelParameterEditor,
-        )
+        Typed[String]
       ),
-      SimplifiedParam("age", Typed[Long], Nil)
+      SimplifiedParam("age", Typed[Long])
     )
     source.testParametersDefinition.map(p =>
-      SimplifiedParam(p.name.value, p.typ, p.editors)
+      SimplifiedParam(p.name.value, p.typ)
     ) should contain theSameElementsAs expectedParameters
   }
 
@@ -74,21 +70,16 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     val expectedParameters = List(
       SimplifiedParam(
         "address.street",
-        Typed[String],
-        List(
-          SpelTemplateParameterEditor,
-          SpelParameterEditor,
-        )
+        Typed[String]
       ),
-      SimplifiedParam("address.number", Typed[Long], Nil),
+      SimplifiedParam("address.number", Typed[Long]),
       SimplifiedParam(
         "additionalParams",
-        Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown)),
-        Nil
+        Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown))
       )
     )
     source.testParametersDefinition.map(p =>
-      SimplifiedParam(p.name.value, p.typ, p.editors)
+      SimplifiedParam(p.name.value, p.typ)
     ) should contain theSameElementsAs expectedParameters
   }
 
@@ -132,12 +123,11 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
             Map("errorCode" -> Typed[Long]),
             Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Typed[Long]))
           )
-        ),
-        Nil
+        )
       )
     )
     source.testParametersDefinition.map(p =>
-      SimplifiedParam(p.name.value, p.typ, p.editors)
+      SimplifiedParam(p.name.value, p.typ)
     ) should contain theSameElementsAs expectedParameters
   }
 

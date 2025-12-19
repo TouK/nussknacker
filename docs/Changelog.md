@@ -303,6 +303,10 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8733](https://github.com/TouK/nussknacker/pull/8733) Added support for Basic Authentication in OpenAPI Enricher
 * [#8781](https://github.com/TouK/nussknacker/pull/8781) Removed `WithExceptionHandler` trait, it made it easy to unintentionally hide original `close` method
 * [#8802](https://github.com/TouK/nussknacker/pull/8802) SQL enrichers: sql metadata uses connection pooling
+* [#8775](https://github.com/TouK/nussknacker/pull/8775) Added `MultiSelectEditor`
+* [#8775](https://github.com/TouK/nussknacker/pull/8775) [#8808](https://github.com/TouK/nussknacker/pull/8808) `BoolParameterEditor` displayed as toggle switch, using `BoolParameterEditor` for boolean parameters
+* [#8808](https://github.com/TouK/nussknacker/pull/8808) Added possibility to pass `ChronoUnit.MILLIS` in `DurationParameterEditor.timeRangeComponents`
+* [#8808](https://github.com/TouK/nussknacker/pull/8808) `Event generator` component: ability to specify `schedule` up to millis 
 
 ## 1.18
 

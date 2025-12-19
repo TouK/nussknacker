@@ -87,8 +87,8 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
       ParameterConfig.empty,
       GlobalParametersConfig.default
     ) shouldBe NonEmptyList.of(
-      SpelTemplateParameterEditor,
       SpelParameterEditor,
+      SpelTemplateParameterEditor,
     )
   }
 
@@ -239,8 +239,8 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
     val stringParam  = getSimpleParamByType[String]
 
     val expectedEditor = NonEmptyList.of(
-      SpelTemplateParameterEditor,
       SpelParameterEditor,
+      SpelTemplateParameterEditor,
     )
     EditorExtractor.extract(charseqParam, ParameterConfig.empty, GlobalParametersConfig.default) shouldBe expectedEditor
     EditorExtractor.extract(stringParam, ParameterConfig.empty, GlobalParametersConfig.default) shouldBe expectedEditor
