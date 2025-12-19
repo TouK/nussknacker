@@ -32,7 +32,8 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
     const graphRef = useRef<Graph>(null);
     const ref = useForkRef(graphRef, forwardedRef);
     const areAdvancedStickyNotesEnabled = userSettings["node.advancedStickyNotes"];
-    const { isItSnowing: isSnowing } = useAppSelector(getUi);
+    const settings = useAppSelector(getUserSettings);
+    const isSnowing = settings["scenario.isItSnowing"];
 
     usePortMagnetToggle(graphRef);
 
