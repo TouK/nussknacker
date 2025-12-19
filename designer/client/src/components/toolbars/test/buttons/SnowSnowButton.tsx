@@ -30,10 +30,10 @@ function SnowSnowButton(props: ToolbarButtonProps) {
     return (
         <ToolbarButton
             {...props}
-            name={t("panels.actions.snow-snow.name", "Let it snow!")}
+            name={t("panels.actions.snow-snow.name", "Let it snow!❄️🎄🎅🏼☃️")}
             icon={<Icon sx={{ width: "auto", padding: "5%" }} />}
-            onClick={() => dispatch(userSettingsToggle(["scenario.isItSnowing"]))}
-            isActive={userSettings["scenario.isItSnowing"]}
+            onClick={() => dispatch(userSettingsToggle(["Let it snow!❄️🎄🎅🏼☃️"]))}
+            isActive={userSettings["Let it snow!❄️🎄🎅🏼☃️"]}
         />
     );
 }

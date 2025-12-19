@@ -6,7 +6,7 @@ import { useAppSelector } from "../store/storeHelpers";
 
 export function SnowSnow() {
     const settings = useAppSelector(getUserSettings);
-    const isSnowing = settings["scenario.isItSnowing"];
+    const isSnowing = settings["Let it snow!❄️🎄🎅🏼☃️"];
 
     if (!isSnowing) return null;
 
