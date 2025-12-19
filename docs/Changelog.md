@@ -282,7 +282,7 @@ description: Stay informed with detailed changelogs covering new features, impro
            }
          }
        }
-     }
+     }  
   ```
 * [#8534](https://github.com/TouK/nussknacker/pull/8534) Kafka components: Added support for "PLAIN" Content type for topics without schema 
 * [#8523](https://github.com/TouK/nussknacker/pull/8523) `FlinkTestScenarioRunner`: added asynchronous method allowing scenario testing on Flink engine (`withRunningScenario`) 
@@ -308,6 +308,8 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8808](https://github.com/TouK/nussknacker/pull/8808) Added possibility to pass `ChronoUnit.MILLIS` in `DurationParameterEditor.timeRangeComponents`
 * [#8808](https://github.com/TouK/nussknacker/pull/8808) `Event generator` component: ability to specify `schedule` up to millis 
 * [#8803](https://github.com/TouK/nussknacker/pull/8803) Nussknacker is now built only against Scala 2.13, removed Scala 2.12 cross-compile
+* [#8815](https://github.com/TouK/nussknacker/pull/8815) Fix: In Flink's serialization was used a result type of expression
+  before final implicit conversion instead of after it. It sometimes caused "AAA cannot be cast to class BBB" in runtime.
 
 ## 1.18
 
