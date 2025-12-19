@@ -46,6 +46,7 @@ class ManagementApiHttpServiceBusinessSpec
                 expressionEvaluationResults = Map.empty,
                 externalServiceInvocationResults = Map.empty,
                 exceptions = List.empty,
+                originalNodeResults = Map.empty
               )
             )
           )
@@ -92,7 +93,8 @@ class ManagementApiHttpServiceBusinessSpec
              |      "errors": 0,
              |      "fragmentCounts": {}
              |    }
-             |  }
+             |  },
+             |  "assertionsResults": {}
              |}""".stripMargin
         )
     }

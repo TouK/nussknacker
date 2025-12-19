@@ -182,7 +182,8 @@ class BatchDataGenerationSpec
            |        "errors": 0,
            |        "fragmentCounts": {}
            |      }
-           |  }
+           |  },
+           |  "assertionsResults": {}
            |}""".stripMargin
       )
   }
@@ -317,7 +318,8 @@ class BatchDataGenerationSpec
            |        "errors": 0,
            |        "fragmentCounts": {}
            |      }
-           |  }
+           |  },
+           |  "assertionsResults": {}
            |}""".stripMargin
       )
   }

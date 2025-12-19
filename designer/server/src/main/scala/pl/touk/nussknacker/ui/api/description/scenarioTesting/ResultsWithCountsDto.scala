@@ -10,13 +10,19 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.ResultsWithCountsD
   ContextIdPathPartDto
 }
 import pl.touk.nussknacker.ui.process.test.ResultsWithCounts
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionResult
 import pl.touk.nussknacker.ui.processreport.NodeCount
 import sttp.tapir.Schema
 
 import java.time.Instant
 import scala.collection.compat._
 
-final case class ResultsWithCountsDto(timestamp: Instant, results: TestResultsDto, counts: Map[NodeId, NodeCount])
+final case class ResultsWithCountsDto(
+    timestamp: Instant,
+    results: TestResultsDto,
+    counts: Map[NodeId, NodeCount],
+    assertionsResults: Map[NodeId, List[AssertionResult]]
+)
 
 object ResultsWithCountsDto {
 
@@ -50,6 +56,7 @@ object ResultsWithCountsDto {
         exceptionsByNodeId = exceptionsByNodeId,
       ),
       counts = resultsWithCounts.counts,
+      assertionsResults = resultsWithCounts.assertionsResults
     )
   }
 
@@ -84,6 +91,7 @@ object ResultsWithCountsDto {
         exceptionsByNodeId = exceptionsByNodeId,
       ),
       counts = counts,
+      assertionsResults = Map.empty
     )
   }
 
@@ -102,6 +110,7 @@ object ResultsWithCountsDto {
   implicit def nodeTransitionResultSchema: Schema[NodeTransitionResult]                      = Schema.derived
   implicit def testResultsSchema: Schema[TestResultsDto]                                     = Schema.derived
   implicit def nodeCountSchema: Schema[NodeCount]                                            = Schema.anyObject
+  implicit def assertionResultsSchema: Schema[AssertionResult]                               = Schema.derived
   implicit def resultsWithCountsSchema: Schema[ResultsWithCountsDto]                         = Schema.derived
 
 }

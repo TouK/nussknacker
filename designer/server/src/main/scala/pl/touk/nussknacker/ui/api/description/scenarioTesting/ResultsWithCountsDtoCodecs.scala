@@ -10,11 +10,15 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.{
   ExternalServiceInvocationResult,
   ResultContext
 }
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionResult
 
 object ResultsWithCountsDtoCodecs {
 
   import io.circe.syntax._
   import pl.touk.nussknacker.engine.api.CirceUtil._
+
+  implicit val assertionResultEncoder: Encoder[AssertionResult] =
+    deriveConfiguredEncoder
 
   implicit val resultsWithCountsEncoder: Encoder[ResultsWithCountsDto] =
     deriveConfiguredEncoder

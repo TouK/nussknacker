@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.Applicative
-import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated._
+import cats.data.ValidatedNel
 import cats.instances.list._
 import cats.instances.option._
 import pl.touk.nussknacker.engine.{compiledgraph, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
