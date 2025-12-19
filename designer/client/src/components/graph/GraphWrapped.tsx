@@ -31,8 +31,6 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
     const graphRef = useRef<Graph>(null);
     const ref = useForkRef(graphRef, forwardedRef);
     const areAdvancedStickyNotesEnabled = userSettings["node.advancedStickyNotes"];
-    const settings = useAppSelector(getUserSettings);
-    const isSnowing = settings["scenario.isItSnowing"];
 
     usePortMagnetToggle(graphRef);
 
@@ -52,7 +50,6 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
                     theme={theme}
                     translation={translation}
                     handleStatisticsEvent={trackEvent}
-                    isItSnowing={isSnowing}
                 />
             </GraphStyledWrapper>
             <NodeDescriptionPopover graphRef={graphRef} />

@@ -3,9 +3,7 @@ import { dia, g, shapes } from "jointjs";
 import "jointjs/dist/joint.min.css";
 import { cloneDeep, debounce, isEmpty, isEqual, keys, without } from "lodash";
 import React from "react";
-import { createPortal } from "react-dom";
 import type { UseTranslationResponse } from "react-i18next";
-import Snowfall from "react-snowfall";
 
 import { moveNodeInject, moveNodePlain, moveNodeReplace } from "../../actions/nk/editNode";
 import { nodesConnected, nodesDisconnected, stickyNoteSetErrors, stickyNoteUpdated } from "../../actions/nk/node";
@@ -83,7 +81,6 @@ type Props = GraphProps & {
     theme: Theme;
     translation: UseTranslationResponse<any, any>;
     handleStatisticsEvent: (event: TrackEventParams) => void;
-    isItSnowing: boolean;
 };
 
 function handleActionOnLongPress<T extends dia.CellView>(
@@ -578,18 +575,6 @@ export class Graph extends React.Component<Props> {
         const { divId, isFragment } = this.props;
         return (
             <>
-                {this.props.isItSnowing &&
-                    createPortal(
-                        <Snowfall
-                            style={{
-                                position: "fixed",
-                                inset: 0,
-                                zIndex: 9999, // higher than JointJS
-                                pointerEvents: "none",
-                            }}
-                        />,
-                        document.body,
-                    )}
                 {/* for now this can't use theme nor other dynamic props to maintain reference with jointjs. */}
                 <PaperContainer ref={this.setEspGraphRef} onResize={isFragment ? () => this.fit() : null} id={divId} />
                 {!isFragment && <ComponentDragPreview scale={() => this.zoom} />}
