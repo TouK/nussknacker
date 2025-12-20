@@ -21,9 +21,9 @@ const debouncedValidate = debounce((dispatch: ThunkDispatch, getState: () => Roo
     );
 }, 500);
 
-export const nodeValidationMiddleware = (validatedActions: ActionType[] = [], ignoredActions: ActionType[] = []): Middleware => {
-    const ignore = ["VALIDATION_RESULT", UndoActionTypes.CLEAR_HISTORY, ...ignoredActions];
-    const validate = [...Object.values(UndoActionTypes), ...validatedActions];
+export const scenarioValidationMiddleware = (validatedActions: ActionType[] = [], ignoredActions: ActionType[] = []): Middleware => {
+    const ignore: (ActionType | NonNullable<string>)[] = ["VALIDATION_RESULT", UndoActionTypes.CLEAR_HISTORY, ...ignoredActions];
+    const validate: (ActionType | NonNullable<string>)[] = [...Object.values(UndoActionTypes), ...validatedActions];
     const shouldValidate = (action: ActionType) => !ignore.includes(action) && validate.includes(action);
 
     return ({ dispatch, getState }) =>
