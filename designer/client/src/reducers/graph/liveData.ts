@@ -39,7 +39,8 @@ export const liveData: Reducer<LiveData> = (state = { pauseReasons: [Initiator.i
                 pauseReasons: [],
             };
         }
-        case "NODE_DETAILS_CLOSED": {
+        case "NODE_DETAILS_CLOSED":
+        case "NODE_DETAILS_RELOAD": {
             const toClean = [Initiator.list];
             return {
                 ...state,
