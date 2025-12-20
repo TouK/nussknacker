@@ -4,7 +4,6 @@ import type React from "react";
 import { type SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { editNode } from "../../../../actions/nk/editNode";
-import { nodeValidationDynamicParametersLoaded } from "../../../../actions/nk/nodeDetails";
 import { getScenario } from "../../../../reducers/selectors/graph";
 import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
@@ -73,18 +72,14 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
             setStatus("processing");
             try {
                 const after = await dispatch(editNode(scenario, node, editedNode, outputEdges, controller));
-                if (autoApply) setNodeId(after.id);
+                setNodeId(after.id);
                 setStatus("idle");
             } catch (e) {
-                console.error(e);
                 setStatus("error");
-            } finally {
-                if (!controller.signal.aborted && autoApply) {
-                    dispatch(nodeValidationDynamicParametersLoaded(node.id));
-                }
+                return Promise.reject(e);
             }
         },
-        [autoApply, dispatch, node, scenario, setStatus],
+        [dispatch, node, scenario, setStatus],
     );
 
     const [isTouchedRef] = useCallbackRef(
