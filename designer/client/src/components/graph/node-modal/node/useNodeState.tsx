@@ -11,7 +11,7 @@ import type { Edge } from "../../../../types/edge";
 import type { NodeType } from "../../../../types/node";
 import type { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
-import type { EditedNode } from "../IdField";
+import type { EditedNode } from "../nodeIdFieldHelpers";
 import type { NodeDetailsMeta } from "./NodeDetails";
 import { useCallbackRef } from "./useCallbackRef";
 import { useEditState } from "./useEditState";

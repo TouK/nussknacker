@@ -1,9 +1,9 @@
 import type { g } from "jointjs";
 import { min } from "lodash";
 
-import type { EditedNode } from "../../components/graph/node-modal/IdField";
-import { applyIdFromFakeName } from "../../components/graph/node-modal/IdField";
 import { getEdgesForNode } from "../../components/graph/node-modal/node/useNodeState";
+import type { EditedNode } from "../../components/graph/node-modal/nodeIdFieldHelpers";
+import { applyIdFromFakeName } from "../../components/graph/node-modal/nodeIdFieldHelpers";
 import { replaceNodeData } from "../../components/graph/node-modal/NodeSwitcherUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import type { Scenario } from "../../components/Process/types";

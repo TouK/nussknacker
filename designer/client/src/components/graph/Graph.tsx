@@ -36,7 +36,7 @@ import { createPaper } from "./GraphPartialsInTS/createPaper";
 import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
 import { dragHovered, nodeFocused, nodeValidationError } from "./graphStyledWrapper";
-import { hasNodeIdPlaceholder } from "./node-modal/IdField";
+import { hasNodeIdPlaceholder } from "./node-modal/nodeIdFieldHelpers";
 import NodeUtils from "./NodeUtils";
 import { PanZoomPlugin } from "./PanZoomPlugin";
 import { PaperContainer } from "./paperContainer";

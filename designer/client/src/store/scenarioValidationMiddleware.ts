@@ -5,7 +5,7 @@ import type { Middleware } from "redux";
 import { ActionTypes as UndoActionTypes } from "redux-undo";
 
 import type { Action } from "../actions/reduxTypes";
-import { cleanNodeIdPlaceholder } from "../components/graph/node-modal/IdField";
+import { cleanNodeIdPlaceholder } from "../components/graph/node-modal/nodeIdFieldHelpers";
 import HttpService from "../http/HttpService/instance";
 import type { RootState } from "../reducers";
 import { getProcessName, getScenarioGraph, getUnsavedOrCurrentName } from "../reducers/selectors/graph";
