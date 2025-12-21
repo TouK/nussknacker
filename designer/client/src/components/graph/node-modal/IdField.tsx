@@ -58,6 +58,10 @@ export function cleanNodeIdPlaceholder(newValue: string) {
     return newValue.replace(PLACEHOLDER_CHARACTER, "");
 }
 
+export function hasNodeIdPlaceholder(newValue: string) {
+    return newValue.includes(PLACEHOLDER_CHARACTER);
+}
+
 function fixNodeIdValue(newValue: string, extraValidators: Validator[]) {
     let fixedValue = newValue;
     while (extraValidators.some((v) => !v.isValid(fixedValue))) {

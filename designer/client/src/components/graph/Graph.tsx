@@ -36,6 +36,7 @@ import { createPaper } from "./GraphPartialsInTS/createPaper";
 import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
 import { dragHovered, nodeFocused, nodeValidationError } from "./graphStyledWrapper";
+import { hasNodeIdPlaceholder } from "./node-modal/IdField";
 import NodeUtils from "./NodeUtils";
 import { PanZoomPlugin } from "./PanZoomPlugin";
 import { PaperContainer } from "./paperContainer";
@@ -755,9 +756,16 @@ export class Graph extends React.Component<Props> {
         // fast indicator for loose nodes, faster than async validation
         elements.forEach((el) => {
             const nodeId = el.id.toString();
-            if (!invalidNodeIds.includes(nodeId) && el.getPort("In") && !el.graph.getNeighbors(el, { inbound: true }).length) {
+            if (invalidNodeIds.includes(nodeId)) return;
+            if (el.getPort("In") && !el.graph.getNeighbors(el, { inbound: true }).length) {
                 invalidNodeIds.push(nodeId);
+                return;
             }
+            if (hasNodeIdPlaceholder(nodeId)) {
+                invalidNodeIds.push(nodeId);
+                return;
+            }
+            return;
         });
 
         invalidNodeIds.forEach((id) => this.highlightNode(id, nodeValidationError));
