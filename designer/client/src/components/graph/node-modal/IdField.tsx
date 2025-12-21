@@ -1,6 +1,7 @@
 import { isEmpty } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
+import { getProcessNodesIds } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeValidationError } from "../../../types/validation";
 import Field, { FieldType } from "./editors/field/Field";
@@ -13,7 +14,6 @@ import {
     FAKE_NAME_PROP_NAME,
     fixNodeIdValue,
     getCurrentEditedId,
-    getProcessNodesIds,
     PLACEHOLDER_CHARACTER,
     PROP_NAME,
 } from "./nodeIdFieldHelpers";
