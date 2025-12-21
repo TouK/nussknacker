@@ -9,6 +9,7 @@ import type { NodeValidationError } from "../../../types/validation";
 import NodeUtils from "../NodeUtils";
 import Field, { FieldType } from "./editors/field/Field";
 import { FieldLabelConsumer } from "./editors/RenderFieldLabel";
+import type { Validator } from "./editors/Validators";
 import { extendErrors, getValidationErrorsForField, mandatoryValueValidator, uniqueScenarioValueValidator } from "./editors/Validators";
 import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableStyled";
 import { useDiffMark } from "./PathsToMark";
@@ -49,6 +50,22 @@ export function getCurrentEditedId(node: EditedNode): NodeId {
 
 export const getProcessNodesIds = createSelector(getScenarioGraph, (p) => NodeUtils.nodesFromScenarioGraph(p).map((n) => n[PROP_NAME]));
 
+export function appendNodeIdPlaceholder(newValue: string) {
+    return `${PLACEHOLDER_CHARACTER}${newValue}`;
+}
+
+export function cleanNodeIdPlaceholder(newValue: string) {
+    return newValue.replace(PLACEHOLDER_CHARACTER, "");
+}
+
+function fixNodeIdValue(newValue: string, extraValidators: Validator[]) {
+    let fixedValue = newValue;
+    while (extraValidators.some((v) => !v.isValid(fixedValue))) {
+        fixedValue = appendNodeIdPlaceholder(fixedValue);
+    }
+    return fixedValue;
+}
+
 export function IdField({ isEditMode, node, setProperty, showValidation, errors }: IdFieldProps): React.JSX.Element {
     const nodes = useAppSelector(getProcessNodesIds);
     // stable node id before edits
@@ -75,11 +92,9 @@ export function IdField({ isEditMode, node, setProperty, showValidation, errors 
 
     const onChange = useCallback(
         (newValue: string) => {
-            setInternalValue(newValue.replace(PLACEHOLDER_CHARACTER, ""));
-            setProperty(
-                FAKE_NAME_PROP_NAME,
-                extraValidators.every((v) => v.isValid(newValue)) ? `${newValue}` : `${PLACEHOLDER_CHARACTER}${newValue}`,
-            );
+            setInternalValue(cleanNodeIdPlaceholder(newValue));
+            const fixedValue = fixNodeIdValue(newValue, extraValidators);
+            setProperty(FAKE_NAME_PROP_NAME, fixedValue);
         },
         [extraValidators, setProperty],
     );
