@@ -1442,9 +1442,6 @@ object NodesApiEndpoints {
         variableTypes: Map[String, TypingResultInJson]
     )
 
-    // for a sake of generation Open API using Scala 2.12, we have to define it explicitly
-    private implicit def listSchema[T: Schema]: Typeclass[List[T]] = Schema.schemaForIterable[T, List]
-
     @derive(schema, encoder, decoder)
     final case class ParametersValidationResultDto(
         validationErrors: List[NodeValidationError],

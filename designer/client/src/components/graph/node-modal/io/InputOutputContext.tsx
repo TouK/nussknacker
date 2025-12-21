@@ -30,7 +30,7 @@ export type ResultsWithId = NodeTransitionResult & { id: string };
 type ContextType = {
     state: InputOutputState;
     dispatch: React.Dispatch<Action>;
-    getAvailableContexts: (direction?: "input" | "output") => [VariableContextType[], number];
+    getAvailableContexts: (direction?: "input" | "output", filter?: string[]) => [VariableContextType[], number];
     inputNodesIds: ResultsWithId[];
     outputNodesIds: ResultsWithId[];
 };
@@ -130,29 +130,35 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
     );
 
     const getAvailableContexts = useCallback(
-        (direction: "input" | "output" = "input"): [VariableContextType[], number] => {
+        (direction: "input" | "output" = "input", filter: string[] = []): [VariableContextType[], number] => {
             const transitionResults = direction === "input" ? inputs : outputs;
             const contexts: VariableContextType[] = [];
-            transitionResults.forEach(({ id: contextNodeId, destinationNodeId, results }) => {
-                results?.forEach(({ id, variables, timestamp }) => {
-                    const foundContext = contexts.find((context) => context.id === id && context.timestamp === timestamp);
-                    if (foundContext) {
-                        foundContext.nodeIds.push(contextNodeId);
-                        return;
-                    }
+            transitionResults
+                .filter(({ sourceNodeId, destinationNodeId }) => {
+                    if (!filter.length) return true;
+                    const subject = direction === "input" ? sourceNodeId : destinationNodeId;
+                    return filter.includes(subject);
+                })
+                .forEach(({ id: contextNodeId, destinationNodeId, results }) => {
+                    results?.forEach(({ id, variables, timestamp }) => {
+                        const foundContext = contexts.find((context) => context.id === id && context.timestamp === timestamp);
+                        if (foundContext) {
+                            foundContext.nodeIds.push(contextNodeId);
+                            return;
+                        }
 
-                    const error = direction === "input" && getError(destinationNodeId, id);
+                        const error = direction === "input" && getError(destinationNodeId, id);
 
-                    contexts.push({
-                        id,
-                        variables,
-                        disabled: isContextDisabled(id, direction),
-                        nodeIds: [contextNodeId],
-                        error: error?.throwable,
-                        timestamp,
+                        contexts.push({
+                            id,
+                            variables,
+                            disabled: isContextDisabled(id, direction),
+                            nodeIds: [contextNodeId],
+                            error: error?.throwable,
+                            timestamp,
+                        });
                     });
                 });
-            });
             const count = transitionResults.reduce((sum, { totalCount = 0 }) => sum + totalCount, 0);
             return [contexts, count];
         },

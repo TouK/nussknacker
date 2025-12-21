@@ -1,7 +1,8 @@
 import { GlobalStyles } from "@mui/material";
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { useGraph } from "../../components/graph/GraphContext";
+import { watchForCover } from "../../components/graph/watchForCover";
 import { getIsLiveDataWorking, getNodeTransitionResults } from "../../reducers/selectors/getLiveData";
 import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../store/storeHelpers";
@@ -18,7 +19,19 @@ export function LiveDataThroughputs() {
     const settings = useAppSelector(getUserSettings);
     const showTransitionAnimations = settings["scenario.liveData.showTransitionAnimations"];
     const showNodeAnimations = settings["scenario.liveData.showNodeAnimations"];
-    const enabled = useAppSelector((state) => (showNodeAnimations || showTransitionAnimations) && getIsLiveDataWorking(state));
+    const [covered, setCovered] = useState(false);
+    const _enabled = useAppSelector((state) => (showNodeAnimations || showTransitionAnimations) && getIsLiveDataWorking(state));
+
+    useEffect(() => {
+        if (!_enabled) return;
+        const unsubscrbe = watchForCover(() => graphGetter()?.processGraphPaper.el, setCovered);
+        return () => {
+            unsubscrbe();
+            setCovered(false);
+        };
+    }, [_enabled, graphGetter]);
+
+    const enabled = !covered && _enabled;
 
     useEffect(() => {
         const classList = graphGetter()?.processGraphPaper.el.classList;
@@ -46,8 +59,11 @@ export function LiveDataThroughputs() {
 
     const maxThroughput = useMemo(
         () =>
-            transitionResults.reduce((max, link) => {
-                return Math.max(max, link.currentThroughput, 0.1);
+            transitionResults.reduce((max, transition) => {
+                if (transition.sourceNodeId && transition.destinationNodeId) {
+                    return Math.max(max, transition.currentThroughput, 0.1);
+                }
+                return max;
             }, 0),
         [transitionResults],
     );
@@ -80,6 +96,7 @@ export function LiveDataThroughputs() {
         const graphInstance = graphGetter();
         graphInstance?.graph.getElements().forEach((model) => {
             const [el] = graphInstance.processGraphPaper.findViewByModel(model).findBySelector(".body");
+            if (!el) return;
 
             const isMatchingModel = getElementMatcher(model);
 
@@ -95,6 +112,7 @@ export function LiveDataThroughputs() {
         const graphInstance = graphGetter();
         graphInstance?.graph.getLinks()?.forEach((model) => {
             const [el] = graphInstance.processGraphPaper.findViewByModel(model).findBySelector(".connection");
+            if (!el) return;
 
             const transition = transitionResults.find(getLinkMatcher(model));
             const events = newEvents.filter(getTransitionMatcher(transition));
@@ -121,11 +139,8 @@ export function LiveDataThroughputs() {
                         transition: "1s linear",
                         transitionProperty: "filter, stroke, stroke-width, stroke-dasharray",
                         [`.${CLASS_NAME}-transition &`]: {
-                            strokeDasharray: "5 20",
+                            strokeDasharray: "20 10",
                             strokeWidth: 3,
-                            [`&.${CLASS_NAME}-active`]: {
-                                strokeDasharray: "20 10",
-                            },
                         },
                     },
                 },

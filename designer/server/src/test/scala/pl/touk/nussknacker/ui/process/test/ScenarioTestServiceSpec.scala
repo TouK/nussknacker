@@ -17,24 +17,32 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.validationHelpers.{
-  GenericParametersSource,
-  GenericParametersSourceNoGenerate,
-  GenericParametersSourceNoTestSupport,
-  SourceWithTestParameters
-}
+import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.compile.validationHelpers._
+import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.testmode.TestProcess
+import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
-import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
+import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.MissingSourceError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.TestingCapabilitiesError.NoSourcesError
+import pl.touk.nussknacker.ui.process.test.testcase.{Assertion, FailedAssertion, SuccessfulAssertion, TestCase}
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
+import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatSerDe
+import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
 import java.time.Instant
+import java.util.UUID
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 
 class ScenarioTestServiceSpec
     extends AnyFunSuite
@@ -54,6 +62,7 @@ class ScenarioTestServiceSpec
       ComponentDefinition("genericSourceWithTestParameters", new SourceWithTestParameters),
       ComponentDefinition("sourceEmptyTimestamp", SourceGeneratingEmptyTimestamp),
       ComponentDefinition("sourceGeneratingEmptyData", SourceGeneratingEmptyData),
+      ComponentDefinition("genericParametersSink", GenericParametersSink),
     )
   )
 
@@ -703,6 +712,113 @@ class ScenarioTestServiceSpec
     }
   }
 
+  test("should run test case") {
+    import scala.concurrent.ExecutionContext.Implicits._
+    import scala.concurrent.duration._
+    val now = Instant.now()
+
+    val mockedTestExecutorService = new ScenarioTestExecutorService() {
+      override def testProcess(
+          processVersion: ProcessVersion,
+          canonicalProcess: CanonicalProcess,
+          scenarioTestData: ScenarioTestData
+      )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestProcess.TestResults[Json]] = {
+        scenarioTestData.commonFormatRecords(NodeId("source1")) shouldBe List(
+          (ScenarioTestCommonFormatJsonRecord(NodeId("source1"), Map("input" -> Json.fromString("record 1")), None), 0),
+          (ScenarioTestCommonFormatJsonRecord(NodeId("source1"), Map("input" -> Json.fromString("record 2")), None), 1),
+        )
+        Future.successful(
+          TestProcess.TestResults
+            .empty[Json]
+            .copy(
+              originalNodeResults = Map(
+                NodeId("end") -> (
+                  ResultContext[Any](ContextId.dummy, now, Map("otherNameThanInput" -> Map("a" -> "foo").asJava)) ::
+                    ResultContext[Any](ContextId.dummy, now, Map("otherNameThanInput" -> Map("a" -> "bar").asJava)) ::
+                    Nil
+                )
+              )
+            )
+        )
+      }
+    }
+
+    val testService = new ScenarioTestService(
+      TestDataSettings(
+        maxSamplesCount = None,
+        testDataMaxLength = None,
+        resultsMaxBytes = None,
+        TestDataFormat.CommonFormat,
+      ),
+      modelData,
+      Resource.pure(EngineScenarioCompilationDependencies.empty),
+      new UIProcessResolver(
+        ProcessTestData.testProcessValidator(validator =
+          ProcessValidator.default(new StubModelDataWithModelDefinition(modelData.modelDefinition))
+        ),
+        ProcessDictSubstitutor(new SimpleDictRegistry(Map.empty))
+      ),
+      processCounter = new ProcessCounter(new StubFragmentRepository(Map.empty)),
+      testExecutorService = mockedTestExecutorService
+    )
+
+    val scenarioRecords = PreliminaryScenarioRecords(
+      NonEmptyList(
+        CommonFormatPreliminaryScenarioRecord(
+          sourceId = NodeId("source1"),
+          variables = Map("input" -> Json.fromString("record 1")),
+          upstreamTimestamp = None
+        ),
+        CommonFormatPreliminaryScenarioRecord(
+          sourceId = NodeId("source1"),
+          variables = Map("input" -> Json.fromString("record 2")),
+          upstreamTimestamp = None
+        ) :: Nil,
+      )
+    )
+
+    val serializedRecords: SerializedScenarioRecordsContent =
+      new PreliminaryScenarioRecordsSerDe(None, None, CommonDataFormatSerDe)
+        .serialize(scenarioRecords)
+        .getOrElse(throw new RuntimeException("Error during records serialization"))
+
+    val scenario =
+      ScenarioBuilder
+        .streaming("single source scenario")
+        .source("source1", "genericSource", "par1" -> "'a'".spel, "a" -> "42".spel)
+        .emptySink("end", "genericParametersSink", "par1" -> "'dummy'".spel, "dummy" -> "1L".spel)
+
+    val testCase = TestCase(
+      UUID.randomUUID(),
+      "someTest",
+      serializedRecords.content,
+      Map.empty,
+      Map(
+        NodeId("end") -> List(
+          Assertion("#TESTS.assertEquals(#contexts[0].otherNameThanInput.a, 'foo')".spel),
+          Assertion("#TESTS.assertEquals(#contexts[1].otherNameThanInput.a, 'foo')".spel)
+        )
+      )
+    )
+
+    val result = Await
+      .result(
+        testService.performTestCase(
+          scenario.toScenarioGraph,
+          processVersionFor(scenario),
+          isFragment = false,
+          testCase
+        ),
+        20 seconds
+      )
+      .fold(e => throw new RuntimeException(s"Error during performing test: $e"), identity)
+
+    result.assertionsResults(NodeId("end")) shouldBe List(
+      SuccessfulAssertion,
+      FailedAssertion("Expected: [bar] but found [foo]")
+    )
+  }
+
   private def prepareScenarioTestService(testDataFormat: TestDataFormat.Value): ScenarioTestService =
     new ScenarioTestService(
       TestDataSettings(
@@ -716,7 +832,7 @@ class ScenarioTestServiceSpec
       TestFactory.processResolver(),
       // These dependencies are needed for test execution which is not tested here
       processCounter = null,
-      testExecutorService = null,
+      testExecutorService = null
     )
 
   private def createScenarioWithSingleSource(sourceComponentId: String = "genericSource"): CanonicalProcess = {

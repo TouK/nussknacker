@@ -1,12 +1,17 @@
 package pl.touk.nussknacker.ui.api
 
+import cats.data.NonEmptyList
 import io.circe.{DecodingFailure, Json}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.DeserializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ScenarioValidationError
+import pl.touk.nussknacker.ui.process.test.testcase.Assertion
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 
@@ -63,6 +68,14 @@ object TestingApiErrorMessages {
         TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.id)
       case PerformTestError.TestResultsSizeExceededError(approxSizeInBytes, maxBytes) =>
         TestingApiErrorMessages.testResultsSizeExceeded(approxSizeInBytes, maxBytes)
+      case ScenarioValidationError(errors) =>
+        TestingApiErrorMessages.scenarioHasValidationErrors(errors)
+      case PerformTestError.MockConfiguredForNotExistingNodesError(nodeIds) =>
+        TestingApiErrorMessages.mocksConfiguredForNotExistingNodes(nodeIds)
+      case PerformTestError.AssertionConfiguredForNotExistingNodesError(errors) =>
+        TestingApiErrorMessages.assertionsConfiguredForNotExistingNodes(errors)
+      case PerformTestError.AssertionExpressionCompilationError(errors, assertion, node) =>
+        TestingApiErrorMessages.assertionCompilationError(errors, assertion, node)
     }
   }
 
@@ -148,5 +161,21 @@ object TestingApiErrorMessages {
 
   def testResultsSizeExceeded(approxSizeInBytes: Long, maxBytes: Long) =
     s"Test results size exceeded (approximate size is $approxSizeInBytes B). The maximum permitted size is $maxBytes B. Contact the system administrator to increase this limit."
+
+  private def scenarioHasValidationErrors(errors: ValidationResults.ValidationErrors) =
+    s"Only scenario without validation errors can be tested. Errors: $errors"
+
+  private def mocksConfiguredForNotExistingNodes(notExistingNodeIds: NonEmptyList[NodeId]) =
+    s"Mocks configured for not existing nodes: ${notExistingNodeIds.toList.mkString(", ")}"
+
+  private def assertionsConfiguredForNotExistingNodes(notExistingNodeIds: NonEmptyList[NodeId]) =
+    s"Assertions configured for not existing nodes: ${notExistingNodeIds.toList.mkString(", ")}"
+
+  private def assertionCompilationError(
+      errors: NonEmptyList[ProcessCompilationError],
+      assertion: Assertion,
+      nodeId: NodeId
+  ) =
+    s"Assertion compilation error. Node: ${nodeId.id}. Assertion expression: ${assertion.expression.expression}. Errors: ${errors.toList.mkString(", ")}"
 
 }

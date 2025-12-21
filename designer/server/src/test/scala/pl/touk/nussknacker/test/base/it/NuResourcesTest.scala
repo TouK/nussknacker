@@ -27,6 +27,8 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
@@ -66,8 +68,10 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
+import pl.touk.nussknacker.ui.process.test.testcase.{ScenarioWithTestCase, TestCase}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
 import slick.dbio.DBIOAction
 
@@ -145,12 +149,11 @@ trait NuResourcesTest
     deploymentManagersClassLoader
   )
 
-  private val modelData =
-    ModelData(
-      processingTypeConfig,
-      modelDependencies,
-      modelClassLoaderProvider.forProcessingTypeUnsafe(Streaming.stringify)
-    )
+  private val modelData = ModelData(
+    processingTypeConfig,
+    modelDependencies,
+    modelClassLoaderProvider.forProcessingTypeUnsafe(Streaming.stringify)
+  )
 
   private val deploymentData =
     new DeploymentData(
@@ -294,7 +297,10 @@ trait NuResourcesTest
       designerConfig.testDataSettings,
       modelData,
       Resource.pure(EngineScenarioCompilationDependencies.empty),
-      processResolver(),
+      new UIProcessResolver(
+        ProcessTestData.testProcessValidator(validator = ProcessValidator.default(modelData)),
+        ProcessDictSubstitutor(new SimpleDictRegistry(Map.empty))
+      ),
       new ProcessCounter(TestFactory.prepareSampleFragmentRepository()),
       new ScenarioTestExecutorServiceImpl(
         new ScenarioResolver(sampleResolver(), Streaming.stringify),
@@ -488,6 +494,22 @@ trait NuResourcesTest
       "scenarioGraph" -> scenarioGraph.asJson.noSpaces
     )()
     Post(s"/processManagement/test/${scenario.name}", multiPart) ~> withPermissions(
+      deployRoute(),
+      Permission.Deploy,
+      Permission.Read
+    )
+  }
+
+  protected def runTestCase(scenario: CanonicalProcess, testCase: TestCase): RouteTestResult = {
+    implicit val timeout: RouteTestTimeout = RouteTestTimeout(10.seconds.dilated)
+
+    val scenarioGraph = scenario.toScenarioGraph
+
+    val body = HttpEntity(
+      ContentTypes.`application/json`,
+      ScenarioWithTestCase(scenarioGraph, testCase).asJson.noSpaces
+    )
+    Post(s"/processManagement/testCase/${scenario.name}", body) ~> withPermissions(
       deployRoute(),
       Permission.Deploy,
       Permission.Read

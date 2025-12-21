@@ -12,8 +12,6 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-import scala.collection.JavaConverters._
-
 class ResultCollectingListenerSpec
     extends AnyFunSuite
     with BeforeAndAfterAll

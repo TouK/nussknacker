@@ -173,7 +173,7 @@ trait PeriodicProcessesRepository {
 
 class SlickPeriodicProcessesRepository(
     processingType: String,
-    db: JdbcBackend.DatabaseDef,
+    db: JdbcBackend.Database,
     override val profile: NuJdbcProfile,
     clock: Clock,
     fetchingProcessRepository: FetchingProcessRepository[Future],

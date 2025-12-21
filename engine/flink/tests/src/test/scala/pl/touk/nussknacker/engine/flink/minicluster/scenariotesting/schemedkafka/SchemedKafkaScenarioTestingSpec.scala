@@ -7,6 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import io.circe.Json._
 import org.apache.avro.Schema
+import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{BeforeAndAfterAll, LoneElement, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -23,7 +24,9 @@ import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.schemedkafka
 import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.JsonTemplate
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
+import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
@@ -40,8 +43,10 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties, VeryPatientScalaFutures}
+import pl.touk.nussknacker.ui.process.test.testcase.{TestCase, TestSourceInput}
 
 import java.time.Instant
+import java.util.Collections
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 

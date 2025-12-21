@@ -31,6 +31,7 @@ import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.test.{ScenarioTestService, SerializedScenarioRecordsContent}
+import pl.touk.nussknacker.ui.process.test.testcase.{ScenarioWithTestCase, TestCase}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -217,6 +218,39 @@ class ManagementResources(
                 }
               }
             }
+          }
+        } ~
+        path("testCase" / ProcessNameSegment) { processName =>
+          (post & processDetailsForName(
+            processName
+          ) & skipResultsPerTransitionQueryParam & skipResultsPerNodeQueryParam & entity(as[ScenarioWithTestCase])) {
+            (details, skipResultsPerTransition, skipResultsPerNode, scenarioWithTestCase) =>
+              canDeploy(details.idWithNameUnsafe) {
+                complete {
+                  measureTime("testCase", metricRegistry) {
+                    scenarioTestServices
+                      .forProcessingTypeUnsafe(details.processingType)
+                      .performTestCase(
+                        scenarioWithTestCase.scenario,
+                        details.processVersionUnsafe,
+                        details.isFragment,
+                        scenarioWithTestCase.testCase
+                      )
+                      .flatMap {
+                        case Left(error) =>
+                          Future.failed(PerformTestDesignerError(TestingApiErrorMessages.from(error)))
+                        case Right(value) =>
+                          mapResultsToHttpResponse(
+                            ResultsWithCountsDto.from(
+                              resultsWithCounts = value,
+                              skipResultsPerNode = SkipResultsPerNode(skipResultsPerNode),
+                              skipResultsPerTransition = SkipResultsPerTransition(skipResultsPerTransition),
+                            )
+                          )
+                      }
+                  }
+                }
+              }
           }
         } ~
         // TODO: maybe Write permission is enough here?

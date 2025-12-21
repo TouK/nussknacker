@@ -456,7 +456,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "HIDE_RUN_PROCESS_DETAILS": {
             return {
                 ...state,
-                visibleDataType: null,
                 processCounts: null,
                 processCountsRefresh: null,
             };

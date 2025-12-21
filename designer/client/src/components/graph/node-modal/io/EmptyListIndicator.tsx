@@ -17,7 +17,7 @@ export const EmptyListIndicator = forwardRef(function EmptyListIndicator(props, 
                 inset: 0,
                 background: isLiveDataWorking ? null : alpha(theme.palette.background.default, 0.75),
                 backdropFilter: "blur(1px)",
-                zIndex: isLiveDataWorking ? 0 : 1,
+                zIndex: isLiveDataWorking ? 0 : 2,
             })}
         >
             <Stack
