@@ -1,6 +1,6 @@
 import { Box, styled, Typography } from "@mui/material";
 import { useWindowManager } from "@touk/window-manager";
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { assistantClose, assistantOpen } from "../../../actions/assistantActions";
@@ -37,9 +37,9 @@ const OpenAssistantButton = () => {
     const dispatch = useAppDispatch();
     const { t } = useTranslation();
     const { open } = useWindows();
-    const { windows, close, focus } = useWindowManager();
+    const { close, focus, frontWindow } = useWindowManager();
 
-    const openedAiAssistantDialog = useMemo(() => Boolean(windows.find((window) => window.id === AI_ASSISTANT_MODAL_ID)), [windows]);
+    const openedAiAssistantDialog = frontWindow === AI_ASSISTANT_MODAL_ID;
 
     const buttonRef = useRef<HTMLElement>(null);
 
