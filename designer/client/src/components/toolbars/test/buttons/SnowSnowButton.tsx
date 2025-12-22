@@ -20,7 +20,6 @@ function SnowSnowButton(props: ToolbarButtonProps) {
         () => {
             setIcon(() => {
                 const index = Math.round(Math.random() * 2);
-                console.log(index);
                 return [Sledding, AcUnit, Park][index];
             });
         },
