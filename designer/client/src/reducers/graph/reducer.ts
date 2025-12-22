@@ -418,7 +418,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 scenarioLoading: false,
             };
         }
-        case "DISPLAY_TEST_ASSERTIONS": {
+        case "DISPLAY_TEST_ASSERTIONS_RESULTS": {
             return {
                 ...state,
                 testing: {
@@ -430,11 +430,22 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 },
             };
         }
-        case "SET_TESTING_EVENTS_PARAMETERS": {
+        case "CLEAR_TEST_ASSERTIONS_RESULTS": {
             return {
                 ...state,
                 testing: {
                     ...state.testing,
+                    [state.scenario.name]: {
+                        ...state.testing[state.scenario.name],
+                        assertionsResults: null,
+                    },
+                },
+            };
+        }
+        case "SET_TESTING_EVENTS_PARAMETERS": {
+            return {
+                ...state,
+                testing: {
                     ...state.testing,
                     [state.scenario.name]: {
                         ...state.testing[state.scenario.name],
@@ -447,7 +458,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 testing: {
-                    ...state.testing,
                     ...state.testing,
                     [state.scenario.name]: {
                         ...state.testing[state.scenario.name],
@@ -503,7 +513,7 @@ export function createStripFieldsTransform(fieldNames: string[]) {
     );
 }
 
-const testingTransform = createStripFieldsTransform(["testResults", "testAssertionResults"]);
+const testingTransform = createStripFieldsTransform(["testResults", "assertionsResults"]);
 
 const reducer: Reducer<GraphState> = persistReducer(
     { key: "testing", storage, whitelist: ["testing"], transforms: [testingTransform] },

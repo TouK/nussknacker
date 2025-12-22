@@ -75,7 +75,7 @@ export type TestsActions =
           testingDataRecords?: TestingDataRecords[];
       }
     | {
-          type: "DISPLAY_TEST_ASSERTIONS";
+          type: "DISPLAY_TEST_ASSERTIONS_RESULTS";
           assertionsResults: TestAssertionResults;
       }
     | {
@@ -93,6 +93,9 @@ export type TestsActions =
     | {
           type: "SET_TESTING_ASSERTIONS";
           testingAssertions: Record<string, { expression: ExpressionObj }[]>;
+      }
+    | {
+          type: "CLEAR_TEST_ASSERTIONS_RESULTS";
       };
 
 function wrapWithTestAction(
@@ -126,7 +129,7 @@ export function displayTestResultsDetails(testResults: TestResultsDto, testData?
 
 export function displayTestAssertions(assertionsResults: TestAssertionResults): Action {
     return {
-        type: "DISPLAY_TEST_ASSERTIONS",
+        type: "DISPLAY_TEST_ASSERTIONS_RESULTS",
         assertionsResults,
     };
 }
@@ -154,6 +157,7 @@ export function setTestingAssertions(
         const next = updater(prev);
 
         const testingAssertions = getTestingAssertions(state);
+        dispatch({ type: "CLEAR_TEST_ASSERTIONS_RESULTS" });
         dispatch({
             type: "SET_TESTING_ASSERTIONS",
             testingAssertions: { ...testingAssertions, [nodeId]: next },
