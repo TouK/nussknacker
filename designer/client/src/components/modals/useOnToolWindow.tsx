@@ -1,5 +1,5 @@
 import { useWindowContext } from "@touk/window-manager";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
 import { nodeDetailsClosed, nodeDetailsOpened } from "../../actions/nk/nodeDetails";
 import { toolClosed, ToolId, toolOpened } from "../../actions/nk/toolWindow";
@@ -10,11 +10,16 @@ export function useOnToolWindow(toolId: ToolId, nodeId?: string) {
     const dispatch = useAppDispatch();
     const { data } = useWindowContext();
 
+    const nodeIdRef = useRef(nodeId);
+    useLayoutEffect(() => {
+        nodeIdRef.current = nodeId;
+    }, [nodeId]);
+
     const onOpen = useCallback(() => {
         if (toolId === ToolId.node) {
             dispatch(nodeDetailsOpened(nodeId, data.id));
             return () => {
-                dispatch(nodeDetailsClosed(nodeId, data.id));
+                dispatch(nodeDetailsClosed(nodeId, data.id, nodeId !== nodeIdRef.current));
             };
         }
 

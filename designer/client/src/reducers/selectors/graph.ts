@@ -3,6 +3,7 @@ import { createSelector } from "reselect";
 
 import type { TestFormParameters } from "../../common/TestResultUtils";
 import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
+import { hasNodeIdPlaceholder } from "../../components/graph/node-modal/nodeIdFieldHelpers";
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils";
 import type { Scenario } from "../../components/Process/types";
 import { isStatusRunning } from "../../components/Process/types";
@@ -60,7 +61,12 @@ export const isPristine = createSelector(getScenario, isProcessRenamed, getSaved
 
 export const getSelectionState = createSelector(getGraph, (g) => g.selectionState);
 export const canModifySelectedNodes = createSelector(getSelectionState, (s) => !isEmpty(s));
-export const isSaveDisabled = createSelector([isPristine, isLatestProcessVersion], (pristine, latest) => pristine && latest);
+export const getProcessNodesIds = createSelector(getNodes, (nodes) => nodes.map((n) => n.id));
+export const hasNodeWithIdPlaceholder = createSelector(getProcessNodesIds, (nodes) => nodes?.some(hasNodeIdPlaceholder));
+export const isSaveDisabled = createSelector(
+    [isPristine, isLatestProcessVersion, hasNodeWithIdPlaceholder],
+    (pristine, latest, hasNodeWithIdPlaceholder) => (pristine && latest) || hasNodeWithIdPlaceholder,
+);
 export const isDeployVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeDeploy(state));
 export const isRedeployVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeRedeploy(state));
 export const isCancelPossible = createSelector(getProcessState, (state) => ProcessStateUtils.canCancel(state));
