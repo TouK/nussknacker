@@ -48,12 +48,13 @@ export function testScenarioWithGeneratedData(testSampleSize: string): ThunkActi
     );
 }
 
-export function testScenarioWithDataRecords(testingEventsParameters: TestingDataRecords[]): ThunkAction {
+export function testScenarioWithDataRecords(testingEventsParameters: TestingDataRecords[], testAssertions: ExpressionObj[]): ThunkAction {
     return wrapWithTestAction((scenarioName, scenarioGraph) =>
         HttpService.testScenarioWithEventsData(
             scenarioName,
             scenarioGraph,
             testingEventsParameters.map(mapDataRecordsToRunTestsFormat),
+            testAssertions,
         ).then(({ data }) => ({
             testResults: data,
         })),
@@ -87,7 +88,7 @@ export type TestsActions =
       }
     | {
           type: "SET_TESTING_ASSERTIONS";
-          testingAssertions: Record<string, ExpressionObj[]>;
+          testingAssertions: Record<string, { expression: ExpressionObj }[]>;
       };
 
 function wrapWithTestAction(
@@ -131,7 +132,10 @@ export function setTestingEventsParameters(updater: (prev: TestingDataRecords[])
     };
 }
 
-export function setTestingAssertions(nodeId: string, updater: (prev: ExpressionObj[]) => ExpressionObj[]): ThunkAction {
+export function setTestingAssertions(
+    nodeId: string,
+    updater: (prev: { expression: ExpressionObj }[]) => { expression: ExpressionObj }[],
+): ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
         const prev = getTestingAssertionForNode(state, nodeId);

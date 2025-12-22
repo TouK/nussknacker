@@ -468,14 +468,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
 const testingTransform = createTransform(
     // inbound (state -> persisted)
     (inboundState: any, key, state) => {
-        console.log("state", state);
-
         return inboundState;
     },
     // outbound (persisted -> state)
     (outboundState: any, key, state) => {
-        console.log("outboundState", state);
-
         return outboundState;
     },
 );

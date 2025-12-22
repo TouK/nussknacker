@@ -5,7 +5,7 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { testScenarioWithDataRecords } from "../../../actions/nk/displayTestResults";
-import { getTestCapabilities, getTestingDataRecords } from "../../../reducers/selectors/graph";
+import { getTestCapabilities, getTestingAssertions, getTestingDataRecords } from "../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../reducers/selectors/settings";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
@@ -48,6 +48,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
     const dispatch = useAppDispatch();
     const testCapabilities = useAppSelector(getTestCapabilities);
     const testingDataRecords = useAppSelector(getTestingDataRecords);
+    const testingAssertions = useAppSelector(getTestingAssertions);
 
     const defaultParameter = testCapabilities.testWithParameters.sourceParameters[0];
 
@@ -85,7 +86,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                 title: t("testingForm.testButton.label", "Test"),
                 action: () => {
                     try {
-                        dispatch(testScenarioWithDataRecords(testingDataRecords));
+                        dispatch(testScenarioWithDataRecords(testingDataRecords, testingAssertions));
                         close();
                     } catch (e) {
                         console.error(e.message);
@@ -93,7 +94,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                 },
             },
         ],
-        [close, disableTestButton, dispatch, testingDataRecords, t],
+        [t, disableTestButton, close, dispatch, testingDataRecords, testingAssertions],
     );
 
     return (

@@ -16,6 +16,7 @@ import SystemUtils from "../../common/SystemUtils";
 import { withoutHackOfEmptyEdges } from "../../components/graph/GraphPartialsInTS/EdgeUtils";
 import type { AdditionalInfo } from "../../components/graph/node-modal/AdditionalInfoBox";
 import type { ExpressionSuggestion } from "../../components/graph/node-modal/editors/expression/ExpressionSuggester";
+import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
 import { extractStickyNotesFromNodes } from "../../components/graph/utils/stickyNotesUtils";
 import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../../components/Labels/types";
 import type { TestingDataRecords, TestingDataRecordsRequestData } from "../../components/modals/TestingDataRecords/Table";
@@ -815,18 +816,32 @@ export class HttpService {
         return promise;
     }
 
-    testScenarioWithEventsData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, testData: TestingDataRecordsRequestData[]) {
+    testScenarioWithEventsData(
+        scenarioName: ProcessName,
+        scenarioGraph: ScenarioGraph,
+        testData: TestingDataRecordsRequestData[],
+        testAssertions: ExpressionObj[],
+    ) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
 
-        const data = new FormData();
-        data.append("testData", new Blob([JSON.stringify(testData)], { type: "application/json" }));
-        data.append("scenarioGraph", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
-
-        const promise = api.post<ResultsWithCountsDto>(`/processManagement/test/${encodeURIComponent(scenarioName)}`, data, {
-            params: {
-                skipResultsPerTransition: this.#skipResultsPerTransition,
+        const promise = api.post<ResultsWithCountsDto>(
+            `/processManagement/testCase/${encodeURIComponent(scenarioName)}`,
+            {
+                scenario: sanitized,
+                testCase: {
+                    id: "a6e7b339-f534-45f9-ad8b-1456b37733a9",
+                    name: "someTestCase",
+                    inputs: JSON.stringify(testData),
+                    mocks: {},
+                    assertions: testAssertions,
+                },
             },
-        });
+            {
+                params: {
+                    skipResultsPerTransition: this.#skipResultsPerTransition,
+                },
+            },
+        );
         promise.catch((error: AxiosError) =>
             this.#addError(
                 i18next.t("notification.error.failedToTestScenarioWithEventsData", "Failed to test due to: {{axiosError}}", {

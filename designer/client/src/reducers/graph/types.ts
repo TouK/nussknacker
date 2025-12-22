@@ -22,7 +22,7 @@ type TestingState = {
     testResultsLoading?: boolean;
     testData?: TestData;
     testingDataRecords?: TestingDataRecords[];
-    testingAssertions?: Record<string, ExpressionObj[]>;
+    testingAssertions?: Record<string, { expression: ExpressionObj[] }>;
 };
 export type GraphState = {
     scenarioLoading: boolean;

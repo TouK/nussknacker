@@ -84,7 +84,7 @@ const getNodeId = (_: unknown, sourceId: string) => sourceId;
 export const getTestingAssertionForNode = createSelector(
     getTestingAssertions,
     getNodeId,
-    (testingAssertions, nodeId): ExpressionObj[] | undefined => testingAssertions[nodeId] || [],
+    (testingAssertions, nodeId): { expression: ExpressionObj }[] | undefined => testingAssertions[nodeId] || [],
 );
 
 export const hasTestingDataRecordsDefined = createSelector(getTestingDataRecords, (testingDataRecords) => testingDataRecords.length > 0);

@@ -22,7 +22,11 @@ export const Assertions = ({ node }: Props) => {
     const testingAssertions = useAppSelector((state) => getTestingAssertionForNode(state, node.id));
 
     const addAssertion = useCallback(() => {
-        dispatch(setTestingAssertions(node.id, (prev) => prev.concat({ expression: "", language: "spel" })));
+        dispatch(
+            setTestingAssertions(node.id, (prev) =>
+                prev.concat({ expression: { expression: "#TESTS.assertEquals('bar', #contexts[0].input['foo'])", language: "spel" } }),
+            ),
+        );
     }, [dispatch, node.id]);
 
     const removeAssertion = useCallback(
@@ -33,7 +37,7 @@ export const Assertions = ({ node }: Props) => {
     );
 
     const editAssertion = useCallback(
-        (index: number, updated: Partial<{ expression: string; language: string }>) => {
+        (index: number, updated: Partial<{ expression: { expression: string; language: string } }>) => {
             dispatch(setTestingAssertions(node.id, (prev) => prev.map((item, i) => (i === index ? { ...item, ...updated } : item))));
         },
         [dispatch, node.id],
@@ -44,14 +48,14 @@ export const Assertions = ({ node }: Props) => {
             <Typography m={0} variant="h5">
                 {t("testingDialog.label.assertions", "Assertions")}
             </Typography>
-            {testingAssertions.map((expressionObj, index) => (
+            {testingAssertions.map(({ expression: expressionObj }, index) => (
                 <Box key={index} display={"flex"} alignItems={"end"}>
                     <NodeTable sx={{ flex: 1, m: 0 }}>
                         <EditableEditor
                             editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
                             expressionObj={expressionObj}
                             variableTypes={{}}
-                            onValueChange={(expression) => editAssertion(index, expression)}
+                            onValueChange={(expression) => editAssertion(index, { expression })}
                             fieldErrors={[]}
                         />
                     </NodeTable>

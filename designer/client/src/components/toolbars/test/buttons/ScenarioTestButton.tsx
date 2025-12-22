@@ -5,7 +5,12 @@ import { useTranslation } from "react-i18next";
 import { testScenarioWithDataRecords } from "../../../../actions/nk/displayTestResults";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { convertViewportUnitToPixels } from "../../../../common/convertViewportUnitToPixels";
-import { getTestingDataRecords, getTestResultsLoading, hasTestingDataRecordsDefined } from "../../../../reducers/selectors/graph";
+import {
+    getTestingAssertions,
+    getTestingDataRecords,
+    getTestResultsLoading,
+    hasTestingDataRecordsDefined,
+} from "../../../../reducers/selectors/graph";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager/useWindows";
@@ -42,12 +47,13 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { t } = useTranslation();
     const { open } = useWindows();
     const testingEventsParameters = useAppSelector(getTestingDataRecords);
+    const testingAssertions = useAppSelector(getTestingAssertions);
     const testingDataRecordsDefined = useAppSelector(hasTestingDataRecordsDefined);
     const dispatch = useAppDispatch();
 
     const handleRerunLastTest = useCallback(() => {
-        return dispatch(testScenarioWithDataRecords(testingEventsParameters));
-    }, [dispatch, testingEventsParameters]);
+        return dispatch(testScenarioWithDataRecords(testingEventsParameters, testingAssertions));
+    }, [dispatch, testingAssertions, testingEventsParameters]);
 
     const presets: Preset[] = useMemo(() => {
         return [
