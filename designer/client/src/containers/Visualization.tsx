@@ -12,6 +12,7 @@ import { clearProcess, loadProcessState } from "../actions/nk/process";
 import { expandSelection } from "../actions/nk/selection";
 import { useDecodedParams } from "../common/routerUtils";
 import { extractCountParams } from "../common/VisualizationUrl";
+import { isAiAssistantDialog } from "../components/aiAssistant/components/IsAiAssistantDialog";
 import type { Graph } from "../components/graph/Graph";
 import { GraphProvider } from "../components/graph/GraphContext";
 import { usePortal } from "../components/graph/node-modal/io/usePortal";
@@ -227,7 +228,7 @@ function Visualization() {
                     <PanToNodes />
                     <AdjustNodeOverlapBehavior />
                     <SelectionContextProvider pastePosition={getPastePosition}>
-                        <BindKeyboardShortcuts disabled={windows.length > 0} />
+                        <BindKeyboardShortcuts disabled={windows.filter((w) => !isAiAssistantDialog(w.id)).length > 0} />
                         <Toolbars isReady={dataResolved} externalLayerWrapper={Portal}>
                             <Overlay gridArea="left" gridRow="top">
                                 <ScenarioDescription />

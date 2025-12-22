@@ -1,6 +1,6 @@
 import { Box, styled, Typography } from "@mui/material";
 import { useWindowManager } from "@touk/window-manager";
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { assistantClose, assistantOpen } from "../../../actions/assistantActions";
@@ -11,6 +11,7 @@ import { addListenerTyped, useAppDispatch } from "../../../store/storeHelpers";
 import { useWindows } from "../../../windowManager/useWindows";
 import { WindowKind } from "../../../windowManager/WindowKind";
 import DragWrapper from "./DragWrapper";
+import { AI_ASSISTANT_MODAL_ID, isAiAssistantDialog } from "./IsAiAssistantDialog";
 
 // TODO: use Fab
 const StyledAiAssistantButton = styled(Box)(({ theme }) => ({
@@ -31,15 +32,13 @@ const StyledAiAssistantButton = styled(Box)(({ theme }) => ({
     },
 }));
 
-const AI_ASSISTANT_MODAL_ID = "AI_ASSISTANT";
-
 const OpenAssistantButton = () => {
     const dispatch = useAppDispatch();
     const { t } = useTranslation();
     const { open } = useWindows();
-    const { windows, close, focus } = useWindowManager();
+    const { close, focus, frontWindow } = useWindowManager();
 
-    const openedAiAssistantDialog = useMemo(() => Boolean(windows.find((window) => window.id === AI_ASSISTANT_MODAL_ID)), [windows]);
+    const openedAiAssistantDialog = isAiAssistantDialog(frontWindow);
 
     const buttonRef = useRef<HTMLElement>(null);
 
