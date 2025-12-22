@@ -1,4 +1,4 @@
-import { Stack, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -10,6 +10,7 @@ import { LimitExceededWarning } from "../../../../../modals/TestingDataRecords/L
 import { Table } from "../../../../../modals/TestingDataRecords/Table";
 import { useDataRecordsActions } from "../../../../../modals/TestingDataRecords/useDataRecordsActions";
 import { ContentSize } from "../../ContentSize";
+import { StyledStack } from "./components/Styled";
 
 interface Props {
     sourceId: string;
@@ -46,7 +47,7 @@ export const InputDataRecords = ({ sourceId }: Props) => {
     );
 
     return (
-        <Stack p={2} gap={2}>
+        <StyledStack>
             <Typography m={0} variant="h5">
                 {t("testingDialog.label.inputDataRecords", "Input data records")}
             </Typography>
@@ -71,6 +72,6 @@ export const InputDataRecords = ({ sourceId }: Props) => {
                 currentRecordsNumber={testingDataRecords.length}
                 recordsToAddLimitExceeded={recordsToAddLimitExceeded}
             />
-        </Stack>
+        </StyledStack>
     );
 };

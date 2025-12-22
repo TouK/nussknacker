@@ -1,15 +1,20 @@
+import { Box, Typography } from "@mui/material";
 import React from "react";
+import { useTranslation } from "react-i18next";
 
-import { getUserSettings } from "../../../../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
 import MockExpressionField from "../../../editors/expression/MockExpressionField";
-import { NodeTable } from "../../../NodeDetailsContent/NodeTable";
+import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
 import { getFindAvailableVariables } from "../../../NodeDetailsContent/selectors";
 import { useGetNodeErrors, useIsEditMode, useSetProperty, useValidation } from "../../../useNodeTypeDetailsContentLogic";
 import type { TestingContentProps } from "../TestingContent";
+import { StyledStack } from "./components/Styled";
+
+const MOCK_EXPRESSION_HINT_TEXT =
+    "If you provide this expression, the real service won't be invoked during tests. Instead, the result of the evaluation will be used.";
 
 export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => {
-    const settings = useAppSelector(getUserSettings);
+    const { t } = useTranslation();
 
     const isEditMode = useIsEditMode({ onChange });
     const setProperty = useSetProperty({ onChange, node });
@@ -19,7 +24,14 @@ export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => 
     useValidation({ node, showValidation: true, edges });
 
     return (
-        <NodeTable sx={settings["node.showInputsAndOutputs"] ? { margin: "0 16px" } : undefined}>
+        <StyledStack>
+            <Box display={"flex"} gap={2} alignItems={"center"}>
+                <Typography m={0} variant="h5">
+                    {t("testingDialog.label.mock", "Mock")}
+                </Typography>
+                <InfoTooltip title={MOCK_EXPRESSION_HINT_TEXT} variant={"hover"} />
+            </Box>
+
             <MockExpressionField
                 isEditMode={isEditMode}
                 editedNode={node}
@@ -29,6 +41,6 @@ export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => 
                 setNodeDataAt={setProperty}
                 errors={errors}
             />
-        </NodeTable>
+        </StyledStack>
     );
 };

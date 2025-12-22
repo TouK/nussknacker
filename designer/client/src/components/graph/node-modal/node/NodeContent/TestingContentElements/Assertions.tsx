@@ -1,4 +1,4 @@
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -11,6 +11,7 @@ import { EditableEditor } from "../../../editors/EditableEditor";
 import { EditorType } from "../../../editors/expression/types";
 import { NodeTable } from "../../../NodeDetailsContent/NodeTable";
 import { AssertionStatus } from "./AssertionStatus";
+import { StyledStack } from "./components/Styled";
 
 interface Props {
     node: NodeType;
@@ -43,7 +44,7 @@ export const Assertions = ({ node }: Props) => {
     );
 
     return (
-        <Stack p={3} gap={2}>
+        <StyledStack>
             <Typography m={0} variant="h5">
                 {t("testingDialog.label.assertions", "Assertions")}
             </Typography>
@@ -82,6 +83,6 @@ export const Assertions = ({ node }: Props) => {
             <StyledButton title={t("node.row.add.title", "Add field")} onClick={addAssertion} sx={{ mt: 2 }}>
                 {t("node.row.add.text", "+")}
             </StyledButton>
-        </Stack>
+        </StyledStack>
     );
 };
