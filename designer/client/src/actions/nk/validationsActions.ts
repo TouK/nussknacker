@@ -1,5 +1,5 @@
-import { applyIdFromFakeName } from "../../components/graph/node-modal/IdField";
 import { getProcessName, getProcessProperties } from "../../components/graph/node-modal/NodeDetailsContent/selectors";
+import { applyIdFromFakeName } from "../../components/graph/node-modal/nodeIdFieldHelpers";
 import { appendNodeDataToProperties, cleanProperties, isRequestSource } from "../../components/graph/node-modal/requestSourceAddons";
 import HttpService from "../../http/HttpService/instance";
 import type { NodeType, PropertiesType } from "../../types/node";

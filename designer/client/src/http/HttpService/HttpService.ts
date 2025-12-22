@@ -500,7 +500,6 @@ export class HttpService {
             .catch((error) => this.#addError(i18next.t("notification.error.failedToExportPdf", "Failed to export PDF"), error));
     }
 
-    //to prevent closing edit node modal and corrupting graph display
     validateProcess(processName: string, unsavedOrCurrentName: string, scenarioGraph: ScenarioGraph, controller?: AbortController) {
         const request = {
             processName: unsavedOrCurrentName,
@@ -513,6 +512,7 @@ export class HttpService {
             .catch((error) => {
                 if (axios.isCancel(error)) return Promise.reject(error);
                 this.#addError(i18next.t("notification.error.fatalValidationError", "Fatal validation error, cannot save"), error, true);
+                // to prevent closing edit node modal and corrupting graph display
                 return Promise.reject(error);
             });
     }

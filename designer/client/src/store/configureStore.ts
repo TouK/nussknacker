@@ -10,7 +10,7 @@ import { thunk } from "redux-thunk";
 import type { Action } from "../actions/reduxTypes";
 import type { RootState } from "../reducers";
 import { rootReducer } from "../reducers";
-import { nodeValidationMiddleware } from "./nodeValidationMiddleware";
+import { scenarioValidationMiddleware } from "./scenarioValidationMiddleware";
 
 // avoid polluting devtools with frequent refresh actions
 const actionsBlacklist: Action["type"][] = [
@@ -48,7 +48,7 @@ export const setupStore = () => {
                             "TOGGLE_COMPONENT_GROUP_TOOLBOX",
                         ],
                     }),
-                    nodeValidationMiddleware([
+                    scenarioValidationMiddleware([
                         "NODE_ADDED",
                         "DELETE_NODES",
                         "NODES_CONNECTED",
