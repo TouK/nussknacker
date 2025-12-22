@@ -5,7 +5,7 @@ import type { TestingDataRecords } from "../../components/modals/TestingDataReco
 import { mapDataRecordsToRunTestsFormat } from "../../components/modals/TestingDataRecords/utils";
 import HttpService from "../../http/HttpService/instance";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
-import type { ResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
+import type { ResultsWithCountsDto, TestAssertionResults, TestResultsDto } from "../../http/resultsWithCountsDto";
 import {
     getProcessName,
     getScenarioGraph,
@@ -75,6 +75,10 @@ export type TestsActions =
           testingDataRecords?: TestingDataRecords[];
       }
     | {
+          type: "DISPLAY_TEST_ASSERTIONS";
+          assertionsResults: TestAssertionResults;
+      }
+    | {
           type: "UPDATE_TEST_TYPE";
           testType: string;
       }
@@ -96,6 +100,7 @@ function wrapWithTestAction(
         processName: ProcessName,
         scenarioGraph: ScenarioGraph,
     ) => Promise<{
+        assertionsResults?: TestAssertionResults;
         testResults: ResultsWithCountsDto;
         testData?: SourceWithParametersTest;
     }>,
@@ -116,6 +121,13 @@ export function displayTestResultsDetails(testResults: TestResultsDto, testData?
         type: "DISPLAY_TEST_RESULTS_DETAILS",
         testResults,
         testData,
+    };
+}
+
+export function displayTestAssertions(assertionsResults: TestAssertionResults): Action {
+    return {
+        type: "DISPLAY_TEST_ASSERTIONS",
+        assertionsResults,
     };
 }
 
@@ -149,10 +161,14 @@ export function setTestingAssertions(
     };
 }
 
-function displayTestResults({ counts, results }: ResultsWithCountsDto, testData?: SourceWithParametersTest): ThunkAction {
+function displayTestResults(
+    { counts, results, assertionsResults }: ResultsWithCountsDto,
+    testData?: SourceWithParametersTest,
+): ThunkAction {
     return (dispatch) => {
         dispatch(displayProcessCounts(counts));
         dispatch(displayTestResultsDetails(results, testData));
+        dispatch(displayTestAssertions(assertionsResults));
     };
 }
 

@@ -418,6 +418,18 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 scenarioLoading: false,
             };
         }
+        case "DISPLAY_TEST_ASSERTIONS": {
+            return {
+                ...state,
+                testing: {
+                    ...state.testing,
+                    [state.scenario.name]: {
+                        ...state.testing[state.scenario.name],
+                        assertionsResults: action.assertionsResults,
+                    },
+                },
+            };
+        }
         case "SET_TESTING_EVENTS_PARAMETERS": {
             return {
                 ...state,
@@ -465,16 +477,33 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
     }
 };
 
-const testingTransform = createTransform(
-    // inbound (state -> persisted)
-    (inboundState: any, key, state) => {
-        return inboundState;
-    },
-    // outbound (persisted -> state)
-    (outboundState: any, key, state) => {
-        return outboundState;
-    },
-);
+function stripFieldsFromEntries(obj: any = {}, fieldNames: string[]) {
+    if (!obj || typeof obj !== "object") return obj;
+    const mapped: any = Array.isArray(obj) ? [] : {};
+    for (const [k, v] of Object.entries(obj)) {
+        if (v && typeof v === "object" && !Array.isArray(v)) {
+            const copy = { ...v } as any;
+            for (const f of fieldNames) {
+                if (f in copy) delete copy[f];
+            }
+            mapped[k] = copy;
+        } else {
+            mapped[k] = v;
+        }
+    }
+    return mapped;
+}
+
+export function createStripFieldsTransform(fieldNames: string[]) {
+    return createTransform(
+        // inbound (state -> persisted)
+        (inboundState: any = {}) => stripFieldsFromEntries(inboundState, fieldNames),
+        // outbound (persisted -> state)
+        (outboundState: any = {}) => stripFieldsFromEntries(outboundState, fieldNames),
+    );
+}
+
+const testingTransform = createStripFieldsTransform(["testResults", "testAssertionResults"]);
 
 const reducer: Reducer<GraphState> = persistReducer(
     { key: "testing", storage, whitelist: ["testing"], transforms: [testingTransform] },

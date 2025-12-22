@@ -3,7 +3,7 @@ import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 import { setTestingAssertions } from "../../../../../../actions/nk/displayTestResults";
-import { getTestingAssertionForNode } from "../../../../../../reducers/selectors/graph";
+import { getTestingAssertionForNode, getTestAssertionResultsForNode } from "../../../../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
 import type { NodeType } from "../../../../../../types/node";
 import { StyledButton } from "../../../../styledButton";
@@ -20,12 +20,11 @@ export const Assertions = ({ node }: Props) => {
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
     const testingAssertions = useAppSelector((state) => getTestingAssertionForNode(state, node.id));
+    const testAssertionResults = useAppSelector((state) => getTestAssertionResultsForNode(state, node.id));
 
     const addAssertion = useCallback(() => {
         dispatch(
-            setTestingAssertions(node.id, (prev) =>
-                prev.concat({ expression: { expression: "#TESTS.assertEquals('bar', #contexts[0].input['foo'])", language: "spel" } }),
-            ),
+            setTestingAssertions(node.id, (prev) => prev.concat({ expression: { expression: "#TESTS.assertEquals()", language: "spel" } })),
         );
     }, [dispatch, node.id]);
 
@@ -48,25 +47,37 @@ export const Assertions = ({ node }: Props) => {
             <Typography m={0} variant="h5">
                 {t("testingDialog.label.assertions", "Assertions")}
             </Typography>
-            {testingAssertions.map(({ expression: expressionObj }, index) => (
-                <Box key={index} display={"flex"} alignItems={"end"}>
-                    <NodeTable sx={{ flex: 1, m: 0 }}>
-                        <EditableEditor
-                            editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
-                            expressionObj={expressionObj}
-                            variableTypes={{}}
-                            onValueChange={(expression) => editAssertion(index, { expression })}
-                            fieldErrors={[]}
-                        />
-                    </NodeTable>
-                    <StyledButton title={t("node.row.remove.title", "Remove field")} onClick={() => removeAssertion(index)} sx={{ ml: 1 }}>
-                        {t("node.row.remove.text", "-")}
-                    </StyledButton>
-                    <Box sx={{ mb: 0.5, ml: 1, display: "flex", alignItems: "center" }}>
-                        <AssertionStatus status={"error"} message={"message"} />
+            {testingAssertions.map(({ expression: expressionObj }, index) => {
+                const testAssertionResult = testAssertionResults?.[index];
+                return (
+                    <Box key={index} display={"flex"} alignItems={"end"}>
+                        <NodeTable sx={{ flex: 1, m: 0 }}>
+                            <EditableEditor
+                                editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
+                                expressionObj={expressionObj}
+                                variableTypes={{}}
+                                onValueChange={(expression) => editAssertion(index, { expression })}
+                                fieldErrors={[]}
+                            />
+                        </NodeTable>
+                        <StyledButton
+                            title={t("node.row.remove.title", "Remove field")}
+                            onClick={() => removeAssertion(index)}
+                            sx={{ ml: 1 }}
+                        >
+                            {t("node.row.remove.text", "-")}
+                        </StyledButton>
+                        <Box sx={{ mb: 0.5, ml: 1, display: "flex", alignItems: "center" }}>
+                            {testAssertionResult && (
+                                <AssertionStatus
+                                    status={testAssertionResult.type === "SuccessfulAssertion" ? "success" : "error"}
+                                    message={testAssertionResult.type === "FailedAssertion" ? testAssertionResult.message : undefined}
+                                />
+                            )}
+                        </Box>
                     </Box>
-                </Box>
-            ))}
+                );
+            })}
 
             <StyledButton title={t("node.row.add.title", "Add field")} onClick={addAssertion} sx={{ mt: 2 }}>
                 {t("node.row.add.text", "+")}

@@ -10,7 +10,7 @@ import { isStatusRunning } from "../../components/Process/types";
 import { ScenarioGraphSourceType } from "../../http/HttpService/types";
 import type { ProcessCounts } from "../../http/resultsWithCountsDto";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
-import type { TestData } from "../graph/types";
+import type { TestData, TestingState } from "../graph/types";
 import type { RootState } from "../index";
 import { getHistoryPast } from "./getHistory";
 import { areLabelsUpdated, isGraphUpdated } from "./helpers";
@@ -28,7 +28,7 @@ export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scena
     },
 });
 
-export const getTesting = createSelector(getGraph, (g) => g.testing[g.scenario.name] || {});
+export const getTesting = createSelector(getGraph, (g) => g.testing[g.scenario.name] || ({} as TestingState));
 
 export const getNodes = createSelector(getScenarioGraph, (g) => g.nodes);
 
@@ -90,13 +90,19 @@ const getNodeId = (_: unknown, sourceId: string) => sourceId;
 export const getTestingAssertionForNode = createSelector(
     getTestingAssertions,
     getNodeId,
-    (testingAssertions, nodeId): { expression: ExpressionObj }[] | undefined => testingAssertions[nodeId] || [],
+    (testingAssertions, nodeId): { expression: ExpressionObj }[] => testingAssertions[nodeId] || [],
 );
 
 export const hasTestingDataRecordsDefined = createSelector(getTestingDataRecords, (testingDataRecords) => testingDataRecords.length > 0);
 
 export const getTestParameters = createSelector(getGraph, (g) => g.testFormParameters || ([] as TestFormParameters[]));
 export const getTestResults = createSelector(getTesting, (g) => g.testResults);
+export const getTestAssertionResults = createSelector(getTesting, (g) => g.assertionsResults || {});
+export const getTestAssertionResultsForNode = createSelector(
+    getTestAssertionResults,
+    getNodeId,
+    (assertionsResults, nodeId) => assertionsResults[nodeId],
+);
 export const getTestResultsLoading = createSelector(getTesting, (g) => g.testResultsLoading);
 export const getTestData = createSelector(getTesting, (g) => g.testData || ({} as TestData));
 export const getProcessCountsRefresh = createSelector(getGraph, (g) => g.processCountsRefresh || null);

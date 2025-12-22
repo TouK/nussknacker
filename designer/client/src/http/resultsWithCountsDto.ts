@@ -52,9 +52,23 @@ export interface NodeCounts {
     fragmentCounts: ProcessCounts;
 }
 
+interface TestAssertionResultSuccess {
+    type: "SuccessfulAssertion";
+}
+
+interface TestAssertionResultError {
+    type: "FailedAssertion";
+    message: string;
+}
+
+type TestAssertionResult = TestAssertionResultSuccess | TestAssertionResultError;
+
+export type TestAssertionResults = Record<string, TestAssertionResult[]>;
+
 export type ProcessCounts = Record<string, NodeCounts>;
 
 export interface ResultsWithCountsDto {
+    assertionsResults: TestAssertionResults;
     results: TestResultsDto;
     counts: ProcessCounts;
     timestamp: string; // ISO

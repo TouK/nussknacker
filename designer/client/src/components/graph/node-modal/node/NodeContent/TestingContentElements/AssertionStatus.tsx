@@ -6,8 +6,8 @@ import React from "react";
 import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
 
 type Props = {
-    status?: "success" | "error";
-    message?: string;
+    status: "success" | "error";
+    message: string | undefined;
 };
 
 export const AssertionStatus: React.FC<Props> = ({ status, message }) => {

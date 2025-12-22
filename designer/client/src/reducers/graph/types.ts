@@ -5,7 +5,7 @@ import type { ExpressionObj } from "../../components/graph/node-modal/editors/ex
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import type { Scenario } from "../../components/Process/types";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
-import type { ProcessCounts, TestResultsDto } from "../../http/resultsWithCountsDto";
+import type { ProcessCounts, TestAssertionResults, TestResultsDto } from "../../http/resultsWithCountsDto";
 
 type Source = SourceWithParametersTest["sourceId"];
 export type SourceTestData = SourceWithParametersTest["parameterExpressions"];
@@ -17,12 +17,13 @@ export enum VisibleDataType {
     counts = "counts",
 }
 
-type TestingState = {
+export type TestingState = {
     testResults: TestResultsDto;
+    assertionsResults: TestAssertionResults;
     testResultsLoading?: boolean;
     testData?: TestData;
     testingDataRecords?: TestingDataRecords[];
-    testingAssertions?: Record<string, { expression: ExpressionObj[] }>;
+    testingAssertions?: Record<string, { expression: ExpressionObj }[]>;
 };
 export type GraphState = {
     scenarioLoading: boolean;
