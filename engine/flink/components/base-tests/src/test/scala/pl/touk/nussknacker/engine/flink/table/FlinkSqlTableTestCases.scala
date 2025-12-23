@@ -28,7 +28,8 @@ object FlinkSqlTableTestCases {
   val unboundedDatagenTableFormatted: String =
     s"""|CREATE TABLE `datagen_table` (
         |  `someString` STRING
-        |) WITH (
+        |)
+        |WITH (
         |  'connector' = 'datagen'
         |)""".stripMargin
 
@@ -38,7 +39,8 @@ object FlinkSqlTableTestCases {
        |    `timestamp` TIMESTAMP(3),
        |    `value` DOUBLE,
        |    WATERMARK FOR `timestamp` AS `timestamp` - INTERVAL '5' SECOND
-       |) WITH (
+       |)
+       |WITH (
        |    'connector' = 'kafka',
        |    'topic' = 'my-topic',
        |    'properties.bootstrap.servers' = 'kafka-broker:9092',
@@ -53,7 +55,8 @@ object FlinkSqlTableTestCases {
        |  `timestamp` TIMESTAMP(3),
        |  `value` DOUBLE,
        |  WATERMARK FOR `timestamp` AS `timestamp` - INTERVAL '5' SECOND
-       |) WITH (
+       |)
+       |WITH (
        |  'connector' = 'kafka',
        |  'topic' = 'my-topic',
        |  'properties.bootstrap.servers' = 'kafka-broker:9092',
