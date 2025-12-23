@@ -1,7 +1,13 @@
 package pl.touk.nussknacker.engine.process.typeinformation
 
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
-import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo, MultisetTypeInfo, RowTypeInfo}
+import org.apache.flink.api.java.typeutils.{
+  MapTypeInfo,
+  MultisetTypeInfo,
+  NullableListTypeInfo,
+  RowTypeInfo,
+  SetTypeInfo
+}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -58,7 +64,8 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
   override def forType[T](typingResult: TypingResult): TypeInformation[T] = {
     (typingResult match {
       case TypedClass(`ListClass`, elementType :: Nil) =>
-        new ListTypeInfo[AnyRef](forType[AnyRef](elementType))
+        // List is the only type that doesn't support null values and requires a specialized Nullable variant
+        new NullableListTypeInfo[AnyRef](forType[AnyRef](elementType))
       case TypedClass(`ZonedDateTimeClass`, Nil)                             => ZonedDateTimeTypeInformation
       case TypedClass(`OffsetDateTimeClass`, Nil)                            => OffsetDateTimeTypeInformation
       case TypedClass(klass, Nil) if classOf[ZoneId].isAssignableFrom(klass) => ZoneIdTypeInformation
@@ -73,6 +80,8 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
         Types.OBJECT_ARRAY(forType[AnyRef](elementType))
       case TypedClass(`MapClass`, keyType :: valueType :: Nil) =>
         new MapTypeInfo[AnyRef, AnyRef](forType[AnyRef](keyType), forType[AnyRef](valueType))
+      case TypedClass(`SetClass`, elementType :: Nil) =>
+        new SetTypeInfo[AnyRef](forType[AnyRef](elementType))
       case TypedMultiset(elementType) =>
         new MultisetTypeInfo[AnyRef](forType[AnyRef](elementType))
       case a: TypedObjectTypingResult if a.runtimeObjType.klass == classOf[Row] =>

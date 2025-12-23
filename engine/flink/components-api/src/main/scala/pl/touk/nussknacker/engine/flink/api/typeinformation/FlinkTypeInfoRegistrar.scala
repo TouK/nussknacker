@@ -46,6 +46,11 @@ object FlinkTypeInfoRegistrar extends LazyLogging {
       } else {
         logger.warn("flink-scala.jar is loaded after Flink classes - serialization of some Scala types may be broken")
       }
+    } else {
+      val oldFlinkScalaLoaded = classExists("org.apache.flink.runtime.types.UnmodifiableJavaCollectionsRegistrar")
+      if (oldFlinkScalaLoaded) {
+        logger.warn("found old flink-scala.jar - serialization of some Scala types may be broken")
+      }
     }
   }
 

@@ -17,15 +17,17 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.ScalaCaseClassSerializer
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject._
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.time._
+import java.util
 import java.util.{Currency, Locale, UUID}
 import scala.jdk.CollectionConverters._
+import scala.reflect.ClassTag
 
 class TypingResultAwareTypeInformationDetectionSpec
     extends AnyFunSuite
@@ -246,6 +248,24 @@ class TypingResultAwareTypeInformationDetectionSpec
       .snapshotConfiguration()
       .resolveSchemaCompatibility(oldSerializerSnapshot)
       .isCompatibleAfterMigration shouldBe true
+  }
+
+  test("list serialization handles null elements") {
+    val list = new util.ArrayList[Integer]()
+    list.add(1)
+    list.add(null)
+    val typeInfo = createTypeInfo[util.List[_]](List(Typed[Integer]))
+
+    serializeRoundTrip(list, typeInfo)()
+  }
+
+  test("list serialization handles null list") {
+    val typeInfo = createTypeInfo[util.List[_]](List(Typed[Integer]))
+    serializeRoundTrip(null, typeInfo)()
+  }
+
+  def createTypeInfo[T: ClassTag](params: List[TypingResult]): TypeInformation[T] = {
+    detection.forType(Typed.genericTypeClass(implicitly[ClassTag[T]].runtimeClass, params))
   }
 
   // We have to compare it this way because context can contains arrays

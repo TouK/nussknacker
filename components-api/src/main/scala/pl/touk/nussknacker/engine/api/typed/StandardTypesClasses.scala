@@ -47,6 +47,8 @@ object StandardTypesClasses {
 
   val MapClass: Class[_] = classOf[java.util.Map[_, _]]
 
+  val SetClass: Class[_] = classOf[java.util.Set[_]]
+
   val AvroIndexedRecordClassName = "org.apache.avro.generic.IndexedRecord"
 
   val FlinkTableApiRowClassName = "org.apache.flink.types.Row"

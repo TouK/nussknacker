@@ -9,6 +9,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.19.0 (Not released yet)
 
+### Flink state incompatibility
+
+Flink state will be incompatible because of multiple changes that involve state serialization, main of which are:
+* updated Kryo serialization library in Flink 2.0
+* changes in typing for lists, maps and sets in Flink 2.0
+* various code changes in Nussknacker
+
 ### Configuration changes
 
 * [#7181](https://github.com/TouK/nussknacker/pull/7181) [#7620](https://github.com/TouK/nussknacker/pull/7620) Added designer configuration: stickyNotesSettings 

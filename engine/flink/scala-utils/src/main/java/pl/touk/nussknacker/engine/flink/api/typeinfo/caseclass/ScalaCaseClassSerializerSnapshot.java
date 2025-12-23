@@ -42,10 +42,8 @@ public final class ScalaCaseClassSerializerSnapshot<T extends scala.Product>
     private Class<T> type;
 
     /** Used via reflection. */
-    @SuppressWarnings({"unused", "deprecation"})
-    public ScalaCaseClassSerializerSnapshot() {
-        super(ScalaCaseClassSerializer.class);
-    }
+    @SuppressWarnings("unused")
+    public ScalaCaseClassSerializerSnapshot() {}
 
     /** Used for the snapshot path. */
     public ScalaCaseClassSerializerSnapshot(ScalaCaseClassSerializer<T> serializerInstance) {
@@ -85,10 +83,15 @@ public final class ScalaCaseClassSerializerSnapshot<T extends scala.Product>
     }
 
     @Override
-    @SuppressWarnings("deprecation")
-    protected CompositeTypeSerializerSnapshot.OuterSchemaCompatibility
-    resolveOuterSchemaCompatibility(ScalaCaseClassSerializer<T> newSerializer) {
-        return (Objects.equals(type, newSerializer.getTupleClass()))
+    protected OuterSchemaCompatibility resolveOuterSchemaCompatibility(
+            TypeSerializerSnapshot<T> oldSerializerSnapshot) {
+        if (!(oldSerializerSnapshot instanceof ScalaCaseClassSerializerSnapshot)) {
+            return OuterSchemaCompatibility.INCOMPATIBLE;
+        }
+
+        ScalaCaseClassSerializerSnapshot<T> oldSnapshot =
+                (ScalaCaseClassSerializerSnapshot<T>) oldSerializerSnapshot;
+        return (Objects.equals(type, oldSnapshot.type))
                 ? OuterSchemaCompatibility.COMPATIBLE_AS_IS
                 : OuterSchemaCompatibility.INCOMPATIBLE;
     }
