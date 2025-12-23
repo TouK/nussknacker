@@ -25,7 +25,6 @@ class FlinkSinkSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
 
-    // without certain hack (see SpelHack & SpelMapHack) this throws exception.
     processInvoker.invokeWithSampleData(process, data)
 
     SinkAccessingNodeContext.nodeId.id shouldBe "out"
