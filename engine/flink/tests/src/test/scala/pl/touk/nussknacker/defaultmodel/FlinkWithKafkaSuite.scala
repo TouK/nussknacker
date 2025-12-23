@@ -7,7 +7,6 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatest.funsuite.AnyFunSuite
@@ -26,7 +25,6 @@ import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.encode.ToAvroSchemaBasedEncoder
-import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ExistingSchemaVersion,
   LatestSchemaVersion,
@@ -78,13 +76,6 @@ abstract class FlinkWithKafkaSuite
     testScenarioRunner = TestScenarioRunner
       .flinkBased(modelConfig, flinkMiniCluster)
       .withExtraComponents(extraComponents)
-      .withExtraSerializersRegistrars(List((_: Config, executionConfig: ExecutionConfig) => {
-        AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(
-          executionConfig,
-          schemaRegistryClientProvider.schemaRegistryClientFactory,
-          kafkaComponentsConfig
-        )
-      }))
       .build()
   }
 
@@ -101,11 +92,6 @@ abstract class FlinkWithKafkaSuite
       .resolveModelConfig(config)
       .withValue(s"$kafkaComponentsConfigPrefix.avroAsJsonSerialization", fromAnyRef(avroAsJsonSerialization))
       .withValue(s"$kafkaComponentsConfigPrefix.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
-      // we turn off auto registration to do it on our own passing mocked schema registry client
-      .withValue(
-        s"$kafkaComponentsConfigPrefix.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}",
-        fromAnyRef(false)
-      )
     maybeAddSchemaRegistryUrl(baseModelConfig)
   }
 

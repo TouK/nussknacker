@@ -14,15 +14,13 @@ import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
   * @see [[org.apache.flink.api.common.typeutils.TypeSerializerSnapshotSerializationUtil#readSerializersAndConfigsWithResilience]]
   */
 object Serializers extends LazyLogging {
-  private val SerialVersionUIDFieldName = "serialVersionUID"
 
   def registerSerializers(
       modelData: ModelData,
-      extraSerializersRegistrars: List[SerializersRegistrar],
       config: ExecutionConfig
   ): Unit = {
     (ScalaServiceLoader
-      .load[SerializersRegistrar](getClass.getClassLoader) ++ extraSerializersRegistrars)
+      .load[SerializersRegistrar](getClass.getClassLoader))
       .foreach(_.register(modelData.modelConfig.underlyingConfig, config))
     TimeSerializers.addDefaultSerializers(config)
   }

@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka
 
-import com.typesafe.config.Config
 import io.circe.generic.JsonCodec
 import org.apache.avro.{AvroRuntimeException, Schema}
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{Assertion, BeforeAndAfter}
 import org.scalatest.funsuite.AnyFunSuite
@@ -21,7 +19,6 @@ import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroPayloadIntegrationSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.helpers.FlinkKafkaAvroSpecMixin
-import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
@@ -59,13 +56,6 @@ class KafkaAvroPayloadIntegrationSpec extends AnyFunSuite with FlinkKafkaAvroSpe
     testScenarioRunner = TestScenarioRunner
       .flinkBased(modelConfig, flinkMiniCluster)
       .withExtraComponents(components)
-      .withExtraSerializersRegistrars(List((_: Config, executionConfig: ExecutionConfig) => {
-        AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(
-          executionConfig,
-          schemaRegistryClientFactory,
-          kafkaComponentsConfig
-        )
-      }))
       .build()
   }
 

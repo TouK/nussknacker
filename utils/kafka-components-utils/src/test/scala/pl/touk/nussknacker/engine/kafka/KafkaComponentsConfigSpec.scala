@@ -32,7 +32,6 @@ class KafkaComponentsConfigSpec extends AnyFunSuite with Matchers {
       kafkaProperties = Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest"),
       kafkaEspProperties = None,
       consumerGroupNamingStrategy = None,
-      avroKryoGenericRecordSchemaIdSerialization = None,
       topicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = true)
     )
     KafkaComponentsConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
