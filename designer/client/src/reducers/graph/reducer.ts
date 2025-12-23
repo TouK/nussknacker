@@ -119,7 +119,7 @@ const updateStateAfterEdit = (state: GraphState, action: ActionOfType<"EDIT_NODE
     });
 };
 
-const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
+const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): GraphState => {
     const currentNodes = state.scenario.scenarioGraph.nodes;
     const currentEdges = state.scenario.scenarioGraph.edges;
     switch (action.type) {
@@ -163,12 +163,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 ...state,
                 testCapabilities: action.capabilities,
                 testFormParameters: action.capabilities?.testWithParameters?.sourceParameters,
-            };
-        }
-        case "UPDATE_TEST_TYPE": {
-            return {
-                ...state,
-                testType: action.testType,
             };
         }
         case "DISPLAY_PROCESS": {
@@ -215,7 +209,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "CLEAR_PROCESS": {
-            return { emptyGraphState, testing: state.testing };
+            return { ...emptyGraphState, testing: state.testing };
         }
         case "EDIT_NODE": {
             const updateStateAfterNodeIdChange = getUpdateStateAfterNodeIdChange(action.before.id, action.after.id);
@@ -408,7 +402,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                     [state.scenario.name]: {
                         ...state.testing[state.scenario.name],
                         testData: {
-                            ...state.testing.testData,
+                            ...state.testing[state.scenario.name].testData,
                             [action.testData?.sourceId]: action.testData?.parameterExpressions,
                         },
                         testResultsLoading: false,
@@ -469,9 +463,15 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "SET_TEST_DATA": {
             return {
                 ...state,
-                testData: {
-                    ...state.testing.testData,
-                    [action.testData?.sourceId]: action.testData?.parameterExpressions,
+                testing: {
+                    ...state.testing,
+                    [state.scenario.name]: {
+                        ...state.testing[state.scenario.name],
+                        testData: {
+                            ...state.testing[state.scenario.name].testData,
+                            [action.testData?.sourceId]: action.testData?.parameterExpressions,
+                        },
+                    },
                 },
             };
         }

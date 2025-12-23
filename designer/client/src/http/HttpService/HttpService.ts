@@ -820,7 +820,7 @@ export class HttpService {
         scenarioName: ProcessName,
         scenarioGraph: ScenarioGraph,
         testData: TestingDataRecordsRequestData[],
-        testAssertions: ExpressionObj[],
+        testAssertions: Record<string, { expression: ExpressionObj }[]>,
     ) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
 

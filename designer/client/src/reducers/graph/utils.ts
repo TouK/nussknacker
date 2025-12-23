@@ -23,8 +23,10 @@ export const getUpdateStateAfterNodeIdChange = (currentId: NodeId, nextId: NodeI
                 if (currentId === n.id) n.id = nextId;
             });
         }
-        if (testing.testResults) {
-            const { expressionEvaluationResults, nodeTransitionResults } = testing.testResults;
+
+        const testingForNode = testing[state.scenario.name];
+        if (testingForNode) {
+            const { expressionEvaluationResults, nodeTransitionResults } = testingForNode.testResults;
             expressionEvaluationResults[nextId] = expressionEvaluationResults[currentId];
             nodeTransitionResults?.forEach((r) => {
                 if (r.sourceNodeId === currentId) r.sourceNodeId = nextId;

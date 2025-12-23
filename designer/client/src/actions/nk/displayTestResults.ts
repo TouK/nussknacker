@@ -48,7 +48,10 @@ export function testScenarioWithGeneratedData(testSampleSize: string): ThunkActi
     );
 }
 
-export function testScenarioWithDataRecords(testingEventsParameters: TestingDataRecords[], testAssertions: ExpressionObj[]): ThunkAction {
+export function testScenarioWithDataRecords(
+    testingEventsParameters: TestingDataRecords[],
+    testAssertions: Record<string, { expression: ExpressionObj }[]>,
+): ThunkAction {
     return wrapWithTestAction((scenarioName, scenarioGraph) =>
         HttpService.testScenarioWithEventsData(
             scenarioName,
@@ -77,10 +80,6 @@ export type TestsActions =
     | {
           type: "DISPLAY_TEST_ASSERTIONS_RESULTS";
           assertionsResults: TestAssertionResults;
-      }
-    | {
-          type: "UPDATE_TEST_TYPE";
-          testType: string;
       }
     | {
           type: "SET_TEST_DATA";
