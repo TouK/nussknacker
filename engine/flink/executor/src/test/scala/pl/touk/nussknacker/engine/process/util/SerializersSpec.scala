@@ -76,7 +76,6 @@ class SerializersSpec extends AnyFlatSpec with Matchers {
     deserialized.someField shouldBe obj.someField
   }
 
-  // FIXME in flink-scala
   it should "serialize unmodifiableList" in {
     val obj = Collections.unmodifiableList(List("foo", "bar").asJava)
     val deserialized =
@@ -84,7 +83,6 @@ class SerializersSpec extends AnyFlatSpec with Matchers {
     deserialized shouldBe obj
   }
 
-  // FIXME in flink-scala
   it should "serialize unmodifiableMap" in {
     val obj = Collections.unmodifiableMap(Map("foo" -> 1, "bar" -> 2).asJava)
     val deserialized =
