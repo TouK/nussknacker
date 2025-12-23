@@ -2,7 +2,7 @@ import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager
 import { DefaultComponents as Window } from "@touk/window-manager";
 import type { DefaultContentProps } from "@touk/window-manager/cjs/components/window/DefaultContent";
 import { uniq } from "lodash";
-import React, { useCallback, useMemo } from "react";
+import React, { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import urljoin from "url-join";
 
@@ -189,4 +189,4 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     );
 }
 
-export default NodeDetails;
+export default memo(NodeDetails);
