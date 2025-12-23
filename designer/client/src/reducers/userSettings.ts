@@ -76,6 +76,11 @@ const reducer: Reducer<{ defaults: UserSettings; values: ExtendRecordValue<UserS
                     [action.key]: action.value,
                 },
             };
+        case "USERSETTING_DELETE": {
+            const values = { ...state.values };
+            delete values[action.key];
+            return { ...state, values };
+        }
         case "RESET_TOOLBARS":
         case "USERSETTINGS_RESET":
             return {
