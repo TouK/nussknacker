@@ -10,7 +10,12 @@ object Serializers extends LazyLogging {
 
   private val genericRecordClassName = "org.apache.avro.generic.GenericData$Record"
 
-  def registerSerializers(
+  def registerSerializers(modelClassLoader: ClassLoader, executionConfig: ExecutionConfig): Unit = {
+    addAvroSerializersWhenAvroIsAvailableOnClasspath(modelClassLoader, executionConfig)
+    TimeSerializers.addDefaultSerializers(executionConfig)
+  }
+
+  private def addAvroSerializersWhenAvroIsAvailableOnClasspath(
       modelClassLoader: ClassLoader,
       executionConfig: ExecutionConfig
   ): Unit = {
@@ -24,7 +29,6 @@ object Serializers extends LazyLogging {
           s"$genericRecordClassName is not available on classpath. Skipping default avro-kryo serializers registration"
         )
     }
-    TimeSerializers.addDefaultSerializers(executionConfig)
   }
 
 }

@@ -259,6 +259,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7137](https://github.com/TouK/nussknacker/pull/7137)[#8317](https://github.com/TouK/nussknacker/pull/8317) Updated Flink 1.19.2 -> 1.20.2.
 * [#8209](https://github.com/TouK/nussknacker/pull/8209) Nussknacker now requires flink to be run with replaced `lib/flink-scala_2.12-x.x.x.jar` by `pl.touk:flink-scala` lib for the same scala version as used Nussknacker distribution. We provide prebuild flink docker images on [Docker Hub](https://hub.docker.com/r/touk/flink)    
 * [#8478](https://github.com/TouK/nussknacker/pull/8478) The behavior of `enum` to json encoding has been changed - now it uses `.name()` instead of `.toString()`
+* [#8842](https://github.com/TouK/nussknacker/pull/8842) `SerializersRegistrar` SPI was removed
 
 ## In version 1.18.0
 
