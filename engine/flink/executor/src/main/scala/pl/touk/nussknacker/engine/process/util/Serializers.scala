@@ -4,16 +4,13 @@ import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.configuration.{Configuration, PipelineOptions}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor
-import pl.touk.nussknacker.engine.flink.api.serialization.{
-  ClassBasedKryoSerializerRegistrar,
-  SerializerRegistrar,
-  SerializersRegistrar
-}
+import pl.touk.nussknacker.engine.flink.api.serialization.SerializersRegistrar
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
-import java.lang.reflect.Modifier
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Try}
 
 /**
@@ -31,9 +28,21 @@ object Serializers extends LazyLogging {
       extraSerializersRegistrars: List[SerializersRegistrar],
       config: ExecutionConfig
   ): Unit = {
-    (implicitly[SerializerRegistrar[CaseClassSerializer]] ::
-      implicitly[SerializerRegistrar[SpelHack]] ::
-      implicitly[SerializerRegistrar[SpelMapHack]] :: Nil).foreach(_.registerIn(config))
+    val serializers = List(
+      classOf[Product]             -> classOf[CaseClassSerializer],
+      classOf[java.util.List[_]]   -> classOf[SpelHack],
+      classOf[java.util.Map[_, _]] -> classOf[SpelMapHack]
+    )
+    config.getSerializerConfig.configure(
+      new Configuration().set(
+        PipelineOptions.SERIALIZATION_CONFIG,
+        // org.example.ExampleClass4: {type: kryo, kryo-type: registered, class: org.example.Class4KryoSerializer},
+        serializers.map { case (serializedClass, serializer) =>
+          s"${serializedClass.getName}: {type: kryo, kryo-type: registered, class: ${serializer.getName}}"
+        }.asJava,
+      ),
+      getClass.getClassLoader
+    )
     (ScalaServiceLoader
       .load[SerializersRegistrar](getClass.getClassLoader) ++ extraSerializersRegistrars)
       .foreach(_.register(modelData.modelConfig.underlyingConfig, config))
@@ -102,12 +111,6 @@ object Serializers extends LazyLogging {
     }
 
     override def copy(kryo: Kryo, original: Product): Product = original
-  }
-
-  object CaseClassSerializer {
-
-    implicit val registrar: SerializerRegistrar[CaseClassSerializer] =
-      new ClassBasedKryoSerializerRegistrar(classOf[CaseClassSerializer], classOf[Product])
   }
 
 }

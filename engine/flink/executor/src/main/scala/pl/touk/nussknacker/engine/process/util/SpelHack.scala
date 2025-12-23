@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.util
 
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
-import pl.touk.nussknacker.engine.flink.api.serialization.{ClassBasedKryoSerializerRegistrar, SerializerRegistrar}
 
 import java.util
 
@@ -37,18 +36,6 @@ class SpelHack extends Serializer[java.util.List[_]](false, true) {
 
 }
 
-object SpelHack {
-
-  implicit val registrar: SerializerRegistrar[SpelHack] = {
-    // It is loaded by loadClass because UnmodifiableCollection has private-package access
-    val unmodifiableCollectionClass = getClass.getClassLoader
-      .loadClass("java.util.Collections$UnmodifiableCollection")
-      .asInstanceOf[Class[java.util.List[_]]]
-    new ClassBasedKryoSerializerRegistrar(classOf[SpelHack], unmodifiableCollectionClass)
-  }
-
-}
-
 class SpelMapHack extends Serializer[java.util.Map[_, _]](false, true) {
 
   override def write(kryo: Kryo, out: Output, obj: java.util.Map[_, _]): Unit = {
@@ -76,18 +63,6 @@ class SpelMapHack extends Serializer[java.util.Map[_, _]](false, true) {
       idx += 1
     }
     map
-  }
-
-}
-
-object SpelMapHack {
-
-  implicit val registrar: SerializerRegistrar[SpelMapHack] = {
-    // It is loaded by loadClass because UnmodifiableCollection has private-package access
-    val unmodifiableMapClass = getClass.getClassLoader
-      .loadClass("java.util.Collections$UnmodifiableMap")
-      .asInstanceOf[Class[java.util.Map[_, _]]]
-    new ClassBasedKryoSerializerRegistrar(classOf[SpelMapHack], unmodifiableMapClass)
   }
 
 }
