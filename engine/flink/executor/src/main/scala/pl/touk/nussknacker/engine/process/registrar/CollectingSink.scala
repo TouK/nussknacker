@@ -7,8 +7,6 @@ import pl.touk.nussknacker.engine.flink.api.WriterInitCtx
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.resultcollector.SinkInvocationCollector
 
-import scala.annotation.nowarn
-
 private[registrar] class CollectingSink[T](
     val compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData,
     collectingSink: SinkInvocationCollector,
@@ -36,10 +34,5 @@ private[registrar] class CollectingSink[T](
       }
     }
   }
-
-  // TODO: Remove after upgrade to Flink 2.x
-  @nowarn("cat=deprecation")
-  override def createWriter(context: Sink.InitContext): SinkWriter[ValueWithContext[T]] =
-    throw new IllegalAccessException("This method shouldn't be invoked")
 
 }

@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.flink.util.test.TestResultSinkFactory.TestResu
 import pl.touk.nussknacker.engine.testmode.TestRunId
 
 import java.util.concurrent.ConcurrentHashMap
-import scala.annotation.nowarn
 
 // `TestResultSinkFactory` is closely related to the ID of the running test. We use the ID to extract results from
 // the shared map with results collected from all instances of TestResultSink (see `TestResultSinkFactory.sinksOutputs`)
@@ -51,14 +50,8 @@ object TestResultSinkFactory {
       helper.lazyMapFunction(value)
 
     override def toFlinkSink(flinkNodeContext: FlinkCustomNodeContext): SinkV2[Value] =
-      new SinkV2[Value] {
-
-        // TODO: Remove after upgrade to Flink 2.x
-        @nowarn("cat=deprecation")
-        override def createWriter(context: SinkV2.InitContext): SinkWriter[AnyRef] =
-          throw new IllegalAccessException("This method shouldn't be invoked")
-
-        override def createWriter(context: WriterInitContext): SinkWriter[Value] = new SinkWriter[Value] {
+      (_: WriterInitContext) =>
+        new SinkWriter[Value] {
 
           override def write(element: AnyRef, context: SinkWriter.Context): Unit = {
             sinksOutputs.compute(
@@ -77,8 +70,6 @@ object TestResultSinkFactory {
           override def close(): Unit = {}
 
         }
-
-      }
 
   }
 

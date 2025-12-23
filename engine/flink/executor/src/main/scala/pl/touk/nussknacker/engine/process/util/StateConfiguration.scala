@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.process.util
 
 import org.apache.flink.configuration.{Configuration, StateBackendOptions}
-import org.apache.flink.contrib.streaming.state.PredefinedOptions.SPINNING_DISK_OPTIMIZED
-import org.apache.flink.contrib.streaming.state.RocksDBOptions
+import org.apache.flink.state.rocksdb.PredefinedOptions.SPINNING_DISK_OPTIMIZED
+import org.apache.flink.state.rocksdb.RocksDBOptions
 
 object StateConfiguration {
 

@@ -8,6 +8,7 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.connector.sink2.{Sink => SinkV2, SinkWriter, WriterInitContext}
+import org.apache.flink.runtime.event.WatermarkEvent
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.functions.co.{CoMapFunction, RichCoFlatMapFunction}
@@ -42,7 +43,6 @@ import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import java.util.{Date, Optional}
 import java.util.concurrent.atomic.AtomicInteger
 import javax.annotation.Nullable
-import scala.annotation.nowarn
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 import scala.util.Try
@@ -435,6 +435,8 @@ object SampleNodes {
           override def processRecordAttributes(recordAttributes: RecordAttributes): Unit =
             super.processRecordAttributes(recordAttributes)
 
+          override def processWatermark(watermark: WatermarkEvent): Unit =
+            super.processWatermark(watermark)
         }
         str.transform("collectTimestammp", ctx.valueWithContextInfo.forUnknown, streamOperator)
       }
@@ -593,11 +595,6 @@ object SampleNodes {
           .flatMap(context.lazyParameterHelper.lazyMapFunction[AnyRef](param))
         afterMap.sinkTo(
           new SinkV2[ValueWithContext[AnyRef]] {
-            // TODO: Remove after upgrade to Flink 2.x
-            @nowarn("cat=deprecation")
-            override def createWriter(context: SinkV2.InitContext): SinkWriter[ValueWithContext[AnyRef]] =
-              throw new IllegalAccessException("This method shouldn't be invoked")
-
             override def createWriter(context: WriterInitContext): SinkWriter[ValueWithContext[AnyRef]] =
               new SinkWriter[ValueWithContext[AnyRef]] {
                 override def write(element: ValueWithContext[AnyRef], context: SinkWriter.Context): Unit =
@@ -629,11 +626,6 @@ object SampleNodes {
 
       override def toFlinkSink(flinkCustomNodeContext: FlinkCustomNodeContext): SinkV2[String] =
         new SinkV2[String] {
-          // TODO: Remove after upgrade to Flink 2.x
-          @nowarn("cat=deprecation")
-          override def createWriter(context: SinkV2.InitContext): SinkWriter[String] =
-            throw new IllegalAccessException("This method shouldn't be invoked")
-
           override def createWriter(context: WriterInitContext): SinkWriter[String] = new SinkWriter[String] {
             override def write(element: String, context: SinkWriter.Context): Unit = resultsHolder.add(element)
 

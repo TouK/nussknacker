@@ -104,11 +104,9 @@ def flinkDeploymentManagerMergeStrategy: String => MergeStrategy = {
         "org",
         "apache",
         "flink",
-        "api",
-        "java",
-        "typeutils",
-        "runtime",
-        "kryo",
+        "streaming",
+        "util",
+        "serialize",
         "FlinkChillPackageRegistrar.class"
       ) =>
     MergeStrategies.onlyFromArtifact("flink-scala_2.13")
@@ -251,8 +249,6 @@ lazy val commonSettings =
         "commons-logging"                  % "commons-logging"                % commonsLoggingV,
       ),
       excludeDependencies ++= Seq(
-        // from flink-scala, should be excluded
-        ExclusionRule("com.esotericsoftware", "kryo-shaded"),
         // conflicting logging libraries
         ExclusionRule("log4j", "log4j"),
         ExclusionRule("org.slf4j", "slf4j-log4j12"),
@@ -261,18 +257,18 @@ lazy val commonSettings =
 
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
-// You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV                = "1.20.3"
-val flinkConnectorKafkaV  = "3.4.0-1.20"
-val jdbcFlinkConnectorV   = "3.3.0-1.20"
+// You can find versions provided by Flink in its lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
+val flinkV                = "2.2.0"
+val flinkConnectorKafkaV  = "4.0.1-2.0"
+val jdbcFlinkConnectorV   = "4.0.0-2.0"
 val flinkCommonsCompressV = "1.26.0"
-val flinkCommonsLang3V    = "3.12.0"
+val flinkCommonsLang3V    = "3.18.0"
 val flinkCommonsTextV     = "1.10.0"
 val flinkCommonsIOV       = "2.15.1"
 val flinkInfluxdbJavaV    = "2.17"
-val flinkScalaV           = "1.2.1"
+val flinkScalaV           = "2.0.0.3-SNAPSHOT"
 // keep calcite synchronized with version used by current flink-sql-parser
-val calciteV              = "1.32.0"
+val calciteV              = "1.36.0"
 val avroV                 = "1.12.1"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
 val kafkaV                = "3.9.1"
@@ -749,7 +745,7 @@ lazy val flinkExecutor = (project in flink("executor"))
       .value,
     libraryDependencies ++= {
       Seq(
-        // Must be loaded before flink-java or custom serializers won't be loaded
+        // Must be loaded before flink-streaming-java or custom serializers won't be loaded
         "pl.touk"         %% "flink-scala"                % flinkScalaV % Provided,
         // Dependencies below are provided by flink-dist jar in production flink or by flink DM for scenario testing/state verification purpose
         "org.apache.flink" % "flink-streaming-java"       % flinkV      % Provided,
@@ -1883,7 +1879,7 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
       )
     },
     assembly / assemblyMergeStrategy := {
-      case PathList("org", "apache", "calcite", "sql", "fun", _) =>
+      case PathList("org", "apache", "calcite", _*) =>
         MergeStrategy.last // taking version from flink-sql-parser instead of calcite-core
       case x =>
         defaultMergeStrategy(x)
