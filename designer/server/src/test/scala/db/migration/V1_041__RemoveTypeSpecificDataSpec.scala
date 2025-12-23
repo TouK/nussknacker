@@ -25,7 +25,7 @@ class V1_041__RemoveTypeSpecificDataSpec
        |""".stripMargin
   )
 
-  private val legacyFlinkScenarioNoFields = parse {
+  private val legacyFlinkMetaDataNoFields = parse {
     """{
        |  "id": "testId",
        |  "typeSpecificData": {
@@ -39,7 +39,7 @@ class V1_041__RemoveTypeSpecificDataSpec
        |""".stripMargin
   }
 
-  private val updatedFlinkScenarioNoFields = parse {
+  private val updatedFlinkMetaDataNoFields = parse {
     """{
        |  "id": "testId",
        |  "additionalFields": {
@@ -57,7 +57,7 @@ class V1_041__RemoveTypeSpecificDataSpec
        |""".stripMargin
   }
 
-  private val legacyFlinkScenarioWithDescriptionNoProperties = parse {
+  private val legacyFlinkMetaDataWithDescriptionNoProperties = parse {
     """{
       |  "id": "testId",
       |  "typeSpecificData": {
@@ -74,7 +74,7 @@ class V1_041__RemoveTypeSpecificDataSpec
       |""".stripMargin
   }
 
-  private val updatedFlinkScenarioWithDescriptionNoProperties = parse {
+  private val updatedFlinkMetaDataWithDescriptionNoProperties = parse {
     """{
       |  "id": "testId",
       |  "additionalFields": {
@@ -92,7 +92,7 @@ class V1_041__RemoveTypeSpecificDataSpec
       |""".stripMargin
   }
 
-  private val legacyFlinkScenarioWithScenarioProperties = parse {
+  private val legacyFlinkMetaDataWithScenarioProperties = parse {
     """{
       |  "id": "testId",
       |  "typeSpecificData": {
@@ -113,7 +113,7 @@ class V1_041__RemoveTypeSpecificDataSpec
       |""".stripMargin
   }
 
-  private val updatedFlinkScenarioWithScenarioProperties = parse {
+  private val updatedFlinkMetaDataWithScenarioProperties = parse {
     """{
       |  "id": "testId",
       |  "additionalFields": {
@@ -133,7 +133,7 @@ class V1_041__RemoveTypeSpecificDataSpec
       |""".stripMargin
   }
 
-  private val legacyLiteStreamScenario = parse {
+  private val legacyLiteStreamMetaData = parse {
     """{
       |  "id": "testId",
       |  "typeSpecificData": {
@@ -144,7 +144,7 @@ class V1_041__RemoveTypeSpecificDataSpec
       |""".stripMargin
   }
 
-  private val updatedLiteStreamScenario = parse {
+  private val updatedLiteStreamMetaData = parse {
     """{
       |  "id": "testId",
       |  "additionalFields": {
@@ -159,7 +159,7 @@ class V1_041__RemoveTypeSpecificDataSpec
       |""".stripMargin
   }
 
-  private val legacyLiteRequestResponseScenario = parse {
+  private val legacyLiteRequestResponseMetaData = parse {
     """{
       |  "id": "testId",
       |  "typeSpecificData": {
@@ -170,7 +170,7 @@ class V1_041__RemoveTypeSpecificDataSpec
       |""".stripMargin
   }
 
-  private val updatedLiteRequestResponseScenario = parse {
+  private val updatedLiteRequestResponseMetaData = parse {
     """{
       |  "id": "testId",
       |  "additionalFields": {
@@ -185,7 +185,7 @@ class V1_041__RemoveTypeSpecificDataSpec
       |""".stripMargin
   }
 
-  private val legacyFragment = parse {
+  private val legacyFragmentMetaData = parse {
     """{
       |  "id": "testId",
       |  "typeSpecificData": {
@@ -196,7 +196,7 @@ class V1_041__RemoveTypeSpecificDataSpec
       |""".stripMargin
   }
 
-  private val updatedFragment = parse {
+  private val updatedFragmentMetaData = parse {
     """{
       |  "id": "testId",
       |  "additionalFields": {
@@ -214,23 +214,23 @@ class V1_041__RemoveTypeSpecificDataSpec
   }
 
   test("migrate flink scenario") {
-    migrateAndGetMetaData(legacyFlinkScenarioNoFields) shouldBe updatedFlinkScenarioNoFields
+    migrateAndGetMetaData(legacyFlinkMetaDataNoFields) shouldBe updatedFlinkMetaDataNoFields
     migrateAndGetMetaData(
-      legacyFlinkScenarioWithDescriptionNoProperties
-    ) shouldBe updatedFlinkScenarioWithDescriptionNoProperties
-    migrateAndGetMetaData(legacyFlinkScenarioWithScenarioProperties) shouldBe updatedFlinkScenarioWithScenarioProperties
+      legacyFlinkMetaDataWithDescriptionNoProperties
+    ) shouldBe updatedFlinkMetaDataWithDescriptionNoProperties
+    migrateAndGetMetaData(legacyFlinkMetaDataWithScenarioProperties) shouldBe updatedFlinkMetaDataWithScenarioProperties
   }
 
   test("migrate lite stream scenario") {
-    migrateAndGetMetaData(legacyLiteStreamScenario) shouldBe updatedLiteStreamScenario
+    migrateAndGetMetaData(legacyLiteStreamMetaData) shouldBe updatedLiteStreamMetaData
   }
 
   test("migrate lite request response scenario") {
-    migrateAndGetMetaData(legacyLiteRequestResponseScenario) shouldBe updatedLiteRequestResponseScenario
+    migrateAndGetMetaData(legacyLiteRequestResponseMetaData) shouldBe updatedLiteRequestResponseMetaData
   }
 
   test("migrate fragment") {
-    migrateAndGetMetaData(legacyFragment) shouldBe updatedFragment
+    migrateAndGetMetaData(legacyFragmentMetaData) shouldBe updatedFragmentMetaData
   }
 
   private def migrateAndGetMetaData(metadataJson: Json): Json = {
