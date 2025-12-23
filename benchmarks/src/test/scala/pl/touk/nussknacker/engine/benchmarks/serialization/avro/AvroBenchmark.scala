@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.benchmarks.serialization.avro
 
-import com.typesafe.config.ConfigFactory
 import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.benchmarks.serialization.SerializationBenchmarkSetup
-import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
+import pl.touk.nussknacker.engine.process.util.Serializers
 
 import java.util.concurrent.TimeUnit
 
@@ -17,7 +16,7 @@ class AvroBenchmark {
   private[avro] val defaultFlinkKryoSetup = new SerializationBenchmarkSetup(
     avroKryoTypeInfo,
     AvroSamples.sampleRecord,
-    config => new AvroSerializersRegistrar().register(ConfigFactory.empty(), config)
+    Serializers.registerSerializers(getClass.getClassLoader, _)
   )
 
   @Benchmark

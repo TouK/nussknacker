@@ -91,7 +91,7 @@ object ExecutionConfigPreparer extends LazyLogging {
         config: ExecutionConfig
     )(jobData: JobData, deploymentData: DeploymentData): Unit = {
       FlinkTypeInfoRegistrar.ensureTypeInfosAreRegistered()
-      Serializers.registerSerializers(modelData, config)
+      Serializers.registerSerializers(modelData.modelClassLoader, config)
       if (enableObjectReuse) {
         config.enableObjectReuse()
         logger.debug("Object reuse enabled")
