@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, SpelExpressionSuggester}
 import pl.touk.nussknacker.engine.util.CaretPosition2d
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import pl.touk.nussknacker.ui.process.test.testcase.TestCaseGlobalVariablesPreparer
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,7 +26,7 @@ class ExpressionSuggester(
     new SpelExpressionSuggester(expressionDefinition, classDefinitions, uiDictServices, classLoader)
 
   private val validationContextGlobalVariablesOnly =
-    GlobalVariablesPreparer(expressionDefinition).prepareValidationContextWithGlobalVariablesOnly(
+    TestCaseGlobalVariablesPreparer(expressionDefinition).prepareValidationContextWithGlobalVariablesOnly(
       scenarioPropertiesNames
     )
 

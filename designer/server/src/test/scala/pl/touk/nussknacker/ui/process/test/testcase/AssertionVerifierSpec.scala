@@ -44,7 +44,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     )
   )
 
-  private val testCaseGlobalVariablesPreparer = GlobalVariablesPreparer(
+  private val testCaseGlobalVariablesPreparer = TestCaseGlobalVariablesPreparer(
     modelDefinitionWithClasses.modelDefinition.expressionConfig
   )
 

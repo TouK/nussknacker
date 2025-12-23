@@ -54,7 +54,7 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
         globalVariablesPreparer
       )
     )
-    new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
+    new AssertionsCompiler(expressionCompiler, new TestCaseGlobalVariablesPreparer(globalVariablesPreparer))
   }
 
   test("should compile valid assertions for scenario") {

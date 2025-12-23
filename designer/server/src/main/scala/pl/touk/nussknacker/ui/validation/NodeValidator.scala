@@ -4,7 +4,16 @@ import cats.effect.SyncIO
 import cats.effect.kernel.Resource
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
-import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
+import pl.touk.nussknacker.engine.api.definition.{
+  AdditionalVariableProvidedInRuntime,
+  EngineScenarioCompilationDependencies,
+  Parameter,
+  ParameterCategory,
+  SpelParameterEditor
+}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   NodeDataValidator,
@@ -16,6 +25,7 @@ import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeValidationRequest, NodeValidationResult}
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
+import pl.touk.nussknacker.ui.process.test.testcase.tests
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class NodeValidator(
@@ -58,7 +68,10 @@ class NodeValidator(
                 validationPerformed = false
               )
             case ValidationPerformed(errors, parameters, expressionType) =>
-              val uiParams = parameters.map(_.map(DefinitionsService.createUIParameter))
+              val uiParams = Some(
+                createAssertionsParameter(nodeData.variableTypes) ::
+                  parameters.getOrElse(Nil).map(DefinitionsService.createUIParameter)
+              )
               val uiErrors = errors.map(PrettyValidationErrors.formatErrorMessage)
               NodeValidationResult(
                 parameters = uiParams,
@@ -71,5 +84,35 @@ class NodeValidator(
       }
       .unsafeRunSync()
   }
+
+  // TODO: move somewhere to testcase package
+  private def createAssertionsParameter(variableTypes: Map[String, TypingResult]) =
+    DefinitionsService.createUIParameter(
+      Parameter(
+        name = ParameterName("$assertions"),
+        typ = typing.Unknown,
+        editors = List(SpelParameterEditor),
+        validators = Nil,
+        defaultValue = None,
+        additionalVariables = (variableTypes ++ Map(
+          "contexts" -> Typed.genericTypeClass(
+            classOf[java.util.List[_]],
+            List(Typed.record(variableTypes))
+          ),
+          "TESTS" -> Typed.fromInstance(tests)
+        )).map { case (name, typ) => name -> AdditionalVariableProvidedInRuntime(typ) },
+        variablesToHide = Set.empty,
+        branchParam = false,
+        isLazyParameter = true,
+        scalaOptionParameter = false,
+        javaOptionalParameter = false,
+        hintText = None,
+        labelOpt = None,
+        category = ParameterCategory.Standard,
+        changesCanReloadParameters = None,
+        nonImportantForExecution = true,
+        displayType = false,
+      )
+    )
 
 }
