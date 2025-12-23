@@ -320,7 +320,7 @@ val restAssuredV              = "5.5.0"
 // depending on scala version one of this jar lays in Flink lib dir
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[Configuration] = None) =
   Seq(
-    "pl.touk" %% "flink-scala" % "1.1.4"
+    "pl.touk" %% "flink-scala" % "1.1.5"
   ).map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude ("com.esotericsoftware", "kryo-shaded"))
 
 lazy val commonDockerSettings = {
