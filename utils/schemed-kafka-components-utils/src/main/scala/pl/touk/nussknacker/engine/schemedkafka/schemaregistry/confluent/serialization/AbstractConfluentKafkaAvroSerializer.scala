@@ -16,7 +16,7 @@ import java.nio.ByteBuffer
 import scala.util.Using
 
 /**
-  * Abstract confluent serializer class. Serialize algorithm is copy past from AbstractKafkaAvroSerializer.serializeImpl.
+  * Abstract confluent serializer class. Serialize algorithm is copy past from AbstractKafkaAvroSerializer.serializeImpl BE change.
   * Serializer try convert data (in most cases it will be GenericContainer) to indicated schema.
   *
   * There is some problem when GenericContainer has different schema then final schema - DatumWriter throws exception,
