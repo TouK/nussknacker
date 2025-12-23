@@ -1,6 +1,7 @@
 import i18next from "i18next";
 import { isEmpty } from "lodash";
 
+import { memoizeByArgsWithTTL } from "../../../../helpers/memoizeByArgsWithTTL";
 import type { NodeValidationError } from "../../../../types/validation";
 import { FormatterType } from "./expression/Formatter";
 
@@ -83,7 +84,7 @@ export const maximalNumberValidator = (maximalNumber: number): Validator => ({
 
 export type FieldError = Pick<NodeValidationError, "message" | "description" | "details">;
 
-export const getValidationErrorsForField = (errors: NodeValidationError[], fieldName: string) => {
+export const getValidationErrorsForField = memoizeByArgsWithTTL((errors: NodeValidationError[], fieldName: string) => {
     const fieldErrors: FieldError[] = errors
         .filter((error) => error.fieldName === fieldName)
         .map(({ message, description, details }) => ({
@@ -92,7 +93,7 @@ export const getValidationErrorsForField = (errors: NodeValidationError[], field
             details,
         }));
     return fieldErrors;
-};
+});
 
 export const extendErrors = (
     errors: NodeValidationError[],
