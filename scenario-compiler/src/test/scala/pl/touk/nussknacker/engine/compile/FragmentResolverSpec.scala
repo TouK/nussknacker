@@ -241,7 +241,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     )
     val resolver = FragmentResolver(List(fragment, emptyFragment))
     val pattern: PartialFunction[ValidatedNel[ProcessCompilationError, CanonicalProcess], _] = {
-      case Valid(CanonicalProcess(_, flatNodes, _, _)) =>
+      case Valid(CanonicalProcess(_, flatNodes, _, _, _)) =>
         flatNodes(0) match {
           case FlatNode(Source(id, _, _)) =>
             id shouldBe "source"

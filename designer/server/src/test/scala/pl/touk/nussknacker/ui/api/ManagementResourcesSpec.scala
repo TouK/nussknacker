@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
+import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
 import pl.touk.nussknacker.restmodel.DeployRequest
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.security.Permission
@@ -30,7 +31,6 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
-import pl.touk.nussknacker.ui.process.test.testcase.{Assertion, EnricherMock, TestCase}
 
 import java.time.Instant
 import java.util.UUID
@@ -439,6 +439,35 @@ class ManagementResourcesSpec
         .downField("pretty")
         .downN(0)
         .focus shouldBe Some(Json.fromString("ala"))
+    }
+  }
+
+  test("save and return test case") {
+    val testDataContent =
+      """[
+        |  {"sourceId":"startProcess","variables":{"input":["ala"]}}
+        |]""".stripMargin
+    val testCase = TestCase(
+      id = UUID.randomUUID(),
+      name = "dummy",
+      inputs = testDataContent,
+      mocks = Map(
+        NodeId("someEnricher") -> EnricherMock("'b'".spel)
+      ),
+      assertions = Map(
+        NodeId("endsuffix") -> List(
+          Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
+          Assertion("#TESTS.assertEquals('ala', #contexts[1].input[0])".spel),
+        )
+      )
+    )
+    val sampleScenarioWithTestCase = ProcessTestData.sampleScenario.copy(testCase = Some(testCase))
+
+    saveCanonicalProcessAndAssertSuccess(sampleScenarioWithTestCase)
+
+    getProcess(processName) ~> check {
+      val scenarioDetails = responseAs[ScenarioWithDetails]
+      scenarioDetails.scenarioGraph.flatMap(_.testCase) shouldBe Some(testCase)
     }
   }
 

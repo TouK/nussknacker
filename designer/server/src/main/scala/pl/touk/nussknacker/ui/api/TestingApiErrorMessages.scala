@@ -6,12 +6,12 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.test.testcase.Assertion
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.DeserializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ScenarioValidationError
-import pl.touk.nussknacker.ui.process.test.testcase.Assertion
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 
