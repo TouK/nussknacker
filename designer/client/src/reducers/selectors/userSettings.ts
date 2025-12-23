@@ -1,6 +1,7 @@
 import { createSelector } from "reselect";
 import type { Entry } from "type-fest";
 
+import type { UserSettingValue } from "../../containers/settings/collapsibleSwitchList";
 import type { RootState } from "../index";
 import type { Setting, UserSettings } from "../userSettings";
 
@@ -21,14 +22,15 @@ export const getUserSettings = createSelector([userSettings, getUserSettingsValu
 });
 
 export const getUserSettingsMerged = createSelector([userSettings], ({ values, defaults }) => {
-    const result: Partial<Record<Setting, { value: boolean; isDefault: boolean }>> = {};
+    const result: Partial<Record<Setting, UserSettingValue>> = {};
     Object.entries(defaults).forEach(([key, value]: Entry<typeof defaults>) => {
-        result[key] = { value, isDefault: true };
+        result[key] = { value, isDefault: true, hasDefault: true };
     });
     Object.entries(values).forEach(([key, value]: Entry<typeof values>) => {
-        result[key] ??= { value: null, isDefault: true };
+        const hasDefault = key in defaults;
+        result[key] ??= { value: null, isDefault: true, hasDefault };
         if (value !== true && value !== false) return;
-        result[key] = { value, isDefault: false };
+        result[key] = { value, isDefault: false, hasDefault };
     });
     return result;
 });
