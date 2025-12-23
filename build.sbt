@@ -948,7 +948,8 @@ lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")
         "org.apache.flink" % "flink-connector-kafka" % flinkConnectorKafkaV,
         "org.apache.flink" % "flink-connector-base"  % flinkV     % Provided,
         "org.apache.flink" % "flink-streaming-java"  % flinkV     % Provided,
-        "org.scalatest"   %% "scalatest"             % scalaTestV % Test
+        "org.scalatest"   %% "scalatest"             % scalaTestV % Test,
+        "org.apache.flink" % "flink-avro"            % flinkV     % Test,
       )
     }
   )
