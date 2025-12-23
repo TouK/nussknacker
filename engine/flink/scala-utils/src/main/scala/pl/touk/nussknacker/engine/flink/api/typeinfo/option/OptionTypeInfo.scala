@@ -24,7 +24,6 @@ import org.apache.flink.api.common.typeinfo.{AtomicType, TypeInformation}
 import org.apache.flink.api.common.typeutils.{TypeComparator, TypeSerializer}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.NothingSerializer
 
-import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
 /** TypeInformation for [[Option]]. */
@@ -59,11 +58,6 @@ class OptionTypeInfo[A, T <: Option[A]](private val elemTypeInfo: TypeInformatio
       throw new UnsupportedOperationException("Element type that doesn't support ")
     }
   }
-
-  // TODO: Remove after upgrade to Flink 2.x
-  @nowarn("cat=deprecation")
-  override def createSerializer(config: ExecutionConfig): TypeSerializer[T] =
-    createSerializer(config.getSerializerConfig)
 
   override def createSerializer(config: SerializerConfig): TypeSerializer[T] = {
     if (elemTypeInfo == null) {

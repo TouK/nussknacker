@@ -23,8 +23,6 @@ import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.{PatientScalaFutures, ValidatedValuesDetailedMessage}
 
-import scala.annotation.nowarn
-
 class SinkWriterWithExceptionHandlerTest
     extends AnyFunSuite
     with Matchers
@@ -101,11 +99,6 @@ object CollectSink extends SinkFactory {
 
           override def close(): Unit = exceptionHandler.close()
         }
-
-      // TODO: Remove after upgrade to Flink 2.x
-      @nowarn("cat=deprecation")
-      override def createWriter(context: Sink.InitContext): SinkWriter[Integer] =
-        throw new IllegalAccessException("This method shouldn't be invoked")
 
     }
   }

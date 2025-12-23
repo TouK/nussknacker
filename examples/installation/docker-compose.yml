@@ -198,7 +198,7 @@ services:
     build:
       context: ./flink/
       args:
-        TOUK_FLINK_VERSION: "1.2.1-flink1.20.3-scala_2.13"
+        TOUK_FLINK_VERSION: "2.0.0-flink2.2.0-scala_2.13"
     restart: unless-stopped
     command: jobmanager
     environment:
@@ -221,7 +221,7 @@ services:
     build:
       context: ./flink/
       args:
-        TOUK_FLINK_VERSION: "1.2.1-flink1.20.3-scala_2.13"
+        TOUK_FLINK_VERSION: "2.0.0-flink2.2.0-scala_2.13"
     restart: unless-stopped
     command: taskmanager
     environment:

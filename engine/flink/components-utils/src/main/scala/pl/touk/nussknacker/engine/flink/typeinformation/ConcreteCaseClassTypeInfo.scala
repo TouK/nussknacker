@@ -1,12 +1,10 @@
 package pl.touk.nussknacker.engine.flink.typeinformation
 
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.serialization.SerializerConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.{CaseClassTypeInfo, ScalaCaseClassSerializer}
 
-import scala.annotation.nowarn
 import scala.reflect.{classTag, ClassTag}
 
 class ConcreteCaseClassTypeInfo[T <: Product](cls: Class[T], fields: List[(String, TypeInformation[_])])
@@ -15,11 +13,6 @@ class ConcreteCaseClassTypeInfo[T <: Product](cls: Class[T], fields: List[(Strin
   override def createSerializer(config: SerializerConfig): TypeSerializer[T] = {
     new ScalaCaseClassSerializer[T](cls, fields.map(_._2.createSerializer(config)).toArray)
   }
-
-  // TODO: Remove after upgrade to Flink 2.x
-  @nowarn("cat=deprecation")
-  override def createSerializer(config: ExecutionConfig): TypeSerializer[T] =
-    createSerializer(config.getSerializerConfig)
 
 }
 

@@ -8,13 +8,11 @@ import org.apache.flink.core.execution.{PipelineExecutor, PipelineExecutorFactor
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterJobClient}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.graph.{StreamConfig, StreamGraph}
-import org.apache.flink.util.ChildFirstClassLoader
+import org.apache.flink.streaming.api.graph.StreamGraph
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 
 import java.lang.{Boolean => JBoolean}
 import java.util.{stream => jstream}
-import java.util.function.Consumer
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
@@ -55,16 +53,18 @@ object FlinkMiniClusterStreamExecutionEnvironmentFactory extends LazyLogging {
             (pipeline: Pipeline, _: Configuration, userCodeClassloader: ClassLoader) => {
               pipeline match {
                 case streamGraph: StreamGraph =>
-                  val jobId = Option(configuration.get(PipelineOptionsInternal.PIPELINE_FIXED_JOB_ID))
+                  Option(configuration.get(PipelineOptionsInternal.PIPELINE_FIXED_JOB_ID))
                     .map(JobID.fromHexString)
-                    .orNull
+                    .foreach(streamGraph.setJobId)
+
                   ensureCorrectClassloaderForExtendedDebugInfo(modelClassLoader)
-                  val jobGraph = streamGraph.getJobGraph(userCodeClassloader, jobId)
-                  jobGraph.setClasspaths(modelClassLoader.getURLs.toList.asJava)
-                  if (jobGraph.getSavepointRestoreSettings == SavepointRestoreSettings.none)
-                    jobGraph.setSavepointRestoreSettings(streamGraph.getSavepointRestoreSettings)
+
+                  streamGraph.setClasspath(modelClassLoader.getURLs.toList.asJava)
+                  if (streamGraph.getSavepointRestoreSettings == SavepointRestoreSettings.none)
+                    streamGraph.setSavepointRestoreSettings(streamGraph.getSavepointRestoreSettings)
+
                   miniCluster
-                    .submitJob(jobGraph)
+                    .submitJob(streamGraph)
                     .thenApply((result: JobSubmissionResult) =>
                       new MiniClusterJobClient(
                         result.getJobID,
