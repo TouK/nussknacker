@@ -52,11 +52,11 @@ export interface NodeCounts {
     fragmentCounts: ProcessCounts;
 }
 
-interface TestAssertionResultSuccess {
+export interface TestAssertionResultSuccess {
     type: "SuccessfulAssertion";
 }
 
-interface TestAssertionResultError {
+export interface TestAssertionResultError {
     type: "FailedAssertion";
     message: string;
 }
