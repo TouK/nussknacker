@@ -1,3 +1,4 @@
+import { isEqual } from "lodash";
 import type { PropsWithChildren } from "react";
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
@@ -51,7 +52,10 @@ export function TestResultsWrapper({
             : TestResultUtils.hasTestResults(nodeResults)
             ? TestResultUtils.availableContexts(nodeResults)[0].id
             : null;
-        setTestResultsState(TestResultUtils.stateForSelectTestResults(nodeResults, chosenId));
+        setTestResultsState((current) => {
+            const testResults = TestResultUtils.stateForSelectTestResults(nodeResults, chosenId);
+            return isEqual(testResults, current) ? current : testResults;
+        });
     }, [nodeResults, io?.state?.inputDataSetId, io?.state?.outputDataSetId, showInputsAndOutputs]);
 
     return (
