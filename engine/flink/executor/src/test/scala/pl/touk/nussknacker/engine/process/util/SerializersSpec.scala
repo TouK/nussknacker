@@ -4,7 +4,9 @@ import com.esotericsoftware.kryo.io.{Input, Output}
 import org.apache.flink.runtime.types.FlinkScalaKryoInstantiator
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.process.util.Serializers.CaseClassSerializer
+
+import java.util.Collections
+import scala.jdk.CollectionConverters._
 
 class SerializersSpec extends AnyFlatSpec with Matchers {
 
@@ -69,17 +71,32 @@ class SerializersSpec extends AnyFlatSpec with Matchers {
   it should "serialize nested case class with serial version uid" in {
     val obj = ObjCaseClassWrapper.CaseClassWithSerialVersionUIDInObject("a")
     val deserialized =
-      serializeAndDeserialize(obj).asInstanceOf[ObjCaseClassWrapper.CaseClassWithSerialVersionUIDInObject]
+      serializeAndDeserialize(obj)
     deserialized.a shouldBe obj.a
     deserialized.someField shouldBe obj.someField
   }
 
-  def serializeAndDeserialize(caseClass: Product): Product = {
-    val kryo       = new FlinkScalaKryoInstantiator().newKryo()
-    val out        = new Output(1024)
-    val serializer = new CaseClassSerializer()
-    serializer.write(kryo, out, caseClass)
-    serializer.read(kryo, new Input(out.toBytes), caseClass.getClass.asInstanceOf[Class[Product]])
+  // FIXME in flink-scala
+  ignore should "serialize unmodifiableList" in {
+    val obj = Collections.unmodifiableList(List("foo", "bar").asJava)
+    val deserialized =
+      serializeAndDeserialize(obj)
+    deserialized shouldBe obj
+  }
+
+  // FIXME in flink-scala
+  ignore should "serialize unmodifiableMap" in {
+    val obj = Collections.unmodifiableMap(Map("foo" -> 1, "bar" -> 2).asJava)
+    val deserialized =
+      serializeAndDeserialize(obj)
+    deserialized shouldBe obj
+  }
+
+  def serializeAndDeserialize[T](obj: T): T = {
+    val kryo = new FlinkScalaKryoInstantiator().newKryo()
+    val out  = new Output(1024)
+    kryo.writeObject(out, obj)
+    kryo.readObject(new Input(out.toBytes), obj.getClass.asInstanceOf[Class[T]])
   }
 
 }
