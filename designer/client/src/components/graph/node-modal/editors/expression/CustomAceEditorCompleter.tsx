@@ -40,10 +40,15 @@ declare module "ace-builds" {
             activated: boolean;
             openPopup: (this: Autocomplete, editor: Ace.Editor, prefix: string, keepPopupPosition: boolean) => void;
             updateCompletions: (this: Autocomplete, keepPopupPosition: boolean, options: Ace.CompletionOptions) => void;
+            getPopup(): AcePopup;
         }
 
         interface Editor {
             readonly completer: Autocomplete;
+        }
+
+        interface AcePopup {
+            isOpen?: boolean;
         }
     }
 }

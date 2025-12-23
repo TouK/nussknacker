@@ -1,5 +1,5 @@
 import { produce } from "immer";
-import { set } from "lodash";
+import { get, isEqual, set } from "lodash";
 
 import type { Paths, PathValue } from "./typeHelpers";
 import { normalizePathString } from "./typeHelpers";
@@ -11,10 +11,13 @@ export function setImmutable<T extends object, P = unknown>(
 ): T {
     return produce(object, (draft) => {
         try {
-            return set(draft, normalizePathString(path), value);
+            const pathString = normalizePathString(path);
+            const current = get(draft, pathString);
+            if (!isEqual(current, value)) {
+                set(draft, pathString, value);
+            }
         } catch (e) {
             console.warn(`${e}, not changed.`);
-            return draft;
         }
     });
 }
