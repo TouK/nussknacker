@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.test.testcase.TestCase
 
 import scala.language.implicitConversions
 
@@ -83,7 +84,8 @@ case class CanonicalProcess(
     // DON'T use these fields, rely on allStartNodes or mapAllNodes instead.
     nodes: List[CanonicalNode],
     additionalBranches: List[List[CanonicalNode]] = List.empty,
-    stickyNotes: List[StickyNote] = List.empty
+    stickyNotes: List[StickyNote] = List.empty,
+    testCase: Option[TestCase] = None,
 ) extends CanonicalTreeNode {
 
   import CanonicalProcess._

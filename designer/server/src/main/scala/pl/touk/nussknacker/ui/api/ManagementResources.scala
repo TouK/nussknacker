@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.deployment.LatestVersion
+import pl.touk.nussknacker.engine.test.testcase.TestCase
 import pl.touk.nussknacker.restmodel.{
   CancelRequest,
   DeployRequest,
@@ -31,7 +32,7 @@ import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.test.{ScenarioTestService, SerializedScenarioRecordsContent}
-import pl.touk.nussknacker.ui.process.test.testcase.{ScenarioWithTestCase, TestCase}
+import pl.touk.nussknacker.ui.process.test.testcase.ScenarioWithTestCase
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}

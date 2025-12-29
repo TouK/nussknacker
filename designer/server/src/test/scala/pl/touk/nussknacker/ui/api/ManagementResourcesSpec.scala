@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
+import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
 import pl.touk.nussknacker.restmodel.DeployRequest
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.security.Permission
@@ -30,7 +31,6 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
-import pl.touk.nussknacker.ui.process.test.testcase.{Assertion, EnricherMock, TestCase}
 
 import java.time.Instant
 import java.util.UUID
@@ -442,6 +442,35 @@ class ManagementResourcesSpec
     }
   }
 
+  test("save and return test case") {
+    val testDataContent =
+      """[
+        |  {"sourceId":"startProcess","variables":{"input":["ala"]}}
+        |]""".stripMargin
+    val testCase = TestCase(
+      id = UUID.randomUUID(),
+      name = "dummy",
+      inputs = testDataContent,
+      mocks = Map(
+        NodeId("someEnricher") -> EnricherMock("'b'".spel)
+      ),
+      assertions = Map(
+        NodeId("endsuffix") -> List(
+          Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
+          Assertion("#TESTS.assertEquals('ala', #contexts[1].input[0])".spel),
+        )
+      )
+    )
+    val sampleScenarioWithTestCase = ProcessTestData.sampleScenario.copy(testCase = Some(testCase))
+
+    saveCanonicalProcessAndAssertSuccess(sampleScenarioWithTestCase)
+
+    getProcess(processName) ~> check {
+      val scenarioDetails = responseAs[ScenarioWithDetails]
+      scenarioDetails.scenarioGraph.flatMap(_.testCase) shouldBe Some(testCase)
+    }
+  }
+
   test("run test case") {
     val testDataContent =
       """[
@@ -459,6 +488,11 @@ class ManagementResourcesSpec
         NodeId("endsuffix") -> List(
           Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
           Assertion("#TESTS.assertEquals('ala', #contexts[1].input[0])".spel),
+          // The output variable produced by the messagesuffix node is not visible at that node, but rather at the subsequent one (endsuffix).
+          Assertion("#TESTS.assertEquals({message: 'message'}, #contexts[0].output)".spel),
+        ),
+        NodeId("messagesuffix") -> List(
+          Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
         )
       )
     )
@@ -483,6 +517,20 @@ class ManagementResourcesSpec
           "message" -> Json.fromString("Expected: [ala] but found [bela]")
         )
       )
+
+      responseJson.hcursor
+        .downField("assertionsResults")
+        .downField("endsuffix")
+        .downN(2)
+        .downField("type")
+        .focus shouldBe Some(Json.fromString("SuccessfulAssertion"))
+
+      responseJson.hcursor
+        .downField("assertionsResults")
+        .downField("messagesuffix")
+        .downN(0)
+        .downField("type")
+        .focus shouldBe Some(Json.fromString("SuccessfulAssertion"))
     }
   }
 
@@ -582,6 +630,31 @@ class ManagementResourcesSpec
     runTestCase(ProcessTestData.sampleScenario, invalidTestCase) ~> check {
       status shouldEqual StatusCodes.BadRequest
       responseAs[String] shouldBe "Mocks configured for not existing nodes: notExistingEnricher"
+    }
+  }
+
+  test("assertion on non existing context variable should return bad request") {
+    val testDataContent =
+      """[
+        |  {"sourceId":"startProcess","variables":{"input":["ala"]}}
+        |]""".stripMargin
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
+
+    val invalidTestCase = TestCase(
+      UUID.randomUUID(),
+      "dummy",
+      testDataContent,
+      Map.empty,
+      Map(
+        NodeId("messagesuffix") -> List(
+          // The output variable produced by the messagesuffix node is not visible at that node, but rather at the subsequent one.
+          Assertion("#TESTS.assertEquals({message: 'message'}, #contexts[0].output)".spel),
+        )
+      )
+    )
+    runTestCase(ProcessTestData.sampleScenario, invalidTestCase) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      responseAs[String] should include("There is no property 'output' in type")
     }
   }
 
