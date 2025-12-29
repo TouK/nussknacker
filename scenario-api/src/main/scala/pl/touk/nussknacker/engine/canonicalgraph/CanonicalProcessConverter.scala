@@ -20,7 +20,7 @@ object CanonicalProcessConverter {
         }
     }
     val props = ProcessProperties(process.metaData.additionalFields)
-    ScenarioGraph(props, nodes, edges, process.stickyNotes, process.testCase)
+    ScenarioGraph(props, nodes, edges, process.stickyNotes, process.testCases)
   }
 
   private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[NodeData], List[Edge]) =
@@ -94,7 +94,7 @@ object CanonicalProcessConverter {
       findRootNodes(graph).map(headNode => unFlattenNode(nodesMap, None)(headNode, edgesFromMapStart))
     val nodes              = rootsUnflattened.headOption.getOrElse(List.empty)
     val additionalBranches = if (rootsUnflattened.isEmpty) List.empty else rootsUnflattened.tail
-    CanonicalProcess(graph.toMetaData(name), nodes, additionalBranches, graph.stickyNotes, graph.testCase)
+    CanonicalProcess(graph.toMetaData(name), nodes, additionalBranches, graph.stickyNotes, graph.testCases)
   }
 
   // TODO: Should find root nodes based no structure to have loose nodes visible at canonical process level - otherwise
