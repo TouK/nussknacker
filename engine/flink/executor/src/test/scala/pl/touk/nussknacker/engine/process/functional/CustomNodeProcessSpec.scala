@@ -27,7 +27,6 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
 
-    // without certain hack (see SpelHack & SpelMapHack) this throws exception.
     processInvoker.invokeWithSampleData(process, data)
 
   }
@@ -47,7 +46,6 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
 
-    // without certain hack (see SpelHack & SpelMapHack) this throws exception.
     processInvoker.invokeWithSampleData(process, data)
   }
 
@@ -319,7 +317,6 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
 
-    // without certain hack (see SpelHack & SpelMapHack) this throws exception.
     processInvoker.invokeWithSampleData(process, data)
     ProcessTestHelpers.optionalEndingCustomResultsHolder.results shouldBe List("1")
   }
