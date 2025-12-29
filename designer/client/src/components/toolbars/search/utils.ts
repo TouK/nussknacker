@@ -44,11 +44,29 @@ const fieldsSelectors: FilterSelector = [
     },
     {
         name: "value",
-        selector: (node) => [node.parameters, node.ref?.parameters, node.service?.parameters, node.fields].flat().map((p) => p?.expression),
+        selector: (node) =>
+            [
+                node.parameters,
+                node.ref?.parameters,
+                node.service?.parameters,
+                node.fields,
+                node.branchParameters?.flatMap((bp) => bp.parameters),
+            ]
+                .flat()
+                .map((p) => p?.expression),
     },
     {
         name: "label",
-        selector: (node) => [node.parameters, node.ref?.parameters, node.service?.parameters, node.fields].flat().map((p) => p?.name),
+        selector: (node) =>
+            [
+                node.parameters,
+                node.ref?.parameters,
+                node.service?.parameters,
+                node.fields,
+                node.branchParameters?.flatMap((bp) => bp.parameters),
+            ]
+                .flat()
+                .map((p) => p?.name),
     },
 ];
 
