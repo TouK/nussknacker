@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka._
 
 import java.util.{Collections, UUID}
-import scala.concurrent.duration.DurationInt
 
 class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest
     extends BaseCachedTopicsExistenceValidatorTest(
@@ -130,7 +129,6 @@ abstract class BaseCachedTopicsExistenceValidatorTest(kafkaAutoCreateEnabled: Bo
     kafkaProperties = Map("bootstrap.servers" -> container.bootstrapServers),
     kafkaEspProperties = None,
     consumerGroupNamingStrategy = None,
-    avroKryoGenericRecordSchemaIdSerialization = None,
     // longer timeout, as container might need some time to make initial assignments etc.
     topicsExistenceValidationConfig = TopicsExistenceValidationConfig(
       enabled = true,

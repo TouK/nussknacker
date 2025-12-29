@@ -2,29 +2,33 @@ package pl.touk.nussknacker.engine.process.util
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.flink.api.serialization.SerializersRegistrar
-import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
+import org.apache.flink.api.java.typeutils.AvroUtils
 
-/**
-  * Watch out, serializers are also serialized. Incompatible SerializationUID on serializer class can lead process state loss (unable to continue from old snapshot).
-  * This is why we set SerialVersionUID explicit.
-  *
-  * @see [[org.apache.flink.api.common.typeutils.TypeSerializerSnapshotSerializationUtil#writeSerializersAndConfigsWithResilience]]
-  * @see [[org.apache.flink.api.common.typeutils.TypeSerializerSnapshotSerializationUtil#readSerializersAndConfigsWithResilience]]
-  */
+import scala.reflect.internal.util.ScalaClassLoader.apply
+
 object Serializers extends LazyLogging {
-  private val SerialVersionUIDFieldName = "serialVersionUID"
 
-  def registerSerializers(
-      modelData: ModelData,
-      extraSerializersRegistrars: List[SerializersRegistrar],
-      config: ExecutionConfig
+  private val genericRecordClassName = "org.apache.avro.generic.GenericData$Record"
+
+  def registerSerializers(modelClassLoader: ClassLoader, executionConfig: ExecutionConfig): Unit = {
+    addAvroSerializersWhenAvroIsAvailableOnClasspath(modelClassLoader, executionConfig)
+    TimeSerializers.addDefaultSerializers(executionConfig)
+  }
+
+  private def addAvroSerializersWhenAvroIsAvailableOnClasspath(
+      modelClassLoader: ClassLoader,
+      executionConfig: ExecutionConfig
   ): Unit = {
-    (ScalaServiceLoader
-      .load[SerializersRegistrar](getClass.getClassLoader) ++ extraSerializersRegistrars)
-      .foreach(_.register(modelData.modelConfig.underlyingConfig, config))
-    TimeSerializers.addDefaultSerializers(config)
+    modelClassLoader
+      .tryToLoadClass(genericRecordClassName) match {
+      case Some(genericRecordClass) =>
+        logger.debug(s"$genericRecordClassName is available on classpath. Registering default avro-kryo serializers")
+        AvroUtils.getAvroUtils.addAvroSerializersIfRequired(executionConfig.getSerializerConfig, genericRecordClass)
+      case None =>
+        logger.debug(
+          s"$genericRecordClassName is not available on classpath. Skipping default avro-kryo serializers registration"
+        )
+    }
   }
 
 }

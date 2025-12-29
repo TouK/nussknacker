@@ -33,7 +33,6 @@ class AzureSchemaBasedSerdeProviderIntegrationTest extends AnyFunSuite with Opti
     val kafkaComponentsConfig = KafkaComponentsConfig(
       config,
       None,
-      avroKryoGenericRecordSchemaIdSerialization = Some(false),
       showTopicsWithoutSchema = false,
     )
     val schema = AvroUtils.parseSchema("""{
