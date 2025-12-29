@@ -106,7 +106,11 @@ class HyperLogLogPlusAggregatorSpec extends AnyFunSuite with Matchers {
       _ shouldBe new ValueSerializer(classOf[HyperLogLogPlusWrapper])
     )
     // this is Kryo overhead, can change with Flink/Kryo version
-    checkSerialization(TypeInformation.of(classOf[Any]), 91, _ shouldBe new KryoSerializer(classOf[Any], ex))
+    checkSerialization(
+      TypeInformation.of(classOf[Any]),
+      91,
+      _ shouldBe new KryoSerializer(classOf[Any], ex.getSerializerConfig)
+    )
   }
 
 }

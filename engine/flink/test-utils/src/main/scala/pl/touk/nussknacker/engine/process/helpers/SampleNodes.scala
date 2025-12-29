@@ -423,14 +423,17 @@ object SampleNodes {
       ): DataStream[ValueWithContext[AnyRef]] = {
         val streamOperator = new AbstractStreamOperator[ValueWithContext[AnyRef]]
           with OneInputStreamOperator[Context, ValueWithContext[AnyRef]] {
+
           override def processElement(element: StreamRecord[Context]): Unit = {
             val valueWithContext: ValueWithContext[AnyRef] =
               ValueWithContext(element.getTimestamp.asInstanceOf[AnyRef], element.getValue)
             val outputResult = new StreamRecord[ValueWithContext[AnyRef]](valueWithContext, timestampToSet)
             output.collect(outputResult)
           }
+
           override def processRecordAttributes(recordAttributes: RecordAttributes): Unit =
             super.processRecordAttributes(recordAttributes)
+
         }
         str.transform("collectTimestammp", ctx.valueWithContextInfo.forUnknown, streamOperator)
       }

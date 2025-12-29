@@ -12,7 +12,6 @@ object Serializers extends LazyLogging {
 
   def registerSerializers(modelClassLoader: ClassLoader, executionConfig: ExecutionConfig): Unit = {
     addAvroSerializersWhenAvroIsAvailableOnClasspath(modelClassLoader, executionConfig)
-    TimeSerializers.addDefaultSerializers(executionConfig)
   }
 
   private def addAvroSerializersWhenAvroIsAvailableOnClasspath(

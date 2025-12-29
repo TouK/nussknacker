@@ -234,7 +234,7 @@ lazy val commonSettings =
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
 val flinkV                = "1.20.2"
-val flinkConnectorKafkaV  = "3.3.0-1.20"
+val flinkConnectorKafkaV  = "3.4.0-1.20"
 val jdbcFlinkConnectorV   = "3.3.0-1.20"
 val flinkCommonsCompressV = "1.26.0"
 val flinkCommonsLang3V    = "3.12.0"
