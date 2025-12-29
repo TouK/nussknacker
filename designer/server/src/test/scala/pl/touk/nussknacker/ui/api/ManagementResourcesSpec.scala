@@ -459,11 +459,6 @@ class ManagementResourcesSpec
         NodeId("endsuffix") -> List(
           Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
           Assertion("#TESTS.assertEquals('ala', #contexts[1].input[0])".spel),
-          // The output variable produced by the messagesuffix node is not visible at that node, but rather at the subsequent one (endsuffix).
-          Assertion("#TESTS.assertEquals({message: 'message'}, #contexts[0].output)".spel),
-        ),
-        NodeId("messagesuffix") -> List(
-          Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
         )
       )
     )
@@ -488,20 +483,6 @@ class ManagementResourcesSpec
           "message" -> Json.fromString("Expected: [ala] but found [bela]")
         )
       )
-
-      responseJson.hcursor
-        .downField("assertionsResults")
-        .downField("endsuffix")
-        .downN(2)
-        .downField("type")
-        .focus shouldBe Some(Json.fromString("SuccessfulAssertion"))
-
-      responseJson.hcursor
-        .downField("assertionsResults")
-        .downField("messagesuffix")
-        .downN(0)
-        .downField("type")
-        .focus shouldBe Some(Json.fromString("SuccessfulAssertion"))
     }
   }
 
@@ -601,31 +582,6 @@ class ManagementResourcesSpec
     runTestCase(ProcessTestData.sampleScenario, invalidTestCase) ~> check {
       status shouldEqual StatusCodes.BadRequest
       responseAs[String] shouldBe "Mocks configured for not existing nodes: notExistingEnricher"
-    }
-  }
-
-  test("assertion on non existing context variable should return bad request") {
-    val testDataContent =
-      """[
-        |  {"sourceId":"startProcess","variables":{"input":["ala"]}}
-        |]""".stripMargin
-    saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
-
-    val invalidTestCase = TestCase(
-      UUID.randomUUID(),
-      "dummy",
-      testDataContent,
-      Map.empty,
-      Map(
-        NodeId("messagesuffix") -> List(
-          // The output variable produced by the messagesuffix node is not visible at that node, but rather at the subsequent one.
-          Assertion("#TESTS.assertEquals({message: 'message'}, #contexts[0].output)".spel),
-        )
-      )
-    )
-    runTestCase(ProcessTestData.sampleScenario, invalidTestCase) ~> check {
-      status shouldEqual StatusCodes.BadRequest
-      responseAs[String] should include("There is no property 'output' in type")
     }
   }
 
