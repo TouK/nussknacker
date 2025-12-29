@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.registrar
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.RuntimeExecutionMode
-import org.apache.flink.runtime.state.StateBackend
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.util.OutputTag
@@ -13,10 +13,7 @@ import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode.ExecutionMode
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.process.util.StateConfiguration
-import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
-
-import scala.annotation.nowarn
 
 /*
   This trait is meant to be the place to configure StreamExecutionEnvironment. Here (e.g. in DefaultStreamExecutionEnvPreparer)
@@ -72,13 +69,20 @@ class DefaultStreamExecutionEnvPreparer(
     (jobConfig.rocksDB, streamMetaData.spillStateToDisk) match {
       case (Some(config), Some(true)) if config.enable =>
         logger.info("Using RocksDB state backend")
-        env.configure(StateConfiguration.prepareRocksDBStateBackendFlinkConfiguration(config), null)
+        env.configure(prepareRocksDBStateBackendFlinkConfiguration(config), null)
       case (None, Some(true)) =>
         // TODO: handle non-configured rocksDB more transparently e.g. hide checkbox on FE?
         logger.warn("RocksDB not configured, cannot use spillStateToDisk")
       case _ =>
         logger.info("Using default state backend configured by cluster")
     }
+  }
+
+  // This method is protected for purpose of backward compatibility layer for flink 1.20
+  protected def prepareRocksDBStateBackendFlinkConfiguration(
+      config: StateConfiguration.RocksDBStateBackendConfig
+  ): Configuration = {
+    StateConfiguration.prepareRocksDBStateBackendFlinkConfiguration(config)
   }
 
   private def configureCheckpoints(env: StreamExecutionEnvironment, streamMetaData: StreamMetaData): Unit = {
