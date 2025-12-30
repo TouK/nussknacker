@@ -34,7 +34,7 @@ class FlinkScenarioUnitTestJob(modelData: ModelData) {
       FlinkProcessRegistrar(
         new FlinkProcessCompilerDataFactory(modelData, deploymentData, List.empty),
         FlinkJobConfig.parse(modelData.modelConfig),
-        ExecutionConfigPreparer.unOptimizedChain(modelData, List.empty)
+        ExecutionConfigPreparer.unOptimizedChain(modelData)
       )
     registrar.register(env, scenario, version, deploymentData)
   }

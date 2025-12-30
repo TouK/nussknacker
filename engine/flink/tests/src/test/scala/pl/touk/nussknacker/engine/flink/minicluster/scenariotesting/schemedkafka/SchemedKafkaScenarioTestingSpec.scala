@@ -7,7 +7,6 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import io.circe.Json._
 import org.apache.avro.Schema
-import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{BeforeAndAfterAll, LoneElement, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -76,7 +75,6 @@ class SchemedKafkaScenarioTestingSpec
       fromAnyRef("schema_registry_should_not_be_used:8081")
     )
     .withValue("components.kafka.config.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
-    .withValue("components.kafka.config.avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(false))
 
   private val modelData =
     LocalModelData(

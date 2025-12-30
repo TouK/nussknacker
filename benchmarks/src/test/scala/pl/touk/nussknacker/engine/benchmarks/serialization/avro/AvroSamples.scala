@@ -3,11 +3,8 @@ package pl.touk.nussknacker.engine.benchmarks.serialization.avro
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{GenericRecordWithSchemaId, SchemaId}
 
 object AvroSamples {
-
-  val sampleSchemaId = SchemaId.fromInt(123)
 
   private val fieldsCount = 10
 
@@ -27,9 +24,6 @@ object AvroSamples {
     1.to(fieldsCount).foreach(i => builder.set(fieldName(i), sampleFieldValue))
     builder.build()
   }
-
-  val sampleRecordWithSchemaId: GenericRecordWithSchemaId =
-    new GenericRecordWithSchemaId(sampleRecord, sampleSchemaId, true)
 
   private def fieldSchema(i: Int) = s"""    { "name": "${fieldName(i)}", "type": "string" }"""
 

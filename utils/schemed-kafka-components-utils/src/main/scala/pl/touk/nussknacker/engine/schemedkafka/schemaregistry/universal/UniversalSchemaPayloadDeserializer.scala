@@ -8,12 +8,10 @@ import org.apache.avro.io.DecoderFactory
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroRecordDeserializer, DatumReaderWriterMixin}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadToAvroConverter
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
@@ -29,13 +27,11 @@ trait UniversalSchemaPayloadDeserializer {
 }
 
 object AvroPayloadDeserializer {
-  def apply(config: KafkaComponentsConfig) =
-    new AvroPayloadDeserializer(GenericRecordSchemaIdSerializationSupport(config), DecoderFactory.get())
+  val instance = new AvroPayloadDeserializer(DecoderFactory.get())
 }
 
 // This implementation is based on Confluent's one but currently deosn't use any Confluent specific things
 class AvroPayloadDeserializer(
-    genericRecordSchemaIdSerializationSupport: GenericRecordSchemaIdSerializationSupport,
     decoderFactory: DecoderFactory
 ) extends DatumReaderWriterMixin
     with UniversalSchemaPayloadDeserializer {
@@ -51,8 +47,7 @@ class AvroPayloadDeserializer(
     val avroWriterSchemaData   = writerSchemaData.asInstanceOf[RuntimeSchemaData[AvroSchema]]
     val readerSchemaData       = avroExpectedSchemaData.getOrElse(avroWriterSchemaData)
     val reader = createDatumReader(avroWriterSchemaData.schema.rawSchema(), readerSchemaData.schema.rawSchema())
-    val result = recordDeserializer.deserializeRecord(readerSchemaData.schema.rawSchema(), reader, buffer)
-    genericRecordSchemaIdSerializationSupport.wrapWithRecordWithSchemaIdIfNeeded(result, readerSchemaData)
+    recordDeserializer.deserializeRecord(readerSchemaData.schema.rawSchema(), reader, buffer)
   }
 
 }

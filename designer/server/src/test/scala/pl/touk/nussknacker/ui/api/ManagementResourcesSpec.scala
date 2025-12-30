@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
-import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
+import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase, TestCases}
 import pl.touk.nussknacker.restmodel.DeployRequest
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.security.Permission
@@ -442,7 +442,7 @@ class ManagementResourcesSpec
     }
   }
 
-  test("save and return test case") {
+  test("save and return single test case") {
     val testDataContent =
       """[
         |  {"sourceId":"startProcess","variables":{"input":["ala"]}}
@@ -461,13 +461,13 @@ class ManagementResourcesSpec
         )
       )
     )
-    val sampleScenarioWithTestCase = ProcessTestData.sampleScenario.copy(testCase = Some(testCase))
+    val sampleScenarioWithTestCase = ProcessTestData.sampleScenario.copy(testCases = Some(TestCases.Single(testCase)))
 
     saveCanonicalProcessAndAssertSuccess(sampleScenarioWithTestCase)
 
     getProcess(processName) ~> check {
       val scenarioDetails = responseAs[ScenarioWithDetails]
-      scenarioDetails.scenarioGraph.flatMap(_.testCase) shouldBe Some(testCase)
+      scenarioDetails.scenarioGraph.flatMap(_.testCases) shouldBe Some(TestCases.Single(testCase))
     }
   }
 
