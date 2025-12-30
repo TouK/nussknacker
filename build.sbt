@@ -250,7 +250,7 @@ val avroV                 =
 val kafkaV           = "3.8.1"
 // when updating note that we have copied and modified class org.springframework.expression.spel.ast.Projection
 // and org.springframework.util.NumberUtils and org.springframework.expression.spel.ast.Selection
-val springV          = "6.2.9"
+val springV          = "6.2.15"
 val scalaTestV       = "3.2.19"
 val scalaCheckV      = "1.18.1"
 val scalaCheckVshort = scalaCheckV.take(4).replace(".", "-")
