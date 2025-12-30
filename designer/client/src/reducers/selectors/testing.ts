@@ -1,7 +1,7 @@
 import { isEmpty } from "lodash";
 import { createSelector } from "reselect";
 
-import type { TestData, TestingState } from "../graph/types";
+import type { TestData, TestingState } from "../graph/testing";
 import { getGraph, getProcessCounts } from "./graph";
 
 export const getTesting = createSelector(getGraph, (g) => g.testing[g.scenario.name] || ({} as TestingState));

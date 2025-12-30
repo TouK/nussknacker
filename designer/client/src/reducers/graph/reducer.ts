@@ -23,6 +23,7 @@ import type { NestedKeyOf } from "./lodashWrappers";
 import { omit, pick } from "./lodashWrappers";
 import { selectionState } from "./selectionState";
 import { testCaseReducer } from "./testCases";
+import { testingReducer } from "./testing";
 import type { GraphState } from "./types";
 import { VisibleDataType } from "./types";
 import {
@@ -397,43 +398,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
             return {
                 ...state,
                 visibleDataType: VisibleDataType.test,
-                testing: {
-                    ...state.testing,
-                    [state.scenario.name]: {
-                        ...state.testing[state.scenario.name],
-                        testData: {
-                            ...state.testing[state.scenario.name].testData,
-                            [action.testData?.sourceId]: action.testData?.parameterExpressions,
-                        },
-                        testResultsLoading: false,
-                        testResults: action.testResults,
-                    },
-                },
                 scenarioLoading: false,
-            };
-        }
-        case "DISPLAY_TEST_ASSERTIONS_RESULTS": {
-            return {
-                ...state,
-                testing: {
-                    ...state.testing,
-                    [state.scenario.name]: {
-                        ...state.testing[state.scenario.name],
-                        assertionsResults: action.assertionsResults,
-                    },
-                },
-            };
-        }
-        case "CLEAR_TEST_ASSERTIONS_RESULTS": {
-            return {
-                ...state,
-                testing: {
-                    ...state.testing,
-                    [state.scenario.name]: {
-                        ...state.testing[state.scenario.name],
-                        assertionsResults: null,
-                    },
-                },
             };
         }
         case "HIDE_RUN_PROCESS_DETAILS": {
@@ -455,6 +420,7 @@ const reducer = mergeReducers(graphReducer, {
             testCases: testCaseReducer,
         },
     },
+    testing: testingReducer,
     selectionState,
 });
 
