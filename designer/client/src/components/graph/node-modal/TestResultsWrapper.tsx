@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 
 import type { StateForSelectTestResults } from "../../../common/TestResultUtils";
 import TestResultUtils from "../../../common/TestResultUtils";
-import { getTestResults } from "../../../reducers/selectors/graph";
+import { getTestResults } from "../../../reducers/selectors/testing";
 import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeId } from "../../../types/node";

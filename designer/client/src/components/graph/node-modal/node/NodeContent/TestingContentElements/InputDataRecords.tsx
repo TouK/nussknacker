@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { getTestCapabilities } from "../../../../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../../../../reducers/selectors/settings";
-import { getTestDataRecordsForSingleSource } from "../../../../../../reducers/selectors/testCases";
+import { getInputDataRecordsForSingleSource } from "../../../../../../reducers/selectors/testCases";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
 import { AppendFromLiveDataButton } from "../../../../../modals/TestingDataRecords/AppendFromLiveDataButton";
 import { LimitExceededWarning } from "../../../../../modals/TestingDataRecords/LimitExceededWarning";
@@ -20,7 +20,7 @@ interface Props {
 export const InputDataRecords = ({ sourceId }: Props) => {
     const { t } = useTranslation();
     const maxTestingRecords = useAppSelector(getMaxTestingRecords);
-    const testingDataRecords = useAppSelector((state) => getTestDataRecordsForSingleSource(state, sourceId));
+    const testingDataRecords = useAppSelector((state) => getInputDataRecordsForSingleSource(state, sourceId));
 
     const { cellErrors, recordsErrors, handleRowAdded, handleRowMoved, handleRowsDeleted, handleRowUpdated, handleGenerateTestData } =
         useDataRecordsActions();

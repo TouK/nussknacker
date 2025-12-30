@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { testScenarioWithDataRecords } from "../../../actions/nk/displayTestResults";
 import { getTestCapabilities } from "../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../reducers/selectors/settings";
-import { getTestCaseAssertions, getTestDataRecords } from "../../../reducers/selectors/testCases";
+import { getTestCaseAssertions, getInputDataRecords } from "../../../reducers/selectors/testCases";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { WindowContent } from "../../../windowManager/WindowContent";
@@ -48,7 +48,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
 
     const dispatch = useAppDispatch();
     const testCapabilities = useAppSelector(getTestCapabilities);
-    const testingDataRecords = useAppSelector(getTestDataRecords);
+    const testingDataRecords = useAppSelector(getInputDataRecords);
     const testCaseAssertions = useAppSelector(getTestCaseAssertions);
 
     const defaultParameter = testCapabilities.testWithParameters.sourceParameters[0];

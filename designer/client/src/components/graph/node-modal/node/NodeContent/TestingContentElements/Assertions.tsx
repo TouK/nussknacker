@@ -3,8 +3,8 @@ import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 import { setTestCaseAssertions } from "../../../../../../actions/nk/testCasesActions";
-import { getTestAssertionResultsForNode } from "../../../../../../reducers/selectors/graph";
 import { getTestCaseAssertionsForNode } from "../../../../../../reducers/selectors/testCases";
+import { getTestAssertionResultsForNode } from "../../../../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
 import type { NodeType } from "../../../../../../types/node";
 import { StyledButton } from "../../../../styledButton";

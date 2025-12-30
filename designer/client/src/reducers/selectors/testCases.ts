@@ -17,9 +17,10 @@ export const getTestCaseAssertionsForNode = createSelector(
 
 export const getTestCaseMocks = createSelector(getTestCase, ({ mocks }) => mocks);
 export const getTestCaseMocksForNode = createSelector(getTestCaseMocks, getNodeId, (mocks, nodeId) => mocks[nodeId]);
-export const getTestDataRecords = createSelector(getTestCase, ({ inputs }) => safeParseExpression<TestingDataRecords[]>(inputs) || []);
+export const getInputDataRecords = createSelector(getTestCase, ({ inputs }) => safeParseExpression<TestingDataRecords[]>(inputs) || []);
 
 const getSourceId = (_: unknown, sourceId: string) => sourceId;
-export const getTestDataRecordsForSingleSource = createSelector([getTestDataRecords, getSourceId], (testCaseInputs, sourceId: string) =>
+export const getInputDataRecordsForSingleSource = createSelector([getInputDataRecords, getSourceId], (testCaseInputs, sourceId: string) =>
     testCaseInputs.filter((r) => r.sourceId === sourceId),
 );
+export const hasInputDataRecordsDefined = createSelector(getInputDataRecords, (testingDataRecords) => testingDataRecords.length > 0);

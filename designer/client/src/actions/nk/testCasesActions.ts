@@ -1,7 +1,7 @@
 import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import type { TestCase } from "../../reducers/graph/testCase";
-import { getTestCaseAssertions, getTestCaseAssertionsForNode, getTestDataRecords } from "../../reducers/selectors/testCases";
+import { getTestCaseAssertions, getTestCaseAssertionsForNode, getInputDataRecords } from "../../reducers/selectors/testCases";
 import type { ThunkAction } from "../reduxTypes";
 
 type Assertion = { expression: ExpressionObj };
@@ -30,7 +30,7 @@ export function setTestCaseAssertions(nodeId: string, updater: (prev: Assertion[
 export function setTestCaseInputs(updater: (prev: TestingDataRecords[]) => TestingDataRecords[]): ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
-        const prev = getTestDataRecords(state);
+        const prev = getInputDataRecords(state);
         const next = updater(prev);
 
         dispatch({
