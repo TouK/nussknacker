@@ -11,21 +11,21 @@ import scala.jdk.CollectionConverters._
 object ContextTypeHelpers {
 
   private def infoFromVariablesAndParent(
-      variables: TypeInformation[Map[String, Any]],
+      variables: TypeInformation[java.util.Map[String, Any]],
       parentCtx: TypeInformation[_ <: Context]
   ): TypeInformation[Context] =
     new PojoTypeInfo(
       classOf[Context],
       List(
         new PojoField(classOf[Context].getDeclaredField("id"), contextIdInfo),
-        new PojoField(classOf[Context].getDeclaredField("variables"), variables),
+        new PojoField(classOf[Context].getDeclaredField("javaMapVariables"), variables),
         new PojoField(classOf[Context].getDeclaredField("nullableParentContext"), parentCtx),
         new PojoField(classOf[Context].getDeclaredField("nullableTraceId"), traceIdTypeInfo),
       ).asJava
     )
 
   def infoFromVariablesAndParentOption(
-      variables: TypeInformation[Map[String, Any]],
+      variables: TypeInformation[java.util.Map[String, Any]],
       parentOpt: Option[TypeInformation[Context]]
   ): TypeInformation[Context] = {
     val parentCtx = parentOpt.getOrElse(FixedValueTypeInformationHelper.nullValueTypeInfo)

@@ -1272,7 +1272,7 @@ case class AggregateData(
     afterAggregateExpression: String = "null"
 )
 
-trait TestRecord {
+trait TestRecord extends Serializable {
   val id: Any
   val eId: Int
   val str: String
@@ -1280,16 +1280,46 @@ trait TestRecord {
   def timestamp: Long
 }
 
-case class TestRecordHours(id: String, timeHours: Int, eId: Int, str: String) extends TestRecord {
+class TestRecordHours private (val id: String, val timeHours: Int, val eId: Int, val str: String) extends TestRecord {
+
+  def this() = this(null, -1, -1, null)
+
   override def timestamp: Long = hoursToMillis(timeHours)
+
 }
 
 object TestRecordHours {
+
   def hoursToMillis(hours: Int): Long = hours * 3600L * 1000
+
+  def apply(id: String, timeHours: Int, eId: Int, str: String) = new TestRecordHours(id, timeHours, eId, str)
+
 }
 
-case class TestRecordWithTimestamp(id: String, timestamp: Long, eId: Int, str: String) extends TestRecord
+class TestRecordWithTimestamp private (val id: String, val timestamp: Long, val eId: Int, val str: String)
+    extends TestRecord {
 
-case class GenericRecordHours[T <: Any](id: T, timeHours: Int, eId: Int, str: String) extends TestRecord {
+  def this() = this(null, -1, -1, null)
+
+}
+
+object TestRecordWithTimestamp {
+
+  def apply(id: String, timestamp: Long, eId: Int, str: String) = new TestRecordWithTimestamp(id, timestamp, eId, str)
+
+}
+
+class GenericRecordHours[T <: Any] private (val id: T, val timeHours: Int, val eId: Int, val str: String)
+    extends TestRecord {
+
+  def this() = this(null.asInstanceOf[T], -1, -1, null)
+
   override def timestamp: Long = timeHours * 3600L * 1000
+
+}
+
+object GenericRecordHours {
+
+  def apply[T <: Any](id: T, timeHours: Int, eId: Int, str: String) = new GenericRecordHours[T](id, timeHours, eId, str)
+
 }

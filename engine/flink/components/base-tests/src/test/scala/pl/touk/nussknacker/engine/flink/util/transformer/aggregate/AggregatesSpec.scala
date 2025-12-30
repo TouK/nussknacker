@@ -58,14 +58,14 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
       SetAggregator,
       Typed[JustAnyClass],
       justAnyObject,
-      Typed.fromDetailedType[Set[JustAnyClass]],
+      Typed.fromDetailedType[JSet[JustAnyClass]],
       Typed.fromDetailedType[JSet[JustAnyClass]]
     ),
     (
       ListAggregator,
       Typed[JustAnyClass],
       justAnyObject,
-      Typed.fromDetailedType[List[JustAnyClass]],
+      Typed.fromDetailedType[JList[JustAnyClass]],
       Typed.fromDetailedType[JList[JustAnyClass]]
     )
   )
@@ -394,7 +394,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     val el    = namedAggregators.mapValuesNow(_._3).asJava
     val stored = Typed.record(
       namedAggregators.mapValuesNow(_._4),
-      objType = Typed.genericTypeClass(classOf[Map[_, _]], List(Typed[String], Unknown))
+      objType = Typed.genericTypeClass(classOf[JMap[_, _]], List(Typed[String], Unknown))
     )
     val output = Typed.record(
       namedAggregators.mapValuesNow(_._5),
@@ -409,7 +409,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     val optionAggregator     = new OptionAggregator(aggregator)
     val input                = Typed.fromDetailedType[Option[Double]]
     val elem: Option[Double] = Some(1.0)
-    val stored               = Typed.fromDetailedType[Option[List[Double]]]
+    val stored               = Typed.fromDetailedType[Option[java.util.List[Double]]]
     val output               = Typed.fromDetailedType[java.util.List[Double]]
 
     checkAggregator(optionAggregator, input, elem, stored, output)
@@ -420,7 +420,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     val aggregator =
       new MapAggregator(Map[String, Aggregator]("field1" -> SumAggregator, "field2" -> MaxAggregator).asJava)
 
-    val oldState = Map[String, AnyRef]("field1" -> (5: java.lang.Integer), "field0" -> "ddd")
+    val oldState = Map[String, AnyRef]("field1" -> (5: java.lang.Integer), "field0" -> "ddd").asJava
 
     def resultFor(maps: Map[String, Any]*): AnyRef = aggregator.getResult(
       maps.map(_.mapValuesNow(_.asInstanceOf[AnyRef]).asJava).foldRight(oldState)(aggregator.addElement)
@@ -449,7 +449,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("Neutral elements for accumulator should be detected for set") {
     val aggregator = SetAggregator
-    val oldState   = Set[AnyRef]("123")
+    val oldState   = Set[AnyRef]("123").asJava
 
     aggregator.isNeutralForAccumulator("123", oldState) shouldBe true
     aggregator.isNeutralForAccumulator("aaa", oldState) shouldBe false
@@ -491,7 +491,8 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     val aggregator =
       new MapAggregator(Map[String, Aggregator]("sumField" -> SumAggregator, "maxField" -> MaxAggregator).asJava)
 
-    val oldState = Map[String, AnyRef]("sumField" -> (5: java.lang.Integer), "maxField" -> (123: java.lang.Integer))
+    val oldState =
+      Map[String, AnyRef]("sumField" -> (5: java.lang.Integer), "maxField" -> (123: java.lang.Integer)).asJava
 
     aggregator.isNeutralForAccumulator(
       Map[String, AnyRef]("sumField" -> (0: java.lang.Integer), "maxField" -> (123: java.lang.Integer)).asJava,
@@ -547,7 +548,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     val aggregator =
       new MapAggregator(Map[String, Aggregator]("sumField" -> SumAggregator, "maxField" -> MaxAggregator).asJava)
 
-    val state = Map[String, AnyRef]("sumField" -> (5: java.lang.Integer), "maxField" -> (123: java.lang.Integer))
+    val state = Map[String, AnyRef]("sumField" -> (5: java.lang.Long), "maxField" -> (123: java.lang.Integer)).asJava
 
     aggregator.mergeAggregates(aggregator.zero, state) shouldBe state
     aggregator.mergeAggregates(state, aggregator.zero) shouldBe state

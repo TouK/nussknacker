@@ -39,10 +39,10 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
     ContextTypeHelpers.infoFromVariablesAndParentOption(variables, parentCtx)
   }
 
-  override def forVariables(variables: Map[String, TypingResult]): TypeInformation[Map[String, Any]] = {
+  override def forVariables(variables: Map[String, TypingResult]): TypeInformation[java.util.Map[String, Any]] = {
     forType(
-      Typed.record(variables, Typed.typedClass[Map[String, AnyRef]])
-    ).asInstanceOf[TypeInformation[Map[String, Any]]]
+      Typed.record(variables, Typed.typedClass[java.util.Map[String, AnyRef]])
+    ).asInstanceOf[TypeInformation[java.util.Map[String, Any]]]
   }
 
   override def forType[T](typingResult: TypingResult): TypeInformation[T] = {

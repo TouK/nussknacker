@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Column
 
-import java.lang
+import java.{lang, util}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
@@ -153,18 +153,20 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent {
         tabularData: TabularTypedData,
         context: Context
     ): Output = {
-      tabularData.rows
-        .filter { row =>
-          val rowData      = row.cells.map(c => (c.definition.name, c.value)).toMap.asJava
-          val localContext = context.withVariables(Map(decisionTableRowRuntimeVariableName -> rowData))
-          val result       = expression.evaluate(localContext)
-          result
-        }
-        .map { row =>
-          row.cells.map(c => c.definition.name -> c.value).toMap
-        }
-        .map(_.asJava)
-        .asJava
+      new util.ArrayList(
+        tabularData.rows
+          .filter { row =>
+            val rowData      = new java.util.HashMap(row.cells.map(c => (c.definition.name, c.value)).toMap.asJava)
+            val localContext = context.withVariables(Map(decisionTableRowRuntimeVariableName -> rowData))
+            val result       = expression.evaluate(localContext)
+            result
+          }
+          .map { row =>
+            row.cells.map(c => c.definition.name -> c.value).toMap
+          }
+          .map(rowMap => new java.util.HashMap(rowMap.asJava))
+          .asJava
+      )
     }
 
   }

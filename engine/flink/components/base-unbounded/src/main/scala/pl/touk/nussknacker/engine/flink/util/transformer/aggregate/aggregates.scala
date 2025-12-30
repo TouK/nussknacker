@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.util.MathUtils
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 
 import java.util
+import java.util.Collections
 import scala.jdk.CollectionConverters._
 
 /*
@@ -104,55 +105,77 @@ object aggregates {
 
   object ListAggregator extends Aggregator {
 
-    override type Aggregate = List[AnyRef]
+    override type Aggregate = java.util.List[AnyRef]
 
     override type Element = AnyRef
 
-    override def zero: Aggregate = List.empty
+    override def zero: Aggregate = Collections.emptyList()
 
-    override def isNeutralForAccumulator(element: ListAggregator.Element, currentAggregate: List[AnyRef]): Boolean =
+    override def isNeutralForAccumulator(
+        element: ListAggregator.Element,
+        currentAggregate: java.util.List[AnyRef]
+    ): Boolean =
       false
 
     // append instead of prepend (assess performance considerations...)
-    override def addElement(el: Element, agg: Aggregate): Aggregate = el :: agg
+    override def addElement(el: Element, agg: Aggregate): Aggregate = {
+      val result = new util.ArrayList(agg)
+      result.add(el)
+      result
+    }
 
-    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1 ++ agg2
+    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = {
+      val result = new util.ArrayList(agg1)
+      result.addAll(agg2)
+      result
+    }
 
-    override def result(finalAggregate: Aggregate): AnyRef = new java.util.ArrayList[Any](finalAggregate.asJava)
+    override def result(finalAggregate: Aggregate): AnyRef = finalAggregate
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult] = Valid(
       Typed.genericTypeClass[java.util.List[_]](List(input))
     )
 
     override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(
-      Typed.genericTypeClass[List[_]](List(input))
+      Typed.genericTypeClass[java.util.List[_]](List(input))
     )
 
   }
 
   object SetAggregator extends Aggregator {
 
-    override type Aggregate = Set[AnyRef]
+    override type Aggregate = java.util.Set[AnyRef]
 
     override type Element = AnyRef
 
-    override def zero: Aggregate = Set.empty
+    override def zero: Aggregate = Collections.emptySet()
 
-    override def isNeutralForAccumulator(element: SetAggregator.Element, currentAggregate: Set[AnyRef]): Boolean =
+    override def isNeutralForAccumulator(
+        element: SetAggregator.Element,
+        currentAggregate: java.util.Set[AnyRef]
+    ): Boolean =
       currentAggregate.contains(element)
 
-    override def addElement(el: Element, agg: Aggregate): Aggregate = agg + el
+    override def addElement(el: Element, agg: Aggregate): Aggregate = {
+      val result = new util.HashSet(agg)
+      result.add(el)
+      result
+    }
 
-    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1 ++ agg2
+    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = {
+      val result = new util.HashSet(agg1)
+      result.addAll(agg2)
+      result
+    }
 
-    override def result(finalAggregate: Aggregate): AnyRef = new java.util.HashSet(finalAggregate.asJava)
+    override def result(finalAggregate: Aggregate): AnyRef = finalAggregate
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult] = Valid(
       Typed.genericTypeClass[java.util.Set[_]](List(input))
     )
 
     override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(
-      Typed.genericTypeClass[Set[_]](List(input))
+      Typed.genericTypeClass[java.util.Set[_]](List(input))
     )
 
   }
@@ -423,30 +446,35 @@ object aggregates {
 
     override type Element = java.util.Map[String, AnyRef]
 
-    override type Aggregate = Map[String, AnyRef]
+    override type Aggregate = java.util.Map[String, AnyRef]
 
-    override val zero: Aggregate = scalaFields.mapValuesNow(_.zero)
+    override val zero: Aggregate = new java.util.HashMap[String, AnyRef](scalaFields.mapValuesNow(_.zero).asJava)
 
-    override def isNeutralForAccumulator(el: util.Map[String, AnyRef], agg: Map[String, AnyRef]): Boolean =
+    override def isNeutralForAccumulator(el: util.Map[String, AnyRef], agg: java.util.Map[String, AnyRef]): Boolean =
       scalaFields.forall { case (field, aggregator) =>
         aggregator.isNeutralForAccumulator(
           el.get(field).asInstanceOf[aggregator.Element],
-          agg.getOrElse(field, aggregator.zero).asInstanceOf[aggregator.Aggregate]
+          Option(agg.get(field)).getOrElse(aggregator.zero).asInstanceOf[aggregator.Aggregate]
         )
       }
 
-    override def addElement(el: Element, agg: Aggregate): Aggregate = scalaFields.map { case (field, aggregator) =>
-      field -> aggregator.add(el.get(field), agg.getOrElse(field, aggregator.zero))
-    }
+    override def addElement(el: Element, agg: Aggregate): Aggregate =
+      new java.util.HashMap(scalaFields.map { case (field, aggregator) =>
+        field -> aggregator.add(el.get(field), Option(agg.get(field)).getOrElse(aggregator.zero))
+      }.asJava)
 
-    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = scalaFields.map {
-      case (field, aggregator) =>
-        field -> aggregator.merge(agg1.getOrElse(field, aggregator.zero), agg2.getOrElse(field, aggregator.zero))
-    }
+    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate =
+      new java.util.HashMap(scalaFields.map { case (field, aggregator) =>
+        field -> aggregator.merge(
+          Option(agg1.get(field)).getOrElse(aggregator.zero),
+          Option(agg2.get(field)).getOrElse(aggregator.zero)
+        )
+      }.asJava)
 
-    override def result(finalAggregate: Aggregate): AnyRef = scalaFields.map { case (field, aggregator) =>
-      field -> aggregator.getResult(finalAggregate.getOrElse(field, aggregator.zero))
-    }.asJava
+    override def result(finalAggregate: Aggregate): AnyRef =
+      new java.util.HashMap(scalaFields.map { case (field, aggregator) =>
+        field -> aggregator.getResult(Option(finalAggregate.get(field)).getOrElse(aggregator.zero))
+      }.asJava)
 
     override def alignToExpectedType(value: AnyRef, outputType: TypingResult): AnyRef = {
       outputType match {
@@ -472,7 +500,7 @@ object aggregates {
 
     override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = computeTypeByFields(
       input,
-      Typed.genericTypeClass(classOf[Map[_, _]], List(Typed[String], Unknown)),
+      Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)),
       _.computeStoredType(_)
     )
 

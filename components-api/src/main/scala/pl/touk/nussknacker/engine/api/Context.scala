@@ -2,14 +2,15 @@ package pl.touk.nussknacker.engine.api
 
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
-import java.util.UUID
+import java.util
+import java.util.{Collections, UUID}
 import javax.annotation.Nullable
 import scala.jdk.CollectionConverters._
 
 object Context {
 
   def apply(id: ContextId, variables: Map[String, Any], parentContext: Option[Context], traceId: Option[TraceId]) =
-    new Context(id, variables, parentContext.orNull, traceId.orNull)
+    new Context(id, new util.HashMap[String, Any](variables.asJava), parentContext.orNull, traceId.orNull)
 
   def apply(id: ContextId): Context = Context(id, Map.empty, None, None)
 
@@ -103,7 +104,7 @@ object ContextId {
  */
 class Context private (
     val id: ContextId,
-    val variables: Map[String, Any],
+    javaMapVariables: java.util.Map[String, Any],
     @Nullable
     nullableParentContext: Context,
     /**
@@ -117,6 +118,8 @@ class Context private (
   // For PojoSerializer purpose
   def this() = this(null, null, null, null)
 
+  def variables: Map[String, Any] = javaMapVariables.asScala.toMap
+
   def parentContext: Option[Context] = Option(nullableParentContext)
 
   def traceId = Option(nullableTraceId)
@@ -124,7 +127,7 @@ class Context private (
   def withContextIdPathPart(nodeId: NodeId, transformation: String): Context =
     new Context(
       id = id.withContextIdPathPart(nodeId, transformation),
-      variables,
+      javaMapVariables,
       nullableParentContext,
       nullableTraceId
     )
@@ -138,7 +141,7 @@ class Context private (
     get(name).getOrElse(default)
 
   def get[T](name: String): Option[T] =
-    variables.get(name).map(_.asInstanceOf[T])
+    Option(javaMapVariables.get(name)).map(_.asInstanceOf[T])
 
   def modifyVariable[T](name: String, f: T => T): Context =
     withVariable(name, f(apply(name)))
@@ -149,17 +152,20 @@ class Context private (
   def withVariable(name: String, value: Any): Context =
     withVariables(Map(name -> value))
 
-  def withVariables(otherVariables: Map[String, Any]): Context =
-    new Context(id, variables = variables ++ otherVariables, nullableParentContext, nullableTraceId)
+  def withVariables(otherVariables: Map[String, Any]): Context = {
+    val newVariables = new util.HashMap[String, Any](javaMapVariables)
+    newVariables.putAll(otherVariables.asJava)
+    new Context(id, javaMapVariables = newVariables, nullableParentContext, nullableTraceId)
+  }
 
   def withParentContext(newParentContext: Option[Context]): Context =
-    new Context(id, variables, newParentContext.orNull, nullableTraceId)
+    new Context(id, javaMapVariables, newParentContext.orNull, nullableTraceId)
 
   def withTraceId(value: TraceId): Context =
-    new Context(id, variables, nullableParentContext, nullableTraceId = value)
+    new Context(id, javaMapVariables, nullableParentContext, nullableTraceId = value)
 
   def pushNewContext(variables: Map[String, Any]): Context = {
-    new Context(id, variables, this, nullableTraceId)
+    new Context(id, new util.HashMap[String, Any](variables.asJava), this, nullableTraceId)
   }
 
   def unsafeTraceId: TraceId =
@@ -174,14 +180,11 @@ class Context private (
   }
 
   def clearUserVariables: Context = {
+    val newVariables = new util.HashMap[String, Any]()
     // clears variables from context but leaves technical variables, hidden from user
-    val variablesToLeave = Set(VariableConstants.EventTimestampVariableName)
-    new Context(
-      id,
-      variables = variables.filter { case (k, _) => variablesToLeave(k) },
-      nullableParentContext,
-      nullableTraceId
-    )
+    Option(javaMapVariables.get(VariableConstants.EventTimestampVariableName))
+      .foreach(javaMapVariables.put(VariableConstants.EventTimestampVariableName, _))
+    new Context(id, newVariables, nullableParentContext, nullableTraceId)
   }
 
 }

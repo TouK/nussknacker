@@ -9,19 +9,16 @@ import org.scalatest.matchers.should.Matchers
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.time._
 import java.util.Collections
-import scala.jdk.CollectionConverters._
 
 class SerializersSpec extends AnyFlatSpec with Matchers {
 
-  // FIXME abr
-  ignore should "serialize unmodifiableList" in {
-    val obj = Collections.unmodifiableList(List("foo", "bar").asJava)
+  it should "serialize unmodifiableList" in {
+    val obj = Collections.unmodifiableList(Collections.singletonList("foo"))
     checkSerializeDeserializeRoundTrip(obj)
   }
 
-  // FIXME abr
-  ignore should "serialize unmodifiableMap" in {
-    val obj = Collections.unmodifiableMap(Map("foo" -> 1, "bar" -> 2).asJava)
+  it should "serialize unmodifiableMap" in {
+    val obj = Collections.unmodifiableMap(Collections.singletonMap("foo", 1))
     checkSerializeDeserializeRoundTrip(obj)
   }
 

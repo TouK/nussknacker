@@ -21,8 +21,7 @@ import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 
-import scala.collection.mutable
-import scala.jdk.CollectionConverters._
+import java.util.Collections
 
 class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
@@ -41,15 +40,12 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
       )
       .emptySink("end", "dead-end")
 
-  // In Scala 2.13 all java collections class wrappers were rewritten from case class to regular class. Now kryo does not
-  // serialize them properly, so JavaWrapperScala2_13Registrar class was added to fix this issue. This test verifies
-  // if we can serialize and deserialize records properly.
   test("should serialize record with java map, list and set") {
-    val record = Record(
+    val record = new Record(
       id = "2",
-      map = mutable.Map(1 -> "a").asJava,
-      list = mutable.ListBuffer("abc").asJava,
-      set = mutable.Set("def").asJava
+      map = Collections.singletonMap(1, "a"),
+      list = Collections.singletonList("abc"),
+      set = Collections.singleton("def")
     )
 
     ResultsCollectingListenerHolder.withListener { collectingListener =>
@@ -91,4 +87,30 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
 
 }
 
-case class Record(id: String, map: java.util.Map[Int, String], list: java.util.List[String], set: java.util.Set[String])
+class Record(
+    val id: String,
+    val map: java.util.Map[Int, String],
+    val list: java.util.List[String],
+    val set: java.util.Set[String]
+) extends Serializable {
+
+  def this() = this(null, null, null, null)
+
+  private def canEqual(other: Any): Boolean = other.isInstanceOf[Record]
+
+  override def equals(other: Any): Boolean = other match {
+    case that: Record =>
+      that.canEqual(this) &&
+      id == that.id &&
+      map == that.map &&
+      list == that.list &&
+      set == that.set
+    case _ => false
+  }
+
+  override def hashCode(): Int = {
+    val state = Seq(id, map, list, set)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  }
+
+}

@@ -23,7 +23,7 @@ trait TypeInformationDetection extends Serializable {
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context]
 
-  def forVariables(variables: Map[String, TypingResult]): TypeInformation[Map[String, Any]]
+  def forVariables(variables: Map[String, TypingResult]): TypeInformation[java.util.Map[String, Any]]
 
   def forValueWithContext[T](
       validationContext: ValidationContext,
