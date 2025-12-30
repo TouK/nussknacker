@@ -340,13 +340,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
                 visibleDataType: VisibleDataType.counts,
                 processCounts: action.processCounts,
                 processCountsRefresh: action.refresh,
-                testing: {
-                    ...state.testing,
-                    [state.scenario.name]: {
-                        ...state.testing[state.scenario.name],
-                        testResults: null,
-                    },
-                },
             };
         }
         case "FETCH_LIVE_DATA": {
@@ -361,13 +354,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
                 visibleDataType: VisibleDataType.live,
                 processCounts: action.results?.counts || {},
                 processCountsRefresh: null,
-                testing: {
-                    ...state.testing,
-                    [state.scenario.name]: {
-                        ...state.testing[state.scenario.name],
-                        testResults: action.results?.results || null,
-                    },
-                },
             };
         }
         case "DISPLAY_TEST_RESULTS_DETAILS": {

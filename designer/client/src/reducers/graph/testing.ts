@@ -3,7 +3,8 @@ import type { ExpressionObj } from "../../components/graph/node-modal/editors/ex
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
 import type { TestAssertionResults, TestResultsDto } from "../../http/resultsWithCountsDto";
-import type { GraphState } from "./types";
+import type { GraphState} from "./types";
+import { VisibleDataType } from "./types";
 
 type Source = SourceWithParametersTest["sourceId"];
 export type SourceTestData = SourceWithParametersTest["parameterExpressions"];
@@ -59,6 +60,18 @@ export const testingReducer: Reducer<GraphState["testing"]> = (state = initialTe
             return {
                 ...state,
                 testResultsLoading: false,
+            };
+        }
+        case "DISPLAY_PROCESS_COUNTS": {
+            return {
+                ...state,
+                testResults: null,
+            };
+        }
+        case "DISPLAY_LIVE_DATA": {
+            return {
+                ...state,
+                testResults: action.results?.results || null,
             };
         }
         default:
