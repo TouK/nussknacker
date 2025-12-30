@@ -2,8 +2,9 @@ import { Typography } from "@mui/material";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { getTestCapabilities, getTestingDataRecordsForSingleSource } from "../../../../../../reducers/selectors/graph";
+import { getTestCapabilities } from "../../../../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../../../../reducers/selectors/settings";
+import { getTestDataRecordsForSingleSource } from "../../../../../../reducers/selectors/testCases";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
 import { AppendFromLiveDataButton } from "../../../../../modals/TestingDataRecords/AppendFromLiveDataButton";
 import { LimitExceededWarning } from "../../../../../modals/TestingDataRecords/LimitExceededWarning";
@@ -19,7 +20,7 @@ interface Props {
 export const InputDataRecords = ({ sourceId }: Props) => {
     const { t } = useTranslation();
     const maxTestingRecords = useAppSelector(getMaxTestingRecords);
-    const testingDataRecords = useAppSelector((state) => getTestingDataRecordsForSingleSource(state, sourceId));
+    const testingDataRecords = useAppSelector((state) => getTestDataRecordsForSingleSource(state, sourceId));
 
     const { cellErrors, recordsErrors, handleRowAdded, handleRowMoved, handleRowsDeleted, handleRowUpdated, handleGenerateTestData } =
         useDataRecordsActions();

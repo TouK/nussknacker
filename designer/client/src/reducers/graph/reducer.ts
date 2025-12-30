@@ -2,8 +2,6 @@
 import { produce } from "immer";
 import type { Dictionary } from "lodash";
 import { concat, defaultsDeep, isEqual, partition, sortBy } from "lodash";
-import { createTransform, persistReducer } from "redux-persist";
-import storage from "redux-persist/lib/storage";
 import type { StateWithHistory } from "redux-undo";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction } from "redux-undo";
 
@@ -24,6 +22,7 @@ import { appendHistorySquashLogic } from "./historySquash";
 import type { NestedKeyOf } from "./lodashWrappers";
 import { omit, pick } from "./lodashWrappers";
 import { selectionState } from "./selectionState";
+import { testCaseReducer } from "./testCase";
 import type { GraphState } from "./types";
 import { VisibleDataType } from "./types";
 import {
@@ -45,6 +44,7 @@ const emptyGraphState: GraphState = {
             edges: [],
             properties: null,
             stickyNotes: [],
+            testCases: {},
         },
     } as Scenario,
     layout: [],
@@ -436,45 +436,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
                 },
             };
         }
-        case "SET_TESTING_EVENTS_PARAMETERS": {
-            return {
-                ...state,
-                testing: {
-                    ...state.testing,
-                    [state.scenario.name]: {
-                        ...state.testing[state.scenario.name],
-                        testingDataRecords: action.testingEventsParameters,
-                    },
-                },
-            };
-        }
-        case "SET_TESTING_ASSERTIONS": {
-            return {
-                ...state,
-                testing: {
-                    ...state.testing,
-                    [state.scenario.name]: {
-                        ...state.testing[state.scenario.name],
-                        testingAssertions: action.testingAssertions,
-                    },
-                },
-            };
-        }
-        case "SET_TEST_DATA": {
-            return {
-                ...state,
-                testing: {
-                    ...state.testing,
-                    [state.scenario.name]: {
-                        ...state.testing[state.scenario.name],
-                        testData: {
-                            ...state.testing[state.scenario.name].testData,
-                            [action.testData?.sourceId]: action.testData?.parameterExpressions,
-                        },
-                    },
-                },
-            };
-        }
         case "HIDE_RUN_PROCESS_DETAILS": {
             return {
                 ...state,
@@ -487,45 +448,15 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
     }
 };
 
-function stripFieldsFromEntries(obj: any = {}, fieldNames: string[]) {
-    if (!obj || typeof obj !== "object") return obj;
-    const mapped: any = Array.isArray(obj) ? [] : {};
-    for (const [k, v] of Object.entries(obj)) {
-        if (v && typeof v === "object" && !Array.isArray(v)) {
-            const copy = { ...v } as any;
-            for (const f of fieldNames) {
-                if (f in copy) delete copy[f];
-            }
-            mapped[k] = copy;
-        } else {
-            mapped[k] = v;
-        }
-    }
-    return mapped;
-}
-
-export function createStripFieldsTransform(fieldNames: string[]) {
-    return createTransform(
-        // inbound (state -> persisted)
-        (inboundState: any = {}) => stripFieldsFromEntries(inboundState, fieldNames),
-        // outbound (persisted -> state)
-        (outboundState: any = {}) => stripFieldsFromEntries(outboundState, fieldNames),
-    );
-}
-
-const testingTransform = createStripFieldsTransform(["testResults", "assertionsResults"]);
-
-const reducer: Reducer<GraphState> = persistReducer(
-    { key: "testing", storage, whitelist: ["testing"], transforms: [testingTransform] },
-    mergeReducers(graphReducer, {
-        scenario: {
-            scenarioGraph: {
-                nodes,
-            },
+const reducer = mergeReducers(graphReducer, {
+    scenario: {
+        scenarioGraph: {
+            nodes,
+            testCases: testCaseReducer,
         },
-        selectionState,
-    }),
-);
+    },
+    selectionState,
+});
 
 export type GraphStateWithHistory = StateWithHistory<GraphState> & {
     snapshots: number[];

@@ -2,8 +2,9 @@ import { Box, Typography } from "@mui/material";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
-import { setTestingAssertions } from "../../../../../../actions/nk/displayTestResults";
-import { getTestingAssertionForNode, getTestAssertionResultsForNode } from "../../../../../../reducers/selectors/graph";
+import { setTestCaseAssertions } from "../../../../../../actions/nk/testCasesActions";
+import { getTestAssertionResultsForNode } from "../../../../../../reducers/selectors/graph";
+import { getTestCaseAssertionsForNode } from "../../../../../../reducers/selectors/testCases";
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
 import type { NodeType } from "../../../../../../types/node";
 import { StyledButton } from "../../../../styledButton";
@@ -20,25 +21,27 @@ interface Props {
 export const Assertions = ({ node }: Props) => {
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
-    const testingAssertions = useAppSelector((state) => getTestingAssertionForNode(state, node.id));
+    const testCaseAssertions = useAppSelector((state) => getTestCaseAssertionsForNode(state, node.id));
     const testAssertionResults = useAppSelector((state) => getTestAssertionResultsForNode(state, node.id));
 
     const addAssertion = useCallback(() => {
         dispatch(
-            setTestingAssertions(node.id, (prev) => prev.concat({ expression: { expression: "#TESTS.assertEquals()", language: "spel" } })),
+            setTestCaseAssertions(node.id, (prev) =>
+                prev.concat({ expression: { expression: "#TESTS.assertEquals()", language: "spel" } }),
+            ),
         );
     }, [dispatch, node.id]);
 
     const removeAssertion = useCallback(
         (index: number) => {
-            dispatch(setTestingAssertions(node.id, (prev) => prev.filter((_, i) => i !== index)));
+            dispatch(setTestCaseAssertions(node.id, (prev) => prev.filter((_, i) => i !== index)));
         },
         [dispatch, node.id],
     );
 
     const editAssertion = useCallback(
         (index: number, updated: Partial<{ expression: { expression: string; language: string } }>) => {
-            dispatch(setTestingAssertions(node.id, (prev) => prev.map((item, i) => (i === index ? { ...item, ...updated } : item))));
+            dispatch(setTestCaseAssertions(node.id, (prev) => prev.map((item, i) => (i === index ? { ...item, ...updated } : item))));
         },
         [dispatch, node.id],
     );
@@ -48,7 +51,7 @@ export const Assertions = ({ node }: Props) => {
             <Typography m={0} variant="h5">
                 {t("testingDialog.label.assertions", "Assertions")}
             </Typography>
-            {testingAssertions.map(({ expression: expressionObj }, index) => {
+            {testCaseAssertions.map(({ expression: expressionObj }, index) => {
                 const testAssertionResult = testAssertionResults?.[index];
                 return (
                     <Box key={index} display={"flex"} alignItems={"end"}>

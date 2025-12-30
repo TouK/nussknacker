@@ -1,4 +1,5 @@
 import type { EditorConfig } from "../components/graph/node-modal/editors/expression/EditorConfig";
+import type { TestCase } from "../reducers/graph/testCase";
 import type { ComponentGroup } from "./component";
 import type { TypingResult, UIParameter } from "./definition";
 import type { Edge, EdgeType } from "./edge";
@@ -9,6 +10,7 @@ export type ScenarioGraph = {
     edges: Edge[];
     properties: PropertiesType;
     stickyNotes: NodeType[];
+    testCases: TestCase;
 };
 
 export type Category = string;

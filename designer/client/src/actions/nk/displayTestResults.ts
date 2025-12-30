@@ -6,13 +6,7 @@ import { mapDataRecordsToRunTestsFormat } from "../../components/modals/TestingD
 import HttpService from "../../http/HttpService/instance";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
 import type { ResultsWithCountsDto, TestAssertionResults, TestResultsDto } from "../../http/resultsWithCountsDto";
-import {
-    getProcessName,
-    getScenarioGraph,
-    getTestingAssertionForNode,
-    getTestingAssertions,
-    getTestingDataRecords,
-} from "../../reducers/selectors/graph";
+import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
 import type { Action, ThunkAction } from "../reduxTypes";
 import { displayProcessCounts } from "./displayProcessCounts";
@@ -82,18 +76,6 @@ export type TestsActions =
           assertionsResults: TestAssertionResults;
       }
     | {
-          type: "SET_TEST_DATA";
-          testData: SourceWithParametersTest;
-      }
-    | {
-          type: "SET_TESTING_EVENTS_PARAMETERS";
-          testingEventsParameters: TestingDataRecords[];
-      }
-    | {
-          type: "SET_TESTING_ASSERTIONS";
-          testingAssertions: Record<string, { expression: ExpressionObj }[]>;
-      }
-    | {
           type: "CLEAR_TEST_ASSERTIONS_RESULTS";
       };
 
@@ -126,41 +108,10 @@ export function displayTestResultsDetails(testResults: TestResultsDto, testData?
     };
 }
 
-export function displayTestAssertions(assertionsResults: TestAssertionResults): Action {
+export function displayTestAssertionsResults(assertionsResults: TestAssertionResults): Action {
     return {
         type: "DISPLAY_TEST_ASSERTIONS_RESULTS",
         assertionsResults,
-    };
-}
-
-export function setTestingEventsParameters(updater: (prev: TestingDataRecords[]) => TestingDataRecords[]): ThunkAction {
-    return (dispatch, getState) => {
-        const state = getState();
-        const prev = getTestingDataRecords(state);
-        const next = updater(prev);
-
-        dispatch({
-            type: "SET_TESTING_EVENTS_PARAMETERS",
-            testingEventsParameters: next,
-        });
-    };
-}
-
-export function setTestingAssertions(
-    nodeId: string,
-    updater: (prev: { expression: ExpressionObj }[]) => { expression: ExpressionObj }[],
-): ThunkAction {
-    return (dispatch, getState) => {
-        const state = getState();
-        const prev = getTestingAssertionForNode(state, nodeId);
-        const next = updater(prev);
-
-        const testingAssertions = getTestingAssertions(state);
-        dispatch({ type: "CLEAR_TEST_ASSERTIONS_RESULTS" });
-        dispatch({
-            type: "SET_TESTING_ASSERTIONS",
-            testingAssertions: { ...testingAssertions, [nodeId]: next },
-        });
     };
 }
 
@@ -171,13 +122,6 @@ function displayTestResults(
     return (dispatch) => {
         dispatch(displayProcessCounts(counts));
         dispatch(displayTestResultsDetails(results, testData));
-        dispatch(displayTestAssertions(assertionsResults));
-    };
-}
-
-export function setTestData(testData: SourceWithParametersTest): Action {
-    return {
-        type: "SET_TEST_DATA",
-        testData,
+        dispatch(displayTestAssertionsResults(assertionsResults));
     };
 }

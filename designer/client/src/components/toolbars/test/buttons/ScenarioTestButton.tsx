@@ -5,12 +5,8 @@ import { useTranslation } from "react-i18next";
 import { testScenarioWithDataRecords } from "../../../../actions/nk/displayTestResults";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { convertViewportUnitToPixels } from "../../../../common/convertViewportUnitToPixels";
-import {
-    getTestingAssertions,
-    getTestingDataRecords,
-    getTestResultsLoading,
-    hasTestingDataRecordsDefined,
-} from "../../../../reducers/selectors/graph";
+import { getTestResultsLoading, hasTestingDataRecordsDefined } from "../../../../reducers/selectors/graph";
+import { getTestCaseAssertions, getTestDataRecords } from "../../../../reducers/selectors/testCases";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager/useWindows";
@@ -46,14 +42,14 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { disabled, name, title, titleOverride, docs, markdownContent, type } = props;
     const { t } = useTranslation();
     const { open } = useWindows();
-    const testingEventsParameters = useAppSelector(getTestingDataRecords);
-    const testingAssertions = useAppSelector(getTestingAssertions);
+    const testingEventsParameters = useAppSelector(getTestDataRecords);
+    const testCaseAssertions = useAppSelector(getTestCaseAssertions);
     const testingDataRecordsDefined = useAppSelector(hasTestingDataRecordsDefined);
     const dispatch = useAppDispatch();
 
     const handleRerunLastTest = useCallback(() => {
-        return dispatch(testScenarioWithDataRecords(testingEventsParameters, testingAssertions));
-    }, [dispatch, testingAssertions, testingEventsParameters]);
+        return dispatch(testScenarioWithDataRecords(testingEventsParameters, testCaseAssertions));
+    }, [dispatch, testCaseAssertions, testingEventsParameters]);
 
     const presets: Preset[] = useMemo(() => {
         return [
