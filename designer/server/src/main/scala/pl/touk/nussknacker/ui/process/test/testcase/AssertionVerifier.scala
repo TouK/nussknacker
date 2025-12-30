@@ -3,10 +3,11 @@ package pl.touk.nussknacker.ui.process.test.testcase
 import pl.touk.nussknacker.engine.api.{Context, ContextId, JobData, NodeId}
 import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.jdk.CollectionConverters._
 
-class AssertionVerifier(testCaseGlobalVariablesPreparer: TestCaseGlobalVariablesPreparer) {
+class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
 
   def verify(
       testCase: CompiledAssertions,
@@ -25,8 +26,10 @@ class AssertionVerifier(testCaseGlobalVariablesPreparer: TestCaseGlobalVariables
       jobData: JobData
   ): AssertionResult = {
     val context = prepareEvaluationContext(nodeId, results)
-    val globalVariables = testCaseGlobalVariablesPreparer
-      .prepareGlobalVariables(jobData)
+    val globalVariables = TestCaseVariables
+      .extendGlobalVariables(
+        globalVariablesPreparer.prepareGlobalVariables(jobData)
+      )
       .mapValuesNow(_.obj)
     try {
       assertion.expression.evaluate[AssertionResult](context, globalVariables) match {

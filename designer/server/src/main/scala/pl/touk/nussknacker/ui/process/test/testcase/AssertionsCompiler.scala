@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.{
@@ -19,7 +20,7 @@ import scala.jdk.CollectionConverters._
 
 class AssertionsCompiler(
     expressionCompiler: ExpressionCompiler,
-    testCaseGlobalVariablesPreparer: TestCaseGlobalVariablesPreparer
+    globalVariablesPreparer: GlobalVariablesPreparer
 ) {
 
   def compile(
@@ -42,15 +43,11 @@ class AssertionsCompiler(
       nodesTyping: Map[String, NodeTypingData],
       jobData: JobData
   ): ValidatedNel[PerformTestError, List[CompiledAssertion]] = {
-    validateTypingExistence(nodeId, nodesTyping).andThen { typing =>
-      val ctx = testCaseGlobalVariablesPreparer
-        .prepareValidationContextWithGlobalVariablesOnly(jobData)
-        .withVariablesUnsafe(
-          "contexts" -> Typed.genericTypeClass(
-            classOf[java.util.List[_]],
-            List(Typed.record(typing.variableTypes))
-          )
-        )
+    validateTypingExistence(nodeId, nodesTyping).andThen { nodeTypingData =>
+      val ctx = TestCaseVariables.extendNodeVariablesValidationContext(
+        globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData),
+        nodeTypingData
+      )
       assertions.map(compileAssertionExpression(nodeId, ctx, _)).traverse(_.toValidatedNel)
     }
   }

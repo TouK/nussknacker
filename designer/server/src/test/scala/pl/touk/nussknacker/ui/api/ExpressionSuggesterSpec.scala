@@ -6,6 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.springframework.expression.spel.SpelParserConfiguration
 import pl.touk.nussknacker.engine.api.{Documentation, VariableConstants}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.{DictInstance, UiDictServices}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter => GenericsParameter}
@@ -19,9 +20,10 @@ import pl.touk.nussknacker.engine.definition.clazz.{
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, Parameter}
+import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, Parameter, SpelExpressionSuggester}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.CaretPosition2d
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.ExpressionSuggesterTestData._
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
@@ -135,19 +137,23 @@ class ExpressionSuggesterSpec
       .expressionConfig
 
   private val expressionSuggester = new ExpressionSuggester(
-    expressionConfig,
-    clazzDefinitions,
-    dictServices,
-    getClass.getClassLoader,
-    List("scenarioProperty")
+    new SpelExpressionSuggester(
+      expressionConfig,
+      clazzDefinitions,
+      dictServices,
+      getClass.getClassLoader,
+    ),
+    GlobalVariablesPreparer(expressionConfig).prepareValidationContextWithGlobalVariablesOnly(List("scenarioProperty"))
   )
 
   private val expressionSuggesterWithExtensions = new ExpressionSuggester(
-    expressionConfig,
-    ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions,
-    dictServices,
-    getClass.getClassLoader,
-    Nil
+    new SpelExpressionSuggester(
+      expressionConfig,
+      ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions,
+      dictServices,
+      getClass.getClassLoader,
+    ),
+    ValidationContext.empty,
   )
 
   private val localVariables: Map[String, TypingResult] = Map(

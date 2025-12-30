@@ -32,6 +32,7 @@ import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder.TestRecordVariablesDecodingError
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ListUtil
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationErrors}
 import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
@@ -80,12 +81,10 @@ class ScenarioTestService(
 
   private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
 
-  private val testCaseGlobalVariablesPreparer = TestCaseGlobalVariablesPreparer(
-    modelData.modelDefinition.expressionConfig
-  )
+  private val globalVariablesPreparer = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
 
-  private val assertionCompiler = new AssertionsCompiler(expressionCompiler, testCaseGlobalVariablesPreparer)
-  private val assertionVerifier: AssertionVerifier = new AssertionVerifier(testCaseGlobalVariablesPreparer)
+  private val assertionCompiler                    = new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
+  private val assertionVerifier: AssertionVerifier = new AssertionVerifier(globalVariablesPreparer)
 
   def getTestingCapabilities(
       scenarioGraph: ScenarioGraph,
