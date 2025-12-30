@@ -8,7 +8,6 @@ type Assertion = { expression: ExpressionObj };
 type Assertions = Record<string, Assertion[]>;
 
 export type TestCasesActions =
-    | { type: "TEST_CASE_UPDATE"; testCases: TestCases }
     | { type: "SET_TEST_CASE_ASSERTIONS"; assertions: Assertions }
     | { type: "SET_TEST_CASE_INPUTS"; inputs: string };
 

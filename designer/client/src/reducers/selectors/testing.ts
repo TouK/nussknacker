@@ -4,7 +4,7 @@ import { createSelector } from "reselect";
 import type { TestData, TestingState } from "../graph/testing";
 import { getGraph, getProcessCounts } from "./graph";
 
-export const getTesting = createSelector(getGraph, (g) => g.testing[g.scenario.name] || ({} as TestingState));
+export const getTesting = createSelector(getGraph, (g) => g.testing || ({} as TestingState));
 
 export const getTestResults = createSelector(getTesting, (g) => g.testResults);
 export const getTestAssertionResults = createSelector(getTesting, (g) => g.assertionsResults || {});

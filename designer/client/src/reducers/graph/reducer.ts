@@ -23,7 +23,7 @@ import type { NestedKeyOf } from "./lodashWrappers";
 import { omit, pick } from "./lodashWrappers";
 import { selectionState } from "./selectionState";
 import { testCaseReducer } from "./testCases";
-import { testingReducer } from "./testing";
+import { initialTestingState, testingReducer } from "./testing";
 import type { GraphState } from "./types";
 import { VisibleDataType } from "./types";
 import {
@@ -53,7 +53,7 @@ const emptyGraphState: GraphState = {
     testFormParameters: null,
     selectionState: [],
     processCounts: {},
-    testing: {},
+    testing: initialTestingState,
 };
 
 export function updateValidationResult(
@@ -131,18 +131,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
                 scenarioLoading: true,
             };
         }
-        case "TEST_RESULTS_LOADING": {
-            return {
-                ...state,
-                testing: {
-                    ...state.testing,
-                    [state.scenario.name]: {
-                        ...state.testing[state.scenario.name],
-                        testResultsLoading: true,
-                    },
-                },
-            };
-        }
         case "UPDATE_IMPORTED_PROCESS": {
             const oldNodeIds = sortBy(currentNodes.map((n) => n.id));
             const adjustedScenario = appendScenarioNameToProperties(addStickyNotesToNodes(action.scenario));
@@ -191,18 +179,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
                 },
             };
         }
-        case "TEST_RESULTS_FAILED": {
-            return {
-                ...state,
-                testing: {
-                    ...state.testing,
-                    [state.scenario.name]: {
-                        ...state.testing[state.scenario.name],
-                        testResultsLoading: false,
-                    },
-                },
-            };
-        }
         case "LOADING_FAILED": {
             return {
                 ...state,
@@ -210,7 +186,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
             };
         }
         case "CLEAR_PROCESS": {
-            return { ...emptyGraphState, testing: state.testing };
+            return { ...emptyGraphState };
         }
         case "EDIT_NODE": {
             const updateStateAfterNodeIdChange = getUpdateStateAfterNodeIdChange(action.before.id, action.after.id);

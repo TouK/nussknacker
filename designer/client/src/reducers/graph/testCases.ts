@@ -16,29 +16,32 @@ export interface TestCases {
 }
 
 export const initialTestCasesState: ScenarioGraph["testCases"] = {
-    id: uuid4(),
-    name: "Test case 1",
-    inputs: "[]",
-    mocks: {},
-    assertions: {},
+    value: {
+        id: uuid4(),
+        name: "Test case 1",
+        inputs: "[]",
+        mocks: {},
+        assertions: {},
+    },
 };
 
 export const testCaseReducer: Reducer<ScenarioGraph["testCases"]> = (state = initialTestCasesState, action) => {
     switch (action.type) {
-        case "TEST_CASE_UPDATE":
-            return {
-                ...state,
-                testCases: action.testCases,
-            };
         case "SET_TEST_CASE_ASSERTIONS":
             return {
                 ...state,
-                assertions: action.assertions,
+                value: {
+                    ...state.value,
+                    assertions: action.assertions,
+                },
             };
         case "SET_TEST_CASE_INPUTS":
             return {
                 ...state,
-                inputs: action.inputs,
+                value: {
+                    ...state.value,
+                    inputs: action.inputs,
+                },
             };
         default:
             return state;

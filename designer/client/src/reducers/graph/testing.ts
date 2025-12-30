@@ -18,13 +18,13 @@ export type TestingState = {
     testingAssertions?: Record<string, { expression: ExpressionObj }[]>;
 };
 
-export const initialTestCasesState: GraphState["testing"] = {
+export const initialTestingState: GraphState["testing"] = {
     testData: null,
     testResults: null,
     assertionsResults: null,
 };
 
-export const testingReducer: Reducer<GraphState["testing"]> = (state = initialTestCasesState, action) => {
+export const testingReducer: Reducer<GraphState["testing"]> = (state = initialTestingState, action) => {
     switch (action.type) {
         case "DISPLAY_TEST_RESULTS_DETAILS": {
             return {
@@ -47,6 +47,18 @@ export const testingReducer: Reducer<GraphState["testing"]> = (state = initialTe
             return {
                 ...state,
                 assertionsResults: null,
+            };
+        }
+        case "TEST_RESULTS_LOADING": {
+            return {
+                ...state,
+                testResultsLoading: true,
+            };
+        }
+        case "TEST_RESULTS_FAILED": {
+            return {
+                ...state,
+                testResultsLoading: false,
             };
         }
         default:

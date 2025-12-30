@@ -10,7 +10,7 @@ export type ScenarioGraph = {
     edges: Edge[];
     properties: PropertiesType;
     stickyNotes: NodeType[];
-    testCases: TestCases;
+    testCases: { value: TestCases };
 };
 
 export type Category = string;
