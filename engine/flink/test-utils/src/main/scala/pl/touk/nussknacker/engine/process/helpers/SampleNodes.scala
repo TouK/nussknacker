@@ -49,16 +49,59 @@ import scala.util.Try
 //TODO: clean up sample objects...
 object SampleNodes {
 
-  case class SimpleRecord(
-      id: String,
-      value1: Long,
-      value2: String,
-      date: Date,
-      value3Opt: Option[BigDecimal] = None,
-      value3: BigDecimal = 1,
-      intAsAny: Any = 1,
-      enumValue: SimpleJavaEnum = SimpleJavaEnum.ONE
-  )
+  class SimpleRecord private (
+      val id: String,
+      val value1: Long,
+      val value2: String,
+      val date: Date,
+      @Nullable
+      val value3Opt: BigDecimal,
+      val value3: BigDecimal,
+      val intAsAny: Any,
+      val enumValue: SimpleJavaEnum
+  ) extends Serializable {
+
+    def this() = this(null, -1, null, null, null, null, null, null)
+
+    def withId(id: String) = new SimpleRecord(id, value1, value2, date, value3Opt, value3, intAsAny, enumValue)
+
+    private def canEqual(other: Any): Boolean = other.isInstanceOf[SimpleRecord]
+
+    override def equals(other: Any): Boolean = other match {
+      case that: SimpleRecord =>
+        that.canEqual(this) &&
+        id == that.id &&
+        value1 == that.value1 &&
+        value2 == that.value2 &&
+        date == that.date &&
+        value3Opt == that.value3Opt &&
+        value3 == that.value3 &&
+        intAsAny == that.intAsAny &&
+        enumValue == that.enumValue
+      case _ => false
+    }
+
+    override def hashCode(): Int = {
+      val state = Seq(id, value1, value2, date, Option(value3Opt), value3, intAsAny, enumValue)
+      state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+    }
+
+  }
+
+  object SimpleRecord {
+
+    def apply(
+        id: String,
+        value1: Long,
+        value2: String,
+        date: Date,
+        value3Opt: Option[BigDecimal] = None,
+        value3: BigDecimal = 1,
+        intAsAny: Any = 1,
+        enumValue: SimpleJavaEnum = SimpleJavaEnum.ONE
+    ): SimpleRecord = new SimpleRecord(id, value1, value2, date, value3Opt.orNull, value3, intAsAny, enumValue)
+
+  }
 
   case class SimpleRecordWithPreviousValue(record: SimpleRecord, previous: Long, added: String)
 

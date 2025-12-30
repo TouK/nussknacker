@@ -937,9 +937,9 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         )
       )
       val recordA = SimpleRecord("a", 1, "2", new Date(3), Some(4), 5, "6")
-      val recordB = recordA.copy(id = "b")
-      val recordC = recordA.copy(id = "c")
-      val recordD = recordA.copy(id = "d")
+      val recordB = recordA.withId(id = "b")
+      val recordC = recordA.withId(id = "c")
+      val recordD = recordA.withId(id = "d")
 
       val results = prepareTestRunner(useIOMonadInInterpreter)
         .runTests(process, scenarioTestData)
