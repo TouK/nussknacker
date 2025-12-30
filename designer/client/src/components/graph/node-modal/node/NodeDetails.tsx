@@ -148,6 +148,7 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     }, [editedNode.$id, editedNode.id, node.id]);
 
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled: buttonFromToolbar?.disabled });
+    const testingTabVisible = settings["node.showTestingTab"];
 
     const generalContent = useMemo(
         () => <GeneralContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />,
@@ -172,10 +173,10 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
             {
                 label: t("nodeDetails.tabs.testing.name", "Testing"),
                 content: testingContent,
-                disabled: !testingScenarioEnabled,
+                disabled: !testingScenarioEnabled || !testingTabVisible,
             },
         ],
-        [generalContent, t, testingContent, testingScenarioEnabled],
+        [generalContent, t, testingContent, testingScenarioEnabled, testingTabVisible],
     );
 
     return (

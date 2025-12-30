@@ -50,6 +50,7 @@ export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean
         createFlag("node.showInputsAndOutputs"),
         createFlag("node.showMockFieldOnEnrichers"),
         createFlag("node.showSendRequestButton"),
+        createFlag("node.showTestingTab"),
         createFlag("scenario.allowQuickCancelDeploy"),
         createFlag("scenario.allowQuickDeploy"),
         createFlag("scenario.allowQuickSave"),
