@@ -22,7 +22,7 @@ import { appendHistorySquashLogic } from "./historySquash";
 import type { NestedKeyOf } from "./lodashWrappers";
 import { omit, pick } from "./lodashWrappers";
 import { selectionState } from "./selectionState";
-import { testCaseReducer } from "./testCase";
+import { testCaseReducer } from "./testCases";
 import type { GraphState } from "./types";
 import { VisibleDataType } from "./types";
 import {

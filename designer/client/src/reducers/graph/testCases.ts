@@ -7,7 +7,7 @@ import type { ScenarioGraph } from "../../types/scenarioGraph";
 type Mocks = Record<string, { expression: ExpressionObj }>;
 type Assertions = Record<string, { expression: ExpressionObj }[]>;
 
-export interface TestCase {
+export interface TestCases {
     id: string;
     name: string;
     inputs: string;
