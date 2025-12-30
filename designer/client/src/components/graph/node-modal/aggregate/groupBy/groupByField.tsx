@@ -22,7 +22,7 @@ export function GroupByField({ node, isEditMode, showValidation, parameter }: Fi
                     value={groupBy.values}
                     onChange={groupBy.onChange}
                     variableTypes={variableTypes}
-                    disabled={isEditMode}
+                    disabled={!isEditMode}
                     isValueValid={showValidation ? (value) => !groupBy.errorsByValue.has(value) : undefined}
                 />
                 <ValidationLabels fieldErrors={groupBy.fieldErrors} />

@@ -57,14 +57,14 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
     const showLines = Boolean(settings[`editor.${props.inputProps.language}.showLines`]);
 
     const [completionsVisible, setCompletionsVisible] = useState(false);
-    const [errorsToDisplay2, setErrorsToDisplay] = useState(fieldErrors);
+    const [errorsToDisplay, setErrorsToDisplay] = useState(fieldErrors);
     useEffect(() => {
         setErrorsToDisplay(getCompletionsActivated(editorRef) ? [] : fieldErrors);
     }, [fieldErrors]);
 
-    const [errorsToDisplay] = useDebouncedValue(errorsToDisplay2, 200);
+    const [debouncedErrorsToDisplay] = useDebouncedValue(errorsToDisplay, 200);
 
-    const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(errorsToDisplay, showLines);
+    const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(debouncedErrorsToDisplay, showLines);
 
     const [debouncedChange] = useDebounceFn((value: string, completionsVisible?: boolean) => {
         if (completionsVisible && getCompletionsActivated(editorRef)) return;
@@ -94,7 +94,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                 <Box
                     className={cx([
                         rowAceEditor,
-                        showValidation && !isEmpty(errorsToDisplay) && nodeInputWithError,
+                        showValidation && !isEmpty(debouncedErrorsToDisplay) && nodeInputWithError,
                         isMarked && "marked",
                         editorFocused && "focused",
                         inputProps.readOnly && "read-only",
@@ -118,7 +118,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                         }}
                         customAceEditorCompleter={completer}
                         enableLiveAutocompletion={enableLiveAutocompletion}
-                        fieldErrors={errorsToDisplay}
+                        fieldErrors={debouncedErrorsToDisplay}
                         annotations={annotations}
                         markers={markers}
                     />
@@ -134,7 +134,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                 </Fade>
             </Box>
             {showValidation && !hasRangeText ? (
-                <ValidationLabels fieldErrors={errorsToDisplay} validationLabelInfo={validationLabelInfo} />
+                <ValidationLabels fieldErrors={debouncedErrorsToDisplay} validationLabelInfo={validationLabelInfo} />
             ) : null}
         </Box>
     );
