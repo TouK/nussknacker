@@ -1,7 +1,7 @@
 import { head } from "lodash";
 import { useCallback, useMemo } from "react";
 
-import { testProcessWithParameters } from "../../../actions/nk/displayTestResults";
+import { testProcessWithParameters } from "../../../actions/nk/testingActions";
 import { getProcessingType, getTestParameters } from "../../../reducers/selectors/graph";
 import { getTestData } from "../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";

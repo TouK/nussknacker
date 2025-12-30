@@ -4,7 +4,7 @@ import type { ElementType, ReactElement } from "react";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { testScenarioWithDataRecords } from "../../../actions/nk/displayTestResults";
+import { testScenarioWithDataRecords } from "../../../actions/nk/testingActions";
 import { getTestCapabilities } from "../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../reducers/selectors/settings";
 import { getTestCaseAssertions, getInputDataRecords } from "../../../reducers/selectors/testCases";

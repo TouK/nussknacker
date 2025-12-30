@@ -95,7 +95,7 @@ function wrapWithTestAction(
         const scenarioGraph = getScenarioGraph(state);
         const processName = getProcessName(state);
         fn(processName, scenarioGraph)
-            .then(({ testResults, testData }) => dispatch(displayTestResults(testResults, testData)))
+            .then(({ testResults, testData }) => dispatch(testingActions(testResults, testData)))
             .catch(() => dispatch({ type: "TEST_RESULTS_FAILED" }));
     };
 }
@@ -115,10 +115,7 @@ export function displayTestAssertionsResults(assertionsResults: TestAssertionRes
     };
 }
 
-function displayTestResults(
-    { counts, results, assertionsResults }: ResultsWithCountsDto,
-    testData?: SourceWithParametersTest,
-): ThunkAction {
+function testingActions({ counts, results, assertionsResults }: ResultsWithCountsDto, testData?: SourceWithParametersTest): ThunkAction {
     return (dispatch) => {
         dispatch(displayProcessCounts(counts));
         dispatch(displayTestResultsDetails(results, testData));

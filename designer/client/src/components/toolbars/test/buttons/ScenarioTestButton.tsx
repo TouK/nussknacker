@@ -2,7 +2,7 @@ import { alpha } from "@mui/material";
 import React, { useCallback, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { testScenarioWithDataRecords } from "../../../../actions/nk/displayTestResults";
+import { testScenarioWithDataRecords } from "../../../../actions/nk/testingActions";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { convertViewportUnitToPixels } from "../../../../common/convertViewportUnitToPixels";
 import { getTestCaseAssertions, getInputDataRecords, hasInputDataRecordsDefined } from "../../../../reducers/selectors/testCases";
