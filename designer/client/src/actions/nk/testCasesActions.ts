@@ -1,11 +1,13 @@
 import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
-import type { TestCases } from "../../reducers/graph/testCases";
 import { getTestCaseAssertions, getTestCaseAssertionsForNode, getInputDataRecords } from "../../reducers/selectors/testCases";
 import type { ThunkAction } from "../reduxTypes";
 
 type Assertion = { expression: ExpressionObj };
-type Assertions = Record<string, Assertion[]>;
+export type Assertions = Record<string, Assertion[]>;
+
+type Mock = { expression: ExpressionObj };
+export type Mocks = Record<string, Mock[]>;
 
 export type TestCasesActions =
     | { type: "SET_TEST_CASE_ASSERTIONS"; assertions: Assertions }

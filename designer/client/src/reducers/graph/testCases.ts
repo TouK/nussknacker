@@ -1,11 +1,8 @@
 import { v4 as uuid4 } from "uuid";
 
+import type { Assertions, Mocks } from "../../actions/nk/testCasesActions";
 import type { Reducer } from "../../actions/reduxTypes";
-import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
-
-type Mocks = Record<string, { expression: ExpressionObj }>;
-type Assertions = Record<string, { expression: ExpressionObj }[]>;
 
 export interface TestCases {
     id: string;
