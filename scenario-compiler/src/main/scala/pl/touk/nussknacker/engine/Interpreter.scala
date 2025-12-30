@@ -93,7 +93,7 @@ private class InterpreterInternal[F[_]: Monad](
         // Here we need parent context so we can compile rest of scenario. Unfortunately some component inside fragment
         // could've cleared that context. In that case, we take current (fragment's) context so we can keep the id,
         // clear it's variables, and keep using it in further processing.
-        val parentContext = ctx.parentContext.getOrElse(ctx.copy(variables = Map.empty))
+        val parentContext = ctx.parentContext.getOrElse(ctx.withVariables(Map.empty))
         val newParentContext = outputVar match {
           case Some(FragmentOutputVarDefinition(varName, fields)) =>
             val parsedFieldsMap = evaluateFragmentOutput(ctx, fields)

@@ -38,7 +38,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  private val traceId = TraceId.generate().toString
+  private val traceId = TraceId.generate()
 
   test("run scenario in request response mode") {
 
@@ -280,10 +280,13 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       case NuExceptionInfo(
             Some(NodeComponentInfo(NodeId("sinkId"), Some(ComponentId(ComponentType.Sink, "unknown")))),
             SinkException("FailingSink failed"),
-            Context(`contextId`, variables, None, Some(traceId)),
+            context,
             _,
             _
-          ) :: Nil if variables == Map("input" -> Request1("a", "b")) =>
+          ) :: Nil
+          if context.id == contextId &&
+            context.variables == Map("input" -> Request1("a", "b")) &&
+            context.traceId.contains(traceId) =>
     }
   }
 
@@ -431,7 +434,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
   private def invokeInterpreter(interpreter: InterpreterType, input: Any): ValidatedNel[ErrorType, List[Any]] = {
     interpreter
-      .invokeToOutput(Request(input, Map(BaseLiteSource.DefaultTraceIdHeader -> traceId)))
+      .invokeToOutput(Request(input, Map(BaseLiteSource.DefaultTraceIdHeader -> traceId.toString)))
       .futureValue
   }
 

@@ -53,6 +53,7 @@
     <logger name="org.apache.flink.runtime.dispatcher.DispatcherRestEndpoint" level="WARN"/>
     <logger name="org.apache.flink.runtime.security.token.DefaultDelegationTokenManager" level="ERROR"/>
     <logger name="org.apache.flink.queryablestate" level="OFF"/>
+    <logger name="org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer" level="${KRYO_LOG_LEVEL:-INFO}"/>
 
     <logger name="kafka" level="ERROR"/>
     <logger name="org.apache.kafka.consumer" level="ERROR"/>

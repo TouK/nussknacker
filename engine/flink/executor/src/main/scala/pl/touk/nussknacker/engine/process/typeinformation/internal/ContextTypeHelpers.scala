@@ -1,32 +1,34 @@
 package pl.touk.nussknacker.engine.process.typeinformation.internal
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.java.typeutils.ListTypeInfo
-import pl.touk.nussknacker.engine.api.{Context, ContextId, ContextIdPathPart, NodeId, TraceId}
+import org.apache.flink.api.java.typeutils.{ListTypeInfo, PojoField, PojoTypeInfo}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.flink.api.typeinfo.option.OptionTypeInfo
 import pl.touk.nussknacker.engine.flink.typeinformation.{ConcreteCaseClassTypeInfo, FixedValueTypeInformationHelper}
+
+import scala.jdk.CollectionConverters._
 
 object ContextTypeHelpers {
 
   private def infoFromVariablesAndParent(
       variables: TypeInformation[Map[String, Any]],
-      parentCtx: TypeInformation[Option[Context]]
+      parentCtx: TypeInformation[_ <: Context]
   ): TypeInformation[Context] =
-    ConcreteCaseClassTypeInfo(
-      ("id", contextIdInfo),
-      ("variables", variables),
-      ("parentContext", parentCtx),
-      ("traceId", traceIdOptionTypeInfo),
+    new PojoTypeInfo(
+      classOf[Context],
+      List(
+        new PojoField(classOf[Context].getDeclaredField("id"), contextIdInfo),
+        new PojoField(classOf[Context].getDeclaredField("variables"), variables),
+        new PojoField(classOf[Context].getDeclaredField("nullableParentContext"), parentCtx),
+        new PojoField(classOf[Context].getDeclaredField("nullableTraceId"), traceIdTypeInfo),
+      ).asJava
     )
 
   def infoFromVariablesAndParentOption(
       variables: TypeInformation[Map[String, Any]],
       parentOpt: Option[TypeInformation[Context]]
   ): TypeInformation[Context] = {
-    val parentCtx = new OptionTypeInfo[Context, Option[Context]](
-      parentOpt.getOrElse(FixedValueTypeInformationHelper.nullValueTypeInfo)
-    )
+    val parentCtx = parentOpt.getOrElse(FixedValueTypeInformationHelper.nullValueTypeInfo)
     infoFromVariablesAndParent(variables, parentCtx)
   }
 
@@ -55,9 +57,5 @@ object ContextTypeHelpers {
 
   private val traceIdTypeInfo: TypeInformation[TraceId] =
     ConcreteCaseClassTypeInfo(("value", TypeInformation.of(classOf[String])))
-
-  private val traceIdOptionTypeInfo = new OptionTypeInfo[TraceId, Option[TraceId]](
-    traceIdTypeInfo
-  )
 
 }

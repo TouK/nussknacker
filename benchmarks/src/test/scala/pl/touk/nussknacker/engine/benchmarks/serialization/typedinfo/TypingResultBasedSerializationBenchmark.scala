@@ -41,7 +41,7 @@ class TypingResultBasedSerializationBenchmark {
   private val mapToSerializeType = Typed.fromInstance(mapToSerialize).asInstanceOf[TypedObjectTypingResult]
 
   private val contextToSerialize =
-    Context.dummy.copy(variables = Map("var1" -> "11", "var2" -> 11L, "map" -> mapToSerialize))
+    Context.dummy.withVariables(Map("var1" -> "11", "var2" -> 11L, "map" -> mapToSerialize))
 
   private val genericContextSetup =
     new SerializationBenchmarkSetup(TypeInformation.of(classOf[Context]), contextToSerialize)

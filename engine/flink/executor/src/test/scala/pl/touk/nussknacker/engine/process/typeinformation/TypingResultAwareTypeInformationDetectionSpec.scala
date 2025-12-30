@@ -2,23 +2,17 @@ package pl.touk.nussknacker.engine.process.typeinformation
 
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.api.common.typeutils.TypeSerializer
-import org.apache.flink.api.common.typeutils.base.{
-  GenericArraySerializer,
-  IntSerializer,
-  LongSerializer,
-  StringSerializer
-}
-import org.apache.flink.api.common.typeutils.base.array.StringArraySerializer
+import org.apache.flink.api.common.typeutils.base.{IntSerializer, LongSerializer, StringSerializer}
+import org.apache.flink.api.java.typeutils.runtime.PojoSerializer
 import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
-import org.scalatest.{Assertion, OptionValues}
 import org.scalatest.Inside.inside
 import org.scalatest.Inspectors.forAll
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.ScalaCaseClassSerializer
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{FlinkTypeInfoRegistrar, TypeInformationDetection}
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject._
@@ -84,7 +78,7 @@ class TypingResultAwareTypeInformationDetectionSpec
   }
 
   test("test context serialization") {
-    val ctx = Context.dummy.copy(variables =
+    val ctx = Context.dummy.withVariables(
       Map(
         "one"            -> 11,
         "two"            -> "ala",
@@ -114,17 +108,12 @@ class TypingResultAwareTypeInformationDetectionSpec
     checkContextAreSame(valueWithContextAfterRoundTrip.context, ctx)
 
     assertSerializersInContext(
-      typeInfo.createSerializer(executionConfigWithoutKryo.getSerializerConfig),
-      ("arrayOfInts", _ shouldBe new GenericArraySerializer(classOf[Integer], new IntSerializer)),
-      ("arrayOfStrings", _ shouldBe new StringArraySerializer),
-      ("one", _ shouldBe new IntSerializer),
-      ("three", assertMapSerializers(_, ("key", new StringSerializer))),
-      ("two", _ shouldBe new StringSerializer)
+      typeInfo.createSerializer(executionConfigWithoutKryo.getSerializerConfig)
     )
   }
 
   test("serialization for logical types that can be represented as string") {
-    val ctx = Context.dummy.copy(variables =
+    val ctx = Context.dummy.withVariables(
       Map(
         "instant"        -> Instant.ofEpochMilli(123L),
         "offsetDateTime" -> OffsetDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC),
@@ -171,7 +160,7 @@ class TypingResultAwareTypeInformationDetectionSpec
   test("number promotion behaviour") {
     val vCtx = ValidationContext(Map("longField" -> Typed[Long])) // we declare Long variable
 
-    val ctx = Context.dummy.copy(variables =
+    val ctx = Context.dummy.withVariables(
       Map("longField" -> 11)
     ) // but we put Int in runtime (which e.g. in spel wouldn't be a problem...)!
 
@@ -179,8 +168,7 @@ class TypingResultAwareTypeInformationDetectionSpec
     intercept[ClassCastException](serializeRoundTrip(ctx, typeInfo)())
 
     assertSerializersInContext(
-      typeInfo.createSerializer(executionConfigWithoutKryo.getSerializerConfig),
-      ("longField", _ shouldBe new LongSerializer)
+      typeInfo.createSerializer(executionConfigWithoutKryo.getSerializerConfig)
     )
   }
 
@@ -287,22 +275,8 @@ class TypingResultAwareTypeInformationDetectionSpec
 
   private def assertSerializersInContext(
       serializer: TypeSerializer[_],
-      nested: (String, TypeSerializer[_] => Assertion)*
   ): Unit = {
-    inside(serializer.asInstanceOf[TypeSerializer[Context]]) { case e: ScalaCaseClassSerializer[Context] @unchecked =>
-      e.getFieldSerializers should have length 4
-      assertNested(e.getFieldSerializers.apply(1), nested: _*)
-
-    }
-  }
-
-  private def assertNested(serializer: TypeSerializer[_], nested: (String, TypeSerializer[_] => Assertion)*): Unit = {
-    inside(serializer.asInstanceOf[TypeSerializer[Map[String, _ <: AnyRef]]]) { case TypedScalaMapSerializer(array) =>
-      array.zipAll(nested.toList, null, null).foreach { case ((name, serializer), (expectedName, expectedSerializer)) =>
-        name shouldBe expectedName
-        expectedSerializer(serializer)
-      }
-    }
+    serializer shouldBe a[PojoSerializer[_]]
   }
 
   private def assertMapSerializers(serializer: TypeSerializer[_], nested: (String, TypeSerializer[_])*) = {

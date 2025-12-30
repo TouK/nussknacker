@@ -3,9 +3,13 @@ package pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import java.util.UUID
+import javax.annotation.Nullable
 import scala.jdk.CollectionConverters._
 
 object Context {
+
+  def apply(id: ContextId, variables: Map[String, Any], parentContext: Option[Context], traceId: Option[TraceId]) =
+    new Context(id, variables, parentContext.orNull, traceId.orNull)
 
   def apply(id: ContextId): Context = Context(id, Map.empty, None, None)
 
@@ -93,23 +97,37 @@ object ContextId {
 /**
  * Context is container for variables used in expression evaluation
  *
- * @param id            correlation id/trace id used for tracing (logs, error presentation) and for tests mechanism, it should be always defined
- * @param variables     variables available in evaluation
- * @param parentContext context used for scopes handling, mainly for fragment invocation purpose
+ * @param id                  correlation id/trace id used for tracing (logs, error presentation) and for tests mechanism, it should be always defined
+ * @param variables           variables available in evaluation
+ * @param nullableParentContext context used for scopes handling, mainly for fragment invocation purpose
  */
-case class Context(
-    id: ContextId,
-    variables: Map[String, Any],
-    parentContext: Option[Context],
+class Context private (
+    val id: ContextId,
+    val variables: Map[String, Any],
+    @Nullable
+    nullableParentContext: Context,
     /**
      * Optional internal tracking ID used for debugging, monitoring, or tracing the execution flow.
      * For now, not exposed in the Designer part. Helps propagate correlation IDs across system components.
      */
-    traceId: Option[TraceId]
+    @Nullable
+    nullableTraceId: TraceId
 ) {
 
+  // For PojoSerializer purpose
+  def this() = this(null, null, null, null)
+
+  def parentContext: Option[Context] = Option(nullableParentContext)
+
+  def traceId = Option(nullableTraceId)
+
   def withContextIdPathPart(nodeId: NodeId, transformation: String): Context =
-    copy(id = id.withContextIdPathPart(nodeId, transformation))
+    new Context(
+      id = id.withContextIdPathPart(nodeId, transformation),
+      variables,
+      nullableParentContext,
+      nullableTraceId
+    )
 
   // TODO: all methods should has NotNothing type check to avoid situation when scala's compiler implicitly put Nothing
   //       into parameter
@@ -132,17 +150,20 @@ case class Context(
     withVariables(Map(name -> value))
 
   def withVariables(otherVariables: Map[String, Any]): Context =
-    copy(variables = variables ++ otherVariables)
+    new Context(id, variables = variables ++ otherVariables, nullableParentContext, nullableTraceId)
+
+  def withParentContext(newParentContext: Option[Context]): Context =
+    new Context(id, variables, newParentContext.orNull, nullableTraceId)
 
   def withTraceId(value: TraceId): Context =
-    copy(traceId = Some(value))
+    new Context(id, variables, nullableParentContext, nullableTraceId = value)
 
   def pushNewContext(variables: Map[String, Any]): Context = {
-    Context(id, variables, Some(this), traceId)
+    new Context(id, variables, this, nullableTraceId)
   }
 
   def unsafeTraceId: TraceId =
-    traceId.getOrElse(throw new IllegalArgumentException(s"Context $id doesn't contain traceId field."))
+    Option(nullableTraceId).getOrElse(throw new IllegalArgumentException(s"Context $id doesn't contain traceId field."))
 
   // it returns all variables from context including parent tree
   def allVariables: Map[String, Any] = {
@@ -155,7 +176,12 @@ case class Context(
   def clearUserVariables: Context = {
     // clears variables from context but leaves technical variables, hidden from user
     val variablesToLeave = Set(VariableConstants.EventTimestampVariableName)
-    copy(variables = variables.filter { case (k, _) => variablesToLeave(k) })
+    new Context(
+      id,
+      variables = variables.filter { case (k, _) => variablesToLeave(k) },
+      nullableParentContext,
+      nullableTraceId
+    )
   }
 
 }

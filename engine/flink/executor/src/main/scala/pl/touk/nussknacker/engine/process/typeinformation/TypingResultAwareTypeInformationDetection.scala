@@ -8,19 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.flink.api.TypedMultiset
-import pl.touk.nussknacker.engine.flink.api.typeinformation.{
-  CharsetTypeInformation,
-  CurrencyTypeInformation,
-  DurationTypeInformation,
-  FlinkTypeInfoRegistrar,
-  LocaleTypeInformation,
-  OffsetDateTimeTypeInformation,
-  PeriodTypeInformation,
-  TypeInformationDetection,
-  UUIDTypeInformation,
-  ZonedDateTimeTypeInformation,
-  ZoneIdTypeInformation
-}
+import pl.touk.nussknacker.engine.flink.api.typeinformation._
 import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
 import pl.touk.nussknacker.engine.process.typeinformation.internal.ContextTypeHelpers
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{
@@ -29,9 +17,7 @@ import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{
 }
 import pl.touk.nussknacker.engine.util.Implicits._
 
-import java.nio.charset.Charset
-import java.time.{Duration, OffsetDateTime, Period, ZonedDateTime, ZoneId}
-import java.util.{Currency, Locale, UUID}
+import java.time.ZoneId
 import scala.jdk.CollectionConverters._
 
 // TODO: handle avro types - see FlinkConfluentUtils

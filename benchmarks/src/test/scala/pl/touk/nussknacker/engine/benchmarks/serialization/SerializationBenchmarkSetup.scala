@@ -9,15 +9,10 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
 class SerializationBenchmarkSetup[T](
     typeInfo: TypeInformation[T],
-    val record: T,
-    prepareConfig: ExecutionConfig => Unit = _ => {}
+    val record: T
 ) extends LazyLogging {
 
-  private val config = {
-    val c = new ExecutionConfig
-    prepareConfig(c)
-    c
-  }
+  private val config = new ExecutionConfig
 
   private val data = new ByteArrayOutputStream(10 * 1024)
 

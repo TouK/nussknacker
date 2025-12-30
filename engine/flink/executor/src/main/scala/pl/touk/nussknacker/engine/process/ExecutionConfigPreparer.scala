@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.typeinformation.FlinkTypeInfoRegistrar
-import pl.touk.nussknacker.engine.process.util.Serializers
 
 /**
  * This is strategy how Flink's ExecutionConfig will be set up before process registration
@@ -91,7 +90,6 @@ object ExecutionConfigPreparer extends LazyLogging {
         config: ExecutionConfig
     )(jobData: JobData, deploymentData: DeploymentData): Unit = {
       FlinkTypeInfoRegistrar.ensureTypeInfosAreRegistered()
-      Serializers.registerSerializers(modelData.modelClassLoader, config)
       if (enableObjectReuse) {
         config.enableObjectReuse()
         logger.debug("Object reuse enabled")

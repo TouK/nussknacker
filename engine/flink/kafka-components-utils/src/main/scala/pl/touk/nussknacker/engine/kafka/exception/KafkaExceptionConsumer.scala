@@ -90,12 +90,13 @@ trait BaseKafkaExceptionConsumer extends FlinkEspExceptionConsumer with LazyLogg
         )
 
         val lightExceptionInfo = exceptionInfo.copy(
-          context = exceptionInfo.context.copy(
-            variables = Map(
-              "!warning" -> s"variables truncated, they didn't fit within max allowed size of a Kafka message: ${e.getMessage}",
-            ),
-            parentContext = None
-          )
+          context = exceptionInfo.context
+            .withVariables(
+              Map(
+                "!warning" -> s"variables truncated, they didn't fit within max allowed size of a Kafka message: ${e.getMessage}",
+              )
+            )
+            .withParentContext(None)
         )
 
         sendKafkaMessage(serializationSchema.serialize(lightExceptionInfo, System.currentTimeMillis()))

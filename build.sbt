@@ -706,6 +706,7 @@ lazy val flinkExecutor = (project in flink("executor"))
         // This is needed when flink minicluster is used for deployment
         "org.apache.flink" % "flink-metrics-influxdb"     % flinkV % Provided,
         "org.apache.flink" % "flink-metrics-prometheus"   % flinkV % Provided,
+        "org.apache.flink" % "flink-avro"                 % flinkV
       )
     },
     prepareItLibs               := {
@@ -916,7 +917,6 @@ lazy val flinkSchemedKafkaComponentsUtils = (project in flink("schemed-kafka-com
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" % "flink-streaming-java"  % flinkV               % Provided,
-        "org.apache.flink" % "flink-avro"            % flinkV,
         "org.apache.flink" % "flink-connector-kafka" % flinkConnectorKafkaV % Test,
         "org.scalatest"   %% "scalatest"             % scalaTestV           % Test
       )
@@ -942,8 +942,7 @@ lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")
         "org.apache.flink" % "flink-connector-kafka" % flinkConnectorKafkaV,
         "org.apache.flink" % "flink-connector-base"  % flinkV     % Provided,
         "org.apache.flink" % "flink-streaming-java"  % flinkV     % Provided,
-        "org.scalatest"   %% "scalatest"             % scalaTestV % Test,
-        "org.apache.flink" % "flink-avro"            % flinkV     % Test,
+        "org.scalatest"   %% "scalatest"             % scalaTestV % Test
       )
     }
   )
@@ -1742,11 +1741,7 @@ lazy val commonComponents = (project in engine("common/components"))
 lazy val commonComponentsTests = (project in engine("common/components-tests"))
   .settings(commonSettings)
   .settings(
-    name := "nussknacker-common-components-tests",
-    libraryDependencies ++= Seq(
-      // We have avro from liteComponentsTestkit on classpath so we need to add flink-avro as well
-      "org.apache.flink" % "flink-avro" % flinkV % Test
-    )
+    name := "nussknacker-common-components-tests"
   )
   .dependsOn(
     commonComponents,
