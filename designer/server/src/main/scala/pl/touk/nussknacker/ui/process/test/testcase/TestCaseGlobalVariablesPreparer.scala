@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.globalvariables.{ExpressionConfigDefinition, ObjectWithType}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
+// TODO: probably to be changed to object?
 class TestCaseGlobalVariablesPreparer(globalVariablesPreparer: GlobalVariablesPreparer) {
 
   private val TestsGlobalVariableName = "TESTS"

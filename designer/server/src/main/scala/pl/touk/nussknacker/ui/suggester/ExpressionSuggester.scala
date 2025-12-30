@@ -1,34 +1,20 @@
 package pl.touk.nussknacker.ui.suggester
 
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.dict.UiDictServices
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, SpelExpressionSuggester}
 import pl.touk.nussknacker.engine.util.CaretPosition2d
-import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.ui.process.test.testcase.TestCaseGlobalVariablesPreparer
+import pl.touk.nussknacker.ui.process.test.testcase.{TestCaseGlobalVariablesPreparer, TestCaseVariables}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ExpressionSuggester(
-    expressionDefinition: ExpressionConfigDefinition,
-    classDefinitions: ClassDefinitionSet,
-    uiDictServices: UiDictServices,
-    classLoader: ClassLoader,
-    scenarioPropertiesNames: Iterable[String]
+    spelExpressionSuggester: SpelExpressionSuggester,
+    validationContextGlobalVariablesOnly: ValidationContext,
 ) {
-
-  private val spelExpressionSuggester =
-    new SpelExpressionSuggester(expressionDefinition, classDefinitions, uiDictServices, classLoader)
-
-  private val validationContextGlobalVariablesOnly =
-    TestCaseGlobalVariablesPreparer(expressionDefinition).prepareValidationContextWithGlobalVariablesOnly(
-      scenarioPropertiesNames
-    )
 
   def expressionSuggestions(
       expression: Expression,
@@ -54,12 +40,23 @@ class ExpressionSuggester(
 object ExpressionSuggester {
 
   def apply(modelData: ModelData, scenarioPropertiesNames: Iterable[String]): ExpressionSuggester = {
-    new ExpressionSuggester(
-      modelData.modelDefinition.expressionConfig,
+    val classDefinitionsForSuggester = TestCaseVariables.extendClassDefinitionSet(
       modelData.modelDefinitionWithClasses.classDefinitions,
-      modelData.designerDictServices,
-      modelData.modelClassLoader,
-      scenarioPropertiesNames
+      modelData.modelDefinition.settings
+    )
+    val spelExpressionSuggester =
+      new SpelExpressionSuggester(
+        modelData.modelDefinition.expressionConfig,
+        classDefinitionsForSuggester,
+        modelData.designerDictServices,
+        modelData.modelClassLoader
+      )
+    val validationContextGlobalVariablesOnly =
+      TestCaseGlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
+        .prepareValidationContextWithGlobalVariablesOnly(scenarioPropertiesNames)
+    new ExpressionSuggester(
+      spelExpressionSuggester,
+      validationContextGlobalVariablesOnly,
     )
   }
 

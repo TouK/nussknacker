@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.benchmarks.suggester
 
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -7,6 +8,7 @@ import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDef
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.spel.SpelExpressionSuggester
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.CaretPosition2d
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
@@ -39,11 +41,13 @@ class ExpressionSuggesterBenchmarkSetup() {
   )
 
   private val expressionSuggester = new ExpressionSuggester(
-    ModelDefinitionBuilder.emptyExpressionConfig,
-    clazzDefinitions,
-    dictServices,
-    getClass.getClassLoader,
-    List.empty
+    new SpelExpressionSuggester(
+      ModelDefinitionBuilder.emptyExpressionConfig,
+      clazzDefinitions,
+      dictServices,
+      getClass.getClassLoader
+    ),
+    ValidationContext.empty
   )
 
   private val variables: Map[String, TypingResult] = Map(

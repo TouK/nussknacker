@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition.clazz
 object ClassDefinitionSet {
 
   def apply(classDefinitions: Set[ClassDefinition]): ClassDefinitionSet = {
-    new ClassDefinitionSet(classDefinitions.toList.map(classDef => classDef.getClazz -> classDef).toMap)
+    new ClassDefinitionSet(classDefinitions.map(classDef => classDef.getClazz -> classDef).toMap)
   }
 
 }
@@ -46,6 +46,12 @@ case class ClassDefinitionSet(classDefinitionsMap: Map[Class[_], ClassDefinition
     lazy val superClass          = Option(clazz.getSuperclass).map(_ #:: Stream.empty).getOrElse(Stream.empty)
     lazy val extractedSuperTypes = (superClass #::: clazz.getInterfaces.toStream).flatMap(extractAllTypesInHierarchy)
     clazz #:: extractedSuperTypes
+  }
+
+  def concat(classDefinitions: Set[ClassDefinition]): ClassDefinitionSet = {
+    ClassDefinitionSet(
+      classDefinitionsMap ++ classDefinitions.map(classDef => classDef.getClazz -> classDef).toMap
+    )
   }
 
 }
