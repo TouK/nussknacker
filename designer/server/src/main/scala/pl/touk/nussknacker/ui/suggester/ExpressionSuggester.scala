@@ -41,6 +41,8 @@ class ExpressionSuggester(
 object ExpressionSuggester {
 
   def apply(modelData: ModelData, scenarioPropertiesNames: Iterable[String]): ExpressionSuggester = {
+    // The definition of the 'tests' global variable needs to be scanned beforehand because this variable,
+    // even if it is a helper, is not present in expressionConfig.globalVariables.
     val classDefinitionsForSuggester = TestCaseVariables.extendClassDefinitionSet(
       modelData.modelDefinitionWithClasses.classDefinitions,
       modelData.modelDefinition.settings
@@ -53,10 +55,8 @@ object ExpressionSuggester {
         modelData.modelClassLoader
       )
     val validationContextGlobalVariablesOnly =
-      TestCaseVariables.extendGlobalVariablesValidationContext(
-        GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
-          .prepareValidationContextWithGlobalVariablesOnly(scenarioPropertiesNames)
-      )
+      GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
+        .prepareValidationContextWithGlobalVariablesOnly(scenarioPropertiesNames)
     new ExpressionSuggester(
       spelExpressionSuggester,
       validationContextGlobalVariablesOnly,

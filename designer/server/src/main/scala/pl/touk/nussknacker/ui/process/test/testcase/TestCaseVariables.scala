@@ -14,8 +14,8 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 
 object TestCaseVariables {
 
-  private val TestsGlobalVariableName  = "TESTS"
-  private val ContextsNodeVariableName = "contexts"
+  final val TestsGlobalVariableName  = "TESTS"
+  final val ContextsNodeVariableName = "contexts"
 
   def extendClassDefinitionSet(
       classDefinitionSet: ClassDefinitionSet,
@@ -28,20 +28,17 @@ object TestCaseVariables {
     classDefinitionSet.concat(testCaseGlobalVarsDefinitions)
   }
 
-  def extendGlobalVariablesValidationContext(validationContext: ValidationContext): ValidationContext =
-    validationContext
-      .withVariablesUnsafe(TestsGlobalVariableName -> testsGlobalVariableType)
-
   def extendNodeVariablesValidationContext(
       validationContext: ValidationContext,
       nodeTyping: NodeTypingData
   ): ValidationContext =
-    extendGlobalVariablesValidationContext(validationContext)
+    validationContext
       .withVariablesUnsafe(
+        TestsGlobalVariableName -> testsGlobalVariableType,
         ContextsNodeVariableName -> Typed.genericTypeClass(
           classOf[java.util.List[_]],
           List(Typed.record(nodeTyping.variableTypes))
-        )
+        ),
       )
 
   def extendGlobalVariables(globalVariables: Map[String, ObjectWithType]): Map[String, ObjectWithType] =
