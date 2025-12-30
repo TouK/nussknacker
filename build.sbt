@@ -233,7 +233,7 @@ lazy val commonSettings =
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV                = "1.20.2"
+val flinkV                = "1.20.3"
 val flinkConnectorKafkaV  = "3.4.0-1.20"
 val jdbcFlinkConnectorV   = "3.3.0-1.20"
 val flinkCommonsCompressV = "1.26.0"
@@ -241,7 +241,6 @@ val flinkCommonsLang3V    = "3.12.0"
 val flinkCommonsTextV     = "1.10.0"
 val flinkCommonsIOV       = "2.15.1"
 val flinkInfluxdbJavaV    = "2.17"
-val flinkScalaV           = "1.1.5"
 // keep calcite synchronized with version used by current flink-sql-parser
 val calciteV              = "1.32.0"
 val avroV                 =
@@ -794,12 +793,8 @@ lazy val benchmarks = (project in file("benchmarks"))
     name                                 := "nussknacker-benchmarks",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java"           % flinkV exclude ("com.esotericsoftware", "kryo-shaded"),
+        "org.apache.flink" % "flink-streaming-java"           % flinkV,
         "org.apache.flink" % "flink-runtime"                  % flinkV,
-        ("pl.touk"        %% "flink-scala"                    % flinkScalaV)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
-          ),
         "com.dimafeng"    %% "testcontainers-scala-scalatest" % testContainersScalaV % Test,
       )
     },
@@ -1156,13 +1151,9 @@ lazy val flinkScalaUtils = (project in flink("scala-utils"))
     libraryDependencies ++= {
       Seq(
         "org.scala-lang"          % "scala-reflect"           % scalaVersion.value,
-        "org.apache.flink"        % "flink-streaming-java"    % flinkV      % Provided,
+        "org.apache.flink"        % "flink-streaming-java"    % flinkV     % Provided,
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
-        ("pl.touk"               %% "flink-scala"             % flinkScalaV % Provided)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
-          ),
-        "org.scalatest"          %% "scalatest"               % scalaTestV  % Test,
+        "org.scalatest"          %% "scalatest"               % scalaTestV % Test,
       )
     }
   )
@@ -1178,7 +1169,6 @@ lazy val flinkMiniCluster = (project in flink("minicluster"))
           .excludeAll(
             ExclusionRule("log4j", "log4j"),
             ExclusionRule("org.slf4j", "slf4j-log4j12"),
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
           ),
         "org.apache.flink"            % "flink-statebackend-rocksdb"  % flinkV,
         // Below is a list of libs that are available in flink distribution
@@ -1186,22 +1176,9 @@ lazy val flinkMiniCluster = (project in flink("minicluster"))
         "org.apache.flink"            % "flink-connector-files"       % flinkV,
         "org.apache.flink"            % "flink-csv"                   % flinkV,
         "org.apache.flink"            % "flink-json"                  % flinkV,
-        ("org.apache.flink"           % "flink-table-api-java-bridge" % flinkV)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded")
-          ),
-        ("org.apache.flink"           % "flink-table-runtime"         % flinkV)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded")
-          ),
-        ("org.apache.flink"           % "flink-table-planner-loader"  % flinkV)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded")
-          ),
-        ("pl.touk"                   %% "flink-scala"                 % flinkScalaV)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
-          ),
+        "org.apache.flink"            % "flink-table-api-java-bridge" % flinkV,
+        "org.apache.flink"            % "flink-table-runtime"         % flinkV,
+        "org.apache.flink"            % "flink-table-planner-loader"  % flinkV,
         // end of list
         "org.scala-lang.modules"     %% "scala-collection-compat"     % scalaCollectionsCompatV % Provided,
         "com.typesafe.scala-logging" %% "scala-logging"               % scalaLoggingV           % Provided,

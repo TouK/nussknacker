@@ -1,4 +1,4 @@
-ARG TOUK_FLINK_VERSION
+ARG FLINK_VERSION
 
 FROM curlimages/curl:8.9.1 AS lib_provider
 
@@ -7,7 +7,7 @@ FROM curlimages/curl:8.9.1 AS lib_provider
 WORKDIR /libs
 RUN curl -k --output /libs/postgresql-42.6.0.jar https://repo1.maven.org/maven2/org/postgresql/postgresql/42.6.0/postgresql-42.6.0.jar
 
-FROM touk/flink:${TOUK_FLINK_VERSION}
+FROM flink:${FLINK_VERSION}
 
 USER root
 RUN echo '#!/bin/sh' > /ex-docker-entrypoint.sh && \

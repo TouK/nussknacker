@@ -4,6 +4,7 @@ import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 
 import scala.collection.immutable.ListMap
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 object InputMeta {
@@ -40,16 +41,16 @@ object InputMeta {
       headers: java.util.Map[String, String],
       leaderEpoch: Integer
   ): java.util.Map[String, Any] = {
-    Map(
-      keyParameterName           -> key,
-      topicParameterName         -> topic,
-      partitionParameterName     -> partition,
-      offsetParameterName        -> offset,
-      timestampParameterName     -> timestamp,
-      timestampTypeParameterName -> timestampType,
-      headersParameterName       -> headers,
-      leaderEpochParameterName   -> leaderEpoch
-    ).asJava
+    val map = new java.util.HashMap[String, Any]()
+    map.put(keyParameterName, key)
+    map.put(topicParameterName, topic)
+    map.put(partitionParameterName, partition)
+    map.put(offsetParameterName, offset)
+    map.put(timestampParameterName, timestamp)
+    map.put(timestampTypeParameterName, timestampType)
+    map.put(headersParameterName, headers)
+    map.put(leaderEpochParameterName, leaderEpoch)
+    map
   }
 
   /**
