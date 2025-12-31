@@ -39,9 +39,8 @@ describe("Process", () => {
             cy.intercept("POST", "/api/processValidation/*").as("processValidation");
 
             cy.wait("@nodeValidation");
-            cy.contains(/^apply/i)
-                .should("be.enabled")
-                .click();
+            cy.applyNodeChanges();
+
             cy.get("[data-testid=window]").should("not.exist");
             cy.wait("@processValidation");
             cy.get("[data-testid=graphPage]").matchImage({
