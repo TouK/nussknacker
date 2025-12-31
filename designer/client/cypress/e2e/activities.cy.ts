@@ -67,7 +67,7 @@ describe.skip("Activities", () => {
         cy.contains("Activities").scrollIntoView();
         cy.contains(/^properties/i).click();
         cy.get("[data-testid=window]").find("input").eq(1).click().type("100");
-        cy.contains(/^apply/i).click();
+        cy.applyNodeChanges();
 
         cy.contains(/^save/i).click();
         cy.get("[data-testid=window]").find("textarea").click();
@@ -86,7 +86,7 @@ describe.skip("Activities", () => {
         cy.contains(/^properties/i).click();
         cy.get("[data-testid=window]").find("input").eq(0).as("nameInput").click();
         cy.get("@nameInput").type("-rename");
-        cy.contains(/^apply/i).click();
+        cy.applyNodeChanges();
         cy.contains(/^save/i).click();
         cy.contains(/^ok/i).click();
         cy.get("[data-testid=window]").should("not.exist");
