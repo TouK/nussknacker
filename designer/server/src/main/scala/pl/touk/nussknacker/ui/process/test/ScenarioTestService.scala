@@ -28,6 +28,7 @@ import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
+import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder.TestRecordVariablesDecodingError
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
