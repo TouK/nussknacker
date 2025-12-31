@@ -36,12 +36,6 @@ export default defineConfig({
                         launchOptions.args.push(`--width=${width}`);
                         launchOptions.args.push(`--height=${height}`);
                     }
-                } else {
-                    if (browser.name === "electron") {
-                        launchOptions.preferences.fullscreen = true;
-                    } else if (browser.family === "chromium") {
-                        launchOptions.args.push("--start-fullscreen");
-                    }
                 }
 
                 return launchOptions;
