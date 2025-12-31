@@ -34,6 +34,8 @@ describe("Description", () => {
 
         cy.get("@window")
             .contains(/^apply$/i)
+            .wait(250)
+            .should("be.enabled")
             .click();
 
         cy.get(`[title="toggle description view"]`).should("be.visible").click();
