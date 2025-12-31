@@ -173,9 +173,7 @@ describe("Table editor", () => {
         // Looks like it's a problem with real events.
 
         // // Reopen the node and verify if position is persisted
-        // cy.contains(/^apply/i)
-        //     .should("be.enabled")
-        //     .click();
+        // cy.applyNodeChanges();
         // cy.openNodeWindow("decision-table");
         // snapshot();
     });
