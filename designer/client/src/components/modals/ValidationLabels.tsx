@@ -1,5 +1,5 @@
 import { Box, FormHelperText, Stack } from "@mui/material";
-import { isEmpty } from "lodash";
+import { isEmpty, uniqBy } from "lodash";
 import type { ReactNode } from "react";
 import React from "react";
 
@@ -26,8 +26,8 @@ export default function ValidationLabels(props: Props) {
     return (
         <Stack direction="row" spacing={0.5} sx={{ alignItems: "baseline" }}>
             <Stack direction="column">
-                {fieldErrors.map((fieldErrors, index) => (
-                    <FormHelperText key={index} title={fieldErrors.message} error>
+                {uniqBy(fieldErrors, "message").map((fieldErrors) => (
+                    <FormHelperText key={fieldErrors.message} title={fieldErrors.message} error>
                         {fieldErrors.message}
                     </FormHelperText>
                 ))}
