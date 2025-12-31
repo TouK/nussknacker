@@ -8,12 +8,14 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.node.{NodeData, StickyNote}
+import pl.touk.nussknacker.engine.test.testcase.{TestCase, TestCases}
 
 final case class ScenarioGraph(
     properties: ProcessProperties,
     nodes: List[NodeData],
     edges: List[Edge],
-    stickyNotes: List[StickyNote] = Nil
+    stickyNotes: List[StickyNote] = Nil,
+    testCases: Option[TestCases] = None,
 ) {
   def toMetaData(name: ProcessName): MetaData = properties.toMetaData(name)
 }
@@ -30,11 +32,13 @@ object ScenarioGraph {
         nodes       <- c.downField("nodes").as[List[NodeData]]
         edges       <- c.downField("edges").as[List[Edge]]
         stickyNotes <- c.downField("stickyNotes").as[Option[List[StickyNote]]]
+        testCases   <- c.downField("testCases").as[Option[TestCases]]
       } yield ScenarioGraph(
         properties,
         nodes,
         edges,
-        stickyNotes.getOrElse(List.empty)
+        stickyNotes.getOrElse(List.empty),
+        testCases,
       )
     }
     Codec.from(decoder, encoder)

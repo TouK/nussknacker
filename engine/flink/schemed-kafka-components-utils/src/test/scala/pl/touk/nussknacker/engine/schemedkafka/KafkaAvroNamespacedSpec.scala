@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.schemedkafka
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.avro.Schema
-import org.apache.flink.api.common.ExecutionConfig
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelConfig
@@ -12,7 +11,6 @@ import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkT
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroNamespacedSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.helpers.FlinkKafkaAvroSpecMixin
-import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
@@ -45,13 +43,6 @@ class KafkaAvroNamespacedSpec extends AnyFunSuite with FlinkKafkaAvroSpecMixin w
     testScenarioRunner = TestScenarioRunner
       .flinkBased(modelConfig, flinkMiniCluster)
       .withExtraComponents(components)
-      .withExtraSerializersRegistrars(List((_: Config, executionConfig: ExecutionConfig) => {
-        AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(
-          executionConfig,
-          schemaRegistryClientFactory,
-          kafkaComponentsConfig
-        )
-      }))
       .build()
   }
 

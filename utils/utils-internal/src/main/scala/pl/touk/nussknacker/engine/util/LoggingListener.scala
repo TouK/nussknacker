@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.util
 
 import org.slf4j.Logger
 import pl.touk.nussknacker.engine.api.{Context, MetaData, NodeId, ProcessListener}
+import pl.touk.nussknacker.engine.api.ProcessListener.Transition
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import java.util.concurrent.ConcurrentHashMap
@@ -41,8 +42,7 @@ object LoggingListener extends ProcessListener with Serializable {
   }
 
   override def transitionToNextNode(
-      nodeId: NodeId,
-      nextNodeId: NodeId,
+      transition: Transition,
       context: Context,
       processMetaData: MetaData
   ): Unit = ()

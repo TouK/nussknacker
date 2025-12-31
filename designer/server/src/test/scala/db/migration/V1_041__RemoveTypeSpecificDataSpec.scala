@@ -2,11 +2,17 @@ package db.migration
 
 import db.migration.V1_041__RemoveTypeSpecificDataDefinition.migrateMetaData
 import io.circe.Json
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
-class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
+class V1_041__RemoveTypeSpecificDataSpec
+    extends AnyFunSuite
+    with Matchers
+    with EitherValuesDetailedMessage
+    with OptionValues {
 
   private def parse(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Failed to decode")
 
@@ -14,13 +20,12 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
     s"""{
        |  "metaData": $metaData,
        |  "nodes": [],
-       |  "additionalBranches": [],
-       |  "stickyNotes": []
+       |  "additionalBranches": []
        |}
        |""".stripMargin
   )
 
-  private val legacyFlinkScenarioNoFields = wrapEmptyScenario {
+  private val legacyFlinkMetaDataNoFields = parse {
     """{
        |  "id": "testId",
        |  "typeSpecificData": {
@@ -34,7 +39,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
        |""".stripMargin
   }
 
-  private val updatedFlinkScenarioNoFields = wrapEmptyScenario {
+  private val updatedFlinkMetaDataNoFields = parse {
     """{
        |  "id": "testId",
        |  "additionalFields": {
@@ -52,7 +57,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
        |""".stripMargin
   }
 
-  private val legacyFlinkScenarioWithDescriptionNoProperties = wrapEmptyScenario {
+  private val legacyFlinkMetaDataWithDescriptionNoProperties = parse {
     """{
       |  "id": "testId",
       |  "typeSpecificData": {
@@ -69,7 +74,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |""".stripMargin
   }
 
-  private val updatedFlinkScenarioWithDescriptionNoProperties = wrapEmptyScenario {
+  private val updatedFlinkMetaDataWithDescriptionNoProperties = parse {
     """{
       |  "id": "testId",
       |  "additionalFields": {
@@ -87,7 +92,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |""".stripMargin
   }
 
-  private val legacyFlinkScenarioWithScenarioProperties = wrapEmptyScenario {
+  private val legacyFlinkMetaDataWithScenarioProperties = parse {
     """{
       |  "id": "testId",
       |  "typeSpecificData": {
@@ -108,7 +113,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |""".stripMargin
   }
 
-  private val updatedFlinkScenarioWithScenarioProperties = wrapEmptyScenario {
+  private val updatedFlinkMetaDataWithScenarioProperties = parse {
     """{
       |  "id": "testId",
       |  "additionalFields": {
@@ -128,7 +133,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |""".stripMargin
   }
 
-  private val legacyLiteStreamScenario = wrapEmptyScenario {
+  private val legacyLiteStreamMetaData = parse {
     """{
       |  "id": "testId",
       |  "typeSpecificData": {
@@ -139,7 +144,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |""".stripMargin
   }
 
-  private val updatedLiteStreamScenario = wrapEmptyScenario {
+  private val updatedLiteStreamMetaData = parse {
     """{
       |  "id": "testId",
       |  "additionalFields": {
@@ -154,7 +159,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |""".stripMargin
   }
 
-  private val legacyLiteRequestResponseScenario = wrapEmptyScenario {
+  private val legacyLiteRequestResponseMetaData = parse {
     """{
       |  "id": "testId",
       |  "typeSpecificData": {
@@ -165,7 +170,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |""".stripMargin
   }
 
-  private val updatedLiteRequestResponseScenario = wrapEmptyScenario {
+  private val updatedLiteRequestResponseMetaData = parse {
     """{
       |  "id": "testId",
       |  "additionalFields": {
@@ -180,7 +185,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |""".stripMargin
   }
 
-  private val legacyFragment = wrapEmptyScenario {
+  private val legacyFragmentMetaData = parse {
     """{
       |  "id": "testId",
       |  "typeSpecificData": {
@@ -191,7 +196,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |""".stripMargin
   }
 
-  private val updatedFragment = wrapEmptyScenario {
+  private val updatedFragmentMetaData = parse {
     """{
       |  "id": "testId",
       |  "additionalFields": {
@@ -209,25 +214,29 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
   }
 
   test("migrate flink scenario") {
-    migrateMetaData(legacyFlinkScenarioNoFields) shouldBe Right(updatedFlinkScenarioNoFields)
-    migrateMetaData(legacyFlinkScenarioWithDescriptionNoProperties) shouldBe Right(
-      updatedFlinkScenarioWithDescriptionNoProperties
-    )
-    migrateMetaData(legacyFlinkScenarioWithScenarioProperties) shouldBe Right(
-      updatedFlinkScenarioWithScenarioProperties
-    )
+    migrateAndGetMetaData(legacyFlinkMetaDataNoFields) shouldBe updatedFlinkMetaDataNoFields
+    migrateAndGetMetaData(
+      legacyFlinkMetaDataWithDescriptionNoProperties
+    ) shouldBe updatedFlinkMetaDataWithDescriptionNoProperties
+    migrateAndGetMetaData(legacyFlinkMetaDataWithScenarioProperties) shouldBe updatedFlinkMetaDataWithScenarioProperties
   }
 
   test("migrate lite stream scenario") {
-    migrateMetaData(legacyLiteStreamScenario) shouldBe Right(updatedLiteStreamScenario)
+    migrateAndGetMetaData(legacyLiteStreamMetaData) shouldBe updatedLiteStreamMetaData
   }
 
   test("migrate lite request response scenario") {
-    migrateMetaData(legacyLiteRequestResponseScenario) shouldBe Right(updatedLiteRequestResponseScenario)
+    migrateAndGetMetaData(legacyLiteRequestResponseMetaData) shouldBe updatedLiteRequestResponseMetaData
   }
 
   test("migrate fragment") {
-    migrateMetaData(legacyFragment) shouldBe Right(updatedFragment)
+    migrateAndGetMetaData(legacyFragmentMetaData) shouldBe updatedFragmentMetaData
+  }
+
+  private def migrateAndGetMetaData(metadataJson: Json): Json = {
+    migrateMetaData(wrapEmptyScenario(metadataJson.noSpaces)).rightValue.asObject
+      .flatMap(_.apply("metaData"))
+      .value
   }
 
 }

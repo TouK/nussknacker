@@ -16,11 +16,19 @@ export const reducer: Reducer<ProcessStateType> = produce((draft, action) => {
         }
         case "PENDING_SCENARIO_ACTION": {
             switch (action.action) {
+                // We have to keep it synchronized with SimpleStateStatus.scala on BE side and it introduces a glitch when response from BE is quick
+                // TODO: replace this by some other way of signaling that current status is outdate and will be validated soon
                 case PredefinedActionName.Deploy:
                     draft.status.name = KnownStatusName.Deploying;
+                    draft.description = "The scenario is being deployed.";
+                    draft.tooltip = "The scenario has been already started and currently is being deployed.";
+                    draft.icon = "/assets/states/deploy-running-animated.svg";
                     break;
                 case PredefinedActionName.Redeploy:
                     draft.status.name = KnownStatusName.Redeploying;
+                    draft.description = "The scenario is being redeployed.";
+                    draft.tooltip = "The scenario has been already started and currently is being redeployed.";
+                    draft.icon = "/assets/states/deploy-running-animated.svg";
                     break;
             }
             return draft;

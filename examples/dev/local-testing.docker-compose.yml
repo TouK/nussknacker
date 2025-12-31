@@ -141,7 +141,7 @@ services:
     build:
       context: flink/
       args:
-        TOUK_FLINK_VERSION: "1.1.4-flink1.20.2-scala_2.13"
+        TOUK_FLINK_VERSION: "1.1.5-flink1.20.2-scala_2.13"
     restart: unless-stopped
     command: jobmanager
     ports:
@@ -162,7 +162,7 @@ services:
     build:
       context: flink/
       args:
-        TOUK_FLINK_VERSION: "1.1.4-flink1.20.2-scala_2.13"
+        TOUK_FLINK_VERSION: "1.1.5-flink1.20.2-scala_2.13"
     restart: unless-stopped
     command: taskmanager
     environment:

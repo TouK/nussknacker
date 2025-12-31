@@ -4,6 +4,11 @@ import cats.effect.{IO, Resource}
 import cats.effect.unsafe.implicits.global
 import io.circe.Json
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.ProcessListener.Transition
+import pl.touk.nussknacker.engine.api.ProcessListener.Transition.{
+  DirectTransition,
+  TransitionFromFragmentStartToNodeAfterFragment
+}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 
@@ -46,13 +51,17 @@ private case class ResultsCollectingListenerImpl[T](holderClass: String, runId: 
   }
 
   override def transitionToNextNode(
-      nodeId: NodeId,
-      nextNodeId: NodeId,
+      transition: Transition,
       context: Context,
       processMetaData: MetaData,
-  ): Unit = {
-    updateResults(_.updateNodeOutputResult(nodeId, Some(nextNodeId), context, variableEncoder))
-  }
+  ): Unit = updateResults(
+    transition match {
+      case DirectTransition(nodeId, nextNodeId) =>
+        _.updateNodeOutputResult(nodeId, Some(nextNodeId), context, variableEncoder)
+      case TransitionFromFragmentStartToNodeAfterFragment(fragmentStartNodeId, afterFragmentNodeId) =>
+        _.updateNodeOutputResult(fragmentStartNodeId, Some(afterFragmentNodeId), context, variableEncoder)
+    }
+  )
 
   override def processingFinishedInNode(
       nodeId: NodeId,

@@ -234,13 +234,14 @@ lazy val commonSettings =
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
 val flinkV                = "1.20.2"
-val flinkConnectorKafkaV  = "3.3.0-1.20"
+val flinkConnectorKafkaV  = "3.4.0-1.20"
 val jdbcFlinkConnectorV   = "3.3.0-1.20"
 val flinkCommonsCompressV = "1.26.0"
 val flinkCommonsLang3V    = "3.12.0"
 val flinkCommonsTextV     = "1.10.0"
 val flinkCommonsIOV       = "2.15.1"
 val flinkInfluxdbJavaV    = "2.17"
+val flinkScalaV           = "1.1.5"
 // keep calcite synchronized with version used by current flink-sql-parser
 val calciteV              = "1.32.0"
 val avroV                 =
@@ -249,7 +250,7 @@ val avroV                 =
 val kafkaV           = "3.8.1"
 // when updating note that we have copied and modified class org.springframework.expression.spel.ast.Projection
 // and org.springframework.util.NumberUtils and org.springframework.expression.spel.ast.Selection
-val springV          = "6.2.9"
+val springV          = "6.2.15"
 val scalaTestV       = "3.2.19"
 val scalaCheckV      = "1.18.1"
 val scalaCheckVshort = scalaCheckV.take(4).replace(".", "-")
@@ -316,12 +317,6 @@ val ujsonV                    = "4.2.1"
 val igniteV                   = "2.10.0"
 val retryV                    = "0.3.6"
 val restAssuredV              = "5.5.0"
-
-// depending on scala version one of this jar lays in Flink lib dir
-def flinkLibScalaDeps(scalaVersion: String, configurations: Option[Configuration] = None) =
-  Seq(
-    "pl.touk" %% "flink-scala" % "1.1.4"
-  ).map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude ("com.esotericsoftware", "kryo-shaded"))
 
 lazy val commonDockerSettings = {
   Seq(
@@ -801,6 +796,10 @@ lazy val benchmarks = (project in file("benchmarks"))
       Seq(
         "org.apache.flink" % "flink-streaming-java"           % flinkV exclude ("com.esotericsoftware", "kryo-shaded"),
         "org.apache.flink" % "flink-runtime"                  % flinkV,
+        ("pl.touk"        %% "flink-scala"                    % flinkScalaV)
+          .excludeAll(
+            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
+          ),
         "com.dimafeng"    %% "testcontainers-scala-scalatest" % testContainersScalaV % Test,
       )
     },
@@ -948,7 +947,8 @@ lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")
         "org.apache.flink" % "flink-connector-kafka" % flinkConnectorKafkaV,
         "org.apache.flink" % "flink-connector-base"  % flinkV     % Provided,
         "org.apache.flink" % "flink-streaming-java"  % flinkV     % Provided,
-        "org.scalatest"   %% "scalatest"             % scalaTestV % Test
+        "org.scalatest"   %% "scalatest"             % scalaTestV % Test,
+        "org.apache.flink" % "flink-avro"            % flinkV     % Test,
       )
     }
   )
@@ -1156,10 +1156,14 @@ lazy val flinkScalaUtils = (project in flink("scala-utils"))
     libraryDependencies ++= {
       Seq(
         "org.scala-lang"          % "scala-reflect"           % scalaVersion.value,
-        "org.apache.flink"        % "flink-streaming-java"    % flinkV     % Provided,
+        "org.apache.flink"        % "flink-streaming-java"    % flinkV      % Provided,
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
-        "org.scalatest"          %% "scalatest"               % scalaTestV % Test,
-      ) ++ flinkLibScalaDeps(scalaVersion.value, Some(Provided))
+        ("pl.touk"               %% "flink-scala"             % flinkScalaV % Provided)
+          .excludeAll(
+            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
+          ),
+        "org.scalatest"          %% "scalatest"               % scalaTestV  % Test,
+      )
     }
   )
   .dependsOn(testUtils % Test)
@@ -1194,11 +1198,15 @@ lazy val flinkMiniCluster = (project in flink("minicluster"))
           .excludeAll(
             ExclusionRule("com.esotericsoftware", "kryo-shaded")
           ),
+        ("pl.touk"                   %% "flink-scala"                 % flinkScalaV)
+          .excludeAll(
+            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
+          ),
         // end of list
         "org.scala-lang.modules"     %% "scala-collection-compat"     % scalaCollectionsCompatV % Provided,
         "com.typesafe.scala-logging" %% "scala-logging"               % scalaLoggingV           % Provided,
         "com.softwaremill.retry"     %% "retry"                       % retryV,
-      ) ++ flinkLibScalaDeps(scalaVersion.value)
+      )
     }
   )
   .dependsOn(
@@ -1757,7 +1765,11 @@ lazy val commonComponents = (project in engine("common/components"))
 lazy val commonComponentsTests = (project in engine("common/components-tests"))
   .settings(commonSettings)
   .settings(
-    name := "nussknacker-common-components-tests"
+    name := "nussknacker-common-components-tests",
+    libraryDependencies ++= Seq(
+      // We have avro from liteComponentsTestkit on classpath so we need to add flink-avro as well
+      "org.apache.flink" % "flink-avro" % flinkV % Test
+    )
   )
   .dependsOn(
     commonComponents,

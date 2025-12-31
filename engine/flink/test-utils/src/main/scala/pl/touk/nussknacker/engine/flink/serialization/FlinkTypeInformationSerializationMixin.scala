@@ -9,7 +9,6 @@ import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import scala.annotation.nowarn
 
 trait FlinkTypeInformationSerializationMixin extends Matchers {
 

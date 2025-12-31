@@ -17,6 +17,7 @@ import org.apache.flink.streaming.runtime.streamrecord.{RecordAttributes, Stream
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.ProcessListener.Transition
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
@@ -423,14 +424,17 @@ object SampleNodes {
       ): DataStream[ValueWithContext[AnyRef]] = {
         val streamOperator = new AbstractStreamOperator[ValueWithContext[AnyRef]]
           with OneInputStreamOperator[Context, ValueWithContext[AnyRef]] {
+
           override def processElement(element: StreamRecord[Context]): Unit = {
             val valueWithContext: ValueWithContext[AnyRef] =
               ValueWithContext(element.getTimestamp.asInstanceOf[AnyRef], element.getValue)
             val outputResult = new StreamRecord[ValueWithContext[AnyRef]](valueWithContext, timestampToSet)
             output.collect(outputResult)
           }
+
           override def processRecordAttributes(recordAttributes: RecordAttributes): Unit =
             super.processRecordAttributes(recordAttributes)
+
         }
         str.transform("collectTimestammp", ctx.valueWithContextInfo.forUnknown, streamOperator)
       }
@@ -1173,8 +1177,7 @@ object SampleNodes {
       checkValidState("nodeEntered")
 
     override def transitionToNextNode(
-        nodeId: NodeId,
-        nextNodeId: NodeId,
+        transition: Transition,
         context: Context,
         processMetaData: MetaData
     ): Unit =

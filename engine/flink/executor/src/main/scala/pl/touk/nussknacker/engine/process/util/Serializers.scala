@@ -1,113 +1,33 @@
 package pl.touk.nussknacker.engine.process.util
 
-import com.esotericsoftware.kryo.{Kryo, Serializer}
-import com.esotericsoftware.kryo.io.{Input, Output}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor
-import pl.touk.nussknacker.engine.flink.api.serialization.{
-  ClassBasedKryoSerializerRegistrar,
-  SerializerRegistrar,
-  SerializersRegistrar
-}
-import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
+import org.apache.flink.api.java.typeutils.AvroUtils
 
-import java.lang.reflect.Modifier
-import scala.util.{Failure, Try}
+import scala.reflect.internal.util.ScalaClassLoader.apply
 
-/**
-  * Watch out, serializers are also serialized. Incompatible SerializationUID on serializer class can lead process state loss (unable to continue from old snapshot).
-  * This is why we set SerialVersionUID explicit.
-  *
-  * @see [[org.apache.flink.api.common.typeutils.TypeSerializerSnapshotSerializationUtil#writeSerializersAndConfigsWithResilience]]
-  * @see [[org.apache.flink.api.common.typeutils.TypeSerializerSnapshotSerializationUtil#readSerializersAndConfigsWithResilience]]
-  */
 object Serializers extends LazyLogging {
-  private val SerialVersionUIDFieldName = "serialVersionUID"
 
-  def registerSerializers(
-      modelData: ModelData,
-      extraSerializersRegistrars: List[SerializersRegistrar],
-      config: ExecutionConfig
+  private val genericRecordClassName = "org.apache.avro.generic.GenericData$Record"
+
+  def registerSerializers(modelClassLoader: ClassLoader, executionConfig: ExecutionConfig): Unit = {
+    addAvroSerializersWhenAvroIsAvailableOnClasspath(modelClassLoader, executionConfig)
+  }
+
+  private def addAvroSerializersWhenAvroIsAvailableOnClasspath(
+      modelClassLoader: ClassLoader,
+      executionConfig: ExecutionConfig
   ): Unit = {
-    (implicitly[SerializerRegistrar[CaseClassSerializer]] ::
-      implicitly[SerializerRegistrar[SpelHack]] ::
-      implicitly[SerializerRegistrar[SpelMapHack]] :: Nil).foreach(_.registerIn(config))
-    (ScalaServiceLoader
-      .load[SerializersRegistrar](getClass.getClassLoader) ++ extraSerializersRegistrars)
-      .foreach(_.register(modelData.modelConfig.underlyingConfig, config))
-    TimeSerializers.addDefaultSerializers(config)
-  }
-
-  // this is not so great, but is OK for now
-  class CaseClassSerializer extends Serializer[Product](false, true) {
-
-    override def write(kryo: Kryo, output: Output, obj: Product): Unit = {
-      // this method handles case classes with implicit parameters and also inner classes.
-      // their constructor takes different parameters than usual case class constructor
-      def handleObjWithDifferentParamsCountConstructor(constructorParamsCount: Int): Unit = {
-        output.writeInt(constructorParamsCount)
-
-        // in inner classes definition, '$outer' field is at the end, but in constructor it is the first parameter
-        // we look for '$outer` in getFields not getDeclaredFields, cause it can be also parent's field
-        val fields = obj.getClass.getFields
-          .find(_.getName == "$outer")
-          .toList ++ obj.getClass.getDeclaredFields
-
-        assume(
-          fields.size >= constructorParamsCount,
-          "To little fields to serialize -> It will be impossible to deserialize this thing anyway"
+    modelClassLoader
+      .tryToLoadClass(genericRecordClassName) match {
+      case Some(genericRecordClass) =>
+        logger.debug(s"$genericRecordClassName is available on classpath. Registering default avro-kryo serializers")
+        AvroUtils.getAvroUtils.addAvroSerializersIfRequired(executionConfig.getSerializerConfig, genericRecordClass)
+      case None =>
+        logger.debug(
+          s"$genericRecordClassName is not available on classpath. Skipping default avro-kryo serializers registration"
         )
-
-        fields
-          .filter(_.getName != SerialVersionUIDFieldName)
-          .take(constructorParamsCount)
-          .foreach(field => {
-            field.setAccessible(true)
-            kryo.writeClassAndObject(output, field.get(obj))
-          })
-      }
-
-      val arity                  = obj.productArity
-      val constructorParamsCount = obj.getClass.getConstructors.headOption.map(_.getParameterCount)
-
-      if (arity == constructorParamsCount.getOrElse(0)) {
-        output.writeInt(arity)
-        obj.productIterator.foreach { f =>
-          kryo.writeClassAndObject(output, f)
-        }
-      } else {
-        handleObjWithDifferentParamsCountConstructor(constructorParamsCount.get)
-      }
     }
-
-    override def read(kryo: Kryo, input: Input, obj: Class[Product]): Product = {
-      val constructorParamsCount = input.readInt()
-      val constructors           = obj.getConstructors
-
-      if (constructorParamsCount == 0 && constructors.isEmpty) {
-        Try(ClassDefinitionExtractor.companionObject(obj)).recoverWith { case e =>
-          logger.error(s"Failed to load companion for $obj"); Failure(e)
-        }.get
-      } else {
-        Try({
-          val cons   = constructors(0)
-          val params = (1 to constructorParamsCount).map(_ => kryo.readClassAndObject(input)).toArray[AnyRef]
-          cons.newInstance(params: _*).asInstanceOf[Product]
-        }).recoverWith { case e =>
-          logger.error(s"Failed to load obj of class $obj", e); Failure(e)
-        }.get
-      }
-    }
-
-    override def copy(kryo: Kryo, original: Product): Product = original
-  }
-
-  object CaseClassSerializer {
-
-    implicit val registrar: SerializerRegistrar[CaseClassSerializer] =
-      new ClassBasedKryoSerializerRegistrar(classOf[CaseClassSerializer], classOf[Product])
   }
 
 }
