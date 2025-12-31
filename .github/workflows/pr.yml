@@ -489,7 +489,8 @@ jobs:
           path: designer/client/cypress-test-results/*.xml
       - name: Store test results
         # We have to store test results also for success, because pipeline can fail on "Force fail if update PR created" stage
-        if: success() || failure()
+        # Always needed to debug canceled runs.
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: e2e-test-results
