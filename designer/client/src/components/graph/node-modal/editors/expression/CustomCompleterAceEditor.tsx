@@ -88,6 +88,12 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
         }
     }, [editorFocused]);
 
+    useEffect(() => {
+        if (!editorFocused) {
+            setInternalValue((current) => (current !== value ? value : current));
+        }
+    }, [editorFocused, value]);
+
     return (
         <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
             <Box sx={{ position: "relative" }}>
