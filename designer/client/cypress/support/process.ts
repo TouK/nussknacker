@@ -1,5 +1,7 @@
 import { padStart } from "lodash";
 
+import type { Setting } from "../../src/reducers/userSettings";
+
 import Chainable = Cypress.Chainable;
 
 declare global {
@@ -21,6 +23,7 @@ declare global {
             getNode: typeof getNode;
             toggleUserFlag: typeof toggleUserFlag;
             openNodeWindow: typeof openNodeWindow;
+            applyNodeChanges: typeof applyNodeChanges;
             dragNode: typeof dragNode;
             layoutScenario: typeof layoutScenario;
             deployScenario: typeof deployScenario;
@@ -90,10 +93,10 @@ const createTestProcess = (name?: string, fixture?: string, category = "Category
 const createTestFragment = (name?: string, fixture?: string, category = "Category1", processingMode?: string, engineSetupName?: string) =>
     createProcess(name, fixture, category, true, processingMode, engineSetupName);
 
-function visitProcess(nameOrAlias: string) {
+function visitProcess(nameOrAlias: string, query?: Record<string, unknown>) {
     cy.intercept("POST", "/api/processValidation/*", { log: false }).as("fetch");
     return getWrappedName(nameOrAlias).then((name) => {
-        cy.visit(`/visualization/${name}`);
+        cy.visit(`/visualization/${name}`, { qs: query });
         cy.wait("@fetch", { timeout: 20000 }).its("response.statusCode").should("eq", 200);
         // lazy loaded panel moves other toolbars/button just before click
         cy.contains(/we are happy/i).should("be.visible");
@@ -101,14 +104,14 @@ function visitProcess(nameOrAlias: string) {
     });
 }
 
-function visitNewProcess(name?: string, fixture?: string, category?: string) {
+function visitNewProcess(name?: string, fixture?: string, category?: string, query?: Record<string, unknown>) {
     cy.createTestProcess(name, fixture, category).as("processName", { type: "static" });
-    return cy.visitProcess("@processName");
+    return cy.visitProcess("@processName", query);
 }
 
-function visitNewFragment(name?: string, fixture?: string, category?: string) {
+function visitNewFragment(name?: string, fixture?: string, category?: string, query?: Record<string, unknown>) {
     cy.createTestFragment(name, fixture, category).as("processName", { type: "static" });
-    return cy.visitProcess("@processName");
+    return cy.visitProcess("@processName", query);
 }
 
 function addLabelsToNewProcess(name?: string, labels?: string[]) {
@@ -305,24 +308,40 @@ function getWrappedName(nameOrAlias: string) {
     return nameOrAlias.startsWith("@") ? cy.get<string>(nameOrAlias, { log: false }) : cy.wrap(nameOrAlias, { log: false });
 }
 
-function getNode(nameOrAlias: string, end?: boolean) {
-    return getWrappedName(nameOrAlias).then((name) =>
-        cy.get(`[model-id${end ? "$=" : "="}"${name}"]`, { timeout: 30000, log: false }).should("be.visible"),
-    );
-}
-
-function toggleUserFlag(flag: string, value?: boolean | undefined) {
-    return cy.window().then((win) => {
-        win["$toggleUserFlag"](flag, value);
+function getNode(nameOrAlias: string) {
+    return getWrappedName(nameOrAlias).then((name) => {
+        let selector = "";
+        const match = name.match(/(.*)\*\*(.*)/);
+        if (!match) {
+            selector = `[model-id="${name}"]`;
+        } else {
+            if (match[1]) {
+                selector = `[model-id^="${match[1]}"]`;
+            }
+            if (match[2]) {
+                selector += `[model-id$="${match[2]}"]`;
+            }
+        }
+        return cy.get(selector, { timeout: 30000, log: false }).should("be.visible");
     });
 }
 
-function openNodeWindow(nameOrAlias: string, end?: boolean) {
+function toggleUserFlag(flag: Setting, value?: boolean | undefined) {
+    return cy
+        .window()
+        .its("$toggleUserFlag")
+        .should("exist")
+        .then((toggleUserFlag) => {
+            toggleUserFlag(flag, value);
+        });
+}
+
+function openNodeWindow(nameOrAlias: string) {
     // in Request (rr) "properties" data is used
     cy.intercept("POST", "/api/*/*/additionalInfo").as("additionalInfo");
     cy.intercept("POST", "/api/nodes/*/validation").as("nodeValidation");
 
-    cy.getNode(nameOrAlias, end).dblclick();
+    cy.getNode(nameOrAlias).should("be.visible").dblclick();
 
     cy.wait(["@additionalInfo", "@nodeValidation"], { timeout: 10000 }).each((res) => {
         cy.wrap(res).its("response.statusCode").should("eq", 200);
@@ -332,6 +351,16 @@ function openNodeWindow(nameOrAlias: string, end?: boolean) {
     cy.get("[data-testid=window]").find('button[name="close"]').should("be.visible");
 
     return cy.get("[data-testid=window]");
+}
+
+function applyNodeChanges() {
+    cy.get("[data-testid=window]")
+        .should("be.visible")
+        .contains(/^apply/i)
+        .should("be.enabled")
+        .wait(500)
+        .click();
+    cy.get("[data-testid=window]").should("not.exist");
 }
 
 function dragNode(
@@ -429,6 +458,7 @@ Cypress.Commands.add("visitProcess", visitProcess);
 Cypress.Commands.add("getNode", getNode);
 Cypress.Commands.add("toggleUserFlag", toggleUserFlag);
 Cypress.Commands.add("openNodeWindow", openNodeWindow);
+Cypress.Commands.add("applyNodeChanges", applyNodeChanges);
 Cypress.Commands.add("dragNode", dragNode);
 Cypress.Commands.add("layoutScenario", layoutScenario);
 Cypress.Commands.add("deployScenario", deployScenario);
