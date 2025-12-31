@@ -12,7 +12,7 @@ import { validateNode } from "./validationsActions";
 
 type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED"; validationData: ValidationData; nodeId: string };
 type NodeDetailsOpened = { type: "NODE_DETAILS_OPENED"; nodeId: string; windowId: string };
-type NodeDetailsClosed = { type: "NODE_DETAILS_CLOSED"; nodeId: string; windowId: string };
+type NodeDetailsClosed = { type: "NODE_DETAILS_RELOAD" | "NODE_DETAILS_CLOSED"; nodeId: string; windowId: string };
 type NodeValidationDynamicParametersLoading = {
     type: "NODE_VALIDATION_DYNAMIC_PARAMETERS_LOADING";
     nodeId: string;
@@ -85,14 +85,14 @@ export function nodeDetailsOpened(nodeId: string, windowId: string): ThunkAction
     };
 }
 
-export function nodeDetailsClosed(nodeId: string, windowId: string): ThunkAction {
+export function nodeDetailsClosed(nodeId: string, windowId: string, reloadOnly?: boolean): ThunkAction {
     return (dispatch) => {
         dispatch({
-            type: "NODE_DETAILS_CLOSED",
+            type: reloadOnly ? "NODE_DETAILS_RELOAD" : "NODE_DETAILS_CLOSED",
             nodeId,
             windowId,
         });
-        mergeQuery(parseWindowsQueryParams({}, { nodeId: nodeId }));
+        mergeQuery(parseWindowsQueryParams({}, { nodeId }));
     };
 }
 

@@ -4,7 +4,7 @@ import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
-import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
+import pl.touk.nussknacker.engine.util.SLF4JBridgeHandlerRegistrar
 import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.process.deployment.reconciliation.ScenarioDeploymentReconciler
@@ -21,7 +21,6 @@ class NussknackerAppFactory(
 
   def createApp(clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
     for {
-      _ <- Resource.eval(IO(JavaClassVersionChecker.check()))
       _ <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
 
       alreadyLoadedConfig <- Resource.eval(designerConfigLoader.loadDesignerConfig())

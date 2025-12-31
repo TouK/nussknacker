@@ -1,12 +1,11 @@
 import { ExpandMore } from "@mui/icons-material";
-import { AccordionDetails, AccordionSummary } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, styled } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React, { forwardRef, memo, useLayoutEffect, useRef } from "react";
 import { useMergeRefs } from "rooks";
 
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
 import { useAppDispatch } from "../../../../store/storeHelpers";
-import { AccordionStyled } from "./AccordionStyled";
 import { ContextTitle } from "./ContextTitle";
 import type { Direction, VariableContextType } from "./VariableContextTree";
 
@@ -18,12 +17,12 @@ type ContextAccordionProps = PropsWithChildren<{
     direction: Direction;
     locked?: boolean;
     showNodes?: boolean;
-    highlightAppear?: boolean;
+    className?: string;
 }>;
 
-export const ContextAccordion = memo(
+const ContextAccordionComponent = memo(
     forwardRef<unknown, ContextAccordionProps>(function ContextAccordion(
-        { disabled, expanded, onToggle, children, value, direction, locked, showNodes, highlightAppear },
+        { disabled, expanded, onToggle, children, value, direction, locked, showNodes, className },
         forwardedRef,
     ) {
         const dispatch = useAppDispatch();
@@ -41,7 +40,7 @@ export const ContextAccordion = memo(
         }, [expanded]);
 
         return (
-            <AccordionStyled
+            <Accordion
                 disabled={disabled}
                 expanded={expanded}
                 onChange={(event, expanded) => {
@@ -62,7 +61,7 @@ export const ContextAccordion = memo(
                     },
                 }}
                 ref={ref}
-                animatedAppear={highlightAppear}
+                className={className}
             >
                 <AccordionSummary
                     expandIcon={<ExpandMore />}
@@ -81,7 +80,9 @@ export const ContextAccordion = memo(
                 >
                     {children}
                 </AccordionDetails>
-            </AccordionStyled>
+            </Accordion>
         );
     }),
 );
+
+export const ContextAccordion = styled(ContextAccordionComponent)({});

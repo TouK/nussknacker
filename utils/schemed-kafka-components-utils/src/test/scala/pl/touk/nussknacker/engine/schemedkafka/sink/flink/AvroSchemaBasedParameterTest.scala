@@ -67,8 +67,8 @@ class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
     ) shouldBe List(
       Parameter(name = ParameterName("a"), typ = typing.Typed[String]).copy(
         isLazyParameter = true,
-        editors = List(SpelTemplateParameterEditor, SpelParameterEditor),
-        defaultValue = Some(Expression.spelTemplate(""))
+        editors = List(SpelParameterEditor, SpelTemplateParameterEditor),
+        defaultValue = Some(Expression.spel("''"))
       ),
       Parameter(name = ParameterName("b.c"), typ = typing.Typed[Long])
         .copy(
@@ -79,7 +79,7 @@ class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
       Parameter(name = ParameterName("c"), typ = typing.Typed[String]).copy(
         isLazyParameter = true,
         defaultValue = Some(Expression.spelTemplate("c-field-default")),
-        editors = List(SpelTemplateParameterEditor, SpelParameterEditor),
+        editors = List(SpelParameterEditor, SpelTemplateParameterEditor),
       ),
       Parameter(name = ParameterName("d"), typ = typing.Typed[Long])
         .copy(isLazyParameter = true, editors = List(SpelParameterEditor), defaultValue = Some(Expression.spel("42L"))),

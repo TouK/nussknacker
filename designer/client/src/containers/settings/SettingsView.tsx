@@ -1,7 +1,8 @@
 import { Button, Stack, Typography } from "@mui/material";
 import { set } from "lodash";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useDocumentEventListener } from "rooks";
 
 import { userSettingSet, userSettingsRotate } from "../../actions/nk/userSettings";
 import { getUserSettingsMerged, getUserSettingsValues } from "../../reducers/selectors/userSettings";
@@ -24,19 +25,37 @@ function SettingsView() {
     const [filter, setFilter] = useState("");
     const searchStrings = useMemo(() => filter.toLowerCase().split(" "), [filter]);
 
+    const filtered = useMemo(
+        () =>
+            Object.entries(settings).filter(([key]) => {
+                const value = key.toLowerCase();
+                return searchStrings.every((string) => {
+                    return value.includes(string);
+                });
+            }),
+        [searchStrings, settings],
+    );
+
     const values = useMemo(() => {
-        const filtered = Object.entries(settings).filter(([key]) => {
-            const value = key.toLowerCase();
-            return searchStrings.every((string) => {
-                return value.includes(string);
-            });
-        });
         return toNested(filtered);
-    }, [searchStrings, settings]);
+    }, [filtered]);
 
     const { t } = useTranslation();
 
     const dispatch = useAppDispatch();
+
+    const onToggle = useCallback(
+        (path: Setting, value?: boolean | "default") => {
+            dispatch(value === false || value === true || value === "default" ? userSettingSet(path, value) : userSettingsRotate(path));
+        },
+        [dispatch],
+    );
+
+    useDocumentEventListener("keydown", (event: KeyboardEvent) => {
+        if (event.key === "Enter" && filtered.length === 1) {
+            onToggle(filtered[0][0] as Setting);
+        }
+    });
 
     return (
         <Stack direction="column" sx={{ paddingTop: 3, paddingBottom: 12 }} spacing={1}>
@@ -64,11 +83,7 @@ function SettingsView() {
             </Stack>
             <CollapsibleSwitchList
                 data={values}
-                onToggle={(path: Setting, value) => {
-                    dispatch(
-                        value === false || value === true || value === "default" ? userSettingSet(path, value) : userSettingsRotate(path),
-                    );
-                }}
+                onToggle={onToggle}
                 flattenSingleChild
                 openIfOnly
                 searchStrings={searchStrings.flatMap((v) => v.split("."))}

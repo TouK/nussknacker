@@ -4,6 +4,7 @@ import storage from "redux-persist/lib/storage";
 import type { Reducer } from "../actions/reduxTypes";
 import type { ExpressionLang } from "../components/graph/node-modal/editors/expression/types";
 import type { Prettify } from "../components/graph/node-modal/useNodeTypeDetailsContentLogic";
+import { SNOW_SNOW_FLAG } from "../containers/SnowSnow";
 
 // empty default values, not visible on __settings until set
 type DynamicSettingsNames = `editor.${ExpressionLang}.noWrap` | `editor.${ExpressionLang}.showLines` | `survey.${string}.closed`;
@@ -22,6 +23,7 @@ export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean
         return [key, initialUserFlags?.[key] ?? defaultValue];
     }
 
+    // TODO: include all from initialUserFlags
     const entries = [
         // keep sorted
         createFlag("assistant.includeScenarioData"),
@@ -40,6 +42,7 @@ export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean
         createFlag("editor.showResetToDefaultButton"),
         createFlag("node.advancedStickyNotes"),
         createFlag("node.autoApply"),
+        createFlag("node.inputsAndOutputs.showBlinkAnimations", true),
         createFlag("node.shortCounts"),
         createFlag("node.showAggregateSwitcher"),
         createFlag("node.showFragmentCreator"),
@@ -54,6 +57,7 @@ export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean
         createFlag("scenario.liveData.showNodeAnimations", true),
         createFlag("scenario.liveData.showTransitionAnimations", true),
         createFlag("scenario.showBreadcrumbs"),
+        createFlag(SNOW_SNOW_FLAG, false),
         createFlag("toolbar.autoSaveDuringDeployRedeploy"),
     ];
     return Object.fromEntries(entries) as Readonly<Prettify<Record<KeysOfEntries<typeof entries>, boolean>>>;

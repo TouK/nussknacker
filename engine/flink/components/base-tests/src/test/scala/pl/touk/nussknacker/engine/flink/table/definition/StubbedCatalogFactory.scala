@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.engine.flink.table.definition
 
+import org.apache.flink.configuration.ConfigOption
 import org.apache.flink.table.api.{DataTypes, Schema}
 import org.apache.flink.table.catalog.{Catalog, CatalogTable, GenericInMemoryCatalog, ObjectPath}
 import org.apache.flink.table.factories.CatalogFactory
 
-import scala.annotation.nowarn
+import java.util
+import java.util.Collections
 import scala.jdk.CollectionConverters._
 
 class StubbedCatalogFactory extends CatalogFactory {
@@ -13,6 +15,9 @@ class StubbedCatalogFactory extends CatalogFactory {
 
   override def createCatalog(context: CatalogFactory.Context): Catalog = StubbedCatalogFactory.catalog
 
+  override def requiredOptions(): util.Set[ConfigOption[_]] = Collections.emptySet()
+
+  override def optionalOptions(): util.Set[ConfigOption[_]] = Collections.emptySet()
 }
 
 object StubbedCatalogFactory {

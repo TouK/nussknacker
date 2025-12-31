@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.engine.process.typeinformation
 
-import com.esotericsoftware.kryo.{Kryo, Serializer}
-import com.esotericsoftware.kryo.io.{Input, Output}
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.common.typeutils.base.{
@@ -25,26 +22,12 @@ import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.ScalaCaseClassSer
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{FlinkTypeInfoRegistrar, TypeInformationDetection}
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject._
-import pl.touk.nussknacker.engine.process.typeinformation.testTypedObject.CustomTypedObject
 
 import java.nio.charset.{Charset, StandardCharsets}
-import java.time.{
-  Duration,
-  Instant,
-  LocalDate,
-  LocalDateTime,
-  LocalTime,
-  OffsetDateTime,
-  Period,
-  ZonedDateTime,
-  ZoneId,
-  ZoneOffset
-}
+import java.time._
 import java.util.{Currency, Locale, UUID}
-import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
-@nowarn("cat=deprecation")
 class TypingResultAwareTypeInformationDetectionSpec
     extends AnyFunSuite
     with Matchers
@@ -96,7 +79,7 @@ class TypingResultAwareTypeInformationDetectionSpec
 
     assertMapSerializers(
       typeInfo.createSerializer(executionConfigWithKryo.getSerializerConfig),
-      ("obj", new KryoSerializer(classOf[SomeTestClass], executionConfigWithKryo))
+      ("obj", new KryoSerializer(classOf[SomeTestClass], executionConfigWithKryo.getSerializerConfig))
     )
   }
 
@@ -211,7 +194,7 @@ class TypingResultAwareTypeInformationDetectionSpec
     val incompatibleTypingResult =
       Typed.record(Map("intF" -> Typed[Int], "strF" -> Typed[Long]), Typed.typedClass[Map[String, Any]])
 
-    val oldSerializer =
+    val serializer =
       detection.forType(typingResult).createSerializer(executionConfigWithoutKryo.getSerializerConfig)
 
     val compatibleSerializer =
@@ -222,42 +205,19 @@ class TypingResultAwareTypeInformationDetectionSpec
       detection
         .forType(incompatibleTypingResult)
         .createSerializer(executionConfigWithoutKryo.getSerializerConfig)
-    val oldSerializerSnapshot = oldSerializer.snapshotConfiguration()
+    val serializerSnapshot = serializer.snapshotConfiguration()
 
-    oldSerializerSnapshot
-      .resolveSchemaCompatibility(oldSerializer.snapshotConfiguration())
+    serializerSnapshot
+      .resolveSchemaCompatibility(serializerSnapshot)
       .isCompatibleAsIs shouldBe true
-    oldSerializerSnapshot
-      .resolveSchemaCompatibility(compatibleSerializer.snapshotConfiguration())
+    compatibleSerializer
+      .snapshotConfiguration()
+      .resolveSchemaCompatibility(serializerSnapshot)
       .isCompatibleAfterMigration shouldBe true
-    oldSerializerSnapshot
-      .resolveSchemaCompatibility(incompatibleSerializer.snapshotConfiguration())
+    incompatibleSerializer
+      .snapshotConfiguration()
+      .resolveSchemaCompatibility(serializerSnapshot)
       .isIncompatible shouldBe true
-  }
-
-  test("serialization compatibility with reconfigured serializer") {
-    val map          = Map("obj" -> SomeTestClass("name"))
-    val typingResult = Typed.record(Map("obj" -> Typed[SomeTestClass]), Typed.typedClass[Map[String, Any]])
-
-    val oldSerializer =
-      detection
-        .forType[Map[String, Any]](typingResult)
-        .createSerializer(executionConfigWithKryo.getSerializerConfig)
-    val oldSerializerSnapshot = oldSerializer.snapshotConfiguration()
-
-    // we prepare ExecutionConfig with different Kryo config, it causes need to reconfigure kryo serializer, used for SomeTestClass
-    val newExecutionConfig = new ExecutionConfig {
-      registerTypeWithKryoSerializer(classOf[CustomTypedObject], classOf[DummySerializer])
-    }
-    val newSerializer =
-      detection
-        .forType[Map[String, Any]](typingResult)
-        .createSerializer(newExecutionConfig.getSerializerConfig)
-    val compatibility = oldSerializerSnapshot.resolveSchemaCompatibility(newSerializer)
-
-    compatibility.isCompatibleWithReconfiguredSerializer shouldBe true
-    val reconfigured = compatibility.getReconfiguredSerializer
-    serializeRoundTripWithSerializers(map, oldSerializer, reconfigured)()
   }
 
   test("serialization compatibility with custom flag config") {
@@ -278,9 +238,17 @@ class TypingResultAwareTypeInformationDetectionSpec
       detection.forType(removeField).createSerializer(executionConfigWithoutKryo.getSerializerConfig)
     val oldSerializerSnapshot = oldSerializer.snapshotConfiguration()
 
-    oldSerializerSnapshot.resolveSchemaCompatibility(oldSerializer).isCompatibleAsIs shouldBe true
-    oldSerializerSnapshot.resolveSchemaCompatibility(addFieldSerializer).isCompatibleAfterMigration shouldBe true
-    oldSerializerSnapshot.resolveSchemaCompatibility(removeFieldSerializer).isCompatibleAfterMigration shouldBe true
+    oldSerializerSnapshot
+      .resolveSchemaCompatibility(oldSerializerSnapshot)
+      .isCompatibleAsIs shouldBe true
+    addFieldSerializer
+      .snapshotConfiguration()
+      .resolveSchemaCompatibility(oldSerializerSnapshot)
+      .isCompatibleAfterMigration shouldBe true
+    removeFieldSerializer
+      .snapshotConfiguration()
+      .resolveSchemaCompatibility(oldSerializerSnapshot)
+      .isCompatibleAfterMigration shouldBe true
   }
 
   test("return type info for LocalDate, LocalTime and LocalDateTime even if type info registration is disabled") {
@@ -346,12 +314,6 @@ class TypingResultAwareTypeInformationDetectionSpec
 }
 
 case class SomeTestClass(name: String)
-
-class DummySerializer extends Serializer[CustomTypedObject] {
-  override def write(kryo: Kryo, output: Output, `object`: CustomTypedObject): Unit = ???
-
-  override def read(kryo: Kryo, input: Input, `type`: Class[CustomTypedObject]): CustomTypedObject = ???
-}
 
 //Sample implementation of TypeObjectTypingResult
 object testTypedObject {

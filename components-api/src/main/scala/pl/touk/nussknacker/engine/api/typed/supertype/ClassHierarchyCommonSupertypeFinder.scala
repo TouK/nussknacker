@@ -23,7 +23,7 @@ import scala.collection.immutable.ListSet
 object ClassHierarchyCommonSupertypeFinder {
 
   private lazy val IgnoredCommonInterfaces = {
-    // we stick to target 1.8 due to scala 2.12.10 incompatibility with jvm 17 so we can't refer statically to those interfaces
+    // we stick to target JDK 11, so we can't refer statically to those interfaces
     val jvmVersionDependentInterfaces = if (JvmVersionUtil.jvmMajorVersion > 12) {
       Set(
         Class.forName("java.lang.constant.ConstantDesc"),

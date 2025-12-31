@@ -83,7 +83,7 @@ case class CanonicalProcess(
     // DON'T use these fields, rely on allStartNodes or mapAllNodes instead.
     nodes: List[CanonicalNode],
     additionalBranches: List[List[CanonicalNode]] = List.empty,
-    stickyNotes: List[StickyNote] = List.empty,
+    stickyNotes: List[StickyNote] = List.empty
 ) extends CanonicalTreeNode {
 
   import CanonicalProcess._

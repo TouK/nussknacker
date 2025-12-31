@@ -12,14 +12,22 @@ object TestProcess {
       nodeTransitionResults: Map[NodeTransition, List[ResultContext[T]]],
       expressionEvaluationResults: Map[NodeId, List[ExpressionEvaluationResult[T]]],
       externalServiceInvocationResults: Map[NodeId, List[ExternalServiceInvocationResult[T]]],
-      exceptions: List[ExceptionResult[T]]
+      exceptions: List[ExceptionResult[T]],
+      originalNodeResults: Map[NodeId, List[
+        ResultContext[Any]
+      ]],
   ) {
 
-    def updateNodeResult(nodeId: NodeId, context: Context, variableEncoder: Any => T): TestResults[T] =
-      copy(nodeResults =
-        nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ ResultContext
-          .fromContext(context, Instant.now(), variableEncoder)))
+    def updateNodeResult(nodeId: NodeId, context: Context, variableEncoder: Any => T): TestResults[T] = {
+      val instantNow = Instant.now()
+      copy(
+        nodeResults = nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ ResultContext
+          .fromContext(context, instantNow, variableEncoder))),
+        originalNodeResults =
+          originalNodeResults + (nodeId -> (originalNodeResults.getOrElse(nodeId, List()) :+ ResultContext
+            .fromContext(context, instantNow, identity))),
       )
+    }
 
     def updateNodeOutputResult(
         nodeId: NodeId,
@@ -86,7 +94,8 @@ object TestProcess {
 
   object TestResults {
 
-    def empty[T]: TestResults[T] = TestResults[T](Map.empty, Map.empty, Map.empty, Map.empty, List.empty)
+    def empty[T]: TestResults[T] =
+      TestResults[T](Map.empty, Map.empty, Map.empty, Map.empty, List.empty, Map.empty)
 
     def aggregate[T](testResults: Iterable[TestResults[T]]): TestResults[T] = {
       TestResults[T](
@@ -95,6 +104,7 @@ object TestProcess {
         expressionEvaluationResults = mergeMaps(testResults.map(_.expressionEvaluationResults)),
         externalServiceInvocationResults = mergeMaps(testResults.map(_.externalServiceInvocationResults)),
         exceptions = testResults.flatMap(_.exceptions).toList,
+        originalNodeResults = mergeMaps(testResults.map(_.originalNodeResults)),
       )
     }
 

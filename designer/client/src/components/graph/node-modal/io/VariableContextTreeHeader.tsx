@@ -34,7 +34,7 @@ export function VariableContextTreeHeader({
                     id,
                     count: totalCount ?? results?.length,
                 }))}
-                input={direction === "input"}
+                reversed={direction === "input"}
             />
         </Stack>
     );

@@ -76,8 +76,7 @@ object KafkaJsonExceptionSerializationSchema {
     // |{
     // |  "inputEvent" : {
     // |    "!warning": ...
-    // (note: line below uses '' as quotes because Scala 2.12 can't handle escaped "")
-    val warningBytes = indentBytes + Utils.utf8Length(s"'$warningKey' : ${messageTemplate.asJson.spaces2},\n")
+    val warningBytes = indentBytes + Utils.utf8Length(s"\"$warningKey\" : ${messageTemplate.asJson.spaces2},\n")
     val bytesToCut   = valueBytes + warningBytes - maxValueBytes
 
     val variablesWithLength               = countVariableLengths(containerObject, indentBytes)

@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 
 import { Initiator, startLiveData, stopLiveData } from "../../actions/nk/liveData";
 import { VisibleDataType } from "../../reducers/graph/types";
-import { getHasPauseReasons, getVisibleDataType, isReadyForLiveData } from "../../reducers/selectors/getLiveData";
+import { getVisibleDataType, isReadyForLiveData } from "../../reducers/selectors/getLiveData";
 import { getHasOpenedNodeWindows } from "../../reducers/selectors/getWindowsIdMapping";
 import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
@@ -21,15 +21,14 @@ export function useLiveDataIfNeeded() {
     const autoEnableLiveData = settings["scenario.autoEnableLiveData"];
     const readyForResults = useAppSelector(isReadyForLiveData);
     const hasOpenedNodeWindow = useAppSelector(getHasOpenedNodeWindows);
-    const hasPauseReasons = useAppSelector(getHasPauseReasons);
 
     const shouldStart = useMemo(() => {
-        return autoEnableLiveData && readyForResults && !hasOpenedNodeWindow && !hasPauseReasons;
-    }, [autoEnableLiveData, hasOpenedNodeWindow, hasPauseReasons, readyForResults]);
+        return autoEnableLiveData && readyForResults && !hasOpenedNodeWindow;
+    }, [autoEnableLiveData, hasOpenedNodeWindow, readyForResults]);
 
     useEffect(() => {
         if (shouldStart) {
-            dispatch(startLiveData());
+            dispatch(startLiveData(Initiator.init));
         }
     }, [dispatch, shouldStart]);
 }

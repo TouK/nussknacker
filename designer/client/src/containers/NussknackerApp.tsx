@@ -15,6 +15,7 @@ import { useErrorRegister } from "./event-tracking/use-error-register";
 import { useRegisterTrackingEvents } from "./event-tracking/use-register-tracking-events";
 import { MainOutlet } from "./MainOutlet";
 import { Notifications } from "./Notifications";
+import { SnowSnow } from "./SnowSnow";
 import { useAnonymousStatistics } from "./useAnonymousStatistics";
 
 export function NussknackerApp() {
@@ -60,6 +61,7 @@ export function NussknackerApp() {
                 </ConnectionErrorProvider>
             </DndProvider>
             <VersionInfo />
+            <SnowSnow />
         </>
     );
 }

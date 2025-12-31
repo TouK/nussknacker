@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.serialization.SerializerConfigImpl
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.java.typeutils.TypeExtractor
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.core.memory.{DataInputViewStreamWrapper, DataOutputViewStreamWrapper}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.internals.{RecordHeader, RecordHeaders}
@@ -19,7 +17,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 import java.util.Optional
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.{classTag, ClassTag}
 import scala.util.Random
 
 class ConsumerRecordSerializerSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
@@ -28,10 +26,7 @@ class ConsumerRecordSerializerSpec extends AnyFunSuite with Matchers with TableD
 
   private val bufferSize = 1024
 
-  private val serializerConfig = {
-    val executionConfig = new ExecutionConfig()
-    new SerializerConfigImpl(new Configuration, executionConfig)
-  }
+  private val serializerConfig = new ExecutionConfig().getSerializerConfig
 
   test("should serialize and deserialize simple record") {
     val table = Table[ConsumerRecord[_, _]](

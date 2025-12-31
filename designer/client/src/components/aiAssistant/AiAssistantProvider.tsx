@@ -34,6 +34,8 @@ const parseEvent: (eventSourceMessage: EventSourceMessage) => ChatStreamEvent = 
         return { type: "delta", responsePart: JSON.parse(eventSourceMessage.data).text };
     } else if (eventSourceMessage.event === "stop") {
         return { type: "stop", threadId: JSON.parse(eventSourceMessage.data).threadId };
+    } else if (eventSourceMessage.event == "error") {
+        return { type: "error" };
     } else {
         return { type: "unknown", originalType: eventSourceMessage.event, data: eventSourceMessage.data };
     }
@@ -153,6 +155,10 @@ const ModelAdapter: ChatModelAdapter = {
                 return;
             } else if (event.type === "unknown") {
                 console.warn("Received unknown event type: ", event.originalType, " with data: ", event.data);
+                yield {
+                    content: [{ type: "text", text }],
+                    status: { type: "incomplete", reason: "error", error: "Unknown event received. Please try again." },
+                };
                 return;
             }
         }

@@ -10,6 +10,7 @@ export function nodeWindowIdMap(state = {}, action: Action): Record<NodeId, stri
                 [action.nodeId]: action.windowId,
             };
         case "NODE_DETAILS_CLOSED":
+        case "NODE_DETAILS_RELOAD":
             return {
                 ...state,
                 [action.nodeId]: undefined,

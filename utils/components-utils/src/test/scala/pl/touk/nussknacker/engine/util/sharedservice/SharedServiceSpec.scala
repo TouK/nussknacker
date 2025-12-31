@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class SharedServiceSpec extends AnyFunSuite with Matchers {
 
   private implicit val metaData: MetaData = MetaData("test1", StreamMetaData())
-  import CompatParColls.Converters._
+  import scala.collection.parallel.CollectionConverters._
 
   class TestSharedService(val creationData: String) extends SharedService[String] {
 
@@ -62,24 +62,6 @@ class SharedServiceSpec extends AnyFunSuite with Matchers {
     oneMore.isClosed.get() shouldBe false
     TestSharedServiceHolder.returnService(data)
     oneMore.isClosed.get() shouldBe true
-  }
-
-}
-
-// https://github.com/scala/scala-parallel-collections/issues/22#issuecomment-288389306
-// this little hack is needed because `scala-parallel-collections` does not publish build for scala 2.12
-private[sharedservice] object CompatParColls {
-
-  val Converters = {
-    import Compat._
-    {
-      import scala.collection.parallel._
-      CollectionConverters
-    }
-  }
-
-  object Compat {
-    object CollectionConverters
   }
 
 }

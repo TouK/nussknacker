@@ -15,6 +15,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#8849](https://github.com/TouK/nussknacker/pull/8849) Vulnerability: Spring upgrade to 6.2.15
 * [#8719](https://github.com/TouK/nussknacker/pull/8719) Feature: Add possibility to pass trace id to Context
 * [#8720](https://github.com/TouK/nussknacker/pull/8720) In those aggregates, that do not require preserving context, the context is now cleaned before grouping:
   * it is done by removing user variables
@@ -282,7 +283,7 @@ description: Stay informed with detailed changelogs covering new features, impro
            }
          }
        }
-     }
+     }  
   ```
 * [#8534](https://github.com/TouK/nussknacker/pull/8534) Kafka components: Added support for "PLAIN" Content type for topics without schema 
 * [#8523](https://github.com/TouK/nussknacker/pull/8523) `FlinkTestScenarioRunner`: added asynchronous method allowing scenario testing on Flink engine (`withRunningScenario`) 
@@ -303,6 +304,14 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8733](https://github.com/TouK/nussknacker/pull/8733) Added support for Basic Authentication in OpenAPI Enricher
 * [#8781](https://github.com/TouK/nussknacker/pull/8781) Removed `WithExceptionHandler` trait, it made it easy to unintentionally hide original `close` method
 * [#8802](https://github.com/TouK/nussknacker/pull/8802) SQL enrichers: sql metadata uses connection pooling
+* [#8775](https://github.com/TouK/nussknacker/pull/8775) Added `MultiSelectEditor`
+* [#8775](https://github.com/TouK/nussknacker/pull/8775) [#8808](https://github.com/TouK/nussknacker/pull/8808) `BoolParameterEditor` displayed as toggle switch, using `BoolParameterEditor` for boolean parameters
+* [#8808](https://github.com/TouK/nussknacker/pull/8808) Added possibility to pass `ChronoUnit.MILLIS` in `DurationParameterEditor.timeRangeComponents`
+* [#8808](https://github.com/TouK/nussknacker/pull/8808) `Event generator` component: ability to specify `schedule` up to millis 
+* [#8803](https://github.com/TouK/nussknacker/pull/8803) Nussknacker is now built only against Scala 2.13, removed Scala 2.12 cross-compile
+* [#8815](https://github.com/TouK/nussknacker/pull/8815) Fix: In Flink's serialization was used a result type of expression
+  before final implicit conversion instead of after it. It sometimes caused "AAA cannot be cast to class BBB" in runtime.
+* [#8806](https://github.com/TouK/nussknacker/pull/8806) Test case running implementation
 
 ## 1.18
 

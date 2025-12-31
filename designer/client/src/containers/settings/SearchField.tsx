@@ -21,7 +21,10 @@ export function SearchField({ value, onChange }: { value: string; onChange: (val
     const ref = useRef<HTMLInputElement>(null);
 
     useDocumentEventListener("keydown", (event: KeyboardEvent) => {
-        if (isSimpleChar(event) && isOutsideInput()) ref.current?.focus();
+        if (isSimpleChar(event) && isOutsideInput()) {
+            ref.current?.select();
+            ref.current?.focus();
+        }
     });
 
     return (

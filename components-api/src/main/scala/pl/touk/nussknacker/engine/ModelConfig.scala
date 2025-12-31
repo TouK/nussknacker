@@ -87,7 +87,7 @@ object ModelConfig {
   object GlobalParametersConfig {
 
     val default: GlobalParametersConfig = GlobalParametersConfig(
-      editorsForStringType = NonEmptyList.of(SpelTemplateParameterEditor, SpelParameterEditor)
+      editorsForStringType = NonEmptyList.of(SpelParameterEditor, SpelTemplateParameterEditor)
     )
 
   }

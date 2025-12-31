@@ -17,15 +17,11 @@ import scala.concurrent.duration.FiniteDuration
 class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDuration, jobsConfigCacheSize: Int)
     extends FlinkClient {
 
-  // In scala 2.12, Unit is not an AnyRef, so it is impossible to use it with buildAsync.
-  // TODO: switch to Unit after migration to >= 2.13 only scala version(s)
-  private val jobsOverviewCacheSingleKey = ""
-
-  private val jobsOverviewCache: AsyncCache[String, List[JobOverview]] =
+  private val jobsOverviewCache: AsyncCache[Unit, List[JobOverview]] =
     Caffeine
       .newBuilder()
       .expireAfterWrite(jobsOverviewCacheTTL.toJava)
-      .buildAsync[String, List[JobOverview]]()
+      .buildAsync[Unit, List[JobOverview]]()
 
   private val jobsConfigCache: Cache[JobID, ExecutionConfig] =
     Caffeine
@@ -42,17 +38,14 @@ class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDurat
     freshnessPolicy match {
       case Fresh =>
         val resultFuture = delegate.getJobsOverviews()
-        jobsOverviewCache.put(jobsOverviewCacheSingleKey, resultFuture.map(_.value).toJava.toCompletableFuture)
+        jobsOverviewCache.put((), resultFuture.map(_.value).toJava.toCompletableFuture)
         resultFuture
       case CanBeCached =>
-        Option(jobsOverviewCache.getIfPresent(jobsOverviewCacheSingleKey))
+        Option(jobsOverviewCache.getIfPresent(()))
           .map(_.toScala.map(WithDataFreshnessStatus.cached))
           .getOrElse(
             jobsOverviewCache
-              .get(
-                jobsOverviewCacheSingleKey,
-                (_, _) => delegate.getJobsOverviews().map(_.value).toJava.toCompletableFuture
-              )
+              .get((), (_, _) => delegate.getJobsOverviews().map(_.value).toJava.toCompletableFuture)
               .toScala
               .map(WithDataFreshnessStatus.fresh)
           )

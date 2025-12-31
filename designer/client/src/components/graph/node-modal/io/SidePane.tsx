@@ -4,6 +4,7 @@ import React, { memo, useCallback } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { getScrollStyle } from "../node/StyledHeader";
+import { FilterProvider } from "./FilterContext";
 import type { Side, SideState } from "./InputOutputLayout";
 import { VariableContextTree } from "./VariableContextTree";
 
@@ -25,7 +26,13 @@ export const SidePane = memo(function SidePane({
                 }}
             >
                 <ErrorBoundary fallback={<div>{`ERROR`}</div>}>
-                    <VariableContextTree direction={sideState.side === "left" ? "input" : "output"} onIsEmptyChange={isEmptyChange} />
+                    <FilterProvider>
+                        <VariableContextTree
+                            invisible={sideState.collapsed}
+                            direction={sideState.side === "left" ? "input" : "output"}
+                            onIsEmptyChange={isEmptyChange}
+                        />
+                    </FilterProvider>
                 </ErrorBoundary>
             </SidePanelBox>
             {children}

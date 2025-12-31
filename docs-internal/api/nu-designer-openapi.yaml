@@ -5256,6 +5256,11 @@ components:
         version:
           type: integer
           format: int32
+    AssertionResult:
+      title: AssertionResult
+      oneOf:
+      - $ref: '#/components/schemas/FailedAssertion'
+      - $ref: '#/components/schemas/SuccessfulAssertion'
     Attachment:
       title: Attachment
       type: object
@@ -5847,6 +5852,14 @@ components:
         name:
           type: string
         value: {}
+    FailedAssertion:
+      title: FailedAssertion
+      type: object
+      required:
+      - message
+      properties:
+        message:
+          type: string
     FetchSourcesLiveDataRequest:
       title: FetchSourcesLiveDataRequest
       type: object
@@ -7164,6 +7177,7 @@ components:
       - timestamp
       - results
       - counts
+      - assertionsResults
       properties:
         timestamp:
           type: string
@@ -7171,6 +7185,8 @@ components:
         results:
           $ref: '#/components/schemas/TestResultsDto'
         counts:
+          $ref: '#/components/schemas/Map_NodeId_V'
+        assertionsResults:
           $ref: '#/components/schemas/Map_NodeId_V'
     RunDeploymentRequest:
       title: RunDeploymentRequest
@@ -7647,6 +7663,9 @@ components:
       type: string
       enum:
       - ERROR
+    SuccessfulAssertion:
+      title: SuccessfulAssertion
+      type: object
     SwitchDefault:
       title: SwitchDefault
       type: object

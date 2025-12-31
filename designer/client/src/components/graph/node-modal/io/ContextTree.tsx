@@ -78,7 +78,11 @@ export function ContextTree({ data, oldFields = [] }: { data: Record<string, unk
     const { extend, treeStyle } = useJsonTreeTheme();
 
     const expandedFields = useMemo(
-        () => keys.filter((key) => !oldFields.includes(key) || (key !== "inputMeta" && keys.length === oldFields.length)),
+        () =>
+            keys.filter((key) => {
+                if (key === "inputMeta") return false;
+                return !oldFields.includes(key);
+            }),
         [keys, oldFields],
     );
 

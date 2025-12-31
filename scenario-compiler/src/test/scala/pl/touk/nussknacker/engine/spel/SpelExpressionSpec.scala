@@ -1032,7 +1032,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("validate ternary operator") {
     parse[Long]("'d'? 3 : 4", ctx) should not be Symbol("valid")
     parse[String]("1 > 2 ? 12 : 23", ctx) should not be Symbol("valid")
-    parse[Long]("1 > 2 ? 12 : 23", ctx).validValue.returnType shouldBe Typed[Integer]
+    parse[Long]("1 > 2 ? 12 : 23", ctx).validValue.returnType shouldBe Typed[Long]
     parse[Number]("1 > 2 ? 12 : 23.0", ctx).validValue.returnType shouldBe Typed[Number]
     parse[String]("1 > 2 ? 'ss' : 'dd'", ctx).validValue.returnType shouldBe Typed[String]
     parse[Any]("1 > 2 ? '123' : 123", ctx).validValue.returnType shouldBe Unknown

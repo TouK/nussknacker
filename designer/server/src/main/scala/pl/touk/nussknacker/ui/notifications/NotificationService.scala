@@ -78,7 +78,7 @@ class NotificationServiceImpl(
     scenarioActionRepository
       .getUserActionsAfter(
         user,
-        Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel),
+        Set(ScenarioActionName.Deploy, ScenarioActionName.Redeploy, ScenarioActionName.Cancel),
         ProcessActionState.FinishedStates + ProcessActionState.Failed,
         limit
       )

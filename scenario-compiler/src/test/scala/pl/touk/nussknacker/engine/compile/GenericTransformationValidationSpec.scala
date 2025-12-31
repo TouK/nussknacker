@@ -98,10 +98,10 @@ class GenericTransformationValidationSpec
     Parameter[String](ParameterName("par1"))
       .copy(
         editors = List(
-          SpelTemplateParameterEditor,
           SpelParameterEditor,
+          SpelTemplateParameterEditor,
         ),
-        defaultValue = Some("".spelTemplate)
+        defaultValue = Some("''".spel)
       ),
     Parameter[Long](ParameterName("lazyPar1"))
       .copy(
@@ -259,10 +259,10 @@ class GenericTransformationValidationSpec
       Parameter[String](ParameterName("par1"))
         .copy(
           editors = List(
-            SpelTemplateParameterEditor,
             SpelParameterEditor,
+            SpelTemplateParameterEditor,
           ),
-          defaultValue = Some("".spelTemplate)
+          defaultValue = Some("''".spel)
         ),
       Parameter[Long](ParameterName("lazyPar1"))
         .copy(
@@ -331,10 +331,10 @@ class GenericTransformationValidationSpec
       Parameter[String](ParameterName("par1"))
         .copy(
           editors = List(
-            SpelTemplateParameterEditor,
             SpelParameterEditor,
+            SpelTemplateParameterEditor,
           ),
-          defaultValue = Some("".spelTemplate)
+          defaultValue = Some("''".spel)
         ),
       Parameter[Long](ParameterName("lazyPar1"))
         .copy(
@@ -420,7 +420,7 @@ class GenericTransformationValidationSpec
             isLazyParameter = false,
             GlobalParametersConfig.default
           ).determine().toList,
-          defaultValue = Some("".spelTemplate)
+          defaultValue = Some("".spel)
         )
     )
   }

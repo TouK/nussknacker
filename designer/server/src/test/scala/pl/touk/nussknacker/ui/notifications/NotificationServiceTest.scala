@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.notifications
 import org.apache.pekko.actor.ActorSystem
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
+import org.mockito.invocation.InvocationOnMock
 import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.funsuite.AnyFunSuite
@@ -12,23 +13,19 @@ import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActivity.ScenarioDeployed
+import pl.touk.nussknacker.engine.api.deployment.ScenarioComment.WithoutContent
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId, LatestVersion}
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
-import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
-import pl.touk.nussknacker.test.mock.MockDeploymentManager
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
-import pl.touk.nussknacker.test.utils.domain.TestFactory.{
-  dummyDbRef,
-  mapProcessingTypeDataProvider,
-  scenarioParametersServiceProvider
-}
+import pl.touk.nussknacker.test.utils.domain.TestFactory.scenarioParametersServiceProvider
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.limits.{GlobalLimitsConfig, LimitsService}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
@@ -80,13 +77,6 @@ class NotificationServiceTest
   private val dbProcessRepository        = TestFactory.newFetchingProcessRepository(testDbRef)
   private val writeProcessRepository     = TestFactory.newWriteProcessRepository(testDbRef, clock)
   private val scenarioActivityRepository = DbScenarioActivityRepository.create(testDbRef, clock)
-  private val dm: MockDeploymentManager =
-    MockDeploymentManager.create(ConfigWithScalaVersion.StreamingProcessTypeConfig)
-
-  private val dmDispatcher = new DeploymentManagerDispatcher(
-    mapProcessingTypeDataProvider(Streaming.stringify -> dm),
-    processRepository,
-  )
 
   private val scenarioActivityService = new FetchScenarioActivityService(
     scenarioActivityRepository = scenarioActivityRepository,
@@ -111,7 +101,7 @@ class NotificationServiceTest
     val processIdWithName = ProcessIdWithName(id, processName)
 
     val deploymentManager                           = mock[DeploymentManager]
-    val (deploymentService, _, notificationService) = createServices(deploymentManager)
+    val (deploymentService, _, notificationService) = createServices(deploymentManager, deploymentStatuses = List.empty)
 
     def notificationsFor(user: LoggedUser): List[Notification] =
       notificationService
@@ -170,7 +160,7 @@ class NotificationServiceTest
     val processIdWithName = ProcessIdWithName(id, processName)
 
     val deploymentManager                           = mock[DeploymentManager]
-    val (deploymentService, _, notificationService) = createServices(deploymentManager)
+    val (deploymentService, _, notificationService) = createServices(deploymentManager, deploymentStatuses = List.empty)
 
     def notificationsFor(user: LoggedUser): List[Notification] =
       notificationService
@@ -244,8 +234,9 @@ class NotificationServiceTest
     val id                = saveSampleProcess(processName)
     val processIdWithName = ProcessIdWithName(id, processName)
 
-    val deploymentManager                                       = mock[DeploymentManager]
-    val (deploymentService, actionService, notificationService) = createServices(deploymentManager)
+    val deploymentManager = mock[DeploymentManager]
+    val (deploymentService, actionService, notificationService) =
+      createServices(deploymentManager, deploymentStatuses = List.empty)
 
     var passedDeploymentId = Option.empty[DeploymentId]
 
@@ -297,9 +288,91 @@ class NotificationServiceTest
     notificationAfterExecutionFinished.head.id should not equal deployNotificationId
   }
 
-  private def createServices(deploymentManager: DeploymentManager) = {
+  test("should notify about redeployment") {
+    val processName       = ProcessName("redeploy")
+    val id                = saveSampleProcess(processName)
+    val processIdWithName = ProcessIdWithName(id, processName)
+
+    val deploymentManager = mock[DeploymentManager]
+    val deployId = scenarioActivityRepository
+      .addActivity(
+        ScenarioDeployed(
+          ScenarioId(id.value),
+          ScenarioActivityId.random,
+          ScenarioUser.internalNuUser,
+          Instant.ofEpochMilli(0),
+          Some(ScenarioVersionId(1)),
+          WithoutContent(UserName("foo"), Instant.ofEpochMilli(0)),
+          DeploymentResult.Success(Instant.ofEpochMilli(0))
+        )
+      )
+      .dbioActionValues
+    val (deploymentService, actionService, notificationService) = createServices(
+      deploymentManager,
+      deploymentStatuses = List(
+        DeploymentStatusDetails(
+          SimpleStateStatus.Running(VersionId(1), Instant.ofEpochMilli(0)),
+          Some(DeploymentId(deployId.value.toString))
+        )
+      )
+    )
+
+    var passedDeploymentId = Option.empty[DeploymentId]
+
+    def redeployProcess(
+        givenDeployResult: Try[Option[ExternalDeploymentId]],
+        user: LoggedUser
+    ): Option[ExternalDeploymentId] = {
+      when(deploymentManager.liveDataPreviewSupport).thenReturn(NoLiveDataPreviewSupport)
+      when(
+        deploymentManager.processCommand(any[DMRunDeploymentCommand])
+      ).thenAnswer { invocation =>
+        passedDeploymentId = Some(invocation.getArgument[DMRunDeploymentCommand](0).deploymentData.deploymentId)
+        Future.fromTry(givenDeployResult)
+      }
+      when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
+      deploymentService
+        .processCommand(
+          RunRedeploymentCommand(
+            commonData = CommonCommandData(processIdWithName, None, user),
+            nodesDeploymentData = Some(NodesDeploymentData.empty),
+            stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+            scenarioSource = LatestVersion,
+          )
+        )
+        .futureValue
+        .externalDeploymentId
+        .futureValue
+    }
+
+    val user = TestFactory.adminUser("fooUser", "fooUser")
+    redeployProcess(Success(None), user)
+    val notificationsAfterDeploy =
+      notificationService
+        .notifications(NotificationsScope.NotificationsForLoggedUser(user))
+        .futureValue
+
+    notificationsAfterDeploy should have length 1
+    val redeployNotificationId = notificationsAfterDeploy.head.id
+
+    actionService
+      .markActionExecutionFinished(Streaming.stringify, passedDeploymentId.value.toActionIdOpt.value)
+      .futureValue
+    val notificationAfterExecutionFinished =
+      notificationService
+        .notifications(NotificationsScope.NotificationsForLoggedUser(user))
+        .futureValue
+    // old notification about deployment is replaced by notification about deployment execution finished which has other id
+    notificationAfterExecutionFinished should have length 1
+    notificationAfterExecutionFinished.head.id should not equal redeployNotificationId
+  }
+
+  private def createServices(
+      deploymentManager: DeploymentManager,
+      deploymentStatuses: List[DeploymentStatusDetails]
+  ) = {
     when(deploymentManager.getScenarioDeploymentsStatuses(any[ProcessName])(any[DataFreshnessPolicy]))
-      .thenReturn(Future.successful(WithDataFreshnessStatus.fresh(List.empty[DeploymentStatusDetails])))
+      .thenAnswer((_: InvocationOnMock) => Future.successful(WithDataFreshnessStatus.fresh(deploymentStatuses)))
     val managerDispatcher = mock[DeploymentManagerDispatcher]
     when(managerDispatcher.deploymentManager(any[String])(any[LoggedUser])).thenReturn(Some(deploymentManager))
     when(managerDispatcher.deploymentManagerUnsafe(any[String])(any[LoggedUser])).thenReturn(deploymentManager)
@@ -314,7 +387,7 @@ class NotificationServiceTest
       clock
     )
     val oldApproachScenarioStatusProvider = new OldApproachScenarioStatusProvider(
-      new EngineSideDeploymentStatusesProvider(dmDispatcher, scenarioStateTimeout = None),
+      new EngineSideDeploymentStatusesProvider(managerDispatcher, scenarioStateTimeout = None),
       managerDispatcher,
       dbProcessRepository,
       actionRepository,
