@@ -13,11 +13,11 @@ import type { Edge } from "../../../types/edge";
 import type { NodeType, Parameter } from "../../../types/node";
 import { ParamFieldLabel } from "./FieldLabel";
 import { getNodeErrors } from "./node/selectors";
-import { getNodeErrors as getNodeCurrentErrors } from "./NodeDetailsContent/selectors";
 import {
     getDynamicParameterDefinitions,
     getFindAvailableBranchVariables,
     getFindAvailableVariables,
+    getNodeErrors as getNodeCurrentErrors,
     getProcessName,
 } from "./NodeDetailsContent/selectors";
 import type { NodeTypeDetailsContentProps } from "./NodeTypeDetailsContent";
@@ -84,7 +84,7 @@ export function useSetProperty({ onChange, node }: Pick<NodeTypeDetailsContentPr
                 const basePath = extractBasePathWithIndex(path);
 
                 const editedParam: Parameter | undefined = get(currentNode, basePath);
-                const editedParamDefinition = parameterDefinitions.find(
+                const editedParamDefinition = parameterDefinitions?.find(
                     (parameterDefinition) => parameterDefinition.name === editedParam?.name,
                 );
 
