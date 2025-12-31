@@ -11,7 +11,7 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.viewport(1400, 800);
     });
 
-    afterEach(() => {
+    after(() => {
         cy.deleteAllTestProcesses({ filter: seed });
     });
 
