@@ -10,6 +10,7 @@ import { getUserSettings } from "../../../../../reducers/selectors/userSettings"
 import { useAppSelector } from "../../../../../store/storeHelpers";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputCss } from "../../../../NodeInput";
+import { useCallbackRef } from "../../node/useCallbackRef";
 import { nodeInput, nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import type { FieldError } from "../Validators";
 import { setupAceEditorSnippets } from "./AceEditorJsonBasedSnippets";
@@ -75,18 +76,31 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
         debouncedChange(internalValue, completionsVisible);
     }, [completionsVisible, debouncedChange, internalValue]);
 
+    const [onValueChangeRef] = useCallbackRef(onValueChange, [onValueChange]);
     useEffect(() => {
         const editor = editorRef.current?.editor;
-        if (editor && editorFocused) {
-            const callback = () => {
-                setCompletionsVisible(getCompletionsActivated(editorRef));
-            };
-            editor.on("keyboardActivity" as any, callback);
-            return () => {
-                editor.off("keyboardActivity" as any, callback);
-            };
-        }
+        if (!editor || !editorFocused) return;
+        const callback = () => {
+            setCompletionsVisible(getCompletionsActivated(editorRef));
+        };
+        editor.on("keyboardActivity" as any, callback);
+        return () => {
+            editor.off("keyboardActivity" as any, callback);
+        };
     }, [editorFocused]);
+
+    useEffect(() => {
+        const editor = editorRef.current?.editor;
+        if (!editor) return;
+        const callback = () => {
+            setInternalValue(editor.getValue());
+            onValueChangeRef.current(editor.getValue());
+        };
+        editor.on("blur", callback);
+        return () => {
+            editor.off("blur", callback);
+        };
+    }, [onValueChangeRef]);
 
     useEffect(() => {
         if (!editorFocused) {
