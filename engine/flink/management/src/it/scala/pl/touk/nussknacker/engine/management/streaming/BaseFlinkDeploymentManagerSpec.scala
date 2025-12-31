@@ -119,14 +119,14 @@ trait BaseFlinkDeploymentManagerSpec
 
           // Wait until first 15 live data samples are collected
           liveDataSamples.nodeTransitions
-            .get(NodeTransition(NodeId("start"), Some(NodeId("endSend"))))
+            .get(NodeTransition(NodeId("start"), Some(NodeId("endSend")), isDirectTransition = true))
             .value
             .totalCount should be >= totalCountWaitLimit.toLong
           liveDataSamples
         }
 
         val nodeTransitions = liveDataSamples.nodeTransitions
-          .get(NodeTransition(NodeId("start"), Some(NodeId("endSend"))))
+          .get(NodeTransition(NodeId("start"), Some(NodeId("endSend")), isDirectTransition = true))
           .value
           .samples
         nodeTransitions.size should be >= totalCountWaitLimit
