@@ -281,9 +281,7 @@ describe("Fragment", () => {
             cy.get("@anyValueWithSuggestionField").find("[data-testid='form-helper-text']").should("not.exist");
 
             cy.get("[data-testid=window]").get('[title="testOutput"]').siblings().eq(0).find("input").type("{selectall}fragmentResult");
-            cy.contains(/^apply/i)
-                .should("be.enabled")
-                .click();
+            cy.applyNodeChanges();
 
             cy.layoutScenario();
             cy.getNode("sendSms")
@@ -330,10 +328,7 @@ describe("Fragment", () => {
             cy.get("[data-testid=window]").as("window").matchImage({ maxDiffThreshold: 0.01 });
 
             // Save scenario
-            cy.contains(/^apply/i)
-                .should("be.enabled")
-                .click();
-
+            cy.applyNodeChanges();
             cy.get("@window").should("not.exist");
             cy.verifySaveIndicator();
             cy.contains(/^save$/i).click();
@@ -345,9 +340,7 @@ describe("Fragment", () => {
             cy.get('[title="any_value_with_suggestions_preset"]').siblings().eq(0).find("#ace-editor").contains("#RGB()");
             cy.get("@window").get("[title='test5']").should("not.exist");
 
-            cy.contains(/^apply/i)
-                .should("be.enabled")
-                .click();
+            cy.applyNodeChanges();
             cy.get("@window").should("not.exist");
 
             cy.visitProcess("@fragmentName");
@@ -417,9 +410,7 @@ describe("Fragment", () => {
 
         cy.get("[data-testid=window]").should("be.visible").find("input").eq(2).click().type(docsUrl);
 
-        cy.contains(/^apply/i)
-            .should("be.enabled")
-            .click();
+        cy.applyNodeChanges();
         cy.contains(/^save/i).should("be.enabled").click();
         cy.intercept("PUT", "/api/processes/*").as("save");
         cy.contains(/^ok$/i).should("be.enabled").click();
