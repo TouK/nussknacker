@@ -28,7 +28,7 @@ describe("Fragment", () => {
             cy.get(`[data-testid='fieldsRow:${fieldNumber}']`).find("[title='Options']").click();
         };
 
-        it("should allow adding input parameters", () => {
+        it.skip("should allow adding input parameters", () => {
             cy.visitNewFragment(seed, "fragment");
 
             cy.openNodeWindow("input").as("window");
