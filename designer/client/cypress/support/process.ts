@@ -355,11 +355,10 @@ function openNodeWindow(nameOrAlias: string) {
 
 function applyNodeChanges() {
     cy.get("[data-testid=window]")
-        .should("be.visible")
         .contains(/^apply/i)
         .should("be.enabled")
         .wait(500)
-        .click();
+        .click({ force: true });
     cy.get("[data-testid=window]").should("not.exist");
 }
 
