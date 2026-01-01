@@ -36,9 +36,7 @@ describe("Compare versions", () => {
         // Change fragment param and save changes
         cy.get("[model-id^=e2e][model-id$=fragment_xxx-test-process]").should("be.visible").trigger("dblclick");
         cy.get("[data-testid=window]").find('[title="i222"]').siblings().eq(0).find("#ace-editor").type("4");
-        cy.contains(/^apply/i)
-            .should("be.enabled")
-            .click();
+        cy.applyNodeChanges();
         cy.contains(/^save$/i).click();
         cy.contains(/^ok$/i).click();
         cy.get("[data-testid=window]").should("not.exist");
@@ -46,9 +44,7 @@ describe("Compare versions", () => {
         // Change fragment param again and save changes
         cy.get("[model-id^=e2e][model-id$=fragment_xxx-test-process]").should("be.visible").trigger("dblclick");
         cy.get("[data-testid=window]").find('[title="i222"]').siblings().eq(0).find("#ace-editor").type("7");
-        cy.contains(/^apply/i)
-            .should("be.enabled")
-            .click();
+        cy.applyNodeChanges();
         cy.get("[data-testid=window]").should("not.exist");
         cy.verifySaveIndicator();
         cy.contains(/^save$/i).click();
