@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.RuntimeMode.{Live, Test}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.ProcessListener.Transition
 import pl.touk.nussknacker.engine.api.component.{
   ComponentDefinition,
   DesignerWideComponentId,
@@ -454,8 +455,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       }
 
       override def transitionToNextNode(
-          nodeId: NodeId,
-          nextNodeId: NodeId,
+          transition: Transition,
           context: Context,
           processMetaData: MetaData
       ): Unit = ()
