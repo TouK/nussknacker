@@ -59,7 +59,7 @@ export const Assertions = ({ node }: Props) => {
                             <EditableEditor
                                 editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
                                 expressionObj={expressionObj}
-                                variableTypes={{}}
+                                variableTypes={{}} //TODO: wait for suggestions support on BE
                                 onValueChange={(expression) => editAssertion(index, { expression })}
                                 fieldErrors={[]}
                             />
