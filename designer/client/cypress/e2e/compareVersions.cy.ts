@@ -36,6 +36,7 @@ describe("Compare versions", () => {
         // Change fragment param and save changes
         cy.openNodeWindow("e2e**fragment_xxx-test-process");
         cy.get("[data-testid=window]").find('[title="i222"]').siblings().eq(0).find("#ace-editor").type("4");
+        cy.get("[data-testid=window]").find('[title="i222"]').click(); // blur
         cy.applyNodeChanges();
         cy.contains(/^save$/i).click();
         cy.contains(/^ok$/i).click();
@@ -44,6 +45,7 @@ describe("Compare versions", () => {
         // Change fragment param again and save changes
         cy.openNodeWindow("e2e**fragment_xxx-test-process");
         cy.get("[data-testid=window]").find('[title="i222"]').siblings().eq(0).find("#ace-editor").type("7");
+        cy.get("[data-testid=window]").find('[title="i222"]').click(); // blur
         cy.applyNodeChanges();
         cy.get("[data-testid=window]").should("not.exist");
         cy.verifySaveIndicator();

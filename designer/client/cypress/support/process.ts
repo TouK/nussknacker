@@ -357,7 +357,7 @@ function applyNodeChanges() {
     cy.get("[data-testid=window]")
         .contains(/^apply/i)
         .should("be.enabled")
-        .wait(500)
+        .wait(550)
         .click({ force: true });
     cy.get("[data-testid=window]").should("not.exist");
 }
