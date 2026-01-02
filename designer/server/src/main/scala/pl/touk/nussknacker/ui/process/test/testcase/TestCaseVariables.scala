@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.test.testcase
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinitionDiscovery,
   ClassDefinitionExtractor,
@@ -40,6 +40,15 @@ object TestCaseVariables {
           List(Typed.record(nodeTyping.variableTypes))
         ),
       )
+
+  def getNodeVariablesTyping(variablesForNode: Map[String, TypingResult]): Map[String, TypingResult] =
+    Map(
+      TestsGlobalVariableName -> testsGlobalVariableType,
+      ContextsNodeVariableName -> Typed.genericTypeClass(
+        classOf[java.util.List[_]],
+        List(Typed.record(variablesForNode))
+      ),
+    )
 
   def extendGlobalVariables(globalVariables: Map[String, ObjectWithType]): Map[String, ObjectWithType] =
     globalVariables +
