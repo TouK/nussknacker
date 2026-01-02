@@ -2,6 +2,7 @@ import { sortBy } from "lodash";
 import type { ChangeEvent } from "react";
 import React, { useCallback, useMemo } from "react";
 
+import type { WithUuid } from "../../../../types/common";
 import type { VariableTypes } from "../../../../types/validation";
 import { EditableEditor } from "../editors/EditableEditor";
 import type { ExpressionObj } from "../editors/expression/types";
@@ -10,7 +11,7 @@ import Input from "../editors/field/Input";
 import type { FieldError } from "../editors/Validators";
 import { TypeSelect } from "../fragment-input-definition/TypeSelect";
 import { useFieldsContext } from "../node-row-fields-provider/NodeRowFieldsProvider";
-import type { AggRow, WithUuid } from "./aggregatorField";
+import type { AggRow } from "./aggregatorField";
 import { DynamicLabel } from "./dynamicLabel";
 
 export type PossibleValue = {

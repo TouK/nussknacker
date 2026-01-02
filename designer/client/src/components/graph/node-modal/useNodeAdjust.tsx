@@ -20,7 +20,7 @@ export function useNodeAdjust(
         (node: NodeType) => {
             const parameterDefinitions = getParameterDefinitions(node);
             const adjustedNode = adjustParameters(node, parameterDefinitions, storedProperties);
-            return generateUUIDs(adjustedNode, ["fields", "parameters"]);
+            return generateUUIDs(adjustedNode);
         },
         [getParameterDefinitions, storedProperties],
     );
