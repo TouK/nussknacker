@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.sink
 
-import org.apache.flink.api.common.functions.{RichFlatMapFunction, RuntimeContext}
+import org.apache.flink.api.common.functions.{OpenContext, RichFlatMapFunction, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
@@ -12,7 +12,8 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
+import pl.touk.nussknacker.engine.flink.api.FlinkEngineContextOps._
+import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
@@ -75,13 +76,19 @@ class TableSink(
 }
 
 class EncodeAsTableTypeFunction private (
-    override protected val exceptionHandlerPreparer: RuntimeContext => ExceptionHandler,
+    exceptionHandlerPreparer: RuntimeContext => ExceptionHandler,
     nodeId: String,
     sinkRowType: RowType,
     producedType: TypeInformation[Row]
 ) extends RichFlatMapFunction[ValueWithContext[AnyRef], Row]
-    with ResultTypeQueryable[Row]
-    with WithExceptionHandler {
+    with ResultTypeQueryable[Row] {
+
+  @transient private var exceptionHandler: ExceptionHandler = _
+
+  override def open(openContext: OpenContext): Unit = {
+    super.open(openContext)
+    exceptionHandler = exceptionHandlerPreparer(getRuntimeContext)
+  }
 
   override def flatMap(valueWithContext: ValueWithContext[AnyRef], out: Collector[Row]): Unit = {
     exceptionHandler
@@ -92,6 +99,13 @@ class EncodeAsTableTypeFunction private (
   }
 
   override def getProducedType: TypeInformation[Row] = producedType
+
+  override def close(): Unit = {
+    if (exceptionHandler != null) {
+      exceptionHandler.close()
+    }
+    super.close()
+  }
 
 }
 
@@ -105,7 +119,7 @@ object EncodeAsTableTypeFunction {
     val alignedType  = ToTableTypeSchemaBasedEncoder.alignTypingResult(valueReturnType, sinkRowType)
     val producedType = TypeInformationDetection.instance.forType[Row](alignedType)
     new EncodeAsTableTypeFunction(
-      flinkNodeContext.exceptionHandlerPreparer,
+      flinkNodeContext.exceptionHandlerPreparer.narrowToRuntimeCtx,
       flinkNodeContext.nodeId,
       sinkRowType,
       producedType

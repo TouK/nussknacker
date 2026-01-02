@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
+import pl.touk.nussknacker.engine.flink.api.{FlinkEngineContext, NkGlobalParameters}
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
@@ -21,7 +21,7 @@ case class FlinkCustomNodeContext(
     timeout: FiniteDuration,
     convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
     lazyParameterHelper: FlinkLazyParameterFunctionHelper,
-    exceptionHandlerPreparer: RuntimeContext => ExceptionHandler,
+    exceptionHandlerPreparer: FlinkEngineContext => ExceptionHandler,
     globalParameters: Option[NkGlobalParameters],
     validationContext: Either[ValidationContext, Map[String, ValidationContext]],
     componentUseContext: ComponentUseContext,
