@@ -7,7 +7,7 @@ import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction
 
 import type { Action, ActionOfType, Reducer } from "../../actions/reduxTypes";
 import ProcessUtils from "../../common/ProcessUtils";
-import { generateUUIDs } from "../../components/graph/node-modal/nodeUtils";
+import { appendUuidToParameters } from "../../components/graph/node-modal/appendUuid";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { addStickyNotesToNodes, StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
 import type { Scenario } from "../../components/Process/types";
@@ -127,7 +127,7 @@ const adjustScenarioData = flow(
     addStickyNotesToNodes,
     appendScenarioNameToProperties,
     produce((draft: Scenario) => {
-        draft.scenarioGraph.nodes?.forEach(generateUUIDs);
+        draft.scenarioGraph.nodes?.forEach(appendUuidToParameters);
     }),
 );
 

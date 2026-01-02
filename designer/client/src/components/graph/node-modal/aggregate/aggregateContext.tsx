@@ -1,13 +1,14 @@
+import { produce } from "immer";
 import { get, isEqual, uniqBy } from "lodash";
 import type { PropsWithChildren } from "react";
 import React, { createContext, useCallback, useMemo, useState } from "react";
 
 import type { NodeValidationError } from "../../../../types/validation";
-import { appendUUID } from "../nodeUtils";
+import { appendUuidToArrayElements } from "../appendUuid";
 import { useParameterPath } from "../parameterHelpers";
 import type { ParametersListProps } from "../parametersList";
 import { useDiffMark } from "../PathsToMark";
-import type { AggregateValue } from "./aggregatorField";
+import type { AggregateValue, AggRow } from "./aggregatorField";
 import { useAggParamsSerializer, useGroupByParamsSerializer } from "./useAggParamsSerializer";
 
 type AggregateContextProviderProps = PropsWithChildren<Pick<ParametersListProps, "node" | "setProperty" | "errors">>;
@@ -32,13 +33,13 @@ export const AggregateContextProvider = ({ children, node, setProperty, errors }
             return null;
         }
 
-        return keys.map<AggregateValue>((name) =>
-            appendUUID({
-                name,
-                agg: aggregatorParam?.[name],
-                expression: aggregateByParam?.[name],
-            }),
-        );
+        const aggRows = keys.map<AggRow>((name) => ({
+            name,
+            agg: aggregatorParam?.[name],
+            expression: aggregateByParam?.[name],
+        }));
+
+        return produce(aggRows, appendUuidToArrayElements);
     });
 
     const onAggChange = useCallback(
