@@ -5,13 +5,13 @@ import React, { useCallback, useContext, useEffect, useMemo, useState } from "re
 import { useArrayState } from "rooks";
 
 import { useAppSelector } from "../../../../store/storeHelpers";
-import type { WithUuid } from "../../../../types/common";
 import { DndItems } from "../../../common/dndItems/DndItems";
+import type { WithUuid } from "../appendUuid";
+import { withUuid } from "../appendUuid";
 import { EditorType } from "../editors/expression/types";
 import { FieldsRow } from "../fragment-input-definition/FieldsRow";
 import { NodeRowFieldsProvider } from "../node-row-fields-provider/NodeRowFieldsProvider";
 import { getFindAvailableVariables } from "../NodeDetailsContent/selectors";
-import { appendUUID } from "../nodeUtils";
 import type { FieldWrapperProps } from "../ParameterExpressionField";
 import { findParamDefinitionByName } from "../parameterHelpers";
 import { AggregateContext } from "./aggregateContext";
@@ -43,7 +43,7 @@ export function AggregatorField({ parameterDefinitions, node, isEditMode, showVa
 
     const onAdd = useCallback(() => {
         dataControls.push(
-            appendUUID({
+            withUuid({
                 name: "",
                 agg: aggregators[0].expression,
                 expression: "",

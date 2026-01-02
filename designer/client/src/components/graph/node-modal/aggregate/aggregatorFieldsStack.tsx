@@ -2,8 +2,8 @@ import { sortBy } from "lodash";
 import type { ChangeEvent } from "react";
 import React, { useCallback, useMemo } from "react";
 
-import type { WithUuid } from "../../../../types/common";
 import type { VariableTypes } from "../../../../types/validation";
+import type { WithUuid } from "../appendUuid";
 import { EditableEditor } from "../editors/EditableEditor";
 import type { ExpressionObj } from "../editors/expression/types";
 import { ExpressionLang } from "../editors/expression/types";
