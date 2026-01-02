@@ -1,10 +1,9 @@
-import { produce } from "immer";
 import { get, isEqual, uniqBy } from "lodash";
 import type { PropsWithChildren } from "react";
 import React, { createContext, useCallback, useMemo, useState } from "react";
 
 import type { NodeValidationError } from "../../../../types/validation";
-import { appendUuidToArrayElements } from "../appendUuid";
+import { withUuid } from "../appendUuid";
 import { useParameterPath } from "../parameterHelpers";
 import type { ParametersListProps } from "../parametersList";
 import { useDiffMark } from "../PathsToMark";
@@ -33,13 +32,13 @@ export const AggregateContextProvider = ({ children, node, setProperty, errors }
             return null;
         }
 
-        const aggRows = keys.map<AggRow>((name) => ({
-            name,
-            agg: aggregatorParam?.[name],
-            expression: aggregateByParam?.[name],
-        }));
-
-        return produce(aggRows, appendUuidToArrayElements);
+        return keys.map((name) =>
+            withUuid<AggRow>({
+                name,
+                agg: aggregatorParam?.[name],
+                expression: aggregateByParam?.[name],
+            }),
+        );
     });
 
     const onAggChange = useCallback(
