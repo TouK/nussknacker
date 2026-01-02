@@ -7,7 +7,7 @@ import { formatDataRecordsVariablesForDisplay, getRowLines, LINE_HEIGHT, padding
 import type { SourceSelectCell } from "./SourceEditor";
 import type { TestingDataRecords } from "./Table";
 
-export const mapInputDataRecordsToRunTestsFormat = (dataRecords: TestingDataRecords): TestingDataRecords => {
+export const mapInputDataRecordsToRunTestsFormat = (dataRecords: TestingDataRecords) => {
     let parsedVariables: unknown;
     try {
         parsedVariables = JSON.parse(dataRecords.variables);
