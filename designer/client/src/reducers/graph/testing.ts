@@ -1,6 +1,4 @@
 import type { Reducer } from "../../actions/reduxTypes";
-import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
-import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
 import type { TestAssertionResults, TestResultsDto } from "../../http/resultsWithCountsDto";
 import type { GraphState } from "./types";
@@ -13,8 +11,6 @@ export type TestingState = {
     assertionsResults: TestAssertionResults;
     testResultsLoading?: boolean;
     testData?: TestData;
-    testingDataRecords?: TestingDataRecords[];
-    testingAssertions?: Record<string, { expression: ExpressionObj }[]>;
 };
 
 export const initialTestingState: GraphState["testing"] = {

@@ -25,14 +25,7 @@ const TestCases = () => {
 
     return (
         <Box maxWidth={"40%"} pt={2} px={3} display={"flex"} alignItems={"center"} gap={1}>
-            <TypeSelect
-                width={"30%"}
-                options={testCaseOptions}
-                onChange={() => {
-                    console.log("noop");
-                }}
-                value={testCaseOptions[0]}
-            />
+            <TypeSelect width={"30%"} options={testCaseOptions} onChange={() => "noop"} value={testCaseOptions[0]} />
             {/*<InfoTooltip title={"Edit name"} variant={"hover"} enterDelay={500}>*/}
             {/*    <StyledActionButton>*/}
             {/*        <EditIcon />*/}

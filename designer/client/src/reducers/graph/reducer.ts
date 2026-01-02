@@ -45,7 +45,7 @@ const emptyGraphState: GraphState = {
             edges: [],
             properties: null,
             stickyNotes: [],
-            testCases: {},
+            testCases: null,
         },
     } as Scenario,
     layout: [],

@@ -17,7 +17,7 @@ export const AssertionStatus: React.FC<Props> = ({ status, message }) => {
 
     return (
         <Box component="span" sx={{ display: "inline-flex", alignItems: "center" }}>
-            <InfoTooltip title={message ?? (isSuccess ? "OK" : "Error")} variant={"hover"}>
+            <InfoTooltip title={message} variant={"hover"}>
                 <IconButton
                     size="small"
                     aria-label={isSuccess ? "success" : "error"}

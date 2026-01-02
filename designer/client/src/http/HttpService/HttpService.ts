@@ -819,7 +819,17 @@ export class HttpService {
 
     testScenarioWithTestCase(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, testCase: TestCase) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
-        const sanitizedInputDataRecords = JSON.parse(testCase.inputs).map(mapInputDataRecordsToRunTestsFormat);
+        let sanitizedInputDataRecords: TestingDataRecords;
+        try {
+            sanitizedInputDataRecords = JSON.parse(testCase.inputs).map(mapInputDataRecordsToRunTestsFormat);
+        } catch (error) {
+            this.#addError(
+                i18next.t("notification.error.invalidTestCaseInputsJson", "Failed to test: invalid JSON in test case inputs"),
+                error,
+                true,
+            );
+            return Promise.reject(error);
+        }
 
         const promise = api.post<ResultsWithCountsDto>(
             `/processManagement/testCase/${encodeURIComponent(scenarioName)}`,

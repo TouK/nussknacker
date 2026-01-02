@@ -32,7 +32,7 @@ export function safeParseExpression<T = unknown>(expr: string): T {
     try {
         return JSON.parse(expr);
     } catch {
-        throw new Error("Invalid JSON expression");
+        return undefined;
     }
 }
 

@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { testScenarioWithTestCase } from "../../../actions/nk/testingActions";
 import { getTestCapabilities } from "../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../reducers/selectors/settings";
-import { getTestCaseAssertions, getInputDataRecords, getTestCase } from "../../../reducers/selectors/testCases";
+import { getInputDataRecords, getTestCase } from "../../../reducers/selectors/testCases";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { WindowContent } from "../../../windowManager/WindowContent";
@@ -19,7 +19,6 @@ import { AppendFromLiveDataButton } from "./AppendFromLiveDataButton";
 import { LimitExceededWarning } from "./LimitExceededWarning";
 import { Table } from "./Table";
 import { useDataRecordsActions } from "./useDataRecordsActions";
-import { mapInputDataRecordsToRunTestsFormat } from "./utils";
 
 type DocsLink = {
     url: string;
