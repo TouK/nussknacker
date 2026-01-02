@@ -168,18 +168,32 @@ export class HttpService {
         return api.get<Scenario[]>("/processes", { params: data });
     }
 
-    fetchProcessDetails(processName: ProcessName, versionId?: ProcessVersionId): Promise<AxiosResponse<Scenario>> {
-        const id = encodeURIComponent(processName);
-        const url = versionId ? `/processes/${id}/${versionId}` : `/processes/${id}`;
-        return api.get<Scenario>(url);
+    fetchScenario(
+        processName: ProcessName,
+        options: {
+            versionId?: ProcessVersionId;
+            skipValidation?: boolean;
+        } = {},
+    ): Promise<AxiosResponse<Scenario>> {
+        let url = `/processes/${encodeURIComponent(processName)}`;
+        if (options.versionId) url += `/${options.versionId}`;
+        return api.get<Scenario>(url, {
+            params: { skipValidateAndResolve: options.skipValidation },
+        });
     }
 
+    /**
+     * @deprecated use HttpService.fetchScenario
+     */
+    fetchProcessDetails(processName: ProcessName, versionId?: ProcessVersionId): Promise<AxiosResponse<Scenario>> {
+        return this.fetchScenario(processName, { versionId });
+    }
+
+    /**
+     * @deprecated use HttpService.fetchScenario
+     */
     fetchLatestProcessDetailsWithoutValidation(processName: ProcessName, versionId?: ProcessVersionId): Promise<AxiosResponse<Scenario>> {
-        const id = encodeURIComponent(processName);
-        const url = versionId
-            ? `/processes/${id}/${versionId}?skipValidateAndResolve=true`
-            : `/processes/${id}?skipValidateAndResolve=true`;
-        return api.get<Scenario>(url);
+        return this.fetchScenario(processName, { versionId, skipValidation: true });
     }
 
     fetchProcessesStates() {

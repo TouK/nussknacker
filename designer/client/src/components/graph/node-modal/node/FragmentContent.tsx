@@ -27,7 +27,7 @@ export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNode
         if (!NodeUtils.nodeIsFragment(nodeToDisplay)) return;
 
         const id = nodeToDisplay?.ref.id;
-        const { data } = await HttpService.fetchProcessDetails(id);
+        const { data } = await HttpService.fetchScenario(id);
         const scenario = correctFetchedDetails(data, processDefinitionData);
         setFragmentContent(scenario);
         openFragmentNodes(scenario);
