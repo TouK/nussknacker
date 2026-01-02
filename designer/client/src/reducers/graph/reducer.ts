@@ -1,12 +1,13 @@
 /* eslint-disable i18next/no-literal-string */
 import { produce } from "immer";
 import type { Dictionary } from "lodash";
-import { concat, defaultsDeep, isEqual, partition, sortBy } from "lodash";
+import { concat, defaultsDeep, flow, isEqual, partition, sortBy } from "lodash";
 import type { StateWithHistory } from "redux-undo";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction } from "redux-undo";
 
 import type { Action, ActionOfType, Reducer } from "../../actions/reduxTypes";
 import ProcessUtils from "../../common/ProcessUtils";
+import { generateUUIDs } from "../../components/graph/node-modal/nodeUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { addStickyNotesToNodes, StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
 import type { Scenario } from "../../components/Process/types";
@@ -122,6 +123,14 @@ const updateStateAfterEdit = (state: GraphState, action: ActionOfType<"EDIT_NODE
     });
 };
 
+const adjustScenarioData = flow(
+    addStickyNotesToNodes,
+    appendScenarioNameToProperties,
+    produce((draft: Scenario) => {
+        draft.scenarioGraph.nodes?.forEach(generateUUIDs);
+    }),
+);
+
 const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
     const currentNodes = state.scenario.scenarioGraph.nodes;
     const currentEdges = state.scenario.scenarioGraph.edges;
@@ -144,7 +153,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         }
         case "UPDATE_IMPORTED_PROCESS": {
             const oldNodeIds = sortBy(currentNodes.map((n) => n.id));
-            const adjustedScenario = appendScenarioNameToProperties(addStickyNotesToNodes(action.scenario));
+            const adjustedScenario = adjustScenarioData(action.scenario);
             const newNodeids = sortBy(adjustedScenario.scenarioGraph.nodes.map((n) => n.id));
             const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null;
 
@@ -172,7 +181,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "DISPLAY_PROCESS": {
-            const adjustedScenario = appendScenarioNameToProperties(addStickyNotesToNodes(action.scenario));
+            const adjustedScenario = adjustScenarioData(action.scenario);
             return {
                 ...state,
                 scenario: adjustedScenario,
