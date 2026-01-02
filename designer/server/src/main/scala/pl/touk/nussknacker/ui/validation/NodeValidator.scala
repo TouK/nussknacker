@@ -64,6 +64,7 @@ class NodeValidator(
               NodeValidationResult(
                 parameters = None,
                 expressionType = None,
+                testCaseAssertions = None,
                 validationErrors = Nil,
                 validationPerformed = false
               )
@@ -76,6 +77,8 @@ class NodeValidator(
               NodeValidationResult(
                 parameters = uiParams,
                 expressionType = expressionType,
+                // TODO
+                testCaseAssertions = None,
                 validationErrors = uiErrors,
                 validationPerformed = true
               )

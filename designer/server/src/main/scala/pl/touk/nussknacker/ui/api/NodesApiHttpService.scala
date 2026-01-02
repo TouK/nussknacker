@@ -149,6 +149,7 @@ class NodesApiHttpService(
             validation = NodeValidationResultDto(
               parameters = None,
               expressionType = None,
+              testCaseAssertions = None,
               validationErrors = result.errors.processPropertiesErrors,
               validationPerformed = true
             )

@@ -210,7 +210,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   summary = Some("Node validation without errors"),
                   value = NodeValidationResultDto(
                     parameters = None,
-                    Some(Typed[java.lang.Boolean]),
+                    expressionType = Some(Typed[java.lang.Boolean]),
+                    testCaseAssertions = None,
                     validationErrors = List.empty,
                     validationPerformed = true
                   )
@@ -219,8 +220,9 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   summary = Some("Wrong parameter type"),
                   value = NodeValidationResultDto(
                     parameters = None,
-                    Some(Unknown),
-                    List(
+                    expressionType = Some(Unknown),
+                    testCaseAssertions = None,
+                    validationErrors = List(
                       NodeValidationError(
                         "ExpressionParserCompilationError",
                         "Bad expression type, expected: Boolean, found: String",
@@ -328,6 +330,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   value = NodeValidationResultDto(
                     parameters = None,
                     expressionType = None,
+                    testCaseAssertions = None,
                     validationErrors = List.empty,
                     validationPerformed = true
                   )
@@ -337,7 +340,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   value = NodeValidationResultDto(
                     parameters = None,
                     expressionType = None,
-                    List(
+                    testCaseAssertions = None,
+                    validationErrors = List(
                       NodeValidationError(
                         "InvalidPropertyFixedValue",
                         "Property numberOfThreads (Number of threads) has invalid value",
@@ -1394,6 +1398,7 @@ object NodesApiEndpoints {
     final case class NodeValidationResultDto(
         parameters: Option[List[UIParameter]],
         expressionType: Option[TypingResult],
+        testCaseAssertions: Option[TestCaseAssertions],
         validationErrors: List[NodeValidationError],
         validationPerformed: Boolean
     )
@@ -1402,10 +1407,11 @@ object NodesApiEndpoints {
       Decoder.instance[NodeValidationResultDto](_ => throw new IllegalStateException)
 
     object NodeValidationResultDto {
-      implicit lazy val parameterEditorSchema: Schema[ParameterEditor]     = Schema.derived
-      implicit lazy val durationSchema: Schema[Duration]                   = Schema.schemaForJavaDuration
-      implicit lazy val uiParameterSchema: Schema[UIParameter]             = Schema.derived
-      implicit lazy val parameterCategorySchema: Schema[ParameterCategory] = Schema.derived
+      implicit lazy val parameterEditorSchema: Schema[ParameterEditor]       = Schema.derived
+      implicit lazy val durationSchema: Schema[Duration]                     = Schema.schemaForJavaDuration
+      implicit lazy val uiParameterSchema: Schema[UIParameter]               = Schema.derived
+      implicit lazy val testCaseAssertionsSchema: Schema[TestCaseAssertions] = Schema.derived
+      implicit lazy val parameterCategorySchema: Schema[ParameterCategory]   = Schema.derived
 
       implicit lazy val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema(
         SProduct(
@@ -1420,6 +1426,7 @@ object NodesApiEndpoints {
         new NodeValidationResultDto(
           parameters = node.parameters,
           expressionType = node.expressionType,
+          testCaseAssertions = node.testCaseAssertions,
           validationErrors = node.validationErrors,
           validationPerformed = node.validationPerformed
         )
@@ -1530,8 +1537,13 @@ object NodesApiEndpoints {
         // TODO: We should keep this in a map, instead of TypedObjectTypingResult as it is done in ValidationResult.typingInfo
         //       Thanks to that we could remove some code on the FE side and be closer to support also not built-in components
         expressionType: Option[TypingResult],
+        testCaseAssertions: Option[TestCaseAssertions],
         validationErrors: List[NodeValidationError],
         validationPerformed: Boolean
+    )
+
+    @JsonCodec(encodeOnly = true) final case class TestCaseAssertions(
+        variables: Map[String, TypingResult]
     )
 
     @JsonCodec(encodeOnly = true) final case class NodeValidationRequest(

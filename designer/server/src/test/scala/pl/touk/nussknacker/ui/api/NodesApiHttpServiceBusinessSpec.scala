@@ -549,6 +549,8 @@ class NodesApiHttpServiceBusinessSpec
              |  "validationPerformed": true
              |}""".stripMargin)
     }
+
+    "return test case assertions variable and their types" in {}
   }
 
   "The endpoint for properties additional info should" - {
