@@ -36,7 +36,7 @@ export function fetchProcessToDisplay(processName: ProcessName, versionId?: Proc
     return (dispatch) => {
         dispatch({ type: "PROCESS_FETCH" });
 
-        return HttpService.fetchProcessDetails(processName, versionId).then((response) => {
+        return HttpService.fetchScenario(processName, { versionId }).then((response) => {
             dispatch({
                 type: "DISPLAY_PROCESS",
                 scenario: response.data,
