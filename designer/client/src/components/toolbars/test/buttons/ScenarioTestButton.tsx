@@ -2,10 +2,10 @@ import { alpha } from "@mui/material";
 import React, { useCallback, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { testScenarioWithDataRecords } from "../../../../actions/nk/testingActions";
+import { testScenarioWithTestCase } from "../../../../actions/nk/testingActions";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { convertViewportUnitToPixels } from "../../../../common/convertViewportUnitToPixels";
-import { getTestCaseAssertions, getInputDataRecords, hasInputDataRecordsDefined } from "../../../../reducers/selectors/testCases";
+import { hasInputDataRecordsDefined, getTestCase } from "../../../../reducers/selectors/testCases";
 import { getTestResultsLoading } from "../../../../reducers/selectors/testing";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
@@ -42,14 +42,13 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { disabled, name, title, titleOverride, docs, markdownContent, type } = props;
     const { t } = useTranslation();
     const { open } = useWindows();
-    const testingEventsParameters = useAppSelector(getInputDataRecords);
-    const testCaseAssertions = useAppSelector(getTestCaseAssertions);
+    const testCase = useAppSelector(getTestCase);
     const testingDataRecordsDefined = useAppSelector(hasInputDataRecordsDefined);
     const dispatch = useAppDispatch();
 
     const handleRerunLastTest = useCallback(() => {
-        return dispatch(testScenarioWithDataRecords(testingEventsParameters, testCaseAssertions));
-    }, [dispatch, testCaseAssertions, testingEventsParameters]);
+        return dispatch(testScenarioWithTestCase(testCase));
+    }, [dispatch, testCase]);
 
     const presets: Preset[] = useMemo(() => {
         return [

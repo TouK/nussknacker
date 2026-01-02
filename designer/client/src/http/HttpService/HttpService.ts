@@ -16,10 +16,10 @@ import SystemUtils from "../../common/SystemUtils";
 import { withoutHackOfEmptyEdges } from "../../components/graph/GraphPartialsInTS/EdgeUtils";
 import type { AdditionalInfo } from "../../components/graph/node-modal/AdditionalInfoBox";
 import type { ExpressionSuggestion } from "../../components/graph/node-modal/editors/expression/ExpressionSuggester";
-import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
 import { extractStickyNotesFromNodes } from "../../components/graph/utils/stickyNotesUtils";
 import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../../components/Labels/types";
 import type { TestingDataRecords, TestingDataRecordsRequestData } from "../../components/modals/TestingDataRecords/Table";
+import { mapInputDataRecordsToRunTestsFormat } from "../../components/modals/TestingDataRecords/utils";
 import type { ProcessName, ProcessVersionId, Scenario, StatusDefinitionType } from "../../components/Process/types";
 import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../../components/toolbars/activities/types";
 import { ActivityTypesRelatedToExecutions } from "../../components/toolbars/activities/types";
@@ -36,6 +36,7 @@ import { API_URL } from "../../config";
 import type { EventTrackingSelectorType, EventTrackingType } from "../../containers/event-tracking/use-register-tracking-events";
 import type { BackendNotification } from "../../containers/Notifications";
 import { handleAxiosError } from "../../devHelpers";
+import type { TestCase } from "../../reducers/graph/testCase";
 import type { AuthenticationSettings } from "../../reducers/settings";
 import type { WithId } from "../../types/common";
 import type { Expression, NodeType } from "../../types/node";
@@ -816,25 +817,15 @@ export class HttpService {
         return promise;
     }
 
-    testScenarioWithEventsData(
-        scenarioName: ProcessName,
-        scenarioGraph: ScenarioGraph,
-        testData: TestingDataRecordsRequestData[],
-        testAssertions: Record<string, { expression: ExpressionObj }[]>,
-    ) {
+    testScenarioWithTestCase(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, testCase: TestCase) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
+        const sanitizedInputDataRecords = JSON.parse(testCase.inputs).map(mapInputDataRecordsToRunTestsFormat);
 
         const promise = api.post<ResultsWithCountsDto>(
             `/processManagement/testCase/${encodeURIComponent(scenarioName)}`,
             {
                 scenario: sanitized,
-                testCase: {
-                    id: "a6e7b339-f534-45f9-ad8b-1456b37733a9",
-                    name: "someTestCase",
-                    inputs: JSON.stringify(testData),
-                    mocks: {},
-                    assertions: testAssertions,
-                },
+                testCase: { ...testCase, inputs: JSON.stringify(sanitizedInputDataRecords) },
             },
             {
                 params: {

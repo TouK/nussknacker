@@ -1,11 +1,11 @@
 import type { ProcessName } from "src/components/Process/types";
 
-import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
-import { mapDataRecordsToRunTestsFormat } from "../../components/modals/TestingDataRecords/utils";
+import { mapInputDataRecordsToRunTestsFormat } from "../../components/modals/TestingDataRecords/utils";
 import HttpService from "../../http/HttpService/instance";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
 import type { ResultsWithCountsDto, TestAssertionResults, TestResultsDto } from "../../http/resultsWithCountsDto";
+import type { TestCase } from "../../reducers/graph/testCase";
 import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
 import type { Action, ThunkAction } from "../reduxTypes";
@@ -42,17 +42,9 @@ export function testScenarioWithGeneratedData(testSampleSize: string): ThunkActi
     );
 }
 
-export function testScenarioWithDataRecords(
-    testingEventsParameters: TestingDataRecords[],
-    testAssertions: Record<string, { expression: ExpressionObj }[]>,
-): ThunkAction {
+export function testScenarioWithTestCase(testCase: TestCase): ThunkAction {
     return wrapWithTestAction((scenarioName, scenarioGraph) =>
-        HttpService.testScenarioWithEventsData(
-            scenarioName,
-            scenarioGraph,
-            testingEventsParameters.map(mapDataRecordsToRunTestsFormat),
-            testAssertions,
-        ).then(({ data }) => ({
+        HttpService.testScenarioWithTestCase(scenarioName, scenarioGraph, testCase).then(({ data }) => ({
             testResults: data,
         })),
     );

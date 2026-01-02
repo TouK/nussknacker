@@ -11,8 +11,6 @@ type Props = {
 };
 
 export const AssertionStatus: React.FC<Props> = ({ status, message }) => {
-    if (!status) return null;
-
     const isSuccess = status === "success";
     const Icon = isSuccess ? CheckCircleIcon : ErrorOutlineIcon;
     const color = isSuccess ? "success.main" : "error.main";

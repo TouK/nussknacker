@@ -29,7 +29,7 @@ export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => 
                 <Typography m={0} variant="h5">
                     {t("testingDialog.label.mock", "Mock")}
                 </Typography>
-                <InfoTooltip title={MOCK_EXPRESSION_HINT_TEXT} variant={"hover"} />
+                <InfoTooltip title={t("testingDialog.mock.hintText", MOCK_EXPRESSION_HINT_TEXT)} variant={"hover"} />
             </Box>
 
             <MockExpressionField

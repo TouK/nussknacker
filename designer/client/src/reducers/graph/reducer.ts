@@ -22,7 +22,7 @@ import { appendHistorySquashLogic } from "./historySquash";
 import type { NestedKeyOf } from "./lodashWrappers";
 import { omit, pick } from "./lodashWrappers";
 import { selectionState } from "./selectionState";
-import { testCaseReducer } from "./testCases";
+import { testCaseReducer } from "./testCase";
 import { initialTestingState, testingReducer } from "./testing";
 import type { GraphState } from "./types";
 import { VisibleDataType } from "./types";
@@ -186,7 +186,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
             };
         }
         case "CLEAR_PROCESS": {
-            return { ...emptyGraphState };
+            return emptyGraphState;
         }
         case "EDIT_NODE": {
             const updateStateAfterNodeIdChange = getUpdateStateAfterNodeIdChange(action.before.id, action.after.id);
@@ -375,7 +375,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
     }
 };
 
-const reducer = mergeReducers(graphReducer, {
+const reducer: Reducer<GraphState> = mergeReducers(graphReducer, {
     scenario: {
         scenarioGraph: {
             nodes,

@@ -3,9 +3,7 @@ import type { ExpressionObj } from "../../components/graph/node-modal/editors/ex
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
 import type { TestAssertionResults, TestResultsDto } from "../../http/resultsWithCountsDto";
-import type { GraphState} from "./types";
-import { VisibleDataType } from "./types";
-
+import type { GraphState } from "./types";
 type Source = SourceWithParametersTest["sourceId"];
 export type SourceTestData = SourceWithParametersTest["parameterExpressions"];
 export type TestData = Record<Source, SourceTestData>;

@@ -2,7 +2,7 @@ import SaveAsIcon from "@mui/icons-material/SaveAs";
 import { Box, styled } from "@mui/material";
 import React, { useCallback } from "react";
 
-import { getTestCase, getTestCaseOptions } from "../../../../../../reducers/selectors/testCases";
+import { getTestCaseOptions } from "../../../../../../reducers/selectors/testCases";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
 import { useWindows } from "../../../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../../../windowManager/WindowKind";

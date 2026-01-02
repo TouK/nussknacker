@@ -1,6 +1,6 @@
 import type { NodesWithPositions } from "../../actions/nk/node";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
-import { initialTestCasesState } from "./testCases";
+import { initialTestCasesState } from "./testCase";
 
 export const scenarioGraph: ScenarioGraph = {
     properties: {

@@ -76,7 +76,7 @@ const AiAssistantModal = loadable(() => import("../components/aiAssistant/compon
 });
 
 const EnterpriseFeatureInfo = loadable(
-    () => import("../components/graph/node-modal/node/NodeContent/TestingContentElements/./EnterpriseFeatureInfo"),
+    () => import("../components/graph/node-modal/node/NodeContent/TestingContentElements/EnterpriseFeatureInfo"),
     {
         fallback: <LoaderSpinner show />,
     },

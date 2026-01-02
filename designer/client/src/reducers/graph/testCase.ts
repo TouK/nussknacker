@@ -4,7 +4,7 @@ import type { Assertions, Mocks } from "../../actions/nk/testCasesActions";
 import type { Reducer } from "../../actions/reduxTypes";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
 
-export interface TestCases {
+export interface TestCase {
     id: string;
     name: string;
     inputs: string;

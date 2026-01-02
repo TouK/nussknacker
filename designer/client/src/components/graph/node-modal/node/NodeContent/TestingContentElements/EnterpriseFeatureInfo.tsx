@@ -8,10 +8,11 @@ import { WindowContent } from "../../../../../../windowManager/WindowContent";
 
 const EnterpriseFeatureInfo = (props: WindowContentProps) => {
     const { t } = useTranslation();
+    const { close } = props;
 
     const buttons: WindowButtonProps[] = useMemo(
-        () => [{ title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton }],
-        [props, t],
+        () => [{ title: t("dialog.button.cancel", "Cancel"), action: () => close(), classname: LoadingButtonTypes.secondaryButton }],
+        [close, t],
     );
 
     return (

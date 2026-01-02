@@ -4,10 +4,10 @@ import type { ElementType, ReactElement } from "react";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { testScenarioWithDataRecords } from "../../../actions/nk/testingActions";
+import { testScenarioWithTestCase } from "../../../actions/nk/testingActions";
 import { getTestCapabilities } from "../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../reducers/selectors/settings";
-import { getTestCaseAssertions, getInputDataRecords } from "../../../reducers/selectors/testCases";
+import { getTestCaseAssertions, getInputDataRecords, getTestCase } from "../../../reducers/selectors/testCases";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { WindowContent } from "../../../windowManager/WindowContent";
@@ -19,6 +19,7 @@ import { AppendFromLiveDataButton } from "./AppendFromLiveDataButton";
 import { LimitExceededWarning } from "./LimitExceededWarning";
 import { Table } from "./Table";
 import { useDataRecordsActions } from "./useDataRecordsActions";
+import { mapInputDataRecordsToRunTestsFormat } from "./utils";
 
 type DocsLink = {
     url: string;
@@ -49,7 +50,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
     const dispatch = useAppDispatch();
     const testCapabilities = useAppSelector(getTestCapabilities);
     const testingDataRecords = useAppSelector(getInputDataRecords);
-    const testCaseAssertions = useAppSelector(getTestCaseAssertions);
+    const testCase = useAppSelector(getTestCase);
 
     const defaultParameter = testCapabilities.testWithParameters.sourceParameters[0];
 
@@ -87,7 +88,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                 title: t("testingForm.testButton.label", "Test"),
                 action: () => {
                     try {
-                        dispatch(testScenarioWithDataRecords(testingDataRecords, testCaseAssertions));
+                        dispatch(testScenarioWithTestCase(testCase));
                         close();
                     } catch (e) {
                         console.error(e.message);
@@ -95,7 +96,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                 },
             },
         ],
-        [t, disableTestButton, close, dispatch, testingDataRecords, testCaseAssertions],
+        [t, disableTestButton, close, dispatch, testCase],
     );
 
     return (
