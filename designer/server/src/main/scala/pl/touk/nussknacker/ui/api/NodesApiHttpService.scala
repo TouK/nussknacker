@@ -28,6 +28,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   ParametersValidationRequest,
   ParametersValidationRequestDto,
   ParametersValidationResultDto,
+  TestCaseAdditionalVariablesResponseDto,
   TestCaseAssertions
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
@@ -52,6 +53,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.SerializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.FetchLiveDataError
+import pl.touk.nussknacker.ui.process.test.testcase.TestCaseVariables
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
@@ -155,6 +157,18 @@ class NodesApiHttpService(
               validationPerformed = true
             )
           } yield validation
+        }
+      }
+  }
+
+  expose {
+    nodesApiEndpoints.testCaseAdditionalVariablesEndpoint
+      .serverSecurityLogic(authorizeKnownUser[NodesError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (_, request) =>
+          EitherT.pure(
+            prepareTestCaseAdditionalVariables(request.variableTypes)
+          )
         }
       }
   }
@@ -319,6 +333,13 @@ class NodesApiHttpService(
       outgoingEdges = node.outgoingEdges
     )
   }
+
+  private def prepareTestCaseAdditionalVariables(
+      variableTypes: Map[String, TypingResult]
+  ): TestCaseAdditionalVariablesResponseDto =
+    TestCaseAdditionalVariablesResponseDto(
+      assertionsAdditionalVariables = TestCaseVariables.getNodeVariablesTyping(variableTypes)
+    )
 
   private def parametersValidationRequestFromDto(
       request: ParametersValidationRequestDto,

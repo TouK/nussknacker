@@ -370,6 +370,36 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .withSecurity(auth)
   }
 
+  lazy val testCaseAdditionalVariablesEndpoint: SecuredEndpoint[
+    (ProcessName, TestCaseAdditionalVariablesRequestDto),
+    NodesError,
+    TestCaseAdditionalVariablesResponseDto,
+    Any
+  ] = {
+    baseNuApiEndpoint
+      .summary("Additional variables for a test case at node")
+      .tag("Nodes")
+      .post
+      .in("nodes" / path[ProcessName]("scenarioName") / "testCase" / "additionalVariables")
+      .in(
+        jsonBody[TestCaseAdditionalVariablesRequestDto]
+        // TODO: add examples?
+      )
+      .out(
+        statusCode(Ok).and(
+          jsonBody[TestCaseAdditionalVariablesResponseDto]
+          // TODO: add examples?
+        )
+      )
+      .errorOut(
+        oneOf[NodesError](
+          scenarioNotFoundErrorOutput,
+          malformedTypingResultErrorOutput
+        )
+      )
+      .withSecurity(auth)
+  }
+
   lazy val recordsEndpoint: SecuredEndpoint[
     (ProcessName, Int, RecordsRequestDto),
     NodesError,
@@ -1440,6 +1470,16 @@ object NodesApiEndpoints {
     final case class PropertiesValidationRequestDto(
         additionalFields: ProcessAdditionalFields,
         name: ProcessName
+    )
+
+    @derive(schema, encoder, decoder)
+    final case class TestCaseAdditionalVariablesRequestDto(
+        variableTypes: Map[String, TypingResult],
+    )
+
+    @derive(schema, encoder, decoder)
+    final case class TestCaseAdditionalVariablesResponseDto(
+        assertionsAdditionalVariables: Map[String, TypingResult]
     )
 
     // Request doesn't need valid encoder, apart from examples
