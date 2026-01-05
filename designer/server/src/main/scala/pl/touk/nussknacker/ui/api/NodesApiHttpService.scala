@@ -28,8 +28,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   ParametersValidationRequest,
   ParametersValidationRequestDto,
   ParametersValidationResultDto,
-  TestCaseAdditionalVariablesResponseDto,
-  TestCaseAssertions
+  TestCaseAdditionalVariablesResponseDto
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
   InvalidNodeType,
@@ -152,7 +151,6 @@ class NodesApiHttpService(
             validation = NodeValidationResultDto(
               parameters = None,
               expressionType = None,
-              testCaseAssertions = None,
               validationErrors = result.errors.processPropertiesErrors,
               validationPerformed = true
             )

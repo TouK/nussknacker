@@ -211,7 +211,6 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   value = NodeValidationResultDto(
                     parameters = None,
                     expressionType = Some(Typed[java.lang.Boolean]),
-                    testCaseAssertions = None,
                     validationErrors = List.empty,
                     validationPerformed = true
                   )
@@ -221,7 +220,6 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   value = NodeValidationResultDto(
                     parameters = None,
                     expressionType = Some(Unknown),
-                    testCaseAssertions = None,
                     validationErrors = List(
                       NodeValidationError(
                         "ExpressionParserCompilationError",
@@ -330,7 +328,6 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   value = NodeValidationResultDto(
                     parameters = None,
                     expressionType = None,
-                    testCaseAssertions = None,
                     validationErrors = List.empty,
                     validationPerformed = true
                   )
@@ -340,7 +337,6 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   value = NodeValidationResultDto(
                     parameters = None,
                     expressionType = None,
-                    testCaseAssertions = None,
                     validationErrors = List(
                       NodeValidationError(
                         "InvalidPropertyFixedValue",
@@ -1428,7 +1424,6 @@ object NodesApiEndpoints {
     final case class NodeValidationResultDto(
         parameters: Option[List[UIParameter]],
         expressionType: Option[TypingResult],
-        testCaseAssertions: Option[TestCaseAssertions],
         validationErrors: List[NodeValidationError],
         validationPerformed: Boolean
     )
@@ -1437,11 +1432,10 @@ object NodesApiEndpoints {
       Decoder.instance[NodeValidationResultDto](_ => throw new IllegalStateException)
 
     object NodeValidationResultDto {
-      implicit lazy val parameterEditorSchema: Schema[ParameterEditor]       = Schema.derived
-      implicit lazy val durationSchema: Schema[Duration]                     = Schema.schemaForJavaDuration
-      implicit lazy val uiParameterSchema: Schema[UIParameter]               = Schema.derived
-      implicit lazy val testCaseAssertionsSchema: Schema[TestCaseAssertions] = Schema.derived
-      implicit lazy val parameterCategorySchema: Schema[ParameterCategory]   = Schema.derived
+      implicit lazy val parameterEditorSchema: Schema[ParameterEditor]     = Schema.derived
+      implicit lazy val durationSchema: Schema[Duration]                   = Schema.schemaForJavaDuration
+      implicit lazy val uiParameterSchema: Schema[UIParameter]             = Schema.derived
+      implicit lazy val parameterCategorySchema: Schema[ParameterCategory] = Schema.derived
 
       implicit lazy val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema(
         SProduct(
@@ -1456,7 +1450,6 @@ object NodesApiEndpoints {
         new NodeValidationResultDto(
           parameters = node.parameters,
           expressionType = node.expressionType,
-          testCaseAssertions = node.testCaseAssertions,
           validationErrors = node.validationErrors,
           validationPerformed = node.validationPerformed
         )
@@ -1569,21 +1562,10 @@ object NodesApiEndpoints {
     )
 
     @JsonCodec(encodeOnly = true) final case class NodeValidationResult(
-        // It it used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
         parameters: Option[List[UIParameter]],
-        // expressionType is returned to present inferred types of a single, hardcoded parameter of the node
-        // We currently support only type inference for an expression in the built-in components: variable and switch
-        // and fields of the record-variable and fragment output (we return TypedObjectTypingResult in this case)
-        // TODO: We should keep this in a map, instead of TypedObjectTypingResult as it is done in ValidationResult.typingInfo
-        //       Thanks to that we could remove some code on the FE side and be closer to support also not built-in components
         expressionType: Option[TypingResult],
-        testCaseAssertions: Option[TestCaseAssertions],
         validationErrors: List[NodeValidationError],
         validationPerformed: Boolean
-    )
-
-    @JsonCodec(encodeOnly = true) final case class TestCaseAssertions(
-        variables: Map[String, TypingResult]
     )
 
     @JsonCodec(encodeOnly = true) final case class NodeValidationRequest(

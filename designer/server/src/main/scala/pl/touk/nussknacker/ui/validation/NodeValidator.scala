@@ -4,16 +4,7 @@ import cats.effect.SyncIO
 import cats.effect.kernel.Resource
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
-import pl.touk.nussknacker.engine.api.definition.{
-  AdditionalVariableProvidedInRuntime,
-  EngineScenarioCompilationDependencies,
-  Parameter,
-  ParameterCategory,
-  SpelParameterEditor
-}
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   NodeDataValidator,
@@ -22,14 +13,9 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
 }
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
-  NodeValidationRequest,
-  NodeValidationResult,
-  TestCaseAssertions
-}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeValidationRequest, NodeValidationResult}
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
-import pl.touk.nussknacker.ui.process.test.testcase.{tests, TestCaseVariables}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class NodeValidator(
@@ -68,7 +54,6 @@ class NodeValidator(
               NodeValidationResult(
                 parameters = None,
                 expressionType = None,
-                testCaseAssertions = None,
                 validationErrors = Nil,
                 validationPerformed = false
               )
@@ -78,7 +63,6 @@ class NodeValidator(
               NodeValidationResult(
                 parameters = uiParams,
                 expressionType = expressionType,
-                testCaseAssertions = Some(prepareTestCaseAssertionsVariables(nodeData.variableTypes)),
                 validationErrors = uiErrors,
                 validationPerformed = true
               )
@@ -87,10 +71,5 @@ class NodeValidator(
       }
       .unsafeRunSync()
   }
-
-  private def prepareTestCaseAssertionsVariables(variableTypes: Map[String, TypingResult]): TestCaseAssertions =
-    TestCaseAssertions(
-      variables = TestCaseVariables.getNodeVariablesTyping(variableTypes)
-    )
 
 }
