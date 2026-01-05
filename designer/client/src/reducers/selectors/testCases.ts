@@ -2,11 +2,12 @@ import { createSelector } from "reselect";
 
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import { safeParseExpression } from "../../components/modals/TestingDataRecords/utils";
+import type { TestCase } from "../graph/testCase";
 import { getScenarioGraph } from "./graph";
 
 const getNodeId = (_: unknown, nodeId: string) => nodeId;
 
-export const getTestCase = createSelector(getScenarioGraph, ({ testCases }) => testCases?.value ?? {});
+export const getTestCase = createSelector(getScenarioGraph, ({ testCases }) => testCases?.value ?? ({} as TestCase));
 export const getTestCaseOptions = createSelector(getTestCase, ({ name, id }) => [{ label: name, value: id }]);
 export const getTestCaseAssertions = createSelector(getTestCase, ({ assertions }) => assertions);
 export const getTestCaseAssertionsForNode = createSelector(
