@@ -14,7 +14,7 @@ export interface TestCase {
 
 export const initialTestCasesState: ScenarioGraph["testCases"] = {
     value: {
-        id: uuid4(),
+        id: "f8757b06-6610-4900-90cc-fd3963356e8e",
         name: "Test case 1",
         inputs: "[]",
         mocks: {},
