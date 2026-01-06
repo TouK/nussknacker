@@ -379,12 +379,53 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .in("nodes" / path[ProcessName]("scenarioName") / "testCase" / "additionalVariables")
       .in(
         jsonBody[TestCaseAdditionalVariablesRequestDto]
-        // TODO: add examples?
+          .example(
+            Example.of(
+              summary = Some("Node variables"),
+              value = TestCaseAdditionalVariablesRequestDto(
+                Map(
+                  "amount" -> TypedObjectWithValue.apply(
+                    Typed[java.lang.Long].asInstanceOf[TypedClass],
+                    5L
+                  ),
+                  "name" -> TypedObjectWithValue.apply(
+                    Typed[java.lang.String].asInstanceOf[TypedClass],
+                    "Alice"
+                  ),
+                )
+              )
+            )
+          )
       )
       .out(
         statusCode(Ok).and(
           jsonBody[TestCaseAdditionalVariablesResponseDto]
-          // TODO: add examples?
+            .example(
+              Example.of(
+                summary = Some("Additional variables for assertions in a test case"),
+                value = TestCaseAdditionalVariablesResponseDto(
+                  assertionsAdditionalVariables = Map(
+                    "contexts" -> Typed.genericTypeClass(
+                      classOf[java.util.List[_]],
+                      List(
+                        Typed.record(
+                          List(
+                            "amount" -> TypedObjectWithValue.apply(
+                              Typed[java.lang.Long].asInstanceOf[TypedClass],
+                              5L
+                            ),
+                            "name" -> TypedObjectWithValue.apply(
+                              Typed[java.lang.String].asInstanceOf[TypedClass],
+                              "Alice"
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
         )
       )
       .errorOut(
