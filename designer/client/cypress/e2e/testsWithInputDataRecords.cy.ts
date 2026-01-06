@@ -53,11 +53,11 @@ describe("test with events data", () => {
         // Verify if test mode running
         cy.get('[id="tipsPanel"]').contains("Testing mode enabled");
         // verify if node has 10 test results
-        cy.get('[model-id="Event Generator"]').find('[joint-selector="testResultsSummary"').contains("11");
+        cy.get('[model-id="Event Generator"]').find('[joint-selector="testResultsSummary"]').contains("11");
         cy.get('[data-selector="SCENARIO_TEST"]').click();
 
         // Rerun test
-        cy.intercept("POST", "/api/processManagement/test/*").as("retest");
+        cy.intercept("POST", "/api/processManagement/testCase/*").as("retest");
         cy.contains('[data-testid="toolbarButton-label"]', /Rerun test/).click();
         cy.wait("@retest");
     });
