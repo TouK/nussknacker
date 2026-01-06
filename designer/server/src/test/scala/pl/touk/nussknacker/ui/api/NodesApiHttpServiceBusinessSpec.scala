@@ -321,7 +321,7 @@ class NodesApiHttpServiceBusinessSpec
         .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/validation")
         .Then()
         .statusCode(200)
-        .matchJsonWithRegexValuesBody(
+        .equalsJsonBody(
           s"""{
              |  "parameters": [
              |    {
