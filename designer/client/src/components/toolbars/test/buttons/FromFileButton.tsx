@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { testProcessFromFile } from "../../../../actions/nk/displayTestResults";
+import { testProcessFromFile } from "../../../../actions/nk/testingActions";
 import Icon from "../../../../assets/img/toolbarButtons/from-file.svg";
 import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
 import { getTestCapabilities } from "../../../../reducers/selectors/graph";

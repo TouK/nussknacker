@@ -1,15 +1,17 @@
-import { Stack, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { getTestCapabilities, getTestingDataRecordsForSingleSource } from "../../../../../../reducers/selectors/graph";
+import { getTestCapabilities } from "../../../../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../../../../reducers/selectors/settings";
+import { getInputDataRecordsForSingleSource } from "../../../../../../reducers/selectors/testCases";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
 import { AppendFromLiveDataButton } from "../../../../../modals/TestingDataRecords/AppendFromLiveDataButton";
 import { LimitExceededWarning } from "../../../../../modals/TestingDataRecords/LimitExceededWarning";
 import { Table } from "../../../../../modals/TestingDataRecords/Table";
 import { useDataRecordsActions } from "../../../../../modals/TestingDataRecords/useDataRecordsActions";
 import { ContentSize } from "../../ContentSize";
+import { StyledStack } from "./components/Styled";
 
 interface Props {
     sourceId: string;
@@ -18,7 +20,7 @@ interface Props {
 export const InputDataRecords = ({ sourceId }: Props) => {
     const { t } = useTranslation();
     const maxTestingRecords = useAppSelector(getMaxTestingRecords);
-    const testingDataRecords = useAppSelector((state) => getTestingDataRecordsForSingleSource(state, sourceId));
+    const testingDataRecords = useAppSelector((state) => getInputDataRecordsForSingleSource(state, sourceId));
 
     const { cellErrors, recordsErrors, handleRowAdded, handleRowMoved, handleRowsDeleted, handleRowUpdated, handleGenerateTestData } =
         useDataRecordsActions();
@@ -46,7 +48,7 @@ export const InputDataRecords = ({ sourceId }: Props) => {
     );
 
     return (
-        <Stack p={2} gap={2}>
+        <StyledStack>
             <Typography m={0} variant="h5">
                 {t("testingDialog.label.inputDataRecords", "Input data records")}
             </Typography>
@@ -71,6 +73,6 @@ export const InputDataRecords = ({ sourceId }: Props) => {
                 currentRecordsNumber={testingDataRecords.length}
                 recordsToAddLimitExceeded={recordsToAddLimitExceeded}
             />
-        </Stack>
+        </StyledStack>
     );
 };

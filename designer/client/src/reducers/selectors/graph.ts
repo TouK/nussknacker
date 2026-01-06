@@ -9,7 +9,6 @@ import { isStatusRunning } from "../../components/Process/types";
 import { ScenarioGraphSourceType } from "../../http/HttpService/types";
 import type { ProcessCounts } from "../../http/resultsWithCountsDto";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
-import type { TestData } from "../graph/types";
 import type { RootState } from "../index";
 import { getHistoryPast } from "./getHistory";
 import { areLabelsUpdated, isGraphUpdated } from "./helpers";
@@ -26,8 +25,6 @@ export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scena
         resultEqualityCheck: isEqual,
     },
 });
-
-export const getTesting = createSelector(getGraph, (g) => g.testing);
 
 export const getNodes = createSelector(getScenarioGraph, (g) => g.nodes);
 
@@ -75,26 +72,9 @@ export const isArchivePossible = createSelector(
     (state, isFragment) => isFragment || ProcessStateUtils.canArchive(state),
 );
 export const getTestCapabilities = createSelector(getGraph, (g) => g.testCapabilities);
-export const getTestingDataRecords = createSelector(getTesting, (g) => g.testingDataRecords || []);
-
-const getSourceId = (_: unknown, sourceId: string) => sourceId;
-export const getTestingDataRecordsForSingleSource = createSelector(
-    [getTestingDataRecords, getSourceId],
-    (testingDataRecords, sourceId: string) => testingDataRecords.filter((r) => r.sourceId === sourceId),
-);
-export const hasTestingDataRecordsDefined = createSelector(getTestingDataRecords, (testingDataRecords) => testingDataRecords.length > 0);
-
 export const getTestParameters = createSelector(getGraph, (g) => g.testFormParameters || ([] as TestFormParameters[]));
-export const getTestResults = createSelector(getTesting, (g) => g.testResults);
-export const getTestResultsLoading = createSelector(getTesting, (g) => g.testResultsLoading);
-export const getTestData = createSelector(getTesting, (g) => g.testData || ({} as TestData));
 export const getProcessCountsRefresh = createSelector(getGraph, (g) => g.processCountsRefresh || null);
 export const getProcessCounts = createSelector(getGraph, (g): ProcessCounts => g.processCounts || ({} as ProcessCounts));
-export const getIsTestingMode = createSelector(
-    getTestResults,
-    getProcessCounts,
-    (results, counts) => !isEmpty(results) || !isEmpty(counts),
-);
 
 export const getVersions = createSelector(getScenario, (details) => details?.history || []);
 export const hasOneVersion = createSelector(getVersions, (h) => h.length <= 1);

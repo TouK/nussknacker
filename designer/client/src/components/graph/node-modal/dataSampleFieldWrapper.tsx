@@ -29,7 +29,6 @@ export function DataSampleFieldWrapper({ children, node, parameter, isEditMode, 
                     infoTooltip={
                         !isRunning ? t("node.actions.sendRequest.tooltip.deployScenarioFirst", "Deploy your scenario first") : null
                     }
-                    expression={parameter.expression.expression}
                     node={node}
                 />
             </FieldAddons>

@@ -75,6 +75,13 @@ const AiAssistantModal = loadable(() => import("../components/aiAssistant/compon
     fallback: <LoaderSpinner show />,
 });
 
+const EnterpriseFeatureInfo = loadable(
+    () => import("../components/graph/node-modal/node/NodeContent/TestingContentElements/EnterpriseFeatureInfo"),
+    {
+        fallback: <LoaderSpinner show />,
+    },
+);
+
 const contentGetter = (props: WindowContentProps<WindowKind>) => {
     switch (props.data.kind) {
         case WindowKind.addFragment:
@@ -129,6 +136,8 @@ const contentGetter = (props: WindowContentProps<WindowKind>) => {
             return <PropertiesDialog {...props} />;
         case WindowKind.aiAssistant:
             return <AiAssistantModal {...props} />;
+        case WindowKind.enterpriseFeatureInfo:
+            return <EnterpriseFeatureInfo {...props} />;
         default:
             return (
                 <WindowContent {...props}>

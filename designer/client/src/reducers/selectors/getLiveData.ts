@@ -5,8 +5,9 @@ import { getNodeDetails } from "../../components/graph/node-modal/NodeDetailsCon
 import type { NodeTransitionResult } from "../../http/resultsWithCountsDto";
 import type { LiveData } from "../graph/liveData";
 import type { RootState } from "../index";
-import { getGraph, getSavedScenario, getScenario, getTestResults, isCurrentVersionDeployed } from "./graph";
+import { getGraph, getSavedScenario, getScenario, isCurrentVersionDeployed } from "./graph";
 import { isGraphUpdated } from "./helpers";
+import { getTestResults } from "./testing";
 
 const EMPTY = [];
 const getLiveData = (state: RootState): LiveData => state.liveData;
