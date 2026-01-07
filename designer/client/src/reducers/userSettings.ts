@@ -34,7 +34,7 @@ export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean
         createFlag("debug.forceDisableModals"),
         createFlag("debug.lightTheme"),
         createFlag("debug.nodesAsJson"),
-        createFlag("debug.scenaro.showNodeAlignToolbar"),
+        createFlag("debug.scenario.showNodeAlignToolbar"),
         createFlag("editor.allowForceSwitch"),
         createFlag("editor.json.showLines", true),
         createFlag("editor.jsonTemplate.showLines", true),
