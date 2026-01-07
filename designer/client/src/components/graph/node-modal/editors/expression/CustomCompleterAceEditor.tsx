@@ -4,7 +4,7 @@ import { isEmpty } from "lodash";
 import type { ReactNode } from "react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import type ReactAce from "react-ace/lib/ace";
-import { useDebouncedValue, useDebounceFn, useMergeRefs } from "rooks";
+import { useDebouncedValue, useMergeRefs } from "rooks";
 
 import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../../../store/storeHelpers";
@@ -41,7 +41,10 @@ export type CustomCompleterAceEditorProps = {
 };
 
 function getCompletionsActivated(editorRef: React.MutableRefObject<ReactAce | undefined>) {
-    return Boolean(editorRef.current?.editor.completer?.activated);
+    const completer = editorRef.current?.editor.completer;
+    if (!completer) return;
+
+    return Boolean(completer.activated && completer.getPopup?.()?.isOpen);
 }
 
 export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): React.JSX.Element {
@@ -67,14 +70,17 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
 
     const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(debouncedErrorsToDisplay, showLines);
 
-    const [debouncedChange] = useDebounceFn((value: string, completionsVisible?: boolean) => {
-        if (completionsVisible && getCompletionsActivated(editorRef)) return;
-        return onValueChange(value);
-    }, 500);
+    const deferredChange = useCallback(
+        (value: string, completionsVisible?: boolean) => {
+            if (completionsVisible && getCompletionsActivated(editorRef)) return;
+            return onValueChange(value);
+        },
+        [onValueChange],
+    );
 
     useEffect(() => {
-        debouncedChange(internalValue, completionsVisible);
-    }, [completionsVisible, debouncedChange, internalValue]);
+        deferredChange(internalValue, completionsVisible);
+    }, [completionsVisible, deferredChange, internalValue]);
 
     const [onValueChangeRef] = useCallbackRef(onValueChange, [onValueChange]);
     useEffect(() => {
