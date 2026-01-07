@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { setTestCaseAssertions } from "../../../../../../actions/nk/testCasesActions";
 import httpService from "../../../../../../http/HttpService/instance";
-import { getProcessName } from "../../../../../../reducers/selectors/graph";
+import { getProcessingType } from "../../../../../../reducers/selectors/graph";
 import { getTestCaseAssertionsForNode } from "../../../../../../reducers/selectors/testCases";
 import { getTestAssertionResultsForNode } from "../../../../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
@@ -27,18 +27,18 @@ export const Assertions = ({ node }: Props) => {
     const dispatch = useAppDispatch();
     const testCaseAssertions = useAppSelector((state) => getTestCaseAssertionsForNode(state, node.id));
     const testAssertionResults = useAppSelector((state) => getTestAssertionResultsForNode(state, node.id));
-    const scenarioName = useAppSelector(getProcessName);
+    const processingType = useAppSelector(getProcessingType);
     const nodeVariableTypes = useVariableTypes({ node });
     const [assertionVariableTypes, setAssertionVariableTypes] = useState<VariableTypes>({});
 
     useEffect(() => {
         const fetchAssertionVariableTypes = async () => {
-            const response = await httpService.fetchTestCaseNodeAdditionalVariables(scenarioName, { variableTypes: nodeVariableTypes });
+            const response = await httpService.fetchTestCaseNodeAdditionalVariables(processingType, { variableTypes: nodeVariableTypes });
             setAssertionVariableTypes(response.assertionsAdditionalVariables || {});
         };
 
         fetchAssertionVariableTypes();
-    }, [scenarioName, nodeVariableTypes]);
+    }, [processingType, nodeVariableTypes]);
 
     const addAssertion = useCallback(() => {
         dispatch(
