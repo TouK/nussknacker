@@ -9,7 +9,6 @@ import type { ScenariosActions } from "../reducers/scenarios";
 import type { ActionTypes } from "./actionTypes";
 import type { AssistantActions } from "./assistantActions";
 import type { CountsActions } from "./nk/displayProcessCounts";
-import type { TestsActions } from "./nk/displayTestResults";
 import type { PropertiesActions } from "./nk/editProperties";
 import type { LiveDataActions } from "./nk/liveData";
 import type { NodeActions } from "./nk/node";
@@ -18,6 +17,8 @@ import type { NotificationActions } from "./nk/notifications";
 import type { ScenarioActions, UpdateTestCapabilitiesAction } from "./nk/process";
 import type { GetScenarioActivitiesAction, UpdateScenarioActivitiesAction } from "./nk/scenarioActivities";
 import type { SelectionActions } from "./nk/selection";
+import type { TestCasesActions } from "./nk/testCasesActions";
+import type { TestsActions } from "./nk/testingActions";
 import type { ToolbarActions } from "./nk/toolbars";
 import type { ToolWindowActions } from "./nk/toolWindow";
 import type { UiActions } from "./nk/ui/uiActions";
@@ -49,7 +50,8 @@ export type TypedAction =
     | UpdateScenarioActivitiesAction
     | UpdateTestCapabilitiesAction
     | UserSettingsActions
-    | ValidationsActions;
+    | ValidationsActions
+    | TestCasesActions;
 
 export interface UntypedAction {
     type: Exclude<ActionTypes, TypedAction["type"]>;

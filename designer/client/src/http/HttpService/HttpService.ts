@@ -19,6 +19,7 @@ import type { ExpressionSuggestion } from "../../components/graph/node-modal/edi
 import { extractStickyNotesFromNodes } from "../../components/graph/utils/stickyNotesUtils";
 import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../../components/Labels/types";
 import type { TestingDataRecords, TestingDataRecordsRequestData } from "../../components/modals/TestingDataRecords/Table";
+import { mapInputDataRecordsToRunTestsFormat } from "../../components/modals/TestingDataRecords/utils";
 import type { ProcessName, ProcessVersionId, Scenario, StatusDefinitionType } from "../../components/Process/types";
 import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../../components/toolbars/activities/types";
 import { ActivityTypesRelatedToExecutions } from "../../components/toolbars/activities/types";
@@ -35,6 +36,7 @@ import { API_URL } from "../../config";
 import type { EventTrackingSelectorType, EventTrackingType } from "../../containers/event-tracking/use-register-tracking-events";
 import type { BackendNotification } from "../../containers/Notifications";
 import { handleAxiosError } from "../../devHelpers";
+import type { TestCase } from "../../reducers/graph/testCase";
 import type { AuthenticationSettings } from "../../reducers/settings";
 import type { WithId } from "../../types/common";
 import type { Expression, NodeType } from "../../types/node";
@@ -815,18 +817,32 @@ export class HttpService {
         return promise;
     }
 
-    testScenarioWithEventsData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, testData: TestingDataRecordsRequestData[]) {
+    testScenarioWithTestCase(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, testCase: TestCase) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
+        let sanitizedInputDataRecords: TestingDataRecords;
+        try {
+            sanitizedInputDataRecords = JSON.parse(testCase.inputs).map(mapInputDataRecordsToRunTestsFormat);
+        } catch (error) {
+            this.#addError(
+                i18next.t("notification.error.invalidTestCaseInputsJson", "Failed to test: invalid JSON in test case inputs"),
+                error,
+                true,
+            );
+            return Promise.reject(error);
+        }
 
-        const data = new FormData();
-        data.append("testData", new Blob([JSON.stringify(testData)], { type: "application/json" }));
-        data.append("scenarioGraph", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
-
-        const promise = api.post<ResultsWithCountsDto>(`/processManagement/test/${encodeURIComponent(scenarioName)}`, data, {
-            params: {
-                skipResultsPerTransition: this.#skipResultsPerTransition,
+        const promise = api.post<ResultsWithCountsDto>(
+            `/processManagement/testCase/${encodeURIComponent(scenarioName)}`,
+            {
+                scenario: sanitized,
+                testCase: { ...testCase, inputs: JSON.stringify(sanitizedInputDataRecords) },
             },
-        });
+            {
+                params: {
+                    skipResultsPerTransition: this.#skipResultsPerTransition,
+                },
+            },
+        );
         promise.catch((error: AxiosError) =>
             this.#addError(
                 i18next.t("notification.error.failedToTestScenarioWithEventsData", "Failed to test due to: {{axiosError}}", {

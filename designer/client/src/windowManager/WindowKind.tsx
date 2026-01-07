@@ -26,4 +26,5 @@ export enum WindowKind {
     withChildren,
     scenarioTest,
     aiAssistant,
+    enterpriseFeatureInfo,
 }

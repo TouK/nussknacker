@@ -2,7 +2,8 @@ import loadable from "@loadable/component";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
-import { getTestParameters, getTestResultsLoading } from "../../../../reducers/selectors/graph";
+import { getTestParameters } from "../../../../reducers/selectors/graph";
+import { getTestResultsLoading } from "../../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../windowManager/WindowKind";

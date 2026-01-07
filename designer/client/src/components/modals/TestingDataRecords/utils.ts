@@ -7,7 +7,7 @@ import { formatDataRecordsVariablesForDisplay, getRowLines, LINE_HEIGHT, padding
 import type { SourceSelectCell } from "./SourceEditor";
 import type { TestingDataRecords } from "./Table";
 
-export const mapDataRecordsToRunTestsFormat = (dataRecords: TestingDataRecords) => {
+export const mapInputDataRecordsToRunTestsFormat = (dataRecords: TestingDataRecords) => {
     let parsedVariables: unknown;
     try {
         parsedVariables = JSON.parse(dataRecords.variables);
@@ -28,13 +28,11 @@ export const mapGeneratedTestingDataToTableFormat = (dataRecords: TestingDataRec
     return dataRecords;
 };
 
-export function safeParseExpression(expr: string): unknown {
-    if (!expr) return "";
+export function safeParseExpression<T = unknown>(expr: string): T {
     try {
         return JSON.parse(expr);
     } catch {
-        // not valid JSON -> return raw string
-        return expr;
+        return undefined;
     }
 }
 

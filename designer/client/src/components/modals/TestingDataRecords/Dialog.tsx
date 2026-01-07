@@ -4,9 +4,10 @@ import type { ElementType, ReactElement } from "react";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { testScenarioWithDataRecords } from "../../../actions/nk/displayTestResults";
-import { getTestCapabilities, getTestingDataRecords } from "../../../reducers/selectors/graph";
+import { testScenarioWithTestCase } from "../../../actions/nk/testingActions";
+import { getTestCapabilities } from "../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../reducers/selectors/settings";
+import { getInputDataRecords, getTestCase } from "../../../reducers/selectors/testCases";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { WindowContent } from "../../../windowManager/WindowContent";
@@ -47,7 +48,8 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
 
     const dispatch = useAppDispatch();
     const testCapabilities = useAppSelector(getTestCapabilities);
-    const testingDataRecords = useAppSelector(getTestingDataRecords);
+    const testingDataRecords = useAppSelector(getInputDataRecords);
+    const testCase = useAppSelector(getTestCase);
 
     const defaultParameter = testCapabilities.testWithParameters.sourceParameters[0];
 
@@ -85,7 +87,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                 title: t("testingForm.testButton.label", "Test"),
                 action: () => {
                     try {
-                        dispatch(testScenarioWithDataRecords(testingDataRecords));
+                        dispatch(testScenarioWithTestCase(testCase));
                         close();
                     } catch (e) {
                         console.error(e.message);
@@ -93,7 +95,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                 },
             },
         ],
-        [close, disableTestButton, dispatch, testingDataRecords, t],
+        [t, disableTestButton, close, dispatch, testCase],
     );
 
     return (

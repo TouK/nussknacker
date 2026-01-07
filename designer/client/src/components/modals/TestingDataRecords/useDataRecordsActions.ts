@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from "react";
 
-import { setTestingEventsParameters } from "../../../actions/nk/displayTestResults";
+import { setTestCaseInputs } from "../../../actions/nk/testCasesActions";
 import HttpService from "../../../http/HttpService/instance";
 import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
@@ -27,7 +27,7 @@ export const useDataRecordsActions = () => {
 
             if (numberOfSamples > 0) {
                 const { data } = await HttpService.generatedTestData(scenarioName, scenarioGraph, numberOfSamples);
-                dispatch(setTestingEventsParameters((prevState) => [...prevState, ...data.map(mapGeneratedTestingDataToTableFormat)]));
+                dispatch(setTestCaseInputs((prevState) => [...prevState, ...data.map(mapGeneratedTestingDataToTableFormat)]));
             }
         },
         [validateForCount, scenarioName, scenarioGraph, dispatch],
@@ -62,7 +62,7 @@ export const useDataRecordsActions = () => {
                 return;
 
             dispatch(
-                setTestingEventsParameters((prev) => {
+                setTestCaseInputs((prev) => {
                     const next = [...prev];
                     if (rowIndex === next.length) next.push(row);
                     else next.splice(rowIndex, 0, row);
@@ -78,7 +78,7 @@ export const useDataRecordsActions = () => {
     const handleRowUpdated = React.useCallback(
         (rowIndex: number, row: TestingDataRecords) => {
             dispatch(
-                setTestingEventsParameters((prev) => {
+                setTestCaseInputs((prev) => {
                     const next = [...prev];
                     if (rowIndex >= next.length) {
                         for (let i = next.length; i <= rowIndex; i++) {
@@ -101,7 +101,7 @@ export const useDataRecordsActions = () => {
             const deletedSet = new Set(deletedRows);
             const sorted = [...deletedRows].sort((a, b) => a - b);
 
-            dispatch(setTestingEventsParameters((prev) => prev.filter((_, i) => !deletedSet.has(i))));
+            dispatch(setTestCaseInputs((prev) => prev.filter((_, i) => !deletedSet.has(i))));
             setCellErrors((prev) =>
                 prev
                     .filter((e) => !deletedSet.has(e.y))
@@ -121,7 +121,7 @@ export const useDataRecordsActions = () => {
     const handleRowMoved = React.useCallback(
         (fromIndex: number, toIndex: number) => {
             dispatch(
-                setTestingEventsParameters((prev) => {
+                setTestCaseInputs((prev) => {
                     if (!prev || fromIndex < 0 || toIndex < 0 || fromIndex >= prev.length || toIndex > prev.length) return prev;
                     const next = [...prev];
                     const [moved] = next.splice(fromIndex, 1);

@@ -3,7 +3,8 @@ import React, { createContext, memo, useCallback, useContext, useMemo, useReduce
 
 import TestResultUtils from "../../../../common/TestResultUtils";
 import type { NodeTransitionResult } from "../../../../http/resultsWithCountsDto";
-import { getScenarioGraph, getTestResults } from "../../../../reducers/selectors/graph";
+import { getScenarioGraph } from "../../../../reducers/selectors/graph";
+import { getTestResults } from "../../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import NodeUtils from "../../NodeUtils";
 import type { VariableContextType } from "./VariableContextTree";

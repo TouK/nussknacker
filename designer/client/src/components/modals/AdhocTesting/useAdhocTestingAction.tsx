@@ -1,8 +1,9 @@
 import { head } from "lodash";
 import { useCallback, useMemo } from "react";
 
-import { testProcessWithParameters } from "../../../actions/nk/displayTestResults";
-import { getProcessingType, getTestData, getTestParameters } from "../../../reducers/selectors/graph";
+import { testProcessWithParameters } from "../../../actions/nk/testingActions";
+import { getProcessingType, getTestParameters } from "../../../reducers/selectors/graph";
+import { getTestData } from "../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { UIParameter } from "../../../types/definition";
 import { getFindAvailableVariables } from "../../graph/node-modal/NodeDetailsContent/selectors";

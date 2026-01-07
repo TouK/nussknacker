@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { hideRunProcessDetails } from "../../../../actions/nk/process";
 import Icon from "../../../../assets/img/toolbarButtons/hide.svg";
-import { getIsTestingMode } from "../../../../reducers/selectors/graph";
+import { getIsTestingMode } from "../../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";

@@ -22,6 +22,8 @@ import { appendHistorySquashLogic } from "./historySquash";
 import type { NestedKeyOf } from "./lodashWrappers";
 import { omit, pick } from "./lodashWrappers";
 import { selectionState } from "./selectionState";
+import { testCaseReducer } from "./testCase";
+import { initialTestingState, testingReducer } from "./testing";
 import type { GraphState } from "./types";
 import { VisibleDataType } from "./types";
 import {
@@ -43,6 +45,7 @@ const emptyGraphState: GraphState = {
             edges: [],
             properties: null,
             stickyNotes: [],
+            testCases: null,
         },
     } as Scenario,
     layout: [],
@@ -50,12 +53,7 @@ const emptyGraphState: GraphState = {
     testFormParameters: null,
     selectionState: [],
     processCounts: {},
-    testing: {
-        testResults: null,
-        testResultsLoading: false,
-        testData: null,
-        testingDataRecords: null,
-    },
+    testing: initialTestingState,
 };
 
 export function updateValidationResult(
@@ -122,7 +120,7 @@ const updateStateAfterEdit = (state: GraphState, action: ActionOfType<"EDIT_NODE
     });
 };
 
-const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
+const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): GraphState => {
     const currentNodes = state.scenario.scenarioGraph.nodes;
     const currentEdges = state.scenario.scenarioGraph.edges;
     switch (action.type) {
@@ -131,15 +129,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 scenarioLoading: true,
-            };
-        }
-        case "TEST_RESULTS_LOADING": {
-            return {
-                ...state,
-                testing: {
-                    ...state.testing,
-                    testResultsLoading: true,
-                },
             };
         }
         case "UPDATE_IMPORTED_PROCESS": {
@@ -165,12 +154,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 testFormParameters: action.capabilities?.testWithParameters?.sourceParameters,
             };
         }
-        case "UPDATE_TEST_TYPE": {
-            return {
-                ...state,
-                testType: action.testType,
-            };
-        }
         case "DISPLAY_PROCESS": {
             const adjustedScenario = appendScenarioNameToProperties(addStickyNotesToNodes(action.scenario));
             return {
@@ -193,15 +176,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 scenario: {
                     ...state.scenario,
                     isArchived: true,
-                },
-            };
-        }
-        case "TEST_RESULTS_FAILED": {
-            return {
-                ...state,
-                testing: {
-                    ...state.testing,
-                    testResultsLoading: false,
                 },
             };
         }
@@ -366,10 +340,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 visibleDataType: VisibleDataType.counts,
                 processCounts: action.processCounts,
                 processCountsRefresh: action.refresh,
-                testing: {
-                    ...state.testing,
-                    testResults: null,
-                },
             };
         }
         case "FETCH_LIVE_DATA": {
@@ -384,44 +354,13 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 visibleDataType: VisibleDataType.live,
                 processCounts: action.results?.counts || {},
                 processCountsRefresh: null,
-                testing: {
-                    ...state.testing,
-                    testResults: action.results?.results || null,
-                },
             };
         }
         case "DISPLAY_TEST_RESULTS_DETAILS": {
             return {
                 ...state,
                 visibleDataType: VisibleDataType.test,
-                testing: {
-                    ...state.testing,
-                    testData: {
-                        ...state.testing.testData,
-                        [action.testData?.sourceId]: action.testData?.parameterExpressions,
-                    },
-                    testResultsLoading: false,
-                    testResults: action.testResults,
-                },
                 scenarioLoading: false,
-            };
-        }
-        case "SET_TESTING_EVENTS_PARAMETERS": {
-            return {
-                ...state,
-                testing: {
-                    ...state.testing,
-                    testingDataRecords: action.testingEventsParameters,
-                },
-            };
-        }
-        case "SET_TEST_DATA": {
-            return {
-                ...state,
-                testData: {
-                    ...state.testing.testData,
-                    [action.testData?.sourceId]: action.testData?.parameterExpressions,
-                },
             };
         }
         case "HIDE_RUN_PROCESS_DETAILS": {
@@ -440,8 +379,10 @@ const reducer: Reducer<GraphState> = mergeReducers(graphReducer, {
     scenario: {
         scenarioGraph: {
             nodes,
+            testCases: testCaseReducer,
         },
     },
+    testing: testingReducer,
     selectionState,
 });
 

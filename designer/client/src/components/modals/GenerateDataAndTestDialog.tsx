@@ -5,7 +5,7 @@ import { isEmpty } from "lodash";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { testScenarioWithGeneratedData } from "../../actions/nk/displayTestResults";
+import { testScenarioWithGeneratedData } from "../../actions/nk/testingActions";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
