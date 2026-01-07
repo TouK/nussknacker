@@ -79,8 +79,9 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
     );
 
     useEffect(() => {
+        if (props.inputProps?.readOnly) return;
         deferredChange(internalValue, completionsVisible);
-    }, [completionsVisible, deferredChange, internalValue]);
+    }, [completionsVisible, deferredChange, internalValue, props.inputProps?.readOnly]);
 
     const [onValueChangeRef] = useCallbackRef(onValueChange, [onValueChange]);
     useEffect(() => {
