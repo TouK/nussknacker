@@ -5,7 +5,6 @@ import { DefaultComponents } from "@touk/window-manager";
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import type { NodeType } from "../../../../types/node";
 import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
@@ -26,8 +25,6 @@ function DescriptionDialog(props: DescriptionDialogProps): React.JSX.Element {
     const { editMode, close } = props;
     const readOnly = useAppSelector(getReadOnly);
     const { currentProperties, editedProperties, handleSetEditedProperties, isTouched, manualApply } = usePropertiesState();
-    const settings = useAppSelector(getUserSettings);
-    const autoApply = settings["node.autoApply"];
 
     const [previewMode, setPreviewMode] = useState(!editMode || readOnly);
 
@@ -35,7 +32,6 @@ function DescriptionDialog(props: DescriptionDialogProps): React.JSX.Element {
 
     const apply = useMemo<WindowButtonProps | false>(() => {
         if (readOnly) return false;
-        if (autoApply) return false;
         if (previewMode && !isTouched) return false;
         return {
             title: t("dialog.button.apply", "apply"),
@@ -45,29 +41,28 @@ function DescriptionDialog(props: DescriptionDialogProps): React.JSX.Element {
             },
             disabled: !editedProperties.name?.length,
         };
-    }, [autoApply, close, editedProperties.name?.length, isTouched, manualApply, previewMode, readOnly, t]);
+    }, [close, editedProperties.name?.length, isTouched, manualApply, previewMode, readOnly, t]);
 
     const cancel = useMemo<WindowButtonProps | false>(() => {
         if (previewMode && !isTouched) return false;
         return {
-            title: autoApply ? t("dialog.button.close", "close") : t("dialog.button.cancel", "cancel"),
+            title: t("dialog.button.cancel", "cancel"),
             className: LoadingButtonTypes.secondaryButton,
             action: () => {
                 handleSetEditedProperties(fieldPath, currentProperties.additionalFields.description);
                 setPreviewMode(true);
             },
         };
-    }, [previewMode, isTouched, autoApply, t, handleSetEditedProperties, currentProperties.additionalFields.description]);
+    }, [previewMode, isTouched, t, handleSetEditedProperties, currentProperties.additionalFields.description]);
 
     const preview = useMemo<WindowButtonProps | false>(() => {
-        if (autoApply) return false;
         if (!isTouched) return false;
         return {
             title: previewMode ? t("dialog.button.edit", "edit") : t("dialog.button.preview", "preview"),
             action: () => setPreviewMode((v) => !v),
             className: LoadingButtonTypes.tertiaryButton,
         };
-    }, [autoApply, isTouched, previewMode, t]);
+    }, [isTouched, previewMode, t]);
 
     const componentsOverride = useMemo<Partial<typeof DefaultComponents>>(() => {
         const HeaderTitle = () => <div />;

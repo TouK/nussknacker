@@ -27,7 +27,8 @@ export type NodeDetailsActions =
     | NodeDetailsOpened
     | NodeValidationDynamicParametersLoading
     | NodeValidationDynamicParametersLoaded
-    | NodeDetailsClosed;
+    | NodeDetailsClosed
+    | { type: "NODE_DETAILS_NEEDS_APPLY"; keys: string[] };
 
 export interface ValidationData {
     parameters?: UIParameter[];

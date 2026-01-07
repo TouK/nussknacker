@@ -7,7 +7,6 @@ import {
     validateNodeData,
 } from "../../../actions/nk/nodeDetails";
 import type { RootState } from "../../../reducers";
-import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { Edge } from "../../../types/edge";
 import type { NodeType, Parameter } from "../../../types/node";
@@ -33,9 +32,6 @@ export function useValidation({ node, edges, showValidation }: Pick<NodeTypeDeta
     const getBranchVariableTypes = useAppSelector(getFindAvailableBranchVariables);
     const processName = useAppSelector(getProcessName);
 
-    const settings = useAppSelector(getUserSettings);
-    const autoApply = settings["node.autoApply"];
-
     const variableTypes = useVariableTypes({ node });
 
     useEffect(() => {
@@ -50,12 +46,11 @@ export function useValidation({ node, edges, showValidation }: Pick<NodeTypeDeta
                     variableTypes,
                 },
                 () => {
-                    if (autoApply) return;
                     dispatch(nodeValidationDynamicParametersLoaded(node.id));
                 },
             ),
         );
-    }, [autoApply, dispatch, edges, getBranchVariableTypes, node, processName, showValidation, variableTypes]);
+    }, [dispatch, edges, getBranchVariableTypes, node, processName, showValidation, variableTypes]);
 }
 
 export function useVariableTypes({ node }: Pick<NodeTypeDetailsContentProps, "node">) {

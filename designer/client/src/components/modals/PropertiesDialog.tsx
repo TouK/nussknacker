@@ -1,19 +1,16 @@
 import { css } from "@emotion/css";
 import { styled } from "@mui/material";
 import type { WindowContentProps } from "@touk/window-manager";
-import type { DefaultContentProps } from "@touk/window-manager/cjs/components/window/DefaultContent";
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import { useDebounceFn } from "rooks";
 
 import { ToolId } from "../../actions/nk/toolWindow";
 import { validateScenarioProperties } from "../../actions/nk/validationsActions";
 import PropertiesSvg from "../../assets/img/properties.svg";
-import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import type { PropertiesType } from "../../types/node";
 import { WindowContent } from "../../windowManager/WindowContent";
 import { WindowKind } from "../../windowManager/WindowKind";
-import { CloseButtonWithEditLock } from "../graph/node-modal/node/CloseButtonWithEditLock";
 import { ContentSize } from "../graph/node-modal/node/ContentSize";
 import { EditStateFeedback } from "../graph/node-modal/node/EditStateFeedback";
 import { getCurrentPropertiesErrors, getReadOnly } from "../graph/node-modal/node/selectors";
@@ -48,7 +45,7 @@ const PropertiesDialog = ({ ...props }: WindowContentProps) => {
     const scenarioProperties = useAppSelector(getScenarioProperties);
 
     const showSwitch = false;
-    const { editedProperties, handleSetEditedProperties, manualApply, editState, editStateRef } = usePropertiesState();
+    const { editedProperties, handleSetEditedProperties, manualApply, editState } = usePropertiesState();
 
     const { apply, cancel } = useDialogActions({
         onApply: manualApply,
@@ -58,27 +55,14 @@ const PropertiesDialog = ({ ...props }: WindowContentProps) => {
 
     const errors = usePropertiesValidation(isEditMode, editedProperties);
 
-    const HeaderButtonClose: DefaultContentProps["components"]["HeaderButtonClose"] = useCallback(
-        (props) => {
-            return <CloseButtonWithEditLock {...props} editStateRef={editStateRef} />;
-        },
-        [editStateRef],
-    );
-
-    const components: DefaultContentProps["components"] = useMemo(() => {
-        return { HeaderButtonClose };
-    }, [HeaderButtonClose]);
-
-    const settings = useAppSelector(getUserSettings);
-
     useOnToolWindow(ToolId.properties);
 
     return (
         <>
-            {settings["node.autoApply"] ? <EditStateFeedback editState={editState} /> : null}
+            <EditStateFeedback editState={editState} />
             <WindowContent
                 {...props}
-                closeWithEsc={editState === "idle"}
+                closeWithEsc
                 buttons={[cancel, apply]}
                 title={"Properties"}
                 icon={<NodeDetailsModalIcon />}
@@ -86,7 +70,6 @@ const PropertiesDialog = ({ ...props }: WindowContentProps) => {
                 classnames={{
                     content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 }, position: "relative" }),
                 }}
-                components={components}
             >
                 <div className={css({ height: "100%", display: "grid", gridTemplateRows: "auto 1fr" })}>
                     <ContentSize>

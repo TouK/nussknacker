@@ -9,6 +9,7 @@ import type { TestCase } from "../../reducers/graph/testCase";
 import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
 import type { Action, ThunkAction } from "../reduxTypes";
+import { checkPendingChanges } from "./checkPendingChanges";
 import { displayProcessCounts } from "./displayProcessCounts";
 
 export function testProcessFromFile(testDataFile: File): ThunkAction {
@@ -81,14 +82,20 @@ function wrapWithTestAction(
         testData?: SourceWithParametersTest;
     }>,
 ): ThunkAction {
-    return (dispatch, getState) => {
+    return async (dispatch, getState) => {
         dispatch({ type: "TEST_RESULTS_LOADING" });
-        const state = getState();
-        const scenarioGraph = getScenarioGraph(state);
-        const processName = getProcessName(state);
-        fn(processName, scenarioGraph)
-            .then(({ testResults, testData }) => dispatch(testingActions(testResults, testData)))
-            .catch(() => dispatch({ type: "TEST_RESULTS_FAILED" }));
+        try {
+            await dispatch(checkPendingChanges());
+
+            const state = getState();
+            const scenarioGraph = getScenarioGraph(state);
+            const processName = getProcessName(state);
+
+            const { testResults, testData } = await fn(processName, scenarioGraph);
+            dispatch(testingActions(testResults, testData));
+        } catch {
+            dispatch({ type: "TEST_RESULTS_FAILED" });
+        }
     };
 }
 

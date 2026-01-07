@@ -1,13 +1,12 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { fetchProcessToDisplay, loadProcessState } from "../../../../actions/nk/process";
 import { disableToolTipsHighlight, enableToolTipsHighlight } from "../../../../actions/nk/tooltips";
 import notificationActions from "../../../../actions/notificationActions";
 import Icon from "../../../../assets/img/toolbarButtons/deploy.svg";
 import HttpService from "../../../../http/HttpService/instance";
-import type { NodesDeploymentData, ScenarioGraphSource } from "../../../../http/HttpService/types";
-import { getProcessName, getProcessVersionId, getScenarioGraphSource, isDeployVisible } from "../../../../reducers/selectors/graph";
+import type { NodesDeploymentData } from "../../../../http/HttpService/types";
+import { getProcessName, getProcessVersionId, isDeployVisible } from "../../../../reducers/selectors/graph";
 import { hasError, isDeployPossible, isValidationResultPresent } from "../../../../reducers/selectors/graph2";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getIsDeploying } from "../../../../reducers/selectors/scenarioState";
@@ -17,10 +16,10 @@ import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 import { useWindows } from "../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../windowManager/WindowKind";
 import type { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
-import type { ProcessName, ProcessVersionId } from "../../../Process/types";
 import { PredefinedActionName } from "../../../Process/types";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
+import { deployAction } from "./deployActions";
 import { ScenarioActionResultType } from "./types";
 
 type DeployPresetValue = "start" | "configureAndStart";
@@ -46,7 +45,6 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const processVersionId = useAppSelector(getProcessVersionId);
     const capabilities = useAppSelector(getCapabilities);
     const isDeploying = useAppSelector(getIsDeploying);
-    const scenarioGraphSource = useAppSelector(getScenarioGraphSource);
 
     const { disabled, type, titleOverride } = props;
 
@@ -70,21 +68,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
 
     const message = t("panels.actions.deploy.dialog", "Deploy scenario {{name}}", { name: processName });
     const action = useCallback(
-        async (
-            name: ProcessName,
-            versionId: ProcessVersionId,
-            comment: string,
-            nodesDeploymentData?: NodesDeploymentData,
-            scenarioGraphSource?: ScenarioGraphSource,
-        ) => {
-            const result = await HttpService.deploy(name, comment, nodesDeploymentData, scenarioGraphSource);
-            if (result.scenarioActionResultType === ScenarioActionResultType.DeploySuccess) {
-                dispatch(fetchProcessToDisplay(name, result.deployedScenarioVersionId));
-            } else {
-                dispatch(loadProcessState(name, versionId));
-            }
-            return result;
-        },
+        async (comment?: string, nodesDeploymentData?: NodesDeploymentData) => dispatch(deployAction(comment, nodesDeploymentData)),
         [dispatch],
     );
 
@@ -128,7 +112,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
         try {
             dispatch({ type: "PENDING_SCENARIO_ACTION", action: PredefinedActionName.Deploy });
             setIsDeployCallProcessing(true);
-            const response = await action(processName, processVersionId, "", null, scenarioGraphSource);
+            const response = await action();
             switch (response.scenarioActionResultType) {
                 case ScenarioActionResultType.DeploySuccess:
                 case ScenarioActionResultType.Success:
@@ -141,7 +125,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
         } finally {
             setIsDeployCallProcessing(false);
         }
-    }, [action, dispatch, processName, processVersionId, setIsDeployCallProcessing, scenarioGraphSource]);
+    }, [action, dispatch, setIsDeployCallProcessing]);
 
     const presets = useMemo<DeployPreset[]>(
         () => [
