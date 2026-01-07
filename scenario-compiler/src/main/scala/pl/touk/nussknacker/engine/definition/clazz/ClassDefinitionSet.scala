@@ -48,9 +48,11 @@ case class ClassDefinitionSet(classDefinitionsMap: Map[Class[_], ClassDefinition
     clazz #:: extractedSuperTypes
   }
 
-  def concat(classDefinitions: Set[ClassDefinition]): ClassDefinitionSet = {
+  def concatOnlyNewClasses(other: ClassDefinitionSet): ClassDefinitionSet = {
     ClassDefinitionSet(
-      classDefinitionsMap ++ classDefinitions.map(classDef => classDef.getClazz -> classDef).toMap
+      classDefinitionsMap ++ other.classDefinitionsMap.filterNot { case (clazz, _) =>
+        this.classDefinitionsMap.contains(clazz)
+      }
     )
   }
 

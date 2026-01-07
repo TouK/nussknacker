@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinitionSet
 }
 import pl.touk.nussknacker.engine.definition.globalvariables.ObjectWithType
+import pl.touk.nussknacker.engine.extension.ExtensionMethods
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 
 object TestCaseVariables {
@@ -22,10 +23,11 @@ object TestCaseVariables {
       classExtractionSettings: ClassExtractionSettings
   ): ClassDefinitionSet = {
     val testCaseGlobalVarsTypes = Set(testsGlobalVariableType)
-    val testCaseGlobalVarsDefinitions =
+    val testCaseGlobalVarsDefinitions = ClassDefinitionSet(
       new ClassDefinitionDiscovery(new ClassDefinitionExtractor(classExtractionSettings))
         .discoverClassesFromTypes(testCaseGlobalVarsTypes)
-    classDefinitionSet.concat(testCaseGlobalVarsDefinitions)
+    )
+    classDefinitionSet.concatOnlyNewClasses(testCaseGlobalVarsDefinitions)
   }
 
   def extendNodeVariablesValidationContext(
