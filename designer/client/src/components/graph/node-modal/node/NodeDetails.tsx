@@ -174,7 +174,7 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     return (
         <InputOutputContextProvider nodeId={nodeId}>
             <EditStateFeedback editState={editState} />
-            <WindowContent {...props} closeWithEsc={editState === "idle"} buttons={buttons} {...titleData} components={components}>
+            <WindowContent {...props} closeWithEsc buttons={buttons} {...titleData} components={components}>
                 <TabsWrapper tabs={tabs} hideIfOne hideDisabled />
             </WindowContent>
         </InputOutputContextProvider>
