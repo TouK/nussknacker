@@ -163,10 +163,19 @@ class NodesApiHttpService(
     nodesApiEndpoints.testCaseAdditionalVariablesEndpoint
       .serverSecurityLogic(authorizeKnownUser[NodesError])
       .serverLogicEitherT { implicit loggedUser =>
-        { case (_, request) =>
-          EitherT.pure(
-            prepareTestCaseAdditionalVariables(request.variableTypes)
-          )
+        { case (processingType, request) =>
+          for {
+            modelData <- getModelData(processingType)
+            variableTypes <- EitherT
+              .fromEither[Future](
+                decodeVariableTypes(
+                  request.variableTypes,
+                  prepareTypingResultDecoder(modelData.modelClassLoader)
+                )
+              )
+              .leftMap[NodesError](identity)
+            additionalVariables = prepareTestCaseAdditionalVariables(variableTypes)
+          } yield additionalVariables
         }
       }
   }

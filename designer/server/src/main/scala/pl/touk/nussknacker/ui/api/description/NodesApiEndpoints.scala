@@ -366,77 +366,6 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .withSecurity(auth)
   }
 
-  lazy val testCaseAdditionalVariablesEndpoint: SecuredEndpoint[
-    (ProcessName, TestCaseAdditionalVariablesRequestDto),
-    NodesError,
-    TestCaseAdditionalVariablesResponseDto,
-    Any
-  ] = {
-    baseNuApiEndpoint
-      .summary("Additional variables for a test case at node")
-      .tag("Nodes")
-      .post
-      .in("nodes" / path[ProcessName]("scenarioName") / "testCase" / "additionalVariables")
-      .in(
-        jsonBody[TestCaseAdditionalVariablesRequestDto]
-          .example(
-            Example.of(
-              summary = Some("Node variables"),
-              value = TestCaseAdditionalVariablesRequestDto(
-                Map(
-                  "amount" -> TypedObjectWithValue.apply(
-                    Typed[java.lang.Long].asInstanceOf[TypedClass],
-                    5L
-                  ),
-                  "name" -> TypedObjectWithValue.apply(
-                    Typed[java.lang.String].asInstanceOf[TypedClass],
-                    "Alice"
-                  ),
-                )
-              )
-            )
-          )
-      )
-      .out(
-        statusCode(Ok).and(
-          jsonBody[TestCaseAdditionalVariablesResponseDto]
-            .example(
-              Example.of(
-                summary = Some("Additional variables for assertions in a test case"),
-                value = TestCaseAdditionalVariablesResponseDto(
-                  assertionsAdditionalVariables = Map(
-                    "contexts" -> Typed.genericTypeClass(
-                      classOf[java.util.List[_]],
-                      List(
-                        Typed.record(
-                          List(
-                            "amount" -> TypedObjectWithValue.apply(
-                              Typed[java.lang.Long].asInstanceOf[TypedClass],
-                              5L
-                            ),
-                            "name" -> TypedObjectWithValue.apply(
-                              Typed[java.lang.String].asInstanceOf[TypedClass],
-                              "Alice"
-                            )
-                          )
-                        )
-                      )
-                    )
-                  )
-                )
-              )
-            )
-        )
-      )
-      .errorOut(
-        oneOf[NodesError](
-          scenarioNotFoundErrorOutput,
-          malformedTypingResultErrorOutput
-        )
-      )
-      .withSecurity(auth)
-  }
-
   lazy val recordsEndpoint: SecuredEndpoint[
     (ProcessName, Int, RecordsRequestDto),
     NodesError,
@@ -689,6 +618,85 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .errorOut(
         oneOf[NodesError](
           processingTypeNotFoundErrorOutput,
+          malformedTypingResultErrorOutput
+        )
+      )
+      .withSecurity(auth)
+  }
+
+  lazy val testCaseAdditionalVariablesEndpoint: SecuredEndpoint[
+    (ProcessingType, TestCaseAdditionalVariablesRequestDto),
+    NodesError,
+    TestCaseAdditionalVariablesResponseDto,
+    Any
+  ] = {
+    baseNuApiEndpoint
+      .summary("Additional variables for a test case at node")
+      .tag("Nodes")
+      .post
+      .in("parameters" / path[ProcessingType]("processingType") / "testCase" / "additionalVariables")
+      .in(
+        jsonBody[TestCaseAdditionalVariablesRequestDto]
+          .example(
+            Example.of(
+              summary = Some("Node variables"),
+              value = TestCaseAdditionalVariablesRequestDto(
+                Map(
+                  "amount" -> TypingResultInJson(
+                    encoder.apply(
+                      TypedObjectWithValue.apply(
+                        Typed[java.lang.Long].asInstanceOf[TypedClass],
+                        5L
+                      )
+                    )
+                  ),
+                  "name" -> TypingResultInJson(
+                    encoder.apply(
+                      TypedObjectWithValue.apply(
+                        Typed[java.lang.String].asInstanceOf[TypedClass],
+                        "Alice"
+                      )
+                    )
+                  ),
+                )
+              )
+            )
+          )
+      )
+      .out(
+        statusCode(Ok).and(
+          jsonBody[TestCaseAdditionalVariablesResponseDto]
+            .example(
+              Example.of(
+                summary = Some("Additional variables for assertions in a test case"),
+                value = TestCaseAdditionalVariablesResponseDto(
+                  assertionsAdditionalVariables = Map(
+                    "contexts" -> Typed.genericTypeClass(
+                      classOf[java.util.List[_]],
+                      List(
+                        Typed.record(
+                          List(
+                            "amount" -> TypedObjectWithValue.apply(
+                              Typed[java.lang.Long].asInstanceOf[TypedClass],
+                              5L
+                            ),
+                            "name" -> TypedObjectWithValue.apply(
+                              Typed[java.lang.String].asInstanceOf[TypedClass],
+                              "Alice"
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+        )
+      )
+      .errorOut(
+        oneOf[NodesError](
+          scenarioNotFoundErrorOutput,
           malformedTypingResultErrorOutput
         )
       )
@@ -1508,7 +1516,7 @@ object NodesApiEndpoints {
 
     @derive(schema, encoder, decoder)
     final case class TestCaseAdditionalVariablesRequestDto(
-        variableTypes: Map[String, TypingResult],
+        variableTypes: Map[String, TypingResultInJson],
     )
 
     @derive(schema, encoder, decoder)
