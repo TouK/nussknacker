@@ -2338,12 +2338,12 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/nodes/{scenarioName}/testCase/additionalVariables:
+  /api/parameters/{processingType}/testCase/additionalVariables:
     post:
       tags:
       - Nodes
       summary: Additional variables for a test case at node
-      operationId: postApiNodesScenarionameTestcaseAdditionalvariables
+      operationId: postApiParametersProcessingtypeTestcaseAdditionalvariables
       parameters:
       - name: Nu-Impersonate-User-Identity
         in: header
@@ -2352,7 +2352,7 @@ paths:
           type:
           - string
           - 'null'
-      - name: scenarioName
+      - name: processingType
         in: path
         required: true
         schema:
@@ -7834,7 +7834,7 @@ components:
       - variableTypes
       properties:
         variableTypes:
-          $ref: '#/components/schemas/Map_TypingResult'
+          $ref: '#/components/schemas/Map_TypingResultInJson'
     TestCaseAdditionalVariablesResponseDto:
       title: TestCaseAdditionalVariablesResponseDto
       type: object
