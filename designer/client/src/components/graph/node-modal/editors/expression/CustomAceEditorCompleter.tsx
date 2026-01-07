@@ -49,6 +49,7 @@ declare module "ace-builds" {
 
         interface AcePopup {
             isOpen?: boolean;
+            setRow: (i: number) => void;
         }
     }
 }
@@ -159,7 +160,8 @@ export class CustomAceEditorCompleter implements Ace.Completer {
 
                 keepPopupPosition = triggerCharacters.some((trigger) => prefix.endsWith(trigger)) ? false : keepPopupPosition;
 
-                return original_updateCompletions.apply(this, [keepPopupPosition, options]);
+                original_updateCompletions.apply(this, [keepPopupPosition, options]);
+                this.getPopup().setRow(0);
             };
 
             this.revertCompleterOverrides = () => {
