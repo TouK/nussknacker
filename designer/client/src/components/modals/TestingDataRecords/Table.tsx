@@ -203,20 +203,16 @@ export const Table: React.FC<TableProps> = ({
     );
 
     // Track measured width of the variables column and the theme provided by the DataEditor
-    const [variablesColumnWidthRef, setVariablesColumnWidthRef] = useState<number | null>(null);
+    const [variablesColumnWidth, setVariablesColumnWidth] = useState<number | null>(null);
     const dataEditorThemeRef = useRef<Theme | null>(null);
 
     const getRowHeight = useCallback(
         (rowIndex: number): number => {
-            if (rowIndex >= data.length || variablesColumnWidthRef == null || dataEditorThemeRef.current == null)
+            if (rowIndex >= data.length || variablesColumnWidth == null || dataEditorThemeRef.current == null)
                 return DEFAULT_ROW_HEADER_HEIGHT;
-            return computeVariablesRowHeight(
-                data[rowIndex]?.variables || "",
-                variablesColumnWidthRef,
-                dataEditorThemeRef.current.lineHeight,
-            );
+            return computeVariablesRowHeight(data[rowIndex]?.variables || "", variablesColumnWidth, dataEditorThemeRef.current.lineHeight);
         },
-        [data, variablesColumnWidthRef],
+        [data, variablesColumnWidth],
     );
 
     const customRenderers = useMemo(() => [sourceSelectRenderer, variablesRenderer], [sourceSelectRenderer, variablesRenderer]);
@@ -233,7 +229,7 @@ export const Table: React.FC<TableProps> = ({
         const { columnIndex, theme } = args;
         dataEditorThemeRef.current = theme;
         if (columnIndex === 1) {
-            setVariablesColumnWidthRef(args.rect.width);
+            setVariablesColumnWidth(args.rect.width);
         }
         const col = tableColumns[columnIndex];
         if (!col) return;
