@@ -29,6 +29,7 @@ export interface Option {
     value: string;
     label: string;
     isDisabled?: boolean;
+    isUsed?: boolean;
 }
 
 interface TypeSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "options" | "onBlur" | "onChange"> {
@@ -97,9 +98,12 @@ function Select({
                     menuList: (base) => ({
                         ...menuList(base),
                     }),
-                    option: (base, props) => ({
-                        ...menuOption(base, props.isSelected, props.isDisabled),
-                    }),
+                    option: (base, props) => {
+                        const data = props.data as Option;
+                        return {
+                            ...menuOption(base, props.isSelected, props.isDisabled, data.isUsed),
+                        };
+                    },
                     valueContainer: (base, props) => ({
                         ...valueContainer(base),
                     }),
