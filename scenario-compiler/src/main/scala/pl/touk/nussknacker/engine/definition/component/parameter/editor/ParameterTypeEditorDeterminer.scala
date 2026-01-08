@@ -30,9 +30,11 @@ class ParameterTypeEditorDeterminer(
         case klazz if classOf[java.lang.CharSequence].isAssignableFrom(klazz) =>
           globalParametersConfig.editorsForStringType
         case `BooleanClass` =>
-          withSpelEditorAsFallbackForLazyParameter(
-            BoolParameterEditor
-          )
+          if (isLazyParameter) {
+            NonEmptyList.of(SpelParameterEditor, BoolParameterEditor)
+          } else {
+            NonEmptyList.one(BoolParameterEditor)
+          }
         case `LocalDateTimeClass` =>
           withSpelEditorAsFallbackForLazyParameter(
             DateTimeParameterEditor

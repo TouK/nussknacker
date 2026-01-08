@@ -45,8 +45,9 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent {
         .lazyMandatory[java.lang.Boolean](name)
         .withAdvancedCreator[Iterable[Column.Definition]](
           create = columnDefinitions =>
-            _.copy(additionalVariables =
-              Map(
+            _.copy(
+              editors = List(SpelParameterEditor),
+              additionalVariables = Map(
                 decisionTableRowRuntimeVariableName -> AdditionalVariableProvidedInRuntime(
                   rowDataTypingResult(columnDefinitions)
                 )
