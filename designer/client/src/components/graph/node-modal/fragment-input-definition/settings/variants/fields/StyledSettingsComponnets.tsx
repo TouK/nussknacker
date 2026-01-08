@@ -1,7 +1,6 @@
-import { alpha, css, styled, Switch } from "@mui/material";
+import { styled, Switch } from "@mui/material";
 import React from "react";
 
-import { blendLighten } from "../../../../../../../containers/theme/helpers";
 import { FormLabel } from "../../../../editors/FormControl";
 import { StyledNodeTip } from "../../../../FieldLabel";
 
@@ -20,43 +19,6 @@ export const SettingLabelStyled = styled(FormLabel)(({ theme }) => ({
         flexBasis: "30% !important",
     },
 }));
-
-export const ListItemContainer = styled("div")`
-    width: 100%;
-    display: flex;
-    justify-content: flex-start;
-`;
-
-export const ListItemWrapper = styled("div")(
-    ({ theme }) => css`
-        display: flex;
-        justify-content: flex-start;
-        max-height: 100px;
-        flex-wrap: wrap;
-        overflow: auto;
-        margin-top: 10px;
-        ::-webkit-scrollbar-track {
-            width: 15px;
-            height: 100px;
-            background: ${blendLighten(theme.palette.background.paper, 0.5)};
-        }
-        ::-webkit-scrollbar-thumb {
-            background: ${alpha(theme.palette.background.paper, 0.85)};
-            background-clip: content-box;
-            border: 3.5px solid transparent;
-            border-radius: 100px;
-            height: 60px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: ${theme.palette.action.hover};
-        }
-        ::-webkit-scrollbar {
-            width: 15px;
-            height: 100px;
-        }
-    `,
-);
 
 export const CustomSwitch = styled(Switch)`
     input[type="checkbox"] {

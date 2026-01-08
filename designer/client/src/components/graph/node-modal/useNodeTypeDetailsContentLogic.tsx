@@ -7,17 +7,16 @@ import {
     validateNodeData,
 } from "../../../actions/nk/nodeDetails";
 import type { RootState } from "../../../reducers";
-import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { Edge } from "../../../types/edge";
 import type { NodeType, Parameter } from "../../../types/node";
 import { ParamFieldLabel } from "./FieldLabel";
 import { getNodeErrors } from "./node/selectors";
-import { getNodeErrors as getNodeCurrentErrors } from "./NodeDetailsContent/selectors";
 import {
     getDynamicParameterDefinitions,
     getFindAvailableBranchVariables,
     getFindAvailableVariables,
+    getNodeErrors as getNodeCurrentErrors,
     getProcessName,
 } from "./NodeDetailsContent/selectors";
 import type { NodeTypeDetailsContentProps } from "./NodeTypeDetailsContent";
@@ -33,9 +32,6 @@ export function useValidation({ node, edges, showValidation }: Pick<NodeTypeDeta
     const getBranchVariableTypes = useAppSelector(getFindAvailableBranchVariables);
     const processName = useAppSelector(getProcessName);
 
-    const settings = useAppSelector(getUserSettings);
-    const autoApply = settings["node.autoApply"];
-
     const variableTypes = useVariableTypes({ node });
 
     useEffect(() => {
@@ -50,12 +46,11 @@ export function useValidation({ node, edges, showValidation }: Pick<NodeTypeDeta
                     variableTypes,
                 },
                 () => {
-                    if (autoApply) return;
                     dispatch(nodeValidationDynamicParametersLoaded(node.id));
                 },
             ),
         );
-    }, [autoApply, dispatch, edges, getBranchVariableTypes, node, processName, showValidation, variableTypes]);
+    }, [dispatch, edges, getBranchVariableTypes, node, processName, showValidation, variableTypes]);
 }
 
 export function useVariableTypes({ node }: Pick<NodeTypeDetailsContentProps, "node">) {
@@ -84,7 +79,7 @@ export function useSetProperty({ onChange, node }: Pick<NodeTypeDetailsContentPr
                 const basePath = extractBasePathWithIndex(path);
 
                 const editedParam: Parameter | undefined = get(currentNode, basePath);
-                const editedParamDefinition = parameterDefinitions.find(
+                const editedParamDefinition = parameterDefinitions?.find(
                     (parameterDefinition) => parameterDefinition.name === editedParam?.name,
                 );
 

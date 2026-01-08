@@ -57,16 +57,18 @@ describe("Fragment", () => {
 
             // Display Add list item errors from a backend when Non reference value occurs
             cy.get("[data-testid='settings:4']").find("[id='ace-editor']").type("w");
+            cy.get("[data-testid='settings:4']").click(); // click outside
             cy.get("[data-testid='settings:4']").find("[data-testid='form-helper-text']").should("be.visible");
             cy.get("[data-testid='settings:4']").contains("Non reference 'w' occurred. Maybe you missed '#' in front of it?");
+            cy.get("[data-testid='settings:4']").find("[role='button']").contains(/^w$/).click();
             cy.get("[data-testid='settings:4']").find("[role='button']").should("not.exist");
 
             // Display Add list item value without error
             cy.get("[data-testid='settings:4']").find("[id='ace-editor']").type("{backspace}");
             cy.get("[data-testid='settings:4']").find("[id='ace-editor']").type("#meta.processName");
-            cy.get("[data-testid='settings:4']").find("[data-testid='form-helper-text']").should("not.exist");
             cy.get("[data-testid='settings:4']").contains("Typing...").should("not.exist");
             cy.get("[data-testid='settings:4']").find("[id='ace-editor']").type("{enter}");
+            cy.get("[data-testid='settings:4']").find("[data-testid='form-helper-text']").should("not.exist");
             cy.get("[data-testid='settings:4']").find("[role='button']").contains("#meta.processName");
 
             // Display Add list item errors when a value is not unique
@@ -78,7 +80,7 @@ describe("Fragment", () => {
                 .siblings()
                 .eq(0)
                 .find("[data-testid='form-helper-text']")
-                .contains("This field has to be unique")
+                .contains("not unique")
                 .should("be.visible");
 
             cy.get("@window").find("[data-testid='settings:4']").matchImage();
@@ -281,9 +283,7 @@ describe("Fragment", () => {
             cy.get("@anyValueWithSuggestionField").find("[data-testid='form-helper-text']").should("not.exist");
 
             cy.get("[data-testid=window]").get('[title="testOutput"]').siblings().eq(0).find("input").type("{selectall}fragmentResult");
-            cy.contains(/^apply/i)
-                .should("be.enabled")
-                .click();
+            cy.applyNodeChanges();
 
             cy.layoutScenario();
             cy.getNode("sendSms")
@@ -312,28 +312,13 @@ describe("Fragment", () => {
                 .find("#ace-editor")
                 .should("be.visible")
                 .type("{selectall}#fragmentResult.");
-            // We wait for validation result to be sure that red message below the form field will be visible
-            cy.wait("@validation")
-                .its("response.statusCode")
-                .should("eq", 200)
-                .then(() => {
-                    cy.get("[data-testid=window]")
-                        .find("[title='Value']")
-                        .siblings()
-                        .eq(0)
-                        .find("[data-testid='form-helper-text']")
-                        .should("exist");
-                });
             cy.wait("@suggestions").its("response.statusCode").should("eq", 200);
             cy.get(".ace_autocomplete").should("be.visible");
 
             cy.get("[data-testid=window]").as("window").matchImage({ maxDiffThreshold: 0.01 });
 
             // Save scenario
-            cy.contains(/^apply/i)
-                .should("be.enabled")
-                .click();
-
+            cy.applyNodeChanges();
             cy.get("@window").should("not.exist");
             cy.verifySaveIndicator();
             cy.contains(/^save$/i).click();
@@ -345,9 +330,7 @@ describe("Fragment", () => {
             cy.get('[title="any_value_with_suggestions_preset"]').siblings().eq(0).find("#ace-editor").contains("#RGB()");
             cy.get("@window").get("[title='test5']").should("not.exist");
 
-            cy.contains(/^apply/i)
-                .should("be.enabled")
-                .click();
+            cy.applyNodeChanges();
             cy.get("@window").should("not.exist");
 
             cy.visitProcess("@fragmentName");
@@ -417,9 +400,7 @@ describe("Fragment", () => {
 
         cy.get("[data-testid=window]").should("be.visible").find("input").eq(2).click().type(docsUrl);
 
-        cy.contains(/^apply/i)
-            .should("be.enabled")
-            .click();
+        cy.applyNodeChanges();
         cy.contains(/^save/i).should("be.enabled").click();
         cy.intercept("PUT", "/api/processes/*").as("save");
         cy.contains(/^ok$/i).should("be.enabled").click();

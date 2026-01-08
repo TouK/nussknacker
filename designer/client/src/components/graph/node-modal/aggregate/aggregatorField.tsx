@@ -3,10 +3,11 @@ import { Box } from "@mui/material";
 import { get } from "lodash";
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useArrayState } from "rooks";
-import { v4 as uuid4 } from "uuid";
 
 import { useAppSelector } from "../../../../store/storeHelpers";
 import { DndItems } from "../../../common/dndItems/DndItems";
+import type { WithUuid } from "../appendUuid";
+import { withUuid } from "../appendUuid";
 import { EditorType } from "../editors/expression/types";
 import { FieldsRow } from "../fragment-input-definition/FieldsRow";
 import { NodeRowFieldsProvider } from "../node-row-fields-provider/NodeRowFieldsProvider";
@@ -21,14 +22,6 @@ export type AggRow = {
     agg: string;
     expression: string;
 };
-
-export type WithUuid<T extends NonNullable<unknown>> = Omit<T, "uuid"> & {
-    uuid: string;
-};
-
-export function appendUuid<T extends NonNullable<unknown>>(o: T): WithUuid<T> {
-    return { uuid: uuid4(), ...o };
-}
 
 export type AggregateValue = WithUuid<AggRow>;
 
@@ -50,7 +43,7 @@ export function AggregatorField({ parameterDefinitions, node, isEditMode, showVa
 
     const onAdd = useCallback(() => {
         dataControls.push(
-            appendUuid({
+            withUuid({
                 name: "",
                 agg: aggregators[0].expression,
                 expression: "",

@@ -28,10 +28,7 @@ describe("Process", () => {
             }
 
             openWindow();
-            cy.get("[data-testid=window]")
-                .contains(/^apply/i)
-                .should("be.enabled")
-                .click();
+            cy.applyNodeChanges();
             cy.get("[data-testid=window]").should("not.exist");
             cy.matchQuery("");
 
@@ -55,9 +52,7 @@ describe("Process", () => {
                 .should("be.enabled")
                 .click();
             cy.get("[data-testid=window]").should("be.visible").find("input").first().click().type("-renamed");
-            cy.contains(/^apply/i)
-                .should("be.enabled")
-                .click();
+            cy.applyNodeChanges();
 
             cy.contains(/^save/i).should("be.enabled").click();
             cy.contains(/^ok$/i).should("be.enabled").click();
@@ -78,9 +73,7 @@ describe("Process", () => {
             cy.get("[data-testid=window]").should("be.visible");
             cy.get("[data-testid=window]").find('[title="Name"]').siblings().first().click().type("-renamed");
             cy.get("[data-testid=window]").find('[title="Description"]').siblings().first().type("RENAMED");
-            cy.contains(/^apply/i)
-                .should("be.enabled")
-                .click();
+            cy.applyNodeChanges();
 
             cy.contains(/^save/i).should("be.enabled").click();
             cy.contains(/^ok$/i).should("be.enabled").click();
@@ -117,9 +110,8 @@ describe("Process", () => {
             cy.get("@inputs").first().click().type("-renamed");
             //this is idx of "Max events", which should be int
             cy.get("@inputs").eq(3).click().type("wrong data");
-            cy.contains(/^apply/i)
-                .should("be.enabled")
-                .click();
+            cy.applyNodeChanges();
+
             cy.get("[data-testid=window]").should("not.exist");
             cy.contains(/^tips.*errors in/i)
                 .contains(/^properties/i)

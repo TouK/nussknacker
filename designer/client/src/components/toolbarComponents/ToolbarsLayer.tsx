@@ -59,8 +59,8 @@ const AbsolutePanel = styled(Box)(({ theme }) => ({
 }));
 
 function useShowFloatingToolbar() {
-    const settings = useAppSelector(getUserSettings);
     const { windows } = useWindowManager();
+    const settings = useAppSelector(getUserSettings);
     const autoApply = settings["node.autoApply"];
     return useMemo(() => {
         if (!autoApply) return false;

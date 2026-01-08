@@ -32,9 +32,7 @@ describe("Description", () => {
 
         cy.contains("Show description each time scenario is opened").click();
 
-        cy.get("@window")
-            .contains(/^apply$/i)
-            .click();
+        cy.applyNodeChanges();
 
         cy.get(`[title="toggle description view"]`).should("be.visible").click();
         cy.contains("description header").should("be.visible");

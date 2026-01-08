@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+import { checkPendingChanges } from "../../../actions/nk/checkPendingChanges";
 import { loadProcessToolbarsConfiguration } from "../../../actions/nk/loadProcessToolbarsConfiguration";
 import { displayCurrentProcessVersion } from "../../../actions/nk/process";
 import { getScenarioActivities } from "../../../actions/nk/scenarioActivities";
@@ -16,49 +17,62 @@ import {
 } from "../../../reducers/selectors/graph";
 import { useAppDispatch } from "../../../store/storeHelpers";
 
+const saveScenario = (comment = ""): ThunkAction<Promise<{ prevName: string; nextName: string }>> => {
+    return async (dispatch, getState) => {
+        const state = getState();
+        const scenarioGraph = getScenarioGraph(state);
+        const currentProcessName = getProcessName(state);
+        const labels = getScenarioLabels(state);
+
+        // save changes before rename and force same processName everywhere
+        await HttpService.saveProcess(currentProcessName, scenarioGraph, comment, labels);
+
+        const unsavedNewName = getProcessUnsavedNewName(state);
+        const isRenamed = isProcessRenamed(state) && (await HttpService.changeProcessName(currentProcessName, unsavedNewName));
+        const processName = isRenamed ? unsavedNewName : currentProcessName;
+
+        await dispatch(displayCurrentProcessVersion(processName));
+        await dispatch(await getScenarioActivities(processName));
+
+        if (isRenamed) {
+            await dispatch(loadProcessToolbarsConfiguration(unsavedNewName));
+        }
+
+        return { prevName: currentProcessName, nextName: unsavedNewName };
+    };
+};
+
 export const useSaveScenario = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
 
-    const saveScenario = useCallback(
-        (comment = ""): ThunkAction => {
-            return async (dispatch, getState) => {
-                const state = getState();
-                const scenarioGraph = getScenarioGraph(state);
-                const currentProcessName = getProcessName(state);
-                const labels = getScenarioLabels(state);
-
-                // save changes before rename and force same processName everywhere
-                await HttpService.saveProcess(currentProcessName, scenarioGraph, comment, labels);
-
-                const unsavedNewName = getProcessUnsavedNewName(state);
-                const isRenamed = isProcessRenamed(state) && (await HttpService.changeProcessName(currentProcessName, unsavedNewName));
-                const processName = isRenamed ? unsavedNewName : currentProcessName;
-
-                await dispatch(displayCurrentProcessVersion(processName));
-                await dispatch(await getScenarioActivities(processName));
-
-                if (isRenamed) {
-                    await dispatch(loadProcessToolbarsConfiguration(unsavedNewName));
-                    navigate(
-                        {
-                            ...location,
-                            pathname: location.pathname.replace(visualizationUrl(currentProcessName), visualizationUrl(unsavedNewName)),
-                        },
-                        { replace: true },
-                    );
-                }
-            };
+    const switchPath = useCallback(
+        ({ prevName, nextName }: { prevName: string; nextName: string }) => {
+            if (prevName === nextName) return;
+            navigate(
+                {
+                    ...location,
+                    pathname: location.pathname.replace(visualizationUrl(prevName), visualizationUrl(nextName)),
+                },
+                { replace: true },
+            );
         },
         [location, navigate],
     );
 
     const handleSaveScenarioAction = useCallback(
         async (comment = "") => {
-            await dispatch(saveScenario(comment));
+            try {
+                await dispatch(checkPendingChanges());
+            } catch (error) {
+                return;
+            }
+
+            const res = await dispatch(saveScenario(comment));
+            switchPath(res);
         },
-        [dispatch, saveScenario],
+        [dispatch, switchPath],
     );
 
     return { handleSaveScenarioAction };

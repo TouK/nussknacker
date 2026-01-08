@@ -12,7 +12,6 @@ import { updateAfterNodeDelete } from "../../reducers/graph/utils";
 import { isFragmentCreator } from "../../reducers/selectors/appendFragmentCreator";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { getGraph } from "../../reducers/selectors/graph";
-import { getUserSettings } from "../../reducers/selectors/userSettings";
 import type { Edge } from "../../types/edge";
 import type { NodeType } from "../../types/node";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
@@ -21,7 +20,6 @@ import type { ThunkAction } from "../reduxTypes";
 import { calculateProcessAfterChange } from "./calculateProcessAfterChange";
 import { createFragment } from "./createFragment";
 import { injectNode, nodesWithEdgesAdded } from "./node";
-import { nodeValidationDynamicParametersLoaded } from "./nodeDetails";
 import { preApplyValidation } from "./preApplyValidation";
 
 function replaceNode(before: NodeType, after: NodeType): ThunkAction {
@@ -87,7 +85,7 @@ export function editNode(
     outputEdges?: Edge[],
     controller?: AbortController,
 ): ThunkAction<Promise<NodeType>> {
-    return async (dispatch, getState) => {
+    return async (dispatch) => {
         const after = applyIdFromFakeName(editedNode);
         const scenarioGraph = await dispatch(calculateProcessAfterChange(scenarioBefore, before, after, outputEdges));
         const response = await dispatch(preApplyValidation(scenarioBefore, scenarioGraph, controller));
@@ -99,10 +97,6 @@ export function editNode(
             validationResult: response?.data,
             scenarioGraphAfterChange: scenarioGraph,
         });
-
-        if (getUserSettings(getState())["node.autoApply"]) {
-            dispatch(nodeValidationDynamicParametersLoaded(after.id));
-        }
 
         return after;
     };

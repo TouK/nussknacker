@@ -3,11 +3,11 @@ import type { PropsWithChildren } from "react";
 import React, { createContext, useCallback, useMemo, useState } from "react";
 
 import type { NodeValidationError } from "../../../../types/validation";
+import { withUuid } from "../appendUuid";
 import { useParameterPath } from "../parameterHelpers";
 import type { ParametersListProps } from "../parametersList";
 import { useDiffMark } from "../PathsToMark";
 import type { AggregateValue, AggRow } from "./aggregatorField";
-import { appendUuid } from "./aggregatorField";
 import { useAggParamsSerializer, useGroupByParamsSerializer } from "./useAggParamsSerializer";
 
 type AggregateContextProviderProps = PropsWithChildren<Pick<ParametersListProps, "node" | "setProperty" | "errors">>;
@@ -32,13 +32,13 @@ export const AggregateContextProvider = ({ children, node, setProperty, errors }
             return null;
         }
 
-        return keys
-            .map<AggRow>((name) => ({
+        return keys.map((name) =>
+            withUuid<AggRow>({
                 name,
                 agg: aggregatorParam?.[name],
                 expression: aggregateByParam?.[name],
-            }))
-            .map(appendUuid);
+            }),
+        );
     });
 
     const onAggChange = useCallback(
