@@ -1,5 +1,4 @@
-import { cx } from "@emotion/css";
-import { useTheme } from "@mui/material";
+import { styled, useTheme } from "@mui/material";
 import { isEmpty } from "lodash";
 import type { HTMLProps } from "react";
 import React, { useCallback, useState } from "react";
@@ -9,7 +8,6 @@ import { selectStyled } from "../../../../stylesheets/SelectStyled";
 import ValidationLabels from "../../../modals/ValidationLabels";
 import type { FieldError } from "../editors/Validators";
 import { NodeValue } from "../node/NodeValue";
-import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 
 function useCaptureEsc() {
     const [captureEsc, setCaptureEsc] = useState(false);
@@ -33,7 +31,7 @@ export interface Option {
     isDisabled?: boolean;
 }
 
-interface RowSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "options" | "onBlur" | "onChange"> {
+interface TypeSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "options" | "onBlur" | "onChange"> {
     onChange: (value: string) => void;
     onBlur?: (value: string) => void;
     options: Option[];
@@ -45,7 +43,7 @@ interface RowSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "o
     menuIsOpen?: boolean;
 }
 
-export function TypeSelect({
+function Select({
     isMarked,
     options,
     readOnly,
@@ -56,7 +54,7 @@ export function TypeSelect({
     fieldErrors = [],
     menuIsOpen = false,
     ...props
-}: RowSelectProps): React.JSX.Element {
+}: TypeSelectProps): React.JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
     const theme = useTheme();
 
@@ -64,12 +62,11 @@ export function TypeSelect({
         selectStyled(theme);
 
     return (
-        <NodeValue marked={isMarked} onKeyDown={preventEsc} sx={{ width: "100%" }}>
+        <NodeValue marked={isMarked} onKeyDown={preventEsc} className={props.className}>
             <CreatableSelect
                 menuIsOpen={menuIsOpen || undefined} // We need to pass undefined in case of false, to not handle menu state in a controlled manner
                 id={props.id}
                 aria-label={"type-select"}
-                className={cx(`${nodeValue}`, props.className)}
                 isDisabled={readOnly}
                 maxMenuHeight={190}
                 onMenuOpen={() => setCaptureEsc(true)}
@@ -113,3 +110,5 @@ export function TypeSelect({
         </NodeValue>
     );
 }
+
+export const TypeSelect = styled(Select)({});

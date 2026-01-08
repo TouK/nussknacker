@@ -30,7 +30,7 @@ interface FieldsRow {
     className?: string;
 }
 
-export function FieldsRow({ index, uuid, className, children }: PropsWithChildren<FieldsRow>): React.JSX.Element {
+function Row({ index, uuid, className, children }: PropsWithChildren<FieldsRow>): React.JSX.Element {
     const { readOnly, remove } = useFieldsContext();
     const onClick = useCallback(() => remove?.(uuid), [uuid, remove]);
     return (
@@ -44,3 +44,5 @@ export function FieldsRow({ index, uuid, className, children }: PropsWithChildre
         </StyledFieldsRow>
     );
 }
+
+export const FieldsRow = styled(Row)({});

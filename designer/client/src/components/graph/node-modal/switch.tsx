@@ -64,8 +64,8 @@ export function Switch({
 
     const getExpressionType = useAppSelector(getNodeExpressionType);
     const nodeExpressionType = useMemo(() => getExpressionType(node.id), [getExpressionType, node.id]);
-    const edgeTypes = useMemo(() => {
-        return [
+    const edgeTypes = useMemo(
+        () => [
             {
                 value: EdgeKind.switchNext,
             },
@@ -74,8 +74,9 @@ export function Switch({
                 onlyOne: true,
                 disabled: true,
             },
-        ];
-    }, []);
+        ],
+        [],
+    );
     const types = useMemo(
         () =>
             node.exprVal
