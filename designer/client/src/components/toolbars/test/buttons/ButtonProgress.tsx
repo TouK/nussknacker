@@ -10,12 +10,12 @@ export type ButtonProgressProps = {
     variant?: LinearProgressProps["variant"];
 };
 
-export function ButtonProgress({ enabled, value = 0, variant }: ButtonProgressProps) {
+export function ButtonProgress({ enabled, value, variant }: ButtonProgressProps) {
     const btnCtx = useContext(ToolbarButtonsContext);
     return (
         <Fade in={enabled}>
             <LinearProgress
-                variant={variant ?? value >= 0 ? "determinate" : "indeterminate"}
+                variant={variant ?? (value >= 0 ? "determinate" : "indeterminate")}
                 value={value}
                 sx={{
                     position: "absolute",
