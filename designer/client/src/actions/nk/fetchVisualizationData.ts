@@ -20,11 +20,10 @@ export function fetchVisualizationData(processName: ProcessName, onSuccess: () =
     return async (dispatch) => {
         try {
             dispatch({ type: "PROCESS_FETCH" });
-            const response = await HttpService.fetchLatestProcessDetailsWithoutValidation(processName);
-            const scenario = response.data;
+            const { data: scenario } = await HttpService.fetchScenario(processName, { skipValidation: true });
             const { name, isFragment, processingType } = scenario;
             await dispatch(fetchProcessDefinition(processingType, isFragment)).then((processDefinitionData) => {
-                dispatch({ type: "DISPLAY_PROCESS", scenario: scenario });
+                dispatch({ type: "DISPLAY_PROCESS", scenario });
                 dispatch({ type: "CORRECT_INVALID_SCENARIO", processDefinitionData });
             });
             dispatch(loadProcessToolbarsConfiguration(name));

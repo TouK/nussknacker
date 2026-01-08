@@ -61,7 +61,9 @@ export default function InitialValue({ onChange, item, path, options, readOnly, 
             ) : (
                 <SpelEditor
                     expressionObj={{ language: ExpressionLang.SpEL, expression: item?.initialValue?.label }}
-                    onValueChange={({ expression }) => onChange(`${path}.initialValue`, { label: expression, expression })}
+                    onValueChange={({ expression }) =>
+                        onChange(`${path}.initialValue`, expression ? { label: expression, expression } : null)
+                    }
                     variableTypes={variableTypes}
                     readOnly={readOnly}
                     showValidation={validationEnabled}

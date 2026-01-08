@@ -1,4 +1,4 @@
-import { ExpandLess, ExpandMore } from "@mui/icons-material";
+import { DeleteForever, ExpandLess, ExpandMore } from "@mui/icons-material";
 import {
     Collapse,
     IconButton,
@@ -16,14 +16,15 @@ import React, { Fragment, useState } from "react";
 
 import { SearchHighlighter } from "../../components/toolbars/creator/SearchHighlighter";
 
-type Primitive = { value: boolean; isDefault: boolean };
+export type UserSettingValue = { value: boolean; isDefault: boolean; hasDefault?: boolean };
 type NestedRecord = {
-    [key: string]: Primitive | NestedRecord;
+    [key: string]: UserSettingValue | NestedRecord;
 };
 
 type CollapsibleSwitchListProps = {
     data: NestedRecord;
     onToggle: (path: string, value?: boolean | "default") => void;
+    onDelete?: (path: string) => void;
     basePath?: string;
     level?: number;
     flattenSingleChild?: boolean;
@@ -54,7 +55,7 @@ function SwitchElement({
     );
 }
 
-function isNestedObject(finalValue: Primitive | NestedRecord) {
+function isNestedObject(finalValue: UserSettingValue | NestedRecord) {
     return (
         typeof finalValue === "object" &&
         finalValue !== null &&
@@ -65,6 +66,7 @@ function isNestedObject(finalValue: Primitive | NestedRecord) {
 const CollapsibleSwitchList = ({
     data,
     onToggle,
+    onDelete,
     basePath = "",
     level = 0,
     flattenSingleChild,
@@ -77,7 +79,7 @@ const CollapsibleSwitchList = ({
         setOpenKeys((prev) => ({ ...prev, [key]: !prev[key] }));
     };
 
-    const flattenPath = (obj: NestedRecord, currentPath: string): [string, Primitive | NestedRecord] => {
+    const flattenPath = (obj: NestedRecord, currentPath: string): [string, UserSettingValue | NestedRecord] => {
         let path = currentPath;
         let value: any = obj;
 
@@ -139,6 +141,7 @@ const CollapsibleSwitchList = ({
                                 <CollapsibleSwitchList
                                     data={finalValue as NestedRecord}
                                     onToggle={onToggle}
+                                    onDelete={onDelete}
                                     basePath={fullPath}
                                     level={level + 1}
                                     flattenSingleChild={flattenSingleChild}
@@ -153,7 +156,26 @@ const CollapsibleSwitchList = ({
                                     <ListItemText
                                         primary={<StyledSearchHighlighter highlights={searchStrings}>{label}</StyledSearchHighlighter>}
                                     />
-                                    <SwitchElement value={finalValue as Primitive} onChange={(v) => onToggle(fullPath, v)} />
+                                    {onDelete && finalValue.hasDefault ? null : (
+                                        <IconButton
+                                            edge="end"
+                                            size="small"
+                                            color="error"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDelete(fullPath);
+                                            }}
+                                            sx={{
+                                                opacity: 0.5,
+                                                "&:focus": {
+                                                    outline: "none",
+                                                },
+                                            }}
+                                        >
+                                            <DeleteForever />
+                                        </IconButton>
+                                    )}
+                                    <SwitchElement value={finalValue as UserSettingValue} onChange={(v) => onToggle(fullPath, v)} />
                                 </ListItemButton>
                             </ListItem>
                         </Fragment>

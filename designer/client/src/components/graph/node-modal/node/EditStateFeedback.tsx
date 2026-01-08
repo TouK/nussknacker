@@ -48,7 +48,7 @@ export function EditStateFeedback({ editState }: { editState: EditState }) {
     const prev = useRef(editState);
 
     const [successVisible, setSuccessVisible] = useState(false);
-    const pendingVisible = !successVisible && editState !== "idle";
+    const pendingVisible = !successVisible && editState === "processing";
 
     useTimeoutWhen(() => setSuccessVisible(false), 1000, successVisible);
     useEffect(() => {

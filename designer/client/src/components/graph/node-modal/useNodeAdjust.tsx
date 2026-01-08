@@ -1,11 +1,12 @@
+import { produce } from "immer";
 import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 
 import { getAdditionalFields } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";
+import { appendUuidToParameters } from "./appendUuid";
 import type { NodeState } from "./node/useNodeState";
 import { getDynamicParameterDefinitions } from "./NodeDetailsContent/selectors";
-import { generateUUIDs } from "./nodeUtils";
 import { adjustParameters } from "./ParametersUtils";
 import { wrapSetState } from "./wrapSetState";
 
@@ -20,7 +21,7 @@ export function useNodeAdjust(
         (node: NodeType) => {
             const parameterDefinitions = getParameterDefinitions(node);
             const adjustedNode = adjustParameters(node, parameterDefinitions, storedProperties);
-            return generateUUIDs(adjustedNode, ["fields", "parameters"]);
+            return produce(adjustedNode, appendUuidToParameters);
         },
         [getParameterDefinitions, storedProperties],
     );

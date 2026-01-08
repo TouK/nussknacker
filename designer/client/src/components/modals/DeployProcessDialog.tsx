@@ -5,26 +5,18 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { NodesDeploymentData, ScenarioGraphSource } from "../../http/HttpService/types";
-import { getProcessName, getProcessVersionId, getScenarioGraphSource } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { useAppSelector } from "../../store/storeHelpers";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { PromptContent } from "../../windowManager/PromptContent";
 import type { WindowKind } from "../../windowManager/WindowKind";
 import CommentInput from "../comment/CommentInput";
-import type { ProcessName, ProcessVersionId } from "../Process/types";
 import type { ScenarioActionResult } from "../toolbars/scenarioActions/buttons/types";
 import { ScenarioActionResultType } from "../toolbars/scenarioActions/buttons/types";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
 
 export type ToggleProcessActionModalData = {
-    action: (
-        processName: ProcessName,
-        processVersionId: ProcessVersionId,
-        comment: string,
-        nodeData?: NodesDeploymentData,
-        scenarioSource?: ScenarioGraphSource,
-    ) => Promise<ScenarioActionResult>;
+    action: (comment: string, nodeData?: NodesDeploymentData, scenarioSource?: ScenarioGraphSource) => Promise<ScenarioActionResult>;
     displayWarnings?: boolean;
     actionName?: string;
 };
@@ -34,16 +26,13 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
     const {
         meta: { action, displayWarnings },
     } = props.data;
-    const processName = useAppSelector(getProcessName);
-    const processVersionId = useAppSelector(getProcessVersionId);
     const [comment, setComment] = useState("");
     const [validationError, setValidationError] = useState("");
     const featureSettings = useAppSelector(getFeatureSettings);
     const deploymentCommentSettings = featureSettings.deploymentCommentSettings;
-    const scenarioGraphSource: ScenarioGraphSource = useAppSelector(getScenarioGraphSource);
 
     const confirmAction = useCallback(async () => {
-        const response = await action(processName, processVersionId, comment, null, scenarioGraphSource);
+        const response = await action(comment);
         switch (response.scenarioActionResultType) {
             case ScenarioActionResultType.Success:
             case ScenarioActionResultType.DeploySuccess:
@@ -54,7 +43,7 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
                 setValidationError(response.msg);
                 break;
         }
-    }, [action, comment, processName, props, processVersionId, scenarioGraphSource]);
+    }, [action, comment, props]);
 
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(

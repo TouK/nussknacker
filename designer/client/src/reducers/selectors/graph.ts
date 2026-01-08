@@ -2,6 +2,7 @@ import { isEmpty, isEqual } from "lodash";
 import { createSelector } from "reselect";
 
 import type { TestFormParameters } from "../../common/TestResultUtils";
+import { getHasPendingChanges } from "../../components/graph/node-modal/node/useEditState";
 import { hasNodeIdPlaceholder } from "../../components/graph/node-modal/nodeIdFieldHelpers";
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils";
 import type { Scenario } from "../../components/Process/types";
@@ -47,13 +48,20 @@ export const getProcessingType = createSelector(getScenario, (d) => d?.processin
 export const isLatestProcessVersion = createSelector(getScenario, (d) => d?.isLatestVersion);
 export const isFragment = createSelector(getScenario, (p) => p?.isFragment);
 export const isArchived = createSelector(getScenario, (p) => p?.isArchived);
-export const isPristine = createSelector(getScenario, isProcessRenamed, getSavedScenario, (scenario, isProcessRenamed, savedScenario) => {
-    if (isEmpty(scenario)) return true;
-    if (isProcessRenamed) return false;
-    if (areLabelsUpdated(scenario.labels, savedScenario.labels)) return false;
-    if (isGraphUpdated(scenario.scenarioGraph, savedScenario.scenarioGraph)) return false;
-    return true;
-});
+export const isPristine = createSelector(
+    getScenario,
+    isProcessRenamed,
+    getSavedScenario,
+    getHasPendingChanges,
+    (scenario, isProcessRenamed, savedScenario, hasPendingChanges) => {
+        if (isEmpty(scenario)) return true;
+        if (isProcessRenamed) return false;
+        if (areLabelsUpdated(scenario.labels, savedScenario.labels)) return false;
+        if (isGraphUpdated(scenario.scenarioGraph, savedScenario.scenarioGraph)) return false;
+        if (hasPendingChanges) return false;
+        return true;
+    },
+);
 
 export const getSelectionState = createSelector(getGraph, (g) => g.selectionState);
 export const canModifySelectedNodes = createSelector(getSelectionState, (s) => !isEmpty(s));

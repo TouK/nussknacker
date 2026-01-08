@@ -31,7 +31,7 @@ export const ContextData = memo(function Data({
     const userSettings = useAppSelector(getUserSettings);
     const isLiveDataWorking = useAppSelector(getIsLiveDataWorking);
 
-    const onEntering = useCallback(
+    const onEnter = useCallback(
         (node: HTMLElement, isAppearing: boolean) => {
             if (isAppearing) return;
             if (!userSettings["node.inputsAndOutputs.showBlinkAnimations"]) return;
@@ -68,7 +68,7 @@ export const ContextData = memo(function Data({
                         key={r.id + r.timestamp}
                         timeout={Math.max(0, 600 - index * 200)}
                         direction="down"
-                        onEntering={onEntering}
+                        onEnter={onEnter}
                         onEntered={onEntered}
                     >
                         <ContextAccordion

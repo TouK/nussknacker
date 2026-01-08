@@ -2,7 +2,7 @@ import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager
 import { DefaultComponents as Window } from "@touk/window-manager";
 import type { DefaultContentProps } from "@touk/window-manager/cjs/components/window/DefaultContent";
 import { uniq } from "lodash";
-import React, { useCallback, useMemo } from "react";
+import React, { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import urljoin from "url-join";
 
@@ -29,7 +29,6 @@ import { usePortal } from "../io/usePortal";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
 import type { EditedNode } from "../nodeIdFieldHelpers";
 import { TestResultsWrapper } from "../TestResultsWrapper";
-import { CloseButtonWithEditLock } from "./CloseButtonWithEditLock";
 import { EditStateFeedback } from "./EditStateFeedback";
 import { GeneralContent } from "./NodeContent/GeneralContent";
 import type { TabDef } from "./NodeContent/TabsWrapper";
@@ -87,7 +86,7 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     const readOnly = useAppSelector((s: RootState) => getReadOnly(s, props.readOnly));
     const buttonFromToolbar = useGetButtonFromToolbar(CustomButtonTypes.scenarioTest);
 
-    const { node, editedNode, onChange, outputEdges, performNodeEdit, editState, editStateRef } = useNodeState(data.meta);
+    const { node, editedNode, onChange, outputEdges, performNodeEdit, editState } = useNodeState(data.meta);
     const { cancel, apply } = useNodeDetailsButtons({ editedNode, outputEdges, performNodeEdit, close, readOnly });
 
     const nodeIsFragment = useMemo(() => NodeUtils.nodeIsFragment(editedNode), [editedNode]);
@@ -127,19 +126,12 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
         [PortalWrapper],
     );
 
-    const HeaderButtonClose: DefaultContentProps["components"]["HeaderButtonClose"] = useCallback(
-        (props) => {
-            return <CloseButtonWithEditLock {...props} editStateRef={editStateRef} />;
-        },
-        [editStateRef],
-    );
-
     const components: DefaultContentProps["components"] = useMemo(() => {
         if (settings["node.showInputsAndOutputs"]) {
-            return { Content, Footer, HeaderButtonClose };
+            return { Content, Footer };
         }
-        return { HeaderButtonClose };
-    }, [settings, Content, Footer, HeaderButtonClose]);
+        return {};
+    }, [settings, Content, Footer]);
 
     useOnToolWindow(ToolId.node, node.id);
 
@@ -181,13 +173,12 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
 
     return (
         <InputOutputContextProvider nodeId={nodeId}>
-            {settings["node.autoApply"] ? <EditStateFeedback editState={editState} /> : null}
-
-            <WindowContent {...props} closeWithEsc={editState === "idle"} buttons={buttons} {...titleData} components={components}>
+            <EditStateFeedback editState={editState} />
+            <WindowContent {...props} closeWithEsc buttons={buttons} {...titleData} components={components}>
                 <TabsWrapper tabs={tabs} hideIfOne hideDisabled />
             </WindowContent>
         </InputOutputContextProvider>
     );
 }
 
-export default NodeDetails;
+export default memo(NodeDetails);

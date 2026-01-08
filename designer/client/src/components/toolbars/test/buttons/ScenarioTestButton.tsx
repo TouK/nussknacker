@@ -11,7 +11,6 @@ import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../windowManager/WindowKind";
-import { getHasPendingChanges } from "../../../graph/node-modal/node/useEditState";
 import type { TestingData, TestingViewParams } from "../../../modals/TestingDataRecords/Dialog";
 import { useTestingScenarioEnabled } from "../../../modals/TestingDataRecords/useTestingScenarioEnabled";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
@@ -71,8 +70,6 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     }, [presets, testingDataRecordsDefined]);
 
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled });
-
-    const hasPendingChanges = useAppSelector(getHasPendingChanges);
 
     const openDialog = useCallback(
         (preset?: Preset) => {
@@ -162,7 +159,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                 };
             }}
             isLoading={isLoading}
-            disabled={!testingScenarioEnabled || hasPendingChanges || isLoading}
+            disabled={!testingScenarioEnabled || isLoading}
             onClick={() => openDialog(presetActionOnButtonClick)}
             type={type}
             presets={presets}

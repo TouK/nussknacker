@@ -35,7 +35,7 @@ const appendAlignToolbar = produce((draft: WithId<ToolbarsConfig>) => {
 
 export const getToolbarsConfig = createSelector([getSettings, getUserSettings], (settings, userSettings) => {
     const withSurveyToolbar = appendSurveyToolbar(settings?.processToolbarsConfiguration);
-    if (userSettings["debug.scenaro.showNodeAlignToolbar"]) {
+    if (userSettings["debug.scenario.showNodeAlignToolbar"]) {
         return appendAlignToolbar(withSurveyToolbar);
     }
     return withSurveyToolbar;
