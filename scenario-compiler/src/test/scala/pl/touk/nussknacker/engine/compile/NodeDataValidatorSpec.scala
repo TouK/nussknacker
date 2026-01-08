@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.validation
+package pl.touk.nussknacker.engine.compile
 
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
@@ -8,19 +8,34 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
 import pl.touk.nussknacker.engine.{ModelConfig, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentDefinition, DesignerWideComponentId, ParameterAdditionalUIConfig}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  ComponentDefinition,
+  DesignerWideComponentId,
+  ParameterAdditionalUIConfig
+}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
-import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ParameterValueCompileTimeValidation, ValueInputWithDictEditor, ValueInputWithFixedValuesProvided}
+import pl.touk.nussknacker.engine.api.parameter.{
+  ParameterName,
+  ParameterValueCompileTimeValidation,
+  ValueInputWithDictEditor,
+  ValueInputWithFixedValuesProvided
+}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ExpressionConfig}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.compile.{FragmentResolver, IdValidationTestData}
-import pl.touk.nussknacker.engine.compile.nodecompilation.OutgoingEdge
+import pl.touk.nussknacker.engine.compile.nodecompilation.{
+  NodeDataValidator,
+  ValidationNotPerformed,
+  ValidationPerformed,
+  ValidationResponse
+}
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator
 import pl.touk.nussknacker.engine.graph.EdgeType.{FragmentOutput, NextSwitch}
@@ -275,7 +290,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map("input" -> Typed[String])
       )
     ) {
-      case ValidationPerformed(CannotCreateObjectError("Some exception", NodeId("tst1"), _) :: Nil, parameters, _) if parameters.nonEmpty =>
+      case ValidationPerformed(CannotCreateObjectError("Some exception", NodeId("tst1"), _) :: Nil, parameters, _)
+          if parameters.nonEmpty =>
     }
   }
 
@@ -298,7 +314,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   }
 
   test("should allow user variable") {
-    inside(validate(Variable("var1", "specialVariable_2", "42L".spel, None), Map.empty)) { case ValidationPerformed(Nil, None, _) =>
+    inside(validate(Variable("var1", "specialVariable_2", "42L".spel, None), Map.empty)) {
+      case ValidationPerformed(Nil, None, _) =>
     }
   }
 
@@ -346,8 +363,9 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   }
 
   test("should return expression type info for variable definition") {
-    inside(validate(Variable("var1", "var1", "42L".spel, None), Map.empty)) { case ValidationPerformed(Nil, _, Some(expressionType)) =>
-      expressionType.display shouldBe Typed.fromInstance(42L).display
+    inside(validate(Variable("var1", "var1", "42L".spel, None), Map.empty)) {
+      case ValidationPerformed(Nil, _, Some(expressionType)) =>
+        expressionType.display shouldBe Typed.fromInstance(42L).display
     }
   }
 
@@ -1258,8 +1276,9 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       ("#input.toList().get(0)", Typed.json)
     )
     expressionsWithExpectedTypes.foreach { case (expression, expectedType) =>
-      inside(validate(Variable("var1", "specialVariable_2", expression.spel, None), ctx)) { case ValidationPerformed(Nil, None, expressionType) =>
-        expressionType shouldBe Some(expectedType)
+      inside(validate(Variable("var1", "specialVariable_2", expression.spel, None), ctx)) {
+        case ValidationPerformed(Nil, None, expressionType) =>
+          expressionType shouldBe Some(expectedType)
       }
     }
   }

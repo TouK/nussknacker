@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessVersion, Stream
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeCompiler, OutgoingEdge}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeCompiler, NodeDataValidator}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.CompilesTo
 import pl.touk.nussknacker.engine.flink.{FlinkBaseUnboundedComponentProvider, FlinkScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
@@ -25,7 +25,7 @@ class FlinkNodeCompiler(
       nodeData: NodeData,
       variableTypes: Map[String, typing.TypingResult],
       branchVariableTypes: Option[Map[String, Map[String, typing.TypingResult]]],
-      outgoingEdges: List[OutgoingEdge]
+      outgoingEdges: List[NodeDataValidator.OutgoingEdge]
   )(implicit compilesTo: CompilesTo[NodeData]): NodeCompiler.NodeCompilationResult[compilesTo.ReturnType] = {
     // TODO: configurable
     val dummyJobData = JobData(

@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.util.test
 
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeCompiler, OutgoingEdge}
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.CompilesTo
-import pl.touk.nussknacker.engine.compile.nodecompilation.OutgoingEdge
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.graph.node.CompilableNodeData
 
 object TestNodeCompiler

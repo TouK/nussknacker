@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{
   MockExpressionParameterName,
   NodeCompilationResult
 }
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.compiledgraph.service.ServiceRef
 import pl.touk.nussknacker.engine.compiledgraph.variable.Field
@@ -488,7 +489,7 @@ class NodeCompiler(
     }
   }
 
-  def compileFragmentInput(
+  private[compile] def compileFragmentInput(
       fragmentInput: FragmentInput,
       inputContext: SingleInputNodeInputValidationContext
   )(
