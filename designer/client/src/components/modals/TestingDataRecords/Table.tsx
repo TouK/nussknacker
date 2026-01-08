@@ -24,11 +24,12 @@ import { Sizer } from "../../graph/node-modal/editors/expression/Table/Sizer";
 import { useTableTheme } from "../../graph/node-modal/editors/expression/Table/tableTheme";
 import type { VariablesCell } from "./CellContent";
 import { getTestingCellContent, isSourceSelectCell, isVariablesCell } from "./CellContent";
-import { DEFAULT_ROW_HEADER, drawFieldForDisplay } from "./drawText";
+import { DEFAULT_ROW_HEADER_HEIGHT, drawFieldForDisplay } from "./drawText";
 import type { SourceSelectCell } from "./SourceEditor";
 import { SourceEditor } from "./SourceEditor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { TableFooter } from "./TableFooter";
+import { useTableHeight } from "./useTableHeight";
 import { buildDefaultVariablesMap, buildInputDataRecordUpdates, computeVariablesRowHeight } from "./utils";
 import { VariablesEditor } from "./VariablesEditor";
 
@@ -202,20 +203,16 @@ export const Table: React.FC<TableProps> = ({
     );
 
     // Track measured width of the variables column and the theme provided by the DataEditor
-    const variablesColumnWidthRef = useRef<number | null>(null);
+    const [variablesColumnWidth, setVariablesColumnWidth] = useState<number | null>(null);
     const dataEditorThemeRef = useRef<Theme | null>(null);
 
     const getRowHeight = useCallback(
         (rowIndex: number): number => {
-            if (rowIndex >= data.length || variablesColumnWidthRef.current == null || dataEditorThemeRef.current == null)
-                return DEFAULT_ROW_HEADER;
-            return computeVariablesRowHeight(
-                data[rowIndex]?.variables || "",
-                variablesColumnWidthRef.current,
-                dataEditorThemeRef.current.lineHeight,
-            );
+            if (rowIndex >= data.length || variablesColumnWidth == null || dataEditorThemeRef.current == null)
+                return DEFAULT_ROW_HEADER_HEIGHT;
+            return computeVariablesRowHeight(data[rowIndex]?.variables || "", variablesColumnWidth, dataEditorThemeRef.current.lineHeight);
         },
-        [data],
+        [data, variablesColumnWidth],
     );
 
     const customRenderers = useMemo(() => [sourceSelectRenderer, variablesRenderer], [sourceSelectRenderer, variablesRenderer]);
@@ -232,12 +229,13 @@ export const Table: React.FC<TableProps> = ({
         const { columnIndex, theme } = args;
         dataEditorThemeRef.current = theme;
         if (columnIndex === 1) {
-            variablesColumnWidthRef.current = args.rect.width;
+            setVariablesColumnWidth(args.rect.width);
         }
         const col = tableColumns[columnIndex];
         if (!col) return;
         drawTextCell(args as unknown as BaseDrawArgs, col.title);
     }, []);
+    const { tableHeight } = useTableHeight(data, getRowHeight);
     const sizerSx = useMemo(() => ({ border: "1px solid", borderColor: tableTheme.borderColor }), [tableTheme.borderColor]);
     const deleteMenuIndexes = useMemo<number[]>(() => {
         if (selection.rows.toArray().length > 0) return selection.rows.toArray();
@@ -297,7 +295,7 @@ export const Table: React.FC<TableProps> = ({
         const col = tableColumns[columnIndex];
 
         return { removedCellColumnId: col.id, removedCellRowIndex: columnRowIndex };
-    }, [tableColumns]);
+    }, []);
 
     const onDeleteTableRow = useCallback(
         (selection: GridSelection) => {
@@ -361,6 +359,7 @@ export const Table: React.FC<TableProps> = ({
                     onItemHovered={toggleTooltip}
                     drawCell={drawCell}
                     drawHeader={renderHeaderCell}
+                    height={tableHeight}
                     rowHeight={getRowHeight}
                     onRowMoved={handleRowReorder}
                     rowSelectionMode="multi"
