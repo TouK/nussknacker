@@ -1,7 +1,9 @@
-import { get } from "lodash";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 
+import { setTestCaseMock } from "../../../../../actions/nk/testCasesActions";
 import type ProcessUtils from "../../../../../common/ProcessUtils";
+import { getTestCaseMockForNode } from "../../../../../reducers/selectors/testCases";
+import { useAppDispatch, useAppSelector } from "../../../../../store/storeHelpers";
 import type { UIParameter } from "../../../../../types/definition";
 import type { NodeType } from "../../../../../types/node";
 import type { NodeValidationError } from "../../../../../types/validation";
@@ -10,8 +12,7 @@ import { useDiffMark } from "../../PathsToMark";
 import { EditableEditor } from "../EditableEditor";
 import { getValidationErrorsForField } from "../Validators";
 import type { OnValueChange } from "./Editor";
-import type { ExpressionObj } from "./types";
-import { EditorType, ExpressionLang } from "./types";
+import { EditorType } from "./types";
 
 const MOCK_EXPRESSION_IN_NODE_NAME = "mockExpression";
 const MOCK_EXPRESSION_PARAMETER_NAME = "$mockExpression";
@@ -25,7 +26,7 @@ const UnknownTypingResult = {
 };
 
 // we construct artificial and hardcoded parameter definition to reuse EditableEditor for mockExpression field
-const MockExpressionParameter: UIParameter = {
+export const MockExpressionParameter: UIParameter = {
     additionalVariables: {},
     branchParam: false,
     defaultValue: { expression: "", language: "spel" },
@@ -47,24 +48,20 @@ type Props = {
 };
 
 function MockExpressionField(props: Props): React.JSX.Element {
-    const { editedNode, isEditMode, showValidation, showSwitch, findAvailableVariables, setNodeDataAt, errors } = props;
-    const [mockExpression, setMockExpression] = useState(() => {
-        return get(editedNode, MOCK_EXPRESSION_IN_NODE_NAME) || { expression: "", language: ExpressionLang.JsonTemplate };
-    });
+    const dispatch = useAppDispatch();
+
+    const { editedNode, isEditMode, showValidation, showSwitch, findAvailableVariables, errors } = props;
+    const mockExpression = useAppSelector((state) => getTestCaseMockForNode(state, editedNode.id));
+
+    const editMock: OnValueChange = useCallback(
+        (expression) => {
+            dispatch(setTestCaseMock(editedNode.id, expression));
+        },
+        [dispatch, editedNode.id],
+    );
+
     const [isMarked] = useDiffMark();
     const readOnly = !isEditMode;
-
-    const onValueChange: OnValueChange = useCallback(
-        (value: ExpressionObj) => {
-            setMockExpression(value);
-            if (value.expression.length > 0) {
-                setNodeDataAt(MOCK_EXPRESSION_IN_NODE_NAME, value);
-            } else {
-                setNodeDataAt(MOCK_EXPRESSION_IN_NODE_NAME, null);
-            }
-        },
-        [setNodeDataAt],
-    );
 
     const variableTypes = useMemo(() => findAvailableVariables(editedNode.id), [findAvailableVariables, editedNode.id]);
 
@@ -73,13 +70,13 @@ function MockExpressionField(props: Props): React.JSX.Element {
             <EditableEditor
                 editors={MockExpressionParameter.editors}
                 paramType={MockExpressionParameter.typ}
-                expressionObj={mockExpression}
+                expressionObj={mockExpression.expression}
                 isMarked={isMarked(EXPRESSION_TEXT_PATH)}
                 showValidation={showValidation}
                 showSwitch={showSwitch}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
-                onValueChange={onValueChange}
+                onValueChange={editMock}
                 fieldErrors={getValidationErrorsForField(errors, MOCK_EXPRESSION_PARAMETER_NAME)}
             />
         </NodeTable>

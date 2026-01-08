@@ -40,6 +40,14 @@ export const testCaseReducer: Reducer<ScenarioGraph["testCases"]> = (state = ini
                     inputs: action.inputs,
                 },
             };
+        case "SET_TEST_CASE_MOCKS":
+            return {
+                ...state,
+                value: {
+                    ...state.value,
+                    mocks: action.mocks,
+                },
+            };
         default:
             return state;
     }
