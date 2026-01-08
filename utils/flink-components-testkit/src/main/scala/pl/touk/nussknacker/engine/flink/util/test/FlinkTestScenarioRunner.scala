@@ -11,7 +11,7 @@ import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
 import pl.touk.nussknacker.engine.RuntimeMode
 import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData}
-import pl.touk.nussknacker.engine.api.process.SourceFactory
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -81,6 +81,7 @@ class FlinkTestScenarioRunner(
     modelConfig: Config,
     flinkMiniClusterWithServices: FlinkMiniClusterWithServices,
     runnerRuntimeMode: RuntimeMode,
+    configCreator: ProcessConfigCreator
 ) extends ClassBasedTestScenarioRunner {
 
   private val modelData = LocalModelData(
@@ -88,7 +89,7 @@ class FlinkTestScenarioRunner(
     // We can't just pass extra components here because we don't want Flink to serialize them.
     // We also don't want user to make them serializable
     components = FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components,
-    configCreator = new DefaultConfigCreator
+    configCreator = configCreator
   )
 
   private implicit val WaitForJobStatusPatience: PatienceConfig =
@@ -394,7 +395,8 @@ object FlinkTestScenarioRunner {
         globalVariables = Map.empty,
         modelConfig = modelConfig,
         flinkMiniClusterWithServices = flinkMiniClusterWithServices,
-        testRuntimeMode = false
+        testRuntimeMode = false,
+        configCreator = new DefaultConfigCreator()
       )
     }
 
@@ -424,7 +426,8 @@ final case class FlinkTestScenarioRunnerBuilder(
     globalVariables: Map[String, AnyRef],
     modelConfig: Config,
     flinkMiniClusterWithServices: FlinkMiniClusterWithServices,
-    testRuntimeMode: Boolean
+    testRuntimeMode: Boolean,
+    configCreator: ProcessConfigCreator
 ) extends TestScenarioRunnerBuilder[FlinkTestScenarioRunner, FlinkTestScenarioRunnerBuilder] {
 
   import TestScenarioRunner._
@@ -444,13 +447,17 @@ final case class FlinkTestScenarioRunnerBuilder(
   def withExecutionMode(mode: ExecutionMode): FlinkTestScenarioRunnerBuilder =
     copy(modelConfig = modelConfig.withValue("executionMode", ConfigValueFactory.fromAnyRef(mode.toString)))
 
+  def withConfigCreator(configCreator: ProcessConfigCreator): FlinkTestScenarioRunnerBuilder =
+    copy(configCreator = configCreator)
+
   override def build() =
     new FlinkTestScenarioRunner(
       components,
       globalVariables,
       modelConfig,
       flinkMiniClusterWithServices,
-      runtimeMode(testRuntimeMode)
+      runtimeMode(testRuntimeMode),
+      configCreator
     )
 
 }
