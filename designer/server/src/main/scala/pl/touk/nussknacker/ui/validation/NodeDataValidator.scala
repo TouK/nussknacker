@@ -1,5 +1,6 @@
-package pl.touk.nussknacker.engine.compile.nodecompilation
+package pl.touk.nussknacker.ui.validation
 
+import cats.data.Validated.{invalidNel, valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{invalidNel, valid}
 import cats.implicits.catsSyntaxTuple2Semigroupal
@@ -10,35 +11,28 @@ import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationErro
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, IdValidator, Output}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
+import pl.touk.nussknacker.engine.compile.nodecompilation.OutgoingEdge
+import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler, SingleInputNodeInputValidationContext}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, IdValidator, Output}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.expression.parse.TypedValue
 import pl.touk.nussknacker.engine.graph.EdgeType
-import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 sealed trait ValidationResponse
 
 case class ValidationPerformed(
-    errors: List[ProcessCompilationError],
-    parameters: Option[List[Parameter]],
-    expressionType: Option[TypingResult]
-) extends ValidationResponse
+                                errors: List[ProcessCompilationError],
+                                parameters: Option[List[Parameter]],
+                                expressionType: Option[TypingResult]
+                              ) extends ValidationResponse
 
 // TODO: Remove ValidationNotPerformed
 case object ValidationNotPerformed extends ValidationResponse
-
-object NodeDataValidator {
-
-  case class OutgoingEdge(target: String, edgeType: Option[EdgeType])
-
-}
 
 class NodeDataValidator(modelData: ModelData) {
 

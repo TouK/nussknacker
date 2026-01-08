@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.definition
+package pl.touk.nussknacker.ui.validation
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
@@ -19,8 +19,20 @@ import pl.touk.nussknacker.engine.api.definition.{
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.{
+  AdditionalVariable,
+  AdditionalVariables,
+  JobData,
+  LazyParameter,
+  MetaData,
+  MethodToInvoke,
+  NodeId,
+  ParamName,
+  Params,
+  ProcessVersion,
+  StreamMetaData
+}
 import pl.touk.nussknacker.engine.compile.FragmentResolver
-import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}

@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessVersion, Stream
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeCompiler, NodeDataValidator}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeCompiler, OutgoingEdge}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.CompilesTo
 import pl.touk.nussknacker.engine.graph.node.CompilableNodeData
 import pl.touk.nussknacker.engine.lite.components.LiteBaseComponentProvider
@@ -22,7 +22,7 @@ class LiteNodeCompiler(
       nodeData: NodeData,
       variableTypes: Map[String, typing.TypingResult],
       branchVariableTypes: Option[Map[String, Map[String, typing.TypingResult]]],
-      outgoingEdges: List[NodeDataValidator.OutgoingEdge]
+      outgoingEdges: List[OutgoingEdge]
   )(implicit compilesTo: CompilesTo[NodeData]): NodeCompiler.NodeCompilationResult[compilesTo.ReturnType] = {
     // TODO: configurable
     val dummyJobData = JobData(
