@@ -49,6 +49,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
+import pl.touk.nussknacker.engine.test.testcase.Assertion
 import pl.touk.nussknacker.engine.util.CaretPosition2d
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
@@ -172,7 +173,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     "longValue" -> TypingResultInJson(encoder.apply(Typed[java.lang.Long]))
                   ),
                   branchVariableTypes = None,
-                  outgoingEdges = None
+                  outgoingEdges = None,
+                  assertions = None,
                 ),
                 summary = Some("Validate correct Filter node")
               ),
@@ -195,7 +197,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     "longValue" -> TypingResultInJson(encoder.apply(Typed[java.lang.Long]))
                   ),
                   branchVariableTypes = None,
-                  outgoingEdges = None
+                  outgoingEdges = None,
+                  assertions = None,
                 ),
               )
             )
@@ -1465,8 +1468,13 @@ object NodesApiEndpoints {
         processProperties: ProcessProperties,
         variableTypes: Map[String, TypingResultInJson],
         branchVariableTypes: Option[Map[String, Map[String, TypingResultInJson]]],
-        outgoingEdges: Option[List[Edge]]
+        outgoingEdges: Option[List[Edge]],
+        assertions: Option[List[Assertion]],
     )
+
+    object NodeValidationRequestDto {
+      implicit val assertionSchema: Schema[Assertion] = Schema.derived
+    }
 
     // Response doesn't need valid decoder
     @derive(encoder, schema)
@@ -1477,10 +1485,10 @@ object NodesApiEndpoints {
         validationPerformed: Boolean
     )
 
-    implicit val nodeValidationRequestDtoDecoder: Decoder[NodeValidationResultDto] =
-      Decoder.instance[NodeValidationResultDto](_ => throw new IllegalStateException)
-
     object NodeValidationResultDto {
+      implicit val nodeValidationResultDtoDecoder: Decoder[NodeValidationResultDto] =
+        Decoder.failedWithMessage("NodeValidationResultDto should never be decoded. Exists only for Tapir purposes")
+
       implicit lazy val parameterEditorSchema: Schema[ParameterEditor]     = Schema.derived
       implicit lazy val durationSchema: Schema[Duration]                   = Schema.schemaForJavaDuration
       implicit lazy val uiParameterSchema: Schema[UIParameter]             = Schema.derived
@@ -1605,12 +1613,12 @@ object NodesApiEndpoints {
         parameterExpressions: Map[ParameterName, Expression]
     )
 
-    @JsonCodec(encodeOnly = true) final case class ParametersValidationRequest(
+    final case class ParametersValidationRequest(
         parameters: List[UIValueParameter],
         variableTypes: Map[String, TypingResult]
     )
 
-    @JsonCodec(encodeOnly = true) final case class NodeValidationResult(
+    final case class NodeValidationResult(
         // It it used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
         parameters: Option[List[UIParameter]],
         // expressionType is returned to present inferred types of a single, hardcoded parameter of the node
@@ -1623,7 +1631,7 @@ object NodesApiEndpoints {
         validationPerformed: Boolean
     )
 
-    @JsonCodec(encodeOnly = true) final case class NodeValidationRequest(
+    final case class NodeValidationRequest(
         nodeData: NodeData,
         processProperties: ProcessProperties,
         variableTypes: Map[String, TypingResult],
@@ -1631,7 +1639,8 @@ object NodesApiEndpoints {
         // TODO: remove Option when FE is ready
         // In this request edges are not guaranteed to have the correct "from" field. Normally it's synced with node id but
         // when renaming node, it contains node's id before the rename.
-        outgoingEdges: Option[List[Edge]]
+        outgoingEdges: Option[List[Edge]],
+        assertions: Option[List[Assertion]],
     )
 
     def decodeVariableTypes(

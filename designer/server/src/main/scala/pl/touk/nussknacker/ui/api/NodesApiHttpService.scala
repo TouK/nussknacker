@@ -337,7 +337,8 @@ class NodesApiHttpService(
       processProperties = node.processProperties,
       variableTypes = variableTypes,
       branchVariableTypes = branchVariableTypes,
-      outgoingEdges = node.outgoingEdges
+      outgoingEdges = node.outgoingEdges,
+      assertions = node.assertions,
     )
   }
 
