@@ -169,7 +169,8 @@ object sampleTransformers {
         @Editor(`type` = EditorType.SPEL_EDITOR)
         aggregator: Aggregator,
         @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
-        @ParamName("endSessionCondition") @DefaultValue("false") endSessionCondition: LazyParameter[java.lang.Boolean],
+        @ParamName("endSessionCondition") @DefaultValue("false")
+        @Editor(`type` = EditorType.SPEL_EDITOR) endSessionCondition: LazyParameter[java.lang.Boolean],
         @ParamName("sessionTimeout") @DefaultValue(
           "T(java.time.Duration).parse('PT1H')"
         ) sessionTimeout: java.time.Duration,
