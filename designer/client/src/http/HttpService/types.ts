@@ -155,3 +155,11 @@ export type DictOption = {
 };
 
 export type ResponseStatus = { status: "success"; data?: any } | { status: "error"; error: AxiosError<string> };
+
+export type TestCaseNodeAdditionalVariablesRequest = {
+    variableTypes: VariableTypes;
+};
+
+export type TestCaseNodeAdditionalVariablesResponse = {
+    assertionsAdditionalVariables: VariableTypes;
+};

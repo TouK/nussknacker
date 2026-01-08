@@ -1116,6 +1116,180 @@ class NodesApiHttpServiceBusinessSpec
     }
   }
 
+  "The endpoint for test case additional variables should" - {
+    "return assertions variables and their types" in {
+      given()
+        .basicAuthAllPermUser()
+        .jsonBody(
+          """
+            |{
+            |  "variableTypes": {
+            |    "input": {
+            |      "display": "Record{dateTime: Instant, sampleField: String, type: String, value: Integer}",
+            |      "type": "TypedObjectTypingResult",
+            |      "fields": {
+            |        "sampleField": {
+            |          "display": "String",
+            |          "type": "TypedClass",
+            |          "refClazzName": "java.lang.String",
+            |          "params": []
+            |        },
+            |        "dateTime": {
+            |          "display": "Instant",
+            |          "type": "TypedClass",
+            |          "refClazzName": "java.time.Instant",
+            |          "params": []
+            |        },
+            |        "type": {
+            |          "display": "String",
+            |          "type": "TypedClass",
+            |          "refClazzName": "java.lang.String",
+            |          "params": []
+            |        },
+            |        "value": {
+            |          "display": "Integer",
+            |          "type": "TypedClass",
+            |          "refClazzName": "java.lang.Integer",
+            |          "params": []
+            |        }
+            |      },
+            |      "refClazzName": "java.util.Map",
+            |      "params": [
+            |        {
+            |          "display": "String",
+            |          "type": "TypedClass",
+            |          "refClazzName": "java.lang.String",
+            |          "params": []
+            |        },
+            |        {
+            |          "display": "Unknown",
+            |          "type": "Unknown",
+            |          "refClazzName": "java.lang.Object",
+            |          "params": []
+            |        }
+            |      ]
+            |    },
+            |    "sampleVariable": {
+            |      "value": "sample value",
+            |      "display": "String(value)",
+            |      "type": "TypedObjectWithValue",
+            |      "refClazzName": "java.lang.String",
+            |      "params": []
+            |    }
+            |  }
+            |}
+            |""".stripMargin
+        )
+        .when()
+        .post(s"$nuDesignerHttpAddress/api/parameters/streaming/testCase/additionalVariables")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(
+          """
+            |{
+            |  "assertionsAdditionalVariables": {
+            |    "TESTS": {
+            |      "display": "tests",
+            |      "type": "TypedClass",
+            |      "refClazzName": "pl.touk.nussknacker.ui.process.test.testcase.tests$",
+            |      "params": [
+            |      ]
+            |    },
+            |    "contexts": {
+            |      "display": "List[Record{input: Record{dateTime: Instant, sampleField: String, type: String, value: Integer}, sampleVariable: String(sample value)}]",
+            |      "type": "TypedClass",
+            |      "refClazzName": "java.util.List",
+            |      "params": [
+            |        {
+            |          "display": "Record{input: Record{dateTime: Instant, sampleField: String, type: String, value: Integer}, sampleVariable: String(sample value)}",
+            |          "type": "TypedObjectTypingResult",
+            |          "fields": {
+            |            "input": {
+            |              "display": "Record{dateTime: Instant, sampleField: String, type: String, value: Integer}",
+            |              "type": "TypedObjectTypingResult",
+            |              "fields": {
+            |                "sampleField": {
+            |                  "display": "String",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.lang.String",
+            |                  "params": [
+            |                  ]
+            |                },
+            |                "dateTime": {
+            |                  "display": "Instant",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.time.Instant",
+            |                  "params": [
+            |                  ]
+            |                },
+            |                "type": {
+            |                  "display": "String",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.lang.String",
+            |                  "params": [
+            |                  ]
+            |                },
+            |                "value": {
+            |                  "display": "Integer",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.lang.Integer",
+            |                  "params": [
+            |                  ]
+            |                }
+            |              },
+            |              "refClazzName": "java.util.Map",
+            |              "params": [
+            |                {
+            |                  "display": "String",
+            |                  "type": "TypedClass",
+            |                  "refClazzName": "java.lang.String",
+            |                  "params": [
+            |                  ]
+            |                },
+            |                {
+            |                  "display": "Unknown",
+            |                  "type": "Unknown",
+            |                  "refClazzName": "java.lang.Object",
+            |                  "params": [
+            |                  ]
+            |                }
+            |              ]
+            |            },
+            |            "sampleVariable": {
+            |              "value": "sample value",
+            |              "display": "String(sample value)",
+            |              "type": "TypedObjectWithValue",
+            |              "refClazzName": "java.lang.String",
+            |              "params": [
+            |              ]
+            |            }
+            |          },
+            |          "refClazzName": "java.util.Map",
+            |          "params": [
+            |            {
+            |              "display": "String",
+            |              "type": "TypedClass",
+            |              "refClazzName": "java.lang.String",
+            |              "params": [
+            |              ]
+            |            },
+            |            {
+            |              "display": "Unknown",
+            |              "type": "Unknown",
+            |              "refClazzName": "java.lang.Object",
+            |              "params": [
+            |              ]
+            |            }
+            |          ]
+            |        }
+            |      ]
+            |    }
+            |  }
+            |}""".stripMargin
+        )
+    }
+  }
+
   private lazy val exampleScenario = ScenarioBuilder
     .streaming("test")
     .source("sourceId", "barSource")

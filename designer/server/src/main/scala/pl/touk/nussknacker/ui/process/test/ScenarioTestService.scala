@@ -80,10 +80,12 @@ class ScenarioTestService(
     testDataFormatSerDe = TestDataFormatHandler(TestDataFormat.CommonFormat, modelData).serDe
   )
 
-  private val expressionCompiler              = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
-  private val testCaseGlobalVariablesPreparer = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
-  private val assertionCompiler = new AssertionsCompiler(expressionCompiler, testCaseGlobalVariablesPreparer)
-  private val assertionVerifier: AssertionVerifier = new AssertionVerifier(testCaseGlobalVariablesPreparer)
+  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
+
+  private val globalVariablesPreparer = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
+
+  private val assertionCompiler                    = new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
+  private val assertionVerifier: AssertionVerifier = new AssertionVerifier(globalVariablesPreparer)
 
   def getTestingCapabilities(
       scenarioGraph: ScenarioGraph,

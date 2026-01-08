@@ -1,11 +1,13 @@
 package pl.touk.nussknacker.ui.api
 
 import org.apache.avro.generic.GenericData.EnumSymbol
+import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.springframework.expression.spel.SpelParserConfiguration
 import pl.touk.nussknacker.engine.api.{Documentation, VariableConstants}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.{DictInstance, UiDictServices}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter => GenericsParameter}
@@ -19,17 +21,22 @@ import pl.touk.nussknacker.engine.definition.clazz.{
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, Parameter}
+import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, Parameter, SpelExpressionSuggester}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.CaretPosition2d
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.ExpressionSuggesterTestData._
+import pl.touk.nussknacker.ui.process.test.testcase
+import pl.touk.nussknacker.ui.process.test.testcase.TestCaseVariables
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 
 import java.math.{BigDecimal => JBigDecimal, BigInteger}
 import java.nio.charset.Charset
 import java.time._
+import java.util
 import java.util.{Currency, Locale, UUID}
+import scala.Nil
 import scala.collection.immutable.{List, ListMap}
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
@@ -73,7 +80,8 @@ class ExpressionSuggesterSpec
     extends AnyFunSuite
     with Matchers
     with PatientScalaFutures
-    with TableDrivenPropertyChecks {
+    with TableDrivenPropertyChecks
+    with Inside {
   private val classDefinitionExtractor = ClassDefinitionTestUtils.DefaultExtractor
 
   private val dictRegistry = new SimpleDictRegistry(
@@ -135,20 +143,35 @@ class ExpressionSuggesterSpec
       .expressionConfig
 
   private val expressionSuggester = new ExpressionSuggester(
-    expressionConfig,
-    clazzDefinitions,
-    dictServices,
-    getClass.getClassLoader,
-    List("scenarioProperty")
+    new SpelExpressionSuggester(
+      expressionConfig,
+      clazzDefinitions,
+      dictServices,
+      getClass.getClassLoader,
+    ),
+    GlobalVariablesPreparer(expressionConfig).prepareValidationContextWithGlobalVariablesOnly(List("scenarioProperty"))
   )
 
   private val expressionSuggesterWithExtensions = new ExpressionSuggester(
-    expressionConfig,
-    ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions,
-    dictServices,
-    getClass.getClassLoader,
-    Nil
+    new SpelExpressionSuggester(
+      expressionConfig,
+      ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions,
+      dictServices,
+      getClass.getClassLoader,
+    ),
+    ValidationContext.empty,
   )
+
+  private val expressionSuggesterWithTestCaseGlobalVariables =
+    new ExpressionSuggester(
+      new SpelExpressionSuggester(
+        expressionConfig,
+        TestCaseVariables.extendClassDefinitionSet(clazzDefinitions, ClassDefinitionTestUtils.DefaultSettings),
+        dictServices,
+        getClass.getClassLoader,
+      ),
+      GlobalVariablesPreparer(expressionConfig).prepareValidationContextWithGlobalVariablesOnly(Nil)
+    )
 
   private val localVariables: Map[String, TypingResult] = Map(
     "input"      -> Typed[A],
@@ -927,9 +950,35 @@ class ExpressionSuggesterSpec
     spelSuggestionsFor(longString, column = longString.length) should not be empty
   }
 
+  test("should suggest tests case variables") {
+    val contextsVariableType = Typed.genericTypeClass(
+      classOf[util.List[_]],
+      List(Typed.record(Map("varString" -> Typed[String], "varInteger" -> Typed[Integer])))
+    )
+    val testsVariableType = Typed.fromInstance(testcase.tests)
+    val localVariables = Map(
+      TestCaseVariables.ContextsNodeVariableName -> contextsVariableType,
+      TestCaseVariables.TestsGlobalVariableName  -> testsVariableType
+    )
+    def testCaseSuggestions(expression: Expression): List[ExpressionSuggestion] =
+      suggestions(expressionSuggesterWithTestCaseGlobalVariables, localVariables, expression)
+
+    testCaseSuggestions(Expression.spel("#cont")) shouldBe List(suggestion("#contexts", contextsVariableType))
+    testCaseSuggestions(Expression.spel("#contexts[0].var")) shouldBe List(
+      suggestion("varInteger", Typed[Integer]),
+      suggestion("varString", Typed[String]),
+    )
+    testCaseSuggestions(Expression.spel("#contexts[0].varS")) shouldBe List(suggestion("varString", Typed[String]))
+    testCaseSuggestions(Expression.spel("#TEST")) shouldBe List(suggestion("#TESTS", testsVariableType))
+    inside(testCaseSuggestions(Expression.spel("#TESTS.as"))) {
+      case ExpressionSuggestion("assertEquals", typingResult, _, _, _) :: Nil =>
+        typingResult shouldBe Typed[testcase.AssertionResult]
+    }
+  }
+
   private def suggestions(
       suggester: ExpressionSuggester,
-      localVariables: Map[String, TypedClass],
+      localVariables: Map[String, TypingResult],
       expression: Expression
   ): List[ExpressionSuggestion] =
     suggester

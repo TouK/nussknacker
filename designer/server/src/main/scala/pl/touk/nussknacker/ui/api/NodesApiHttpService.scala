@@ -27,7 +27,8 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   NodeValidationResultDto,
   ParametersValidationRequest,
   ParametersValidationRequestDto,
-  ParametersValidationResultDto
+  ParametersValidationResultDto,
+  TestCaseAdditionalVariablesResponseDto
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
   InvalidNodeType,
@@ -51,6 +52,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.SerializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.FetchLiveDataError
+import pl.touk.nussknacker.ui.process.test.testcase.TestCaseVariables
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
@@ -153,6 +155,27 @@ class NodesApiHttpService(
               validationPerformed = true
             )
           } yield validation
+        }
+      }
+  }
+
+  expose {
+    nodesApiEndpoints.testCaseAdditionalVariablesEndpoint
+      .serverSecurityLogic(authorizeKnownUser[NodesError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (processingType, request) =>
+          for {
+            modelData <- getModelData(processingType)
+            variableTypes <- EitherT
+              .fromEither[Future](
+                decodeVariableTypes(
+                  request.variableTypes,
+                  prepareTypingResultDecoder(modelData.modelClassLoader)
+                )
+              )
+              .leftMap[NodesError](identity)
+            additionalVariables = prepareTestCaseAdditionalVariables(variableTypes)
+          } yield additionalVariables
         }
       }
   }
@@ -317,6 +340,13 @@ class NodesApiHttpService(
       outgoingEdges = node.outgoingEdges
     )
   }
+
+  private def prepareTestCaseAdditionalVariables(
+      variableTypes: Map[String, TypingResult]
+  ): TestCaseAdditionalVariablesResponseDto =
+    TestCaseAdditionalVariablesResponseDto(
+      assertionsAdditionalVariables = TestCaseVariables.getNodeVariablesTyping(variableTypes)
+    )
 
   private def parametersValidationRequestFromDto(
       request: ParametersValidationRequestDto,

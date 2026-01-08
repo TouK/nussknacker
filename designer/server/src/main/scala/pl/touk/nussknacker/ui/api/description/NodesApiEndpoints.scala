@@ -210,7 +210,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   summary = Some("Node validation without errors"),
                   value = NodeValidationResultDto(
                     parameters = None,
-                    Some(Typed[java.lang.Boolean]),
+                    expressionType = Some(Typed[java.lang.Boolean]),
                     validationErrors = List.empty,
                     validationPerformed = true
                   )
@@ -219,8 +219,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   summary = Some("Wrong parameter type"),
                   value = NodeValidationResultDto(
                     parameters = None,
-                    Some(Unknown),
-                    List(
+                    expressionType = Some(Unknown),
+                    validationErrors = List(
                       NodeValidationError(
                         "ExpressionParserCompilationError",
                         "Bad expression type, expected: Boolean, found: String",
@@ -337,7 +337,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   value = NodeValidationResultDto(
                     parameters = None,
                     expressionType = None,
-                    List(
+                    validationErrors = List(
                       NodeValidationError(
                         "InvalidPropertyFixedValue",
                         "Property numberOfThreads (Number of threads) has invalid value",
@@ -618,6 +618,85 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .errorOut(
         oneOf[NodesError](
           processingTypeNotFoundErrorOutput,
+          malformedTypingResultErrorOutput
+        )
+      )
+      .withSecurity(auth)
+  }
+
+  lazy val testCaseAdditionalVariablesEndpoint: SecuredEndpoint[
+    (ProcessingType, TestCaseAdditionalVariablesRequestDto),
+    NodesError,
+    TestCaseAdditionalVariablesResponseDto,
+    Any
+  ] = {
+    baseNuApiEndpoint
+      .summary("Additional variables for a test case at node")
+      .tag("Nodes")
+      .post
+      .in("parameters" / path[ProcessingType]("processingType") / "testCase" / "additionalVariables")
+      .in(
+        jsonBody[TestCaseAdditionalVariablesRequestDto]
+          .example(
+            Example.of(
+              summary = Some("Node variables"),
+              value = TestCaseAdditionalVariablesRequestDto(
+                Map(
+                  "amount" -> TypingResultInJson(
+                    encoder.apply(
+                      TypedObjectWithValue.apply(
+                        Typed[java.lang.Long].asInstanceOf[TypedClass],
+                        5L
+                      )
+                    )
+                  ),
+                  "name" -> TypingResultInJson(
+                    encoder.apply(
+                      TypedObjectWithValue.apply(
+                        Typed[java.lang.String].asInstanceOf[TypedClass],
+                        "Alice"
+                      )
+                    )
+                  ),
+                )
+              )
+            )
+          )
+      )
+      .out(
+        statusCode(Ok).and(
+          jsonBody[TestCaseAdditionalVariablesResponseDto]
+            .example(
+              Example.of(
+                summary = Some("Additional variables for assertions in a test case"),
+                value = TestCaseAdditionalVariablesResponseDto(
+                  assertionsAdditionalVariables = Map(
+                    "contexts" -> Typed.genericTypeClass(
+                      classOf[java.util.List[_]],
+                      List(
+                        Typed.record(
+                          List(
+                            "amount" -> TypedObjectWithValue.apply(
+                              Typed[java.lang.Long].asInstanceOf[TypedClass],
+                              5L
+                            ),
+                            "name" -> TypedObjectWithValue.apply(
+                              Typed[java.lang.String].asInstanceOf[TypedClass],
+                              "Alice"
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+        )
+      )
+      .errorOut(
+        oneOf[NodesError](
+          scenarioNotFoundErrorOutput,
           malformedTypingResultErrorOutput
         )
       )
@@ -1433,6 +1512,16 @@ object NodesApiEndpoints {
     final case class PropertiesValidationRequestDto(
         additionalFields: ProcessAdditionalFields,
         name: ProcessName
+    )
+
+    @derive(schema, encoder, decoder)
+    final case class TestCaseAdditionalVariablesRequestDto(
+        variableTypes: Map[String, TypingResultInJson],
+    )
+
+    @derive(schema, encoder, decoder)
+    final case class TestCaseAdditionalVariablesResponseDto(
+        assertionsAdditionalVariables: Map[String, TypingResult]
     )
 
     // Request doesn't need valid encoder, apart from examples

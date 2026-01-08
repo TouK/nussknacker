@@ -19,7 +19,10 @@ import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.
 import java.util
 import scala.jdk.CollectionConverters._
 
-class AssertionsCompiler(expressionCompiler: ExpressionCompiler, globalVariablesPreparer: GlobalVariablesPreparer) {
+class AssertionsCompiler(
+    expressionCompiler: ExpressionCompiler,
+    globalVariablesPreparer: GlobalVariablesPreparer
+) {
 
   def compile(
       testCase: TestCase,
@@ -41,16 +44,11 @@ class AssertionsCompiler(expressionCompiler: ExpressionCompiler, globalVariables
       nodesTyping: Map[String, NodeTypingData],
       jobData: JobData
   ): ValidatedNel[PerformTestError, List[CompiledAssertion]] = {
-    validateTypingExistence(nodeId, nodesTyping).andThen { typing =>
-      val ctx = globalVariablesPreparer
-        .prepareValidationContextWithGlobalVariablesOnly(jobData)
-        .withVariablesUnsafe(
-          "contexts" -> Typed.genericTypeClass(
-            classOf[java.util.List[_]],
-            List(Typed.record(typing.variableTypes))
-          ),
-          "TESTS" -> Typed.fromInstance(tests)
-        )
+    validateTypingExistence(nodeId, nodesTyping).andThen { nodeTypingData =>
+      val ctx = TestCaseVariables.extendNodeVariablesValidationContext(
+        globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData),
+        nodeTypingData
+      )
       assertions.map(compileAssertionExpression(nodeId, ctx, _)).traverse(_.toValidatedNel)
     }
   }

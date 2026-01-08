@@ -2338,6 +2338,149 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/parameters/{processingType}/testCase/additionalVariables:
+    post:
+      tags:
+      - Nodes
+      summary: Additional variables for a test case at node
+      operationId: postApiParametersProcessingtypeTestcaseAdditionalvariables
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestCaseAdditionalVariablesRequestDto'
+            examples:
+              Example:
+                summary: Node variables
+                value:
+                  variableTypes:
+                    amount:
+                      value: 5
+                      display: Long(5)
+                      type: TypedObjectWithValue
+                      refClazzName: java.lang.Long
+                      params: []
+                    name:
+                      value: Alice
+                      display: String(Alice)
+                      type: TypedObjectWithValue
+                      refClazzName: java.lang.String
+                      params: []
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestCaseAdditionalVariablesResponseDto'
+              examples:
+                Example:
+                  summary: Additional variables for assertions in a test case
+                  value:
+                    assertionsAdditionalVariables:
+                      contexts:
+                        display: 'List[Record{amount: Long(5), name: String(Alice)}]'
+                        type: TypedClass
+                        refClazzName: java.util.List
+                        params:
+                        - display: 'Record{amount: Long(5), name: String(Alice)}'
+                          type: TypedObjectTypingResult
+                          fields:
+                            amount:
+                              value: 5
+                              display: Long(5)
+                              type: TypedObjectWithValue
+                              refClazzName: java.lang.Long
+                              params: []
+                            name:
+                              value: Alice
+                              display: String(Alice)
+                              type: TypedObjectWithValue
+                              refClazzName: java.lang.String
+                              params: []
+                          refClazzName: java.util.Map
+                          params:
+                          - display: String
+                            type: TypedClass
+                            refClazzName: java.lang.String
+                            params: []
+                          - display: Unknown
+                            type: Unknown
+                            refClazzName: java.lang.Object
+                            params: []
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Malformed TypingResult sent in request
+                  value: |-
+                    The request content was malformed:
+                    Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
   /api/notifications:
     get:
       tags:
@@ -7684,6 +7827,22 @@ components:
     TabularTypedDataEditor:
       title: TabularTypedDataEditor
       type: object
+    TestCaseAdditionalVariablesRequestDto:
+      title: TestCaseAdditionalVariablesRequestDto
+      type: object
+      required:
+      - variableTypes
+      properties:
+        variableTypes:
+          $ref: '#/components/schemas/Map_TypingResultInJson'
+    TestCaseAdditionalVariablesResponseDto:
+      title: TestCaseAdditionalVariablesResponseDto
+      type: object
+      required:
+      - assertionsAdditionalVariables
+      properties:
+        assertionsAdditionalVariables:
+          $ref: '#/components/schemas/Map_TypingResult'
     TestResultsDto:
       title: TestResultsDto
       type: object

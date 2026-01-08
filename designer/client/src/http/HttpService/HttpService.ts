@@ -41,7 +41,7 @@ import type { AuthenticationSettings } from "../../reducers/settings";
 import type { WithId } from "../../types/common";
 import type { Expression, NodeType } from "../../types/node";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
-import type { ValidationResult } from "../../types/validation";
+import type { ValidationResult, VariableTypes } from "../../types/validation";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "../parametersUtils";
 import type { ProcessCounts, ResultsWithCountsDto } from "../resultsWithCountsDto";
 import type {
@@ -63,6 +63,8 @@ import type {
     ScenarioParametersCombinations,
     SourceWithParametersTest,
     StatusesType,
+    TestCaseNodeAdditionalVariablesRequest,
+    TestCaseNodeAdditionalVariablesResponse,
 } from "./types";
 import { HealthState } from "./types";
 
@@ -657,6 +659,26 @@ export class HttpService {
             .catch((error) => {
                 this.#addError(
                     i18next.t("notification.error.failedToFetchPropertiesAdditionalInfo", "Failed to get properties additional info"),
+                    error,
+                    true,
+                );
+                return null;
+            });
+    }
+
+    fetchTestCaseNodeAdditionalVariables(
+        processingType: string,
+        request: TestCaseNodeAdditionalVariablesRequest,
+    ): Promise<TestCaseNodeAdditionalVariablesResponse | null> {
+        return api
+            .post(`/parameters/${encodeURIComponent(processingType)}/testCase/additionalVariables`, request)
+            .then((res) => res.data)
+            .catch((error) => {
+                this.#addError(
+                    i18next.t(
+                        "notification.error.failedToFetchTestCaseNodeAdditionalVariables",
+                        "Failed to fetch test case node additional variables",
+                    ),
                     error,
                     true,
                 );

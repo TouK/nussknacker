@@ -1,16 +1,20 @@
 import { Box, Typography } from "@mui/material";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { setTestCaseAssertions } from "../../../../../../actions/nk/testCasesActions";
+import httpService from "../../../../../../http/HttpService/instance";
+import { getProcessingType } from "../../../../../../reducers/selectors/graph";
 import { getTestCaseAssertionsForNode } from "../../../../../../reducers/selectors/testCases";
 import { getTestAssertionResultsForNode } from "../../../../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
 import type { NodeType } from "../../../../../../types/node";
+import type { VariableTypes } from "../../../../../../types/validation";
 import { StyledButton } from "../../../../styledButton";
 import { EditableEditor } from "../../../editors/EditableEditor";
 import { EditorType } from "../../../editors/expression/types";
 import { NodeTable } from "../../../NodeDetailsContent/NodeTable";
+import { useVariableTypes } from "../../../useNodeTypeDetailsContentLogic";
 import { AssertionStatus } from "./AssertionStatus";
 import { StyledStack } from "./components/Styled";
 
@@ -23,6 +27,18 @@ export const Assertions = ({ node }: Props) => {
     const dispatch = useAppDispatch();
     const testCaseAssertions = useAppSelector((state) => getTestCaseAssertionsForNode(state, node.id));
     const testAssertionResults = useAppSelector((state) => getTestAssertionResultsForNode(state, node.id));
+    const processingType = useAppSelector(getProcessingType);
+    const nodeVariableTypes = useVariableTypes({ node });
+    const [assertionVariableTypes, setAssertionVariableTypes] = useState<VariableTypes>({});
+
+    useEffect(() => {
+        const fetchAssertionVariableTypes = async () => {
+            const response = await httpService.fetchTestCaseNodeAdditionalVariables(processingType, { variableTypes: nodeVariableTypes });
+            setAssertionVariableTypes(response.assertionsAdditionalVariables || {});
+        };
+
+        fetchAssertionVariableTypes();
+    }, [processingType, nodeVariableTypes]);
 
     const addAssertion = useCallback(() => {
         dispatch(
@@ -59,7 +75,7 @@ export const Assertions = ({ node }: Props) => {
                             <EditableEditor
                                 editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
                                 expressionObj={expressionObj}
-                                variableTypes={{}} //TODO: wait for suggestions support on BE
+                                variableTypes={assertionVariableTypes}
                                 onValueChange={(expression) => editAssertion(index, { expression })}
                                 fieldErrors={[]}
                             />

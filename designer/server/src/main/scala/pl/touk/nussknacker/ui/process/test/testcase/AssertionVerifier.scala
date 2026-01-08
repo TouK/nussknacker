@@ -26,9 +26,11 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
       jobData: JobData
   ): AssertionResult = {
     val context = prepareEvaluationContext(nodeId, results)
-    val globalVariables = globalVariablesPreparer
-      .prepareGlobalVariables(jobData)
-      .mapValuesNow(_.obj) + ("TESTS" -> tests)
+    val globalVariables = TestCaseVariables
+      .extendGlobalVariables(
+        globalVariablesPreparer.prepareGlobalVariables(jobData)
+      )
+      .mapValuesNow(_.obj)
     try {
       assertion.expression.evaluate[AssertionResult](context, globalVariables) match {
         case null                             => FailedAssertion("Assertion result can't be null")
@@ -47,7 +49,7 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
       .getOrElse(nodeId, List.empty)
       .map(_.variables.asJava)
       .asJava
-    Context(ContextId.dummy, Map("contexts" -> resultsForNode))
+    Context(ContextId.dummy, Map(TestCaseVariables.ContextsNodeVariableName -> resultsForNode))
   }
 
 }
