@@ -5,7 +5,7 @@ import { loadProcessState } from "../../../../actions/nk/process";
 import Icon from "../../../../assets/img/toolbarButtons/run-off-schedule.svg";
 import HttpService from "../../../../http/HttpService/instance";
 import type { RootState } from "../../../../reducers";
-import { getProcessName, isRunOffScheduleVisible } from "../../../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId, isRunOffScheduleVisible } from "../../../../reducers/selectors/graph";
 import { isRunOffSchedulePossible, isValidationResultPresent } from "../../../../reducers/selectors/graph2";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getProcessState } from "../../../../reducers/selectors/scenarioState";
@@ -15,7 +15,6 @@ import { useWindows } from "../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../windowManager/WindowKind";
 import type { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
 import ProcessStateUtils from "../../../Process/ProcessStateUtils";
-import type { ProcessName, ProcessVersionId } from "../../../Process/types";
 import { PredefinedActionName } from "../../../Process/types";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
@@ -29,12 +28,17 @@ export default function RunOffScheduleButton(props: ToolbarButtonProps) {
     const isVisible = useAppSelector(isRunOffScheduleVisible);
     const isPossible = useAppSelector(isRunOffSchedulePossible);
     const processName = useAppSelector(getProcessName);
+    const processVersionId = useAppSelector(getProcessVersionId);
     const capabilities = useAppSelector(getCapabilities);
     const available = validationResultPresent && !disabled && isPossible && capabilities.deploy;
 
     const { open } = useWindows();
-    const action = (name: ProcessName, versionId: ProcessVersionId, comment: string) =>
-        HttpService.runOffSchedule(name, comment).finally(() => dispatch(loadProcessState(name, versionId)));
+
+    const action = (comment: string) => {
+        const name = processName;
+        const versionId = processVersionId;
+        return HttpService.runOffSchedule(name, comment).finally(() => dispatch(loadProcessState(name, versionId)));
+    };
     const message = t("panels.actions.run-of-out-schedule.dialog", "Perform single execution", { name: processName });
 
     const defaultTooltip = t("panels.actions.run-off-schedule.tooltip", "run now");

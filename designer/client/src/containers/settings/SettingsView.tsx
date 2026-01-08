@@ -4,7 +4,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDocumentEventListener } from "rooks";
 
-import { userSettingSet, userSettingsRotate } from "../../actions/nk/userSettings";
+import { userSettingDelete, userSettingSet, userSettingsRotate } from "../../actions/nk/userSettings";
 import { getUserSettingsMerged, getUserSettingsValues } from "../../reducers/selectors/userSettings";
 import type { Setting } from "../../reducers/userSettings";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
@@ -50,6 +50,12 @@ function SettingsView() {
         },
         [dispatch],
     );
+    const onDelete = useCallback(
+        (path: Setting) => {
+            dispatch(userSettingDelete(path));
+        },
+        [dispatch],
+    );
 
     useDocumentEventListener("keydown", (event: KeyboardEvent) => {
         if (event.key === "Enter" && filtered.length === 1) {
@@ -84,6 +90,7 @@ function SettingsView() {
             <CollapsibleSwitchList
                 data={values}
                 onToggle={onToggle}
+                onDelete={onDelete}
                 flattenSingleChild
                 openIfOnly
                 searchStrings={searchStrings.flatMap((v) => v.split("."))}

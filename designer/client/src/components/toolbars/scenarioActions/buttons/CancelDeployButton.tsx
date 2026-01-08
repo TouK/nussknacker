@@ -12,7 +12,6 @@ import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 import { useWindows } from "../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../windowManager/WindowKind";
 import type { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
-import type { ProcessName, ProcessVersionId } from "../../../Process/types";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
@@ -42,20 +41,20 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
 
     const { open } = useWindows();
     const action = useCallback(
-        (name: ProcessName, versionId: ProcessVersionId, comment?: string) =>
-            HttpService.cancel(name, comment).finally(() => dispatch(loadProcessState(name, versionId))),
-        [dispatch],
+        (comment?: string) =>
+            HttpService.cancel(processName, comment).finally(() => dispatch(loadProcessState(processName, processVersionId))),
+        [dispatch, processName, processVersionId],
     );
     const message = t("panels.actions.deploy-cancel.dialog", "Stop scenario {{name}}", { name: processName });
 
     const handleCancelDeploy = useCallback(async () => {
         try {
             setIsCancelCallProcessing(true);
-            await action(processName, processVersionId);
+            await action();
         } finally {
             setIsCancelCallProcessing(false);
         }
-    }, [action, processName, processVersionId]);
+    }, [action]);
 
     const handleOpenCancelDeployDialog = useCallback(
         () =>

@@ -12,8 +12,8 @@ export const useTableHeight = (data: TestingDataRecords[], getRowHeight: (rowInd
             rowsHeight[rowIndex] = getRowHeight(rowIndex);
         });
 
-        const SumOfRowsHeight = sum(values(rowsHeight));
-        return SumOfRowsHeight + DEFAULT_ROW_HEADER_HEIGHT + paddingY + DEFAULT_TRAILING_ROW_HEIGHT + paddingY;
+        const sumOfRowsHeight = sum(values(rowsHeight));
+        return sumOfRowsHeight + DEFAULT_ROW_HEADER_HEIGHT + paddingY + DEFAULT_TRAILING_ROW_HEIGHT + paddingY;
     }, [data, getRowHeight]);
 
     return { tableHeight };

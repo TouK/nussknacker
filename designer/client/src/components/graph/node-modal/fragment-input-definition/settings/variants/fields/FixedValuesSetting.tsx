@@ -2,7 +2,7 @@ import React from "react";
 
 import type { ReturnedType } from "../../../../../../../types/scenarioGraph";
 import type { NodeValidationError, VariableTypes } from "../../../../../../../types/validation";
-import type { onChangeType, FixedValuesOption, FixedListParameterVariant } from "../../../item/types";
+import type { FixedListParameterVariant, FixedValuesOption, onChangeType } from "../../../item/types";
 import { FixedValuesType } from "../../../item/types";
 import { DictSelect } from "./dictSelect";
 import { UserDefinedListInput } from "./UserDefinedListInput";

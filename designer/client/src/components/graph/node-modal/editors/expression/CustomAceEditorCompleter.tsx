@@ -40,10 +40,16 @@ declare module "ace-builds" {
             activated: boolean;
             openPopup: (this: Autocomplete, editor: Ace.Editor, prefix: string, keepPopupPosition: boolean) => void;
             updateCompletions: (this: Autocomplete, keepPopupPosition: boolean, options: Ace.CompletionOptions) => void;
+            getPopup(): AcePopup;
         }
 
         interface Editor {
             readonly completer: Autocomplete;
+        }
+
+        interface AcePopup {
+            isOpen?: boolean;
+            setRow: (i: number) => void;
         }
     }
 }
@@ -154,7 +160,8 @@ export class CustomAceEditorCompleter implements Ace.Completer {
 
                 keepPopupPosition = triggerCharacters.some((trigger) => prefix.endsWith(trigger)) ? false : keepPopupPosition;
 
-                return original_updateCompletions.apply(this, [keepPopupPosition, options]);
+                original_updateCompletions.apply(this, [keepPopupPosition, options]);
+                this.getPopup().setRow(0);
             };
 
             this.revertCompleterOverrides = () => {

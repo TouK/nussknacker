@@ -11,7 +11,7 @@ function useMetricsUrl(processName?: ProcessName): string {
     const [processingType, setProcessingType] = useState("");
     useEffect(() => {
         if (processName) {
-            HttpService.fetchProcessDetails(processName).then(({ data }) => {
+            HttpService.fetchScenario(processName).then(({ data }) => {
                 setProcessingType(data.processingType);
             });
         } else {

@@ -2,13 +2,15 @@ import { cx } from "@emotion/css";
 import { Box, Fade, LinearProgress, styled } from "@mui/material";
 import { isEmpty } from "lodash";
 import type { ReactNode } from "react";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import type ReactAce from "react-ace/lib/ace";
+import { useDebouncedValue, useMergeRefs } from "rooks";
 
 import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../../../store/storeHelpers";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputCss } from "../../../../NodeInput";
+import { useCallbackRef } from "../../node/useCallbackRef";
 import { nodeInput, nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import type { FieldError } from "../Validators";
 import { setupAceEditorSnippets } from "./AceEditorJsonBasedSnippets";
@@ -38,17 +40,80 @@ export type CustomCompleterAceEditorProps = {
     enableLiveAutocompletion?: boolean;
 };
 
+function getCompletionsActivated(editorRef: React.MutableRefObject<ReactAce | undefined>) {
+    const completer = editorRef.current?.editor.completer;
+    if (!completer) return;
+
+    return Boolean(completer.activated && completer.getPopup?.()?.isOpen);
+}
+
 export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): React.JSX.Element {
     const { className, isMarked, showValidation, fieldErrors, validationLabelInfo, completer, isLoading, enableLiveAutocompletion } = props;
     const { value, onValueChange, ref, ...inputProps } = props.inputProps;
+    const editorRef = useRef<ReactAce>();
+    const mergedRefs = useMergeRefs(ref, editorRef);
     const [editorFocused, setEditorFocused] = useState(false);
-    const onChange = useCallback((value: string) => onValueChange(value), [onValueChange]);
+    const [internalValue, setInternalValue] = useState(value);
+
     const editorFocus = useCallback((editorFocused: boolean) => () => setEditorFocused(editorFocused), []);
 
     const settings = useAppSelector(getUserSettings);
     const showLines = Boolean(settings[`editor.${props.inputProps.language}.showLines`]);
 
-    const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(fieldErrors, showLines);
+    const [completionsVisible, setCompletionsVisible] = useState(false);
+    const [errorsToDisplay, setErrorsToDisplay] = useState(fieldErrors);
+    useEffect(() => {
+        setErrorsToDisplay(getCompletionsActivated(editorRef) ? [] : fieldErrors);
+    }, [fieldErrors]);
+
+    const [debouncedErrorsToDisplay] = useDebouncedValue(errorsToDisplay, 200);
+
+    const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(debouncedErrorsToDisplay, showLines);
+
+    const deferredChange = useCallback(
+        (value: string, completionsVisible?: boolean) => {
+            if (completionsVisible && getCompletionsActivated(editorRef)) return;
+            return onValueChange(value);
+        },
+        [onValueChange],
+    );
+
+    useEffect(() => {
+        if (props.inputProps?.readOnly) return;
+        deferredChange(internalValue, completionsVisible);
+    }, [completionsVisible, deferredChange, internalValue, props.inputProps?.readOnly]);
+
+    const [onValueChangeRef] = useCallbackRef(onValueChange, [onValueChange]);
+    useEffect(() => {
+        const editor = editorRef.current?.editor;
+        if (!editor || !editorFocused) return;
+        const callback = () => {
+            setCompletionsVisible(getCompletionsActivated(editorRef));
+        };
+        editor.on("keyboardActivity" as any, callback);
+        return () => {
+            editor.off("keyboardActivity" as any, callback);
+        };
+    }, [editorFocused]);
+
+    useEffect(() => {
+        const editor = editorRef.current?.editor;
+        if (!editor) return;
+        const callback = () => {
+            setInternalValue(editor.getValue());
+            onValueChangeRef.current(editor.getValue());
+        };
+        editor.on("blur", callback);
+        return () => {
+            editor.off("blur", callback);
+        };
+    }, [onValueChangeRef]);
+
+    useEffect(() => {
+        if (!editorFocused) {
+            setInternalValue((current) => (current !== value ? value : current));
+        }
+    }, [editorFocused, value]);
 
     return (
         <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
@@ -56,7 +121,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                 <Box
                     className={cx([
                         rowAceEditor,
-                        showValidation && !isEmpty(fieldErrors) && nodeInputWithError,
+                        showValidation && !isEmpty(debouncedErrorsToDisplay) && nodeInputWithError,
                         isMarked && "marked",
                         editorFocused && "focused",
                         inputProps.readOnly && "read-only",
@@ -67,9 +132,9 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                         onLoad={(editor) => {
                             setupAceEditorSnippets(editor);
                         }}
-                        ref={ref}
-                        value={value}
-                        onChange={onChange}
+                        ref={mergedRefs}
+                        value={internalValue}
+                        onChange={setInternalValue}
                         onFocus={editorFocus(true)}
                         onBlur={editorFocus(false)}
                         inputProps={{
@@ -80,7 +145,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                         }}
                         customAceEditorCompleter={completer}
                         enableLiveAutocompletion={enableLiveAutocompletion}
-                        fieldErrors={fieldErrors}
+                        fieldErrors={debouncedErrorsToDisplay}
                         annotations={annotations}
                         markers={markers}
                     />
@@ -95,7 +160,9 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                     <LoadingFeedback color="warning" inflate={0.25} />
                 </Fade>
             </Box>
-            {showValidation && !hasRangeText && <ValidationLabels fieldErrors={fieldErrors} validationLabelInfo={validationLabelInfo} />}
+            {showValidation && !hasRangeText ? (
+                <ValidationLabels fieldErrors={debouncedErrorsToDisplay} validationLabelInfo={validationLabelInfo} />
+            ) : null}
         </Box>
     );
 }

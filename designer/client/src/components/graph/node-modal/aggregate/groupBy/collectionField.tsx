@@ -29,6 +29,7 @@ export function CollectionField({ value, onChange, variableTypes, disabled, isVa
             if (!value.trim().length) return;
             controller.push(value.trim());
             setExpression("");
+            ref.current?.editor.setValue(""); // fast tests showed that sometimes remains, it's better to be sure
         },
         [controller],
     );
@@ -53,7 +54,9 @@ export function CollectionField({ value, onChange, variableTypes, disabled, isVa
                 win: "Enter",
                 mac: "Enter",
             },
-            exec: (editor) => applyValue(editor.getValue()),
+            exec: (editor) => {
+                applyValue(editor.getValue());
+            },
         }),
         [applyValue],
     );
@@ -73,7 +76,7 @@ export function CollectionField({ value, onChange, variableTypes, disabled, isVa
     const [focusWithin, setFocusWithin] = useState(false);
     const { focusWithinProps } = useFocusWithin({
         onFocusWithinChange: setFocusWithin,
-        onBlurWithin: () => applyValue(expression),
+        onBlurWithin: () => applyValue(ref.current?.editor.getValue()),
     });
 
     useEffect(() => {
@@ -101,6 +104,10 @@ export function CollectionField({ value, onChange, variableTypes, disabled, isVa
         };
     }, [controller]);
 
+    const onEditorChange = useCallback(({ expression }) => {
+        setExpression(expression);
+    }, []);
+
     return (
         <Stack
             {...focusWithinProps}
@@ -119,13 +126,7 @@ export function CollectionField({ value, onChange, variableTypes, disabled, isVa
             }}
         >
             <Collapse in={editorVisible} unmountOnExit={false} mountOnEnter={false}>
-                <Editor
-                    ref={ref}
-                    variableTypes={variableTypes}
-                    value={expression}
-                    onChange={({ expression }) => setExpression(expression)}
-                    readOnly={!disabled}
-                />
+                <Editor ref={ref} variableTypes={variableTypes} value={expression} onChange={onEditorChange} readOnly={disabled} />
             </Collapse>
             <Collapse in={itemsVisible}>
                 <ValuesList values={values} onRemove={onRemove} onEdit={onEdit} ChipComponent={SpelChip} isValid={isValueValid} />

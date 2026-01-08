@@ -1,13 +1,12 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { fetchProcessToDisplay, loadProcessState } from "../../../../actions/nk/process";
 import { disableToolTipsHighlight, enableToolTipsHighlight } from "../../../../actions/nk/tooltips";
 import notificationActions from "../../../../actions/notificationActions";
 import Icon from "../../../../assets/img/toolbarButtons/redeploy.svg";
 import HttpService from "../../../../http/HttpService/instance";
-import type { NodesDeploymentData, ScenarioGraphSource } from "../../../../http/HttpService/types";
-import { getProcessName, getProcessVersionId, getScenarioGraphSource, isRedeployVisible } from "../../../../reducers/selectors/graph";
+import type { NodesDeploymentData } from "../../../../http/HttpService/types";
+import { getProcessName, getProcessVersionId, isRedeployVisible } from "../../../../reducers/selectors/graph";
 import { hasError, isRedeployPossible, isValidationResultPresent } from "../../../../reducers/selectors/graph2";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getIsRedeploying } from "../../../../reducers/selectors/scenarioState";
@@ -17,10 +16,10 @@ import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 import { useWindows } from "../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../windowManager/WindowKind";
 import type { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
-import type { ProcessName, ProcessVersionId } from "../../../Process/types";
 import { PredefinedActionName } from "../../../Process/types";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
+import { redeployAction } from "./deployActions";
 import { ScenarioActionResultType } from "./types";
 
 type RedeployPresetValue = "stopAndStart" | "configureAndStart";
@@ -44,7 +43,6 @@ export default function RedeployButton(props: ToolbarButtonProps) {
     const processVersionId = useAppSelector(getProcessVersionId);
     const capabilities = useAppSelector(getCapabilities);
     const isRedeploying = useAppSelector(getIsRedeploying);
-    const scenarioGraphSource = useAppSelector(getScenarioGraphSource);
 
     const { disabled, type, titleOverride } = props;
 
@@ -68,21 +66,7 @@ export default function RedeployButton(props: ToolbarButtonProps) {
 
     const message = t("panels.actions.redeploy.dialog", "Redeploy scenario {{name}}", { name: processName });
     const action = useCallback(
-        async (
-            name: ProcessName,
-            versionId: ProcessVersionId,
-            comment: string,
-            nodesDeploymentData?: NodesDeploymentData,
-            scenarioGraphSource?: ScenarioGraphSource,
-        ) => {
-            const result = await HttpService.redeploy(name, comment, nodesDeploymentData, scenarioGraphSource);
-            if (result.scenarioActionResultType === ScenarioActionResultType.DeploySuccess) {
-                dispatch(fetchProcessToDisplay(name, result.deployedScenarioVersionId));
-            } else {
-                dispatch(loadProcessState(name, versionId));
-            }
-            return result;
-        },
+        (comment?: string, nodesDeploymentData?: NodesDeploymentData) => dispatch(redeployAction(comment, nodesDeploymentData)),
         [dispatch],
     );
 
@@ -125,7 +109,7 @@ export default function RedeployButton(props: ToolbarButtonProps) {
         try {
             setIsRedeployCallProcessing(true);
             dispatch({ type: "PENDING_SCENARIO_ACTION", action: PredefinedActionName.Redeploy });
-            const response = await action(processName, processVersionId, "", null, scenarioGraphSource);
+            const response = await action();
             switch (response.scenarioActionResultType) {
                 case ScenarioActionResultType.DeploySuccess:
                 case ScenarioActionResultType.Success:
@@ -138,7 +122,7 @@ export default function RedeployButton(props: ToolbarButtonProps) {
         } finally {
             setIsRedeployCallProcessing(false);
         }
-    }, [action, dispatch, processName, processVersionId, setIsRedeployCallProcessing, scenarioGraphSource]);
+    }, [action, dispatch, setIsRedeployCallProcessing]);
 
     const presets = useMemo<RedeployPreset[]>(
         () => [

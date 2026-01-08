@@ -11,6 +11,13 @@ export function userSettingSet(key: Setting, value: boolean | string): Action {
     };
 }
 
+export function userSettingDelete(key: Setting): Action {
+    return {
+        type: "USERSETTING_DELETE",
+        key,
+    };
+}
+
 function nextIndex<T>(options: T[], selected: T): number {
     const index = options.indexOf(selected);
     if (index === -1) return 1;
@@ -48,6 +55,10 @@ export type UserSettingsActions =
           type: "USERSETTING_SET";
           key: Setting;
           value: boolean | string;
+      }
+    | {
+          type: "USERSETTING_DELETE";
+          key: Setting;
       }
     | {
           type: "USERSETTINGS_DEFAULTS_LOADED";

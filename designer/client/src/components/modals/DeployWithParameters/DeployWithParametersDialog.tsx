@@ -4,8 +4,8 @@ import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager
 import React, { Suspense, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { NodesDeploymentData, ScenarioGraphSource } from "../../../http/HttpService/types";
-import { getProcessName, getProcessVersionId, getScenarioGraphSource } from "../../../reducers/selectors/graph";
+import type { NodesDeploymentData } from "../../../http/HttpService/types";
+import { getProcessName } from "../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../reducers/selectors/settings";
 import { useAppSelector } from "../../../store/storeHelpers";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
@@ -26,17 +26,15 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
         meta: { action, displayWarnings, actionName },
     } = props.data;
     const processName = useAppSelector(getProcessName);
-    const processVersionId = useAppSelector(getProcessVersionId);
     const [parametersValues, setParametersValues] = useState<NodesDeploymentData>({});
 
     const [comment, setComment] = useState("");
     const [validationError, setValidationError] = useState("");
     const featureSettings = useAppSelector(getFeatureSettings);
     const deploymentCommentSettings = featureSettings.deploymentCommentSettings;
-    const scenarioGraphSource: ScenarioGraphSource = useAppSelector(getScenarioGraphSource);
 
     const confirmAction = useCallback(async () => {
-        const response = await action(processName, processVersionId, comment, parametersValues, scenarioGraphSource);
+        const response = await action(comment, parametersValues);
         switch (response.scenarioActionResultType) {
             case ScenarioActionResultType.DeploySuccess:
             case ScenarioActionResultType.Success:
@@ -47,7 +45,7 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                 setValidationError(response.msg);
                 break;
         }
-    }, [action, comment, processName, props, processVersionId, parametersValues, scenarioGraphSource]);
+    }, [action, comment, props, parametersValues]);
 
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(
