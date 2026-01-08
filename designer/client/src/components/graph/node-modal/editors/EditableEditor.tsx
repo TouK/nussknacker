@@ -69,18 +69,16 @@ export const EditableEditor = (props: Props) => {
             readOnly={props.readOnly}
             showSwitch={props.showSwitch}
         >
-            {({ type, ...editorConfig }) => {
-                return (
-                    <EditorByType
-                        type={type}
-                        config={editorConfig}
-                        {...props}
-                        className={`${valueClassName ? valueClassName : nodeValue}`}
-                        fieldErrors={fieldErrors}
-                        formatter={formatter}
-                    />
-                );
-            }}
+            {({ type, ...editorConfig }) => (
+                <EditorByType
+                    type={type}
+                    config={editorConfig}
+                    {...props}
+                    className={`${valueClassName ? valueClassName : nodeValue}`}
+                    fieldErrors={fieldErrors}
+                    formatter={formatter}
+                />
+            )}
         </FieldSwitch>
     );
 };

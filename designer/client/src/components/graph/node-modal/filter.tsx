@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 
 import type { UIParameter } from "../../../types/definition";
 import type { Edge } from "../../../types/edge";
@@ -37,6 +37,13 @@ export function Filter({
     showValidation?: boolean;
 }): React.JSX.Element {
     const [, isCompareView] = useDiffMark();
+    const edgeTypes = useMemo(
+        () => [
+            { value: EdgeKind.filterTrue, onlyOne: true },
+            { value: EdgeKind.filterFalse, onlyOne: true },
+        ],
+        [],
+    );
     return (
         <>
             <IdField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
@@ -58,10 +65,7 @@ export function Filter({
                     nodeId={node.id}
                     value={edges}
                     onChange={setEditedEdges}
-                    edgeTypes={[
-                        { value: EdgeKind.filterTrue, onlyOne: true },
-                        { value: EdgeKind.filterFalse, onlyOne: true },
-                    ]}
+                    edgeTypes={edgeTypes}
                     readOnly={!isEditMode}
                     errors={errors}
                 />
