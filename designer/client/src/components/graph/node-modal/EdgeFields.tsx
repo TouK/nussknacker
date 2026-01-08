@@ -1,5 +1,5 @@
 import { produce } from "immer";
-import { uniq } from "lodash";
+import { isEqual, uniq } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -18,7 +18,9 @@ import type { ExpressionObj } from "./editors/expression/types";
 import { ExpressionLang } from "./editors/expression/types";
 import type { FieldError } from "./editors/Validators";
 import { FieldsRow } from "./fragment-input-definition/FieldsRow";
+import type { Option } from "./fragment-input-definition/TypeSelect";
 import { TypeSelect } from "./fragment-input-definition/TypeSelect";
+import { useCallbackRef } from "./node/useCallbackRef";
 
 interface Props {
     index: number;
@@ -34,14 +36,15 @@ interface Props {
 export function EdgeFields(props: Props): React.JSX.Element {
     const { t } = useTranslation();
     const { readOnly, value, index, onChange, edges, types, variableTypes, fieldErrors } = props;
+    const [onChangeRef] = useCallbackRef(onChange, [onChange]);
     const scenarioGraph = useAppSelector(getScenarioGraph);
     const processDefinitionData = useAppSelector(getProcessDefinitionData);
 
     const [edge, setEdge] = useState(value);
 
     useEffect(() => {
-        onChange(edge);
-    }, [edge, onChange]);
+        onChangeRef.current?.(edge);
+    }, [edge, onChangeRef]);
 
     //NOTE: fragment node preview is read only so we can ignore wrong "process" and nodes here.
     const availableNodes = useMemo(() => scenarioGraph.nodes.filter((n) => NodeUtils.hasInputs(n)), [scenarioGraph.nodes]);
@@ -49,60 +52,64 @@ export function EdgeFields(props: Props): React.JSX.Element {
     const targetNodes = useMemo(() => availableNodes.filter((n) => n.id === edge.to), [availableNodes, edge.to]);
     const freeNodes = useMemo(() => {
         return availableNodes.filter((n) => {
-            //filter this switch
-            if (n.id === edge.from) {
-                return false;
-            }
-            //filter already used
-            if (edges.some((e) => e.to === n.id)) {
-                return false;
-            }
             return NodeUtils.canHaveMoreInputs(
                 n,
                 otherEdges.filter((e) => e.to === n.id),
                 processDefinitionData,
             );
         });
-    }, [availableNodes, edge.from, edges, otherEdges, processDefinitionData]);
+    }, [availableNodes, otherEdges, processDefinitionData]);
 
-    const freeInputs = useMemo(
-        () => [
+    const targetOptions = useMemo<Option[]>(() => {
+        const targets = uniq(freeNodes.concat(targetNodes).map((n) => n.id));
+        return [
             { label: "⇢", value: "" },
-            ...uniq(freeNodes.concat(targetNodes).map((n) => n.id)).map((freeInput) => ({
+            ...targets.map((freeInput) => ({
                 label: `➝ ${freeInput}`,
                 value: freeInput,
+                isUsed: edges.some((e) => e.to === freeInput && !isEqual(e, edge)),
             })),
-        ],
-        [freeNodes, targetNodes],
+        ];
+    }, [edge, edges, freeNodes, targetNodes]);
+
+    const onValueChange = useCallback(
+        ({ expression, language }: ExpressionObj) => {
+            setEdge(
+                produce((draft) => {
+                    // @ts-expect-error null
+                    draft.edgeType.condition ||= {};
+                    draft.edgeType.condition.expression = expression;
+                    draft.edgeType.condition.language = language;
+                }),
+            );
+        },
+        [setEdge],
     );
 
-    const onValueChange = useCallback((condition: ExpressionObj) => {
-        setEdge(
-            produce((draft) => {
-                draft.edgeType.condition = condition;
-            }),
-        );
-    }, []);
+    const onTargetChange = useCallback(
+        (value: NodeId) => {
+            setEdge(
+                produce((draft) => {
+                    draft.to = value;
+                }),
+            );
+        },
+        [setEdge],
+    );
 
-    const onTargetChange = useCallback((value: NodeId) => {
-        setEdge(
-            produce((draft) => {
-                draft.to = value;
-            }),
-        );
-    }, []);
-
-    const onTypeChange = useCallback((type: EdgeKind) => {
-        setEdge(
-            produce((draft) => {
-                if (type === EdgeKind.switchNext) delete draft.edgeType.condition;
-                draft.edgeType.type = type;
-            }),
-        );
-    }, []);
+    const onTypeChange = useCallback(
+        (type: EdgeKind) => {
+            setEdge(
+                produce((draft) => {
+                    if (type === EdgeKind.switchNext) delete draft.edgeType.condition;
+                    draft.edgeType.type = type;
+                }),
+            );
+        },
+        [setEdge],
+    );
 
     const showType = useMemo(() => types.length > 1 || uniq(edges.map((e) => e.edgeType?.type)).length > 1, [edges, types.length]);
-    const targetOptions = freeInputs;
     return (
         <FieldsRow
             uuid={edge._id}

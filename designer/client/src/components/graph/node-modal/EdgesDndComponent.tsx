@@ -1,5 +1,5 @@
 import { defaultsDeep } from "lodash";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 
 import type { Edge } from "../../../types/edge";
 import { EdgeKind } from "../../../types/edge";
@@ -11,8 +11,10 @@ import type { EdgeTypeOption } from "./EdgeTypeSelect";
 import { ExpressionLang } from "./editors/expression/types";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { NodeRowFieldsProvider } from "./node-row-fields-provider/NodeRowFieldsProvider";
+import { useCallbackRef } from "./node/useCallbackRef";
+import { useStream } from "./node/useStream";
 import type { WithTempId } from "./tempId";
-import { useStateWithTempId, withTempId } from "./tempId";
+import { withoutTempId, withTempId } from "./tempId";
 
 interface EdgeType extends Partial<EdgeTypeOption> {
     value: EdgeKind;
@@ -48,7 +50,7 @@ function getDefaultEdgeType(kind: EdgeKind): Edge["edgeType"] {
 }
 
 function getDefaultEdge(kind: EdgeKind): Edge {
-    return { _id: `id${Math.random()}`, from: "", to: "", edgeType: getDefaultEdgeType(kind) };
+    return { from: "", to: "", edgeType: getDefaultEdgeType(kind) };
 }
 
 function withDefaults<T extends Edge>(edge: Partial<T>): T {
@@ -57,7 +59,18 @@ function withDefaults<T extends Edge>(edge: Partial<T>): T {
 
 export function EdgesDndComponent(props: Props): React.JSX.Element {
     const { nodeId, label, readOnly, value, onChange, ordered, variableTypes, errors } = props;
-    const [edges, setEdges] = useStateWithTempId(value, onChange);
+
+    const [onChangeRef] = useCallbackRef((edges) => onChange(edges), [onChange]);
+    const [edge$, setEdges, edges] = useStream<Edge[]>(
+        value.map((edge, index) => withTempId(withDefaults(edge), index)),
+        true,
+    );
+    useEffect(() => {
+        const subscription = edge$.observe((edges) => {
+            onChangeRef.current?.(edges.map(withoutTempId));
+        });
+        return subscription.unsubscribe;
+    }, [edge$, onChangeRef]);
 
     const edgeTypes = useMemo(
         () => props.edgeTypes.map((t) => ({ ...t, label: t.label || NodeUtils.edgeTypeLabel(t.value) })),
@@ -72,17 +85,31 @@ export function EdgesDndComponent(props: Props): React.JSX.Element {
     const replaceEdge = useCallback(
         (current: WithTempId<Edge>) => (next: WithTempId<Edge>) => {
             if (current !== next) {
-                setEdges((edges) => edges.map((e) => (e === current ? withTempId(withDefaults(next)) : e)));
+                setEdges((edges) =>
+                    edges.map((e, i) => {
+                        if (e === current) return withTempId(withDefaults(next), i);
+                        if (e.to && e.to === next.to) return { ...e, to: current.to };
+                        return e;
+                    }),
+                );
             }
         },
         [setEdges],
     );
 
-    const removeEdge = useCallback((n, uuid: string) => setEdges((edges) => edges.filter((e) => e._id !== uuid)), [setEdges]);
+    const removeEdge = useCallback(
+        (n, uuid: string) => {
+            setEdges((edges) => edges.filter((e) => e._id !== uuid));
+        },
+        [setEdges],
+    );
 
     const addEdge = useCallback(() => {
         const [{ value: type }] = availableTypes;
-        setEdges((edges) => edges.concat(withTempId(withDefaults({ from: nodeId, edgeType: { type } }))));
+        setEdges((edges) => {
+            const item = withTempId(withDefaults({ from: nodeId, edgeType: { type } }), edges.length);
+            return [...edges, item];
+        });
     }, [availableTypes, nodeId, setEdges]);
 
     const edgeItems = useMemo(() => {

@@ -32,27 +32,30 @@ export const selectStyled = (theme: Theme) => {
         outline: 1px solid ${isError ? theme.palette.error.light : isFocused ? theme.palette.primary.main : getBorderColor(theme)} !important;
     `;
 
-    const menuOption = (base: CSSObjectWithLabel, isSelected: boolean, isDisabled: boolean) => css`
-        ${base}
-        ${commonNodeInput("10px")};
-        min-height: 25px;
-        line-height: 25px;
-        border: 1px;
-        border-radius: 0;
-        padding: 3px 10px;
-        background-color: ${isSelected
-            ? getLuminance(theme.palette.background.paper) > 0.5
-                ? blendDarken(theme.palette.background.paper, 0.15)
-                : blendLighten(theme.palette.background.paper, 0.15)
-            : isDisabled
-            ? "none"
-            : theme.palette.background.paper};
-        color: ${isDisabled && theme.palette.action.disabled};
-        &:hover {
-            color: ${!isDisabled && "inherit"};
-            background-color: ${!isDisabled && theme.palette.action.hover};
-        }
-    `;
+    const menuOption = (base: CSSObjectWithLabel, isSelected: boolean, isDisabled?: boolean, isUsed?: boolean) =>
+        css([
+            base,
+            commonNodeInput("10px"),
+            {
+                minHeight: "25px",
+                lineHeight: "25px",
+                border: "1px",
+                borderRadius: 0,
+                padding: "3px 10px",
+                backgroundColor: isSelected
+                    ? getLuminance(theme.palette.background.paper) > 0.5
+                        ? blendDarken(theme.palette.background.paper, 0.15)
+                        : blendLighten(theme.palette.background.paper, 0.15)
+                    : isDisabled
+                    ? "none"
+                    : theme.palette.background.paper,
+                color: isDisabled ? theme.palette.action.disabled : isUsed ? theme.palette.primary.main : null,
+                "&:hover": {
+                    color: !isDisabled && "inherit",
+                    backgroundColor: !isDisabled && theme.palette.action.hover,
+                },
+            },
+        ]);
 
     const input = (base: CSSObjectWithLabel) => css`
         ${base};
