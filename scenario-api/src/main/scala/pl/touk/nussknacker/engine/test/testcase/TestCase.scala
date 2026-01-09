@@ -24,7 +24,7 @@ object TestCases {
 }
 
 @JsonCodec final case class TestCase(
-    id: UUID,
+    id: TestCaseId,
     name: String,
     inputs: String,
     mocks: Map[NodeId, EnricherMock],

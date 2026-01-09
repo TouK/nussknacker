@@ -483,7 +483,7 @@ class BaseFlowTest
         variableTypes = Map.empty,
         branchVariableTypes = None,
         outgoingEdges = None,
-        assertions = None,
+        testCases = None,
       )
 
       val response = httpClient.send(

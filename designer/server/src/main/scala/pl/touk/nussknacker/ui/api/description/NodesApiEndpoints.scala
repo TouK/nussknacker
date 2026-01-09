@@ -49,7 +49,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
-import pl.touk.nussknacker.engine.test.testcase.Assertion
+import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCaseId}
 import pl.touk.nussknacker.engine.util.CaretPosition2d
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
@@ -174,7 +174,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   ),
                   branchVariableTypes = None,
                   outgoingEdges = None,
-                  assertions = None,
+                  // TODO: add test cases examples for enricher and other node
+                  testCases = None,
                 ),
                 summary = Some("Validate correct Filter node")
               ),
@@ -198,7 +199,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   ),
                   branchVariableTypes = None,
                   outgoingEdges = None,
-                  assertions = None,
+                  testCases = None,
                 ),
               )
             )
@@ -1469,12 +1470,8 @@ object NodesApiEndpoints {
         variableTypes: Map[String, TypingResultInJson],
         branchVariableTypes: Option[Map[String, Map[String, TypingResultInJson]]],
         outgoingEdges: Option[List[Edge]],
-        assertions: Option[List[Assertion]],
+        testCases: Option[NodeTestCases],
     )
-
-    object NodeValidationRequestDto {
-      implicit val assertionSchema: Schema[Assertion] = Schema.derived
-    }
 
     // Response doesn't need valid decoder
     @derive(encoder, schema)
@@ -1513,6 +1510,19 @@ object NodesApiEndpoints {
       }
 
     }
+
+    type NodeTestCases = Map[TestCaseId, NodeTestCase]
+
+    @derive(schema, encoder, decoder)
+    final case class NodeTestCase(
+        name: String,
+        enricherMock: Option[EnricherMock],
+        assertions: List[Assertion],
+    )
+
+    implicit val nodeTestCasesSchema: Schema[NodeTestCases] = Schema.schemaForMap[TestCaseId, NodeTestCase](_.toString)
+    implicit val enricherMockSchema: Schema[EnricherMock]   = Schema.derived
+    implicit val assertionSchema: Schema[Assertion]         = Schema.derived
 
     implicit val scenarioNameSchema: Schema[ProcessName] = Schema.string
 
@@ -1640,7 +1650,7 @@ object NodesApiEndpoints {
         // In this request edges are not guaranteed to have the correct "from" field. Normally it's synced with node id but
         // when renaming node, it contains node's id before the rename.
         outgoingEdges: Option[List[Edge]],
-        assertions: Option[List[Assertion]],
+        testCases: Option[NodeTestCases],
     )
 
     def decodeVariableTypes(
