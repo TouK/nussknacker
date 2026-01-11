@@ -49,7 +49,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
-import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCaseId}
+import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCaseId, TestCaseName}
 import pl.touk.nussknacker.engine.util.CaretPosition2d
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
@@ -216,7 +216,9 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     parameters = None,
                     expressionType = Some(Typed[java.lang.Boolean]),
                     validationErrors = List.empty,
-                    validationPerformed = true
+                    validationPerformed = true,
+                    // TODO: do not forget some real examples.
+                    testCasesValidationErrors = None,
                   )
                 ),
                 Example.of(
@@ -234,7 +236,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                         details = None
                       )
                     ),
-                    validationPerformed = true
+                    validationPerformed = true,
+                    testCasesValidationErrors = None,
                   )
                 )
               )
@@ -333,7 +336,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     parameters = None,
                     expressionType = None,
                     validationErrors = List.empty,
-                    validationPerformed = true
+                    validationPerformed = true,
+                    testCasesValidationErrors = None,
                   )
                 ),
                 Example.of(
@@ -359,7 +363,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                         details = None
                       )
                     ),
-                    validationPerformed = true
+                    validationPerformed = true,
+                    testCasesValidationErrors = None,
                   )
                 )
               )
@@ -1479,7 +1484,8 @@ object NodesApiEndpoints {
         parameters: Option[List[UIParameter]],
         expressionType: Option[TypingResult],
         validationErrors: List[NodeValidationError],
-        validationPerformed: Boolean
+        validationPerformed: Boolean,
+        testCasesValidationErrors: Option[NodeTestCasesValidationErrors],
     )
 
     object NodeValidationResultDto {
@@ -1505,24 +1511,53 @@ object NodesApiEndpoints {
           parameters = node.parameters,
           expressionType = node.expressionType,
           validationErrors = node.validationErrors,
-          validationPerformed = node.validationPerformed
+          validationPerformed = node.validationPerformed,
+          testCasesValidationErrors = node.testCasesValidationErrors,
         )
       }
 
     }
 
-    type NodeTestCases = Map[TestCaseId, NodeTestCase]
+    type NodeTestCases = Map[TestCaseName, NodeTestCase]
 
     @derive(schema, encoder, decoder)
     final case class NodeTestCase(
-        name: String,
         enricherMock: Option[EnricherMock],
         assertions: List[Assertion],
     )
 
-    implicit val nodeTestCasesSchema: Schema[NodeTestCases] = Schema.schemaForMap[TestCaseId, NodeTestCase](_.toString)
-    implicit val enricherMockSchema: Schema[EnricherMock]   = Schema.derived
-    implicit val assertionSchema: Schema[Assertion]         = Schema.derived
+    implicit val enricherMockSchema: Schema[EnricherMock] = Schema.derived
+    implicit val assertionSchema: Schema[Assertion]       = Schema.derived
+
+    type NodeTestCasesValidationErrors = Map[TestCaseName, NodeTestCaseValidationErrors]
+    type AssertionIndex                = Int
+
+    @derive(schema, encoder, decoder)
+    final case class NodeTestCaseValidationErrors(
+        enricherMockError: Option[NonEmptyList[EnricherMockValidationError]],
+        assertionsErrors: Option[Map[AssertionIndex, NonEmptyList[AssertionValidationError]]],
+    )
+
+    object NodeTestCaseValidationErrors {
+      implicit val assertionsErrorSchema: Schema[Map[AssertionIndex, NonEmptyList[AssertionValidationError]]] =
+        Schema.schemaForMap[AssertionIndex, NonEmptyList[AssertionValidationError]](_.toString)
+    }
+
+    @derive(schema, encoder, decoder)
+    final case class EnricherMockValidationError(
+        typ: String,
+        message: String,
+        description: String,
+        details: Option[ErrorDetails],
+    )
+
+    @derive(schema, encoder, decoder)
+    final case class AssertionValidationError(
+        typ: String,
+        message: String,
+        description: String,
+        details: Option[ErrorDetails],
+    )
 
     implicit val scenarioNameSchema: Schema[ProcessName] = Schema.string
 
@@ -1638,7 +1673,8 @@ object NodesApiEndpoints {
         //       Thanks to that we could remove some code on the FE side and be closer to support also not built-in components
         expressionType: Option[TypingResult],
         validationErrors: List[NodeValidationError],
-        validationPerformed: Boolean
+        validationPerformed: Boolean,
+        testCasesValidationErrors: Option[NodeTestCasesValidationErrors],
     )
 
     final case class NodeValidationRequest(
@@ -2082,4 +2118,5 @@ object TypingDtoSchemas {
     )
   }
 
+  implicit def nonEmptyListSchema[T: Schema]: Schema[NonEmptyList[T]] = Schema.derived[List[T]].as[NonEmptyList[T]]
 }

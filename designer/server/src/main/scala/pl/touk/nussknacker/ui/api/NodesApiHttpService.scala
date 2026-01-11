@@ -152,7 +152,8 @@ class NodesApiHttpService(
               parameters = None,
               expressionType = None,
               validationErrors = result.errors.processPropertiesErrors,
-              validationPerformed = true
+              validationPerformed = true,
+              testCasesValidationErrors = None,
             )
           } yield validation
         }
