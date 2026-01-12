@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
+import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
@@ -8,6 +9,7 @@ import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -19,27 +21,27 @@ import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeTestCase, NodeTestCases}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
+  AssertionValidationError,
+  EnricherMockValidationError,
+  NodeTestCase,
+  NodeTestCases,
+  NodeTestCaseValidationErrors
+}
 
 import scala.concurrent.Future
 
 class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
-  object Enricher1Service extends Service {
+  object TestEnricher extends Service {
     @MethodToInvoke
     def invoke(@ParamName("par1") par1: String): Future[String] = ???
-  }
-
-  object Enricher2Service extends Service {
-    @MethodToInvoke
-    def invoke(@ParamName("value") value: Int): Future[Int] = ???
   }
 
   private val modelData = LocalModelData(
     ConfigFactory.empty(),
     List(
-      ComponentDefinition("enricher1", Enricher1Service),
-      ComponentDefinition("enricher2", Enricher2Service)
+      ComponentDefinition("testEnricher", TestEnricher),
     )
   )
 
@@ -57,12 +59,36 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
   private implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
     new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
 
-  test("should successfully validate valid enricher mock") {
-    val enricher = Enricher(
-      id = "enricher1",
-      service = ServiceRef("enricher1", List(NodeParameter(ParameterName("par1"), "'test'".spel))),
-      output = "enricherOutput"
+  private val enricher = Enricher(
+    id = "testEnricher",
+    service = ServiceRef("testEnricher", List(NodeParameter(ParameterName("par1"), "'test'".spel))),
+    output = "enricherOutput"
+  )
+
+  private val variableTypes = Map("input" -> Typed[String])
+
+  test("should validate assertions") {
+    val nodeTestCases: NodeTestCases = Map(
+      "test1" -> NodeTestCase(
+        enricherMock = None,
+        assertions = List(
+          Assertion("#TESTS.assertEquals(#contexts[0].input, 'expected')".spel),
+          Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel)
+        )
+      )
     )
+
+    val result = testCaseValidator.validateNodeTestCases(
+      enricher,
+      nodeTestCases,
+      variableTypes,
+      jobData,
+    )
+
+    result shouldBe Map.empty
+  }
+
+  test("should validate enricher mock") {
     val nodeTestCases: NodeTestCases = Map(
       "test1" -> NodeTestCase(
         enricherMock = Some(EnricherMock("'mocked value'".spel)),
@@ -73,7 +99,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      Map.empty,
+      variableTypes,
       jobData,
     )
 
@@ -81,14 +107,9 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
   }
 
   test("should return error for invalid enricher mock expression") {
-    val enricher = Enricher(
-      id = "enricher1",
-      service = ServiceRef("enricher1", List(NodeParameter(ParameterName("par1"), "'test'".spel))),
-      output = "enricherOutput"
-    )
     val nodeTestCases: NodeTestCases = Map(
       "test1" -> NodeTestCase(
-        enricherMock = Some(EnricherMock("#invalidVariable".spel)),
+        enricherMock = Some(EnricherMock("42".spel)),
         assertions = List.empty
       )
     )
@@ -96,37 +117,26 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      Map.empty,
+      variableTypes,
       jobData,
     )
 
-    result should have size 1
-    result("test1").enricherMockError shouldBe defined
-    // Error is expected for undefined variable
-    result("test1").enricherMockError.get.head.message should include("invalidVariable")
-  }
-
-  test("should allow enricher mock with compatible type") {
-    val enricher = Enricher(
-      id = "enricher2",
-      service = ServiceRef("enricher2", List(NodeParameter(ParameterName("value"), "42".spel))),
-      output = "enricherOutput"
-    )
-    val nodeTestCases: NodeTestCases = Map(
-      "test1" -> NodeTestCase(
-        enricherMock = Some(EnricherMock("123".spel)),
-        assertions = List.empty
+    result shouldBe Map(
+      "test1" -> NodeTestCaseValidationErrors(
+        enricherMockError = Some(
+          NonEmptyList.one(
+            EnricherMockValidationError(
+              typ = "ExpressionParserCompilationError",
+              message = "Bad expression type, expected: String, found: Integer(42)",
+              description = "There is problem with expression in field [mockExpression] - it could not be parsed.",
+              details = None
+            ),
+          )
+        ),
+        assertionsErrors = None
       )
     )
 
-    val result = testCaseValidator.validateNodeTestCases(
-      enricher,
-      nodeTestCases,
-      Map.empty,
-      jobData,
-    )
-
-    result shouldBe Map.empty
   }
 
   test("should return error for mock on non-enricher node") {
@@ -145,53 +155,33 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val result = testCaseValidator.validateNodeTestCases(
       filter,
       nodeTestCases,
-      Map.empty,
+      variableTypes,
       jobData,
     )
 
-    result should have size 1
-    result("test1").enricherMockError shouldBe defined
-    result("test1").enricherMockError.get.head.typ shouldBe "MockForNonEnricherNode"
-    result("test1").enricherMockError.get.head.message should include("non-enricher node")
-  }
-
-  test("should successfully validate valid assertions") {
-    val enricher = Enricher(
-      id = "enricher1",
-      service = ServiceRef("enricher1", List(NodeParameter(ParameterName("par1"), "'test'".spel))),
-      output = "enricherOutput"
-    )
-    val nodeTestCases: NodeTestCases = Map(
-      "test1" -> NodeTestCase(
-        enricherMock = None,
-        assertions = List(
-          Assertion("#TESTS.assertEquals('expected', 'expected')".spel),
-          Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel)
-        )
+    result shouldBe Map(
+      "test1" -> NodeTestCaseValidationErrors(
+        enricherMockError = Some(
+          NonEmptyList.one(
+            EnricherMockValidationError(
+              typ = "MockForNonEnricherNode",
+              message = "Mock configured for non-enricher node 'filter1'",
+              description = "Mocks can only be configured for enricher nodes",
+              details = None
+            )
+          )
+        ),
+        assertionsErrors = None
       )
     )
-
-    val result = testCaseValidator.validateNodeTestCases(
-      enricher,
-      nodeTestCases,
-      Map("input" -> Typed[String]),
-      jobData,
-    )
-
-    result shouldBe Map.empty
   }
 
   test("should return error for invalid assertion expression") {
-    val enricher = Enricher(
-      id = "enricher1",
-      service = ServiceRef("enricher1", List(NodeParameter(ParameterName("par1"), "'test'".spel))),
-      output = "enricherOutput"
-    )
     val nodeTestCases: NodeTestCases = Map(
       "test1" -> NodeTestCase(
         enricherMock = None,
         assertions = List(
-          Assertion("#invalidVariable".spel)
+          Assertion("#TESTS.doSthMagic".spel)
         )
       )
     )
@@ -199,27 +189,34 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      Map.empty,
+      variableTypes,
       jobData,
     )
 
-    result should have size 1
-    result("test1").assertionsErrors shouldBe defined
-    result("test1").assertionsErrors.get should have size 1
-    // Error is expected for undefined variable (either IllegalPropertyName or NotFoundError)
-    result("test1").assertionsErrors.get(0).head.message should include("invalidVariable")
+    result shouldBe Map(
+      "test1" -> NodeTestCaseValidationErrors(
+        enricherMockError = None,
+        assertionsErrors = Some(
+          Map(
+            0 -> NonEmptyList.one(
+              AssertionValidationError(
+                typ = "ExpressionParserCompilationError",
+                message = "There is no property 'doSthMagic' in type: tests",
+                description = "There is problem with expression in field [<missing>] - it could not be parsed.",
+                details = Some(CoordinatesBasedTextRange(TextCoordinates(7, 0), TextCoordinates(17, 0)))
+              )
+            )
+          )
+        )
+      )
+    )
   }
 
-  test("should validate multiple test cases with mixed valid and invalid") {
-    val enricher = Enricher(
-      id = "enricher1",
-      service = ServiceRef("enricher1", List(NodeParameter(ParameterName("par1"), "'test'".spel))),
-      output = "enricherOutput"
-    )
+  test("should validate multiple test cases") {
     val nodeTestCases: NodeTestCases = Map(
       "validTest" -> NodeTestCase(
         enricherMock = Some(EnricherMock("'valid mock'".spel)),
-        assertions = List(Assertion("#TESTS.assertEquals(1, 1)".spel))
+        assertions = List(Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel))
       ),
       "invalidMockTest" -> NodeTestCase(
         enricherMock = Some(EnricherMock("#invalidVar".spel)),
@@ -227,57 +224,10 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       ),
       "invalidAssertionTest" -> NodeTestCase(
         enricherMock = None,
-        assertions = List(Assertion("#badExpression".spel))
-      )
-    )
-
-    val result = testCaseValidator.validateNodeTestCases(
-      enricher,
-      nodeTestCases,
-      Map.empty,
-      jobData,
-    )
-
-    result should have size 2
-    result.keySet should contain only ("invalidMockTest", "invalidAssertionTest")
-    result("invalidMockTest").enricherMockError shouldBe defined
-    result("invalidAssertionTest").assertionsErrors shouldBe defined
-  }
-
-  test("should return empty map for test cases with no errors") {
-    val enricher = Enricher(
-      id = "enricher1",
-      service = ServiceRef("enricher1", List(NodeParameter(ParameterName("par1"), "'test'".spel))),
-      output = "enricherOutput"
-    )
-    val nodeTestCases: NodeTestCases = Map(
-      "test1" -> NodeTestCase(
-        enricherMock = None,
-        assertions = List.empty
-      )
-    )
-
-    val result = testCaseValidator.validateNodeTestCases(
-      enricher,
-      nodeTestCases,
-      Map.empty,
-      jobData,
-    )
-
-    result shouldBe Map.empty
-  }
-
-  test("should validate assertions with available variables") {
-    val enricher = Enricher(
-      id = "enricher1",
-      service = ServiceRef("enricher1", List(NodeParameter(ParameterName("par1"), "'test'".spel))),
-      output = "enricherOutput"
-    )
-    val nodeTestCases: NodeTestCases = Map(
-      "test1" -> NodeTestCase(
-        enricherMock = None,
         assertions = List(
-          Assertion("#TESTS.assertEquals(#contexts[0].input, 'test')".spel)
+          Assertion("#TESTS.assertEquals(#contexts[0].doesNotExist, 1)".spel),
+          Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel),
+          Assertion("#TESTS.assertEquals(#contexts[0].doesNotExistOther, 2)".spel),
         )
       )
     )
@@ -285,11 +235,48 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      Map("input" -> Typed[String]),
+      variableTypes,
       jobData,
     )
 
-    result shouldBe Map.empty
+    result shouldBe Map(
+      "invalidMockTest" -> NodeTestCaseValidationErrors(
+        enricherMockError = Some(
+          NonEmptyList.one(
+            EnricherMockValidationError(
+              typ = "ExpressionParserCompilationError",
+              message = "Unresolved reference 'invalidVar'",
+              description = "There is problem with expression in field [mockExpression] - it could not be parsed.",
+              details = Some(CoordinatesBasedTextRange(TextCoordinates(0, 0), TextCoordinates(11, 0)))
+            )
+          )
+        ),
+        assertionsErrors = None
+      ),
+      "invalidAssertionTest" -> NodeTestCaseValidationErrors(
+        enricherMockError = None,
+        assertionsErrors = Some(
+          Map(
+            0 -> NonEmptyList.one(
+              AssertionValidationError(
+                typ = "ExpressionParserCompilationError",
+                message = "There is no property 'doesNotExist' in type: Record{input: String}",
+                description = "There is problem with expression in field [<missing>] - it could not be parsed.",
+                details = Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(45, 0)))
+              )
+            ),
+            2 -> NonEmptyList.one(
+              AssertionValidationError(
+                typ = "ExpressionParserCompilationError",
+                message = "There is no property 'doesNotExistOther' in type: Record{input: String}",
+                description = "There is problem with expression in field [<missing>] - it could not be parsed.",
+                details = Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(50, 0)))
+              )
+            )
+          )
+        )
+      )
+    )
   }
 
 }

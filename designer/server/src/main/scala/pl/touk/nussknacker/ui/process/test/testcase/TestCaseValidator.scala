@@ -100,7 +100,7 @@ class TestCaseValidator(
     }
   }
 
-  // TODO: consider reusing compilation from NodeDataValidator
+  // TODO: consider reusing compilation result from NodeDataValidator to avoid double compilation of the enricher node
   private def compileEnricherMock(
       enricher: Enricher,
       mockExpression: Expression,
