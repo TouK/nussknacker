@@ -7,7 +7,7 @@ import { getBorderColor } from "../../../../../containers/theme/helpers";
 import type { VariableTypes } from "../../../../../types/validation";
 import type { ValueFieldProps } from "../../../../valueField";
 import { rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
-import { Editor } from "./editor";
+import { SimplifiedSpelEditor } from "./SimplifiedSpelEditor";
 import { SpelChip } from "./spelChip";
 import type { ValuesListProps } from "./valuesList";
 import { ValuesList } from "./valuesList";
@@ -126,7 +126,13 @@ export function CollectionField({ value, onChange, variableTypes, disabled, isVa
             }}
         >
             <Collapse in={editorVisible} unmountOnExit={false} mountOnEnter={false}>
-                <Editor ref={ref} variableTypes={variableTypes} value={expression} onChange={onEditorChange} readOnly={disabled} />
+                <SimplifiedSpelEditor
+                    ref={ref}
+                    variableTypes={variableTypes}
+                    value={expression}
+                    onChange={onEditorChange}
+                    readOnly={disabled}
+                />
             </Collapse>
             <Collapse in={itemsVisible}>
                 <ValuesList values={values} onRemove={onRemove} onEdit={onEdit} ChipComponent={SpelChip} isValid={isValueValid} />
