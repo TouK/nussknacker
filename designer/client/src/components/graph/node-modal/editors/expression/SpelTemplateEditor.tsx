@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
@@ -17,25 +18,20 @@ function looksLikeStringLiteral(expr: string): boolean {
 
 export const SpelTemplateEditor = prepareEditor<SpelEditorProps>(
     (props) => {
+        const { t } = useTranslation();
         const { expressionObj, rows = 1, ...passProps } = props;
+
+        const language = editorsParameters[EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR].language;
 
         const value = useMemo(
             () => ({
                 expression: expressionObj?.expression,
-                language: editorsParameters[EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR].language,
+                language,
             }),
-            [expressionObj],
+            [expressionObj?.expression, language],
         );
 
-        return (
-            <SpelEditor
-                {...passProps}
-                expressionObj={value}
-                rows={rows}
-                editorMode={EditorMode.SpELTemplate}
-                language={editorsParameters[EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR].language}
-            />
-        );
+        return <SpelEditor {...passProps} expressionObj={value} rows={rows} editorMode={EditorMode.SpELTemplate} language={language} />;
     },
     {
         parseValueOnEditorChange: ({ expression, language }: ExpressionObj, newLanguage) => {

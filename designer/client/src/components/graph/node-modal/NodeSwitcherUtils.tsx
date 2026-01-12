@@ -1,6 +1,6 @@
 import { cloneDeep, defaultsDeep, isArray, isPlainObject, mergeWith } from "lodash";
 
-import ProcessUtils from "../../../common/ProcessUtils";
+import { determineComponentId } from "../../../common/componentUtils";
 import { fakeComponentType } from "../../../reducers/selectors/appendAdditionalCreators";
 import { fakeNodeCreatorType } from "../../../reducers/selectors/getCreator";
 import type { ComponentGroup } from "../../../types/component";
@@ -119,7 +119,7 @@ function compareNames(base: string, name: string): boolean {
 
 function isCustomName(editedNode: NodeType, componentGroups: ComponentGroup[]) {
     const nodeCreatorType = fakeNodeCreatorType(editedNode);
-    const componentId = nodeCreatorType ? `${fakeComponentType}-${nodeCreatorType}` : ProcessUtils.determineComponentId(editedNode);
+    const componentId = nodeCreatorType ? `${fakeComponentType}-${nodeCreatorType}` : determineComponentId(editedNode);
     const component = componentGroups.flatMap((g) => g.components).find((c) => componentId === c.componentId);
     return !component || !compareNames(component.label, editedNode.$id || editedNode.id);
 }

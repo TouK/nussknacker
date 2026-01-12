@@ -7,15 +7,13 @@ import { useAppSelector } from "../../../store/storeHelpers";
 import type { UIParameter } from "../../../types/definition";
 import type { NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
-import { AggregateParametersList } from "./aggregateParametersList";
 import { DescriptionField } from "./DescriptionField";
 import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
-import { isAggregate } from "./isAggregate";
 import { findParameters } from "./NodeDetailsContent/helpers";
 import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 import { NodeField } from "./NodeField";
-import { ParametersListAdvanced } from "./parametersListAdvanced";
+import { ParametersListWithOverrides } from "./ParametersListWithOverrides";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 export type CustomNodeProps = {
@@ -45,10 +43,6 @@ export function CustomNode({
         [node, processDefinitionData.components],
     );
 
-    const ParametersComponent = useMemo(() => {
-        return isAggregate(node) ? AggregateParametersList : ParametersListAdvanced;
-    }, [node]);
-
     return (
         <>
             <IdField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
@@ -65,7 +59,7 @@ export function CustomNode({
                 />
             )}
             {children}
-            <ParametersComponent
+            <ParametersListWithOverrides
                 parameters={findParameters(node)}
                 showSwitch={showSwitch}
                 findAvailableVariables={findAvailableVariables}
@@ -84,7 +78,7 @@ export function CustomNode({
                     setProperty={setProperty}
                     errors={errors}
                 />
-            </ParametersComponent>
+            </ParametersListWithOverrides>
         </>
     );
 }
