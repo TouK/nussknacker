@@ -1,22 +1,25 @@
-import type { PropsOf } from "@emotion/react";
 import React, { forwardRef } from "react";
 import type ReactAce from "react-ace/lib/ace";
 
+import type { VariableTypes } from "../../../../../types/validation";
 import { SpelEditor } from "../../editors/expression/SpelEditor";
 import type { ExpressionObj } from "../../editors/expression/types";
 import { EditorType, ExpressionLang } from "../../editors/expression/types";
 
-type EditorProps = Omit<PropsOf<typeof SpelEditor>, "expressionObj" | "onValueChange" | "fieldErrors" | "editorConfig"> & {
+type EditorProps = {
     value: string;
     onChange: (value: ExpressionObj) => void;
+    variableTypes: VariableTypes;
+    readOnly?: boolean;
 };
 
-export const Editor = forwardRef<ReactAce, EditorProps>(function Editor(props, ref) {
-    const { value, onChange, ...passProps } = props;
+export const SimplifiedSpelEditor = forwardRef<ReactAce, EditorProps>(function Editor(props, ref) {
+    const { value, onChange, readOnly, variableTypes } = props;
     return (
         <SpelEditor
             ref={ref}
-            {...passProps}
+            readOnly={readOnly}
+            variableTypes={variableTypes}
             fieldErrors={[]}
             expressionObj={{
                 expression: value,
