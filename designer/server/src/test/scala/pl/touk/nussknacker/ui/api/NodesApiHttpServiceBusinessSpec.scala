@@ -1146,6 +1146,192 @@ class NodesApiHttpServiceBusinessSpec
             |}
             |""".stripMargin)
     }
+    "validate enricher node with multiple test cases" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody("""{
+             |  "nodeData": {
+             |    "id": "enricherId",
+             |    "service": {
+             |      "id": "paramService",
+             |      "parameters": [
+             |        {
+             |          "name": "id",
+             |          "expression": {
+             |            "language": "spel",
+             |            "expression": "'a'"
+             |          }
+             |        }
+             |      ]
+             |    },
+             |    "output": "enricherOutput",
+             |    "additionalFields": null,
+             |    "type": "Enricher"
+             |  },
+             |  "processProperties": {
+             |    "isFragment": false,
+             |    "additionalFields": {
+             |      "description": null,
+             |      "properties": {
+             |        "parallelism": "",
+             |        "spillStateToDisk": "true",
+             |        "useAsyncInterpretation": "",
+             |        "checkpointIntervalInSeconds": ""
+             |      },
+             |      "metaDataType": "StreamMetaData"
+             |    }
+             |  },
+             |  "variableTypes": {
+             |    "input": {
+             |      "display": "String",
+             |      "type": "TypedClass",
+             |      "refClazzName": "java.lang.String",
+             |      "params": []
+             |    }
+             |  },
+             |  "branchVariableTypes": null,
+             |  "outgoingEdges": null,
+             |  "testCases": {
+             |    "test-case-1": {
+             |      "enricherMock": {
+             |        "expression": {
+             |          "language": "spel",
+             |          "expression": "'valid mock'"
+             |        }
+             |      },
+             |      "assertions": [
+             |        {
+             |          "expression": {
+             |            "language": "spel",
+             |            "expression": "#TESTS.assertEquals(#contexts.size, 5)"
+             |          }
+             |        },
+             |        {
+             |          "expression": {
+             |            "language": "spel",
+             |            "expression": "#TESTS.assertEquals(#contexts[0].input, 'value')"
+             |          }
+             |        }
+             |      ]
+             |    },
+             |    "test-case-2": {
+             |      "enricherMock": {
+             |        "expression": {
+             |          "language": "spel",
+             |          "expression": "#nonExistentVariable"
+             |        }
+             |      },
+             |      "assertions": []
+             |    },
+             |    "test-case-3": {
+             |      "enricherMock": {
+             |        "expression": {
+             |          "language": "spel",
+             |          "expression": "'another valid mock'"
+             |        }
+             |      },
+             |      "assertions": [
+             |        {
+             |          "expression": {
+             |            "language": "spel",
+             |            "expression": "#TESTS.assertEquals(#contexts[0].doesNotExist, 'value')"
+             |          }
+             |        },
+             |        {
+             |          "expression": {
+             |            "language": "spel",
+             |            "expression": "#TESTS.assertEquals(#contexts.size, 1)"
+             |          }
+             |        },
+             |        {
+             |          "expression": {
+             |            "language": "spel",
+             |            "expression": "#TESTS.assertEquals(#contexts[0].doesNotExist, 'value')"
+             |          }
+             |        }
+             |      ]
+             |    }
+             |  }
+             |}""".stripMargin)
+        .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/validation")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody("""{
+            |  "parameters": null,
+            |  "expressionType": null,
+            |  "validationErrors": [
+            |  ],
+            |  "validationPerformed": true,
+            |  "testCasesValidationErrors": {
+            |    "test-case-2": {
+            |      "enricherMockError": [
+            |        {
+            |          "typ": "ExpressionParserCompilationError",
+            |          "message": "Unresolved reference 'nonExistentVariable'",
+            |          "description": "There is problem with expression in field [mockExpression] - it could not be parsed.",
+            |          "details": {
+            |            "start": {
+            |              "column": 0,
+            |              "row": 0
+            |            },
+            |            "end": {
+            |              "column": 20,
+            |              "row": 0
+            |            },
+            |            "type": "CoordinatesBasedTextRange"
+            |          }
+            |        }
+            |      ],
+            |      "assertionsErrors": null
+            |    },
+            |    "test-case-3": {
+            |      "enricherMockError": null,
+            |      "assertionsErrors": {
+            |        "0": [
+            |          {
+            |            "typ": "ExpressionParserCompilationError",
+            |            "message": "There is no property 'doesNotExist' in type: Record{input: String}",
+            |            "description": "There is problem with expression in field [<missing>] - it could not be parsed.",
+            |            "details": {
+            |              "start": {
+            |                "column": 33,
+            |                "row": 0
+            |              },
+            |              "end": {
+            |                "column": 45,
+            |                "row": 0
+            |              },
+            |              "type": "CoordinatesBasedTextRange"
+            |            }
+            |          }
+            |        ],
+            |        "2": [
+            |          {
+            |            "typ": "ExpressionParserCompilationError",
+            |            "message": "There is no property 'doesNotExist' in type: Record{input: String}",
+            |            "description": "There is problem with expression in field [<missing>] - it could not be parsed.",
+            |            "details": {
+            |              "start": {
+            |                "column": 33,
+            |                "row": 0
+            |              },
+            |              "end": {
+            |                "column": 45,
+            |                "row": 0
+            |              },
+            |              "type": "CoordinatesBasedTextRange"
+            |            }
+            |          }
+            |        ]
+            |      }
+            |    }
+            |  }
+            |}""".stripMargin)
+    }
   }
 
   "The endpoint for properties additional info should" - {
