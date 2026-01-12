@@ -5,6 +5,7 @@ import cats.effect.kernel.Resource
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   NodeDataValidator,
@@ -12,6 +13,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
   ValidationPerformed
 }
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   NodeTestCasesValidationErrors,
@@ -20,7 +22,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
 }
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
-import pl.touk.nussknacker.ui.process.test.testcase.TestCaseValidator
+import pl.touk.nussknacker.ui.process.test.testcase.{AssertionsCompiler, TestCaseValidator}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class NodeValidator(
@@ -29,7 +31,12 @@ class NodeValidator(
     fragmentRepository: FragmentRepository
 ) {
 
-  private val testCasesValidator = new TestCaseValidator()
+  private lazy val assertionsCompiler = new AssertionsCompiler(
+    ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper,
+    GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
+  )
+
+  private lazy val testCasesValidator = new TestCaseValidator(modelData, assertionsCompiler)
 
   def validate(processVersion: ProcessVersion, validationRequest: NodeValidationRequest)(
       implicit loggedUser: LoggedUser
@@ -81,7 +88,19 @@ class NodeValidator(
       .unsafeRunSync()
   }
 
-  private def validateTestCases(validationRequest: NodeValidationRequest): Option[NodeTestCasesValidationErrors] =
-    validationRequest.testCases.map(testCasesValidator.validateNodeTestCases(validationRequest.nodeData, _))
+  private def validateTestCases(
+      validationRequest: NodeValidationRequest,
+  )(
+      implicit jobData: JobData,
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): Option[NodeTestCasesValidationErrors] =
+    validationRequest.testCases.map(
+      testCasesValidator.validateNodeTestCases(
+        validationRequest.nodeData,
+        _,
+        validationRequest.variableTypes,
+        jobData,
+      )
+    )
 
 }
