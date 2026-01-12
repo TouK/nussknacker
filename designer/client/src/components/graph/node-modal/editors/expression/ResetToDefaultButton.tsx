@@ -10,13 +10,10 @@ import type { ExpressionObj } from "./types";
 
 interface Props {
     defaultValue: ExpressionObj;
-    handleChange: (expression: string) => void;
+    handleChange: (value: ExpressionObj) => void;
 }
 
-export const ResetToDefaultButton = ({ defaultValue, handleChange }: Props) => {
-    const userSettings = useAppSelector(getUserSettings);
-    const showResetToDefaultButton = userSettings["editor.showResetToDefaultButton"];
-
+const ResetToDefaultButton = ({ defaultValue, handleChange }: Props) => {
     const { t } = useTranslation();
     const [anchorEl, setAnchorEl] = useState<null | SVGElement>(null);
 
@@ -29,13 +26,9 @@ export const ResetToDefaultButton = ({ defaultValue, handleChange }: Props) => {
     };
 
     const handleApply = () => {
-        handleChange(defaultValue.expression);
+        handleChange(defaultValue);
         handleClose();
     };
-
-    if (!showResetToDefaultButton) {
-        return null;
-    }
 
     return (
         <>
@@ -69,3 +62,24 @@ export const ResetToDefaultButton = ({ defaultValue, handleChange }: Props) => {
         </>
     );
 };
+
+export function ResetToDefault({
+    value,
+    defaultValue,
+    handleChange,
+}: {
+    value: string;
+    defaultValue: ExpressionObj;
+    handleChange: (value: ExpressionObj) => void;
+}) {
+    const userSettings = useAppSelector(getUserSettings);
+    if (!userSettings["editor.showResetToDefaultButton"]) {
+        return null;
+    }
+
+    if (!defaultValue || defaultValue.expression === value) {
+        return null;
+    }
+
+    return <ResetToDefaultButton defaultValue={defaultValue} handleChange={handleChange} />;
+}

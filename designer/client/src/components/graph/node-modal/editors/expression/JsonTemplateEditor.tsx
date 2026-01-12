@@ -1,7 +1,10 @@
 import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
+import { Info, InputAdornmentEndColumn } from "./InputAdornmentEndColumn";
+import { ResetToDefault } from "./ResetToDefaultButton";
 import type { SpelEditorProps } from "./SpelEditor";
 import { SpelEditor } from "./SpelEditor";
 import { addQuotesToExpression } from "./SpelQuotesUtils";
@@ -9,23 +12,36 @@ import { EditorMode, EditorType, ExpressionLang, type ExpressionObj } from "./ty
 
 export const JsonTemplateEditor = prepareEditor<SpelEditorProps>(
     (props) => {
+        const { t } = useTranslation();
         const { expressionObj, rows = 5, ...passProps } = props;
+
+        const language = editorsParameters[EditorType.JSON_TEMPLATE_PARAMETER_EDITOR].language;
 
         const value = useMemo(
             () => ({
                 expression: expressionObj.expression,
-                language: editorsParameters[EditorType.JSON_TEMPLATE_PARAMETER_EDITOR].language,
+                language,
             }),
-            [expressionObj],
+            [expressionObj.expression, language],
         );
 
         return (
             <SpelEditor
+                inputAdornmentEnd={
+                    <InputAdornmentEndColumn>
+                        <Info editorConfig={props.editorConfig} />
+                        <ResetToDefault
+                            value={expressionObj?.expression}
+                            defaultValue={props.defaultValue}
+                            handleChange={props.onValueChange}
+                        />
+                    </InputAdornmentEndColumn>
+                }
                 {...passProps}
                 expressionObj={value}
                 rows={rows}
                 editorMode={EditorMode.JsonTemplate}
-                language={editorsParameters[EditorType.JSON_TEMPLATE_PARAMETER_EDITOR].language}
+                language={language}
             />
         );
     },

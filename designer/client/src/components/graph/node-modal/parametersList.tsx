@@ -3,6 +3,7 @@ import React from "react";
 
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { Parameter } from "../../../types/node";
+import { ParamKeyProvider } from "./editors/ParamKeyProvider";
 import { getIsParameterStable } from "./NodeDetailsContent/selectors";
 import type { ParameterExpressionFieldProps } from "./ParameterExpressionField";
 import type { ParametersListFieldProps } from "./parametersListField";
@@ -45,7 +46,9 @@ export const ParametersList = (props: ParametersListProps) => {
     return (
         <>
             {parameters.map((paramWithIndex) => (
-                <ListElement key={node.id + paramWithIndex.param.name + paramWithIndex.index} paramWithIndex={paramWithIndex} {...props} />
+                <ParamKeyProvider node={node} param={paramWithIndex.param} key={node.id + paramWithIndex.param.name + paramWithIndex.index}>
+                    <ListElement paramWithIndex={paramWithIndex} {...props} />
+                </ParamKeyProvider>
             ))}
         </>
     );

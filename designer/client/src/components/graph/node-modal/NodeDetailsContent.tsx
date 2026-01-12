@@ -1,7 +1,7 @@
 import type { SetStateAction } from "react";
 import React, { useCallback, useMemo } from "react";
 
-import ProcessUtils from "../../../common/ProcessUtils";
+import { determineComponentId } from "../../../common/componentUtils";
 import { getConfiguredAdditionalComponents } from "../../../reducers/selectors/configuredAdditionalComponents";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
 import { getRemoteTenantId, getRemoteWebHost } from "../../../reducers/selectors/isCloudInstance";
@@ -39,10 +39,7 @@ export const NodeDetailsContent = ({
 
     const configuredAdditionalComponents = useAppSelector(getConfiguredAdditionalComponents);
     const creatorType = useMemo(() => {
-        return (
-            getCreatorType(node) ||
-            configuredAdditionalComponents.find((c) => c.componentId === ProcessUtils.determineComponentId(node))?.type
-        );
+        return getCreatorType(node) || configuredAdditionalComponents.find((c) => c.componentId === determineComponentId(node))?.type;
     }, [configuredAdditionalComponents, node]);
 
     const nodeSwitcherVisible =

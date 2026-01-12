@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from "react";
 
-import ProcessUtils from "../../../common/ProcessUtils";
+import { determineComponentId } from "../../../common/componentUtils";
 import { getConfiguredAdditionalComponents } from "../../../reducers/cloudData";
 import { createUniqueName } from "../../../reducers/graph/utils";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
@@ -8,6 +8,7 @@ import { getNodes } from "../../../reducers/selectors/graph";
 import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { EditorByType } from "./editors/expression/EditorByType";
+import type { EditorConfig } from "./editors/expression/EditorConfig";
 import type { ExpressionObj } from "./editors/expression/types";
 import { EditorType, ExpressionLang } from "./editors/expression/types";
 import { FormControl } from "./editors/FormControl";
@@ -66,7 +67,7 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
     );
 
     const selectedId = useMemo(
-        () => componentsToSelect.find((c) => c.componentId === ProcessUtils.determineComponentId(editedNode))?.componentId,
+        () => componentsToSelect.find((c) => c.componentId === determineComponentId(editedNode))?.componentId,
         [componentsToSelect, editedNode],
     );
 
