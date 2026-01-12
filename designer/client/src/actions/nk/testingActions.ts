@@ -67,6 +67,9 @@ export type TestsActions =
     | {
           type: "DISPLAY_TEST_ASSERTIONS_RESULTS";
           assertionsResults: TestAssertionResults;
+      }
+    | {
+          type: "CLEAR_TEST_ASSERTIONS_RESULTS";
       };
 
 function wrapWithTestAction(
@@ -80,6 +83,7 @@ function wrapWithTestAction(
     }>,
 ): ThunkAction {
     return async (dispatch, getState) => {
+        dispatch({ type: "CLEAR_TEST_ASSERTIONS_RESULTS" });
         dispatch({ type: "TEST_RESULTS_LOADING" });
         try {
             await dispatch(checkPendingChanges());

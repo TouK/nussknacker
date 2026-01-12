@@ -38,6 +38,12 @@ export const testingReducer: Reducer<GraphState["testing"]> = (state = initialTe
                 assertionsResults: action.assertionsResults,
             };
         }
+        case "CLEAR_TEST_ASSERTIONS_RESULTS": {
+            return {
+                ...state,
+                assertionsResults: null,
+            };
+        }
         case "TEST_RESULTS_LOADING": {
             return {
                 ...state,
