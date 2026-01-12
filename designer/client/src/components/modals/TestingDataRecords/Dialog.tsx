@@ -136,7 +136,6 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                     <AppendFromLiveDataButton
                         handleGenerateTestData={handleGenerateTestData}
                         maxTestingRecords={maxTestingRecords}
-                        currentRecordsNumber={testingDataRecords.length}
                         recordsToAddLimitExceeded={recordsToAddLimitExceeded}
                     />
                 </Stack>

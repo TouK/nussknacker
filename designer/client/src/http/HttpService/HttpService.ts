@@ -39,9 +39,9 @@ import { handleAxiosError } from "../../devHelpers";
 import type { TestCase } from "../../reducers/graph/testCase";
 import type { AuthenticationSettings } from "../../reducers/settings";
 import type { WithId } from "../../types/common";
-import type { Expression, NodeType } from "../../types/node";
+import type { Expression, NodeType, PropertiesType } from "../../types/node";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
-import type { ValidationResult, VariableTypes } from "../../types/validation";
+import type { ValidationResult } from "../../types/validation";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "../parametersUtils";
 import type { ProcessCounts, ResultsWithCountsDto } from "../resultsWithCountsDto";
 import type {
@@ -926,6 +926,34 @@ export class HttpService {
         const sanitizedScenarioGraph = this.#sanitizeScenarioGraph(scenarioGraph);
         const promise = api.post<TestingDataRecords[]>(`/scenarioTesting/${encodeURIComponent(scenarioName)}/generatedTestData`, {
             scenarioGraph: sanitizedScenarioGraph,
+            numberOfSamples,
+        });
+
+        promise.catch((error: AxiosError) =>
+            this.#addError(
+                i18next.t(
+                    "notification.error.failedToValidateScenarioWithEventsData",
+                    "Failed to generated test data due to: {{axiosError}}",
+                    {
+                        axiosError: handleAxiosError(error),
+                    },
+                ),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
+    generatedTestDataForSingleSource(
+        scenarioName: ProcessName,
+        scenarioProperties: PropertiesType,
+        nodeData: NodeType,
+        numberOfSamples = 10,
+    ) {
+        const promise = api.post<TestingDataRecords[]>(`/nodes/${encodeURIComponent(scenarioName)}/records?limit=${numberOfSamples}`, {
+            processProperties: scenarioProperties,
+            nodeData,
             numberOfSamples,
         });
 
