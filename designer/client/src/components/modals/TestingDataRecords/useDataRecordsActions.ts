@@ -27,7 +27,7 @@ export const useDataRecordsActions = () => {
                 return;
 
             if (numberOfSamples > 0) {
-                const { data } = await HttpService.generatedTestData(scenarioName, scenarioGraph, numberOfSamples);
+                const { data } = await HttpService.fetchTestData(scenarioName, scenarioGraph, numberOfSamples);
                 dispatch(setTestCaseInputs((prevState) => [...prevState, ...data.map(mapGeneratedTestingDataToTableFormat)]));
             }
         },
@@ -44,7 +44,7 @@ export const useDataRecordsActions = () => {
                 return;
 
             if (numberOfSamples > 0) {
-                const { data } = await HttpService.generatedTestDataForSingleSource(
+                const { data } = await HttpService.fetchTestDataForSingleSource(
                     scenarioName,
                     scenarioProperties,
                     nodeData,

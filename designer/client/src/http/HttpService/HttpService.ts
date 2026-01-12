@@ -922,7 +922,7 @@ export class HttpService {
         return promise;
     }
 
-    generatedTestData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, numberOfSamples = 10) {
+    fetchTestData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, numberOfSamples = 10) {
         const sanitizedScenarioGraph = this.#sanitizeScenarioGraph(scenarioGraph);
         const promise = api.post<TestingDataRecords[]>(`/scenarioTesting/${encodeURIComponent(scenarioName)}/generatedTestData`, {
             scenarioGraph: sanitizedScenarioGraph,
@@ -931,13 +931,9 @@ export class HttpService {
 
         promise.catch((error: AxiosError) =>
             this.#addError(
-                i18next.t(
-                    "notification.error.failedToValidateScenarioWithEventsData",
-                    "Failed to generated test data due to: {{axiosError}}",
-                    {
-                        axiosError: handleAxiosError(error),
-                    },
-                ),
+                i18next.t("notification.error.failedToFetchTestData", "Failed to fetch test data due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
                 error,
                 true,
             ),
@@ -945,23 +941,17 @@ export class HttpService {
         return promise;
     }
 
-    generatedTestDataForSingleSource(
-        scenarioName: ProcessName,
-        scenarioProperties: PropertiesType,
-        nodeData: NodeType,
-        numberOfSamples = 10,
-    ) {
+    fetchTestDataForSingleSource(scenarioName: ProcessName, scenarioProperties: PropertiesType, nodeData: NodeType, numberOfSamples = 10) {
         const promise = api.post<TestingDataRecords[]>(`/nodes/${encodeURIComponent(scenarioName)}/records?limit=${numberOfSamples}`, {
             processProperties: scenarioProperties,
             nodeData,
-            numberOfSamples,
         });
 
         promise.catch((error: AxiosError) =>
             this.#addError(
                 i18next.t(
-                    "notification.error.failedToValidateScenarioWithEventsData",
-                    "Failed to generated test data due to: {{axiosError}}",
+                    "notification.error.failedToFetchTestDataForSingleSource",
+                    "Failed to fetch test data for a single source due to: {{axiosError}}",
                     {
                         axiosError: handleAxiosError(error),
                     },
