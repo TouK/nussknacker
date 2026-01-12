@@ -28,7 +28,6 @@ class TestCaseValidator(
 
   import TestCaseValidator._
 
-  // TODO: do not create those variables here (and again - they are created already in many other places)?
   private val expressionCompiler      = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
   private val globalVariablesPreparer = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
 
@@ -109,7 +108,7 @@ class TestCaseValidator(
   ): ValidatedNel[EnricherMockValidationError, Unit] = {
     implicit val nodeId: NodeId = NodeId(enricher.id)
     // TODO: consider reusing NodeCompiler from NodeValidator?
-    val nodeCompiler = createNodeCompiler()
+    val nodeCompiler = NodeCompiler.forValidation(modelData)
     val validationContextWithGlobalVariablesOnly =
       globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(scenarioCompilationDependencies.jobData)
     val inputContext = validationContextWithGlobalVariablesOnly.copy(localVariables = variableTypes)
@@ -183,24 +182,6 @@ class TestCaseValidator(
         details = prettyError.details
       )
     }
-  }
-
-  private def createNodeCompiler(): NodeCompiler = {
-    new NodeCompiler(
-      modelData.modelDefinition,
-      new FragmentParametersDefinitionExtractor(
-        modelData.modelClassLoader,
-        modelData.modelDefinitionWithClasses.classDefinitions,
-        modelData.modelConfig.globalParametersConfig
-      ),
-      expressionCompiler,
-      modelData.modelClassLoader,
-      Seq.empty,
-      PreventInvocationCollector,
-      RuntimeMode.Live,
-      NodesDeploymentData.empty,
-      nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
-    )
   }
 
 }

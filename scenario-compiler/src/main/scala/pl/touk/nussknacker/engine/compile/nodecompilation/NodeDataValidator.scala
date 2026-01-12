@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.expression.parse.TypedValue
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
+import pl.touk.nussknacker.engine.resultcollector.{PreventInvocationCollector, ProductionServiceInvocationCollector}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -42,23 +42,7 @@ object NodeDataValidator {
 
 class NodeDataValidator(modelData: ModelData) {
 
-  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
-
-  private val compiler = new NodeCompiler(
-    modelData.modelDefinition,
-    new FragmentParametersDefinitionExtractor(
-      modelData.modelClassLoader,
-      modelData.modelDefinitionWithClasses.classDefinitions,
-      modelData.modelConfig.globalParametersConfig
-    ),
-    expressionCompiler,
-    modelData.modelClassLoader,
-    Seq.empty,
-    PreventInvocationCollector,
-    RuntimeMode.Live,
-    NodesDeploymentData.empty,
-    nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
-  )
+  private val compiler = NodeCompiler.forValidation(modelData)
 
   def validate(
       nodeData: NodeData,

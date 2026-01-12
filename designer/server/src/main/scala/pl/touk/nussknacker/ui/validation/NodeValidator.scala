@@ -31,12 +31,13 @@ class NodeValidator(
     fragmentRepository: FragmentRepository
 ) {
 
-  private lazy val assertionsCompiler = new AssertionsCompiler(
-    ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper,
-    GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
+  private lazy val testCasesValidator = new TestCaseValidator(
+    modelData,
+    new AssertionsCompiler(
+      ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper,
+      GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
+    )
   )
-
-  private lazy val testCasesValidator = new TestCaseValidator(modelData, assertionsCompiler)
 
   def validate(processVersion: ProcessVersion, validationRequest: NodeValidationRequest)(
       implicit loggedUser: LoggedUser
