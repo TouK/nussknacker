@@ -67,9 +67,6 @@ export type TestsActions =
     | {
           type: "DISPLAY_TEST_ASSERTIONS_RESULTS";
           assertionsResults: TestAssertionResults;
-      }
-    | {
-          type: "CLEAR_TEST_ASSERTIONS_RESULTS";
       };
 
 function wrapWithTestAction(
