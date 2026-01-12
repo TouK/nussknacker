@@ -94,7 +94,6 @@ class TestCaseValidator(
               case Valid(_)        => None
             }
           case _ =>
-            // Mock provided for non-enricher node
             Some(NonEmptyList.one(errors.enricherMockForNonEnricherNode(nodeData)))
         }
       case None => None
