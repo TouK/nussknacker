@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import java.util.UUID
 
-// When adding multiple test cases variant, remember to validate ID and name uniqueness.
+// TODO: When adding multiple test cases variant, remember to validate ID and name uniqueness.
 sealed trait TestCases
 
 object TestCases {
