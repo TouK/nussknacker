@@ -63,7 +63,6 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       service = ServiceRef("enricher1", List(NodeParameter(ParameterName("par1"), "'test'".spel))),
       output = "enricherOutput"
     )
-
     val nodeTestCases: NodeTestCases = Map(
       "test1" -> NodeTestCase(
         enricherMock = Some(EnricherMock("'mocked value'".spel)),
@@ -87,7 +86,6 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       service = ServiceRef("enricher1", List(NodeParameter(ParameterName("par1"), "'test'".spel))),
       output = "enricherOutput"
     )
-
     val nodeTestCases: NodeTestCases = Map(
       "test1" -> NodeTestCase(
         enricherMock = Some(EnricherMock("#invalidVariable".spel)),
@@ -114,7 +112,6 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       service = ServiceRef("enricher2", List(NodeParameter(ParameterName("value"), "42".spel))),
       output = "enricherOutput"
     )
-
     val nodeTestCases: NodeTestCases = Map(
       "test1" -> NodeTestCase(
         enricherMock = Some(EnricherMock("123".spel)),
@@ -138,7 +135,6 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       expression = Expression.spel("true"),
       isDisabled = None
     )
-
     val nodeTestCases: NodeTestCases = Map(
       "test1" -> NodeTestCase(
         enricherMock = Some(EnricherMock("'value'".spel)),
@@ -165,7 +161,6 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       service = ServiceRef("enricher1", List(NodeParameter(ParameterName("par1"), "'test'".spel))),
       output = "enricherOutput"
     )
-
     val nodeTestCases: NodeTestCases = Map(
       "test1" -> NodeTestCase(
         enricherMock = None,
@@ -192,7 +187,6 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       service = ServiceRef("enricher1", List(NodeParameter(ParameterName("par1"), "'test'".spel))),
       output = "enricherOutput"
     )
-
     val nodeTestCases: NodeTestCases = Map(
       "test1" -> NodeTestCase(
         enricherMock = None,
@@ -222,7 +216,6 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       service = ServiceRef("enricher1", List(NodeParameter(ParameterName("par1"), "'test'".spel))),
       output = "enricherOutput"
     )
-
     val nodeTestCases: NodeTestCases = Map(
       "validTest" -> NodeTestCase(
         enricherMock = Some(EnricherMock("'valid mock'".spel)),
@@ -257,7 +250,6 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       service = ServiceRef("enricher1", List(NodeParameter(ParameterName("par1"), "'test'".spel))),
       output = "enricherOutput"
     )
-
     val nodeTestCases: NodeTestCases = Map(
       "test1" -> NodeTestCase(
         enricherMock = None,
@@ -281,7 +273,6 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       service = ServiceRef("enricher1", List(NodeParameter(ParameterName("par1"), "'test'".spel))),
       output = "enricherOutput"
     )
-
     val nodeTestCases: NodeTestCases = Map(
       "test1" -> NodeTestCase(
         enricherMock = None,

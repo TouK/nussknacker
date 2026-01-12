@@ -30,6 +30,7 @@ class TestCaseValidator(
 
   private val expressionCompiler      = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
   private val globalVariablesPreparer = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
+  private val nodeCompiler            = NodeCompiler.forValidation(modelData)
 
   def validateNodeTestCases(
       nodeData: NodeData,
@@ -99,6 +100,7 @@ class TestCaseValidator(
     }
   }
 
+  // TODO: consider reusing compilation from NodeDataValidator
   private def compileEnricherMock(
       enricher: Enricher,
       mockExpression: Expression,
@@ -107,8 +109,6 @@ class TestCaseValidator(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): ValidatedNel[EnricherMockValidationError, Unit] = {
     implicit val nodeId: NodeId = NodeId(enricher.id)
-    // TODO: consider reusing NodeCompiler from NodeValidator?
-    val nodeCompiler = NodeCompiler.forValidation(modelData)
     val validationContextWithGlobalVariablesOnly =
       globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(scenarioCompilationDependencies.jobData)
     val inputContext = validationContextWithGlobalVariablesOnly.copy(localVariables = variableTypes)
