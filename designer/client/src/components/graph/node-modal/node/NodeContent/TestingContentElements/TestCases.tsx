@@ -1,6 +1,6 @@
-import SaveAsIcon from "@mui/icons-material/SaveAs";
-import { Box, styled } from "@mui/material";
+import { Box } from "@mui/material";
 import React, { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
 import { getTestCaseOptions } from "../../../../../../reducers/selectors/testCases";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
@@ -11,13 +11,8 @@ import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
 import { TypeSelect } from "../../../fragment-input-definition/TypeSelect";
 import { StyledStack } from "./components/Styled";
 
-const StyledActionButton = styled(StyledButton)(() => ({
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-}));
-
 const TestCases = () => {
+    const { t } = useTranslation();
     const testCaseOptions = useAppSelector(getTestCaseOptions);
     const { open } = useWindows();
     const onDisplayEnterpriseInfo = useCallback(() => {
@@ -34,9 +29,9 @@ const TestCases = () => {
                 {/*    </StyledActionButton>*/}
                 {/*</InfoTooltip>*/}
                 <InfoTooltip title={"Save as"} variant={"hover"} enterDelay={500}>
-                    <StyledActionButton onClick={onDisplayEnterpriseInfo}>
-                        <SaveAsIcon />
-                    </StyledActionButton>
+                    <StyledButton title={t("node.row.add.title", "Add field")} onClick={onDisplayEnterpriseInfo}>
+                        {t("node.row.add.text", "+")}
+                    </StyledButton>
                 </InfoTooltip>
             </Box>
         </StyledStack>
