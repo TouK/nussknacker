@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.api.definition.{
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
   CellError,
   ColumnDefinition,
+  CoordinatesBasedTextRange,
   ErrorDetails,
   TextCoordinates
 }
@@ -174,7 +175,6 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   ),
                   branchVariableTypes = None,
                   outgoingEdges = None,
-                  // TODO: add test cases examples for enricher and other node
                   testCases = None,
                 ),
                 summary = Some("Validate correct Filter node")
@@ -201,6 +201,59 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   outgoingEdges = None,
                   testCases = None,
                 ),
+              ),
+              Example.of(
+                summary = Some("Validate test cases for enricher node"),
+                value = NodeValidationRequestDto(
+                  nodeData = Enricher(
+                    "enricher",
+                    ServiceRef(
+                      "paramService",
+                      List(
+                        EvaluatedParameter(ParameterName("param"), Expression(Language.Spel, "#input.id"))
+                      )
+                    ),
+                    "out",
+                    additionalFields = None
+                  ),
+                  processProperties = ProcessProperties.apply(
+                    ProcessAdditionalFields(description = None, properties = Map.empty, metaDataType = "")
+                  ),
+                  variableTypes = Map(
+                    "input" -> TypingResultInJson(
+                      encoder.apply(
+                        Typed.record(
+                          Map(
+                            "id" ->
+                              TypedObjectWithValue.apply(
+                                Typed[java.lang.String].asInstanceOf[TypedClass],
+                                "a"
+                              )
+                          )
+                        )
+                      )
+                    )
+                  ),
+                  branchVariableTypes = None,
+                  outgoingEdges = None,
+                  testCases = Some(
+                    Map(
+                      "test-case-1" -> NodeTestCase(
+                        enricherMock = Some(EnricherMock(Expression.spel("42"))),
+                        assertions = List(
+                          Assertion(Expression.spel("#TESTS.assertEquals(#contexts.size, 1)'")),
+                        ),
+                      ),
+                      "test-case-2" -> NodeTestCase(
+                        enricherMock = Some(EnricherMock(Expression.spel("'sample value'"))),
+                        assertions = List(
+                          Assertion(Expression.spel("#TESTS.assertEquals(#contexts.size, 1)'")),
+                          Assertion(Expression.spel("#TESTS.assertEquals(#contexts[0].doesNotExist, 'expected')")),
+                        ),
+                      )
+                    )
+                  ),
+                )
               )
             )
           )
@@ -217,7 +270,6 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     expressionType = Some(Typed[java.lang.Boolean]),
                     validationErrors = List.empty,
                     validationPerformed = true,
-                    // TODO: do not forget some real examples.
                     testCasesValidationErrors = None,
                   )
                 ),
@@ -238,6 +290,50 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     ),
                     validationPerformed = true,
                     testCasesValidationErrors = None,
+                  )
+                ),
+                Example.of(
+                  summary = Some("Test cases validation errors"),
+                  value = NodeValidationResultDto(
+                    parameters = None,
+                    expressionType = Some(Typed[java.lang.Boolean]),
+                    validationErrors = List.empty,
+                    validationPerformed = true,
+                    testCasesValidationErrors = Some(
+                      Map(
+                        "test-case-1" -> NodeTestCaseValidationErrors(
+                          enricherMockError = Some(
+                            NonEmptyList.one(
+                              EnricherMockValidationError(
+                                typ = "ExpressionParserCompilationError",
+                                message = "Bad expression type, expected: String, found: Integer(42)",
+                                description =
+                                  "There is problem with expression in field [mockExpression] - it could not be parsed.",
+                                details = None
+                              )
+                            )
+                          ),
+                          assertionsErrors = None
+                        ),
+                        "test-case-2" -> NodeTestCaseValidationErrors(
+                          enricherMockError = None,
+                          assertionsErrors = Some(
+                            Map(
+                              1 -> NonEmptyList.one(
+                                AssertionValidationError(
+                                  typ = "UnknownVariable",
+                                  message = "Unknown variable 'doesNotExist'",
+                                  description =
+                                    "There is problem with expression in field [assertion] - it could not be parsed.",
+                                  details =
+                                    Some(CoordinatesBasedTextRange(TextCoordinates(7, 0), TextCoordinates(17, 0)))
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
                   )
                 )
               )
