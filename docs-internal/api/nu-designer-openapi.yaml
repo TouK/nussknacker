@@ -5399,11 +5399,37 @@ components:
         version:
           type: integer
           format: int32
+    Assertion:
+      title: Assertion
+      type: object
+      required:
+      - expression
+      properties:
+        expression:
+          $ref: '#/components/schemas/Expression'
     AssertionResult:
       title: AssertionResult
       oneOf:
       - $ref: '#/components/schemas/FailedAssertion'
       - $ref: '#/components/schemas/SuccessfulAssertion'
+    AssertionValidationError:
+      title: AssertionValidationError
+      type: object
+      required:
+      - typ
+      - message
+      - description
+      properties:
+        typ:
+          type: string
+        message:
+          type: string
+        description:
+          type: string
+        details:
+          anyOf:
+          - $ref: '#/components/schemas/ErrorDetails'
+          - type: 'null'
     Attachment:
       title: Attachment
       type: object
@@ -5885,6 +5911,32 @@ components:
     EmptyDetails:
       title: EmptyDetails
       type: object
+    EnricherMock:
+      title: EnricherMock
+      type: object
+      required:
+      - expression
+      properties:
+        expression:
+          $ref: '#/components/schemas/Expression'
+    EnricherMockValidationError:
+      title: EnricherMockValidationError
+      type: object
+      required:
+      - typ
+      - message
+      - description
+      properties:
+        typ:
+          type: string
+        message:
+          type: string
+        description:
+          type: string
+        details:
+          anyOf:
+          - $ref: '#/components/schemas/ErrorDetails'
+          - type: 'null'
     ErrorDetails:
       title: ErrorDetails
       oneOf:
@@ -6258,6 +6310,13 @@ components:
       - type: array
         items:
           $ref: '#/components/schemas/FragmentParameter'
+    List_T:
+      title: List_T
+      oneOf:
+      - $ref: '#/components/schemas/Nil'
+      - type: array
+        items:
+          $ref: '#/components/schemas/EnricherMockValidationError'
     Map_EngineSetupName_List_String:
       title: Map_EngineSetupName_List_String
       type: object
@@ -6265,6 +6324,11 @@ components:
         type: array
         items:
           type: string
+    Map_Int_NonEmptyList_AssertionValidationError:
+      title: Map_Int_NonEmptyList_AssertionValidationError
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/List_T'
     Map_Json:
       title: Map_Json
       type: object
@@ -6298,6 +6362,16 @@ components:
         type: array
         items:
           $ref: '#/components/schemas/ResultContext_Json'
+    Map_NodeTestCase:
+      title: Map_NodeTestCase
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/NodeTestCase'
+    Map_NodeTestCaseValidationErrors:
+      title: Map_NodeTestCaseValidationErrors
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/NodeTestCaseValidationErrors'
     Map_ParameterName_Expression:
       title: Map_ParameterName_Expression
       type: object
@@ -6825,6 +6899,30 @@ components:
       properties:
         id:
           type: string
+    NodeTestCase:
+      title: NodeTestCase
+      type: object
+      properties:
+        enricherMock:
+          anyOf:
+          - $ref: '#/components/schemas/EnricherMock'
+          - type: 'null'
+        assertions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Assertion'
+    NodeTestCaseValidationErrors:
+      title: NodeTestCaseValidationErrors
+      type: object
+      properties:
+        enricherMockError:
+          anyOf:
+          - $ref: '#/components/schemas/List_T'
+          - type: 'null'
+        assertionsErrors:
+          anyOf:
+          - $ref: '#/components/schemas/Map_Int_NonEmptyList_AssertionValidationError'
+          - type: 'null'
     NodeTransitionResult:
       title: NodeTransitionResult
       type: object
@@ -6984,6 +7082,10 @@ components:
           - 'null'
           items:
             $ref: '#/components/schemas/Edge'
+        testCases:
+          anyOf:
+          - $ref: '#/components/schemas/Map_NodeTestCase'
+          - type: 'null'
     NodeValidationResultDto:
       title: NodeValidationResultDto
       type: object
@@ -7014,6 +7116,10 @@ components:
             $ref: '#/components/schemas/NodeValidationError'
         validationPerformed:
           type: boolean
+        testCasesValidationErrors:
+          anyOf:
+          - $ref: '#/components/schemas/Map_NodeTestCaseValidationErrors'
+          - type: 'null'
     NotAvailable:
       title: NotAvailable
       type: object
