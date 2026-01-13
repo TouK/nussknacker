@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.api.definition.{
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
   CellError,
   ColumnDefinition,
+  CoordinatesBasedTextRange,
   ErrorDetails,
   TextCoordinates
 }
@@ -49,6 +50,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
+import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCaseId, TestCaseName}
 import pl.touk.nussknacker.engine.util.CaretPosition2d
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
@@ -172,7 +174,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     "longValue" -> TypingResultInJson(encoder.apply(Typed[java.lang.Long]))
                   ),
                   branchVariableTypes = None,
-                  outgoingEdges = None
+                  outgoingEdges = None,
+                  testCases = None,
                 ),
                 summary = Some("Validate correct Filter node")
               ),
@@ -195,8 +198,62 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     "longValue" -> TypingResultInJson(encoder.apply(Typed[java.lang.Long]))
                   ),
                   branchVariableTypes = None,
-                  outgoingEdges = None
+                  outgoingEdges = None,
+                  testCases = None,
                 ),
+              ),
+              Example.of(
+                summary = Some("Validate test cases for enricher node"),
+                value = NodeValidationRequestDto(
+                  nodeData = Enricher(
+                    "enricher",
+                    ServiceRef(
+                      "paramService",
+                      List(
+                        EvaluatedParameter(ParameterName("param"), Expression(Language.Spel, "#input.id"))
+                      )
+                    ),
+                    "out",
+                    additionalFields = None
+                  ),
+                  processProperties = ProcessProperties.apply(
+                    ProcessAdditionalFields(description = None, properties = Map.empty, metaDataType = "")
+                  ),
+                  variableTypes = Map(
+                    "input" -> TypingResultInJson(
+                      encoder.apply(
+                        Typed.record(
+                          Map(
+                            "id" ->
+                              TypedObjectWithValue.apply(
+                                Typed[java.lang.String].asInstanceOf[TypedClass],
+                                "a"
+                              )
+                          )
+                        )
+                      )
+                    )
+                  ),
+                  branchVariableTypes = None,
+                  outgoingEdges = None,
+                  testCases = Some(
+                    Map(
+                      "test-case-1" -> NodeTestCase(
+                        enricherMock = Some(EnricherMock(Expression.spel("42"))),
+                        assertions = List(
+                          Assertion(Expression.spel("#TESTS.assertEquals(#contexts.size, 1)'")),
+                        ),
+                      ),
+                      "test-case-2" -> NodeTestCase(
+                        enricherMock = Some(EnricherMock(Expression.spel("'sample value'"))),
+                        assertions = List(
+                          Assertion(Expression.spel("#TESTS.assertEquals(#contexts.size, 1)'")),
+                          Assertion(Expression.spel("#TESTS.assertEquals(#contexts[0].doesNotExist, 'expected')")),
+                        ),
+                      )
+                    )
+                  ),
+                )
               )
             )
           )
@@ -212,7 +269,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     parameters = None,
                     expressionType = Some(Typed[java.lang.Boolean]),
                     validationErrors = List.empty,
-                    validationPerformed = true
+                    validationPerformed = true,
+                    testCasesValidationErrors = None,
                   )
                 ),
                 Example.of(
@@ -230,7 +288,35 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                         details = None
                       )
                     ),
-                    validationPerformed = true
+                    validationPerformed = true,
+                    testCasesValidationErrors = None,
+                  )
+                ),
+                Example.of(
+                  summary = Some("Test cases validation errors"),
+                  value = NodeValidationResultDto(
+                    parameters = None,
+                    expressionType = Some(Typed[java.lang.Boolean]),
+                    validationErrors = List.empty,
+                    validationPerformed = true,
+                    testCasesValidationErrors = Some(
+                      Map(
+                        "test-case-1" -> NodeTestCaseValidationErrors(
+                          enricherMockErrors = Some(
+                            NonEmptyList.one(
+                              EnricherMockValidationError(
+                                typ = "ExpressionParserCompilationError",
+                                message = "Bad expression type, expected: String, found: Integer(42)",
+                                description =
+                                  "There is problem with expression in field [mockExpression] - it could not be parsed.",
+                                details = None
+                              )
+                            )
+                          ),
+                          assertionsErrors = None
+                        )
+                      )
+                    )
                   )
                 )
               )
@@ -329,7 +415,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     parameters = None,
                     expressionType = None,
                     validationErrors = List.empty,
-                    validationPerformed = true
+                    validationPerformed = true,
+                    testCasesValidationErrors = None,
                   )
                 ),
                 Example.of(
@@ -355,7 +442,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                         details = None
                       )
                     ),
-                    validationPerformed = true
+                    validationPerformed = true,
+                    testCasesValidationErrors = None,
                   )
                 )
               )
@@ -1465,7 +1553,8 @@ object NodesApiEndpoints {
         processProperties: ProcessProperties,
         variableTypes: Map[String, TypingResultInJson],
         branchVariableTypes: Option[Map[String, Map[String, TypingResultInJson]]],
-        outgoingEdges: Option[List[Edge]]
+        outgoingEdges: Option[List[Edge]],
+        testCases: Option[NodeTestCases],
     )
 
     // Response doesn't need valid decoder
@@ -1474,13 +1563,14 @@ object NodesApiEndpoints {
         parameters: Option[List[UIParameter]],
         expressionType: Option[TypingResult],
         validationErrors: List[NodeValidationError],
-        validationPerformed: Boolean
+        validationPerformed: Boolean,
+        testCasesValidationErrors: Option[NodeTestCasesValidationErrors],
     )
 
-    implicit val nodeValidationRequestDtoDecoder: Decoder[NodeValidationResultDto] =
-      Decoder.instance[NodeValidationResultDto](_ => throw new IllegalStateException)
-
     object NodeValidationResultDto {
+      implicit val nodeValidationResultDtoDecoder: Decoder[NodeValidationResultDto] =
+        Decoder.failedWithMessage("NodeValidationResultDto should never be decoded. Exists only for Tapir purposes")
+
       implicit lazy val parameterEditorSchema: Schema[ParameterEditor]     = Schema.derived
       implicit lazy val durationSchema: Schema[Duration]                   = Schema.schemaForJavaDuration
       implicit lazy val uiParameterSchema: Schema[UIParameter]             = Schema.derived
@@ -1500,11 +1590,59 @@ object NodesApiEndpoints {
           parameters = node.parameters,
           expressionType = node.expressionType,
           validationErrors = node.validationErrors,
-          validationPerformed = node.validationPerformed
+          validationPerformed = node.validationPerformed,
+          testCasesValidationErrors = node.testCasesValidationErrors,
         )
       }
 
     }
+
+    type NodeTestCases = Map[TestCaseName, NodeTestCase]
+
+    @derive(schema, encoder, decoder)
+    final case class NodeTestCase(
+        enricherMock: Option[EnricherMock],
+        assertions: List[Assertion],
+    )
+
+    implicit val enricherMockSchema: Schema[EnricherMock] = Schema.derived
+    implicit val assertionSchema: Schema[Assertion]       = Schema.derived
+
+    type NodeTestCasesValidationErrors = Map[TestCaseName, NodeTestCaseValidationErrors]
+    type AssertionIndex                = Int
+
+    @derive(schema, encoder, decoder)
+    final case class NodeTestCaseValidationErrors(
+        enricherMockErrors: Option[NonEmptyList[EnricherMockValidationError]],
+        assertionsErrors: Option[Map[AssertionIndex, NonEmptyList[AssertionValidationError]]],
+    )
+
+    object NodeTestCaseValidationErrors {
+      implicit val enricherMockErrorsSchema: Schema[NonEmptyList[EnricherMockValidationError]] =
+        Schema.derived[List[EnricherMockValidationError]].as[NonEmptyList[EnricherMockValidationError]]
+
+      implicit val assertionValidationErrorsSchema: Schema[NonEmptyList[AssertionValidationError]] =
+        Schema.derived[List[AssertionValidationError]].as[NonEmptyList[AssertionValidationError]]
+
+      implicit val assertionsErrorSchema: Schema[Map[AssertionIndex, NonEmptyList[AssertionValidationError]]] =
+        Schema.schemaForMap[AssertionIndex, NonEmptyList[AssertionValidationError]](_.toString)
+    }
+
+    @derive(schema, encoder, decoder)
+    final case class EnricherMockValidationError(
+        typ: String,
+        message: String,
+        description: String,
+        details: Option[ErrorDetails],
+    )
+
+    @derive(schema, encoder, decoder)
+    final case class AssertionValidationError(
+        typ: String,
+        message: String,
+        description: String,
+        details: Option[ErrorDetails],
+    )
 
     implicit val scenarioNameSchema: Schema[ProcessName] = Schema.string
 
@@ -1605,12 +1743,12 @@ object NodesApiEndpoints {
         parameterExpressions: Map[ParameterName, Expression]
     )
 
-    @JsonCodec(encodeOnly = true) final case class ParametersValidationRequest(
+    final case class ParametersValidationRequest(
         parameters: List[UIValueParameter],
         variableTypes: Map[String, TypingResult]
     )
 
-    @JsonCodec(encodeOnly = true) final case class NodeValidationResult(
+    final case class NodeValidationResult(
         // It it used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
         parameters: Option[List[UIParameter]],
         // expressionType is returned to present inferred types of a single, hardcoded parameter of the node
@@ -1620,10 +1758,11 @@ object NodesApiEndpoints {
         //       Thanks to that we could remove some code on the FE side and be closer to support also not built-in components
         expressionType: Option[TypingResult],
         validationErrors: List[NodeValidationError],
-        validationPerformed: Boolean
+        validationPerformed: Boolean,
+        testCasesValidationErrors: Option[NodeTestCasesValidationErrors],
     )
 
-    @JsonCodec(encodeOnly = true) final case class NodeValidationRequest(
+    final case class NodeValidationRequest(
         nodeData: NodeData,
         processProperties: ProcessProperties,
         variableTypes: Map[String, TypingResult],
@@ -1631,7 +1770,8 @@ object NodesApiEndpoints {
         // TODO: remove Option when FE is ready
         // In this request edges are not guaranteed to have the correct "from" field. Normally it's synced with node id but
         // when renaming node, it contains node's id before the rename.
-        outgoingEdges: Option[List[Edge]]
+        outgoingEdges: Option[List[Edge]],
+        testCases: Option[NodeTestCases],
     )
 
     def decodeVariableTypes(

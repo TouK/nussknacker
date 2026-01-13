@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.all._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -19,6 +19,7 @@ import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.
 import java.util
 import scala.jdk.CollectionConverters._
 
+// TODO: rename to TestCaseCompiler?
 class AssertionsCompiler(
     expressionCompiler: ExpressionCompiler,
     globalVariablesPreparer: GlobalVariablesPreparer
@@ -38,6 +39,15 @@ class AssertionsCompiler(
       .map(assertions => CompiledAssertions(assertions.toMap))
   }
 
+  def compileForNode(
+      nodeId: NodeId,
+      assertions: List[Assertion],
+      variableTypes: Map[String, TypingResult],
+      jobData: JobData
+  ): List[Validated[AssertionExpressionCompilationError, CompiledAssertion]] = {
+    compileEachNodeAssertion(nodeId, assertions, variableTypes, jobData)
+  }
+
   private def compileNodeAssertions(
       nodeId: NodeId,
       assertions: List[Assertion],
@@ -45,12 +55,22 @@ class AssertionsCompiler(
       jobData: JobData
   ): ValidatedNel[PerformTestError, List[CompiledAssertion]] = {
     validateTypingExistence(nodeId, nodesTyping).andThen { nodeTypingData =>
-      val ctx = TestCaseVariables.extendNodeVariablesValidationContext(
-        globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData),
-        nodeTypingData
-      )
-      assertions.map(compileAssertionExpression(nodeId, ctx, _)).traverse(_.toValidatedNel)
+      compileEachNodeAssertion(nodeId, assertions, nodeTypingData.variableTypes, jobData)
+        .traverse(_.toValidatedNel)
     }
+  }
+
+  private def compileEachNodeAssertion(
+      nodeId: NodeId,
+      assertions: List[Assertion],
+      variableTypes: Map[String, TypingResult],
+      jobData: JobData
+  ): List[Validated[AssertionExpressionCompilationError, CompiledAssertion]] = {
+    val ctx = TestCaseVariables.extendNodeVariablesValidationContext(
+      globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData),
+      variableTypes
+    )
+    assertions.map(compileAssertionExpression(nodeId, ctx, _))
   }
 
   private def validateTypingExistence(

@@ -6,6 +6,7 @@ import org.hamcrest.Matchers
 import org.hamcrest.Matchers.{empty, equalTo, is, not}
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
@@ -15,6 +16,8 @@ import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
+
+import java.util.UUID
 
 class NodesApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -172,7 +175,8 @@ class NodesApiHttpServiceBusinessSpec
              |    "params": []
              |  },
              |  "validationErrors": [],
-             |  "validationPerformed": true
+             |  "validationPerformed": true,
+             |  "testCasesValidationErrors": null
              |}""".stripMargin
         )
     }
@@ -248,7 +252,8 @@ class NodesApiHttpServiceBusinessSpec
              |      "details": null
              |    }
              |  ],
-             |  "validationPerformed": true
+             |  "validationPerformed": true,
+             |  "testCasesValidationErrors": null
              |}""".stripMargin
         )
     }
@@ -401,7 +406,8 @@ class NodesApiHttpServiceBusinessSpec
              |      }
              |    }
              |  ],
-             |  "validationPerformed": true
+             |  "validationPerformed": true,
+             |  "testCasesValidationErrors": null
              |}""".stripMargin
         )
     }
@@ -454,7 +460,8 @@ class NodesApiHttpServiceBusinessSpec
              |    "params": []
              |  },
              |  "validationErrors": [],
-             |  "validationPerformed": true
+             |  "validationPerformed": true,
+             |  "testCasesValidationErrors": null
              |}""".stripMargin)
     }
     "validate node id" in {
@@ -516,7 +523,8 @@ class NodesApiHttpServiceBusinessSpec
              |      "details": null
              |    }
              |  ],
-             |  "validationPerformed": true
+             |  "validationPerformed": true,
+             |  "testCasesValidationErrors": null
              |}""".stripMargin)
     }
 
@@ -546,8 +554,423 @@ class NodesApiHttpServiceBusinessSpec
              |      "details": null
              |    }
              |  ],
-             |  "validationPerformed": true
+             |  "validationPerformed": true,
+             |  "testCasesValidationErrors": null
              |}""".stripMargin)
+    }
+
+    "validate node with a valid test case" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody("""{
+             |  "nodeData": {
+             |    "id": "mysink",
+             |    "ref": {
+             |      "typ": "kafka-string",
+             |      "parameters": [
+             |        {
+             |          "name": "Value",
+             |          "expression": {
+             |            "language": "spel",
+             |            "expression": "'sample'"
+             |          }
+             |        },
+             |        {
+             |          "name": "Topic",
+             |          "expression": {
+             |            "language": "spel",
+             |            "expression": "'test-topic'"
+             |          }
+             |        }
+             |      ]
+             |    },
+             |    "endResult": null,
+             |    "isDisabled": null,
+             |    "additionalFields": null,
+             |    "type": "Sink"
+             |  },
+             |  "processProperties": {
+             |    "isFragment": false,
+             |    "additionalFields": {
+             |      "description": null,
+             |      "properties": {
+             |        "parallelism": "",
+             |        "spillStateToDisk": "true",
+             |        "useAsyncInterpretation": "",
+             |        "checkpointIntervalInSeconds": ""
+             |      },
+             |      "metaDataType": "StreamMetaData"
+             |    }
+             |  },
+             |  "variableTypes": {
+             |    "input": {
+             |      "display": "String",
+             |      "type": "TypedClass",
+             |      "refClazzName": "java.lang.String",
+             |      "params": []
+             |    }
+             |  },
+             |  "branchVariableTypes": null,
+             |  "outgoingEdges": null,
+             |  "testCases": {
+             |    "test-case-1": {
+             |      "assertions": [
+             |        {
+             |          "expression": {
+             |            "language": "spel",
+             |            "expression": "#TESTS.assertEquals(#contexts.size, 5)"
+             |          }
+             |        }
+             |      ]
+             |    }
+             |  }
+             |}""".stripMargin)
+        .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/validation")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody("""{
+            |  "parameters": [
+            |    {
+            |      "name": "Topic",
+            |      "typ": {
+            |        "display": "String",
+            |        "type": "TypedClass",
+            |        "refClazzName": "java.lang.String",
+            |        "params": [
+            |        ]
+            |      },
+            |      "editors": [
+            |        {
+            |          "type": "SpelTemplateParameterEditor"
+            |        },
+            |        {
+            |          "type": "SpelParameterEditor"
+            |        }
+            |      ],
+            |      "defaultValue": {
+            |        "language": "spelTemplate",
+            |        "expression": ""
+            |      },
+            |      "additionalVariables": {
+            |      },
+            |      "variablesToHide": [
+            |      ],
+            |      "branchParam": false,
+            |      "hintText": null,
+            |      "label": "Topic",
+            |      "requiredParam": true,
+            |      "category": "Standard",
+            |      "changesCanReloadParameters": false,
+            |      "nonImportantForExecution": false
+            |    },
+            |    {
+            |      "name": "Value",
+            |      "typ": {
+            |        "display": "Unknown",
+            |        "type": "Unknown",
+            |        "refClazzName": "java.lang.Object",
+            |        "params": [
+            |        ]
+            |      },
+            |      "editors": [
+            |        {
+            |          "type": "SpelParameterEditor"
+            |        }
+            |      ],
+            |      "defaultValue": {
+            |        "language": "spel",
+            |        "expression": ""
+            |      },
+            |      "additionalVariables": {
+            |      },
+            |      "variablesToHide": [
+            |      ],
+            |      "branchParam": false,
+            |      "hintText": null,
+            |      "label": "Value",
+            |      "requiredParam": true,
+            |      "category": "Standard",
+            |      "changesCanReloadParameters": false,
+            |      "nonImportantForExecution": false
+            |    }
+            |  ],
+            |  "expressionType": null,
+            |  "validationErrors": [
+            |  ],
+            |  "validationPerformed": true,
+            |  "testCasesValidationErrors": {
+            |  }
+            |}""".stripMargin)
+
+    }
+
+    "validate node with mock for non-enricher node in a test case" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(s"""{
+             |  "nodeData": {
+             |    "id": "sourceId",
+             |    "ref": {
+             |      "typ": "barSource",
+             |      "parameters": []
+             |    },
+             |    "additionalFields": null,
+             |    "type": "Source"
+             |  },
+             |  "processProperties": {
+             |    "isFragment": false,
+             |    "additionalFields": {
+             |      "description": null,
+             |      "properties": {
+             |        "parallelism": "",
+             |        "spillStateToDisk": "true",
+             |        "useAsyncInterpretation": "",
+             |        "checkpointIntervalInSeconds": ""
+             |      },
+             |      "metaDataType": "StreamMetaData"
+             |    }
+             |  },
+             |  "variableTypes": {},
+             |  "branchVariableTypes": null,
+             |  "outgoingEdges": null,
+             |  "testCases": {
+             |    "test-case-1": {
+             |      "enricherMock": {
+             |        "expression": {
+             |          "language": "spel",
+             |          "expression": "'mock-value'"
+             |        }
+             |      },
+             |      "assertions": []
+             |    }
+             |  }
+             |}""".stripMargin)
+        .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/validation")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody("""{
+            |  "parameters": null,
+            |  "expressionType": null,
+            |  "validationErrors": [
+            |    {
+            |      "typ": "MissingSourceFactory",
+            |      "message": "Missing source: barSource",
+            |      "description": "Please check the name of source, barSource is not available",
+            |      "fieldName": null,
+            |      "errorType": "SaveAllowed",
+            |      "details": null
+            |    }
+            |  ],
+            |  "validationPerformed": true,
+            |  "testCasesValidationErrors": {
+            |    "test-case-1": {
+            |      "enricherMockErrors": [
+            |        {
+            |          "typ": "MockForNonEnricherNode",
+            |          "message": "Mock configured for non-enricher node 'sourceId'",
+            |          "description": "Mocks can only be configured for enricher nodes",
+            |          "details": null
+            |        }
+            |      ],
+            |      "assertionsErrors": null
+            |    }
+            |  }
+            |}""".stripMargin)
+    }
+
+    "validate enricher node with multiple test cases" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody("""{
+             |  "nodeData": {
+             |    "id": "enricherId",
+             |    "service": {
+             |      "id": "paramService",
+             |      "parameters": [
+             |        {
+             |          "name": "id",
+             |          "expression": {
+             |            "language": "spel",
+             |            "expression": "'a'"
+             |          }
+             |        }
+             |      ]
+             |    },
+             |    "output": "enricherOutput",
+             |    "additionalFields": null,
+             |    "type": "Enricher"
+             |  },
+             |  "processProperties": {
+             |    "isFragment": false,
+             |    "additionalFields": {
+             |      "description": null,
+             |      "properties": {
+             |        "parallelism": "",
+             |        "spillStateToDisk": "true",
+             |        "useAsyncInterpretation": "",
+             |        "checkpointIntervalInSeconds": ""
+             |      },
+             |      "metaDataType": "StreamMetaData"
+             |    }
+             |  },
+             |  "variableTypes": {
+             |    "input": {
+             |      "display": "String",
+             |      "type": "TypedClass",
+             |      "refClazzName": "java.lang.String",
+             |      "params": []
+             |    }
+             |  },
+             |  "branchVariableTypes": null,
+             |  "outgoingEdges": null,
+             |  "testCases": {
+             |    "test-case-1": {
+             |      "enricherMock": {
+             |        "expression": {
+             |          "language": "spel",
+             |          "expression": "'valid mock'"
+             |        }
+             |      },
+             |      "assertions": [
+             |        {
+             |          "expression": {
+             |            "language": "spel",
+             |            "expression": "#TESTS.assertEquals(#contexts.size, 5)"
+             |          }
+             |        },
+             |        {
+             |          "expression": {
+             |            "language": "spel",
+             |            "expression": "#TESTS.assertEquals(#contexts[0].input, 'value')"
+             |          }
+             |        }
+             |      ]
+             |    },
+             |    "test-case-2": {
+             |      "enricherMock": {
+             |        "expression": {
+             |          "language": "spel",
+             |          "expression": "#nonExistentVariable"
+             |        }
+             |      },
+             |      "assertions": []
+             |    },
+             |    "test-case-3": {
+             |      "enricherMock": {
+             |        "expression": {
+             |          "language": "spel",
+             |          "expression": "'another valid mock'"
+             |        }
+             |      },
+             |      "assertions": [
+             |        {
+             |          "expression": {
+             |            "language": "spel",
+             |            "expression": "#TESTS.assertEquals(#contexts[0].doesNotExist, 'value')"
+             |          }
+             |        },
+             |        {
+             |          "expression": {
+             |            "language": "spel",
+             |            "expression": "#TESTS.assertEquals(#contexts.size, 1)"
+             |          }
+             |        },
+             |        {
+             |          "expression": {
+             |            "language": "spel",
+             |            "expression": "#TESTS.assertEquals(#contexts[0].doesNotExist, 'value')"
+             |          }
+             |        }
+             |      ]
+             |    }
+             |  }
+             |}""".stripMargin)
+        .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/validation")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody("""{
+            |  "parameters": null,
+            |  "expressionType": null,
+            |  "validationErrors": [
+            |  ],
+            |  "validationPerformed": true,
+            |  "testCasesValidationErrors": {
+            |    "test-case-2": {
+            |      "enricherMockErrors": [
+            |        {
+            |          "typ": "ExpressionParserCompilationError",
+            |          "message": "Unresolved reference 'nonExistentVariable'",
+            |          "description": "There is problem with expression in field [mockExpression] - it could not be parsed.",
+            |          "details": {
+            |            "start": {
+            |              "column": 0,
+            |              "row": 0
+            |            },
+            |            "end": {
+            |              "column": 20,
+            |              "row": 0
+            |            },
+            |            "type": "CoordinatesBasedTextRange"
+            |          }
+            |        }
+            |      ],
+            |      "assertionsErrors": null
+            |    },
+            |    "test-case-3": {
+            |      "enricherMockErrors": null,
+            |      "assertionsErrors": {
+            |        "0": [
+            |          {
+            |            "typ": "ExpressionParserCompilationError",
+            |            "message": "There is no property 'doesNotExist' in type: Record{input: String}",
+            |            "description": "There is problem with expression in field [<missing>] - it could not be parsed.",
+            |            "details": {
+            |              "start": {
+            |                "column": 33,
+            |                "row": 0
+            |              },
+            |              "end": {
+            |                "column": 45,
+            |                "row": 0
+            |              },
+            |              "type": "CoordinatesBasedTextRange"
+            |            }
+            |          }
+            |        ],
+            |        "2": [
+            |          {
+            |            "typ": "ExpressionParserCompilationError",
+            |            "message": "There is no property 'doesNotExist' in type: Record{input: String}",
+            |            "description": "There is problem with expression in field [<missing>] - it could not be parsed.",
+            |            "details": {
+            |              "start": {
+            |                "column": 33,
+            |                "row": 0
+            |              },
+            |              "end": {
+            |                "column": 45,
+            |                "row": 0
+            |              },
+            |              "type": "CoordinatesBasedTextRange"
+            |            }
+            |          }
+            |        ]
+            |      }
+            |    }
+            |  }
+            |}""".stripMargin)
     }
   }
 
@@ -648,7 +1071,8 @@ class NodesApiHttpServiceBusinessSpec
              |      }
              |    }
              |  ],
-             |  "validationPerformed": true
+             |  "validationPerformed": true,
+             |  "testCasesValidationErrors": null
              |}""".stripMargin)
     }
     "validate scenario id" in {
@@ -699,7 +1123,8 @@ class NodesApiHttpServiceBusinessSpec
              |      "details": null
              |    }
              |  ],
-             |  "validationPerformed": true
+             |  "validationPerformed": true,
+             |  "testCasesValidationErrors": null
              |}""".stripMargin)
     }
   }

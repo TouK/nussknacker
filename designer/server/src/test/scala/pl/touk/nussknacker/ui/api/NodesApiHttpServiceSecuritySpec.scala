@@ -231,7 +231,8 @@ class NodesApiHttpServiceSecuritySpec
                |    "params": []
                |  },
                |  "validationErrors": [],
-               |  "validationPerformed": true
+               |  "validationPerformed": true,
+               |  "testCasesValidationErrors": null
                |}""".stripMargin
           )
       }
@@ -375,7 +376,8 @@ class NodesApiHttpServiceSecuritySpec
                |    "params": []
                |  },
                |  "validationErrors": [],
-               |  "validationPerformed": true
+               |  "validationPerformed": true,
+               |  "testCasesValidationErrors": null
                |}""".stripMargin
           )
       }
@@ -572,7 +574,8 @@ class NodesApiHttpServiceSecuritySpec
                |            }
                |    }
                |  ],
-               |  "validationPerformed": true
+               |  "validationPerformed": true,
+               |  "testCasesValidationErrors": null
                |}""".stripMargin)
       }
       "validate properties of scenario in the forbidden category" in {
@@ -685,7 +688,8 @@ class NodesApiHttpServiceSecuritySpec
                |            }
                |    }
                |  ],
-               |  "validationPerformed": true
+               |  "validationPerformed": true,
+               |  "testCasesValidationErrors": null
                |}""".stripMargin)
       }
     }

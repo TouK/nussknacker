@@ -32,14 +32,14 @@ object TestCaseVariables {
 
   def extendNodeVariablesValidationContext(
       validationContext: ValidationContext,
-      nodeTyping: NodeTypingData
+      variableTypes: Map[String, TypingResult]
   ): ValidationContext =
     validationContext
       .withVariablesUnsafe(
         TestsGlobalVariableName -> testsGlobalVariableType,
         ContextsNodeVariableName -> Typed.genericTypeClass(
           classOf[java.util.List[_]],
-          List(Typed.record(nodeTyping.variableTypes))
+          List(Typed.record(variableTypes))
         ),
       )
 

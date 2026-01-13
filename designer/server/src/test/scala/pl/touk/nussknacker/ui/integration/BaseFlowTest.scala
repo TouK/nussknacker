@@ -39,7 +39,7 @@ import pl.touk.nussknacker.test.mock.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.ScenarioToJsonHelper.{ScenarioGraphToJson, ScenarioToJson}
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeValidationRequest
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeValidationRequest, NodeValidationRequestDto}
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
 import pl.touk.nussknacker.ui.util.{CorsSupport, SecurityHeadersSupport}
@@ -477,12 +477,13 @@ class BaseFlowTest
       .flatMap(_.asString)
 
     def dynamicServiceParameters: Option[List[String]] = {
-      val request = NodeValidationRequest(
+      val request = NodeValidationRequestDto(
         nodeData = Processor(nodeUsingDynamicServiceId, ServiceRef("dynamicService", List.empty)),
         processProperties = ProcessProperties(StreamMetaData()),
         variableTypes = Map.empty,
         branchVariableTypes = None,
-        outgoingEdges = None
+        outgoingEdges = None,
+        testCases = None,
       )
 
       val response = httpClient.send(

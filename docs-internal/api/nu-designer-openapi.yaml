@@ -1578,6 +1578,70 @@ paths:
                       type: TypedClass
                       refClazzName: java.lang.Long
                       params: []
+              Example2:
+                summary: Validate test cases for enricher node
+                value:
+                  nodeData:
+                    id: enricher
+                    service:
+                      id: paramService
+                      parameters:
+                      - name: param
+                        expression:
+                          language: spel
+                          expression: '#input.id'
+                    output: out
+                    type: Enricher
+                  processProperties:
+                    additionalFields:
+                      properties: {}
+                      metaDataType: ''
+                      showDescription: false
+                  variableTypes:
+                    input:
+                      display: 'Record{id: String(a)}'
+                      type: TypedObjectTypingResult
+                      fields:
+                        id:
+                          value: a
+                          display: String(a)
+                          type: TypedObjectWithValue
+                          refClazzName: java.lang.String
+                          params: []
+                      refClazzName: java.util.Map
+                      params:
+                      - display: String
+                        type: TypedClass
+                        refClazzName: java.lang.String
+                        params: []
+                      - value: a
+                        display: String(a)
+                        type: TypedObjectWithValue
+                        refClazzName: java.lang.String
+                        params: []
+                  testCases:
+                    test-case-1:
+                      enricherMock:
+                        expression:
+                          language: spel
+                          expression: '42'
+                      assertions:
+                      - expression:
+                          language: spel
+                          expression: '#TESTS.assertEquals(#contexts.size, 1)'''
+                    test-case-2:
+                      enricherMock:
+                        expression:
+                          language: spel
+                          expression: '''sample value'''
+                      assertions:
+                      - expression:
+                          language: spel
+                          expression: '#TESTS.assertEquals(#contexts.size, 1)'''
+                      - expression:
+                          language: spel
+                          expression: '#TESTS.assertEquals(#contexts[0].doesNotExist,
+                            ''expected'')'
         required: true
       responses:
         '200':
@@ -1613,6 +1677,24 @@ paths:
                       fieldName: $expression
                       errorType: SaveAllowed
                     validationPerformed: true
+                Example2:
+                  summary: Test cases validation errors
+                  value:
+                    expressionType:
+                      display: Boolean
+                      type: TypedClass
+                      refClazzName: java.lang.Boolean
+                      params: []
+                    validationErrors: []
+                    validationPerformed: true
+                    testCasesValidationErrors:
+                      test-case-1:
+                        enricherMockErrors:
+                        - typ: ExpressionParserCompilationError
+                          message: 'Bad expression type, expected: String, found:
+                            Integer(42)'
+                          description: There is problem with expression in field [mockExpression]
+                            - it could not be parsed.
         '400':
           description: ''
           content:
@@ -5399,11 +5481,37 @@ components:
         version:
           type: integer
           format: int32
+    Assertion:
+      title: Assertion
+      type: object
+      required:
+      - expression
+      properties:
+        expression:
+          $ref: '#/components/schemas/Expression'
     AssertionResult:
       title: AssertionResult
       oneOf:
       - $ref: '#/components/schemas/FailedAssertion'
       - $ref: '#/components/schemas/SuccessfulAssertion'
+    AssertionValidationError:
+      title: AssertionValidationError
+      type: object
+      required:
+      - typ
+      - message
+      - description
+      properties:
+        typ:
+          type: string
+        message:
+          type: string
+        description:
+          type: string
+        details:
+          anyOf:
+          - $ref: '#/components/schemas/ErrorDetails'
+          - type: 'null'
     Attachment:
       title: Attachment
       type: object
@@ -5885,6 +5993,32 @@ components:
     EmptyDetails:
       title: EmptyDetails
       type: object
+    EnricherMock:
+      title: EnricherMock
+      type: object
+      required:
+      - expression
+      properties:
+        expression:
+          $ref: '#/components/schemas/Expression'
+    EnricherMockValidationError:
+      title: EnricherMockValidationError
+      type: object
+      required:
+      - typ
+      - message
+      - description
+      properties:
+        typ:
+          type: string
+        message:
+          type: string
+        description:
+          type: string
+        details:
+          anyOf:
+          - $ref: '#/components/schemas/ErrorDetails'
+          - type: 'null'
     ErrorDetails:
       title: ErrorDetails
       oneOf:
@@ -6244,6 +6378,20 @@ components:
         y:
           type: integer
           format: int64
+    List_AssertionValidationError:
+      title: List_AssertionValidationError
+      oneOf:
+      - $ref: '#/components/schemas/Nil'
+      - type: array
+        items:
+          $ref: '#/components/schemas/AssertionValidationError'
+    List_EnricherMockValidationError:
+      title: List_EnricherMockValidationError
+      oneOf:
+      - $ref: '#/components/schemas/Nil'
+      - type: array
+        items:
+          $ref: '#/components/schemas/EnricherMockValidationError'
     List_Field:
       title: List_Field
       oneOf:
@@ -6265,6 +6413,11 @@ components:
         type: array
         items:
           type: string
+    Map_Int_NonEmptyList_AssertionValidationError:
+      title: Map_Int_NonEmptyList_AssertionValidationError
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/List_AssertionValidationError'
     Map_Json:
       title: Map_Json
       type: object
@@ -6298,6 +6451,16 @@ components:
         type: array
         items:
           $ref: '#/components/schemas/ResultContext_Json'
+    Map_NodeTestCase:
+      title: Map_NodeTestCase
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/NodeTestCase'
+    Map_NodeTestCaseValidationErrors:
+      title: Map_NodeTestCaseValidationErrors
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/NodeTestCaseValidationErrors'
     Map_ParameterName_Expression:
       title: Map_ParameterName_Expression
       type: object
@@ -6825,6 +6988,30 @@ components:
       properties:
         id:
           type: string
+    NodeTestCase:
+      title: NodeTestCase
+      type: object
+      properties:
+        enricherMock:
+          anyOf:
+          - $ref: '#/components/schemas/EnricherMock'
+          - type: 'null'
+        assertions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Assertion'
+    NodeTestCaseValidationErrors:
+      title: NodeTestCaseValidationErrors
+      type: object
+      properties:
+        enricherMockErrors:
+          anyOf:
+          - $ref: '#/components/schemas/List_EnricherMockValidationError'
+          - type: 'null'
+        assertionsErrors:
+          anyOf:
+          - $ref: '#/components/schemas/Map_Int_NonEmptyList_AssertionValidationError'
+          - type: 'null'
     NodeTransitionResult:
       title: NodeTransitionResult
       type: object
@@ -6984,6 +7171,10 @@ components:
           - 'null'
           items:
             $ref: '#/components/schemas/Edge'
+        testCases:
+          anyOf:
+          - $ref: '#/components/schemas/Map_NodeTestCase'
+          - type: 'null'
     NodeValidationResultDto:
       title: NodeValidationResultDto
       type: object
@@ -7014,6 +7205,10 @@ components:
             $ref: '#/components/schemas/NodeValidationError'
         validationPerformed:
           type: boolean
+        testCasesValidationErrors:
+          anyOf:
+          - $ref: '#/components/schemas/Map_NodeTestCaseValidationErrors'
+          - type: 'null'
     NotAvailable:
       title: NotAvailable
       type: object
