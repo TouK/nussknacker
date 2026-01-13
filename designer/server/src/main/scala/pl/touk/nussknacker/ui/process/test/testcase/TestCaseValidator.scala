@@ -113,7 +113,7 @@ class TestCaseValidator(
       globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(scenarioCompilationDependencies.jobData)
     val inputContext = validationContextWithGlobalVariablesOnly.copy(localVariables = variableTypes)
     val enricherCompilationResult = modelData.withModelClassloaderAsContextClassLoader {
-      nodeCompiler.compileNode(enricher, variableTypes, None, List.empty)
+      nodeCompiler.compileNode(enricher, variableTypes, branchVariableTypes = None, outgoingEdges = List.empty)
     }
     val expectedType = enricherCompilationResult.validationContext
       .leftMap(convertToEnricherMockErrors)
