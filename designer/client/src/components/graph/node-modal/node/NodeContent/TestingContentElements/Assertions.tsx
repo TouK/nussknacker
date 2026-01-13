@@ -1,4 +1,4 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -10,6 +10,7 @@ import { getTestAssertionResultsForNode } from "../../../../../../reducers/selec
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
 import type { NodeType } from "../../../../../../types/node";
 import type { VariableTypes } from "../../../../../../types/validation";
+import { Expandable } from "../../../../../common/Expandable";
 import { StyledButton } from "../../../../styledButton";
 import { EditableEditor } from "../../../editors/EditableEditor";
 import { EditorType } from "../../../editors/expression/types";
@@ -24,6 +25,7 @@ interface Props {
 
 export const Assertions = ({ node }: Props) => {
     const { t } = useTranslation();
+    const [isExpanded, setIsExpanded] = useState(true);
     const dispatch = useAppDispatch();
     const testCaseAssertions = useAppSelector((state) => getTestCaseAssertionsForNode(state, node.id));
     const testAssertionResults = useAppSelector((state) => getTestAssertionResultsForNode(state, node.id));
@@ -64,44 +66,48 @@ export const Assertions = ({ node }: Props) => {
 
     return (
         <StyledStack>
-            <Typography m={0} variant="h5">
-                {t("testingDialog.label.assertions", "Assertions")}
-            </Typography>
-            {testCaseAssertions.map(({ expression: expressionObj }, index) => {
-                const testAssertionResult = testAssertionResults?.[index];
-                return (
-                    <Box key={index} display={"flex"} alignItems={"end"}>
-                        <NodeTable sx={{ flex: 1, m: 0 }}>
-                            <EditableEditor
-                                editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
-                                expressionObj={expressionObj}
-                                variableTypes={assertionVariableTypes}
-                                onValueChange={(expression) => editAssertion(index, { expression })}
-                                fieldErrors={[]}
-                            />
-                        </NodeTable>
-                        <StyledButton
-                            title={t("node.row.remove.title", "Remove field")}
-                            onClick={() => removeAssertion(index)}
-                            sx={{ ml: 1 }}
-                        >
-                            {t("node.row.remove.text", "-")}
-                        </StyledButton>
-                        <Box sx={{ mb: 0.5, ml: 1, display: "flex", alignItems: "center" }}>
-                            {testAssertionResult && (
-                                <AssertionStatus
-                                    status={testAssertionResult.type === "SuccessfulAssertion" ? "success" : "error"}
-                                    message={testAssertionResult.type === "FailedAssertion" ? testAssertionResult.message : undefined}
-                                />
-                            )}
-                        </Box>
-                    </Box>
-                );
-            })}
+            <Expandable componentId={"Assertions"} expandableTitle={"Assertions"} expanded={isExpanded} onChange={setIsExpanded}>
+                {testCaseAssertions.length === 0 && <Typography>{t("assertions.noAsserionsDefined", "No assertions defined")}</Typography>}
+                <Stack gap={2}>
+                    {testCaseAssertions.map(({ expression: expressionObj }, index) => {
+                        const testAssertionResult = testAssertionResults?.[index];
+                        return (
+                            <Box key={index} display={"flex"} alignItems={"end"}>
+                                <NodeTable sx={{ flex: 1, m: 0 }}>
+                                    <EditableEditor
+                                        editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
+                                        expressionObj={expressionObj}
+                                        variableTypes={assertionVariableTypes}
+                                        onValueChange={(expression) => editAssertion(index, { expression })}
+                                        fieldErrors={[]}
+                                    />
+                                </NodeTable>
+                                <StyledButton
+                                    title={t("node.row.remove.title", "Remove field")}
+                                    onClick={() => removeAssertion(index)}
+                                    sx={{ ml: 1 }}
+                                >
+                                    {t("node.row.remove.text", "-")}
+                                </StyledButton>
+                                <Box sx={{ mb: 0.5, ml: 1, display: "flex", alignItems: "center" }}>
+                                    {testAssertionResult && (
+                                        <AssertionStatus
+                                            status={testAssertionResult.type === "SuccessfulAssertion" ? "success" : "error"}
+                                            message={
+                                                testAssertionResult.type === "FailedAssertion" ? testAssertionResult.message : undefined
+                                            }
+                                        />
+                                    )}
+                                </Box>
+                            </Box>
+                        );
+                    })}
+                </Stack>
 
-            <StyledButton title={t("node.row.add.title", "Add field")} onClick={addAssertion} sx={{ mt: 2 }}>
-                {t("node.row.add.text", "+")}
-            </StyledButton>
+                <StyledButton title={t("node.row.add.title", "Add field")} onClick={addAssertion} sx={{ mt: 2 }}>
+                    {t("node.row.add.text", "+")}
+                </StyledButton>
+            </Expandable>
         </StyledStack>
     );
 };

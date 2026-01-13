@@ -1,8 +1,9 @@
 import { Box, Typography } from "@mui/material";
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useAppSelector } from "../../../../../../store/storeHelpers";
+import { Expandable } from "../../../../../common/Expandable";
 import MockExpressionField from "../../../editors/expression/MockExpressionField";
 import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
 import { getFindAvailableVariables } from "../../../NodeDetailsContent/selectors";
@@ -16,6 +17,7 @@ const MOCK_EXPRESSION_HINT_TEXT =
 export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => {
     const { t } = useTranslation();
 
+    const [isExpanded, setIsExpanded] = useState(true);
     const isEditMode = useIsEditMode({ onChange });
     const setProperty = useSetProperty({ onChange, node });
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
@@ -25,22 +27,29 @@ export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => 
 
     return (
         <StyledStack>
-            <Box display={"flex"} gap={2} alignItems={"center"}>
-                <Typography m={0} variant="h5">
-                    {t("testingDialog.label.mock", "Mock")}
-                </Typography>
-                <InfoTooltip title={t("testingDialog.mock.hintText", MOCK_EXPRESSION_HINT_TEXT)} variant={"hover"} />
-            </Box>
-
-            <MockExpressionField
-                isEditMode={isEditMode}
-                editedNode={node}
-                showValidation
-                showSwitch
-                findAvailableVariables={findAvailableVariables}
-                setNodeDataAt={setProperty}
-                errors={errors}
-            />
+            <Expandable
+                componentId={"mock"}
+                expandableTitle={
+                    <Box display={"flex"} gap={2} alignItems={"center"}>
+                        <Typography variant={"body2"} color={"text.secondary"}>
+                            {t("testingDialog.label.mock", "Mock")}
+                        </Typography>
+                        <InfoTooltip title={t("testingDialog.mock.hint", MOCK_EXPRESSION_HINT_TEXT)} variant={"hover"} />
+                    </Box>
+                }
+                expanded={isExpanded}
+                onChange={setIsExpanded}
+            >
+                <MockExpressionField
+                    isEditMode={isEditMode}
+                    editedNode={node}
+                    showValidation
+                    showSwitch
+                    findAvailableVariables={findAvailableVariables}
+                    setNodeDataAt={setProperty}
+                    errors={errors}
+                />
+            </Expandable>
         </StyledStack>
     );
 };
