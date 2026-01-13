@@ -123,7 +123,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
     result shouldBe Map(
       "test1" -> NodeTestCaseValidationErrors(
-        enricherMockError = Some(
+        enricherMockErrors = Some(
           NonEmptyList.one(
             EnricherMockValidationError(
               typ = "ExpressionParserCompilationError",
@@ -161,7 +161,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
     result shouldBe Map(
       "test1" -> NodeTestCaseValidationErrors(
-        enricherMockError = Some(
+        enricherMockErrors = Some(
           NonEmptyList.one(
             EnricherMockValidationError(
               typ = "MockForNonEnricherNode",
@@ -195,7 +195,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
     result shouldBe Map(
       "test1" -> NodeTestCaseValidationErrors(
-        enricherMockError = None,
+        enricherMockErrors = None,
         assertionsErrors = Some(
           Map(
             0 -> NonEmptyList.one(
@@ -241,7 +241,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
     result shouldBe Map(
       "invalidMockTest" -> NodeTestCaseValidationErrors(
-        enricherMockError = Some(
+        enricherMockErrors = Some(
           NonEmptyList.one(
             EnricherMockValidationError(
               typ = "ExpressionParserCompilationError",
@@ -254,7 +254,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
         assertionsErrors = None
       ),
       "invalidAssertionTest" -> NodeTestCaseValidationErrors(
-        enricherMockError = None,
+        enricherMockErrors = None,
         assertionsErrors = Some(
           Map(
             0 -> NonEmptyList.one(

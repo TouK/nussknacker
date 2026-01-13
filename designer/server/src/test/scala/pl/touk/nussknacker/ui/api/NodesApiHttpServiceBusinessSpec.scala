@@ -772,7 +772,7 @@ class NodesApiHttpServiceBusinessSpec
             |  "validationPerformed": true,
             |  "testCasesValidationErrors": {
             |    "test-case-1": {
-            |      "enricherMockError": [
+            |      "enricherMockErrors": [
             |        {
             |          "typ": "MockForNonEnricherNode",
             |          "message": "Mock configured for non-enricher node 'sourceId'",
@@ -908,7 +908,7 @@ class NodesApiHttpServiceBusinessSpec
             |  "validationPerformed": true,
             |  "testCasesValidationErrors": {
             |    "test-case-2": {
-            |      "enricherMockError": [
+            |      "enricherMockErrors": [
             |        {
             |          "typ": "ExpressionParserCompilationError",
             |          "message": "Unresolved reference 'nonExistentVariable'",
@@ -929,7 +929,7 @@ class NodesApiHttpServiceBusinessSpec
             |      "assertionsErrors": null
             |    },
             |    "test-case-3": {
-            |      "enricherMockError": null,
+            |      "enricherMockErrors": null,
             |      "assertionsErrors": {
             |        "0": [
             |          {

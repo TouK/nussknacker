@@ -302,7 +302,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     testCasesValidationErrors = Some(
                       Map(
                         "test-case-1" -> NodeTestCaseValidationErrors(
-                          enricherMockError = Some(
+                          enricherMockErrors = Some(
                             NonEmptyList.one(
                               EnricherMockValidationError(
                                 typ = "ExpressionParserCompilationError",
@@ -314,23 +314,6 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                             )
                           ),
                           assertionsErrors = None
-                        ),
-                        "test-case-2" -> NodeTestCaseValidationErrors(
-                          enricherMockError = None,
-                          assertionsErrors = Some(
-                            Map(
-                              1 -> NonEmptyList.one(
-                                AssertionValidationError(
-                                  typ = "UnknownVariable",
-                                  message = "Unknown variable 'doesNotExist'",
-                                  description =
-                                    "There is problem with expression in field [assertion] - it could not be parsed.",
-                                  details =
-                                    Some(CoordinatesBasedTextRange(TextCoordinates(7, 0), TextCoordinates(17, 0)))
-                                )
-                              )
-                            )
-                          )
                         )
                       )
                     )
@@ -1630,11 +1613,17 @@ object NodesApiEndpoints {
 
     @derive(schema, encoder, decoder)
     final case class NodeTestCaseValidationErrors(
-        enricherMockError: Option[NonEmptyList[EnricherMockValidationError]],
+        enricherMockErrors: Option[NonEmptyList[EnricherMockValidationError]],
         assertionsErrors: Option[Map[AssertionIndex, NonEmptyList[AssertionValidationError]]],
     )
 
     object NodeTestCaseValidationErrors {
+      implicit val enricherMockErrorsSchema: Schema[NonEmptyList[EnricherMockValidationError]] =
+        Schema.derived[List[EnricherMockValidationError]].as[NonEmptyList[EnricherMockValidationError]]
+
+      implicit val assertionValidationErrorsSchema: Schema[NonEmptyList[AssertionValidationError]] =
+        Schema.derived[List[AssertionValidationError]].as[NonEmptyList[AssertionValidationError]]
+
       implicit val assertionsErrorSchema: Schema[Map[AssertionIndex, NonEmptyList[AssertionValidationError]]] =
         Schema.schemaForMap[AssertionIndex, NonEmptyList[AssertionValidationError]](_.toString)
     }
@@ -2214,5 +2203,4 @@ object TypingDtoSchemas {
     )
   }
 
-  implicit def nonEmptyListSchema[T: Schema]: Schema[NonEmptyList[T]] = Schema.derived[List[T]].as[NonEmptyList[T]]
 }

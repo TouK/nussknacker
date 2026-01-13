@@ -1689,27 +1689,12 @@ paths:
                     validationPerformed: true
                     testCasesValidationErrors:
                       test-case-1:
-                        enricherMockError:
+                        enricherMockErrors:
                         - typ: ExpressionParserCompilationError
                           message: 'Bad expression type, expected: String, found:
                             Integer(42)'
                           description: There is problem with expression in field [mockExpression]
                             - it could not be parsed.
-                      test-case-2:
-                        assertionsErrors:
-                          '1':
-                          - typ: UnknownVariable
-                            message: Unknown variable 'doesNotExist'
-                            description: There is problem with expression in field
-                              [assertion] - it could not be parsed.
-                            details:
-                              start:
-                                column: 7
-                                row: 0
-                              end:
-                                column: 17
-                                row: 0
-                              type: CoordinatesBasedTextRange
         '400':
           description: ''
           content:
@@ -6393,6 +6378,20 @@ components:
         y:
           type: integer
           format: int64
+    List_AssertionValidationError:
+      title: List_AssertionValidationError
+      oneOf:
+      - $ref: '#/components/schemas/Nil'
+      - type: array
+        items:
+          $ref: '#/components/schemas/AssertionValidationError'
+    List_EnricherMockValidationError:
+      title: List_EnricherMockValidationError
+      oneOf:
+      - $ref: '#/components/schemas/Nil'
+      - type: array
+        items:
+          $ref: '#/components/schemas/EnricherMockValidationError'
     List_Field:
       title: List_Field
       oneOf:
@@ -6407,13 +6406,6 @@ components:
       - type: array
         items:
           $ref: '#/components/schemas/FragmentParameter'
-    List_T:
-      title: List_T
-      oneOf:
-      - $ref: '#/components/schemas/Nil'
-      - type: array
-        items:
-          $ref: '#/components/schemas/EnricherMockValidationError'
     Map_EngineSetupName_List_String:
       title: Map_EngineSetupName_List_String
       type: object
@@ -6425,7 +6417,7 @@ components:
       title: Map_Int_NonEmptyList_AssertionValidationError
       type: object
       additionalProperties:
-        $ref: '#/components/schemas/List_T'
+        $ref: '#/components/schemas/List_AssertionValidationError'
     Map_Json:
       title: Map_Json
       type: object
@@ -7012,9 +7004,9 @@ components:
       title: NodeTestCaseValidationErrors
       type: object
       properties:
-        enricherMockError:
+        enricherMockErrors:
           anyOf:
-          - $ref: '#/components/schemas/List_T'
+          - $ref: '#/components/schemas/List_EnricherMockValidationError'
           - type: 'null'
         assertionsErrors:
           anyOf:
