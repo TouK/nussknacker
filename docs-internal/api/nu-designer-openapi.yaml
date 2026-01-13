@@ -1578,6 +1578,70 @@ paths:
                       type: TypedClass
                       refClazzName: java.lang.Long
                       params: []
+              Example2:
+                summary: Validate test cases for enricher node
+                value:
+                  nodeData:
+                    id: enricher
+                    service:
+                      id: paramService
+                      parameters:
+                      - name: param
+                        expression:
+                          language: spel
+                          expression: '#input.id'
+                    output: out
+                    type: Enricher
+                  processProperties:
+                    additionalFields:
+                      properties: {}
+                      metaDataType: ''
+                      showDescription: false
+                  variableTypes:
+                    input:
+                      display: 'Record{id: String(a)}'
+                      type: TypedObjectTypingResult
+                      fields:
+                        id:
+                          value: a
+                          display: String(a)
+                          type: TypedObjectWithValue
+                          refClazzName: java.lang.String
+                          params: []
+                      refClazzName: java.util.Map
+                      params:
+                      - display: String
+                        type: TypedClass
+                        refClazzName: java.lang.String
+                        params: []
+                      - value: a
+                        display: String(a)
+                        type: TypedObjectWithValue
+                        refClazzName: java.lang.String
+                        params: []
+                  testCases:
+                    test-case-1:
+                      enricherMock:
+                        expression:
+                          language: spel
+                          expression: '42'
+                      assertions:
+                      - expression:
+                          language: spel
+                          expression: '#TESTS.assertEquals(#contexts.size, 1)'''
+                    test-case-2:
+                      enricherMock:
+                        expression:
+                          language: spel
+                          expression: '''sample value'''
+                      assertions:
+                      - expression:
+                          language: spel
+                          expression: '#TESTS.assertEquals(#contexts.size, 1)'''
+                      - expression:
+                          language: spel
+                          expression: '#TESTS.assertEquals(#contexts[0].doesNotExist,
+                            ''expected'')'
         required: true
       responses:
         '200':
@@ -1613,6 +1677,39 @@ paths:
                       fieldName: $expression
                       errorType: SaveAllowed
                     validationPerformed: true
+                Example2:
+                  summary: Test cases validation errors
+                  value:
+                    expressionType:
+                      display: Boolean
+                      type: TypedClass
+                      refClazzName: java.lang.Boolean
+                      params: []
+                    validationErrors: []
+                    validationPerformed: true
+                    testCasesValidationErrors:
+                      test-case-1:
+                        enricherMockError:
+                        - typ: ExpressionParserCompilationError
+                          message: 'Bad expression type, expected: String, found:
+                            Integer(42)'
+                          description: There is problem with expression in field [mockExpression]
+                            - it could not be parsed.
+                      test-case-2:
+                        assertionsErrors:
+                          '1':
+                          - typ: UnknownVariable
+                            message: Unknown variable 'doesNotExist'
+                            description: There is problem with expression in field
+                              [assertion] - it could not be parsed.
+                            details:
+                              start:
+                                column: 7
+                                row: 0
+                              end:
+                                column: 17
+                                row: 0
+                              type: CoordinatesBasedTextRange
         '400':
           description: ''
           content:
