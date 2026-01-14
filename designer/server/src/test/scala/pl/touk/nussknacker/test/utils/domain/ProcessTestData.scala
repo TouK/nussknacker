@@ -38,6 +38,7 @@ import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
+import pl.touk.nussknacker.ui.process.test.testcase.TestCaseValidator
 import pl.touk.nussknacker.ui.validation.{ScenarioLabelsValidator, UIProcessValidator}
 
 object ProcessTestData {
@@ -94,6 +95,7 @@ object ProcessTestData {
       .withService(logProcessorId, None)
       .withService(
         otherExistingServiceId2,
+        returnType = Some(Typed[String]),
         Parameter[Any](ParameterName("expression")).copy(editors = List(SpelParameterEditor))
       )
       .withService(
@@ -158,6 +160,7 @@ object ProcessTestData {
     val stickyNotesSettings: StickyNotesSettings = StickyNotesSettings(5000, None, enabled = false)
     val processValidator: ProcessValidator =
       ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition()))
+    val testCaseValidator = TestCaseValidator(new StubModelDataWithModelDefinition(modelDefinition()))
     val scenarioProperties: Map[String, ScenarioPropertyConfig] = Map.empty
     val scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer =
       new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType)
@@ -169,6 +172,7 @@ object ProcessTestData {
   def testProcessValidator(
       processingType: ProcessingType = ProcessValidatorDefaults.processingType,
       validator: ProcessValidator = ProcessValidatorDefaults.processValidator,
+      testCaseValidator: TestCaseValidator = ProcessValidatorDefaults.testCaseValidator,
       scenarioProperties: Map[String, ScenarioPropertyConfig] = ProcessValidatorDefaults.scenarioProperties,
       scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer =
         ProcessValidatorDefaults.scenarioPropertiesConfigFinalizer,
@@ -179,6 +183,7 @@ object ProcessTestData {
   ): UIProcessValidator = new UIProcessValidator(
     processingType = processingType,
     validator = validator,
+    testCaseValidator = testCaseValidator,
     scenarioProperties = scenarioProperties,
     scenarioPropertiesConfigFinalizer = scenarioPropertiesConfigFinalizer,
     engineScenarioCompilationDependenciesResource = Resource.pure(EngineScenarioCompilationDependencies.empty),

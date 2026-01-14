@@ -44,14 +44,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
     )
   )
 
-  private val globalVariablesPreparer =
-    GlobalVariablesPreparer.apply(modelData.modelDefinition.expressionConfig)
-
-  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
-
-  private val assertionsCompiler = new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
-
-  private val testCaseValidator = new TestCaseValidator(modelData, assertionsCompiler)
+  private val testCaseValidator = TestCaseValidator(modelData)
 
   private val jobData = JobData(MetaData("someScenario", StreamMetaData()), ProcessVersion.empty)
 

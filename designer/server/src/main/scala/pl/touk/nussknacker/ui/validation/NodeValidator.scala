@@ -28,13 +28,7 @@ class NodeValidator(
     fragmentRepository: FragmentRepository
 ) {
 
-  private lazy val testCasesValidator = new TestCaseValidator(
-    modelData,
-    new AssertionsCompiler(
-      ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper,
-      GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
-    )
-  )
+  private val testCasesValidator = TestCaseValidator(modelData)
 
   def validate(processVersion: ProcessVersion, validationRequest: NodeValidationRequest)(
       implicit loggedUser: LoggedUser

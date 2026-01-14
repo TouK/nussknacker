@@ -79,6 +79,7 @@ import pl.touk.nussknacker.ui.config.ScenarioLabelConfig
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
+import pl.touk.nussknacker.ui.process.test.testcase.TestCaseValidator
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 import java.time.LocalDateTime
@@ -1637,20 +1638,20 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("validate service parameter based on input config - MandatoryParameterValidator") {
+    val modelData = LocalModelData(
+      ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved
+        .getConfig("modelConfig")
+        .withValue(
+          "componentsUiConfig.optionalParameterService.params.optionalParam.validators",
+          fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava)
+        ),
+      List(ComponentDefinition("optionalParameterService", OptionalParameterService)),
+      additionalConfigsFromProvider = Map.empty
+    )
     val validator = new UIProcessValidator(
       processingType = "Streaming",
-      validator = ProcessValidator.default(
-        LocalModelData(
-          ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved
-            .getConfig("modelConfig")
-            .withValue(
-              "componentsUiConfig.optionalParameterService.params.optionalParam.validators",
-              fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava)
-            ),
-          List(ComponentDefinition("optionalParameterService", OptionalParameterService)),
-          additionalConfigsFromProvider = Map.empty
-        )
-      ),
+      validator = ProcessValidator.default(modelData),
+      testCaseValidator = TestCaseValidator(modelData),
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
@@ -1684,33 +1685,33 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("validate service parameter based on input config - ValidationExpressionParameterValidator") {
+    val modelData = LocalModelData(
+      ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved
+        .getConfig("modelConfig")
+        .withValue(
+          "componentsUiConfig.optionalParameterService.params.optionalParam.validators",
+          fromIterable(
+            List(
+              Map(
+                "type" -> "ValidationExpressionParameterValidatorToCompile",
+                "validationExpression" -> fromMap(
+                  Map(
+                    "language"   -> "spel",
+                    "expression" -> validationExpression.expression
+                  ).asJava
+                ),
+                "validationFailedMessage" -> "some custom failure message",
+              ).asJava
+            ).asJava
+          )
+        ),
+      List(ComponentDefinition("optionalParameterService", OptionalParameterService)),
+      additionalConfigsFromProvider = Map.empty
+    )
     val validator = new UIProcessValidator(
       processingType = "Streaming",
-      validator = ProcessValidator.default(
-        LocalModelData(
-          ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved
-            .getConfig("modelConfig")
-            .withValue(
-              "componentsUiConfig.optionalParameterService.params.optionalParam.validators",
-              fromIterable(
-                List(
-                  Map(
-                    "type" -> "ValidationExpressionParameterValidatorToCompile",
-                    "validationExpression" -> fromMap(
-                      Map(
-                        "language"   -> "spel",
-                        "expression" -> validationExpression.expression
-                      ).asJava
-                    ),
-                    "validationFailedMessage" -> "some custom failure message",
-                  ).asJava
-                ).asJava
-              )
-            ),
-          List(ComponentDefinition("optionalParameterService", OptionalParameterService)),
-          additionalConfigsFromProvider = Map.empty
-        )
-      ),
+      validator = ProcessValidator.default(modelData),
+      testCaseValidator = TestCaseValidator(modelData),
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
@@ -2683,34 +2684,36 @@ private object UIProcessValidatorSpec {
   private def validatorWithComponentsAndConfig(
       components: List[ComponentDefinition],
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ) = new UIProcessValidator(
-    processingType = "Streaming",
-    validator = ProcessValidator.default(
-      LocalModelData(
-        ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
-        components,
-        additionalConfigsFromProvider = additionalConfigsFromProvider,
-        configCreator = new EmptyProcessConfigCreator {
+  ) = {
+    val modelData = LocalModelData(
+      ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
+      components,
+      additionalConfigsFromProvider = additionalConfigsFromProvider,
+      configCreator = new EmptyProcessConfigCreator {
 
-          override def expressionConfig(modelConfig: ModelConfig): ExpressionConfig =
-            super
-              .expressionConfig(modelConfig)
-              .copy(
-                globalProcessVariables = Map("COLLECTION" -> WithCategories.anyCategory(collection))
-              )
+        override def expressionConfig(modelConfig: ModelConfig): ExpressionConfig =
+          super
+            .expressionConfig(modelConfig)
+            .copy(
+              globalProcessVariables = Map("COLLECTION" -> WithCategories.anyCategory(collection))
+            )
 
-        }
-      )
-    ),
-    scenarioProperties = Map.empty,
-    scenarioPropertiesConfigFinalizer =
-      new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
-    engineScenarioCompilationDependenciesResource = Resource.pure(EngineScenarioCompilationDependencies.empty),
-    scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
-    additionalValidators = List.empty,
-    fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty)),
-    stickyNotesSettings = StickyNotesSettings(5000, None, enabled = false)
-  )
+      }
+    )
+    new UIProcessValidator(
+      processingType = "Streaming",
+      validator = ProcessValidator.default(modelData),
+      testCaseValidator = TestCaseValidator(modelData),
+      scenarioProperties = Map.empty,
+      scenarioPropertiesConfigFinalizer =
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
+      engineScenarioCompilationDependenciesResource = Resource.pure(EngineScenarioCompilationDependencies.empty),
+      scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
+      additionalValidators = List.empty,
+      fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty)),
+      stickyNotesSettings = StickyNotesSettings(5000, None, enabled = false)
+    )
+  }
 
   def mockedProcessValidator(
       fragmentInDefaultProcessingType: Option[CanonicalProcess],
@@ -2733,10 +2736,12 @@ private object UIProcessValidatorSpec {
       .withUnboundedStreamSource(sourceTypeName)
       .withSink(sinkTypeName)
       .build
+    val modelData = new StubModelDataWithModelDefinition(modelDefinition, execConfig)
 
     new UIProcessValidator(
       processingType = "Streaming",
-      validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition, execConfig)),
+      validator = ProcessValidator.default(modelData),
+      testCaseValidator = TestCaseValidator(modelData),
       scenarioProperties = FlinkStreamingPropertiesConfig.properties,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, "Streaming"),

@@ -21,6 +21,7 @@ import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.{ActionInfoService, ScenarioResolver, ScenarioTestExecutorServiceImpl}
 import pl.touk.nussknacker.ui.process.fragment.{FragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
+import pl.touk.nussknacker.ui.process.test.testcase.TestCaseValidator
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -88,6 +89,7 @@ object ProcessingTypeServices {
     val scenarioValidator = new UIProcessValidator(
       processingType = processingTypeData.processingType,
       validator = ProcessValidator.default(processingTypeData.designerModelData.modelData),
+      testCaseValidator = TestCaseValidator(processingTypeData.designerModelData.modelData),
       scenarioProperties = processingTypeData.designerModelData.scenarioPropertiesConfig,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),

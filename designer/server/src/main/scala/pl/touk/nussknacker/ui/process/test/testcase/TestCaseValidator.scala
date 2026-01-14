@@ -12,15 +12,17 @@ import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.{Enricher, NodeData}
-import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock}
+import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import pl.touk.nussknacker.restmodel.validation.testcase.{
   AssertionIndex,
   AssertionValidationError,
   EnricherMockValidationError,
   NodeTestCasesValidationErrors,
-  NodeTestCaseValidationErrors
+  NodeTestCaseValidationErrors,
+  ScenarioTestCasesValidationErrors
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.AssertionExpressionCompilationError
@@ -35,6 +37,50 @@ class TestCaseValidator(
   private val expressionCompiler      = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
   private val globalVariablesPreparer = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
   private val nodeCompiler            = NodeCompiler.forValidation(modelData)
+
+  def validateScenarioTestCases(
+      nodes: List[NodeData],
+      nodesTyping: Map[String, NodeTypingData],
+      testCases: List[TestCase],
+  )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): ScenarioTestCasesValidationErrors = {
+
+    val nodesById = nodes.map(n => NodeId(n.id) -> n).toMap
+    val nodeTestCasesErrors = nodesById.flatMap { case (nodeId, node) =>
+      val nodeTestCases = testCases.flatMap { testCase =>
+        val hasMock       = testCase.mocks.contains(nodeId)
+        val hasAssertions = testCase.assertions.get(nodeId).exists(_.nonEmpty)
+
+        if (hasMock || hasAssertions) {
+          Some(
+            // TODO: do not use DTO here.
+            testCase.name -> NodeTestCase(
+              enricherMock = testCase.mocks.get(nodeId),
+              assertions = testCase.assertions.getOrElse(nodeId, List.empty)
+            )
+          )
+        } else {
+          None
+        }
+      }.toMap
+
+      if (nodeTestCases.nonEmpty) {
+        val variableTypes = nodesTyping.get(nodeId.id).map(_.variableTypes).getOrElse(Map.empty)
+
+        val errors = validateNodeTestCases(
+          node,
+          nodeTestCases,
+          variableTypes,
+          scenarioCompilationDependencies.jobData
+        )
+
+        if (errors.isEmpty) None else Some(nodeId -> errors)
+      } else {
+        None
+      }
+    }
+
+    nodeTestCasesErrors
+  }
 
   def validateNodeTestCases(
       nodeData: NodeData,
@@ -190,7 +236,17 @@ class TestCaseValidator(
 
 }
 
-private object TestCaseValidator {
+object TestCaseValidator {
+
+  def apply(modelData: ModelData): TestCaseValidator = {
+    new TestCaseValidator(
+      modelData,
+      new AssertionsCompiler(
+        ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper,
+        GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
+      )
+    )
+  }
 
   private object errors {
 

@@ -11,11 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition.UIParameter
-import pl.touk.nussknacker.restmodel.validation.testcase.{
-  NodeTestCasesValidationErrors,
-  NodeTestCaseValidationErrors,
-  ScenarioTestCasesValidationErrors
-}
+import pl.touk.nussknacker.restmodel.validation.testcase.ScenarioTestCasesValidationErrors
 
 object ValidationResults {
 
@@ -27,7 +23,8 @@ object ValidationResults {
       warnings: ValidationWarnings,
       nodeResults: Map[String, NodeTypingData]
   ) {
-    val hasErrors: Boolean   = errors != ValidationErrors.success
+    // At the moment, test cases validation errors are not considered as blocking errors, e.g. during deployment
+    val hasErrors: Boolean   = errors.copy(testCasesValidationErrors = None) != ValidationErrors.success
     val hasWarnings: Boolean = warnings != ValidationWarnings.success
     val saveAllowed: Boolean = allErrors.forall(_.errorType == NodeValidationErrorType.SaveAllowed)
 

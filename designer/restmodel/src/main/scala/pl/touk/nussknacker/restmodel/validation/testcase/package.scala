@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.restmodel.validation
 
+import cats.Semigroup
 import cats.data.NonEmptyList
+import cats.syntax.semigroup._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
@@ -36,12 +38,20 @@ package object testcase {
 
   object ScenarioTestCasesValidationErrors {
 
+    private implicit val nodeTestCaseValidationErrorsSemigroup: Semigroup[NodeTestCaseValidationErrors] =
+      Semigroup.instance { (first, second) =>
+        NodeTestCaseValidationErrors(
+          enricherMockErrors = first.enricherMockErrors.combine(second.enricherMockErrors),
+          assertionsErrors = first.assertionsErrors.combine(second.assertionsErrors)
+        )
+      }
+
     def add(
         firstOption: Option[ScenarioTestCasesValidationErrors],
         secondOption: Option[ScenarioTestCasesValidationErrors]
-    ): Option[ScenarioTestCasesValidationErrors] =
-      // TODO
-      firstOption
+    ): Option[ScenarioTestCasesValidationErrors] = {
+      firstOption.combine(secondOption)
+    }
 
   }
 
