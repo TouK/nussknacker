@@ -69,7 +69,7 @@ export function AggregatorField({ parameterDefinitions, node, isEditMode, showVa
 
     const getFieldsRow = useCallback(
         (item: WithUuid<AggRow>, index: number) => (
-            <FieldsRow uuid={item.uuid} index={index}>
+            <FieldsRow key={item.uuid} uuid={item.uuid} index={index}>
                 <AggregatorFieldsStack
                     value={item}
                     onChange={onChangeItem}
