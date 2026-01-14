@@ -21,13 +21,12 @@ import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
+import pl.touk.nussknacker.restmodel.validation.testcase.{
   AssertionValidationError,
   EnricherMockValidationError,
-  NodeTestCase,
-  NodeTestCases,
   NodeTestCaseValidationErrors
 }
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeTestCase, NodeTestCases}
 
 import scala.concurrent.Future
 

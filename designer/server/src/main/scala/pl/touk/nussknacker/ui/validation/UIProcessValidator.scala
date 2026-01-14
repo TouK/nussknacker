@@ -236,8 +236,8 @@ class UIProcessValidator(
       case Valid(()) =>
         ValidationResult.success
       case Invalid(errors) =>
-        ValidationResult.globalErrors(
-          errors
+        ValidationResult.errors(
+          globalErrors = errors
             .map(ve =>
               ScenarioLabelValidationError(label = ve.label, description = ve.validationMessages.toList.mkString(", "))
             )
@@ -276,7 +276,7 @@ class UIProcessValidator(
 
     val edgeUniquenessErrors =
       edgesByFrom.map { case (from, edges) => from -> findNonUniqueEdge(from, edges) }.filterNot(_._2.isEmpty)
-    ValidationResult.errors(edgeUniquenessErrors, List(), List())
+    ValidationResult.errors(invalidNodes = edgeUniquenessErrors)
   }
 
   private def validateStickyNotesLength(scenarioGraph: ScenarioGraph): ValidationResult = {
@@ -380,7 +380,9 @@ class UIProcessValidator(
       ValidationErrors(
         invalidNodes = deduplicatedInvalidNodes,
         processPropertiesErrors = deduplicatedProcessPropertiesErrors,
-        globalErrors = deduplicatedGlobalErrors
+        globalErrors = deduplicatedGlobalErrors,
+        // TODO
+        testCasesValidationErrors = None,
       )
     )
   }
