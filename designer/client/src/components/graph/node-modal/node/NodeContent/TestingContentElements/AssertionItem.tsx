@@ -108,7 +108,6 @@ export const AssertionItem = ({ uuid, expressionObj, onChange, index, testAssert
                         value={ASSERTION_SYMBOLS[decodedParts?.assertion] ?? ""}
                         disabled={true}
                         fieldErrors={[]}
-                        onChange={(event) => handleChangeAssertionPart("assertion", event.target.value)}
                         className={centeredInputStyle}
                     />
                 </NonDraggableLabel>
