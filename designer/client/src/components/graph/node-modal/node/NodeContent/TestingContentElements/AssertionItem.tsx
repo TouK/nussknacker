@@ -14,6 +14,16 @@ import type { AssertionParts } from "./assertionEncoder";
 import { encodeAssertionExpression, decodeAssertionExpression } from "./assertionEncoder";
 import { AssertionStatus } from "./AssertionStatus";
 
+const ASSERTION_SYMBOLS: Record<string, string> = {
+    assertEquals: "==",
+};
+
+const centeredInputStyle = css({
+    "& input": {
+        textAlign: "center",
+    },
+});
+
 interface Props {
     uuid: string;
     expressionObj: ExpressionObj;
@@ -95,10 +105,11 @@ export const AssertionItem = ({ uuid, expressionObj, onChange, index, testAssert
                 </NonDraggableLabel>
                 <NonDraggableLabel hovered={isFirstRow} label="Assertion">
                     <Input
-                        value={"assertEquals"}
+                        value={ASSERTION_SYMBOLS[decodedParts?.assertion] ?? ""}
                         disabled={true}
                         fieldErrors={[]}
                         onChange={(event) => handleChangeAssertionPart("assertion", event.target.value)}
+                        className={centeredInputStyle}
                     />
                 </NonDraggableLabel>
                 <NonDraggableLabel hovered={isFirstRow} label="Actual">
