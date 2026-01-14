@@ -126,6 +126,7 @@ export function AggregatorFieldsStack({
         [onChange, uuid],
     );
 
+    const fieldErrors = useMemo(() => (expression ? [] : [EMPTY_REQUIRED_ERROR]), [expression]);
     return (
         <>
             <RowFieldLabel
@@ -155,7 +156,7 @@ export function AggregatorFieldsStack({
                         onValueChange={onChangeExpression}
                         readOnly={readOnly}
                         showValidation
-                        fieldErrors={expression ? [] : [EMPTY_REQUIRED_ERROR]}
+                        fieldErrors={fieldErrors}
                         showSwitch={false}
                     />
                 )}
