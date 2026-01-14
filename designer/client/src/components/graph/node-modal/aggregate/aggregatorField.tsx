@@ -1,7 +1,7 @@
 import { cx } from "@emotion/css";
 import { Box } from "@mui/material";
-import { get } from "lodash";
-import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { get, isEqual } from "lodash";
+import React, { useCallback, useContext, useMemo, useState } from "react";
 
 import { useAppSelector } from "../../../../store/storeHelpers";
 import { DndItems } from "../../../common/dndItems/DndItems";
@@ -40,8 +40,20 @@ export function AggregatorField({ parameterDefinitions, node, isEditMode, showVa
     const { values, onChange, isMarked, fieldErrors = [] } = aggregator;
     const [data, setData] = useState<AggregateValue[]>(values);
 
+    const setAggregatorData = useCallback(
+        (value: ((prevData: AggregateValue[]) => AggregateValue[]) | AggregateValue[]) => {
+            setData((prev) => {
+                const next = typeof value === "function" ? value(prev) : value;
+                if (isEqual(prev, next)) return prev;
+                onChange?.(next);
+                return next;
+            });
+        },
+        [onChange],
+    );
+
     const onAdd = useCallback(() => {
-        setData((prevData) => [
+        setAggregatorData((prevData) => [
             ...prevData,
             withUuid({
                 name: "",
@@ -49,15 +61,21 @@ export function AggregatorField({ parameterDefinitions, node, isEditMode, showVa
                 expression: "",
             }),
         ]);
-    }, [aggregators]);
+    }, [aggregators, setAggregatorData]);
 
-    const onRemove = useCallback((_: string, uuid: string) => {
-        setData((prevData) => prevData.filter((item) => item.uuid !== uuid));
-    }, []);
+    const onRemove = useCallback(
+        (_: string, uuid: string) => {
+            setAggregatorData((prevData) => prevData.filter((item) => item.uuid !== uuid));
+        },
+        [setAggregatorData],
+    );
 
-    const onChangeItem = useCallback((uuid: string, updated: Partial<AggRow>) => {
-        setData((prevData) => prevData.map((item) => (item.uuid === uuid ? { ...item, ...updated } : item)));
-    }, []);
+    const onChangeItem = useCallback(
+        (uuid: string, updated: Partial<AggRow>) => {
+            setAggregatorData((prevData) => prevData.map((item) => (item.uuid === uuid ? { ...item, ...updated } : item)));
+        },
+        [setAggregatorData],
+    );
 
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     const variableTypes = useMemo(() => findAvailableVariables?.(node.id), [findAvailableVariables, node.id]);
@@ -90,10 +108,6 @@ export function AggregatorField({ parameterDefinitions, node, isEditMode, showVa
         }));
     }, [data, getFieldsRow]);
 
-    useEffect(() => {
-        onChange?.(data);
-    }, [data, onChange]);
-
     return (
         <NodeRowFieldsProvider
             path={null}
@@ -104,7 +118,12 @@ export function AggregatorField({ parameterDefinitions, node, isEditMode, showVa
             errors={errors}
         >
             <Box sx={{ paddingTop: 2 }} className={cx({ marked: isMarked })}>
-                <DndItems disabled={!isEditMode || data.length <= 1} items={items} onChange={setData} onDestinationChange={setHovered} />
+                <DndItems
+                    disabled={!isEditMode || data.length <= 1}
+                    items={items}
+                    onChange={setAggregatorData}
+                    onDestinationChange={setHovered}
+                />
             </Box>
         </NodeRowFieldsProvider>
     );
