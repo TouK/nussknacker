@@ -1,5 +1,4 @@
-import { css, cx } from "@emotion/css";
-import { alpha, Box, Stack, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -13,7 +12,6 @@ import type { NodeType } from "../../../../../../types/node";
 import type { VariableTypes } from "../../../../../../types/validation";
 import { Expandable } from "../../../../../common/Expandable";
 import { withUuid } from "../../../appendUuid";
-import { FieldsRow } from "../../../fragment-input-definition/FieldsRow";
 import { NodeRowFieldsProvider } from "../../../node-row-fields-provider/NodeRowFieldsProvider";
 import { NodeTable } from "../../../NodeDetailsContent/NodeTable";
 import { useVariableTypes } from "../../../useNodeTypeDetailsContentLogic";
@@ -34,7 +32,6 @@ export const Assertions = ({ node }: Props) => {
     const nodeVariableTypes = useVariableTypes({ node });
     const [assertionVariableTypes, setAssertionVariableTypes] = useState<VariableTypes>({});
 
-    console.log("testCaseAssertions", testCaseAssertions);
     useEffect(() => {
         const fetchAssertionVariableTypes = async () => {
             const response = await httpService.fetchTestCaseNodeAdditionalVariables(processingType, { variableTypes: nodeVariableTypes });
@@ -82,30 +79,17 @@ export const Assertions = ({ node }: Props) => {
                             {testCaseAssertions.length === 0 && (
                                 <Typography>{t("assertions.noAssertionsDefined", "No assertions defined")}</Typography>
                             )}
+
                             {testCaseAssertions.map(({ expression: expressionObj, uuid }, index) => (
-                                <FieldsRow
+                                <AssertionItem
                                     key={uuid}
-                                    index={index}
                                     uuid={uuid}
-                                    className={cx(
-                                        css({
-                                            "&&&&": {
-                                                display: "grid",
-                                                gridTemplateColumns: "1fr 2fr 1fr auto",
-                                                gridTemplateRows: "auto auto",
-                                                gridTemplateAreas: `"field field field remove" "expr expr expr x"`,
-                                            },
-                                        }),
-                                    )}
-                                >
-                                    <AssertionItem
-                                        uuid={uuid}
-                                        onChange={editAssertion}
-                                        expressionObj={expressionObj}
-                                        assertionVariableTypes={assertionVariableTypes}
-                                        testAssertionResult={testAssertionResults?.[index]}
-                                    />
-                                </FieldsRow>
+                                    onChange={editAssertion}
+                                    expressionObj={expressionObj}
+                                    assertionVariableTypes={assertionVariableTypes}
+                                    testAssertionResult={testAssertionResults?.[index]}
+                                    index={index}
+                                />
                             ))}
                         </>
                     </NodeRowFieldsProvider>
