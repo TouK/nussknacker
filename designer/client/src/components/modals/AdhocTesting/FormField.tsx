@@ -54,7 +54,7 @@ export function FormField({ name }: { name: string }) {
                     readOnly={false}
                     showSwitch={true}
                 >
-                    {({ type, ...editorConfig }) => (
+                    {(type, editorConfig) => (
                         <EditorByType
                             type={type}
                             config={editorConfig}

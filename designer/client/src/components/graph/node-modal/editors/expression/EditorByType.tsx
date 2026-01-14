@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import React, { type ComponentProps } from "react";
+import React, { type ComponentProps, useMemo } from "react";
 
 import type { Prettify } from "../../useNodeTypeDetailsContentLogic";
 import { editors } from "./Editor";
@@ -17,7 +17,8 @@ type EditorConfigWithoutType<T extends EditorType> = Prettify<Omit<PropsOfEditor
 type Props<T extends EditorType> = Prettify<WithoutEditorConfig<T> & { type: T; config: EditorConfigWithoutType<T> }>;
 
 export function EditorByType<T extends EditorType>({ type, config, ...props }: Props<T>) {
-    const passProps = { ...props, editorConfig: { type, ...config } } as PropsOfEditor<T>;
+    const editorConfig = useMemo(() => ({ type, ...config }), [config, type]);
+    const passProps = { ...props, editorConfig } as PropsOfEditor<T>;
 
     const Editor = getEditorByType(type) as ComponentType<PropsOfEditor<T>>;
     if (!Editor) return null;

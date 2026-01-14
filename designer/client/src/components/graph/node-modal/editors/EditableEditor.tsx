@@ -2,7 +2,7 @@ import { cx } from "@emotion/css";
 import { styled } from "@mui/material";
 import { isEmpty } from "lodash";
 import type { ReactNode } from "react";
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 
 import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../../store/storeHelpers";
@@ -15,6 +15,7 @@ import type { EditorConfig } from "./expression/EditorConfig";
 import { spelFormatters } from "./expression/Formatter";
 import type { ExpressionObj } from "./expression/types";
 import { EditorType, ExpressionLang } from "./expression/types";
+import type { CallbackChildren } from "./field/FieldSwitch";
 import { FieldSwitch } from "./field/FieldSwitch";
 import { FormControl, FormLabel } from "./FormControl";
 import { FieldLabelConsumer } from "./RenderFieldLabel";
@@ -40,8 +41,10 @@ interface Props {
     defaultValue?: ExpressionObj | string;
 }
 
+const emptyArray = [];
+
 export const EditableEditor = (props: Props) => {
-    const { expressionObj, valueClassName, editors, paramType, fieldErrors = [] } = props;
+    const { expressionObj, valueClassName, editors, paramType, fieldErrors = emptyArray } = props;
 
     const userSettings = useAppSelector(getUserSettings);
     const forceSpelEditors = userSettings["debug.editor.forceSpelEditors"];
@@ -61,15 +64,9 @@ export const EditableEditor = (props: Props) => {
         [expressionObj?.language, paramType?.refClazzName],
     );
 
-    return (
-        <FieldSwitch
-            availableEditors={availableEditors}
-            expressionObj={expressionObj}
-            onValueChange={props.onValueChange}
-            readOnly={props.readOnly}
-            showSwitch={props.showSwitch}
-        >
-            {({ type, ...editorConfig }) => (
+    const element = useCallback<CallbackChildren>(
+        (type, editorConfig) => {
+            return (
                 <EditorByType
                     type={type}
                     config={editorConfig}
@@ -78,7 +75,20 @@ export const EditableEditor = (props: Props) => {
                     fieldErrors={fieldErrors}
                     formatter={formatter}
                 />
-            )}
+            );
+        },
+        [fieldErrors, formatter, props, valueClassName],
+    );
+
+    return (
+        <FieldSwitch
+            availableEditors={availableEditors}
+            expressionObj={expressionObj}
+            onValueChange={props.onValueChange}
+            readOnly={props.readOnly}
+            showSwitch={props.showSwitch}
+        >
+            {element}
         </FieldSwitch>
     );
 };

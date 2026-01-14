@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import React, { forwardRef, useCallback, useMemo } from "react";
 import type ReactAce from "react-ace/lib/ace";
-import { useTranslation } from "react-i18next";
 
 import { tryParseOrNull } from "../../../../../common/JsonUtils";
 import type { VariableTypes } from "../../../../../types/validation";
@@ -59,8 +58,6 @@ export const SpelEditor = prepareEditor<SpelEditorProps, ReactAce>(
         },
         forwardedRef,
     ) {
-        const { t } = useTranslation();
-
         const handleChange = useCallback(
             (expression: string) => {
                 onValueChange({ expression, language });
