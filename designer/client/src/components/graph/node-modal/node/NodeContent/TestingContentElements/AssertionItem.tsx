@@ -1,6 +1,6 @@
-import { css, cx } from "@emotion/css";
+import { css } from "@emotion/css";
 import { Box } from "@mui/material";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, memo } from "react";
 
 import type { TestAssertionResult } from "../../../../../../http/resultsWithCountsDto";
 import type { VariableTypes } from "../../../../../../types/validation";
@@ -24,6 +24,15 @@ const centeredInputStyle = css({
     },
 });
 
+const gridContainerStyle = css({
+    "&&&&": {
+        display: "grid",
+        gridTemplateColumns: "3fr 1fr 3fr auto",
+        gridTemplateRows: "auto auto",
+        gridTemplateAreas: `"field field field remove" "expr expr expr x"`,
+    },
+});
+
 interface Props {
     uuid: string;
     expressionObj: ExpressionObj;
@@ -33,14 +42,14 @@ interface Props {
     index: number;
 }
 
-export const AssertionItem = ({ uuid, expressionObj, onChange, index, testAssertionResult, variableTypes }: Props) => {
+const AssertionItemComponent = ({ uuid, expressionObj, onChange, index, testAssertionResult, variableTypes }: Props) => {
     const isFirstRow = index === 0;
 
     const decodedParts = useMemo(() => {
         return decodeAssertionExpression(expressionObj.expression);
     }, [expressionObj.expression]);
 
-    const expectedExpressionObj = useMemo(() => {
+    const expectedExpressionObj: ExpressionObj = useMemo(() => {
         const expectedValue = decodedParts?.expected ?? "";
         return {
             expression: expectedValue,
@@ -48,7 +57,7 @@ export const AssertionItem = ({ uuid, expressionObj, onChange, index, testAssert
         };
     }, [decodedParts?.expected]);
 
-    const actualExpressionObj = useMemo(() => {
+    const actualExpressionObj: ExpressionObj = useMemo(() => {
         const actualValue = decodedParts?.actual ?? "";
         return {
             expression: actualValue,
@@ -76,40 +85,35 @@ export const AssertionItem = ({ uuid, expressionObj, onChange, index, testAssert
         [decodedParts, onChange, uuid],
     );
 
+    const handleExpectedChange = useCallback(
+        ({ expression }) => handleChangeAssertionPart("expected", expression),
+        [handleChangeAssertionPart],
+    );
+
+    const handleActualChange = useCallback(
+        ({ expression }) => handleChangeAssertionPart("actual", expression),
+        [handleChangeAssertionPart],
+    );
+
+    const assertionSymbol = useMemo(() => {
+        return ASSERTION_SYMBOLS[decodedParts?.assertion] ?? "";
+    }, [decodedParts?.assertion]);
+
     return (
         <Box display={"flex"} alignItems={"flex-start"}>
-            <FieldsRow
-                key={uuid}
-                index={index}
-                uuid={uuid}
-                className={cx(
-                    css({
-                        "&&&&": {
-                            display: "grid",
-                            gridTemplateColumns: "3fr 1fr 3fr auto",
-                            gridTemplateRows: "auto auto",
-                            gridTemplateAreas: `"field field field remove" "expr expr expr x"`,
-                        },
-                    }),
-                )}
-            >
+            <FieldsRow key={uuid} index={index} uuid={uuid} className={gridContainerStyle}>
                 <NonDraggableLabel hovered={isFirstRow} label="Expected">
                     <EditableEditor
                         showSwitch={false}
                         editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
                         expressionObj={expectedExpressionObj}
                         variableTypes={variableTypes}
-                        onValueChange={({ expression }) => handleChangeAssertionPart("expected", expression)}
+                        onValueChange={handleExpectedChange}
                         fieldErrors={[]}
                     />
                 </NonDraggableLabel>
                 <NonDraggableLabel hovered={isFirstRow} label="Assertion">
-                    <Input
-                        value={ASSERTION_SYMBOLS[decodedParts?.assertion] ?? ""}
-                        disabled={true}
-                        fieldErrors={[]}
-                        className={centeredInputStyle}
-                    />
+                    <Input value={assertionSymbol} disabled={true} fieldErrors={[]} className={centeredInputStyle} />
                 </NonDraggableLabel>
                 <NonDraggableLabel hovered={isFirstRow} label="Actual">
                     <EditableEditor
@@ -117,7 +121,7 @@ export const AssertionItem = ({ uuid, expressionObj, onChange, index, testAssert
                         editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
                         expressionObj={actualExpressionObj}
                         variableTypes={variableTypes}
-                        onValueChange={({ expression }) => handleChangeAssertionPart("actual", expression)}
+                        onValueChange={handleActualChange}
                         fieldErrors={[]}
                     />
                 </NonDraggableLabel>
@@ -133,3 +137,5 @@ export const AssertionItem = ({ uuid, expressionObj, onChange, index, testAssert
         </Box>
     );
 };
+
+export const AssertionItem = memo(AssertionItemComponent);
