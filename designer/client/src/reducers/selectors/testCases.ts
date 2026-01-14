@@ -1,5 +1,6 @@
 import { createSelector } from "reselect";
 
+import { withUuid } from "../../components/graph/node-modal/appendUuid";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import { safeParseExpression } from "../../components/modals/TestingDataRecords/utils";
 import type { TestCase } from "../graph/testCase";
@@ -13,7 +14,7 @@ export const getTestCaseAssertions = createSelector(getTestCase, ({ assertions }
 export const getTestCaseAssertionsForNode = createSelector(
     getTestCaseAssertions,
     getNodeId,
-    (assertions, nodeId) => assertions[nodeId] || [],
+    (assertions, nodeId) => assertions[nodeId]?.map(withUuid) || [],
 );
 
 export const getTestCaseMocks = createSelector(getTestCase, ({ mocks }) => mocks);

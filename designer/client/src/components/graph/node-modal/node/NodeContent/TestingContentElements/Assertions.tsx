@@ -1,4 +1,5 @@
-import { Box, Stack, Typography } from "@mui/material";
+import { css, cx } from "@emotion/css";
+import { alpha, Box, Stack, Typography } from "@mui/material";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -11,12 +12,12 @@ import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHel
 import type { NodeType } from "../../../../../../types/node";
 import type { VariableTypes } from "../../../../../../types/validation";
 import { Expandable } from "../../../../../common/Expandable";
-import { StyledButton } from "../../../../styledButton";
-import { EditableEditor } from "../../../editors/EditableEditor";
-import { EditorType } from "../../../editors/expression/types";
+import { withUuid } from "../../../appendUuid";
+import { FieldsRow } from "../../../fragment-input-definition/FieldsRow";
+import { NodeRowFieldsProvider } from "../../../node-row-fields-provider/NodeRowFieldsProvider";
 import { NodeTable } from "../../../NodeDetailsContent/NodeTable";
 import { useVariableTypes } from "../../../useNodeTypeDetailsContentLogic";
-import { AssertionStatus } from "./AssertionStatus";
+import { AssertionItem } from "./AssertionItem";
 import { StyledStack } from "./components/Styled";
 
 interface Props {
@@ -33,6 +34,7 @@ export const Assertions = ({ node }: Props) => {
     const nodeVariableTypes = useVariableTypes({ node });
     const [assertionVariableTypes, setAssertionVariableTypes] = useState<VariableTypes>({});
 
+    console.log("testCaseAssertions", testCaseAssertions);
     useEffect(() => {
         const fetchAssertionVariableTypes = async () => {
             const response = await httpService.fetchTestCaseNodeAdditionalVariables(processingType, { variableTypes: nodeVariableTypes });
@@ -45,21 +47,21 @@ export const Assertions = ({ node }: Props) => {
     const addAssertion = useCallback(() => {
         dispatch(
             setTestCaseAssertions(node.id, (prev) =>
-                prev.concat({ expression: { expression: "#TESTS.assertEquals()", language: "spel" } }),
+                prev.concat(withUuid({ expression: { expression: "#TESTS.assertEquals()", language: "spel" } })),
             ),
         );
     }, [dispatch, node.id]);
 
     const removeAssertion = useCallback(
-        (index: number) => {
-            dispatch(setTestCaseAssertions(node.id, (prev) => prev.filter((_, i) => i !== index)));
+        (_, uuid: string) => {
+            dispatch(setTestCaseAssertions(node.id, (prev) => prev.filter((item) => item.uuid !== uuid)));
         },
         [dispatch, node.id],
     );
 
     const editAssertion = useCallback(
-        (index: number, updated: Partial<{ expression: { expression: string; language: string } }>) => {
-            dispatch(setTestCaseAssertions(node.id, (prev) => prev.map((item, i) => (i === index ? { ...item, ...updated } : item))));
+        (uuid: string, updated: Partial<{ expression: { expression: string; language: string } }>) => {
+            dispatch(setTestCaseAssertions(node.id, (prev) => prev.map((item) => (item.uuid === uuid ? { ...item, ...updated } : item))));
         },
         [dispatch, node.id],
     );
@@ -67,46 +69,47 @@ export const Assertions = ({ node }: Props) => {
     return (
         <StyledStack>
             <Expandable componentId={"Assertions"} expandableTitle={"Assertions"} expanded={isExpanded} onChange={setIsExpanded}>
-                {testCaseAssertions.length === 0 && <Typography>{t("assertions.noAsserionsDefined", "No assertions defined")}</Typography>}
-                <Stack gap={2}>
-                    {testCaseAssertions.map(({ expression: expressionObj }, index) => {
-                        const testAssertionResult = testAssertionResults?.[index];
-                        return (
-                            <Box key={index} display={"flex"} alignItems={"end"}>
-                                <NodeTable sx={{ flex: 1, m: 0 }}>
-                                    <EditableEditor
-                                        editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
-                                        expressionObj={expressionObj}
-                                        variableTypes={assertionVariableTypes}
-                                        onValueChange={(expression) => editAssertion(index, { expression })}
-                                        fieldErrors={[]}
-                                    />
-                                </NodeTable>
-                                <StyledButton
-                                    title={t("node.row.remove.title", "Remove field")}
-                                    onClick={() => removeAssertion(index)}
-                                    sx={{ ml: 1 }}
-                                >
-                                    {t("node.row.remove.text", "-")}
-                                </StyledButton>
-                                <Box sx={{ mb: 0.5, ml: 1, display: "flex", alignItems: "center" }}>
-                                    {testAssertionResult && (
-                                        <AssertionStatus
-                                            status={testAssertionResult.type === "SuccessfulAssertion" ? "success" : "error"}
-                                            message={
-                                                testAssertionResult.type === "FailedAssertion" ? testAssertionResult.message : undefined
-                                            }
-                                        />
+                <NodeTable sx={{ ml: 0 }}>
+                    <NodeRowFieldsProvider
+                        path={null}
+                        label=""
+                        onFieldRemove={removeAssertion}
+                        onFieldAdd={addAssertion}
+                        readOnly={false}
+                        errors={[]}
+                    >
+                        <>
+                            {testCaseAssertions.length === 0 && (
+                                <Typography>{t("assertions.noAssertionsDefined", "No assertions defined")}</Typography>
+                            )}
+                            {testCaseAssertions.map(({ expression: expressionObj, uuid }, index) => (
+                                <FieldsRow
+                                    key={uuid}
+                                    index={index}
+                                    uuid={uuid}
+                                    className={cx(
+                                        css({
+                                            "&&&&": {
+                                                display: "grid",
+                                                gridTemplateColumns: "1fr 2fr 1fr auto",
+                                                gridTemplateRows: "auto auto",
+                                                gridTemplateAreas: `"field field field remove" "expr expr expr x"`,
+                                            },
+                                        }),
                                     )}
-                                </Box>
-                            </Box>
-                        );
-                    })}
-                </Stack>
-
-                <StyledButton title={t("node.row.add.title", "Add field")} onClick={addAssertion} sx={{ mt: 2 }}>
-                    {t("node.row.add.text", "+")}
-                </StyledButton>
+                                >
+                                    <AssertionItem
+                                        uuid={uuid}
+                                        onChange={editAssertion}
+                                        expressionObj={expressionObj}
+                                        assertionVariableTypes={assertionVariableTypes}
+                                        testAssertionResult={testAssertionResults?.[index]}
+                                    />
+                                </FieldsRow>
+                            ))}
+                        </>
+                    </NodeRowFieldsProvider>
+                </NodeTable>
             </Expandable>
         </StyledStack>
     );
