@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import java.util.UUID
 
+// TODO: When adding multiple test cases variant, remember to validate ID and name uniqueness.
 sealed trait TestCases
 
 object TestCases {
@@ -24,8 +25,8 @@ object TestCases {
 }
 
 @JsonCodec final case class TestCase(
-    id: UUID,
-    name: String,
+    id: TestCaseId,
+    name: TestCaseName,
     inputs: String,
     mocks: Map[NodeId, EnricherMock],
     assertions: Map[NodeId, List[Assertion]],

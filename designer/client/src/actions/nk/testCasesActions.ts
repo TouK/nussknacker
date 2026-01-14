@@ -21,7 +21,6 @@ export function setTestCaseAssertions(nodeId: string, updater: (prev: WithUuid<A
         const next = updater(prev);
 
         const testingAssertions = getTestCaseAssertions(state);
-        dispatch({ type: "CLEAR_TEST_ASSERTIONS_RESULTS" });
         dispatch({
             type: "SET_TEST_CASE_ASSERTIONS",
             assertions: { ...testingAssertions, [nodeId]: next },

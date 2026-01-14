@@ -84,6 +84,7 @@ export function startLiveData(initiator: Initiator | null = null, showErrors = f
         if (!getHasPauseReasons(getState())) {
             if (!getIsLiveDataWorking(getState())) {
                 dispatch(hideTestRunDetails());
+                dispatch({ type: "CLEAR_TEST_ASSERTIONS_RESULTS" });
             }
             dispatch(fetchAndDisplayLiveData(showErrors));
         }

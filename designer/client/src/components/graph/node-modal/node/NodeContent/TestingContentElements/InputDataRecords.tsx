@@ -1,30 +1,41 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 
 import { getTestCapabilities } from "../../../../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../../../../reducers/selectors/settings";
 import { getInputDataRecordsForSingleSource } from "../../../../../../reducers/selectors/testCases";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
+import type { NodeType } from "../../../../../../types/node";
 import { Expandable } from "../../../../../common/Expandable";
 import { AppendFromLiveDataButton } from "../../../../../modals/TestingDataRecords/AppendFromLiveDataButton";
 import { LimitExceededWarning } from "../../../../../modals/TestingDataRecords/LimitExceededWarning";
 import { Table } from "../../../../../modals/TestingDataRecords/Table";
 import { useDataRecordsActions } from "../../../../../modals/TestingDataRecords/useDataRecordsActions";
+import { getProcessProperties } from "../../../NodeDetailsContent/selectors";
 import { ContentSize } from "../../ContentSize";
 import { StyledStack } from "./components/Styled";
 
 interface Props {
+    node: NodeType;
     sourceId: string;
 }
 
-export const InputDataRecords = ({ sourceId }: Props) => {
+export const InputDataRecords = ({ node, sourceId }: Props) => {
     const [isExpanded, setIsExpanded] = useState(true);
     const maxTestingRecords = useAppSelector(getMaxTestingRecords);
-    const testingDataRecords = useAppSelector((state) => getInputDataRecordsForSingleSource(state, sourceId));
+    const testingDataRecordsForSource = useAppSelector((state) => getInputDataRecordsForSingleSource(state, sourceId));
 
-    const { cellErrors, recordsErrors, handleRowAdded, handleRowMoved, handleRowsDeleted, handleRowUpdated, handleGenerateTestData } =
-        useDataRecordsActions();
+    const {
+        cellErrors,
+        recordsErrors,
+        handleRowAdded,
+        handleRowMoved,
+        handleRowsDeleted,
+        handleRowUpdated,
+        generateTestDataForSingleSource,
+    } = useDataRecordsActions();
 
     const testCapabilities = useAppSelector(getTestCapabilities);
+    const scenarioProperties = useAppSelector(getProcessProperties);
     const defaultParameter = testCapabilities.testWithParameters.sourceParameters.find(
         (sourceParameter) => sourceParameter.sourceId === sourceId,
     );
@@ -46,6 +57,13 @@ export const InputDataRecords = ({ sourceId }: Props) => {
         [recordsErrors],
     );
 
+    const handleGenerateTestDataForSingleSource = useCallback(
+        async (numberOfSamples: number) => {
+            await generateTestDataForSingleSource(numberOfSamples, scenarioProperties, node);
+        },
+        [generateTestDataForSingleSource, node, scenarioProperties],
+    );
+
     return (
         <StyledStack>
             <Expandable
@@ -62,17 +80,16 @@ export const InputDataRecords = ({ sourceId }: Props) => {
                         onRowMoved={handleRowMoved}
                         onRowsDeleted={handleRowsDeleted}
                         onRowUpdated={handleRowUpdated}
-                        data={testingDataRecords}
+                        data={testingDataRecordsForSource}
                         sourceOptions={[sourceId]}
                         sourceParameters={testCapabilities.testWithParameters.sourceParameters}
                     />
                 </ContentSize>
                 {recordsToAddLimitExceeded ? <LimitExceededWarning maxTestingRecords={maxTestingRecords} /> : null}
-                {/*TODO: Adjust handleGenerateTestData when the backend receives an option to generate test data for a specific source*/}
+
                 <AppendFromLiveDataButton
-                    handleGenerateTestData={handleGenerateTestData}
+                    handleGenerateTestData={handleGenerateTestDataForSingleSource}
                     maxTestingRecords={maxTestingRecords}
-                    currentRecordsNumber={testingDataRecords.length}
                     recordsToAddLimitExceeded={recordsToAddLimitExceeded}
                 />
             </Expandable>
