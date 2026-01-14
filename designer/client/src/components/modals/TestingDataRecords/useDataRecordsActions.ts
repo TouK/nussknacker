@@ -4,6 +4,7 @@ import { setTestCaseInputs } from "../../../actions/nk/testCasesActions";
 import HttpService from "../../../http/HttpService/instance";
 import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
+import type { NodeType, PropertiesType } from "../../../types/node";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import type { TestingDataRecords } from "./Table";
 import { useDataRecordsValidation } from "./useDataRecordsValidation";
@@ -26,11 +27,33 @@ export const useDataRecordsActions = () => {
                 return;
 
             if (numberOfSamples > 0) {
-                const { data } = await HttpService.generatedTestData(scenarioName, scenarioGraph, numberOfSamples);
+                const { data } = await HttpService.fetchTestData(scenarioName, scenarioGraph, numberOfSamples);
                 dispatch(setTestCaseInputs((prevState) => [...prevState, ...data.map(mapGeneratedTestingDataToTableFormat)]));
             }
         },
         [validateForCount, scenarioName, scenarioGraph, dispatch],
+    );
+
+    const generateTestDataForSingleSource = useCallback(
+        async (numberOfSamples: number, scenarioProperties: PropertiesType, nodeData: NodeType) => {
+            if (
+                !validateForCount((currentCount) => {
+                    return currentCount + (numberOfSamples || 1); // we treat 0 as 1 to run validation when limit exceeded;
+                })
+            )
+                return;
+
+            if (numberOfSamples > 0) {
+                const { data } = await HttpService.fetchTestDataForSingleSource(
+                    scenarioName,
+                    scenarioProperties,
+                    nodeData,
+                    numberOfSamples,
+                );
+                dispatch(setTestCaseInputs((prevState) => [...prevState, ...data.map(mapGeneratedTestingDataToTableFormat)]));
+            }
+        },
+        [validateForCount, scenarioName, dispatch],
     );
 
     const validateEditedRow = React.useCallback(
@@ -140,6 +163,7 @@ export const useDataRecordsActions = () => {
         handleRowUpdated,
         handleRowsDeleted,
         handleGenerateTestData,
+        generateTestDataForSingleSource,
         handleRowMoved,
     };
 };
