@@ -17,13 +17,13 @@ import { AssertionStatus } from "./AssertionStatus";
 interface Props {
     uuid: string;
     expressionObj: ExpressionObj;
-    assertionVariableTypes: VariableTypes;
+    variableTypes: VariableTypes;
     onChange: (uuid: string, expression: { expression: ExpressionObj }) => void;
     testAssertionResult: TestAssertionResult | undefined;
     index: number;
 }
 
-export const AssertionItem = ({ uuid, expressionObj, assertionVariableTypes, onChange, index, testAssertionResult }: Props) => {
+export const AssertionItem = ({ uuid, expressionObj, onChange, index, testAssertionResult, variableTypes }: Props) => {
     const isFirstRow = index === 0;
 
     const decodedParts = useMemo(() => {
@@ -88,7 +88,7 @@ export const AssertionItem = ({ uuid, expressionObj, assertionVariableTypes, onC
                         showSwitch={false}
                         editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
                         expressionObj={expectedExpressionObj}
-                        variableTypes={assertionVariableTypes}
+                        variableTypes={variableTypes}
                         onValueChange={({ expression }) => handleChangeAssertionPart("expected", expression)}
                         fieldErrors={[]}
                     />
@@ -106,7 +106,7 @@ export const AssertionItem = ({ uuid, expressionObj, assertionVariableTypes, onC
                         showSwitch={false}
                         editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
                         expressionObj={actualExpressionObj}
-                        variableTypes={assertionVariableTypes}
+                        variableTypes={variableTypes}
                         onValueChange={({ expression }) => handleChangeAssertionPart("actual", expression)}
                         fieldErrors={[]}
                     />
