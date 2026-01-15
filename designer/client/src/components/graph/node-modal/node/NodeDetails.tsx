@@ -34,6 +34,7 @@ import { GeneralContent } from "./NodeContent/GeneralContent";
 import type { TabDef } from "./NodeContent/TabsWrapper";
 import { TabsWrapper } from "./NodeContent/TabsWrapper";
 import { TestingContent } from "./NodeContent/TestingContent";
+import { TestCases } from "./NodeContent/TestingContentElements/TestCases";
 import { getReadOnly } from "./selectors";
 import { useDialogActions } from "./useDialogActions";
 import { useNodeState } from "./useNodeState";
@@ -166,6 +167,7 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
                 label: t("nodeDetails.tabs.testing.name", "Testing"),
                 content: testingContent,
                 disabled: !testingScenarioEnabled || !testingTabVisible,
+                additionalTabContent: <TestCases />,
             },
         ],
         [generalContent, t, testingContent, testingScenarioEnabled, testingTabVisible],

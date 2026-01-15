@@ -9,9 +9,8 @@ import { WindowKind } from "../../../../../../windowManager/WindowKind";
 import { StyledButton } from "../../../../styledButton";
 import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
 import { TypeSelect } from "../../../fragment-input-definition/TypeSelect";
-import { StyledStack } from "./components/Styled";
 
-const TestCases = () => {
+export const TestCases = () => {
     const { t } = useTranslation();
     const testCaseOptions = useAppSelector(getTestCaseOptions);
     const { open } = useWindows();
@@ -20,22 +19,18 @@ const TestCases = () => {
     }, [open]);
 
     return (
-        <StyledStack sx={{ pb: 2, ml: 1 }}>
-            <Box maxWidth={"40%"} pt={2} display={"flex"} alignItems={"center"} gap={1}>
-                <TypeSelect width={"30%"} options={testCaseOptions} onChange={() => "noop"} value={testCaseOptions[0]} />
-                {/*<InfoTooltip title={"Edit name"} variant={"hover"} enterDelay={500}>*/}
-                {/*    <StyledActionButton>*/}
-                {/*        <EditIcon />*/}
-                {/*    </StyledActionButton>*/}
-                {/*</InfoTooltip>*/}
-                <InfoTooltip title={"Save as"} variant={"hover"} enterDelay={500}>
-                    <StyledButton title={t("node.row.add.title", "Add field")} onClick={onDisplayEnterpriseInfo}>
-                        {t("node.row.add.text", "+")}
-                    </StyledButton>
-                </InfoTooltip>
-            </Box>
-        </StyledStack>
+        <Box ml={4} pb={0.25} width={"40%"} pt={2} display={"flex"} alignItems={"center"} gap={1}>
+            <TypeSelect width={"30%"} options={testCaseOptions} onChange={() => "noop"} value={testCaseOptions[0]} />
+            {/*<InfoTooltip title={"Edit name"} variant={"hover"} enterDelay={500}>*/}
+            {/*    <StyledActionButton>*/}
+            {/*        <EditIcon />*/}
+            {/*    </StyledActionButton>*/}
+            {/*</InfoTooltip>*/}
+            <InfoTooltip title={"Save as"} variant={"hover"} enterDelay={500}>
+                <StyledButton title={t("node.row.add.title", "Add field")} onClick={onDisplayEnterpriseInfo}>
+                    {t("node.row.add.text", "+")}
+                </StyledButton>
+            </InfoTooltip>
+        </Box>
     );
 };
-
-export default TestCases;
