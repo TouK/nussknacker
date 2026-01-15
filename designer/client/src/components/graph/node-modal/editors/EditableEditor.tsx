@@ -43,7 +43,6 @@ interface Props {
 export const EditableEditor = (props: Props) => {
     const { expressionObj, valueClassName, editors, paramType, fieldErrors = [] } = props;
 
-    console.log("EditableEditor rerendered");
     const userSettings = useAppSelector(getUserSettings);
     const forceSpelEditors = userSettings["debug.editor.forceSpelEditors"];
 
