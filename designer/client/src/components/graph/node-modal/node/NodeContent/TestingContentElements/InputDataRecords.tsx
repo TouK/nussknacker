@@ -66,12 +66,7 @@ export const InputDataRecords = ({ node, sourceId }: Props) => {
 
     return (
         <StyledStack>
-            <Expandable
-                componentId={"inputDataRecords"}
-                expandableTitle={"Input data records"}
-                expanded={isExpanded}
-                onChange={setIsExpanded}
-            >
+            <Expandable componentId={"inputDataRecords"} expandableTitle={"Test data"} expanded={isExpanded} onChange={setIsExpanded}>
                 <ContentSize sx={{ padding: 0, maxHeight: "45cqh", mb: 2 }}>
                     <Table
                         cellErrors={cellErrors}
