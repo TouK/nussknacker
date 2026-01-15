@@ -39,9 +39,9 @@ import { handleAxiosError } from "../../devHelpers";
 import type { TestCase } from "../../reducers/graph/testCase";
 import type { AuthenticationSettings } from "../../reducers/settings";
 import type { WithId } from "../../types/common";
-import type { Expression, NodeType } from "../../types/node";
+import type { Expression, NodeType, PropertiesType } from "../../types/node";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
-import type { ValidationResult, VariableTypes } from "../../types/validation";
+import type { ValidationResult } from "../../types/validation";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "../parametersUtils";
 import type { ProcessCounts, ResultsWithCountsDto } from "../resultsWithCountsDto";
 import type {
@@ -922,7 +922,7 @@ export class HttpService {
         return promise;
     }
 
-    generatedTestData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, numberOfSamples = 10) {
+    fetchTestData(scenarioName: ProcessName, scenarioGraph: ScenarioGraph, numberOfSamples = 10) {
         const sanitizedScenarioGraph = this.#sanitizeScenarioGraph(scenarioGraph);
         const promise = api.post<TestingDataRecords[]>(`/scenarioTesting/${encodeURIComponent(scenarioName)}/generatedTestData`, {
             scenarioGraph: sanitizedScenarioGraph,
@@ -931,9 +931,27 @@ export class HttpService {
 
         promise.catch((error: AxiosError) =>
             this.#addError(
+                i18next.t("notification.error.failedToFetchTestData", "Failed to fetch test data due to: {{axiosError}}", {
+                    axiosError: handleAxiosError(error),
+                }),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
+    fetchTestDataForSingleSource(scenarioName: ProcessName, scenarioProperties: PropertiesType, nodeData: NodeType, numberOfSamples = 10) {
+        const promise = api.post<TestingDataRecords[]>(`/nodes/${encodeURIComponent(scenarioName)}/records?limit=${numberOfSamples}`, {
+            processProperties: scenarioProperties,
+            nodeData,
+        });
+
+        promise.catch((error: AxiosError) =>
+            this.#addError(
                 i18next.t(
-                    "notification.error.failedToValidateScenarioWithEventsData",
-                    "Failed to generated test data due to: {{axiosError}}",
+                    "notification.error.failedToFetchTestDataForSingleSource",
+                    "Failed to fetch test data for a single source due to: {{axiosError}}",
                     {
                         axiosError: handleAxiosError(error),
                     },

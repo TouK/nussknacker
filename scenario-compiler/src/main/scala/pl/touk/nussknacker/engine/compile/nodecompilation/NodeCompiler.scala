@@ -52,7 +52,11 @@ import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.branchParameterExpressionId
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{CompilableNodeData, _}
-import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
+import pl.touk.nussknacker.engine.resultcollector.{
+  PreventInvocationCollector,
+  ProductionServiceInvocationCollector,
+  ResultCollector
+}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -66,7 +70,26 @@ object NodeCompiler {
   val MockExpressionParameterName: ParameterName = ParameterName("$mockExpression")
 
   def apply(modelData: ModelData): NodeCompiler = {
-    val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData)
+    apply(
+      modelData = modelData,
+      resultCollector = ProductionServiceInvocationCollector,
+      expressionCompiler = ExpressionCompiler.withoutOptimization(modelData)
+    )
+  }
+
+  def forValidation(modelData: ModelData): NodeCompiler = {
+    apply(
+      modelData = modelData,
+      resultCollector = PreventInvocationCollector,
+      expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
+    )
+  }
+
+  private def apply(
+      modelData: ModelData,
+      resultCollector: ResultCollector,
+      expressionCompiler: ExpressionCompiler
+  ): NodeCompiler = {
     new NodeCompiler(
       definitions = modelData.modelDefinition,
       fragmentDefinitionExtractor = new FragmentParametersDefinitionExtractor(

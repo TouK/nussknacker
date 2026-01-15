@@ -2,6 +2,8 @@ import { Box } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { getInputDataRecords } from "../../../reducers/selectors/testCases";
+import { useAppSelector } from "../../../store/storeHelpers";
 import { NumericInput } from "../../graph/node-modal/editors/expression/NumericInput";
 import { FormLabel } from "../../graph/node-modal/editors/FormControl";
 import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
@@ -10,7 +12,6 @@ import { StyledLoadingButton } from "../../graph/node-modal/node-action-buttons/
 interface Props {
     handleGenerateTestData: (numberOfSamples: number) => void;
     maxTestingRecords: number;
-    currentRecordsNumber: number;
     recordsToAddLimitExceeded: boolean;
 }
 
@@ -18,14 +19,11 @@ const DEFAULT_APPEND_COUNT = 10;
 const APPEND_MIN = 0;
 const TOOLTIP_APPEND_LIVE_DATA = "The table will be appended with live data from the data sources.";
 
-export const AppendFromLiveDataButton = ({
-    handleGenerateTestData,
-    maxTestingRecords,
-    currentRecordsNumber,
-    recordsToAddLimitExceeded,
-}: Props) => {
+export const AppendFromLiveDataButton = ({ handleGenerateTestData, maxTestingRecords, recordsToAddLimitExceeded }: Props) => {
     const { t } = useTranslation();
     const [recordsToAppend, setRecordsToAppend] = useState<number>(DEFAULT_APPEND_COUNT);
+    const allTestingDataRecords = useAppSelector(getInputDataRecords);
+    const currentRecordsNumber = allTestingDataRecords.length;
     const maxLiveDataToAppend = maxTestingRecords - currentRecordsNumber;
 
     useEffect(() => {

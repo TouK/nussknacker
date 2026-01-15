@@ -152,7 +152,8 @@ class NodesApiHttpService(
               parameters = None,
               expressionType = None,
               validationErrors = result.errors.processPropertiesErrors,
-              validationPerformed = true
+              validationPerformed = true,
+              testCasesValidationErrors = None,
             )
           } yield validation
         }
@@ -337,7 +338,8 @@ class NodesApiHttpService(
       processProperties = node.processProperties,
       variableTypes = variableTypes,
       branchVariableTypes = branchVariableTypes,
-      outgoingEdges = node.outgoingEdges
+      outgoingEdges = node.outgoingEdges,
+      testCases = node.testCases,
     )
   }
 

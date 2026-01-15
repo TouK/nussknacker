@@ -34,7 +34,7 @@ export function useTestingContentRenderer() {
             render: ({ node }) => (
                 <>
                     <TestCases />
-                    <InputDataRecords sourceId={node.id} />
+                    <InputDataRecords sourceId={node.id} node={node} />
                     <Assertions node={node} />
                 </>
             ),
