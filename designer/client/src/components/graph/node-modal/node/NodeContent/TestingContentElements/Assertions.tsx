@@ -52,7 +52,7 @@ export const Assertions = ({ node }: Props) => {
     return (
         <StyledStack>
             <Expandable componentId={"Assertions"} expandableTitle={"Assertions"} expanded={isExpanded} onChange={setIsExpanded}>
-                <NodeTable sx={{ ml: 0 }}>
+                <NodeTable sx={{ mx: 0 }}>
                     <NodeRowFieldsProvider
                         path={null}
                         label=""

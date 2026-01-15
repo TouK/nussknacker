@@ -27,9 +27,9 @@ const centeredInputStyle = css({
 const gridContainerStyle = css({
     "&&&&": {
         display: "grid",
-        gridTemplateColumns: "3fr 1fr 3fr auto",
+        gridTemplateColumns: "4fr 1fr 4fr",
         gridTemplateRows: "auto auto",
-        gridTemplateAreas: `"field field field remove" "expr expr expr x"`,
+        gridTemplateAreas: `"field field field remove" "expr expr expr remove"`,
     },
 });
 
