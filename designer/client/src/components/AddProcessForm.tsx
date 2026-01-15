@@ -10,7 +10,7 @@ import RequestResponseIcon from "../assets/img/request-response.svg";
 import StreamingIcon from "../assets/img/streaming.svg";
 import { formLabelWidth } from "../containers/theme/styles";
 import { ProcessingMode } from "../http/HttpService/types";
-import type { NodeValidationError } from "../types/validation";
+import type { NodeValidationError, TestCaseValidationErrors } from "../types/validation";
 import type { ChangeableValue } from "./ChangeableValue";
 import { CustomRadio } from "./customRadio/CustomRadio";
 import Input from "./graph/node-modal/editors/field/Input";
@@ -28,6 +28,7 @@ export type TouchedValue = Record<keyof FormValue, boolean>;
 
 interface AddProcessFormProps extends ChangeableValue<FormValue> {
     validationErrors: NodeValidationError[];
+    testCasesValidationErrors: TestCaseValidationErrors;
     categories: { value: string; disabled: boolean }[];
     processingModes: ProcessingMode[];
     engines: string[];

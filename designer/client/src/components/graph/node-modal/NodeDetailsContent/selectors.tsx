@@ -36,6 +36,13 @@ export const getValidationPerformed = createSelector(
             nodeDetails(nodeId)?.validationPerformed,
 );
 const getValidationErrors = createSelector(getNodeDetails, (nodeDetails) => (nodeId) => nodeDetails(nodeId)?.validationErrors);
+
+const getNodeId = (_: unknown, nodeId: string) => nodeId;
+export const getValidationTestCasesErrors = createSelector(
+    getNodeDetails,
+    getNodeId,
+    (nodeDetails, nodeId) => nodeDetails(nodeId)?.testCasesValidationErrors,
+);
 export const getDetailsParameters = createSelector(getNodeDetails, (nodeDetails) => (nodeId): UIParameter[] => {
     const parameters = nodeDetails(nodeId)?.parameters;
     return parameters || null;

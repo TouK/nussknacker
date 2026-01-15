@@ -8,10 +8,10 @@ import {
 } from "../../reducers/selectors/testCases";
 import type { ThunkAction } from "../reduxTypes";
 
-type Assertion = { expression: ExpressionObj };
+export type Assertion = { expression: ExpressionObj };
 export type Assertions = Record<string, Assertion[]>;
 
-type Mock = { expression: ExpressionObj };
+export type Mock = { expression: ExpressionObj };
 export type Mocks = Record<string, Mock>;
 
 export type TestCasesActions =

@@ -7,6 +7,7 @@ import {
     validateNodeData,
 } from "../../../actions/nk/nodeDetails";
 import type { RootState } from "../../../reducers";
+import { getTestCase } from "../../../reducers/selectors/testCases";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { Edge } from "../../../types/edge";
 import type { NodeType, Parameter } from "../../../types/node";
@@ -18,6 +19,7 @@ import {
     getFindAvailableVariables,
     getNodeErrors as getNodeCurrentErrors,
     getProcessName,
+    getValidationTestCasesErrors,
 } from "./NodeDetailsContent/selectors";
 import type { NodeTypeDetailsContentProps } from "./NodeTypeDetailsContent";
 import { setImmutable } from "./setImmutable";
@@ -31,7 +33,7 @@ export function useValidation({ node, edges, showValidation }: Pick<NodeTypeDeta
     const dispatch = useAppDispatch();
     const getBranchVariableTypes = useAppSelector(getFindAvailableBranchVariables);
     const processName = useAppSelector(getProcessName);
-
+    const testCase = useAppSelector(getTestCase);
     const variableTypes = useVariableTypes({ node });
 
     useEffect(() => {
@@ -44,13 +46,20 @@ export function useValidation({ node, edges, showValidation }: Pick<NodeTypeDeta
                     nodeData: node,
                     branchVariableTypes: getBranchVariableTypes(node.id),
                     variableTypes,
+                    testCases: {
+                        [testCase.name]: {
+                            ...testCase,
+                            assertions: testCase.assertions[node.id] ?? [],
+                            enricherMock: testCase.mocks[node.id],
+                        },
+                    },
                 },
                 () => {
                     dispatch(nodeValidationDynamicParametersLoaded(node.id));
                 },
             ),
         );
-    }, [dispatch, edges, getBranchVariableTypes, node, processName, showValidation, variableTypes]);
+    }, [dispatch, edges, getBranchVariableTypes, node, processName, showValidation, testCase, variableTypes]);
 }
 
 export function useVariableTypes({ node }: Pick<NodeTypeDetailsContentProps, "node">) {
@@ -154,4 +163,11 @@ export function useGetNodeErrors(node: NodeType) {
     const [errors, diagramStructureErrors] = useMemo(() => partition(currentErrors, (error) => !!error.fieldName), [currentErrors]);
 
     return [errors, diagramStructureErrors];
+}
+
+export function useGetNodeTestCasesErrors(node: NodeType): { enricherMockErrors: any; assertionsErrors: any } {
+    const testCase = useAppSelector(getTestCase);
+    const currentTestCasesErrors = useAppSelector((state: RootState) => getValidationTestCasesErrors(state, node.id));
+
+    return currentTestCasesErrors?.[testCase.name] ?? { enricherMockErrors: [], assertionsErrors: [] };
 }

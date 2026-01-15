@@ -10,7 +10,6 @@ import type { NodeValidationError } from "../../../../../types/validation";
 import { NodeTable } from "../../NodeDetailsContent/NodeTable";
 import { useDiffMark } from "../../PathsToMark";
 import { EditableEditor } from "../EditableEditor";
-import { getValidationErrorsForField } from "../Validators";
 import type { OnValueChange } from "./Editor";
 import { EditorType } from "./types";
 
@@ -77,7 +76,7 @@ function MockExpressionField(props: Props): React.JSX.Element {
                 readOnly={readOnly}
                 variableTypes={variableTypes}
                 onValueChange={editMock}
-                fieldErrors={getValidationErrorsForField(errors, MOCK_EXPRESSION_PARAMETER_NAME)}
+                fieldErrors={errors}
             />
         </NodeTable>
     );

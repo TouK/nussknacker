@@ -8,21 +8,23 @@ import { getProcessingType } from "../../../../../../reducers/selectors/graph";
 import { getTestCaseAssertionsForNode } from "../../../../../../reducers/selectors/testCases";
 import { getTestAssertionResultsForNode } from "../../../../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
+import type { Edge } from "../../../../../../types/edge";
 import type { NodeType } from "../../../../../../types/node";
 import type { VariableTypes } from "../../../../../../types/validation";
 import { StyledButton } from "../../../../styledButton";
 import { EditableEditor } from "../../../editors/EditableEditor";
 import { EditorType } from "../../../editors/expression/types";
 import { NodeTable } from "../../../NodeDetailsContent/NodeTable";
-import { useVariableTypes } from "../../../useNodeTypeDetailsContentLogic";
+import { useGetNodeTestCasesErrors, useValidation, useVariableTypes } from "../../../useNodeTypeDetailsContentLogic";
 import { AssertionStatus } from "./AssertionStatus";
 import { StyledStack } from "./components/Styled";
 
 interface Props {
     node: NodeType;
+    edges: Edge[];
 }
 
-export const Assertions = ({ node }: Props) => {
+export const Assertions = ({ node, edges }: Props) => {
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
     const testCaseAssertions = useAppSelector((state) => getTestCaseAssertionsForNode(state, node.id));
@@ -30,6 +32,9 @@ export const Assertions = ({ node }: Props) => {
     const processingType = useAppSelector(getProcessingType);
     const nodeVariableTypes = useVariableTypes({ node });
     const [assertionVariableTypes, setAssertionVariableTypes] = useState<VariableTypes>({});
+    const testCasesErrors = useGetNodeTestCasesErrors(node);
+
+    useValidation({ node, showValidation: true, edges });
 
     useEffect(() => {
         const fetchAssertionVariableTypes = async () => {
@@ -73,11 +78,12 @@ export const Assertions = ({ node }: Props) => {
                     <Box key={index} display={"flex"} alignItems={"end"}>
                         <NodeTable sx={{ flex: 1, m: 0 }}>
                             <EditableEditor
+                                showValidation
                                 editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
                                 expressionObj={expressionObj}
                                 variableTypes={assertionVariableTypes}
                                 onValueChange={(expression) => editAssertion(index, { expression })}
-                                fieldErrors={[]}
+                                fieldErrors={testCasesErrors.assertionsErrors?.[index] ?? []}
                             />
                         </NodeTable>
                         <StyledButton

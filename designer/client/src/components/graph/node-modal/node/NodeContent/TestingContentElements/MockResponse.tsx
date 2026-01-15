@@ -6,20 +6,22 @@ import { useAppSelector } from "../../../../../../store/storeHelpers";
 import MockExpressionField from "../../../editors/expression/MockExpressionField";
 import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
 import { getFindAvailableVariables } from "../../../NodeDetailsContent/selectors";
-import { useGetNodeErrors, useIsEditMode, useSetProperty } from "../../../useNodeTypeDetailsContentLogic";
+import { useGetNodeTestCasesErrors, useIsEditMode, useSetProperty, useValidation } from "../../../useNodeTypeDetailsContentLogic";
 import type { TestingContentProps } from "../TestingContent";
 import { StyledStack } from "./components/Styled";
 
 const MOCK_EXPRESSION_HINT_TEXT =
     "If you provide this expression, the real service won't be invoked during tests. Instead, the result of the evaluation will be used.";
 
-export const MockResponse = ({ node, onChange }: TestingContentProps) => {
+export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => {
     const { t } = useTranslation();
 
     const isEditMode = useIsEditMode({ onChange });
     const setProperty = useSetProperty({ onChange, node });
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
-    const [errors] = useGetNodeErrors(node);
+    const testCasesErrors = useGetNodeTestCasesErrors(node);
+
+    useValidation({ node, showValidation: true, edges });
 
     return (
         <StyledStack>
@@ -37,7 +39,7 @@ export const MockResponse = ({ node, onChange }: TestingContentProps) => {
                 showSwitch
                 findAvailableVariables={findAvailableVariables}
                 setNodeDataAt={setProperty}
-                errors={errors}
+                errors={testCasesErrors.enricherMockErrors}
             />
         </StyledStack>
     );
