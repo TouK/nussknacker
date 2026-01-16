@@ -4,8 +4,8 @@ import cats.effect.SyncIO
 import cats.effect.kernel.Resource
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   NodeDataValidator,
@@ -13,13 +13,12 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
   ValidationPerformed
 }
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
-import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.testcase.NodeTestCasesValidationErrors
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeValidationRequest, NodeValidationResult}
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
-import pl.touk.nussknacker.ui.process.test.testcase.{AssertionsCompiler, TestCaseValidator}
+import pl.touk.nussknacker.ui.process.test.testcase.TestCaseValidator
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class NodeValidator(
@@ -62,9 +61,9 @@ class NodeValidator(
                 expressionType = None,
                 validationErrors = Nil,
                 validationPerformed = false,
-                testCasesValidationErrors = validateTestCases(validationRequest),
+                testCasesValidationErrors = validateTestCases(validationRequest, outputValidationContext = None),
               )
-            case ValidationPerformed(errors, parameters, expressionType) =>
+            case ValidationPerformed(errors, parameters, expressionType, outputValidationContext) =>
               val uiParams = parameters.map(_.map(DefinitionsService.createUIParameter))
               val uiErrors = errors.map(PrettyValidationErrors.formatErrorMessage)
               NodeValidationResult(
@@ -72,7 +71,7 @@ class NodeValidator(
                 expressionType = expressionType,
                 validationErrors = uiErrors,
                 validationPerformed = true,
-                testCasesValidationErrors = validateTestCases(validationRequest),
+                testCasesValidationErrors = validateTestCases(validationRequest, outputValidationContext),
               )
           }
         }
@@ -82,16 +81,18 @@ class NodeValidator(
 
   private def validateTestCases(
       validationRequest: NodeValidationRequest,
+      outputValidationContext: Option[ValidationContext]
   )(
-      implicit jobData: JobData,
-      scenarioCompilationDependencies: ScenarioCompilationDependencies
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): Option[NodeTestCasesValidationErrors] =
     validationRequest.testCases.map(
       testCasesValidator.validateNodeTestCases(
         validationRequest.nodeData,
         _,
-        validationRequest.variableTypes,
-        jobData,
+        TestCaseValidator.NodeTyping(
+          inputVariables = validationRequest.variableTypes,
+          outputVariables = outputValidationContext.map(_.localVariables).getOrElse(Map.empty)
+        )
       )
     )
 

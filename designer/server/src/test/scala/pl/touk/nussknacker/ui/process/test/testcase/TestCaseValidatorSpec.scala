@@ -8,11 +8,11 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.{Enricher, Filter}
@@ -20,13 +20,13 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock}
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.testcase.{
   AssertionValidationError,
   EnricherMockValidationError,
   NodeTestCaseValidationErrors
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeTestCase, NodeTestCases}
+import pl.touk.nussknacker.ui.process.test.testcase.TestCaseValidator.NodeTyping
 
 import scala.concurrent.Future
 
@@ -57,7 +57,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
     output = "enricherOutput"
   )
 
-  private val variableTypes = Map("input" -> Typed[String])
+  private val inputVariableTypes = Map("input" -> Typed[String])
 
   test("should validate assertions") {
     val nodeTestCases: NodeTestCases = Map(
@@ -73,8 +73,10 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      variableTypes,
-      jobData,
+      NodeTyping(
+        inputVariables = inputVariableTypes,
+        outputVariables = inputVariableTypes
+      )
     )
 
     result shouldBe Map.empty
@@ -91,8 +93,10 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      variableTypes,
-      jobData,
+      NodeTyping(
+        inputVariables = inputVariableTypes,
+        outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
+      )
     )
 
     result shouldBe Map.empty
@@ -109,8 +113,10 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      variableTypes,
-      jobData,
+      NodeTyping(
+        inputVariables = inputVariableTypes,
+        outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
+      )
     )
 
     result shouldBe Map(
@@ -147,8 +153,10 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val result = testCaseValidator.validateNodeTestCases(
       filter,
       nodeTestCases,
-      variableTypes,
-      jobData,
+      NodeTyping(
+        inputVariables = inputVariableTypes,
+        outputVariables = inputVariableTypes
+      )
     )
 
     result shouldBe Map(
@@ -181,8 +189,10 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      variableTypes,
-      jobData,
+      NodeTyping(
+        inputVariables = inputVariableTypes,
+        outputVariables = inputVariableTypes
+      )
     )
 
     result shouldBe Map(
@@ -227,8 +237,10 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val result = testCaseValidator.validateNodeTestCases(
       enricher,
       nodeTestCases,
-      variableTypes,
-      jobData,
+      NodeTyping(
+        inputVariables = inputVariableTypes,
+        outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
+      )
     )
 
     result shouldBe Map(

@@ -6,7 +6,7 @@ import cats.implicits.catsSyntaxTuple2Semigroupal
 import pl.touk.nussknacker.engine.{ModelData, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
-import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError}
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
@@ -28,7 +28,8 @@ sealed trait ValidationResponse
 case class ValidationPerformed(
     errors: List[ProcessCompilationError],
     parameters: Option[List[Parameter]],
-    expressionType: Option[TypingResult]
+    expressionType: Option[TypingResult],
+    outputValidationContext: Option[ValidationContext],
 ) extends ValidationResponse
 
 // TODO: Remove ValidationNotPerformed
@@ -80,7 +81,8 @@ class NodeDataValidator(modelData: ModelData) {
 
       compilationErrors match {
         case e: ValidationPerformed => e.copy(errors = e.errors ++ nodeIdErrors)
-        case ValidationNotPerformed => ValidationPerformed(nodeIdErrors, None, None)
+        case ValidationNotPerformed =>
+          ValidationPerformed(nodeIdErrors, parameters = None, expressionType = None, outputValidationContext = None)
       }
     }
   }
@@ -131,7 +133,7 @@ class NodeDataValidator(modelData: ModelData) {
         )
         parametersResponse.copy(errors = parametersResponse.errors ++ outputErrors)
       }
-      .valueOr(errors => ValidationPerformed(errors.toList, None, None))
+      .valueOr(errors => ValidationPerformed(errors.toList, None, None, None))
   }
 
   private def toValidationResponse[T <: TypedValue](
@@ -140,7 +142,8 @@ class NodeDataValidator(modelData: ModelData) {
     ValidationPerformed(
       nodeCompilationResult.errors,
       nodeCompilationResult.parameters,
-      expressionType = nodeCompilationResult.expressionType
+      expressionType = nodeCompilationResult.expressionType,
+      outputValidationContext = nodeCompilationResult.validationContext.toOption
     )
 
 }

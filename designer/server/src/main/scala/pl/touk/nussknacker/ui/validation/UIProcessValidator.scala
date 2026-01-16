@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{CustomProcessValidator, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.graph.{Edge, ScenarioGraph}
@@ -157,7 +157,7 @@ class UIProcessValidator(
               new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
             val validated                 = validator.validate(scenario, isFragment)
             val nodeResults               = validated.typing.mapValuesNow(nodeInfoToResult)
-            val testCasesValidationResult = validateTestCases(scenario, nodeResults)
+            val testCasesValidationResult = validateTestCases(scenario, validated.typing)
             validated.result
               .fold(formatErrors, _ => ValidationResult.success)
               .withNodeResults(nodeResults)
@@ -380,25 +380,29 @@ class UIProcessValidator(
     )
   }
 
-  private def validateTestCases(scenario: CanonicalProcess, nodesTyping: Map[String, NodeTypingData])(
+  private def validateTestCases(scenario: CanonicalProcess, nodesTyping: Map[String, NodeTypingInfo])(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): ValidationResult = {
-    val testCases = scenario.testCases
+    scenario.testCases
       .map { case TestCases.Single(value) =>
-        List(value)
+        NonEmptyList.one(value)
       }
-      .getOrElse(Nil)
-    val testCasesValidationErrors =
-      testCaseValidator.validateScenarioTestCases(scenario.collectAllNodes, nodesTyping, testCases)
-    if (testCasesValidationErrors.isEmpty) {
-      ValidationResult.success
-    } else {
-      ValidationResult.errors(
-        testCasesValidationErrors = Some(
-          testCaseValidator.validateScenarioTestCases(scenario.collectAllNodes, nodesTyping, testCases)
-        )
-      )
-    }
+      .map { testCases =>
+        val testCasesNodeTyping = nodesTyping.mapValuesNow { typingInfo =>
+          TestCaseValidator.NodeTyping(
+            inputVariables = typingInfo.inputValidationContext.localVariables,
+            outputVariables = typingInfo.outputValidationContext.map(_.localVariables).getOrElse(Map.empty),
+          )
+        }
+        val testCasesValidationErrors =
+          testCaseValidator.validateScenarioTestCases(scenario.collectAllNodes, testCasesNodeTyping, testCases.toList)
+        if (testCasesValidationErrors.isEmpty) {
+          ValidationResult.success
+        } else {
+          ValidationResult.errors(testCasesValidationErrors = Some(testCasesValidationErrors))
+        }
+      }
+      .getOrElse(ValidationResult.success)
   }
 
   private def deduplicateErrors(result: ValidationResult): ValidationResult = {
