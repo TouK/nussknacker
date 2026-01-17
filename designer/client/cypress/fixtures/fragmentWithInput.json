@@ -186,7 +186,7 @@
                 }
             ],
             "additionalFields": {
-                "description": null,
+                "description": "",
                 "layoutData": {
                     "x": 360,
                     "y": 0
