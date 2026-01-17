@@ -238,10 +238,11 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                     value={versionOptions.find((option) => option.value === state.otherVersion)}
                     options={versionOptions}
                     fieldErrors={[]}
+                    sx={{ flex: 1 }}
                 />
             </NodeRow>
             {state.otherVersion ? (
-                <div>
+                <>
                     <NodeRow label="Difference to pick">
                         <TypeSelect
                             id="differentVersion"
@@ -249,10 +250,11 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
                             value={differenceOptions.find((option) => option.value === state.currentDiffId)}
                             options={differenceOptions}
                             fieldErrors={[]}
+                            sx={{ flex: 1 }}
                         />
                     </NodeRow>
                     {state.currentDiffId ? printDiff(state.currentDiffId) : null}
-                </div>
+                </>
             ) : null}
         </>
     );
