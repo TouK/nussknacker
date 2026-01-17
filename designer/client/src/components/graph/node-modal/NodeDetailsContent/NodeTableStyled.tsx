@@ -8,6 +8,8 @@ export const rowAceEditor = "row-ace-editor";
 export const movableRow = "movable-row";
 export const partlyHidden = "partly-hidden";
 
+export const editorAnchorName = "--editor";
+
 export const NodeTableStyled = styled("div")(({ theme }) => ({
     fontSize: 11,
     margin: "0 24px",
@@ -24,6 +26,7 @@ export const NodeTableStyled = styled("div")(({ theme }) => ({
         flexBasis: "60%",
         display: "inline-block",
         width: "100%",
+        "anchor-name": editorAnchorName,
 
         textarea: {
             overflow: "hidden",
