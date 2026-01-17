@@ -1,11 +1,11 @@
 import { isEqual } from "lodash";
 import React, { useCallback } from "react";
+import { useToggle } from "rooks";
 
 import type { ReturnedType } from "../../../../../types/scenarioGraph";
 import type { NodeValidationError, VariableTypes } from "../../../../../types/validation";
 import Input from "../../editors/field/Input";
 import { getValidationErrorsForField } from "../../editors/Validators";
-import { useFieldsContext } from "../../node-row-fields-provider/NodeRowFieldsProvider";
 import { NodeValue } from "../../node/NodeValue";
 import { useDiffMark } from "../../PathsToMark";
 import SettingsButton from "../buttons/SettingsButton";
@@ -14,7 +14,7 @@ import type { Option } from "../FieldsSelect";
 import { Settings } from "../settings/Settings";
 import { SettingsProvider } from "../settings/SettingsProvider";
 import { TypeSelect } from "../TypeSelect";
-import type { onChangeType, FragmentInputParameter } from "./types";
+import type { FragmentInputParameter, onChangeType } from "./types";
 import { resolveRefClazzName } from "./utils";
 
 interface ItemProps {
@@ -31,9 +31,7 @@ interface ItemProps {
 
 export function Item(props: ItemProps): React.JSX.Element {
     const { index, item, namespace, variableTypes, readOnly, showValidation, onChange, options, errors } = props;
-    const { getIsOpen, toggleIsOpen } = useFieldsContext();
-
-    const isOpen = getIsOpen(item.uuid);
+    const [isOpen, toggleIsOpen] = useToggle();
 
     const path = `${namespace}[${index}]`;
     const [isMarked] = useDiffMark();
@@ -45,10 +43,6 @@ export function Item(props: ItemProps): React.JSX.Element {
         },
         [options],
     );
-
-    const openSettingMenu = () => {
-        toggleIsOpen(item.uuid);
-    };
 
     return (
         <div>
@@ -75,7 +69,7 @@ export function Item(props: ItemProps): React.JSX.Element {
                     options={options}
                     fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$typ`)}
                 />
-                <SettingsButton isOpen={isOpen} toggleIsOpen={openSettingMenu} />
+                <SettingsButton isOpen={isOpen} toggleIsOpen={toggleIsOpen} />
             </FieldsRow>
             <SettingsProvider
                 initialFixedValuesList={item?.valueEditor?.fixedValuesList}

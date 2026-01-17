@@ -10,7 +10,7 @@ import { ExpressionLang } from "../editors/expression/types";
 import Input from "../editors/field/Input";
 import type { FieldError } from "../editors/Validators";
 import { TypeSelect } from "../fragment-input-definition/TypeSelect";
-import { useFieldsContext } from "../node-row-fields-provider/NodeRowFieldsProvider";
+import { useFieldsControl } from "../node-row-fields-provider/FieldsControl";
 import type { AggRow } from "./aggregatorField";
 import { RowFieldLabel } from "./rowFieldLabel";
 
@@ -62,7 +62,7 @@ export function AggregatorFieldsStack({
     showLabels,
     outputVariableName,
 }: AggregatorFieldsStackProps) {
-    const { readOnly } = useFieldsContext();
+    const { readOnly } = useFieldsControl();
     const options = useMemo<TypeOption[]>(() => {
         const values = aggregators.map(({ expression: value, label }) => ({
             value,

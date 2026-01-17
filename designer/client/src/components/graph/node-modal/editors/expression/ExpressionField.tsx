@@ -14,7 +14,7 @@ import type { OnValueChange } from "./Editor";
 import type { ExpressionObj } from "./types";
 import { EditorType } from "./types";
 
-type Props = {
+export type ExpressionFieldProps = {
     fieldName: string;
     fieldLabel: string;
     exprPath: string;
@@ -30,7 +30,7 @@ type Props = {
     endAdornment?: ReactNode;
 };
 
-function ExpressionField(props: Props): React.JSX.Element {
+function ExpressionField(props: ExpressionFieldProps): React.JSX.Element {
     const {
         fieldName,
         fieldLabel,
