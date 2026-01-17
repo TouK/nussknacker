@@ -86,7 +86,7 @@ export function AggregatorField({ parameterDefinitions, node, isEditMode, showVa
                     onChange={onChangeItem}
                     aggregators={aggregators}
                     variableTypes={variableTypes}
-                    hovered={hovered === 0}
+                    showLabels={hovered == 0}
                     outputVariableName={outputVariableName}
                 />
             </FieldsRow>
