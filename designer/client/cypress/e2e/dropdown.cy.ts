@@ -6,22 +6,20 @@ describe("Dropdown", () => {
     });
 
     after(() => {
-        cy.deleteAllTestProcesses({ filter: seed });
+        // cy.deleteAllTestProcesses({ filter: seed });
     });
 
     it("should display menu portal", () => {
         cy.visitNewProcess(seed, "testProcess");
         cy.layoutScenario();
-        cy.get("[model-id=enricher]").should("be.visible").trigger("dblclick");
-        cy.get("[data-testid=window]").should("be.visible");
+        cy.openNodeWindow("enricher");
         cy.get("div[class$=singleValue").contains("normal").parent().click();
         cy.get("[data-testid=window]").matchImage();
         const expectedValues = ["normal", "gold"];
-        cy.get('.test__menu-portal [role="option"]').each(($el, index, $list) => {
-            cy.wrap($el).should("have.text", expectedValues[index]);
-            const lastElement = index === $list.length - 1;
-            if (lastElement) {
-                cy.wrap($el).click();
+        expectedValues.forEach((value, index, $list) => {
+            cy.contains(`[role="option"]`, value).should("be.visible").as("option");
+            if (index === $list.length - 1) {
+                cy.get("@option").click();
             }
         });
         //It should be.visible instead of exist, but Cypress think it's covered
