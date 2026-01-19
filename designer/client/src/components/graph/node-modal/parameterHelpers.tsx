@@ -22,6 +22,8 @@ export const OverrideKeys = {
     SourceDataSample: "source-webhook/Data sample",
     DecisionTableMatch: "service-decision-table/Match condition",
     AggregateEndSession: "custom-aggregate-session/endSessionCondition",
+    HttpQueryParameters: "service-http/Query Parameters",
+    HttpHeaders: "service-http/Headers",
 } as const;
 
 export type ParamKeys = (typeof OverrideKeys)[keyof typeof OverrideKeys] | (string & NonNullable<unknown>);

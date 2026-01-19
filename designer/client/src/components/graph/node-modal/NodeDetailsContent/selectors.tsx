@@ -9,7 +9,9 @@ import type { UIParameter } from "../../../../types/definition";
 import type { NodeType, Parameter } from "../../../../types/node";
 import type { PropertiesConfig, UiScenarioProperties } from "../../../../types/scenarioGraph";
 import type { NodeValidationError } from "../../../../types/validation";
+import { EditorType } from "../editors/expression/types";
 import { getCurrentPropertiesErrors } from "../node/selectors";
+import { determineParameterKey, OverrideKeys } from "../parameterHelpers";
 import { appendPropertiesErrors, getScenarioPropertiesDef, isRequestSource } from "../requestSourceAddons";
 import { getNodeDetails, getNodesDetails } from "./getNodeDetails";
 
@@ -81,8 +83,8 @@ export const getDynamicParameterDefinitions = createDeepEqualSelector(
     getResultParameters,
     getComponentsDefinition,
     getScenarioPropertiesConfig,
-    (validationPerformed, detailsParameters, resultParameters, components, { order, properties }) =>
-        (node: NodeType): UIParameter[] => {
+    (validationPerformed, detailsParameters, resultParameters, components, { order, properties }) => {
+        function getParameters(node: NodeType): UIParameter[] {
             const isValidationPerformed = validationPerformed(node.id);
             const dynamicParameterDefinitions = isValidationPerformed ? detailsParameters(node.id) : resultParameters(node.id);
 
@@ -93,7 +95,25 @@ export const getDynamicParameterDefinitions = createDeepEqualSelector(
             }
 
             return parameters;
-        },
+        }
+
+        return function (node: NodeType): UIParameter[] {
+            return getParameters(node)?.map((param) => {
+                switch (determineParameterKey(node, param)) {
+                    case OverrideKeys.HttpHeaders:
+                    case OverrideKeys.HttpQueryParameters: {
+                        return {
+                            ...param,
+                            editors: [{ type: EditorType.NAME_VALUE_LIST_EDITOR }],
+                            typ: null,
+                        };
+                    }
+                    default:
+                        return param;
+                }
+            });
+        };
+    },
 );
 
 export const getFindAvailableVariables = createSelector(getComponentsDefinition, getScenario, (processDefinition, scenario) =>
