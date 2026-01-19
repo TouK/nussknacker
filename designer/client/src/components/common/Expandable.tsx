@@ -5,12 +5,12 @@ import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import type { Theme } from "@mui/material/styles";
 import type { SxProps } from "@mui/system";
-import type { PropsWithChildren } from "react";
+import type { PropsWithChildren, ReactNode } from "react";
 import React from "react";
 
 interface Props {
     componentId: string;
-    expandableTitle: string;
+    expandableTitle: ReactNode | string;
     onChange?: (isExpanded: boolean) => void;
     expanded?: boolean;
     expandIconSx?: SxProps<Theme>;
@@ -43,7 +43,7 @@ export function Expandable({
                 id={`${componentId}-header`}
                 sx={{ flexDirection: "row-reverse", border: 0, padding: 0 }}
             >
-                <Typography sx={typographySx}>{expandableTitle}</Typography>
+                {typeof expandableTitle === "string" ? <Typography sx={typographySx}>{expandableTitle}</Typography> : expandableTitle}
             </AccordionSummary>
             <AccordionDetails sx={detailsSx}>{children}</AccordionDetails>
         </Accordion>

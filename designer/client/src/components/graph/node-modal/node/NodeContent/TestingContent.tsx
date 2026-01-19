@@ -9,7 +9,6 @@ import type { NodeState } from "../useNodeState";
 import { Assertions } from "./TestingContentElements/Assertions";
 import { InputDataRecords } from "./TestingContentElements/InputDataRecords";
 import { MockResponse } from "./TestingContentElements/MockResponse";
-import TestCases from "./TestingContentElements/TestCases";
 
 export interface TestingContentProps extends Pick<NodeTypeDetailsContentProps, "node" | "edges"> {
     onChange?: NodeState["onChange"];
@@ -33,7 +32,6 @@ export function useTestingContentRenderer() {
             when: (node) => node.type === "Source",
             render: ({ node, edges }) => (
                 <>
-                    <TestCases />
                     <InputDataRecords sourceId={node.id} node={node} />
                     <Assertions node={node} edges={edges} />
                 </>
@@ -43,7 +41,6 @@ export function useTestingContentRenderer() {
             when: (node) => settings["node.showMockFieldOnEnrichers"] && node.type === "Enricher" && node.service.id !== "decision-table",
             render: ({ node, edges, onChange }) => (
                 <>
-                    <TestCases />
                     <MockResponse node={node} edges={edges} onChange={onChange} />
                     <Assertions node={node} edges={edges} />
                 </>
@@ -51,12 +48,7 @@ export function useTestingContentRenderer() {
         },
         {
             when: () => true,
-            render: ({ node, edges }) => (
-                <>
-                    <TestCases />
-                    <Assertions node={node} edges={edges} />
-                </>
-            ),
+            render: ({ node, edges }) => <Assertions node={node} edges={edges} />,
         },
     ];
 

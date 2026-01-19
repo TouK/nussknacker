@@ -1,12 +1,11 @@
-import { Typography } from "@mui/material";
-import React, { useCallback, useMemo } from "react";
-import { useTranslation } from "react-i18next";
+import React, { useCallback, useMemo, useState } from "react";
 
 import { getTestCapabilities } from "../../../../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../../../../reducers/selectors/settings";
 import { getInputDataRecordsForSingleSource } from "../../../../../../reducers/selectors/testCases";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
 import type { NodeType } from "../../../../../../types/node";
+import { Expandable } from "../../../../../common/Expandable";
 import { AppendFromLiveDataButton } from "../../../../../modals/TestingDataRecords/AppendFromLiveDataButton";
 import { LimitExceededWarning } from "../../../../../modals/TestingDataRecords/LimitExceededWarning";
 import { Table } from "../../../../../modals/TestingDataRecords/Table";
@@ -21,7 +20,7 @@ interface Props {
 }
 
 export const InputDataRecords = ({ node, sourceId }: Props) => {
-    const { t } = useTranslation();
+    const [isExpanded, setIsExpanded] = useState(true);
     const maxTestingRecords = useAppSelector(getMaxTestingRecords);
     const testingDataRecordsForSource = useAppSelector((state) => getInputDataRecordsForSingleSource(state, sourceId));
 
@@ -67,28 +66,28 @@ export const InputDataRecords = ({ node, sourceId }: Props) => {
 
     return (
         <StyledStack>
-            <Typography m={0} variant="h5">
-                {t("testingDialog.label.inputDataRecords", "Input data records")}
-            </Typography>
-            <ContentSize sx={{ padding: 0, maxHeight: "45cqh" }}>
-                <Table
-                    cellErrors={cellErrors}
-                    defaultDataRecord={defaultDataRecord}
-                    onRowAdded={handleRowAdded}
-                    onRowMoved={handleRowMoved}
-                    onRowsDeleted={handleRowsDeleted}
-                    onRowUpdated={handleRowUpdated}
-                    data={testingDataRecordsForSource}
-                    sourceOptions={[sourceId]}
-                    sourceParameters={testCapabilities.testWithParameters.sourceParameters}
+            <Expandable componentId={"inputDataRecords"} expandableTitle={"Test data"} expanded={isExpanded} onChange={setIsExpanded}>
+                <ContentSize sx={{ padding: 0, maxHeight: "45cqh", mb: 2 }}>
+                    <Table
+                        cellErrors={cellErrors}
+                        defaultDataRecord={defaultDataRecord}
+                        onRowAdded={handleRowAdded}
+                        onRowMoved={handleRowMoved}
+                        onRowsDeleted={handleRowsDeleted}
+                        onRowUpdated={handleRowUpdated}
+                        data={testingDataRecordsForSource}
+                        sourceOptions={[sourceId]}
+                        sourceParameters={testCapabilities.testWithParameters.sourceParameters}
+                    />
+                </ContentSize>
+                {recordsToAddLimitExceeded ? <LimitExceededWarning maxTestingRecords={maxTestingRecords} /> : null}
+
+                <AppendFromLiveDataButton
+                    handleGenerateTestData={handleGenerateTestDataForSingleSource}
+                    maxTestingRecords={maxTestingRecords}
+                    recordsToAddLimitExceeded={recordsToAddLimitExceeded}
                 />
-            </ContentSize>
-            {recordsToAddLimitExceeded ? <LimitExceededWarning maxTestingRecords={maxTestingRecords} /> : null}
-            <AppendFromLiveDataButton
-                handleGenerateTestData={handleGenerateTestDataForSingleSource}
-                maxTestingRecords={maxTestingRecords}
-                recordsToAddLimitExceeded={recordsToAddLimitExceeded}
-            />
+            </Expandable>
         </StyledStack>
     );
 };

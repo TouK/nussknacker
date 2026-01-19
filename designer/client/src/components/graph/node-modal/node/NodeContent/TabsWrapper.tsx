@@ -5,6 +5,7 @@ export interface TabDef {
     label: string;
     content: React.ReactNode;
     disabled?: boolean;
+    additionalTabContent?: React.ReactNode;
 }
 
 interface Props {
@@ -39,6 +40,7 @@ export const TabsWrapper = ({ tabs, hideDisabled, hideIfOne }: Props) => {
                     {tabDefs.map((t, i) => (
                         <Tab key={i} label={t.label} id={`tab-${i}`} aria-controls={`tabpanel-${i}`} disabled={t.disabled} />
                     ))}
+                    {tabs[value].additionalTabContent}
                 </Tabs>
             </Collapse>
             <div role="tabpanel" id={`tabpanel-${value}`} aria-labelledby={`tab-${value}`}>
