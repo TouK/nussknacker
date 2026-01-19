@@ -71,8 +71,6 @@ interface Props {
 
 export const FieldSwitch = ({ availableEditors: editors, onValueChange, expressionObj, children, readOnly, showSwitch = true }: Props) => {
     const { t } = useTranslation();
-    const settings = useAppSelector(getUserSettings);
-
     const userSettings = useAppSelector(getUserSettings);
     const forceSpelEditors = userSettings["debug.editor.forceSpelEditors"];
 
@@ -139,11 +137,11 @@ export const FieldSwitch = ({ availableEditors: editors, onValueChange, expressi
         [allowsSwitch, availableEditors, getHint, readOnly, type],
     );
 
-    const isSingleEditorVisible = availableEditors.length === 1 && !SINGLE_EDITOR_TO_DISPLAY.includes(availableEditors[0].type);
+    const isSingleEditorHidden = availableEditors.length === 1 && !SINGLE_EDITOR_TO_DISPLAY.includes(availableEditors[0].type);
 
     const element = useMemo(() => (typeof children === "function" ? children(type, config) : children), [children, config, type]);
 
-    if (readOnly || isSingleEditorVisible || (!showSwitch && !forceSpelEditors)) {
+    if (readOnly || isSingleEditorHidden || (!showSwitch && !forceSpelEditors)) {
         return <Box sx={{ flex: 1 }}>{element}</Box>;
     }
 
@@ -204,7 +202,7 @@ export const FieldSwitch = ({ availableEditors: editors, onValueChange, expressi
                             iconPosition="end"
                             onClickCapture={(event) => {
                                 if (event.target !== event.currentTarget) return;
-                                if (settings["editor.allowForceSwitch"] && (event.altKey || event.ctrlKey || event.metaKey)) return;
+                                if (userSettings["editor.allowForceSwitch"] && (event.altKey || event.ctrlKey || event.metaKey)) return;
                                 if (!option.isDisabled) return;
                                 event.stopPropagation();
                             }}

@@ -5,6 +5,7 @@ import ProcessUtils from "../../../../common/ProcessUtils";
 import type { RootState } from "../../../../reducers";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/getProcessDefinitionData";
 import { getScenario, getScenarioGraph } from "../../../../reducers/selectors/graph";
+import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import type { UIParameter } from "../../../../types/definition";
 import type { NodeType, Parameter } from "../../../../types/node";
 import type { PropertiesConfig, UiScenarioProperties } from "../../../../types/scenarioGraph";
@@ -83,7 +84,8 @@ export const getDynamicParameterDefinitions = createDeepEqualSelector(
     getResultParameters,
     getComponentsDefinition,
     getScenarioPropertiesConfig,
-    (validationPerformed, detailsParameters, resultParameters, components, { order, properties }) => {
+    getUserSettings,
+    (validationPerformed, detailsParameters, resultParameters, components, { order, properties }, userSettings) => {
         function getParameters(node: NodeType): UIParameter[] {
             const isValidationPerformed = validationPerformed(node.id);
             const dynamicParameterDefinitions = isValidationPerformed ? detailsParameters(node.id) : resultParameters(node.id);
@@ -97,8 +99,22 @@ export const getDynamicParameterDefinitions = createDeepEqualSelector(
             return parameters;
         }
 
-        return function (node: NodeType): UIParameter[] {
-            return getParameters(node)?.map((param) => {
+        function appendDebugEditors(parameters: UIParameter[] = []): UIParameter[] {
+            if (!userSettings["debug.editor.forceSpelEditors"]) return parameters;
+            return parameters.map((param) => {
+                if (!param.editors.find(({ type }) => type === EditorType.SPEL_PARAMETER_EDITOR)) {
+                    return {
+                        ...param,
+                        editors: [...param.editors, { type: EditorType.SPEL_PARAMETER_EDITOR, debug: true }],
+                    };
+                }
+
+                return param;
+            });
+        }
+
+        function overridePrameters(parameters: UIParameter[] = [], node: NodeType): UIParameter[] {
+            return parameters.map((param: UIParameter): UIParameter => {
                 switch (determineParameterKey(node, param)) {
                     case OverrideKeys.HttpHeaders:
                     case OverrideKeys.HttpQueryParameters: {
@@ -112,7 +128,9 @@ export const getDynamicParameterDefinitions = createDeepEqualSelector(
                         return param;
                 }
             });
-        };
+        }
+
+        return (node: NodeType): UIParameter[] => overridePrameters(getParameters(node), node);
     },
 );
 
