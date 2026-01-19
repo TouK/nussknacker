@@ -54,6 +54,7 @@ export const Assertions = ({ node, edges }: Props) => {
     return (
         <StyledStack>
             <Expandable componentId={"Assertions"} expandableTitle={"Assertions"} expanded={isExpanded} onChange={setIsExpanded}>
+                {testCaseAssertions.length === 0 && <Typography>{t("assertions.noAssertionsDefined", "No assertions defined")}</Typography>}
                 <NodeTable sx={{ mx: 0 }}>
                     <NodeRowFieldsProvider
                         path={null}
@@ -64,10 +65,6 @@ export const Assertions = ({ node, edges }: Props) => {
                         errors={[]}
                     >
                         <>
-                            {testCaseAssertions.length === 0 && (
-                                <Typography>{t("assertions.noAssertionsDefined", "No assertions defined")}</Typography>
-                            )}
-
                             {testCaseAssertions.map(({ expression: expressionObj, uuid }, index) => (
                                 <AssertionItem
                                     key={uuid}
