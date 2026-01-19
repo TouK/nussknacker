@@ -7,7 +7,7 @@ import { editorsParameters } from "./editorsParameters";
 import { useHelpText } from "./helpText";
 
 export function Info({ editorConfig }: { editorConfig: EditorConfig }) {
-    const helpText = useHelpText(editorsParameters[editorConfig.type].language);
+    const helpText = useHelpText(editorsParameters[editorConfig?.type]?.language);
     if (!helpText) return null;
     return (
         <InfoTooltip
