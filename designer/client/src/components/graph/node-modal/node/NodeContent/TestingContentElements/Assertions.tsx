@@ -1,21 +1,18 @@
-import { Box, Typography } from "@mui/material";
-import React, { useCallback, useEffect, useState } from "react";
+import { Typography } from "@mui/material";
+import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { setTestCaseAssertions } from "../../../../../../actions/nk/testCasesActions";
-import httpService from "../../../../../../http/HttpService/instance";
-import { getProcessingType } from "../../../../../../reducers/selectors/graph";
 import { getTestCaseAssertionsForNode } from "../../../../../../reducers/selectors/testCases";
 import { getTestAssertionResultsForNode } from "../../../../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
 import type { NodeType } from "../../../../../../types/node";
-import type { VariableTypes } from "../../../../../../types/validation";
-import { StyledButton } from "../../../../styledButton";
-import { EditableEditor } from "../../../editors/EditableEditor";
-import { EditorType } from "../../../editors/expression/types";
+import { Expandable } from "../../../../../common/Expandable";
+import { withUuid } from "../../../appendUuid";
+import { NodeRowFieldsProvider } from "../../../node-row-fields-provider/NodeRowFieldsProvider";
 import { NodeTable } from "../../../NodeDetailsContent/NodeTable";
 import { useVariableTypes } from "../../../useNodeTypeDetailsContentLogic";
-import { AssertionStatus } from "./AssertionStatus";
+import { AssertionItem } from "./AssertionItem";
 import { StyledStack } from "./components/Styled";
 
 interface Props {
@@ -24,84 +21,66 @@ interface Props {
 
 export const Assertions = ({ node }: Props) => {
     const { t } = useTranslation();
+    const [isExpanded, setIsExpanded] = useState(true);
     const dispatch = useAppDispatch();
     const testCaseAssertions = useAppSelector((state) => getTestCaseAssertionsForNode(state, node.id));
     const testAssertionResults = useAppSelector((state) => getTestAssertionResultsForNode(state, node.id));
-    const processingType = useAppSelector(getProcessingType);
-    const nodeVariableTypes = useVariableTypes({ node });
-    const [assertionVariableTypes, setAssertionVariableTypes] = useState<VariableTypes>({});
-
-    useEffect(() => {
-        const fetchAssertionVariableTypes = async () => {
-            const response = await httpService.fetchTestCaseNodeAdditionalVariables(processingType, { variableTypes: nodeVariableTypes });
-            setAssertionVariableTypes(response.assertionsAdditionalVariables || {});
-        };
-
-        fetchAssertionVariableTypes();
-    }, [processingType, nodeVariableTypes]);
+    const variableTypes = useVariableTypes({ node });
 
     const addAssertion = useCallback(() => {
         dispatch(
             setTestCaseAssertions(node.id, (prev) =>
-                prev.concat({ expression: { expression: "#TESTS.assertEquals()", language: "spel" } }),
+                prev.concat(withUuid({ expression: { expression: "#TESTS.assertEquals()", language: "spel" } })),
             ),
         );
     }, [dispatch, node.id]);
 
     const removeAssertion = useCallback(
-        (index: number) => {
-            dispatch(setTestCaseAssertions(node.id, (prev) => prev.filter((_, i) => i !== index)));
+        (_, uuid: string) => {
+            dispatch(setTestCaseAssertions(node.id, (prev) => prev.filter((item) => item.uuid !== uuid)));
         },
         [dispatch, node.id],
     );
 
     const editAssertion = useCallback(
-        (index: number, updated: Partial<{ expression: { expression: string; language: string } }>) => {
-            dispatch(setTestCaseAssertions(node.id, (prev) => prev.map((item, i) => (i === index ? { ...item, ...updated } : item))));
+        (uuid: string, updated: Partial<{ expression: { expression: string; language: string } }>) => {
+            dispatch(setTestCaseAssertions(node.id, (prev) => prev.map((item) => (item.uuid === uuid ? { ...item, ...updated } : item))));
         },
         [dispatch, node.id],
     );
 
     return (
         <StyledStack>
-            <Typography m={0} variant="h5">
-                {t("testingDialog.label.assertions", "Assertions")}
-            </Typography>
-            {testCaseAssertions.map(({ expression: expressionObj }, index) => {
-                const testAssertionResult = testAssertionResults?.[index];
-                return (
-                    <Box key={index} display={"flex"} alignItems={"end"}>
-                        <NodeTable sx={{ flex: 1, m: 0 }}>
-                            <EditableEditor
-                                editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
-                                expressionObj={expressionObj}
-                                variableTypes={assertionVariableTypes}
-                                onValueChange={(expression) => editAssertion(index, { expression })}
-                                fieldErrors={[]}
-                            />
-                        </NodeTable>
-                        <StyledButton
-                            title={t("node.row.remove.title", "Remove field")}
-                            onClick={() => removeAssertion(index)}
-                            sx={{ ml: 1 }}
-                        >
-                            {t("node.row.remove.text", "-")}
-                        </StyledButton>
-                        <Box sx={{ mb: 0.5, ml: 1, display: "flex", alignItems: "center" }}>
-                            {testAssertionResult && (
-                                <AssertionStatus
-                                    status={testAssertionResult.type === "SuccessfulAssertion" ? "success" : "error"}
-                                    message={testAssertionResult.type === "FailedAssertion" ? testAssertionResult.message : undefined}
-                                />
+            <Expandable componentId={"Assertions"} expandableTitle={"Assertions"} expanded={isExpanded} onChange={setIsExpanded}>
+                <NodeTable sx={{ mx: 0 }}>
+                    <NodeRowFieldsProvider
+                        path={null}
+                        label=""
+                        onFieldRemove={removeAssertion}
+                        onFieldAdd={addAssertion}
+                        readOnly={false}
+                        errors={[]}
+                    >
+                        <>
+                            {testCaseAssertions.length === 0 && (
+                                <Typography>{t("assertions.noAssertionsDefined", "No assertions defined")}</Typography>
                             )}
-                        </Box>
-                    </Box>
-                );
-            })}
 
-            <StyledButton title={t("node.row.add.title", "Add field")} onClick={addAssertion} sx={{ mt: 2 }}>
-                {t("node.row.add.text", "+")}
-            </StyledButton>
+                            {testCaseAssertions.map(({ expression: expressionObj, uuid }, index) => (
+                                <AssertionItem
+                                    key={uuid}
+                                    uuid={uuid}
+                                    onChange={editAssertion}
+                                    expressionObj={expressionObj}
+                                    variableTypes={variableTypes}
+                                    testAssertionResult={testAssertionResults?.[index]}
+                                    index={index}
+                                />
+                            ))}
+                        </>
+                    </NodeRowFieldsProvider>
+                </NodeTable>
+            </Expandable>
         </StyledStack>
     );
 };

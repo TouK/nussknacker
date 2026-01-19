@@ -1,4 +1,4 @@
-import { Tooltip } from "@mui/material";
+import { Box, Tooltip } from "@mui/material";
 import type { TooltipProps } from "@mui/material/Tooltip/Tooltip";
 import type { PropsWithChildren, ReactNode } from "react";
 import React, { useCallback, useEffect, useRef } from "react";
@@ -15,7 +15,16 @@ interface Props {
 
 export const InfoTooltipHover = ({ title, className, children, customComponentsProps, enterDelay }: PropsWithChildren<Props>) => {
     const { tooltipOpen, tooltipRef, componentsProps, handleSetTooltipOpen, handleSetTooltipClose } = useTooltip({
-        customComponentsProps,
+        customComponentsProps: {
+            ...customComponentsProps,
+            tooltip: {
+                ...customComponentsProps?.tooltip,
+                sx: {
+                    padding: 0,
+                    ...customComponentsProps?.tooltip?.sx,
+                },
+            },
+        },
         enterDelay,
     });
 
@@ -40,7 +49,9 @@ export const InfoTooltipHover = ({ title, className, children, customComponentsP
     return (
         <Tooltip
             title={
-                <div
+                <Box
+                    px={1}
+                    py={0.5}
                     ref={tooltipRef}
                     onPointerEnter={() => {
                         clearCloseTimer();
@@ -51,7 +62,7 @@ export const InfoTooltipHover = ({ title, className, children, customComponentsP
                     }}
                 >
                     {title}
-                </div>
+                </Box>
             }
             placement="bottom-start"
             arrow

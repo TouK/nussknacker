@@ -61,7 +61,7 @@ export interface TestAssertionResultError {
     message: string;
 }
 
-type TestAssertionResult = TestAssertionResultSuccess | TestAssertionResultError;
+export type TestAssertionResult = TestAssertionResultSuccess | TestAssertionResultError;
 
 export type TestAssertionResults = Record<string, TestAssertionResult[]>;
 
