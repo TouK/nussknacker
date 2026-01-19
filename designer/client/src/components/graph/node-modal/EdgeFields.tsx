@@ -120,9 +120,9 @@ export function EdgeFields(props: Props): React.JSX.Element {
                     gridTemplateColumns: "1fr 2fr auto",
                 },
                 ".fieldRemove": { gridArea: "1 / 3" },
-                ".edge-value": { gridColumn: "span 2" },
-                ".edge-type + .edge-value": { gridColumn: "span 1" },
-                ".edge-value + .edge-target": { gridColumn: "span 2" },
+                "& :has(>.edge-value)": { gridColumn: "span 2" },
+                "& :has(>.edge-value) + .edge-target": { gridColumn: "span 2" },
+                "& .edge-type + :has(>.edge-value)": { gridColumn: "span 1" },
             }}
         >
             {showType ? (
