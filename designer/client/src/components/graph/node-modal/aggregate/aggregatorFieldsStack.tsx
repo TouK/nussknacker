@@ -8,7 +8,7 @@ import { EditableEditor } from "../editors/EditableEditor";
 import type { ExpressionObj } from "../editors/expression/types";
 import { ExpressionLang } from "../editors/expression/types";
 import Input from "../editors/field/Input";
-import type { FieldError } from "../editors/Validators";
+import { EMPTY_REQUIRED_ERROR } from "../editors/Validators";
 import { TypeSelect } from "../fragment-input-definition/TypeSelect";
 import { useFieldsContext } from "../node-row-fields-provider/NodeRowFieldsProvider";
 import type { AggRow } from "./aggregatorField";
@@ -46,12 +46,6 @@ type TypeOption = {
     value: string;
     label: string;
     preset?: Preset;
-};
-
-// use existing method to display only red border without any message
-const EMPTY_REQUIRED_ERROR: FieldError = {
-    message: "",
-    description: "",
 };
 
 export function AggregatorFieldsStack({

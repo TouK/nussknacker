@@ -2,7 +2,7 @@ import type { TypingInfo, TypingResult, UIParameter } from "./definition";
 
 export interface TestCaseValidationError {
     enricherMockErrors: NodeValidationError[];
-    assertionsErrors: NodeValidationError[];
+    assertionsErrors: Record<string, NodeValidationError[]>;
 }
 
 export type TestCaseValidationErrors = Record<string, TestCaseValidationError>;

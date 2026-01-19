@@ -3,12 +3,13 @@ import { Box } from "@mui/material";
 import React, { useCallback, useMemo, memo } from "react";
 
 import type { TestAssertionResult } from "../../../../../../http/resultsWithCountsDto";
-import type { VariableTypes } from "../../../../../../types/validation";
+import type { NodeValidationError, VariableTypes } from "../../../../../../types/validation";
 import { NonDraggableLabel } from "../../../aggregate/dynamicLabel";
 import { EditableEditor } from "../../../editors/EditableEditor";
 import type { ExpressionObj } from "../../../editors/expression/types";
 import { EditorType, ExpressionLang } from "../../../editors/expression/types";
 import Input from "../../../editors/field/Input";
+import { EMPTY_REQUIRED_ERROR } from "../../../editors/Validators";
 import { FieldsRow } from "../../../fragment-input-definition/FieldsRow";
 import type { AssertionParts } from "./assertionEncoder";
 import { encodeAssertionExpression, decodeAssertionExpression } from "./assertionEncoder";
@@ -40,9 +41,10 @@ interface Props {
     onChange: (uuid: string, expression: { expression: ExpressionObj }) => void;
     testAssertionResult: TestAssertionResult | undefined;
     index: number;
+    errors: NodeValidationError[];
 }
 
-const AssertionItemComponent = ({ uuid, expressionObj, onChange, index, testAssertionResult, variableTypes }: Props) => {
+const AssertionItemComponent = ({ uuid, expressionObj, onChange, index, testAssertionResult, variableTypes, errors = [] }: Props) => {
     const isFirstRow = index === 0;
 
     const decodedParts = useMemo(() => {
@@ -109,11 +111,12 @@ const AssertionItemComponent = ({ uuid, expressionObj, onChange, index, testAsse
                         expressionObj={expectedExpressionObj}
                         variableTypes={variableTypes}
                         onValueChange={handleExpectedChange}
-                        fieldErrors={[]}
+                        showValidation
+                        fieldErrors={errors}
                     />
                 </NonDraggableLabel>
                 <NonDraggableLabel hovered={isFirstRow} label="Assertion">
-                    <Input value={assertionSymbol} disabled={true} fieldErrors={[]} className={centeredInputStyle} />
+                    <Input value={assertionSymbol} disabled={true} className={centeredInputStyle} />
                 </NonDraggableLabel>
                 <NonDraggableLabel hovered={isFirstRow} label="Actual">
                     <EditableEditor
@@ -122,7 +125,8 @@ const AssertionItemComponent = ({ uuid, expressionObj, onChange, index, testAsse
                         expressionObj={actualExpressionObj}
                         variableTypes={variableTypes}
                         onValueChange={handleActualChange}
-                        fieldErrors={[]}
+                        showValidation
+                        fieldErrors={errors.length > 0 ? [EMPTY_REQUIRED_ERROR] : []}
                     />
                 </NonDraggableLabel>
             </FieldsRow>

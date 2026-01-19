@@ -28,6 +28,9 @@ export const Assertions = ({ node, edges }: Props) => {
     const testCaseAssertions = useAppSelector((state) => getTestCaseAssertionsForNode(state, node.id));
     const testAssertionResults = useAppSelector((state) => getTestAssertionResultsForNode(state, node.id));
     const variableTypes = useVariableTypes({ node });
+    const testCasesErrors = useGetNodeTestCasesErrors(node);
+
+    useValidation({ node, showValidation: true, edges });
 
     const addAssertion = useCallback(() => {
         dispatch(
@@ -74,6 +77,7 @@ export const Assertions = ({ node, edges }: Props) => {
                                     variableTypes={variableTypes}
                                     testAssertionResult={testAssertionResults?.[index]}
                                     index={index}
+                                    errors={testCasesErrors.assertionsErrors[index]}
                                 />
                             ))}
                         </>

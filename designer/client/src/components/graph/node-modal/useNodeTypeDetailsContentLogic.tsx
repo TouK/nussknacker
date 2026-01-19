@@ -163,12 +163,12 @@ export function useGetNodeErrors(node: NodeType) {
 
 export function useGetNodeTestCasesErrors(node: NodeType): {
     enricherMockErrors: NodeValidationError[];
-    assertionsErrors: NodeValidationError[];
+    assertionsErrors: Record<string, NodeValidationError[]>;
 } {
     const testCase = useAppSelector(getTestCase);
     const currentTestCasesErrors = useAppSelector((state: RootState) =>
         getValidationTestCasesErrors(state, { nodeId: node.id, testCaseId: testCase.name }),
     );
 
-    return currentTestCasesErrors ?? { enricherMockErrors: [], assertionsErrors: [] };
+    return currentTestCasesErrors ?? { enricherMockErrors: [], assertionsErrors: {} };
 }

@@ -47,7 +47,7 @@ export const getValidationTestCasesErrors = createDeepEqualSelector(
         const testCasesValidationErrors = nodeDetails(nodeId)?.testCasesValidationErrors[testCaseId];
 
         return {
-            assertionsErrors: testCasesValidationErrors?.assertionsErrors ?? [],
+            assertionsErrors: testCasesValidationErrors?.assertionsErrors ?? {},
             enricherMockErrors: testCasesValidationErrors?.enricherMockErrors ?? [],
         };
     },
