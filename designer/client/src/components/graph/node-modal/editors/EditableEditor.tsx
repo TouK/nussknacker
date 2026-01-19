@@ -4,8 +4,6 @@ import { isEmpty } from "lodash";
 import type { ReactNode } from "react";
 import React, { useCallback, useMemo } from "react";
 
-import { getUserSettings } from "../../../../reducers/selectors/userSettings";
-import { useAppSelector } from "../../../../store/storeHelpers";
 import type { TypingResult } from "../../../../types/definition";
 import type { VariableTypes } from "../../../../types/validation";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
@@ -46,18 +44,12 @@ const emptyArray = [];
 export const EditableEditor = ({ paramType, ...props }: Props) => {
     const { expressionObj, valueClassName, editors, fieldErrors = emptyArray } = props;
 
-    const userSettings = useAppSelector(getUserSettings);
-    const forceSpelEditors = userSettings["debug.editor.forceSpelEditors"];
-
     const availableEditors: EditorConfig[] = useMemo((): EditorConfig[] => {
         if (isEmpty(editors)) {
             return [{ type: EditorType.SPEL_PARAMETER_EDITOR }];
         }
-        if (forceSpelEditors && !editors.find(({ type }) => type === EditorType.SPEL_PARAMETER_EDITOR)) {
-            return [...editors, { type: EditorType.SPEL_PARAMETER_EDITOR }];
-        }
         return editors;
-    }, [editors, forceSpelEditors]);
+    }, [editors]);
 
     const formatter = useMemo(
         () => (expressionObj?.language === ExpressionLang.SpEL ? spelFormatters[paramType?.refClazzName] : null),

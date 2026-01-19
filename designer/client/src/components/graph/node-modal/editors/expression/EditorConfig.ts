@@ -46,6 +46,8 @@ type ExtendedEditorConfig =
           dictId: string;
       };
 
-export type EditorConfig = PureEditorConfig | ExtendedEditorConfig;
+export type EditorConfig = (PureEditorConfig | ExtendedEditorConfig) & {
+    debug?: boolean;
+};
 
 export type EditorConfigForType<T extends EditorType> = Prettify<EditorConfig & { type: T }>;

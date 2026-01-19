@@ -69,9 +69,20 @@ interface Props {
     showSwitch?: boolean;
 }
 
-export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, children, readOnly, showSwitch = true }: Props) => {
+export const FieldSwitch = ({ availableEditors: editors, onValueChange, expressionObj, children, readOnly, showSwitch = true }: Props) => {
     const { t } = useTranslation();
     const settings = useAppSelector(getUserSettings);
+
+    const userSettings = useAppSelector(getUserSettings);
+    const forceSpelEditors = userSettings["debug.editor.forceSpelEditors"];
+
+    const availableEditors = useMemo(() => {
+        if (forceSpelEditors && !editors.find(({ type }) => type === EditorType.SPEL_PARAMETER_EDITOR)) {
+            const spel: EditorConfig = { type: EditorType.SPEL_PARAMETER_EDITOR, debug: true };
+            return [...editors, spel];
+        }
+        return editors;
+    }, [editors, forceSpelEditors]);
 
     const allowsSwitch = useCallback(
         (checkedEditor: ParamType["editors"][number]) => {
@@ -116,13 +127,14 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
         return { type, config };
     }, [allowsSwitch, availableEditors, selectedEditorType]);
 
-    const availableEditorsOptions: (Option & { hint: string | undefined })[] = useMemo(
+    const availableEditorsOptions: (Option & { hint: string | undefined; debug?: boolean })[] = useMemo(
         () =>
             availableEditors.map((editor) => ({
                 label: editorsParameters[editor.type]?.displayName,
                 value: editor.type,
                 isDisabled: readOnly || (!allowsSwitch(editor) && editor.type !== type),
                 hint: editor.type !== type ? getHint(editor) : undefined,
+                debug: editor.debug,
             })),
         [allowsSwitch, availableEditors, getHint, readOnly, type],
     );
@@ -131,8 +143,8 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
 
     const element = useMemo(() => (typeof children === "function" ? children(type, config) : children), [children, config, type]);
 
-    if (readOnly || !showSwitch || isSingleEditorVisible) {
-        return <>{element}</>;
+    if (readOnly || isSingleEditorVisible || (!showSwitch && !forceSpelEditors)) {
+        return <Box sx={{ flex: 1 }}>{element}</Box>;
     }
 
     const selectedOption = availableEditorsOptions.find(({ value }) => value === type);
@@ -175,6 +187,19 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                             value={option.value}
                             sx={(theme) => ({
                                 cursor: option.value === type ? "default !important" : "pointer",
+                                "&": option.debug
+                                    ? {
+                                          color: theme.palette.info.light,
+                                          "&.Mui-selected": {
+                                              backgroundColor: theme.palette.info.main,
+                                              color: theme.palette.info.contrastText,
+                                          },
+                                          "&:not(.Mui-selected):hover": {
+                                              background: theme.palette.info.dark,
+                                              color: theme.palette.info.contrastText,
+                                          },
+                                      }
+                                    : null,
                             })}
                             iconPosition="end"
                             onClickCapture={(event) => {
