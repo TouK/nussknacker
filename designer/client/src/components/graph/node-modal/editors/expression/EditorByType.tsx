@@ -9,7 +9,7 @@ type TypeOfEditor<T extends keyof typeof editors> = (typeof editors)[T];
 type PropsOfEditor<T extends keyof typeof editors> = ComponentProps<TypeOfEditor<T>>;
 
 export function getEditorByType<T extends EditorType>(type: T) {
-    return editors[type];
+    return editors[type]();
 }
 
 type WithoutEditorConfig<T extends EditorType> = NonNullable<Omit<PropsOfEditor<T>, "editorConfig">>;

@@ -12,7 +12,7 @@ export enum ExpressionLang {
 
 export type ExpressionObj = {
     expression: string;
-    language: ExpressionLang | string;
+    language: ExpressionLang | NonNullable<string>;
 };
 
 export enum EditorMode {
