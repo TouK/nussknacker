@@ -5,7 +5,7 @@ import React, { forwardRef, useCallback } from "react";
 import { useFieldsControl } from "../node-row-fields-provider/FieldsControl";
 import { NodeRow } from "../node/NodeRow";
 import { NodeValue } from "../node/NodeValue";
-import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
+import { editorAnchorName, nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 import { RemoveButton } from "./buttons/RemoveButton";
 
 interface FieldsRow {
@@ -47,5 +47,15 @@ export const FieldsRow = styled(Row)({
         "&.fieldRemove": {
             flex: 0,
         },
+    },
+
+    // aligns better for field row, avoids label collision
+    "& .MuiTabs-root": {
+        "position-anchor": editorAnchorName,
+        position: "absolute",
+        top: "calc(anchor(bottom))",
+    },
+    [`& :has(.MuiTabs-root) ~ .${nodeValue}`]: {
+        marginBottom: "20px",
     },
 });
