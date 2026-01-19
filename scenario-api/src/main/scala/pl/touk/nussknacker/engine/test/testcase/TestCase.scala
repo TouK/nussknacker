@@ -38,37 +38,41 @@ sealed trait Assertion
 
 object Assertion {
 
-  @JsonCodec final case class AssertionExpression(expression: Expression) extends Assertion
+  @JsonCodec final case class ExpressionAssertion(expression: Expression) extends Assertion
 
   @JsonCodec final case class PredicateAssertion(operator: AssertionOperator, expected: Expression, actual: Expression)
       extends Assertion
 
   implicit val assertionEncoder: Encoder[Assertion] = Encoder.instance {
-    case expr: AssertionExpression => expr.asJson
+    case expr: ExpressionAssertion => expr.asJson
     case pred: PredicateAssertion  => pred.asJson
   }
 
   implicit val assertionDecoder: Decoder[Assertion] = Decoder.instance { cursor =>
     if (cursor.downField("operator").failed) {
-      cursor.as[AssertionExpression]
+      cursor.as[ExpressionAssertion]
     } else {
       cursor.as[PredicateAssertion]
     }
   }
 
-  sealed trait AssertionOperator
+  sealed trait AssertionOperator {
+
+    val name: String = this match {
+      case AssertionOperator.Equals => "equals"
+    }
+
+  }
 
   object AssertionOperator {
     case object Equals extends AssertionOperator
 
-    implicit val assertionOperatorEncoder: Encoder[AssertionOperator] = Encoder.instance { case Equals =>
-      "equals".asJson
-    }
+    implicit val assertionOperatorEncoder: Encoder[AssertionOperator] = Encoder.instance(_.name.asJson)
 
     implicit val assertionOperatorDecoder: Decoder[AssertionOperator] = Decoder.instance { cursor =>
       cursor.as[String].flatMap {
-        case "equals" => Right(AssertionOperator.Equals)
-        case other    => Left(DecodingFailure(s"Unknown AssertionOperator: $other", cursor.history))
+        case AssertionOperator.Equals.name => Right(AssertionOperator.Equals)
+        case other => Left(DecodingFailure(s"Unknown AssertionOperator: $other", cursor.history))
       }
     }
 

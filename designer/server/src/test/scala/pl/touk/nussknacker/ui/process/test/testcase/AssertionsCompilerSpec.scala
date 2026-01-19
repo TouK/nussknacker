@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.ExpressionAssertion
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
@@ -71,7 +72,7 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
       "someTest",
       inputs = "",
       mocks = Map.empty,
-      assertions = Map(NodeId("sink1") -> List(Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel)))
+      assertions = Map(NodeId("sink1") -> List(ExpressionAssertion("#TESTS.assertEquals(#contexts.size, 1)".spel)))
     )
 
     val testCompilationResult = compileScenarioWithAssertions(scenario, test)
@@ -98,7 +99,8 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
       "someTest",
       inputs = "",
       mocks = Map.empty,
-      assertions = Map(NodeId("notExistingSink") -> List(Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel)))
+      assertions =
+        Map(NodeId("notExistingSink") -> List(ExpressionAssertion("#TESTS.assertEquals(#contexts.size, 1)".spel)))
     )
 
     val testCompilationResult = compileScenarioWithAssertions(scenario, test)
@@ -120,7 +122,7 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
       .buildSimpleVariable("result-id2", "result", "#input".spel)
       .emptySink("sink1", "sink")
     val nodeId           = NodeId("sink1")
-    val invalidAssertion = Assertion("#TESTS.assertEquals(#contexts.size,".spel)
+    val invalidAssertion = ExpressionAssertion("#TESTS.assertEquals(#contexts.size,".spel)
 
     val test = TestCase(
       UUID.randomUUID(),

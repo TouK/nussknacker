@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase, TestCases}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.ExpressionAssertion
 import pl.touk.nussknacker.restmodel.DeployRequest
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.security.Permission
@@ -456,8 +457,8 @@ class ManagementResourcesSpec
       ),
       assertions = Map(
         NodeId("endsuffix") -> List(
-          Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
-          Assertion("#TESTS.assertEquals('ala', #contexts[1].input[0])".spel),
+          ExpressionAssertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
+          ExpressionAssertion("#TESTS.assertEquals('ala', #contexts[1].input[0])".spel),
         )
       )
     )
@@ -486,13 +487,13 @@ class ManagementResourcesSpec
       Map.empty,
       Map(
         NodeId("endsuffix") -> List(
-          Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
-          Assertion("#TESTS.assertEquals('ala', #contexts[1].input[0])".spel),
+          ExpressionAssertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
+          ExpressionAssertion("#TESTS.assertEquals('ala', #contexts[1].input[0])".spel),
           // The output variable produced by the messagesuffix node is not visible at that node, but rather at the subsequent one (endsuffix).
-          Assertion("#TESTS.assertEquals({message: 'message'}, #contexts[0].output)".spel),
+          ExpressionAssertion("#TESTS.assertEquals({message: 'message'}, #contexts[0].output)".spel),
         ),
         NodeId("messagesuffix") -> List(
-          Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
+          ExpressionAssertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
         )
       )
     )
@@ -568,7 +569,7 @@ class ManagementResourcesSpec
       ),
       assertions = Map(
         NodeId("endsuffix") -> List(
-          Assertion("#TESTS.assertEquals('b', #contexts[0].out1)".spel),
+          ExpressionAssertion("#TESTS.assertEquals('b', #contexts[0].out1)".spel),
         )
       )
     )
@@ -600,7 +601,7 @@ class ManagementResourcesSpec
       mocks = Map.empty,
       assertions = Map(
         NodeId("someNotExistingNode") -> List(
-          Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
+          ExpressionAssertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
         )
       )
     )
@@ -648,7 +649,7 @@ class ManagementResourcesSpec
       Map(
         NodeId("messagesuffix") -> List(
           // The output variable produced by the messagesuffix node is not visible at that node, but rather at the subsequent one.
-          Assertion("#TESTS.assertEquals({message: 'message'}, #contexts[0].output)".spel),
+          ExpressionAssertion("#TESTS.assertEquals({message: 'message'}, #contexts[0].output)".spel),
         )
       )
     )
