@@ -18,6 +18,7 @@ import type { Formatter } from "./Formatter";
 import { JsonEditor } from "./JsonEditor";
 import { JsonTemplateEditor } from "./JsonTemplateEditor";
 import { MultiSelectFixedValuesEditor } from "./MultiSelectFixedValuesEditor";
+import { NameValueListEditor } from "./NameValueList/NameValueListEditor";
 import { SpelEditor } from "./SpelEditor";
 import { SpelTemplateEditor } from "./SpelTemplateEditor";
 import { SqlEditor } from "./SqlEditor";
@@ -101,6 +102,7 @@ export const editors: Record<EditorType, () => SimpleEditor | ExtendedEditor> = 
     [EditorType.DICT_PARAMETER_EDITOR]: () => DictParameterEditor,
     [EditorType.TABLE_EDITOR]: () => TableEditor,
     [EditorType.JSON_TEMPLATE_PARAMETER_EDITOR]: () => JsonTemplateEditor,
+    [EditorType.NAME_VALUE_LIST_EDITOR]: () => NameValueListEditor,
 } as const;
 
 export type OnValueChange = {

@@ -43,4 +43,5 @@ export enum EditorType {
     DICT_PARAMETER_EDITOR = "DictParameterEditor",
     TABLE_EDITOR = "TabularTypedDataEditor",
     JSON_TEMPLATE_PARAMETER_EDITOR = "JsonTemplateParameterEditor",
+    NAME_VALUE_LIST_EDITOR = "NameValueListEditor",
 }
