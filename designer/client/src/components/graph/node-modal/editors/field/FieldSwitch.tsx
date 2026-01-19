@@ -83,11 +83,9 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                 return;
             }
 
-            if (!isExtendedEditor(editor)) {
-                return;
+            if (isExtendedEditor(editor)) {
+                return editor.notSwitchableToHint?.();
             }
-
-            return editor?.notSwitchableToHint();
         },
         [readOnly, allowsSwitch, t],
     );
