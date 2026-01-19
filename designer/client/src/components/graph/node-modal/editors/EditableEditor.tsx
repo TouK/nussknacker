@@ -28,7 +28,7 @@ interface Props {
     readOnly?: boolean;
     valueClassName?: string;
     editors?: EditorConfig[];
-    paramType?: TypingResult;
+    paramType?: Pick<TypingResult, "refClazzName">;
     values?: Array<PossibleValue>;
     isMarked?: boolean;
     showValidation?: boolean;
@@ -43,8 +43,8 @@ interface Props {
 
 const emptyArray = [];
 
-export const EditableEditor = (props: Props) => {
-    const { expressionObj, valueClassName, editors, paramType, fieldErrors = emptyArray } = props;
+export const EditableEditor = ({ paramType, ...props }: Props) => {
+    const { expressionObj, valueClassName, editors, fieldErrors = emptyArray } = props;
 
     const userSettings = useAppSelector(getUserSettings);
     const forceSpelEditors = userSettings["debug.editor.forceSpelEditors"];

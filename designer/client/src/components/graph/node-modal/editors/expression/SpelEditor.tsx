@@ -7,6 +7,7 @@ import type { VariableTypes } from "../../../../../types/validation";
 import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import { ExpressionSuggest } from "./ExpressionSuggest";
+import { FormatterType, spelFormatters } from "./Formatter";
 import { usePlaceholder } from "./helpText";
 import { Info } from "./InputAdornmentEndColumn";
 import { addQuotesToExpression } from "./SpelQuotesUtils";
@@ -128,10 +129,16 @@ export const SpelEditor = prepareEditor<SpelEditorProps, ReactAce>(
                 };
             }
 
+            if (language === ExpressionLang.String) {
+                return {
+                    expression: spelFormatters[FormatterType.String].encode(expression),
+                    language: newLanguage,
+                };
+            }
+
             if (language === ExpressionLang.SpELTemplate) {
                 return { expression: addQuotesToExpression({ expression, language: newLanguage }), language: newLanguage };
             }
-
             return { expression, language: newLanguage };
         },
     },
