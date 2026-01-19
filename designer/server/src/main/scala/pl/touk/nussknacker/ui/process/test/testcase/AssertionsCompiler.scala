@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, Val
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.ExpressionAssertion
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
@@ -89,7 +90,7 @@ class AssertionsCompiler(
   private def compileAssertionExpression(nodeId: NodeId, context: ValidationContext, assertion: Assertion) = {
     expressionCompiler
       .compile(
-        assertion.expression,
+        assertion.asInstanceOf[ExpressionAssertion].expression,
         None,
         context,
         Typed.typedClass(classOf[AssertionResult])

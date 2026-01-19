@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.test.testcase.Assertion
+import pl.touk.nussknacker.engine.test.testcase.Assertion.ExpressionAssertion
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.DeserializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
@@ -176,6 +177,6 @@ object TestingApiErrorMessages {
       assertion: Assertion,
       nodeId: NodeId
   ) =
-    s"Assertion compilation error. Node: ${nodeId.id}. Assertion expression: ${assertion.expression.expression}. Errors: ${errors.toList.mkString(", ")}"
+    s"Assertion compilation error. Node: ${nodeId.id}. Assertion expression: ${assertion.asInstanceOf[ExpressionAssertion].expression.expression}. Errors: ${errors.toList.mkString(", ")}"
 
 }

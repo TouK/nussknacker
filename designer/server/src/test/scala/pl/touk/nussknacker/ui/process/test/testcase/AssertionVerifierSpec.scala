@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.ExpressionAssertion
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
 import pl.touk.nussknacker.engine.util.functions.conversion
@@ -72,8 +73,8 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
       Map.empty,
       Map(
         NodeId("someNode") -> List(
-          Assertion("#TESTS.assertEquals('valid', #contexts[0].someVariable)".spel),
-          Assertion("#TESTS.assertEquals('valid', #contexts[1].someVariable)".spel),
+          ExpressionAssertion("#TESTS.assertEquals('valid', #contexts[0].someVariable)".spel),
+          ExpressionAssertion("#TESTS.assertEquals('valid', #contexts[1].someVariable)".spel),
         )
       )
     )
@@ -129,7 +130,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
         Map.empty,
         Map(
           NodeId("someNode") -> List(
-            Assertion(assertion.spel),
+            ExpressionAssertion(assertion.spel),
           )
         )
       )

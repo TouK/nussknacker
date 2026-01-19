@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.graph.node.{Enricher, Filter}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.ExpressionAssertion
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.restmodel.validation.testcase.{
   AssertionValidationError,
@@ -64,8 +65,8 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       "test1" -> NodeTestCase(
         enricherMock = None,
         assertions = List(
-          Assertion("#TESTS.assertEquals(#contexts[0].input, 'expected')".spel),
-          Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel)
+          ExpressionAssertion("#TESTS.assertEquals(#contexts[0].input, 'expected')".spel),
+          ExpressionAssertion("#TESTS.assertEquals(#contexts.size, 1)".spel)
         )
       )
     )
@@ -181,7 +182,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       "test1" -> NodeTestCase(
         enricherMock = None,
         assertions = List(
-          Assertion("#TESTS.doSthMagic".spel)
+          ExpressionAssertion("#TESTS.doSthMagic".spel)
         )
       )
     )
@@ -218,7 +219,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val nodeTestCases: NodeTestCases = Map(
       "validTest" -> NodeTestCase(
         enricherMock = Some(EnricherMock("'valid mock'".spel)),
-        assertions = List(Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel))
+        assertions = List(ExpressionAssertion("#TESTS.assertEquals(#contexts.size, 1)".spel))
       ),
       "invalidMockTest" -> NodeTestCase(
         enricherMock = Some(EnricherMock("#invalidVar".spel)),
@@ -227,9 +228,9 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       "invalidAssertionTest" -> NodeTestCase(
         enricherMock = None,
         assertions = List(
-          Assertion("#TESTS.assertEquals(#contexts[0].doesNotExist, 1)".spel),
-          Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel),
-          Assertion("#TESTS.assertEquals(#contexts[0].doesNotExistOther, 2)".spel),
+          ExpressionAssertion("#TESTS.assertEquals(#contexts[0].doesNotExist, 1)".spel),
+          ExpressionAssertion("#TESTS.assertEquals(#contexts.size, 1)".spel),
+          ExpressionAssertion("#TESTS.assertEquals(#contexts[0].doesNotExistOther, 2)".spel),
         )
       )
     )
@@ -309,8 +310,8 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
         inputs = "{}",
         mocks = Map(NodeId(enricher.id) -> EnricherMock("'valid mock'".spel)),
         assertions = Map(
-          NodeId(enricher.id) -> List(Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel)),
-          NodeId(filter.id)   -> List(Assertion("#TESTS.assertEquals(#contexts[0].input, 'test')".spel))
+          NodeId(enricher.id) -> List(ExpressionAssertion("#TESTS.assertEquals(#contexts.size, 1)".spel)),
+          NodeId(filter.id)   -> List(ExpressionAssertion("#TESTS.assertEquals(#contexts[0].input, 'test')".spel))
         )
       ),
       TestCase(
@@ -330,13 +331,13 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
         mocks = Map.empty,
         assertions = Map(
           NodeId(enricher.id) -> List(
-            Assertion("#TESTS.assertEquals(#contexts[0].doesNotExist, 1)".spel),
-            Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel),
-            Assertion("#TESTS.assertEquals(#contexts[0].doesNotExistOther, 2)".spel)
+            ExpressionAssertion("#TESTS.assertEquals(#contexts[0].doesNotExist, 1)".spel),
+            ExpressionAssertion("#TESTS.assertEquals(#contexts.size, 1)".spel),
+            ExpressionAssertion("#TESTS.assertEquals(#contexts[0].doesNotExistOther, 2)".spel)
           ),
           NodeId(filter.id) -> List(
-            Assertion("#TESTS.assertEquals(#contexts[0].input, 'value')".spel),
-            Assertion("#TESTS.assertEquals(#contexts[0].doesNotExist, 1)".spel),
+            ExpressionAssertion("#TESTS.assertEquals(#contexts[0].input, 'value')".spel),
+            ExpressionAssertion("#TESTS.assertEquals(#contexts[0].doesNotExist, 1)".spel),
           )
         )
       ),

@@ -27,6 +27,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.test.testcase._
+import pl.touk.nussknacker.engine.test.testcase.Assertion.ExpressionAssertion
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.restmodel.validation.testcase.{
   AssertionValidationError,
@@ -272,11 +273,11 @@ class ValidationResourcesSpec
               ),
               assertions = Map(
                 NodeId("enricher") -> List(
-                  Assertion("#TESTS.assertEquals(#contexts.size, 3)".spel),
-                  Assertion("#TESTS.assertEquals(#contexts[0].input, 'abc')".spel),
+                  ExpressionAssertion("#TESTS.assertEquals(#contexts.size, 3)".spel),
+                  ExpressionAssertion("#TESTS.assertEquals(#contexts[0].input, 'abc')".spel),
                 ),
                 NodeId("sink") -> List(
-                  Assertion("#TESTS.assertEquals(#contexts[0].output, 'def')".spel),
+                  ExpressionAssertion("#TESTS.assertEquals(#contexts[0].output, 'def')".spel),
                 )
               )
             )
@@ -316,14 +317,14 @@ class ValidationResourcesSpec
               ),
               assertions = Map(
                 NodeId("enricher") -> List(
-                  Assertion("#TESTS.assertEquals(#contexts.size, 3)".spel),
-                  Assertion("#TESTS.assertEquals(#contexts[0].doesNotExist, 'abc')".spel),
-                  Assertion("#TESTS.assertEquals(#contexts[0].input, 'abc')".spel),
+                  ExpressionAssertion("#TESTS.assertEquals(#contexts.size, 3)".spel),
+                  ExpressionAssertion("#TESTS.assertEquals(#contexts[0].doesNotExist, 'abc')".spel),
+                  ExpressionAssertion("#TESTS.assertEquals(#contexts[0].input, 'abc')".spel),
                 ),
                 NodeId("sink") -> List(
-                  Assertion("#TESTS.assertEquals(#contexts[0].doesNotExist2, 'def')".spel),
-                  Assertion("#TESTS.assertEquals(#contexts[0].output, 'def')".spel),
-                  Assertion("#TESTS.assertEquals(#contexts[0].doesNotExist3, 'ghi')".spel),
+                  ExpressionAssertion("#TESTS.assertEquals(#contexts[0].doesNotExist2, 'def')".spel),
+                  ExpressionAssertion("#TESTS.assertEquals(#contexts[0].output, 'def')".spel),
+                  ExpressionAssertion("#TESTS.assertEquals(#contexts[0].doesNotExist3, 'ghi')".spel),
                 )
               )
             )

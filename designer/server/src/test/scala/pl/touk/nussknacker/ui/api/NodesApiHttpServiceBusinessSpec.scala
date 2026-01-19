@@ -1603,7 +1603,7 @@ class NodesApiHttpServiceBusinessSpec
             |    }
             |  }
             |}
-            |""".stripMargin
+         cccc   |""".stripMargin
         )
         .when()
         .post(s"$nuDesignerHttpAddress/api/parameters/streaming/testCase/additionalVariables")
