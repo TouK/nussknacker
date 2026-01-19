@@ -31,3 +31,15 @@ export const getInputDataRecordsForSingleSource = createSelector([getInputDataRe
     testCaseInputs.filter((r) => r.sourceId === sourceId),
 );
 export const hasInputDataRecordsDefined = createSelector(getInputDataRecords, (inputDataRecords) => inputDataRecords.length > 0);
+
+export const getTestCaseNodeValidationData = createSelector(getScenarioGraph, getNodeId, ({ testCases }, nodeId) => {
+    const testCase = testCases?.value ?? ({} as TestCase);
+
+    return {
+        [testCase.name]: {
+            ...testCase,
+            assertions: testCase.assertions[nodeId] ?? [],
+            enricherMock: testCase.mocks[nodeId],
+        },
+    };
+});

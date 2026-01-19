@@ -8,7 +8,7 @@ import { getScenario, getScenarioGraph } from "../../../../reducers/selectors/gr
 import type { UIParameter } from "../../../../types/definition";
 import type { NodeType, Parameter } from "../../../../types/node";
 import type { PropertiesConfig, UiScenarioProperties } from "../../../../types/scenarioGraph";
-import type { NodeValidationError } from "../../../../types/validation";
+import type { NodeValidationError, TestCaseValidationError } from "../../../../types/validation";
 import { getCurrentPropertiesErrors } from "../node/selectors";
 import { appendPropertiesErrors, getScenarioPropertiesDef, isRequestSource } from "../requestSourceAddons";
 import { getNodeDetails, getNodesDetails } from "./getNodeDetails";
@@ -37,11 +37,20 @@ export const getValidationPerformed = createSelector(
 );
 const getValidationErrors = createSelector(getNodeDetails, (nodeDetails) => (nodeId) => nodeDetails(nodeId)?.validationErrors);
 
-const getNodeId = (_: unknown, nodeId: string) => nodeId;
-export const getValidationTestCasesErrors = createSelector(
+type TestCaseParams = { nodeId: string; testCaseId: string };
+const getTestParams = (_: unknown, testCaseParams: TestCaseParams) => testCaseParams;
+
+export const getValidationTestCasesErrors = createDeepEqualSelector(
     getNodeDetails,
-    getNodeId,
-    (nodeDetails, nodeId) => nodeDetails(nodeId)?.testCasesValidationErrors,
+    getTestParams,
+    (nodeDetails, { nodeId, testCaseId }): TestCaseValidationError => {
+        const testCasesValidationErrors = nodeDetails(nodeId)?.testCasesValidationErrors[testCaseId];
+
+        return {
+            assertionsErrors: testCasesValidationErrors?.assertionsErrors ?? [],
+            enricherMockErrors: testCasesValidationErrors?.enricherMockErrors ?? [],
+        };
+    },
 );
 export const getDetailsParameters = createSelector(getNodeDetails, (nodeDetails) => (nodeId): UIParameter[] => {
     const parameters = nodeDetails(nodeId)?.parameters;

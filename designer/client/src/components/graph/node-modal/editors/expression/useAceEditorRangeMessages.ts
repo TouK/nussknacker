@@ -1,4 +1,7 @@
-import { useMemo } from "react";
+import type { MutableRefObject } from "react";
+import { useEffect, useMemo } from "react";
+import type ReactAce from "react-ace/lib/ace";
+import type { IAceEditorProps } from "react-ace/lib/ace";
 import type { IMarker } from "react-ace/lib/types";
 import type { Annotation } from "react-ace/types";
 import { v4 as uuid4 } from "uuid";
@@ -93,3 +96,17 @@ export function useAceEditorRangeMessages(fieldErrors: FieldError[], showLines?:
 
     return { annotations, markers, hasRangeText };
 }
+
+/**
+ * Manually sets annotations on the Ace editor session.
+ * This is needed because we disable the Ace worker (useWorker: false) to avoid
+ * MIME type errors when loading worker-json.js. Without the worker, annotations
+ * must be set programmatically instead of being handled automatically by Ace.
+ */
+export const useSetAceEditorAnnotations = (editorRef: MutableRefObject<ReactAce>, annotations: IAceEditorProps["annotations"]) => {
+    useEffect(() => {
+        if (editorRef.current && annotations?.length > 0) {
+            editorRef.current.editor.getSession().setAnnotations(annotations);
+        }
+    }, [annotations, editorRef]);
+};
