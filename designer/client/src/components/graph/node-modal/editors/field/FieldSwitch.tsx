@@ -1,4 +1,3 @@
-import { css } from "@emotion/css";
 import { Box, styled, Tab, Tabs } from "@mui/material";
 import type { ReactNode } from "react";
 import React, { useCallback, useMemo, useState } from "react";
@@ -9,7 +8,7 @@ import { getUserSettings } from "../../../../../reducers/selectors/userSettings"
 import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { Option } from "../../fragment-input-definition/TypeSelect";
 import { isExtendedEditor } from "../expression/Editor";
-import { getEditorByType } from "../expression/EditorByType";
+import { getEditorByType, parseExpressionObjForType } from "../expression/EditorByType";
 import type { EditorConfig, EditorConfigForType } from "../expression/EditorConfig";
 import { editorsParameters } from "../expression/editorsParameters";
 import type { ExpressionObj } from "../expression/types";
@@ -24,9 +23,12 @@ const StyledTab = styled(Tab)(({ theme }) => ({
     minHeight: "20px",
     minWidth: "45px",
     border: `1px solid ${getBorderColor(theme)}`,
+    "&:focus": { outline: "none" },
+
     "&.Mui-selected": {
         color: theme.palette.text.primary,
         background: blendDarken(theme.palette.primary.main, 0.3),
+        outline: "none",
     },
     "&[aria-disabled='true']": {
         cursor: "default",
@@ -34,6 +36,12 @@ const StyledTab = styled(Tab)(({ theme }) => ({
         "&:hover": {
             background: theme.palette.action.disabledBackground,
         },
+    },
+    ".MuiTab-iconWrapper": {
+        marginLeft: "2px !important",
+        display: "flex",
+        alignItems: "center",
+        pointerEvents: "auto",
     },
     ".MuiSvgIcon-root": {
         backgroundColor: "inherit",
@@ -96,7 +104,6 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
         () =>
             availableEditors.find((editor: EditorConfig) => {
                 const editorParameters = editorsParameters[editor.type];
-
                 return editorParameters?.language === expressionObj.language && allowsSwitch(editor);
             })?.type,
     );
@@ -134,8 +141,13 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
     }
 
     return (
-        <Box display="block" flexBasis={"60%"} flex={1} width={"100%"}>
-            <Box display="flex" justifyContent="flex-end">
+        <Box sx={{ flex: 1 }}>
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                }}
+            >
                 <Tabs
                     value={selectedOption.value}
                     variant="standard"
@@ -148,15 +160,9 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                     TabIndicatorProps={{ sx: { display: "none" } }}
                     onChange={(_, value: string) => {
                         const selectedEditor = availableEditors.find((editor) => editor.type === value);
-                        const editorParameters = editorsParameters[selectedEditor.type];
-                        const editorComponent = getEditorByType(selectedEditor.type);
-                        const editorWithParseValueMethod = isExtendedEditor(editorComponent) && editorComponent.parseValueOnEditorChange;
-                        onValueChange(
-                            editorWithParseValueMethod
-                                ? editorComponent?.parseValueOnEditorChange(expressionObj, editorParameters.language)
-                                : { ...expressionObj, language: editorParameters.language },
-                        );
-                        setSelectedEditorType(selectedEditor.type);
+                        const type = selectedEditor.type;
+                        onValueChange(parseExpressionObjForType(type, expressionObj));
+                        setSelectedEditorType(type);
                     }}
                 >
                     {availableEditorsOptions.map((option, index) => (
@@ -167,19 +173,9 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                             key={index}
                             label={option.label?.toLowerCase()}
                             value={option.value}
-                            classes={{
-                                selected: css({ outline: "none" }),
-                                root: css({
-                                    cursor: option.value === type ? "default !important" : "pointer",
-                                    "&:focus": { outline: "none" },
-                                }),
-                                iconWrapper: css({
-                                    marginLeft: "2px !important",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    pointerEvents: "auto",
-                                }),
-                            }}
+                            sx={(theme) => ({
+                                cursor: option.value === type ? "default !important" : "pointer",
+                            })}
                             iconPosition="end"
                             onClickCapture={(event) => {
                                 if (event.target !== event.currentTarget) return;

@@ -1,7 +1,7 @@
 import { parse } from "ts-spel";
 import type { Ast } from "ts-spel/lib/lib/Ast";
 
-function getAst(input: string) {
+export function getAst(input: string) {
     try {
         return parse(input, true);
     } catch (e) {
@@ -10,11 +10,12 @@ function getAst(input: string) {
 }
 
 function printFragment(text: string, el: { start: number; end: number }): string {
+    if (!text || !el) return "";
     return text.slice(el.start, el.end).trim();
 }
 
 function mapToList(input: string, ast?: Ast): string[] | null {
-    if (ast.type !== "InlineList" || ast.__unclosed) return null;
+    if (ast?.type !== "InlineList" || ast.__unclosed) return null;
     return ast.elements.map((el) => printFragment(input, el));
 }
 
@@ -37,6 +38,6 @@ export function parseToList(input: string): string[] {
     return mapToList(input, getAst(input));
 }
 
-export function parseToObject(input: string): Record<string, string> {
-    return mapToObject(input, getAst(input));
+export function parseToObject<T extends Record<string, string>>(input: string): T {
+    return mapToObject(input, getAst(input)) as T;
 }
