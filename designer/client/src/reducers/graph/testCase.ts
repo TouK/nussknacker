@@ -1,8 +1,7 @@
-import { v4 as uuid4 } from "uuid";
-
 import type { Assertions, Mocks } from "../../actions/nk/testCasesActions";
 import type { Reducer } from "../../actions/reduxTypes";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
+import { omit } from "./lodashWrappers";
 
 export interface TestCase {
     id: string;
@@ -46,6 +45,15 @@ export const testCaseReducer: Reducer<ScenarioGraph["testCases"]> = (state = ini
                 value: {
                     ...state.value,
                     mocks: action.mocks,
+                },
+            };
+        case "DELETE_NODES":
+            return {
+                ...state,
+                value: {
+                    ...state.value,
+                    assertions: omit(state.value.assertions, action.ids),
+                    mocks: omit(state.value.mocks, action.ids),
                 },
             };
         default:
