@@ -6,7 +6,7 @@ describe("Dropdown", () => {
     });
 
     after(() => {
-        // cy.deleteAllTestProcesses({ filter: seed });
+        cy.deleteAllTestProcesses({ filter: seed });
     });
 
     it("should display menu portal", () => {
