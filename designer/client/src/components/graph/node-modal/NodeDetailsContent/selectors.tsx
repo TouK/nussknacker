@@ -1,3 +1,4 @@
+import { produce } from "immer";
 import { isEqual } from "lodash";
 import { createSelector, createSelectorCreator, lruMemoize as defaultMemoize } from "reselect";
 
@@ -14,7 +15,7 @@ import { EditorType } from "../editors/expression/types";
 import { getCurrentPropertiesErrors } from "../node/selectors";
 import { determineParameterKey, OverrideKeys } from "../parameterHelpers";
 import { appendPropertiesErrors, getScenarioPropertiesDef, isRequestSource } from "../requestSourceAddons";
-import { getNodeDetails, getNodesDetails } from "./getNodeDetails";
+import { getNodesDetails } from "./getNodeDetails";
 
 const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);
 
@@ -99,34 +100,18 @@ export const getDynamicParameterDefinitions = createDeepEqualSelector(
             return parameters;
         }
 
-        function appendDebugEditors(parameters: UIParameter[] = []): UIParameter[] {
-            if (!userSettings["debug.editor.forceSpelEditors"]) return parameters;
-            return parameters.map((param) => {
-                if (!param.editors.find(({ type }) => type === EditorType.SPEL_PARAMETER_EDITOR)) {
-                    return {
-                        ...param,
-                        editors: [...param.editors, { type: EditorType.SPEL_PARAMETER_EDITOR, debug: true }],
-                    };
-                }
-
-                return param;
-            });
-        }
-
         function overridePrameters(parameters: UIParameter[] = [], node: NodeType): UIParameter[] {
-            return parameters.map((param: UIParameter): UIParameter => {
-                switch (determineParameterKey(node, param)) {
-                    case OverrideKeys.HttpHeaders:
-                    case OverrideKeys.HttpQueryParameters: {
-                        return {
-                            ...param,
-                            editors: [{ type: EditorType.NAME_VALUE_LIST_EDITOR }],
-                            typ: null,
-                        };
+            return produce(parameters, (draft) => {
+                draft.forEach((param) => {
+                    switch (determineParameterKey(node, param)) {
+                        case OverrideKeys.HttpHeaders:
+                        case OverrideKeys.HttpQueryParameters: {
+                            param.typ = null;
+                            param.editors = [{ type: EditorType.NAME_VALUE_LIST_EDITOR }];
+                            break;
+                        }
                     }
-                    default:
-                        return param;
-                }
+                });
             });
         }
 
