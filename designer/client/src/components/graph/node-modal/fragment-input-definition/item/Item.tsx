@@ -1,11 +1,12 @@
 import { isEqual } from "lodash";
+import type { PropsWithChildren } from "react";
 import React, { useCallback } from "react";
-import { useToggle } from "rooks";
 
 import type { ReturnedType } from "../../../../../types/scenarioGraph";
 import type { NodeValidationError, VariableTypes } from "../../../../../types/validation";
 import Input from "../../editors/field/Input";
 import { getValidationErrorsForField } from "../../editors/Validators";
+import { useFieldsControl } from "../../node-row-fields-provider/FieldsControl";
 import { NodeValue } from "../../node/NodeValue";
 import { useDiffMark } from "../../PathsToMark";
 import SettingsButton from "../buttons/SettingsButton";
@@ -17,22 +18,56 @@ import { TypeSelect } from "../TypeSelect";
 import type { FragmentInputParameter, onChangeType } from "./types";
 import { resolveRefClazzName } from "./utils";
 
-interface ItemProps {
+type CommonItemProps = {
     index: number;
     item: FragmentInputParameter;
     namespace: string;
     readOnly?: boolean;
-    showValidation?: boolean;
-    variableTypes: VariableTypes;
     onChange: (path: string, value: onChangeType) => void;
-    options: Option[];
     errors: NodeValidationError[];
+};
+
+type ItemSettingsProps = CommonItemProps & {
+    variableTypes: VariableTypes;
+};
+
+function ItemSettings({ index, item, namespace, variableTypes, readOnly, onChange, errors }: ItemSettingsProps) {
+    const path = `${namespace}[${index}]`;
+
+    return (
+        <SettingsProvider
+            initialFixedValuesList={item?.valueEditor?.fixedValuesList}
+            initialTemporaryValueCompileTimeValidation={item?.valueCompileTimeValidation}
+        >
+            <Settings
+                path={path}
+                item={item}
+                onChange={onChange}
+                variableTypes={variableTypes}
+                readOnly={readOnly}
+                errors={errors}
+                data-testid={`settings:${index}`}
+            />
+        </SettingsProvider>
+    );
 }
 
-export function Item(props: ItemProps): React.JSX.Element {
-    const { index, item, namespace, variableTypes, readOnly, showValidation, onChange, options, errors } = props;
-    const [isOpen, toggleIsOpen] = useToggle();
+type ItemFieldsProps = CommonItemProps & {
+    showValidation?: boolean;
+    options: Option[];
+};
 
+function ItemFields({
+    children,
+    index,
+    item,
+    namespace,
+    readOnly,
+    showValidation,
+    onChange,
+    options,
+    errors,
+}: PropsWithChildren<ItemFieldsProps>) {
     const path = `${namespace}[${index}]`;
     const [isMarked] = useDiffMark();
     const getCurrentOption = useCallback(
@@ -45,48 +80,42 @@ export function Item(props: ItemProps): React.JSX.Element {
     );
 
     return (
-        <div>
-            <FieldsRow index={index} uuid={item.uuid}>
-                <NodeValue>
-                    <Input
-                        readOnly={readOnly}
-                        showValidation={showValidation}
-                        isMarked={isMarked(`${path}.name`)}
-                        onChange={(e) => onChange(`${path}.name`, e.target.value)}
-                        value={item.name}
-                        placeholder="Field name"
-                        fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$name`)}
-                    />
-                </NodeValue>
-                <TypeSelect
+        <FieldsRow index={index} uuid={item.uuid}>
+            <NodeValue>
+                <Input
                     readOnly={readOnly}
-                    onChange={(value) => {
-                        onChange(`${path}.typ.refClazzName`, value);
-                        onChange(`${path}.valueEditor`, null);
-                    }}
-                    value={getCurrentOption(item.typ)}
-                    isMarked={isMarked(`${path}.typ.refClazzName`)}
-                    options={options}
-                    fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$typ`)}
+                    showValidation={showValidation}
+                    isMarked={isMarked(`${path}.name`)}
+                    onChange={(e) => onChange(`${path}.name`, e.target.value)}
+                    value={item.name}
+                    placeholder="Field name"
+                    fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$name`)}
                 />
-                <SettingsButton isOpen={isOpen} toggleIsOpen={toggleIsOpen} />
-            </FieldsRow>
-            <SettingsProvider
-                initialFixedValuesList={item?.valueEditor?.fixedValuesList}
-                initialTemporaryValueCompileTimeValidation={item?.valueCompileTimeValidation}
-            >
-                {isOpen && (
-                    <Settings
-                        path={path}
-                        item={item}
-                        onChange={onChange}
-                        variableTypes={variableTypes}
-                        readOnly={readOnly}
-                        errors={errors}
-                        data-testid={`settings:${index}`}
-                    />
-                )}
-            </SettingsProvider>
+            </NodeValue>
+            <TypeSelect
+                readOnly={readOnly}
+                onChange={(value) => {
+                    onChange(`${path}.typ.refClazzName`, value);
+                    onChange(`${path}.valueEditor`, null);
+                }}
+                value={getCurrentOption(item.typ)}
+                isMarked={isMarked(`${path}.typ.refClazzName`)}
+                options={options}
+                fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$typ`)}
+            />
+            {children}
+        </FieldsRow>
+    );
+}
+
+export function Item(props: ItemSettingsProps & ItemFieldsProps) {
+    const { isExpanded, toggleExpanded } = useFieldsControl();
+    return (
+        <div>
+            <ItemFields {...props}>
+                <SettingsButton isOpen={isExpanded(props.item.uuid)} toggleIsOpen={() => toggleExpanded(props.item.uuid)} />
+            </ItemFields>
+            {isExpanded(props.item.uuid) ? <ItemSettings {...props} /> : null}
         </div>
     );
 }
