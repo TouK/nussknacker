@@ -7,6 +7,7 @@ import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { convertViewportUnitToPixels } from "../../../../common/convertViewportUnitToPixels";
 import { hasInputDataRecordsDefined, getTestCase } from "../../../../reducers/selectors/testCases";
 import { getTestResultsLoading } from "../../../../reducers/selectors/testing";
+import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager/useWindows";
@@ -38,6 +39,7 @@ type Preset = {
 };
 
 function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>) {
+    const settings = useAppSelector(getUserSettings);
     const { disabled, name, title, titleOverride, docs, markdownContent, type } = props;
     const { t } = useTranslation();
     const { open } = useWindows();
@@ -46,8 +48,8 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const dispatch = useAppDispatch();
 
     const handleRerunLastTest = useCallback(() => {
-        return dispatch(testScenarioWithTestCase(testCase));
-    }, [dispatch, testCase]);
+        return dispatch(testScenarioWithTestCase(testCase, settings["node.showMockFieldOnEnrichers"]));
+    }, [dispatch, settings, testCase]);
 
     const presets: Preset[] = useMemo(() => {
         return [
