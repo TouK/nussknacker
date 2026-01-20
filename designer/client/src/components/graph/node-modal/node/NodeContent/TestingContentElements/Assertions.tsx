@@ -1,13 +1,17 @@
 import { Typography } from "@mui/material";
-import React, { useCallback, useState } from "react";
+import { omit } from "lodash";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { setTestCaseAssertions } from "../../../../../../actions/nk/testCasesActions";
+import httpService from "../../../../../../http/HttpService/instance";
+import { getProcessingType } from "../../../../../../reducers/selectors/graph";
 import { getTestCaseAssertionsForNode } from "../../../../../../reducers/selectors/testCases";
 import { getTestAssertionResultsForNode } from "../../../../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
 import type { Edge } from "../../../../../../types/edge";
 import type { NodeType } from "../../../../../../types/node";
+import type { VariableTypes } from "../../../../../../types/validation";
 import { Expandable } from "../../../../../common/Expandable";
 import { withUuid } from "../../../appendUuid";
 import { NodeRowFieldsProvider } from "../../../node-row-fields-provider/NodeRowFieldsProvider";
@@ -31,6 +35,18 @@ export const Assertions = ({ node, edges }: Props) => {
     const testCasesErrors = useGetNodeTestCasesErrors(node);
 
     useValidation({ node, showValidation: true, edges });
+    const processingType = useAppSelector(getProcessingType);
+    const nodeVariableTypes = useVariableTypes({ node });
+    const [assertionVariableTypes, setAssertionVariableTypes] = useState<VariableTypes>({});
+
+    useEffect(() => {
+        const fetchAssertionVariableTypes = async () => {
+            const response = await httpService.fetchTestCaseNodeAdditionalVariables(processingType, { variableTypes: nodeVariableTypes });
+            setAssertionVariableTypes(omit(response.assertionsAdditionalVariables, "TESTS") || {});
+        };
+
+        fetchAssertionVariableTypes();
+    }, [processingType, nodeVariableTypes]);
 
     const addAssertion = useCallback(() => {
         dispatch(
@@ -57,7 +73,9 @@ export const Assertions = ({ node, edges }: Props) => {
     return (
         <StyledStack>
             <Expandable componentId={"Assertions"} expandableTitle={"Assertions"} expanded={isExpanded} onChange={setIsExpanded}>
-                {testCaseAssertions.length === 0 && <Typography>{t("assertions.noAssertionsDefined", "No assertions defined")}</Typography>}
+                {testCaseAssertions.length === 0 && (
+                    <Typography variant={"body2"}>{t("assertions.noAssertionsDefined", "No assertions defined")}</Typography>
+                )}
                 <NodeTable sx={{ mx: 0 }}>
                     <NodeRowFieldsProvider
                         path={null}
@@ -67,20 +85,18 @@ export const Assertions = ({ node, edges }: Props) => {
                         readOnly={false}
                         errors={[]}
                     >
-                        <>
-                            {testCaseAssertions.map(({ expression: expressionObj, uuid }, index) => (
-                                <AssertionItem
-                                    key={uuid}
-                                    uuid={uuid}
-                                    onChange={editAssertion}
-                                    expressionObj={expressionObj}
-                                    variableTypes={variableTypes}
-                                    testAssertionResult={testAssertionResults?.[index]}
-                                    index={index}
-                                    errors={testCasesErrors.assertionsErrors[index]}
-                                />
-                            ))}
-                        </>
+                        {testCaseAssertions.map(({ expression: expressionObj, uuid }, index) => (
+                            <AssertionItem
+                                key={uuid}
+                                uuid={uuid}
+                                onChange={editAssertion}
+                                expressionObj={expressionObj}
+                                variableTypes={assertionVariableTypes}
+                                testAssertionResult={testAssertionResults?.[index]}
+                                index={index}
+                                errors={testCasesErrors.assertionsErrors[index]}
+                            />
+                        ))}
                     </NodeRowFieldsProvider>
                 </NodeTable>
             </Expandable>

@@ -77,7 +77,7 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with Strict
   }
 
   private def prepareFlinkImage(): ImageFromDockerfile = {
-    List("Dockerfile", "entrypointWithIP.sh", "conf.yml", "log4j-console.properties").foldLeft(
+    List("Dockerfile", "entrypointWithIP.sh", "config.overrides.yml", "log4j-console.overrides.properties").foldLeft(
       new ImageFromDockerfile()
     ) { case (image, file) =>
       val resource = ResourceLoader.load(s"/docker/$file")
