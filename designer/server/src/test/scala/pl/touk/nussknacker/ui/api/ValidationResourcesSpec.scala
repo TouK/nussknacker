@@ -357,10 +357,11 @@ class ValidationResourcesSpec
               Map(
                 1 -> NonEmptyList.one(
                   AssertionValidationError(
-                    "ExpressionParserCompilationError",
-                    "There is no property 'doesNotExist' in type: Record{input: Unknown}",
-                    "There is problem with expression in field [<missing>] - it could not be parsed.",
-                    Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(45, 0)))
+                    typ = "ExpressionParserCompilationError",
+                    message = "There is no property 'doesNotExist' in type: Record{input: Unknown}",
+                    description = "There is problem with expression in field [<missing>] - it could not be parsed.",
+                    details = Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(45, 0))),
+                    fieldName = None,
                   )
                 )
               )
@@ -372,10 +373,10 @@ class ValidationResourcesSpec
             enricherMockErrors = Some(
               NonEmptyList.one(
                 EnricherMockValidationError(
-                  "MockForNonEnricherNode",
-                  "Mock configured for non-enricher node 'sink'",
-                  "Mocks can only be configured for enricher nodes",
-                  None
+                  typ = "MockForNonEnricherNode",
+                  message = "Mock configured for non-enricher node 'sink'",
+                  description = "Mocks can only be configured for enricher nodes",
+                  details = None,
                 )
               )
             ),
@@ -383,18 +384,20 @@ class ValidationResourcesSpec
               Map(
                 0 -> NonEmptyList.one(
                   AssertionValidationError(
-                    "ExpressionParserCompilationError",
-                    "There is no property 'doesNotExist2' in type: Record{input: Unknown, output: String}",
-                    "There is problem with expression in field [<missing>] - it could not be parsed.",
-                    Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(46, 0)))
+                    typ = "ExpressionParserCompilationError",
+                    message = "There is no property 'doesNotExist2' in type: Record{input: Unknown, output: String}",
+                    description = "There is problem with expression in field [<missing>] - it could not be parsed.",
+                    details = Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(46, 0))),
+                    fieldName = None,
                   )
                 ),
                 2 -> NonEmptyList.one(
                   AssertionValidationError(
-                    "ExpressionParserCompilationError",
-                    "There is no property 'doesNotExist3' in type: Record{input: Unknown, output: String}",
-                    "There is problem with expression in field [<missing>] - it could not be parsed.",
-                    Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(46, 0)))
+                    typ = "ExpressionParserCompilationError",
+                    message = "There is no property 'doesNotExist3' in type: Record{input: Unknown, output: String}",
+                    description = "There is problem with expression in field [<missing>] - it could not be parsed.",
+                    details = Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(46, 0))),
+                    fieldName = None,
                   )
                 )
               )

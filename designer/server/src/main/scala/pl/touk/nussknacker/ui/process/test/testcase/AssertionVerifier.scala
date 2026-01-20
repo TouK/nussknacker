@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine.api.{Context, ContextId, JobData, NodeId}
 import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.CompiledExpressionAssertion
 
 import scala.jdk.CollectionConverters._
 
@@ -32,7 +33,11 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
       )
       .mapValuesNow(_.obj)
     try {
-      assertion.expression.evaluate[AssertionResult](context, globalVariables) match {
+      // TODO
+      assertion
+        .asInstanceOf[CompiledExpressionAssertion]
+        .expression
+        .evaluate[AssertionResult](context, globalVariables) match {
         case null                             => FailedAssertion("Assertion result can't be null")
         case assertionResult: AssertionResult => assertionResult
       }

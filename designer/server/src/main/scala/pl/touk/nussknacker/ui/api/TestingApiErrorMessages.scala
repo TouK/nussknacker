@@ -13,6 +13,12 @@ import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.Deser
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ScenarioValidationError
+import pl.touk.nussknacker.ui.process.test.testcase.{AssertionCompilationError, AssertionValidationError}
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.{
+  ExpressionAssertionCompilationError,
+  PredicateAssertionCompilationError
+}
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionValidationError.AssertionConfiguredForNotExistingNodesError
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 
@@ -73,10 +79,16 @@ object TestingApiErrorMessages {
         TestingApiErrorMessages.scenarioHasValidationErrors(errors)
       case PerformTestError.MockConfiguredForNotExistingNodesError(nodeIds) =>
         TestingApiErrorMessages.mocksConfiguredForNotExistingNodes(nodeIds)
-      case PerformTestError.AssertionConfiguredForNotExistingNodesError(errors) =>
-        TestingApiErrorMessages.assertionsConfiguredForNotExistingNodes(errors)
-      case PerformTestError.AssertionExpressionCompilationError(errors, assertion, node) =>
-        TestingApiErrorMessages.assertionCompilationError(errors, assertion, node)
+      case PerformTestError.AssertionErrors(errors) =>
+        // in case of performing test case we return errors in fail-fast fashion
+        errors.head match {
+          case AssertionConfiguredForNotExistingNodesError(notExistingNodeIds) =>
+            TestingApiErrorMessages.assertionsConfiguredForNotExistingNodes(notExistingNodeIds)
+          case ExpressionAssertionCompilationError(errors, assertion, nodeId) =>
+            TestingApiErrorMessages.assertionCompilationError(errors, assertion, nodeId)
+          case PredicateAssertionCompilationError(errors, assertion, _, nodeId) =>
+            TestingApiErrorMessages.assertionCompilationError(errors, assertion, nodeId)
+        }
     }
   }
 

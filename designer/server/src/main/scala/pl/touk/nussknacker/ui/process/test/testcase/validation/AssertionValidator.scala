@@ -7,8 +7,8 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.test.testcase.Assertion
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.testcase.{AssertionIndex, AssertionValidationError}
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.AssertionExpressionCompilationError
-import pl.touk.nussknacker.ui.process.test.testcase.AssertionsCompiler
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.{ExpressionAssertionCompilationError, PredicateAssertionCompilationError}
+import pl.touk.nussknacker.ui.process.test.testcase.{AssertionCompilationError, AssertionsCompiler}
 
 class AssertionValidator(
     assertionsCompiler: AssertionsCompiler
@@ -24,24 +24,40 @@ class AssertionValidator(
       None
     } else {
       val compilationResults = assertionsCompiler.compileForNode(nodeId, assertions, inputVariableTypes, jobData)
-      val errorsMap = compilationResults.zipWithIndex.collect { case (Invalid(error), index) =>
-        index -> convertToAssertionErrors(error)
+      val errorsMap = compilationResults.zipWithIndex.collect { case (Invalid(errors), index) =>
+        index -> convertToAssertionErrors(errors)
       }.toMap
       Some(errorsMap).filter(_.nonEmpty)
     }
   }
 
-  private def convertToAssertionErrors(
-      error: AssertionExpressionCompilationError
-  ): NonEmptyList[AssertionValidationError] = {
-    error.errors.map { compilationError =>
-      val prettyError = PrettyValidationErrors.formatErrorMessage(compilationError)
-      AssertionValidationError(
-        typ = prettyError.typ,
-        message = prettyError.message,
-        description = prettyError.description,
-        details = prettyError.details
-      )
+  private def convertToAssertionErrors(assertionErrors: NonEmptyList[AssertionCompilationError]): NonEmptyList[AssertionValidationError] = {
+    assertionErrors.flatMap {
+      case ExpressionAssertionCompilationError(errors, _, _) =>
+        errors.map { error =>
+          val prettyError = PrettyValidationErrors.formatErrorMessage(error)
+          AssertionValidationError(
+            typ = prettyError.typ,
+            message = prettyError.message,
+            description = prettyError.description,
+            details = prettyError.details,
+            fieldName = None,
+          )
+        }
+      case AssertionCompilationError.PredicateAssertionCompilationError(errors, _, field, _) =>
+        errors.map { error =>
+          val prettyError = PrettyValidationErrors.formatErrorMessage(error)
+          AssertionValidationError(
+            typ = prettyError.typ,
+            message = prettyError.message,
+            description = prettyError.description,
+            details = prettyError.details,
+            fieldName = Some(field match {
+              case PredicateAssertionCompilationError.ExpectedField => "expected"
+              case PredicateAssertionCompilationError.ActualField   => "actual"
+            })
+          )
+        }
     }
   }
 

@@ -34,6 +34,7 @@ package object testcase {
       message: String,
       description: String,
       details: Option[ErrorDetails],
+      fieldName: Option[String],
   )
 
   object ScenarioTestCasesValidationErrors {
