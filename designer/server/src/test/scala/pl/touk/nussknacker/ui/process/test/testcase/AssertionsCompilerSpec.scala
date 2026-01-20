@@ -19,16 +19,15 @@ import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
-import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
 import pl.touk.nussknacker.engine.test.testcase.Assertion.ExpressionAssertion
+import pl.touk.nussknacker.engine.test.testcase.TestCase
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import pl.touk.nussknacker.ui.definition.DefinitionsService
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.{
-  AssertionConfiguredForNotExistingNodesError,
-  AssertionExpressionCompilationError
-}
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.ExpressionAssertionCompilationError
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionValidationError.AssertionConfiguredForNotExistingNodesError
+import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.CompiledExpressionAssertion
 
 import java.util.UUID
 
@@ -82,6 +81,8 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
       compiledAssertions
         .assertions(NodeId("sink1"))
         .head
+        // TODO
+        .asInstanceOf[CompiledExpressionAssertion]
         .expression
         .original shouldBe "#TESTS.assertEquals(#contexts.size, 1)"
     }
@@ -135,7 +136,7 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
     val testCompilationResult = compileScenarioWithAssertions(scenario, test)
     inside(testCompilationResult) { case Invalid(errors) =>
       errors.size shouldBe 1
-      errors.head shouldBe AssertionExpressionCompilationError(
+      errors.head shouldBe ExpressionAssertionCompilationError(
         NonEmptyList.one(
           ExpressionParserCompilationError(
             "Unexpectedly ran out of arguments",
