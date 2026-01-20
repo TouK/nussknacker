@@ -1,8 +1,9 @@
 import i18next from "i18next";
-import { isEqual } from "lodash";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import { curry, isEqual } from "lodash";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDebounceFn } from "rooks";
 
+import type { VariableTypes } from "../../../../../../types/validation";
 import { DndItems } from "../../../../../common/dndItems/DndItems";
 import { RowFieldLabel } from "../../../aggregate/rowFieldLabel";
 import type { WithUuid } from "../../../appendUuid";
@@ -10,14 +11,51 @@ import { withUuid } from "../../../appendUuid";
 import { FieldsRow } from "../../../fragment-input-definition/FieldsRow";
 import { FieldsControl } from "../../../node-row-fields-provider/FieldsControl";
 import { EditableEditor } from "../../EditableEditor";
+import type { FieldError } from "../../Validators";
 import { prepareEditor } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
 import { FormatterType, spelFormatters } from "../Formatter";
 import { EditorType, ExpressionLang } from "../types";
 import { deserialize, type NameValueRecord, serialize } from "./nameValueRecordsListHelpers";
 
+type FieldProps = {
+    fieldErrors: FieldError[];
+    onChangeItem: (updated: Partial<NameValueRecord>) => void;
+    showLabels: boolean;
+    showValidation: boolean;
+    showSwitch: boolean;
+    variableTypes: VariableTypes;
+    value: string;
+};
+
+const NameField = ({ showLabels, value, onChangeItem, ...props }: FieldProps) => (
+    <RowFieldLabel flexBasis="30%" label="name" showLabel={showLabels}>
+        <EditableEditor
+            editors={[{ type: EditorType.STATIC_STRING_PARAMETER_EDITOR }]}
+            expressionObj={{ expression: value, language: ExpressionLang.SpEL }}
+            onValueChange={({ expression, language }) => {
+                const name = language === ExpressionLang.SpEL ? expression : spelFormatters[FormatterType.String].encode(expression);
+                onChangeItem({ name });
+            }}
+            {...props}
+        />
+    </RowFieldLabel>
+);
+
+const ValueField = ({ showLabels, value, onChangeItem, ...props }: FieldProps) => (
+    <RowFieldLabel flexBasis="70%" label="value" showLabel={showLabels}>
+        <EditableEditor
+            expressionObj={{ expression: value, language: ExpressionLang.SpEL }}
+            onValueChange={({ expression }) => {
+                onChangeItem({ value: expression });
+            }}
+            {...props}
+        />
+    </RowFieldLabel>
+);
+
 export const NameValueListEditor = prepareEditor(
-    ({ expressionObj, onValueChange, variableTypes, readOnly }) => {
+    ({ expressionObj, onValueChange, variableTypes, readOnly, fieldErrors = [], showValidation }) => {
         const { expression, language } = expressionObj;
 
         const [list, setList] = useState<WithUuid<NameValueRecord>[]>(() => {
@@ -44,11 +82,11 @@ export const NameValueListEditor = prepareEditor(
             [updateFn],
         );
 
-        const uuidWaitingFor = useRef(null);
+        const uuidWaitingForFocus = useRef(null);
         const onAdd = useCallback(() => {
             setData((prevData) => {
                 const added = withUuid({ name: '""', value: "" });
-                uuidWaitingFor.current = added.uuid;
+                uuidWaitingForFocus.current = added.uuid;
                 return [...prevData, added];
             });
         }, [setData]);
@@ -60,78 +98,51 @@ export const NameValueListEditor = prepareEditor(
             [setData],
         );
 
-        const onChangeItem = useCallback(
-            (uuid: string, updated: Partial<NameValueRecord>) => {
-                setData((prevData) =>
-                    prevData.map((item) => {
-                        if (item.uuid !== uuid) {
-                            return item;
-                        }
-                        return { ...item, ...updated };
-                    }),
-                );
-            },
+        const onChangeItem = useMemo(
+            () =>
+                curry((uuid: string, updated: Partial<NameValueRecord>) => {
+                    setData((prevData) =>
+                        prevData.map((item) => {
+                            if (item.uuid !== uuid) {
+                                return item;
+                            }
+                            return { ...item, ...updated };
+                        }),
+                    );
+                }),
             [setData],
         );
 
         const [hovered, setHovered] = useState<number | null>(null);
 
-        const items = useMemo(
-            () =>
-                list.map((item, index) => {
-                    const { name, uuid, value } = item;
-                    const showLabels = hovered == 0;
-                    return {
-                        item,
-                        el: (
-                            <FieldsRow
-                                key={uuid}
-                                uuid={uuid}
-                                index={index}
-                                ref={(el) => {
-                                    if (uuid !== uuidWaitingFor.current) return;
-                                    uuidWaitingFor.current = null;
-                                    (el.querySelector("input, textarea") as HTMLElement)?.focus();
-                                }}
-                            >
-                                <RowFieldLabel flexBasis="30%" label="name" showLabel={showLabels}>
-                                    <EditableEditor
-                                        variableTypes={variableTypes}
-                                        editors={[{ type: EditorType.STATIC_STRING_PARAMETER_EDITOR }]}
-                                        expressionObj={{
-                                            expression: name,
-                                            language: ExpressionLang.SpEL,
-                                        }}
-                                        onValueChange={({ expression, language }) => {
-                                            const name =
-                                                language === ExpressionLang.SpEL
-                                                    ? expression
-                                                    : spelFormatters[FormatterType.String].encode(expression);
-                                            onChangeItem(uuid, { name });
-                                        }}
-                                        // showValidation
-                                        // fieldErrors={fieldErrors}
-                                        showSwitch={false}
-                                    />
-                                </RowFieldLabel>
-                                <RowFieldLabel flexBasis="70%" label="value" showLabel={showLabels}>
-                                    <EditableEditor
-                                        variableTypes={variableTypes}
-                                        expressionObj={{ expression: value, language: ExpressionLang.SpEL }}
-                                        onValueChange={({ expression }) => {
-                                            onChangeItem(uuid, { value: expression });
-                                        }}
-                                        // showValidation
-                                        // fieldErrors={fieldErrors}
-                                        showSwitch={false}
-                                    />
-                                </RowFieldLabel>
-                            </FieldsRow>
-                        ),
-                    };
-                }),
-            [hovered, list, onChangeItem, variableTypes],
+        const focusField = useCallback(
+            (uuid: string) => (el: HTMLElement) => {
+                if (uuid !== uuidWaitingForFocus.current) return;
+                uuidWaitingForFocus.current = null;
+                (el.querySelector("input, textarea") as HTMLElement)?.focus();
+            },
+            [],
         );
+
+        const items = useMemo(() => {
+            return list.map((item, index) => {
+                const fieldProps = {
+                    onChangeItem: onChangeItem(item.uuid),
+                    variableTypes,
+                    fieldErrors,
+                    showLabels: hovered == 0,
+                    showValidation,
+                    showSwitch: false,
+                };
+                const el = (
+                    <FieldsRow key={item.uuid} uuid={item.uuid} index={index} ref={focusField(item.uuid)}>
+                        <NameField value={item.name} {...fieldProps} />
+                        <ValueField value={item.value} {...fieldProps} />
+                    </FieldsRow>
+                );
+                return { item, el };
+            });
+        }, [fieldErrors, focusField, hovered, list, onChangeItem, showValidation, variableTypes]);
 
         return (
             <FieldsControl path={null} onFieldRemove={list.length >= 1 && onRemove} onFieldAdd={onAdd} readOnly={readOnly}>
