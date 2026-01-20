@@ -1,5 +1,6 @@
 import { createSelector } from "reselect";
 
+import { Mock } from "../../actions/nk/testCasesActions";
 import { withUuid } from "../../components/graph/node-modal/appendUuid";
 import { MockExpressionParameter } from "../../components/graph/node-modal/editors/expression/MockExpressionField";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
@@ -39,7 +40,7 @@ export const getTestCaseNodeValidationData = createSelector(getScenarioGraph, ge
         [testCase.name]: {
             ...testCase,
             assertions: testCase.assertions[nodeId] ?? [],
-            enricherMock: testCase.mocks[nodeId] ?? {},
+            enricherMock: testCase.mocks[nodeId],
         },
     };
 });
