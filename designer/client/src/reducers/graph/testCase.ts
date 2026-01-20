@@ -56,6 +56,15 @@ export const testCaseReducer: Reducer<ScenarioGraph["testCases"]> = (state = ini
                     mocks: omit(state.value.mocks, action.ids),
                 },
             };
+        case "ADD_NODE_REPLACE":
+            return {
+                ...state,
+                value: {
+                    ...state.value,
+                    assertions: omit(state.value.assertions, [action.old.id]),
+                    mocks: omit(state.value.mocks, [action.old.id]),
+                },
+            };
         default:
             return state;
     }
