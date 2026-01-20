@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
-import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
-
 import java.util
 import scala.jdk.CollectionConverters._
 
@@ -11,12 +9,9 @@ case object SuccessfulAssertion extends AssertionResult
 
 case class FailedAssertion(message: String) extends AssertionResult
 
-object tests extends TestsFunctions
+object AssertionResult {
 
-trait TestsFunctions extends HideToString {
-
-  @Documentation(description = "Check whether two values are equals")
-  def assertEquals(@ParamName("expected") expected: Any, @ParamName("actual") actual: Any): AssertionResult = {
+  def assertEquals(expected: Any, actual: Any): AssertionResult = {
     // we use scala "lenient" equals to allow to compare boxed primitives of different types - like 1L and 1
     if (expected == actual) {
       SuccessfulAssertion
