@@ -94,7 +94,7 @@ export const Assertions = ({ node, edges }: Props) => {
                                 variableTypes={assertionVariableTypes}
                                 testAssertionResult={testAssertionResults?.[index]}
                                 index={index}
-                                errors={testCasesErrors.assertionsErrors[index]}
+                                errors={testCasesErrors.assertionsErrors[index.toString()]}
                             />
                         ))}
                     </NodeRowFieldsProvider>

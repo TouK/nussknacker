@@ -39,7 +39,7 @@ export const getTestCaseNodeValidationData = createSelector(getScenarioGraph, ge
         [testCase.name]: {
             ...testCase,
             assertions: testCase.assertions[nodeId] ?? [],
-            enricherMock: testCase.mocks[nodeId],
+            enricherMock: testCase.mocks[nodeId] ?? {},
         },
     };
 });
