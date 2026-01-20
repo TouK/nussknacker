@@ -59,8 +59,7 @@ export function useVariableTypes({ node }: Pick<NodeTypeDetailsContentProps, "no
 }
 
 export function useParameterDefinitions({ node }: Pick<NodeTypeDetailsContentProps, "node">) {
-    const getParameterDefinitions = useAppSelector(getDynamicParameterDefinitions);
-    return useMemo(() => getParameterDefinitions(node), [getParameterDefinitions, node]);
+    return useAppSelector((state) => getDynamicParameterDefinitions(state, node));
 }
 
 export function useSetProperty({ onChange, node }: Pick<NodeTypeDetailsContentProps, "onChange" | "node">) {

@@ -5,8 +5,10 @@ import type { RootState } from "../../../../reducers";
 
 const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);
 
-export const getNodesDetails = (state: RootState) => state.nodeDetails;
-export const getNodeDetails = createDeepEqualSelector(getNodesDetails, (nodeDetails) => (nodeId: string) => nodeDetails[nodeId]);
+export const getNodesDetails = createDeepEqualSelector(
+    (state: RootState) => state?.nodeDetails || {},
+    (nodeDetails) => nodeDetails,
+);
 
 export const getPropertiesDetails = createDeepEqualSelector(getNodesDetails, (nodeDetails) => {
     return nodeDetails[".properties"];

@@ -27,28 +27,19 @@ export const getScenarioPropertiesConfig = createSelector(getScenarioProperties,
     return { properties: propertiesConfig, order };
 });
 
-const getNodeResults = createSelector(getScenario, (scenario) => ProcessUtils.getNodeResults(scenario));
-export const getFindAvailableBranchVariables = createSelector(getNodeResults, (nodeResults) =>
+const getNodesResults = createSelector(getScenario, (scenario) => ProcessUtils.getNodeResults(scenario));
+export const getFindAvailableBranchVariables = createSelector(getNodesResults, (nodeResults) =>
     ProcessUtils.findVariablesForBranches(nodeResults),
 );
-const getNodeResult = createSelector(getNodeResults, (s) => (nodeId: string) => s?.[nodeId]);
+const getNodeResult = createSelector(getNodesResults, (s) => (nodeId: string) => s?.[nodeId]);
 
-export const getValidationPerformed = createSelector(
-    getNodeDetails,
-    (nodeDetails) =>
-        (nodeId): boolean =>
-            nodeDetails(nodeId)?.validationPerformed,
-);
-const getValidationErrors = createSelector(getNodeDetails, (nodeDetails) => (nodeId) => nodeDetails(nodeId)?.validationErrors);
-export const getDetailsParameters = createSelector(getNodeDetails, (nodeDetails) => (nodeId): UIParameter[] => {
-    const parameters = nodeDetails(nodeId)?.parameters;
-    return parameters || null;
+const getValidationPerformed = createDeepEqualSelector(getNodesDetails, (nodeDetails) => {
+    return Object.fromEntries(Object.entries(nodeDetails).map(([k, { validationPerformed }]) => [k, validationPerformed]));
 });
-export const getResultParameters = createSelector(
-    getNodeResult,
-    (nodeResult) => (nodeId: string) => nodeResult(nodeId)?.parameters || null,
-);
-export const getExpressionType = createSelector(getNodeDetails, (nodeDetails) => (nodeId: string) => nodeDetails(nodeId)?.expressionType);
+
+const getValidationErrors = createSelector(getNodesDetails, (nodeDetails) => (nodeId) => nodeDetails[nodeId]?.validationErrors);
+
+export const getExpressionType = createSelector(getNodesDetails, (nodeDetails) => (nodeId: string) => nodeDetails[nodeId]?.expressionType);
 export const getNodeTypingInfo = createSelector(getNodeResult, (nodeResult) => (nodeId: string) => nodeResult(nodeId)?.typingInfo);
 export const getNodeExpressionType = createSelector(getExpressionType, getNodeTypingInfo, (expressionType, nodeTypingInfo) => (nodeId) => {
     const type = expressionType(nodeId);
@@ -65,7 +56,7 @@ const getCurrentErrors = createSelector(
     getValidationErrors,
     (_: RootState, props: { node: NodeType; nodeErrors: NodeValidationError[] }) => props,
     (validationPerformed, validationErrors, { node, nodeErrors = [] }) =>
-        validationPerformed(node.id) ? validationErrors(node.id) : nodeErrors,
+        validationPerformed[node.id] ? validationErrors(node.id) : nodeErrors,
 );
 export const getNodeErrors = createSelector(
     getCurrentErrors,
@@ -80,16 +71,18 @@ export const getNodeErrors = createSelector(
 );
 
 export const getDynamicParameterDefinitions = createDeepEqualSelector(
+    (_: RootState, node: NodeType) => node,
+    getNodesDetails,
+    getNodesResults,
     getValidationPerformed,
-    getDetailsParameters,
-    getResultParameters,
     getComponentsDefinition,
     getScenarioPropertiesConfig,
     getUserSettings,
-    (validationPerformed, detailsParameters, resultParameters, components, { order, properties }, userSettings) => {
+    (node, nodesDetails, nodesResults, validationPerformed, components, { order, properties }, userSettings) => {
         function getParameters(node: NodeType): UIParameter[] {
-            const isValidationPerformed = validationPerformed(node.id);
-            const dynamicParameterDefinitions = isValidationPerformed ? detailsParameters(node.id) : resultParameters(node.id);
+            const dynamicParameterDefinitions = validationPerformed[node.id]
+                ? nodesDetails[node.id]?.parameters
+                : nodesResults[node.id]?.parameters;
 
             const parameters = dynamicParameterDefinitions || ProcessUtils.extractComponentDefinition(node, components)?.parameters;
 
@@ -115,16 +108,12 @@ export const getDynamicParameterDefinitions = createDeepEqualSelector(
             });
         }
 
-        return (node: NodeType): UIParameter[] => overridePrameters(getParameters(node), node);
+        return overridePrameters(getParameters(node), node);
     },
 );
 
 export const getFindAvailableVariables = createSelector(getComponentsDefinition, getScenario, (processDefinition, scenario) =>
     ProcessUtils.findAvailableVariables(processDefinition, scenario),
-);
-export const getVariableTypes = createSelector(
-    getNodeResults,
-    (nodeResults) => (originalNodeId) => ProcessUtils.getVariablesFromValidation(nodeResults, originalNodeId) || {},
 );
 
 export const getDynamicParametersChanged = createSelector(
