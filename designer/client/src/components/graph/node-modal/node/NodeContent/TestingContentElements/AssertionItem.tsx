@@ -1,6 +1,7 @@
 import { css } from "@emotion/css";
 import { Box } from "@mui/material";
-import React, { useCallback, useMemo, memo } from "react";
+import React, { useCallback, useMemo, memo, useState, useRef } from "react";
+import { useMutationObserver } from "rooks";
 
 import type { TestAssertionResult } from "../../../../../../http/resultsWithCountsDto";
 import type { NodeValidationError, VariableTypes } from "../../../../../../types/validation";
@@ -46,6 +47,28 @@ interface Props {
 
 const AssertionItemComponent = ({ uuid, expressionObj, onChange, index, testAssertionResult, variableTypes, errors = [] }: Props) => {
     const isFirstRow = index === 0;
+    const [hasExpectedError, setHasExpectedError] = useState(false);
+    const bodyRef = useRef(document.body);
+
+    const mutationObserverOptions = useMemo(
+        () => ({
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ["class"],
+        }),
+        [],
+    );
+
+    const checkForExpectedError = useCallback(() => {
+        const assertionContainer = document.querySelector(`[data-assertion-uuid="${uuid}"]`);
+        const expectedLabel = assertionContainer?.querySelector('[label="Expected"]');
+        const hasMuiError = expectedLabel?.querySelector(".Mui-error") !== null;
+        setHasExpectedError(hasMuiError);
+    }, [uuid]);
+
+    //TODO: remove this logic when backend ready to validate specific assertion field
+    useMutationObserver(bodyRef, checkForExpectedError, mutationObserverOptions);
 
     const decodedParts = useMemo(() => {
         return decodeAssertionExpression(expressionObj.expression);
@@ -102,7 +125,7 @@ const AssertionItemComponent = ({ uuid, expressionObj, onChange, index, testAsse
     }, [decodedParts?.assertion]);
 
     return (
-        <Box display={"flex"} alignItems={"flex-start"}>
+        <Box display={"flex"} alignItems={"flex-start"} data-assertion-uuid={uuid}>
             <FieldsRow key={uuid} index={index} uuid={uuid} className={gridContainerStyle}>
                 <NonDraggableLabel hovered={isFirstRow} label="Expected">
                     <EditableEditor
@@ -126,7 +149,7 @@ const AssertionItemComponent = ({ uuid, expressionObj, onChange, index, testAsse
                         variableTypes={variableTypes}
                         onValueChange={handleActualChange}
                         showValidation
-                        fieldErrors={errors.length > 0 ? [EMPTY_REQUIRED_ERROR] : []}
+                        fieldErrors={errors.length > 0 && hasExpectedError ? [EMPTY_REQUIRED_ERROR] : []}
                     />
                 </NonDraggableLabel>
             </FieldsRow>
