@@ -19,15 +19,16 @@ import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
-import pl.touk.nussknacker.engine.test.testcase.Assertion.ExpressionAssertion
+import pl.touk.nussknacker.engine.test.testcase.Assertion
+import pl.touk.nussknacker.engine.test.testcase.Assertion.PredicateAssertion
 import pl.touk.nussknacker.engine.test.testcase.TestCase
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import pl.touk.nussknacker.ui.definition.DefinitionsService
-import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.ExpressionAssertionCompilationError
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.PredicateAssertionCompilationError
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionValidationError.AssertionConfiguredForNotExistingNodesError
-import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.CompiledExpressionAssertion
+import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.CompiledPredicateAssertion
 
 import java.util.UUID
 
@@ -71,20 +72,20 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
       "someTest",
       inputs = "",
       mocks = Map.empty,
-      assertions = Map(NodeId("sink1") -> List(ExpressionAssertion("#TESTS.assertEquals(#contexts.size, 1)".spel)))
+      assertions = Map(
+        NodeId("sink1") -> List(PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel))
+      )
     )
 
     val testCompilationResult = compileScenarioWithAssertions(scenario, test)
     inside(testCompilationResult) { case Valid(compiledAssertions) =>
       compiledAssertions.assertions.size shouldBe 1
       compiledAssertions.assertions(NodeId("sink1")).size shouldBe 1
-      compiledAssertions
-        .assertions(NodeId("sink1"))
-        .head
-        // TODO
-        .asInstanceOf[CompiledExpressionAssertion]
-        .expression
-        .original shouldBe "#TESTS.assertEquals(#contexts.size, 1)"
+      val compiledAssertion =
+        compiledAssertions.assertions(NodeId("sink1")).head.asInstanceOf[CompiledPredicateAssertion]
+      compiledAssertion.operator shouldBe Assertion.AssertionOperator.Equals
+      compiledAssertion.expected.original shouldBe "1"
+      compiledAssertion.actual.original shouldBe "#contexts.size"
     }
   }
 
@@ -100,8 +101,11 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
       "someTest",
       inputs = "",
       mocks = Map.empty,
-      assertions =
-        Map(NodeId("notExistingSink") -> List(ExpressionAssertion("#TESTS.assertEquals(#contexts.size, 1)".spel)))
+      assertions = Map(
+        NodeId("notExistingSink") -> List(
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel)
+        )
+      )
     )
 
     val testCompilationResult = compileScenarioWithAssertions(scenario, test)
@@ -123,7 +127,7 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
       .buildSimpleVariable("result-id2", "result", "#input".spel)
       .emptySink("sink1", "sink")
     val nodeId           = NodeId("sink1")
-    val invalidAssertion = ExpressionAssertion("#TESTS.assertEquals(#contexts.size,".spel)
+    val invalidAssertion = PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size,".spel)
 
     val test = TestCase(
       UUID.randomUUID(),
@@ -136,17 +140,18 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
     val testCompilationResult = compileScenarioWithAssertions(scenario, test)
     inside(testCompilationResult) { case Invalid(errors) =>
       errors.size shouldBe 1
-      errors.head shouldBe ExpressionAssertionCompilationError(
+      errors.head shouldBe PredicateAssertionCompilationError(
         NonEmptyList.one(
           ExpressionParserCompilationError(
-            "Unexpectedly ran out of arguments",
+            "Unexpected text",
             nodeId,
-            None,
-            "#TESTS.assertEquals(#contexts.size,",
-            Some(CoordinatesBasedTextRange(TextCoordinates(19, 0), TextCoordinates(20, 0)))
+            Some(ParameterName(PredicateAssertionCompilationError.ActualField.name)),
+            "#contexts.size,",
+            Some(CoordinatesBasedTextRange(TextCoordinates(14, 0), TextCoordinates(15, 0)))
           )
         ),
         invalidAssertion,
+        PredicateAssertionCompilationError.ActualField,
         nodeId
       )
     }
