@@ -25,9 +25,9 @@ object AssertionResult {
   def assertNotEquals(expected: Any, actual: Any): AssertionResult = {
     // we use scala "lenient" equals to allow to compare boxed primitives of different types - like 1L and 1
     if (expected == actual) {
-      produceFailedNotEqualsAssertion(expected, actual)
+      produceFailedNotEqualsAssertion(expected)
     } else if (checkIfSameElements(expected, actual)) {
-      produceFailedNotEqualsAssertion(expected, actual)
+      produceFailedNotEqualsAssertion(expected)
     } else {
       SuccessfulAssertion
     }
@@ -56,10 +56,9 @@ object AssertionResult {
     FailedAssertion(s"Expected: [$expectedStr] but found [$actualStr]")
   }
 
-  private def produceFailedNotEqualsAssertion(expected: Any, actual: Any) = {
+  private def produceFailedNotEqualsAssertion(expected: Any) = {
     val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expected)
-    val actualStr   = SpelValuePrettyPrinter.prettyPrintValue(actual)
-    FailedAssertion(s"Expected value different from: [$expectedStr] but found [$actualStr]")
+    FailedAssertion(s"Expected value different from: [$expectedStr]")
   }
 
 }
