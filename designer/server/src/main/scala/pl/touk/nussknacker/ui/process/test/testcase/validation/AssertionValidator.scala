@@ -52,10 +52,7 @@ class AssertionValidator(
             message = prettyError.message,
             description = prettyError.description,
             details = prettyError.details,
-            fieldName = Some(field match {
-              case PredicateAssertionCompilationError.ExpectedField => "expected"
-              case PredicateAssertionCompilationError.ActualField   => "actual"
-            })
+            fieldName = Some(field.name),
           )
         }
     }

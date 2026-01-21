@@ -120,7 +120,7 @@ class AssertionsCompiler(
     val compiledExpected = expressionCompiler
       .compile(
         assertion.expected,
-        Some(ParameterName("expected")),
+        Some(ParameterName(PredicateAssertionCompilationError.ExpectedField.name)),
         context,
         Unknown // For equals, we can assume any of type of expected and actual expressions are fine, but for >=, <, etc. we could also check if both types are comparable.
       )(nodeId)
@@ -131,7 +131,7 @@ class AssertionsCompiler(
     val compiledActual = expressionCompiler
       .compile(
         assertion.actual,
-        Some(ParameterName("actual")),
+        Some(ParameterName(PredicateAssertionCompilationError.ActualField.name)),
         context,
         Unknown
       )(nodeId)
@@ -173,7 +173,16 @@ object AssertionCompilationError {
   ) extends AssertionCompilationError
 
   object PredicateAssertionCompilationError {
-    sealed trait Field
+
+    sealed trait Field {
+
+      val name: String = this match {
+        case ExpectedField => "expected"
+        case ActualField   => "actual"
+      }
+
+    }
+
     case object ExpectedField extends Field
     case object ActualField   extends Field
   }
