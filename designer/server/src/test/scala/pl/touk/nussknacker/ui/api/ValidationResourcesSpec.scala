@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import cats.data.NonEmptyList
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import org.apache.pekko.http.scaladsl.model.{ContentTypeRange, StatusCodes, Uri}
 import org.apache.pekko.http.scaladsl.model.Uri.Path
@@ -12,6 +13,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{NodeId, StreamMetaData}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -23,7 +25,14 @@ import pl.touk.nussknacker.engine.graph.node.{NodeData, Source}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.spel.SpelExtension._
+import pl.touk.nussknacker.engine.test.testcase._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.restmodel.validation.testcase.{
+  AssertionValidationError,
+  EnricherMockValidationError,
+  NodeTestCaseValidationErrors
+}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
@@ -32,6 +41,8 @@ import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{mapProcessingTypeDataProvider, withPermissions}
 import pl.touk.nussknacker.test.utils.scalas.PekkoHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
+
+import java.util.UUID
 
 class ValidationResourcesSpec
     extends AnyFlatSpec
@@ -238,6 +249,158 @@ class ValidationResourcesSpec
       val validation = responseAs[ValidationResult]
       validation.warnings.invalidNodes(NodeId("filter1")).head.message should include("Node filter1 is disabled")
       validation.warnings.invalidNodes(NodeId("proc1")).head.message should include("Node proc1 is disabled")
+    }
+  }
+
+  it should "find no errors in valid test case" in {
+    val scenarioGraph = ScenarioBuilder
+      .streaming("testCaseValidationScenario")
+      .additionalFields(properties = Map("requiredStringProperty" -> "some value"))
+      .source("source", ProcessTestData.existingSourceFactory)
+      .enricher("enricher", "output", ProcessTestData.otherExistingServiceId2, "expression" -> "'value'".spel)
+      .emptySink("sink", ProcessTestData.existingSinkFactory)
+      .toScenarioGraph
+      .copy(
+        testCases = Some(
+          TestCases.Single(
+            TestCase(
+              id = UUID.randomUUID(),
+              name = "test-case-1",
+              inputs = "{}",
+              mocks = Map(
+                NodeId("enricher") -> EnricherMock("'mocked value'".spel),
+              ),
+              assertions = Map(
+                NodeId("enricher") -> List(
+                  Assertion("#TESTS.assertEquals(#contexts.size, 3)".spel),
+                  Assertion("#TESTS.assertEquals(#contexts[0].input, 'abc')".spel),
+                ),
+                NodeId("sink") -> List(
+                  Assertion("#TESTS.assertEquals(#contexts[0].output, 'def')".spel),
+                )
+              )
+            )
+          )
+        )
+      )
+
+    createAndValidateScenario(scenarioGraph, ProcessName("testCaseValidation")) {
+      status shouldEqual StatusCodes.OK
+      val validation = responseAs[ValidationResult]
+      validation.hasErrors shouldBe false
+      validation.hasWarnings shouldBe false
+      validation.errors.globalErrors shouldBe empty
+      validation.errors.invalidNodes shouldBe empty
+      validation.errors.testCasesValidationErrors shouldBe None
+    }
+  }
+
+  it should "find errors in invalid test case" in {
+    val scenarioGraph = ScenarioBuilder
+      .streaming("testCaseValidationScenario")
+      .additionalFields(properties = Map("requiredStringProperty" -> "some value"))
+      .source("source", ProcessTestData.existingSourceFactory)
+      .enricher("enricher", "output", ProcessTestData.otherExistingServiceId2, "expression" -> "'value'".spel)
+      .emptySink("sink", ProcessTestData.existingSinkFactory)
+      .toScenarioGraph
+      .copy(
+        testCases = Some(
+          TestCases.Single(
+            TestCase(
+              id = UUID.randomUUID(),
+              name = "test-case-1",
+              inputs = "{}",
+              mocks = Map(
+                NodeId("enricher") -> EnricherMock("42".spel),
+                NodeId("sink")     -> EnricherMock("'some mock'".spel) // mock for non-enricher node
+              ),
+              assertions = Map(
+                NodeId("enricher") -> List(
+                  Assertion("#TESTS.assertEquals(#contexts.size, 3)".spel),
+                  Assertion("#TESTS.assertEquals(#contexts[0].doesNotExist, 'abc')".spel),
+                  Assertion("#TESTS.assertEquals(#contexts[0].input, 'abc')".spel),
+                ),
+                NodeId("sink") -> List(
+                  Assertion("#TESTS.assertEquals(#contexts[0].doesNotExist2, 'def')".spel),
+                  Assertion("#TESTS.assertEquals(#contexts[0].output, 'def')".spel),
+                  Assertion("#TESTS.assertEquals(#contexts[0].doesNotExist3, 'ghi')".spel),
+                )
+              )
+            )
+          )
+        )
+      )
+
+    createAndValidateScenario(scenarioGraph, ProcessName("testCaseValidation")) {
+      status shouldEqual StatusCodes.OK
+      val validation = responseAs[ValidationResult]
+      // For now test cases validation errors do not affect overall validation status
+      validation.hasErrors shouldBe false
+      validation.hasWarnings shouldBe false
+      validation.errors.globalErrors shouldBe empty
+      validation.errors.invalidNodes shouldBe empty
+      validation.errors.testCasesValidationErrors.value shouldBe Map(
+        NodeId("enricher") -> Map(
+          "test-case-1" -> NodeTestCaseValidationErrors(
+            enricherMockErrors = Some(
+              NonEmptyList.one(
+                EnricherMockValidationError(
+                  "ExpressionParserCompilationError",
+                  "Bad expression type, expected: String, found: Integer(42)",
+                  "There is problem with expression in field [mockExpression] - it could not be parsed.",
+                  None
+                )
+              )
+            ),
+            assertionsErrors = Some(
+              Map(
+                1 -> NonEmptyList.one(
+                  AssertionValidationError(
+                    "ExpressionParserCompilationError",
+                    "There is no property 'doesNotExist' in type: Record{input: Unknown}",
+                    "There is problem with expression in field [<missing>] - it could not be parsed.",
+                    Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(45, 0)))
+                  )
+                )
+              )
+            )
+          )
+        ),
+        NodeId("sink") -> Map(
+          "test-case-1" -> NodeTestCaseValidationErrors(
+            enricherMockErrors = Some(
+              NonEmptyList.one(
+                EnricherMockValidationError(
+                  "MockForNonEnricherNode",
+                  "Mock configured for non-enricher node 'sink'",
+                  "Mocks can only be configured for enricher nodes",
+                  None
+                )
+              )
+            ),
+            assertionsErrors = Some(
+              Map(
+                0 -> NonEmptyList.one(
+                  AssertionValidationError(
+                    "ExpressionParserCompilationError",
+                    "There is no property 'doesNotExist2' in type: Record{input: Unknown, output: String}",
+                    "There is problem with expression in field [<missing>] - it could not be parsed.",
+                    Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(46, 0)))
+                  )
+                ),
+                2 -> NonEmptyList.one(
+                  AssertionValidationError(
+                    "ExpressionParserCompilationError",
+                    "There is no property 'doesNotExist3' in type: Record{input: Unknown, output: String}",
+                    "There is problem with expression in field [<missing>] - it could not be parsed.",
+                    Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(46, 0)))
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
     }
   }
 
