@@ -5,6 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.all._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
@@ -119,7 +120,7 @@ class AssertionsCompiler(
     val compiledExpected = expressionCompiler
       .compile(
         assertion.expected,
-        paramName = None,
+        Some(ParameterName("expected")),
         context,
         Unknown // For equals, we can assume any of type of expected and actual expressions are fine, but for >=, <, etc. we could also check if both types are comparable.
       )(nodeId)
@@ -130,7 +131,7 @@ class AssertionsCompiler(
     val compiledActual = expressionCompiler
       .compile(
         assertion.actual,
-        paramName = None,
+        Some(ParameterName("actual")),
         context,
         Unknown
       )(nodeId)
