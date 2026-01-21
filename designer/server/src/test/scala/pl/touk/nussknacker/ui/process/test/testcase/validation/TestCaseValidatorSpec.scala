@@ -19,7 +19,11 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.restmodel.validation.testcase.{AssertionValidationError, EnricherMockValidationError, NodeTestCaseValidationErrors}
+import pl.touk.nussknacker.restmodel.validation.testcase.{
+  AssertionValidationError,
+  EnricherMockValidationError,
+  NodeTestCaseValidationErrors
+}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeTestCase, NodeTestCases}
 import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator.NodeTyping
 
