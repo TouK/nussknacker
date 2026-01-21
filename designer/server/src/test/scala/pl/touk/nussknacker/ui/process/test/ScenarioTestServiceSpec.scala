@@ -821,7 +821,7 @@ class ScenarioTestServiceSpec
 
     result.assertionsResults(NodeId("end")) shouldBe List(
       SuccessfulAssertion,
-      FailedAssertion("Expected: [bar] but found [foo]")
+      FailedAssertion("Expected: ['bar'] but found ['foo']")
     )
   }
 
