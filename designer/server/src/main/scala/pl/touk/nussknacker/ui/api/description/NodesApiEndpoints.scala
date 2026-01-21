@@ -51,7 +51,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCaseId, TestCaseName}
-import pl.touk.nussknacker.engine.test.testcase.Assertion.ExpressionAssertion
+import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, PredicateAssertion}
 import pl.touk.nussknacker.engine.util.CaretPosition2d
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
@@ -249,15 +249,25 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                       "test-case-1" -> NodeTestCase(
                         enricherMock = Some(EnricherMock(Expression.spel("42"))),
                         assertions = List(
-                          ExpressionAssertion(Expression.spel("#TESTS.assertEquals(#contexts.size, 1)'")),
+                          PredicateAssertion(
+                            operator = AssertionOperator.Equals,
+                            actual = Expression.spel("#contexts.size"),
+                            expected = Expression.spel("1")
+                          ),
                         ),
                       ),
                       "test-case-2" -> NodeTestCase(
                         enricherMock = Some(EnricherMock(Expression.spel("'sample value'"))),
                         assertions = List(
-                          ExpressionAssertion(Expression.spel("#TESTS.assertEquals(#contexts.size, 1)'")),
-                          ExpressionAssertion(
-                            Expression.spel("#TESTS.assertEquals(#contexts[0].doesNotExist, 'expected')")
+                          PredicateAssertion(
+                            operator = AssertionOperator.Equals,
+                            actual = Expression.spel("#contexts.size"),
+                            expected = Expression.spel("1")
+                          ),
+                          PredicateAssertion(
+                            operator = AssertionOperator.Equals,
+                            actual = Expression.spel("#contexts[0].doesNotExist"),
+                            expected = Expression.spel("'expected'")
                           ),
                         ),
                       )
