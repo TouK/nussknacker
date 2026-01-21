@@ -29,7 +29,7 @@ import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
 import pl.touk.nussknacker.ui.definition.{DefinitionsService, ScenarioPropertiesConfigFinalizer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
-import pl.touk.nussknacker.ui.process.test.testcase.TestCaseValidator
+import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class UIProcessValidator(

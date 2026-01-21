@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.{ActionInfoService, ScenarioResolver, ScenarioTestExecutorServiceImpl}
 import pl.touk.nussknacker.ui.process.fragment.{FragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
-import pl.touk.nussknacker.ui.process.test.testcase.TestCaseValidator
+import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.process.test.testcase
+package pl.touk.nussknacker.ui.process.test.testcase.validation
 
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
@@ -8,7 +8,6 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -20,13 +19,9 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.restmodel.validation.testcase.{
-  AssertionValidationError,
-  EnricherMockValidationError,
-  NodeTestCaseValidationErrors
-}
+import pl.touk.nussknacker.restmodel.validation.testcase.{AssertionValidationError, EnricherMockValidationError, NodeTestCaseValidationErrors}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeTestCase, NodeTestCases}
-import pl.touk.nussknacker.ui.process.test.testcase.TestCaseValidator.NodeTyping
+import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator.NodeTyping
 
 import java.util.UUID
 import scala.concurrent.Future

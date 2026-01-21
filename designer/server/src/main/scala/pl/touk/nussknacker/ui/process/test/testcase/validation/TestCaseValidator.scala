@@ -1,29 +1,23 @@
-package pl.touk.nussknacker.ui.process.test.testcase
+package pl.touk.nussknacker.ui.process.test.testcase.validation
 
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated._
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.syntax.functor._
-import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.{Enricher, NodeData}
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
-import pl.touk.nussknacker.restmodel.validation.testcase.{
-  AssertionIndex,
-  AssertionValidationError,
-  EnricherMockValidationError,
-  NodeTestCasesValidationErrors,
-  NodeTestCaseValidationErrors,
-  ScenarioTestCasesValidationErrors
-}
+import pl.touk.nussknacker.restmodel.validation.testcase.{AssertionIndex, AssertionValidationError, EnricherMockValidationError, NodeTestCaseValidationErrors, NodeTestCasesValidationErrors, ScenarioTestCasesValidationErrors}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.AssertionExpressionCompilationError
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionsCompiler
 
 class TestCaseValidator(
     expressionCompiler: ExpressionCompiler,

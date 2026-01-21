@@ -18,7 +18,7 @@ import pl.touk.nussknacker.restmodel.validation.testcase.NodeTestCasesValidation
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeValidationRequest, NodeValidationResult}
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
-import pl.touk.nussknacker.ui.process.test.testcase.TestCaseValidator
+import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class NodeValidator(
