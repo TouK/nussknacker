@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteCustomComponent}
 
+import scala.collection.immutable.::
 import scala.jdk.CollectionConverters._
 import scala.language.higherKinds
 
@@ -32,8 +33,9 @@ object CollectTransformer extends CustomStreamTransformer with RequestResponseCo
 
 }
 
-class CollectTransformer(outputVariable: String, inputExpression: LazyParameter[AnyRef])(implicit nodeId: NodeId)
-    extends LiteCustomComponent
+class CollectTransformer(outputVariable: String, inputExpression: LazyParameter[AnyRef])(
+    implicit traceId: Option[TraceId] = None
+) extends LiteCustomComponent
     with Lifecycle
     with LazyLogging {
 
@@ -49,9 +51,19 @@ class CollectTransformer(outputVariable: String, inputExpression: LazyParameter[
     lazy val contextIdGenerator = runtimeContext.contextIdGenerator(context.nodeId)
     (inputCtx: DataBatch) =>
       val outputList = inputCtx.map(inputExpression.evaluate).asJava
+
+      // FIXME: This is an ugly workaround for the fact that we can't pass traceId from org Context to collect.
+      val tracesId = inputCtx.value.flatMap(_.traceId)
+      val ctxTracesId = tracesId.distinct match {
+        // We assume that if all elements had the same traceId, we can safely pass it on
+        case traceId :: Nil if tracesId.size == inputCtx.value.size => Some(traceId)
+        case _                                                      => None
+      }
+
+      val ctx = Context(contextIdGenerator.nextContextId()).withVariable(outputVariable, outputList)
       continuation(
         DataBatch(
-          Context(contextIdGenerator.nextContextId()).withVariable(outputVariable, outputList) :: Nil
+          ctxTracesId.map(ctx.withTraceId).getOrElse(ctx) :: Nil
         )
       )
   }
