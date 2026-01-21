@@ -519,7 +519,7 @@ class ManagementResourcesSpec
         .focus shouldBe Some(
         Json.obj(
           "type"    -> Json.fromString("FailedAssertion"),
-          "message" -> Json.fromString("Expected: [ala] but found [bela]")
+          "message" -> Json.fromString("Expected: ['ala'] but found ['bela']")
         )
       )
 

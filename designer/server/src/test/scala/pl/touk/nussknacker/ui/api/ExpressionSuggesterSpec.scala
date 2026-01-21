@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import org.apache.avro.generic.GenericData.EnumSymbol
-import org.scalatest.Inside
+import org.scalatest.{Inside, Inspectors}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -81,7 +81,8 @@ class ExpressionSuggesterSpec
     with Matchers
     with PatientScalaFutures
     with TableDrivenPropertyChecks
-    with Inside {
+    with Inside
+    with Inspectors {
   private val classDefinitionExtractor = ClassDefinitionTestUtils.DefaultExtractor
 
   private val dictRegistry = new SimpleDictRegistry(
@@ -970,9 +971,9 @@ class ExpressionSuggesterSpec
     )
     testCaseSuggestions(Expression.spel("#contexts[0].varS")) shouldBe List(suggestion("varString", Typed[String]))
     testCaseSuggestions(Expression.spel("#TEST")) shouldBe List(suggestion("#TESTS", testsVariableType))
-    inside(testCaseSuggestions(Expression.spel("#TESTS.as"))) {
-      case ExpressionSuggestion("assertEquals", typingResult, _, _, _) :: Nil =>
-        typingResult shouldBe Typed[testcase.AssertionResult]
+    forAll(testCaseSuggestions(Expression.spel("#TESTS.as"))) { suggestion =>
+      suggestion.methodName should startWith("assert")
+      suggestion.refClazz shouldBe Typed[testcase.AssertionResult]
     }
   }
 

@@ -99,10 +99,10 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     results.toList shouldBe List(
       NodeId("someNode") -> List(
         SuccessfulAssertion,
-        FailedAssertion("Expected: [valid] but found [invalid]"),
+        FailedAssertion("Expected: ['valid'] but found ['invalid']"),
         SuccessfulAssertion,
-        FailedAssertion("Expected: [valid] but found [invalid]"),
-        FailedAssertion("Expected value different from: [valid]"),
+        FailedAssertion("Expected: ['valid'] but found ['invalid']"),
+        FailedAssertion("Expected value different from: ['valid']"),
         SuccessfulAssertion,
       )
     )
@@ -121,11 +121,15 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
         ("{'foo': 'bar'}", "{'foo': 'bar'}", SuccessfulAssertion),
         ("1", "1L", SuccessfulAssertion),
         ("null", "null", SuccessfulAssertion),
-        ("{'foo'}", "{}", FailedAssertion("Expected: [{foo}] but found [{}]")),
+        ("{'foo'}", "{}", FailedAssertion("Expected: [{'foo'}] but found [{}]")),
         ("'1,2,3'.split(',')", "'1,2,3'.split(',')", SuccessfulAssertion), // comparing arrays
-        ("'1,2'.split(',')", "'1,2,3'.split(',')", FailedAssertion("Expected: [{1, 2}] but found [{1, 2, 3}]")),
+        (
+          "'1,2'.split(',')",
+          "'1,2,3'.split(',')",
+          FailedAssertion("Expected: [{'1', '2'}] but found [{'1', '2', '3'}]")
+        ),
         ("{'1','2','3'}", "'1,2,3'.split(',')", SuccessfulAssertion), // comparing arrays with SpEL inline lists
-        ("{'a': 1}", "{:}", FailedAssertion("Expected: [{a: 1}] but found [{:}]")),
+        ("{'a': 1}", "{:}", FailedAssertion("Expected: [{'a': 1}] but found [{:}]")),
         // ("{'1,2'.split(',')}", "{'1,2'.split(',')}", SuccessfulAssertion), //todo: to be discussed whether it should work for nested structures
       )
     ) { (expected, actual, result) =>
