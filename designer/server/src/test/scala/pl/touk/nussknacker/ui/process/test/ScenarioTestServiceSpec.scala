@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
-import pl.touk.nussknacker.engine.test.testcase.Assertion.ExpressionAssertion
+import pl.touk.nussknacker.engine.test.testcase.Assertion.PredicateAssertion
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
@@ -797,8 +797,12 @@ class ScenarioTestServiceSpec
       Map.empty,
       Map(
         NodeId("end") -> List(
-          ExpressionAssertion("#TESTS.assertEquals(#contexts[0].otherNameThanInput.a, 'foo')".spel),
-          ExpressionAssertion("#TESTS.assertEquals(#contexts[1].otherNameThanInput.a, 'foo')".spel)
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "#contexts[0].otherNameThanInput.a".spel,
+            "'foo'".spel
+          ),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "#contexts[1].otherNameThanInput.a".spel, "'foo'".spel)
         )
       )
     )
