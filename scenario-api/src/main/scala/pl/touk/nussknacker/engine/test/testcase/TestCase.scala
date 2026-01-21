@@ -59,19 +59,22 @@ object Assertion {
   sealed trait AssertionOperator {
 
     val name: String = this match {
-      case AssertionOperator.Equals => "equals"
+      case AssertionOperator.Equals    => "equals"
+      case AssertionOperator.NotEquals => "notEquals"
     }
 
   }
 
   object AssertionOperator {
-    case object Equals extends AssertionOperator
+    case object Equals    extends AssertionOperator
+    case object NotEquals extends AssertionOperator
 
     implicit val assertionOperatorEncoder: Encoder[AssertionOperator] = Encoder.instance(_.name.asJson)
 
     implicit val assertionOperatorDecoder: Decoder[AssertionOperator] = Decoder.instance { cursor =>
       cursor.as[String].flatMap {
-        case AssertionOperator.Equals.name => Right(AssertionOperator.Equals)
+        case AssertionOperator.Equals.name    => Right(AssertionOperator.Equals)
+        case AssertionOperator.NotEquals.name => Right(AssertionOperator.NotEquals)
         case other => Left(DecodingFailure(s"Unknown AssertionOperator: $other", cursor.history))
       }
     }

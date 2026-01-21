@@ -22,6 +22,17 @@ object AssertionResult {
     }
   }
 
+  def assertNotEquals(expected: Any, actual: Any): AssertionResult = {
+    // we use scala "lenient" equals to allow to compare boxed primitives of different types - like 1L and 1
+    if (expected == actual) {
+      produceFailedNotEqualsAssertion(expected, actual)
+    } else if (checkIfSameElements(expected, actual)) {
+      produceFailedNotEqualsAssertion(expected, actual)
+    } else {
+      SuccessfulAssertion
+    }
+  }
+
   // todo: should it work recursively - e.g for arrays nested in lists?
   private def checkIfSameElements(expected: Any, actual: Any) = {
     if ((expected.isInstanceOf[Array[_]] || expected.isInstanceOf[util.Collection[_]]) &&
@@ -43,6 +54,12 @@ object AssertionResult {
     val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expected)
     val actualStr   = SpelValuePrettyPrinter.prettyPrintValue(actual)
     FailedAssertion(s"Expected: [$expectedStr] but found [$actualStr]")
+  }
+
+  private def produceFailedNotEqualsAssertion(expected: Any, actual: Any) = {
+    val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expected)
+    val actualStr   = SpelValuePrettyPrinter.prettyPrintValue(actual)
+    FailedAssertion(s"Expected value different from: [$expectedStr] but found [$actualStr]")
   }
 
 }
