@@ -23,7 +23,7 @@ lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
 
 lazy val supportedScalaVersions = List(scala213)
 
-lazy val scalaFixV = "0.14.2"
+lazy val scalaFixV = "0.14.5"
 
 //TODO: replace configuration by system properties with configuration via environment after removing travis scripts
 //then we can change names to snake case, for "normal" env variables
@@ -144,9 +144,9 @@ lazy val commonSettings =
       ),
       // We ignore k8s tests to keep development setup low-dependency
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
-      addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.3" cross CrossVersion.full),
+      addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.4" cross CrossVersion.full),
       semanticdbEnabled                := true,
-      semanticdbVersion                := "4.13.2",
+      semanticdbVersion                := "4.14.5",
       scalacOptions                    := Seq(
         "-unchecked",
         "-deprecation",
@@ -2151,7 +2151,7 @@ lazy val scalafixRules = (project in file("scalafix-rules"))
     name := "scalafix-rules",
     libraryDependencies ++= Seq(
       "ch.epfl.scala" %% "scalafix-core" % scalaFixV,
-      "org.scalameta" %% "scalameta"     % "4.13.2",
+      "org.scalameta" %% "scalameta"     % "4.14.5",
       "org.scalatest" %% "scalatest"     % scalaTestV % Test
     )
   )
