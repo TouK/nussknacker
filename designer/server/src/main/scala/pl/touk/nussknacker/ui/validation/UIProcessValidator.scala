@@ -383,11 +383,10 @@ class UIProcessValidator(
   private def validateTestCases(scenario: CanonicalProcess, nodesTyping: Map[String, NodeTypingInfo])(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): ValidationResult = {
-    scenario.testCases
-      .map { case TestCases.Single(value) =>
-        NonEmptyList.one(value)
-      }
-      .map { testCases =>
+    scenario.testCases match {
+      case None =>
+        ValidationResult.success
+      case Some(TestCases.Single(testCase)) =>
         val testCasesNodeTyping = nodesTyping.mapValuesNow { typingInfo =>
           TestCaseValidator.NodeTyping(
             inputVariables = typingInfo.inputValidationContext.localVariables,
@@ -395,14 +394,13 @@ class UIProcessValidator(
           )
         }
         val testCasesValidationErrors =
-          testCaseValidator.validateScenarioTestCases(scenario.collectAllNodes, testCasesNodeTyping, testCases.toList)
+          testCaseValidator.validateScenarioTestCases(scenario.collectAllNodes, testCasesNodeTyping, List(testCase))
         if (testCasesValidationErrors.isEmpty) {
           ValidationResult.success
         } else {
           ValidationResult.errors(testCasesValidationErrors = Some(testCasesValidationErrors))
         }
-      }
-      .getOrElse(ValidationResult.success)
+    }
   }
 
   private def deduplicateErrors(result: ValidationResult): ValidationResult = {
