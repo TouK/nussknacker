@@ -497,8 +497,9 @@ export class HttpService {
                 this.#addInfo(i18next.t("notification.error.nameChanged", "Scenario name changed"));
                 return true;
             })
-            .catch((error) => {
-                return this.#addError(failedToChangeNameMessage, error, true).then(() => false);
+            .catch(async (error) => {
+                await this.#addError(failedToChangeNameMessage, error, true);
+                return false;
             });
     }
 

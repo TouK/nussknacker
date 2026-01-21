@@ -14,10 +14,10 @@ export function success(message: string): Action {
     });
 }
 
-export function error(message: string): Action {
+export function error(message: string, details: string, showDetails = false): Action {
     return Notifications.error({
         autoDismiss: 10,
-        children: <Notification type={"error"} icon={<InfoOutlinedIcon />} message={message} />,
+        children: <Notification type={"error"} icon={<InfoOutlinedIcon />} message={message} details={showDetails ? details : undefined} />,
     });
 }
 

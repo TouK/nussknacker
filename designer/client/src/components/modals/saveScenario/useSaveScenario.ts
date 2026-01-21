@@ -29,16 +29,16 @@ const saveScenario = (comment = ""): ThunkAction<Promise<{ prevName: string; nex
 
         const unsavedNewName = getProcessUnsavedNewName(state);
         const isRenamed = isProcessRenamed(state) && (await HttpService.changeProcessName(currentProcessName, unsavedNewName));
-        const processName = isRenamed ? unsavedNewName : currentProcessName;
+        const nextProcessName = isRenamed ? unsavedNewName : currentProcessName;
 
-        await dispatch(displayCurrentProcessVersion(processName));
-        await dispatch(await getScenarioActivities(processName));
+        await dispatch(displayCurrentProcessVersion(nextProcessName));
+        await dispatch(await getScenarioActivities(nextProcessName));
 
         if (isRenamed) {
             await dispatch(loadProcessToolbarsConfiguration(unsavedNewName));
         }
 
-        return { prevName: currentProcessName, nextName: unsavedNewName };
+        return { prevName: currentProcessName, nextName: nextProcessName };
     };
 };
 
