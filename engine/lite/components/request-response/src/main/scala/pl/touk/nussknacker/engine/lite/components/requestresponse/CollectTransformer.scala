@@ -53,11 +53,11 @@ class CollectTransformer(outputVariable: String, inputExpression: LazyParameter[
       val outputList = inputCtx.map(inputExpression.evaluate).asJava
 
       // FIXME: This is an ugly workaround for the fact that we can't pass traceId from org Context to collect.
-      val tracesId = inputCtx.value.flatMap(_.traceId)
-      val ctxTracesId = tracesId.distinct match {
-        // We assume that if all elements had the same traceId, we can safely pass it on
-        case traceId :: Nil if tracesId.size == inputCtx.value.size => Some(traceId)
-        case _                                                      => None
+      val ctxTracesId = inputCtx.value.collectFirst(_.traceId) match {
+        case Some(traceIdOpt) if inputCtx.value.forall(_.traceId == traceIdOpt) => traceIdOpt
+        // this should never happen
+        case Some(_) => logger.warn(s"Inconsistent traceId in context: ${inputCtx.value.flatMap(_.traceId)}"); None
+        case _       => None
       }
 
       val ctx = Context(contextIdGenerator.nextContextId()).withVariable(outputVariable, outputList)
