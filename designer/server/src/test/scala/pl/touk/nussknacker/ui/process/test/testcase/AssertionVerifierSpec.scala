@@ -14,7 +14,8 @@ import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
-import pl.touk.nussknacker.engine.test.testcase.Assertion.ExpressionAssertion
+import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, ExpressionAssertion, PredicateAssertion}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.AssertionOperator.Equals
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
 import pl.touk.nussknacker.engine.util.functions.conversion
@@ -75,6 +76,8 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
         NodeId("someNode") -> List(
           ExpressionAssertion("#TESTS.assertEquals('valid', #contexts[0].someVariable)".spel),
           ExpressionAssertion("#TESTS.assertEquals('valid', #contexts[1].someVariable)".spel),
+          PredicateAssertion(AssertionOperator.Equals, "'valid'".spel, "#contexts[0].someVariable".spel),
+          PredicateAssertion(AssertionOperator.Equals, "'valid'".spel, "#contexts[1].someVariable".spel),
         )
       )
     )
@@ -92,37 +95,36 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     )
 
     results.toList shouldBe List(
-      NodeId("someNode") -> List(SuccessfulAssertion, FailedAssertion("Expected: [valid] but found [invalid]"))
+      NodeId("someNode") -> List(
+        SuccessfulAssertion,
+        FailedAssertion("Expected: [valid] but found [invalid]"),
+        SuccessfulAssertion,
+        FailedAssertion("Expected: [valid] but found [invalid]"),
+      )
     )
   }
 
   test("should properly compare various types used in SpEL") {
     forAll(
       Table(
-        ("assertion", "result"),
-        ("#TESTS.assertEquals('valid', 'valid')", SuccessfulAssertion),
-        ("#TESTS.assertEquals({}, {})", SuccessfulAssertion),
-        ("#TESTS.assertEquals({:}, {:})", SuccessfulAssertion),
-        ("#TESTS.assertEquals(#CONV.toAny('abc'), 'abc')", SuccessfulAssertion),
-        ("#TESTS.assertEquals({'foo'}, #contexts[0].someJavaList)", SuccessfulAssertion),
-        ("#TESTS.assertEquals({'foo'}, {'foo'})", SuccessfulAssertion),
-        ("#TESTS.assertEquals({'foo': 'bar'}, {'foo': 'bar'})", SuccessfulAssertion),
-        ("#TESTS.assertEquals(1, 1L)", SuccessfulAssertion),
-        ("#TESTS.assertEquals(null, null)", SuccessfulAssertion),
-        ("#TESTS.assertEquals({'foo'}, {})", FailedAssertion("Expected: [{foo}] but found [{}]")),
-        ("#TESTS.assertEquals('1,2,3'.split(','), '1,2,3'.split(','))", SuccessfulAssertion), // comparing arrays
-        (
-          "#TESTS.assertEquals('1,2'.split(','), '1,2,3'.split(','))",
-          FailedAssertion("Expected: [{1, 2}] but found [{1, 2, 3}]")
-        ),
-        (
-          "#TESTS.assertEquals({'1','2','3'}, '1,2,3'.split(','))",
-          SuccessfulAssertion
-        ), // comparing arrays with SpEL inline lists
-        ("#TESTS.assertEquals({'a': 1}, {:})", FailedAssertion("Expected: [{a: 1}] but found [{:}]")),
-        // ("#TESTS.assertEquals({'1,2'.split(',')}, {'1,2'.split(',')})", SuccessfulAssertion), //todo: to be discussed whether it should work for nested structures
+        ("expected", "actual", "result"),
+        ("'valid'", "'valid'", SuccessfulAssertion),
+        ("{}", "{}", SuccessfulAssertion),
+        ("{:}", "{:}", SuccessfulAssertion),
+        ("#CONV.toAny('abc')", "'abc'", SuccessfulAssertion),
+        ("{'foo'}", "#contexts[0].someJavaList", SuccessfulAssertion),
+        ("{'foo'}", "{'foo'}", SuccessfulAssertion),
+        ("{'foo': 'bar'}", "{'foo': 'bar'}", SuccessfulAssertion),
+        ("1", "1L", SuccessfulAssertion),
+        ("null", "null", SuccessfulAssertion),
+        ("{'foo'}", "{}", FailedAssertion("Expected: [{foo}] but found [{}]")),
+        ("'1,2,3'.split(',')", "'1,2,3'.split(',')", SuccessfulAssertion), // comparing arrays
+        ("'1,2'.split(',')", "'1,2,3'.split(',')", FailedAssertion("Expected: [{1, 2}] but found [{1, 2, 3}]")),
+        ("{'1','2','3'}", "'1,2,3'.split(',')", SuccessfulAssertion), // comparing arrays with SpEL inline lists
+        ("{'a': 1}", "{:}", FailedAssertion("Expected: [{a: 1}] but found [{:}]")),
+        // ("{'1,2'.split(',')}", "{'1,2'.split(',')}", SuccessfulAssertion), //todo: to be discussed whether it should work for nested structures
       )
-    ) { (assertion, result) =>
+    ) { (expected, actual, result) =>
       val testCase = TestCase(
         UUID.randomUUID(),
         "dummy",
@@ -130,7 +132,8 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
         Map.empty,
         Map(
           NodeId("someNode") -> List(
-            ExpressionAssertion(assertion.spel),
+            ExpressionAssertion(s"#TESTS.assertEquals($expected, $actual)".spel),
+            PredicateAssertion(AssertionOperator.Equals, expected.spel, actual.spel),
           )
         )
       )
@@ -140,13 +143,15 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
             ContextId.dummy,
             Instant.now(),
             Map(
-              "someJavaList" -> createSingletonArrayList("foo"),
+              "someJavaList" -> java.util.List.of("foo"),
             )
           ),
         )
       )
 
-      verifyForTestCase(testCase, nodesResultsAfterTestRun).toList shouldBe List(NodeId("someNode") -> List(result))
+      verifyForTestCase(testCase, nodesResultsAfterTestRun).toList shouldBe List(
+        NodeId("someNode") -> List(result, result)
+      )
     }
   }
 
@@ -160,12 +165,6 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
       nodesResultsAfterTestRun,
       jobData
     )
-  }
-
-  private def createSingletonArrayList[T](element: T): java.util.ArrayList[T] = {
-    val list = new util.ArrayList[T]()
-    list.add(element)
-    list
   }
 
 }
