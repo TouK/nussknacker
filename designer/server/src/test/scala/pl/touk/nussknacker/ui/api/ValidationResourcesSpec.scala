@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.test.testcase._
-import pl.touk.nussknacker.engine.test.testcase.Assertion.ExpressionAssertion
+import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, PredicateAssertion}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.restmodel.validation.testcase.{
   AssertionValidationError,
@@ -273,11 +273,23 @@ class ValidationResourcesSpec
               ),
               assertions = Map(
                 NodeId("enricher") -> List(
-                  ExpressionAssertion("#TESTS.assertEquals(#contexts.size, 3)".spel),
-                  ExpressionAssertion("#TESTS.assertEquals(#contexts[0].input, 'abc')".spel),
+                  PredicateAssertion(
+                    operator = AssertionOperator.Equals,
+                    actual = "#contexts.size".spel,
+                    expected = "3".spel
+                  ),
+                  PredicateAssertion(
+                    operator = AssertionOperator.Equals,
+                    actual = "#contexts[0].input".spel,
+                    expected = "'abc'".spel
+                  ),
                 ),
                 NodeId("sink") -> List(
-                  ExpressionAssertion("#TESTS.assertEquals(#contexts[0].output, 'def')".spel),
+                  PredicateAssertion(
+                    operator = AssertionOperator.Equals,
+                    actual = "#contexts[0].output".spel,
+                    expected = "'def'".spel
+                  ),
                 )
               )
             )
@@ -317,14 +329,38 @@ class ValidationResourcesSpec
               ),
               assertions = Map(
                 NodeId("enricher") -> List(
-                  ExpressionAssertion("#TESTS.assertEquals(#contexts.size, 3)".spel),
-                  ExpressionAssertion("#TESTS.assertEquals(#contexts[0].doesNotExist, 'abc')".spel),
-                  ExpressionAssertion("#TESTS.assertEquals(#contexts[0].input, 'abc')".spel),
+                  PredicateAssertion(
+                    operator = AssertionOperator.Equals,
+                    actual = "#contexts.size".spel,
+                    expected = "3".spel
+                  ),
+                  PredicateAssertion(
+                    operator = AssertionOperator.Equals,
+                    actual = "#contexts[0].doesNotExist".spel,
+                    expected = "'abc'".spel
+                  ),
+                  PredicateAssertion(
+                    operator = AssertionOperator.Equals,
+                    actual = "#contexts[0].input".spel,
+                    expected = "'abc'".spel
+                  ),
                 ),
                 NodeId("sink") -> List(
-                  ExpressionAssertion("#TESTS.assertEquals(#contexts[0].doesNotExist2, 'def')".spel),
-                  ExpressionAssertion("#TESTS.assertEquals(#contexts[0].output, 'def')".spel),
-                  ExpressionAssertion("#TESTS.assertEquals(#contexts[0].doesNotExist3, 'ghi')".spel),
+                  PredicateAssertion(
+                    operator = AssertionOperator.Equals,
+                    actual = "#contexts[0].doesNotExist2".spel,
+                    expected = "'def'".spel
+                  ),
+                  PredicateAssertion(
+                    operator = AssertionOperator.Equals,
+                    actual = "#contexts[0].output".spel,
+                    expected = "'def'".spel
+                  ),
+                  PredicateAssertion(
+                    operator = AssertionOperator.Equals,
+                    actual = "#contexts[0].doesNotExist3".spel,
+                    expected = "'ghi'".spel
+                  ),
                 )
               )
             )
@@ -359,9 +395,9 @@ class ValidationResourcesSpec
                   AssertionValidationError(
                     typ = "ExpressionParserCompilationError",
                     message = "There is no property 'doesNotExist' in type: Record{input: Unknown}",
-                    description = "There is problem with expression in field [<missing>] - it could not be parsed.",
-                    details = Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(45, 0))),
-                    fieldName = None,
+                    description = "There is problem with expression in field [actual] - it could not be parsed.",
+                    details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(25, 0))),
+                    fieldName = Some("actual"),
                   )
                 )
               )
@@ -386,18 +422,18 @@ class ValidationResourcesSpec
                   AssertionValidationError(
                     typ = "ExpressionParserCompilationError",
                     message = "There is no property 'doesNotExist2' in type: Record{input: Unknown, output: String}",
-                    description = "There is problem with expression in field [<missing>] - it could not be parsed.",
-                    details = Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(46, 0))),
-                    fieldName = None,
+                    description = "There is problem with expression in field [actual] - it could not be parsed.",
+                    details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(26, 0))),
+                    fieldName = Some("actual"),
                   )
                 ),
                 2 -> NonEmptyList.one(
                   AssertionValidationError(
                     typ = "ExpressionParserCompilationError",
                     message = "There is no property 'doesNotExist3' in type: Record{input: Unknown, output: String}",
-                    description = "There is problem with expression in field [<missing>] - it could not be parsed.",
-                    details = Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(46, 0))),
-                    fieldName = None,
+                    description = "There is problem with expression in field [actual] - it could not be parsed.",
+                    details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(26, 0))),
+                    fieldName = Some("actual"),
                   )
                 )
               )
