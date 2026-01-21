@@ -78,6 +78,8 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
           ExpressionAssertion("#TESTS.assertEquals('valid', #contexts[1].someVariable)".spel),
           PredicateAssertion(AssertionOperator.Equals, "'valid'".spel, "#contexts[0].someVariable".spel),
           PredicateAssertion(AssertionOperator.Equals, "'valid'".spel, "#contexts[1].someVariable".spel),
+          PredicateAssertion(AssertionOperator.NotEquals, "'valid'".spel, "#contexts[0].someVariable".spel),
+          PredicateAssertion(AssertionOperator.NotEquals, "'valid'".spel, "#contexts[1].someVariable".spel),
         )
       )
     )
@@ -100,6 +102,8 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
         FailedAssertion("Expected: [valid] but found [invalid]"),
         SuccessfulAssertion,
         FailedAssertion("Expected: [valid] but found [invalid]"),
+        FailedAssertion("Expected value different from: [valid]"),
+        SuccessfulAssertion,
       )
     )
   }
