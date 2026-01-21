@@ -28,38 +28,26 @@ class TestCaseValidator(
       testCases: List[TestCase],
   )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): ScenarioTestCasesValidationErrors = {
     val nodesById = nodes.map(n => NodeId(n.id) -> n).toMap
-    val nodeTestCasesErrors = nodesById.flatMap { case (nodeId, node) =>
-      val nodeTestCases = testCases.flatMap { testCase =>
-        val hasMock       = testCase.mocks.contains(nodeId)
-        val hasAssertions = testCase.assertions.get(nodeId).exists(_.nonEmpty)
-
-        if (hasMock || hasAssertions) {
-          Some(
-            testCase.name -> NodeTestCase(
-              enricherMock = testCase.mocks.get(nodeId),
-              assertions = testCase.assertions.getOrElse(nodeId, List.empty)
-            )
-          )
-        } else {
-          None
-        }
-      }.toMap
-
-      if (nodeTestCases.nonEmpty) {
-        val nodeTyping = nodesTyping.getOrElse(nodeId.id, NodeTyping.empty)
-        val errors = validateNodeTestCases(
-          node,
-          nodeTestCases,
-          nodeTyping
-        )
-
-        if (errors.isEmpty) None else Some(nodeId -> errors)
-      } else {
-        None
-      }
+    val testCasesErrorsByNode = nodesById.flatMap { case (nodeId, node) =>
+      val nodeTestCases = prepareNodeTestCases(testCases, nodeId)
+      val nodeTyping    = nodesTyping.getOrElse(nodeId.id, NodeTyping.empty)
+      val errors        = validateNodeTestCases(node, nodeTestCases, nodeTyping)
+      if (errors.isEmpty) None else Some(nodeId -> errors)
     }
 
-    nodeTestCasesErrors
+    testCasesErrorsByNode
+  }
+
+  private def prepareNodeTestCases(
+      testCases: List[TestCase],
+      nodeId: NodeId
+  ): NodeTestCases = {
+    testCases.map { testCase =>
+      testCase.name -> NodeTestCase(
+        enricherMock = testCase.mocks.get(nodeId),
+        assertions = testCase.assertions.getOrElse(nodeId, List.empty)
+      )
+    }.toMap
   }
 
   def validateNodeTestCases(
