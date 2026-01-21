@@ -78,7 +78,8 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
     val expectedValue = expected.evaluate[Any](context, globalVariables)
     val actualValue   = actual.evaluate[Any](context, globalVariables)
     operator match {
-      case AssertionOperator.Equals => AssertionResult.assertEquals(expectedValue, actualValue)
+      case AssertionOperator.Equals    => AssertionResult.assertEquals(expectedValue, actualValue)
+      case AssertionOperator.NotEquals => AssertionResult.assertNotEquals(expectedValue, actualValue)
     }
   }
 
