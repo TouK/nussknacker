@@ -15,6 +15,8 @@ import pl.touk.nussknacker.restmodel.validation.testcase.ScenarioTestCasesValida
 
 object ValidationResults {
 
+  import ScenarioTestCasesValidationErrors._
+
   private implicit val typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
 
   // TODO: consider extracting additional DTO class
@@ -33,7 +35,7 @@ object ValidationResults {
         errors.invalidNodes.combine(other.errors.invalidNodes),
         errors.processPropertiesErrors ++ other.errors.processPropertiesErrors,
         errors.globalErrors ++ other.errors.globalErrors,
-        ScenarioTestCasesValidationErrors.add(errors.testCasesValidationErrors, other.errors.testCasesValidationErrors),
+        errors.testCasesValidationErrors.combine(other.errors.testCasesValidationErrors),
       ),
       ValidationWarnings(
         warnings.invalidNodes.combine(other.warnings.invalidNodes)

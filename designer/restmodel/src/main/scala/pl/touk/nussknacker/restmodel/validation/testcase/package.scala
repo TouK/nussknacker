@@ -38,20 +38,13 @@ package object testcase {
 
   object ScenarioTestCasesValidationErrors {
 
-    private implicit val nodeTestCaseValidationErrorsSemigroup: Semigroup[NodeTestCaseValidationErrors] =
+    implicit val nodeTestCaseValidationErrorsSemigroup: Semigroup[NodeTestCaseValidationErrors] =
       Semigroup.instance { (first, second) =>
         NodeTestCaseValidationErrors(
           enricherMockErrors = first.enricherMockErrors.combine(second.enricherMockErrors),
           assertionsErrors = first.assertionsErrors.combine(second.assertionsErrors)
         )
       }
-
-    def add(
-        firstOption: Option[ScenarioTestCasesValidationErrors],
-        secondOption: Option[ScenarioTestCasesValidationErrors]
-    ): Option[ScenarioTestCasesValidationErrors] = {
-      firstOption.combine(secondOption)
-    }
 
   }
 
