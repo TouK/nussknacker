@@ -98,6 +98,10 @@ const formatArgument = (arg: string): string => {
     if (arg.includes("{") || arg.includes("(") || arg.startsWith("#")) {
         return arg;
     }
+    // If the argument is a number (integer or float), don't quote it
+    if (!isNaN(Number(arg)) && arg.trim() !== "") {
+        return arg;
+    }
     // Otherwise wrap in single quotes
     return `'${arg}'`;
 };

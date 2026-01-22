@@ -31,7 +31,6 @@ export const Assertions = ({ node, edges }: Props) => {
     const dispatch = useAppDispatch();
     const testCaseAssertions = useAppSelector((state) => getTestCaseAssertionsForNode(state, node.id));
     const testAssertionResults = useAppSelector((state) => getTestAssertionResultsForNode(state, node.id));
-    const variableTypes = useVariableTypes({ node });
     const testCasesErrors = useGetNodeTestCasesErrors(node);
 
     useValidation({ node, showValidation: true, edges });

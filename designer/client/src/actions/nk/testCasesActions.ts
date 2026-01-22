@@ -52,7 +52,6 @@ export function setTestCaseMock(nodeId: string, expression: ExpressionObj): Thun
         const state = getState();
 
         const mocks = getTestCaseMocks(state);
-        dispatch({ type: "CLEAR_TEST_ASSERTIONS_RESULTS" });
         dispatch({
             type: "SET_TEST_CASE_MOCKS",
             mocks: { ...mocks, [nodeId]: { expression } },
