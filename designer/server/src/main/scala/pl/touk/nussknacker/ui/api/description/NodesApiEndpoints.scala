@@ -56,6 +56,13 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
+import pl.touk.nussknacker.restmodel.validation.testcase.{
+  AssertionIndex,
+  AssertionValidationError,
+  EnricherMockValidationError,
+  NodeTestCasesValidationErrors,
+  NodeTestCaseValidationErrors
+}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
@@ -1608,41 +1615,20 @@ object NodesApiEndpoints {
     implicit val enricherMockSchema: Schema[EnricherMock] = Schema.derived
     implicit val assertionSchema: Schema[Assertion]       = Schema.derived
 
-    type NodeTestCasesValidationErrors = Map[TestCaseName, NodeTestCaseValidationErrors]
-    type AssertionIndex                = Int
+    implicit val enricherMockValidationErrorSchema: Schema[EnricherMockValidationError] =
+      Schema.derived[EnricherMockValidationError]
+    implicit val enricherMockErrorsSchema: Schema[NonEmptyList[EnricherMockValidationError]] =
+      Schema.derived[List[EnricherMockValidationError]].as[NonEmptyList[EnricherMockValidationError]]
 
-    @derive(schema, encoder, decoder)
-    final case class NodeTestCaseValidationErrors(
-        enricherMockErrors: Option[NonEmptyList[EnricherMockValidationError]],
-        assertionsErrors: Option[Map[AssertionIndex, NonEmptyList[AssertionValidationError]]],
-    )
+    implicit val assertionValidationErrorSchema: Schema[AssertionValidationError] =
+      Schema.derived[AssertionValidationError]
+    implicit val assertionValidationErrorsSchema: Schema[NonEmptyList[AssertionValidationError]] =
+      Schema.derived[List[AssertionValidationError]].as[NonEmptyList[AssertionValidationError]]
+    implicit val assertionsErrorSchema: Schema[Map[AssertionIndex, NonEmptyList[AssertionValidationError]]] =
+      Schema.schemaForMap[AssertionIndex, NonEmptyList[AssertionValidationError]](_.toString)
 
-    object NodeTestCaseValidationErrors {
-      implicit val enricherMockErrorsSchema: Schema[NonEmptyList[EnricherMockValidationError]] =
-        Schema.derived[List[EnricherMockValidationError]].as[NonEmptyList[EnricherMockValidationError]]
-
-      implicit val assertionValidationErrorsSchema: Schema[NonEmptyList[AssertionValidationError]] =
-        Schema.derived[List[AssertionValidationError]].as[NonEmptyList[AssertionValidationError]]
-
-      implicit val assertionsErrorSchema: Schema[Map[AssertionIndex, NonEmptyList[AssertionValidationError]]] =
-        Schema.schemaForMap[AssertionIndex, NonEmptyList[AssertionValidationError]](_.toString)
-    }
-
-    @derive(schema, encoder, decoder)
-    final case class EnricherMockValidationError(
-        typ: String,
-        message: String,
-        description: String,
-        details: Option[ErrorDetails],
-    )
-
-    @derive(schema, encoder, decoder)
-    final case class AssertionValidationError(
-        typ: String,
-        message: String,
-        description: String,
-        details: Option[ErrorDetails],
-    )
+    implicit val nodeTestCaseValidationErrorsSchema: Schema[NodeTestCaseValidationErrors] =
+      Schema.derived[NodeTestCaseValidationErrors]
 
     implicit val scenarioNameSchema: Schema[ProcessName] = Schema.string
 

@@ -128,7 +128,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         )
       ),
       Map("aVar" -> Typed[Long])
-    ) shouldBe ValidationPerformed(Nil, Some(genericParameters), None)
+    ) should matchPattern { case ValidationPerformed(Nil, Some(_), None, _) => }
 
     inside(
       validate(
@@ -141,13 +141,13 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         ),
         Map("aVar" -> Typed[String])
       )
-    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, Some(params), _) =>
+    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, Some(params), _, _) =>
       params shouldBe genericParameters
       error.message shouldBe "Bad expression type, expected: Long, found: String"
     }
 
     validate(Sink("tst1", SinkRef("doNotExist", Nil)), Map.empty) should matchPattern {
-      case ValidationPerformed((_: MissingSinkFactory) :: Nil, _, _) =>
+      case ValidationPerformed((_: MissingSinkFactory) :: Nil, _, _, _) =>
     }
 
   }
@@ -162,7 +162,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         )
       ),
       Map.empty
-    ) shouldBe ValidationPerformed(Nil, Some(genericParameters), None)
+    ) should matchPattern { case ValidationPerformed(Nil, Some(_), None, _) => }
 
     inside(
       validate(
@@ -175,12 +175,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         ),
         Map.empty
       )
-    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, _, _) =>
+    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, _, _, _) =>
       error.message shouldBe s"Bad expression type, expected: Long, found: ${Typed.fromInstance("").display}"
     }
 
     validate(Source("tst1", SourceRef("doNotExist", Nil)), Map.empty) should matchPattern {
-      case ValidationPerformed((_: MissingSourceFactory) :: Nil, _, _) =>
+      case ValidationPerformed((_: MissingSourceFactory) :: Nil, _, _, _) =>
     }
 
   }
@@ -195,13 +195,13 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         )
       ),
       Map.empty
-    ) should matchPattern { case ValidationPerformed((_: EagerExpressionEvaluationError) :: Nil, Some(_), _) =>
+    ) should matchPattern { case ValidationPerformed((_: EagerExpressionEvaluationError) :: Nil, Some(_), _, _) =>
     }
   }
 
   test("should validate filter") {
     inside(validate(Filter("filter", "#a > 3".spel), Map("a" -> Typed[String]))) {
-      case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, _) =>
+      case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, _, _) =>
         error.message shouldBe "Wrong part types"
     }
   }
@@ -219,6 +219,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                 )
               ) :: Nil,
               _,
+              _,
               _
             ) =>
       }
@@ -231,12 +232,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         node.Enricher("stringService", ServiceRef("stringService", List(par("stringParam", "#a.length + 33"))), "out"),
         Map("a" -> Typed[String])
       )
-    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, _) =>
+    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, _, _) =>
       error.message shouldBe "Bad expression type, expected: String, found: Integer"
     }
 
     validate(Processor("tst1", ServiceRef("doNotExist", Nil)), Map.empty) should matchPattern {
-      case ValidationPerformed((_: MissingService) :: Nil, _, _) =>
+      case ValidationPerformed((_: MissingService) :: Nil, _, _, _) =>
     }
   }
 
@@ -251,13 +252,13 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         ),
         Map("aVar" -> Typed[String])
       )
-    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, Some(params), _) =>
+    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, Some(params), _, _) =>
       params shouldBe genericParameters
       error.message shouldBe "Bad expression type, expected: Long, found: String"
     }
 
     validate(CustomNode("tst1", None, "doNotExist", Nil), Map.empty) should matchPattern {
-      case ValidationPerformed((_: MissingCustomNodeExecutor) :: Nil, _, _) =>
+      case ValidationPerformed((_: MissingCustomNodeExecutor) :: Nil, _, _, _) =>
     }
   }
 
@@ -267,7 +268,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         CustomNode("tst1", None, "genericTransformerUsingParameterValidator", List(par("paramWithFixedValues", "666"))),
         Map.empty
       )
-    ) { case ValidationPerformed(InvalidPropertyFixedValue(_, _, "666", _, _) :: Nil, _, _) =>
+    ) { case ValidationPerformed(InvalidPropertyFixedValue(_, _, "666", _, _) :: Nil, _, _, _) =>
     }
   }
 
@@ -290,7 +291,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map("input" -> Typed[String])
       )
     ) {
-      case ValidationPerformed(CannotCreateObjectError("Some exception", NodeId("tst1"), _) :: Nil, parameters, _)
+      case ValidationPerformed(CannotCreateObjectError("Some exception", NodeId("tst1"), _) :: Nil, parameters, _, _)
           if parameters.nonEmpty =>
     }
   }
@@ -308,14 +309,14 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         ),
         Map.empty
       )
-    ) { case ValidationPerformed(err :: Nil, _, _) =>
+    ) { case ValidationPerformed(err :: Nil, _, _, _) =>
       err shouldBe expectedError
     }
   }
 
   test("should allow user variable") {
     inside(validate(Variable("var1", "specialVariable_2", "42L".spel, None), Map.empty)) {
-      case ValidationPerformed(Nil, None, _) =>
+      case ValidationPerformed(Nil, None, _, _) =>
     }
   }
 
@@ -332,6 +333,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                 )
               ) :: Nil,
               _,
+              _,
               _
             ) =>
       }
@@ -341,7 +343,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   test("should validate variable definition") {
     inside(
       validate(Variable("var1", "var1", "doNotExist".spel, None), Map.empty)
-    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, _) =>
+    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, _, _) =>
       error.message shouldBe "Non reference 'doNotExist' occurred. Maybe you missed '#' in front of it?"
     }
   }
@@ -352,19 +354,19 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Variable("var1", "var1", "42L".spel, None),
         Map("var1" -> typing.Unknown)
       )
-    ) { case ValidationPerformed(OverwrittenVariable("var1", NodeId("var1"), _) :: Nil, None, _) =>
+    ) { case ValidationPerformed(OverwrittenVariable("var1", NodeId("var1"), _) :: Nil, None, _, _) =>
     }
   }
 
   test("should not allow to use special chars in variable name") {
     inside(validate(Variable("var1", "var@ 2", "42L".spel, None), Map.empty)) {
-      case ValidationPerformed(InvalidVariableName("var@ 2", NodeId("var1"), _) :: Nil, None, _) =>
+      case ValidationPerformed(InvalidVariableName("var@ 2", NodeId("var1"), _) :: Nil, None, _, _) =>
     }
   }
 
   test("should return expression type info for variable definition") {
     inside(validate(Variable("var1", "var1", "42L".spel, None), Map.empty)) {
-      case ValidationPerformed(Nil, _, Some(expressionType)) =>
+      case ValidationPerformed(Nil, _, Some(expressionType), _) =>
         expressionType.display shouldBe Typed.fromInstance(42L).display
     }
   }
@@ -375,7 +377,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         VariableBuilder("var1", "var1", List(Field("field1", "doNotExist".spel)), None),
         Map.empty
       )
-    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, _) =>
+    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, _, _) =>
       error.message shouldBe "Non reference 'doNotExist' occurred. Maybe you missed '#' in front of it?"
     }
   }
@@ -386,7 +388,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         VariableBuilder("var1", "var1", Nil, None),
         Map("var1" -> typing.Unknown)
       )
-    ) { case ValidationPerformed(OverwrittenVariable("var1", NodeId("var1"), _) :: Nil, None, _) =>
+    ) { case ValidationPerformed(OverwrittenVariable("var1", NodeId("var1"), _) :: Nil, None, _, _) =>
     }
   }
 
@@ -410,6 +412,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               NodeId("recordVariable")
             ) :: Nil,
             None,
+            _,
             _
           ) =>
     }
@@ -446,6 +449,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               NodeId("recordVariable")
             ) :: Nil,
             _,
+            _,
             _
           ) =>
     }
@@ -472,6 +476,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                 NodeId("recordVariable")
               ) :: Nil,
               None,
+              _,
               _
             ) =>
       }
@@ -484,7 +489,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         VariableBuilder("var1", "var1", List(Field("field1", "42L".spel), Field("field2", "'some string'".spel)), None),
         Map.empty
       )
-    ) { case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _, _))) =>
+    ) { case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _, _)), _) =>
       fields.mapValuesNow(_.display) shouldBe Map(
         "field1" -> Typed.fromInstance(42L).display,
         "field2" -> Typed.fromInstance("some string").display
@@ -503,7 +508,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         ),
         Map.empty
       )
-    ) { case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _, _))) =>
+    ) { case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _, _)), _) =>
       fields.mapValuesNow(_.display) shouldBe Map(
         "field1" -> Typed.fromInstance(42L).display,
         "field2" -> Typed.fromInstance("some string").display
@@ -527,7 +532,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       case ValidationPerformed(
             List(UnknownFragment("non-existing-fragment", NodeId("frInput"))),
             None,
-            None
+            None,
+            _
           ) =>
     }
   }
@@ -546,7 +552,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       case ValidationPerformed(
             List(ExpressionParserCompilationError(message, NodeId("frInput"), Some(ParameterName("param1")), "145", _)),
             None,
-            None
+            None,
+            _
           ) =>
         message shouldBe s"Bad expression type, expected: String, found: ${Typed.fromInstance(145).display}"
     }
@@ -578,7 +585,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       outgoingEdges = defaultFragmentOutgoingEdges,
       fragmentDefinition = fragmentDefinitionWithValidators,
       aModelData = getModelData(configWithValidators)
-    ) should matchPattern { case ValidationPerformed(List(), None, None) =>
+    ) should matchPattern { case ValidationPerformed(List(), None, None, _) =>
     }
   }
 
@@ -619,7 +626,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       case ValidationPerformed(
             List(EmptyMandatoryParameter(_, _, ParameterName("P1"), NodeId(returnedNodeId))),
             None,
-            None
+            None,
+            _
           ) =>
         returnedNodeId shouldBe nodeId
     }
@@ -680,7 +688,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               EmptyMandatoryParameter(_, _, ParameterName("P2"), NodeId("nameOfTheNode"))
             ),
             None,
-            None
+            None,
+            _
           ) =>
     }
   }
@@ -702,7 +711,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       case ValidationPerformed(
             List(EmptyMandatoryParameter(_, _, ParameterName("optionalParam"), NodeId("enricherNodeId"))),
             None,
-            None
+            None,
+            _
           ) =>
     }
   }
@@ -732,7 +742,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               )
             ),
             None,
-            None
+            None,
+            _
           ) =>
     }
 
@@ -754,7 +765,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       case ValidationPerformed(
             List(OverwrittenVariable("var1", NodeId("frInput"), Some(ParameterName("ref.outputVariableNames.out1")))),
             None,
-            None
+            None,
+            _
           ) =>
     }
   }
@@ -773,7 +785,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         ),
         Map.empty
       )
-    ) { case ValidationPerformed(List(FragmentOutputNotDefined("out1", nodes)), None, None) =>
+    ) { case ValidationPerformed(List(FragmentOutputNotDefined("out1", nodes)), None, None, _) =>
       nodes shouldBe Set(NodeId(nodeId))
     }
 
@@ -806,7 +818,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               )
             ),
             None,
-            Some(Unknown)
+            Some(Unknown),
+            _
           ) =>
     }
   }
@@ -829,7 +842,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                 NodeId("switchId")
               ) :: Nil,
               None,
-              None
+              None,
+              _
             ) =>
       }
     }
@@ -838,8 +852,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   test("should validate node id in all cases") {
     forAll(IdValidationTestData.nodeIdErrorCases) { (nodeId: String, expectedErrors: List[ProcessCompilationError]) =>
       validate(Variable(nodeId, "varName", "1".spel, None), Map.empty) match {
-        case ValidationPerformed(errors, _, _) => errors shouldBe expectedErrors
-        case ValidationNotPerformed            => fail("should not happen")
+        case ValidationPerformed(errors, _, _, _) => errors shouldBe expectedErrors
+        case ValidationNotPerformed               => fail("should not happen")
       }
     }
   }
@@ -876,7 +890,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               UnsupportedFixedValuesType(ParameterName("param1"), "int", nodes),
             ),
             None,
-            None
+            None,
+            _
           ) =>
         nodes shouldBe Set(NodeId(nodeId))
     }
@@ -914,7 +929,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               InitialValueNotPresentInPossibleValues(ParameterName("param1"), nodes)
             ),
             None,
-            None
+            None,
+            _
           ) =>
         nodes shouldBe Set(NodeId(nodeId))
     }
@@ -943,7 +959,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed((error: ExpressionParserCompilationErrorInFragmentDefinition) :: Nil, None, None) =>
+    ) { case ValidationPerformed((error: ExpressionParserCompilationErrorInFragmentDefinition) :: Nil, None, None, _) =>
       error.message should include("Bad expression type, expected: Boolean, found: String(someString)")
     }
   }
@@ -976,7 +992,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed((error: ExpressionParserCompilationErrorInFragmentDefinition) :: Nil, None, None) =>
+    ) { case ValidationPerformed((error: ExpressionParserCompilationErrorInFragmentDefinition) :: Nil, None, None, _) =>
       error.message should include("Bad expression type, expected: Boolean, found: String(someString)")
     }
 
@@ -1009,7 +1025,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed((error: DictNotDeclared) :: Nil, None, None) =>
+    ) { case ValidationPerformed((error: DictNotDeclared) :: Nil, None, None, _) =>
       error.dictId shouldBe "thisDictDoesntExist"
     }
   }
@@ -1041,7 +1057,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed((error: DictIsOfInvalidType) :: Nil, None, None) =>
+    ) { case ValidationPerformed((error: DictIsOfInvalidType) :: Nil, None, None, _) =>
       error.expectedType.display shouldBe "Boolean"
       error.actualType.display shouldBe "String @ dictValue:someDictId"
       error.dictId shouldBe "someDictId"
@@ -1080,7 +1096,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed(errors, None, None) =>
+    ) { case ValidationPerformed(errors, None, None, _) =>
       errors shouldBe empty
     }
   }
@@ -1108,7 +1124,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed(errors, None, None) =>
+    ) { case ValidationPerformed(errors, None, None, _) =>
       errors shouldBe empty
     }
   }
@@ -1137,7 +1153,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed((error: FragmentParamClassLoadError) :: _, None, None) =>
+    ) { case ValidationPerformed((error: FragmentParamClassLoadError) :: _, None, None, _) =>
       error.paramName shouldBe paramName
       error.refClazzName shouldBe invalidType
       error.nodeIds shouldBe Set(NodeId(nodeId))
@@ -1167,7 +1183,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed(errors, None, None) =>
+    ) { case ValidationPerformed(errors, None, None, _) =>
       errors shouldBe empty
     }
   }
@@ -1195,7 +1211,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed(errors, None, None) =>
+    ) { case ValidationPerformed(errors, None, None, _) =>
       errors shouldBe empty
     }
   }
@@ -1224,7 +1240,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed(errors, None, None) =>
+    ) { case ValidationPerformed(errors, None, None, _) =>
       errors shouldBe List(
         FragmentParamClassLoadError(
           ParameterName("param1"),
@@ -1260,7 +1276,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed(errors, None, None) =>
+    ) { case ValidationPerformed(errors, None, None, _) =>
       errors shouldBe List(FragmentParamClassLoadError(ParameterName("param1"), "Map[String, Foo]", NodeId("in")))
     }
   }
@@ -1277,7 +1293,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     )
     expressionsWithExpectedTypes.foreach { case (expression, expectedType) =>
       inside(validate(Variable("var1", "specialVariable_2", expression.spel, None), ctx)) {
-        case ValidationPerformed(Nil, None, expressionType) =>
+        case ValidationPerformed(Nil, None, expressionType, _) =>
           expressionType shouldBe Some(expectedType)
       }
     }
@@ -1311,7 +1327,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed(errors, None, None) =>
+    ) { case ValidationPerformed(errors, None, None, _) =>
       errors shouldBe empty
     }
   }
@@ -1351,7 +1367,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               )
             ),
             None,
-            None
+            None,
+            _
           ) =>
         expr shouldBe blankExpression
     }
@@ -1392,7 +1409,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               )
             ),
             None,
-            None
+            None,
+            _
           ) =>
         expr shouldBe invalidReference
     }
@@ -1437,7 +1455,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               )
             ),
             None,
-            None
+            None,
+            _
           ) =>
         expr shouldBe invalidExpression
     }
@@ -1478,7 +1497,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               )
             ),
             None,
-            None
+            None,
+            _
           ) =>
         expr shouldBe stringExpression
     }
@@ -1509,7 +1529,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               )
             ),
             None,
-            None
+            None,
+            _
           ) =>
     }
   }
@@ -1537,7 +1558,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               DuplicateFragmentInputParameter(ParameterName("paramName"), NodeId("in"))
             ),
             None,
-            None
+            None,
+            _
           ) =>
     }
   }
@@ -1576,7 +1598,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               DuplicateFragmentInputParameter(ParameterName("paramName"), NodeId("in"))
             ),
             None,
-            None
+            None,
+            _
           ) =>
     }
   }

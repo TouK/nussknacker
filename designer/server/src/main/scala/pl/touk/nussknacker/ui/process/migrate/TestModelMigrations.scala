@@ -142,12 +142,15 @@ class TestModelMigrations(
 
     ValidationResult(
       ValidationErrors(
-        diffOnMap(before.errors.invalidNodes, after.errors.invalidNodes),
-        diffErrorLists(before.errors.processPropertiesErrors, after.errors.processPropertiesErrors),
-        diffOnGlobalErrors(before.errors.globalErrors, after.errors.globalErrors)
+        invalidNodes = diffOnMap(before.errors.invalidNodes, after.errors.invalidNodes),
+        processPropertiesErrors =
+          diffErrorLists(before.errors.processPropertiesErrors, after.errors.processPropertiesErrors),
+        globalErrors = diffOnGlobalErrors(before.errors.globalErrors, after.errors.globalErrors),
+        // Test cases validation errors do not affect migration.
+        testCasesValidationErrors = None,
       ),
       ValidationWarnings(diffOnMap(before.warnings.invalidNodes, after.warnings.invalidNodes)),
-      Map.empty
+      nodeResults = Map.empty
     )
   }
 
