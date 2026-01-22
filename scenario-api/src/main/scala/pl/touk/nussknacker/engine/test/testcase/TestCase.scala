@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.test.testcase
 
-import io.circe.{Decoder, DecodingFailure, Encoder, Json}
+import enumeratum.{CirceEnum, Enum, EnumEntry}
+import enumeratum.EnumEntry.LowerCamelcase
+import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.JsonCodec
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.graph.expression.Expression
-
-import java.util.UUID
 
 // TODO: When adding multiple test cases variant, remember to validate ID and name uniqueness.
 sealed trait TestCases
@@ -56,29 +56,13 @@ object Assertion {
     }
   }
 
-  sealed trait AssertionOperator {
+  sealed trait AssertionOperator extends EnumEntry with LowerCamelcase
 
-    val name: String = this match {
-      case AssertionOperator.Equals    => "equals"
-      case AssertionOperator.NotEquals => "notEquals"
-    }
-
-  }
-
-  object AssertionOperator {
+  object AssertionOperator extends Enum[AssertionOperator] with CirceEnum[AssertionOperator] {
     case object Equals    extends AssertionOperator
     case object NotEquals extends AssertionOperator
 
-    implicit val assertionOperatorEncoder: Encoder[AssertionOperator] = Encoder.instance(_.name.asJson)
-
-    implicit val assertionOperatorDecoder: Decoder[AssertionOperator] = Decoder.instance { cursor =>
-      cursor.as[String].flatMap {
-        case AssertionOperator.Equals.name    => Right(AssertionOperator.Equals)
-        case AssertionOperator.NotEquals.name => Right(AssertionOperator.NotEquals)
-        case other => Left(DecodingFailure(s"Unknown AssertionOperator: $other", cursor.history))
-      }
-    }
-
+    override def values: IndexedSeq[AssertionOperator] = findValues
   }
 
 }

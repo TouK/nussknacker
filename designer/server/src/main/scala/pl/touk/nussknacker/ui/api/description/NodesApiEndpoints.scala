@@ -1630,7 +1630,7 @@ object NodesApiEndpoints {
     implicit val expressionAssertionSchema: Schema[Assertion.ExpressionAssertion] =
       Schema.derived[Assertion.ExpressionAssertion]
     implicit val operatorAssertionSchema: Schema[Assertion.AssertionOperator] =
-      Schema.derivedEnumeration[Assertion.AssertionOperator](encode = Some(v => v.name))
+      Schema.derivedEnumeration[Assertion.AssertionOperator](encode = Some(v => v.entryName))
     implicit val predicateAssertionSchema: Schema[Assertion.PredicateAssertion] =
       Schema.derived[Assertion.PredicateAssertion]
 

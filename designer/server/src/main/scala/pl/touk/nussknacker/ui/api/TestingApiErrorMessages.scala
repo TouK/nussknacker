@@ -195,7 +195,7 @@ object TestingApiErrorMessages {
     assertion match {
       case ExpressionAssertion(expression) => s"Assertion expression: ${expression.expression}')"
       case Assertion.PredicateAssertion(operator, expected, actual) =>
-        s"Assertion: '${operator.name}' , expected: ${expected.expression}, actual: ${actual.expression}"
+        s"Assertion: '${operator.entryName}' , expected: ${expected.expression}, actual: ${actual.expression}"
     }
   }
 

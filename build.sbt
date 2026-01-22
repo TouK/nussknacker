@@ -1603,7 +1603,9 @@ lazy val scenarioApi = (project in file("scenario-api"))
   .settings(
     name := "nussknacker-scenario-api",
     libraryDependencies ++= Seq(
-      "org.apache.commons" % "commons-lang3" % flinkCommonsLang3V,
+      "org.apache.commons" % "commons-lang3"    % flinkCommonsLang3V,
+      "com.beachape"      %% "enumeratum"       % enumeratumV,
+      "com.beachape"      %% "enumeratum-circe" % enumeratumV,
     )
   )
   .dependsOn(commonApi, testUtils % Test)
