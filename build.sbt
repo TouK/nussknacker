@@ -463,13 +463,14 @@ lazy val distribution: Project = sbt
     },
     Universal / packageName                  := ("nussknacker" + "-" + version.value),
     Universal / mappings                     := {
+      val universalMappings = (Universal / mappings).value
       val universalMappingsWithDevConfigFilter =
-        if (addDevArtifacts) (Universal / mappings).value
-        else filterDevConfigArtifacts((Universal / mappings).value)
+        if (addDevArtifacts) universalMappings
+        else filterDevConfigArtifacts(universalMappings)
 
       universalMappingsWithDevConfigFilter ++
-        (deploymentManagerArtifacts).value ++
-        (componentArtifacts).value ++
+        deploymentManagerArtifacts.value ++
+        componentArtifacts.value ++
         (if (addDevArtifacts)
            Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar")
          else Nil) ++
@@ -478,9 +479,10 @@ lazy val distribution: Project = sbt
         (flinkExecutor / additionalBundledArtifacts).value
     },
     Universal / packageZipTarball / mappings := {
+      val universalMappings = (Universal / mappings).value
       val universalMappingsWithDevConfigFilter =
-        if (addDevArtifacts) (Universal / mappings).value
-        else filterDevConfigArtifacts((Universal / mappings).value)
+        if (addDevArtifacts) universalMappings
+        else filterDevConfigArtifacts(universalMappings)
       // we don't want docker-* stuff in .tgz
       universalMappingsWithDevConfigFilter filterNot { case (file, _) =>
         file.getName.startsWith("docker-") || file.getName.contains("entrypoint.sh")
@@ -2026,9 +2028,7 @@ lazy val designer = (project in file("designer/server"))
     },
     ThisBuild / parallelExecution    := false,
     SlowTests / test                 := (SlowTests / test).dependsOn(prepareDesignerSlowTests).value,
-    SlowTests / testOptions += Tests.Setup(() => prepareDesignerSlowTests.value),
     Test / test                      := (Test / test).dependsOn(prepareDesignerTests).value,
-    Test / testOptions += Tests.Setup(() => prepareDesignerTests.value),
     /*
       We depend on copyClientDist in packageBin and assembly to be make sure FE files will be included in jar and fajar
       We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
@@ -2121,7 +2121,13 @@ lazy val e2eTests = (project in file("e2e-tests"))
   .settings(commonSettings)
   .configs(SlowTests)
   .settings(slowTestsSettings)
-  .settings(doTest)
+  .settings(
+    Test / test := (Test / test).dependsOn(distribution / Docker / publishLocal).value,
+    Test / testOptions += {
+      val s = streams.value
+      Tests.Setup { _ => s.log.info("Building Nu Designer docker image from the sources for E2E tests") }
+    }
+  )
   .settings(
     libraryDependencies ++= {
       Seq(
@@ -2138,13 +2144,6 @@ lazy val e2eTests = (project in file("e2e-tests"))
   .enablePlugins(BuildInfoPlugin)
   .settings(buildInfoSettings)
   .dependsOn(testUtils % Test, scenarioApi % Test, designer % Test)
-
-lazy val doTest = Seq(
-  Test / testOptions += Tests.Setup { () =>
-    streams.value.log.info("Building Nu Designer docker image from the sources for a sake of E2E tests")
-    (distribution / Docker / publishLocal).value.a
-  }
-)
 
 lazy val scalafixRules = (project in file("scalafix-rules"))
   .settings(
