@@ -17,10 +17,11 @@ interface Props {
     edge: Edge;
     onChange: (value: EdgeKind) => void;
     options: EdgeTypeOption[];
+    className?: string;
 }
 
 export function EdgeTypeSelect(props: Props): React.JSX.Element {
-    const { readOnly, edge, onChange, id, options } = props;
+    const { readOnly, edge, onChange, id, options, className } = props;
     return (
         <TypeSelect
             id={id}
@@ -29,6 +30,7 @@ export function EdgeTypeSelect(props: Props): React.JSX.Element {
             options={options.map((option) => ({ ...option, isDisabled: option.disabled }))}
             fieldErrors={[]}
             readOnly={readOnly}
+            className={className}
         />
     );
 }

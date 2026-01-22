@@ -1,6 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import { isEqual, uniqBy } from "lodash";
 
+import { determineComponentId } from "../../common/componentUtils";
 import ProcessUtils from "../../common/ProcessUtils";
 import { memoizeByArgsWithTTL } from "../../helpers/memoizeByArgsWithTTL";
 import { createEdge } from "../../reducers/graph/utils";
@@ -73,7 +74,7 @@ class NodeUtils {
     };
 
     getEdgesAvailableForNode = (node: NodeType, processDefinitionData: ProcessDefinitionData, forInput?: boolean) => {
-        const componentId = ProcessUtils.determineComponentId(node);
+        const componentId = determineComponentId(node);
         //TODO: when we add more configuration for joins, probably more complex logic will be needed
         const edgesForNode = processDefinitionData.edgesForNodes
             .filter((e) => !forInput || e.isForInputDefinition === forInput)
@@ -211,7 +212,7 @@ class NodeUtils {
     hasOutputs = (node: NodeType, processDefinitionData?: ProcessDefinitionData): boolean => {
         switch (node?.type) {
             case "FragmentInput": {
-                const fragmentComponentId = ProcessUtils.determineComponentId(node);
+                const fragmentComponentId = determineComponentId(node);
                 const edgesFromDefinition = processDefinitionData?.edgesForNodes.find(
                     (e) => e.componentId === fragmentComponentId && !e.isForInputDefinition,
                 )?.edges;

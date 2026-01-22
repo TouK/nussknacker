@@ -1,6 +1,8 @@
-import { startsWith } from "lodash";
 import moment from "moment";
+import { prettyPrint } from "ts-spel";
+import type { Ast } from "ts-spel/lib/lib/Ast";
 
+import { getAst } from "../../aggregate/pareserHelpers";
 import type { CronExpression } from "./Cron/CronEditor";
 import type { Duration } from "./Duration/DurationEditor";
 import type { Period } from "./Duration/PeriodEditor";
@@ -22,16 +24,15 @@ export enum FormatterType {
     DateTime = "java.time.LocalDateTime",
 }
 
-const defaultQuotationMark = "'";
-const valueQuotationMark = (value) => value.charAt(0);
-
-const valueStartsWithQuotationMark = (value) => startsWith(value, '"') || startsWith(value, "'");
-
-const quotationMark = (value) => (valueStartsWithQuotationMark(value) ? valueQuotationMark(value) : defaultQuotationMark);
-
 export const stringSpelFormatter: Formatter = {
-    encode: (value) => quotationMark(value) + value + quotationMark(value),
-    decode: (value) => value.substring(1, value.length - 1),
+    encode: (value: string): string => {
+        const ast: Ast = { type: "StringLiteral", value };
+        return prettyPrint(ast);
+    },
+    decode: (value: string): string => {
+        const ast = getAst(value);
+        return ast?.type === "StringLiteral" ? ast.value : "";
+    },
 };
 
 const spelDurationFormatter: Formatter = {

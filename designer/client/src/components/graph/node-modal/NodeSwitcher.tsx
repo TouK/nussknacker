@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from "react";
 
-import ProcessUtils from "../../../common/ProcessUtils";
+import { determineComponentId } from "../../../common/componentUtils";
 import { getConfiguredAdditionalComponents } from "../../../reducers/cloudData";
 import { createUniqueName } from "../../../reducers/graph/utils";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
@@ -8,10 +8,12 @@ import { getNodes } from "../../../reducers/selectors/graph";
 import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { EditorByType } from "./editors/expression/EditorByType";
+import type { EditorConfig } from "./editors/expression/EditorConfig";
 import type { ExpressionObj } from "./editors/expression/types";
 import { EditorType, ExpressionLang } from "./editors/expression/types";
 import { FormControl } from "./editors/FormControl";
 import { FieldLabel } from "./FieldLabel";
+import type { FixedValuesOption } from "./fragment-input-definition/item/types";
 import type { GeneralContentProps } from "./node/NodeContent/GeneralContent";
 import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 import { replaceNodeData } from "./NodeSwitcherUtils";
@@ -66,7 +68,7 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
     );
 
     const selectedId = useMemo(
-        () => componentsToSelect.find((c) => c.componentId === ProcessUtils.determineComponentId(editedNode))?.componentId,
+        () => componentsToSelect.find((c) => c.componentId === determineComponentId(editedNode))?.componentId,
         [componentsToSelect, editedNode],
     );
 
@@ -86,9 +88,10 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
         [onCreate, onSelected],
     );
 
-    const editorConfig = useMemo(() => {
-        const possibleValues = componentsToSelect.map((c) => ({ expression: c.componentId, label: c.label }));
+    const { type, ...config } = useMemo((): EditorConfig => {
+        const possibleValues: FixedValuesOption[] = componentsToSelect.map((c) => ({ expression: c.componentId, label: c.label }));
         return {
+            type: EditorType.FIXED_VALUES_PARAMETER_EDITOR,
             possibleValues: onCreate
                 ? [
                       {
@@ -98,7 +101,7 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
                       ...possibleValues,
                   ]
                 : possibleValues,
-        } as const;
+        };
     }, [componentsToSelect, onCreate]);
 
     if (!creatorType) return null;
@@ -106,8 +109,8 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
         <FormControl sx={{ padding: "16px", marginX: "-16px", background: "rgba(0,0,0,.25)" }}>
             <FieldLabel label={"Component"} />
             <EditorByType
-                type={EditorType.FIXED_VALUES_PARAMETER_EDITOR}
-                config={editorConfig}
+                type={type}
+                config={config}
                 className={nodeValue}
                 fieldErrors={[]}
                 onValueChange={onValueChange}

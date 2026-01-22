@@ -1,4 +1,4 @@
-import { Box } from "@mui/material";
+import { Box, styled } from "@mui/material";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -10,6 +10,11 @@ import { StyledButton } from "../../../../styledButton";
 import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
 import { TypeSelect } from "../../../fragment-input-definition/TypeSelect";
 
+const StyledTestCasesSelect = styled(TypeSelect)(() => ({
+    width: "40cqw",
+    maxWidth: "400px",
+}));
+
 export const TestCases = () => {
     const { t } = useTranslation();
     const testCaseOptions = useAppSelector(getTestCaseOptions);
@@ -19,8 +24,8 @@ export const TestCases = () => {
     }, [open]);
 
     return (
-        <Box ml={4} pb={0.25} width={"40%"} pt={2} display={"flex"} alignItems={"center"} gap={1}>
-            <TypeSelect width={"30%"} options={testCaseOptions} onChange={() => "noop"} value={testCaseOptions[0]} />
+        <Box ml={4} pb={0.25} pt={2} display={"flex"} alignItems={"center"} gap={1}>
+            <StyledTestCasesSelect options={testCaseOptions} onChange={() => "noop"} value={testCaseOptions[0]} />
             {/*<InfoTooltip title={"Edit name"} variant={"hover"} enterDelay={500}>*/}
             {/*    <StyledActionButton>*/}
             {/*        <EditIcon />*/}

@@ -1,4 +1,3 @@
-import { configureStore } from "@reduxjs/toolkit";
 import { render, screen } from "@testing-library/react";
 import "ace-builds/src-noconflict/ace";
 import "ace-builds/src-noconflict/ext-language_tools";
@@ -7,24 +6,6 @@ import * as React from "react";
 import { SpelTemplateEditor } from "../../src/components/graph/node-modal/editors/expression/SpelTemplateEditor";
 import { mockFieldErrors, mockValueChange } from "./helpers";
 import { TestProviders } from "./TestProviders";
-
-const store = configureStore({
-    reducer: (state) => state,
-    preloadedState: {
-        settings: {
-            processDefinitionData: {
-                componentGroups: [],
-                processDefinition: {},
-                componentsConfig: {},
-                additionalPropertiesConfig: {},
-                edgesForNodes: [],
-                defaultAsyncInterpretation: true,
-            },
-        },
-        graphReducer: { present: { scenario: {} } },
-    },
-    devTools: false,
-});
 
 describe("SpelTemplateEditor", () => {
     it("should display validation error when the field is required", () => {

@@ -30,21 +30,19 @@ export function FieldsSelect(props: FieldsSelectProps): React.JSX.Element {
     const { fields, label, namespace, options, onChange, variableTypes, removeField, addField, readOnly, showValidation, errors } = props;
 
     const ItemElement = useCallback(
-        ({ index, item, errors }: { index: number; item: FragmentInputParameter; errors: NodeValidationError[] }) => {
-            return (
-                <Item
-                    index={index}
-                    item={item}
-                    namespace={namespace}
-                    onChange={onChange}
-                    options={options}
-                    readOnly={readOnly}
-                    variableTypes={variableTypes}
-                    showValidation={showValidation}
-                    errors={errors}
-                />
-            );
-        },
+        ({ index, item, errors }: { index: number; item: FragmentInputParameter; errors: NodeValidationError[] }) => (
+            <Item
+                index={index}
+                item={item}
+                namespace={namespace}
+                onChange={onChange}
+                options={options}
+                readOnly={readOnly}
+                variableTypes={variableTypes}
+                showValidation={showValidation}
+                errors={errors}
+            />
+        ),
         [namespace, onChange, options, readOnly, variableTypes, showValidation],
     );
 

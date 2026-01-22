@@ -63,6 +63,12 @@ export function ParameterExpressionField({ FieldWrapper, ...props }: ParameterEx
     );
 
     const fieldErrors = getValidationErrorsForField(errors, parameter.name);
+
+    const parameterDefinition = useMemo(
+        () => findParamDefinitionByName(parameterDefinitions, parameter.name),
+        [parameter.name, parameterDefinitions],
+    );
+
     const field = useMemo(() => {
         return (
             <ExpressionField
@@ -73,7 +79,7 @@ export function ParameterExpressionField({ FieldWrapper, ...props }: ParameterEx
                 editedNode={node}
                 showValidation={showValidation}
                 showSwitch={showSwitch}
-                parameterDefinition={findParamDefinitionByName(parameterDefinitions, parameter.name)}
+                parameterDefinition={parameterDefinition}
                 setNodeDataAt={setProperty}
                 testResultsToShow={testResultsState.testResultsToShow}
                 variableTypes={variableTypes}
@@ -88,7 +94,7 @@ export function ParameterExpressionField({ FieldWrapper, ...props }: ParameterEx
         listFieldPath,
         node,
         parameter.name,
-        parameterDefinitions,
+        parameterDefinition,
         setProperty,
         showSwitch,
         showValidation,

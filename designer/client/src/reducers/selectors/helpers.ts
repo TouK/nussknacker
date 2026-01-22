@@ -5,7 +5,7 @@ import { findParameters } from "../../components/graph/node-modal/NodeDetailsCon
 import type { ScenarioGraph } from "../../types/scenarioGraph";
 import type { NodeDetailsState } from "../nodeDetailsState";
 
-function filterScenarioData(mode: "save" | "execution", nodeDetailsGetter?: (id: string) => NodeDetailsState[typeof id]) {
+function filterScenarioData(mode: "save" | "execution", nodesDetails?: NodeDetailsState) {
     return produce((draft: ScenarioGraph) => {
         draft.nodes?.forEach((node) => {
             /**
@@ -17,7 +17,7 @@ function filterScenarioData(mode: "save" | "execution", nodeDetailsGetter?: (id:
 
             if (mode === "execution") {
                 node.additionalFields = undefined;
-                const parametersDefinitions = nodeDetailsGetter(node.id)?.parameters;
+                const parametersDefinitions = nodesDetails?.[node.id]?.parameters;
                 const parameters = findParameters(node);
                 parametersDefinitions?.forEach((def, index) => {
                     if (def.nonImportantForExecution) {
@@ -34,15 +34,15 @@ export function isGraphUpdated(
     scenarioGraph: ScenarioGraph,
     savedScenarioGraph: ScenarioGraph,
     mode: "execution",
-    nodeDetailsGetter: (id: string) => NodeDetailsState[typeof id],
+    nodesDetails: NodeDetailsState,
 );
 export function isGraphUpdated(
     scenarioGraph: ScenarioGraph,
     savedScenarioGraph: ScenarioGraph,
     mode: "save" | "execution" = "save",
-    nodeDetailsGetter?: (id: string) => NodeDetailsState[typeof id],
+    nodesDetails?: NodeDetailsState,
 ) {
-    const filter = filterScenarioData(mode, nodeDetailsGetter);
+    const filter = filterScenarioData(mode, nodesDetails);
     return !isEqual(filter(scenarioGraph), filter(savedScenarioGraph));
 }
 

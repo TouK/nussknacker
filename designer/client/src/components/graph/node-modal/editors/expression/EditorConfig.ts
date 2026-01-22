@@ -17,7 +17,8 @@ type PureEditorConfig = {
         | EditorType.SQL_PARAMETER_EDITOR
         | EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR
         | EditorType.TABLE_EDITOR
-        | EditorType.JSON_TEMPLATE_PARAMETER_EDITOR;
+        | EditorType.JSON_TEMPLATE_PARAMETER_EDITOR
+        | EditorType.NAME_VALUE_LIST_EDITOR;
 };
 
 type ExtendedEditorConfig =
@@ -46,6 +47,8 @@ type ExtendedEditorConfig =
           dictId: string;
       };
 
-export type EditorConfig = PureEditorConfig | ExtendedEditorConfig;
+export type EditorConfig = (PureEditorConfig | ExtendedEditorConfig) & {
+    debug?: boolean;
+};
 
 export type EditorConfigForType<T extends EditorType> = Prettify<EditorConfig & { type: T }>;

@@ -6,24 +6,23 @@ import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";
 import { appendUuidToParameters } from "./appendUuid";
 import type { NodeState } from "./node/useNodeState";
-import { getDynamicParameterDefinitions } from "./NodeDetailsContent/selectors";
 import { adjustParameters } from "./ParametersUtils";
+import { useParameterDefinitions } from "./useNodeTypeDetailsContentLogic";
 import { wrapSetState } from "./wrapSetState";
 
 export function useNodeAdjust(
     node: NodeType,
     onChange?: NodeState["onChange"],
 ): [adjustedNode: typeof node, adjustedOnChange: typeof onChange] {
-    const getParameterDefinitions = useAppSelector(getDynamicParameterDefinitions);
+    const parameterDefinitions = useParameterDefinitions({ node });
     const { properties: storedProperties } = useAppSelector(getAdditionalFields);
 
     const adjustNode = useCallback(
         (node: NodeType) => {
-            const parameterDefinitions = getParameterDefinitions(node);
             const adjustedNode = adjustParameters(node, parameterDefinitions, storedProperties);
             return produce(adjustedNode, appendUuidToParameters);
         },
-        [getParameterDefinitions, storedProperties],
+        [parameterDefinitions, storedProperties],
     );
 
     const adjustFn = useRef(adjustNode);

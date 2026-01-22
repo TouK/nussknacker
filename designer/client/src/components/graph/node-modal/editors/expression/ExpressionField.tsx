@@ -1,6 +1,6 @@
 import { get } from "lodash";
 import type { ReactNode } from "react";
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 
 import type { NodeResultsForContext } from "../../../../../common/TestResultUtils";
 import type { UIParameter } from "../../../../../types/definition";
@@ -14,7 +14,7 @@ import type { OnValueChange } from "./Editor";
 import type { ExpressionObj } from "./types";
 import { EditorType } from "./types";
 
-type Props = {
+export type ExpressionFieldProps = {
     fieldName: string;
     fieldLabel: string;
     exprPath: string;
@@ -30,7 +30,7 @@ type Props = {
     endAdornment?: ReactNode;
 };
 
-function ExpressionField(props: Props): React.JSX.Element {
+function ExpressionField(props: ExpressionFieldProps): React.JSX.Element {
     const {
         fieldName,
         fieldLabel,
@@ -49,8 +49,8 @@ function ExpressionField(props: Props): React.JSX.Element {
     const [isMarked] = useDiffMark();
     const readOnly = !isEditMode;
     const exprTextPath = `${exprPath}.expression`;
-    const expressionObj = get(editedNode, exprPath);
-    const editors = parameterDefinition?.editors || [];
+    const expressionObj = useMemo(() => get(editedNode, exprPath), [editedNode, exprPath]);
+    const editors = useMemo(() => parameterDefinition?.editors || [], [parameterDefinition?.editors]);
 
     const onValueChange: OnValueChange = useCallback(
         (value: ExpressionObj) => {
@@ -59,49 +59,57 @@ function ExpressionField(props: Props): React.JSX.Element {
         [exprPath, setNodeDataAt],
     );
 
-    if (
-        editors.some(
-            (editor) =>
-                editor?.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR ||
-                editor?.type === EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR,
-        )
-    ) {
-        return (
+    const editor = useMemo(
+        () => (
             <EditableEditor
-                fieldLabel={fieldLabel}
-                editors={editors}
-                paramType={parameterDefinition?.typ}
                 defaultValue={parameterDefinition?.defaultValue}
-                expressionObj={expressionObj}
-                isMarked={isMarked(exprTextPath)}
-                showSwitch={showSwitch}
-                readOnly={readOnly}
-                onValueChange={onValueChange}
-                variableTypes={variableTypes}
-                showValidation={showValidation}
-                fieldErrors={fieldErrors}
+                editors={editors}
                 endAdornment={endAdornment}
+                expressionObj={expressionObj}
+                fieldErrors={fieldErrors}
+                fieldLabel={fieldLabel}
+                isMarked={isMarked(exprTextPath)}
+                onValueChange={onValueChange}
+                paramType={parameterDefinition?.typ}
+                readOnly={readOnly}
+                showSwitch={showSwitch}
+                showValidation={showValidation}
+                variableTypes={variableTypes}
             />
-        );
-    }
+        ),
+        [
+            editors,
+            endAdornment,
+            exprTextPath,
+            expressionObj,
+            fieldErrors,
+            fieldLabel,
+            isMarked,
+            onValueChange,
+            parameterDefinition?.defaultValue,
+            parameterDefinition?.typ,
+            readOnly,
+            showSwitch,
+            showValidation,
+            variableTypes,
+        ],
+    );
+
+    const isFixedValues = useMemo(
+        () =>
+            editors.some(
+                (editor) =>
+                    editor?.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR ||
+                    editor?.type === EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR,
+            ),
+        [editors],
+    );
+
+    if (isFixedValues) return <>{editor}</>;
 
     return (
         <ExpressionTestResults fieldName={fieldName} resultsToShow={testResultsToShow}>
-            <EditableEditor
-                editors={editors}
-                paramType={parameterDefinition?.typ}
-                defaultValue={parameterDefinition?.defaultValue}
-                fieldLabel={fieldLabel}
-                expressionObj={expressionObj}
-                isMarked={isMarked(exprTextPath)}
-                showValidation={showValidation}
-                showSwitch={showSwitch}
-                readOnly={readOnly}
-                variableTypes={variableTypes}
-                onValueChange={onValueChange}
-                fieldErrors={fieldErrors}
-                endAdornment={endAdornment}
-            />
+            {editor}
         </ExpressionTestResults>
     );
 }

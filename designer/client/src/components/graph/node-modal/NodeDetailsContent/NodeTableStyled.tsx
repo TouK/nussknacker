@@ -5,25 +5,20 @@ export const nodeInput = "node-input";
 export const nodeValue = "node-value";
 export const nodeInputWithError = "node-input-with-error";
 export const rowAceEditor = "row-ace-editor";
-export const movableRow = "movable-row";
 export const partlyHidden = "partly-hidden";
+
+export const editorAnchorName = "--editor";
 
 export const NodeTableStyled = styled("div")(({ theme }) => ({
     fontSize: 11,
     margin: "0 24px",
-
-    [`.${movableRow}`]: {
-        marginTop: 0,
-        flexWrap: "nowrap",
-        columnGap: 5,
-        rowGap: 5,
-    },
 
     [`.${nodeValue}`]: {
         flex: 1,
         flexBasis: "60%",
         display: "inline-block",
         width: "100%",
+        "anchor-name": editorAnchorName,
 
         textarea: {
             overflow: "hidden",

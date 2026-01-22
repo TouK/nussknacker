@@ -10,9 +10,9 @@ import { ExpressionLang } from "../editors/expression/types";
 import Input from "../editors/field/Input";
 import type { FieldError } from "../editors/Validators";
 import { TypeSelect } from "../fragment-input-definition/TypeSelect";
-import { useFieldsContext } from "../node-row-fields-provider/NodeRowFieldsProvider";
+import { useFieldsControl } from "../node-row-fields-provider/FieldsControl";
 import type { AggRow } from "./aggregatorField";
-import { DynamicLabel } from "./dynamicLabel";
+import { RowFieldLabel } from "./rowFieldLabel";
 
 export type PossibleValue = {
     expression: string;
@@ -24,7 +24,7 @@ type AggregatorFieldsStackProps = {
     onChange: (uuid: string, updated: Partial<AggRow>) => void;
     aggregators: PossibleValue[];
     variableTypes: VariableTypes;
-    hovered?: boolean;
+    showLabels?: boolean;
     outputVariableName?: string;
 };
 
@@ -59,10 +59,10 @@ export function AggregatorFieldsStack({
     onChange,
     aggregators,
     variableTypes,
-    hovered,
+    showLabels,
     outputVariableName,
 }: AggregatorFieldsStackProps) {
-    const { readOnly } = useFieldsContext();
+    const { readOnly } = useFieldsControl();
     const options = useMemo<TypeOption[]>(() => {
         const values = aggregators.map(({ expression: value, label }) => ({
             value,
@@ -126,12 +126,13 @@ export function AggregatorFieldsStack({
         [onChange, uuid],
     );
 
+    const fieldErrors = useMemo(() => (expression ? [] : [EMPTY_REQUIRED_ERROR]), [expression]);
     return (
         <>
-            <DynamicLabel
+            <RowFieldLabel
                 flexBasis="35%"
                 label={`${outputVariableName ? `#${outputVariableName}` : "output variable"} field`}
-                hovered={hovered}
+                showLabel={showLabels}
             >
                 <Input
                     onChange={onChangeName}
@@ -141,11 +142,11 @@ export function AggregatorFieldsStack({
                     fieldErrors={name ? [] : [EMPTY_REQUIRED_ERROR]}
                     autoFocus={!name}
                 />
-            </DynamicLabel>
-            <DynamicLabel flexBasis="35%" label="aggregator" hovered={hovered}>
+            </RowFieldLabel>
+            <RowFieldLabel flexBasis="35%" label="aggregator" showLabel={showLabels}>
                 <TypeSelect onChange={onChangeType} value={selectedType} options={options} readOnly={readOnly} />
-            </DynamicLabel>
-            <DynamicLabel flexBasis="70%" label="aggregator input" hovered={hovered}>
+            </RowFieldLabel>
+            <RowFieldLabel flexBasis="70%" label="aggregator input" showLabel={showLabels}>
                 {selectedType.preset ? (
                     <Input disabled value="" />
                 ) : (
@@ -155,11 +156,11 @@ export function AggregatorFieldsStack({
                         onValueChange={onChangeExpression}
                         readOnly={readOnly}
                         showValidation
-                        fieldErrors={expression ? [] : [EMPTY_REQUIRED_ERROR]}
+                        fieldErrors={fieldErrors}
                         showSwitch={false}
                     />
                 )}
-            </DynamicLabel>
+            </RowFieldLabel>
         </>
     );
 }
