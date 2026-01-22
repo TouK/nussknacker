@@ -1,4 +1,5 @@
 import i18next from "i18next";
+import { isEmpty } from "lodash";
 import React from "react";
 
 import type { NodeValidationError, VariableTypes } from "../../../../../../types/validation";
@@ -11,17 +12,20 @@ import { FormatterType, spelFormatters } from "../Formatter";
 import { EditorType, ExpressionLang } from "../types";
 import type { NameValueRecord } from "./nameValueRecordsListHelpers";
 
-export const emptyMandatoryValueValidator: Validator = {
-    ...mandatoryValueValidator,
-    message: () => "",
+const emptyNameValidator: Validator = {
+    isValid: (value) => value.length > 2,
+    message: () => i18next.t("emptyNameValidator.message", "Required"),
     description: () => "",
+    handledErrorType: HandledErrorType.EmptyMandatoryParameter,
 };
-export const spelValuePreValidator: Validator = {
-    isValid: (value) => Boolean(getAst(value, false)),
+
+const spelValuePreValidator: Validator = {
+    isValid: (value) => isEmpty(value) || Boolean(getAst(value, false)),
     message: () => i18next.t("spelValuePreValidator.message", "This field have to contain valid SpEL expression"),
     description: () => i18next.t("validator.spelValue.description", "Please enter valid SpEL"),
     handledErrorType: HandledErrorType.InvalidSpelExpressionParameter,
 };
+
 type FieldProps = {
     fieldErrors: FieldError[];
     onChangeItem: (updated: Partial<NameValueRecord>) => void;
@@ -32,7 +36,7 @@ type FieldProps = {
     value: string;
 };
 
-export const NameField = ({ showLabels, value, onChangeItem, ...props }: FieldProps) => (
+export const NameField = ({ showLabels, value, onChangeItem, fieldErrors, ...props }: FieldProps) => (
     <RowFieldLabel flexBasis="30%" label="name" showLabel={showLabels}>
         <EditableEditor
             editors={[{ type: EditorType.STATIC_STRING_PARAMETER_EDITOR }]}
@@ -47,7 +51,7 @@ export const NameField = ({ showLabels, value, onChangeItem, ...props }: FieldPr
                 }
                 return onChangeItem({ name: spelFormatters[FormatterType.String].encode(expression) });
             }}
-            fieldErrors={extendErrors([], value, null, [spelValuePreValidator, emptyMandatoryValueValidator])}
+            fieldErrors={extendErrors(fieldErrors as NodeValidationError[], value, null, [emptyNameValidator, spelValuePreValidator])}
             {...props}
         />
     </RowFieldLabel>

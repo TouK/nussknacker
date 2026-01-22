@@ -147,7 +147,7 @@ export const NameValueListEditor = prepareEditor(
                         <ValueField
                             value={item.value}
                             fieldErrors={mappedErrors.filter(({ row }) => row === item.uuid).map(({ error }) => error)}
-                            showValidation={showValidation && Boolean(item.name)}
+                            showValidation={showValidation && (Boolean(item.name) || Boolean(item.value))}
                             {...fieldProps}
                         />
                     </FieldsRow>
