@@ -7,10 +7,10 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.test.testcase.Assertion
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.testcase.{AssertionIndex, AssertionValidationError}
-import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.{ExpressionAssertionCompilationError, PredicateAssertionCompilationError}
 import pl.touk.nussknacker.ui.process.test.testcase.{AssertionCompilationError, AssertionsCompiler}
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.ExpressionAssertionCompilationError
 
-class AssertionValidator(
+private class AssertionValidator(
     assertionsCompiler: AssertionsCompiler
 ) {
 
@@ -31,7 +31,9 @@ class AssertionValidator(
     }
   }
 
-  private def convertToAssertionErrors(assertionErrors: NonEmptyList[AssertionCompilationError]): NonEmptyList[AssertionValidationError] = {
+  private def convertToAssertionErrors(
+      assertionErrors: NonEmptyList[AssertionCompilationError]
+  ): NonEmptyList[AssertionValidationError] = {
     assertionErrors.flatMap {
       case ExpressionAssertionCompilationError(errors, _, _) =>
         errors.map { error =>
