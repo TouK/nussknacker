@@ -65,7 +65,7 @@ class AssertionsCompiler(
       globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData),
       variableTypes
     )
-    assertions.map(compileAssertionExpression(nodeId, ctx, _))
+    assertions.map(compileAssertion(nodeId, ctx, _))
   }
 
   private def validateTypingExistence(
@@ -82,7 +82,7 @@ class AssertionsCompiler(
       )
   }
 
-  private def compileAssertionExpression(
+  private def compileAssertion(
       nodeId: NodeId,
       context: ValidationContext,
       assertion: Assertion

@@ -799,10 +799,10 @@ class ScenarioTestServiceSpec
         NodeId("end") -> List(
           PredicateAssertion(
             Assertion.AssertionOperator.Equals,
-            "#contexts[0].otherNameThanInput.a".spel,
-            "'foo'".spel
+            "'foo'".spel,
+            "#contexts[0].otherNameThanInput.a".spel
           ),
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "#contexts[1].otherNameThanInput.a".spel, "'foo'".spel)
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'foo'".spel, "#contexts[1].otherNameThanInput.a".spel)
         )
       )
     )
@@ -821,7 +821,7 @@ class ScenarioTestServiceSpec
 
     result.assertionsResults(NodeId("end")) shouldBe List(
       SuccessfulAssertion,
-      FailedAssertion("Expected: ['bar'] but found ['foo']")
+      FailedAssertion("Expected: ['foo'] but found ['bar']")
     )
   }
 

@@ -6,7 +6,10 @@ import pl.touk.nussknacker.engine.test.testcase.Assertion.AssertionOperator
 import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.CompiledExpressionAssertion
+import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.{
+  CompiledExpressionAssertion,
+  CompiledPredicateAssertion
+}
 
 import scala.jdk.CollectionConverters._
 
@@ -38,7 +41,7 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
       assertion match {
         case CompiledExpressionAssertion(expression) =>
           evaluateExpressionAssertion(expression, context, globalVariables)
-        case CompiledAssertion.CompiledPredicateAssertion(operator, expected, actual) =>
+        case CompiledPredicateAssertion(operator, expected, actual) =>
           evaluatePredicateAssertion(operator, expected, actual, context, globalVariables)
       }
     } catch {
