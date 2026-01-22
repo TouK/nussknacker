@@ -20,7 +20,7 @@ type Props<T extends EditorType> = Prettify<WithoutEditorConfig<T> & { type: T; 
 export function parseExpressionObjForType<T extends EditorType>(type: T, { expression, language }: ExpressionObj): ExpressionObj {
     const Editor = getEditorByType(type);
     const editorLanguage = editorsParameters[type].language;
-    if (language === editorLanguage) return { expression, language };
+    // if (language === editorLanguage) return { expression, language };
     if (isExtendedEditor(Editor) && Editor.parseValueOnEditorChange) {
         return Editor.parseValueOnEditorChange({ expression, language }, editorLanguage);
     }

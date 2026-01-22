@@ -29,7 +29,7 @@ export const StaticStringEditor = prepareEditor(
     {
         isSwitchableTo: ({ expression, language }) => {
             if (language === ExpressionLang.SpEL) {
-                return getAst(expression)?.type === "StringLiteral";
+                return getAst(expression, false)?.type === "StringLiteral";
             }
             return true;
         },

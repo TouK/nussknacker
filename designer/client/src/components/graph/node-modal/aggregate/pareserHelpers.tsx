@@ -1,15 +1,15 @@
 import { parse } from "ts-spel";
 import type { Ast } from "ts-spel/lib/lib/Ast";
 
-export function getAst(input: string) {
+export function getAst(input: string, graceful = true) {
     try {
-        return parse(input, true);
+        return parse(input, graceful);
     } catch (e) {
         return null;
     }
 }
 
-function printFragment(text: string, el: { start: number; end: number }): string {
+export function printFragment(text: string, el: { start: number; end: number }): string {
     if (!text || !el) return "";
     return text.slice(el.start, el.end).trim();
 }
