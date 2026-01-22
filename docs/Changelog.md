@@ -313,6 +313,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8815](https://github.com/TouK/nussknacker/pull/8815) Fix: In Flink's serialization was used a result type of expression
   before final implicit conversion instead of after it. It sometimes caused "AAA cannot be cast to class BBB" in runtime.
 * [#8806](https://github.com/TouK/nussknacker/pull/8806) Test case running implementation
+* [#8903](https://github.com/TouK/nussknacker/pull/8903) Updated Flink dependency to 1.20.3, Scala to 2.13.18
 
 ## 1.18
 
