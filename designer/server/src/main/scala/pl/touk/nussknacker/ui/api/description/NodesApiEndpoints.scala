@@ -811,6 +811,86 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .withSecurity(auth)
   }
 
+  lazy val testCaseMetadataEndpoint: SecuredEndpoint[
+    (ProcessName, TestCaseMetadataRequestDto),
+    NodesError,
+    TestCaseMetadataResponseDto,
+    Any
+  ] = {
+    baseNuApiEndpoint
+      .summary("Metadata for a test case including assertions additional variables")
+      .tag("Nodes")
+      .post
+      .in("nodes" / path[ProcessName]("scenarioName") / "testCase" / "metadata")
+      .in(
+        jsonBody[TestCaseMetadataRequestDto]
+          .example(
+            Example.of(
+              summary = Some("Test case metadata request"),
+              value = TestCaseMetadataRequestDto(
+                variableTypes = Map(
+                  "amount" -> TypingResultInJson(
+                    encoder.apply(
+                      TypedObjectWithValue.apply(
+                        Typed[java.lang.Long].asInstanceOf[TypedClass],
+                        5L
+                      )
+                    )
+                  ),
+                  "name" -> TypingResultInJson(
+                    encoder.apply(
+                      TypedObjectWithValue.apply(
+                        Typed[java.lang.String].asInstanceOf[TypedClass],
+                        "Alice"
+                      )
+                    )
+                  ),
+                )
+              )
+            )
+          )
+      )
+      .out(
+        statusCode(Ok).and(
+          jsonBody[TestCaseMetadataResponseDto]
+            .example(
+              Example.of(
+                summary = Some("Test case metadata response"),
+                value = TestCaseMetadataResponseDto(
+                  assertionsAdditionalVariables = Map(
+                    "contexts" -> Typed.genericTypeClass(
+                      classOf[java.util.List[_]],
+                      List(
+                        Typed.record(
+                          List(
+                            "amount" -> TypedObjectWithValue.apply(
+                              Typed[java.lang.Long].asInstanceOf[TypedClass],
+                              5L
+                            ),
+                            "name" -> TypedObjectWithValue.apply(
+                              Typed[java.lang.String].asInstanceOf[TypedClass],
+                              "Alice"
+                            )
+                          )
+                        )
+                      )
+                    )
+                  ),
+                  enricherMockExpression = None
+                )
+              )
+            )
+        )
+      )
+      .errorOut(
+        oneOf[NodesError](
+          scenarioNotFoundErrorOutput,
+          malformedTypingResultErrorOutput
+        )
+      )
+      .withSecurity(auth)
+  }
+
   private val validPropertiesAdditionalFields =
     ProcessAdditionalFields(
       description = None,
@@ -1681,6 +1761,18 @@ object NodesApiEndpoints {
     @derive(schema, encoder, decoder)
     final case class TestCaseAdditionalVariablesResponseDto(
         assertionsAdditionalVariables: Map[String, TypingResult]
+    )
+
+    @derive(schema, encoder, decoder)
+    final case class TestCaseMetadataRequestDto(
+        variableTypes: Map[String, TypingResultInJson],
+        nodeData: Option[NodeData] = None
+    )
+
+    @derive(schema, encoder, decoder)
+    final case class TestCaseMetadataResponseDto(
+        assertionsAdditionalVariables: Map[String, TypingResult],
+        enricherMockExpression: Option[String] = None
     )
 
     // Request doesn't need valid encoder, apart from examples

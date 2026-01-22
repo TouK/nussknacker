@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.graph.node.SourceNodeData
+import pl.touk.nussknacker.engine.graph.node.{NodeData, SourceNodeData}
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import pl.touk.nussknacker.restmodel.definition.UIValueParameter
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
@@ -28,7 +28,8 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   ParametersValidationRequest,
   ParametersValidationRequestDto,
   ParametersValidationResultDto,
-  TestCaseAdditionalVariablesResponseDto
+  TestCaseAdditionalVariablesResponseDto,
+  TestCaseMetadataResponseDto
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
   InvalidNodeType,
@@ -177,6 +178,28 @@ class NodesApiHttpService(
               .leftMap[NodesError](identity)
             additionalVariables = prepareTestCaseAdditionalVariables(variableTypes)
           } yield additionalVariables
+        }
+      }
+  }
+
+  expose {
+    nodesApiEndpoints.testCaseMetadataEndpoint
+      .serverSecurityLogic(authorizeKnownUser[NodesError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (scenarioName, request) =>
+          for {
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            modelData           <- getModelData(scenarioWithDetails.processingType)
+            variableTypes <- EitherT
+              .fromEither[Future](
+                decodeVariableTypes(
+                  request.variableTypes,
+                  prepareTypingResultDecoder(modelData.modelClassLoader)
+                )
+              )
+              .leftMap[NodesError](identity)
+            metadata = prepareTestCaseMetadata(variableTypes, request.nodeData)
+          } yield metadata
         }
       }
   }
@@ -349,6 +372,19 @@ class NodesApiHttpService(
     TestCaseAdditionalVariablesResponseDto(
       assertionsAdditionalVariables = TestCaseVariables.getNodeVariablesTyping(variableTypes)
     )
+
+  private def prepareTestCaseMetadata(
+      variableTypes: Map[String, TypingResult],
+      nodeData: Option[NodeData]
+  ): TestCaseMetadataResponseDto = {
+    val assertionsAdditionalVariables = TestCaseVariables.getNodeVariablesTyping(variableTypes)
+    // TODO: Generate enricher mock expression based on nodeData when implemented
+    val enricherMockExpression = None
+    TestCaseMetadataResponseDto(
+      assertionsAdditionalVariables = assertionsAdditionalVariables,
+      enricherMockExpression = enricherMockExpression
+    )
+  }
 
   private def parametersValidationRequestFromDto(
       request: ParametersValidationRequestDto,
