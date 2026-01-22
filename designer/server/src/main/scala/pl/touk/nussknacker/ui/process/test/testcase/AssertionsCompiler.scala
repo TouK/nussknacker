@@ -3,6 +3,8 @@ package pl.touk.nussknacker.ui.process.test.testcase
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.all._
+import enumeratum.{Enum, EnumEntry}
+import enumeratum.EnumEntry.LowerCamelcase
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -114,7 +116,7 @@ class AssertionsCompiler(
     val compiledExpected = expressionCompiler
       .compile(
         assertion.expected,
-        Some(ParameterName(PredicateAssertionCompilationError.ExpectedField.name)),
+        Some(ParameterName(PredicateAssertionCompilationError.ExpectedField.entryName)),
         context,
         Unknown // For equals, we can assume any of type of expected and actual expressions are fine, but for >=, <, etc. we could also check if both types are comparable.
       )
@@ -125,7 +127,7 @@ class AssertionsCompiler(
     val compiledActual = expressionCompiler
       .compile(
         assertion.actual,
-        Some(ParameterName(PredicateAssertionCompilationError.ActualField.name)),
+        Some(ParameterName(PredicateAssertionCompilationError.ActualField.entryName)),
         context,
         Unknown
       )
@@ -168,13 +170,10 @@ object AssertionCompilationError {
 
   object PredicateAssertionCompilationError {
 
-    sealed trait Field {
+    sealed trait Field extends EnumEntry with LowerCamelcase
 
-      val name: String = this match {
-        case ExpectedField => "expected"
-        case ActualField   => "actual"
-      }
-
+    object Field extends Enum[Field] {
+      override def values: IndexedSeq[Field] = findValues
     }
 
     case object ExpectedField extends Field
