@@ -920,7 +920,7 @@ class NodesApiHttpServiceBusinessSpec
              |          },
              |          "expected": {
              |            "language": "spel",
-             |            "expression": "'value'"
+             |            "expression": "missing quotes"
              |          }
              |        }
              |      ]
@@ -981,6 +981,23 @@ class NodesApiHttpServiceBusinessSpec
             |          }
             |        ],
             |        "2": [
+            |          {
+            |            "typ": "ExpressionParserCompilationError",
+            |            "message": "Unexpected text",
+            |            "description": "There is problem with expression in field [expected] - it could not be parsed.",
+            |            "details": {
+            |              "start": {
+            |                "column": 8,
+            |                "row": 0
+            |              },
+            |              "end": {
+            |                "column": 9,
+            |                "row": 0
+            |              },
+            |              "type": "CoordinatesBasedTextRange"
+            |            },
+            |            "fieldName": "expected"
+            |          },
             |          {
             |            "typ": "ExpressionParserCompilationError",
             |            "message": "There is no property 'doesNotExist2' in type: Record{input: String}",
