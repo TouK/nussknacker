@@ -43,8 +43,10 @@ export default function Notification({ icon, message, details, type }: Props): R
         </Alert>
     );
 
+    const textToCopy = details ? `${message}\n\n${details}` : message;
+
     return type === "error" ? (
-        <CopyTooltip text={message} title={t("error.copyMessage", "Copy message to clipboard")}>
+        <CopyTooltip text={textToCopy} title={t("error.copyMessage", "Copy message to clipboard")}>
             {alertContent}
         </CopyTooltip>
     ) : (
