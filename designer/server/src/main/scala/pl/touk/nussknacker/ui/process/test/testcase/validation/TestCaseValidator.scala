@@ -80,11 +80,10 @@ class TestCaseValidator(
       nodeTyping
     )
     val assertionsErrors = assertionValidator.validate(
-      NodeId(nodeData.id),
       nodeTestCase.assertions,
       nodeTyping.inputVariables,
       scenarioCompilationDependencies.jobData
-    )
+    )(NodeId(nodeData.id))
 
     (enricherMockErrors, assertionsErrors) match {
       case (None, None) => Right(())

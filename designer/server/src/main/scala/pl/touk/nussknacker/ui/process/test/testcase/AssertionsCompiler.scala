@@ -33,9 +33,9 @@ class AssertionsCompiler(
       jobData: JobData
   ): ValidatedNel[AssertionError, CompiledAssertions] = {
     testCase.assertions
-      .map { case (node, assertions) =>
-        compileNodeAssertions(node, assertions, scenarioTypingResult, jobData)
-          .tupleLeft(node)
+      .map { case (nodeId, assertions) =>
+        compileNodeAssertions(assertions, scenarioTypingResult, jobData)(nodeId)
+          .tupleLeft(nodeId)
       }
       .toList
       .sequence
@@ -44,34 +44,31 @@ class AssertionsCompiler(
 
   // Returns all compiled assertions or combined compilation errors. It's used to compile test case before performing it.
   private def compileNodeAssertions(
-      nodeId: NodeId,
       assertions: List[Assertion],
       nodesTyping: Map[String, NodeTypingData],
       jobData: JobData
-  ): ValidatedNel[AssertionError, List[CompiledAssertion]] = {
-    validateTypingExistence(nodeId, nodesTyping).andThen { nodeTypingData =>
-      compileForNode(nodeId, assertions, nodeTypingData.variableTypes, jobData).sequence
+  )(implicit nodeId: NodeId): ValidatedNel[AssertionError, List[CompiledAssertion]] = {
+    validateTypingExistence(nodesTyping).andThen { nodeTypingData =>
+      compileForNode(assertions, nodeTypingData.variableTypes, jobData).sequence
     }
   }
 
   // For each assertion, returns compiled assertion or compilation errors. We need this, to return errors by assertion.
   def compileForNode(
-      nodeId: NodeId,
       assertions: List[Assertion],
       variableTypes: Map[String, TypingResult],
       jobData: JobData
-  ): List[ValidatedNel[AssertionCompilationError, CompiledAssertion]] = {
+  )(implicit nodeId: NodeId): List[ValidatedNel[AssertionCompilationError, CompiledAssertion]] = {
     val ctx = TestCaseVariables.extendNodeVariablesValidationContext(
       globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData),
       variableTypes
     )
-    assertions.map(compileAssertion(nodeId, ctx, _))
+    assertions.map(compileAssertion(ctx, _))
   }
 
   private def validateTypingExistence(
-      nodeId: NodeId,
       nodesTyping: Map[String, NodeTypingData],
-  ): ValidatedNel[AssertionError, NodeTypingData] = {
+  )(implicit nodeId: NodeId): ValidatedNel[AssertionError, NodeTypingData] = {
     nodesTyping
       .get(nodeId.id)
       .map(Valid(_))
@@ -83,47 +80,44 @@ class AssertionsCompiler(
   }
 
   private def compileAssertion(
-      nodeId: NodeId,
       context: ValidationContext,
       assertion: Assertion
-  ): ValidatedNel[AssertionCompilationError, CompiledAssertion] = {
+  )(implicit nodeId: NodeId): ValidatedNel[AssertionCompilationError, CompiledAssertion] = {
     assertion match {
       case expressionAssertion: ExpressionAssertion =>
-        compileExpressionAssertion(nodeId, context, expressionAssertion)
+        compileExpressionAssertion(context, expressionAssertion)
       case predicateAssertion: PredicateAssertion =>
-        compilePredicateAssertion(nodeId, context, predicateAssertion)
+        compilePredicateAssertion(context, predicateAssertion)
     }
   }
 
   private def compileExpressionAssertion(
-      nodeId: NodeId,
       context: ValidationContext,
       assertion: ExpressionAssertion,
-  ): ValidatedNel[ExpressionAssertionCompilationError, CompiledExpressionAssertion] = {
+  )(implicit nodeId: NodeId): ValidatedNel[ExpressionAssertionCompilationError, CompiledExpressionAssertion] = {
     expressionCompiler
       .compile(
         assertion.expression,
         paramName = None,
         context,
         Typed.typedClass(classOf[AssertionResult])
-      )(nodeId)
+      )
       .map(e => CompiledExpressionAssertion(e.expression))
       .leftMap(ExpressionAssertionCompilationError(_, assertion, nodeId))
       .toValidatedNel
   }
 
   private def compilePredicateAssertion(
-      nodeId: NodeId,
       context: ValidationContext,
       assertion: PredicateAssertion
-  ): ValidatedNel[PredicateAssertionCompilationError, CompiledPredicateAssertion] = {
+  )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, CompiledPredicateAssertion] = {
     val compiledExpected = expressionCompiler
       .compile(
         assertion.expected,
         Some(ParameterName(PredicateAssertionCompilationError.ExpectedField.name)),
         context,
         Unknown // For equals, we can assume any of type of expected and actual expressions are fine, but for >=, <, etc. we could also check if both types are comparable.
-      )(nodeId)
+      )
       .leftMap(
         PredicateAssertionCompilationError(_, assertion, PredicateAssertionCompilationError.ExpectedField, nodeId)
       )
@@ -134,7 +128,7 @@ class AssertionsCompiler(
         Some(ParameterName(PredicateAssertionCompilationError.ActualField.name)),
         context,
         Unknown
-      )(nodeId)
+      )
       .leftMap(PredicateAssertionCompilationError(_, assertion, PredicateAssertionCompilationError.ActualField, nodeId))
       .toValidatedNel
 
