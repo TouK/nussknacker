@@ -57,11 +57,8 @@ class ScenarioGraphVersionService(
             case Validated.Invalid(e) =>
               Left(
                 ScenarioGraphValidationError(
-                  ValidationErrors(
-                    invalidNodes = Map.empty,
-                    processPropertiesErrors = e.map(PrettyValidationErrors.formatErrorMessage).toList,
-                    globalErrors = Nil
-                  )
+                  ValidationErrors
+                    .initial(processPropertiesErrors = e.map(PrettyValidationErrors.formatErrorMessage).toList)
                 )
               )
           }

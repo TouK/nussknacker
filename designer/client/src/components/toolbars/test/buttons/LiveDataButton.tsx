@@ -44,7 +44,6 @@ const LiveDataButton = memo(function LiveDataButton(props: ToolbarButtonProps) {
         <>
             <ToolbarButton
                 isLoading={readyForLiveData && !disabled && isProgressing}
-                loadingVariant={"determinate"}
                 loadingProgress={progress}
                 isActive={working}
                 name={t("panels.actions.live-data.name", "live data")}

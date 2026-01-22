@@ -9,13 +9,14 @@ export enum HandledErrorType {
     AlreadyExists = "AlreadyExists",
     EmptyMandatoryParameter = "EmptyMandatoryParameter",
     UniqueParameter = "UniqueParameter",
+    InvalidSpelExpressionParameter = "InvalidSpelExpressionParameter",
     InvalidIntegerLiteralParameter = "InvalidIntegerLiteralParameter",
     LowerThanRequiredParameter = "LowerThanRequiredParameter",
     GreaterThanRequiredParameter = "GreaterThanRequiredParameter",
 }
 
 export type Validator = {
-    isValid: (...args: any[]) => boolean;
+    isValid: (...args: any[]) => boolean | FieldError;
     message: () => string;
     description: () => string;
     handledErrorType: HandledErrorType;
@@ -101,15 +102,30 @@ export const extendErrors = (
     fieldName: string,
     validators: Validator[],
 ): NodeValidationError[] => {
-    const customValidatorErrors: NodeValidationError[] = validators
-        .filter((validator) => !validator.isValid(value))
-        .map((validator) => ({
-            errorType: "SaveAllowed",
-            fieldName,
-            typ: FormatterType.String,
-            description: validator.description(),
-            message: validator.message(),
-        }));
+    const customValidatorErrors = validators
+        .map((validator): NodeValidationError => {
+            const result = validator.isValid(value);
+            if (result === false) {
+                return {
+                    errorType: "SaveAllowed",
+                    fieldName,
+                    typ: FormatterType.String,
+                    description: validator.description(),
+                    message: validator.message(),
+                };
+            }
+            if (result !== true) {
+                return {
+                    errorType: "SaveAllowed",
+                    fieldName,
+                    typ: FormatterType.String,
+                    description: result.description,
+                    message: result.message,
+                };
+            }
+            return null;
+        })
+        .filter(Boolean);
 
     return [...errors, ...customValidatorErrors];
 };

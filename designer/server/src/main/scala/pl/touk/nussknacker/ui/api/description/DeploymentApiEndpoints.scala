@@ -104,6 +104,7 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
                             MissingRequiredProperty(ParameterName("parallelism"), None)(NodeId("properties"))
                           )
                         ),
+                        testCasesValidationErrors = None,
                       )
                     )
                   ),

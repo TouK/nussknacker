@@ -14,6 +14,7 @@ import type { NodeType, Parameter } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import { ParamFieldLabel } from "./FieldLabel";
 import { getNodeErrors } from "./node/selectors";
+import { useCallbackRef } from "./node/useCallbackRef";
 import {
     getDynamicParameterDefinitions,
     getFindAvailableBranchVariables,
@@ -63,14 +64,18 @@ export function useVariableTypes({ node }: Pick<NodeTypeDetailsContentProps, "no
 }
 
 export function useParameterDefinitions({ node }: Pick<NodeTypeDetailsContentProps, "node">) {
-    const getParameterDefinitions = useAppSelector(getDynamicParameterDefinitions);
-    return useMemo(() => getParameterDefinitions(node), [getParameterDefinitions, node]);
+    return useAppSelector((state) => getDynamicParameterDefinitions(state, node));
 }
 
 export function useSetProperty({ onChange, node }: Pick<NodeTypeDetailsContentProps, "onChange" | "node">) {
     const dispatch = useAppDispatch();
     const setEditedNode = useSetEditedNode({ onChange });
     const parameterDefinitions = useParameterDefinitions({ node });
+
+    const [getEditedParamDefinition] = useCallbackRef(
+        (editedParam: Parameter) => parameterDefinitions?.find((parameterDefinition) => parameterDefinition.name === editedParam?.name),
+        [parameterDefinitions],
+    );
 
     return useCallback<SetProperty>(
         <P extends Paths<NodeType>, V extends PathValue<NodeType, P>>(path: P, value: V, fallbackValue?: V): void => {
@@ -84,9 +89,7 @@ export function useSetProperty({ onChange, node }: Pick<NodeTypeDetailsContentPr
                 const basePath = extractBasePathWithIndex(path);
 
                 const editedParam: Parameter | undefined = get(currentNode, basePath);
-                const editedParamDefinition = parameterDefinitions?.find(
-                    (parameterDefinition) => parameterDefinition.name === editedParam?.name,
-                );
+                const editedParamDefinition = getEditedParamDefinition.current(editedParam);
 
                 const nextNode = setImmutable<NodeType, Paths<NodeType>>(currentNode, path, nextValue);
                 const detectChanges = !isEqual(nextNode, currentNode);
@@ -98,7 +101,7 @@ export function useSetProperty({ onChange, node }: Pick<NodeTypeDetailsContentPr
                 return nextNode;
             });
         },
-        [dispatch, parameterDefinitions, setEditedNode],
+        [dispatch, getEditedParamDefinition, setEditedNode],
     );
 }
 

@@ -10,6 +10,7 @@ import type { TypingResult, UIParameter } from "../types/definition";
 import type { NodeId, NodeType } from "../types/node";
 import type { ComponentDefinition, ReturnedType, ScenarioGraph } from "../types/scenarioGraph";
 import type { NodeResults, ValidationErrors, ValidationResult, VariableTypes } from "../types/validation";
+import { determineComponentId } from "./componentUtils";
 
 class ProcessUtils {
     canExport = (state: RootState): boolean => {
@@ -179,86 +180,7 @@ class ProcessUtils {
     };
 
     extractComponentDefinition = (node: NodeType, components?: Record<string, ComponentDefinition>): ComponentDefinition | null => {
-        return node?.type == StickyNoteType ? StickyNoteDefinition : components?.[this.determineComponentId(node)];
-    };
-
-    determineComponentId = (node?: NodeType): string | null => {
-        const componentType = this.determineComponentType(node);
-        const componentName = this.determineComponentName(node);
-        return componentType && componentName ? `${componentType}-${componentName}` : null;
-    };
-
-    // It should be synchronized with ComponentInfoExtractor.fromScenarioNode
-    private determineComponentType = (node?: NodeType): string | null => {
-        switch (node?.type) {
-            case "Source":
-                return "source";
-            case "Sink":
-                return "sink";
-            case "Enricher":
-            case "Processor":
-                return "service";
-            case "Join":
-            case "CustomNode":
-                return "custom";
-            case "FragmentInput":
-                return "fragment";
-            case "Filter":
-            case "Split":
-            case "Switch":
-            case "Variable":
-            case "VariableBuilder":
-            case "FragmentInputDefinition":
-            case "FragmentOutputDefinition":
-                return "builtin";
-            default:
-                return null;
-        }
-    };
-
-    // It should be synchronized with ComponentInfoExtractor.fromScenarioNode
-    private determineComponentName = (node: NodeType): string | null => {
-        switch (node?.type) {
-            case "Source":
-            case "Sink": {
-                return node.ref.typ;
-            }
-            case "FragmentInput": {
-                return node.ref.id;
-            }
-            case "Enricher":
-            case "Processor": {
-                return node.service.id;
-            }
-            case "Join":
-            case "CustomNode": {
-                return node.nodeType;
-            }
-            case "Filter": {
-                return "filter";
-            }
-            case "Split": {
-                return "split";
-            }
-            case "Switch": {
-                return "choice";
-            }
-            case "Variable": {
-                return "variable";
-            }
-            case "VariableBuilder": {
-                return "record-variable";
-            }
-            case "FragmentInputDefinition": {
-                return "input";
-            }
-            case "FragmentOutputDefinition": {
-                return "output";
-            }
-            default: {
-                return null;
-            }
-        }
+        return node?.type == StickyNoteType ? StickyNoteDefinition : components?.[determineComponentId(node)];
     };
 
     humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;

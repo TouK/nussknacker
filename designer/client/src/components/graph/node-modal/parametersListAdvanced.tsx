@@ -51,7 +51,7 @@ export const ParametersListAdvanced = ({
                     componentId={"advanced-param-section"}
                     expandableTitle={t("component.advancedParameters.title", "Advanced parameters")}
                 >
-                    {<ParametersList {...props} parameters={advanced} getListFieldPath={getListFieldPath} />}
+                    <ParametersList {...props} parameters={advanced} getListFieldPath={getListFieldPath} />
                 </Expandable>
             )}
         </>

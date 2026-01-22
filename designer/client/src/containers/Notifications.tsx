@@ -1,7 +1,7 @@
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import DangerousOutlinedIcon from "@mui/icons-material/DangerousOutlined";
 import i18next from "i18next";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { default as ReactNotifications } from "react-notification-system-redux";
 import { bindActionCreators } from "redux";
 
@@ -115,10 +115,12 @@ export function Notifications(): React.JSX.Element {
     const processVersionId = useAppSelector(getProcessVersionId);
     const currentProcessingType = useAppSelector(getProcessingType);
     const currentIsFragment = useAppSelector(isFragment);
+    const errorShown = useRef(null);
 
     const refresh = useCallback(() => {
         HttpService.loadBackendNotifications(currentScenarioName)
             .then((notifications) => {
+                errorShown.current = false;
                 handleChangeConnectionError(null);
                 dispatch(updateBackendNotifications(notifications.map(({ id }) => id)));
                 dispatch(
@@ -134,6 +136,8 @@ export function Notifications(): React.JSX.Element {
                 } else if (possibleServerNotAvailableHttpStatuses.some((status) => status === error?.response?.status)) {
                     handleChangeConnectionError("NO_BACKEND_ACCESS");
                 } else {
+                    if (errorShown.current) return;
+                    errorShown.current = true;
                     dispatch(
                         NotificationActions.error(
                             i18next.t("notification.error.cannotFetchBackendNotifications", "Cannot fetch backend notification"),

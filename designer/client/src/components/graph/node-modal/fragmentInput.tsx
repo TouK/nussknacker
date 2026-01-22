@@ -10,7 +10,7 @@ import { DisableField } from "./DisableField";
 import { IdField } from "./IdField";
 import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 import OutputParametersList from "./OutputParametersList";
-import { ParameterExpressionField } from "./ParameterExpressionField";
+import { ParametersListWithOverrides } from "./ParametersListWithOverrides";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 import { useParametersList } from "./useParametersList";
 
@@ -24,6 +24,8 @@ interface FragmentInput {
     showValidation?: boolean;
 }
 
+const getListFieldPath = (index: number) => `ref.parameters[${index}]`;
+
 export function FragmentInput(props: FragmentInput): React.JSX.Element {
     const { errors, isEditMode, node, parameterDefinitions, setProperty, showSwitch, showValidation } = props;
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
@@ -36,36 +38,34 @@ export function FragmentInput(props: FragmentInput): React.JSX.Element {
         <>
             <IdField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
             <DisableField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
-            {parameters.map((param, index) => (
-                <ParameterExpressionField
-                    key={`${param.name}-${index}`}
-                    showSwitch={showSwitch}
-                    findAvailableVariables={findAvailableVariables}
-                    parameterDefinitions={parameterDefinitions}
-                    errors={errors}
-                    node={node}
-                    isEditMode={isEditMode}
-                    showValidation={showValidation}
-                    setProperty={setProperty}
-                    parameter={param}
-                    listFieldPath={`ref.parameters[${index}]`}
-                />
-            ))}
-            <OutputParametersList
-                editedNode={node}
+            <ParametersListWithOverrides
+                parameters={parameters}
+                showSwitch={showSwitch}
+                findAvailableVariables={findAvailableVariables}
+                parameterDefinitions={parameterDefinitions}
                 errors={errors}
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                setProperty={setProperty}
-                processDefinitionData={processDefinitionData}
-            />
-            <DescriptionField
                 node={node}
                 isEditMode={isEditMode}
                 showValidation={showValidation}
                 setProperty={setProperty}
-                errors={errors}
-            />
+                getListFieldPath={getListFieldPath}
+            >
+                <OutputParametersList
+                    editedNode={node}
+                    errors={errors}
+                    isEditMode={isEditMode}
+                    showValidation={showValidation}
+                    setProperty={setProperty}
+                    processDefinitionData={processDefinitionData}
+                />
+                <DescriptionField
+                    node={node}
+                    isEditMode={isEditMode}
+                    showValidation={showValidation}
+                    setProperty={setProperty}
+                    errors={errors}
+                />
+            </ParametersListWithOverrides>
         </>
     );
 }

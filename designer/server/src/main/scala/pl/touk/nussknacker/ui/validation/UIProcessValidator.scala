@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{CustomProcessValidator, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.graph.{Edge, ScenarioGraph}
@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
 import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
+import pl.touk.nussknacker.engine.test.testcase.TestCases
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
@@ -28,11 +29,13 @@ import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
 import pl.touk.nussknacker.ui.definition.{DefinitionsService, ScenarioPropertiesConfigFinalizer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
+import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class UIProcessValidator(
     processingType: ProcessingType,
     validator: ProcessValidator,
+    testCaseValidator: TestCaseValidator,
     scenarioProperties: Map[String, ScenarioPropertyConfig],
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
     engineScenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies],
@@ -51,6 +54,7 @@ class UIProcessValidator(
     new UIProcessValidator(
       processingType,
       validator,
+      testCaseValidator,
       scenarioProperties,
       scenarioPropertiesConfigFinalizer,
       engineScenarioCompilationDependenciesResource,
@@ -64,6 +68,7 @@ class UIProcessValidator(
     new UIProcessValidator(
       processingType,
       transform(validator),
+      testCaseValidator,
       scenarioProperties,
       scenarioPropertiesConfigFinalizer,
       engineScenarioCompilationDependenciesResource,
@@ -106,10 +111,11 @@ class UIProcessValidator(
     // The problem preventing further validation is that loose nodes and their children are skipped during conversion
     // and in case if the scenario has only loose nodes, it will be reported that the scenario is empty
     if (uiValidationResult.saveAllowed) {
-      val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
+      val canonical           = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
+      val canonicalValidation = validateCanonicalProcess(canonical, processVersion, isFragment)
       // The deduplication is needed for errors that are validated on both uiValidation for DisplayableProcess and
       // CanonicalProcess validation.
-      deduplicateErrors(uiValidationResult.add(validateCanonicalProcess(canonical, processVersion, isFragment)))
+      deduplicateErrors(uiValidationResult.add(canonicalValidation))
     } else {
       uiValidationResult
     }
@@ -149,10 +155,13 @@ class UIProcessValidator(
             val jobData: JobData = JobData(scenario.metaData, processVersion)
             implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
               new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
-            val validated = validator.validate(scenario, isFragment)
+            val validated                 = validator.validate(scenario, isFragment)
+            val nodeResults               = validated.typing.mapValuesNow(nodeInfoToResult)
+            val testCasesValidationResult = validateTestCases(scenario, validated.typing)
             validated.result
               .fold(formatErrors, _ => ValidationResult.success)
-              .withNodeResults(validated.typing.mapValuesNow(nodeInfoToResult))
+              .withNodeResults(nodeResults)
+              .add(testCasesValidationResult)
           }
 
           // TODO: should we validate after resolve?
@@ -236,8 +245,8 @@ class UIProcessValidator(
       case Valid(()) =>
         ValidationResult.success
       case Invalid(errors) =>
-        ValidationResult.globalErrors(
-          errors
+        ValidationResult.errors(
+          globalErrors = errors
             .map(ve =>
               ScenarioLabelValidationError(label = ve.label, description = ve.validationMessages.toList.mkString(", "))
             )
@@ -276,7 +285,7 @@ class UIProcessValidator(
 
     val edgeUniquenessErrors =
       edgesByFrom.map { case (from, edges) => from -> findNonUniqueEdge(from, edges) }.filterNot(_._2.isEmpty)
-    ValidationResult.errors(edgeUniquenessErrors, List(), List())
+    ValidationResult.errors(invalidNodes = edgeUniquenessErrors)
   }
 
   private def validateStickyNotesLength(scenarioGraph: ScenarioGraph): ValidationResult = {
@@ -371,6 +380,29 @@ class UIProcessValidator(
     )
   }
 
+  private def validateTestCases(scenario: CanonicalProcess, nodesTyping: Map[String, NodeTypingInfo])(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): ValidationResult = {
+    scenario.testCases match {
+      case None =>
+        ValidationResult.success
+      case Some(TestCases.Single(testCase)) =>
+        val testCasesNodeTyping = nodesTyping.mapValuesNow { typingInfo =>
+          TestCaseValidator.NodeTyping(
+            inputVariables = typingInfo.inputValidationContext.localVariables,
+            outputVariables = typingInfo.outputValidationContext.map(_.localVariables).getOrElse(Map.empty),
+          )
+        }
+        val testCasesValidationErrors =
+          testCaseValidator.validateScenarioTestCases(scenario.collectAllNodes, testCasesNodeTyping, List(testCase))
+        if (testCasesValidationErrors.isEmpty) {
+          ValidationResult.success
+        } else {
+          ValidationResult.errors(testCasesValidationErrors = Some(testCasesValidationErrors))
+        }
+    }
+  }
+
   private def deduplicateErrors(result: ValidationResult): ValidationResult = {
     val deduplicatedInvalidNodes = result.errors.invalidNodes.map { case (key, value) => key -> value.distinct }
     val deduplicatedProcessPropertiesErrors = result.errors.processPropertiesErrors.distinct
@@ -380,7 +412,9 @@ class UIProcessValidator(
       ValidationErrors(
         invalidNodes = deduplicatedInvalidNodes,
         processPropertiesErrors = deduplicatedProcessPropertiesErrors,
-        globalErrors = deduplicatedGlobalErrors
+        globalErrors = deduplicatedGlobalErrors,
+        // Test cases are validated once, so no need to deduplicate.
+        testCasesValidationErrors = result.errors.testCasesValidationErrors,
       )
     )
   }

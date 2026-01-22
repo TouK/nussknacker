@@ -1,5 +1,5 @@
-import { css, cx } from "@emotion/css";
-import { uniq } from "lodash";
+import { produce } from "immer";
+import { isEqual, uniq } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -8,6 +8,7 @@ import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { Edge } from "../../../types/edge";
 import { EdgeKind } from "../../../types/edge";
+import type { NodeId } from "../../../types/node";
 import type { VariableTypes } from "../../../types/validation";
 import NodeUtils from "../NodeUtils";
 import type { EdgeTypeOption } from "./EdgeTypeSelect";
@@ -17,9 +18,9 @@ import type { ExpressionObj } from "./editors/expression/types";
 import { ExpressionLang } from "./editors/expression/types";
 import type { FieldError } from "./editors/Validators";
 import { FieldsRow } from "./fragment-input-definition/FieldsRow";
+import type { Option } from "./fragment-input-definition/TypeSelect";
 import { TypeSelect } from "./fragment-input-definition/TypeSelect";
-import { NodeValue } from "./node/NodeValue";
-import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
+import { useCallbackRef } from "./node/useCallbackRef";
 
 interface Props {
     index: number;
@@ -35,68 +36,107 @@ interface Props {
 export function EdgeFields(props: Props): React.JSX.Element {
     const { t } = useTranslation();
     const { readOnly, value, index, onChange, edges, types, variableTypes, fieldErrors } = props;
+    const [onChangeRef] = useCallbackRef(onChange, [onChange]);
     const scenarioGraph = useAppSelector(getScenarioGraph);
     const processDefinitionData = useAppSelector(getProcessDefinitionData);
 
     const [edge, setEdge] = useState(value);
 
     useEffect(() => {
-        onChange(edge);
-    }, [edge, onChange]);
+        onChangeRef.current?.(edge);
+    }, [edge, onChangeRef]);
 
     //NOTE: fragment node preview is read only so we can ignore wrong "process" and nodes here.
-    const availableNodes = scenarioGraph.nodes.filter((n) => NodeUtils.hasInputs(n));
+    const availableNodes = useMemo(() => scenarioGraph.nodes.filter((n) => NodeUtils.hasInputs(n)), [scenarioGraph.nodes]);
     const otherEdges = useMemo(() => scenarioGraph.edges.filter((e) => e.from !== edge.from), [edge.from, scenarioGraph.edges]);
     const targetNodes = useMemo(() => availableNodes.filter((n) => n.id === edge.to), [availableNodes, edge.to]);
     const freeNodes = useMemo(() => {
         return availableNodes.filter((n) => {
-            //filter this switch
-            if (n.id === edge.from) {
-                return false;
-            }
-            //filter already used
-            if (edges.some((e) => e.to === n.id)) {
-                return false;
-            }
             return NodeUtils.canHaveMoreInputs(
                 n,
                 otherEdges.filter((e) => e.to === n.id),
                 processDefinitionData,
             );
         });
-    }, [availableNodes, edge.from, edges, otherEdges, processDefinitionData]);
+    }, [availableNodes, otherEdges, processDefinitionData]);
 
-    const freeInputs = useMemo(
-        () => [
+    const targetOptions = useMemo<Option[]>(() => {
+        const targets = uniq(freeNodes.concat(targetNodes).map((n) => n.id));
+        return [
             { label: "⇢", value: "" },
-            ...uniq(freeNodes.concat(targetNodes).map((n) => n.id)).map((freeInput) => ({
+            ...targets.map((freeInput) => ({
                 label: `➝ ${freeInput}`,
                 value: freeInput,
+                isUsed: edges.some((e) => e.to === freeInput && !isEqual(e, edge)),
             })),
-        ],
-        [freeNodes, targetNodes],
-    );
+        ];
+    }, [edge, edges, freeNodes, targetNodes]);
 
     const onValueChange = useCallback(
-        ({ expression }: ExpressionObj) =>
-            setEdge((e) => ({
-                ...e,
-                edgeType: {
-                    ...e.edgeType,
-                    condition: {
-                        ...e.edgeType?.condition,
-                        expression,
-                    },
-                },
-            })),
-        [],
+        ({ expression, language }: ExpressionObj) => {
+            setEdge(
+                produce((draft) => {
+                    // @ts-expect-error null
+                    draft.edgeType.condition ||= {};
+                    draft.edgeType.condition.expression = expression;
+                    draft.edgeType.condition.language = language;
+                }),
+            );
+        },
+        [setEdge],
     );
 
-    function getValueEditor() {
-        if (edge.edgeType?.type === EdgeKind.switchNext) {
-            return (
+    const onTargetChange = useCallback(
+        (value: NodeId) => {
+            setEdge(
+                produce((draft) => {
+                    draft.to = value;
+                }),
+            );
+        },
+        [setEdge],
+    );
+
+    const onTypeChange = useCallback(
+        (type: EdgeKind) => {
+            setEdge(
+                produce((draft) => {
+                    if (type === EdgeKind.switchNext) delete draft.edgeType.condition;
+                    draft.edgeType.type = type;
+                }),
+            );
+        },
+        [setEdge],
+    );
+
+    const showType = useMemo(() => types.length > 1 || uniq(edges.map((e) => e.edgeType?.type)).length > 1, [edges, types.length]);
+    return (
+        <FieldsRow
+            uuid={edge._id}
+            index={index}
+            sx={{
+                "&&&&": {
+                    display: "grid",
+                    gridTemplateColumns: "1fr 2fr auto",
+                },
+                ".fieldRemove": { gridArea: "1 / 3" },
+                "& :has(>.edge-value)": { gridColumn: "span 2" },
+                "& :has(>.edge-value) + .edge-target": { gridColumn: "span 2" },
+                "& .edge-type + :has(>.edge-value)": { gridColumn: "span 1" },
+            }}
+        >
+            {showType ? (
+                <EdgeTypeSelect
+                    readOnly={readOnly || types.length < 2}
+                    edge={edge}
+                    onChange={onTypeChange}
+                    options={types}
+                    className="edge-type"
+                />
+            ) : null}
+
+            {edge.edgeType?.type === EdgeKind.switchNext ? (
                 <EditableEditor
-                    valueClassName={cx(nodeValue, css({ gridArea: "expr" }))}
                     variableTypes={variableTypes}
                     fieldLabel={t("node.fields.edge.expression", "Expression")}
                     expressionObj={{
@@ -108,60 +148,22 @@ export function EdgeFields(props: Props): React.JSX.Element {
                     fieldErrors={fieldErrors}
                     showValidation
                     showSwitch={false}
+                    valueClassName={"edge-value"}
                 />
-            );
-        }
-        return null;
-    }
-
-    const showType = types.length > 1 || uniq(edges.map((e) => e.edgeType?.type)).length > 1;
-    return (
-        <FieldsRow
-            uuid={edge._id}
-            index={index}
-            className={cx(
-                css({
-                    "&&&&": {
-                        display: "grid",
-                        gridTemplateColumns: "1fr 2fr auto",
-                        gridTemplateRows: "auto auto",
-                        gridTemplateAreas: `"field field remove" "expr expr x"`,
-                    },
-                }),
-            )}
-        >
-            {showType ? (
-                <NodeValue>
-                    <EdgeTypeSelect
-                        readOnly={readOnly || types.length < 2}
-                        edge={edge}
-                        onChange={(type) =>
-                            setEdge(({ edgeType: { condition, ...edgeType } = {}, ...edge }) => ({
-                                ...edge,
-                                edgeType: type === EdgeKind.switchNext ? { ...edgeType, type, condition } : { ...edgeType, type },
-                            }))
-                        }
-                        options={types}
-                    />
-                </NodeValue>
             ) : null}
-            <NodeValue className={css({ gridArea: !showType && "field" })}>
-                <TypeSelect
-                    title={
-                        freeInputs.length
-                            ? t("node.fields.edge.target", "Edge target node")
-                            : t("node.fields.edge.target.empty", "No free target nodes")
-                    }
-                    onChange={(value) => {
-                        setEdge((edge) => ({ ...edge, to: value }));
-                    }}
-                    value={readOnly ? { value: edge.to, label: edge.to } : freeInputs.find((option) => option.value === edge.to)}
-                    options={freeInputs}
-                    fieldErrors={[]}
-                    readOnly={readOnly || freeInputs.length <= 1}
-                />
-            </NodeValue>
-            {getValueEditor()}
+
+            <TypeSelect
+                title={
+                    targetOptions.length
+                        ? t("node.fields.edge.target", "Edge target node")
+                        : t("node.fields.edge.target.empty", "No free target nodes")
+                }
+                onChange={onTargetChange}
+                value={readOnly ? { value: edge.to, label: edge.to } : targetOptions.find((option) => option.value === edge.to)}
+                options={targetOptions}
+                readOnly={readOnly || targetOptions.length <= 1}
+                className="edge-target"
+            />
         </FieldsRow>
     );
 }

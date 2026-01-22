@@ -42,7 +42,7 @@ class ScenarioPropertiesValidator(
       case Valid(_)   => List.empty
     }
 
-    ValidationResult.errors(Map(), processPropertiesErrors, List())
+    ValidationResult.errors(processPropertiesErrors = processPropertiesErrors)
   }
 
   private def getConfiguredValidationsResults(config: PropertyConfig, scenarioProperties: List[(String, String)]) = {

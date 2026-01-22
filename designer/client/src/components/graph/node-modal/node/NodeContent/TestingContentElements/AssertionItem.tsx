@@ -5,7 +5,7 @@ import { useMutationObserver } from "rooks";
 
 import type { TestAssertionResult } from "../../../../../../http/resultsWithCountsDto";
 import type { NodeValidationError, VariableTypes } from "../../../../../../types/validation";
-import { NonDraggableLabel } from "../../../aggregate/dynamicLabel";
+import { RowFieldLabel } from "../../../aggregate/rowFieldLabel";
 import { EditableEditor } from "../../../editors/EditableEditor";
 import type { ExpressionObj } from "../../../editors/expression/types";
 import { EditorType, ExpressionLang } from "../../../editors/expression/types";
@@ -13,7 +13,7 @@ import Input from "../../../editors/field/Input";
 import { EMPTY_REQUIRED_ERROR } from "../../../editors/Validators";
 import { FieldsRow } from "../../../fragment-input-definition/FieldsRow";
 import type { AssertionParts } from "./assertionEncoder";
-import { encodeAssertionExpression, decodeAssertionExpression } from "./assertionEncoder";
+import { decodeAssertionExpression, encodeAssertionExpression } from "./assertionEncoder";
 import { AssertionStatus } from "./AssertionStatus";
 
 const ASSERTION_SYMBOLS: Record<string, string> = {
@@ -127,7 +127,7 @@ const AssertionItemComponent = ({ uuid, expressionObj, onChange, index, testAsse
     return (
         <Box display={"flex"} alignItems={"flex-start"} data-assertion-uuid={uuid}>
             <FieldsRow key={uuid} index={index} uuid={uuid} className={gridContainerStyle}>
-                <NonDraggableLabel hovered={isFirstRow} label="Expected">
+                <RowFieldLabel showLabel={isFirstRow} label="Expected">
                     <EditableEditor
                         showSwitch={false}
                         editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
@@ -137,11 +137,11 @@ const AssertionItemComponent = ({ uuid, expressionObj, onChange, index, testAsse
                         showValidation
                         fieldErrors={errors}
                     />
-                </NonDraggableLabel>
-                <NonDraggableLabel hovered={isFirstRow} label="Assertion">
+                </RowFieldLabel>
+                <RowFieldLabel showLabel={isFirstRow} label="Assertion">
                     <Input value={assertionSymbol} disabled={true} className={centeredInputStyle} />
-                </NonDraggableLabel>
-                <NonDraggableLabel hovered={isFirstRow} label="Actual">
+                </RowFieldLabel>
+                <RowFieldLabel showLabel={isFirstRow} label="Actual">
                     <EditableEditor
                         showSwitch={false}
                         editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
@@ -151,7 +151,7 @@ const AssertionItemComponent = ({ uuid, expressionObj, onChange, index, testAsse
                         showValidation
                         fieldErrors={errors.length > 0 && hasExpectedError ? [EMPTY_REQUIRED_ERROR] : []}
                     />
-                </NonDraggableLabel>
+                </RowFieldLabel>
             </FieldsRow>
             {testAssertionResult && (
                 <Box ml={1} mt={0.5}>

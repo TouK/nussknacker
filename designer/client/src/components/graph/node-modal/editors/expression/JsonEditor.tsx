@@ -12,7 +12,7 @@ import { setupAceEditorSnippets } from "./AceEditorJsonBasedSnippets";
 import AceWithSettings from "./AceWithSettings";
 import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
-import { ResetToDefaultButton } from "./ResetToDefaultButton";
+import { ResetToDefault } from "./ResetToDefaultButton";
 import type { ExpressionObj } from "./types";
 import { EditorType, ExpressionLang } from "./types";
 import { useAceEditorRangeMessages } from "./useAceEditorRangeMessages";
@@ -48,12 +48,21 @@ export const JsonEditor = prepareEditor<JsonEditorProps>(
         const InputAdornmentEnd = useMemo(() => {
             if (!defaultValue) return;
             if (readOnly) return;
-
-            const defaultValueObject =
-                typeof defaultValue === "string" ? { expression: defaultValue, language: ExpressionLang.JSON } : defaultValue; // defaultValue can be a string in case of Properties
-            if (defaultValueObject.expression === value) return;
-
-            return <ResetToDefaultButton defaultValue={defaultValueObject} handleChange={onChange} />;
+            return (
+                <ResetToDefault
+                    value={value}
+                    defaultValue={
+                        // defaultValue can be a string in case of Properties
+                        typeof defaultValue === "string"
+                            ? {
+                                  expression: defaultValue,
+                                  language: ExpressionLang.JSON,
+                              }
+                            : defaultValue
+                    }
+                    handleChange={({ expression }) => onChange(expression)}
+                />
+            );
         }, [defaultValue, onChange, readOnly, value]);
 
         return (

@@ -39,7 +39,6 @@ export function ReactSelectCreatableVariant({
         <div className={cx(className)}>
             <Creatable
                 value={currentOption}
-                classNamePrefix={"test"}
                 onChange={(newValue) =>
                     onValueChange({
                         expression: newValue.value,

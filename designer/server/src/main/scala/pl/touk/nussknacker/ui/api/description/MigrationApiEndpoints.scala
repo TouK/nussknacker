@@ -128,9 +128,9 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
               summary = Some("Invalid scenario to migrate"),
               value = InvalidScenario(
                 ValidationErrors(
-                  Map.empty,
-                  List.empty,
-                  List(
+                  invalidNodes = Map.empty,
+                  processPropertiesErrors = List.empty,
+                  globalErrors = List(
                     UIGlobalError(
                       NodeValidationError(
                         "FragmentParamClassLoadError",
@@ -142,7 +142,8 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
                       ),
                       List(NodeId("node1"))
                     )
-                  )
+                  ),
+                  testCasesValidationErrors = None,
                 )
               )
             )

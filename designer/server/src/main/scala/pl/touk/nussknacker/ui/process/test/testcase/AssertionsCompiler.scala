@@ -19,7 +19,6 @@ import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.
 import java.util
 import scala.jdk.CollectionConverters._
 
-// TODO: rename to TestCaseCompiler?
 class AssertionsCompiler(
     expressionCompiler: ExpressionCompiler,
     globalVariablesPreparer: GlobalVariablesPreparer

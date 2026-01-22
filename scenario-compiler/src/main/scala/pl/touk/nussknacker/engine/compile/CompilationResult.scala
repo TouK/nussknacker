@@ -145,6 +145,12 @@ object CompilationResult extends Applicative[CompilationResult] {
               s"This can be a bug in code or duplicated node ids with same expression ids"
           )
         }
+        if (x.outputValidationContext.isDefined && y.outputValidationContext.isDefined && y.outputValidationContext != x.outputValidationContext) {
+          logger.warn(
+            s"Merging different output validation contexts: ${x.outputValidationContext} and ${y.outputValidationContext}. " +
+              s"This can be a bug in code or duplicated node ids with different output validation contexts"
+          )
+        }
       }
 
       // we should be lax here because we want to detect duplicate nodes and context can be different then
@@ -153,7 +159,8 @@ object CompilationResult extends Applicative[CompilationResult] {
       NodeTypingInfo(
         y.inputValidationContext,
         x.expressionsTypingInfo ++ y.expressionsTypingInfo,
-        y.parameters.orElse(x.parameters)
+        y.parameters.orElse(x.parameters),
+        y.outputValidationContext.orElse(x.outputValidationContext)
       )
     }
 
@@ -166,5 +173,8 @@ case class NodeTypingInfo(
     expressionsTypingInfo: Map[String, ExpressionTypingInfo],
     // Currently only parameters for dynamic nodes (implemented by DynamicComponent) are returned
     // They are used on FE, to faster display correct node details modal (without need for additional validation request to BE)
-    parameters: Option[List[Parameter]]
+    parameters: Option[List[Parameter]],
+    // Output validation context after this node executes (includes output variables for enrichers)
+    // Used to avoid recompilation when validating test case mocks
+    outputValidationContext: Option[ValidationContext]
 )

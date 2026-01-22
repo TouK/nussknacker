@@ -1,8 +1,7 @@
 import { cx } from "@emotion/css";
 import { Box } from "@mui/material";
-import { get } from "lodash";
-import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { useArrayState } from "rooks";
+import { get, isEqual } from "lodash";
+import React, { useCallback, useContext, useMemo, useState } from "react";
 
 import { useAppSelector } from "../../../../store/storeHelpers";
 import { DndItems } from "../../../common/dndItems/DndItems";
@@ -39,35 +38,43 @@ export function AggregatorField({ parameterDefinitions, node, isEditMode, showVa
 
     const { aggregator } = useContext(AggregateContext);
     const { values, onChange, isMarked, fieldErrors = [] } = aggregator;
-    const [data, dataControls] = useArrayState<AggregateValue>(() => values);
+    const [data, setData] = useState<AggregateValue[]>(values);
+
+    const setAggregatorData = useCallback(
+        (value: ((prevData: AggregateValue[]) => AggregateValue[]) | AggregateValue[]) => {
+            setData((prev) => {
+                const next = typeof value === "function" ? value(prev) : value;
+                if (isEqual(prev, next)) return prev;
+                onChange?.(next);
+                return next;
+            });
+        },
+        [onChange],
+    );
 
     const onAdd = useCallback(() => {
-        dataControls.push(
+        setAggregatorData((prevData) => [
+            ...prevData,
             withUuid({
                 name: "",
                 agg: aggregators[0].expression,
                 expression: "",
             }),
-        );
-    }, [aggregators, dataControls]);
+        ]);
+    }, [aggregators, setAggregatorData]);
 
     const onRemove = useCallback(
         (_: string, uuid: string) => {
-            const i = data.findIndex((o) => o.uuid === uuid);
-            dataControls.removeItemAtIndex(i);
+            setAggregatorData((prevData) => prevData.filter((item) => item.uuid !== uuid));
         },
-        [data, dataControls],
+        [setAggregatorData],
     );
 
     const onChangeItem = useCallback(
         (uuid: string, updated: Partial<AggRow>) => {
-            const i = data.findIndex((o) => o.uuid === uuid);
-            dataControls.updateItemAtIndex(i, {
-                ...data[i],
-                ...updated,
-            });
+            setAggregatorData((prevData) => prevData.map((item) => (item.uuid === uuid ? { ...item, ...updated } : item)));
         },
-        [data, dataControls],
+        [setAggregatorData],
     );
 
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
@@ -80,13 +87,13 @@ export function AggregatorField({ parameterDefinitions, node, isEditMode, showVa
 
     const getFieldsRow = useCallback(
         (item: WithUuid<AggRow>, index: number) => (
-            <FieldsRow uuid={item.uuid} index={index}>
+            <FieldsRow key={item.uuid} uuid={item.uuid} index={index}>
                 <AggregatorFieldsStack
                     value={item}
                     onChange={onChangeItem}
                     aggregators={aggregators}
                     variableTypes={variableTypes}
-                    hovered={hovered === 0}
+                    showLabels={hovered == 0}
                     outputVariableName={outputVariableName}
                 />
             </FieldsRow>
@@ -101,10 +108,6 @@ export function AggregatorField({ parameterDefinitions, node, isEditMode, showVa
         }));
     }, [data, getFieldsRow]);
 
-    useEffect(() => {
-        onChange?.(data);
-    }, [data, onChange]);
-
     return (
         <NodeRowFieldsProvider
             path={null}
@@ -118,7 +121,7 @@ export function AggregatorField({ parameterDefinitions, node, isEditMode, showVa
                 <DndItems
                     disabled={!isEditMode || data.length <= 1}
                     items={items}
-                    onChange={dataControls.setArray}
+                    onChange={setAggregatorData}
                     onDestinationChange={setHovered}
                 />
             </Box>

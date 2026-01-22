@@ -2,10 +2,8 @@ import { cx } from "@emotion/css";
 import { styled } from "@mui/material";
 import { isEmpty } from "lodash";
 import type { ReactNode } from "react";
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 
-import { getUserSettings } from "../../../../reducers/selectors/userSettings";
-import { useAppSelector } from "../../../../store/storeHelpers";
 import type { TypingResult } from "../../../../types/definition";
 import type { VariableTypes } from "../../../../types/validation";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
@@ -15,6 +13,7 @@ import type { EditorConfig } from "./expression/EditorConfig";
 import { spelFormatters } from "./expression/Formatter";
 import type { ExpressionObj } from "./expression/types";
 import { EditorType, ExpressionLang } from "./expression/types";
+import type { CallbackChildren } from "./field/FieldSwitch";
 import { FieldSwitch } from "./field/FieldSwitch";
 import { FormControl, FormLabel } from "./FormControl";
 import { FieldLabelConsumer } from "./RenderFieldLabel";
@@ -27,7 +26,7 @@ interface Props {
     readOnly?: boolean;
     valueClassName?: string;
     editors?: EditorConfig[];
-    paramType?: TypingResult;
+    paramType?: Pick<TypingResult, "refClazzName">;
     values?: Array<PossibleValue>;
     isMarked?: boolean;
     showValidation?: boolean;
@@ -40,25 +39,37 @@ interface Props {
     defaultValue?: ExpressionObj | string;
 }
 
-export const EditableEditor = (props: Props) => {
-    const { expressionObj, valueClassName, editors, paramType, fieldErrors = [] } = props;
+const emptyArray = [];
 
-    const userSettings = useAppSelector(getUserSettings);
-    const forceSpelEditors = userSettings["debug.editor.forceSpelEditors"];
+export const EditableEditor = ({ paramType, ...props }: Props) => {
+    const { expressionObj, valueClassName, editors, fieldErrors = emptyArray } = props;
 
     const availableEditors: EditorConfig[] = useMemo((): EditorConfig[] => {
         if (isEmpty(editors)) {
             return [{ type: EditorType.SPEL_PARAMETER_EDITOR }];
         }
-        if (forceSpelEditors && !editors.find(({ type }) => type === EditorType.SPEL_PARAMETER_EDITOR)) {
-            return [...editors, { type: EditorType.SPEL_PARAMETER_EDITOR }];
-        }
         return editors;
-    }, [editors, forceSpelEditors]);
+    }, [editors]);
 
     const formatter = useMemo(
         () => (expressionObj?.language === ExpressionLang.SpEL ? spelFormatters[paramType?.refClazzName] : null),
         [expressionObj?.language, paramType?.refClazzName],
+    );
+
+    const element = useCallback<CallbackChildren>(
+        (type, editorConfig) => {
+            return (
+                <EditorByType
+                    type={type}
+                    config={editorConfig}
+                    {...props}
+                    className={`${valueClassName ? valueClassName : nodeValue}`}
+                    fieldErrors={fieldErrors}
+                    formatter={formatter}
+                />
+            );
+        },
+        [fieldErrors, formatter, props, valueClassName],
     );
 
     return (
@@ -69,18 +80,7 @@ export const EditableEditor = (props: Props) => {
             readOnly={props.readOnly}
             showSwitch={props.showSwitch}
         >
-            {({ type, ...editorConfig }) => {
-                return (
-                    <EditorByType
-                        type={type}
-                        config={editorConfig}
-                        {...props}
-                        className={`${valueClassName ? valueClassName : nodeValue}`}
-                        fieldErrors={fieldErrors}
-                        formatter={formatter}
-                    />
-                );
-            }}
+            {element}
         </FieldSwitch>
     );
 };

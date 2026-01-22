@@ -27,17 +27,17 @@ describe("Editors", () => {
         cy.layoutScenario();
         cy.intercept("POST", "/api/nodes/*/validation");
 
-        cy.get("[model-id^=Classinstancesource]").should("be.visible").trigger("dblclick");
+        cy.openNodeWindow("Classinstancesource").as("window");
 
         // Expression verification
-        cy.get("[data-testid=window]")
+        cy.get("@window")
             .contains(/Additional class/i)
             .siblings()
             .find("[id='ace-editor']")
             .type("{backspace}{backspace}"); //clear field
 
         // Open SpEL template editor hint
-        cy.get("[data-testid=window]")
+        cy.get("@window")
             .contains(/Additional class/i)
             .siblings()
             .find("[data-testid='InfoIcon']")
@@ -51,7 +51,7 @@ describe("Editors", () => {
         cy.get("[role=tab]").contains("expression").click();
 
         // Open SpEL editor hint
-        cy.get("[data-testid=window]")
+        cy.get("@window")
             .contains(/Additional class/i)
             .siblings()
             .find("[data-testid='InfoIcon']")
@@ -60,6 +60,6 @@ describe("Editors", () => {
         // Wait for a tooltip rendering and positioning
         cy.contains("You are using an expression-based input");
         cy.wait(200);
-        cy.get("[data-testid=window]").matchImage();
+        cy.get("@window").matchImage();
     });
 });

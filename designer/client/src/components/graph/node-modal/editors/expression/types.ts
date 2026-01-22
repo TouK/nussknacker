@@ -12,7 +12,7 @@ export enum ExpressionLang {
 
 export type ExpressionObj = {
     expression: string;
-    language: ExpressionLang | string;
+    language: ExpressionLang | NonNullable<string>;
 };
 
 export enum EditorMode {
@@ -43,4 +43,5 @@ export enum EditorType {
     DICT_PARAMETER_EDITOR = "DictParameterEditor",
     TABLE_EDITOR = "TabularTypedDataEditor",
     JSON_TEMPLATE_PARAMETER_EDITOR = "JsonTemplateParameterEditor",
+    NAME_VALUE_LIST_EDITOR = "NameValueListEditor",
 }

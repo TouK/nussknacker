@@ -11,8 +11,11 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition.UIParameter
+import pl.touk.nussknacker.restmodel.validation.testcase.ScenarioTestCasesValidationErrors
 
 object ValidationResults {
+
+  import ScenarioTestCasesValidationErrors._
 
   private implicit val typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
 
@@ -22,7 +25,8 @@ object ValidationResults {
       warnings: ValidationWarnings,
       nodeResults: Map[String, NodeTypingData]
   ) {
-    val hasErrors: Boolean   = errors != ValidationErrors.success
+    // At the moment, test cases validation errors are not considered as blocking errors, e.g. during deployment
+    val hasErrors: Boolean   = errors.copy(testCasesValidationErrors = None) != ValidationErrors.success
     val hasWarnings: Boolean = warnings != ValidationWarnings.success
     val saveAllowed: Boolean = allErrors.forall(_.errorType == NodeValidationErrorType.SaveAllowed)
 
@@ -30,7 +34,8 @@ object ValidationResults {
       ValidationErrors(
         errors.invalidNodes.combine(other.errors.invalidNodes),
         errors.processPropertiesErrors ++ other.errors.processPropertiesErrors,
-        errors.globalErrors ++ other.errors.globalErrors
+        errors.globalErrors ++ other.errors.globalErrors,
+        errors.testCasesValidationErrors.combine(other.errors.testCasesValidationErrors),
       ),
       ValidationWarnings(
         warnings.invalidNodes.combine(other.warnings.invalidNodes)
@@ -85,7 +90,8 @@ object ValidationResults {
   @JsonCodec final case class ValidationErrors(
       invalidNodes: Map[NodeId, List[NodeValidationError]],
       processPropertiesErrors: List[NodeValidationError],
-      globalErrors: List[UIGlobalError]
+      globalErrors: List[UIGlobalError],
+      testCasesValidationErrors: Option[ScenarioTestCasesValidationErrors],
   ) {
     def isEmpty: Boolean = invalidNodes.isEmpty && processPropertiesErrors.isEmpty && globalErrors.isEmpty
   }
@@ -104,33 +110,53 @@ object ValidationResults {
   )
 
   object ValidationErrors {
-    val success: ValidationErrors = ValidationErrors(Map.empty, List.empty, List.empty)
+
+    val success: ValidationErrors = ValidationErrors(
+      invalidNodes = Map.empty,
+      processPropertiesErrors = List.empty,
+      globalErrors = List.empty,
+      testCasesValidationErrors = None,
+    )
+
+    def initial(
+        invalidNodes: Map[NodeId, List[NodeValidationError]] = Map.empty,
+        processPropertiesErrors: List[NodeValidationError] = Nil,
+        globalErrors: List[UIGlobalError] = Nil,
+        testCasesValidationErrors: Option[ScenarioTestCasesValidationErrors] = None,
+    ): ValidationErrors =
+      ValidationErrors(
+        invalidNodes = invalidNodes,
+        processPropertiesErrors = processPropertiesErrors,
+        globalErrors = globalErrors,
+        testCasesValidationErrors = testCasesValidationErrors,
+      )
+
   }
 
   object ValidationWarnings {
-    val success: ValidationWarnings = ValidationWarnings(Map.empty)
+    val success: ValidationWarnings = ValidationWarnings(invalidNodes = Map.empty)
   }
 
   object ValidationResult {
 
-    val success: ValidationResult = ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
-
-    def globalErrors(globalErrors: List[UIGlobalError]): ValidationResult =
-      ValidationResult.errors(Map.empty, List.empty, globalErrors)
+    val success: ValidationResult =
+      ValidationResult(ValidationErrors.success, ValidationWarnings.success, nodeResults = Map.empty)
 
     def errors(
-        invalidNodes: Map[NodeId, List[NodeValidationError]],
-        processPropertiesErrors: List[NodeValidationError],
-        globalErrors: List[UIGlobalError]
+        invalidNodes: Map[NodeId, List[NodeValidationError]] = Map.empty,
+        processPropertiesErrors: List[NodeValidationError] = Nil,
+        globalErrors: List[UIGlobalError] = Nil,
+        testCasesValidationErrors: Option[ScenarioTestCasesValidationErrors] = None,
     ): ValidationResult = {
       ValidationResult(
         ValidationErrors(
           invalidNodes = invalidNodes,
           processPropertiesErrors = processPropertiesErrors,
-          globalErrors = globalErrors
+          globalErrors = globalErrors,
+          testCasesValidationErrors = testCasesValidationErrors,
         ),
         ValidationWarnings.success,
-        Map.empty
+        nodeResults = Map.empty
       )
     }
 

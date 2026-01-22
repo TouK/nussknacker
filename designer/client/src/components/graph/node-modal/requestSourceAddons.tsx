@@ -1,5 +1,6 @@
 import { produce } from "immer";
 
+import { determineComponentId } from "../../../common/componentUtils";
 import type { UIParameter } from "../../../types/definition";
 import { ParameterCategory } from "../../../types/definition";
 import type { NodeType, PropertiesType } from "../../../types/node";
@@ -8,7 +9,7 @@ import type { NodeValidationError } from "../../../types/validation";
 import { editorsParameters } from "./editors/expression/editorsParameters";
 
 export function isRequestSource(node: NodeType) {
-    return node.type === "Source" && node.ref?.typ === "request";
+    return determineComponentId(node) === "source-request";
 }
 
 function isRequestParameter(name: PropertiesConfigKeys) {
