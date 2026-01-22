@@ -242,8 +242,10 @@ protected trait ProcessCompilerBase {
       part.node,
       SingleInputNodeInputValidationContext(initialCtx.valueOr(_ => contextWithOnlyGlobalVariables))
     )
-    val typesForParts  = validatedSource.typing.mapValuesNow(_.inputValidationContext)
-    val nodeTypingInfo = Map(part.id -> NodeTypingInfo(contextWithOnlyGlobalVariables, typingInfo, parameters))
+    val typesForParts = validatedSource.typing.mapValuesNow(_.inputValidationContext)
+    val nodeTypingInfo = Map(
+      part.id -> NodeTypingInfo(contextWithOnlyGlobalVariables, typingInfo, parameters, initialCtx.toOption)
+    )
 
     CompilationResult.map4(
       validatedSource,
@@ -267,9 +269,9 @@ protected trait ProcessCompilerBase {
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[part.SinkPart] = {
-    val NodeCompilationResult(typingInfo, parameters, _, compiledSink, _) =
+    val NodeCompilationResult(typingInfo, parameters, outputCtx, compiledSink, _) =
       nodeCompiler.compileSink(node.data, SingleInputNodeInputValidationContext(ctx))
-    val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
+    val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters, outputCtx.toOption))
     CompilationResult.map2(
       sub.validate(node, SingleInputNodeInputValidationContext(ctx)),
       CompilationResult(nodeTypingInfo, compiledSink)
@@ -284,7 +286,7 @@ protected trait ProcessCompilerBase {
   ): CompilationResult[compiledgraph.part.CustomNodePart] = {
     val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) =
       nodeCompiler.compileCustomNodeObject(node, SingleInputNodeInputValidationContext(ctx))
-    val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
+    val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters, validatedNextCtx.toOption))
 
     CompilationResult
       .map2(
@@ -334,7 +336,12 @@ protected trait ProcessCompilerBase {
     val nextPartsValidation = sub.validate(node, nextPartInputValidationContext)
     val typesForParts       = nextPartsValidation.typing.mapValuesNow(_.inputValidationContext)
     val nodeTypingInfo = Map(
-      node.id -> NodeTypingInfo(ctx.left.getOrElse(contextWithOnlyGlobalVariables), typingInfo, parameters)
+      node.id -> NodeTypingInfo(
+        ctx.left.getOrElse(contextWithOnlyGlobalVariables),
+        typingInfo,
+        parameters,
+        validatedNextCtx.toOption
+      )
     )
 
     CompilationResult

@@ -1,0 +1,120 @@
+package pl.touk.nussknacker.ui.process.test.testcase.validation
+
+import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.test.testcase.TestCase
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import pl.touk.nussknacker.restmodel.validation.testcase.{
+  NodeTestCasesValidationErrors,
+  NodeTestCaseValidationErrors,
+  ScenarioTestCasesValidationErrors
+}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionsCompiler
+
+class TestCaseValidator(
+    enricherMockValidator: EnricherMockValidator,
+    assertionValidator: AssertionValidator,
+) {
+
+  import TestCaseValidator._
+
+  def validateScenarioTestCases(
+      nodes: List[NodeData],
+      nodesTyping: Map[String, TestCaseValidator.NodeTyping],
+      testCases: List[TestCase],
+  )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): ScenarioTestCasesValidationErrors = {
+    val nodesById = nodes.map(n => NodeId(n.id) -> n).toMap
+    val testCasesErrorsByNode = nodesById.flatMap { case (nodeId, node) =>
+      val nodeTestCases = prepareNodeTestCases(testCases, nodeId)
+      val nodeTyping    = nodesTyping.getOrElse(nodeId.id, NodeTyping.empty)
+      val errors        = validateNodeTestCases(node, nodeTestCases, nodeTyping)
+      if (errors.isEmpty) None else Some(nodeId -> errors)
+    }
+
+    testCasesErrorsByNode
+  }
+
+  private def prepareNodeTestCases(
+      testCases: List[TestCase],
+      nodeId: NodeId
+  ): NodeTestCases = {
+    testCases.map { testCase =>
+      testCase.name -> NodeTestCase(
+        enricherMock = testCase.mocks.get(nodeId),
+        assertions = testCase.assertions.getOrElse(nodeId, List.empty)
+      )
+    }.toMap
+  }
+
+  def validateNodeTestCases(
+      nodeData: NodeData,
+      nodeTestCases: NodeTestCases,
+      nodeTyping: NodeTyping
+  )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): NodeTestCasesValidationErrors = {
+    nodeTestCases.flatMap { case (testCaseName, nodeTestCase) =>
+      validateSingleNodeTestCase(
+        nodeData,
+        nodeTestCase,
+        nodeTyping
+      ) match {
+        case Left(errors) => Some(testCaseName -> errors)
+        case Right(_)     => None
+      }
+    }
+  }
+
+  private def validateSingleNodeTestCase(
+      nodeData: NodeData,
+      nodeTestCase: NodeTestCase,
+      nodeTyping: NodeTyping
+  )(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): Either[NodeTestCaseValidationErrors, Unit] = {
+    val enricherMockErrors = enricherMockValidator.validate(
+      nodeData,
+      nodeTestCase.enricherMock,
+      nodeTyping
+    )
+    val assertionsErrors = assertionValidator.validate(
+      NodeId(nodeData.id),
+      nodeTestCase.assertions,
+      nodeTyping.inputVariables,
+      scenarioCompilationDependencies.jobData
+    )
+
+    (enricherMockErrors, assertionsErrors) match {
+      case (None, None) => Right(())
+      case (enricherErrs, assertionErrs) =>
+        Left(NodeTestCaseValidationErrors(enricherErrs, assertionErrs))
+    }
+  }
+
+}
+
+object TestCaseValidator {
+
+  final case class NodeTyping(
+      inputVariables: Map[String, TypingResult],
+      outputVariables: Map[String, TypingResult],
+  )
+
+  object NodeTyping {
+    val empty = NodeTyping(Map.empty, Map.empty)
+  }
+
+  def apply(modelData: ModelData): TestCaseValidator = {
+    val expressionCompiler      = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
+    val globalVariablesPreparer = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
+    new TestCaseValidator(
+      new EnricherMockValidator(expressionCompiler, globalVariablesPreparer),
+      new AssertionValidator(
+        new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
+      )
+    )
+  }
+
+}

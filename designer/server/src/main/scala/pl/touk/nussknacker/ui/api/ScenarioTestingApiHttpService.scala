@@ -257,11 +257,7 @@ class ScenarioTestingApiHttpService(
     error match {
       case ParametersDefinitionError.SourcesCompilationError(nodesWithErrors) =>
         SourcesCompilationError(
-          ValidationErrors(
-            invalidNodes = collectInvalidNodes(nodesWithErrors),
-            processPropertiesErrors = List.empty,
-            globalErrors = List.empty
-          )
+          ValidationErrors.initial(invalidNodes = collectInvalidNodes(nodesWithErrors))
         )
       case ParametersDefinitionError.TestingWithCustomInputNotSupportedError(nodeId) =>
         BadRequestTestingError.TestingWithCustomInputNotSupportedError(nodeId)
@@ -272,11 +268,7 @@ class ScenarioTestingApiHttpService(
     error match {
       case FetchLiveDataError.SourcesCompilationError(nodesWithErrors) =>
         SourcesCompilationError(
-          ValidationErrors(
-            invalidNodes = collectInvalidNodes(nodesWithErrors),
-            processPropertiesErrors = List.empty,
-            globalErrors = List.empty
-          )
+          ValidationErrors.initial(invalidNodes = collectInvalidNodes(nodesWithErrors))
         )
       case FetchLiveDataError.NoLiveDataAvailableError =>
         NoLiveDataAvailable
