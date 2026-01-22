@@ -6,19 +6,22 @@ import { cloneDeep } from "lodash";
 import React, { useCallback, useRef } from "react";
 
 import { DragHandle, DragHandlerContext } from "./DragHandle";
+import type { DropTargetProps } from "./DropTarget";
 import { DropTarget } from "./DropTarget";
 import { FakeFormWindow } from "./FakeFormWindow";
-import type { ItemsProps } from "./Items";
 
-interface DndListProps<I> extends ItemsProps<I> {
+type PassedProps = Omit<DropTargetProps, "renderClone" | "CloneWrapper" | "onDragEnd" | "onDragStart" | "onDragUpdate" | "droppableId">;
+
+type OwnProps<I> = {
     disabled?: boolean;
     onChange: (value: I[]) => void;
+    items: { item: I; el: React.JSX.Element }[];
     onDestinationChange?: (index: number | null) => void;
-}
+};
 
-export function DndItems<I>(props: DndListProps<I>): React.JSX.Element {
-    const { items, onChange, onDestinationChange, disabled } = props;
+type DndItemsProps<I> = PassedProps & OwnProps<I>;
 
+export function DndItems<I>({ items, onChange, onDestinationChange, disabled, ...passProps }: DndItemsProps<I>) {
     const moveItem = useCallback(
         (source: number, target: number) => {
             if (source >= 0 && target >= 0) {
@@ -67,6 +70,7 @@ export function DndItems<I>(props: DndListProps<I>): React.JSX.Element {
             onDragEnd={({ destination, source }) => moveItem(source?.index, destination?.index)}
             onDragStart={({ source }) => onDestinationChange?.(source?.index)}
             onDragUpdate={({ destination }) => onDestinationChange?.(destination?.index)}
+            {...passProps}
         >
             {items.map((_, index) => (
                 <Draggable key={index} draggableId={`${index}`} index={index} isDragDisabled={disabled}>

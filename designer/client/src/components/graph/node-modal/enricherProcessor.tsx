@@ -12,7 +12,7 @@ import { IdField } from "./IdField";
 import { findParameters } from "./NodeDetailsContent/helpers";
 import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 import { NodeField } from "./NodeField";
-import { ParametersListAdvanced } from "./parametersListAdvanced";
+import { ParametersListWithOverrides } from "./ParametersListWithOverrides";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 export function EnricherProcessor({
@@ -38,7 +38,7 @@ export function EnricherProcessor({
     return (
         <>
             <IdField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
-            <ParametersListAdvanced
+            <ParametersListWithOverrides
                 parameters={findParameters(node)}
                 isEditMode={isEditMode}
                 showValidation={showValidation}
@@ -78,7 +78,7 @@ export function EnricherProcessor({
                     setProperty={setProperty}
                     errors={errors}
                 />
-            </ParametersListAdvanced>
+            </ParametersListWithOverrides>
         </>
     );
 }

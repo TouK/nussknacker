@@ -6,7 +6,8 @@ import { AggregateFieldOverrideWrapper } from "./customNodeParameters";
 import type { AdvancedParametersListProps } from "./parametersListAdvanced";
 import { ParametersListAdvanced } from "./parametersListAdvanced";
 
-export const AggregateParametersList = ({ children, ...props }: PropsWithChildren<AdvancedParametersListProps>) => {
+type AggregateParametersListProps = Omit<PropsWithChildren<AdvancedParametersListProps>, "FieldWrapper">;
+export const AggregateParametersList = ({ children, ...props }: AggregateParametersListProps) => {
     const { errors, node, setProperty } = props;
     return (
         <AggregateContextProvider node={node} errors={errors} setProperty={setProperty}>

@@ -42,4 +42,8 @@ export const editorsParameters: Record<EditorType, { displayName: string; langua
         displayName: "Json Template",
         language: ExpressionLang.JsonTemplate,
     },
+    [EditorType.NAME_VALUE_LIST_EDITOR]: {
+        displayName: "list",
+        language: ExpressionLang.SpEL,
+    },
 };

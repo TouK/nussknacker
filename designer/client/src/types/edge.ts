@@ -1,4 +1,5 @@
 import type { ExpressionObj } from "../components/graph/node-modal/editors/expression/types";
+import type { WithTempId } from "../components/graph/node-modal/tempId";
 import type { NodeId } from "./node";
 
 export enum EdgeKind {
@@ -15,9 +16,8 @@ export type EdgeType = {
     condition?: ExpressionObj;
 };
 
-export type Edge = {
-    _id?: string;
+export type Edge = WithTempId<{
     from: NodeId;
     to: NodeId;
     edgeType?: EdgeType;
-};
+}>;

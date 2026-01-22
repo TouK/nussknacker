@@ -25,7 +25,6 @@ function CountsButton(props: ToolbarButtonProps) {
     return featuresSettings?.counts && !fragment ? (
         <ToolbarButton
             isLoading={isProgressing}
-            loadingVariant={"determinate"}
             loadingProgress={percent}
             name={t("panels.actions.test-counts.name", "counts")}
             title={t("panels.actions.test-counts.button.title", "Show number of processed data records")}

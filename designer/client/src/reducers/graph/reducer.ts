@@ -1,4 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
+import type { WritableDraft } from "immer";
 import { produce } from "immer";
 import type { Dictionary } from "lodash";
 import { concat, defaultsDeep, flow, isEqual, partition, sortBy } from "lodash";
@@ -8,6 +9,7 @@ import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction
 import type { Action, ActionOfType, Reducer } from "../../actions/reduxTypes";
 import ProcessUtils from "../../common/ProcessUtils";
 import { appendUuidToParameters } from "../../components/graph/node-modal/appendUuid";
+import { fixEmptyValues } from "../../components/graph/node-modal/fixEmptyValues";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { addStickyNotesToNodes, StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
 import type { Scenario } from "../../components/Process/types";
@@ -124,8 +126,11 @@ const updateStateAfterEdit = (state: GraphState, action: ActionOfType<"EDIT_NODE
 const adjustScenarioData = flow(
     addStickyNotesToNodes,
     appendScenarioNameToProperties,
-    produce((draft: Scenario) => {
-        draft.scenarioGraph.nodes?.forEach(appendUuidToParameters);
+    produce((draft: WritableDraft<Scenario>) => {
+        draft.scenarioGraph.nodes?.forEach((nodeDraft) => {
+            appendUuidToParameters(nodeDraft);
+            fixEmptyValues(nodeDraft);
+        });
     }),
 );
 

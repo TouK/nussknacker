@@ -54,24 +54,22 @@ export function FormField({ name }: { name: string }) {
                     readOnly={false}
                     showSwitch={true}
                 >
-                    {({ type, ...editorConfig }) => {
-                        return (
-                            <EditorByType
-                                type={type}
-                                config={editorConfig}
-                                className={nodeValue}
-                                fieldErrors={getValidationErrorsForField(errors, name)}
-                                formatter={formatter}
-                                onValueChange={setParam(name)}
-                                expressionObj={value[name]}
-                                readOnly={false}
-                                key={name}
-                                showSwitch={true}
-                                showValidation={true}
-                                variableTypes={variableTypes}
-                            />
-                        );
-                    }}
+                    {(type, editorConfig) => (
+                        <EditorByType
+                            type={type}
+                            config={editorConfig}
+                            className={nodeValue}
+                            fieldErrors={getValidationErrorsForField(errors, name)}
+                            formatter={formatter}
+                            onValueChange={setParam(name)}
+                            expressionObj={value[name]}
+                            readOnly={false}
+                            key={name}
+                            showSwitch={true}
+                            showValidation={true}
+                            variableTypes={variableTypes}
+                        />
+                    )}
                 </FieldSwitch>
             </FormControl>
         </NodeTable>

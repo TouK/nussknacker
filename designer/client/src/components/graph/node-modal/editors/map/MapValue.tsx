@@ -31,7 +31,6 @@ export default React.memo(function MapValue(props: MapValueProps): React.JSX.Ele
                 showValidation={showValidation}
                 onValueChange={onChange}
                 expressionObj={value}
-                valueClassName={" "}
                 variableTypes={variableTypes}
                 validationLabelInfo={validationLabelInfo}
                 showSwitch={false}

@@ -1,6 +1,6 @@
 import { debounce } from "lodash";
 
-import { getNodeDetails } from "../../components/graph/node-modal/NodeDetailsContent/getNodeDetails";
+import { getNodesDetails } from "../../components/graph/node-modal/NodeDetailsContent/getNodeDetails";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import type { AppDispatch } from "../../store/storeHelpers";
 import type { TypingResult, UIParameter } from "../../types/definition";
@@ -117,7 +117,7 @@ export function validateNodeData(
 ): ThunkAction {
     return (dispatch, getState) => {
         validateDebounced(dispatch, validationRequestData, (data) => {
-            const allowDataUpdate = data && getNodeDetails(getState())(validationRequestData.nodeData.id);
+            const allowDataUpdate = data && getNodesDetails(getState())[validationRequestData.nodeData.id];
             callback?.(allowDataUpdate ? "allowDataUpdate" : "unknown");
         });
     };

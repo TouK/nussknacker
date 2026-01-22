@@ -12,7 +12,8 @@ type Props = {
 };
 
 export default function ValidationLabels(props: Props) {
-    const { fieldErrors, validationLabelInfo } = props;
+    const { validationLabelInfo } = props;
+    const fieldErrors = props.fieldErrors.filter((e) => e.message);
 
     if (isEmpty(fieldErrors)) {
         if (!validationLabelInfo) return null;

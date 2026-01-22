@@ -18,6 +18,7 @@ import type { Formatter } from "./Formatter";
 import { JsonEditor } from "./JsonEditor";
 import { JsonTemplateEditor } from "./JsonTemplateEditor";
 import { MultiSelectFixedValuesEditor } from "./MultiSelectFixedValuesEditor";
+import { NameValueListEditor } from "./NameValueList/NameValueListEditor";
 import { SpelEditor } from "./SpelEditor";
 import { SpelTemplateEditor } from "./SpelTemplateEditor";
 import { SqlEditor } from "./SqlEditor";
@@ -50,7 +51,7 @@ type SimpleEditor<C = EditorProps, P extends EditorProps = GetProps<C>> = GetCom
 
 type Addons<C = EditorProps, P extends EditorProps = GetProps<C>> = {
     isSwitchableTo: (expressionObj: P["expressionObj"], editorConfig: P["editorConfig"]) => boolean;
-    notSwitchableToHint: () => string;
+    notSwitchableToHint?: () => string;
     parseValueOnEditorChange?: (expressionObj: P["expressionObj"], nextLanguage: ExpressionLang) => ExpressionObj;
 };
 
@@ -80,27 +81,28 @@ export function isExtendedEditor(editor: SimpleEditor | ExtendedEditor): editor 
     return (editor as ExtendedEditor)?.isSwitchableTo !== undefined;
 }
 
-export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
-    [EditorType.BOOL_PARAMETER_EDITOR]: BoolEditor,
-    [EditorType.CRON_EDITOR]: CronEditor,
-    [EditorType.DATE]: DateEditor,
-    [EditorType.DATE_TIME]: DateTimeEditor,
-    [EditorType.DURATION_EDITOR]: DurationEditor,
-    [EditorType.FIXED_VALUES_PARAMETER_EDITOR]: FixedValuesEditor,
-    [EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR]: FixedValuesEditor,
-    [EditorType.FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR]: FixedValuesRadioEditor,
-    [EditorType.MULTI_SELECT_EDITOR]: MultiSelectFixedValuesEditor,
-    [EditorType.JSON_PARAMETER_EDITOR]: JsonEditor,
-    [EditorType.PERIOD_EDITOR]: PeriodEditor,
-    [EditorType.SPEL_PARAMETER_EDITOR]: SpelEditor,
-    [EditorType.STATIC_STRING_PARAMETER_EDITOR]: StaticStringEditor,
-    [EditorType.TEXTAREA_PARAMETER_EDITOR]: TextareaEditor,
-    [EditorType.TIME]: TimeEditor,
-    [EditorType.SQL_PARAMETER_EDITOR]: SqlEditor,
-    [EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR]: SpelTemplateEditor,
-    [EditorType.DICT_PARAMETER_EDITOR]: DictParameterEditor,
-    [EditorType.TABLE_EDITOR]: TableEditor,
-    [EditorType.JSON_TEMPLATE_PARAMETER_EDITOR]: JsonTemplateEditor,
+export const editors: Record<EditorType, () => SimpleEditor | ExtendedEditor> = {
+    [EditorType.BOOL_PARAMETER_EDITOR]: () => BoolEditor,
+    [EditorType.CRON_EDITOR]: () => CronEditor,
+    [EditorType.DATE]: () => DateEditor,
+    [EditorType.DATE_TIME]: () => DateTimeEditor,
+    [EditorType.DURATION_EDITOR]: () => DurationEditor,
+    [EditorType.FIXED_VALUES_PARAMETER_EDITOR]: () => FixedValuesEditor,
+    [EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR]: () => FixedValuesEditor,
+    [EditorType.FIXED_VALUES_WITH_RADIO_PARAMETER_EDITOR]: () => FixedValuesRadioEditor,
+    [EditorType.MULTI_SELECT_EDITOR]: () => MultiSelectFixedValuesEditor,
+    [EditorType.JSON_PARAMETER_EDITOR]: () => JsonEditor,
+    [EditorType.PERIOD_EDITOR]: () => PeriodEditor,
+    [EditorType.SPEL_PARAMETER_EDITOR]: () => SpelEditor,
+    [EditorType.STATIC_STRING_PARAMETER_EDITOR]: () => StaticStringEditor,
+    [EditorType.TEXTAREA_PARAMETER_EDITOR]: () => TextareaEditor,
+    [EditorType.TIME]: () => TimeEditor,
+    [EditorType.SQL_PARAMETER_EDITOR]: () => SqlEditor,
+    [EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR]: () => SpelTemplateEditor,
+    [EditorType.DICT_PARAMETER_EDITOR]: () => DictParameterEditor,
+    [EditorType.TABLE_EDITOR]: () => TableEditor,
+    [EditorType.JSON_TEMPLATE_PARAMETER_EDITOR]: () => JsonTemplateEditor,
+    [EditorType.NAME_VALUE_LIST_EDITOR]: () => NameValueListEditor,
 } as const;
 
 export type OnValueChange = {
