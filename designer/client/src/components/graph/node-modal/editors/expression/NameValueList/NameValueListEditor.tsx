@@ -3,22 +3,18 @@ import { curry, isEqual } from "lodash";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useDebounceFn } from "rooks";
 
-import type { VariableTypes } from "../../../../../../types/validation";
 import { DndItems } from "../../../../../common/dndItems/DndItems";
 import { getAst } from "../../../aggregate/pareserHelpers";
-import { RowFieldLabel } from "../../../aggregate/rowFieldLabel";
 import type { WithUuid } from "../../../appendUuid";
 import { withUuid } from "../../../appendUuid";
 import { FieldsRow } from "../../../fragment-input-definition/FieldsRow";
 import { FieldsControl } from "../../../node-row-fields-provider/FieldsControl";
-import { EditableEditor } from "../../EditableEditor";
-import type { FieldError, Validator } from "../../Validators";
-import { extendErrors, HandledErrorType, mandatoryValueValidator } from "../../Validators";
+import type { FieldError } from "../../Validators";
 import { prepareEditor } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
-import { FormatterType, spelFormatters } from "../Formatter";
 import { EditorType, ExpressionLang } from "../types";
 import { deserialize, type NameValueRecord, serialize } from "./nameValueRecordsListHelpers";
+import { NameField, ValueField } from "./partialFields";
 
 function lineColumnToIndex(text: string, { row, column }: { row: number; column: number }): number {
     let currentLine = 0;
@@ -42,70 +38,6 @@ function lineColumnToIndex(text: string, { row, column }: { row: number; column:
 
     return -1;
 }
-
-const emptyMandatoryValueValidator: Validator = {
-    ...mandatoryValueValidator,
-    message: () => "",
-    description: () => "",
-};
-
-const mappedValueValidator = (errors: { error: FieldError; row: string }[], item: WithUuid<NameValueRecord>): Validator => ({
-    ...emptyMandatoryValueValidator,
-    isValid: (value) => {
-        if (!errors) return true;
-        if (!item) return true;
-        return errors.find((e) => e.row === item.uuid)?.error || true;
-    },
-});
-
-const spelValuePreValidator: Validator = {
-    isValid: (value) => Boolean(getAst(value, false)),
-    message: () => i18next.t("spelValuePreValidator.message", "This field have to contain valid SpEL expression"),
-    description: () => i18next.t("validator.spelValue.description", "Please enter valid SpEL"),
-    handledErrorType: HandledErrorType.InvalidSpelExpressionParameter,
-};
-
-type FieldProps = {
-    fieldErrors: FieldError[];
-    onChangeItem: (updated: Partial<NameValueRecord>) => void;
-    showLabels: boolean;
-    showValidation: boolean;
-    showSwitch: boolean;
-    variableTypes: VariableTypes;
-    value: string;
-};
-
-const NameField = ({ showLabels, value, onChangeItem, ...props }: FieldProps) => (
-    <RowFieldLabel flexBasis="30%" label="name" showLabel={showLabels}>
-        <EditableEditor
-            editors={[{ type: EditorType.STATIC_STRING_PARAMETER_EDITOR }]}
-            expressionObj={{ expression: value, language: ExpressionLang.SpEL }}
-            onValueChange={(value) => {
-                const expression = value.expression.trim();
-                if (value.language === ExpressionLang.SpEL) {
-                    return onChangeItem({ name: expression });
-                }
-                if (!expression) {
-                    return onChangeItem({ name: "" });
-                }
-                return onChangeItem({ name: spelFormatters[FormatterType.String].encode(expression) });
-            }}
-            {...props}
-        />
-    </RowFieldLabel>
-);
-
-const ValueField = ({ showLabels, value, onChangeItem, ...props }: FieldProps) => (
-    <RowFieldLabel flexBasis="70%" label="value" showLabel={showLabels}>
-        <EditableEditor
-            expressionObj={{ expression: value, language: ExpressionLang.SpEL }}
-            onValueChange={({ expression }) => {
-                onChangeItem({ value: expression });
-            }}
-            {...props}
-        />
-    </RowFieldLabel>
-);
 
 export const NameValueListEditor = prepareEditor(
     ({ expressionObj, onValueChange, variableTypes, readOnly, fieldErrors = [], showValidation }) => {
@@ -208,17 +140,13 @@ export const NameValueListEditor = prepareEditor(
                     <FieldsRow key={item.uuid} uuid={item.uuid} index={index} ref={focusField(item.uuid)}>
                         <NameField
                             value={item.name}
-                            fieldErrors={extendErrors([], item.name, null, [spelValuePreValidator, emptyMandatoryValueValidator])}
+                            fieldErrors={[]}
                             showValidation={showValidation && Boolean(item.value)}
                             {...fieldProps}
                         />
                         <ValueField
                             value={item.value}
-                            fieldErrors={extendErrors([], item.value, null, [
-                                spelValuePreValidator,
-                                mandatoryValueValidator,
-                                mappedValueValidator(mappedErrors, item),
-                            ])}
+                            fieldErrors={mappedErrors.filter(({ row }) => row === item.uuid).map(({ error }) => error)}
                             showValidation={showValidation && Boolean(item.name)}
                             {...fieldProps}
                         />
