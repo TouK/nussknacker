@@ -14,7 +14,7 @@ import scala.util.Try
 import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 
-val scala213 = "2.13.16"
+val scala213 = "2.13.18"
 
 lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
   case None | Some("2.13") => scala213
@@ -233,7 +233,7 @@ lazy val commonSettings =
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV                = "1.20.2"
+val flinkV                = "1.20.3"
 val flinkConnectorKafkaV  = "3.4.0-1.20"
 val jdbcFlinkConnectorV   = "3.3.0-1.20"
 val flinkCommonsCompressV = "1.26.0"
@@ -241,7 +241,7 @@ val flinkCommonsLang3V    = "3.12.0"
 val flinkCommonsTextV     = "1.10.0"
 val flinkCommonsIOV       = "2.15.1"
 val flinkInfluxdbJavaV    = "2.17"
-val flinkScalaV           = "1.1.5"
+val flinkScalaV           = "1.1.6"
 // keep calcite synchronized with version used by current flink-sql-parser
 val calciteV              = "1.32.0"
 val avroV                 =
