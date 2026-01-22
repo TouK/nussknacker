@@ -27,7 +27,7 @@ Use autocompletion to explore available options. To read more see [Documentation
                     case OverrideKeys.DecisionTableMatch:
                         return mergeTexts(
                             t(
-                                "editors.spelEditor.infoText.tableMatch",
+                                "editors.spelEditor.additionalInfoText.tableMatch",
                                 `Match condition is a **Boolean** SpEL expression based on which one or more rows of the decision table will be selected. To create this expression you can refer to the variables used in the scenario and values in the decision table. Use \`#ROW.columnName\` notation to access a single cell value.`,
                             ),
                             helpText,
@@ -35,7 +35,7 @@ Use autocompletion to explore available options. To read more see [Documentation
                     case OverrideKeys.AggregateEndSession:
                         return mergeTexts(
                             t(
-                                "editors.spelEditor.infoText.endSession",
+                                "editors.spelEditor.additionalInfoText.endSession",
                                 `The Aggregate Session window can close not only on timeout. It will also close when the expression entered in this field evaluates to true. Set this parameter to \`false\` if the only way to close the window is through session timeout.`,
                             ),
                             helpText,
