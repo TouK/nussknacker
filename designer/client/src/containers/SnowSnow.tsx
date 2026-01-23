@@ -1,6 +1,7 @@
 import React from "react";
 import Snowfall from "react-snowfall";
 
+import { ThemedStylesWrapper } from "../components/ThemedStylesWrapper";
 import { getUserSettings } from "../reducers/selectors/userSettings";
 import { useAppSelector } from "../store/storeHelpers";
 
@@ -11,15 +12,15 @@ export function SnowSnow() {
     const isSnowing = settings[SNOW_SNOW_FLAG];
 
     if (!isSnowing) return null;
-
     return (
-        <Snowfall
-            style={{
+        <ThemedStylesWrapper
+            component={Snowfall}
+            style={(theme) => ({
+                zIndex: theme.zIndex.drawer + 101,
                 position: "fixed",
                 inset: 0,
-                zIndex: 9999, // higher than JointJS
                 pointerEvents: "none",
-            }}
+            })}
         />
     );
 }
