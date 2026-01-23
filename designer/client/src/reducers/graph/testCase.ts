@@ -1,5 +1,7 @@
 import type { Assertions, Mocks } from "../../actions/nk/testCasesActions";
 import type { Reducer } from "../../actions/reduxTypes";
+import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
+import { safeParseExpression } from "../../components/modals/TestingDataRecords/utils";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
 import { omit } from "./lodashWrappers";
 
@@ -50,22 +52,25 @@ export const testCaseReducer: Reducer<ScenarioGraph["testCases"]> = (state = ini
         case "DELETE_NODES":
             return {
                 ...state,
-                value: {
-                    ...state.value,
-                    assertions: omit(state.value.assertions, action.ids),
-                    mocks: omit(state.value.mocks, action.ids),
-                },
+                value: cleanTestCaseState(state, action.ids),
             };
         case "ADD_NODE_REPLACE":
             return {
                 ...state,
-                value: {
-                    ...state.value,
-                    assertions: omit(state.value.assertions, [action.old.id]),
-                    mocks: omit(state.value.mocks, [action.old.id]),
-                },
+                value: cleanTestCaseState(state, [action.old.id]),
             };
         default:
             return state;
     }
+};
+
+const cleanTestCaseState = (state: ScenarioGraph["testCases"], ids: string[]) => {
+    return {
+        ...state.value,
+        assertions: omit(state.value.assertions, ids),
+        mocks: omit(state.value.mocks, ids),
+        inputs: JSON.stringify(
+            safeParseExpression<TestingDataRecords[]>(state.value.inputs)?.filter((input) => !ids.includes(input.sourceId)),
+        ),
+    };
 };
