@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase, TestCases}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.PredicateAssertion
 import pl.touk.nussknacker.restmodel.DeployRequest
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.security.Permission
@@ -456,8 +457,8 @@ class ManagementResourcesSpec
       ),
       assertions = Map(
         NodeId("endsuffix") -> List(
-          Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
-          Assertion("#TESTS.assertEquals('ala', #contexts[1].input[0])".spel),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'ala'".spel, "#contexts[0].input[0]".spel),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'ala'".spel, "#contexts[1].input[0]".spel),
         )
       )
     )
@@ -486,13 +487,17 @@ class ManagementResourcesSpec
       Map.empty,
       Map(
         NodeId("endsuffix") -> List(
-          Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
-          Assertion("#TESTS.assertEquals('ala', #contexts[1].input[0])".spel),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'ala'".spel, "#contexts[0].input[0]".spel),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'ala'".spel, "#contexts[1].input[0]".spel),
           // The output variable produced by the messagesuffix node is not visible at that node, but rather at the subsequent one (endsuffix).
-          Assertion("#TESTS.assertEquals({message: 'message'}, #contexts[0].output)".spel),
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "{message: 'message'}".spel,
+            "#contexts[0].output".spel
+          ),
         ),
         NodeId("messagesuffix") -> List(
-          Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'ala'".spel, "#contexts[0].input[0]".spel),
         )
       )
     )
@@ -514,7 +519,7 @@ class ManagementResourcesSpec
         .focus shouldBe Some(
         Json.obj(
           "type"    -> Json.fromString("FailedAssertion"),
-          "message" -> Json.fromString("Expected: [ala] but found [bela]")
+          "message" -> Json.fromString("Expected: ['ala'] but found ['bela']")
         )
       )
 
@@ -568,7 +573,7 @@ class ManagementResourcesSpec
       ),
       assertions = Map(
         NodeId("endsuffix") -> List(
-          Assertion("#TESTS.assertEquals('b', #contexts[0].out1)".spel),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'b'".spel, "#contexts[0].out1".spel),
         )
       )
     )
@@ -600,7 +605,7 @@ class ManagementResourcesSpec
       mocks = Map.empty,
       assertions = Map(
         NodeId("someNotExistingNode") -> List(
-          Assertion("#TESTS.assertEquals('ala', #contexts[0].input[0])".spel),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'ala'".spel, "#contexts[0].input[0]".spel),
         )
       )
     )
@@ -648,7 +653,11 @@ class ManagementResourcesSpec
       Map(
         NodeId("messagesuffix") -> List(
           // The output variable produced by the messagesuffix node is not visible at that node, but rather at the subsequent one.
-          Assertion("#TESTS.assertEquals({message: 'message'}, #contexts[0].output)".spel),
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "{message: 'message'}".spel,
+            "#contexts[0].output".spel
+          ),
         )
       )
     )

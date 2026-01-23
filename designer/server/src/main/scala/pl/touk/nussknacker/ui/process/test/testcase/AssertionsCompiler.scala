@@ -1,23 +1,28 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.all._
+import enumeratum.{Enum, EnumEntry}
+import enumeratum.EnumEntry.LowerCamelcase
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.{ExpressionAssertion, PredicateAssertion}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.{
-  AssertionConfiguredForNotExistingNodesError,
-  AssertionExpressionCompilationError
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.{
+  ExpressionAssertionCompilationError,
+  PredicateAssertionCompilationError
 }
-
-import java.util
-import scala.jdk.CollectionConverters._
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionValidationError.AssertionConfiguredForNotExistingNodesError
+import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.{
+  CompiledExpressionAssertion,
+  CompiledPredicateAssertion
+}
 
 class AssertionsCompiler(
     expressionCompiler: ExpressionCompiler,
@@ -28,54 +33,44 @@ class AssertionsCompiler(
       testCase: TestCase,
       scenarioTypingResult: Map[String, NodeTypingData],
       jobData: JobData
-  ): ValidatedNel[PerformTestError, CompiledAssertions] = {
+  ): ValidatedNel[AssertionError, CompiledAssertions] = {
     testCase.assertions
-      .map { case (node, assertions) =>
-        compileNodeAssertions(node, assertions, scenarioTypingResult, jobData).map(node -> _)
+      .map { case (nodeId, assertions) =>
+        compileNodeAssertions(assertions, scenarioTypingResult, jobData)(nodeId)
+          .tupleLeft(nodeId)
       }
       .toList
       .sequence
       .map(assertions => CompiledAssertions(assertions.toMap))
   }
 
-  def compileForNode(
-      nodeId: NodeId,
-      assertions: List[Assertion],
-      variableTypes: Map[String, TypingResult],
-      jobData: JobData
-  ): List[Validated[AssertionExpressionCompilationError, CompiledAssertion]] = {
-    compileEachNodeAssertion(nodeId, assertions, variableTypes, jobData)
-  }
-
+  // Returns all compiled assertions or combined compilation errors. It's used to compile test case before performing it.
   private def compileNodeAssertions(
-      nodeId: NodeId,
       assertions: List[Assertion],
       nodesTyping: Map[String, NodeTypingData],
       jobData: JobData
-  ): ValidatedNel[PerformTestError, List[CompiledAssertion]] = {
-    validateTypingExistence(nodeId, nodesTyping).andThen { nodeTypingData =>
-      compileEachNodeAssertion(nodeId, assertions, nodeTypingData.variableTypes, jobData)
-        .traverse(_.toValidatedNel)
+  )(implicit nodeId: NodeId): ValidatedNel[AssertionError, List[CompiledAssertion]] = {
+    validateTypingExistence(nodesTyping).andThen { nodeTypingData =>
+      compileForNode(assertions, nodeTypingData.variableTypes, jobData).sequence
     }
   }
 
-  private def compileEachNodeAssertion(
-      nodeId: NodeId,
+  // For each assertion, returns compiled assertion or compilation errors. We need this, to return errors by assertion.
+  def compileForNode(
       assertions: List[Assertion],
       variableTypes: Map[String, TypingResult],
       jobData: JobData
-  ): List[Validated[AssertionExpressionCompilationError, CompiledAssertion]] = {
+  )(implicit nodeId: NodeId): List[ValidatedNel[AssertionCompilationError, CompiledAssertion]] = {
     val ctx = TestCaseVariables.extendNodeVariablesValidationContext(
       globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData),
       variableTypes
     )
-    assertions.map(compileAssertionExpression(nodeId, ctx, _))
+    assertions.map(compileAssertion(ctx, _))
   }
 
   private def validateTypingExistence(
-      nodeId: NodeId,
       nodesTyping: Map[String, NodeTypingData],
-  ): Validated[NonEmptyList[PerformTestError], NodeTypingData] = {
+  )(implicit nodeId: NodeId): ValidatedNel[AssertionError, NodeTypingData] = {
     nodesTyping
       .get(nodeId.id)
       .map(Valid(_))
@@ -86,71 +81,106 @@ class AssertionsCompiler(
       )
   }
 
-  private def compileAssertionExpression(nodeId: NodeId, context: ValidationContext, assertion: Assertion) = {
+  private def compileAssertion(
+      context: ValidationContext,
+      assertion: Assertion
+  )(implicit nodeId: NodeId): ValidatedNel[AssertionCompilationError, CompiledAssertion] = {
+    assertion match {
+      case expressionAssertion: ExpressionAssertion =>
+        compileExpressionAssertion(context, expressionAssertion)
+      case predicateAssertion: PredicateAssertion =>
+        compilePredicateAssertion(context, predicateAssertion)
+    }
+  }
+
+  private def compileExpressionAssertion(
+      context: ValidationContext,
+      assertion: ExpressionAssertion,
+  )(implicit nodeId: NodeId): ValidatedNel[ExpressionAssertionCompilationError, CompiledExpressionAssertion] = {
     expressionCompiler
       .compile(
         assertion.expression,
-        None,
+        paramName = None,
         context,
         Typed.typedClass(classOf[AssertionResult])
-      )(nodeId)
-      .map(e => CompiledAssertion(e.expression))
-      .leftMap(mapExpressionCompilationErrors(_, assertion, nodeId))
+      )
+      .map(e => CompiledExpressionAssertion(e.expression))
+      .leftMap(ExpressionAssertionCompilationError(_, assertion, nodeId))
+      .toValidatedNel
   }
 
-  private def mapExpressionCompilationErrors(
-      errors: NonEmptyList[PartSubGraphCompilationError],
-      assertion: Assertion,
-      nodeId: NodeId
-  ) = {
-    AssertionExpressionCompilationError(errors, assertion, nodeId)
+  private def compilePredicateAssertion(
+      context: ValidationContext,
+      assertion: PredicateAssertion
+  )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, CompiledPredicateAssertion] = {
+    val compiledExpected = expressionCompiler
+      .compile(
+        assertion.expected,
+        Some(ParameterName(PredicateAssertionCompilationError.Field.Expected.entryName)),
+        context,
+        Unknown // For equals, we can assume any of type of expected and actual expressions are fine, but for >=, <, etc. we could also check if both types are comparable.
+      )
+      .leftMap(
+        PredicateAssertionCompilationError(_, assertion, PredicateAssertionCompilationError.Field.Expected, nodeId)
+      )
+      .toValidatedNel
+    val compiledActual = expressionCompiler
+      .compile(
+        assertion.actual,
+        Some(ParameterName(PredicateAssertionCompilationError.Field.Actual.entryName)),
+        context,
+        Unknown
+      )
+      .leftMap(
+        PredicateAssertionCompilationError(_, assertion, PredicateAssertionCompilationError.Field.Actual, nodeId)
+      )
+      .toValidatedNel
+
+    (compiledExpected, compiledActual)
+      .mapN { (expected, actual) =>
+        CompiledPredicateAssertion(assertion.operator, expected.expression, actual.expression)
+      }
   }
 
 }
 
-sealed trait AssertionResult
+sealed trait AssertionError
 
-case object SuccessfulAssertion extends AssertionResult
+sealed trait AssertionValidationError extends AssertionError
 
-case class FailedAssertion(message: String) extends AssertionResult
+object AssertionValidationError {
+  final case class AssertionConfiguredForNotExistingNodesError(notExistingNodeIds: NonEmptyList[NodeId])
+      extends AssertionValidationError
+}
 
-object tests extends TestsFunctions
+sealed trait AssertionCompilationError extends AssertionError
 
-trait TestsFunctions extends HideToString {
+object AssertionCompilationError {
 
-  @Documentation(description = "Check whether two values are equals")
-  def assertEquals(@ParamName("expected") expected: Any, @ParamName("actual") actual: Any): AssertionResult = {
-    // we use scala "lenient" equals to allow to compare boxed primitives of different types - like 1L and 1
-    if (expected == actual) {
-      SuccessfulAssertion
-    } else if (checkIfSameElements(expected, actual)) {
-      SuccessfulAssertion
-    } else {
-      produceFailedAssertion(expected, actual)
+  final case class ExpressionAssertionCompilationError(
+      errors: NonEmptyList[ProcessCompilationError],
+      assertion: ExpressionAssertion,
+      nodeId: NodeId
+  ) extends AssertionCompilationError
+
+  final case class PredicateAssertionCompilationError(
+      errors: NonEmptyList[ProcessCompilationError],
+      assertion: PredicateAssertion,
+      field: PredicateAssertionCompilationError.Field,
+      nodeId: NodeId,
+  ) extends AssertionCompilationError
+
+  object PredicateAssertionCompilationError {
+
+    sealed trait Field extends EnumEntry with LowerCamelcase
+
+    object Field extends Enum[Field] {
+      case object Expected extends Field
+      case object Actual   extends Field
+
+      override def values: IndexedSeq[Field] = findValues
     }
-  }
 
-  // todo: should it work recursively - e.g for arrays nested in lists?
-  private def checkIfSameElements(expected: Any, actual: Any) = {
-    if ((expected.isInstanceOf[Array[_]] || expected.isInstanceOf[util.Collection[_]]) &&
-      (actual.isInstanceOf[Array[_]] || actual.isInstanceOf[util.Collection[_]])) {
-      convertToSeq(expected) == convertToSeq(actual)
-    } else {
-      false
-    }
-  }
-
-  private def convertToSeq(value: Any): Seq[_] = {
-    value match {
-      case a: Array[_]           => a.toSeq
-      case c: util.Collection[_] => c.asScala.toSeq
-    }
-  }
-
-  private def produceFailedAssertion(expected: Any, actual: Any) = {
-    val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expected)
-    val actualStr   = SpelValuePrettyPrinter.prettyPrintValue(actual)
-    FailedAssertion(s"Expected: [$expectedStr] but found [$actualStr]")
   }
 
 }

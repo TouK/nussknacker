@@ -51,6 +51,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCaseId, TestCaseName}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, PredicateAssertion}
 import pl.touk.nussknacker.engine.util.CaretPosition2d
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
@@ -248,14 +249,26 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                       "test-case-1" -> NodeTestCase(
                         enricherMock = Some(EnricherMock(Expression.spel("42"))),
                         assertions = List(
-                          Assertion(Expression.spel("#TESTS.assertEquals(#contexts.size, 1)'")),
+                          PredicateAssertion(
+                            operator = AssertionOperator.Equals,
+                            actual = Expression.spel("#contexts.size"),
+                            expected = Expression.spel("1")
+                          ),
                         ),
                       ),
                       "test-case-2" -> NodeTestCase(
                         enricherMock = Some(EnricherMock(Expression.spel("'sample value'"))),
                         assertions = List(
-                          Assertion(Expression.spel("#TESTS.assertEquals(#contexts.size, 1)'")),
-                          Assertion(Expression.spel("#TESTS.assertEquals(#contexts[0].doesNotExist, 'expected')")),
+                          PredicateAssertion(
+                            operator = AssertionOperator.Equals,
+                            actual = Expression.spel("#contexts.size"),
+                            expected = Expression.spel("1")
+                          ),
+                          PredicateAssertion(
+                            operator = AssertionOperator.Equals,
+                            actual = Expression.spel("#contexts[0].doesNotExist"),
+                            expected = Expression.spel("'expected'")
+                          ),
                         ),
                       )
                     )
@@ -1613,7 +1626,29 @@ object NodesApiEndpoints {
     )
 
     implicit val enricherMockSchema: Schema[EnricherMock] = Schema.derived
-    implicit val assertionSchema: Schema[Assertion]       = Schema.derived
+
+    implicit val expressionAssertionSchema: Schema[Assertion.ExpressionAssertion] =
+      Schema.derived[Assertion.ExpressionAssertion]
+    implicit val operatorAssertionSchema: Schema[Assertion.AssertionOperator] =
+      Schema.derivedEnumeration[Assertion.AssertionOperator](encode = Some(v => v.entryName))
+    implicit val predicateAssertionSchema: Schema[Assertion.PredicateAssertion] =
+      Schema.derived[Assertion.PredicateAssertion]
+
+    implicit val assertionSchema: Schema[Assertion] = {
+      Schema(
+        SchemaType.SCoproduct(
+          List(
+            expressionAssertionSchema.title("ExpressionAssertion"),
+            predicateAssertionSchema.title("PredicateAssertion")
+          ),
+          discriminator = None
+        ) {
+          case expr: Assertion.ExpressionAssertion => Some(SchemaWithValue(expressionAssertionSchema, expr))
+          case pred: Assertion.PredicateAssertion  => Some(SchemaWithValue(predicateAssertionSchema, pred))
+        },
+        Some(SName("Assertion"))
+      )
+    }
 
     implicit val enricherMockValidationErrorSchema: Schema[EnricherMockValidationError] =
       Schema.derived[EnricherMockValidationError]

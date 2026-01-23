@@ -7,11 +7,18 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.test.testcase.Assertion
+import pl.touk.nussknacker.engine.test.testcase.Assertion.ExpressionAssertion
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.DeserializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ScenarioValidationError
+import pl.touk.nussknacker.ui.process.test.testcase.{AssertionCompilationError, AssertionValidationError}
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.{
+  ExpressionAssertionCompilationError,
+  PredicateAssertionCompilationError
+}
+import pl.touk.nussknacker.ui.process.test.testcase.AssertionValidationError.AssertionConfiguredForNotExistingNodesError
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 
@@ -72,10 +79,16 @@ object TestingApiErrorMessages {
         TestingApiErrorMessages.scenarioHasValidationErrors(errors)
       case PerformTestError.MockConfiguredForNotExistingNodesError(nodeIds) =>
         TestingApiErrorMessages.mocksConfiguredForNotExistingNodes(nodeIds)
-      case PerformTestError.AssertionConfiguredForNotExistingNodesError(errors) =>
-        TestingApiErrorMessages.assertionsConfiguredForNotExistingNodes(errors)
-      case PerformTestError.AssertionExpressionCompilationError(errors, assertion, node) =>
-        TestingApiErrorMessages.assertionCompilationError(errors, assertion, node)
+      case PerformTestError.AssertionErrors(errors) =>
+        // in case of performing test case we return errors in fail-fast fashion
+        errors.head match {
+          case AssertionConfiguredForNotExistingNodesError(notExistingNodeIds) =>
+            TestingApiErrorMessages.assertionsConfiguredForNotExistingNodes(notExistingNodeIds)
+          case ExpressionAssertionCompilationError(errors, assertion, nodeId) =>
+            TestingApiErrorMessages.assertionCompilationError(errors, assertion, nodeId)
+          case PredicateAssertionCompilationError(errors, assertion, _, nodeId) =>
+            TestingApiErrorMessages.assertionCompilationError(errors, assertion, nodeId)
+        }
     }
   }
 
@@ -176,6 +189,14 @@ object TestingApiErrorMessages {
       assertion: Assertion,
       nodeId: NodeId
   ) =
-    s"Assertion compilation error. Node: ${nodeId.id}. Assertion expression: ${assertion.expression.expression}. Errors: ${errors.toList.mkString(", ")}"
+    s"Assertion compilation error. Node: ${nodeId.id}. ${prettyPrintAssertion(assertion)}. Errors: ${errors.toList.mkString(", ")}"
+
+  private def prettyPrintAssertion(assertion: Assertion): String = {
+    assertion match {
+      case ExpressionAssertion(expression) => s"Assertion expression: ${expression.expression}')"
+      case Assertion.PredicateAssertion(operator, expected, actual) =>
+        s"Assertion: '${operator.entryName}' , expected: ${expected.expression}, actual: ${actual.expression}"
+    }
+  }
 
 }
