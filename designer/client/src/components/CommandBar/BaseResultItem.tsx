@@ -14,7 +14,7 @@ export type ResultItemProps = PropsWithChildren<{
     preventClose?: boolean;
 }>;
 
-export const ResultItem = forwardRef<HTMLDivElement, ResultItemProps>(function ResultItem(
+export const BaseResultItem = forwardRef<HTMLDivElement, ResultItemProps>(function ResultItem(
     { children, action, active, currentRootActionId, preventClose },
     forwardedRef,
 ) {
