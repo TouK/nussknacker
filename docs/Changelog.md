@@ -386,11 +386,12 @@ description: Stay informed with detailed changelogs covering new features, impro
   [#7012](https://github.com/TouK/nussknacker/pull/7012)
   [#7014](https://github.com/TouK/nussknacker/pull/7014)
   [#7113](https://github.com/TouK/nussknacker/pull/7113)
+  [#8907](https://github.com/TouK/nussknacker/pull/8907)
   Update most dependencies to latest versions, most important ones:
   * Flink 1.18.1 -> 1.19.1
   * Jackson 2.15.4 -> 2.17.2
   * Cats 2.10 -> 2.12
-  * Avro 1.11.3 -> 1.11.4
+  * Avro 1.11.3 -> 1.12.1
   * swagger-parser 2.1.15 -> 2.1.22
   * Tapir -> 1.11.7
   * openapi-circe-yaml -> 0.11.3
