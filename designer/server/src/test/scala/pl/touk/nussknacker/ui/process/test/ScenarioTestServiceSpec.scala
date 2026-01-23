@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.PredicateAssertion
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
@@ -796,8 +797,12 @@ class ScenarioTestServiceSpec
       Map.empty,
       Map(
         NodeId("end") -> List(
-          Assertion("#TESTS.assertEquals(#contexts[0].otherNameThanInput.a, 'foo')".spel),
-          Assertion("#TESTS.assertEquals(#contexts[1].otherNameThanInput.a, 'foo')".spel)
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "'foo'".spel,
+            "#contexts[0].otherNameThanInput.a".spel
+          ),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'foo'".spel, "#contexts[1].otherNameThanInput.a".spel)
         )
       )
     )
@@ -816,7 +821,7 @@ class ScenarioTestServiceSpec
 
     result.assertionsResults(NodeId("end")) shouldBe List(
       SuccessfulAssertion,
-      FailedAssertion("Expected: [bar] but found [foo]")
+      FailedAssertion("Expected: ['foo'] but found ['bar']")
     )
   }
 

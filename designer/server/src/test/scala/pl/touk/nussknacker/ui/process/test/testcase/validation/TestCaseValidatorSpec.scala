@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.graph.node.{Enricher, Filter}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.PredicateAssertion
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.restmodel.validation.testcase.{
   AssertionValidationError,
@@ -64,8 +65,8 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       "test1" -> NodeTestCase(
         enricherMock = None,
         assertions = List(
-          Assertion("#TESTS.assertEquals(#contexts[0].input, 'expected')".spel),
-          Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel)
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'expected'".spel, "#contexts[0].input".spel),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel)
         )
       )
     )
@@ -181,7 +182,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       "test1" -> NodeTestCase(
         enricherMock = None,
         assertions = List(
-          Assertion("#TESTS.doSthMagic".spel)
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'value'".spel, "#doesNotExist".spel)
         )
       )
     )
@@ -203,9 +204,10 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
             0 -> NonEmptyList.one(
               AssertionValidationError(
                 typ = "ExpressionParserCompilationError",
-                message = "There is no property 'doSthMagic' in type: tests",
-                description = "There is problem with expression in field [<missing>] - it could not be parsed.",
-                details = Some(CoordinatesBasedTextRange(TextCoordinates(7, 0), TextCoordinates(17, 0)))
+                message = "Unresolved reference 'doesNotExist'",
+                description = "There is problem with expression in field [actual] - it could not be parsed.",
+                details = Some(CoordinatesBasedTextRange(TextCoordinates(0, 0), TextCoordinates(13, 0))),
+                fieldName = Some("actual"),
               )
             )
           )
@@ -218,7 +220,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val nodeTestCases: NodeTestCases = Map(
       "validTest" -> NodeTestCase(
         enricherMock = Some(EnricherMock("'valid mock'".spel)),
-        assertions = List(Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel))
+        assertions = List(PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel))
       ),
       "invalidMockTest" -> NodeTestCase(
         enricherMock = Some(EnricherMock("#invalidVar".spel)),
@@ -227,9 +229,9 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       "invalidAssertionTest" -> NodeTestCase(
         enricherMock = None,
         assertions = List(
-          Assertion("#TESTS.assertEquals(#contexts[0].doesNotExist, 1)".spel),
-          Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel),
-          Assertion("#TESTS.assertEquals(#contexts[0].doesNotExistOther, 2)".spel),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts[0].doesNotExist".spel),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "2".spel, "#contexts[0].doesNotExistOther".spel),
         )
       )
     )
@@ -265,16 +267,18 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
               AssertionValidationError(
                 typ = "ExpressionParserCompilationError",
                 message = "There is no property 'doesNotExist' in type: Record{input: String}",
-                description = "There is problem with expression in field [<missing>] - it could not be parsed.",
-                details = Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(45, 0)))
+                description = "There is problem with expression in field [actual] - it could not be parsed.",
+                details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(25, 0))),
+                fieldName = Some("actual"),
               )
             ),
             2 -> NonEmptyList.one(
               AssertionValidationError(
                 typ = "ExpressionParserCompilationError",
                 message = "There is no property 'doesNotExistOther' in type: Record{input: String}",
-                description = "There is problem with expression in field [<missing>] - it could not be parsed.",
-                details = Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(50, 0)))
+                description = "There is problem with expression in field [actual] - it could not be parsed.",
+                details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(30, 0))),
+                fieldName = Some("actual"),
               )
             )
           )
@@ -309,8 +313,12 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
         inputs = "{}",
         mocks = Map(NodeId(enricher.id) -> EnricherMock("'valid mock'".spel)),
         assertions = Map(
-          NodeId(enricher.id) -> List(Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel)),
-          NodeId(filter.id)   -> List(Assertion("#TESTS.assertEquals(#contexts[0].input, 'test')".spel))
+          NodeId(enricher.id) -> List(
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel)
+          ),
+          NodeId(filter.id) -> List(
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "'test'".spel, "#contexts[0].input".spel)
+          )
         )
       ),
       TestCase(
@@ -330,13 +338,13 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
         mocks = Map.empty,
         assertions = Map(
           NodeId(enricher.id) -> List(
-            Assertion("#TESTS.assertEquals(#contexts[0].doesNotExist, 1)".spel),
-            Assertion("#TESTS.assertEquals(#contexts.size, 1)".spel),
-            Assertion("#TESTS.assertEquals(#contexts[0].doesNotExistOther, 2)".spel)
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts[0].doesNotExist".spel),
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel),
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "2".spel, "#contexts[0].doesNotExistOther".spel)
           ),
           NodeId(filter.id) -> List(
-            Assertion("#TESTS.assertEquals(#contexts[0].input, 'value')".spel),
-            Assertion("#TESTS.assertEquals(#contexts[0].doesNotExist, 1)".spel),
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "'value'".spel, "#contexts[0].input".spel),
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts[0].doesNotExist".spel),
           )
         )
       ),
@@ -371,16 +379,18 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
               AssertionValidationError(
                 typ = "ExpressionParserCompilationError",
                 message = "There is no property 'doesNotExist' in type: Record{input: String}",
-                description = "There is problem with expression in field [<missing>] - it could not be parsed.",
-                details = Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(45, 0)))
+                description = "There is problem with expression in field [actual] - it could not be parsed.",
+                details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(25, 0))),
+                fieldName = Some("actual"),
               )
             ),
             2 -> NonEmptyList.one(
               AssertionValidationError(
                 typ = "ExpressionParserCompilationError",
                 message = "There is no property 'doesNotExistOther' in type: Record{input: String}",
-                description = "There is problem with expression in field [<missing>] - it could not be parsed.",
-                details = Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(50, 0)))
+                description = "There is problem with expression in field [actual] - it could not be parsed.",
+                details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(30, 0))),
+                fieldName = Some("actual"),
               )
             )
           )
@@ -409,8 +419,9 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
               AssertionValidationError(
                 typ = "ExpressionParserCompilationError",
                 message = "There is no property 'doesNotExist' in type: Record{input: String}",
-                description = "There is problem with expression in field [<missing>] - it could not be parsed.",
-                details = Some(CoordinatesBasedTextRange(TextCoordinates(33, 0), TextCoordinates(45, 0)))
+                description = "There is problem with expression in field [actual] - it could not be parsed.",
+                details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(25, 0))),
+                fieldName = Some("actual"),
               )
             )
           )
