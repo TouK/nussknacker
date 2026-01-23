@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.process.util.IoUtils._
 
-import java.util.concurrent.{CountDownLatch, Semaphore}
+import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration._
 
@@ -32,21 +32,24 @@ class IOUtilsTest extends AnyFunSuite with Matchers {
     implicit val ioRuntime: IORuntime = IORuntime.global
     val timeout                       = 10.seconds
     val resultRef                     = new AtomicReference[Either[Error, Unit]]()
-    val testIo                        = IO.never
 
-    val startedSemaphore = new Semaphore(0)
+    val ioActionInProgressSemaphore = new Semaphore(0)
 
     val thread = new Thread(() => {
-      startedSemaphore.release()
+      val testIo =
+        IO.unit
+          .as(ioActionInProgressSemaphore.release())
+          .flatMap(_ => IO.never[Unit])
+
       val result = testIo.unsafeRunTimedAttempt(timeout)
       resultRef.set(result)
     })
 
     // wait for thread start
     thread.start()
-    startedSemaphore.acquire()
 
-    // interrupt and wait for finish
+    // make sure IO action is in progress, interrupt thread and wait for finish
+    ioActionInProgressSemaphore.acquire()
     thread.interrupt()
     thread.join()
 
