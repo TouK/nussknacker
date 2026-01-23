@@ -16,6 +16,3 @@ addSbtPlugin("com.github.sbt"     % "sbt-pgp"                % "2.3.1")
 addSbtPlugin("com.github.sbt"     % "sbt-release"            % "1.4.0")
 addSbtPlugin("ch.epfl.scala"      % "sbt-scalafix"           % "0.14.5")
 addSbtPlugin("org.scalameta"      % "sbt-scalafmt"           % "2.5.6")
-// 3.12 is missing some logging when run on JDK 11
-// (and it is deprecated, publication should be done with sbt's native integration)
-addSbtPlugin("org.xerial.sbt"     % "sbt-sonatype"           % "3.11.3")
