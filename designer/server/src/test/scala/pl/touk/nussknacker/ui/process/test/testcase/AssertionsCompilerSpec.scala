@@ -26,6 +26,7 @@ import pl.touk.nussknacker.engine.test.testcase.TestCase
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.PredicateAssertionCompilationError
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionValidationError.AssertionConfiguredForNotExistingNodesError
@@ -33,7 +34,7 @@ import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.CompiledPr
 
 import java.util.UUID
 
-class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
+class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside with ValidatedValuesDetailedMessage {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
@@ -73,16 +74,15 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
       )
     )
 
-    val testCompilationResult = compileScenarioWithAssertions(scenario, test)
-    inside(testCompilationResult) { case Valid(compiledAssertions) =>
-      compiledAssertions.assertions.size shouldBe 1
-      compiledAssertions.assertions(NodeId("sink1")).size shouldBe 1
-      val compiledAssertion =
-        compiledAssertions.assertions(NodeId("sink1")).head.asInstanceOf[CompiledPredicateAssertion]
-      compiledAssertion.operator shouldBe Assertion.AssertionOperator.Equals
-      compiledAssertion.expectedExpression.original shouldBe "1"
-      compiledAssertion.actualExpression.original shouldBe "#contexts.size"
-    }
+    val compiledAssertions = compileScenarioWithAssertions(scenario, test).validValue
+
+    compiledAssertions.assertions.size shouldBe 1
+    compiledAssertions.assertions(NodeId("sink1")).size shouldBe 1
+    val compiledAssertion =
+      compiledAssertions.assertions(NodeId("sink1")).head.asInstanceOf[CompiledPredicateAssertion]
+    compiledAssertion.operator shouldBe Assertion.AssertionOperator.Equals
+    compiledAssertion.expectedExpression.original shouldBe "1"
+    compiledAssertion.actualExpression.original shouldBe "#contexts.size"
   }
 
   test("should produce errors for assertions on missing nodes") {
@@ -100,15 +100,13 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
       )
     )
 
-    val testCompilationResult = compileScenarioWithAssertions(scenario, test)
+    val errors = compileScenarioWithAssertions(scenario, test).invalidValue
 
-    inside(testCompilationResult) { case Invalid(errors) =>
-      errors.toList shouldBe List(
-        AssertionConfiguredForNotExistingNodesError(
-          NonEmptyList.one(NodeId("notExistingSink"))
-        )
+    errors.toList shouldBe List(
+      AssertionConfiguredForNotExistingNodesError(
+        NonEmptyList.one(NodeId("notExistingSink"))
       )
-    }
+    )
   }
 
   test("should produce errors for assertions with syntax errors") {
@@ -119,53 +117,91 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
       .buildSimpleVariable("result-id2", "result", "#input".spel)
       .emptySink("sink1", "sink")
     val nodeId = NodeId("sink1")
-    val assertionWithUnneededComma =
-      PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size,".spel)
+    val assertionWithSyntaxErrorsInBothExpressions =
+      PredicateAssertion(Assertion.AssertionOperator.Equals, "'123".spel, "#contexts.size,".spel)
     val assertionComparingUnrelatedTypes =
       PredicateAssertion(Assertion.AssertionOperator.Equals, "'string'".spel, "123".spel)
     val test = prepareTestCase(
       Map(
         nodeId -> List(
-          assertionWithUnneededComma,
+          assertionWithSyntaxErrorsInBothExpressions,
           assertionComparingUnrelatedTypes,
         )
       )
     )
 
-    val testCompilationResult = compileScenarioWithAssertions(scenario, test)
-    inside(testCompilationResult) { case Invalid(errors) =>
-      errors.size shouldBe 2
+    val errors = compileScenarioWithAssertions(scenario, test).invalidValue
+    errors.size shouldBe 3
+    val assertionWithErrorsInBothExpressionsActualExpectedFieldError :: assertionWithErrorsInBothExpressionsActualFieldError :: assertionComparingUnrelatedTypesError :: Nil =
+      errors.toList
 
-      val assertionWithUnneededCommaError :: assertionComparingUnrelatedTypesError :: Nil = errors.toList
-      assertionWithUnneededCommaError shouldBe PredicateAssertionCompilationError(
-        NonEmptyList.one(
-          ExpressionParserCompilationError(
-            "Unexpected text",
-            nodeId,
-            Some(ParameterName(PredicateAssertionCompilationError.Field.Actual.entryName)),
-            "#contexts.size,",
-            Some(CoordinatesBasedTextRange(TextCoordinates(14, 0), TextCoordinates(15, 0)))
-          )
-        ),
-        assertionWithUnneededComma,
-        Some(PredicateAssertionCompilationError.Field.Actual),
-        nodeId
-      )
+    inside(assertionWithErrorsInBothExpressionsActualExpectedFieldError) {
+      case PredicateAssertionCompilationError(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                message,
+                `nodeId`,
+                Some(ParameterName(parameterName)),
+                originalExpr,
+                _
+              ),
+              Nil
+            ),
+            assertion,
+            Some(field),
+            `nodeId`
+          ) =>
+        message shouldBe "Cannot find terminating ' for string"
+        parameterName shouldBe PredicateAssertionCompilationError.Field.Expected.entryName
+        field shouldBe PredicateAssertionCompilationError.Field.Expected
+        originalExpr shouldBe "'123"
+        assertion shouldBe assertionWithSyntaxErrorsInBothExpressions
+    }
 
-      assertionComparingUnrelatedTypesError shouldBe PredicateAssertionCompilationError(
-        NonEmptyList.one(
-          ExpressionParserCompilationError(
-            "Bad expression type, expected: String(string), found: Integer(123)",
-            nodeId,
-            Some(ParameterName(PredicateAssertionCompilationError.Field.Actual.entryName)),
-            "123",
-            details = None
-          )
-        ),
-        assertionComparingUnrelatedTypes,
-        Some(PredicateAssertionCompilationError.Field.Actual),
-        nodeId
-      )
+    inside(assertionWithErrorsInBothExpressionsActualFieldError) {
+      case PredicateAssertionCompilationError(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                message,
+                `nodeId`,
+                Some(ParameterName(parameterName)),
+                originalExpr,
+                _
+              ),
+              Nil
+            ),
+            assertion,
+            Some(field),
+            `nodeId`
+          ) =>
+        message shouldBe "Unexpected text"
+        parameterName shouldBe PredicateAssertionCompilationError.Field.Actual.entryName
+        field shouldBe PredicateAssertionCompilationError.Field.Actual
+        originalExpr shouldBe "#contexts.size,"
+        assertion shouldBe assertionWithSyntaxErrorsInBothExpressions
+    }
+
+    inside(assertionComparingUnrelatedTypesError) {
+      case PredicateAssertionCompilationError(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                message,
+                `nodeId`,
+                Some(ParameterName(parameterName)),
+                originalExpr,
+                _
+              ),
+              Nil
+            ),
+            assertion,
+            Some(field),
+            `nodeId`
+          ) =>
+        message shouldBe "Bad expression type, expected: String(string), found: Integer(123)"
+        parameterName shouldBe PredicateAssertionCompilationError.Field.Actual.entryName
+        field shouldBe PredicateAssertionCompilationError.Field.Actual
+        originalExpr shouldBe "123"
+        assertion shouldBe assertionComparingUnrelatedTypes
     }
   }
 

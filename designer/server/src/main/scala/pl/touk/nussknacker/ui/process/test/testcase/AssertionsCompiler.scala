@@ -13,7 +13,12 @@ import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
-import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, ExpressionAssertion, PredicateAssertion}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.{
+  assertionDecoder,
+  AssertionOperator,
+  ExpressionAssertion,
+  PredicateAssertion
+}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.{
@@ -115,22 +120,24 @@ class AssertionsCompiler(
       context: ValidationContext,
       assertion: PredicateAssertion
   )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, CompiledPredicateAssertion] = {
-    compileExpectedExpression(context, assertion)
-      .andThen { expectedExpression =>
-        compileActualExpression(context, assertion, expectedExpression.returnType)
-          .tupleLeft(expectedExpression)
-      }
-      .andThen { case (expectedExpression, actualExpression) =>
-        compileComparisonExpression(context, assertion)
-          .map { comparisonExpression =>
-            CompiledPredicateAssertion(
-              operator = assertion.operator,
-              expectedExpression = expectedExpression.expression,
-              actualExpression = actualExpression.expression,
-              comparisonExpression = comparisonExpression.expression
-            )
-          }
-      }
+    val expectedCompiled = compileExpectedExpression(context, assertion)
+    val actualCompiled = compileActualExpression(
+      context,
+      assertion,
+      // In case of errors for expected expression, we still try to compile without expected type to return potential errors
+      expectedCompiled.map(_.returnType).getOrElse(Unknown)
+    )
+    (expectedCompiled, actualCompiled).tupled.andThen { case (expectedExpression, actualExpression) =>
+      compileComparisonExpression(context, assertion)
+        .map { comparisonExpression =>
+          CompiledPredicateAssertion(
+            operator = assertion.operator,
+            expectedExpression = expectedExpression.expression,
+            actualExpression = actualExpression.expression,
+            comparisonExpression = comparisonExpression.expression
+          )
+        }
+    }
   }
 
   private def compileExpectedExpression(
