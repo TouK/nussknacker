@@ -124,7 +124,8 @@ class AssertionsCompiler(
     val actualCompiled = compileActualExpression(
       context,
       assertion,
-      // In case of errors for expected expression, we still try to compile without expected type to return potential errors
+      // If errors occur in the expected expression, we still attempt to compile the actual expression
+      // without the expected type to return errors if there are any in the expression itself.
       expectedCompiled.map(_.returnType).getOrElse(Unknown)
     )
     (expectedCompiled, actualCompiled).tupled.andThen { case (expectedExpression, actualExpression) =>

@@ -7,7 +7,8 @@ import scala.jdk.CollectionConverters._
 
 object tests extends TestsFunctions
 
-// This helper should be eventually removed because comparison logic do apply SpEL implicit conversions.
+// This helper should be eventually removed because SpEL comparison logic do apply SpEL implicit conversions
+// in contrary to this implementation which uses Scala equality semantics.
 trait TestsFunctions extends HideToString {
 
   @Documentation(description = "Check whether two values are equal")
