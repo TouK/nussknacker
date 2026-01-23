@@ -48,7 +48,7 @@ private[registrar] class SyncInterpretationFunction(
     (try {
       runInterpreter(input)
     } catch {
-      case NonFatal(error) => List(Right(NuExceptionInfo(Some(nodeComponentInfo), error, input)))
+      case NonFatal(error) => List(Right(exceptionInfo(error, input)))
     }).foreach {
       case Left(ir) =>
         collector.collect(ir)
@@ -68,9 +68,22 @@ private[registrar] class SyncInterpretationFunction(
         case Right(result) =>
           result
         case Left(Error.Interrupted) =>
-          throw new RuntimeException(s"Interpreter action was interrupted")
+          List(
+            Right(
+              exceptionInfo(new InterruptedException(s"Interpreter action was interrupted"), input)
+            )
+          )
         case Left(Error.Timeout) =>
-          throw new TimeoutException(s"Interpreter is running too long (timeout: ${compilerData.processTimeout})")
+          List(
+            Right(
+              exceptionInfo(
+                new TimeoutException(
+                  s"Interpreter is running too long (timeout: ${compilerData.processTimeout})"
+                ),
+                input
+              )
+            )
+          )
       }
     } else {
       Await.result(
@@ -79,6 +92,10 @@ private[registrar] class SyncInterpretationFunction(
         atMost = compilerData.processTimeout
       )
     }
+  }
+
+  private def exceptionInfo(error: Throwable, input: Context): NuExceptionInfo = {
+    NuExceptionInfo(Some(nodeComponentInfo), error, input)
   }
 
 }
