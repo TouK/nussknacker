@@ -13,8 +13,8 @@ import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
+import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
 import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, ExpressionAssertion, PredicateAssertion}
-import pl.touk.nussknacker.engine.test.testcase.TestCase
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
 import pl.touk.nussknacker.engine.util.functions.conversion
@@ -65,52 +65,42 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     )
   )
 
+  private val nodeId = NodeId("someNode")
+
   test("should run assertions on test nodes results and return assertion result for each assertion") {
-    val testCase = TestCase(
-      UUID.randomUUID(),
-      "dummy",
-      "dummy",
-      Map.empty,
-      Map(
-        NodeId("someNode") -> List(
-          ExpressionAssertion("#TESTS.assertEquals('valid', #contexts[0].someVariable)".spel),
-          ExpressionAssertion("#TESTS.assertEquals('valid', #contexts[1].someVariable)".spel),
-          PredicateAssertion(AssertionOperator.Equals, "'valid'".spel, "#contexts[0].someVariable".spel),
-          PredicateAssertion(AssertionOperator.Equals, "'valid'".spel, "#contexts[1].someVariable".spel),
-          PredicateAssertion(AssertionOperator.NotEquals, "'valid'".spel, "#contexts[0].someVariable".spel),
-          PredicateAssertion(AssertionOperator.NotEquals, "'valid'".spel, "#contexts[1].someVariable".spel),
-        )
+    val testCase = prepareTestCase(
+      List(
+        ExpressionAssertion("#TESTS.assertEquals('valid', #contexts[0].someVariable)".spel),
+        ExpressionAssertion("#TESTS.assertEquals('valid', #contexts[1].someVariable)".spel),
+        PredicateAssertion(AssertionOperator.Equals, "'valid'".spel, "#contexts[0].someVariable".spel),
+        PredicateAssertion(AssertionOperator.Equals, "'valid'".spel, "#contexts[1].someVariable".spel),
+        PredicateAssertion(AssertionOperator.NotEquals, "'valid'".spel, "#contexts[0].someVariable".spel),
+        PredicateAssertion(AssertionOperator.NotEquals, "'valid'".spel, "#contexts[1].someVariable".spel),
+      )
+    )
+    val nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]] = prepareNodeResults(
+      List(
+        Map("someVariable" -> "valid"),
+        Map("someVariable" -> "invalid"),
       )
     )
 
-    val nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]] = Map(
-      NodeId("someNode") -> List(
-        ResultContext[Any](ContextId.dummy, Instant.now(), Map("someVariable" -> "valid")),
-        ResultContext[Any](ContextId.dummy, Instant.now(), Map("someVariable" -> "invalid")),
-      )
-    )
+    val results = verifyForTestCase(testCase, nodesResultsAfterTestRun)
 
-    val results = verifyForTestCase(
-      testCase,
-      nodesResultsAfterTestRun
-    )
-
-    results.toList shouldBe List(
-      NodeId("someNode") -> List(
-        SuccessfulAssertion,
-        FailedAssertion("Expected: ['valid'] but found ['invalid']"),
-        SuccessfulAssertion,
-        FailedAssertion("Expected: ['valid'] but found ['invalid']"),
-        FailedAssertion("Expected value different from: ['valid']"),
-        SuccessfulAssertion,
-      )
+    results shouldBe List(
+      SuccessfulAssertion,
+      FailedAssertion("Expected: ['valid'] but found ['invalid']"),
+      SuccessfulAssertion,
+      FailedAssertion("Expected: ['valid'] but found ['invalid']"),
+      FailedAssertion("Expected value different from: ['valid']"),
+      SuccessfulAssertion,
     )
   }
 
   test("should properly compare various types used in SpEL") {
     forAll(
       Table(
-        ("expected", "actual", "result"),
+        ("expected expression", "actual expression", "expected assertion result"),
         ("'valid'", "'valid'", SuccessfulAssertion),
         ("{}", "{}", SuccessfulAssertion),
         ("{:}", "{:}", SuccessfulAssertion),
@@ -129,49 +119,54 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
         ),
         ("{'1','2','3'}", "'1,2,3'.split(',')", SuccessfulAssertion), // comparing arrays with SpEL inline lists
         ("{'a': 1}", "{:}", FailedAssertion("Expected: [{'a': 1}] but found [{:}]")),
-        // ("{'1,2'.split(',')}", "{'1,2'.split(',')}", SuccessfulAssertion), //todo: to be discussed whether it should work for nested structures
       )
-    ) { (expected, actual, result) =>
-      val testCase = TestCase(
-        UUID.randomUUID(),
-        "dummy",
-        "dummy",
-        Map.empty,
-        Map(
-          NodeId("someNode") -> List(
-            ExpressionAssertion(s"#TESTS.assertEquals($expected, $actual)".spel),
-            PredicateAssertion(AssertionOperator.Equals, expected.spel, actual.spel),
-          )
+    ) { (expectedExpression, actualExpression, expectedResult) =>
+      val testCase = prepareTestCase(
+        List(
+          ExpressionAssertion(s"#TESTS.assertEquals($expectedExpression, $actualExpression)".spel),
+          PredicateAssertion(AssertionOperator.Equals, expectedExpression.spel, actualExpression.spel),
         )
       )
-      val nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]] = Map(
-        NodeId("someNode") -> List(
-          ResultContext[Any](
-            ContextId.dummy,
-            Instant.now(),
-            Map(
-              "someJavaList" -> java.util.List.of("foo"),
-            )
-          ),
+      val nodesResultsAfterTestRun = prepareNodeResults(
+        List(
+          Map("someJavaList" -> java.util.List.of("foo"))
         )
       )
 
-      verifyForTestCase(testCase, nodesResultsAfterTestRun).toList shouldBe List(
-        NodeId("someNode") -> List(result, result)
-      )
+      val results = verifyForTestCase(testCase, nodesResultsAfterTestRun)
+
+      results shouldBe List(expectedResult, expectedResult)
     }
   }
 
-  private def verifyForTestCase(testCase: TestCase, nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]]) = {
+  private def verifyForTestCase(
+      testCase: TestCase,
+      nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]]
+  ): List[AssertionResult] = {
     val jobData = JobData(MetaData("someScenario", StreamMetaData()), ProcessVersion.empty)
     val compiledTestCase = testCompiler
       .compile(testCase, scenarioTyping, jobData)
       .fold(errors => throw new IllegalStateException(s"Test compilation errors: $errors"), identity)
-    verifier.verify(
+    val results = verifier.verify(
       compiledTestCase,
       nodesResultsAfterTestRun,
       jobData
     )
+    results(nodeId)
+  }
+
+  private def prepareTestCase(assertions: List[Assertion]): TestCase = {
+    TestCase(
+      id = UUID.randomUUID(),
+      name = "dummy",
+      inputs = "dummy",
+      mocks = Map.empty,
+      assertions = Map(nodeId -> assertions)
+    )
+  }
+
+  private def prepareNodeResults(variablesForEachRun: List[Map[String, Any]]): Map[NodeId, List[ResultContext[Any]]] = {
+    Map(nodeId -> variablesForEachRun.map(variables => ResultContext[Any](ContextId.dummy, Instant.now(), variables)))
   }
 
 }
