@@ -53,7 +53,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
     const testingDataRecords = useAppSelector(getInputDataRecords);
     const testCase = useAppSelector(getTestCase);
 
-    const defaultParameter = testCapabilities.testWithParameters.sourceParameters[0];
+    const defaultParameter = testCapabilities.testWithParameters.sourceParameters?.[0];
 
     const defaultDataRecord = useMemo(
         () =>
