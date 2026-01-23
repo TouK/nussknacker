@@ -64,7 +64,7 @@
         "react-hooks/exhaustive-deps": [
             "error",
             {
-                "additionalHooks": "(useDrop|useDrag|useCallbackRef)$"
+                "additionalHooks": "(useDrop|useDrag|useCallbackRef|useRegisterCommands)$"
             }
         ],
         "import/order": [

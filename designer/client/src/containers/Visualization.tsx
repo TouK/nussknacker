@@ -186,6 +186,7 @@ function Visualization() {
         fetchData(processName);
     }, [fetchData, processName]);
 
+    useScenarioCommands();
     useProcessState();
     useCountsIfNeeded();
     useLiveDataIfNeeded();

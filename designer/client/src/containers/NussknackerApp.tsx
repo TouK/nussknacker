@@ -5,6 +5,8 @@ import React from "react";
 import { DndProvider } from "react-dnd-multi-backend";
 
 import { AiAssistantButton } from "../components/aiAssistant/components/AiAssistantButton";
+import { CommandBar } from "../components/CommandBar/CommandBar";
+import { useRegisterSettingsCommands } from "../components/CommandBar/settings/useRegisterSettingsCommands";
 import { MenuBar } from "../components/MenuBar";
 import { VersionInfo } from "../components/versionInfo";
 import { getLoggedUser } from "../reducers/selectors/settings";
@@ -24,6 +26,7 @@ export function NussknackerApp() {
     useAnonymousStatistics();
     useRegisterTrackingEvents();
     useErrorRegister();
+    useRegisterSettingsCommands();
 
     if (isEmpty(loggedUser)) {
         return null;
@@ -31,6 +34,7 @@ export function NussknackerApp() {
 
     return (
         <>
+            <CommandBar />
             <DndProvider options={HTML5toTouch}>
                 <WindowManager
                     className={css({
