@@ -145,13 +145,13 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
           ExpressionParserCompilationError(
             "Unexpected text",
             nodeId,
-            Some(ParameterName(PredicateAssertionCompilationError.ActualField.entryName)),
+            Some(ParameterName(PredicateAssertionCompilationError.Field.Actual.entryName)),
             "#contexts.size,",
             Some(CoordinatesBasedTextRange(TextCoordinates(14, 0), TextCoordinates(15, 0)))
           )
         ),
         invalidAssertion,
-        PredicateAssertionCompilationError.ActualField,
+        PredicateAssertionCompilationError.Field.Actual,
         nodeId
       )
     }

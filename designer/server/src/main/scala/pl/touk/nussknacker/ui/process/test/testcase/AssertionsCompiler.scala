@@ -116,22 +116,24 @@ class AssertionsCompiler(
     val compiledExpected = expressionCompiler
       .compile(
         assertion.expected,
-        Some(ParameterName(PredicateAssertionCompilationError.ExpectedField.entryName)),
+        Some(ParameterName(PredicateAssertionCompilationError.Field.Expected.entryName)),
         context,
         Unknown // For equals, we can assume any of type of expected and actual expressions are fine, but for >=, <, etc. we could also check if both types are comparable.
       )
       .leftMap(
-        PredicateAssertionCompilationError(_, assertion, PredicateAssertionCompilationError.ExpectedField, nodeId)
+        PredicateAssertionCompilationError(_, assertion, PredicateAssertionCompilationError.Field.Expected, nodeId)
       )
       .toValidatedNel
     val compiledActual = expressionCompiler
       .compile(
         assertion.actual,
-        Some(ParameterName(PredicateAssertionCompilationError.ActualField.entryName)),
+        Some(ParameterName(PredicateAssertionCompilationError.Field.Actual.entryName)),
         context,
         Unknown
       )
-      .leftMap(PredicateAssertionCompilationError(_, assertion, PredicateAssertionCompilationError.ActualField, nodeId))
+      .leftMap(
+        PredicateAssertionCompilationError(_, assertion, PredicateAssertionCompilationError.Field.Actual, nodeId)
+      )
       .toValidatedNel
 
     (compiledExpected, compiledActual)
@@ -173,11 +175,12 @@ object AssertionCompilationError {
     sealed trait Field extends EnumEntry with LowerCamelcase
 
     object Field extends Enum[Field] {
+      case object Expected extends Field
+      case object Actual   extends Field
+
       override def values: IndexedSeq[Field] = findValues
     }
 
-    case object ExpectedField extends Field
-    case object ActualField   extends Field
   }
 
 }
