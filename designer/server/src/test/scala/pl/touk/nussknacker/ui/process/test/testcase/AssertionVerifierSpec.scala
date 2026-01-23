@@ -53,19 +53,20 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
   private val testCompiler = new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
   private val verifier     = new AssertionVerifier(globalVariablesPreparer)
 
+  private val nodeId = NodeId("someNode")
+
   private val scenarioTyping: Map[String, NodeTypingData] = Map(
-    "someNode" -> NodeTypingData(
-      Map(
-        "someVariable" -> Typed.fromInstance("bar"),
-        "someJavaList" -> Typed.fromInstance(new util.ArrayList[String]()),
-        "someArray"    -> Typed.fromInstance(new Array[String](1))
+    nodeId.id -> NodeTypingData(
+      variableTypes = Map(
+        "someVariable"   -> Typed.fromInstance("bar"),
+        "someJavaList"   -> Typed.fromInstance(new util.ArrayList[String]()),
+        "someArray"      -> Typed.fromInstance(new Array[String](1)),
+        "someBigDecimal" -> Typed[java.math.BigDecimal],
       ),
-      None,
-      Map.empty
+      parameters = None,
+      typingInfo = Map.empty
     )
   )
-
-  private val nodeId = NodeId("someNode")
 
   test("should run assertions on test nodes results and return assertion result for each assertion") {
     val testCase = prepareTestCase(
@@ -130,6 +131,36 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
       val nodesResultsAfterTestRun = prepareNodeResults(
         List(
           Map("someJavaList" -> java.util.List.of("foo"))
+        )
+      )
+
+      val results = verifyForTestCase(testCase, nodesResultsAfterTestRun)
+
+      results shouldBe List(expectedResult, expectedResult)
+    }
+  }
+
+  test("should apply SpEL conversions") {
+    forAll(
+      Table(
+        ("expected expression", "actual expression", "expected assertion result"),
+        ("1", "#contexts[0].someBigDecimal", SuccessfulAssertion),
+        ("1L", "#contexts[0].someBigDecimal", SuccessfulAssertion),
+        ("1.0", "#contexts[0].someBigDecimal", SuccessfulAssertion),
+        ("1.0f", "#contexts[0].someBigDecimal", SuccessfulAssertion),
+        ("1", "T(java.math.BigDecimal).ONE", SuccessfulAssertion),
+        ("{'1,2'.split(',')}", "{'1,2'.split(',')}", SuccessfulAssertion),
+      )
+    ) { (expectedExpression, actualExpression, expectedResult) =>
+      val testCase = prepareTestCase(
+        List(
+          ExpressionAssertion(s"#TESTS.assertEquals($expectedExpression, $actualExpression)".spel),
+          PredicateAssertion(AssertionOperator.Equals, expectedExpression.spel, actualExpression.spel),
+        )
+      )
+      val nodesResultsAfterTestRun = prepareNodeResults(
+        List(
+          Map("someBigDecimal" -> new java.math.BigDecimal("1.0"))
         )
       )
 
