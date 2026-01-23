@@ -84,8 +84,8 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
       val compiledAssertion =
         compiledAssertions.assertions(NodeId("sink1")).head.asInstanceOf[CompiledPredicateAssertion]
       compiledAssertion.operator shouldBe Assertion.AssertionOperator.Equals
-      compiledAssertion.expected.original shouldBe "1"
-      compiledAssertion.actual.original shouldBe "#contexts.size"
+      compiledAssertion.expectedExpression.original shouldBe "1"
+      compiledAssertion.actualExpression.original shouldBe "#contexts.size"
     }
   }
 
@@ -151,7 +151,7 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
           )
         ),
         invalidAssertion,
-        PredicateAssertionCompilationError.Field.Actual,
+        Some(PredicateAssertionCompilationError.Field.Actual),
         nodeId
       )
     }

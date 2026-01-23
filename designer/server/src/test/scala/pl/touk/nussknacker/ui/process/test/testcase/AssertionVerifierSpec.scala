@@ -50,8 +50,8 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     modelDefinitionWithClasses.modelDefinition.expressionConfig
   )
 
-  private val testCompiler = new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
-  private val verifier     = new AssertionVerifier(globalVariablesPreparer)
+  private val assertionsCompiler = new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
+  private val assertionVerifier  = new AssertionVerifier(globalVariablesPreparer)
 
   private val nodeId = NodeId("someNode")
 
@@ -149,12 +149,12 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
         ("1.0", "#contexts[0].someBigDecimal", SuccessfulAssertion),
         ("1.0f", "#contexts[0].someBigDecimal", SuccessfulAssertion),
         ("1", "T(java.math.BigDecimal).ONE", SuccessfulAssertion),
-        ("{'1,2'.split(',')}", "{'1,2'.split(',')}", SuccessfulAssertion),
+        ("{a: 1}", """#CONV.toJson('{"a": 1}')""", SuccessfulAssertion),
+        ("{a: 1}", """#CONV.toJson('{"a": 2}')""", FailedAssertion("Expected: [{'a': 1}] but found [{'a': 2}]")),
       )
     ) { (expectedExpression, actualExpression, expectedResult) =>
       val testCase = prepareTestCase(
         List(
-          ExpressionAssertion(s"#TESTS.assertEquals($expectedExpression, $actualExpression)".spel),
           PredicateAssertion(AssertionOperator.Equals, expectedExpression.spel, actualExpression.spel),
         )
       )
@@ -166,7 +166,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
 
       val results = verifyForTestCase(testCase, nodesResultsAfterTestRun)
 
-      results shouldBe List(expectedResult, expectedResult)
+      results shouldBe List(expectedResult)
     }
   }
 
@@ -175,10 +175,10 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
       nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]]
   ): List[AssertionResult] = {
     val jobData = JobData(MetaData("someScenario", StreamMetaData()), ProcessVersion.empty)
-    val compiledTestCase = testCompiler
+    val compiledTestCase = assertionsCompiler
       .compile(testCase, scenarioTyping, jobData)
       .fold(errors => throw new IllegalStateException(s"Test compilation errors: $errors"), identity)
-    val results = verifier.verify(
+    val results = assertionVerifier.verify(
       compiledTestCase,
       nodesResultsAfterTestRun,
       jobData

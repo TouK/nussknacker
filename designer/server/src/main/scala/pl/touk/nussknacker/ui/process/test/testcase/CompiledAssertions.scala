@@ -14,8 +14,9 @@ object CompiledAssertion {
 
   final case class CompiledPredicateAssertion(
       operator: AssertionOperator,
-      expected: CompiledExpression,
-      actual: CompiledExpression
+      expectedExpression: CompiledExpression,
+      actualExpression: CompiledExpression,
+      comparisonExpression: CompiledExpression
   ) extends CompiledAssertion
 
 }

@@ -10,8 +10,10 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
+import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
-import pl.touk.nussknacker.engine.test.testcase.Assertion.{ExpressionAssertion, PredicateAssertion}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, ExpressionAssertion, PredicateAssertion}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.{
@@ -113,33 +115,86 @@ class AssertionsCompiler(
       context: ValidationContext,
       assertion: PredicateAssertion
   )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, CompiledPredicateAssertion] = {
-    val compiledExpected = expressionCompiler
+    compileExpectedExpression(context, assertion)
+      .andThen { expectedExpression =>
+        compileActualExpression(context, assertion, expectedExpression.returnType)
+          .tupleLeft(expectedExpression)
+      }
+      .andThen { case (expectedExpression, actualExpression) =>
+        compileComparisonExpression(context, assertion)
+          .map { comparisonExpression =>
+            CompiledPredicateAssertion(
+              operator = assertion.operator,
+              expectedExpression = expectedExpression.expression,
+              actualExpression = actualExpression.expression,
+              comparisonExpression = comparisonExpression.expression
+            )
+          }
+      }
+  }
+
+  private def compileExpectedExpression(
+      context: ValidationContext,
+      assertion: PredicateAssertion
+  )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, TypedExpression] = {
+    expressionCompiler
       .compile(
         assertion.expected,
         Some(ParameterName(PredicateAssertionCompilationError.Field.Expected.entryName)),
         context,
-        Unknown // For equals, we can assume any of type of expected and actual expressions are fine, but for >=, <, etc. we could also check if both types are comparable.
+        Unknown
       )
       .leftMap(
-        PredicateAssertionCompilationError(_, assertion, PredicateAssertionCompilationError.Field.Expected, nodeId)
+        PredicateAssertionCompilationError(
+          _,
+          assertion,
+          Some(PredicateAssertionCompilationError.Field.Expected),
+          nodeId
+        )
       )
       .toValidatedNel
-    val compiledActual = expressionCompiler
+  }
+
+  private def compileActualExpression(
+      context: ValidationContext,
+      assertion: PredicateAssertion,
+      expectedType: TypingResult
+  )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, TypedExpression] = {
+    expressionCompiler
       .compile(
         assertion.actual,
         Some(ParameterName(PredicateAssertionCompilationError.Field.Actual.entryName)),
         context,
-        Unknown
+        expectedType
       )
       .leftMap(
-        PredicateAssertionCompilationError(_, assertion, PredicateAssertionCompilationError.Field.Actual, nodeId)
+        PredicateAssertionCompilationError(_, assertion, Some(PredicateAssertionCompilationError.Field.Actual), nodeId)
       )
       .toValidatedNel
+  }
 
-    (compiledExpected, compiledActual)
-      .mapN { (expected, actual) =>
-        CompiledPredicateAssertion(assertion.operator, expected.expression, actual.expression)
-      }
+  private def compileComparisonExpression(
+      context: ValidationContext,
+      assertion: PredicateAssertion,
+  )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, TypedExpression] = {
+    expressionCompiler
+      .compile(
+        s"${assertion.expected.expression} ${toComparisonOperator(assertion.operator)} ${assertion.actual.expression}".spel,
+        paramName = None,
+        context,
+        Typed[java.lang.Boolean]
+      )
+      .leftMap(
+        PredicateAssertionCompilationError(_, assertion, field = None, nodeId)
+      )
+      .toValidatedNel
+  }
+
+  private def toComparisonOperator(operator: Assertion.AssertionOperator): String = {
+    operator match {
+      case AssertionOperator.Equals    => "=="
+      case AssertionOperator.NotEquals => "!="
+    }
   }
 
 }
@@ -166,7 +221,7 @@ object AssertionCompilationError {
   final case class PredicateAssertionCompilationError(
       errors: NonEmptyList[ProcessCompilationError],
       assertion: PredicateAssertion,
-      field: PredicateAssertionCompilationError.Field,
+      field: Option[PredicateAssertionCompilationError.Field],
       nodeId: NodeId,
   ) extends AssertionCompilationError
 
