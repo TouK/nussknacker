@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.test.testcase
 
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
+import jdk.internal.net.http.common.Log.errors
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -66,13 +67,8 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
       .enricher("enricher1", "enricherOutput", "enricher1", "par1" -> "'abc'".spel)
       .buildSimpleVariable("result-id2", "result", "#input".spel)
       .emptySink("sink1", "sink")
-
-    val test = TestCase(
-      UUID.randomUUID(),
-      "someTest",
-      inputs = "",
-      mocks = Map.empty,
-      assertions = Map(
+    val test = prepareTestCase(
+      Map(
         NodeId("sink1") -> List(PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel))
       )
     )
@@ -96,12 +92,8 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
       .enricher("enricher1", "enricherOutput", "enricher1", "par1" -> "'abc'".spel)
       .buildSimpleVariable("result-id2", "result", "#input".spel)
       .emptySink("sink1", "sink")
-    val test = TestCase(
-      UUID.randomUUID(),
-      "someTest",
-      inputs = "",
-      mocks = Map.empty,
-      assertions = Map(
+    val test = prepareTestCase(
+      Map(
         NodeId("notExistingSink") -> List(
           PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel)
         )
@@ -126,21 +118,26 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
       .enricher("enricher1", "enricherOutput", "enricher1", "par1" -> "'abc'".spel)
       .buildSimpleVariable("result-id2", "result", "#input".spel)
       .emptySink("sink1", "sink")
-    val nodeId           = NodeId("sink1")
-    val invalidAssertion = PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size,".spel)
-
-    val test = TestCase(
-      UUID.randomUUID(),
-      "someTest",
-      inputs = "",
-      mocks = Map.empty,
-      assertions = Map(nodeId -> List(invalidAssertion))
+    val nodeId = NodeId("sink1")
+    val assertionWithUnneededComma =
+      PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size,".spel)
+    val assertionComparingUnrelatedTypes =
+      PredicateAssertion(Assertion.AssertionOperator.Equals, "'string'".spel, "123".spel)
+    val test = prepareTestCase(
+      Map(
+        nodeId -> List(
+          assertionWithUnneededComma,
+          assertionComparingUnrelatedTypes,
+        )
+      )
     )
 
     val testCompilationResult = compileScenarioWithAssertions(scenario, test)
     inside(testCompilationResult) { case Invalid(errors) =>
-      errors.size shouldBe 1
-      errors.head shouldBe PredicateAssertionCompilationError(
+      errors.size shouldBe 2
+
+      val assertionWithUnneededCommaError :: assertionComparingUnrelatedTypesError :: Nil = errors.toList
+      assertionWithUnneededCommaError shouldBe PredicateAssertionCompilationError(
         NonEmptyList.one(
           ExpressionParserCompilationError(
             "Unexpected text",
@@ -150,7 +147,22 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
             Some(CoordinatesBasedTextRange(TextCoordinates(14, 0), TextCoordinates(15, 0)))
           )
         ),
-        invalidAssertion,
+        assertionWithUnneededComma,
+        Some(PredicateAssertionCompilationError.Field.Actual),
+        nodeId
+      )
+
+      assertionComparingUnrelatedTypesError shouldBe PredicateAssertionCompilationError(
+        NonEmptyList.one(
+          ExpressionParserCompilationError(
+            "Bad expression type, expected: String(string), found: Integer(123)",
+            nodeId,
+            Some(ParameterName(PredicateAssertionCompilationError.Field.Actual.entryName)),
+            "123",
+            details = None
+          )
+        ),
+        assertionComparingUnrelatedTypes,
         Some(PredicateAssertionCompilationError.Field.Actual),
         nodeId
       )
@@ -195,5 +207,15 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
     typingInfo.parameters.map(_.map(DefinitionsService.createUIParameter)),
     typingInfo.expressionsTypingInfo
   )
+
+  private def prepareTestCase(assertions: Map[NodeId, List[Assertion]]): TestCase = {
+    TestCase(
+      id = UUID.randomUUID(),
+      name = "dummy",
+      inputs = "dummy",
+      mocks = Map.empty,
+      assertions = assertions
+    )
+  }
 
 }
