@@ -620,9 +620,14 @@ class NodesApiHttpServiceBusinessSpec
              |    "test-case-1": {
              |      "assertions": [
              |        {
-             |          "expression": {
+             |          "operator": "equals",
+             |          "actual": {
              |            "language": "spel",
-             |            "expression": "#TESTS.assertEquals(#contexts.size, 5)"
+             |            "expression": "#contexts.size"
+             |          },
+             |          "expected": {
+             |            "language": "spel",
+             |            "expression": "5"
              |          }
              |        }
              |      ]
@@ -845,15 +850,25 @@ class NodesApiHttpServiceBusinessSpec
              |      },
              |      "assertions": [
              |        {
-             |          "expression": {
+             |          "operator": "equals",
+             |          "actual": {
              |            "language": "spel",
-             |            "expression": "#TESTS.assertEquals(#contexts.size, 5)"
+             |            "expression": "#contexts.size"
+             |          },
+             |          "expected": {
+             |            "language": "spel",
+             |            "expression": "5"
              |          }
              |        },
              |        {
-             |          "expression": {
+             |          "operator": "equals",
+             |          "actual": {
              |            "language": "spel",
-             |            "expression": "#TESTS.assertEquals(#contexts[0].input, 'value')"
+             |            "expression": "#contexts[0].input"
+             |          },
+             |          "expected": {
+             |            "language": "spel",
+             |            "expression": "'value'"
              |          }
              |        }
              |      ]
@@ -876,21 +891,36 @@ class NodesApiHttpServiceBusinessSpec
              |      },
              |      "assertions": [
              |        {
-             |          "expression": {
+             |          "operator": "equals",
+             |          "actual": {
              |            "language": "spel",
-             |            "expression": "#TESTS.assertEquals(#contexts[0].doesNotExist, 'value')"
+             |            "expression": "#contexts[0].doesNotExist"
+             |          },
+             |          "expected": {
+             |            "language": "spel",
+             |            "expression": "'value'"
              |          }
              |        },
              |        {
-             |          "expression": {
+             |          "operator": "equals",
+             |          "actual": {
              |            "language": "spel",
-             |            "expression": "#TESTS.assertEquals(#contexts.size, 1)"
+             |            "expression": "#contexts.size"
+             |          },
+             |          "expected": {
+             |            "language": "spel",
+             |            "expression": "1"
              |          }
              |        },
              |        {
-             |          "expression": {
+             |          "operator": "equals",
+             |          "actual": {
              |            "language": "spel",
-             |            "expression": "#TESTS.assertEquals(#contexts[0].doesNotExist, 'value')"
+             |            "expression": "#contexts[0].doesNotExist2"
+             |          },
+             |          "expected": {
+             |            "language": "spel",
+             |            "expression": "missing quotes"
              |          }
              |        }
              |      ]
@@ -935,36 +965,55 @@ class NodesApiHttpServiceBusinessSpec
             |          {
             |            "typ": "ExpressionParserCompilationError",
             |            "message": "There is no property 'doesNotExist' in type: Record{input: String}",
-            |            "description": "There is problem with expression in field [<missing>] - it could not be parsed.",
+            |            "description": "There is problem with expression in field [actual] - it could not be parsed.",
             |            "details": {
             |              "start": {
-            |                "column": 33,
+            |                "column": 13,
             |                "row": 0
             |              },
             |              "end": {
-            |                "column": 45,
+            |                "column": 25,
             |                "row": 0
             |              },
             |              "type": "CoordinatesBasedTextRange"
-            |            }
+            |            },
+            |            "fieldName": "actual"
             |          }
             |        ],
             |        "2": [
             |          {
             |            "typ": "ExpressionParserCompilationError",
-            |            "message": "There is no property 'doesNotExist' in type: Record{input: String}",
-            |            "description": "There is problem with expression in field [<missing>] - it could not be parsed.",
+            |            "message": "Unexpected text",
+            |            "description": "There is problem with expression in field [expected] - it could not be parsed.",
             |            "details": {
             |              "start": {
-            |                "column": 33,
+            |                "column": 8,
             |                "row": 0
             |              },
             |              "end": {
-            |                "column": 45,
+            |                "column": 9,
             |                "row": 0
             |              },
             |              "type": "CoordinatesBasedTextRange"
-            |            }
+            |            },
+            |            "fieldName": "expected"
+            |          },
+            |          {
+            |            "typ": "ExpressionParserCompilationError",
+            |            "message": "There is no property 'doesNotExist2' in type: Record{input: String}",
+            |            "description": "There is problem with expression in field [actual] - it could not be parsed.",
+            |            "details": {
+            |              "start": {
+            |                "column": 13,
+            |                "row": 0
+            |              },
+            |              "end": {
+            |                "column": 26,
+            |                "row": 0
+            |              },
+            |              "type": "CoordinatesBasedTextRange"
+            |            },
+            |            "fieldName": "actual"
             |          }
             |        ]
             |      }

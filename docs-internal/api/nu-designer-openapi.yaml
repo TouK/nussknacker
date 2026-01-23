@@ -1626,22 +1626,33 @@ paths:
                           language: spel
                           expression: '42'
                       assertions:
-                      - expression:
+                      - operator: equals
+                        expected:
                           language: spel
-                          expression: '#TESTS.assertEquals(#contexts.size, 1)'''
+                          expression: '1'
+                        actual:
+                          language: spel
+                          expression: '#contexts.size'
                     test-case-2:
                       enricherMock:
                         expression:
                           language: spel
                           expression: '''sample value'''
                       assertions:
-                      - expression:
+                      - operator: equals
+                        expected:
                           language: spel
-                          expression: '#TESTS.assertEquals(#contexts.size, 1)'''
-                      - expression:
+                          expression: '1'
+                        actual:
                           language: spel
-                          expression: '#TESTS.assertEquals(#contexts[0].doesNotExist,
-                            ''expected'')'
+                          expression: '#contexts.size'
+                      - operator: equals
+                        expected:
+                          language: spel
+                          expression: '''expected'''
+                        actual:
+                          language: spel
+                          expression: '#contexts[0].doesNotExist'
         required: true
       responses:
         '200':
@@ -5483,12 +5494,15 @@ components:
           format: int32
     Assertion:
       title: Assertion
-      type: object
-      required:
-      - expression
-      properties:
-        expression:
-          $ref: '#/components/schemas/Expression'
+      oneOf:
+      - $ref: '#/components/schemas/ExpressionAssertion'
+      - $ref: '#/components/schemas/PredicateAssertion'
+    AssertionOperator:
+      title: AssertionOperator
+      type: string
+      enum:
+      - equals
+      - notEquals
     AssertionResult:
       title: AssertionResult
       oneOf:
@@ -5512,6 +5526,10 @@ components:
           anyOf:
           - $ref: '#/components/schemas/ErrorDetails'
           - type: 'null'
+        fieldName:
+          type:
+          - string
+          - 'null'
     Attachment:
       title: Attachment
       type: object
@@ -6051,6 +6069,14 @@ components:
           type: string
         expression:
           type: string
+    ExpressionAssertion:
+      title: ExpressionAssertion
+      type: object
+      required:
+      - expression
+      properties:
+        expression:
+          $ref: '#/components/schemas/Expression'
     ExpressionEvaluationResult_Json:
       title: ExpressionEvaluationResult_Json
       type: object
@@ -7391,6 +7417,20 @@ components:
                 type: string
               duration:
                 type: string
+    PredicateAssertion:
+      title: PredicateAssertion
+      type: object
+      required:
+      - operator
+      - expected
+      - actual
+      properties:
+        operator:
+          $ref: '#/components/schemas/AssertionOperator'
+        expected:
+          $ref: '#/components/schemas/Expression'
+        actual:
+          $ref: '#/components/schemas/Expression'
     ProcessActivity:
       title: ProcessActivity
       type: object

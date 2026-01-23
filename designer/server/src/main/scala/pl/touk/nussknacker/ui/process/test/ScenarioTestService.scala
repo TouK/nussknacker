@@ -28,7 +28,7 @@ import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
-import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
+import pl.touk.nussknacker.engine.test.testcase.{EnricherMock, TestCase}
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder.TestRecordVariablesDecodingError
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
@@ -40,6 +40,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceP
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.{
+  AssertionErrors,
   ExpressionsToTestDataConversionError,
   MockConfiguredForNotExistingNodesError,
   ScenarioValidationError
@@ -366,9 +367,9 @@ class ScenarioTestService(
     assertionCompiler
       .compile(test, nodesTyping, jobData)
       .fold(
-        errors => Left(errors.head),
+        errors => Left(AssertionErrors(errors)),
         Right(_)
-      ) // in case of performing test case we return errors in fail-fast fashion
+      )
   }
 
   def performTest(
@@ -633,17 +634,10 @@ object ScenarioTestService {
 
     final case class TestResultsSizeExceededError(approxSizeInBytes: Long, maxBytes: Long) extends PerformTestError
 
+    final case class AssertionErrors(errors: NonEmptyList[testcase.AssertionError]) extends PerformTestError
+
     final case class MockConfiguredForNotExistingNodesError(notExistingNodeIds: NonEmptyList[NodeId])
         extends PerformTestError
-
-    final case class AssertionConfiguredForNotExistingNodesError(notExistingNodeIds: NonEmptyList[NodeId])
-        extends PerformTestError
-
-    final case class AssertionExpressionCompilationError(
-        errors: NonEmptyList[ProcessCompilationError],
-        assertion: Assertion,
-        nodeId: NodeId
-    ) extends PerformTestError
 
     final case class ScenarioValidationError(errors: ValidationErrors) extends PerformTestError
 

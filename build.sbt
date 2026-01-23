@@ -14,7 +14,7 @@ import scala.util.Try
 import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 
-val scala213 = "2.13.16"
+val scala213 = "2.13.18"
 
 lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
   case None | Some("2.13") => scala213
@@ -233,7 +233,7 @@ lazy val commonSettings =
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV                = "1.20.2"
+val flinkV                = "1.20.3"
 val flinkConnectorKafkaV  = "3.4.0-1.20"
 val jdbcFlinkConnectorV   = "3.3.0-1.20"
 val flinkCommonsCompressV = "1.26.0"
@@ -241,7 +241,7 @@ val flinkCommonsLang3V    = "3.12.0"
 val flinkCommonsTextV     = "1.10.0"
 val flinkCommonsIOV       = "2.15.1"
 val flinkInfluxdbJavaV    = "2.17"
-val flinkScalaV           = "1.1.5"
+val flinkScalaV           = "1.1.6"
 // keep calcite synchronized with version used by current flink-sql-parser
 val calciteV              = "1.32.0"
 val avroV                 =
@@ -463,13 +463,14 @@ lazy val distribution: Project = sbt
     },
     Universal / packageName                  := ("nussknacker" + "-" + version.value),
     Universal / mappings                     := {
+      val universalMappings = (Universal / mappings).value
       val universalMappingsWithDevConfigFilter =
-        if (addDevArtifacts) (Universal / mappings).value
-        else filterDevConfigArtifacts((Universal / mappings).value)
+        if (addDevArtifacts) universalMappings
+        else filterDevConfigArtifacts(universalMappings)
 
       universalMappingsWithDevConfigFilter ++
-        (deploymentManagerArtifacts).value ++
-        (componentArtifacts).value ++
+        deploymentManagerArtifacts.value ++
+        componentArtifacts.value ++
         (if (addDevArtifacts)
            Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar")
          else Nil) ++
@@ -478,9 +479,10 @@ lazy val distribution: Project = sbt
         (flinkExecutor / additionalBundledArtifacts).value
     },
     Universal / packageZipTarball / mappings := {
+      val universalMappings = (Universal / mappings).value
       val universalMappingsWithDevConfigFilter =
-        if (addDevArtifacts) (Universal / mappings).value
-        else filterDevConfigArtifacts((Universal / mappings).value)
+        if (addDevArtifacts) universalMappings
+        else filterDevConfigArtifacts(universalMappings)
       // we don't want docker-* stuff in .tgz
       universalMappingsWithDevConfigFilter filterNot { case (file, _) =>
         file.getName.startsWith("docker-") || file.getName.contains("entrypoint.sh")
@@ -1601,7 +1603,9 @@ lazy val scenarioApi = (project in file("scenario-api"))
   .settings(
     name := "nussknacker-scenario-api",
     libraryDependencies ++= Seq(
-      "org.apache.commons" % "commons-lang3" % flinkCommonsLang3V,
+      "org.apache.commons" % "commons-lang3"    % flinkCommonsLang3V,
+      "com.beachape"      %% "enumeratum"       % enumeratumV,
+      "com.beachape"      %% "enumeratum-circe" % enumeratumV,
     )
   )
   .dependsOn(commonApi, testUtils % Test)
@@ -2026,9 +2030,7 @@ lazy val designer = (project in file("designer/server"))
     },
     ThisBuild / parallelExecution    := false,
     SlowTests / test                 := (SlowTests / test).dependsOn(prepareDesignerSlowTests).value,
-    SlowTests / testOptions += Tests.Setup(() => prepareDesignerSlowTests.value),
     Test / test                      := (Test / test).dependsOn(prepareDesignerTests).value,
-    Test / testOptions += Tests.Setup(() => prepareDesignerTests.value),
     /*
       We depend on copyClientDist in packageBin and assembly to be make sure FE files will be included in jar and fajar
       We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
@@ -2121,7 +2123,13 @@ lazy val e2eTests = (project in file("e2e-tests"))
   .settings(commonSettings)
   .configs(SlowTests)
   .settings(slowTestsSettings)
-  .settings(doTest)
+  .settings(
+    Test / test := (Test / test).dependsOn(distribution / Docker / publishLocal).value,
+    Test / testOptions += {
+      val s = streams.value
+      Tests.Setup { _ => s.log.info("Building Nu Designer docker image from the sources for E2E tests") }
+    }
+  )
   .settings(
     libraryDependencies ++= {
       Seq(
@@ -2138,13 +2146,6 @@ lazy val e2eTests = (project in file("e2e-tests"))
   .enablePlugins(BuildInfoPlugin)
   .settings(buildInfoSettings)
   .dependsOn(testUtils % Test, scenarioApi % Test, designer % Test)
-
-lazy val doTest = Seq(
-  Test / testOptions += Tests.Setup { () =>
-    streams.value.log.info("Building Nu Designer docker image from the sources for a sake of E2E tests")
-    (distribution / Docker / publishLocal).value.a
-  }
-)
 
 lazy val scalafixRules = (project in file("scalafix-rules"))
   .settings(
