@@ -1,7 +1,6 @@
 import { css } from "@emotion/css";
 import { Box } from "@mui/material";
-import React, { useCallback, useMemo, memo, useState, useRef } from "react";
-import { useMutationObserver } from "rooks";
+import React, { useCallback, useMemo, memo } from "react";
 
 import type { TestAssertionResult } from "../../../../../../http/resultsWithCountsDto";
 import type { NodeValidationError, VariableTypes } from "../../../../../../types/validation";
@@ -12,12 +11,11 @@ import { EditorType, ExpressionLang } from "../../../editors/expression/types";
 import Input from "../../../editors/field/Input";
 import { EMPTY_REQUIRED_ERROR } from "../../../editors/Validators";
 import { FieldsRow } from "../../../fragment-input-definition/FieldsRow";
-import type { AssertionParts } from "./assertionEncoder";
-import { decodeAssertionExpression, encodeAssertionExpression } from "./assertionEncoder";
 import { AssertionStatus } from "./AssertionStatus";
 
 const ASSERTION_SYMBOLS: Record<string, string> = {
-    assertEquals: "==",
+    equals: "==",
+    notEquals: "!=",
 };
 
 const centeredInputStyle = css({
@@ -37,119 +35,84 @@ const gridContainerStyle = css({
 
 interface Props {
     uuid: string;
-    expressionObj: ExpressionObj;
+    expected: ExpressionObj;
+    operator: "equals" | "notEquals";
+    actual: ExpressionObj;
     variableTypes: VariableTypes;
-    onChange: (uuid: string, expression: { expression: ExpressionObj }) => void;
+    onChange: (
+        uuid: string,
+        updated: Partial<{ expected: ExpressionObj; operator: "equals" | "notEquals"; actual: ExpressionObj }>,
+    ) => void;
     testAssertionResult: TestAssertionResult | undefined;
     index: number;
     errors: NodeValidationError[];
 }
 
-const AssertionItemComponent = ({ uuid, expressionObj, onChange, index, testAssertionResult, variableTypes, errors = [] }: Props) => {
+const AssertionItemComponent = ({
+    uuid,
+    expected,
+    operator,
+    actual,
+    onChange,
+    index,
+    testAssertionResult,
+    variableTypes,
+    errors = [],
+}: Props) => {
     const isFirstRow = index === 0;
-    const [hasExpectedError, setHasExpectedError] = useState(false);
-    const bodyRef = useRef(document.body);
-
-    const mutationObserverOptions = useMemo(
-        () => ({
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ["class"],
-        }),
-        [],
-    );
-
-    const checkForExpectedError = useCallback(() => {
-        const assertionContainer = document.querySelector(`[data-assertion-uuid="${uuid}"]`);
-        const expectedLabel = assertionContainer?.querySelector('[label="Expected"]');
-        const hasMuiError = expectedLabel?.querySelector(".Mui-error") !== null;
-        setHasExpectedError(hasMuiError);
-    }, [uuid]);
-
-    //TODO: remove this logic when backend ready to validate specific assertion field
-    useMutationObserver(bodyRef, checkForExpectedError, mutationObserverOptions);
-
-    const decodedParts = useMemo(() => {
-        return decodeAssertionExpression(expressionObj.expression);
-    }, [expressionObj.expression]);
-
-    const expectedExpressionObj: ExpressionObj = useMemo(() => {
-        const expectedValue = decodedParts?.expected ?? "";
-        return {
-            expression: expectedValue,
-            language: ExpressionLang.SpEL,
-        };
-    }, [decodedParts?.expected]);
-
-    const actualExpressionObj: ExpressionObj = useMemo(() => {
-        const actualValue = decodedParts?.actual ?? "";
-        return {
-            expression: actualValue,
-            language: ExpressionLang.SpEL,
-        };
-    }, [decodedParts?.actual]);
-
-    const handleChangeAssertionPart = useCallback(
-        (part: keyof AssertionParts, value: string) => {
-            const currentParts = decodedParts || {
-                assertion: "assertEquals",
-                expected: "",
-                actual: "",
-            };
-
-            const updatedParts: AssertionParts = {
-                ...currentParts,
-                [part]: value,
-            };
-
-            const encodedExpression = encodeAssertionExpression(updatedParts);
-
-            onChange(uuid, { expression: { language: ExpressionLang.SpEL, expression: encodedExpression } });
-        },
-        [decodedParts, onChange, uuid],
-    );
 
     const handleExpectedChange = useCallback(
-        ({ expression }) => handleChangeAssertionPart("expected", expression),
-        [handleChangeAssertionPart],
+        ({ expression }: { expression: string }) => {
+            onChange(uuid, { expected: { expression, language: ExpressionLang.SpEL } });
+        },
+        [onChange, uuid],
     );
 
     const handleActualChange = useCallback(
-        ({ expression }) => handleChangeAssertionPart("actual", expression),
-        [handleChangeAssertionPart],
+        ({ expression }: { expression: string }) => {
+            onChange(uuid, { actual: { expression, language: ExpressionLang.SpEL } });
+        },
+        [onChange, uuid],
     );
 
     const assertionSymbol = useMemo(() => {
-        return ASSERTION_SYMBOLS[decodedParts?.assertion] ?? "";
-    }, [decodedParts?.assertion]);
+        return ASSERTION_SYMBOLS[operator] ?? "";
+    }, [operator]);
+
+    const expectedErrors = useMemo(() => {
+        return errors.filter((error) => error.fieldName === "expected") || [];
+    }, [errors]);
+
+    const actualErrors = useMemo(() => {
+        return errors.filter((error) => error.fieldName === "actual") || [];
+    }, [errors]);
 
     return (
         <Box display={"flex"} alignItems={"flex-start"} data-assertion-uuid={uuid}>
             <FieldsRow key={uuid} index={index} uuid={uuid} className={gridContainerStyle}>
-                <RowFieldLabel showLabel={isFirstRow} label="Expected">
+                <RowFieldLabel showLabel={isFirstRow} label="Expected" data-testid={`assertion-expected-${index}`}>
                     <EditableEditor
                         showSwitch={false}
                         editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
-                        expressionObj={expectedExpressionObj}
+                        expressionObj={expected}
                         variableTypes={variableTypes}
                         onValueChange={handleExpectedChange}
                         showValidation
-                        fieldErrors={errors}
+                        fieldErrors={expectedErrors}
                     />
                 </RowFieldLabel>
                 <RowFieldLabel showLabel={isFirstRow} label="Assertion">
                     <Input value={assertionSymbol} disabled={true} className={centeredInputStyle} />
                 </RowFieldLabel>
-                <RowFieldLabel showLabel={isFirstRow} label="Actual">
+                <RowFieldLabel showLabel={isFirstRow} label="Actual" data-testid={`assertion-actual-${index}`}>
                     <EditableEditor
                         showSwitch={false}
                         editors={[{ type: EditorType.SPEL_PARAMETER_EDITOR }]}
-                        expressionObj={actualExpressionObj}
+                        expressionObj={actual}
                         variableTypes={variableTypes}
                         onValueChange={handleActualChange}
                         showValidation
-                        fieldErrors={errors.length > 0 && hasExpectedError ? [EMPTY_REQUIRED_ERROR] : []}
+                        fieldErrors={actualErrors}
                     />
                 </RowFieldLabel>
             </FieldsRow>

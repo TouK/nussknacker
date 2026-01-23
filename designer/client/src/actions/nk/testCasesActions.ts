@@ -9,7 +9,7 @@ import {
 } from "../../reducers/selectors/testCases";
 import type { ThunkAction } from "../reduxTypes";
 
-export type Assertion = { expression: ExpressionObj };
+export type Assertion = { expected: ExpressionObj; operator: "equals" | "notEquals"; actual: ExpressionObj };
 export type Assertions = Record<string, Assertion[]>;
 
 export type Mock = { expression: ExpressionObj };

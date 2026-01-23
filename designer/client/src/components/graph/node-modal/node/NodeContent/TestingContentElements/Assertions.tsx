@@ -50,7 +50,13 @@ export const Assertions = ({ node, edges }: Props) => {
     const addAssertion = useCallback(() => {
         dispatch(
             setTestCaseAssertions(node.id, (prev) =>
-                prev.concat(withUuid({ expression: { expression: "#TESTS.assertEquals()", language: "spel" } })),
+                prev.concat(
+                    withUuid({
+                        expected: { expression: "", language: "spel" },
+                        operator: "equals" as const,
+                        actual: { expression: "", language: "spel" },
+                    } as const),
+                ),
             ),
         );
     }, [dispatch, node.id]);
@@ -63,7 +69,14 @@ export const Assertions = ({ node, edges }: Props) => {
     );
 
     const editAssertion = useCallback(
-        (uuid: string, updated: Partial<{ expression: { expression: string; language: string } }>) => {
+        (
+            uuid: string,
+            updated: Partial<{
+                expected: { expression: string; language: string };
+                operator: "equals" | "notEquals";
+                actual: { expression: string; language: string };
+            }>,
+        ) => {
             dispatch(setTestCaseAssertions(node.id, (prev) => prev.map((item) => (item.uuid === uuid ? { ...item, ...updated } : item))));
         },
         [dispatch, node.id],
@@ -84,12 +97,14 @@ export const Assertions = ({ node, edges }: Props) => {
                         readOnly={false}
                         errors={[]}
                     >
-                        {testCaseAssertions.map(({ expression: expressionObj, uuid }, index) => (
+                        {testCaseAssertions.map(({ expected, operator, actual, uuid }, index) => (
                             <AssertionItem
                                 key={uuid}
                                 uuid={uuid}
                                 onChange={editAssertion}
-                                expressionObj={expressionObj}
+                                expected={expected}
+                                operator={operator}
+                                actual={actual}
                                 variableTypes={assertionVariableTypes}
                                 testAssertionResult={testAssertionResults?.[index]}
                                 index={index}

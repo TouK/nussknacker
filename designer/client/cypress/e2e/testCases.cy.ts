@@ -37,8 +37,11 @@ describe("Test cases", () => {
         checkAssertionResult(0, "Expected: [100] but found [0]");
         checkAssertionResult(1, "ok");
         addEmptyAssertion();
-        fillAssertion(2, "#wrongValue", "10");
-        checkAssertionErrorVisible(2, "Unresolved reference 'wrongValue'");
+        fillAssertion(2, "#wrongExpected", "10");
+        checkAssertionErrorVisible(2, "expected", "Unresolved reference 'wrongExpected'");
+        addEmptyAssertion();
+        fillAssertion(3, "10", "#wrongActual");
+        checkAssertionErrorVisible(3, "actual", "Unresolved reference 'wrongActual'");
     });
 });
 
@@ -55,10 +58,8 @@ const addEmptyAssertion = () => {
 };
 
 const fillAssertion = (assertionNumber: number, expected: string, actual: string) => {
-    cy.get(`[data-testid="fieldsRow:${assertionNumber}"]`).within(() => {
-        cy.get('[label="Expected"]').find("textarea").type(expected, { force: true });
-        cy.get('[label="Actual"]').find("textarea").type(actual, { force: true });
-    });
+    cy.get(`[data-testid="assertion-expected-${assertionNumber}"]`).find("textarea").type(expected, { force: true });
+    cy.get(`[data-testid="assertion-actual-${assertionNumber}"]`).find("textarea").type(actual, { force: true });
 };
 
 const appendFromLiveDataClick = () => {
@@ -80,8 +81,13 @@ const checkAssertionResult = (assertionNumber: number, message: string) => {
     cy.get('[role="tooltip"]').should("not.exist");
 };
 
-const checkAssertionErrorVisible = (assertionNumber: number, message: string) => {
-    cy.get(`[data-testid="fieldsRow:${assertionNumber}"]`).within(() => {
+const checkAssertionErrorVisible = (assertionNumber: number, fieldType: "actual" | "expected", message: string) => {
+    const notSelectedFieldType = fieldType === "actual" ? "expected" : "actual";
+
+    cy.get(`[data-testid="assertion-${fieldType}-${assertionNumber}"]`).within(() => {
         cy.contains('[data-testid="form-helper-text"]', message).should("be.visible");
+    });
+    cy.get(`[data-testid="assertion-${notSelectedFieldType}-${assertionNumber}"]`).within(() => {
+        cy.contains('[data-testid="form-helper-text"]', message).should("not.exist");
     });
 };
