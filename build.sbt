@@ -45,7 +45,7 @@ val requestResponseProcessesPort  = propOrEnv("requestResponseProcessesPort", "8
 
 val liteEngineKafkaRuntimeDockerPackageName =
   propOrEnv("liteEngineKafkaRuntimeDockerPackageName", "nussknacker-lite-runtime-app")
-
+//
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
 //publishArtifact := false

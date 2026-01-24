@@ -1,3 +1,4 @@
+trigger build
 Building Nussknacker
 ====================
 
