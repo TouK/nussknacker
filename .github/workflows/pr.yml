@@ -577,9 +577,6 @@ jobs:
           - repo: nussknacker-sample-components
             workflow_id: pr.yml
             ref: staging
-          - repo: nussknacker-flink-compatibility
-            workflow_id: test.yml
-            ref: staging
     steps:
       - uses: actions/github-script@v6
         with:
