@@ -57,27 +57,26 @@ ThisBuild / isSnapshot := version(_ contains "-SNAPSHOT").value
 lazy val publishSettings = Seq(
   publishMavenStyle             := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
-  sonatypeCredentialHost        := "central.sonatype.com", // can be removed after sbt 1.11.x+ migration
+  pomIncludeRepository          := { _ => false },
   publishTo                     := {
     if (isSnapshot.value) {
-      Some("snapshots" at "https://central.sonatype.com/repository/maven-snapshots/")
+      Some("central-snapshots" at "https://central.sonatype.com/repository/maven-snapshots/")
     } else {
-      sonatypePublishToBundle.value
+      localStaging.value
     }
   },
   Test / publishArtifact        := false,
-  // We don't put scm information here, it will be added by release plugin and if scm provided here is different than the one from scm
-  // we'll end up with two scm sections and invalid pom...
-  pomExtra in Global            := {
-    <developers>
-      <developer>
-        <id>TouK</id>
-        <name>TouK</name>
-        <url>https://touk.pl</url>
-      </developer>
-    </developers>
-  },
+  developers                    := List(
+    Developer(
+      id = "TouK",
+      name = "TouK",
+      email = "",
+      url = url("https://touk.pl")
+    )
+  ),
   organization                  := "pl.touk.nussknacker",
+  organizationName              := "TouK",
+  organizationHomepage          := Some(url("https://touk.pl/")),
   homepage                      := Some(url(s"https://github.com/touk/nussknacker")),
 )
 
@@ -136,7 +135,7 @@ val ignoreExternalDepsTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "or
 lazy val commonSettings =
   publishSettings ++
     Seq(
-      licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
+      licenses                         := Seq(License.Apache2),
       crossScalaVersions               := supportedScalaVersions,
       scalaVersion                     := defaultScalaV,
       resolvers ++= Seq(
@@ -463,7 +462,7 @@ lazy val distribution: Project = sbt
     },
     Universal / packageName                  := ("nussknacker" + "-" + version.value),
     Universal / mappings                     := {
-      val universalMappings = (Universal / mappings).value
+      val universalMappings                    = (Universal / mappings).value
       val universalMappingsWithDevConfigFilter =
         if (addDevArtifacts) universalMappings
         else filterDevConfigArtifacts(universalMappings)
@@ -479,7 +478,7 @@ lazy val distribution: Project = sbt
         (flinkExecutor / additionalBundledArtifacts).value
     },
     Universal / packageZipTarball / mappings := {
-      val universalMappings = (Universal / mappings).value
+      val universalMappings                    = (Universal / mappings).value
       val universalMappingsWithDevConfigFilter =
         if (addDevArtifacts) universalMappings
         else filterDevConfigArtifacts(universalMappings)
@@ -2307,7 +2306,7 @@ lazy val root = (project in file("."))
       releaseStepCommand("dist/Universal/packageZipTarball"),
       releaseStepCommandAndRemaining("+dist/Docker/publish"),
       releaseStepCommandAndRemaining("+liteEngineRuntimeApp/Docker/publish"),
-      releaseStepCommand("sonatypeBundleRelease"),
+      releaseStepCommand("sonaRelease"),
       setNextVersion,
       commitNextVersion,
       pushChanges
