@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next";
-import React from "react";
+import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 import { layout } from "../../../../actions/nk/ui/layout";
@@ -13,6 +13,7 @@ import AlignTop from "../../../../assets/img/toolbarButtons/layout_avt.svg";
 import DistributeH from "../../../../assets/img/toolbarButtons/layout_dh.svg";
 import DistributeV from "../../../../assets/img/toolbarButtons/layout_dv.svg";
 import { useAppDispatch } from "../../../../store/storeHelpers";
+import { useRegisterCommands } from "../../../CommandBar/useRegisterCommands";
 import type { AlignCellsVariant } from "../../../graph/alignCells";
 import { useGraph } from "../../../graph/GraphContext";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
@@ -88,22 +89,67 @@ function getName(t: TFunction, type: ToolbarButtonProps["type"]) {
     }
 }
 
+function getKey(type: ToolbarButtonProps["type"]) {
+    switch (type) {
+        case BuiltinButtonTypes.editLayout:
+            return ["a", "x"];
+        case BuiltinButtonTypes.alignHorizontalLeft:
+            return ["a", "l"];
+        case BuiltinButtonTypes.alignVerticalTop:
+            return ["a", "t"];
+        case BuiltinButtonTypes.alignHorizontalRight:
+            return ["a", "r"];
+        case BuiltinButtonTypes.alignVerticalBottom:
+            return ["a", "b"];
+        case BuiltinButtonTypes.alignHorizontalCenter:
+            return ["a", "h"];
+        case BuiltinButtonTypes.alignVerticalCenter:
+            return ["a", "v"];
+        case BuiltinButtonTypes.distributeHorizontal:
+            return ["a", "d", "h"];
+        case BuiltinButtonTypes.distributeVertical:
+            return ["a", "d", "v"];
+    }
+}
+
 function LayoutButton(props: ToolbarButtonProps) {
     const dispatch = useAppDispatch();
     const { t } = useTranslation();
     const graphGetter = useGraph();
     const { disabled, type } = props;
-    const type1 = props.type;
+    const name = getName(t, props.type);
+    const icon = getIcon(props.type);
+    const performAction = useCallback(
+        (altMode?: boolean) => {
+            const variant = getAlignCellsVariant(props.type);
+            dispatch(layout(() => graphGetter?.()?.forceLayout(variant, altMode)));
+        },
+        [dispatch, graphGetter, props.type],
+    );
+
+    useRegisterCommands(
+        () => [
+            {
+                id: `align/${props.type}`,
+                perform: () => performAction(),
+                section: "actions",
+                name,
+                icon,
+                shortcut: getKey(props.type),
+            },
+        ],
+        [icon, name, performAction, props.type],
+    );
+
     return (
         <CapabilitiesToolbarButton
             editFrontend
-            name={getName(t, props.type)}
-            icon={getIcon(props.type)}
+            name={name}
+            icon={icon}
             disabled={disabled}
             onClick={(e) => {
                 const altMode = "altKey" in e && e.altKey === true;
-                const variant = getAlignCellsVariant(props.type);
-                dispatch(layout(() => graphGetter?.()?.forceLayout(variant, altMode)));
+                performAction(altMode);
             }}
             type={type}
         />
