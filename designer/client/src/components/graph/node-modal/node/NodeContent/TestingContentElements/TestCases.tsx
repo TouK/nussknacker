@@ -24,7 +24,7 @@ export const TestCases = () => {
     }, [open]);
 
     return (
-        <Box ml={4} pb={0.25} pt={2} display={"flex"} alignItems={"center"} gap={1}>
+        <Box ml={4} pt={1.25} display={"flex"} gap={1}>
             <StyledTestCasesSelect options={testCaseOptions} onChange={() => "noop"} value={testCaseOptions[0]} />
             {/*<InfoTooltip title={"Edit name"} variant={"hover"} enterDelay={500}>*/}
             {/*    <StyledActionButton>*/}
