@@ -24,8 +24,10 @@ describe("Test cases", () => {
         openTestingTab();
         addEmptyAssertion();
         addEmptyAssertion();
+        addEmptyAssertion();
         fillAssertion(0, "#contexts[0].input.value", "0");
         fillAssertion(1, "#contexts.size", "10");
+        fillAssertion(2, "#contexts.size", "11", "!=");
         cy.applyNodeChanges();
         cy.contains(/^save$/i).click();
         cy.contains(/^ok$/i).click();
@@ -36,12 +38,13 @@ describe("Test cases", () => {
         openTestingTab();
         checkAssertionResult(0, "Expected: [100] but found [0]");
         checkAssertionResult(1, "ok");
+        checkAssertionResult(2, "ok");
         addEmptyAssertion();
-        fillAssertion(2, "#wrongExpected", "10");
-        checkAssertionErrorVisible(2, "expected", "Unresolved reference 'wrongExpected'");
+        fillAssertion(3, "#wrongExpected", "10");
+        checkAssertionErrorVisible(3, "expected", "Unresolved reference 'wrongExpected'");
         addEmptyAssertion();
-        fillAssertion(3, "10", "#wrongActual");
-        checkAssertionErrorVisible(3, "actual", "Unresolved reference 'wrongActual'");
+        fillAssertion(4, "10", "#wrongActual");
+        checkAssertionErrorVisible(4, "actual", "Unresolved reference 'wrongActual'");
     });
 });
 
@@ -57,9 +60,14 @@ const addEmptyAssertion = () => {
     });
 };
 
-const fillAssertion = (assertionNumber: number, expected: string, actual: string) => {
-    cy.get(`[data-testid="assertion-expected-${assertionNumber}"]`).find("textarea").type(expected, { force: true });
-    cy.get(`[data-testid="assertion-actual-${assertionNumber}"]`).find("textarea").type(actual, { force: true });
+const fillAssertion = (assertionNumber: number, expected: string, actual: string, operator?: "==" | "!=") => {
+    if (operator) {
+        cy.get(`[data-testid="assertion-operator-${assertionNumber}"]`).click();
+        cy.get("[id*='option-']").should("exist").contains(operator).click({ force: true });
+    }
+
+    cy.get(`[data-testid="assertion-expected-${assertionNumber}"]`).find("textarea").type(expected, { force: true }).click({ force: true });
+    cy.get(`[data-testid="assertion-actual-${assertionNumber}"]`).find("textarea").type(actual, { force: true }).click({ force: true });
 };
 
 const appendFromLiveDataClick = () => {
