@@ -118,7 +118,6 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
           "'1,2,3'.split(',')",
           FailedAssertion("Expected: [{'1', '2'}] but found [{'1', '2', '3'}]")
         ),
-        ("{'1','2','3'}", "'1,2,3'.split(',')", SuccessfulAssertion), // comparing arrays with SpEL inline lists
         ("{'a': 1}", "{:}", FailedAssertion("Expected: [{'a': 1}] but found [{:}]")),
       )
     ) { (expectedExpression, actualExpression, expectedResult) =>

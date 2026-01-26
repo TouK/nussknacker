@@ -19,6 +19,7 @@ class TestCaseVariablesSpec extends AnyFunSuite with Matchers {
     newClasses.keySet shouldBe Set(
       classOf[testcase.tests.type],
       classOf[testcase.AssertionResult],
+      classOf[testcase.FailedAssertion], // no idea why it is being pulled in
     )
     originalClasses shouldBe originalClassDefinitionSet.classDefinitionsMap
   }

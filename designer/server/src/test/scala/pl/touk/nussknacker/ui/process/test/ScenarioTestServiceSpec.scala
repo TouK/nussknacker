@@ -735,8 +735,8 @@ class ScenarioTestServiceSpec
             .copy(
               originalNodeResults = Map(
                 NodeId("end") -> (
-                  ResultContext[Any](ContextId.dummy, now, Map("otherNameThanInput" -> Map("a" -> "foo").asJava)) ::
-                    ResultContext[Any](ContextId.dummy, now, Map("otherNameThanInput" -> Map("a" -> "bar").asJava)) ::
+                  ResultContext[Any](ContextId.dummy, now, Map("otherNameThanInput" -> Map("a" -> 42).asJava)) ::
+                    ResultContext[Any](ContextId.dummy, now, Map("otherNameThanInput" -> Map("a" -> 43).asJava)) ::
                     Nil
                 )
               )
@@ -799,10 +799,14 @@ class ScenarioTestServiceSpec
         NodeId("end") -> List(
           PredicateAssertion(
             Assertion.AssertionOperator.Equals,
-            "'foo'".spel,
+            "42".spel,
             "#contexts[0].otherNameThanInput.a".spel
           ),
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "'foo'".spel, "#contexts[1].otherNameThanInput.a".spel)
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "44".spel,
+            "#contexts[1].otherNameThanInput.a".spel
+          )
         )
       )
     )
@@ -821,7 +825,7 @@ class ScenarioTestServiceSpec
 
     result.assertionsResults(NodeId("end")) shouldBe List(
       SuccessfulAssertion,
-      FailedAssertion("Expected: ['foo'] but found ['bar']")
+      FailedAssertion("Expected: [44] but found [43]")
     )
   }
 

@@ -53,7 +53,7 @@ private class AssertionValidator(
             message = prettyError.message,
             description = prettyError.description,
             details = prettyError.details,
-            fieldName = field.map(_.entryName),
+            fieldName = Some(field.entryName),
           )
         }
     }

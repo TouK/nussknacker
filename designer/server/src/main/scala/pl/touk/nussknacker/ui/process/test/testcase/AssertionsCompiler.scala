@@ -121,13 +121,7 @@ class AssertionsCompiler(
       assertion: PredicateAssertion
   )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, CompiledPredicateAssertion] = {
     val expectedCompiled = compileExpectedExpression(context, assertion)
-    val actualCompiled = compileActualExpression(
-      context,
-      assertion,
-      // If errors occur in the expected expression, we still attempt to compile the actual expression
-      // without the expected type to return errors if there are any in the expression itself.
-      expectedCompiled.map(_.returnType).getOrElse(Unknown)
-    )
+    val actualCompiled   = compileActualExpression(context, assertion)
     (expectedCompiled, actualCompiled).tupled.andThen { case (expectedExpression, actualExpression) =>
       compileComparisonExpression(context, assertion)
         .map { comparisonExpression =>
@@ -150,13 +144,13 @@ class AssertionsCompiler(
         assertion.expected,
         Some(ParameterName(PredicateAssertionCompilationError.Field.Expected.entryName)),
         context,
-        Unknown
+        expectedType = Unknown
       )
       .leftMap(
         PredicateAssertionCompilationError(
           _,
           assertion,
-          Some(PredicateAssertionCompilationError.Field.Expected),
+          PredicateAssertionCompilationError.Field.Expected,
           nodeId
         )
       )
@@ -166,17 +160,21 @@ class AssertionsCompiler(
   private def compileActualExpression(
       context: ValidationContext,
       assertion: PredicateAssertion,
-      expectedType: TypingResult
   )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, TypedExpression] = {
     expressionCompiler
       .compile(
         assertion.actual,
         Some(ParameterName(PredicateAssertionCompilationError.Field.Actual.entryName)),
         context,
-        expectedType
+        expectedType = Unknown
       )
       .leftMap(
-        PredicateAssertionCompilationError(_, assertion, Some(PredicateAssertionCompilationError.Field.Actual), nodeId)
+        PredicateAssertionCompilationError(
+          _,
+          assertion,
+          PredicateAssertionCompilationError.Field.Actual,
+          nodeId
+        )
       )
       .toValidatedNel
   }
@@ -187,14 +185,23 @@ class AssertionsCompiler(
   )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, TypedExpression] = {
     expressionCompiler
       .compile(
+        // Compiling the below expression can result in errors like: Operator '==' used with not comparable types: String and Integer
+        // If we need to report more user-friendly error (without: Operator '=='), we can use CommonSupertypeFinder here to check if types are comparable before compiling.
         s"${assertion.expected.expression} ${toComparisonOperator(assertion.operator)} ${assertion.actual.expression}".spel,
-        paramName = None,
+        // See comment below - we report errors on actual field.
+        paramName = Some(ParameterName(PredicateAssertionCompilationError.Field.Actual.entryName)),
         context,
-        Typed[java.lang.Boolean]
+        expectedType = Typed[java.lang.Boolean]
       )
-      .leftMap(
-        PredicateAssertionCompilationError(_, assertion, field = None, nodeId)
-      )
+      .leftMap { errors =>
+        PredicateAssertionCompilationError(
+          errors,
+          assertion,
+          // If comparison expression fails to compile because of uncomparable types, we report the error on actual field.
+          PredicateAssertionCompilationError.Field.Actual,
+          nodeId
+        )
+      }
       .toValidatedNel
   }
 
@@ -229,7 +236,7 @@ object AssertionCompilationError {
   final case class PredicateAssertionCompilationError(
       errors: NonEmptyList[ProcessCompilationError],
       assertion: PredicateAssertion,
-      field: Option[PredicateAssertionCompilationError.Field],
+      field: PredicateAssertionCompilationError.Field,
       nodeId: NodeId,
   ) extends AssertionCompilationError
 
