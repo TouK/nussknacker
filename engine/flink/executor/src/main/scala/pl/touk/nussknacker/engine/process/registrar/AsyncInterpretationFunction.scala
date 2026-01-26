@@ -8,6 +8,7 @@ import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFu
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -27,6 +28,7 @@ private[registrar] class AsyncInterpretationFunction(
     val node: SplittedNode[_ <: NodeData],
     validationContext: ValidationContext,
     serviceExecutionContextPreparer: AsyncExecutionContextPreparer,
+    nodeComponentInfo: NodeComponentInfo,
     useIOMonad: Boolean
 ) extends RichAsyncFunction[Context, InterpretationResult]
     with LazyLogging
@@ -65,12 +67,12 @@ private[registrar] class AsyncInterpretationFunction(
           handleResults(collector, successes, exceptions)
         case Left(ex) =>
           logger.warn("Unexpected error", ex)
-          handleResults(collector, Nil, List(NuExceptionInfo(None, ex, input)))
+          handleResults(collector, Nil, List(NuExceptionInfo(Some(nodeComponentInfo), ex, input)))
       }
     } catch {
       case NonFatal(ex) =>
         logger.warn("Unexpected error", ex)
-        handleResults(collector, Nil, List(NuExceptionInfo(None, ex, input)))
+        handleResults(collector, Nil, List(NuExceptionInfo(Some(nodeComponentInfo), ex, input)))
     }
 
   }
