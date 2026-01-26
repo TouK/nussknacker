@@ -243,8 +243,7 @@ val flinkInfluxdbJavaV    = "2.17"
 val flinkScalaV           = "1.1.6"
 // keep calcite synchronized with version used by current flink-sql-parser
 val calciteV              = "1.32.0"
-val avroV                 =
-  "1.11.4" // 1.12.0 has broken handling of extreme Double values - https://issues.apache.org/jira/browse/AVRO-4110
+val avroV                 = "1.12.1"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
 val kafkaV           = "3.8.1"
 // when updating note that we have copied and modified class org.springframework.expression.spel.ast.Projection
