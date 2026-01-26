@@ -6,37 +6,23 @@ import org.apache.flink.api.java.typeutils.TypeExtractor
 import java.lang.reflect.Type
 import java.time._
 import java.util
-import java.util.concurrent.atomic.AtomicBoolean
 
 // This class contains registers TypeInfoFactory for commonly used classes in Nussknacker.
 // It is a singleton as Flink's only contains a global registry for such purpose
 object FlinkTypeInfoRegistrar {
 
-  private val typeInfoRegistrationEnabled = new AtomicBoolean(true)
+  private case class RegistrationEntry[T](klass: Class[T], factoryClass: Class[_ <: TypeInfoFactory[T]])
 
-  private val DisableFlinkTypeInfoRegistrationEnvVarName = "NU_DISABLE_FLINK_TYPE_INFO_REGISTRATION"
-
-  // These members are package protected for purpose of TypingResultAwareTypeInformationDetection.FlinkBelow119AdditionalTypeInfo - see comment there
-  private[engine] case class RegistrationEntry[T](klass: Class[T], factoryClass: Class[_ <: TypeInfoFactory[T]])
-
-  private[engine] val typeInfoToRegister = List(
+  private val typeInfoToRegister = List(
     RegistrationEntry(classOf[LocalDate], classOf[LocalDateTypeInfoFactory]),
     RegistrationEntry(classOf[LocalTime], classOf[LocalTimeTypeInfoFactory]),
     RegistrationEntry(classOf[LocalDateTime], classOf[LocalDateTimeTypeInfoFactory]),
   )
 
   def ensureTypeInfosAreRegistered(): Unit = {
-    // TypeInfo registration is available in Flink >= 1.19. For backward compatibility purpose we allow
-    // to disable this by either environment variable or programmatically
-    if (typeInfoRegistrationEnabled.get() && !typeInfoRegistrationDisabledByEnvVariable) {
-      typeInfoToRegister.foreach { entry =>
-        register(entry)
-      }
+    typeInfoToRegister.foreach { entry =>
+      register(entry)
     }
-  }
-
-  private def typeInfoRegistrationDisabledByEnvVariable = {
-    Option(System.getenv(DisableFlinkTypeInfoRegistrationEnvVarName)).exists(_.toBoolean)
   }
 
   private def register(entry: RegistrationEntry[_]): Unit = {
@@ -47,18 +33,6 @@ object FlinkTypeInfoRegistrar {
         TypeExtractor.registerFactory(entry.klass, entry.factoryClass)
       }
     }
-  }
-
-  // These methods are mainly for purpose of tests in nussknacker-flink-compatibility project
-  // It should be used with caution as it changes the global state. They will be removed when we stop supporting Flink < 1.19
-  def isFlinkTypeInfoRegistrationEnabled: Boolean = typeInfoRegistrationEnabled.get()
-
-  def enableFlinkTypeInfoRegistration(): Unit = {
-    typeInfoRegistrationEnabled.set(true)
-  }
-
-  def disableFlinkTypeInfoRegistration(): Unit = {
-    typeInfoRegistrationEnabled.set(false)
   }
 
   class LocalDateTypeInfoFactory extends TypeInfoFactory[LocalDate] {

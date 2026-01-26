@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.process.typeinformation
 
-import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.common.typeutils.base.{
   GenericArraySerializer,
@@ -19,7 +19,6 @@ import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.ScalaCaseClassSerializer
-import pl.touk.nussknacker.engine.flink.api.typeinformation.{FlinkTypeInfoRegistrar, TypeInformationDetection}
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject._
 
@@ -35,8 +34,6 @@ class TypingResultAwareTypeInformationDetectionSpec
     with OptionValues {
 
   private val detection = new TypingResultAwareTypeInformationDetection
-
-  FlinkTypeInfoRegistrar.ensureTypeInfosAreRegistered()
 
   test("test map serialization") {
     val map = Map("intF" -> 11, "strF" -> "sdfasf", "longF" -> 111L, "fixedLong" -> 12L, "taggedString" -> "1")
@@ -249,26 +246,6 @@ class TypingResultAwareTypeInformationDetectionSpec
       .snapshotConfiguration()
       .resolveSchemaCompatibility(oldSerializerSnapshot)
       .isCompatibleAfterMigration shouldBe true
-  }
-
-  test("return type info for LocalDate, LocalTime and LocalDateTime even if type info registration is disabled") {
-    withFlinkTypeInfoRegistrationDisabled {
-      TypeInformationDetection.instance.forClass[LocalDate] shouldBe Types.LOCAL_DATE
-      TypeInformationDetection.instance.forClass[LocalTime] shouldBe Types.LOCAL_TIME
-      TypeInformationDetection.instance.forClass[LocalDateTime] shouldBe Types.LOCAL_DATE_TIME
-    }
-  }
-
-  private def withFlinkTypeInfoRegistrationDisabled[T](f: => T): T = {
-    val stateBeforeChange = FlinkTypeInfoRegistrar.isFlinkTypeInfoRegistrationEnabled
-    FlinkTypeInfoRegistrar.disableFlinkTypeInfoRegistration()
-    try {
-      f
-    } finally {
-      if (stateBeforeChange) {
-        FlinkTypeInfoRegistrar.enableFlinkTypeInfoRegistration()
-      }
-    }
   }
 
   // We have to compare it this way because context can contains arrays
