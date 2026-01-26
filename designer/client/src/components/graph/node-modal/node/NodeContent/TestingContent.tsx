@@ -30,10 +30,10 @@ export function useTestingContentRenderer() {
     const CONFIG: { when: (node: TestingContentProps["node"]) => boolean; render: (props: TestingContentProps) => React.JSX.Element }[] = [
         {
             when: (node) => node.type === "Source",
-            render: ({ node }) => (
+            render: ({ node, edges }) => (
                 <>
                     <InputDataRecords sourceId={node.id} node={node} />
-                    <Assertions node={node} />
+                    <Assertions node={node} edges={edges} />
                 </>
             ),
         },
@@ -42,13 +42,13 @@ export function useTestingContentRenderer() {
             render: ({ node, edges, onChange }) => (
                 <>
                     <MockResponse node={node} edges={edges} onChange={onChange} />
-                    <Assertions node={node} />
+                    <Assertions node={node} edges={edges} />
                 </>
             ),
         },
         {
             when: () => true,
-            render: ({ node }) => <Assertions node={node} />,
+            render: ({ node, edges }) => <Assertions node={node} edges={edges} />,
         },
     ];
 

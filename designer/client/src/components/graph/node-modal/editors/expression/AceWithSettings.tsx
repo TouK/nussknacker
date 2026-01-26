@@ -13,6 +13,7 @@ import { useAppDispatch, useAppSelector } from "../../../../../store/storeHelper
 import type { AceKeyCommand, AceWrapperProps } from "./AceWrapper";
 import AceWrapper from "./AceWrapper";
 import { useAceDndTarget } from "./useAceDndTarget";
+import { useSetAceEditorAnnotations } from "./useAceEditorRangeMessages";
 
 export type AceWithSettingsProps = Omit<AceWrapperProps, "noWrap" | "showLines">;
 
@@ -73,6 +74,8 @@ export default forwardRef(function AceWithSettings(props: AceWithSettingsProps, 
     const mergedRefs = useMergeRefs(editorRef, ref);
 
     const { isOver } = useAceDndTarget(editorRef, props.inputProps.language);
+
+    useSetAceEditorAnnotations(editorRef, props.annotations);
 
     return (
         <>

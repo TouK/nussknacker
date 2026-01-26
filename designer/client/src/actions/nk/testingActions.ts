@@ -43,9 +43,10 @@ export function testScenarioWithGeneratedData(testSampleSize: string): ThunkActi
     );
 }
 
-export function testScenarioWithTestCase(testCase: TestCase): ThunkAction {
+export function testScenarioWithTestCase(testCase: TestCase, isMockEnabled: boolean): ThunkAction {
+    const testData = isMockEnabled ? testCase : { ...testCase, mocks: {} };
     return wrapWithTestAction((scenarioName, scenarioGraph) =>
-        HttpService.testScenarioWithTestCase(scenarioName, scenarioGraph, testCase).then(({ data }) => ({
+        HttpService.testScenarioWithTestCase(scenarioName, scenarioGraph, testData).then(({ data }) => ({
             testResults: data,
         })),
     );

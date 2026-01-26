@@ -1,18 +1,24 @@
 import type { WithUuid } from "../../components/graph/node-modal/appendUuid";
 import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
-import { getTestCaseAssertions, getTestCaseAssertionsForNode, getInputDataRecords } from "../../reducers/selectors/testCases";
+import {
+    getTestCaseAssertions,
+    getTestCaseAssertionsForNode,
+    getInputDataRecords,
+    getTestCaseMocks,
+} from "../../reducers/selectors/testCases";
 import type { ThunkAction } from "../reduxTypes";
 
-type Assertion = { expression: ExpressionObj };
+export type Assertion = { expected: ExpressionObj; operator: "equals" | "notEquals"; actual: ExpressionObj };
 export type Assertions = Record<string, Assertion[]>;
 
-type Mock = { expression: ExpressionObj };
-export type Mocks = Record<string, Mock[]>;
+export type Mock = { expression: ExpressionObj };
+export type Mocks = Record<string, Mock>;
 
 export type TestCasesActions =
     | { type: "SET_TEST_CASE_ASSERTIONS"; assertions: Assertions }
-    | { type: "SET_TEST_CASE_INPUTS"; inputs: string };
+    | { type: "SET_TEST_CASE_INPUTS"; inputs: string }
+    | { type: "SET_TEST_CASE_MOCKS"; mocks: Mocks };
 
 export function setTestCaseAssertions(nodeId: string, updater: (prev: WithUuid<Assertion>[]) => WithUuid<Assertion>[]): ThunkAction {
     return (dispatch, getState) => {
@@ -37,6 +43,18 @@ export function setTestCaseInputs(updater: (prev: TestingDataRecords[]) => Testi
         dispatch({
             type: "SET_TEST_CASE_INPUTS",
             inputs: JSON.stringify(next),
+        });
+    };
+}
+
+export function setTestCaseMock(nodeId: string, expression: ExpressionObj): ThunkAction {
+    return (dispatch, getState) => {
+        const state = getState();
+
+        const mocks = getTestCaseMocks(state);
+        dispatch({
+            type: "SET_TEST_CASE_MOCKS",
+            mocks: { ...mocks, [nodeId]: { expression } },
         });
     };
 }

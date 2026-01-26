@@ -1,8 +1,9 @@
-import { v4 as uuid4 } from "uuid";
-
 import type { Assertions, Mocks } from "../../actions/nk/testCasesActions";
 import type { Reducer } from "../../actions/reduxTypes";
+import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
+import { safeParseExpression } from "../../components/modals/TestingDataRecords/utils";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
+import { omit } from "./lodashWrappers";
 
 export interface TestCase {
     id: string;
@@ -40,7 +41,36 @@ export const testCaseReducer: Reducer<ScenarioGraph["testCases"]> = (state = ini
                     inputs: action.inputs,
                 },
             };
+        case "SET_TEST_CASE_MOCKS":
+            return {
+                ...state,
+                value: {
+                    ...state.value,
+                    mocks: action.mocks,
+                },
+            };
+        case "DELETE_NODES":
+            return {
+                ...state,
+                value: cleanTestCaseState(state, action.ids),
+            };
+        case "ADD_NODE_REPLACE":
+            return {
+                ...state,
+                value: cleanTestCaseState(state, [action.old.id]),
+            };
         default:
             return state;
     }
+};
+
+const cleanTestCaseState = (state: ScenarioGraph["testCases"], ids: string[]) => {
+    return {
+        ...state.value,
+        assertions: omit(state.value.assertions, ids),
+        mocks: omit(state.value.mocks, ids),
+        inputs: JSON.stringify(
+            safeParseExpression<TestingDataRecords[]>(state.value.inputs)?.filter((input) => !ids.includes(input.sourceId)),
+        ),
+    };
 };

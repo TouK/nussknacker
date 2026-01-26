@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { validateNodeData } from "../../../../actions/nk/nodeDetails";
 import HttpService from "../../../../http/HttpService/instance";
 import { getProcessName, getScenarioGraph } from "../../../../reducers/selectors/graph";
+import { getTestCaseNodeValidationData } from "../../../../reducers/selectors/testCases";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import type { NodeType } from "../../../../types/node";
 import { getFindAvailableBranchVariables, getFindAvailableVariables } from "../NodeDetailsContent/selectors";
@@ -23,6 +24,7 @@ export const GenerateNewEndpoint = ({ node, handleNewEndpointGenerated }: Props)
     const getBranchVariableTypes = useAppSelector(getFindAvailableBranchVariables);
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     const variableTypes = useMemo(() => findAvailableVariables?.(node.id), [findAvailableVariables, node.id]);
+    const testCaseValidationData = useAppSelector((state) => getTestCaseNodeValidationData(state, node.id));
 
     const handleSendHttpRequest = useCallback(async () => {
         try {
@@ -36,6 +38,7 @@ export const GenerateNewEndpoint = ({ node, handleNewEndpointGenerated }: Props)
                             nodeData: node,
                             branchVariableTypes: getBranchVariableTypes(node.id),
                             variableTypes,
+                            testCases: testCaseValidationData,
                         },
                         (status) => {
                             if (status === "allowDataUpdate") {
@@ -49,7 +52,16 @@ export const GenerateNewEndpoint = ({ node, handleNewEndpointGenerated }: Props)
         } catch (error) {
             console.error("Error sending request:", error);
         }
-    }, [dispatch, getBranchVariableTypes, handleNewEndpointGenerated, node, scenarioGraph.edges, scenarioName, variableTypes]);
+    }, [
+        dispatch,
+        getBranchVariableTypes,
+        handleNewEndpointGenerated,
+        node,
+        scenarioGraph.edges,
+        scenarioName,
+        testCaseValidationData,
+        variableTypes,
+    ]);
 
     return <StyledLoadingButton title={t("node.actions.generateNewEndpoint", "Generate New Endpoint")} action={handleSendHttpRequest} />;
 };

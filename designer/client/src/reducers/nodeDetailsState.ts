@@ -1,7 +1,7 @@
 import type { Action } from "../actions/reduxTypes";
 import type { TypingResult, UIParameter } from "../types/definition";
 import type { NodeId } from "../types/node";
-import type { NodeValidationError } from "../types/validation";
+import type { NodeValidationError, TestCaseValidationErrors } from "../types/validation";
 
 export type NodeDetailsState = Partial<
     Record<
@@ -12,6 +12,7 @@ export type NodeDetailsState = Partial<
             validationErrors: NodeValidationError[];
             validationPerformed: boolean;
             changingDynamicParameters: string[];
+            testCasesValidationErrors: TestCaseValidationErrors;
         }
     >
 >;
@@ -73,6 +74,7 @@ export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetai
                     validationErrors: action.errors,
                     validationPerformed: true,
                     changingDynamicParameters: [],
+                    testCasesValidationErrors: {},
                 },
             };
         }

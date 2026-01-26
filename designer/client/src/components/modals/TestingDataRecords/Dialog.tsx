@@ -8,6 +8,7 @@ import { testScenarioWithTestCase } from "../../../actions/nk/testingActions";
 import { getTestCapabilities } from "../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../reducers/selectors/settings";
 import { getInputDataRecords, getTestCase } from "../../../reducers/selectors/testCases";
+import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { WindowContent } from "../../../windowManager/WindowContent";
@@ -37,6 +38,7 @@ export interface TestingData {
 }
 
 function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElement {
+    const settings = useAppSelector(getUserSettings);
     const maxTestingRecords = useAppSelector(getMaxTestingRecords);
 
     const { t } = useTranslation();
@@ -51,7 +53,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
     const testingDataRecords = useAppSelector(getInputDataRecords);
     const testCase = useAppSelector(getTestCase);
 
-    const defaultParameter = testCapabilities.testWithParameters.sourceParameters[0];
+    const defaultParameter = testCapabilities.testWithParameters.sourceParameters?.[0];
 
     const defaultDataRecord = useMemo(
         () =>
@@ -87,7 +89,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                 title: t("testingForm.testButton.label", "Test"),
                 action: () => {
                     try {
-                        dispatch(testScenarioWithTestCase(testCase));
+                        dispatch(testScenarioWithTestCase(testCase, settings["node.showMockFieldOnEnrichers"]));
                         close();
                     } catch (e) {
                         console.error(e.message);
@@ -95,7 +97,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                 },
             },
         ],
-        [t, disableTestButton, close, dispatch, testCase],
+        [t, disableTestButton, close, dispatch, testCase, settings],
     );
 
     return (

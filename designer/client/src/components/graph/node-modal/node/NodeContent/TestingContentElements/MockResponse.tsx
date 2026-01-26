@@ -7,7 +7,7 @@ import { Expandable } from "../../../../../common/Expandable";
 import MockExpressionField from "../../../editors/expression/MockExpressionField";
 import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
 import { getFindAvailableVariables } from "../../../NodeDetailsContent/selectors";
-import { useGetNodeErrors, useIsEditMode, useSetProperty, useValidation } from "../../../useNodeTypeDetailsContentLogic";
+import { useGetNodeTestCasesErrors, useIsEditMode, useSetProperty, useValidation } from "../../../useNodeTypeDetailsContentLogic";
 import type { TestingContentProps } from "../TestingContent";
 import { StyledStack } from "./components/Styled";
 
@@ -21,7 +21,7 @@ export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => 
     const isEditMode = useIsEditMode({ onChange });
     const setProperty = useSetProperty({ onChange, node });
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
-    const [errors] = useGetNodeErrors(node);
+    const testCasesErrors = useGetNodeTestCasesErrors(node);
 
     useValidation({ node, showValidation: true, edges });
 
@@ -47,7 +47,7 @@ export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => 
                     showSwitch
                     findAvailableVariables={findAvailableVariables}
                     setNodeDataAt={setProperty}
-                    errors={errors}
+                    errors={testCasesErrors.enricherMockErrors}
                 />
             </Expandable>
         </StyledStack>

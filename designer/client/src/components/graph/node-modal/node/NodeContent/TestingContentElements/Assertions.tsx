@@ -9,26 +9,31 @@ import { getProcessingType } from "../../../../../../reducers/selectors/graph";
 import { getTestCaseAssertionsForNode } from "../../../../../../reducers/selectors/testCases";
 import { getTestAssertionResultsForNode } from "../../../../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
+import type { Edge } from "../../../../../../types/edge";
 import type { NodeType } from "../../../../../../types/node";
 import type { VariableTypes } from "../../../../../../types/validation";
 import { Expandable } from "../../../../../common/Expandable";
 import { withUuid } from "../../../appendUuid";
 import { NodeRowFieldsProvider } from "../../../node-row-fields-provider/NodeRowFieldsProvider";
 import { NodeTable } from "../../../NodeDetailsContent/NodeTable";
-import { useVariableTypes } from "../../../useNodeTypeDetailsContentLogic";
+import { useGetNodeTestCasesErrors, useValidation, useVariableTypes } from "../../../useNodeTypeDetailsContentLogic";
 import { AssertionItem } from "./AssertionItem";
 import { StyledStack } from "./components/Styled";
 
 interface Props {
     node: NodeType;
+    edges: Edge[];
 }
 
-export const Assertions = ({ node }: Props) => {
+export const Assertions = ({ node, edges }: Props) => {
     const { t } = useTranslation();
     const [isExpanded, setIsExpanded] = useState(true);
     const dispatch = useAppDispatch();
     const testCaseAssertions = useAppSelector((state) => getTestCaseAssertionsForNode(state, node.id));
     const testAssertionResults = useAppSelector((state) => getTestAssertionResultsForNode(state, node.id));
+    const testCasesErrors = useGetNodeTestCasesErrors(node);
+
+    useValidation({ node, showValidation: true, edges });
     const processingType = useAppSelector(getProcessingType);
     const nodeVariableTypes = useVariableTypes({ node });
     const [assertionVariableTypes, setAssertionVariableTypes] = useState<VariableTypes>({});
@@ -45,7 +50,13 @@ export const Assertions = ({ node }: Props) => {
     const addAssertion = useCallback(() => {
         dispatch(
             setTestCaseAssertions(node.id, (prev) =>
-                prev.concat(withUuid({ expression: { expression: "#TESTS.assertEquals()", language: "spel" } })),
+                prev.concat(
+                    withUuid({
+                        expected: { expression: "", language: "spel" },
+                        operator: "equals" as const,
+                        actual: { expression: "", language: "spel" },
+                    } as const),
+                ),
             ),
         );
     }, [dispatch, node.id]);
@@ -58,7 +69,14 @@ export const Assertions = ({ node }: Props) => {
     );
 
     const editAssertion = useCallback(
-        (uuid: string, updated: Partial<{ expression: { expression: string; language: string } }>) => {
+        (
+            uuid: string,
+            updated: Partial<{
+                expected: { expression: string; language: string };
+                operator: "equals" | "notEquals";
+                actual: { expression: string; language: string };
+            }>,
+        ) => {
             dispatch(setTestCaseAssertions(node.id, (prev) => prev.map((item) => (item.uuid === uuid ? { ...item, ...updated } : item))));
         },
         [dispatch, node.id],
@@ -79,15 +97,18 @@ export const Assertions = ({ node }: Props) => {
                         readOnly={false}
                         errors={[]}
                     >
-                        {testCaseAssertions.map(({ expression: expressionObj, uuid }, index) => (
+                        {testCaseAssertions.map(({ expected, operator, actual, uuid }, index) => (
                             <AssertionItem
                                 key={uuid}
                                 uuid={uuid}
                                 onChange={editAssertion}
-                                expressionObj={expressionObj}
+                                expected={expected}
+                                operator={operator}
+                                actual={actual}
                                 variableTypes={assertionVariableTypes}
                                 testAssertionResult={testAssertionResults?.[index]}
                                 index={index}
+                                errors={testCasesErrors.assertionsErrors[index.toString()]}
                             />
                         ))}
                     </NodeRowFieldsProvider>

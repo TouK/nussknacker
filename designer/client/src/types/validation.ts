@@ -1,11 +1,19 @@
 import type { TypingInfo, TypingResult, UIParameter } from "./definition";
 
+export interface TestCaseValidationError {
+    enricherMockErrors: NodeValidationError[];
+    assertionsErrors: Record<string, NodeValidationError[]>;
+}
+
+export type TestCaseValidationErrors = Record<string, TestCaseValidationError>;
+
 export type ValidationResult = {
     validationErrors?: ValidationErrors[];
     validationWarnings?: ValidationWarnings[];
     nodeResults: NodeResults;
     errors: ValidationErrors;
     warnings?: Pick<ValidationErrors, "invalidNodes">;
+    testCasesValidationErrors: TestCaseValidationErrors;
 };
 
 export type NodeResults = Record<string, NodeTypingData>;

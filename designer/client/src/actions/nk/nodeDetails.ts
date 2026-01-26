@@ -6,8 +6,9 @@ import type { AppDispatch } from "../../store/storeHelpers";
 import type { TypingResult, UIParameter } from "../../types/definition";
 import type { Edge } from "../../types/edge";
 import type { NodeType, PropertiesType } from "../../types/node";
-import type { NodeValidationError, VariableTypes } from "../../types/validation";
+import type { NodeValidationError, TestCaseValidationErrors, VariableTypes } from "../../types/validation";
 import type { ThunkAction } from "../reduxTypes";
+import type { Assertion, Mock } from "./testCasesActions";
 import { validateNode } from "./validationsActions";
 
 type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED"; validationData: ValidationData; nodeId: string };
@@ -35,6 +36,12 @@ export interface ValidationData {
     expressionType?: TypingResult;
     validationErrors: NodeValidationError[];
     validationPerformed: boolean;
+    testCasesValidationErrors: TestCaseValidationErrors;
+}
+
+export interface TestCaseValidationData {
+    assertions: Assertion[];
+    enricherMock: Mock;
 }
 
 export interface ValidationRequest {
@@ -43,6 +50,7 @@ export interface ValidationRequest {
     branchVariableTypes: Record<string, VariableTypes>;
     processProperties: PropertiesType;
     outgoingEdges: Edge[];
+    testCases: Record<string, TestCaseValidationData>;
 }
 
 export function nodeValidationDataUpdated(nodeId: string, validationData: ValidationData): NodeValidationUpdated {

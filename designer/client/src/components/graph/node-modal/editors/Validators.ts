@@ -129,3 +129,9 @@ export const extendErrors = (
 
     return [...errors, ...customValidatorErrors];
 };
+
+// use existing method to display only red border without any message
+export const EMPTY_REQUIRED_ERROR: FieldError = {
+    message: "",
+    description: "",
+};

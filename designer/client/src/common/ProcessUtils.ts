@@ -57,6 +57,7 @@ class ProcessUtils {
                 processPropertiesErrors: [],
                 invalidNodes: {},
             },
+            testCasesValidationErrors: {},
         };
 
     hasNoWarnings = (scenario: Scenario) => {
