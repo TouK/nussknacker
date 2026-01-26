@@ -8,21 +8,15 @@ import { RowFieldLabel } from "../../../aggregate/rowFieldLabel";
 import { EditableEditor } from "../../../editors/EditableEditor";
 import type { ExpressionObj } from "../../../editors/expression/types";
 import { EditorType, ExpressionLang } from "../../../editors/expression/types";
-import Input from "../../../editors/field/Input";
-import { EMPTY_REQUIRED_ERROR } from "../../../editors/Validators";
 import { FieldsRow } from "../../../fragment-input-definition/FieldsRow";
+import { TypeSelect } from "../../../fragment-input-definition/TypeSelect";
+import type { Option } from "../../../fragment-input-definition/TypeSelect";
 import { AssertionStatus } from "./AssertionStatus";
 
-const ASSERTION_SYMBOLS: Record<string, string> = {
+export const ASSERTION_SYMBOLS: Record<string, string> = {
     equals: "==",
     notEquals: "!=",
 };
-
-const centeredInputStyle = css({
-    "& input": {
-        textAlign: "center",
-    },
-});
 
 const gridContainerStyle = css({
     "&&&&": {
@@ -75,9 +69,14 @@ const AssertionItemComponent = ({
         [onChange, uuid],
     );
 
-    const assertionSymbol = useMemo(() => {
-        return ASSERTION_SYMBOLS[operator] ?? "";
-    }, [operator]);
+    const assertionOptions: Option[] = useMemo(() => Object.entries(ASSERTION_SYMBOLS).map(([value, label]) => ({ value, label })), []);
+
+    const handleOperatorChange = useCallback(
+        (value: string) => {
+            onChange(uuid, { operator: value as "equals" | "notEquals" });
+        },
+        [onChange, uuid],
+    );
 
     const expectedErrors = useMemo(() => {
         return errors.filter((error) => error.fieldName === "expected") || [];
@@ -101,8 +100,12 @@ const AssertionItemComponent = ({
                         fieldErrors={expectedErrors}
                     />
                 </RowFieldLabel>
-                <RowFieldLabel showLabel={isFirstRow} label="Assertion">
-                    <Input value={assertionSymbol} disabled={true} className={centeredInputStyle} />
+                <RowFieldLabel showLabel={isFirstRow} label="Assertion" data-testid={`assertion-operator-${index}`}>
+                    <TypeSelect
+                        value={assertionOptions.find((o) => o.value === operator)}
+                        options={assertionOptions}
+                        onChange={handleOperatorChange}
+                    />
                 </RowFieldLabel>
                 <RowFieldLabel showLabel={isFirstRow} label="Actual" data-testid={`assertion-actual-${index}`}>
                     <EditableEditor
