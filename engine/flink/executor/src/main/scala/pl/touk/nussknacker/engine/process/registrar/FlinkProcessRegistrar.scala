@@ -169,12 +169,13 @@ class FlinkProcessRegistrar(
       val source = part.obj.asInstanceOf[FlinkSource]
 
       val contextTypeInformation = TypeInformationDetection.instance.forContext(part.validationContext)
+      val nodeComponentInfo      = nodeComponentInfoFrom(part)
 
       val start = source
-        .contextStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
+        .contextStream(env, nodeContext(nodeComponentInfo, Left(ValidationContext.empty)))
         .process(new SourceMetricsFunction(part.id, compilerData.runtimeMode), contextTypeInformation)
 
-      val asyncAssigned = registerInterpretationPart(start, part, InterpretationName)
+      val asyncAssigned = registerInterpretationPart(start, part, InterpretationName, nodeComponentInfo)
 
       registerNextParts(asyncAssigned, part)
     }
@@ -202,20 +203,20 @@ class FlinkProcessRegistrar(
           throw new IllegalArgumentException(s"Unknown join node transformer: $other")
       }
 
-      val outputVar     = joinPart.node.data.outputVar.get
-      val newContextFun = (ir: ValueWithContext[_]) => ir.context.withVariable(outputVar, ir.value)
-
+      val outputVar         = joinPart.node.data.outputVar.get
+      val newContextFun     = (ir: ValueWithContext[_]) => ir.context.withVariable(outputVar, ir.value)
+      val nodeComponentInfo = nodeComponentInfoFrom(joinPart)
       val newStart = transformer
         .transform(
           inputs.mapValuesNow(_._1),
-          nodeContext(nodeComponentInfoFrom(joinPart), Right(inputs.mapValuesNow(_._2)))
+          nodeContext(nodeComponentInfo, Right(inputs.mapValuesNow(_._2)))
         )
         .map(
           (value: ValueWithContext[AnyRef]) => newContextFun(value),
           TypeInformationDetection.instance.forContext(joinPart.validationContext)
         )
 
-      val afterSplit = registerInterpretationPart(newStart, joinPart, BranchInterpretationName)
+      val afterSplit = registerInterpretationPart(newStart, joinPart, BranchInterpretationName, nodeComponentInfo)
       registerNextParts(afterSplit, joinPart)
     }
 
@@ -272,13 +273,14 @@ class FlinkProcessRegistrar(
     ): Map[BranchEndDefinition, BranchEndData] = {
       val typeInformationForIR  = InterpretationResultTypeInformation.create(contextBefore)
       val typeInformationForCtx = TypeInformationDetection.instance.forContext(contextBefore)
+      val nodeComponentInfo     = nodeComponentInfoFrom(part)
       // TODO: for sinks there are no further nodes to interpret but the function is registered to invoke listeners (e.g. to measure end metrics).
       val afterInterpretation = sideOutput(
-        registerInterpretationPart(start, part, SinkInterpretationName),
+        registerInterpretationPart(start, part, SinkInterpretationName, nodeComponentInfo),
         new OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId, typeInformationForIR)
       )
         .map((value: InterpretationResult) => value.finalContext, typeInformationForCtx)
-      val customNodeContext = nodeContext(nodeComponentInfoFrom(part), Left(contextBefore))
+      val customNodeContext = nodeContext(nodeComponentInfo, Left(contextBefore))
       val withValuePrepared = sink.prepareValue(afterInterpretation, customNodeContext)
       // TODO: maybe this logic should be moved to compiler instead?
       val withSinkAdded = resultCollector match {
@@ -295,7 +297,7 @@ class FlinkProcessRegistrar(
               new CollectingSink[AnyRef](compilerDataForProcessPart(None), collectingSink, NodeId(part.id))
             )
         case _ =>
-          sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfoFrom(part), Left(contextBefore)))
+          sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfo, Left(contextBefore)))
       }
 
       withSinkAdded.name(operatorName(compilerData.jobData, part.node, "sink"))
@@ -311,8 +313,8 @@ class FlinkProcessRegistrar(
         case other =>
           throw new IllegalArgumentException(s"Unknown custom node transformer: $other")
       }
-
-      val customNodeContext = nodeContext(nodeComponentInfoFrom(part), Left(part.contextBefore))
+      val nodeComponentInfo = nodeComponentInfoFrom(part)
+      val customNodeContext = nodeContext(nodeComponentInfo, Left(part.contextBefore))
       val newContextFun: ValueWithContext[_] => Context = part.node.data.outputVar match {
         case Some(name) => vwc => vwc.context.withVariable(name, vwc.value)
         case None       => _.context
@@ -324,14 +326,16 @@ class FlinkProcessRegistrar(
           TypeInformationDetection.instance.forContext(part.validationContext)
         )
       // TODO: for ending custom nodes there are no further nodes to interpret but the function is registered to invoke listeners (e.g. to measure end metrics).
-      val afterInterpretation = registerInterpretationPart(transformed, part, CustomNodeInterpretationName)
+      val afterInterpretation =
+        registerInterpretationPart(transformed, part, CustomNodeInterpretationName, nodeComponentInfo)
       registerNextParts(afterInterpretation, part)
     }
 
     def registerInterpretationPart(
         stream: SingleOutputStreamOperator[Context],
         part: ProcessPart,
-        name: String
+        name: String,
+        nodeComponentInfo: NodeComponentInfo
     ): SingleOutputStreamOperator[Unit] = {
       val node              = part.node
       val validationContext = part.validationContext
@@ -355,6 +359,7 @@ class FlinkProcessRegistrar(
           node,
           validationContext,
           asyncExecutionContextPreparer,
+          nodeComponentInfo,
           useIOMonad
         )
         AsyncDataStream
@@ -373,6 +378,7 @@ class FlinkProcessRegistrar(
             compilerDataForProcessPart(Some(part)),
             node,
             validationContext,
+            nodeComponentInfo,
             useIOMonad
           ),
           ti
