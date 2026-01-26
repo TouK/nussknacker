@@ -14,16 +14,14 @@ import scala.util.Try
 import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 
-val scala212 = "2.12.20"
 val scala213 = "2.13.16"
 
 lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
   case None | Some("2.13") => scala213
-  case Some("2.12")        => scala212
   case Some(unsupported)   => throw new IllegalArgumentException(s"Nu doesn't support $unsupported Scala version")
 }
 
-lazy val supportedScalaVersions = List(scala212, scala213)
+lazy val supportedScalaVersions = List(scala213)
 
 lazy val scalaFixV = "0.14.2"
 
