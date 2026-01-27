@@ -1783,7 +1783,7 @@ object NodesApiEndpoints {
     @derive(schema, encoder, decoder)
     final case class TestCaseMetadataResponseDto(
         assertionsAdditionalVariables: Map[String, TypingResult],
-        enricherMockSampleExpression: Option[String],
+        enricherMockSampleExpression: Option[Expression],
     )
 
     // Request doesn't need valid encoder, apart from examples
