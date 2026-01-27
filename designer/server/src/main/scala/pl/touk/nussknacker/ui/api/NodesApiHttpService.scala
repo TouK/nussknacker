@@ -378,11 +378,10 @@ class NodesApiHttpService(
       nodeData: Option[NodeData]
   ): TestCaseMetadataResponseDto = {
     val assertionsAdditionalVariables = TestCaseVariables.getNodeVariablesTyping(variableTypes)
-    // TODO: Generate enricher mock expression based on nodeData when implemented
-    val enricherMockExpression = None
     TestCaseMetadataResponseDto(
       assertionsAdditionalVariables = assertionsAdditionalVariables,
-      enricherMockExpression = enricherMockExpression
+      // TODO: Generate enricher mock expression based on nodeData when implemented
+      enricherMockSampleExpression = None
     )
   }
 
