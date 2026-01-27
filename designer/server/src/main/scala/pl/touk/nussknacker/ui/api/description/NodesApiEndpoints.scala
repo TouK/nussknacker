@@ -845,6 +845,17 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                       )
                     )
                   ),
+                ),
+                nodeData = Enricher(
+                  "enricher",
+                  ServiceRef(
+                    "paramService",
+                    List(
+                      EvaluatedParameter(ParameterName("param"), Expression(Language.Spel, "#input.id"))
+                    )
+                  ),
+                  "out",
+                  additionalFields = None
                 )
               )
             )
@@ -1766,7 +1777,7 @@ object NodesApiEndpoints {
     @derive(schema, encoder, decoder)
     final case class TestCaseMetadataRequestDto(
         variableTypes: Map[String, TypingResultInJson],
-        nodeData: Option[NodeData] = None
+        nodeData: NodeData,
     )
 
     @derive(schema, encoder, decoder)

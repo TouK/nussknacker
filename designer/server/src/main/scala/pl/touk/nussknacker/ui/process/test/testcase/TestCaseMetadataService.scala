@@ -8,7 +8,7 @@ class TestCaseMetadataService {
 
   def prepareTestCaseMetadata(
       variableTypes: Map[String, TypingResult],
-      nodeData: Option[NodeData]
+      nodeData: NodeData,
   ): TestCaseMetadataResponseDto = {
     val assertionsAdditionalVariables = TestCaseVariables.getNodeVariablesTyping(variableTypes)
     TestCaseMetadataResponseDto(
