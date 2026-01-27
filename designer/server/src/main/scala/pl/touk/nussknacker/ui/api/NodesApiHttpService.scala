@@ -53,7 +53,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.SerializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.FetchLiveDataError
-import pl.touk.nussknacker.ui.process.test.testcase.TestCaseVariables
+import pl.touk.nussknacker.ui.process.test.testcase.{TestCaseMetadataService, TestCaseVariables}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
@@ -73,6 +73,8 @@ class NodesApiHttpService(
     extends BaseHttpService(authManager)
     with ScenarioHttpServiceExtensions
     with LazyLogging {
+
+  private val testCaseMetadataService = new TestCaseMetadataService()
 
   override protected type BusinessErrorType = NodesError
   override protected def noScenarioError(scenarioName: ProcessName): NodesError      = NoScenario(scenarioName)
@@ -198,7 +200,7 @@ class NodesApiHttpService(
                 )
               )
               .leftMap[NodesError](identity)
-            metadata = prepareTestCaseMetadata(variableTypes, request.nodeData)
+            metadata = testCaseMetadataService.prepareTestCaseMetadata(variableTypes, request.nodeData)
           } yield metadata
         }
       }
@@ -372,18 +374,6 @@ class NodesApiHttpService(
     TestCaseAdditionalVariablesResponseDto(
       assertionsAdditionalVariables = TestCaseVariables.getNodeVariablesTyping(variableTypes)
     )
-
-  private def prepareTestCaseMetadata(
-      variableTypes: Map[String, TypingResult],
-      nodeData: Option[NodeData]
-  ): TestCaseMetadataResponseDto = {
-    val assertionsAdditionalVariables = TestCaseVariables.getNodeVariablesTyping(variableTypes)
-    TestCaseMetadataResponseDto(
-      assertionsAdditionalVariables = assertionsAdditionalVariables,
-      // TODO: Generate enricher mock expression based on nodeData when implemented
-      enricherMockSampleExpression = None
-    )
-  }
 
   private def parametersValidationRequestFromDto(
       request: ParametersValidationRequestDto,
