@@ -3,6 +3,7 @@ import { Stack, styled } from "@mui/material";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { addListenerTyped, useAppDispatch } from "../../../store/storeHelpers";
+import { delay } from "../../../utils";
 import { LoadingButton } from "../../../windowManager/LoadingButton";
 import { TextAreaNode } from "../../FormElements";
 import { nodeInput } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
@@ -70,8 +71,10 @@ export const Composer = () => {
     };
 
     useEffect(() => {
+        textAreaRef.current?.focus();
         return dispatch(
-            addListenerTyped("ASSISTANT_FOCUS", () => {
+            addListenerTyped("ASSISTANT_FOCUS", async () => {
+                await delay();
                 textAreaRef.current?.focus();
             }),
         );
