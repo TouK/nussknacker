@@ -1,5 +1,6 @@
 import { getContextPrompt, getContextRawData } from "../reducers/selectors/assistantSelectors";
 import { getUserSettings } from "../reducers/selectors/userSettings";
+import { delay } from "../utils";
 import type { ThunkAction } from "./reduxTypes";
 
 export type AssistantActions =
@@ -7,8 +8,6 @@ export type AssistantActions =
     | { type: "ASSISTANT_CLOSE" }
     | { type: "ASSISTANT_FOCUS" }
     | { type: "ASSISTANT_ASK"; question: string; realPrompt?: string; contextRawData?: string };
-
-const delay = (time = 250) => new Promise((resolve) => setTimeout(resolve, time));
 
 export function assistantAsk(question: string, prompt?: string): ThunkAction {
     return async (dispatch, getState) => {

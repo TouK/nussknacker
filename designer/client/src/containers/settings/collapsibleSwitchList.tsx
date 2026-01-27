@@ -32,7 +32,7 @@ type CollapsibleSwitchListProps = {
     searchStrings?: string[];
 };
 
-function SwitchElement({
+export function SwitchElement({
     value: { value, isDefault },
     onChange,
 }: {
@@ -55,7 +55,7 @@ function SwitchElement({
     );
 }
 
-function isNestedObject(finalValue: UserSettingValue | NestedRecord) {
+export function isNestedObject(finalValue: UserSettingValue | NestedRecord) {
     return (
         typeof finalValue === "object" &&
         finalValue !== null &&

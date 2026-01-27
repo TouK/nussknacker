@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import { AiAssistantProvider } from "./components/aiAssistant/AiAssistantProvider";
+import { CommandBarProvider } from "./components/CommandBar/CommandBarProvider";
 import { ErrorBoundary } from "./components/common/error-boundary/ErrorBoundary";
 import { GlideGridPortal } from "./components/graph/node-modal/editors/expression/Table/glideGridPortal";
 import { BASE_PATH } from "./config";
@@ -36,7 +37,9 @@ const Root = () => (
                         <NussknackerInitializer>
                             <BuildInfoProvider>
                                 <AiAssistantProvider>
-                                    <RouterProvider router={router} />
+                                    <CommandBarProvider>
+                                        <RouterProvider router={router} />
+                                    </CommandBarProvider>
                                 </AiAssistantProvider>
                             </BuildInfoProvider>
                         </NussknackerInitializer>
