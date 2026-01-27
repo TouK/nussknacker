@@ -41,8 +41,15 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
       assertion match {
         case CompiledExpressionAssertion(expression) =>
           evaluateExpressionAssertion(expression, context, globalVariables)
-        case CompiledPredicateAssertion(operator, expected, actual) =>
-          evaluatePredicateAssertion(operator, expected, actual, context, globalVariables)
+        case CompiledPredicateAssertion(operator, expectedExpression, actualExpression, comparisonExpression) =>
+          evaluatePredicateAssertion(
+            operator,
+            expectedExpression,
+            actualExpression,
+            comparisonExpression,
+            context,
+            globalVariables
+          )
       }
     } catch {
       case e: Exception => FailedAssertion(s"Exception during assertion evaluation: ${e.getMessage}")
@@ -73,16 +80,22 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
 
   private def evaluatePredicateAssertion(
       operator: AssertionOperator,
-      expected: CompiledExpression,
-      actual: CompiledExpression,
+      expectedExpression: CompiledExpression,
+      actualExpression: CompiledExpression,
+      comparisonExpression: CompiledExpression,
       context: Context,
       globalVariables: Map[String, Any]
   ): AssertionResult = {
-    val expectedValue = expected.evaluate[Any](context, globalVariables)
-    val actualValue   = actual.evaluate[Any](context, globalVariables)
-    operator match {
-      case AssertionOperator.Equals    => AssertionResult.assertEquals(expectedValue, actualValue)
-      case AssertionOperator.NotEquals => AssertionResult.assertNotEquals(expectedValue, actualValue)
+    val comparisonResult = comparisonExpression.evaluate[Boolean](context, globalVariables)
+    if (comparisonResult) {
+      SuccessfulAssertion
+    } else {
+      val expectedValue = expectedExpression.evaluate[Any](context, globalVariables)
+      val actualValue   = actualExpression.evaluate[Any](context, globalVariables)
+      operator match {
+        case AssertionOperator.Equals    => AssertionResult.produceFailedEqualsAssertion(expectedValue, actualValue)
+        case AssertionOperator.NotEquals => AssertionResult.produceFailedNotEqualsAssertion(expectedValue)
+      }
     }
   }
 

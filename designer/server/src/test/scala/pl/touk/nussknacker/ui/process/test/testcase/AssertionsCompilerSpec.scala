@@ -1,10 +1,13 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
-import cats.data.{NonEmptyList, Validated}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
+import cats.syntax.functor._
+import jdk.internal.net.http.common.Log.errors
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
@@ -23,8 +26,10 @@ import pl.touk.nussknacker.engine.test.testcase.Assertion
 import pl.touk.nussknacker.engine.test.testcase.Assertion.PredicateAssertion
 import pl.touk.nussknacker.engine.test.testcase.TestCase
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
+import pl.touk.nussknacker.engine.util.functions.conversion
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.PredicateAssertionCompilationError
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionValidationError.AssertionConfiguredForNotExistingNodesError
@@ -32,7 +37,12 @@ import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.CompiledPr
 
 import java.util.UUID
 
-class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
+class AssertionsCompilerSpec
+    extends AnyFunSuite
+    with Matchers
+    with Inside
+    with ValidatedValuesDetailedMessage
+    with TableDrivenPropertyChecks {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
@@ -40,6 +50,7 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
     .withUnboundedStreamSource("sourceWithUnknown", Some(Unknown))
     .withService("enricher1", Some(Typed[String]), Parameter[String](ParameterName("par1")))
     .withSink("sink")
+    .withGlobalVariable("CONV", conversion)
     .build
 
   private val modelDefinitionWithClasses = ModelDefinitionWithClasses(baseDefinition)
@@ -59,101 +70,194 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
     new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
   }
 
-  test("should compile valid assertions for scenario") {
-    val scenario = ScenarioBuilder
-      .streaming("process1")
-      .source("id1", "sourceWithUnknown")
-      .enricher("enricher1", "enricherOutput", "enricher1", "par1" -> "'abc'".spel)
-      .buildSimpleVariable("result-id2", "result", "#input".spel)
-      .emptySink("sink1", "sink")
+  private val scenario = ScenarioBuilder
+    .streaming("process1")
+    .source("id1", "sourceWithUnknown")
+    .enricher("enricher1", "enricherOutput", "enricher1", "par1" -> "'abc'".spel)
+    .buildSimpleVariable("result-id2", "result", "#input".spel)
+    .emptySink("sink1", "sink")
 
-    val test = TestCase(
-      UUID.randomUUID(),
-      "someTest",
-      inputs = "",
-      mocks = Map.empty,
-      assertions = Map(
+  test("should compile valid assertions for scenario") {
+    val test = prepareTestCase(
+      Map(
         NodeId("sink1") -> List(PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel))
       )
     )
 
-    val testCompilationResult = compileScenarioWithAssertions(scenario, test)
-    inside(testCompilationResult) { case Valid(compiledAssertions) =>
-      compiledAssertions.assertions.size shouldBe 1
-      compiledAssertions.assertions(NodeId("sink1")).size shouldBe 1
-      val compiledAssertion =
-        compiledAssertions.assertions(NodeId("sink1")).head.asInstanceOf[CompiledPredicateAssertion]
-      compiledAssertion.operator shouldBe Assertion.AssertionOperator.Equals
-      compiledAssertion.expected.original shouldBe "1"
-      compiledAssertion.actual.original shouldBe "#contexts.size"
-    }
+    val compiledAssertions = compileScenarioWithAssertions(scenario, test).validValue
+
+    compiledAssertions.assertions.size shouldBe 1
+    compiledAssertions.assertions(NodeId("sink1")).size shouldBe 1
+    val compiledAssertion =
+      compiledAssertions.assertions(NodeId("sink1")).head.asInstanceOf[CompiledPredicateAssertion]
+    compiledAssertion.operator shouldBe Assertion.AssertionOperator.Equals
+    compiledAssertion.expectedExpression.original shouldBe "1"
+    compiledAssertion.actualExpression.original shouldBe "#contexts.size"
   }
 
   test("should produce errors for assertions on missing nodes") {
-    val scenario = ScenarioBuilder
-      .streaming("process1")
-      .source("id1", "sourceWithUnknown")
-      .enricher("enricher1", "enricherOutput", "enricher1", "par1" -> "'abc'".spel)
-      .buildSimpleVariable("result-id2", "result", "#input".spel)
-      .emptySink("sink1", "sink")
-    val test = TestCase(
-      UUID.randomUUID(),
-      "someTest",
-      inputs = "",
-      mocks = Map.empty,
-      assertions = Map(
+    val test = prepareTestCase(
+      Map(
         NodeId("notExistingSink") -> List(
           PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel)
         )
       )
     )
 
-    val testCompilationResult = compileScenarioWithAssertions(scenario, test)
+    val errors = compileScenarioWithAssertions(scenario, test).invalidValue
 
-    inside(testCompilationResult) { case Invalid(errors) =>
-      errors.toList shouldBe List(
-        AssertionConfiguredForNotExistingNodesError(
-          NonEmptyList.one(NodeId("notExistingSink"))
+    errors.toList shouldBe List(
+      AssertionConfiguredForNotExistingNodesError(
+        NonEmptyList.one(NodeId("notExistingSink"))
+      )
+    )
+  }
+
+  test("should produce errors for multiple assertions") {
+    val nodeId = NodeId("sink1")
+    val assertionWithSyntaxErrorsInBothExpressions =
+      PredicateAssertion(Assertion.AssertionOperator.Equals, "'123".spel, "#contexts.size,".spel)
+    val assertionComparingUnrelatedTypes =
+      PredicateAssertion(Assertion.AssertionOperator.Equals, "'string'".spel, "123".spel)
+    val test = prepareTestCase(
+      Map(
+        nodeId -> List(
+          assertionWithSyntaxErrorsInBothExpressions,
+          assertionComparingUnrelatedTypes,
         )
       )
+    )
+
+    val errors = compileScenarioWithAssertions(scenario, test).invalidValue
+    errors.size shouldBe 3
+    val assertionWithErrorsInBothExpressionsActualExpectedFieldError :: assertionWithErrorsInBothExpressionsActualFieldError :: assertionComparingUnrelatedTypesError :: Nil =
+      errors.toList
+
+    inside(assertionWithErrorsInBothExpressionsActualExpectedFieldError) {
+      case PredicateAssertionCompilationError(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                message,
+                _,
+                Some(ParameterName(parameterName)),
+                originalExpr,
+                _
+              ),
+              Nil
+            ),
+            assertion,
+            field,
+            _
+          ) =>
+        message shouldBe "Cannot find terminating ' for string"
+        parameterName shouldBe PredicateAssertionCompilationError.Field.Expected.entryName
+        field shouldBe PredicateAssertionCompilationError.Field.Expected
+        originalExpr shouldBe "'123"
+        assertion shouldBe assertionWithSyntaxErrorsInBothExpressions
+    }
+
+    inside(assertionWithErrorsInBothExpressionsActualFieldError) {
+      case PredicateAssertionCompilationError(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                message,
+                _,
+                Some(ParameterName(parameterName)),
+                originalExpr,
+                _
+              ),
+              Nil
+            ),
+            assertion,
+            field,
+            _
+          ) =>
+        message shouldBe "Unexpected text"
+        parameterName shouldBe PredicateAssertionCompilationError.Field.Actual.entryName
+        field shouldBe PredicateAssertionCompilationError.Field.Actual
+        originalExpr shouldBe "#contexts.size,"
+        assertion shouldBe assertionWithSyntaxErrorsInBothExpressions
+    }
+
+    inside(assertionComparingUnrelatedTypesError) {
+      case PredicateAssertionCompilationError(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                message,
+                `nodeId`,
+                Some(ParameterName(parameterName)),
+                originalExpr,
+                _
+              ),
+              Nil
+            ),
+            assertion,
+            field,
+            `nodeId`
+          ) =>
+        message shouldBe "Operator '==' used with not comparable types: String and Integer"
+        parameterName shouldBe PredicateAssertionCompilationError.Field.Actual.entryName
+        field shouldBe PredicateAssertionCompilationError.Field.Actual
+        originalExpr shouldBe "'string' == 123"
+        assertion shouldBe assertionComparingUnrelatedTypes
     }
   }
 
-  test("should produce errors for assertions with syntax errors") {
-    val scenario = ScenarioBuilder
-      .streaming("process1")
-      .source("id1", "sourceWithUnknown")
-      .enricher("enricher1", "enricherOutput", "enricher1", "par1" -> "'abc'".spel)
-      .buildSimpleVariable("result-id2", "result", "#input".spel)
-      .emptySink("sink1", "sink")
-    val nodeId           = NodeId("sink1")
-    val invalidAssertion = PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size,".spel)
-
-    val test = TestCase(
-      UUID.randomUUID(),
-      "someTest",
-      inputs = "",
-      mocks = Map.empty,
-      assertions = Map(nodeId -> List(invalidAssertion))
-    )
-
-    val testCompilationResult = compileScenarioWithAssertions(scenario, test)
-    inside(testCompilationResult) { case Invalid(errors) =>
-      errors.size shouldBe 1
-      errors.head shouldBe PredicateAssertionCompilationError(
-        NonEmptyList.one(
-          ExpressionParserCompilationError(
-            "Unexpected text",
-            nodeId,
-            Some(ParameterName(PredicateAssertionCompilationError.Field.Actual.entryName)),
-            "#contexts.size,",
-            Some(CoordinatesBasedTextRange(TextCoordinates(14, 0), TextCoordinates(15, 0)))
-          )
+  test("should compile assertions with various types used in SpEL") {
+    forAll(
+      Table[Assertion, ValidatedNel[String, Unit]](
+        ("assertion", "compilation result"),
+        (
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'abc'".spel, "'def'".spel),
+          Validated.unit,
         ),
-        invalidAssertion,
-        PredicateAssertionCompilationError.Field.Actual,
-        nodeId
+        (
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'abc'".spel, "#CONV.toAny(123)".spel),
+          Validated.unit,
+        ),
+        (
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'abc'".spel, "123".spel),
+          Validated.invalidNel("Operator '==' used with not comparable types: String and Integer")
+        ),
+        (
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "{'abc', 'def'}".spel, "{'xyz'}".spel),
+          Validated.unit
+        ),
+        (
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "{'abc', 'def'}".spel, "{123}".spel),
+          Validated.invalidNel("Operator '==' used with not comparable types: List[String] and List[Integer]")
+        ),
+        (
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "{'abc', 'def'}".spel, "#CONV.toAny({'xyz'})".spel),
+          Validated.unit
+        ),
       )
+    ) { (assertion, expectedCompilationResult) =>
+      val nodeId = NodeId("sink1")
+      val test = prepareTestCase(
+        Map(
+          nodeId -> List(assertion)
+        )
+      )
+
+      val compilationResult = compileScenarioWithAssertions(scenario, test)
+
+      val actualCompilationResult = compilationResult.void
+        .leftMap { errors =>
+          errors.flatMap {
+            case PredicateAssertionCompilationError(compilationErrors, _, _, _) =>
+              compilationErrors.map {
+                case ExpressionParserCompilationError(message, _, _, _, _) =>
+                  message
+                case other =>
+                  fail(s"Unexpected error: $other")
+              }
+            case other =>
+              fail(s"Unexpected error: $other")
+          }
+        }
+
+      actualCompilationResult shouldBe expectedCompilationResult
     }
   }
 
@@ -195,5 +299,15 @@ class AssertionsCompilerSpec extends AnyFunSuite with Matchers with Inside {
     typingInfo.parameters.map(_.map(DefinitionsService.createUIParameter)),
     typingInfo.expressionsTypingInfo
   )
+
+  private def prepareTestCase(assertions: Map[NodeId, List[Assertion]]): TestCase = {
+    TestCase(
+      id = UUID.randomUUID(),
+      name = "dummy",
+      inputs = "dummy",
+      mocks = Map.empty,
+      assertions = assertions
+    )
+  }
 
 }
