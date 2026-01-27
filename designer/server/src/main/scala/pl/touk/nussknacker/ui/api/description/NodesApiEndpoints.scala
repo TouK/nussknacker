@@ -811,23 +811,22 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .withSecurity(auth)
   }
 
-  lazy val testCaseMetadataEndpoint: SecuredEndpoint[
-    (ProcessName, TestCaseMetadataRequestDto),
+  lazy val testCaseSampleEnricherMockEndpoint: SecuredEndpoint[
+    (ProcessName, SampleEnricherMockRequestDto),
     NodesError,
-    TestCaseMetadataResponseDto,
+    SampleEnricherMockResponseDto,
     Any
   ] = {
     baseNuApiEndpoint
-      .summary("Metadata for a test case including assertions additional variables")
+      .summary("Generate a sample enricher mock expression")
       .tag("Nodes")
       .post
-      .in("nodes" / path[ProcessName]("scenarioName") / "testCase" / "metadata")
+      .in("nodes" / path[ProcessName]("scenarioName") / "testCase" / "sampleEnricherMock")
       .in(
-        jsonBody[TestCaseMetadataRequestDto]
+        jsonBody[SampleEnricherMockRequestDto]
           .example(
             Example.of(
-              summary = Some("Test case metadata request"),
-              value = TestCaseMetadataRequestDto(
+              value = SampleEnricherMockRequestDto(
                 variableTypes = Map(
                   "amount" -> TypingResultInJson(
                     encoder.apply(
@@ -863,30 +862,10 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       )
       .out(
         statusCode(Ok).and(
-          jsonBody[TestCaseMetadataResponseDto]
+          jsonBody[SampleEnricherMockResponseDto]
             .example(
               Example.of(
-                summary = Some("Test case metadata response"),
-                value = TestCaseMetadataResponseDto(
-                  assertionsAdditionalVariables = Map(
-                    "contexts" -> Typed.genericTypeClass(
-                      classOf[java.util.List[_]],
-                      List(
-                        Typed.record(
-                          List(
-                            "amount" -> TypedObjectWithValue.apply(
-                              Typed[java.lang.Long].asInstanceOf[TypedClass],
-                              5L
-                            ),
-                            "name" -> TypedObjectWithValue.apply(
-                              Typed[java.lang.String].asInstanceOf[TypedClass],
-                              "Alice"
-                            )
-                          )
-                        )
-                      )
-                    )
-                  ),
+                value = SampleEnricherMockResponseDto(,
                   enricherMockSampleExpression = None
                 )
               )
@@ -1775,15 +1754,14 @@ object NodesApiEndpoints {
     )
 
     @derive(schema, encoder, decoder)
-    final case class TestCaseMetadataRequestDto(
+    final case class SampleEnricherMockRequestDto(
         variableTypes: Map[String, TypingResultInJson],
-        nodeData: NodeData,
+        enricher: Enricher,
     )
 
     @derive(schema, encoder, decoder)
-    final case class TestCaseMetadataResponseDto(
-        assertionsAdditionalVariables: Map[String, TypingResult],
-        enricherMockSampleExpression: Option[Expression],
+    final case class SampleEnricherMockResponseDto(
+        enricherMockSampleExpression: Expression,
     )
 
     // Request doesn't need valid encoder, apart from examples

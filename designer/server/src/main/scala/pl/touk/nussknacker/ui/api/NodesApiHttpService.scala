@@ -29,7 +29,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   ParametersValidationRequestDto,
   ParametersValidationResultDto,
   TestCaseAdditionalVariablesResponseDto,
-  TestCaseMetadataResponseDto
+  SampleEnricherMockResponseDto
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
   InvalidNodeType,
@@ -53,7 +53,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.SerializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.FetchLiveDataError
-import pl.touk.nussknacker.ui.process.test.testcase.{TestCaseMetadataService, TestCaseVariables}
+import pl.touk.nussknacker.ui.process.test.testcase.{EnricherMockGenerator, TestCaseVariables}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
@@ -74,7 +74,7 @@ class NodesApiHttpService(
     with ScenarioHttpServiceExtensions
     with LazyLogging {
 
-  private val testCaseMetadataService = new TestCaseMetadataService()
+  private val enricherMockGenerator = new EnricherMockGenerator()
 
   override protected type BusinessErrorType = NodesError
   override protected def noScenarioError(scenarioName: ProcessName): NodesError      = NoScenario(scenarioName)
@@ -185,7 +185,7 @@ class NodesApiHttpService(
   }
 
   expose {
-    nodesApiEndpoints.testCaseMetadataEndpoint
+    nodesApiEndpoints.testCaseSampleEnricherMockEndpoint
       .serverSecurityLogic(authorizeKnownUser[NodesError])
       .serverLogicEitherT { implicit loggedUser =>
         { case (scenarioName, request) =>
@@ -200,7 +200,7 @@ class NodesApiHttpService(
                 )
               )
               .leftMap[NodesError](identity)
-            metadata = testCaseMetadataService.prepareTestCaseMetadata(variableTypes, request.nodeData)
+            metadata = enricherMockGenerator.generateSampleExpression(variableTypes, request.nodeData)
           } yield metadata
         }
       }
