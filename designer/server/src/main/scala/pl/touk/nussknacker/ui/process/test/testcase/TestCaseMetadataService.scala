@@ -8,12 +8,12 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestCaseMet
 class TestCaseMetadataService {
 
   def prepareTestCaseMetadata(
-      variableTypes: Map[String, TypingResult],
+      inputVariableTypes: Map[String, TypingResult],
       nodeData: NodeData,
   ): TestCaseMetadataResponseDto = {
     TestCaseMetadataResponseDto(
-      assertionsAdditionalVariables = TestCaseVariables.getNodeVariablesTyping(variableTypes),
-      enricherMockSampleExpression = generateEnricherMockSampleExpression(variableTypes, nodeData)
+      assertionsAdditionalVariables = TestCaseVariables.getNodeVariablesTyping(inputVariableTypes),
+      enricherMockSampleExpression = generateEnricherMockSampleExpression(inputVariableTypes, nodeData)
     )
   }
 
