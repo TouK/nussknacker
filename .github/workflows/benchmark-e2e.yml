@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
       - uses: coursier/setup-action@v1
         with:
           jvm: temurin:1.17.0.5
@@ -18,7 +18,7 @@ jobs:
         run: |
           bash -c "export NUSSKNACKER_SCALA_VERSION=2.13 && sbt \"benchmarks/test:runMain pl.touk.nussknacker.engine.benchmarks.e2e.FlinkSteamingScenarioBenchmark 10000000\""
       - name: Store benchmark results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: benchmark-e2e.csv
           path: /tmp/benchmarkResult.csv

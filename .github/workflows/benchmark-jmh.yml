@@ -9,15 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-      - uses: coursier/setup-action@v1
+        uses: actions/checkout@v6
+      - uses: coursier/setup-action@v2
         with:
           jvm: temurin:1.17.0.5
       - uses: sbt/setup-sbt@v1
       - name: Run benchmarks
         run: sbt "benchmarks/jmh:run -i 8 -wi 3 -f1 -t1 -rf csv"
       - name: Store benchmark results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: jmh-result.csv
           path: benchmarks/jmh-result.csv
