@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Enricher
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodesError, SampleEnricherMockResponseDto}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{GenerateEnricherMockResponseDto, NodesError}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.EnricherMockExpressionGenerationError
 
 class EnricherMockGenerator(
@@ -21,30 +21,30 @@ class EnricherMockGenerator(
 
   private val nodeCompiler = NodeCompiler.forValidation(modelData)
 
-  def generateSampleExpression(
+  def generateExpression(
       inputVariableTypes: Map[String, TypingResult],
       enricher: Enricher,
       jobData: JobData
-  ): Either[NodesError, SampleEnricherMockResponseDto] = {
+  ): Either[NodesError, GenerateEnricherMockResponseDto] = {
     engineScenarioCompilationDependenciesResource
       .use { engineScenarioCompilationDependencies =>
         SyncIO {
           implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
             new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
 
-          generateSampleExpression(inputVariableTypes, enricher, nodeCompiler)
+          generateExpression(inputVariableTypes, enricher, nodeCompiler)
         }
       }
       .unsafeRunSync()
   }
 
-  private def generateSampleExpression(
+  private def generateExpression(
       inputVariableTypes: Map[String, TypingResult],
       enricher: Enricher,
       nodeCompiler: NodeCompiler
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
-  ): Either[NodesError, SampleEnricherMockResponseDto] = {
+  ): Either[NodesError, GenerateEnricherMockResponseDto] = {
     val compilationResult = nodeCompiler.compileNode[Enricher](
       nodeData = enricher,
       variableTypes = inputVariableTypes,
@@ -69,8 +69,8 @@ class EnricherMockGenerator(
         SpelExpressionSampleGenerator.generateSampleExpression(typingResult) match {
           case Some(sampleExpressionString) =>
             Right(
-              SampleEnricherMockResponseDto(
-                enricherMockSampleExpression = Expression.spel(sampleExpressionString)
+              GenerateEnricherMockResponseDto(
+                enricherMockExpression = Expression.spel(sampleExpressionString)
               )
             )
           case None =>

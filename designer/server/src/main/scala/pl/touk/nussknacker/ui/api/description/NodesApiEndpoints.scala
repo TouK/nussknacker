@@ -811,22 +811,22 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .withSecurity(auth)
   }
 
-  lazy val testCaseSampleEnricherMockEndpoint: SecuredEndpoint[
-    (ProcessName, SampleEnricherMockRequestDto),
+  lazy val testCaseGenerateEnricherMockEndpoint: SecuredEndpoint[
+    (ProcessName, GenerateEnricherMockRequestDto),
     NodesError,
-    SampleEnricherMockResponseDto,
+    GenerateEnricherMockResponseDto,
     Any
   ] = {
     baseNuApiEndpoint
-      .summary("Generate a sample enricher mock expression")
+      .summary("Generate an enricher mock expression")
       .tag("Nodes")
       .post
-      .in("nodes" / path[ProcessName]("scenarioName") / "testCase" / "sampleEnricherMock")
+      .in("nodes" / path[ProcessName]("scenarioName") / "testCase" / "enricherMock")
       .in(
-        jsonBody[SampleEnricherMockRequestDto]
+        jsonBody[GenerateEnricherMockRequestDto]
           .example(
             Example.of(
-              value = SampleEnricherMockRequestDto(
+              value = GenerateEnricherMockRequestDto(
                 variableTypes = Map(
                   "amount" -> TypingResultInJson(
                     encoder.apply(
@@ -862,11 +862,11 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       )
       .out(
         statusCode(Ok).and(
-          jsonBody[SampleEnricherMockResponseDto]
+          jsonBody[GenerateEnricherMockResponseDto]
             .example(
               Example.of(
-                value = SampleEnricherMockResponseDto(
-                  enricherMockSampleExpression = Expression.spel("'sample'")
+                value = GenerateEnricherMockResponseDto(
+                  enricherMockExpression = Expression.spel("'sample'")
                 )
               )
             )
@@ -1753,12 +1753,12 @@ object NodesApiEndpoints {
         assertionsAdditionalVariables: Map[String, TypingResult]
     )
 
-    final case class SampleEnricherMockRequestDto(
+    final case class GenerateEnricherMockRequestDto(
         variableTypes: Map[String, TypingResultInJson],
         enricher: Enricher,
     )
 
-    object SampleEnricherMockRequestDto {
+    object GenerateEnricherMockRequestDto {
       import io.circe.generic.semiauto._
 
       implicit lazy val enricherEncoderImplicit: Encoder[Enricher] = Encoder[NodeData].contramap(identity)
@@ -1768,21 +1768,21 @@ object NodesApiEndpoints {
         case other       => Left(s"Expected Enricher but got ${other.getClass.getSimpleName}")
       }
 
-      implicit lazy val sampleEnricherMockRequestDtoEncoder: Encoder[SampleEnricherMockRequestDto] =
-        deriveEncoder[SampleEnricherMockRequestDto]
-      implicit lazy val sampleEnricherMockRequestDtoDecoder: Decoder[SampleEnricherMockRequestDto] =
-        deriveDecoder[SampleEnricherMockRequestDto]
+      implicit lazy val generateEnricherMockRequestDtoEncoder: Encoder[GenerateEnricherMockRequestDto] =
+        deriveEncoder[GenerateEnricherMockRequestDto]
+      implicit lazy val generateEnricherMockRequestDtoDecoder: Decoder[GenerateEnricherMockRequestDto] =
+        deriveDecoder[GenerateEnricherMockRequestDto]
 
-      implicit lazy val sampleEnricherMockRequestDtoSchema: Schema[SampleEnricherMockRequestDto] = {
+      implicit lazy val sampleEnricherMockRequestDtoSchema: Schema[GenerateEnricherMockRequestDto] = {
         import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas._
-        Schema.derived[SampleEnricherMockRequestDto]
+        Schema.derived[GenerateEnricherMockRequestDto]
       }
 
     }
 
     @derive(schema, encoder, decoder)
-    final case class SampleEnricherMockResponseDto(
-        enricherMockSampleExpression: Expression,
+    final case class GenerateEnricherMockResponseDto(
+        enricherMockExpression: Expression,
     )
 
     // Request doesn't need valid encoder, apart from examples
