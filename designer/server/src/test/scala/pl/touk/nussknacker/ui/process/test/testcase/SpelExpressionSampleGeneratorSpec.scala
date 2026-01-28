@@ -75,9 +75,9 @@ class SpelExpressionSampleGeneratorSpec extends AnyFreeSpecLike with Matchers {
       result shouldBe Some("{'key': 42}")
     }
 
-    "should return None for Unknown type" in {
+    "should return null for Unknown type" in {
       val result = SpelExpressionSampleGenerator.generateSampleExpression(typing.Unknown)
-      result shouldBe None
+      result shouldBe Some("null")
     }
 
   }

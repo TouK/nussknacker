@@ -29,7 +29,7 @@ private object SpelExpressionSampleGenerator {
       generateSampleExpression(union.possibleTypes.head)
 
     case _: Unknown =>
-      None
+      Some("null")
 
     case _: TypedDict =>
       Some("{:}")
