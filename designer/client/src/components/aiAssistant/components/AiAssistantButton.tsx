@@ -8,16 +8,16 @@ import type { AskAssistantProps } from "./AskAssistant";
 
 const AiAssistant = loadable(() => import("./OpenAssistantButton"), { fallback: null });
 export const AiAssistantButton = () => {
-    const assistantEnabld = useAppSelector(getIsAssitantEnabled);
-    if (!assistantEnabld) return null;
+    const assistantEnabled = useAppSelector(getIsAssitantEnabled);
+    if (!assistantEnabled) return null;
     return <AiAssistant />;
 };
 
 const AskAssistant = loadable(() => import("./AskAssistant"), { fallback: null });
 export const AskAssistantButton = (props: AskAssistantProps) => {
-    const assistantEnabld = useAppSelector(getIsAssitantEnabled);
+    const assistantEnabled = useAppSelector(getIsAssitantEnabled);
     const settings = useAppSelector(getUserSettings);
 
-    if (!assistantEnabld || !settings["assistant.showHelp"]) return null;
+    if (!assistantEnabled || !settings["assistant.showHelp"]) return null;
     return <AskAssistant {...props} />;
 };

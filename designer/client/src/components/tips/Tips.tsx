@@ -1,5 +1,5 @@
-import { Box } from "@mui/material";
 import i18next from "i18next";
+import { omit } from "lodash";
 import React, { useCallback } from "react";
 import { Scrollbars } from "react-custom-scrollbars";
 import { v4 as uuid4 } from "uuid";
@@ -12,10 +12,10 @@ import { getUi } from "../../reducers/selectors/ui";
 import { useAppSelector } from "../../store/storeHelpers";
 import type { NodeType } from "../../types/node";
 import { useWindows } from "../../windowManager/useWindows";
-import { AskAssistantButton } from "../aiAssistant/components/AiAssistantButton";
 import type { ToolbarPanelProps } from "../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import Errors from "./error/Errors";
+import { Errors } from "./error/Errors";
+import { TestCaseErrors } from "./error/TestCaseErrors";
 import { TipPanelStyled } from "./Styled";
 import ValidTips from "./ValidTips";
 import Warnings from "./Warnings";
@@ -44,18 +44,21 @@ export default function Tips(props: ToolbarPanelProps): React.JSX.Element {
                     renderThumbVertical={(props) => <div key={uuid4()} {...props} />}
                     hideTracksWhenNotNeeded={true}
                 >
-                    <Box sx={{ float: "right" }}>
-                        <AskAssistantButton
-                            question={`Explain scenario state.`}
-                            realPrompt={`Explain problems in scenario if any. (raw internal data: ${JSON.stringify({ errors, warnings })})`}
-                        />
-                    </Box>
                     <ValidTips
                         loading={!ProcessUtils.isValidationResultPresent(scenario)}
                         testing={visibleDataType === VisibleDataType.test}
                         hasNeitherErrorsNorWarnings={ProcessUtils.hasNeitherErrorsNorWarnings(scenario)}
                     />
-                    {!ProcessUtils.hasNoErrors(scenario) && <Errors errors={errors} showDetails={showDetails} scenario={scenario} />}
+                    {!ProcessUtils.hasNoErrors(scenario) && (
+                        <Errors errors={omit(errors, "testCasesValidationErrors")} showDetails={showDetails} scenario={scenario} />
+                    )}
+                    {!ProcessUtils.hasNoTestCaseErrors(scenario) && (
+                        <TestCaseErrors
+                            testCasesValidationErrors={errors.testCasesValidationErrors}
+                            showDetails={showDetails}
+                            scenario={scenario}
+                        />
+                    )}
                     {!ProcessUtils.hasNoWarnings(scenario) && (
                         <Warnings
                             warnings={ProcessUtils.extractInvalidNodes(warnings.invalidNodes)}

@@ -24,7 +24,12 @@ class ProcessUtils {
 
     //fixme maybe return hasErrors flag from backend?
     hasNeitherErrorsNorWarnings = (scenario: Scenario) => {
-        return this.isValidationResultPresent(scenario) && this.hasNoErrors(scenario) && this.hasNoWarnings(scenario);
+        return (
+            this.isValidationResultPresent(scenario) &&
+            this.hasNoErrors(scenario) &&
+            this.hasNoTestCaseErrors(scenario) &&
+            this.hasNoWarnings(scenario)
+        );
     };
 
     extractInvalidNodes = (invalidNodes: Pick<ValidationResult, "warnings">) => {
@@ -47,6 +52,11 @@ class ProcessUtils {
         );
     };
 
+    hasNoTestCaseErrors = (scenario: Scenario) => {
+        const result = this.getValidationErrors(scenario);
+        return !result || (result.testCasesValidationErrors ?? []).length === 0;
+    };
+
     getValidationResult = (scenario: Scenario): ValidationResult =>
         scenario?.validationResult || {
             validationErrors: [],
@@ -56,8 +66,8 @@ class ProcessUtils {
                 globalErrors: [],
                 processPropertiesErrors: [],
                 invalidNodes: {},
+                testCasesValidationErrors: {},
             },
-            testCasesValidationErrors: {},
         };
 
     hasNoWarnings = (scenario: Scenario) => {

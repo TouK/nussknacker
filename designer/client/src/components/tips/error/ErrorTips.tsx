@@ -5,6 +5,7 @@ import React, { useMemo } from "react";
 import type { Props } from "./Errors";
 import NodeErrorsLinkSection from "./NodeErrorsLinkSection";
 import { ScenarioPropertiesSection } from "./ScenarioPropertiesSection";
+import { StyledTipsContentWrapper } from "./styled";
 
 export const ErrorTips = ({ errors, showDetails, scenario }: Props) => {
     const { globalErrors, processPropertiesErrors, invalidNodes } = errors;
@@ -32,7 +33,7 @@ export const ErrorTips = ({ errors, showDetails, scenario }: Props) => {
     );
 
     return isEmpty(invalidNodes) && isEmpty(processPropertiesErrors) && isEmpty(globalErrors) ? null : (
-        <div>
+        <StyledTipsContentWrapper>
             {globalErrorsLinkSections}
             <NodeErrorsLinkSection
                 nodeIds={invalidNodeIds}
@@ -41,6 +42,6 @@ export const ErrorTips = ({ errors, showDetails, scenario }: Props) => {
                 scenario={scenario}
             />
             {!isEmpty(processPropertiesErrors) && <ScenarioPropertiesSection />}
-        </div>
+        </StyledTipsContentWrapper>
     );
 };

@@ -53,6 +53,18 @@ export const getValidationTestCasesErrors = createDeepEqualSelector(
     },
 );
 
+export const hasValidationTestCasesErrors = createDeepEqualSelector(
+    getNodesDetails,
+    getTestParams,
+    (nodeDetails, { nodeId, testCaseId }): boolean => {
+        const testCasesValidationErrors = nodeDetails[nodeId]?.testCasesValidationErrors?.[testCaseId];
+        const hasAssertionErrors = Object.keys(testCasesValidationErrors?.assertionsErrors ?? {}).length > 0;
+        const hasEnricherMockErrors = (testCasesValidationErrors?.enricherMockErrors ?? []).length > 0;
+
+        return hasAssertionErrors || hasEnricherMockErrors;
+    },
+);
+
 const getValidationErrors = createSelector(getNodesDetails, (nodeDetails) => (nodeId) => nodeDetails[nodeId]?.validationErrors);
 
 export const getExpressionType = createSelector(getNodesDetails, (nodeDetails) => (nodeId: string) => nodeDetails[nodeId]?.expressionType);

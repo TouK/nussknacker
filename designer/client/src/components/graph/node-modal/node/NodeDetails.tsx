@@ -11,6 +11,8 @@ import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
 import type { RootState } from "../../../../reducers";
 import { getCreatorType } from "../../../../reducers/selectors/getCreator";
+import { hasError } from "../../../../reducers/selectors/graph2";
+import { getTestCase } from "../../../../reducers/selectors/testCases";
 import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import type { Edge } from "../../../../types/edge";
@@ -22,13 +24,16 @@ import { useOnToolWindow } from "../../../modals/useOnToolWindow";
 import type { Scenario } from "../../../Process/types";
 import { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
 import { useGetButtonFromToolbar } from "../../../toolbarSettings/useToolbarConfig";
+import { nodeValidationError } from "../../graphStyledWrapper";
 import NodeUtils from "../../NodeUtils";
 import { InputOutputContent } from "../io/InputOutputContent";
 import { InputOutputContextProvider } from "../io/InputOutputContext";
 import { usePortal } from "../io/usePortal";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
+import { hasValidationTestCasesErrors } from "../NodeDetailsContent/selectors";
 import type { EditedNode } from "../nodeIdFieldHelpers";
 import { TestResultsWrapper } from "../TestResultsWrapper";
+import { useGetNodeErrors, useGetNodeTestCasesErrors } from "../useNodeTypeDetailsContentLogic";
 import { EditStateFeedback } from "./EditStateFeedback";
 import { GeneralContent } from "./NodeContent/GeneralContent";
 import type { TabDef } from "./NodeContent/TabsWrapper";
@@ -88,6 +93,12 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     const buttonFromToolbar = useGetButtonFromToolbar(CustomButtonTypes.scenarioTest);
 
     const { node, editedNode, onChange, outputEdges, performNodeEdit, editState } = useNodeState(data.meta);
+    const [generalErrors] = useGetNodeErrors(node);
+    const testCase = useAppSelector(getTestCase);
+    const hasNodeTestCasesErrors = useAppSelector((state) =>
+        hasValidationTestCasesErrors(state, { nodeId: node.id, testCaseId: testCase.name }),
+    );
+
     const { cancel, apply } = useNodeDetailsButtons({ editedNode, outputEdges, performNodeEdit, close, readOnly });
 
     const nodeIsFragment = useMemo(() => NodeUtils.nodeIsFragment(editedNode), [editedNode]);
@@ -162,15 +173,17 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
             {
                 label: t("nodeDetails.tabs.general.name", "General"),
                 content: generalContent,
+                showErrorIndicator: generalErrors.length > 0,
             },
             {
                 label: t("nodeDetails.tabs.testing.name", "Testing"),
                 content: testingContent,
                 disabled: !testingScenarioEnabled || !testingTabVisible,
                 additionalTabContent: <TestCases />,
+                showErrorIndicator: hasNodeTestCasesErrors,
             },
         ],
-        [generalContent, t, testingContent, testingScenarioEnabled, testingTabVisible],
+        [generalContent, generalErrors.length, hasNodeTestCasesErrors, t, testingContent, testingScenarioEnabled, testingTabVisible],
     );
 
     return (
