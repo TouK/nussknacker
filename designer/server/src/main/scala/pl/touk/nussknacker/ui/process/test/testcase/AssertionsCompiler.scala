@@ -5,8 +5,10 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.all._
 import enumeratum.{Enum, EnumEntry}
 import enumeratum.EnumEntry.LowerCamelcase
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle.details
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -195,7 +197,9 @@ class AssertionsCompiler(
       )
       .leftMap { errors =>
         PredicateAssertionCompilationError(
-          errors,
+          // Clear the error details, including the position of the error in the comparison expression.
+          // Since this expression is never shown to the user, highlighting part of the actual expression at the wrong position would be confusing.
+          clearErrorsDetails(errors),
           assertion,
           // If comparison expression fails to compile because of uncomparable types, we report the error on actual field.
           PredicateAssertionCompilationError.Field.Actual,
@@ -209,6 +213,17 @@ class AssertionsCompiler(
     operator match {
       case AssertionOperator.Equals    => "=="
       case AssertionOperator.NotEquals => "!="
+    }
+  }
+
+  private def clearErrorsDetails(
+      errors: NonEmptyList[ProcessCompilationError]
+  ): NonEmptyList[ProcessCompilationError] = {
+    errors.map {
+      case e: ExpressionParserCompilationError =>
+        e.copy(details = None)
+      case other =>
+        other
     }
   }
 
