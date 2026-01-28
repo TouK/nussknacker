@@ -845,7 +845,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     )
                   ),
                 ),
-                nodeData = Enricher(
+                enricher = Enricher(
                   "enricher",
                   ServiceRef(
                     "paramService",
@@ -865,8 +865,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           jsonBody[SampleEnricherMockResponseDto]
             .example(
               Example.of(
-                value = SampleEnricherMockResponseDto(,
-                  enricherMockSampleExpression = None
+                value = SampleEnricherMockResponseDto(
+                  enricherMockSampleExpression = Expression.spel("'sample'")
                 )
               )
             )
@@ -1753,11 +1753,35 @@ object NodesApiEndpoints {
         assertionsAdditionalVariables: Map[String, TypingResult]
     )
 
-    @derive(schema, encoder, decoder)
     final case class SampleEnricherMockRequestDto(
         variableTypes: Map[String, TypingResultInJson],
         enricher: Enricher,
     )
+
+    object SampleEnricherMockRequestDto {
+      import io.circe.generic.semiauto._
+
+      implicit lazy val enricherEncoderImplicit: Encoder[Enricher] = Encoder[NodeData].contramap(identity)
+
+      implicit lazy val enricherDecoderImplicit: Decoder[Enricher] = Decoder[NodeData].emap {
+        case e: Enricher => Right(e)
+        case other       => Left(s"Expected Enricher but got ${other.getClass.getSimpleName}")
+      }
+
+      implicit lazy val sampleEnricherMockRequestDtoEncoder: Encoder[SampleEnricherMockRequestDto] =
+        deriveEncoder[SampleEnricherMockRequestDto]
+      implicit lazy val sampleEnricherMockRequestDtoDecoder: Decoder[SampleEnricherMockRequestDto] =
+        deriveDecoder[SampleEnricherMockRequestDto]
+      // Schema needs to be defined outside companion object to access enricherSchema
+    }
+
+    implicit lazy val sampleEnricherMockRequestDtoSchema: Schema[SampleEnricherMockRequestDto] = {
+      import sttp.tapir.generic.Configuration
+      import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.SampleEnricherMockRequestDto._
+      import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas._
+      implicit val tapirConfiguration: Configuration = Configuration.default
+      Schema.derived[SampleEnricherMockRequestDto]
+    }
 
     @derive(schema, encoder, decoder)
     final case class SampleEnricherMockResponseDto(
@@ -1900,6 +1924,7 @@ object NodesApiEndpoints {
 
       object BadRequestNodesError {
         case class SourceCompilation(nodeId: String, errors: List[String])   extends BadRequestNodesError
+        case class EnricherCompilation(nodeId: String, errors: List[String]) extends BadRequestNodesError
         case class UnsupportedSourcePreview(nodeId: String)                  extends BadRequestNodesError
         case class InvalidNodeType(expectedType: String, actualType: String) extends BadRequestNodesError
         case class TooManyRecordsRequested(maxRecordsCount: Int)             extends BadRequestNodesError
@@ -1910,6 +1935,8 @@ object NodesApiEndpoints {
           BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestNodesError] {
             case SourceCompilation(nodeId, errors) =>
               s"Cannot compile source '$nodeId'. Errors: ${errors.mkString(", ")}"
+            case EnricherCompilation(nodeId, errors) =>
+              s"Cannot compile enricher '$nodeId'. Errors: ${errors.mkString(", ")}"
             case UnsupportedSourcePreview(nodeId)          => s"Source '$nodeId' doesn't support records preview"
             case InvalidNodeType(expectedType, actualType) => s"Expected $expectedType but got: ${actualType}"
             case TooManyRecordsRequested(maxRecordsCount) =>

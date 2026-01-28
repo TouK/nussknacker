@@ -21,6 +21,7 @@ import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.{ActionInfoService, ScenarioResolver, ScenarioTestExecutorServiceImpl}
 import pl.touk.nussknacker.ui.process.fragment.{FragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
+import pl.touk.nussknacker.ui.process.test.testcase.EnricherMockGenerator
 import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
@@ -47,6 +48,7 @@ final class ProcessingTypeServices private (
     val scenarioTestService: ScenarioTestService,
     val actionInfoService: ActionInfoService,
     val newProcessPreparer: NewProcessPreparer,
+    val enricherMockGenerator: EnricherMockGenerator,
 ) {
 
   def processingType: ProcessingType = processingTypeData.processingType
@@ -142,6 +144,10 @@ object ProcessingTypeServices {
       processingTypeData.designerModelData.modelData,
       processingTypeData.designerModelData.scenarioPropertiesConfig.keys
     )
+    val enricherMockGenerator = new EnricherMockGenerator(
+      processingTypeData.designerModelData.modelData,
+      scenarioCompilationDependenciesResource
+    )
     new ProcessingTypeServices(
       processingTypeData,
       alignedComponentsDefinitionProvider,
@@ -155,6 +161,7 @@ object ProcessingTypeServices {
       scenarioTestService,
       actionInfoService,
       newProcessPreparer,
+      enricherMockGenerator,
     )
   }
 

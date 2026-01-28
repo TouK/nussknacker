@@ -109,6 +109,7 @@ object TapirHttpServiceFactory {
       processingTypeToExpressionSuggester = processingTypeServicesProvider.mapValues(_.expressionSuggester),
       processingTypeToParametersValidator = processingTypeServicesProvider.mapValues(_.parametersValidator),
       processingTypeToScenarioTestServices = processingTypeServicesProvider.mapValues(_.scenarioTestService),
+      processingTypeToEnricherMockGenerator = processingTypeServicesProvider.mapValues(_.enricherMockGenerator),
       scenarioService = processService,
     )
 

@@ -28,8 +28,8 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   ParametersValidationRequest,
   ParametersValidationRequestDto,
   ParametersValidationResultDto,
-  TestCaseAdditionalVariablesResponseDto,
-  SampleEnricherMockResponseDto
+  SampleEnricherMockResponseDto,
+  TestCaseAdditionalVariablesResponseDto
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
   InvalidNodeType,
@@ -68,13 +68,12 @@ class NodesApiHttpService(
     processingTypeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _],
     processingTypeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
     processingTypeToScenarioTestServices: ProcessingTypeDataProvider[ScenarioTestService, _],
+    processingTypeToEnricherMockGenerator: ProcessingTypeDataProvider[EnricherMockGenerator, _],
     protected override val scenarioService: ProcessService
 )(override protected implicit val executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
     with ScenarioHttpServiceExtensions
     with LazyLogging {
-
-  private val enricherMockGenerator = new EnricherMockGenerator()
 
   override protected type BusinessErrorType = NodesError
   override protected def noScenarioError(scenarioName: ProcessName): NodesError      = NoScenario(scenarioName)
@@ -192,6 +191,9 @@ class NodesApiHttpService(
           for {
             scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
             modelData           <- getModelData(scenarioWithDetails.processingType)
+            enricherMockGenerator = processingTypeToEnricherMockGenerator.forProcessingTypeUnsafe(
+              scenarioWithDetails.processingType
+            )
             variableTypes <- EitherT
               .fromEither[Future](
                 decodeVariableTypes(
@@ -200,8 +202,22 @@ class NodesApiHttpService(
                 )
               )
               .leftMap[NodesError](identity)
-            metadata = enricherMockGenerator.generateSampleExpression(variableTypes, request.nodeData)
-          } yield metadata
+            metaData = pl.touk.nussknacker.engine.api.MetaData(
+              scenarioWithDetails.name.value,
+              pl.touk.nussknacker.engine.api.StreamMetaData()
+            )
+            jobData = pl.touk.nussknacker.engine.api.JobData(
+              metaData,
+              scenarioWithDetails.processVersionUnsafe
+            )
+            result <- EitherT.fromEither[Future](
+              enricherMockGenerator.generateSampleExpression(
+                variableTypes,
+                request.enricher,
+                jobData
+              )
+            )
+          } yield result
         }
       }
   }
