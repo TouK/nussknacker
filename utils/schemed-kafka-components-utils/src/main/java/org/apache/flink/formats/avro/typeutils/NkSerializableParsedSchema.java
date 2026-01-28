@@ -20,8 +20,10 @@ package org.apache.flink.formats.avro.typeutils;
 
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.avro.AvroSchema;
+import org.apache.avro.JsonSchemaFormatter;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Parser;
+import org.apache.avro.SchemaFormatter;
 import org.apache.avro.reflect.Nullable;
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema;
 
@@ -63,7 +65,7 @@ public final class NkSerializableParsedSchema<T extends ParsedSchema> implements
             oos.writeBoolean(true);
             if (schema instanceof AvroSchema) {
                 oos.writeByte(avroSchemaType);
-                oos.writeObject(((AvroSchema) schema).rawSchema().toString(false));
+                oos.writeObject(new JsonSchemaFormatter(false).format(((AvroSchema) schema).rawSchema()));
             } else if (schema instanceof OpenAPIJsonSchema) {
                 oos.writeByte(jsonSchemaType);
                 oos.writeObject(((OpenAPIJsonSchema) schema).schemaString());
