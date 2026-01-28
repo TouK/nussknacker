@@ -13,6 +13,7 @@ import { expandSelection } from "../actions/nk/selection";
 import { useDecodedParams } from "../common/routerUtils";
 import { extractCountParams } from "../common/VisualizationUrl";
 import { isAiAssistantDialog } from "../components/aiAssistant/components/IsAiAssistantDialog";
+import { useScenarioCommands } from "../components/CommandBar/scenario/useScenarioCommands";
 import type { Graph } from "../components/graph/Graph";
 import { GraphProvider } from "../components/graph/GraphContext";
 import { usePortal } from "../components/graph/node-modal/io/usePortal";
@@ -186,6 +187,7 @@ function Visualization() {
         fetchData(processName);
     }, [fetchData, processName]);
 
+    useScenarioCommands();
     useProcessState();
     useCountsIfNeeded();
     useLiveDataIfNeeded();

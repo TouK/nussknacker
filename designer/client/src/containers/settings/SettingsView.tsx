@@ -11,7 +11,7 @@ import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import CollapsibleSwitchList from "./collapsibleSwitchList";
 import { SearchField } from "./SearchField";
 
-function toNested<T>(entries: [string, T][]) {
+export function toNested<T>(entries: [string, T][]) {
     const result = {};
     entries.forEach(([key, value]) => {
         set(result, key, value);

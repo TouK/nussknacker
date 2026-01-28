@@ -66,17 +66,19 @@ lazy val publishSettings = Seq(
     }
   },
   Test / publishArtifact        := false,
-  developers                    := List(
-    Developer(
-      id = "TouK",
-      name = "TouK",
-      email = "",
-      url = url("https://touk.pl")
-    )
+  pomExtra                      := List(
+    <developers>
+      <developer>
+        <name>Nussknacker Team</name>
+        <email>info@nussknacker.io</email>
+        <organization>Nussknacker</organization>
+        <organizationUrl>https://nussknacker.io</organizationUrl>
+      </developer>
+    </developers>
   ),
   organization                  := "pl.touk.nussknacker",
-  organizationName              := "TouK",
-  organizationHomepage          := Some(url("https://touk.pl/")),
+  organizationName              := "Nussknacker",
+  organizationHomepage          := Some(url("https://nussknacker.io")),
   homepage                      := Some(url(s"https://github.com/touk/nussknacker")),
 )
 
@@ -245,14 +247,14 @@ val flinkScalaV           = "1.1.6"
 val calciteV              = "1.32.0"
 val avroV                 = "1.12.1"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV           = "3.8.1"
+val kafkaV                = "3.8.1"
 // when updating note that we have copied and modified class org.springframework.expression.spel.ast.Projection
 // and org.springframework.util.NumberUtils and org.springframework.expression.spel.ast.Selection
-val springV          = "6.2.15"
-val scalaTestV       = "3.2.19"
-val scalaCheckV      = "1.18.1"
-val scalaCheckVshort = scalaCheckV.take(4).replace(".", "-")
-val scalaTestPlusV   =
+val springV               = "6.2.15"
+val scalaTestV            = "3.2.19"
+val scalaCheckV           = "1.18.1"
+val scalaCheckVshort      = scalaCheckV.take(4).replace(".", "-")
+val scalaTestPlusV        =
   "3.2.19.0" // has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
 // note: Logback 1.3 requires Slf4j 2.x, but Flink has Slf4j 1.7 on its classpath
 val logbackV                = "1.2.13"

@@ -9,7 +9,7 @@
   [![Maven Central](https://maven-badges.herokuapp.com/maven-central/pl.touk.nussknacker/nussknacker-designer_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/pl.touk.nussknacker/nussknacker-designer_2.13)
   [![Build status](https://github.com/touk/nussknacker/workflows/CI/badge.svg?branch=staging)](https://github.com/touk/nussknacker/actions?query=workflow%3ACI+branch%3Astaging++)
   [![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/touk)](https://artifacthub.io/packages/search?repo=touk)
-  [![PR](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md#Contributing)
+  [![PR](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING/README.md#Contributing)
 
 </div>
 <h3 align="center">
@@ -119,7 +119,7 @@ with detailed instructions how to run Nussknacker with some of the older version
 
 ## Contributing
 
-Nussknacker is an open source project - contribution is welcome. Read how to do it in [Contributing guide](CONTRIBUTING.md).
+Nussknacker is an open source project - contribution is welcome. Read how to do it in [Contributing guide](CONTRIBUTING/README.md).
 There you can also find out how to build and run development version of Nussknacker.
 
 ## Legal

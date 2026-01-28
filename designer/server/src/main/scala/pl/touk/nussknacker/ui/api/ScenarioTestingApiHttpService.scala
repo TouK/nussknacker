@@ -242,7 +242,7 @@ class ScenarioTestingApiHttpService(
                 request.numberOfSamples
               ) match {
                 case Left(error) =>
-                  logger.error(s"Error during generation of test data: $error")
+                  logger.info(s"Could not generate test data: $error")
                   Future(Left(toDto(error)))
                 case Right(serializedLiveData) =>
                   Future(Right(serializedLiveData.content))

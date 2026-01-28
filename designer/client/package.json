@@ -44,6 +44,7 @@
         "jest-junit": "13.0.0",
         "jointjs": "3.7.7",
         "jsonwebtoken": "8.5.1",
+        "kbar": "0.1.0-beta.48",
         "kefir": "3.8.8",
         "lodash": "4.17.21",
         "marked": "9.1.5",
