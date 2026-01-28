@@ -1920,20 +1920,20 @@ object NodesApiEndpoints {
       sealed trait ForbiddenNodesError  extends NodesError
 
       object BadRequestNodesError {
-        case class SourceCompilation(nodeId: String, errors: List[String])   extends BadRequestNodesError
-        case class EnricherCompilation(nodeId: String, errors: List[String]) extends BadRequestNodesError
-        case class UnsupportedSourcePreview(nodeId: String)                  extends BadRequestNodesError
-        case class InvalidNodeType(expectedType: String, actualType: String) extends BadRequestNodesError
-        case class TooManyRecordsRequested(maxRecordsCount: Int)             extends BadRequestNodesError
-        case class MalformedTypingResult(msg: String)                        extends BadRequestNodesError
-        case class TooManyCharactersGenerated(length: Int, limit: Int)       extends BadRequestNodesError
+        case class SourceCompilation(nodeId: String, errors: List[String])             extends BadRequestNodesError
+        case class EnricherMockExpressionGenerationError(errors: NonEmptyList[String]) extends BadRequestNodesError
+        case class UnsupportedSourcePreview(nodeId: String)                            extends BadRequestNodesError
+        case class InvalidNodeType(expectedType: String, actualType: String)           extends BadRequestNodesError
+        case class TooManyRecordsRequested(maxRecordsCount: Int)                       extends BadRequestNodesError
+        case class MalformedTypingResult(msg: String)                                  extends BadRequestNodesError
+        case class TooManyCharactersGenerated(length: Int, limit: Int)                 extends BadRequestNodesError
 
         implicit val badRequestNodesErrorCodec: Codec[String, BadRequestNodesError, CodecFormat.TextPlain] =
           BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestNodesError] {
             case SourceCompilation(nodeId, errors) =>
               s"Cannot compile source '$nodeId'. Errors: ${errors.mkString(", ")}"
-            case EnricherCompilation(nodeId, errors) =>
-              s"Cannot compile enricher '$nodeId'. Errors: ${errors.mkString(", ")}"
+            case EnricherMockExpressionGenerationError(errors) =>
+              s"Cannot generate mock expression. Errors: ${errors.toList.mkString(", ")}"
             case UnsupportedSourcePreview(nodeId)          => s"Source '$nodeId' doesn't support records preview"
             case InvalidNodeType(expectedType, actualType) => s"Expected $expectedType but got: ${actualType}"
             case TooManyRecordsRequested(maxRecordsCount) =>

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
+import cats.data.NonEmptyList
 import cats.effect.SyncIO
 import cats.effect.kernel.Resource
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Enricher
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodesError, SampleEnricherMockResponseDto}
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.EnricherCompilation
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.EnricherMockExpressionGenerationError
 
 class EnricherMockGenerator(
     modelData: ModelData,
@@ -25,7 +26,6 @@ class EnricherMockGenerator(
       enricher: Enricher,
       jobData: JobData
   ): Either[NodesError, SampleEnricherMockResponseDto] = {
-
     engineScenarioCompilationDependenciesResource
       .use { engineScenarioCompilationDependencies =>
         SyncIO {
@@ -52,40 +52,35 @@ class EnricherMockGenerator(
       outgoingEdges = Nil
     )
 
-    if (compilationResult.errors.nonEmpty) {
-      Left(
-        EnricherCompilation(
-          enricher.id,
-          compilationResult.errors.map(e => PrettyValidationErrors.formatErrorMessage(e).message)
-        )
-      )
-    } else {
-      compilationResult.validationContext.toOption.flatMap(_.localVariables.get(enricher.output)) match {
-        case Some(typingResult) =>
-          SpelExpressionSampleGenerator.generateSampleExpression(typingResult) match {
-            case Some(sampleExpressionString) =>
-              Right(
-                SampleEnricherMockResponseDto(
-                  enricherMockSampleExpression = Expression.spel(sampleExpressionString)
-                )
-              )
-            case None =>
-              Left(
-                EnricherCompilation(
-                  enricher.id,
-                  List(s"Cannot generate sample expression for type: ${typingResult.display}")
-                )
-              )
-          }
-        case None =>
-          Left(
-            EnricherCompilation(
-              enricher.id,
-              List(s"Output variable '${enricher.output}' not found in enricher output")
-            )
-          )
+    compilationResult.validationContext
+      .leftMap { errors =>
+        EnricherMockExpressionGenerationError(errors.map(e => PrettyValidationErrors.formatErrorMessage(e).message))
       }
-    }
+      .toEither
+      .flatMap { validationContext =>
+        val outputVariableType = validationContext.localVariables.get(enricher.output)
+        outputVariableType.toRight(
+          EnricherMockExpressionGenerationError(
+            NonEmptyList.one(s"Output variable '${enricher.output}' not found in enricher output")
+          )
+        )
+      }
+      .flatMap { typingResult =>
+        SpelExpressionSampleGenerator.generateSampleExpression(typingResult) match {
+          case Some(sampleExpressionString) =>
+            Right(
+              SampleEnricherMockResponseDto(
+                enricherMockSampleExpression = Expression.spel(sampleExpressionString)
+              )
+            )
+          case None =>
+            Left(
+              EnricherMockExpressionGenerationError(
+                NonEmptyList.one(s"Cannot generate sample expression for type: ${typingResult.display}")
+              )
+            )
+        }
+      }
   }
 
 }

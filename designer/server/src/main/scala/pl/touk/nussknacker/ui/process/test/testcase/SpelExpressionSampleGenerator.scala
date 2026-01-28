@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.util.ReflectUtils.JavaEnumConstants
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaListMap
 
-object SpelExpressionSampleGenerator {
+private object SpelExpressionSampleGenerator {
 
   def generateSampleExpression(typ: TypingResult): Option[String] = typ match {
     case TypedObjectTypingResult(fields, _, _) =>
