@@ -5,7 +5,6 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.all._
 import enumeratum.{Enum, EnumEntry}
 import enumeratum.EnumEntry.LowerCamelcase
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle.details
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
