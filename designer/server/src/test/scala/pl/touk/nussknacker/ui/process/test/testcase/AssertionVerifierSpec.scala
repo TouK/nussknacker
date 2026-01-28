@@ -173,6 +173,8 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     forAll(
       Table(
         ("expected expression", "actual expression", "expected assertion result"),
+        ("", "", SuccessfulAssertion),
+        ("  ", "    ", SuccessfulAssertion),
         ("", "#contexts[0].someBigDecimal", SuccessfulAssertion),
         ("   ", "#contexts[0].someBigDecimal", SuccessfulAssertion),
         ("{a: 1}", "  ", SuccessfulAssertion),
