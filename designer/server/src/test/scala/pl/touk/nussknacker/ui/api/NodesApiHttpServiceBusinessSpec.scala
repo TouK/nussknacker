@@ -1764,6 +1764,50 @@ class NodesApiHttpServiceBusinessSpec
     }
   }
 
+  "The endpoint for test case enricher mock generation should" - {
+    "generate mock expression for enricher with simple record output" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(
+          s"""{
+             |  "variableTypes": {
+             |    "input": {
+             |      "display": "String",
+             |      "type": "TypedClass",
+             |      "refClazzName": "java.lang.String",
+             |      "params": []
+             |    }
+             |  },
+             |  "enricher": {
+             |    "id": "enricherId",
+             |    "service": {
+             |      "id": "unionReturnObjectService",
+             |      "parameters": []
+             |    },
+             |    "output": "enricherOutput",
+             |    "additionalFields": null,
+             |    "type": "Enricher"
+             |  }
+             |}""".stripMargin
+        )
+        .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/testCase/enricherMock")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(
+          s"""{
+             |  "enricherMockExpression": {
+             |    "language": "spel",
+             |    "expression": "{foo: 42}"
+             |  }
+             |}""".stripMargin
+        )
+    }
+  }
+
   private lazy val exampleScenario = ScenarioBuilder
     .streaming("test")
     .source("sourceId", "barSource")
