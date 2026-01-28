@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.all._
 import enumeratum.{Enum, EnumEntry}
@@ -24,7 +24,8 @@ import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.{
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionValidationError.AssertionConfiguredForNotExistingNodesError
 import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.{
   CompiledExpressionAssertion,
-  CompiledPredicateAssertion
+  CompiledPredicateAssertion,
+  EmptyCompiledAssertion
 }
 
 class AssertionsCompiler(
@@ -115,19 +116,25 @@ class AssertionsCompiler(
   private def compilePredicateAssertion(
       context: ValidationContext,
       assertion: PredicateAssertion
-  )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, CompiledPredicateAssertion] = {
+  )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, CompiledAssertion] = {
     val expectedCompiled = compileExpectedExpression(context, assertion)
     val actualCompiled   = compileActualExpression(context, assertion)
     (expectedCompiled, actualCompiled).tupled.andThen { case (expectedExpression, actualExpression) =>
-      compileComparisonExpression(context, assertion)
-        .map { comparisonExpression =>
-          CompiledPredicateAssertion(
-            operator = assertion.operator,
-            expectedExpression = expectedExpression.expression,
-            actualExpression = actualExpression.expression,
-            comparisonExpression = comparisonExpression.expression
-          )
-        }
+      val emptyAssertion =
+        expectedExpression.expression.original.isBlank || actualExpression.expression.original.isBlank
+      if (emptyAssertion) {
+        EmptyCompiledAssertion.validNel
+      } else {
+        compileComparisonExpression(context, assertion)
+          .map { comparisonExpression =>
+            CompiledPredicateAssertion(
+              operator = assertion.operator,
+              expectedExpression = expectedExpression.expression,
+              actualExpression = actualExpression.expression,
+              comparisonExpression = comparisonExpression.expression
+            )
+          }
+      }
     }
   }
 

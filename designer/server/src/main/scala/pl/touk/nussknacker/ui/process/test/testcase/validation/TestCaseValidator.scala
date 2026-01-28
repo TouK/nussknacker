@@ -74,12 +74,12 @@ class TestCaseValidator(
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): Either[NodeTestCaseValidationErrors, Unit] = {
-    val enricherMockErrors = enricherMockValidator.validate(
+    val enricherMockErrors = enricherMockValidator.validateForNode(
       nodeData,
       nodeTestCase.enricherMock,
       nodeTyping
     )
-    val assertionsErrors = assertionValidator.validate(
+    val assertionsErrors = assertionValidator.validateForNode(
       nodeTestCase.assertions,
       nodeTyping.inputVariables,
       scenarioCompilationDependencies.jobData

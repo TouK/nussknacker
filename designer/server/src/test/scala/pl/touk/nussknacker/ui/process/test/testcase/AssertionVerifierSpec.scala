@@ -169,6 +169,32 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     }
   }
 
+  test("should not evaluate empty assertions") {
+    forAll(
+      Table(
+        ("expected expression", "actual expression", "expected assertion result"),
+        ("", "#contexts[0].someBigDecimal", SuccessfulAssertion),
+        ("   ", "#contexts[0].someBigDecimal", SuccessfulAssertion),
+        ("{a: 1}", "  ", SuccessfulAssertion),
+      )
+    ) { (expectedExpression, actualExpression, expectedResult) =>
+      val testCase = prepareTestCase(
+        List(
+          PredicateAssertion(AssertionOperator.Equals, expectedExpression.spel, actualExpression.spel),
+        )
+      )
+      val nodesResultsAfterTestRun = prepareNodeResults(
+        List(
+          Map("someBigDecimal" -> new java.math.BigDecimal("1.0"))
+        )
+      )
+
+      val results = verifyForTestCase(testCase, nodesResultsAfterTestRun)
+
+      results shouldBe List(expectedResult)
+    }
+  }
+
   private def verifyForTestCase(
       testCase: TestCase,
       nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]]
