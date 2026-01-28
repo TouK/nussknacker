@@ -46,6 +46,21 @@ describe("Test cases", () => {
         fillAssertion(4, "10", "#wrongActual");
         checkAssertionErrorVisible(4, "actual", "Unresolved reference 'wrongActual'");
     });
+
+    it("should verify test case errors in a diagram", () => {
+        cy.visitNewProcess(seed, "testCases", "Category2");
+        cy.toggleUserFlag("node.showTestingTab", true);
+        cy.toggleUserFlag("node.showMockFieldOnEnrichers", true);
+        cy.layoutScenario();
+
+        cy.openNodeWindow("Enricher");
+        openTestingTab();
+        addEmptyAssertion();
+        fillAssertion(0, "10", "#wrongActual");
+        cy.applyNodeChanges();
+
+        cy.get("body").matchImage();
+    });
 });
 
 const openTestingTab = () => {
