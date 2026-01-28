@@ -31,8 +31,8 @@ class BatchDataGenerationSpec
   private val designerServiceUrl               = "http://localhost:8080"
 
   override def beforeAll(): Unit = {
-    createEmptyBatchScenario(scenarioName)
     super.beforeAll()
+    createEmptyBatchScenario(scenarioName)
   }
 
   "Generate file endpoint for scenario with table source should generate" - {

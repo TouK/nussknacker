@@ -3,13 +3,14 @@ package pl.touk.nussknacker.test.installationexample
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.effect.unsafe.implicits.global
-import com.dimafeng.testcontainers.{DockerComposeContainer, ServiceLogConsumer, WaitingForService}
+import com.dimafeng.testcontainers.{DockerComposeContainer, ServiceLogConsumer, Services, WaitingForService}
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.model.Container
 import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.Logger
 import org.slf4j.MarkerFactory.getIMarkerFactory
 import org.testcontainers.DockerClientFactory
+import org.testcontainers.containers.ComposeContainer
 import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.DockerHealthcheckWaitStrategy
 import org.testcontainers.utility.LogUtils
@@ -27,6 +28,9 @@ import java.util
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
+/**
+ * Note: Docker startup happens in constructor, watch out for that
+ */
 class DockerBasedInstallationExampleNuEnvironment(
     nussknackerImageVersion: String,
     dockerComposeTweakFiles: Iterable[JFile]
@@ -49,9 +53,14 @@ class DockerBasedInstallationExampleNuEnvironment(
           new DockerHealthcheckWaitStrategy().withStartupTimeout(Duration.ofSeconds(300))
         )
       ),
+      services = Services.All,
       // Change to 'true' to enable logging
       tailChildContainers = false
     ) {
+
+  slf4jLogger.info(
+    s"Starting ${getClass.getName} from:\n${Thread.currentThread().getStackTrace.toList.mkString("\n")}"
+  )
 
   Try(start()) match {
     case Failure(ex) =>
