@@ -1,18 +1,26 @@
 ui:
-- 'designer/client/*'
-- 'designer/client/**/*'
-- 'designer/submodules/*'
-- 'designer/submodules/**/*'
+- changed-files:
+  - any-glob-to-any-file:
+    - 'designer/client/*'
+    - 'designer/client/**/*'
+    - 'designer/submodules/*'
+    - 'designer/submodules/**/*'
 
 client:
-- 'designer/client/*'
-- 'designer/client/**/*'
+- changed-files:
+  - any-glob-to-any-file:
+    - 'designer/client/*'
+    - 'designer/client/**/*'
 
 submodules:
-- 'designer/submodules/*'
-- 'designer/submodules/**/*'
+- changed-files:
+  - any-glob-to-any-file:
+    - 'designer/submodules/*'
+    - 'designer/submodules/**/*'
 
 docs:
-- '**/*.md'
-- 'docs/*'
-- 'docs/**/*'
+- changed-files:
+  - any-glob-to-any-file:
+    - '**/*.md'
+    - 'docs/*'
+    - 'docs/**/*'
