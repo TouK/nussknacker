@@ -38,7 +38,7 @@ jobs:
       nk_snapshot_version: ${{ steps.variables.outputs.nk_snapshot_version }}
       scala_version_matrix: ${{ steps.variables.outputs.scala_version_matrix }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 100
       - uses: dorny/paths-filter@v2
@@ -79,10 +79,10 @@ jobs:
     steps:
       - name: Cancel previous runs
         if: ${{ env.shouldPerformBackendBuild == 'true' && github.event_name != 'push' }}
-        uses: styfle/cancel-workflow-action@0.11.0
+        uses: styfle/cancel-workflow-action@0.13.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
       - uses: coursier/setup-action@v1
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
@@ -91,7 +91,7 @@ jobs:
       - uses: sbt/setup-sbt@v1
       - name: Cache ivy packages
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             ~/.ivy2/cache
@@ -109,7 +109,7 @@ jobs:
         run:  find . -wholename "**/target/**/*" -printf '%P\0' | tar --null -C '.' --files-from=- -czf 'target.tgz'
       - name: Store target
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: build-target
           path: target.tgz
@@ -123,13 +123,13 @@ jobs:
     steps:
       - name: Cancel previous runs
         if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.11.0
+        uses: styfle/cancel-workflow-action@0.13.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Cache npm
         id: cache-npm
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             **/node_modules
@@ -139,7 +139,7 @@ jobs:
         id: nvm
         run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - name: Download node modules
@@ -159,7 +159,7 @@ jobs:
         shell: bash
         run:  tar -czf 'fe-dist.tgz' designer/client/dist designer/submodules/dist
       - name: Store dist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: build-fe-dist
           path: fe-dist.tgz
@@ -179,7 +179,7 @@ jobs:
     steps:
       - name: Cancel previous runs
         if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.11.0
+        uses: styfle/cancel-workflow-action@0.13.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Try to free space
@@ -189,11 +189,11 @@ jobs:
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
           sudo rm -rf /usr/local/lib/android
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - uses: coursier/setup-action@v1
         with:
           jvm: temurin:1.17.0.5
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: build-target
       - name: Untar artifacts
@@ -201,7 +201,7 @@ jobs:
         run:  tar xfz target.tgz
       - uses: sbt/setup-sbt@v1
       - name: Cache ivy packages
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             ~/.ivy2/cache
@@ -214,7 +214,7 @@ jobs:
         run: ./ciRunSbt.sh test
       - name: Test Report
         if: success() || failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: BackendTests-results-${{ matrix.scalaVersion }}
           path: '**/test-reports/*.xml'
@@ -232,16 +232,16 @@ jobs:
     steps:
       - name: Cancel previous runs
         if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.11.0
+        uses: styfle/cancel-workflow-action@0.13.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - uses: coursier/setup-action@v1
         with:
           jvm: temurin:1.17.0.5
       - uses: sbt/setup-sbt@v1
       - name: Cache ivy packages
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             ~/.ivy2/cache
@@ -249,7 +249,7 @@ jobs:
             ~/.sbt
           key: sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: sbt
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: build-target
       - name: Untar artifacts
@@ -263,7 +263,7 @@ jobs:
         run: ./ciRunSbt.sh It/test
       - name: Test Report
         if: success() || failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: IntegrationTests-results-${{ matrix.scalaVersion }}
           path: '**/it-reports/*.xml'
@@ -281,16 +281,16 @@ jobs:
     steps:
       - name: Cancel previous runs
         if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.11.0
+        uses: styfle/cancel-workflow-action@0.13.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - uses: coursier/setup-action@v1
         with:
           jvm: temurin:1.17.0.5
       - uses: sbt/setup-sbt@v1
       - name: Cache ivy packages
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             ~/.ivy2/cache
@@ -298,7 +298,7 @@ jobs:
             ~/.sbt
           key: sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: sbt
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: build-target
       - name: Untar artifacts
@@ -332,7 +332,7 @@ jobs:
           docker logs k3d-k3s-default-serverlb
       - name: Test Report
         if: success() || failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: SlowTests-results-${{ matrix.scalaVersion }}
           path: '**/test-reports/*.xml'
@@ -347,15 +347,15 @@ jobs:
     steps:
       - name: Cancel previous runs
         if: ${{ env.shouldPerformFrontendTests == 'true' && github.event_name != 'push' }}
-        uses: styfle/cancel-workflow-action@0.11.0
+        uses: styfle/cancel-workflow-action@0.13.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
       - name: Cache npm
         id: cache-npm
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             **/node_modules
@@ -367,7 +367,7 @@ jobs:
         run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
       - name: Use Node.js ${{ matrix.node-version }}
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - name: Download node modules
@@ -380,7 +380,7 @@ jobs:
         run: (cd designer/client; npm run test:unit)
       - name: Test Report
         if: ${{ env.shouldPerformFrontendTests == 'true' && (success() || failure()) }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: FrontendTests-results
           path: designer/client/junit.xml
@@ -400,7 +400,7 @@ jobs:
     steps:
       - name: Cancel previous runs
         if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.11.0
+        uses: styfle/cancel-workflow-action@0.13.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       # On self-hosted runners, docker can have some obsolete containers. Because of that, we clean them all
@@ -409,12 +409,12 @@ jobs:
         run: |
           c=$(docker ps -q)
           [[ $c ]] && docker kill $c || echo "No container run"
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Get Node.js version
         id: nvm
         run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - uses: coursier/setup-action@v1
@@ -428,7 +428,7 @@ jobs:
           npm ci --no-audit --prefix designer/client
           npm ci --no-audit --prefix designer/submodules
           rm -rf $npm_config_cache
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
           name: build-target
@@ -436,7 +436,7 @@ jobs:
         if: ${{ env.shouldBuildImage == 'true' }}
         shell: bash
         run:  tar xfz target.tgz
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: build-fe-dist
       - name: Untar fe artifacts
@@ -483,7 +483,7 @@ jobs:
           npx start-server-and-test backend:docker ${{ env.BE_PORT }} start-prod 3000 test:e2e
       - name: Test Report
         if: success() || failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: CypressTests-results
           path: designer/client/cypress-test-results/*.xml
@@ -491,7 +491,7 @@ jobs:
         # We have to store test results also for success, because pipeline can fail on "Force fail if update PR created" stage
         # Always needed to debug canceled runs.
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: e2e-test-results
           path: |
@@ -502,7 +502,7 @@ jobs:
           if-no-files-found: ignore
       - name: Create Pull Request
         id: update_snapshots
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         if: always() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
         env:
           HASH: ${{ format('#{0}', github.event.number) }}
@@ -526,7 +526,7 @@ jobs:
           comment_tag: snapshots_pr
       - name: Force fail if update PR created
         if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-number }}
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v8
         with:
           script: |
             core.setFailed('Snapshots updated, chceck comments!')
@@ -578,14 +578,48 @@ jobs:
             workflow_id: pr.yml
             ref: staging
     steps:
-      - uses: actions/github-script@v6
+      # createWorkflowDispatch doesn't return run_id, we need to find id manually
+      # https://github.com/orgs/community/discussions/9752
+      # There are actions that can dispatch workflow and fetch id for us, but they require additional
+      # job in target repository (e.g. codex-/return-dispatch, lasith-kg/dispatch-workflow).
+      - name: Trigger external workflow
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.ORG_TRIGGER_PAT_TOKEN }}
           script: |
+            core.info("Creating workflow...");
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: '${{ matrix.repo }}',
               workflow_id: '${{ matrix.workflow_id }}',
               ref: '${{ matrix.ref }}',
               inputs: {"nussknacker_version": "${{ needs.setup.outputs.nk_snapshot_version }}"}
-            })
+            });
+
+            core.info("Fetching run id...");
+            await new Promise(r => setTimeout(r, 5000));
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: '${{ matrix.repo }}',
+              workflow_id: '${{ matrix.workflow_id }}',
+              ref: '${{ matrix.ref }}',
+              per_page: 1
+            });
+            if (!runs.data.workflow_runs.length) {
+              core.setFailed("No workflow run found");
+              return;
+            }
+
+            const runId = runs.data.workflow_runs[0].id;
+            core.info(`External workflow run ID: ${runId}`);
+            core.exportVariable("RUN_ID", runId);
+
+      - name: Wait for external workflow to finish
+        uses: Codex-/await-remote-run@a56c556e6434d2d7ec9438dc656143b39532324e # v1.13.0
+        with:
+          token: ${{ secrets.ORG_TRIGGER_PAT_TOKEN }}
+          owner: ${{ github.repository_owner }}
+          repo: ${{ matrix.repo }}
+          run_id: ${{ env.RUN_ID }}
+          run_timeout_seconds: 300
+          poll_interval_ms: 5000

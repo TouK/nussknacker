@@ -7,18 +7,14 @@ import enumeratum.{Enum, EnumEntry}
 import enumeratum.EnumEntry.LowerCamelcase
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
+import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
-import pl.touk.nussknacker.engine.test.testcase.Assertion.{
-  assertionDecoder,
-  AssertionOperator,
-  ExpressionAssertion,
-  PredicateAssertion
-}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, ExpressionAssertion, PredicateAssertion}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.{
@@ -195,7 +191,9 @@ class AssertionsCompiler(
       )
       .leftMap { errors =>
         PredicateAssertionCompilationError(
-          errors,
+          // Clear the error details, including the position of the error in the comparison expression.
+          // Since this expression is never shown to the user, highlighting part of the actual expression at the wrong position would be confusing.
+          clearErrorsDetails(errors),
           assertion,
           // If comparison expression fails to compile because of uncomparable types, we report the error on actual field.
           PredicateAssertionCompilationError.Field.Actual,
@@ -209,6 +207,17 @@ class AssertionsCompiler(
     operator match {
       case AssertionOperator.Equals    => "=="
       case AssertionOperator.NotEquals => "!="
+    }
+  }
+
+  private def clearErrorsDetails(
+      errors: NonEmptyList[ProcessCompilationError]
+  ): NonEmptyList[ProcessCompilationError] = {
+    errors.map {
+      case e: ExpressionParserCompilationError =>
+        e.copy(details = None)
+      case other =>
+        other
     }
   }
 
