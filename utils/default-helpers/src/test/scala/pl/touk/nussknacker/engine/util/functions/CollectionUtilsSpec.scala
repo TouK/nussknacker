@@ -564,7 +564,7 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
     evaluateAny("#COLLECTION.range(1, 7, 3)") shouldBe List(1, 4, 7).asJava
     evaluateAny("#COLLECTION.range(6, 1, 2)") shouldBe List(6, 4, 2).asJava
     evaluateAny("#COLLECTION.range(6, 1, -2)") shouldBe List(6, 4, 2).asJava
-    evaluateAny("#COLLECTION.range(6, -1, -2)") shouldBe List(6, 4, 2, 0, -2).asJava
+    evaluateAny("#COLLECTION.range(6, -2, -2)") shouldBe List(6, 4, 2, 0, -2).asJava
     evaluateAny("#COLLECTION.range(5, 5, 10)") shouldBe List(5).asJava
   }
 

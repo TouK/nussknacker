@@ -71,7 +71,7 @@ trait GeoUtils extends HideToString {
       @ParamName("longitude1") longitude1: Number,
       @ParamName("latitude2") latitude2: Number,
       @ParamName("longitude2") longitude2: Number
-  ): Double = {
+  ): java.lang.Double = {
     import scala.math._
 
     val lat1 = latitude1.doubleValue().toRadians

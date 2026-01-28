@@ -137,7 +137,10 @@ trait CollectionUtils extends HideToString {
   }
 
   @Documentation(description = "Returns a list of integers from [a to b] (inclusive)")
-  def range(@ParamName("a") a: java.lang.Integer, @ParamName("b") b: java.lang.Integer): java.util.List[Int] =
+  def range(
+      @ParamName("a") a: java.lang.Integer,
+      @ParamName("b") b: java.lang.Integer
+  ): java.util.List[java.lang.Integer] =
     range(a, b, 1)
 
   @Documentation(description = "Returns a list of integers from [a to b] (inclusive) with given step")
@@ -145,7 +148,7 @@ trait CollectionUtils extends HideToString {
       @ParamName("a") a: java.lang.Integer,
       @ParamName("b") b: java.lang.Integer,
       @ParamName("step") step: java.lang.Integer
-  ): java.util.List[Int] = {
+  ): java.util.List[java.lang.Integer] = {
     val s = step.intValue()
     if (s == 0) {
       throw new IllegalArgumentException("Step cannot be 0")
@@ -154,7 +157,7 @@ trait CollectionUtils extends HideToString {
     val end           = b.intValue()
     val effectiveStep = if (start <= end) math.abs(s) else -math.abs(s)
     val scalaRange    = start to end by effectiveStep
-    scalaRange.toList.asJava
+    scalaRange.map(Int.box).toList.asJava
   }
 
   @Documentation(description =
