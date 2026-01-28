@@ -112,6 +112,45 @@ trait NumericUtils extends MathUtils with HideToString {
   )
   def ceil(@ParamName("a") a: Double): Double = Math.ceil(a)
 
+  @Documentation(description = "Sine of a value (argument in radians).")
+  def sin(@ParamName("a") a: Number): Double = Math.sin(a.doubleValue())
+
+  @Documentation(description = "Cosine of a value (argument in radians).")
+  def cos(@ParamName("a") a: Number): Double = Math.cos(a.doubleValue())
+
+  @Documentation(description = "Tangent of a value (argument in radians).")
+  def tan(@ParamName("a") a: Number): Double = Math.tan(a.doubleValue())
+
+  @Documentation(description = "Arc sine (result in radians).")
+  def asin(@ParamName("a") a: Number): Double = Math.asin(a.doubleValue())
+
+  @Documentation(description = "Arc cosine (result in radians).")
+  def acos(@ParamName("a") a: Number): Double = Math.acos(a.doubleValue())
+
+  @Documentation(description = "Arc tangent (result in radians).")
+  def atan(@ParamName("a") a: Number): Double = Math.atan(a.doubleValue())
+
+  @Documentation(description = "Square root.")
+  def sqrt(@ParamName("a") a: Number): Double = Math.sqrt(a.doubleValue())
+
+  @Documentation(description = "Cubic root.")
+  def cbrt(@ParamName("a") a: Number): Double = Math.cbrt(a.doubleValue())
+
+  @Documentation(description = "Exponential function e^a.")
+  def exp(@ParamName("a") a: Number): Double = Math.exp(a.doubleValue())
+
+  @Documentation(description = "Natural logarithm (base e).")
+  def log(@ParamName("a") a: Number): Double = Math.log(a.doubleValue())
+
+  @Documentation(description = "Base-10 logarithm.")
+  def log10(@ParamName("a") a: Number): Double = Math.log10(a.doubleValue())
+
+  @Documentation(description = "Converts degrees to radians.")
+  def toRadians(@ParamName("a") a: Number): Double = Math.toRadians(a.doubleValue())
+
+  @Documentation(description = "Converts radians to degrees.")
+  def toDegrees(@ParamName("a") a: Number): Double = Math.toDegrees(a.doubleValue())
+
 }
 
 object NumericUtils {
