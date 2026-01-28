@@ -24,7 +24,7 @@ private class EnricherMockValidator(
 
   import EnricherMockValidator._
 
-  def validate(
+  def validateForNode(
       nodeData: NodeData,
       enricherMock: Option[EnricherMock],
       nodeTyping: NodeTyping,

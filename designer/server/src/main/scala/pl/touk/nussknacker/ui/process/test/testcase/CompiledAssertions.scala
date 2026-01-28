@@ -19,4 +19,5 @@ object CompiledAssertion {
       comparisonExpression: CompiledExpression
   ) extends CompiledAssertion
 
+  case object EmptyCompiledAssertion extends CompiledAssertion
 }

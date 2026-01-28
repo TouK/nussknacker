@@ -14,20 +14,16 @@ private class AssertionValidator(
     assertionsCompiler: AssertionsCompiler
 ) {
 
-  def validate(
+  def validateForNode(
       assertions: List[Assertion],
       inputVariableTypes: Map[String, TypingResult],
       jobData: JobData
   )(implicit nodeId: NodeId): Option[Map[AssertionIndex, NonEmptyList[AssertionValidationError]]] = {
-    if (assertions.isEmpty) {
-      None
-    } else {
-      val compilationResults = assertionsCompiler.compileForNode(assertions, inputVariableTypes, jobData)
-      val errorsMap = compilationResults.zipWithIndex.collect { case (Invalid(errors), index) =>
-        index -> convertToAssertionErrors(errors)
-      }.toMap
-      Some(errorsMap).filter(_.nonEmpty)
-    }
+    val compilationResults = assertionsCompiler.compileForNode(assertions, inputVariableTypes, jobData)
+    val errorsMap = compilationResults.zipWithIndex.collect { case (Invalid(errors), index) =>
+      index -> convertToAssertionErrors(errors)
+    }.toMap
+    Some(errorsMap).filter(_.nonEmpty)
   }
 
   private def convertToAssertionErrors(
