@@ -578,14 +578,48 @@ jobs:
             workflow_id: pr.yml
             ref: staging
     steps:
-      - uses: actions/github-script@v6
+      # createWorkflowDispatch doesn't return run_id, we need to find id manually
+      # https://github.com/orgs/community/discussions/9752
+      # There are actions that can dispatch workflow and fetch id for us, but they require additional
+      # job in target repository (e.g. codex-/return-dispatch, lasith-kg/dispatch-workflow).
+      - name: Trigger external workflow
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.ORG_TRIGGER_PAT_TOKEN }}
           script: |
+            core.info("Creating workflow...");
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: '${{ matrix.repo }}',
               workflow_id: '${{ matrix.workflow_id }}',
               ref: '${{ matrix.ref }}',
               inputs: {"nussknacker_version": "${{ needs.setup.outputs.nk_snapshot_version }}"}
-            })
+            });
+
+            core.info("Fetching run id...");
+            await new Promise(r => setTimeout(r, 5000));
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: '${{ matrix.repo }}',
+              workflow_id: '${{ matrix.workflow_id }}',
+              ref: '${{ matrix.ref }}',
+              per_page: 1
+            });
+            if (!runs.data.workflow_runs.length) {
+              core.setFailed("No workflow run found");
+              return;
+            }
+
+            const runId = runs.data.workflow_runs[0].id;
+            core.info(`External workflow run ID: ${runId}`);
+            core.exportVariable("RUN_ID", runId);
+
+      - name: Wait for external workflow to finish
+        uses: Codex-/await-remote-run@a56c556e6434d2d7ec9438dc656143b39532324e # v1.13.0
+        with:
+          token: ${{ secrets.ORG_TRIGGER_PAT_TOKEN }}
+          owner: ${{ github.repository_owner }}
+          repo: ${{ matrix.repo }}
+          run_id: ${{ env.RUN_ID }}
+          run_timeout_seconds: 300
+          poll_interval_ms: 5000
