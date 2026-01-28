@@ -18,12 +18,13 @@ class EnricherMockGenerator(
     engineScenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies]
 ) {
 
+  private val nodeCompiler = NodeCompiler.forValidation(modelData)
+
   def generateSampleExpression(
       inputVariableTypes: Map[String, TypingResult],
       enricher: Enricher,
       jobData: JobData
   ): Either[NodesError, SampleEnricherMockResponseDto] = {
-    val nodeCompiler = NodeCompiler.forValidation(modelData)
 
     engineScenarioCompilationDependenciesResource
       .use { engineScenarioCompilationDependencies =>
@@ -31,50 +32,60 @@ class EnricherMockGenerator(
           implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
             new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
 
-          val compilationResult = nodeCompiler.compileNode[Enricher](
-            nodeData = enricher,
-            variableTypes = inputVariableTypes,
-            branchVariableTypes = None,
-            outgoingEdges = Nil
-          )
-
-          if (compilationResult.errors.nonEmpty) {
-            Left(
-              EnricherCompilation(
-                enricher.id,
-                compilationResult.errors.map(e => PrettyValidationErrors.formatErrorMessage(e).message)
-              )
-            )
-          } else {
-            compilationResult.validationContext.toOption.flatMap(_.localVariables.get(enricher.output)) match {
-              case Some(typingResult) =>
-                SpelExpressionSampleGenerator.generateSampleExpression(typingResult) match {
-                  case Some(sampleExpressionString) =>
-                    Right(
-                      SampleEnricherMockResponseDto(
-                        enricherMockSampleExpression = Expression.spel(sampleExpressionString)
-                      )
-                    )
-                  case None =>
-                    Left(
-                      EnricherCompilation(
-                        enricher.id,
-                        List(s"Cannot generate sample expression for type: ${typingResult.display}")
-                      )
-                    )
-                }
-              case None =>
-                Left(
-                  EnricherCompilation(
-                    enricher.id,
-                    List(s"Output variable '${enricher.output}' not found in enricher output")
-                  )
-                )
-            }
-          }
+          generateSampleExpression(inputVariableTypes, enricher, nodeCompiler)
         }
       }
       .unsafeRunSync()
+  }
+
+  private def generateSampleExpression(
+      inputVariableTypes: Map[String, TypingResult],
+      enricher: Enricher,
+      nodeCompiler: NodeCompiler
+  )(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): Either[NodesError, SampleEnricherMockResponseDto] = {
+    val compilationResult = nodeCompiler.compileNode[Enricher](
+      nodeData = enricher,
+      variableTypes = inputVariableTypes,
+      branchVariableTypes = None,
+      outgoingEdges = Nil
+    )
+
+    if (compilationResult.errors.nonEmpty) {
+      Left(
+        EnricherCompilation(
+          enricher.id,
+          compilationResult.errors.map(e => PrettyValidationErrors.formatErrorMessage(e).message)
+        )
+      )
+    } else {
+      compilationResult.validationContext.toOption.flatMap(_.localVariables.get(enricher.output)) match {
+        case Some(typingResult) =>
+          SpelExpressionSampleGenerator.generateSampleExpression(typingResult) match {
+            case Some(sampleExpressionString) =>
+              Right(
+                SampleEnricherMockResponseDto(
+                  enricherMockSampleExpression = Expression.spel(sampleExpressionString)
+                )
+              )
+            case None =>
+              Left(
+                EnricherCompilation(
+                  enricher.id,
+                  List(s"Cannot generate sample expression for type: ${typingResult.display}")
+                )
+              )
+          }
+        case None =>
+          Left(
+            EnricherCompilation(
+              enricher.id,
+              List(s"Output variable '${enricher.output}' not found in enricher output")
+            )
+          )
+      }
+    }
   }
 
 }

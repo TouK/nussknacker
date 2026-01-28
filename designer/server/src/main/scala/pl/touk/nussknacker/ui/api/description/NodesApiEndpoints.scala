@@ -1772,15 +1772,12 @@ object NodesApiEndpoints {
         deriveEncoder[SampleEnricherMockRequestDto]
       implicit lazy val sampleEnricherMockRequestDtoDecoder: Decoder[SampleEnricherMockRequestDto] =
         deriveDecoder[SampleEnricherMockRequestDto]
-      // Schema needs to be defined outside companion object to access enricherSchema
-    }
 
-    implicit lazy val sampleEnricherMockRequestDtoSchema: Schema[SampleEnricherMockRequestDto] = {
-      import sttp.tapir.generic.Configuration
-      import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.SampleEnricherMockRequestDto._
-      import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas._
-      implicit val tapirConfiguration: Configuration = Configuration.default
-      Schema.derived[SampleEnricherMockRequestDto]
+      implicit lazy val sampleEnricherMockRequestDtoSchema: Schema[SampleEnricherMockRequestDto] = {
+        import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas._
+        Schema.derived[SampleEnricherMockRequestDto]
+      }
+
     }
 
     @derive(schema, encoder, decoder)
