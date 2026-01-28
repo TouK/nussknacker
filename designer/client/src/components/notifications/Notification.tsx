@@ -20,7 +20,7 @@ export default function Notification({ icon, message, details, type }: Props): R
 
     const alertContent = (
         <Alert icon={icon} severity={type} action={<CloseIcon sx={{ fontSize: 12 }} />}>
-            {message}
+            <Typography variant={"body2"}>{message}</Typography>
             {details && (
                 <>
                     <Button
