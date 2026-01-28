@@ -11,15 +11,10 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.Expression
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
+import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
-import pl.touk.nussknacker.engine.test.testcase.Assertion.{
-  assertionDecoder,
-  AssertionOperator,
-  ExpressionAssertion,
-  PredicateAssertion
-}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, ExpressionAssertion, PredicateAssertion}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.{
