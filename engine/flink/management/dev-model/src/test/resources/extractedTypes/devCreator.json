@@ -17585,6 +17585,51 @@
           }
         }
       ],
+      "range": [
+        {
+          "description": "Returns a list of integers from [a to b] (inclusive)",
+          "name": "range",
+          "signature": {
+            "noVarArgs": [
+              {"name": "a", "refClazz": {"refClazzName": "java.lang.Integer"}},
+              {"name": "b", "refClazz": {"refClazzName": "java.lang.Integer"}}
+            ],
+            "result": {
+              "params": [
+                {
+                  "display": "Integer",
+                  "params": [],
+                  "refClazzName": "java.lang.Integer",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "java.util.List"
+            }
+          }
+        },
+        {
+          "description": "Returns a list of integers from [a to b] (inclusive) with given step",
+          "name": "range",
+          "signature": {
+            "noVarArgs": [
+              {"name": "a", "refClazz": {"refClazzName": "java.lang.Integer"}},
+              {"name": "b", "refClazz": {"refClazzName": "java.lang.Integer"}},
+              {"name": "step", "refClazz": {"refClazzName": "java.lang.Integer"}}
+            ],
+            "result": {
+              "params": [
+                {
+                  "display": "Integer",
+                  "params": [],
+                  "refClazzName": "java.lang.Integer",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "java.util.List"
+            }
+          }
+        }
+      ],
       "reverse": [
         {
           "description": "Returns a list that contains elements in reversed order from the given list",
@@ -18744,6 +18789,48 @@
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.geo$"},
     "methods": {
+      "azimuth": [
+        {
+          "description": "Calculate initial bearing (azimuth) in degrees from the first point to the second point. Result in range [0, 360).",
+          "name": "azimuth",
+          "signature": {
+            "noVarArgs": [
+              {"name": "latitude1", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "longitude1", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "latitude2", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "longitude2", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "closestPointOnLine": [
+        {
+          "description": "Calculate the closest point on the line segment AB to point C. Returns [latitude, longitude].",
+          "name": "closestPointOnLine",
+          "signature": {
+            "noVarArgs": [
+              {"name": "lineStartLat", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "lineStartLon", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "lineEndLat", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "lineEndLon", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "pointLat", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "pointLon", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {
+              "params": [
+                {
+                  "display": "Double",
+                  "params": [],
+                  "refClazzName": "java.lang.Double",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "java.util.List"
+            }
+          }
+        }
+      ],
       "distanceInKm": [
         {
           "description": "Calculate distance in kilometers between two points (with decimal coordinates), using the Haversine formula",
@@ -18756,6 +18843,31 @@
               {"name": "longitude2", "refClazz": {"refClazzName": "java.lang.Number"}}
             ],
             "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "midpoint": [
+        {
+          "description": "Calculate geographic midpoint between two points on Earth. Returns [latitude, longitude].",
+          "name": "midpoint",
+          "signature": {
+            "noVarArgs": [
+              {"name": "latitude1", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "longitude1", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "latitude2", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "longitude2", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {
+              "params": [
+                {
+                  "display": "Double",
+                  "params": [],
+                  "refClazzName": "java.lang.Double",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "java.util.List"
+            }
           }
         }
       ]
@@ -18779,6 +18891,54 @@
           ]
         }
       ],
+      "acos": [
+        {
+          "description": "Arc cosine (result in radians).",
+          "name": "acos",
+          "signature": {
+            "noVarArgs": [
+              {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "asin": [
+        {
+          "description": "Arc sine (result in radians).",
+          "name": "asin",
+          "signature": {
+            "noVarArgs": [
+              {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "atan": [
+        {
+          "description": "Arc tangent (result in radians).",
+          "name": "atan",
+          "signature": {
+            "noVarArgs": [
+              {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "cbrt": [
+        {
+          "description": "Cubic root.",
+          "name": "cbrt",
+          "signature": {
+            "noVarArgs": [
+              {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
       "ceil": [
         {
           "description": "Returns the smallest (closest to negative infinity) double value that is greater than or equal to the argument and is equal to a mathematical integer.",
@@ -18786,6 +18946,18 @@
           "signature": {
             "noVarArgs": [
               {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "cos": [
+        {
+          "description": "Cosine of a value (argument in radians).",
+          "name": "cos",
+          "signature": {
+            "noVarArgs": [
+              {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}}
             ],
             "result": {"refClazzName": "java.lang.Double"}
           }
@@ -18814,6 +18986,18 @@
               {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
             ],
             "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "exp": [
+        {
+          "description": "Exponential function e^a.",
+          "name": "exp",
+          "signature": {
+            "noVarArgs": [
+              {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
           }
         }
       ],
@@ -18888,6 +19072,30 @@
               {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
             ],
             "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "log": [
+        {
+          "description": "Natural logarithm (base e).",
+          "name": "log",
+          "signature": {
+            "noVarArgs": [
+              {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "log10": [
+        {
+          "description": "Base-10 logarithm.",
+          "name": "log10",
+          "signature": {
+            "noVarArgs": [
+              {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
           }
         }
       ],
@@ -19025,6 +19233,30 @@
           }
         }
       ],
+      "sin": [
+        {
+          "description": "Sine of a value (argument in radians).",
+          "name": "sin",
+          "signature": {
+            "noVarArgs": [
+              {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "sqrt": [
+        {
+          "description": "Square root.",
+          "name": "sqrt",
+          "signature": {
+            "noVarArgs": [
+              {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
       "sum": [
         {
           "name": "sum",
@@ -19037,6 +19269,30 @@
               "result": {"refClazzName": "java.lang.Number"}
             }
           ]
+        }
+      ],
+      "tan": [
+        {
+          "description": "Tangent of a value (argument in radians).",
+          "name": "tan",
+          "signature": {
+            "noVarArgs": [
+              {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toDegrees": [
+        {
+          "description": "Converts radians to degrees.",
+          "name": "toDegrees",
+          "signature": {
+            "noVarArgs": [
+              {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
         }
       ],
       "toNumber": [
@@ -19070,6 +19326,18 @@
               "result": {"refClazzName": "java.lang.Number"}
             }
           ]
+        }
+      ],
+      "toRadians": [
+        {
+          "description": "Converts degrees to radians.",
+          "name": "toRadians",
+          "signature": {
+            "noVarArgs": [
+              {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
         }
       ]
     },
