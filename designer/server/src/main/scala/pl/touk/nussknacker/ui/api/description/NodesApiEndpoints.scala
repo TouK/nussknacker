@@ -874,6 +874,10 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       )
       .errorOut(
         oneOf[NodesError](
+          oneOfVariant[BadRequestNodesError](
+            BadRequest,
+            plainBody[BadRequestNodesError]
+          ),
           scenarioNotFoundErrorOutput,
           malformedTypingResultErrorOutput
         )

@@ -1806,6 +1806,49 @@ class NodesApiHttpServiceBusinessSpec
              |}""".stripMargin
         )
     }
+
+    "return 400 when enricher returns unsupported type" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(
+          s"""{
+             |  "variableTypes": {
+             |    "input": {
+             |      "display": "String",
+             |      "type": "TypedClass",
+             |      "refClazzName": "java.lang.String",
+             |      "params": []
+             |    }
+             |  },
+             |  "enricher": {
+             |    "id": "enricherId",
+             |    "service": {
+             |      "id": "clientHttpService",
+             |      "parameters": [
+             |        {
+             |          "name": "id",
+             |          "expression": {
+             |            "language": "spel",
+             |            "expression": "'client-123'"
+             |          }
+             |        }
+             |      ]
+             |    },
+             |    "output": "clientOutput",
+             |    "additionalFields": null,
+             |    "type": "Enricher"
+             |  }
+             |}""".stripMargin
+        )
+        .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/testCase/enricherMock")
+        .Then()
+        .statusCode(400)
+        .body(equalTo("Cannot generate mock expression. Errors: Cannot generate sample expression for type: Client"))
+    }
   }
 
   private lazy val exampleScenario = ScenarioBuilder
