@@ -136,6 +136,27 @@ trait CollectionUtils extends HideToString {
     values
   }
 
+  @Documentation(description = "Returns a list of integers from [a to b] (inclusive)")
+  def range(@ParamName("a") a: java.lang.Integer, @ParamName("b") b: java.lang.Integer): java.util.List[Int] =
+    range(a, b, 1)
+
+  @Documentation(description = "Returns a list of integers from [a to b] (inclusive) with given step")
+  def range(
+      @ParamName("a") a: java.lang.Integer,
+      @ParamName("b") b: java.lang.Integer,
+      @ParamName("step") step: java.lang.Integer
+  ): java.util.List[Int] = {
+    val s = step.intValue()
+    if (s == 0) {
+      throw new IllegalArgumentException("Step cannot be 0")
+    }
+    val start         = a.intValue()
+    val end           = b.intValue()
+    val effectiveStep = if (start <= end) math.abs(s) else -math.abs(s)
+    val scalaRange    = start to end by effectiveStep
+    scalaRange.toList.asJava
+  }
+
   @Documentation(description =
     "Returns a list of all elements sorted by record field in ascending order (elements must be comparable)"
   )
