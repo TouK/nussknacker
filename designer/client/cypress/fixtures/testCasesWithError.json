@@ -60,13 +60,42 @@
                 ]
             },
             "additionalFields": {
-                "description": null,
+                "description": "",
                 "layoutData": {
                     "x": -155,
                     "y": -221
                 }
             },
             "type": "Source"
+        },
+        {
+            "id": "Previous Value",
+            "outputVar": "outputVar",
+            "nodeType": "previousValue",
+            "parameters": [
+                {
+                    "name": "Key",
+                    "expression": {
+                        "language": "spel",
+                        "expression": ""
+                    }
+                },
+                {
+                    "name": "Value",
+                    "expression": {
+                        "language": "spel",
+                        "expression": ""
+                    }
+                }
+            ],
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": -82,
+                    "y": -141
+                }
+            },
+            "type": "CustomNode"
         },
         {
             "id": "Enricher",
