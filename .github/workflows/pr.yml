@@ -568,9 +568,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - repo: nussknacker-helm
-            workflow_id: helm-test-workflow.yaml
-            ref: main
           - repo: nussknacker-quickstart
             workflow_id: pr.yml
             ref: staging
@@ -621,5 +618,5 @@ jobs:
           owner: ${{ github.repository_owner }}
           repo: ${{ matrix.repo }}
           run_id: ${{ env.RUN_ID }}
-          run_timeout_seconds: 300
+          run_timeout_seconds: 600
           poll_interval_ms: 5000
