@@ -2,20 +2,24 @@ package pl.touk.nussknacker.k8s.manager
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.Done
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Framing, Sink, Source}
+import org.apache.pekko.util.ByteString
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.test.{AvailablePortFinder, ExtremelyPatientScalaFutures, ProcessUtils}
-import skuber.{ConfigMap, Container, ObjectMeta, ObjectResource, Pod, Service, Volume}
-import skuber.Pod.Phase
+import pl.touk.nussknacker.test.{AvailablePortFinder, ExtremelyPatientScalaFutures}
+import skuber.{ConfigMap, Container, Event, ListResource, ObjectMeta, ObjectResource, Pod, Service, Volume}
+import skuber.Pod.{LogQueryParams, Phase}
 import skuber.api.client.KubernetesClient
+import skuber.apps.v1.Deployment
 import skuber.json.format._
+import skuber.networking.v1.Ingress
 
-import java.io.File
-import java.net.Socket
 import scala.collection.mutable
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.util.{Try, Using}
 
 class K8sTestUtils(k8s: KubernetesClient)
     extends K8sUtils(k8s)
@@ -71,18 +75,9 @@ class K8sTestUtils(k8s: KubernetesClient)
 
   def withPortForwarded(obj: ObjectResource, remotePort: Int)(action: Int => Unit): Unit = {
     ensureRunningStatus(obj)
-    val localPort = AvailablePortFinder.findAvailablePorts(1).head
-    val portForwardProcess =
-      new ProcessBuilder("kubectl", "port-forward", s"${fixedKind(obj)}/${obj.name}", s"$localPort:$remotePort")
-        .directory(new File("/tmp"))
-        .start()
 
-    ProcessUtils.destroyProcessEventually(portForwardProcess) {
-      val processExitFuture = ProcessUtils.attachLoggingAndReturnWaitingFuture(portForwardProcess)
-      ProcessUtils.checkIfFailedInstantly(processExitFuture)
-      eventually {
-        new Socket("localhost", localPort)
-      }
+    val localPort = AvailablePortFinder.findAvailablePorts(1).head
+    Using.resource(new K8sPortForwarder(obj, remotePort, localPort).start()) { _ =>
       action(localPort)
     }
   }
@@ -94,19 +89,8 @@ class K8sTestUtils(k8s: KubernetesClient)
         eventually {
           k8s.get[Pod](p.name).futureValue.status.value.phase.value shouldEqual Phase.Running
         }
-      case s: Service =>
+      case _: Service =>
       case other      => throw new IllegalArgumentException(s"Unknown resource with empty kind: $other")
-    }
-  }
-
-  // kind is sometime blank - skuber resources keep kind as a field (not a constant) and looks like sometime it is set to blank string
-  private def fixedKind(obj: ObjectResource) = {
-    Option(obj.kind.toLowerCase).filterNot(_.isBlank).getOrElse {
-      obj match {
-        case _: Pod     => "pod"
-        case _: Service => "service"
-        case other      => throw new IllegalArgumentException(s"Unknown resource with empty kind: $other")
-      }
     }
   }
 
@@ -125,7 +109,7 @@ class K8sTestUtils(k8s: KubernetesClient)
       Pod.Spec(
         containers = List(
           Container(
-            image = "nginx:1.23.1",
+            image = "nginx:1.28-alpine",
             name = "reverse-proxy",
             volumeMounts = List(Volume.Mount(reverseProxyConfConfigMapName, "/etc/nginx/conf.d/"))
           )
@@ -167,6 +151,40 @@ class K8sTestUtils(k8s: KubernetesClient)
         )
       )
       .futureValue
+  }
+
+  def printResourcesDetails()(implicit materializer: Materializer): Unit = {
+    Try(doPrintResourcesDetails()).failed.foreach { ex =>
+      logger.warn("Failure during printResourcesDetails", ex)
+    }
+  }
+
+  private def doPrintResourcesDetails()(implicit materializer: Materializer): Unit = {
+    val pods = k8s.list[ListResource[Pod]]().futureValue.items
+    logger.info("pods:\n" + pods.mkString("\n"))
+    logger.info("services:\n" + k8s.list[ListResource[Service]]().futureValue.items.mkString("\n"))
+    logger.info("deployments:\n" + k8s.list[ListResource[Deployment]]().futureValue.items.mkString("\n"))
+    logger.info("ingresses:\n" + k8s.list[ListResource[Ingress]]().futureValue.items.mkString("\n"))
+    logger.info("events:\n" + k8s.list[ListResource[Event]]().futureValue.items.mkString("\n"))
+    pods.foreach { p =>
+      logger.info(s"Printing logs for pod: ${p.name}")
+      val logParams = LogQueryParams(
+        sinceTime = p.metadata.creationTimestamp,
+        follow = Some(false),
+      )
+      val podLogger = k8s.getPodLogSource(p.name, logParams).flatMap { source =>
+        source
+          .via(Framing.delimiter(ByteString('\n'), maximumFrameLength = 16384, allowTruncation = true))
+          .runForeach { bs =>
+            logger.info(s"[pod:${p.name}] ${bs.utf8String}")
+          }
+      }
+
+      Try(Await.result(podLogger, 5.seconds)).failed.foreach { e =>
+        logger.warn(s"Failed to fetch logs for ${p.name}: ${e.getMessage}")
+      }
+      logger.info(s"Finished printing logs for pod: ${p.name}")
+    }
   }
 
 }

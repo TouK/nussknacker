@@ -7,6 +7,7 @@ import org.apache.kafka.common.TopicPartition
 import org.scalatest.concurrent.Eventually.{eventually, _}
 import org.scalatest.time.{Millis, Seconds, Span}
 
+import java.{lang, util}
 import java.time.Duration
 import java.util.concurrent.TimeoutException
 import scala.collection.compat.immutable.LazyList
@@ -32,6 +33,9 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
       topic: String,
       secondsToWait: Int = DefaultSecondsToWait
   ): LazyList[ConsumerRecord[K, M]] = {
+    if (!consumer.subscription().isEmpty) {
+      throw new IllegalStateException(s"Consumer is already subscribed to topics: ${consumer.subscription().asScala}")
+    }
     val partitions = fetchTopicPartitions(topic, secondsToWait)
     consumer.assign(partitions.asJava)
     logger.debug(s"Consumer assigment: ${consumer.assignment().asScala}")
@@ -41,7 +45,7 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
     LazyList.continually(()).flatMap(new Poller(secondsToWait))
   }
 
-  def getEndOffsets(topic: String, secondsToWait: Int = DefaultSecondsToWait) = {
+  def getEndOffsets(topic: String, secondsToWait: Int = DefaultSecondsToWait): util.Map[TopicPartition, lang.Long] = {
     val partitions = fetchTopicPartitions(topic, secondsToWait)
     consumer.assign(partitions.asJava)
     consumer.endOffsets(partitions.asJava)

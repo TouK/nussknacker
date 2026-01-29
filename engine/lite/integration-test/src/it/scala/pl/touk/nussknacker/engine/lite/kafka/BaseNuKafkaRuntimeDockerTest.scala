@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
-import com.dimafeng.testcontainers.{ForAllTestContainer, GenericContainer, KafkaContainer, SingleContainer}
+import com.dimafeng.testcontainers.{ForAllTestContainer, GenericContainer, KafkaContainer}
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import org.scalatest.{BeforeAndAfterAll, TestSuite, TryValues}
@@ -31,17 +31,15 @@ trait BaseNuKafkaRuntimeDockerTest
   private val network       = Network.newNetwork
   private val kafkaHostname = "kafka"
 
-  protected val schemaRegistryContainer = {
-    val container = GenericContainer(
-      "confluentinc/cp-schema-registry:7.5.3",
+  protected val schemaRegistryContainer: GenericContainer = {
+    GenericContainer(
+      "confluentinc/cp-schema-registry:7.5.13",
       exposedPorts = Seq(schemaRegistryPort),
       env = Map(
         "SCHEMA_REGISTRY_HOST_NAME"                    -> schemaRegistryHostname,
         "SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS" -> dockerNetworkKafkaBoostrapServer
       )
-    )
-    configureNetwork(container, schemaRegistryHostname)
-    container
+    ).configure { configureNetwork(_, schemaRegistryHostname) }
   }
 
   protected def mappedSchemaRegistryAddress =
@@ -51,18 +49,20 @@ trait BaseNuKafkaRuntimeDockerTest
   protected lazy val schemaRegistryClient = new CachedSchemaRegistryClient(mappedSchemaRegistryAddress, 10)
 
   protected val kafkaContainer: KafkaContainer = {
-    val container = KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.5.3"))
-      .configure(_.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "FALSE"))
-    configureNetwork(container, kafkaHostname)
-    container
+    KafkaContainer(DockerImageName.parse("apache/kafka-native:4.1.1")).configure { self =>
+      self.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false")
+      // can segfault on startup, we need retries - https://issues.apache.org/jira/browse/KAFKA-20314
+      self.withStartupAttempts(3)
+      configureNetwork(self, kafkaHostname)
+    }
   }
 
   protected def configureNetwork(
-      container: SingleContainer[_ <: JavaGenericContainer[_]],
+      container: JavaGenericContainer[_],
       networkAlias: String
   ): Unit = {
-    container.underlyingUnsafeContainer.withNetwork(network)
-    container.underlyingUnsafeContainer.withNetworkAliases(networkAlias)
+    container.withNetwork(network)
+    container.withNetworkAliases(networkAlias)
   }
 
   protected var fixture: NuKafkaRuntimeTestTestCaseFixture = _
@@ -91,7 +91,7 @@ trait BaseNuKafkaRuntimeDockerTest
 
   override protected def kafkaBoostrapServer: String = kafkaContainer.bootstrapServers
 
-  protected def dockerNetworkKafkaBoostrapServer: String = s"$kafkaHostname:9092"
+  protected def dockerNetworkKafkaBoostrapServer: String = s"$kafkaHostname:9093"
 
   protected lazy val kafkaClient = new KafkaClient(kafkaBoostrapServer, suiteName)
 

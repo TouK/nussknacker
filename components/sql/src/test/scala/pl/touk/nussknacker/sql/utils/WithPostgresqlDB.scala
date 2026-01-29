@@ -13,7 +13,7 @@ trait WithPostgresqlDB {
   var conn: Connection = _
 
   override val container: PostgreSQLContainer = {
-    val container = PostgreSQLContainer(DockerImageName.parse("postgres:18"))
+    val container = PostgreSQLContainer(DockerImageName.parse("postgres:18-alpine"))
     container.container.setPortBindings(List("5432:5432").asJava)
     container
   }
