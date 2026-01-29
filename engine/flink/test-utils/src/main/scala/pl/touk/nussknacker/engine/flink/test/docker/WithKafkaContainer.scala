@@ -12,7 +12,7 @@ trait WithKafkaContainer { self: Suite with WithDockerContainers =>
   protected val kafkaNetworkAlias = "kafka"
 
   protected val kafkaContainer: KafkaContainer =
-    KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.4.0")).configure { self =>
+    KafkaContainer(DockerImageName.parse(s"apache/kafka-native:3.9.1")).configure { self =>
       self.setNetwork(network)
       self.setNetworkAliases(asList(kafkaNetworkAlias))
     }

@@ -282,8 +282,8 @@ val configV                 = "1.4.4"
 // rc16+ depend on slf4j 2.x
 val dropWizardV             = "5.0.0-rc15"
 val scalaCollectionsCompatV = "2.13.0"
-val testContainersScalaV    = "0.43.0"
-val testContainersJavaV     = "1.21.4"
+val testContainersScalaV    = "0.44.1"
+val testContainersJavaV     = "2.0.3"
 val nettyV                  = "4.1.123.Final"
 val nettyReactiveStreamsV   = "2.0.12"
 
@@ -1633,10 +1633,8 @@ lazy val security = (project in file("security"))
       "com.softwaremill.sttp.tapir" %% "tapir-core"                     % tapirV,
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe"               % tapirV,
       "com.dimafeng"                %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
-      "com.github.dasniko"           % "testcontainers-keycloak"        % "3.8.0"              % "it,test" excludeAll (
+      "com.github.dasniko"           % "testcontainers-keycloak"        % "4.1.1"              % "it,test" excludeAll (
         ExclusionRule("commons-logging", "commons-logging"),
-        // we're using testcontainers-scala which requires a proper junit4 dependency
-        ExclusionRule("io.quarkus", "quarkus-junit4-mock")
       )
     )
   )
