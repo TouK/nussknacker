@@ -1782,6 +1782,19 @@ class NodesApiHttpServiceBusinessSpec
              |      "params": []
              |    }
              |  },
+             |  "processProperties": {
+             |    "isFragment": false,
+             |    "additionalFields": {
+             |      "description": null,
+             |      "properties": {
+             |        "parallelism": "",
+             |        "spillStateToDisk": "true",
+             |        "useAsyncInterpretation": "",
+             |        "checkpointIntervalInSeconds": ""
+             |      },
+             |      "metaDataType": "StreamMetaData"
+             |    }
+             |  },
              |  "enricher": {
              |    "id": "enricherId",
              |    "service": {
@@ -1801,7 +1814,7 @@ class NodesApiHttpServiceBusinessSpec
           s"""{
              |  "enricherMockExpression": {
              |    "language": "spel",
-             |    "expression": "{foo: 42}"
+             |    "expression": "{foo: 0}"
              |  }
              |}""".stripMargin
         )
@@ -1822,6 +1835,19 @@ class NodesApiHttpServiceBusinessSpec
              |      "type": "TypedClass",
              |      "refClazzName": "java.lang.String",
              |      "params": []
+             |    }
+             |  },
+             |  "processProperties": {
+             |    "isFragment": false,
+             |    "additionalFields": {
+             |      "description": null,
+             |      "properties": {
+             |        "parallelism": "",
+             |        "spillStateToDisk": "true",
+             |        "useAsyncInterpretation": "",
+             |        "checkpointIntervalInSeconds": ""
+             |      },
+             |      "metaDataType": "StreamMetaData"
              |    }
              |  },
              |  "enricher": {

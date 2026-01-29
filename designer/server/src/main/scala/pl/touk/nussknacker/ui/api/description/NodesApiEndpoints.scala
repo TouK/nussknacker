@@ -845,6 +845,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     )
                   ),
                 ),
+                processProperties = ProcessProperties(StreamMetaData()),
                 enricher = Enricher(
                   "enricher",
                   ServiceRef(
@@ -1759,6 +1760,7 @@ object NodesApiEndpoints {
 
     final case class GenerateEnricherMockRequestDto(
         variableTypes: Map[String, TypingResultInJson],
+        processProperties: ProcessProperties,
         enricher: Enricher,
     )
 

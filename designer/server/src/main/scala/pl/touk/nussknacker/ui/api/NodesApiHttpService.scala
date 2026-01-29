@@ -5,11 +5,11 @@ import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.graph.node.{NodeData, SourceNodeData}
+import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import pl.touk.nussknacker.restmodel.definition.UIValueParameter
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
@@ -21,7 +21,6 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   decodeVariableTypes,
   prepareTypingResultDecoder,
   ExpressionSuggestionDto,
-  GenerateEnricherMockResponseDto,
   NodesError,
   NodeValidationRequest,
   NodeValidationRequestDto,
@@ -203,15 +202,8 @@ class NodesApiHttpService(
                 )
               )
               .leftMap[NodesError](identity)
-            // TODO: figure out how to remove metaData and jobData and loading scenario.
-            metaData = pl.touk.nussknacker.engine.api.MetaData(
-              scenarioWithDetails.name.value,
-              pl.touk.nussknacker.engine.api.StreamMetaData()
-            )
-            jobData = pl.touk.nussknacker.engine.api.JobData(
-              metaData,
-              scenarioWithDetails.processVersionUnsafe
-            )
+            processVersion = scenarioWithDetails.processVersionUnsafe
+            jobData        = JobData(request.processProperties.toMetaData(processVersion.processName), processVersion)
             result <- EitherT.fromEither[Future](
               enricherMockGenerator.generateExpression(
                 variableTypes,
