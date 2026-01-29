@@ -50,6 +50,20 @@ class SpelExpressionGeneratorSpec
       ("float", Typed[java.lang.Float], "0.0f"),
       ("double", Typed[java.lang.Double], "0.0"),
       ("boolean", Typed[java.lang.Boolean], "true"),
+      ("instant", Typed[java.time.Instant], "T(java.time.Instant).parse('1900-01-01T00:00:00Z')"),
+      (
+        "local date time",
+        Typed[java.time.LocalDateTime],
+        "T(java.time.LocalDateTime).parse('1900-01-01T00:00:00')"
+      ),
+      ("local date", Typed[java.time.LocalDate], "T(java.time.LocalDate).parse('1900-01-01')"),
+      ("local time", Typed[java.time.LocalTime], "T(java.time.LocalTime).parse('00:00:00')"),
+      ("UUID", Typed[java.util.UUID], "T(java.util.UUID).fromString('00000000-0000-0000-0000-000000000000')"),
+      (
+        "java enum",
+        Typed.typedClass[java.time.Month],
+        "T(java.time.Month).JANUARY"
+      ),
       ("empty record", Typed.record(Map.empty[String, TypingResult]), "{:}"),
       (
         "simple record",
