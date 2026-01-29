@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.test.testcase
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -19,6 +20,7 @@ class SpelExpressionGeneratorSpec
     extends AnyFunSuite
     with Matchers
     with OptionValues
+    with TableDrivenPropertyChecks
     with ValidatedValuesDetailedMessage {
 
   private implicit val nodeId: NodeId = NodeId("test-node")
@@ -38,109 +40,55 @@ class SpelExpressionGeneratorSpec
     ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
   )
 
-  test("should generate expression for String") {
-    val expectedType = Typed[String]
-    val result       = SpelExpressionGenerator.generate(expectedType)
-
-    result shouldBe Some("'string'")
-    verifyExpressionCompilesToExpectedType(result.value, expectedType)
-  }
-
-  test("should generate expression for Integer") {
-    val expectedType = Typed[Integer]
-    val result       = SpelExpressionGenerator.generate(expectedType)
-
-    result shouldBe Some("42")
-    verifyExpressionCompilesToExpectedType(result.value, expectedType)
-  }
-
-  test("should generate expression for Long") {
-    val expectedType = Typed[java.lang.Long]
-    val result       = SpelExpressionGenerator.generate(expectedType)
-
-    result shouldBe Some("42")
-    verifyExpressionCompilesToExpectedType(result.value, expectedType)
-  }
-
-  test("should generate expression for Double") {
-    val expectedType = Typed[java.lang.Double]
-    val result       = SpelExpressionGenerator.generate(expectedType)
-
-    result shouldBe Some("42.0")
-    verifyExpressionCompilesToExpectedType(result.value, expectedType)
-  }
-
-  test("should generate expression for Boolean") {
-    val expectedType = Typed[java.lang.Boolean]
-    val result       = SpelExpressionGenerator.generate(expectedType)
-
-    result shouldBe Some("true")
-    verifyExpressionCompilesToExpectedType(result.value, expectedType)
-  }
-
-  test("should generate expression for record type") {
-    val expectedType = Typed.record(
-      Map(
-        "name" -> Typed[String],
-        "age"  -> Typed[Integer]
-      )
-    )
-
-    val result = SpelExpressionGenerator.generate(expectedType)
-
-    result shouldBe Some("{name: 'string', age: 42}")
-    verifyExpressionCompilesToExpectedType(result.value, expectedType)
-  }
-
-  test("should generate expression for nested record") {
-    val expectedType = Typed.record(
-      Map(
-        "user" -> Typed.record(
+  test("should generate expressions for various types") {
+    val testCases = Table(
+      ("description", "typingResult", "expectedExpression"),
+      ("unknown", Unknown, "null"),
+      ("string", Typed[String], "'string'"),
+      ("integer", Typed[Integer], "42"),
+      ("long", Typed[java.lang.Long], "42"),
+      ("double", Typed[java.lang.Double], "42.0"),
+      ("boolean", Typed[java.lang.Boolean], "true"),
+      ("empty record", Typed.record(Map.empty[String, TypingResult]), "{:}"),
+      (
+        "simple record",
+        Typed.record(Map("name" -> Typed[String], "age" -> Typed[Integer])),
+        "{name: 'string', age: 42}"
+      ),
+      (
+        "nested record",
+        Typed.record(
           Map(
-            "name"   -> Typed[String],
-            "active" -> Typed[java.lang.Boolean]
+            "user"  -> Typed.record(Map("name" -> Typed[String], "active" -> Typed[java.lang.Boolean])),
+            "count" -> Typed[Integer]
           )
         ),
-        "count" -> Typed[Integer]
+        "{user: {name: 'string', active: true}, count: 42}"
+      ),
+      ("list", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])), "{'string'}"),
+      (
+        "Map",
+        Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Typed[Integer])),
+        "{'key': 42}"
+      ),
+      (
+        "HTTP request/response record",
+        httpRequestResponseType,
+        "{request: {body: {:}, headers: {{name: 'string', value: 'string'}}, method: 'string', url: 'string'}, response: {body: null, headers: {{name: 'string', value: 'string'}}, statusCode: 42, statusText: 'string'}}"
       )
     )
 
-    val result = SpelExpressionGenerator.generate(expectedType)
+    forAll(testCases) { (description, typingResult, expectedExpression) =>
+      withClue(s"Test case: $description") {
+        val result = SpelExpressionGenerator.generate(typingResult)
 
-    result shouldBe Some("{user: {name: 'string', active: true}, count: 42}")
-    verifyExpressionCompilesToExpectedType(result.value, expectedType)
+        result shouldBe Some(expectedExpression)
+        verifyExpressionCompilesToExpectedType(result.value, typingResult)
+      }
+    }
   }
 
-  test("should generate expression for List") {
-    val expectedType = Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String]))
-
-    val result = SpelExpressionGenerator.generate(expectedType)
-
-    result shouldBe Some("{'string'}")
-    verifyExpressionCompilesToExpectedType(result.value, expectedType)
-  }
-
-  test("should generate expression for Map") {
-    val expectedType = Typed.genericTypeClass(
-      classOf[java.util.Map[_, _]],
-      List(Typed[String], Typed[Integer])
-    )
-
-    val result = SpelExpressionGenerator.generate(expectedType)
-
-    result shouldBe Some("{'key': 42}")
-    verifyExpressionCompilesToExpectedType(result.value, expectedType)
-  }
-
-  test("should return null for Unknown type") {
-    val expectedType = Unknown
-    val result       = SpelExpressionGenerator.generate(expectedType)
-
-    result shouldBe Some("null")
-    verifyExpressionCompilesToExpectedType(result.value, expectedType)
-  }
-
-  test("should generate expression for complex HTTP request/response record") {
+  private def httpRequestResponseType: TypedObjectTypingResult = {
     val headerRecordType = Typed.record(
       Map(
         "name"  -> Typed[String],
@@ -163,19 +111,7 @@ class SpelExpressionGeneratorSpec
         "statusText" -> Typed[String]
       )
     )
-    val expectedType = Typed.record(
-      Map(
-        "request"  -> requestType,
-        "response" -> responseType
-      )
-    )
-
-    val result = SpelExpressionGenerator.generate(expectedType)
-
-    result shouldBe Some(
-      "{request: {body: {:}, headers: {{name: 'string', value: 'string'}}, method: 'string', url: 'string'}, response: {body: null, headers: {{name: 'string', value: 'string'}}, statusCode: 42, statusText: 'string'}}"
-    )
-    verifyExpressionCompilesToExpectedType(result.value, expectedType)
+    Typed.record(Map("request" -> requestType, "response" -> responseType))
   }
 
   private def verifyExpressionCompilesToExpectedType(generatedExpression: String, expectedType: TypingResult): Unit = {
