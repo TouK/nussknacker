@@ -57,6 +57,15 @@ private object SpelExpressionGenerator {
     case TypedClass(clazz, _) if clazz == DoubleClass =>
       Some("0.0")
 
+    case TypedClass(clazz, _) if clazz == BigDecimalClass =>
+      Some("0.toBigDecimal")
+
+    case TypedClass(clazz, _) if clazz == ByteClass =>
+      Some("0.byteValue")
+
+    case TypedClass(clazz, _) if clazz == ShortClass =>
+      Some("0.shortValue")
+
     case TypedClass(clazz, _) if isDecimalNumber(clazz) =>
       Some("0")
 
@@ -86,20 +95,6 @@ private object SpelExpressionGenerator {
 
     case _ =>
       None
-  }
-
-  private def isDecimalNumber(clazz: Class[_]): Boolean = {
-    clazz == classOf[java.lang.Integer] ||
-    clazz == classOf[java.lang.Long] ||
-    clazz == classOf[java.lang.Short] ||
-    clazz == classOf[java.lang.Byte] ||
-    clazz == classOf[java.math.BigInteger] ||
-    clazz == classOf[java.math.BigDecimal]
-  }
-
-  private def isFloatingPointNumber(clazz: Class[_]): Boolean = {
-    clazz == classOf[java.lang.Float] ||
-    clazz == classOf[java.lang.Double]
   }
 
   private def generateForRecord(fields: ListMap[String, TypingResult], indentLevel: Int): Option[String] = {
