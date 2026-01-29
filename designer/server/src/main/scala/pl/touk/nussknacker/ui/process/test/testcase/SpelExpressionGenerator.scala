@@ -5,41 +5,40 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.util.ReflectUtils.JavaEnumConstants
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaListMap
 
+import scala.annotation.tailrec
+import scala.collection.immutable.ListMap
+
 private object SpelExpressionGenerator {
 
-  def generate(typ: TypingResult): Option[String] = typ match {
-    case TypedObjectTypingResult(fields, _, _) =>
-      val fieldExpressions = fields.mapValuesNow(generate(_).getOrElse("null"))
-      val recordExpression = if (fieldExpressions.isEmpty) {
-        "{:}"
-      } else if (fieldExpressions.size == 1) {
-        fieldExpressions.map { case (key, value) => s"$key: $value" }.mkString("{", ", ", "}")
-      } else {
-        val fieldLines = fieldExpressions.map { case (key, value) => s"  $key: $value" }.mkString(",\n")
-        s"{\n$fieldLines\n}"
-      }
-      Some(recordExpression)
+  def generate(typ: TypingResult): Option[String] = {
+    generateForTypingResult(typ, indentLevel = 0)
+  }
 
-    case TypedTaggedValue(underlying, _) =>
-      generate(underlying)
-
-    case TypedObjectWithValue(_, value) =>
-      generateForValue(value)
+  @tailrec
+  private def generateForTypingResult(typ: TypingResult, indentLevel: Int): Option[String] = typ match {
+    case _: Unknown =>
+      Some("null")
 
     case TypedNull =>
       Some("null")
 
+    case TypedTaggedValue(underlying, _) =>
+      generateForTypingResult(underlying, indentLevel)
+
+    case TypedObjectWithValue(_, value) =>
+      generateForValue(value)
+
     case klass: TypedClass =>
-      generateForClass(klass)
+      generateForClass(klass, indentLevel)
 
     case union: TypedUnion =>
-      generate(union.possibleTypes.head)
+      generateForTypingResult(union.possibleTypes.head, indentLevel)
 
-    case _: Unknown =>
-      Some("null")
+    case TypedObjectTypingResult(fields, _, _) =>
+      generateForRecord(fields, indentLevel)
 
     case _: TypedDict =>
-      Some("{:}")
+      None
   }
 
   private def generateForValue(value: Any): Option[String] = value match {
@@ -53,27 +52,27 @@ private object SpelExpressionGenerator {
     case _          => None
   }
 
-  private def generateForClass(klass: TypedClass): Option[String] = klass match {
+  private def generateForClass(klass: TypedClass, indentLevel: Int): Option[String] = klass match {
     case TypedClass(clazz, _) if clazz == StringClass =>
-      Some("'string'")
+      Some("''")
 
     case TypedClass(clazz, _) if clazz == BooleanClass =>
       Some("true")
 
     case TypedClass(clazz, _) if isDecimalNumber(clazz) =>
-      Some("42")
+      Some("0")
 
     case TypedClass(clazz, _) if isFloatingPointNumber(clazz) =>
-      Some("42.0")
+      Some("0.0")
 
     case TypedClass(ListClass | ArrayClass, elementType :: Nil) =>
-      generate(elementType) match {
+      generateForTypingResult(elementType, indentLevel) match {
         case Some(elementExpr) => Some(s"{$elementExpr}")
         case None              => Some("{}")
       }
 
     case TypedClass(MapClass, _ :: valueType :: Nil) =>
-      generate(valueType) match {
+      generateForTypingResult(valueType, indentLevel) match {
         case Some(valueExpr) => Some(s"{'key': $valueExpr}")
         case None            => Some("{:}")
       }
@@ -112,6 +111,21 @@ private object SpelExpressionGenerator {
   private def isFloatingPointNumber(clazz: Class[_]): Boolean = {
     clazz == classOf[java.lang.Float] ||
     clazz == classOf[java.lang.Double]
+  }
+
+  private def generateForRecord(fields: ListMap[String, TypingResult], indentLevel: Int): Option[String] = {
+    val fieldExpressions = fields.mapValuesNow(generateForTypingResult(_, indentLevel + 1).getOrElse("null"))
+    val recordExpression = if (fieldExpressions.isEmpty) {
+      "{:}"
+    } else if (fieldExpressions.size == 1) {
+      fieldExpressions.map { case (key, value) => s"$key: $value" }.mkString("{", ", ", "}")
+    } else {
+      val indent        = "  " * (indentLevel + 1)
+      val closingIndent = "  " * indentLevel
+      val fieldLines    = fieldExpressions.map { case (key, value) => s"$indent$key: $value" }.mkString(",\n")
+      s"{\n$fieldLines\n$closingIndent}"
+    }
+    Some(recordExpression)
   }
 
 }

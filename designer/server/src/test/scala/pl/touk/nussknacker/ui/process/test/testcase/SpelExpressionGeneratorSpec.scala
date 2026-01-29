@@ -44,18 +44,18 @@ class SpelExpressionGeneratorSpec
     val testCases = Table(
       ("description", "typingResult", "expectedExpression"),
       ("unknown", Unknown, "null"),
-      ("string", Typed[String], "'string'"),
-      ("integer", Typed[Integer], "42"),
-      ("long", Typed[java.lang.Long], "42"),
-      ("double", Typed[java.lang.Double], "42.0"),
+      ("string", Typed[String], "''"),
+      ("integer", Typed[Integer], "0"),
+      ("long", Typed[java.lang.Long], "0"),
+      ("double", Typed[java.lang.Double], "0.0"),
       ("boolean", Typed[java.lang.Boolean], "true"),
       ("empty record", Typed.record(Map.empty[String, TypingResult]), "{:}"),
       (
         "simple record",
         Typed.record(Map("name" -> Typed[String], "age" -> Typed[Integer])),
         """{
-          |  name: 'string',
-          |  age: 42
+          |  name: '',
+          |  age: 0
           |}""".stripMargin
       ),
       (
@@ -68,40 +68,40 @@ class SpelExpressionGeneratorSpec
         ),
         """{
           |  user: {
-          |  name: 'string',
-          |  active: true
-          |},
-          |  count: 42
+          |    name: '',
+          |    active: true
+          |  },
+          |  count: 0
           |}""".stripMargin
       ),
-      ("list", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])), "{'string'}"),
+      ("list", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])), "{''}"),
       (
         "Map",
         Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Typed[Integer])),
-        "{'key': 42}"
+        "{'key': 0}"
       ),
       (
         "HTTP request/response record",
         httpRequestResponseType,
         """{
           |  request: {
-          |  body: {:},
-          |  headers: {{
-          |  name: 'string',
-          |  value: 'string'
-          |}},
-          |  method: 'string',
-          |  url: 'string'
-          |},
+          |    body: {:},
+          |    headers: {{
+          |      name: '',
+          |      value: ''
+          |    }},
+          |    method: '',
+          |    url: ''
+          |  },
           |  response: {
-          |  body: null,
-          |  headers: {{
-          |  name: 'string',
-          |  value: 'string'
-          |}},
-          |  statusCode: 42,
-          |  statusText: 'string'
-          |}
+          |    body: null,
+          |    headers: {{
+          |      name: '',
+          |      value: ''
+          |    }},
+          |    statusCode: 0,
+          |    statusText: ''
+          |  }
           |}""".stripMargin
       )
     )
