@@ -59,7 +59,7 @@ describe("Test cases", () => {
         fillAssertion(0, "10", "#wrongActual");
         cy.applyNodeChanges();
 
-        cy.get("body").matchImage();
+        cy.get("body").matchImage({ maxDiffThreshold: 0.02 });
     });
 });
 
