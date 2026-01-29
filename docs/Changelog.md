@@ -316,6 +316,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8806](https://github.com/TouK/nussknacker/pull/8806) Test case running implementation
 * [#8903](https://github.com/TouK/nussknacker/pull/8903) Updated Flink dependency to 1.20.3, Scala to 2.13.18
 * [#8903](https://github.com/TouK/nussknacker/pull/8946) Fix default Kafka EOS configuration on Flink to use a unique transactional id prefix
+* [#8943](https://github.com/TouK/nussknacker/pull/8943) Replaced `spring-jcl` library with contemporary version of `commons-logging` 
 
 ## 1.18
 
