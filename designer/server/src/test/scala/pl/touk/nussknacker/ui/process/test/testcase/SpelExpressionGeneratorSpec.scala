@@ -43,7 +43,7 @@ class SpelExpressionGeneratorSpec
     val result       = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("'string'")
-    result.foreach(verifyExpressionCompiles)
+    verifyExpressionCompilesToExpectedType(result.value, expectedType)
   }
 
   test("should generate expression for Integer") {
@@ -51,7 +51,7 @@ class SpelExpressionGeneratorSpec
     val result       = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("42")
-    verifyExpressionCompiles(result.value)
+    verifyExpressionCompilesToExpectedType(result.value, expectedType)
   }
 
   test("should generate expression for Long") {
@@ -59,7 +59,7 @@ class SpelExpressionGeneratorSpec
     val result       = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("42")
-    verifyExpressionCompiles(result.value)
+    verifyExpressionCompilesToExpectedType(result.value, expectedType)
   }
 
   test("should generate expression for Double") {
@@ -67,7 +67,7 @@ class SpelExpressionGeneratorSpec
     val result       = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("42.0")
-    verifyExpressionCompiles(result.value)
+    verifyExpressionCompilesToExpectedType(result.value, expectedType)
   }
 
   test("should generate expression for Boolean") {
@@ -75,7 +75,7 @@ class SpelExpressionGeneratorSpec
     val result       = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("true")
-    verifyExpressionCompiles(result.value)
+    verifyExpressionCompilesToExpectedType(result.value, expectedType)
   }
 
   test("should generate expression for record type") {
@@ -89,7 +89,7 @@ class SpelExpressionGeneratorSpec
     val result = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("{name: 'string', age: 42}")
-    verifyExpressionCompiles(result.value)
+    verifyExpressionCompilesToExpectedType(result.value, expectedType)
   }
 
   test("should generate expression for nested record") {
@@ -108,7 +108,7 @@ class SpelExpressionGeneratorSpec
     val result = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("{user: {name: 'string', active: true}, count: 42}")
-    verifyExpressionCompiles(result.value)
+    verifyExpressionCompilesToExpectedType(result.value, expectedType)
   }
 
   test("should generate expression for List") {
@@ -117,7 +117,7 @@ class SpelExpressionGeneratorSpec
     val result = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("{'string'}")
-    verifyExpressionCompiles(result.value)
+    verifyExpressionCompilesToExpectedType(result.value, expectedType)
   }
 
   test("should generate expression for Map") {
@@ -129,7 +129,7 @@ class SpelExpressionGeneratorSpec
     val result = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("{'key': 42}")
-    verifyExpressionCompiles(result.value)
+    verifyExpressionCompilesToExpectedType(result.value, expectedType)
   }
 
   test("should return null for Unknown type") {
@@ -137,7 +137,7 @@ class SpelExpressionGeneratorSpec
     val result       = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("null")
-    verifyExpressionCompiles(result.value)
+    verifyExpressionCompilesToExpectedType(result.value, expectedType)
   }
 
   test("should generate expression for complex HTTP request/response record") {
@@ -175,17 +175,16 @@ class SpelExpressionGeneratorSpec
     result shouldBe Some(
       "{request: {body: {}, headers: {{name: 'string', value: 'string'}}, method: 'string', url: 'string'}, response: {body: null, headers: {{name: 'string', value: 'string'}}, statusCode: 42, statusText: 'string'}}"
     )
-    verifyExpressionCompiles(result.value)
+    verifyExpressionCompilesToExpectedType(result.value, expectedType)
   }
 
-  private def verifyExpressionCompiles(generatedExpression: String): Unit = {
+  private def verifyExpressionCompilesToExpectedType(generatedExpression: String, expectedType: TypingResult): Unit = {
     val expr              = Expression.spel(generatedExpression)
     val validationContext = ValidationContext.empty
-    val compilationResult = expressionCompiler.compile(expr, None, validationContext, Unknown)
+    val compilationResult = expressionCompiler.compile(expr, None, validationContext, expectedType)
 
-    withClue(s"Expression '$generatedExpression' should compile successfully") {
-      compilationResult.validValue.returnType
-      // TODO
+    withClue(s"Expression '$generatedExpression' should compile successfully to type '${expectedType.display}'") {
+      compilationResult.validValue
     }
   }
 
