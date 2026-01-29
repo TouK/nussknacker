@@ -947,7 +947,8 @@ class ExpressionSuggesterSpec
   }
 
   test("should work with long expressions") {
-    val longString = "'" + " ".padTo(SpelParserConfiguration.DEFAULT_MAX_EXPRESSION_LENGTH, ' ') + "abcd'."
+    val spelMaxExpressionLength = 10_000
+    val longString              = "'" + " ".padTo(spelMaxExpressionLength, ' ') + "abcd'."
     spelSuggestionsFor(longString, column = longString.length) should not be empty
   }
 

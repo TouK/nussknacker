@@ -97,9 +97,12 @@ object UberJarAssembler {
       jarSource: Path
   )
 
-  private[assembly] case class BufferedEntry(
-      lines: mutable.LinkedHashSet[String]
-  )
+  private[assembly] sealed trait BufferedEntry
+
+  private[assembly] object BufferedEntry {
+    final case class ConcatenatedEntry(contents: mutable.ListBuffer[String])  extends BufferedEntry
+    final case class DistinctLinesEntry(lines: mutable.LinkedHashSet[String]) extends BufferedEntry
+  }
 
   private[assembly] case class AssemblyState(
       writtenEntries: mutable.Map[String, WrittenEntry],

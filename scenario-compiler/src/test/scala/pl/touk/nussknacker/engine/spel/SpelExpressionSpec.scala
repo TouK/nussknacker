@@ -173,7 +173,7 @@ trait SpelExpressionSpec
     .withVariable("processHelper", SampleGlobalObject)
     .withVariable("javaClassWithVarargs", new JavaClassWithVarargs)
 
-  val maxSpelExpressionLimit = SpelParserConfiguration.DEFAULT_MAX_EXPRESSION_LENGTH
+  val maxSpelExpressionLimit = 10_000
 
   private def bigExpression(stringVar: String, length: Int): String = {
     val builder = new StringBuilder()

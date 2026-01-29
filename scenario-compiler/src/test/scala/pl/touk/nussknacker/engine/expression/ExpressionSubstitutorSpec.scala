@@ -52,7 +52,8 @@ class ExpressionSubstitutorSpec extends AnyFunSuite with Matchers {
   }
 
   test("very long expressions") {
-    val expression = s"#foo == '${"x".padTo(SpelParserConfiguration.DEFAULT_MAX_EXPRESSION_LENGTH, "x")}'"
+    val spelMaxExpressionLength = 10_000
+    val expression              = s"#foo == '${"x".padTo(spelMaxExpressionLength, "x")}'"
 
     val result = replace(expression, PartialFunction.empty)
 
