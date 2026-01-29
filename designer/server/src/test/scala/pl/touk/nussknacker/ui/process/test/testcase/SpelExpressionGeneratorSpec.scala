@@ -1,56 +1,99 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
+import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-class SpelExpressionGeneratorSpec extends AnyFunSuite with Matchers {
+class SpelExpressionGeneratorSpec
+    extends AnyFunSuite
+    with Matchers
+    with OptionValues
+    with ValidatedValuesDetailedMessage {
 
-  test("should generate sample expression for String") {
-    val result = SpelExpressionGenerator.generate(Typed[String])
+  private implicit val nodeId: NodeId = NodeId("test-node")
+
+  private val modelDefinitionWithClasses = ModelDefinitionWithClasses(
+    ModelDefinitionBuilder.empty.build
+  )
+
+  private val globalVariablesPreparer =
+    GlobalVariablesPreparer.apply(modelDefinitionWithClasses.modelDefinition.expressionConfig)
+
+  private val expressionCompiler = ExpressionCompiler.withOptimization(
+    getClass.getClassLoader,
+    new SimpleDictRegistry(Map.empty),
+    modelDefinitionWithClasses.modelDefinition.expressionConfig,
+    modelDefinitionWithClasses.classDefinitions,
+    ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
+  )
+
+  test("should generate expression for String") {
+    val expectedType = Typed[String]
+    val result       = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("'string'")
+    result.foreach(verifyExpressionCompiles)
   }
 
-  test("should generate sample expression for Integer") {
-    val result = SpelExpressionGenerator.generate(Typed[Integer])
+  test("should generate expression for Integer") {
+    val expectedType = Typed[Integer]
+    val result       = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("42")
+    verifyExpressionCompiles(result.value)
   }
 
-  test("should generate sample expression for Long") {
-    val result = SpelExpressionGenerator.generate(Typed[java.lang.Long])
+  test("should generate expression for Long") {
+    val expectedType = Typed[java.lang.Long]
+    val result       = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("42")
+    verifyExpressionCompiles(result.value)
   }
 
-  test("should generate sample expression for Double") {
-    val result = SpelExpressionGenerator.generate(Typed[java.lang.Double])
+  test("should generate expression for Double") {
+    val expectedType = Typed[java.lang.Double]
+    val result       = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("42.0")
+    verifyExpressionCompiles(result.value)
   }
 
-  test("should generate sample expression for Boolean") {
-    val result = SpelExpressionGenerator.generate(Typed[java.lang.Boolean])
+  test("should generate expression for Boolean") {
+    val expectedType = Typed[java.lang.Boolean]
+    val result       = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("true")
+    verifyExpressionCompiles(result.value)
   }
 
-  test("should generate sample expression for record type") {
-    val recordType = Typed.record(
+  test("should generate expression for record type") {
+    val expectedType = Typed.record(
       Map(
         "name" -> Typed[String],
         "age"  -> Typed[Integer]
       )
     )
 
-    val result = SpelExpressionGenerator.generate(recordType)
+    val result = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("{name: 'string', age: 42}")
+    verifyExpressionCompiles(result.value)
   }
 
-  test("should generate sample expression for nested record") {
-    val nestedRecord = Typed.record(
+  test("should generate expression for nested record") {
+    val expectedType = Typed.record(
       Map(
         "user" -> Typed.record(
           Map(
@@ -62,37 +105,42 @@ class SpelExpressionGeneratorSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val result = SpelExpressionGenerator.generate(nestedRecord)
+    val result = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("{user: {name: 'string', active: true}, count: 42}")
+    verifyExpressionCompiles(result.value)
   }
 
-  test("should generate sample expression for List") {
-    val listType = Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String]))
+  test("should generate expression for List") {
+    val expectedType = Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String]))
 
-    val result = SpelExpressionGenerator.generate(listType)
+    val result = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("{'string'}")
+    verifyExpressionCompiles(result.value)
   }
 
-  test("should generate sample expression for Map") {
-    val mapType = Typed.genericTypeClass(
+  test("should generate expression for Map") {
+    val expectedType = Typed.genericTypeClass(
       classOf[java.util.Map[_, _]],
       List(Typed[String], Typed[Integer])
     )
 
-    val result = SpelExpressionGenerator.generate(mapType)
+    val result = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("{'key': 42}")
+    verifyExpressionCompiles(result.value)
   }
 
   test("should return null for Unknown type") {
-    val result = SpelExpressionGenerator.generate(Unknown)
+    val expectedType = Unknown
+    val result       = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some("null")
+    verifyExpressionCompiles(result.value)
   }
 
-  test("should generate sample expression for complex HTTP request/response record") {
+  test("should generate expression for complex HTTP request/response record") {
     val headerRecordType = Typed.record(
       Map(
         "name"  -> Typed[String],
@@ -115,18 +163,30 @@ class SpelExpressionGeneratorSpec extends AnyFunSuite with Matchers {
         "statusText" -> Typed[String]
       )
     )
-    val httpRecordType = Typed.record(
+    val expectedType = Typed.record(
       Map(
         "request"  -> requestType,
         "response" -> responseType
       )
     )
 
-    val result = SpelExpressionGenerator.generate(httpRecordType)
+    val result = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some(
       "{request: {body: {}, headers: {{name: 'string', value: 'string'}}, method: 'string', url: 'string'}, response: {body: null, headers: {{name: 'string', value: 'string'}}, statusCode: 42, statusText: 'string'}}"
     )
+    verifyExpressionCompiles(result.value)
+  }
+
+  private def verifyExpressionCompiles(generatedExpression: String): Unit = {
+    val expr              = Expression.spel(generatedExpression)
+    val validationContext = ValidationContext.empty
+    val compilationResult = expressionCompiler.compile(expr, None, validationContext, Unknown)
+
+    withClue(s"Expression '$generatedExpression' should compile successfully") {
+      compilationResult.validValue.returnType
+      // TODO
+    }
   }
 
 }
