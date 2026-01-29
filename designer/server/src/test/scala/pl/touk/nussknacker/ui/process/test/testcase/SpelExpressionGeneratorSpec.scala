@@ -173,7 +173,7 @@ class SpelExpressionGeneratorSpec
     val result = SpelExpressionGenerator.generate(expectedType)
 
     result shouldBe Some(
-      "{request: {body: {}, headers: {{name: 'string', value: 'string'}}, method: 'string', url: 'string'}, response: {body: null, headers: {{name: 'string', value: 'string'}}, statusCode: 42, statusText: 'string'}}"
+      "{request: {body: {:}, headers: {{name: 'string', value: 'string'}}, method: 'string', url: 'string'}, response: {body: null, headers: {{name: 'string', value: 'string'}}, statusCode: 42, statusText: 'string'}}"
     )
     verifyExpressionCompilesToExpectedType(result.value, expectedType)
   }

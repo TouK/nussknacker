@@ -10,8 +10,12 @@ private object SpelExpressionGenerator {
   def generate(typ: TypingResult): Option[String] = typ match {
     case TypedObjectTypingResult(fields, _, _) =>
       val fieldExpressions = fields.mapValuesNow(generate(_).getOrElse("null"))
-      val fieldsString     = fieldExpressions.map { case (key, value) => s"$key: $value" }.mkString(", ")
-      Some(s"{$fieldsString}")
+      val recordExpression = if (fieldExpressions.isEmpty) {
+        "{:}"
+      } else {
+        fieldExpressions.map { case (key, value) => s"$key: $value" }.mkString("{", ", ", "}")
+      }
+      Some(recordExpression)
 
     case TypedTaggedValue(underlying, _) =>
       generate(underlying)
@@ -36,13 +40,13 @@ private object SpelExpressionGenerator {
   }
 
   private def generateForValue(value: Any): Option[String] = value match {
+    case null       => Some("null")
     case s: String  => Some(s"'$s'")
     case i: Int     => Some(i.toString)
     case l: Long    => Some(l.toString)
     case d: Double  => Some(d.toString)
     case f: Float   => Some(f.toString)
     case b: Boolean => Some(b.toString)
-    case null       => Some("null")
     case _          => None
   }
 
