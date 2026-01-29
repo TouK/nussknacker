@@ -1937,7 +1937,7 @@ object NodesApiEndpoints {
             case SourceCompilation(nodeId, errors) =>
               s"Cannot compile source '$nodeId'. Errors: ${errors.mkString(", ")}"
             case EnricherMockExpressionGenerationError(errors) =>
-              s"Cannot generate mock expression. Errors: ${errors.toList.mkString(", ")}"
+              s"${errors.toList.mkString(", ")}"
             case UnsupportedSourcePreview(nodeId)          => s"Source '$nodeId' doesn't support records preview"
             case InvalidNodeType(expectedType, actualType) => s"Expected $expectedType but got: ${actualType}"
             case TooManyRecordsRequested(maxRecordsCount) =>

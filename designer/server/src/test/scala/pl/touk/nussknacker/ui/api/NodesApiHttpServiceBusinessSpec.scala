@@ -1847,7 +1847,7 @@ class NodesApiHttpServiceBusinessSpec
         .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/testCase/enricherMock")
         .Then()
         .statusCode(400)
-        .body(equalTo("Cannot generate mock expression. Errors: Cannot generate sample expression for type: Client"))
+        .body(equalTo("Cannot generate sample expression for type: Client"))
     }
   }
 
