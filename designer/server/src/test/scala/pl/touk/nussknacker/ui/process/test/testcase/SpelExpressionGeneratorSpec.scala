@@ -4,30 +4,30 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing
 
-class SpelExpressionSampleGeneratorSpec extends AnyFunSuite with Matchers {
+class SpelExpressionGeneratorSpec extends AnyFunSuite with Matchers {
 
   test("should generate sample expression for String") {
-    val result = SpelExpressionSampleGenerator.generateSampleExpression(typing.Typed[String])
+    val result = SpelExpressionGenerator.generate(typing.Typed[String])
     result shouldBe Some("'string'")
   }
 
   test("should generate sample expression for Integer") {
-    val result = SpelExpressionSampleGenerator.generateSampleExpression(typing.Typed[Integer])
+    val result = SpelExpressionGenerator.generate(typing.Typed[Integer])
     result shouldBe Some("42")
   }
 
   test("should generate sample expression for Long") {
-    val result = SpelExpressionSampleGenerator.generateSampleExpression(typing.Typed[java.lang.Long])
+    val result = SpelExpressionGenerator.generate(typing.Typed[java.lang.Long])
     result shouldBe Some("42")
   }
 
   test("should generate sample expression for Double") {
-    val result = SpelExpressionSampleGenerator.generateSampleExpression(typing.Typed[java.lang.Double])
+    val result = SpelExpressionGenerator.generate(typing.Typed[java.lang.Double])
     result shouldBe Some("42.0")
   }
 
   test("should generate sample expression for Boolean") {
-    val result = SpelExpressionSampleGenerator.generateSampleExpression(typing.Typed[java.lang.Boolean])
+    val result = SpelExpressionGenerator.generate(typing.Typed[java.lang.Boolean])
     result shouldBe Some("true")
   }
 
@@ -38,7 +38,7 @@ class SpelExpressionSampleGeneratorSpec extends AnyFunSuite with Matchers {
         "age"  -> typing.Typed[Integer]
       )
     )
-    val result = SpelExpressionSampleGenerator.generateSampleExpression(recordType)
+    val result = SpelExpressionGenerator.generate(recordType)
     result shouldBe Some("{name: 'string', age: 42}")
   }
 
@@ -54,13 +54,13 @@ class SpelExpressionSampleGeneratorSpec extends AnyFunSuite with Matchers {
         "count" -> typing.Typed[Integer]
       )
     )
-    val result = SpelExpressionSampleGenerator.generateSampleExpression(nestedRecord)
+    val result = SpelExpressionGenerator.generate(nestedRecord)
     result shouldBe Some("{user: {name: 'string', active: true}, count: 42}")
   }
 
   test("should generate sample expression for List") {
     val listType = typing.Typed.genericTypeClass(classOf[java.util.List[_]], List(typing.Typed[String]))
-    val result   = SpelExpressionSampleGenerator.generateSampleExpression(listType)
+    val result   = SpelExpressionGenerator.generate(listType)
     result shouldBe Some("{'string'}")
   }
 
@@ -69,12 +69,12 @@ class SpelExpressionSampleGeneratorSpec extends AnyFunSuite with Matchers {
       classOf[java.util.Map[_, _]],
       List(typing.Typed[String], typing.Typed[Integer])
     )
-    val result = SpelExpressionSampleGenerator.generateSampleExpression(mapType)
+    val result = SpelExpressionGenerator.generate(mapType)
     result shouldBe Some("{'key': 42}")
   }
 
   test("should return null for Unknown type") {
-    val result = SpelExpressionSampleGenerator.generateSampleExpression(typing.Unknown)
+    val result = SpelExpressionGenerator.generate(typing.Unknown)
     result shouldBe Some("null")
   }
 

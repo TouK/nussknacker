@@ -5,28 +5,28 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.util.ReflectUtils.JavaEnumConstants
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaListMap
 
-private object SpelExpressionSampleGenerator {
+private object SpelExpressionGenerator {
 
-  def generateSampleExpression(typ: TypingResult): Option[String] = typ match {
+  def generate(typ: TypingResult): Option[String] = typ match {
     case TypedObjectTypingResult(fields, _, _) =>
-      val fieldExpressions = fields.mapValuesNow(generateSampleExpression(_).getOrElse("null"))
+      val fieldExpressions = fields.mapValuesNow(generate(_).getOrElse("null"))
       val fieldsString     = fieldExpressions.map { case (key, value) => s"$key: $value" }.mkString(", ")
       Some(s"{$fieldsString}")
 
     case TypedTaggedValue(underlying, _) =>
-      generateSampleExpression(underlying)
+      generate(underlying)
 
     case TypedObjectWithValue(_, value) =>
-      generateSampleExpressionForValue(value)
+      generateForValue(value)
 
     case TypedNull =>
       Some("null")
 
     case klass: TypedClass =>
-      generateSampleExpressionForClass(klass)
+      generateForClass(klass)
 
     case union: TypedUnion =>
-      generateSampleExpression(union.possibleTypes.head)
+      generate(union.possibleTypes.head)
 
     case _: Unknown =>
       Some("null")
@@ -35,7 +35,7 @@ private object SpelExpressionSampleGenerator {
       Some("{:}")
   }
 
-  private def generateSampleExpressionForValue(value: Any): Option[String] = value match {
+  private def generateForValue(value: Any): Option[String] = value match {
     case s: String  => Some(s"'$s'")
     case i: Int     => Some(i.toString)
     case l: Long    => Some(l.toString)
@@ -46,7 +46,7 @@ private object SpelExpressionSampleGenerator {
     case _          => None
   }
 
-  private def generateSampleExpressionForClass(klass: TypedClass): Option[String] = klass match {
+  private def generateForClass(klass: TypedClass): Option[String] = klass match {
     case TypedClass(clazz, _) if clazz == StringClass =>
       Some("'string'")
 
@@ -60,13 +60,13 @@ private object SpelExpressionSampleGenerator {
       Some("42.0")
 
     case TypedClass(ListClass | ArrayClass, elementType :: Nil) =>
-      generateSampleExpression(elementType) match {
+      generate(elementType) match {
         case Some(elementExpr) => Some(s"{$elementExpr}")
         case None              => Some("{}")
       }
 
     case TypedClass(MapClass, _ :: valueType :: Nil) =>
-      generateSampleExpression(valueType) match {
+      generate(valueType) match {
         case Some(valueExpr) => Some(s"{'key': $valueExpr}")
         case None            => Some("{:}")
       }
