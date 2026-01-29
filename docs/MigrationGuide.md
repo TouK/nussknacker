@@ -264,6 +264,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#8209](https://github.com/TouK/nussknacker/pull/8209) Nussknacker now requires flink to be run with replaced `lib/flink-scala_2.12-x.x.x.jar` by `pl.touk:flink-scala` lib for the same scala version as used Nussknacker distribution. We provide prebuild flink docker images on [Docker Hub](https://hub.docker.com/r/touk/flink)    
 * [#8478](https://github.com/TouK/nussknacker/pull/8478) The behavior of `enum` to json encoding has been changed - now it uses `.name()` instead of `.toString()`
 * [#8842](https://github.com/TouK/nussknacker/pull/8842) `SerializersRegistrar` SPI was removed
+* [#8943](https://github.com/TouK/nussknacker/pull/8943) `spring-jcl` was replaced with `commons-logging` - projects depending on Nu should update their exclusion rules
 
 ## In version 1.18.0
 

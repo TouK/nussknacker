@@ -247,7 +247,8 @@ lazy val commonSettings =
         "com.fasterxml.jackson.module"    %% "jackson-module-scala"           % jacksonV,
         "io.dropwizard.metrics5"           % "metrics-core"                   % dropWizardV,
         "io.dropwizard.metrics5"           % "metrics-json"                   % dropWizardV,
-        "org.slf4j"                        % "slf4j-api"                      % slf4jV
+        "org.slf4j"                        % "slf4j-api"                      % slf4jV,
+        "commons-logging"                  % "commons-logging"                % commonsLoggingV,
       )
     )
 
@@ -291,6 +292,8 @@ val everitSchemaV           = "1.14.5"
 val jsonSchemaValidatorV    = "1.5.8"
 val fastParseV              = "3.1.1"
 val slf4jV                  = "1.7.36"
+// commons-logging should be used instead of spring-jcl
+val commonsLoggingV         = "1.3.5"
 val scalaXmlV               = "2.4.0"
 val scalaLoggingV           = "3.9.5"
 val scalaCompatV            = "1.0.2"
@@ -913,12 +916,10 @@ lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-componen
     libraryDependencies ++= {
       Seq(
         "io.confluent"                  % "kafka-json-schema-provider"      % confluentV excludeAll (
-          ExclusionRule("commons-logging", "commons-logging"),
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12"),
         ),
         "io.confluent"                  % "kafka-avro-serializer"           % confluentV excludeAll (
-          ExclusionRule("commons-logging", "commons-logging"),
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
@@ -1104,7 +1105,8 @@ lazy val mathUtils = (project in utils("math-utils"))
   .settings(
     name := "nussknacker-math-utils",
     libraryDependencies ++= Seq(
-      "org.springframework" % "spring-expression" % springV,
+      "commons-logging"     % "commons-logging"   % commonsLoggingV,
+      "org.springframework" % "spring-expression" % springV exclude ("org.springframework", "spring-jcl"),
     )
   )
   .dependsOn(commonUtils, componentsApi, testUtils % Test)
@@ -1133,7 +1135,6 @@ lazy val testUtils = (project in utils("test-utils"))
         "com.typesafe"                   % "config"                    % configV,
         "org.typelevel"                 %% "cats-core"                 % catsV,
         "ch.qos.logback"                 % "logback-classic"           % logbackV,
-        "org.springframework"            % "spring-jcl"                % springV,
         "commons-io"                     % "commons-io"                % flinkCommonsIOV,
         "org.scala-lang.modules"        %% "scala-collection-compat"   % scalaCollectionsCompatV,
         "com.softwaremill.sttp.client3" %% "slf4j-backend"             % sttpV,
@@ -1157,13 +1158,12 @@ lazy val jsonUtils = (project in utils("json-utils"))
     name := "nussknacker-json-utils",
     libraryDependencies ++= Seq(
       "io.swagger.parser.v3" % "swagger-parser"     % swaggerParserV excludeAll (
-        ExclusionRule(organization = "commons-logging"),
         ExclusionRule(organization = "javax.mail"),
         ExclusionRule(organization = "javax.validation"),
         ExclusionRule(organization = "jakarta.activation"),
         ExclusionRule(organization = "jakarta.validation"),
       ),
-      "com.github.erosb"     % "everit-json-schema" % everitSchemaV exclude ("commons-logging", "commons-logging"),
+      "com.github.erosb"     % "everit-json-schema" % everitSchemaV,
     )
   )
   .dependsOn(componentsUtils % Provided, testUtils % Test)
@@ -1539,7 +1539,7 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager"))
     name                            := "nussknacker-lite-k8s-deploymentManager",
     libraryDependencies ++= {
       Seq(
-        "io.github.hagay3"              %% "skuber"                           % "4.0.4" exclude ("commons-logging", "commons-logging"),
+        "io.github.hagay3"              %% "skuber"                           % "4.0.4",
         "com.github.julien-truffaut"    %% "monocle-core"                     % monocleV,
         "com.github.julien-truffaut"    %% "monocle-macro"                    % monocleV,
         "org.apache.pekko"              %% "pekko-slf4j"                      % pekkoV    % Test,
@@ -1578,6 +1578,7 @@ lazy val componentsApi = (project in file("components-api"))
     name := "nussknacker-components-api",
     libraryDependencies ++= {
       Seq(
+        "commons-logging"                % "commons-logging"               % commonsLoggingV,
         "org.apache.commons"             % "commons-text"                  % flinkCommonsTextV,
         "org.typelevel"                 %% "cats-core"                     % catsV,
         "com.beachape"                  %% "enumeratum"                    % enumeratumV,
@@ -1587,8 +1588,8 @@ lazy val componentsApi = (project in file("components-api"))
         "javax.validation"               % "validation-api"                % javaxValidationApiV,
         "org.scala-lang.modules"        %% "scala-collection-compat"       % scalaCollectionsCompatV,
         "com.iheart"                    %% "ficus"                         % ficusV,
-        "org.springframework"            % "spring-core"                   % springV,
-        "org.springframework"            % "spring-expression"             % springV        % Test,
+        "org.springframework"            % "spring-core"                   % springV exclude ("org.springframework", "spring-jcl"),
+        "org.springframework"            % "spring-expression"             % springV        % Test exclude ("org.springframework", "spring-jcl"),
         "com.google.code.findbugs"       % "jsr305"                        % findBugsV,
         "com.softwaremill.sttp.client3" %% "core"                          % sttpV,
         "org.scalatestplus"             %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test,
@@ -1605,7 +1606,8 @@ lazy val extensionsApi = (project in file("extensions-api"))
   .settings(
     name := "nussknacker-extensions-api",
     libraryDependencies ++= Seq(
-      "org.springframework" % "spring-expression" % springV,
+      "commons-logging"     % "commons-logging"   % commonsLoggingV,
+      "org.springframework" % "spring-expression" % springV exclude ("org.springframework", "spring-jcl"),
     )
   )
   .dependsOn(testUtils % Test, componentsApi, scenarioApi)
@@ -1671,7 +1673,6 @@ lazy val security = (project in file("security"))
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe"               % tapirV,
       "com.dimafeng"                %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
       "com.github.dasniko"           % "testcontainers-keycloak"        % "3.8.0"              % "it,test" excludeAll (
-        ExclusionRule("commons-logging", "commons-logging"),
         // we're using testcontainers-scala which requires a proper junit4 dependency
         ExclusionRule("io.quarkus", "quarkus-junit4-mock")
       )
@@ -2091,6 +2092,7 @@ lazy val designer = (project in file("designer/server"))
         "ch.qos.logback"                 % "logback-core"                   % logbackV,
         "ch.qos.logback"                 % "logback-classic"                % logbackV,
         "org.slf4j"                      % "log4j-over-slf4j"               % slf4jV,
+        "commons-logging"                % "commons-logging"                % commonsLoggingV,
         "com.carrotsearch"               % "java-sizeof"                    % "0.0.5",
         "org.typelevel"                 %% "case-insensitive"               % "1.4.0",
 
@@ -2103,7 +2105,7 @@ lazy val designer = (project in file("designer/server"))
         "org.hsqldb"                     % "hsqldb"                           % hsqldbV,
         "org.postgresql"                 % "postgresql"                       % postgresV,
         "org.flywaydb"                   % "flyway-core"                      % flywayV,
-        "org.apache.xmlgraphics"         % "fop"                              % "2.9" exclude ("commons-logging", "commons-logging"),
+        "org.apache.xmlgraphics"         % "fop"                              % "2.9",
         "com.beachape"                  %% "enumeratum-circe"                 % enumeratumV,
         "tf.tofu"                       %% "derevo-circe"                     % "0.13.0",
         "com.softwaremill.retry"        %% "retry"                            % retryV,
@@ -2125,7 +2127,7 @@ lazy val designer = (project in file("designer/server"))
         "io.dropwizard.metrics5"         % "metrics-jmx"                      % dropWizardV,
         "fr.davit"                      %% "pekko-http-metrics-dropwizard-v5" % "1.0.1",
         "org.scalacheck"                %% "scalacheck"                       % scalaCheckV          % Test,
-        "com.github.erosb"               % "everit-json-schema"               % everitSchemaV exclude ("commons-logging", "commons-logging"),
+        "com.github.erosb"               % "everit-json-schema"               % everitSchemaV,
         "org.apache.flink"               % "flink-metrics-dropwizard"         % flinkV               % Test,
         "org.wiremock"                   % "wiremock"                         % wireMockV            % Test,
         "io.circe"                      %% "circe-yaml"                       % circeYamlV           % Test,

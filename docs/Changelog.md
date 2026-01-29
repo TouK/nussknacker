@@ -323,6 +323,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#9012](https://github.com/TouK/nussknacker/pull/9012) Migrate test endpoints to Tapir:
   * `/processManagement/testCase/{scenarioName}` endpoint to `/scenarioTesting/{scenarioName)/performTestCase`
   * `/processManagement/test/{scenarioName}` to multipart variant of `/scenarioTesting/{scenarioName}/performTest`
+* [#8943](https://github.com/TouK/nussknacker/pull/8943) Replaced `spring-jcl` library with contemporary version of `commons-logging` 
 
 ## 1.18
 
