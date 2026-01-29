@@ -278,7 +278,7 @@ val avroV                 = "1.12.1"
 val kafkaV                = "3.9.1"
 // when updating note that we have copied and modified class org.springframework.expression.spel.ast.Projection
 // and org.springframework.util.NumberUtils and org.springframework.expression.spel.ast.Selection
-val springV               = "6.2.15"
+val springV               = "5.3.39"
 val scalaTestV            = "3.2.19"
 val scalaCheckV           = "1.18.1"
 val scalaCheckVshort      = scalaCheckV.take(4).replace(".", "-")
@@ -313,41 +313,43 @@ val dropWizardV             = "5.0.0-rc15"
 val scalaCollectionsCompatV = "2.13.0"
 val testContainersScalaV    = "0.44.1"
 val testContainersJavaV     = "2.0.3"
-val nettyV                  = "4.1.123.Final"
+val nettyV                  = "4.1.130.Final"
 val nettyReactiveStreamsV   = "2.0.12"
 
-val pekkoV                    = "1.0.3" // 1.1 uses Slf4j 2.x
-val pekkoHttpV                = "1.0.1"
-val pekkoManagementV          = "1.0.0"
-val pekkoHttpCirceV           = "2.8.0"
-val slickV                    = "3.5.0"
-val slickPgV                  = "0.22.2"
-val hikariCpV                 = "7.0.0"
-val hsqldbV                   = "2.7.4"
-val postgresV                 = "42.7.8"
-val flywayV                   = "9.22.3"
-val confluentV                = "7.5.1"
-val azureKafkaSchemaRegistryV = "1.1.2"
-val azureSchemaRegistryV      = "1.4.9"
-val azureIdentityV            = "1.16.3"
-val bcryptV                   = "0.10.2"
-val cronParserV               = "9.1.6" // 9.1.7+ requires JDK 16+
-val javaxValidationApiV       = "2.0.1.Final"
-val caffeineCacheV            = "3.2.2"
-val sttpV                     = "3.11.0"
-val sttpSharedV               = "1.3.22"
-val tapirV                    = "1.11.12"
-val openapiCirceYamlV         = "0.11.10"
-val monocleV                  = "2.1.0"
-val jmxPrometheusJavaagentV   = "0.20.0"
-val wireMockV                 = "3.13.1"
-val findBugsV                 = "3.0.2"
-val enumeratumV               = "1.9.0"
-val ujsonV                    = "4.2.1"
-val igniteV                   = "2.10.0"
-val retryV                    = "0.3.6"
-val restAssuredV              = "5.5.0"
-val awsSdkCommonsCodecV       = "1.17.1"
+val pekkoV                      = "1.0.3" // 1.1 uses Slf4j 2.x
+val pekkoHttpV                  = "1.0.1"
+val pekkoManagementV            = "1.0.0"
+val pekkoHttpCirceV             = "2.8.0"
+val slickV                      = "3.5.0"
+val slickPgV                    = "0.22.2"
+val hikariCpV                   = "7.0.0"
+val hsqldbV                     = "2.7.4"
+val postgresV                   = "42.7.8"
+val flywayV                     = "9.22.3"
+val confluentV                  = "7.5.1"
+val azureKafkaSchemaRegistryV   = "1.1.2"
+val azureSchemaRegistryV        = "1.4.9"
+val azureIdentityV              = "1.16.3"
+val bcryptV                     = "0.10.2"
+val cronParserV                 = "9.1.6" // 9.1.7+ requires JDK 16+
+val javaxValidationApiV         = "2.0.1.Final"
+val caffeineCacheV              = "3.2.2"
+val sttpV                       = "3.11.0"
+val sttpSharedV                 = "1.3.22"
+val tapirV                      = "1.11.12"
+val openapiCirceYamlV           = "0.11.10"
+val monocleV                    = "2.1.0"
+val jmxPrometheusJavaagentV     = "0.20.0"
+val wireMockV                   = "3.13.1"
+val findBugsV                   = "3.0.2"
+val enumeratumV                 = "1.9.0"
+val ujsonV                      = "4.2.1"
+val igniteV                     = "2.10.0"
+val retryV                      = "0.3.6"
+val restAssuredV                = "5.5.0"
+val awsSdkV                     = "2.42.8"
+val awsSdkCommonsCodecV         = "1.17.1"
+val awsKinesisAnaliticsRuntimeV = "1.2.0"
 
 lazy val commonDockerSettings = {
   Seq(
@@ -463,9 +465,10 @@ lazy val distribution: Project = sbt
   .settings(
     deploymentManagerArtifacts               := {
       List(
-        (flinkDeploymentManager / assembly).value        -> "managers/nussknacker-flink-manager.jar",
-        (liteK8sDeploymentManager / assembly).value      -> "managers/lite-k8s-manager.jar",
-        (liteEmbeddedDeploymentManager / assembly).value -> "managers/lite-embedded-manager.jar",
+        (flinkDeploymentManager / assembly).value           -> "managers/nussknacker-flink-manager.jar",
+        (awsManagedFlinkDeploymentManager / assembly).value -> "managers/nussknacker-aws-managed-flink-deployment-manager.jar",
+        (liteK8sDeploymentManager / assembly).value         -> "managers/lite-k8s-manager.jar",
+        (liteEmbeddedDeploymentManager / assembly).value    -> "managers/lite-embedded-manager.jar",
       )
     },
     componentArtifacts                       := {
@@ -483,8 +486,9 @@ lazy val distribution: Project = sbt
     },
     modelArtifacts                           := {
       List(
-        (defaultModel / assembly).value  -> "model/defaultModel.jar",
-        (flinkExecutor / assembly).value -> "model/flinkExecutor.jar",
+        (defaultModel / assembly).value                -> "model/defaultModel.jar",
+        (flinkExecutor / assembly).value               -> "model/flinkExecutor.jar",
+        (awsManagedFlinkDependencies / assembly).value -> "model/awsManagedFlinkDependencies.jar",
       )
     },
     devArtifacts                             := {
@@ -615,17 +619,51 @@ lazy val flinkDeploymentManager = (project in flink("management"))
 
 lazy val awsManagedFlinkDeploymentManager = (project in flink("aws-managed-flink-deployment-manager"))
   .settings(commonSettings)
+  .settings(assemblyNoScala("nussknacker-aws-managed-flink-deployment-manager.jar"): _*)
   .settings(
-    name := "nussknacker-aws-managed-flink-deployment-manager",
+    name                             := "nussknacker-aws-managed-flink-deployment-manager",
+    assembly / assemblyMergeStrategy := {
+      case PathList("META-INF", "native-image", "io.netty", _, "generated", "handlers", "reflect-config.json") =>
+        MergeStrategy.first
+      case x                                                                                                   => flinkDeploymentManagerMergeStrategy(x)
+    },
     libraryDependencies ++= {
       Seq(
-        "commons-codec" % "commons-codec" % awsSdkCommonsCodecV
+        "software.amazon.awssdk" % "s3"                           % awsSdkV,
+        "software.amazon.awssdk" % "kinesisanalyticsv2"           % awsSdkV,
+        "com.amazonaws"          % "aws-kinesisanalytics-runtime" % awsKinesisAnaliticsRuntimeV,
+        "commons-codec"          % "commons-codec"                % awsSdkCommonsCodecV
       )
     }
   )
   .dependsOn(
-    commonUtils % Provided,
-    testUtils   % Test,
+    scenarioCompilerFlinkDeps,
+    flinkMiniCluster,
+    deploymentManagerApi % Provided,
+    commonUtils          % Provided,
+    utilsInternal        % Provided,
+    testUtils            % Test,
+    scenarioCompiler     % Test
+  )
+
+lazy val awsManagedFlinkDependencies = (project in flink("aws-managed-flink-dependencies"))
+  .settings(commonSettings)
+  .settings(
+    assemblySettings(
+      "awsManagedFlinkDependencies.jar",
+      includeScala = true
+    ): _*
+  )
+  .settings(
+    name                                             := "nussknacker-aws-managed-flink-dependencies",
+    libraryDependencies ++= {
+      Seq(
+        "software.amazon.awssdk" % "s3"                       % awsSdkV,
+        "org.apache.flink"       % "flink-metrics-dropwizard" % flinkV,
+        "org.scala-lang"         % "scala-reflect"            % scalaVersion.value,
+      )
+    },
+    dependencyOverrides += "com.google.code.findbugs" % "jsr305" % findBugsV,
   )
 
 lazy val flinkMetricsDeferredReporter = (project in flink("metrics-deferred-reporter"))
@@ -749,15 +787,23 @@ lazy val flinkExecutor = (project in flink("executor"))
     libraryDependencies ++= {
       Seq(
         // Must be loaded before flink-java or custom serializers won't be loaded
-        "pl.touk"         %% "flink-scala"                % flinkScalaV % Provided,
+        "pl.touk"               %% "flink-scala"                  % flinkScalaV                 % Provided,
         // Dependencies below are provided by flink-dist jar in production flink or by flink DM for scenario testing/state verification purpose
-        "org.apache.flink" % "flink-streaming-java"       % flinkV      % Provided,
-        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV      % Provided,
+        "org.apache.flink"       % "flink-streaming-java"         % flinkV                      % Provided,
+        "org.apache.flink"       % "flink-statebackend-rocksdb"   % flinkV                      % Provided,
         // This dependency must be provided, because some cloud providers, such as Ververica, already have it on their classpath, which may cause a conflict
-        "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV      % Provided,
+        "org.apache.flink"       % "flink-metrics-dropwizard"     % flinkV                      % Provided,
         // This is needed when flink minicluster is used for deployment
-        "org.apache.flink" % "flink-metrics-influxdb"     % flinkV      % Provided,
-        "org.apache.flink" % "flink-metrics-prometheus"   % flinkV      % Provided,
+        "org.apache.flink"       % "flink-metrics-influxdb"       % flinkV                      % Provided,
+        "org.apache.flink"       % "flink-metrics-prometheus"     % flinkV                      % Provided,
+        "commons-logging"        % "commons-logging"              % commonsLoggingV,
+        // Provided by AWS Managed Flink environment
+        "com.amazonaws"          % "aws-kinesisanalytics-runtime" % awsKinesisAnaliticsRuntimeV % Provided,
+        // S3 is needed for reading a deployment-properties file containing scenario json and modelConfig. Alternatively
+        // we could store this deployment-properties file in the application code jar, but then we would have to upload
+        // this jar every deploy. Without this, we send just one application code jar for configured classpath and reuse
+        // it every time.
+        "software.amazon.awssdk" % "s3"                           % awsSdkV                     % Provided
       )
     },
     prepareItLibs               := {
@@ -2218,6 +2264,7 @@ lazy val modules = List[ProjectReference](
   liteEngineRuntimeApp,
   flinkDeploymentManager,
   awsManagedFlinkDeploymentManager,
+  awsManagedFlinkDependencies,
   flinkDevModel,
   flinkDevModelJava,
   flinkTableApiComponents,
