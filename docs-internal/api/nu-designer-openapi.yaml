@@ -2574,6 +2574,137 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/nodes/{scenarioName}/testCase/enricherMock:
+    post:
+      tags:
+      - Nodes
+      summary: Generate an enricher mock expression
+      operationId: postApiNodesScenarionameTestcaseEnrichermock
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateEnricherMockRequestDto'
+            example:
+              variableTypes:
+                amount:
+                  value: 5
+                  display: Long(5)
+                  type: TypedObjectWithValue
+                  refClazzName: java.lang.Long
+                  params: []
+                name:
+                  value: Alice
+                  display: String(Alice)
+                  type: TypedObjectWithValue
+                  refClazzName: java.lang.String
+                  params: []
+              processProperties:
+                additionalFields:
+                  properties:
+                    parallelism: ''
+                    spillStateToDisk: 'true'
+                    useAsyncInterpretation: ''
+                    checkpointIntervalInSeconds: ''
+                  metaDataType: StreamMetaData
+                  showDescription: false
+              enricher:
+                id: enricher
+                service:
+                  id: paramService
+                  parameters:
+                  - name: param
+                    expression:
+                      language: spel
+                      expression: '#input.id'
+                output: out
+                type: Enricher
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateEnricherMockResponseDto'
+              example:
+                enricherMockExpression:
+                  language: spel
+                  expression: '''sample'''
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                anyOf:
+                - type: string
+                - type: string
+              examples:
+                Example:
+                  summary: Malformed TypingResult sent in request
+                  value: |-
+                    The request content was malformed:
+                    Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
   /api/notifications:
     get:
       tags:
@@ -6313,6 +6444,48 @@ components:
           type: string
         nodeId:
           type: string
+    GenerateEnricherMockRequestDto:
+      title: GenerateEnricherMockRequestDto
+      type: object
+      required:
+      - variableTypes
+      - processProperties
+      - enricher
+      properties:
+        variableTypes:
+          $ref: '#/components/schemas/Map_TypingResultInJson'
+        enricher:
+          type: object
+          required:
+          - id
+          - output
+          - service
+          - type
+          properties:
+            additionalFields:
+              anyOf:
+              - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+              - type: 'null'
+            branchParametersTemplate:
+              type: array
+              items:
+                $ref: '#/components/schemas/Parameter'
+            id:
+              type: string
+            output:
+              type: string
+            service:
+              $ref: '#/components/schemas/ServiceRef'
+            type:
+              $ref: '#/components/schemas/NodeTypes2'
+    GenerateEnricherMockResponseDto:
+      title: GenerateEnricherMockResponseDto
+      type: object
+      required:
+      - enricherMockExpression
+      properties:
+        enricherMockExpression:
+          $ref: '#/components/schemas/Expression'
     GetDeploymentStatusResponse:
       title: GetDeploymentStatusResponse
       type: object
