@@ -386,9 +386,9 @@ class K8sDeploymentManagerKafkaTest
     kafka.start()
   }
 
-  override protected def cleanup(): Unit = {
-    super.cleanup()
+  override protected def afterAll(): Unit = {
     kafka.stop()
+    super.afterAll()
   }
 
   private def cancelAndAssertCleanup(manager: K8sDeploymentManager, version: ProcessVersion) = {

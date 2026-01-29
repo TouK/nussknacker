@@ -24,7 +24,7 @@ services:
         condition: service_healthy
 
   postgres:
-    image: postgres:18
+    image: postgres:18-alpine
     restart: unless-stopped
     ports:
       - 5432:5432

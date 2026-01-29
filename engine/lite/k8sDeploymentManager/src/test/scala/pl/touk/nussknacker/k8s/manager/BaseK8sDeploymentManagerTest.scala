@@ -17,9 +17,8 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, VeryPatientScalaFutures}
-import skuber.{k8sInit, ConfigMap, Event, LabelSelector, ListResource, Pod, Resource, Secret, Service}
+import skuber.{k8sInit, ConfigMap, LabelSelector, ListResource, Pod, Resource, Secret, Service}
 import skuber.LabelSelector.dsl._
-import skuber.Pod.LogQueryParams
 import skuber.api.client.KubernetesClient
 import skuber.apps.v1.Deployment
 import skuber.json.format._
@@ -29,7 +28,6 @@ import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
-import scala.util.{Failure, Try}
 import scala.util.control.NonFatal
 
 class BaseK8sDeploymentManagerTest
@@ -39,9 +37,11 @@ class BaseK8sDeploymentManagerTest
     with BeforeAndAfterAll {
   self: LazyLogging =>
 
-  private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-  private implicit val system: ActorSystem                  = ActorSystem(getClass.getSimpleName)
   import system.dispatcher
+
+  private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+
+  protected implicit val system: ActorSystem      = ActorSystem(getClass.getSimpleName)
   protected val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
 
   protected lazy val k8s: KubernetesClient = k8sInit(system)
@@ -146,9 +146,7 @@ class BaseK8sDeploymentManagerTest
         action
       } catch {
         case NonFatal(ex) =>
-          Try(printResourcesDetails()).failed.foreach { ex =>
-            logger.warn("Failure during printResourcesDetails", ex)
-          }
+          k8sTestUtils.printResourcesDetails()
           throw ex
       } finally {
         manager.processCommand(DMCancelScenarioCommand(version.processName, DeploymentData.systemUser)).futureValue
@@ -166,25 +164,6 @@ class BaseK8sDeploymentManagerTest
         state.map(_.status).headOption should matchPattern {
           case Some(s: SimpleStateStatus.Running) if s.version == version.versionId =>
         }
-      }
-    }
-
-    private def printResourcesDetails(): Unit = {
-      val pods = k8s.list[ListResource[Pod]]().futureValue.items
-      logger.info("pods:\n" + pods.mkString("\n"))
-      logger.info("services:\n" + k8s.list[ListResource[Service]]().futureValue.items.mkString("\n"))
-      logger.info("deployments:\n" + k8s.list[ListResource[Deployment]]().futureValue.items.mkString("\n"))
-      logger.info("ingresses:\n" + k8s.list[ListResource[Ingress]]().futureValue.items.mkString("\n"))
-      logger.info("events:\n" + k8s.list[ListResource[Event]]().futureValue.items.mkString("\n"))
-      pods.foreach { p =>
-        logger.info(s"Printing logs for pod: ${p.name}")
-        // It looks like it is a common situation that waiting for logs take a longer time than patient config.
-        // I guess that for still running pods, it can wait forever. Even if futureValue failed, printing of logs would
-        // still be continued. Because of that, I silently ignore this error
-        Try(
-          k8s.getPodLogSource(p.name, LogQueryParams()).futureValue.runForeach(bs => println(bs.utf8String)).futureValue
-        )
-        logger.info(s"Finished printing logs for pod: ${p.name}")
       }
     }
 

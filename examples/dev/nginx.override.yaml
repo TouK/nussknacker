@@ -1,7 +1,7 @@
 services:
 
   nginx:
-    image: nginx:1.26.0-alpine
+    image: nginx:1.28-alpine
     restart: unless-stopped
     ports:
       - 3080:8080

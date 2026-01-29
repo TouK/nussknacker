@@ -120,10 +120,11 @@ abstract class BaseCachedTopicsExistenceValidatorTest(kafkaAutoCreateEnabled: Bo
     with Matchers {
 
   override val container: KafkaContainer =
-    KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.4.0"))
-      .configure {
-        _.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", kafkaAutoCreateEnabled.toString.toUpperCase)
-      }
+    KafkaContainer(DockerImageName.parse("apache/kafka-native:4.1.1")).configure { self =>
+      // can segfault on startup, we need retries - https://issues.apache.org/jira/browse/KAFKA-20314
+      self.withStartupAttempts(3)
+      self.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", kafkaAutoCreateEnabled.toString.toLowerCase)
+    }
 
   lazy val defaultKafkaConfig: KafkaComponentsConfig = KafkaComponentsConfig(
     kafkaProperties = Map("bootstrap.servers" -> container.bootstrapServers),
