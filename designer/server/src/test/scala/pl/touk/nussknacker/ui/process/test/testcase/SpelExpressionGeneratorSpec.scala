@@ -45,8 +45,9 @@ class SpelExpressionGeneratorSpec
       ("description", "typingResult", "expectedExpression"),
       ("unknown", Unknown, "null"),
       ("string", Typed[String], "''"),
-      ("integer", Typed[Integer], "0"),
-      ("long", Typed[java.lang.Long], "0"),
+      ("integer", Typed[java.lang.Integer], "0"),
+      ("long", Typed[java.lang.Long], "0l"),
+      ("float", Typed[java.lang.Float], "0.0f"),
       ("double", Typed[java.lang.Double], "0.0"),
       ("boolean", Typed[java.lang.Boolean], "true"),
       ("empty record", Typed.record(Map.empty[String, TypingResult]), "{:}"),
@@ -75,11 +76,6 @@ class SpelExpressionGeneratorSpec
           |}""".stripMargin
       ),
       ("list", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])), "{''}"),
-      (
-        "Map",
-        Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Typed[Integer])),
-        "{'key': 0}"
-      ),
       (
         "HTTP request/response record",
         httpRequestResponseType,

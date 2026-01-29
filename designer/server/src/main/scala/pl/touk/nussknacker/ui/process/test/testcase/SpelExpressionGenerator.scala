@@ -25,8 +25,8 @@ private object SpelExpressionGenerator {
     case TypedTaggedValue(underlying, _) =>
       generateForTypingResult(underlying, indentLevel)
 
-    case TypedObjectWithValue(_, value) =>
-      generateForValue(value)
+    case TypedObjectWithValue(underlying, _) =>
+      generateForTypingResult(underlying, indentLevel)
 
     case klass: TypedClass =>
       generateForClass(klass, indentLevel)
@@ -41,17 +41,6 @@ private object SpelExpressionGenerator {
       None
   }
 
-  private def generateForValue(value: Any): Option[String] = value match {
-    case null       => Some("null")
-    case s: String  => Some(s"'$s'")
-    case i: Int     => Some(i.toString)
-    case l: Long    => Some(l.toString)
-    case d: Double  => Some(d.toString)
-    case f: Float   => Some(f.toString)
-    case b: Boolean => Some(b.toString)
-    case _          => None
-  }
-
   private def generateForClass(klass: TypedClass, indentLevel: Int): Option[String] = klass match {
     case TypedClass(clazz, _) if clazz == StringClass =>
       Some("''")
@@ -59,22 +48,22 @@ private object SpelExpressionGenerator {
     case TypedClass(clazz, _) if clazz == BooleanClass =>
       Some("true")
 
+    case TypedClass(clazz, _) if clazz == LongClass =>
+      Some("0l")
+
+    case TypedClass(clazz, _) if clazz == FloatClass =>
+      Some("0.0f")
+
+    case TypedClass(clazz, _) if clazz == DoubleClass =>
+      Some("0.0")
+
     case TypedClass(clazz, _) if isDecimalNumber(clazz) =>
       Some("0")
-
-    case TypedClass(clazz, _) if isFloatingPointNumber(clazz) =>
-      Some("0.0")
 
     case TypedClass(ListClass | ArrayClass, elementType :: Nil) =>
       generateForTypingResult(elementType, indentLevel) match {
         case Some(elementExpr) => Some(s"{$elementExpr}")
         case None              => Some("{}")
-      }
-
-    case TypedClass(MapClass, _ :: valueType :: Nil) =>
-      generateForTypingResult(valueType, indentLevel) match {
-        case Some(valueExpr) => Some(s"{'key': $valueExpr}")
-        case None            => Some("{:}")
       }
 
     case TypedClass(JavaEnumConstants(firstEnumConstant :: _), _) =>
