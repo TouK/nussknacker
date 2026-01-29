@@ -53,7 +53,10 @@ class SpelExpressionGeneratorSpec
       (
         "simple record",
         Typed.record(Map("name" -> Typed[String], "age" -> Typed[Integer])),
-        "{name: 'string', age: 42}"
+        """{
+          |  name: 'string',
+          |  age: 42
+          |}""".stripMargin
       ),
       (
         "nested record",
@@ -63,7 +66,13 @@ class SpelExpressionGeneratorSpec
             "count" -> Typed[Integer]
           )
         ),
-        "{user: {name: 'string', active: true}, count: 42}"
+        """{
+          |  user: {
+          |  name: 'string',
+          |  active: true
+          |},
+          |  count: 42
+          |}""".stripMargin
       ),
       ("list", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])), "{'string'}"),
       (
@@ -74,7 +83,26 @@ class SpelExpressionGeneratorSpec
       (
         "HTTP request/response record",
         httpRequestResponseType,
-        "{request: {body: {:}, headers: {{name: 'string', value: 'string'}}, method: 'string', url: 'string'}, response: {body: null, headers: {{name: 'string', value: 'string'}}, statusCode: 42, statusText: 'string'}}"
+        """{
+          |  request: {
+          |  body: {:},
+          |  headers: {{
+          |  name: 'string',
+          |  value: 'string'
+          |}},
+          |  method: 'string',
+          |  url: 'string'
+          |},
+          |  response: {
+          |  body: null,
+          |  headers: {{
+          |  name: 'string',
+          |  value: 'string'
+          |}},
+          |  statusCode: 42,
+          |  statusText: 'string'
+          |}
+          |}""".stripMargin
       )
     )
 

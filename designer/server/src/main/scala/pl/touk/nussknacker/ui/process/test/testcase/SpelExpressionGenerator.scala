@@ -12,8 +12,11 @@ private object SpelExpressionGenerator {
       val fieldExpressions = fields.mapValuesNow(generate(_).getOrElse("null"))
       val recordExpression = if (fieldExpressions.isEmpty) {
         "{:}"
-      } else {
+      } else if (fieldExpressions.size == 1) {
         fieldExpressions.map { case (key, value) => s"$key: $value" }.mkString("{", ", ", "}")
+      } else {
+        val fieldLines = fieldExpressions.map { case (key, value) => s"  $key: $value" }.mkString(",\n")
+        s"{\n$fieldLines\n}"
       }
       Some(recordExpression)
 
