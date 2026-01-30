@@ -6,6 +6,7 @@ runs:
     # https://github.com/actions/runner-images/issues/2875
     # https://github.com/actions/runner-images/issues/2840#issuecomment-790492173
     - name: Increase free disk space
+      shell: bash
       run: |
         df -h /
 
