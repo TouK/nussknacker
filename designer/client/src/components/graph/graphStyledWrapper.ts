@@ -112,6 +112,7 @@ export const GraphStyledWrapper = styled("div")<{ areAdvancedStickyNotesEnabled:
         {
             ".element": {
                 cursor: "pointer",
+                backgroundColor: "blue",
                 "&:active": {
                     cursor: "grabbing",
                 },

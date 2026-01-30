@@ -39,6 +39,7 @@ import { useAppDispatch, useAppSelector } from "../store/storeHelpers";
 import { useWindows } from "../windowManager/useWindows";
 import { AddComponentsButtons } from "./AddComponentsButtons";
 import { AdjustNodeOverlapBehavior } from "./AdjustNodeOverlapBehavior";
+import { AddAssertionResultToNodes } from "./assertions/addAssertionResultToNodes";
 import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
 import { useModalsIfNeeded } from "./hooks/useModalsIfNeeded";
 import { useInterval } from "./Interval";
@@ -238,6 +239,7 @@ function Visualization() {
                             <AddComponentsButtons />
                         </Toolbars>
                     </SelectionContextProvider>
+                    <AddAssertionResultToNodes />
                 </GraphProvider>
             </GraphPage>
             <div data-testid="toolbar-portal" ref={portalRef} />

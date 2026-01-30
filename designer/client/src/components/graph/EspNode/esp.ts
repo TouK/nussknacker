@@ -128,6 +128,34 @@ const testResults: dia.MarkupNodeJSON = {
     },
 };
 
+const testAssertionResult: dia.MarkupNodeJSON = {
+    tagName: "g",
+    selector: "testAssertionResultGroup",
+    children: [
+        {
+            selector: "testAssertionResult",
+            tagName: "rect",
+            className: "testAssertionResult",
+            attributes: {
+                height: testResultsHeight,
+                y: RECT_HEIGHT / 2 - 12,
+            },
+        },
+        {
+            selector: "testAssertionResultSummary",
+            tagName: "text",
+            className: "testAssertionResultSummary",
+            attributes: {
+                height: testResultsHeight,
+                y: RECT_HEIGHT / 2 + 4,
+            },
+        },
+    ],
+    attributes: {
+        noExport: "",
+    },
+};
+
 const refX = RECT_HEIGHT - getStringWidth("1") / 2;
 const defaults = (theme: Theme) =>
     util.defaultsDeep(
@@ -186,7 +214,7 @@ const protoProps = (theme: Theme, node: NodeType) => {
         portMarkup: [portMarkup(theme, node)],
         portLabelMarkup: null,
 
-        markup: [background, iconBackground, border, icon, content(theme), help(theme), testResults],
+        markup: [background, iconBackground, border, icon, content(theme), help(theme), testResults, testAssertionResult],
     };
 };
 
