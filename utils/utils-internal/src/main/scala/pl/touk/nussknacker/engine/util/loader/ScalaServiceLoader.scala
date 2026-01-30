@@ -69,7 +69,7 @@ object ScalaServiceLoader extends LazyLogging {
         .map { cl =>
           val classLoader = cl.getClass.getClassLoader match {
             case urlCL: URLClassLoader =>
-              s"${urlCL.getURLs.map(_.toString).toList.mkCommaSeparatedStringWithPotentialEllipsis(10)})"
+              s"(${urlCL.getURLs.map(_.toString).toList.mkCommaSeparatedStringWithPotentialEllipsis(10)})"
             case other =>
               s"${other.getName}"
           }
