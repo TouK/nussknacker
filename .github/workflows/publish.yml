@@ -37,30 +37,8 @@ jobs:
       SONATYPE_USERNAME: ${{ secrets.sonatype_user }}
       SONATYPE_PASSWORD: ${{ secrets.sonatype_password }}
     steps:
-      - name: Cancel previous runs
-        if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ secrets.github__token }}
       - uses: actions/checkout@v6
-      - uses: coursier/setup-action@v1
-        with:
-          jvm: temurin:1.17.0.5
-      - name: Cache ivy packages
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            ~/.sbt
-          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
-          restore-keys: sbt
-      - uses: actions/download-artifact@v7
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run: tar xfz target.tgz
+      - uses: ./.github/actions/prepare_sbt_test.yml
       - uses: actions/download-artifact@v7
         with:
           name: build-fe-dist
@@ -79,14 +57,7 @@ jobs:
           config-inline: |
             [worker.oci]
               max-parallelism = 1
-      - name: Try to free space
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          sudo rm -rf /usr/local/lib/android
-      - uses: sbt/setup-sbt@v1
+      - uses: ./.github/actions/increase_runner_disk_space.yml
       - name: Publish with scaladocs
         if: ${{ inputs.ref == 'refs/heads/staging' }}
         env:

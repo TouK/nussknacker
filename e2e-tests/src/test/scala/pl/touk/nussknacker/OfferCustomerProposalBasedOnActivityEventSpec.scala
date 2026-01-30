@@ -2,6 +2,7 @@ package pl.touk.nussknacker
 
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.tags.Slow
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import pl.touk.nussknacker.utils.BasicScenarioInformationFetching
 import pl.touk.nussknacker.utils.BasicScenarioInformationFetching.{
@@ -11,6 +12,7 @@ import pl.touk.nussknacker.utils.BasicScenarioInformationFetching.{
 }
 import ujson.Str
 
+@Slow
 class OfferCustomerProposalBasedOnActivityEventSpec
     extends AnyFreeSpecLike
     with BaseE2ESpec

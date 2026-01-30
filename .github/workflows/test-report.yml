@@ -41,6 +41,14 @@ jobs:
           reporter: java-junit
           # Limited because of GH actions maximum report size of 65535 bytes
           list-suites: failed
+      - name: E2ETests Report
+        continue-on-error: true
+        uses: dorny/test-reporter@v2
+        with:
+          name: REPORT-E2ETests-${{ matrix.scalaVersion }}
+          artifact: E2ETests-results-${{ matrix.scalaVersion }}
+          path: '**/*.xml'
+          reporter: java-junit
       - name: IntegrationTests Report
         continue-on-error: true
         uses: dorny/test-reporter@v2

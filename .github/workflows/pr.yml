@@ -177,38 +177,9 @@ jobs:
       NUSSKNACKER_SCALA_VERSION: ${{ matrix.scalaVersion }}
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
-      - name: Cancel previous runs
-        if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.13.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Try to free space
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          sudo rm -rf /usr/local/lib/android
       - uses: actions/checkout@v6
-      - uses: coursier/setup-action@v1
-        with:
-          jvm: temurin:1.17.0.5
-      - uses: actions/download-artifact@v7
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
-      - uses: sbt/setup-sbt@v1
-      - name: Cache ivy packages
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            ~/.sbt
-          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
-          restore-keys: sbt
+      - uses: ./.github/actions/prepare_sbt_test.yml
+      - uses: ./.github/actions/increase_runner_disk_space.yml
       - name: Backend tests
         shell: bash
         run: ./ciRunSbt.sh test
@@ -217,6 +188,30 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: BackendTests-results-${{ matrix.scalaVersion }}
+          path: '**/test-reports/*.xml'
+
+  e2eTests:
+    name: E2ETests
+    runs-on: ubuntu-latest
+    needs: [ build, setup ]
+    strategy:
+      matrix:
+        scalaVersion: [2.13]
+    env:
+      NUSSKNACKER_SCALA_VERSION: ${{ matrix.scalaVersion }}
+    if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/prepare_sbt_test.yml
+      - uses: ./.github/actions/increase_runner_disk_space.yml
+      - name: E2E tests
+        shell: bash
+        run: ./ciRunSbt.sh e2eTests/Slow/test
+      - name: Test Report
+        if: success() || failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: E2ETests-results-${{ matrix.scalaVersion }}
           path: '**/test-reports/*.xml'
 
   integrationTests:
@@ -230,32 +225,8 @@ jobs:
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     runs-on: ubuntu-latest
     steps:
-      - name: Cancel previous runs
-        if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.13.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v6
-      - uses: coursier/setup-action@v1
-        with:
-          jvm: temurin:1.17.0.5
-      - uses: sbt/setup-sbt@v1
-      - name: Cache ivy packages
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            ~/.sbt
-          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
-          restore-keys: sbt
-      - uses: actions/download-artifact@v7
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
-      - uses: sbt/setup-sbt@v1
+      - uses: ./.github/actions/prepare_sbt_test.yml
       - name: Integration tests
         shell: bash
         env:
@@ -279,31 +250,8 @@ jobs:
       NUSSKNACKER_SCALA_VERSION: ${{ matrix.scalaVersion }}
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
-      - name: Cancel previous runs
-        if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.13.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v6
-      - uses: coursier/setup-action@v1
-        with:
-          jvm: temurin:1.17.0.5
-      - uses: sbt/setup-sbt@v1
-      - name: Cache ivy packages
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            ~/.sbt
-          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
-          restore-keys: sbt
-      - uses: actions/download-artifact@v7
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
+      - uses: ./.github/actions/prepare_sbt_test.yml
       # We run k8s tests here instead of in integrationTests job because it causes RAM overhead and some other docker tests failing occasionally
       - uses: AbsaOSS/k3d-action@v2.4.0
         env:

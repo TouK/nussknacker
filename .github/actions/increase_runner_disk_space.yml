@@ -1,0 +1,42 @@
+name: Free disk space
+description: Removes some unused runner components to have more free space e.g. for Docker builds
+runs:
+  using: "composite"
+  steps:
+    # https://github.com/actions/runner-images/issues/2875
+    # https://github.com/actions/runner-images/issues/2840#issuecomment-790492173
+    - name: Increase free disk space
+      run: |
+        df -h /
+
+        set +x
+        du -hs /usr/share/*
+        du -hs /usr/lib/*
+        du -hs /opt/*
+        du -hs /opt/google/*
+        du -hs /opt/microsoft/*
+        du -hs /usr/local/share/*
+        du -hs /usr/local/lib/*
+        du -hs "$AGENT_TOOLSDIRECTORY/"*
+
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /usr/share/swift
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /usr/local/share/boost
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY/go"
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY/Ruby"
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY/Python"
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY/PyPy"
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY/CodeQL"
+
+        sudo rm -rf /usr/lib/firefox
+        sudo rm -rf /opt/google/chrome
+        sudo rm -rf /opt/microsoft/msedge
+        sudo rm -rf /opt/microsoft/powershell
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /usr/local/share/chromium
+        sudo rm -rf /usr/local/share/powershell
+
+        set -x
+        df -h
