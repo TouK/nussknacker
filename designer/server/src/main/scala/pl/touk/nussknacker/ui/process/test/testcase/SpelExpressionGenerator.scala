@@ -41,7 +41,7 @@ private object SpelExpressionGenerator {
       None
   }
 
-  private def generateForClass(klass: TypedClass, indentLevel: Int): Option[String] = klass match {
+  private def generateForClass(typedClass: TypedClass, indentLevel: Int): Option[String] = typedClass match {
     case TypedClass(clazz, _) if clazz == StringClass =>
       Some("''")
 
@@ -76,7 +76,7 @@ private object SpelExpressionGenerator {
       }
 
     case TypedClass(JavaEnumConstants(firstEnumConstant :: _), _) =>
-      Some(s"T(${klass.klass.getName}).${firstEnumConstant.name()}")
+      Some(s"T(${typedClass.klass.getName}).${firstEnumConstant.name()}")
 
     case TypedClass(clazz, _) if clazz == InstantClass =>
       Some("T(java.time.Instant).parse('1900-01-01T00:00:00Z')")
