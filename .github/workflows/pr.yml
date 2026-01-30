@@ -178,8 +178,8 @@ jobs:
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/prepare_sbt_test.yml
-      - uses: ./.github/actions/increase_runner_disk_space.yml
+      - uses: ./.github/actions/prepare_sbt_test
+      - uses: ./.github/actions/increase_runner_disk_space
       - name: Backend tests
         shell: bash
         run: ./ciRunSbt.sh test
@@ -202,8 +202,8 @@ jobs:
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/prepare_sbt_test.yml
-      - uses: ./.github/actions/increase_runner_disk_space.yml
+      - uses: ./.github/actions/prepare_sbt_test
+      - uses: ./.github/actions/increase_runner_disk_space
       - name: E2E tests
         shell: bash
         run: ./ciRunSbt.sh e2eTests/Slow/test
@@ -226,7 +226,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/prepare_sbt_test.yml
+      - uses: ./.github/actions/prepare_sbt_test
       - name: Integration tests
         shell: bash
         env:
@@ -251,7 +251,7 @@ jobs:
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/prepare_sbt_test.yml
+      - uses: ./.github/actions/prepare_sbt_test
       # We run k8s tests here instead of in integrationTests job because it causes RAM overhead and some other docker tests failing occasionally
       - uses: AbsaOSS/k3d-action@v2.4.0
         env:

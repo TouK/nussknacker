@@ -38,7 +38,8 @@ jobs:
       SONATYPE_PASSWORD: ${{ secrets.sonatype_password }}
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/prepare_sbt_test.yml
+      - uses: ./.github/actions/prepare_sbt_test
+      - uses: ./.github/actions/increase_runner_disk_space
       - uses: actions/download-artifact@v7
         with:
           name: build-fe-dist
@@ -57,7 +58,6 @@ jobs:
           config-inline: |
             [worker.oci]
               max-parallelism = 1
-      - uses: ./.github/actions/increase_runner_disk_space.yml
       - name: Publish with scaladocs
         if: ${{ inputs.ref == 'refs/heads/staging' }}
         env:

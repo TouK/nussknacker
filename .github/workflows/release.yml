@@ -97,7 +97,7 @@ jobs:
           config-inline: |
             [worker.oci]
               max-parallelism = 1
-      - uses: ./.github/actions/increase_runner_disk_space.yml
+      - uses: ./.github/actions/increase_runner_disk_space
       - name: "Build"
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
