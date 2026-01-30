@@ -2,16 +2,16 @@ package pl.touk.nussknacker.engine.lite.components
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
+import cats.implicits._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.Suite
-import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke, NodeId, Service, TraceId}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
-import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 import pl.touk.nussknacker.engine.util.test.{RunListResult, RunResult, TestScenarioRunner}
 
 import java.util.UUID
@@ -62,12 +62,15 @@ trait FunctionalTestMixin extends KafkaSpec { self: Suite =>
       redundantFieldsError: List[String],
       rangeFieldErrors: List[String]
   ): Invalid[NonEmptyList[ProcessCompilationError]] = {
-    val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(
-      typeFieldErrors,
-      missingFieldsError,
-      redundantFieldsError,
-      rangeFieldErrors
-    )
+    val finalMessage = List(
+      NonEmptyList.fromList(typeFieldErrors).map(errors => s"Incorrect type: ${errors.mkString_(", ")}."),
+      NonEmptyList.fromList(missingFieldsError).map(errors => s"Missing fields: ${errors.mkString_(", ")}."),
+      NonEmptyList.fromList(redundantFieldsError).map(errors => s"Redundant fields: ${errors.mkString_(", ")}."),
+      NonEmptyList
+        .fromList(rangeFieldErrors)
+        .map(errors => s"Provided value is out of range: ${errors.mkString_(", ")}."),
+    ).flatten.mkString("Provided value does not match scenario output - errors:\n", ", ", "")
+
     Invalid(
       NonEmptyList.one(
         CustomNodeError(NodeId(sinkName), finalMessage, Some(KafkaUniversalComponentTransformer.sinkValueParamName))

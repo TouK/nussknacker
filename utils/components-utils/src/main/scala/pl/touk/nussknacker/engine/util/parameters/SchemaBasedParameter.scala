@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.util.parameters
 
 import cats.data.{NonEmptyList, ValidatedNel}
+import cats.implicits._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.transformation.BaseDefinedParameter
@@ -21,9 +22,13 @@ sealed trait SchemaBasedParameter {
     case SchemaBasedRecordParameter(fields) => fields.values.toList.flatMap(_.flatten)
   }
 
-  def validateParams(resultType: Map[ParameterName, BaseDefinedParameter])(
+  def validateParams(resultType: Map[ParameterName, BaseDefinedParameter], detailedErrorDescriptions: Boolean)(
       implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, Unit]
+
+  def validateParams(resultType: Map[ParameterName, BaseDefinedParameter])(
+      implicit nodeId: NodeId
+  ): ValidatedNel[ProcessCompilationError, Unit] = validateParams(resultType, detailedErrorDescriptions = true)
 
 }
 
@@ -34,13 +39,16 @@ object SchemaBasedParameter {
 case class SingleSchemaBasedParameter(value: Parameter, validator: TypingResultValidator) extends SchemaBasedParameter {
 
   override def validateParams(
-      resultTypes: Map[ParameterName, BaseDefinedParameter]
+      resultTypes: Map[ParameterName, BaseDefinedParameter],
+      detailedErrorDescriptions: Boolean
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
     val paramName       = value.name
     val paramResultType = resultTypes(paramName)
     validator
       .validate(paramResultType.returnType)
-      .leftMap(errors => new OutputValidatorErrorsConverter(paramName).convertValidationErrors(errors))
+      .leftMap(errors =>
+        new OutputValidatorErrorsConverter(paramName).convertValidationErrors(errors, detailedErrorDescriptions)
+      )
       .leftMap(NonEmptyList.one)
       .map(_ => ())
   }
@@ -51,9 +59,10 @@ case class SchemaBasedRecordParameter(fields: ListMap[RecordFieldName, SchemaBas
     extends SchemaBasedParameter {
 
   override def validateParams(
-      actualResultTypes: Map[ParameterName, BaseDefinedParameter]
+      actualResultTypes: Map[ParameterName, BaseDefinedParameter],
+      detailedErrorDescriptions: Boolean
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
-    flatten.map(_.validateParams(actualResultTypes)).sequence.map(_ => ())
+    flatten.map(_.validateParams(actualResultTypes, detailedErrorDescriptions)).sequence.map(_ => ())
   }
 
 }

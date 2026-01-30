@@ -1,17 +1,28 @@
 package pl.touk.nussknacker.engine.schemedkafka.schema
 
-import cats.data.{NonEmptyList, ValidatedNel}
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.{Validated, ValidatedNel}
+import cats.data.Validated.Valid
+import cats.implicits._
 import org.apache.avro.Schema
+import org.apache.avro.Schema.Type
+import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.schemedkafka.AvroDefaultExpressionDeterminer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.util.output.{
+  OutputValidatorError,
+  OutputValidatorExpected,
+  OutputValidatorTypeError,
+  OutputValidatorValueError
+}
 import pl.touk.nussknacker.engine.util.parameters.{
   SchemaBasedParameter,
   SchemaBasedRecordParameter,
@@ -20,6 +31,7 @@ import pl.touk.nussknacker.engine.util.parameters.{
 }
 
 import scala.collection.immutable.ListMap
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 object AvroSchemaBasedParameter {
 
@@ -50,42 +62,57 @@ object AvroSchemaBasedParameter {
       restrictedParamNames: Set[ParameterName],
       avroSchemaTypeDefinitionExtractor: AvroSchemaTypeDefinitionExtractor
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
-    import cats.implicits.{catsStdInstancesForList, toTraverseOps}
-
-    if (schema.getType == Schema.Type.RECORD) {
-      val recordFields = schema.getFields.asScala.toList
-      if (containsRestrictedNames(recordFields, restrictedParamNames)) {
-        Invalid(
-          NonEmptyList.one(
+    schema.getType match {
+      case Schema.Type.RECORD =>
+        val recordFields = schema.getFields.asScala.toList
+        Validated
+          .condNel(
+            !containsRestrictedNames(recordFields, restrictedParamNames),
+            (),
             CustomNodeError(
               s"""Record field name is restricted. Restricted names are ${restrictedParamNames
                   .map(_.value)
                   .mkString(", ")}""",
               None
-            )
+            ),
           )
-        )
-      } else {
-        val listOfValidatedParams = recordFields.map { recordField =>
-          val fieldName = recordField.name()
-          // Fields of nested records are flatten, e.g. { a -> { b -> _ } } => { a.b -> _ }
-          val concatName = ParameterName(paramName.map(pn => s"${pn.value}.$fieldName").getOrElse(fieldName))
-          val sinkValueValidated = getDefaultValue(recordField, paramName).andThen { defaultValue =>
-            toSchemaBasedParameter(
-              schema = recordField.schema(),
-              paramName = Some(concatName),
-              defaultValue,
-              restrictedParamNames,
-              avroSchemaTypeDefinitionExtractor
-            )
+          .andThen { (_: Unit) =>
+            val listOfValidatedParams = recordFields.map { recordField =>
+              val fieldName = recordField.name()
+              // Fields of nested records are flatten, e.g. { a -> { b -> _ } } => { a.b -> _ }
+              val concatName = ParameterName(paramName.map(pn => s"${pn.value}.$fieldName").getOrElse(fieldName))
+              val sinkValueValidated = getDefaultValue(recordField, paramName).andThen { defaultValue =>
+                toSchemaBasedParameter(
+                  schema = recordField.schema(),
+                  paramName = Some(concatName),
+                  defaultValue,
+                  restrictedParamNames,
+                  avroSchemaTypeDefinitionExtractor
+                )
+              }
+              sinkValueValidated.map(sinkValueParam => fieldName -> sinkValueParam)
+            }
+            listOfValidatedParams.sequence.map(l => ListMap(l: _*)).map(SchemaBasedRecordParameter)
           }
-          sinkValueValidated.map(sinkValueParam => fieldName -> sinkValueParam)
+      case Schema.Type.ENUM =>
+        val schemaForEnum = Schema.createUnion(schema, Schema.create(Type.STRING))
+        Valid(AvroSinkSingleValueParameter(paramName, schemaForEnum, defaultValue, avroSchemaTypeDefinitionExtractor))
+      case Schema.Type.UNION if isUnionWithEnumSchema(schema) =>
+        val stringSchema = Schema.create(Type.STRING)
+        val unionTypes   = schema.getTypes.asScala.toList
+        val finalSchema = if (unionTypes.contains(stringSchema)) {
+          schema
+        } else {
+          Schema.createUnion((unionTypes :+ stringSchema).asJava)
         }
-        listOfValidatedParams.sequence.map(l => ListMap(l: _*)).map(SchemaBasedRecordParameter)
-      }
-    } else {
-      Valid(AvroSinkSingleValueParameter(paramName, schema, defaultValue, avroSchemaTypeDefinitionExtractor))
+        Valid(AvroSinkSingleValueParameter(paramName, finalSchema, defaultValue, avroSchemaTypeDefinitionExtractor))
+      case other =>
+        Valid(AvroSinkSingleValueParameter(paramName, schema, defaultValue, avroSchemaTypeDefinitionExtractor))
     }
+  }
+
+  private def isUnionWithEnumSchema(schema: Schema) = {
+    schema.getType == Schema.Type.UNION && schema.getTypes.asScala.exists(_.getType == Schema.Type.ENUM)
   }
 
   private def getDefaultValue(fieldSchema: Schema.Field, paramName: Option[ParameterName])(
@@ -108,19 +135,107 @@ object AvroSinkSingleValueParameter {
       paramName: Option[ParameterName],
       schema: Schema,
       defaultValue: Option[Expression],
-      avroSchemaTypeDefinitionExtractor: AvroSchemaTypeDefinitionExtractor
+      avroSchemaTypeDefinitionExtractor: AvroSchemaTypeDefinitionExtractor,
   ): SingleSchemaBasedParameter = {
     val typing = avroSchemaTypeDefinitionExtractor.typeDefinition(schema)
     val name   = paramName.getOrElse(sinkValueParamName)
+    val (resultValidator, customEditors) = schema match {
+      // enum schemas will always be here inside the union
+      case UnionWithEnumSchema(enumSchema: EnumSchema) =>
+        (
+          new AvroEnumTypingResultValidator(name.value, enumSchema),
+          avroEnumEditors(enumSchema)
+        )
+      case _ =>
+        (TypingResultValidator.emptyValidator, List.empty[ParameterEditor])
+    }
+
     val parameter = (
       if (schema.isNullable) Parameter.optional(name, typing) else Parameter(name, typing)
     ).copy(
       isLazyParameter = true,
-      defaultValue = defaultValue
+      defaultValue = defaultValue,
+      editors = customEditors
     )
-    // TODO: for now we don't use SchemaOutputValidator for avro in editor mode,
-    // but we can add it in the future in combination with accepting unknown/any in enums fields to allow passing enums in editor mode
-    SingleSchemaBasedParameter(parameter, TypingResultValidator.emptyValidator)
+
+    SingleSchemaBasedParameter(parameter, resultValidator)
+  }
+
+  private def avroEnumEditors(schema: EnumSchema): List[ParameterEditor] = {
+    List(FixedValuesParameterEditor(schema.possibleValues), SpelParameterEditor)
+  }
+
+  private final class AvroEnumTypingResultValidator(field: String, enumSchema: EnumSchema)
+      extends TypingResultValidator {
+
+    override def validate(typingResult: typing.TypingResult): ValidatedNel[OutputValidatorError, Unit] = {
+      typingResult.valueOpt match {
+        case Some(_: GenericData.EnumSymbol) =>
+          Valid(())
+        case Some(value: String) =>
+          val schemaSymbols = enumSchema.schema.getEnumSymbols.asScala.toSet
+          Validated.condNel(
+            schemaSymbols.nonEmpty && schemaSymbols.contains(value),
+            (),
+            avroEnumExpectedError(typingResult)
+          )
+        case Some(null) =>
+          Validated.condNel(enumSchema.nullable, (), avroEnumExpectedError(typingResult))
+        case Some(_) | None =>
+          // dynamic
+          Valid(())
+      }
+    }
+
+    private def avroEnumExpectedError(actual: TypingResult) = {
+      OutputValidatorValueError(
+        Some(field),
+        actual,
+        new AvroEnumTypingResultValidator.AvroEnumExpected(enumSchema)
+      )
+    }
+
+  }
+
+  private object AvroEnumTypingResultValidator {
+
+    final class AvroEnumExpected(schema: EnumSchema) extends OutputValidatorExpected {
+      override def expected: String =
+        s"one of: [${schema.possibleValues.map(_.expression).mkString(", ")}]"
+    }
+
+  }
+
+  private final class EnumSchema private (val schema: Schema, val nullable: Boolean) {
+
+    def possibleValues: List[FixedExpressionValue] = {
+      val enumSymbols = schema.getEnumSymbols.asScala.toList.map(symbol => FixedExpressionValue(s"'$symbol'", symbol))
+      if (nullable) {
+        FixedExpressionValue("null", "") :: enumSymbols
+      } else {
+        enumSymbols
+      }
+    }
+
+  }
+
+  private object EnumSchema {
+
+    def from(schema: Schema, nullable: Boolean): Option[EnumSchema] = {
+      Option.when(schema.getType == Schema.Type.ENUM)(new EnumSchema(schema, nullable))
+    }
+
+  }
+
+  private object UnionWithEnumSchema {
+
+    def unapply(schema: Schema): Option[EnumSchema] = {
+      for {
+        unionSchema <- Option.when(schema.getType == Schema.Type.UNION)(schema)
+        enumSchema  <- unionSchema.getTypes.asScala.flatMap(EnumSchema.from(_, unionSchema.isNullable)).headOption
+      } yield enumSchema
+    }
+
   }
 
 }

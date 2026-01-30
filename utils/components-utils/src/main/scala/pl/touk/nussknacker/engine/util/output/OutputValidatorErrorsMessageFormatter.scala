@@ -9,24 +9,29 @@ object OutputValidatorErrorsMessageFormatter {
   private val ValidationRedundantFieldsErrorMessage = "Redundant fields"
   private val ValidationMissingFieldsErrorMessage   = "Missing fields"
   private val ValidationTypeErrorMessage            = "Incorrect type"
+  private val ValidationValueErrorMessage           = "Incorrect value"
 
   private def makeErrors(messages: List[String], baseMessage: String): List[String] =
     if (messages.nonEmpty) messages.mkString(s"$baseMessage: ", ", ", ".") :: Nil else Nil
 
   def makeMessage(
-      typeFieldErrors: List[String],
-      missingFieldsError: List[String],
-      redundantFieldsError: List[String],
-      typeFieldRangeErrors: List[String]
+      outputErrors: OutputErrors,
+      detailedErrorDescriptions: Boolean
   ): String = {
-    val messageMissingFieldsError   = makeErrors(missingFieldsError, ValidationMissingFieldsErrorMessage)
-    val messageRedundantFieldsError = makeErrors(redundantFieldsError, ValidationRedundantFieldsErrorMessage)
-    val messageTypeFieldErrors      = makeErrors(typeFieldErrors, ValidationTypeErrorMessage)
-    val messageTypeFieldRangeErrors = makeErrors(typeFieldRangeErrors, ValidationRangeMessage)
+    val messageMissingFieldsError = makeErrors(outputErrors.missingFields, ValidationMissingFieldsErrorMessage)
+    val messageValueFieldsError =
+      makeErrors(outputErrors.valueFieldsError(detailedErrorDescriptions), ValidationValueErrorMessage)
+    val messageRedundantFieldsError = makeErrors(outputErrors.redundantFields, ValidationRedundantFieldsErrorMessage)
+    val messageTypeFieldErrors =
+      makeErrors(outputErrors.typeFieldsErrors(detailedErrorDescriptions), ValidationTypeErrorMessage)
+    val messageTypeFieldRangeErrors =
+      makeErrors(outputErrors.rangeFieldsErrors(detailedErrorDescriptions), ValidationRangeMessage)
     val messageErrors =
-      messageTypeFieldErrors ::: messageMissingFieldsError ::: messageRedundantFieldsError ::: messageTypeFieldRangeErrors
+      messageTypeFieldErrors ::: messageValueFieldsError ::: messageMissingFieldsError ::: messageRedundantFieldsError ::: messageTypeFieldRangeErrors
 
-    messageErrors.mkString(s"$ValidationErrorMessageBase - errors:\n", ", ", "")
+    val messageBase = if (detailedErrorDescriptions) s"$ValidationErrorMessageBase - errors:\n" else "Errors:\n"
+
+    messageErrors.mkString(messageBase, ", ", "")
 
   }
 
