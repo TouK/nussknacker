@@ -2124,8 +2124,8 @@ lazy val e2eTests = (project in file("e2e-tests"))
   .configs(SlowTests)
   .settings(slowTestsSettings)
   .settings(
-    Test / test := (Test / test).dependsOn(distribution / Docker / publishLocal).value,
-    Test / testOptions += {
+    SlowTests / test := (SlowTests / test).dependsOn(distribution / Docker / publishLocal).value,
+    SlowTests / testOptions += {
       val s = streams.value
       Tests.Setup { _ => s.log.info("Building Nu Designer docker image from the sources for E2E tests") }
     }
