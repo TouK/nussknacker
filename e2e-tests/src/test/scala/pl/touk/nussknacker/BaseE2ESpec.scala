@@ -17,13 +17,18 @@ import java.io.{File => JFile}
 trait BaseE2ESpec extends BeforeAndAfterAll with BeforeAndAfterEach with LazyLogging {
   this: Suite =>
 
-  val client: DockerBasedInstallationExampleClient =
+  lazy val client: DockerBasedInstallationExampleClient =
     BaseE2ESpec.dockerBasedInstallationExampleNuEnvironmentSingleton.client
+
+  override def beforeAll(): Unit = {
+    client // initialize lazy client
+  }
+
 }
 
 object BaseE2ESpec extends LazyLogging {
 
-  val dockerBasedInstallationExampleNuEnvironmentSingleton: DockerBasedInstallationExampleNuEnvironment = {
+  private lazy val dockerBasedInstallationExampleNuEnvironmentSingleton: DockerBasedInstallationExampleNuEnvironment = {
     val singleton = new DockerBasedInstallationExampleNuEnvironment(
       nussknackerImageVersion = BuildInfo.version,
       dockerComposeTweakFiles = List(

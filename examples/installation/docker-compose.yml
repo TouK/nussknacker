@@ -203,6 +203,9 @@ services:
     command: jobmanager
     environment:
       JOB_MANAGER_RPC_ADDRESS: "flink-jobmanager"
+    depends_on:
+      telegraf:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8081/jobs/overview" ]
       interval: 10s
@@ -238,6 +241,9 @@ services:
   telegraf:
     image: telegraf:1.30.2
     restart: unless-stopped
+    depends_on:
+      influxdb:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8087/write" ]
       interval: 10s
