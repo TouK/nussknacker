@@ -4,6 +4,10 @@ on:
     workflows: ['CI']
     types:
       - completed
+permissions:
+  contents: read
+  actions: read
+  checks: write
 env:
   CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
 jobs:
