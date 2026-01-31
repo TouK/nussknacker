@@ -3,18 +3,25 @@ description: Removes some unused runner components to have more free space e.g. 
 runs:
   using: "composite"
   steps:
-    # https://github.com/actions/runner-images/issues/2875
-    # https://github.com/actions/runner-images/issues/2840#issuecomment-790492173
+    # things not removed, along with their sizes and approximate times to execute 'rm -rf':
+    # MB   | time  | path
+    # -----|-------|---
+    #  780 |  16.1 | /usr/share/miniconda
+    #  550 |   1.5 | /usr/share/az_*
+    # 4200 |  12.0 | /usr/share/dotnet
+    # 1700 | 136.0 | $AGENT_TOOLSDIRECTORY/CodeQL
+    # 1100 |  20.5 | $AGENT_TOOLSDIRECTORY/go
+    #  520 |   5.3 | $AGENT_TOOLSDIRECTORY/PyPy
+    # 1700 |   8.0 | $AGENT_TOOLSDIRECTORY/Python
+    #  313 |   5.7 | $AGENT_TOOLSDIRECTORY/Ruby
+
     - name: Increase free disk space
       shell: bash
       run: |
         echo "Free space before file removals:"
         df -h /
         echo
-
         set -x
-        # 780M
-        time sudo rm -rf /usr/share/miniconda
 
         # 370M
         time sudo rm -rf /opt/google/chrome
@@ -25,10 +32,6 @@ runs:
         # 626M
         time sudo rm -rf /usr/local/share/chromium
 
-        # 550M
-        time sudo rm -rf /usr/share/az_*
-        # 4.2G
-        time sudo rm -rf /usr/share/dotnet
         # 178M
         time sudo rm -rf /opt/microsoft/powershell
         # 1.3G
@@ -37,19 +40,9 @@ runs:
         # 2.3G
         time sudo rm -rf /usr/share/swift
 
-        # 9.9G
+        # 9.9G, 1.1s
         time sudo rm -rf /usr/local/lib/android
 
-        # 1.7G
-        time sudo rm -rf "$AGENT_TOOLSDIRECTORY/CodeQL"
-        # 1.1G
-        time sudo rm -rf "$AGENT_TOOLSDIRECTORY/go"
-        # 520M
-        time sudo rm -rf "$AGENT_TOOLSDIRECTORY/PyPy"
-        # 1.7G
-        time sudo rm -rf "$AGENT_TOOLSDIRECTORY/Python"
-        # 313M
-        time sudo rm -rf "$AGENT_TOOLSDIRECTORY/Ruby"
-
+        set +x
         echo -e "\nFree space after file removals:"
         df -h /
