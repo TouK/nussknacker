@@ -179,7 +179,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/prepare_sbt_test
-      - uses: ./.github/actions/increase_runner_disk_space
       - name: Backend tests
         shell: bash
         run: ./ciRunSbt.sh test
@@ -189,7 +188,6 @@ jobs:
         with:
           name: BackendTests-results-${{ matrix.scalaVersion }}
           path: '**/test-reports/*.xml'
-          overwrite: 'true'
 
   e2eTests:
     name: E2ETests
@@ -204,7 +202,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/prepare_sbt_test
-      - uses: ./.github/actions/increase_runner_disk_space
       - name: E2E tests
         shell: bash
         run: ./ciRunSbt.sh e2eTests/Slow/test
@@ -214,7 +211,6 @@ jobs:
         with:
           name: E2ETests-results-${{ matrix.scalaVersion }}
           path: '**/test-reports/*.xml'
-          overwrite: 'true'
 
   integrationTests:
     name: IntegrationTests
@@ -240,7 +236,6 @@ jobs:
         with:
           name: IntegrationTests-results-${{ matrix.scalaVersion }}
           path: '**/it-reports/*.xml'
-          overwrite: 'true'
 
   slowTests:
     name: SlowTests
@@ -287,7 +282,6 @@ jobs:
         with:
           name: SlowTests-results-${{ matrix.scalaVersion }}
           path: '**/test-reports/*.xml'
-          overwrite: 'true'
 
   frontendTests:
     name: FrontendTests
