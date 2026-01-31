@@ -8,36 +8,48 @@ runs:
     - name: Increase free disk space
       shell: bash
       run: |
+        echo "Free space before file removals:"
         df -h /
-
-        set +x
-        du -hs /usr/share/*
-        du -hs /usr/lib/*
-        du -hs /opt/*
-        du -hs /opt/google/*
-        du -hs /opt/microsoft/*
-        du -hs /usr/local/share/*
-        du -hs /usr/local/lib/*
-        du -hs "$AGENT_TOOLSDIRECTORY/"*
-
-        sudo rm -rf /usr/share/dotnet
-        sudo rm -rf /usr/share/swift
-        sudo rm -rf /opt/ghc
-        sudo rm -rf /usr/local/share/boost
-        sudo rm -rf /usr/local/lib/android
-        sudo rm -rf "$AGENT_TOOLSDIRECTORY/go"
-        sudo rm -rf "$AGENT_TOOLSDIRECTORY/Ruby"
-        sudo rm -rf "$AGENT_TOOLSDIRECTORY/Python"
-        sudo rm -rf "$AGENT_TOOLSDIRECTORY/PyPy"
-        sudo rm -rf "$AGENT_TOOLSDIRECTORY/CodeQL"
-
-        sudo rm -rf /usr/lib/firefox
-        sudo rm -rf /opt/google/chrome
-        sudo rm -rf /opt/microsoft/msedge
-        sudo rm -rf /opt/microsoft/powershell
-        sudo rm -rf /usr/local/lib/android
-        sudo rm -rf /usr/local/share/chromium
-        sudo rm -rf /usr/local/share/powershell
+        echo
 
         set -x
-        df -h
+        # 780M
+        time sudo rm -rf /usr/share/miniconda
+
+        # 370M
+        time sudo rm -rf /opt/google/chrome
+        # 619M
+        time sudo rm -rf /opt/microsoft/msedge
+        # 278M
+        time sudo rm -rf /usr/lib/firefox
+        # 626M
+        time sudo rm -rf /usr/local/share/chromium
+
+        # 550M
+        time sudo rm -rf /usr/share/az_*
+        # 4.2G
+        time sudo rm -rf /usr/share/dotnet
+        # 178M
+        time sudo rm -rf /opt/microsoft/powershell
+        # 1.3G
+        time sudo rm -rf /usr/local/share/powershell
+
+        # 2.3G
+        time sudo rm -rf /usr/share/swift
+
+        # 9.9G
+        time sudo rm -rf /usr/local/lib/android
+
+        # 1.7G
+        time sudo rm -rf "$AGENT_TOOLSDIRECTORY/CodeQL"
+        # 1.1G
+        time sudo rm -rf "$AGENT_TOOLSDIRECTORY/go"
+        # 520M
+        time sudo rm -rf "$AGENT_TOOLSDIRECTORY/PyPy"
+        # 1.7G
+        time sudo rm -rf "$AGENT_TOOLSDIRECTORY/Python"
+        # 313M
+        time sudo rm -rf "$AGENT_TOOLSDIRECTORY/Ruby"
+
+        echo -e "\nFree space after file removals:"
+        df -h /
