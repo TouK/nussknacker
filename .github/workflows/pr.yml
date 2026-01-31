@@ -179,7 +179,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/prepare_sbt_test
-      - uses: /.github/actions/increase_runner_disk_space
+      - uses: ./.github/actions/increase_runner_disk_space
       - name: Backend tests
         shell: bash
         run: ./ciRunSbt.sh test
