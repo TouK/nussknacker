@@ -171,6 +171,9 @@ class FlinkKafkaSource[K, V](
     )
     val startingOffsetInitializer = prepareOffsetInitializer(offsetResetStrategy, autoOffsetResetKafkaConfigValue)
 
+    // prevent KafkaSourceBuilder from logging a warning, it derives this value from startingOffsetInitializer
+    consumerProperties.remove(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG)
+
     KafkaSource
       .builder()
       .setStartingOffsets(startingOffsetInitializer)
