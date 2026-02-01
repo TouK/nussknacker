@@ -55,7 +55,7 @@ class FlinkKafkaUniversalSink(
     dataStream
       .map(new EncodeAvroRecordFunction(flinkNodeContext), typeInfo)
       .filter(_.value != null)
-      .sinkTo(toFlinkSink)
+      .sinkTo(toFlinkSink(flinkNodeContext))
   }
 
   def prepareValue(
@@ -75,8 +75,8 @@ class FlinkKafkaUniversalSink(
     )
   }
 
-  private def toFlinkSink: Sink[KeyedValue[AnyRef, AnyRef]] = {
-    PartitionByKeyFlinkKafkaSink(kafkaComponentsConfig, serializationSchema, clientId)
+  private def toFlinkSink(flinkNodeContext: FlinkCustomNodeContext): Sink[KeyedValue[AnyRef, AnyRef]] = {
+    PartitionByKeyFlinkKafkaSink(kafkaComponentsConfig, serializationSchema, clientId, flinkNodeContext.nodeId)
   }
 
   class EncodeAvroRecordFunction(flinkNodeContext: FlinkCustomNodeContext)

@@ -15,7 +15,7 @@ import pl.touk.nussknacker.test.{KafkaConfigProperties, PatientScalaFutures}
 
 import scala.jdk.CollectionConverters._
 
-class FinkExactlyOnceItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
+class FlinkExactlyOnceItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
   override val avroAsJsonSerialization: Boolean = true
 

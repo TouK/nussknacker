@@ -30,7 +30,7 @@ class FlinkKafkaSink(
     helper.lazyMapFunction(value)
 
   override def toFlinkSink(flinkNodeContext: FlinkCustomNodeContext): Sink[AnyRef] =
-    PartitionByKeyFlinkKafkaSink(kafkaComponentsConfig, serializationSchema, clientId)
+    PartitionByKeyFlinkKafkaSink(kafkaComponentsConfig, serializationSchema, clientId, flinkNodeContext.nodeId)
 
   override def prepareTestValueFunction: AnyRef => String =
     value =>

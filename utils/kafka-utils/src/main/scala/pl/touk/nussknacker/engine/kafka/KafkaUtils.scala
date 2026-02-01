@@ -55,10 +55,16 @@ trait KafkaUtils extends LazyLogging {
     // https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/common/Config.scala#L25-L35
     originalId.replaceAll("[^a-zA-Z0-9\\._\\-]", "_")
 
-  def toProducerProperties(config: KafkaComponentsConfig, clientId: String): Properties = {
+  def toProducerProperties(
+      config: KafkaComponentsConfig,
+      clientId: String,
+      includeSerializerClassConfig: Boolean = true
+  ): Properties = {
     val props: Properties = new Properties
-    props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, classOf[ByteArraySerializer].getName)
-    props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, classOf[ByteArraySerializer].getName)
+    if (includeSerializerClassConfig) {
+      props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, classOf[ByteArraySerializer].getName)
+      props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, classOf[ByteArraySerializer].getName)
+    }
     setClientId(props, clientId)
     withPropertiesFromConfig(props, config)
   }
