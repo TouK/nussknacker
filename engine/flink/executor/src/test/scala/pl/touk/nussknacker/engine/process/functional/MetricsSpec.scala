@@ -238,7 +238,7 @@ class MetricsSpec
   }
 
   override protected def prepareFlinkConfiguration(): Configuration = {
-    TestReporterUtil.configWithTestMetrics(reporterName, new Configuration())
+    TestReporterUtil.configWithTestMetrics(reporterName, super.prepareFlinkConfiguration())
   }
 
 }
