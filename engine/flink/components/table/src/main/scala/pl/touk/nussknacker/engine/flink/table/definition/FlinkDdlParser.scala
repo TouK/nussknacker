@@ -5,6 +5,7 @@ import cats.implicits._
 import org.apache.calcite.config.Lex
 import org.apache.calcite.sql.{SqlNode, SqlNodeList}
 import org.apache.calcite.sql.parser.{SqlParser => CalciteSqlParser}
+import org.apache.calcite.util.Util
 import org.apache.flink.sql.parser.ddl.{SqlCreateCatalog, SqlCreateTable, SqlCreateTableAs, SqlTableOption}
 import org.apache.flink.sql.parser.impl.FlinkSqlParserImpl
 import org.apache.flink.sql.parser.validate.FlinkSqlConformance
@@ -73,9 +74,9 @@ object FlinkDdlParser {
       // Doc: https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/create/#as-select_statement
       // Since these definitions are meant only for data source declarations, inserts are not allowed.
       // To achieve similar functionality, users should run a separate insert statement.
-      case ctas: SqlCreateTableAs => UnallowedStatement(SqlString(ctas.toString)).invalidNel
+      case ctas: SqlCreateTableAs => UnallowedStatement(SqlString(ctas.toLinuxString)).invalidNel
       case table: SqlCreateTable => {
-        val sqlString = SqlString(table.toString)
+        val sqlString = SqlString(table.toLinuxString)
         extractOptions(table.getPropertyList)
           .find(_.key == "connector")
           .toValidNel(MissingConnectorOption(sqlString))
@@ -84,7 +85,7 @@ object FlinkDdlParser {
             CreateTable(sqlString, Connector(connector))
           }
       }
-      case other => UnallowedStatement(SqlString(other.toString)).invalidNel
+      case other => UnallowedStatement(SqlString(other.toLinuxString)).invalidNel
     }
   }
 
@@ -101,5 +102,13 @@ object FlinkDdlParser {
     .withConformance(FlinkSqlConformance.DEFAULT)
     .withLex(Lex.JAVA)
     .withIdentifierMaxLength(256);
+
+  private implicit class SqlNodeExt(sqlNode: SqlNode) {
+
+    def toLinuxString: String =
+      if (Util.LINE_SEPARATOR != "\n") Util.toLinux(sqlNode.toString)
+      else sqlNode.toString
+
+  }
 
 }
