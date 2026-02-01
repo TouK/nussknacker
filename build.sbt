@@ -137,18 +137,18 @@ val ignoreExternalDepsTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "or
 lazy val commonSettings =
   publishSettings ++
     Seq(
-      licenses                         := Seq(License.Apache2),
-      crossScalaVersions               := supportedScalaVersions,
-      scalaVersion                     := defaultScalaV,
+      licenses                     := Seq(License.Apache2),
+      crossScalaVersions           := supportedScalaVersions,
+      scalaVersion                 := defaultScalaV,
       resolvers ++= Seq(
         "confluent" at "https://packages.confluent.io/maven",
       ),
       // We ignore k8s tests to keep development setup low-dependency
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
       addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.4" cross CrossVersion.full),
-      semanticdbEnabled                := true,
-      semanticdbVersion                := "4.14.5",
-      scalacOptions                    := Seq(
+      semanticdbEnabled            := true,
+      semanticdbVersion            := "4.14.5",
+      scalacOptions                := Seq(
         "-unchecked",
         "-deprecation",
         "-encoding",
@@ -162,15 +162,16 @@ lazy val commonSettings =
         "-Ymacro-annotations",
         "-Wconf:cat=deprecation:silent"
       ),
-      Compile / compile / javacOptions := Seq(
+      javacOptions                 := Seq(
         "-Xlint:deprecation",
         "-Xlint:unchecked",
         // Using --release flag (available only on jdk >= 9) instead of -source -target to avoid usage of api from newer java version
         "--release",
         "11",
-        // we use it e.g. to provide consistent behaviour wrt extracting parameter names from scala and java
+        // we use it e.g. to provide consistent behavior wrt extracting parameter names from scala and java
         "-parameters"
       ),
+      Compile / doc / javacOptions := Seq(),
       // problem with scaladoc of api: https://github.com/scala/bug/issues/10134
       Compile / doc / scalacOptions -= "-Xfatal-warnings",
       // here we add dependencies that we want to have fixed across all modules
