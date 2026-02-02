@@ -13,7 +13,6 @@ export type ValidationResult = {
     nodeResults: NodeResults;
     errors: ValidationErrors;
     warnings?: Pick<ValidationErrors, "invalidNodes">;
-    testCasesValidationErrors: TestCaseValidationErrors;
 };
 
 export type NodeResults = Record<string, NodeTypingData>;
@@ -34,6 +33,7 @@ export type ValidationErrors = {
     invalidNodes: Record<string, NodeValidationError[]>;
     processPropertiesErrors: NodeValidationError[];
     globalErrors: GlobalValidationError[];
+    testCasesValidationErrors: Record<string, NodeValidationError[]>;
 };
 
 export type GlobalValidationError = {

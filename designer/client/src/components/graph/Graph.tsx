@@ -739,7 +739,7 @@ export class Graph extends React.Component<Props> {
         });
 
         const validationErrors = ProcessUtils.getValidationErrors(scenario);
-        const invalidNodeKeys = [...keys(validationErrors?.invalidNodes)];
+        const invalidNodeKeys = [...keys(validationErrors?.invalidNodes), ...keys(validationErrors?.testCasesValidationErrors)];
         const invalidFragmentNodes = this.#getInvalidFragmentNodes(invalidNodeKeys, scenario.scenarioGraph);
         const invalidNodeIds = [...invalidNodeKeys, ...validationErrors.globalErrors.flatMap((e) => e.nodeIds), ...invalidFragmentNodes];
 

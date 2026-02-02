@@ -6,9 +6,9 @@ import { useTranslation } from "react-i18next";
 import { assistantAsk } from "../../../actions/assistantActions";
 import { useAppDispatch } from "../../../store/storeHelpers";
 
-export type AskAssistantProps = PropsWithChildren<{ question: string; realPrompt?: string }>;
+export type AskAssistantProps = PropsWithChildren<{ question: string; realPrompt?: string; className?: string }>;
 
-function AskAssistant({ question, realPrompt = question, children }: AskAssistantProps) {
+function AskAssistant({ question, realPrompt = question, className, children }: AskAssistantProps) {
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
 
@@ -18,6 +18,7 @@ function AskAssistant({ question, realPrompt = question, children }: AskAssistan
 
     return (
         <Button
+            className={className}
             variant="contained"
             size="small"
             onClick={onClick}

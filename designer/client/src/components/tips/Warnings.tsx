@@ -7,6 +7,8 @@ import { v4 as uuid4 } from "uuid";
 import type { NodeType } from "../../types/node";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
 import NodeUtils from "../graph/NodeUtils";
+import { explainValidationProblemPrompt } from "./constants";
+import { StyledAskAssistantButton, StyledItemWrapper } from "./error/styled";
 import { LinkStyled } from "./Styled";
 
 interface Warning {
@@ -38,7 +40,7 @@ const Warnings = ({ warnings, showDetails, scenarioGraph }: WarningsProps) => {
     const separator = ", ";
 
     return (
-        <div key={uuid4()} style={{ display: "flex" }}>
+        <StyledItemWrapper key={uuid4()}>
             {warnings.length > 0 && <StyledWarningIcon />}
             <div>
                 {Object.entries(groupedByType).map(([warningType, warnings]) => (
@@ -64,7 +66,11 @@ const Warnings = ({ warnings, showDetails, scenarioGraph }: WarningsProps) => {
                     </div>
                 ))}
             </div>
-        </div>
+            <StyledAskAssistantButton
+                question={`Explain scenario nodes warnings.`}
+                realPrompt={explainValidationProblemPrompt(JSON.stringify(warnings))}
+            />
+        </StyledItemWrapper>
     );
 };
 

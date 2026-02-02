@@ -1,6 +1,5 @@
 import { createSelector } from "reselect";
 
-import { Mock } from "../../actions/nk/testCasesActions";
 import { withUuid } from "../../components/graph/node-modal/appendUuid";
 import { MockExpressionParameter } from "../../components/graph/node-modal/editors/expression/MockExpressionField";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";

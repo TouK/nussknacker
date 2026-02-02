@@ -1,7 +1,10 @@
 import type { TypographyProps } from "@mui/material";
+import { Box } from "@mui/material";
 import { styled, Typography } from "@mui/material";
 import Color from "color";
 import type { NavLink } from "react-router-dom";
+
+import { AskAssistantButton } from "../../aiAssistant/components/AiAssistantButton";
 
 export const ErrorLinkStyle = styled(Typography)<TypographyProps<"span" | typeof NavLink>>(({ theme }) => ({
     whiteSpace: "normal",
@@ -16,4 +19,19 @@ export const ErrorLinkStyle = styled(Typography)<TypographyProps<"span" | typeof
             textDecoration: "none",
         },
     },
+}));
+
+export const StyledAskAssistantButton = styled(AskAssistantButton)(({ theme }) => ({
+    marginLeft: theme.spacing(1),
+}));
+
+export const StyledItemWrapper = styled(Box)(() => ({
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+}));
+
+export const StyledTipsContentWrapper = styled(Box)(() => ({
+    flex: 1,
+    minWidth: 0,
 }));

@@ -1,0 +1,168 @@
+{
+    "metaData": {
+        "id": "dpl-test",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "parallelism": "1",
+                "checkpointIntervalInSeconds": "",
+                "maxEvents": "",
+                "numberOfThreads": "1",
+                "spillStateToDisk": "true",
+                "environment": "test",
+                "useAsyncInterpretation": ""
+            },
+            "metaDataType": "StreamMetaData",
+            "showDescription": false
+        }
+    },
+    "nodes": [
+        {
+            "id": "Event Generator",
+            "ref": {
+                "typ": "event-generator",
+                "parameters": [
+                    {
+                        "name": "schedule",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT1M')"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "1"
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "expression": {
+                            "language": "jsonTemplate",
+                            "expression": "{\n\t\"sampleField\": \"#{ #UTIL.uuid }\",\n\t\"dateTime\": \"#{ #DATE.now }\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}"
+                        }
+                    },
+                    {
+                        "name": "Event time",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "#DATE.now"
+                        }
+                    },
+                    {
+                        "name": "Max out-of-orderness",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT10S')"
+                        }
+                    }
+                ]
+            },
+            "additionalFields": {
+                "description": "",
+                "layoutData": {
+                    "x": -155,
+                    "y": -221
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "id": "Previous Value",
+            "outputVar": "outputVar",
+            "nodeType": "previousValue",
+            "parameters": [
+                {
+                    "name": "Key",
+                    "expression": {
+                        "language": "spel",
+                        "expression": ""
+                    }
+                },
+                {
+                    "name": "Value",
+                    "expression": {
+                        "language": "spel",
+                        "expression": ""
+                    }
+                }
+            ],
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": -82,
+                    "y": -141
+                }
+            },
+            "type": "CustomNode"
+        },
+        {
+            "id": "Enricher",
+            "service": {
+                "id": "enricher",
+                "parameters": [
+                    {
+                        "name": "param",
+                        "expression": {
+                            "language": "spelTemplate",
+                            "expression": "default value"
+                        }
+                    },
+                    {
+                        "name": "tariffType",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(pl.touk.nussknacker.engine.management.sample.TariffType).NORMAL"
+                        }
+                    }
+                ]
+            },
+            "output": "enricher_output",
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": -148,
+                    "y": -34
+                }
+            },
+            "mockExpression": null,
+            "type": "Enricher"
+        },
+        {
+            "id": "Dead End",
+            "ref": {
+                "typ": "dead-end",
+                "parameters": []
+            },
+            "endResult": null,
+            "isDisabled": null,
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": -166,
+                    "y": 129
+                }
+            },
+            "type": "Sink"
+        }
+    ],
+    "additionalBranches": [],
+    "stickyNotes": [],
+    "testCases": {
+        "value": {
+            "id": "f8757b06-6610-4900-90cc-fd3963356e8e",
+            "name": "Test case 1",
+            "inputs": "[]",
+            "mocks": {
+                "Enricher": {
+                    "expression": {
+                        "language": "spel",
+                        "expression": ""
+                    }
+                }
+            },
+            "assertions": {}
+        }
+    }
+}
