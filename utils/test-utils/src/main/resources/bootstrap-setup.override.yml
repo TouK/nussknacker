@@ -3,8 +3,6 @@ services:
   bootstrap-setup:
     image: touk/nussknacker-example-scenarios-library:1.10.0
     depends_on:
-      nginx:
-        condition: service_healthy
       designer:
         condition: service_healthy
       kafka:
@@ -13,10 +11,10 @@ services:
         condition: service_healthy
     environment:
       DISABLE_EMBEDDED_EXAMPLES: true
-      NU_DESIGNER_URL: "http://nginx:8080"
+      NU_DESIGNER_URL: "http://designer:8080"
       NU_DESIGNER_USER: admin
       NU_DESIGNER_PASSWORD: admin
-      NU_REQUEST_RESPONSE_OPEN_API_SERVICE_ADDRESS: "nginx:8181"
+      NU_REQUEST_RESPONSE_OPEN_API_SERVICE_ADDRESS: "designer:8181"
       KAFKA_ADDRESS: "kafka:9092"
       SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       SCHEMA_REGISTRY_USER: admin

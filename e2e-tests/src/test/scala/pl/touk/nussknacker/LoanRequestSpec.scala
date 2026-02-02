@@ -2,9 +2,11 @@ package pl.touk.nussknacker
 
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.tags.Slow
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import pl.touk.nussknacker.test.installationexample.HttpResponse
 
+@Slow
 class LoanRequestSpec extends AnyFreeSpecLike with BaseE2ESpec with Matchers with VeryPatientScalaFutures {
 
   "Properly handle loan request" in {

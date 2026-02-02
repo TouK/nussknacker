@@ -1,0 +1,48 @@
+name: Free disk space
+description: Removes some unused runner components to have more free space e.g. for Docker builds
+runs:
+  using: "composite"
+  steps:
+    # things not removed, along with their sizes and approximate times to execute 'rm -rf':
+    # MB   | time  | path
+    # -----|-------|---
+    #  780 |  16.1 | /usr/share/miniconda
+    #  550 |   1.5 | /usr/share/az_*
+    # 4200 |  12.0 | /usr/share/dotnet
+    # 1700 | 136.0 | $AGENT_TOOLSDIRECTORY/CodeQL
+    # 1100 |  20.5 | $AGENT_TOOLSDIRECTORY/go
+    #  520 |   5.3 | $AGENT_TOOLSDIRECTORY/PyPy
+    # 1700 |   8.0 | $AGENT_TOOLSDIRECTORY/Python
+    #  313 |   5.7 | $AGENT_TOOLSDIRECTORY/Ruby
+
+    - name: Increase free disk space
+      shell: bash
+      run: |
+        echo "Free space before file removals:"
+        df -h /
+        echo
+        set -x
+
+        # 370M
+        time sudo rm -rf /opt/google/chrome
+        # 619M
+        time sudo rm -rf /opt/microsoft/msedge
+        # 278M
+        time sudo rm -rf /usr/lib/firefox
+        # 626M
+        time sudo rm -rf /usr/local/share/chromium
+
+        # 178M
+        time sudo rm -rf /opt/microsoft/powershell
+        # 1.3G
+        time sudo rm -rf /usr/local/share/powershell
+
+        # 2.3G
+        time sudo rm -rf /usr/share/swift
+
+        # 9.9G, 1.1s
+        time sudo rm -rf /usr/local/lib/android
+
+        set +x
+        echo -e "\nFree space after file removals:"
+        df -h /

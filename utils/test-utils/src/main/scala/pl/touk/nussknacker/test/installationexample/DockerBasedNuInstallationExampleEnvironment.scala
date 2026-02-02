@@ -27,6 +27,9 @@ import java.util
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
+/**
+ * Note: Docker startup happens in constructor, watch out for that
+ */
 class DockerBasedInstallationExampleNuEnvironment(
     nussknackerImageVersion: String,
     dockerComposeTweakFiles: Iterable[JFile]
@@ -52,6 +55,8 @@ class DockerBasedInstallationExampleNuEnvironment(
       // Change to 'true' to enable logging
       tailChildContainers = false
     ) {
+
+  slf4jLogger.info(s"Initializing ${getClass.getName}")
 
   Try(start()) match {
     case Failure(ex) =>

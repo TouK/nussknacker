@@ -1,0 +1,28 @@
+name: Prepare build artifacts for sbt tests
+runs:
+  using: "composite"
+  steps:
+    - name: Cancel previous runs
+      if: github.event_name != 'push'
+      uses: styfle/cancel-workflow-action@0.13.0
+      with:
+        access_token: ${{ secrets.GITHUB_TOKEN }}
+    - uses: coursier/setup-action@v1
+      with:
+        jvm: temurin:1.17.0.5
+    - uses: sbt/setup-sbt@v1
+    - name: Cache ivy packages
+      uses: actions/cache@v5
+      with:
+        path: |
+          ~/.ivy2/cache
+          ~/.cache/coursier
+          ~/.sbt
+        key: sbt-cache-${{ hashFiles('**/*.sbt') }}
+        restore-keys: sbt
+    - uses: actions/download-artifact@v7
+      with:
+        name: build-target
+    - name: Untar artifacts
+      shell: bash
+      run: tar xfz target.tgz

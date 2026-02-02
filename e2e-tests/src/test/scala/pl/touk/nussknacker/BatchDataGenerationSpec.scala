@@ -6,11 +6,13 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.collection.IsIn._
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.tags.Slow
 import pl.touk.nussknacker.config.WithE2EInstallationExampleRestAssuredUsersExtensions
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, VeryPatientScalaFutures}
 
+@Slow
 class BatchDataGenerationSpec
     extends AnyFreeSpecLike
     with BaseE2ESpec
@@ -31,8 +33,8 @@ class BatchDataGenerationSpec
   private val designerServiceUrl               = "http://localhost:8080"
 
   override def beforeAll(): Unit = {
-    createEmptyBatchScenario(scenarioName)
     super.beforeAll()
+    createEmptyBatchScenario(scenarioName)
   }
 
   "Generate file endpoint for scenario with table source should generate" - {

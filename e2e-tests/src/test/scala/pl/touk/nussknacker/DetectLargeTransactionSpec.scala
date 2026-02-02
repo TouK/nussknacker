@@ -4,9 +4,11 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.tags.Slow
 import pl.touk.nussknacker.config.WithE2EInstallationExampleRestAssuredUsersExtensions
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, VeryPatientScalaFutures}
 
+@Slow
 class DetectLargeTransactionSpec
     extends AnyFreeSpecLike
     with NuRestAssureExtensions

@@ -13,14 +13,14 @@ import pl.touk.nussknacker.test.installationexample.{
 // `bash -c "export NUSSKNACKER_SCALA_VERSION=2.13 && sbt dist/Docker/publishLocal"`
 trait BaseE2EBenchmark {
 
-  val client: DockerBasedInstallationExampleClient =
+  lazy val client: DockerBasedInstallationExampleClient =
     BaseE2EBenchmark.dockerBasedInstallationExampleNuEnvironmentSingleton.client
 
 }
 
 object BaseE2EBenchmark extends LazyLogging {
 
-  val dockerBasedInstallationExampleNuEnvironmentSingleton =
+  private lazy val dockerBasedInstallationExampleNuEnvironmentSingleton =
     new DockerBasedInstallationExampleNuEnvironment(
       nussknackerImageVersion = BuildInfo.version,
       dockerComposeTweakFiles = List(

@@ -11,6 +11,7 @@ import scala.util.{Random, Try}
 object FlinkSteamingScenarioBenchmark extends IOApp with BaseE2EBenchmark with LazyLogging {
 
   override def run(args: List[String]): IO[ExitCode] = {
+    client // initialize lazy client
     for {
       messagesCount        <- readBenchmarkMessagesCount(args)
       _                    <- log("Starting message generation...")
