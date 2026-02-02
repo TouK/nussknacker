@@ -100,17 +100,56 @@ trait NumericUtils extends MathUtils with HideToString {
   @Documentation(description =
     "Returns the largest (closest to positive infinity) value that is less than or equal to the argument and is equal to a mathematical integer."
   )
-  def floor(@ParamName("a") a: Double): Double = Math.floor(a)
+  def floor(@ParamName("a") a: java.lang.Double): java.lang.Double = Math.floor(a)
 
   @Documentation(description =
     "Returns the closest long to the argument. The result is rounded to an integer by adding 1/2, taking the floor of the result, and casting the result to type long."
   )
-  def round(@ParamName("a") a: Double): Double = Math.round(a).toDouble
+  def round(@ParamName("a") a: java.lang.Double): java.lang.Double = Math.round(a).toDouble
 
   @Documentation(description =
     "Returns the smallest (closest to negative infinity) double value that is greater than or equal to the argument and is equal to a mathematical integer."
   )
-  def ceil(@ParamName("a") a: Double): Double = Math.ceil(a)
+  def ceil(@ParamName("a") a: java.lang.Double): java.lang.Double = Math.ceil(a)
+
+  @Documentation(description = "Sine of a value (argument in radians).")
+  def sin(@ParamName("a") a: Number): java.lang.Double = Math.sin(a.doubleValue())
+
+  @Documentation(description = "Cosine of a value (argument in radians).")
+  def cos(@ParamName("a") a: Number): java.lang.Double = Math.cos(a.doubleValue())
+
+  @Documentation(description = "Tangent of a value (argument in radians).")
+  def tan(@ParamName("a") a: Number): java.lang.Double = Math.tan(a.doubleValue())
+
+  @Documentation(description = "Arc sine (result in radians).")
+  def asin(@ParamName("a") a: Number): java.lang.Double = Math.asin(a.doubleValue())
+
+  @Documentation(description = "Arc cosine (result in radians).")
+  def acos(@ParamName("a") a: Number): java.lang.Double = Math.acos(a.doubleValue())
+
+  @Documentation(description = "Arc tangent (result in radians).")
+  def atan(@ParamName("a") a: Number): java.lang.Double = Math.atan(a.doubleValue())
+
+  @Documentation(description = "Square root.")
+  def sqrt(@ParamName("a") a: Number): java.lang.Double = Math.sqrt(a.doubleValue())
+
+  @Documentation(description = "Cubic root.")
+  def cbrt(@ParamName("a") a: Number): java.lang.Double = Math.cbrt(a.doubleValue())
+
+  @Documentation(description = "Exponential function e^a.")
+  def exp(@ParamName("a") a: Number): java.lang.Double = Math.exp(a.doubleValue())
+
+  @Documentation(description = "Natural logarithm (base e).")
+  def log(@ParamName("a") a: Number): java.lang.Double = Math.log(a.doubleValue())
+
+  @Documentation(description = "Base-10 logarithm.")
+  def log10(@ParamName("a") a: Number): java.lang.Double = Math.log10(a.doubleValue())
+
+  @Documentation(description = "Converts degrees to radians.")
+  def toRadians(@ParamName("a") a: Number): java.lang.Double = Math.toRadians(a.doubleValue())
+
+  @Documentation(description = "Converts radians to degrees.")
+  def toDegrees(@ParamName("a") a: Number): java.lang.Double = Math.toDegrees(a.doubleValue())
 
 }
 

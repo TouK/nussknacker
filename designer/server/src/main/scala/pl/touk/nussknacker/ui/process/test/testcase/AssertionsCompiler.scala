@@ -1,24 +1,20 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.all._
 import enumeratum.{Enum, EnumEntry}
 import enumeratum.EnumEntry.LowerCamelcase
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
+import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
-import pl.touk.nussknacker.engine.test.testcase.Assertion.{
-  assertionDecoder,
-  AssertionOperator,
-  ExpressionAssertion,
-  PredicateAssertion
-}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, ExpressionAssertion, PredicateAssertion}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.{
@@ -28,7 +24,8 @@ import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.{
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionValidationError.AssertionConfiguredForNotExistingNodesError
 import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.{
   CompiledExpressionAssertion,
-  CompiledPredicateAssertion
+  CompiledPredicateAssertion,
+  EmptyCompiledAssertion
 }
 
 class AssertionsCompiler(
@@ -119,19 +116,25 @@ class AssertionsCompiler(
   private def compilePredicateAssertion(
       context: ValidationContext,
       assertion: PredicateAssertion
-  )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, CompiledPredicateAssertion] = {
+  )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, CompiledAssertion] = {
     val expectedCompiled = compileExpectedExpression(context, assertion)
     val actualCompiled   = compileActualExpression(context, assertion)
     (expectedCompiled, actualCompiled).tupled.andThen { case (expectedExpression, actualExpression) =>
-      compileComparisonExpression(context, assertion)
-        .map { comparisonExpression =>
-          CompiledPredicateAssertion(
-            operator = assertion.operator,
-            expectedExpression = expectedExpression.expression,
-            actualExpression = actualExpression.expression,
-            comparisonExpression = comparisonExpression.expression
-          )
-        }
+      val emptyAssertion =
+        expectedExpression.expression.original.isBlank || actualExpression.expression.original.isBlank
+      if (emptyAssertion) {
+        EmptyCompiledAssertion.validNel
+      } else {
+        compileComparisonExpression(context, assertion)
+          .map { comparisonExpression =>
+            CompiledPredicateAssertion(
+              operator = assertion.operator,
+              expectedExpression = expectedExpression.expression,
+              actualExpression = actualExpression.expression,
+              comparisonExpression = comparisonExpression.expression
+            )
+          }
+      }
     }
   }
 
@@ -195,7 +198,9 @@ class AssertionsCompiler(
       )
       .leftMap { errors =>
         PredicateAssertionCompilationError(
-          errors,
+          // Clear the error details, including the position of the error in the comparison expression.
+          // Since this expression is never shown to the user, highlighting part of the actual expression at the wrong position would be confusing.
+          clearErrorsDetails(errors),
           assertion,
           // If comparison expression fails to compile because of uncomparable types, we report the error on actual field.
           PredicateAssertionCompilationError.Field.Actual,
@@ -209,6 +214,17 @@ class AssertionsCompiler(
     operator match {
       case AssertionOperator.Equals    => "=="
       case AssertionOperator.NotEquals => "!="
+    }
+  }
+
+  private def clearErrorsDetails(
+      errors: NonEmptyList[ProcessCompilationError]
+  ): NonEmptyList[ProcessCompilationError] = {
+    errors.map {
+      case e: ExpressionParserCompilationError =>
+        e.copy(details = None)
+      case other =>
+        other
     }
   }
 

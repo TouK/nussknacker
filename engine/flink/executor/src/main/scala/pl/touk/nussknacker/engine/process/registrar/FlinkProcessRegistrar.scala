@@ -72,29 +72,23 @@ class FlinkProcessRegistrar(
       deploymentData: DeploymentData,
       resultCollector: ResultCollector
   ): Unit = {
-    usingRightClassloader { userClassLoader =>
-      val compilerDataForUsedNodesAndClassloader =
-        prepareCompilerData(process.metaData, processVersion, resultCollector)
-      val compilerData = compilerDataForUsedNodesAndClassloader(UsedNodes.empty, userClassLoader)
+    // sbt's LayeredClassLoader in most tests, ModelClassLoader on real Flink and on MiniCluster
+    val userClassLoader                        = Thread.currentThread().getContextClassLoader
+    val compilerDataForUsedNodesAndClassloader = prepareCompilerData(process.metaData, processVersion, resultCollector)
+    val compilerData = compilerDataForUsedNodesAndClassloader(UsedNodes.empty, userClassLoader)
 
-      streamExecutionEnvPreparer.preRegistration(env, compilerData, deploymentData)
+    streamExecutionEnvPreparer.preRegistration(env, compilerData, deploymentData)
 
-      val compilerDataForProcessPart =
-        FlinkProcessRegistrar.enrichWithUsedNodes[FlinkProcessCompilerData](compilerDataForUsedNodesAndClassloader) _
-      register(
-        env,
-        compilerDataForProcessPart,
-        compilerData,
-        process,
-        resultCollector,
-        deploymentData
-      )
-    }
-  }
-
-  private def usingRightClassloader(action: ClassLoader => Unit): Unit = {
-    val userLoader = getClass.getClassLoader
-    action(userLoader)
+    val compilerDataForProcessPart =
+      FlinkProcessRegistrar.enrichWithUsedNodes[FlinkProcessCompilerData](compilerDataForUsedNodesAndClassloader) _
+    register(
+      env,
+      compilerDataForProcessPart,
+      compilerData,
+      process,
+      resultCollector,
+      deploymentData
+    )
   }
 
   private def createInterpreter(

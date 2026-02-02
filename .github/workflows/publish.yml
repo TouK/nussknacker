@@ -42,12 +42,12 @@ jobs:
         uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ secrets.github__token }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - uses: coursier/setup-action@v1
         with:
           jvm: temurin:1.17.0.5
       - name: Cache ivy packages
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             ~/.ivy2/cache
@@ -55,20 +55,20 @@ jobs:
             ~/.sbt
           key: sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: sbt
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: build-target
       - name: Untar artifacts
         shell: bash
         run: tar xfz target.tgz
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: build-fe-dist
       - name: Untar fe artifacts
         shell: bash
         run: tar xfz fe-dist.tgz
       - name: Login to Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.dockerhub_user }}
           password: ${{ secrets.dockerhub_token }}

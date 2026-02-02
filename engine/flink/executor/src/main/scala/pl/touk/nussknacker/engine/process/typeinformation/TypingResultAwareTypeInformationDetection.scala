@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.flink.api.typeinformation.{
   CharsetTypeInformation,
   CurrencyTypeInformation,
   DurationTypeInformation,
-  FlinkTypeInfoRegistrar,
   LocaleTypeInformation,
   OffsetDateTimeTypeInformation,
   PeriodTypeInformation,
@@ -29,10 +28,7 @@ import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{
 }
 import pl.touk.nussknacker.engine.util.Implicits._
 
-import java.nio.charset.Charset
-import java.time.{Duration, OffsetDateTime, Period, ZonedDateTime, ZoneId}
-import java.util.{Currency, Locale, UUID}
-import scala.jdk.CollectionConverters._
+import java.time.ZoneId
 
 // TODO: handle avro types - see FlinkConfluentUtils
 /*
@@ -61,7 +57,6 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
 
   override def forType[T](typingResult: TypingResult): TypeInformation[T] = {
     (typingResult match {
-      case FlinkBelow119AdditionalTypeInfo(typeInfo) => typeInfo
       case TypedClass(`ListClass`, elementType :: Nil) =>
         new ListTypeInfo[AnyRef](forType[AnyRef](elementType))
       case TypedClass(`ZonedDateTimeClass`, Nil)                             => ZonedDateTimeTypeInformation
@@ -99,29 +94,6 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
       case _ =>
         TypeInformation.of(classOf[Any])
     }).asInstanceOf[TypeInformation[T]]
-  }
-
-  // This extractor is to allow using of predefined type infos in Flink < 1.19. Type info registration was added in 1.19
-  // It should be removed when we stop supporting Flink < 1.19
-  private object FlinkBelow119AdditionalTypeInfo extends Serializable {
-
-    def unapply(typingResult: TypingResult): Option[TypeInformation[_]] = {
-      if (FlinkTypeInfoRegistrar.isFlinkTypeInfoRegistrationEnabled) {
-        None
-      } else {
-        for {
-          clazz <- Option(typingResult).collect { case TypedClass(clazz, Nil) =>
-            clazz
-          }
-          typeInfo <- FlinkTypeInfoRegistrar.typeInfoToRegister.collectFirst {
-            case FlinkTypeInfoRegistrar.RegistrationEntry(`clazz`, factoryClass) =>
-              val factory = factoryClass.getDeclaredConstructor().newInstance()
-              factory.createTypeInfo(clazz, Map.empty[String, TypeInformation[_]].asJava)
-          }
-        } yield typeInfo
-      }
-    }
-
   }
 
   private def createScalaMapTypeInformation(typingResult: TypedObjectTypingResult) =

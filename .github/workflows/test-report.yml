@@ -12,7 +12,7 @@ jobs:
     outputs:
       scala_version_matrix: ${{ steps.variables.outputs.scala_version_matrix }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 100
       - name: Define variables
@@ -33,7 +33,7 @@ jobs:
     steps:
       - name: BackendTests Report
         continue-on-error: true
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v2
         with:
           name: REPORT-BackendTests-${{ matrix.scalaVersion }}
           artifact: BackendTests-results-${{ matrix.scalaVersion }}
@@ -43,7 +43,7 @@ jobs:
           list-suites: failed
       - name: IntegrationTests Report
         continue-on-error: true
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v2
         with:
           name: REPORT-IntegrationTests-${{ matrix.scalaVersion }}
           artifact: IntegrationTests-results-${{ matrix.scalaVersion }}
@@ -51,7 +51,7 @@ jobs:
           reporter: java-junit
       - name: SlowTests Report
         continue-on-error: true
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v2
         with:
           name: REPORT-SlowTests-${{ matrix.scalaVersion }}
           artifact: SlowTests-results-${{ matrix.scalaVersion }}
@@ -62,7 +62,7 @@ jobs:
     steps:
       - name: FrontendTests Report
         continue-on-error: true
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v2
         with:
           name: REPORT-FrontendTests
           artifact: FrontendTests-results
@@ -70,7 +70,7 @@ jobs:
           reporter: jest-junit
       - name: CypressTests Report
         continue-on-error: true
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v2
         with:
           name: REPORT-CypressTests
           artifact: CypressTests-results

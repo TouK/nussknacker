@@ -42,7 +42,7 @@ trait FlinkKafkaDockerSpec
 
   protected def useMiniClusterForDeployment: Boolean
 
-  override val container: Container = MultipleContainers(
+  override lazy val container: Container = MultipleContainers(
     (kafkaContainer: LazyContainer[_]) :: (if (useMiniClusterForDeployment) Nil else flinkContainers): _*
   )
 
@@ -63,7 +63,7 @@ trait FlinkKafkaDockerSpec
         ConfigValueFactory.fromAnyRef("false")
       )
     if (useMiniClusterForDeployment) {
-      logger.debug(s"Using Flink MiniCluster - setting bootstrap.servers to $hostKafkaAddress")
+      logger.debug(s"Using Flink MiniCluster - setting Kafka's bootstrap.servers to $hostKafkaAddress")
       baseConfig
         .withValue("deploymentConfig.useMiniClusterForDeployment", fromAnyRef(true))
         .withValue(
@@ -76,7 +76,7 @@ trait FlinkKafkaDockerSpec
         )
     } else {
       logger.debug(
-        s"Using Flink from docker - setting restUrl to $jobManagerRestUrl and bootstrap.servers to $dockerKafkaAddress"
+        s"Using Flink from docker - setting restUrl to $jobManagerRestUrl and Kafka's bootstrap.servers to $dockerKafkaAddress"
       )
       baseConfig
         .withValue("deploymentConfig.restUrl", fromAnyRef(jobManagerRestUrl))

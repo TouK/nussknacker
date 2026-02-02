@@ -8,7 +8,8 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.ui.process.test.testcase.CompiledAssertion.{
   CompiledExpressionAssertion,
-  CompiledPredicateAssertion
+  CompiledPredicateAssertion,
+  EmptyCompiledAssertion
 }
 
 import scala.jdk.CollectionConverters._
@@ -50,6 +51,8 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
             context,
             globalVariables
           )
+        case EmptyCompiledAssertion =>
+          SuccessfulAssertion
       }
     } catch {
       case e: Exception => FailedAssertion(s"Exception during assertion evaluation: ${e.getMessage}")
