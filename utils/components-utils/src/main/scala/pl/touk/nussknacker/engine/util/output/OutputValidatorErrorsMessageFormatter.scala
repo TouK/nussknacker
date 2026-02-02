@@ -18,14 +18,15 @@ object OutputValidatorErrorsMessageFormatter {
       outputErrors: OutputErrors,
       detailedErrorDescriptions: Boolean
   ): String = {
-    val messageMissingFieldsError = makeErrors(outputErrors.missingFields, ValidationMissingFieldsErrorMessage)
+    val messageMissingFieldsError = makeErrors(outputErrors.missingFieldNames, ValidationMissingFieldsErrorMessage)
     val messageValueFieldsError =
-      makeErrors(outputErrors.valueFieldsError(detailedErrorDescriptions), ValidationValueErrorMessage)
-    val messageRedundantFieldsError = makeErrors(outputErrors.redundantFields, ValidationRedundantFieldsErrorMessage)
+      makeErrors(outputErrors.valueErrorMessages(detailedErrorDescriptions), ValidationValueErrorMessage)
+    val messageRedundantFieldsError =
+      makeErrors(outputErrors.redundantFieldNames, ValidationRedundantFieldsErrorMessage)
     val messageTypeFieldErrors =
-      makeErrors(outputErrors.typeFieldsErrors(detailedErrorDescriptions), ValidationTypeErrorMessage)
+      makeErrors(outputErrors.typeErrorMessages(detailedErrorDescriptions), ValidationTypeErrorMessage)
     val messageTypeFieldRangeErrors =
-      makeErrors(outputErrors.rangeFieldsErrors(detailedErrorDescriptions), ValidationRangeMessage)
+      makeErrors(outputErrors.rangeErrorMessages(detailedErrorDescriptions), ValidationRangeMessage)
     val messageErrors =
       messageTypeFieldErrors ::: messageValueFieldsError ::: messageMissingFieldsError ::: messageRedundantFieldsError ::: messageTypeFieldRangeErrors
 

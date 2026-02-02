@@ -128,7 +128,7 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
     result.errors shouldBe Nil
   }
 
-  test("should validate record with non-nullable enum field with value from string expression") {
+  test("sink validation succeeds for non-nullable AVRO enum value from string expression") {
     val topic         = exampleAvroEnumTopic
     val schemaVersion = 1
     val result = validate(
@@ -142,7 +142,7 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
     result.errors shouldBe Nil
   }
 
-  test("should validate record with nullable enum field with null value") {
+  test("sink validation succeeds for null value in nullable AVRO enum") {
     val topic         = exampleAvroEnumTopic
     val schemaVersion = 2
     val result = validate(
@@ -156,7 +156,7 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
     result.errors shouldBe Nil
   }
 
-  test("should validate record with union field with enum field") {
+  test("sink validation succeeds for union field with AVRO enum and matching alternative type") {
     val topic         = exampleAvroEnumTopic
     val schemaVersion = 3
     val result = validate(
@@ -198,7 +198,7 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
         paramName = topicParamName,
         label = None,
         value = "'tereferer'",
-        values = ("" :: allTopics).map(fixedExpressionValue),
+        values = ("" :: allRegisteredTopics).map(fixedExpressionValue),
         nodeId = sinkNodeId
       ),
       InvalidPropertyFixedValue(
@@ -260,6 +260,48 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
         sinkNodeId
       )
     )
+  }
+
+  test(
+    "sink validation fails for invalid AVRO enum value with dynamic forms"
+  ) {
+    val topic         = exampleAvroEnumTopic
+    val schemaVersion = 1
+    val testParamName = ParameterName("testField")
+    val result = validate(
+      topicParamName         -> s"'$topic'".spel,
+      schemaVersionParamName -> s"'$schemaVersion'".spel,
+      sinkKeyParamName       -> "".spel,
+      sinkRawEditorParamName -> "false".spel,
+      testParamName          -> "'INVALID_COLOR'".spel,
+    )(defaultUniversalSinkFactory)
+
+    result.errors shouldBe CustomNodeError(
+      nodeId = sinkNodeId,
+      message = "Errors:\nIncorrect value: actual value: 'INVALID_COLOR' should be one of: ['RED', 'GREEN', 'BLUE'].",
+      paramName = Some(testParamName)
+    ) :: Nil
+  }
+
+  test(
+    "sink validation fails for null value in non-nullable AVRO enum with dynamic forms"
+  ) {
+    val topic         = exampleAvroEnumTopic
+    val schemaVersion = 1
+    val testParamName = ParameterName("testField")
+    val result = validate(
+      topicParamName         -> s"'$topic'".spel,
+      schemaVersionParamName -> s"'$schemaVersion'".spel,
+      sinkKeyParamName       -> "".spel,
+      sinkRawEditorParamName -> "false".spel,
+      testParamName          -> "null".spel,
+    )(defaultUniversalSinkFactory)
+
+    result.errors shouldBe CustomNodeError(
+      nodeId = sinkNodeId,
+      message = "Errors:\nIncorrect value: actual value: 'null' should be one of: ['RED', 'GREEN', 'BLUE'].",
+      paramName = Some(testParamName)
+    ) :: Nil
   }
 
   test("sink should be validated against the topic using an AVRO schema, with default values applied from the schema") {
@@ -401,46 +443,6 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
       )
     )
 
-  }
-
-  test("sink should be validated against the topic using an AVRO schema, with incorrect value for enum schema") {
-    val topic         = exampleAvroEnumTopic
-    val schemaVersion = 1
-    val testParamName = ParameterName("testField")
-    val result = validate(
-      topicParamName         -> s"'$topic'".spel,
-      schemaVersionParamName -> s"'$schemaVersion'".spel,
-      sinkKeyParamName       -> "".spel,
-      sinkRawEditorParamName -> "false".spel,
-      testParamName          -> "'INVALID_COLOR'".spel,
-    )(defaultUniversalSinkFactory)
-
-    result.errors shouldBe CustomNodeError(
-      nodeId = sinkNodeId,
-      message = "Errors:\nIncorrect value: actual value: 'INVALID_COLOR' should be one of: ['RED', 'GREEN', 'BLUE'].",
-      paramName = Some(testParamName)
-    ) :: Nil
-  }
-
-  test(
-    "sink should be validated against the topic using an AVRO schema, with null value passed for not nullable enum schema"
-  ) {
-    val topic         = exampleAvroEnumTopic
-    val schemaVersion = 1
-    val testParamName = ParameterName("testField")
-    val result = validate(
-      topicParamName         -> s"'$topic'".spel,
-      schemaVersionParamName -> s"'$schemaVersion'".spel,
-      sinkKeyParamName       -> "".spel,
-      sinkRawEditorParamName -> "false".spel,
-      testParamName          -> "null".spel,
-    )(defaultUniversalSinkFactory)
-
-    result.errors shouldBe CustomNodeError(
-      nodeId = sinkNodeId,
-      message = "Errors:\nIncorrect value: actual value: 'null' should be one of: ['RED', 'GREEN', 'BLUE'].",
-      paramName = Some(testParamName)
-    ) :: Nil
   }
 
   test("sink should be validated against the topic using a JSON schema, with default values applied from the schema") {
@@ -629,7 +631,8 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
     val exampleAvroEnumTopic: String = "example-avro-enum"
     val exampleJsonTopic: String     = "example-json"
 
-    val allTopics = List(fullnameTopic, exampleAvroTopic, exampleAvroEnumTopic, exampleJsonTopic).sorted
+    val allRegisteredTopics: List[String] =
+      List(fullnameTopic, exampleAvroTopic, exampleAvroEnumTopic, exampleJsonTopic).sorted
 
     val schemaRegistryMockClient: CSchemaRegistryClient = new MockConfluentSchemaRegistryClientBuilder()
       .register(fullnameTopic, FullNameV1.schema, 1, isKey = false)

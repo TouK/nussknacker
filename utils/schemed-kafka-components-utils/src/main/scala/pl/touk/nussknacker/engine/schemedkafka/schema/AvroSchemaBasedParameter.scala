@@ -17,12 +17,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.schemedkafka.AvroDefaultExpressionDeterminer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.util.output.{
-  OutputValidatorError,
-  OutputValidatorExpected,
-  OutputValidatorTypeError,
-  OutputValidatorValueError
-}
+import pl.touk.nussknacker.engine.util.output.{OutputValidatorError, OutputValidatorExpected, OutputValidatorValueError}
 import pl.touk.nussknacker.engine.util.parameters.{
   SchemaBasedParameter,
   SchemaBasedRecordParameter,
@@ -31,7 +26,7 @@ import pl.touk.nussknacker.engine.util.parameters.{
 }
 
 import scala.collection.immutable.ListMap
-import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.CollectionConverters._
 
 object AvroSchemaBasedParameter {
 
@@ -94,25 +89,9 @@ object AvroSchemaBasedParameter {
             }
             listOfValidatedParams.sequence.map(l => ListMap(l: _*)).map(SchemaBasedRecordParameter)
           }
-      case Schema.Type.ENUM =>
-        val schemaForEnum = Schema.createUnion(schema, Schema.create(Type.STRING))
-        Valid(AvroSinkSingleValueParameter(paramName, schemaForEnum, defaultValue, avroSchemaTypeDefinitionExtractor))
-      case Schema.Type.UNION if isUnionWithEnumSchema(schema) =>
-        val stringSchema = Schema.create(Type.STRING)
-        val unionTypes   = schema.getTypes.asScala.toList
-        val finalSchema = if (unionTypes.contains(stringSchema)) {
-          schema
-        } else {
-          Schema.createUnion((unionTypes :+ stringSchema).asJava)
-        }
-        Valid(AvroSinkSingleValueParameter(paramName, finalSchema, defaultValue, avroSchemaTypeDefinitionExtractor))
       case other =>
         Valid(AvroSinkSingleValueParameter(paramName, schema, defaultValue, avroSchemaTypeDefinitionExtractor))
     }
-  }
-
-  private def isUnionWithEnumSchema(schema: Schema) = {
-    schema.getType == Schema.Type.UNION && schema.getTypes.asScala.exists(_.getType == Schema.Type.ENUM)
   }
 
   private def getDefaultValue(fieldSchema: Schema.Field, paramName: Option[ParameterName])(
@@ -137,9 +116,24 @@ object AvroSinkSingleValueParameter {
       defaultValue: Option[Expression],
       avroSchemaTypeDefinitionExtractor: AvroSchemaTypeDefinitionExtractor,
   ): SingleSchemaBasedParameter = {
-    val typing = avroSchemaTypeDefinitionExtractor.typeDefinition(schema)
+    val enrichedSchema: Schema = schema.getType match {
+      case Schema.Type.ENUM =>
+        Schema.createUnion(schema, Schema.create(Type.STRING))
+      case Schema.Type.UNION if isUnionWithEnumSchema(schema) =>
+        val stringSchema = Schema.create(Type.STRING)
+        val unionTypes   = schema.getTypes.asScala.toList
+        if (unionTypes.contains(stringSchema)) {
+          schema
+        } else {
+          Schema.createUnion((unionTypes :+ stringSchema).asJava)
+        }
+      case _ =>
+        schema
+    }
+
+    val typing = avroSchemaTypeDefinitionExtractor.typeDefinition(enrichedSchema)
     val name   = paramName.getOrElse(sinkValueParamName)
-    val (resultValidator, customEditors) = schema match {
+    val (resultValidator, customEditors) = enrichedSchema match {
       // enum schemas will always be here inside the union
       case UnionWithEnumSchema(enumSchema: EnumSchema) =>
         (
@@ -147,11 +141,12 @@ object AvroSinkSingleValueParameter {
           avroEnumEditors(enumSchema)
         )
       case _ =>
+        // TODO: for now, we don't use SchemaOutputValidator for Avro in editor mode, but we can add it in the future
         (TypingResultValidator.emptyValidator, List.empty[ParameterEditor])
     }
 
     val parameter = (
-      if (schema.isNullable) Parameter.optional(name, typing) else Parameter(name, typing)
+      if (enrichedSchema.isNullable) Parameter.optional(name, typing) else Parameter(name, typing)
     ).copy(
       isLazyParameter = true,
       defaultValue = defaultValue,
@@ -159,6 +154,10 @@ object AvroSinkSingleValueParameter {
     )
 
     SingleSchemaBasedParameter(parameter, resultValidator)
+  }
+
+  private def isUnionWithEnumSchema(schema: Schema) = {
+    schema.getType == Schema.Type.UNION && schema.getTypes.asScala.exists(_.getType == Schema.Type.ENUM)
   }
 
   private def avroEnumEditors(schema: EnumSchema): List[ParameterEditor] = {
@@ -182,7 +181,6 @@ object AvroSinkSingleValueParameter {
         case Some(null) =>
           Validated.condNel(enumSchema.nullable, (), avroEnumExpectedError(typingResult))
         case Some(_) | None =>
-          // dynamic
           Valid(())
       }
     }

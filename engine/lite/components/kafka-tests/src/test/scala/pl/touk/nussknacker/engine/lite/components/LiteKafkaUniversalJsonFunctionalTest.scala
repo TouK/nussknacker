@@ -353,7 +353,7 @@ class LiteKafkaUniversalJsonFunctionalTest
 
   test("pattern properties validations should work in editor mode") {
     def invalidTypeInEditorMode(fieldName: String, error: String): Invalid[NonEmptyList[CustomNodeError]] = {
-      val finalMessage = s"Provided value does not match scenario output - errors:\nIncorrect type: $error."
+      val finalMessage = s"Errors:\nIncorrect type: $error."
       Invalid(NonEmptyList.one(CustomNodeError(NodeId(sinkName), finalMessage, Some(ParameterName(fieldName)))))
     }
 

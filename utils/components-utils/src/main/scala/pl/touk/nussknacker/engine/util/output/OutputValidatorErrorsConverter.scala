@@ -24,11 +24,7 @@ class OutputValidatorErrorsConverter(schemaParamName: ParameterName) {
 
 }
 
-trait OutputValidatorExpected {
-  def expected: String
-}
-
-final case class OutputErrors private (
+private[output] final case class OutputErrors private (
     typeErrors: List[OutputValidatorTypeError],
     valueErrors: List[OutputValidatorValueError],
     rangeTypeErrors: List[OutputValidatorRangeTypeError],
@@ -36,11 +32,11 @@ final case class OutputErrors private (
     redundantFieldsErrors: List[OutputValidatorRedundantFieldsError]
 ) {
 
-  def missingFields: List[String] = missingFieldsErrors.flatMap(_.fields)
+  def missingFieldNames: List[String] = missingFieldsErrors.flatMap(_.fields)
 
-  def redundantFields: List[String] = redundantFieldsErrors.flatMap(_.fields)
+  def redundantFieldNames: List[String] = redundantFieldsErrors.flatMap(_.fields)
 
-  def typeFieldsErrors(detailed: Boolean): List[String] = {
+  def typeErrorMessages(detailed: Boolean): List[String] = {
     typeErrors
       .orderedGroupBy(err => (err.field, err.actual))
       .map { case ((field, actual), errors) =>
@@ -51,13 +47,13 @@ final case class OutputErrors private (
       }
   }
 
-  def valueFieldsError(detailed: Boolean): List[String] = {
+  def valueErrorMessages(detailed: Boolean): List[String] = {
     valueErrors.map { err =>
       s"${withPathDescription(detailed, err.field)}actual value: '${err.actual.valueOpt.orNull}' should be ${err.expected.expected}"
     }
   }
 
-  def rangeFieldsErrors(detailed: Boolean): List[String] = {
+  def rangeErrorMessages(detailed: Boolean): List[String] = {
     rangeTypeErrors.map { err =>
       s"${withPathDescription(detailed, err.field)}actual value: '${err.actual.valueOpt.orNull}' should be ${err.expected.expected}"
     }
@@ -89,7 +85,7 @@ final case class OutputErrors private (
 
 }
 
-object OutputErrors {
+private[output] object OutputErrors {
 
   def from(errors: NonEmptyList[OutputValidatorError]): OutputErrors = {
     errors.toList.reverse.foldLeft(OutputErrors(Nil, Nil, Nil, Nil, Nil)) { (acc, error) =>
@@ -103,7 +99,7 @@ object OutputErrors {
     }
   }
 
-  case class OutputValidatorGroupTypeError(
+  private case class OutputValidatorGroupTypeError(
       field: Option[String],
       actual: TypingResult,
       expected: List[OutputValidatorExpected]
@@ -112,6 +108,10 @@ object OutputErrors {
     def displayActual: String   = actual.display
   }
 
+}
+
+trait OutputValidatorExpected {
+  def expected: String
 }
 
 sealed trait OutputValidatorError

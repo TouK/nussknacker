@@ -26,7 +26,7 @@ sealed trait SchemaBasedParameter {
       implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, Unit]
 
-  def validateParams(resultType: Map[ParameterName, BaseDefinedParameter])(
+  final def validateParams(resultType: Map[ParameterName, BaseDefinedParameter])(
       implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, Unit] = validateParams(resultType, detailedErrorDescriptions = true)
 
