@@ -1,9 +1,9 @@
-import { useThread } from "@assistant-ui/react";
+import { ThreadPrimitive, useThread } from "@assistant-ui/react";
 import { ThreadWelcome } from "@assistant-ui/react-ui"; // TODO: "This repo is not actively maintained, these are legacy components and are not up to date."
 import { styled } from "@mui/material";
 import React from "react";
 
-const StyledThreadSuggestionsContainer = styled("div")(({ theme }) => ({
+const StyledThreadSuggestionsContainer = styled(ThreadPrimitive.Empty)(({ theme }) => ({
     position: "fixed",
     bottom: 60,
     left: 0,

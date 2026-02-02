@@ -36,6 +36,8 @@ export const UserMessage = () => {
     );
     const { showActions, handleShowActions, handleHideActions } = useHandleActions();
 
+    if (!messageText.length) return null;
+
     return (
         <Container onMouseEnter={handleShowActions} onMouseLeave={handleHideActions}>
             <MessageBubble>
