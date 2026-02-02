@@ -45,7 +45,6 @@ export const AddAssertionResultToNodes = () => {
                 fill: fillColor,
                 stroke: strokeColor,
                 strokeWidth: 1,
-                pointerEvents: "none",
                 rx: theme.shape?.borderRadius ?? 1,
                 ry: theme.shape?.borderRadius ?? 1,
                 x: RECT_WIDTH - assertionResultWidth / 2,

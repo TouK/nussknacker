@@ -12,7 +12,7 @@ export const RECT_WIDTH = 300;
 export const RECT_HEIGHT = 60;
 export const BORDER_RADIUS = 3;
 export const MARGIN_TOP = 7;
-export const CONTENT_PADDING = 10;
+export const CONTENT_PADDING = 24;
 export const iconBackgroundSize = RECT_HEIGHT;
 export const iconSize = iconBackgroundSize / 2;
 export const portSize = iconSize / 3;
@@ -100,6 +100,7 @@ const portMarkup = (theme: Theme, node: NodeType): dia.MarkupNodeJSON => ({
 });
 
 const testResultsHeight = 24;
+const testAssertionResultHeight = 24;
 const testResults: dia.MarkupNodeJSON = {
     tagName: "g",
     selector: "testResultsGroup",
@@ -135,9 +136,9 @@ const testAssertionResult: dia.MarkupNodeJSON = {
         {
             selector: "testAssertionResult",
             tagName: "rect",
-            className: "testAssertionResult",
+            className: "testAssertionResultPlaceholder",
             attributes: {
-                height: testResultsHeight,
+                height: testAssertionResultHeight,
                 y: RECT_HEIGHT / 2 - 12,
             },
         },
@@ -146,7 +147,7 @@ const testAssertionResult: dia.MarkupNodeJSON = {
             tagName: "text",
             className: "testAssertionResultSummary",
             attributes: {
-                height: testResultsHeight,
+                height: testAssertionResultHeight,
                 y: RECT_HEIGHT / 2 + 4,
             },
         },
@@ -183,6 +184,15 @@ const defaults = (theme: Theme) =>
                     textAnchor: "middle",
                     textVerticalAnchor: "middle",
                     refX,
+                    z: 2,
+                },
+                testAssertionResult: {
+                    refX: 1,
+                    rx: 5,
+                    z: 2,
+                },
+                testAssertionResultSummary: {
+                    refX: 1,
                     z: 2,
                 },
             },

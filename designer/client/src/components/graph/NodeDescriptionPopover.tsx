@@ -54,7 +54,7 @@ const useEnterLeaveEvents = (
     }: {
         onEnter: (view: dia.CellView, el?: Element) => void;
         onLeave: (view: dia.CellView, el?: Element) => void;
-        innerSelector: string;
+        innerSelector: string | string[];
         outerSelector: string;
     },
 ) => {
@@ -102,10 +102,11 @@ const useEnterLeaveEvents = (
 
         const eventsInner = getEvents(true);
         const eventsOuter = getEvents();
-        graph?.processGraphPaper?.$el?.on(eventsInner, innerSelector);
+        const innerSel = Array.isArray(innerSelector) ? innerSelector.map((s) => s.trim()).join(",") : innerSelector;
+        graph?.processGraphPaper?.$el?.on(eventsInner, innerSel);
         graph?.processGraphPaper?.$el?.on(eventsOuter, outerSelector);
         return () => {
-            graph?.processGraphPaper?.$el?.off(eventsInner, innerSelector);
+            graph?.processGraphPaper?.$el?.off(eventsInner, innerSel);
             graph?.processGraphPaper?.$el?.off(eventsOuter, outerSelector);
         };
     }, [onEnter, graphRef, innerSelector, outerSelector, onLeave]);
@@ -135,8 +136,12 @@ export function NodeDescriptionPopover(props: NodeDescriptionPopoverProps) {
 
     const enterTimer = useTimeout((view: dia.CellView, el: Element) => {
         if (isStickyNoteElement(view.model)) return; //Dont use it for stickyNotes
+
+        const hasAssertionResultHovered = el?.attributes["joint-selector"]?.value === "testAssertionResult";
         setData(
-            el
+            hasAssertionResultHovered
+                ? [t("graph.node.assertionResult.title", "Passed assertions out of total assertions for this node"), el]
+                : el
                 ? [t("graph.node.counts.title", "number of messages that passed downstream"), el]
                 : [getNodeData(view.model, scenarioGraph)?.additionalFields?.description, view.el],
         );
@@ -160,7 +165,7 @@ export function NodeDescriptionPopover(props: NodeDescriptionPopoverProps) {
         onLeave: () => {
             leaveTimer.start();
         },
-        innerSelector: "[joint-selector=testResultsGroup]",
+        innerSelector: ["[joint-selector=testResultsGroup]", "[joint-selector=testAssertionResultGroup]"],
         outerSelector: "[model-id]",
     });
 
