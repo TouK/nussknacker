@@ -552,6 +552,29 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
     }
   }
 
+  test("range") {
+    evaluateAny("#COLLECTION.range(1, 4)") shouldBe List(1, 2, 3, 4).asJava
+    evaluateAny("#COLLECTION.range(-1, 4)") shouldBe List(-1, 0, 1, 2, 3, 4).asJava
+    evaluateAny("#COLLECTION.range(4, 1)") shouldBe List(4, 3, 2, 1).asJava
+    evaluateAny("#COLLECTION.range(3, 3)") shouldBe List(3).asJava
+  }
+
+  test("range with step") {
+    evaluateAny("#COLLECTION.range(1, 6, 2)") shouldBe List(1, 3, 5).asJava
+    evaluateAny("#COLLECTION.range(1, 7, 3)") shouldBe List(1, 4, 7).asJava
+    evaluateAny("#COLLECTION.range(6, 1, 2)") shouldBe List(6, 4, 2).asJava
+    evaluateAny("#COLLECTION.range(6, 1, -2)") shouldBe List(6, 4, 2).asJava
+    evaluateAny("#COLLECTION.range(6, -2, -2)") shouldBe List(6, 4, 2, 0, -2).asJava
+    evaluateAny("#COLLECTION.range(5, 5, 10)") shouldBe List(5).asJava
+  }
+
+  test("range should throw for step 0") {
+    val caught = intercept[SpelExpressionEvaluationException] {
+      evaluateAny("#COLLECTION.range(1, 10, 0)")
+    }
+    caught.getMessage should include("Step cannot be 0")
+  }
+
   private val types = Map(
     "unknownMap" -> Typed.fromDetailedType[java.util.Map[Any, Any]],
     "stringMap"  -> Typed.fromDetailedType[java.util.Map[String, Any]],

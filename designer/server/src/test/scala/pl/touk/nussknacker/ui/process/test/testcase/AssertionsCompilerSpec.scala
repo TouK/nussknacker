@@ -141,7 +141,7 @@ class AssertionsCompilerSpec
                 _,
                 Some(ParameterName(parameterName)),
                 originalExpr,
-                _
+                details
               ),
               Nil
             ),
@@ -153,6 +153,7 @@ class AssertionsCompilerSpec
         parameterName shouldBe PredicateAssertionCompilationError.Field.Expected.entryName
         field shouldBe PredicateAssertionCompilationError.Field.Expected
         originalExpr shouldBe "'123"
+        details shouldBe defined
         assertion shouldBe assertionWithSyntaxErrorsInBothExpressions
     }
 
@@ -164,7 +165,7 @@ class AssertionsCompilerSpec
                 _,
                 Some(ParameterName(parameterName)),
                 originalExpr,
-                _
+                details
               ),
               Nil
             ),
@@ -176,6 +177,7 @@ class AssertionsCompilerSpec
         parameterName shouldBe PredicateAssertionCompilationError.Field.Actual.entryName
         field shouldBe PredicateAssertionCompilationError.Field.Actual
         originalExpr shouldBe "#contexts.size,"
+        details shouldBe defined
         assertion shouldBe assertionWithSyntaxErrorsInBothExpressions
     }
 
@@ -187,7 +189,7 @@ class AssertionsCompilerSpec
                 `nodeId`,
                 Some(ParameterName(parameterName)),
                 originalExpr,
-                _
+                details
               ),
               Nil
             ),
@@ -199,6 +201,7 @@ class AssertionsCompilerSpec
         parameterName shouldBe PredicateAssertionCompilationError.Field.Actual.entryName
         field shouldBe PredicateAssertionCompilationError.Field.Actual
         originalExpr shouldBe "'string' == 123"
+        details shouldBe None
         assertion shouldBe assertionComparingUnrelatedTypes
     }
   }

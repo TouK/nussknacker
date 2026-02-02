@@ -14,7 +14,7 @@ In order to implement any of those you need to provide:
 ## Sources
 
 ### Standard implementation
-The recommended way to implement a source is through [StandardFlinkSource](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSource.scala)
+The recommended way to implement a source is through [FlinkSource](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSource.scala)
 interface. Your source only has to implement a `sourceStream` method that provides [DataStreamSource](https://nightlies.apache.org/flink/flink-docs-master/api/java/org/apache/flink/streaming/api/datastream/DataStreamSource.html)
 based on [StreamExecutionEnvironment](https://nightlies.apache.org/flink/flink-docs-master/api/java/org/apache/flink/streaming/api/environment/StreamExecutionEnvironment.html).
 
