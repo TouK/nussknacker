@@ -190,7 +190,7 @@ jobs:
           path: '**/test-reports/*.xml'
 
   e2eTests:
-    name: E2ETests
+    name: BackendE2ETests
     runs-on: ubuntu-latest
     needs: [ build, setup ]
     strategy:
