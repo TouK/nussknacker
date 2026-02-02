@@ -5,18 +5,7 @@ import { EventSourceParserStream } from "eventsource-parser/stream";
 
 import httpService from "../../http/HttpService/instance";
 import { extractMessage, extractTools } from "./messageHelpers";
-
-export const ThreadIdManager = {
-    _threadId: undefined as string | undefined,
-
-    get THREAD_ID() {
-        return this._threadId;
-    },
-
-    set THREAD_ID(value: string | undefined) {
-        this._threadId = value;
-    },
-};
+import { ThreadIdManager } from "./ThreadIdManager";
 
 export type ChatStreamEventName = "toolExecutionRequest" | "delta" | "stop" | "error" | NonNullable<string>;
 

@@ -2,8 +2,9 @@ import type { ChatModelAdapter, ChatModelRunResult, ToolCallMessagePart } from "
 import type { AssistantMessage } from "assistant-stream";
 import { unstable_runPendingTools } from "assistant-stream";
 
-import { initializeChatStream, ThreadIdManager } from "./InitializeChatStream";
+import { initializeChatStream } from "./InitializeChatStream";
 import { addPendingHumanResolver, resolveHumanAction } from "./PendingHumanResolvers";
+import { ThreadIdManager } from "./ThreadIdManager";
 
 let controller: AbortController;
 function forkSignal(parentSignal: AbortSignal): AbortSignal {

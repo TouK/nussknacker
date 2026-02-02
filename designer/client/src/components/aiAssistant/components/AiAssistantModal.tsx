@@ -7,6 +7,7 @@ import { WindowContent } from "../../../windowManager/WindowContent";
 import { AssistantMessage } from "./AssistantMessage";
 import { Composer } from "./Composer";
 import { DefaultToolComponent } from "./DefaultToolComponent";
+import { ResetThread } from "./ResetThread";
 import { ThreadSuggestions } from "./ThreadWelcome";
 import { ThreadWithScroll } from "./ThreadWithScroll";
 import { UserMessage } from "./UserMessage";
@@ -20,7 +21,7 @@ const AiAssistantModal = ({ ...props }: WindowContentProps) => {
     );
 
     return (
-        <WindowContent {...props} components={components} closeWithEsc>
+        <WindowContent {...props} components={components} closeWithEsc subheader={<ResetThread />}>
             <ThreadWithScroll>
                 <ThreadSuggestions />
                 <ThreadPrimitive.Messages
