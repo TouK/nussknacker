@@ -12,7 +12,8 @@ export const RECT_WIDTH = 300;
 export const RECT_HEIGHT = 60;
 export const BORDER_RADIUS = 3;
 export const MARGIN_TOP = 7;
-export const CONTENT_PADDING = 24;
+export const CONTENT_PADDING = 10;
+export const HELP_ICON_PADDING = 24;
 export const iconBackgroundSize = RECT_HEIGHT;
 export const iconSize = iconBackgroundSize / 2;
 export const portSize = iconSize / 3;
@@ -76,7 +77,7 @@ const help = (theme: Theme): dia.MarkupNodeJSON => ({
     selector: "help",
     tagName: "text",
     attributes: {
-        x: RECT_WIDTH - CONTENT_PADDING,
+        x: RECT_WIDTH - HELP_ICON_PADDING,
         y: RECT_HEIGHT / 2,
         fill: getBorderColor(theme),
         ...theme.typography.caption,
