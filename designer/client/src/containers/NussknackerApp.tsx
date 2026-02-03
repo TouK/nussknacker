@@ -5,6 +5,8 @@ import React from "react";
 import { DndProvider } from "react-dnd-multi-backend";
 
 import { AiAssistantButton } from "../components/aiAssistant/components/AiAssistantButton";
+import { ListScenariosAiTool } from "../components/aiAssistant/tools/ListScenariosAiTool";
+import { OpenScenarioAiTool } from "../components/aiAssistant/tools/OpenScenarioAiTool";
 import { CommandBar } from "../components/CommandBar/CommandBar";
 import { useRegisterSettingsCommands } from "../components/CommandBar/settings/useRegisterSettingsCommands";
 import { MenuBar } from "../components/MenuBar";
@@ -35,6 +37,8 @@ export function NussknackerApp() {
     return (
         <>
             <CommandBar />
+            <OpenScenarioAiTool />
+            <ListScenariosAiTool />
             <DndProvider options={HTML5toTouch}>
                 <WindowManager
                     className={css({
