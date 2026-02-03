@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CustomNodeError,
   EmptyMandatoryParameter,
+  ExpressionParserCompilationError,
   InvalidPropertyFixedValue
 }
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -129,44 +130,17 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
   }
 
   test("sink validation succeeds for non-nullable AVRO enum value from string expression") {
-    val topic         = exampleAvroEnumTopic
-    val schemaVersion = 1
-    val result = validate(
-      topicParamName             -> s"'$topic'".spel,
-      schemaVersionParamName     -> s"'$schemaVersion'".spel,
-      sinkKeyParamName           -> "".spel,
-      sinkRawEditorParamName     -> "false".spel,
-      ParameterName("testField") -> "'GREEN'".spel,
-    )(defaultUniversalSinkFactory)
-
+    val result = validateKafkaSinkUsingAvroEnumTopic(schemaVersion = 1, testFieldValue = "'GREEN'".spel)
     result.errors shouldBe Nil
   }
 
   test("sink validation succeeds for null value in nullable AVRO enum") {
-    val topic         = exampleAvroEnumTopic
-    val schemaVersion = 2
-    val result = validate(
-      topicParamName             -> s"'$topic'".spel,
-      schemaVersionParamName     -> s"'$schemaVersion'".spel,
-      sinkKeyParamName           -> "".spel,
-      sinkRawEditorParamName     -> "false".spel,
-      ParameterName("testField") -> "null".spel,
-    )(defaultUniversalSinkFactory)
-
+    val result = validateKafkaSinkUsingAvroEnumTopic(schemaVersion = 2, testFieldValue = "null".spel)
     result.errors shouldBe Nil
   }
 
   test("sink validation succeeds for union field with AVRO enum and matching alternative type") {
-    val topic         = exampleAvroEnumTopic
-    val schemaVersion = 3
-    val result = validate(
-      topicParamName             -> s"'$topic'".spel,
-      schemaVersionParamName     -> s"'$schemaVersion'".spel,
-      sinkKeyParamName           -> "".spel,
-      sinkRawEditorParamName     -> "false".spel,
-      ParameterName("testField") -> "123".spel,
-    )(defaultUniversalSinkFactory)
-
+    val result = validateKafkaSinkUsingAvroEnumTopic(schemaVersion = 3, testFieldValue = "123".spel)
     result.errors shouldBe Nil
   }
 
@@ -262,45 +236,31 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
     )
   }
 
-  test(
-    "sink validation fails for invalid AVRO enum value with dynamic forms"
-  ) {
-    val topic         = exampleAvroEnumTopic
-    val schemaVersion = 1
-    val testParamName = ParameterName("testField")
-    val result = validate(
-      topicParamName         -> s"'$topic'".spel,
-      schemaVersionParamName -> s"'$schemaVersion'".spel,
-      sinkKeyParamName       -> "".spel,
-      sinkRawEditorParamName -> "false".spel,
-      testParamName          -> "'INVALID_COLOR'".spel,
-    )(defaultUniversalSinkFactory)
+  test("sink validation fails for invalid AVRO enum value with dynamic forms") {
+    expectErrorWhenUsingInvalidAvroEnumValue(
+      testFieldValue = "'INVALID_COLOR'".spel,
+      expectedErrorMessage =
+        "Errors:\nIncorrect value: actual value: 'INVALID_COLOR' should be one of: ['RED', 'GREEN', 'BLUE']."
+    )
 
-    result.errors shouldBe CustomNodeError(
-      nodeId = sinkNodeId,
-      message = "Errors:\nIncorrect value: actual value: 'INVALID_COLOR' should be one of: ['RED', 'GREEN', 'BLUE'].",
-      paramName = Some(testParamName)
-    ) :: Nil
   }
 
-  test(
-    "sink validation fails for null value in non-nullable AVRO enum with dynamic forms"
-  ) {
-    val topic         = exampleAvroEnumTopic
-    val schemaVersion = 1
-    val testParamName = ParameterName("testField")
-    val result = validate(
-      topicParamName         -> s"'$topic'".spel,
-      schemaVersionParamName -> s"'$schemaVersion'".spel,
-      sinkKeyParamName       -> "".spel,
-      sinkRawEditorParamName -> "false".spel,
-      testParamName          -> "null".spel,
-    )(defaultUniversalSinkFactory)
+  test("sink validation fails for null value in non-nullable AVRO enum with dynamic forms") {
+    expectErrorWhenUsingInvalidAvroEnumValue(
+      testFieldValue = "null".spel,
+      expectedErrorMessage =
+        "Errors:\nIncorrect value: actual value: 'null' should be one of: ['RED', 'GREEN', 'BLUE']."
+    )
+  }
 
-    result.errors shouldBe CustomNodeError(
+  test("sink validation fails for other value in non-nullable AVRO enum with dynamic forms") {
+    val result = validateKafkaSinkUsingAvroEnumTopic(schemaVersion = 1, testFieldValue = "123".spel)
+    result.errors shouldBe ExpressionParserCompilationError(
+      message = "Bad expression type, expected: EnumSymbol | String, found: Integer(123)",
       nodeId = sinkNodeId,
-      message = "Errors:\nIncorrect value: actual value: 'null' should be one of: ['RED', 'GREEN', 'BLUE'].",
-      paramName = Some(testParamName)
+      paramName = Some(ParameterName("testField")),
+      originalExpr = "123",
+      details = None
     ) :: Nil
   }
 
@@ -622,6 +582,26 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
 
     validationForSinkDefaultValue.errors shouldBe List.empty
 
+  }
+
+  private def expectErrorWhenUsingInvalidAvroEnumValue(testFieldValue: Expression, expectedErrorMessage: String) = {
+    val result = validateKafkaSinkUsingAvroEnumTopic(schemaVersion = 1, testFieldValue = testFieldValue)
+    result.errors shouldBe CustomNodeError(
+      nodeId = sinkNodeId,
+      message = expectedErrorMessage,
+      paramName = Some(ParameterName("testField"))
+    ) :: Nil
+  }
+
+  private def validateKafkaSinkUsingAvroEnumTopic(schemaVersion: Int, testFieldValue: Expression) = {
+    val topic = exampleAvroEnumTopic
+    validate(
+      topicParamName             -> s"'$topic'".spel,
+      schemaVersionParamName     -> s"'$schemaVersion'".spel,
+      sinkKeyParamName           -> "".spel,
+      sinkRawEditorParamName     -> "false".spel,
+      ParameterName("testField") -> testFieldValue,
+    )(defaultUniversalSinkFactory)
   }
 
   private object KafkaAvroSinkMockSchemaRegistry {
