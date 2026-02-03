@@ -1,15 +1,17 @@
 import { Box, styled, Typography } from "@mui/material";
 import { useWindowManager } from "@touk/window-manager";
+import { Priority, useKBar } from "kbar";
 import React, { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
-import { assistantClose, assistantOpen } from "../../../actions/assistantActions";
+import { assistantAsk, assistantClose, assistantOpen } from "../../../actions/assistantActions";
 import NuIcon from "../../../assets/img/nussknacker-logo-icon.svg";
 import { convertViewportUnitToPixels } from "../../../common/convertViewportUnitToPixels";
 import { blendDarken } from "../../../containers/theme/helpers";
 import { addListenerTyped, useAppDispatch } from "../../../store/storeHelpers";
 import { useWindows } from "../../../windowManager/useWindows";
 import { WindowKind } from "../../../windowManager/WindowKind";
+import { useRegisterCommands } from "../../CommandBar/useRegisterCommands";
 import DragWrapper from "./DragWrapper";
 import { AI_ASSISTANT_MODAL_ID, isAiAssistantDialog } from "./IsAiAssistantDialog";
 
@@ -92,6 +94,26 @@ const OpenAssistantButton = () => {
     const handleClick = useCallback(() => {
         dispatch(openedAiAssistantDialog ? assistantClose() : assistantOpen());
     }, [dispatch, openedAiAssistantDialog]);
+
+    const { searchQuery } = useKBar((state) => ({ searchQuery: state.searchQuery }));
+    useRegisterCommands(
+        () => [
+            {
+                priority: Priority.HIGH + 100,
+                name: searchQuery ? "Ask assistant..." : "AI Assistant",
+                shortcut: ["a", "i"],
+                id: "ai-assistant",
+                perform: () => {
+                    if (searchQuery) {
+                        dispatch(assistantAsk(searchQuery));
+                    } else {
+                        dispatch(assistantOpen());
+                    }
+                },
+            },
+        ],
+        [dispatch, searchQuery],
+    );
 
     return (
         <DragWrapper

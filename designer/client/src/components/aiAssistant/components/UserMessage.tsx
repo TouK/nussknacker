@@ -1,5 +1,5 @@
 import { useMessage } from "@assistant-ui/react";
-import { Box, styled, Typography } from "@mui/material";
+import { Box, Paper, styled, Typography } from "@mui/material";
 import React, { useMemo } from "react";
 
 import { ActionsContainer, useHandleActions } from "./actions/ActionsContainer";
@@ -14,11 +14,10 @@ const Container = styled(Box)(({ theme }) => ({
     paddingBottom: theme.spacing(2),
 }));
 
-const MessageBubble = styled(Box)(({ theme }) => ({
+const MessageBubble = styled(Paper)(({ theme }) => ({
     display: "flex",
     flexDirection: "column",
-    backgroundColor: theme.palette.grey[700],
-    borderRadius: theme.spacing(0.5),
+    backgroundColor: theme.palette.grey[800],
     padding: theme.spacing(1),
     maxWidth: "70%",
 }));
@@ -35,6 +34,8 @@ export const UserMessage = () => {
         [content, metadata],
     );
     const { showActions, handleShowActions, handleHideActions } = useHandleActions();
+
+    if (!messageText.length) return null;
 
     return (
         <Container onMouseEnter={handleShowActions} onMouseLeave={handleHideActions}>

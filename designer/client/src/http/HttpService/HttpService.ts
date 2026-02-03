@@ -1,5 +1,4 @@
 /* eslint-disable i18next/no-literal-string */
-import type { TextMessagePart } from "@assistant-ui/react";
 import type { AxiosError, AxiosResponse } from "axios";
 import axios from "axios";
 import FileSaver from "file-saver";
@@ -13,12 +12,13 @@ import type { ProcessingType } from "../../actions/nk/processDefinitionData";
 import api from "../../api";
 import type { UserData } from "../../common/models/User";
 import SystemUtils from "../../common/SystemUtils";
+import type { ChatRequest } from "../../components/aiAssistant/ChatRequest";
 import { withoutHackOfEmptyEdges } from "../../components/graph/GraphPartialsInTS/EdgeUtils";
 import type { AdditionalInfo } from "../../components/graph/node-modal/AdditionalInfoBox";
 import type { ExpressionSuggestion } from "../../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import { extractStickyNotesFromNodes } from "../../components/graph/utils/stickyNotesUtils";
 import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../../components/Labels/types";
-import type { TestingDataRecords, TestingDataRecordsRequestData } from "../../components/modals/TestingDataRecords/Table";
+import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import { mapInputDataRecordsToRunTestsFormat } from "../../components/modals/TestingDataRecords/utils";
 import type { ProcessName, ProcessVersionId, Scenario, StatusDefinitionType } from "../../components/Process/types";
 import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../../components/toolbars/activities/types";
@@ -1113,7 +1113,7 @@ export class HttpService {
         return api.get<ActivitiesResponse>(`/processes/${scenarioName}/activity/activities`);
     }
 
-    sendChatMessage(message: TextMessagePart, abortSignal: AbortSignal, threadId: string) {
+    sendChatMessage({ threadId, message, externalTools = [] }: ChatRequest, abortSignal: AbortSignal) {
         const headers = {
             "Content-Type": "application/json",
             Accept: "text/event-stream",
@@ -1129,7 +1129,7 @@ export class HttpService {
             SystemUtils.setAuthHeader({
                 method: "POST",
                 headers,
-                body: JSON.stringify({ message, threadId }),
+                body: JSON.stringify({ message, threadId, externalTools }),
                 signal: abortSignal,
             }),
         );

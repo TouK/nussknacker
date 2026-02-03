@@ -1,8 +1,9 @@
-import { useComposerRuntime, useThread } from "@assistant-ui/react";
+import { useAssistantApi, useThread } from "@assistant-ui/react";
 import { Stack, styled } from "@mui/material";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { addListenerTyped, useAppDispatch } from "../../../store/storeHelpers";
+import { delay } from "../../../utils";
 import { LoadingButton } from "../../../windowManager/LoadingButton";
 import { TextAreaNode } from "../../FormElements";
 import { nodeInput } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
@@ -30,7 +31,8 @@ const adjustInputHeight = (textarea: HTMLTextAreaElement) => {
 };
 
 export const Composer = () => {
-    const { send, setText, cancel } = useComposerRuntime();
+    const api = useAssistantApi();
+    const { send, setText, cancel } = api.composer();
     const dispatch = useAppDispatch();
 
     const [message, setMessage] = useState("");
@@ -70,12 +72,18 @@ export const Composer = () => {
     };
 
     useEffect(() => {
-        return dispatch(
-            addListenerTyped("ASSISTANT_FOCUS", () => {
-                textAreaRef.current?.focus();
-            }),
-        );
-    }, [dispatch]);
+        const focus = async () => {
+            await delay();
+            textAreaRef.current?.focus();
+        };
+
+        const subscriptions = [api.on("thread-list-item.switched-to", focus), dispatch(addListenerTyped("ASSISTANT_FOCUS", focus))];
+        focus();
+
+        return () => {
+            subscriptions.forEach((unsubscribe) => unsubscribe());
+        };
+    }, [api, dispatch]);
 
     useEffect(() => {
         adjustInputHeight(textAreaRef.current);
@@ -98,6 +106,7 @@ export const Composer = () => {
                 <StyledTextArea
                     ref={textAreaRef}
                     autoComplete="off"
+                    autoFocus
                     name="message"
                     placeholder="Message AI Assistant, e.g. what is a scenario?"
                     value={message}
