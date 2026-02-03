@@ -64,6 +64,31 @@ describe("Test cases", () => {
         cy.get("@tipsToolbar").matchImage();
         cy.get("@graph").matchImage({ screenshotConfig: { padding: 16 } });
     });
+
+    it("should verify assertion result on diagram", () => {
+        cy.visitNewProcess(seed, "testCases", "Category2");
+        cy.toggleUserFlag("node.showTestingTab", true);
+        cy.toggleUserFlag("node.showMockFieldOnEnrichers", true);
+        cy.layoutScenario();
+
+        cy.openNodeWindow("Event Generator");
+        openTestingTab();
+        appendFromLiveDataClick();
+        addEmptyAssertion();
+        fillAssertion(0, "#contexts.size", "10");
+        cy.applyNodeChanges();
+
+        cy.openNodeWindow("Enricher");
+        openTestingTab();
+        addEmptyAssertion();
+        fillAssertion(0, "10", "2");
+        cy.applyNodeChanges();
+
+        rerunTest();
+
+        cy.getNode("Event Generator").parent().as("graph");
+        cy.get("@graph").matchImage({ screenshotConfig: { padding: 16 } });
+    });
 });
 
 const openTestingTab = () => {

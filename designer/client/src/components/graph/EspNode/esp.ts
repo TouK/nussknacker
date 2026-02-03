@@ -13,6 +13,7 @@ export const RECT_HEIGHT = 60;
 export const BORDER_RADIUS = 3;
 export const MARGIN_TOP = 7;
 export const CONTENT_PADDING = 10;
+export const HELP_ICON_PADDING = 24;
 export const iconBackgroundSize = RECT_HEIGHT;
 export const iconSize = iconBackgroundSize / 2;
 export const portSize = iconSize / 3;
@@ -76,7 +77,7 @@ const help = (theme: Theme): dia.MarkupNodeJSON => ({
     selector: "help",
     tagName: "text",
     attributes: {
-        x: RECT_WIDTH - CONTENT_PADDING,
+        x: RECT_WIDTH - HELP_ICON_PADDING,
         y: RECT_HEIGHT / 2,
         fill: getBorderColor(theme),
         ...theme.typography.caption,
@@ -100,6 +101,7 @@ const portMarkup = (theme: Theme, node: NodeType): dia.MarkupNodeJSON => ({
 });
 
 const testResultsHeight = 24;
+const testAssertionResultHeight = 24;
 const testResults: dia.MarkupNodeJSON = {
     tagName: "g",
     selector: "testResultsGroup",
@@ -120,6 +122,34 @@ const testResults: dia.MarkupNodeJSON = {
             attributes: {
                 height: testResultsHeight,
                 y: RECT_HEIGHT + testResultsHeight / 2 + 1 - testResultsHeight / 2,
+            },
+        },
+    ],
+    attributes: {
+        noExport: "",
+    },
+};
+
+const testAssertionResult: dia.MarkupNodeJSON = {
+    tagName: "g",
+    selector: "testAssertionResultGroup",
+    children: [
+        {
+            selector: "testAssertionResult",
+            tagName: "rect",
+            className: "testAssertionResultPlaceholder",
+            attributes: {
+                height: testAssertionResultHeight,
+                y: RECT_HEIGHT / 2 - 12,
+            },
+        },
+        {
+            selector: "testAssertionResultSummary",
+            tagName: "text",
+            className: "testAssertionResultSummary",
+            attributes: {
+                height: testAssertionResultHeight,
+                y: RECT_HEIGHT / 2 + 4,
             },
         },
     ],
@@ -157,6 +187,15 @@ const defaults = (theme: Theme) =>
                     refX,
                     z: 2,
                 },
+                testAssertionResult: {
+                    refX: 1,
+                    rx: 5,
+                    z: 2,
+                },
+                testAssertionResultSummary: {
+                    refX: 1,
+                    z: 2,
+                },
             },
             inPorts: [],
             outPorts: [],
@@ -186,7 +225,7 @@ const protoProps = (theme: Theme, node: NodeType) => {
         portMarkup: [portMarkup(theme, node)],
         portLabelMarkup: null,
 
-        markup: [background, iconBackground, border, icon, content(theme), help(theme), testResults],
+        markup: [background, iconBackground, border, icon, content(theme), help(theme), testResults, testAssertionResult],
     };
 };
 
