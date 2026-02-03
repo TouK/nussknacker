@@ -120,9 +120,9 @@ abstract class BaseCachedTopicsExistenceValidatorTest(kafkaAutoCreateEnabled: Bo
     with Matchers {
 
   override val container: KafkaContainer =
-    KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.4.0"))
+    KafkaContainer(DockerImageName.parse("apache/kafka-native:3.9.1"))
       .configure {
-        _.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", kafkaAutoCreateEnabled.toString.toUpperCase)
+        _.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", kafkaAutoCreateEnabled.toString.toLowerCase)
       }
 
   lazy val defaultKafkaConfig: KafkaComponentsConfig = KafkaComponentsConfig(

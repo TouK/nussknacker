@@ -31,7 +31,7 @@ trait BaseNuKafkaRuntimeDockerTest
   private val network       = Network.newNetwork
   private val kafkaHostname = "kafka"
 
-  protected val schemaRegistryContainer = {
+  protected val schemaRegistryContainer: GenericContainer = {
     val container = GenericContainer(
       "confluentinc/cp-schema-registry:7.5.3",
       exposedPorts = Seq(schemaRegistryPort),
@@ -51,8 +51,8 @@ trait BaseNuKafkaRuntimeDockerTest
   protected lazy val schemaRegistryClient = new CachedSchemaRegistryClient(mappedSchemaRegistryAddress, 10)
 
   protected val kafkaContainer: KafkaContainer = {
-    val container = KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.5.3"))
-      .configure(_.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "FALSE"))
+    val container = KafkaContainer(DockerImageName.parse("apache/kafka-native:3.9.1"))
+      .configure(_.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false"))
     configureNetwork(container, kafkaHostname)
     container
   }
