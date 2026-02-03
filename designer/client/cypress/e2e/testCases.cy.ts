@@ -65,7 +65,7 @@ describe("Test cases", () => {
         cy.get("@graph").matchImage({ screenshotConfig: { padding: 16 } });
     });
 
-    it.only("should verify assertion result on diagram", () => {
+    it("should verify assertion result on diagram", () => {
         cy.visitNewProcess(seed, "testCases", "Category2");
         cy.toggleUserFlag("node.showTestingTab", true);
         cy.toggleUserFlag("node.showMockFieldOnEnrichers", true);
