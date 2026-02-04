@@ -2,9 +2,8 @@ import { css, cx } from "@emotion/css";
 import { alpha, useTheme } from "@mui/material";
 import React from "react";
 
+import { useUserSettings } from "../common/useUserSettings";
 import { getBorderColor } from "../containers/theme/helpers";
-import { getUserSettings } from "../reducers/selectors/userSettings";
-import { useAppSelector } from "../store/storeHelpers";
 import { BORDER_RADIUS } from "./graph/EspNode/esp";
 import {
     getStickyNoteAdvancedBackgroundColor,
@@ -21,8 +20,7 @@ export function StickyNotePreview({ isActive, isOver }: { isActive?: boolean; is
     const scale = isOver ? 1 : PREVIEW_SCALE;
     const rotation = isActive ? (isOver ? -ACTIVE_ROTATION : ACTIVE_ROTATION) : 0;
     const finalScale = isActive ? 1 : INACTIVE_SCALE;
-    const settings = useAppSelector(getUserSettings);
-    const areAdvancedStickyNotesEnabled = settings["node.advancedStickyNotes"];
+    const [areAdvancedStickyNotesEnabled] = useUserSettings("node.advancedStickyNotes");
 
     const { DEFAULT_COLOR, DEFAULT_HEIGHT, DEFAULT_WIDTH } = areAdvancedStickyNotesEnabled
         ? STICKY_NOTE_ADVANCED_CONSTRAINTS
