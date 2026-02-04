@@ -68,11 +68,11 @@ class EnricherMockGenerator(
         )
       }
       .flatMap { typingResult =>
-        SpelExpressionGenerator.generate(typingResult) match {
-          case Some(sampleExpressionString) =>
+        ExpressionGenerator.generate(typingResult) match {
+          case Some(expression) =>
             Right(
               GenerateEnricherMockResponseDto(
-                enricherMockExpression = Expression.jsonTemplate(sampleExpressionString)
+                enricherMockExpression = expression
               )
             )
           case None =>

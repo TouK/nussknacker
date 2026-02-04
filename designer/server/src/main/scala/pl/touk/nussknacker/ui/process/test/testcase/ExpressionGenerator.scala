@@ -3,15 +3,17 @@ package pl.touk.nussknacker.ui.process.test.testcase
 import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.util.ReflectUtils.JavaEnumConstants
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaListMap
 
 import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
 
-private object SpelExpressionGenerator {
+private object ExpressionGenerator {
 
-  def generate(typ: TypingResult): Option[String] = {
+  def generate(typ: TypingResult): Option[Expression] = {
     generateForTypingResult(typ, indentLevel = 0)
+      .map(Expression.jsonTemplate)
   }
 
   @tailrec

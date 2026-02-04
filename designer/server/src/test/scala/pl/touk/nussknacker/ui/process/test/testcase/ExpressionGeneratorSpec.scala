@@ -12,11 +12,12 @@ import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.JsonTemplate
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-class SpelExpressionGeneratorSpec
+class ExpressionGeneratorSpec
     extends AnyFunSuite
     with Matchers
     with OptionValues
@@ -117,9 +118,10 @@ class SpelExpressionGeneratorSpec
 
     forAll(testCases) { (description, typingResult, expectedExpression) =>
       withClue(s"Test case: $description") {
-        val result = SpelExpressionGenerator.generate(typingResult)
+        val result = ExpressionGenerator.generate(typingResult)
 
-        result shouldBe Some(expectedExpression)
+        result.value.expression shouldBe expectedExpression
+        result.value.language shouldBe JsonTemplate
         verifyExpressionCompilesToExpectedType(result.value, typingResult)
       }
     }
@@ -151,10 +153,9 @@ class SpelExpressionGeneratorSpec
     Typed.record(Map("request" -> requestType, "response" -> responseType))
   }
 
-  private def verifyExpressionCompilesToExpectedType(generatedExpression: String, expectedType: TypingResult): Unit = {
-    val expr              = Expression.jsonTemplate(generatedExpression)
+  private def verifyExpressionCompilesToExpectedType(generatedExpression: Expression, expectedType: TypingResult): Unit = {
     val validationContext = ValidationContext.empty
-    val compilationResult = expressionCompiler.compile(expr, None, validationContext, expectedType)
+    val compilationResult = expressionCompiler.compile(generatedExpression, None, validationContext, expectedType)
 
     withClue(s"Expression '$generatedExpression' should compile successfully to type '${expectedType.display}'") {
       compilationResult.validValue
