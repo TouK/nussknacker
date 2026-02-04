@@ -56,11 +56,7 @@ class ExpressionGeneratorSpec
       ("big decimal", Typed[java.math.BigDecimal], "0.0"),
       ("enum", Typed.typedClass[java.time.Month], "#{ T(java.time.Month).JANUARY }"),
       ("instant", Typed[java.time.Instant], "\"1900-01-01T00:00:00Z\""),
-      (
-        "local date time",
-        Typed[java.time.LocalDateTime],
-        "\"1900-01-01T00:00:00\""
-      ),
+      ("local date time", Typed[java.time.LocalDateTime], "\"1900-01-01T00:00:00\""),
       ("local date", Typed[java.time.LocalDate], "\"1900-01-01\""),
       ("local time", Typed[java.time.LocalTime], "\"00:00:00\""),
       ("UUID", Typed[java.util.UUID], "\"00000000-0000-0000-0000-000000000000\""),
