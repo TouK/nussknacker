@@ -44,36 +44,32 @@ class SpelExpressionGeneratorSpec
     val testCases = Table(
       ("description", "typingResult", "expectedExpression"),
       ("unknown", Unknown, "null"),
-      ("string", Typed[String], "''"),
-      ("byte", Typed[java.lang.Byte], "0.byteValue"),
-      ("short", Typed[java.lang.Short], "0.shortValue"),
+      ("string", Typed[String], "\"\""),
+      ("byte", Typed[java.lang.Byte], "0"),
+      ("short", Typed[java.lang.Short], "0"),
       ("integer", Typed[java.lang.Integer], "0"),
-      ("long", Typed[java.lang.Long], "0l"),
-      ("float", Typed[java.lang.Float], "0.0f"),
+      ("long", Typed[java.lang.Long], "0"),
+      ("float", Typed[java.lang.Float], "0.0"),
       ("double", Typed[java.lang.Double], "0.0"),
       ("boolean", Typed[java.lang.Boolean], "true"),
-      ("big decimal", Typed[java.math.BigDecimal], "0.toBigDecimal"),
-      ("instant", Typed[java.time.Instant], "T(java.time.Instant).parse('1900-01-01T00:00:00Z')"),
+      ("big decimal", Typed[java.math.BigDecimal], "0.0"),
+      ("enum", Typed.typedClass[java.time.Month], "#{ T(java.time.Month).JANUARY }"),
+      ("instant", Typed[java.time.Instant], "\"1900-01-01T00:00:00Z\""),
       (
         "local date time",
         Typed[java.time.LocalDateTime],
-        "T(java.time.LocalDateTime).parse('1900-01-01T00:00:00')"
+        "\"1900-01-01T00:00:00\""
       ),
-      ("local date", Typed[java.time.LocalDate], "T(java.time.LocalDate).parse('1900-01-01')"),
-      ("local time", Typed[java.time.LocalTime], "T(java.time.LocalTime).parse('00:00:00')"),
-      ("UUID", Typed[java.util.UUID], "T(java.util.UUID).fromString('00000000-0000-0000-0000-000000000000')"),
-      (
-        "java enum",
-        Typed.typedClass[java.time.Month],
-        "T(java.time.Month).JANUARY"
-      ),
-      ("empty record", Typed.record(Map.empty[String, TypingResult]), "{:}"),
+      ("local date", Typed[java.time.LocalDate], "\"1900-01-01\""),
+      ("local time", Typed[java.time.LocalTime], "\"00:00:00\""),
+      ("UUID", Typed[java.util.UUID], "\"00000000-0000-0000-0000-000000000000\""),
+      ("empty record", Typed.record(Map.empty[String, TypingResult]), "{}"),
       (
         "simple record",
         Typed.record(Map("name" -> Typed[String], "age" -> Typed[Integer])),
         """{
-          |  name: '',
-          |  age: 0
+          |  "name": "",
+          |  "age": 0
           |}""".stripMargin
       ),
       (
@@ -85,35 +81,35 @@ class SpelExpressionGeneratorSpec
           )
         ),
         """{
-          |  user: {
-          |    name: '',
-          |    active: true
+          |  "user": {
+          |    "name": "",
+          |    "active": true
           |  },
-          |  count: 0
+          |  "count": 0
           |}""".stripMargin
       ),
-      ("list", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])), "{''}"),
+      ("list", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])), "[\"\"]"),
       (
         "HTTP request/response record",
         httpRequestResponseType,
         """{
-          |  request: {
-          |    body: {:},
-          |    headers: {{
-          |      name: '',
-          |      value: ''
-          |    }},
-          |    method: '',
-          |    url: ''
+          |  "request": {
+          |    "body": {},
+          |    "headers": [{
+          |      "name": "",
+          |      "value": ""
+          |    }],
+          |    "method": "",
+          |    "url": ""
           |  },
-          |  response: {
-          |    body: null,
-          |    headers: {{
-          |      name: '',
-          |      value: ''
-          |    }},
-          |    statusCode: 0,
-          |    statusText: ''
+          |  "response": {
+          |    "body": null,
+          |    "headers": [{
+          |      "name": "",
+          |      "value": ""
+          |    }],
+          |    "statusCode": 0,
+          |    "statusText": ""
           |  }
           |}""".stripMargin
       )
@@ -156,7 +152,7 @@ class SpelExpressionGeneratorSpec
   }
 
   private def verifyExpressionCompilesToExpectedType(generatedExpression: String, expectedType: TypingResult): Unit = {
-    val expr              = Expression.spel(generatedExpression)
+    val expr              = Expression.jsonTemplate(generatedExpression)
     val validationContext = ValidationContext.empty
     val compilationResult = expressionCompiler.compile(expr, None, validationContext, expectedType)
 

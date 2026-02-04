@@ -870,7 +870,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
             .example(
               Example.of(
                 value = GenerateEnricherMockResponseDto(
-                  enricherMockExpression = Expression.spel("'sample'")
+                  enricherMockExpression = Expression.jsonTemplate("\"sample\"")
                 )
               )
             )

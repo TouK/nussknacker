@@ -1813,8 +1813,8 @@ class NodesApiHttpServiceBusinessSpec
         .equalsJsonBody(
           s"""{
              |  "enricherMockExpression": {
-             |    "language": "spel",
-             |    "expression": "{foo: 0}"
+             |    "language": "jsonTemplate",
+             |    "expression": "{\\"foo\\": 0}"
              |  }
              |}""".stripMargin
         )

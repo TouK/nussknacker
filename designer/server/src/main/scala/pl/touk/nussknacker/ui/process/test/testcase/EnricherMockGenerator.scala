@@ -72,7 +72,7 @@ class EnricherMockGenerator(
           case Some(sampleExpressionString) =>
             Right(
               GenerateEnricherMockResponseDto(
-                enricherMockExpression = Expression.spel(sampleExpressionString)
+                enricherMockExpression = Expression.jsonTemplate(sampleExpressionString)
               )
             )
           case None =>

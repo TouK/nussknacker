@@ -43,55 +43,55 @@ private object SpelExpressionGenerator {
 
   private def generateForClass(typedClass: TypedClass, indentLevel: Int): Option[String] = typedClass match {
     case TypedClass(clazz, _) if clazz == StringClass =>
-      Some("''")
+      Some("\"\"")
 
     case TypedClass(clazz, _) if clazz == BooleanClass =>
       Some("true")
 
     case TypedClass(clazz, _) if clazz == LongClass =>
-      Some("0l")
+      Some("0")
 
     case TypedClass(clazz, _) if clazz == FloatClass =>
-      Some("0.0f")
+      Some("0.0")
 
     case TypedClass(clazz, _) if clazz == DoubleClass =>
       Some("0.0")
 
     case TypedClass(clazz, _) if clazz == BigDecimalClass =>
-      Some("0.toBigDecimal")
+      Some("0.0")
 
     case TypedClass(clazz, _) if clazz == ByteClass =>
-      Some("0.byteValue")
+      Some("0")
 
     case TypedClass(clazz, _) if clazz == ShortClass =>
-      Some("0.shortValue")
+      Some("0")
 
     case TypedClass(clazz, _) if isDecimalNumber(clazz) =>
       Some("0")
 
     case TypedClass(ListClass | ArrayClass, elementType :: Nil) =>
       generateForTypingResult(elementType, indentLevel) match {
-        case Some(elementExpr) => Some(s"{$elementExpr}")
-        case None              => Some("{}")
+        case Some(elementExpr) => Some(s"[$elementExpr]")
+        case None              => Some("[]")
       }
 
     case TypedClass(JavaEnumConstants(firstEnumConstant :: _), _) =>
-      Some(s"T(${typedClass.klass.getName}).${firstEnumConstant.name()}")
+      Some(s"#{ T(${typedClass.klass.getName}).${firstEnumConstant.name()} }")
 
     case TypedClass(clazz, _) if clazz == InstantClass =>
-      Some("T(java.time.Instant).parse('1900-01-01T00:00:00Z')")
+      Some("\"1900-01-01T00:00:00Z\"")
 
     case TypedClass(clazz, _) if clazz == LocalDateTimeClass =>
-      Some("T(java.time.LocalDateTime).parse('1900-01-01T00:00:00')")
+      Some("\"1900-01-01T00:00:00\"")
 
     case TypedClass(clazz, _) if clazz == LocalDateClass =>
-      Some("T(java.time.LocalDate).parse('1900-01-01')")
+      Some("\"1900-01-01\"")
 
     case TypedClass(clazz, _) if clazz == LocalTimeClass =>
-      Some("T(java.time.LocalTime).parse('00:00:00')")
+      Some("\"00:00:00\"")
 
     case TypedClass(clazz, _) if clazz == UUIDClass =>
-      Some("T(java.util.UUID).fromString('00000000-0000-0000-0000-000000000000')")
+      Some("\"00000000-0000-0000-0000-000000000000\"")
 
     case _ =>
       None
@@ -100,13 +100,13 @@ private object SpelExpressionGenerator {
   private def generateForRecord(fields: ListMap[String, TypingResult], indentLevel: Int): Option[String] = {
     val fieldExpressions = fields.mapValuesNow(generateForTypingResult(_, indentLevel + 1).getOrElse("null"))
     val recordExpression = if (fieldExpressions.isEmpty) {
-      "{:}"
+      "{}"
     } else if (fieldExpressions.size == 1) {
-      fieldExpressions.map { case (key, value) => s"$key: $value" }.mkString("{", ", ", "}")
+      fieldExpressions.map { case (key, value) => s""""$key": $value""" }.mkString("{", ", ", "}")
     } else {
       val indent        = "  " * (indentLevel + 1)
       val closingIndent = "  " * indentLevel
-      val fieldLines    = fieldExpressions.map { case (key, value) => s"$indent$key: $value" }.mkString(",\n")
+      val fieldLines    = fieldExpressions.map { case (key, value) => s"""$indent"$key": $value""" }.mkString(",\n")
       s"{\n$fieldLines\n$closingIndent}"
     }
     Some(recordExpression)
