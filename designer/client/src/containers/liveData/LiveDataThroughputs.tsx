@@ -1,10 +1,10 @@
 import { GlobalStyles } from "@mui/material";
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
+import { useUserSettings } from "../../common/useUserSettings";
 import { useGraph } from "../../components/graph/GraphContext";
 import { watchForCover } from "../../components/graph/watchForCover";
 import { getIsLiveDataWorking, getNodeTransitionResults } from "../../reducers/selectors/getLiveData";
-import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../store/storeHelpers";
 import type { DataEvent } from "./animationHelpers";
 import { updateAnimation } from "./animationHelpers";
@@ -16,9 +16,10 @@ const CLASS_NAME = "live-data";
 export function LiveDataThroughputs() {
     const graphGetter = useGraph();
 
-    const settings = useAppSelector(getUserSettings);
-    const showTransitionAnimations = settings["scenario.liveData.showTransitionAnimations"];
-    const showNodeAnimations = settings["scenario.liveData.showNodeAnimations"];
+    const [showTransitionAnimations, showNodeAnimations] = useUserSettings(
+        "scenario.liveData.showTransitionAnimations",
+        "scenario.liveData.showNodeAnimations",
+    );
     const [covered, setCovered] = useState(false);
     const _enabled = useAppSelector((state) => (showNodeAnimations || showTransitionAnimations) && getIsLiveDataWorking(state));
 
