@@ -2642,22 +2642,23 @@ paths:
                 $ref: '#/components/schemas/GenerateEnricherMockResponseDto'
               example:
                 enricherMockExpression:
-                  language: spel
-                  expression: '''sample'''
+                  language: jsonTemplate
+                  expression: '"sample"'
         '400':
           description: ''
           content:
             text/plain:
               schema:
-                anyOf:
-                - type: string
-                - type: string
+                type: string
               examples:
-                Example:
-                  summary: Malformed TypingResult sent in request
-                  value: |-
-                    The request content was malformed:
-                    Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown
+                Example0:
+                  summary: Compilation errors during enricher mock generation
+                  value: 'Cannot compile enricher: Node parameters not filled: param1'
+                Example1:
+                  summary: Output variable not found during enricher mock generation
+                  value: Enricher output variable 'outputVar' not found
+        '204':
+          description: Unsupported expression type during enricher mock generation
         '401':
           description: ''
           content:
@@ -2681,16 +2682,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-        '404':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
