@@ -1872,7 +1872,7 @@ class NodesApiHttpServiceBusinessSpec
         )
         .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/testCase/enricherMock")
         .Then()
-        .statusCode(400)
+        .statusCode(204)
         .body(equalTo("Cannot generate sample expression for type: Client"))
     }
   }

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import cats.Bifunctor.ops.toAllBifunctorOps
 import cats.data.EitherT
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
@@ -201,16 +202,17 @@ class NodesApiHttpService(
                   prepareTypingResultDecoder(modelData.modelClassLoader)
                 )
               )
-              .leftMap[NodesError](identity)
+              .leftWiden[NodesError]
             processVersion = scenarioWithDetails.processVersionUnsafe
             jobData        = JobData(request.processProperties.toMetaData(processVersion.processName), processVersion)
-            result <- EitherT.fromEither[Future](
-              enricherMockGenerator.generateExpression(
-                variableTypes,
-                request.enricher,
-                jobData
+            result <- EitherT
+              .fromEither[Future](
+                enricherMockGenerator.generateExpression(
+                  variableTypes,
+                  request.enricher,
+                  jobData
+                )
               )
-            )
           } yield result
         }
       }

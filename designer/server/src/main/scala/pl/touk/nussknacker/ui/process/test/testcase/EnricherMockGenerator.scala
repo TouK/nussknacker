@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.process.test.testcase
 
-import cats.data.NonEmptyList
 import cats.effect.SyncIO
 import cats.effect.kernel.Resource
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
@@ -10,9 +9,13 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Enricher
-import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{GenerateEnricherMockResponseDto, NodesError}
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.EnricherMockExpressionGenerationError
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.GenerateEnricherMockResponseDto
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.EnricherMockExpressionGenerationError.{
+  CompilationErrors,
+  OutputVariableNotFound
+}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.NoContentNodesError.EnricherMockExpressionGenerationError.UnsupportedExpressionType
 
 class EnricherMockGenerator(
     modelData: ModelData,
@@ -54,15 +57,13 @@ class EnricherMockGenerator(
 
     compilationResult.validationContext
       .leftMap { errors =>
-        EnricherMockExpressionGenerationError(errors.map(e => PrettyValidationErrors.formatErrorMessage(e).message))
+        CompilationErrors(errors)
       }
       .toEither
       .flatMap { validationContext =>
         val outputVariableType = validationContext.localVariables.get(enricher.output)
         outputVariableType.toRight(
-          EnricherMockExpressionGenerationError(
-            NonEmptyList.one(s"Output variable '${enricher.output}' not found in enricher output")
-          )
+          OutputVariableNotFound(enricher.output)
         )
       }
       .flatMap { typingResult =>
@@ -75,9 +76,7 @@ class EnricherMockGenerator(
             )
           case None =>
             Left(
-              EnricherMockExpressionGenerationError(
-                NonEmptyList.one(s"Cannot generate sample expression for type: ${typingResult.display}")
-              )
+              UnsupportedExpressionType(typingResult)
             )
         }
       }
