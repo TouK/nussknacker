@@ -39,7 +39,7 @@ export function DefaultToolComponent({ status, toolCallId, toolName }: ToolCallM
     switch (status.type) {
         case "requires-action":
         case "running":
-            return action ? (
+            return action && tools[toolName] ? (
                 <HumanActionButton action={action} toolCallId={toolCallId}>
                     <Typography>{tools[toolName].description}</Typography>
                 </HumanActionButton>

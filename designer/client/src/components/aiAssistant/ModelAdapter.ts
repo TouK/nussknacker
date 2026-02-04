@@ -8,7 +8,7 @@ import { ThreadIdManager } from "./ThreadIdManager";
 
 let controller: AbortController;
 function forkSignal(parentSignal: AbortSignal): AbortSignal {
-    controller?.abort();
+    controller?.abort("new signal");
     controller = new AbortController();
 
     if (parentSignal.aborted) {
