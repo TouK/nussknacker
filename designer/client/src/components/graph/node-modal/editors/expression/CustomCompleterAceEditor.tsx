@@ -6,8 +6,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import type ReactAce from "react-ace/lib/ace";
 import { useDebouncedValue, useMergeRefs } from "rooks";
 
-import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
-import { useAppSelector } from "../../../../../store/storeHelpers";
+import { useUserSettings } from "../../../../../common/useUserSettings";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputCss } from "../../../../NodeInput";
 import { useCallbackRef } from "../../node/useCallbackRef";
@@ -57,8 +56,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
 
     const editorFocus = useCallback((editorFocused: boolean) => () => setEditorFocused(editorFocused), []);
 
-    const settings = useAppSelector(getUserSettings);
-    const showLines = Boolean(settings[`editor.${props.inputProps.language}.showLines`]);
+    const [showLines] = useUserSettings(`editor.${props.inputProps.language}.showLines`);
 
     const [completionsVisible, setCompletionsVisible] = useState(false);
     const [errorsToDisplay, setErrorsToDisplay] = useState(fieldErrors);

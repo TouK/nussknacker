@@ -3,8 +3,7 @@ import { Box } from "@mui/material";
 import { isEmpty } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
-import { useAppSelector } from "../../../../../store/storeHelpers";
+import { useUserSettings } from "../../../../../common/useUserSettings";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import type { ParamType } from "../types";
@@ -33,8 +32,7 @@ export const JsonEditor = prepareEditor<JsonEditorProps>(
         }, [storedExpression]);
 
         const language = ExpressionLang.JSON;
-        const settings = useAppSelector(getUserSettings);
-        const showLines = Boolean(settings[`editor.${language}.showLines`]);
+        const [showLines] = useUserSettings(`editor.${language}.showLines`);
         const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(fieldErrors, showLines);
 
         const onChange = useCallback(
