@@ -67,9 +67,9 @@ class ExpressionGeneratorSpec
       ("empty record", Typed.record(Map.empty[String, TypingResult]), "{}"),
       (
         "simple record",
-        Typed.record(Map("name" -> Typed[String], "age" -> Typed[Integer])),
+        Typed.record(Map("first name" -> Typed[String], "age" -> Typed[Integer])),
         """{
-          |  "name": "",
+          |  "first name": "",
           |  "age": 0
           |}""".stripMargin
       ),
@@ -153,7 +153,10 @@ class ExpressionGeneratorSpec
     Typed.record(Map("request" -> requestType, "response" -> responseType))
   }
 
-  private def verifyExpressionCompilesToExpectedType(generatedExpression: Expression, expectedType: TypingResult): Unit = {
+  private def verifyExpressionCompilesToExpectedType(
+      generatedExpression: Expression,
+      expectedType: TypingResult
+  ): Unit = {
     val validationContext = ValidationContext.empty
     val compilationResult = expressionCompiler.compile(generatedExpression, None, validationContext, expectedType)
 
