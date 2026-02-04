@@ -1,6 +1,7 @@
 import type { MutableRefObject } from "react";
 import { useEffect, useMemo } from "react";
-import type ReactAce, { IAceEditorProps } from "react-ace/lib/ace";
+import type ReactAce from "react-ace/lib/ace";
+import type { IAceEditorProps } from "react-ace/lib/ace";
 import type { IMarker } from "react-ace/lib/types";
 import type { Annotation } from "react-ace/types";
 import { v4 as uuid4 } from "uuid";
