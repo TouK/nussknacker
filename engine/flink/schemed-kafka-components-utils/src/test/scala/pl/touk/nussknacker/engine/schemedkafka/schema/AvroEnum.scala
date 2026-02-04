@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schema
 
 object AvroEnum {
 
-  object V1 extends TestSchema {
+  object V1 extends TestSchemaWithRecord {
 
     override def stringSchema: String =
       s"""|{
@@ -26,9 +26,10 @@ object AvroEnum {
           |  ]
           |}""".stripMargin
 
+    override def exampleData: Map[String, Any] = Map("testField" -> "GREEN")
   }
 
-  object V2 extends TestSchema {
+  object V2 extends TestSchemaWithRecord {
 
     override def stringSchema: String =
       s"""|{
@@ -55,9 +56,11 @@ object AvroEnum {
           |  ]
           |}""".stripMargin
 
+    override def exampleData: Map[String, Any] = Map("testField" -> "RED")
+
   }
 
-  object V3 extends TestSchema {
+  object V3 extends TestSchemaWithRecord {
 
     override def stringSchema: String =
       s"""|{
@@ -84,6 +87,8 @@ object AvroEnum {
           |    }
           |  ]
           |}""".stripMargin
+
+    override def exampleData: Map[String, Any] = Map("testField" -> "BLUE")
 
   }
 

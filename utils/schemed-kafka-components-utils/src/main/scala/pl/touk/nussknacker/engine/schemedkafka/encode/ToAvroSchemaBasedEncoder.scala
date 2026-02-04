@@ -69,7 +69,9 @@ class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validat
           .headOption
           .map(Valid(_))
           .getOrElse {
-            error(s"Can't find matching union subtype for value: $value for field: $fieldName with schema: $schema")
+            error(
+              s"Can't find matching union subtype for value: $value for field${fieldName.map(fn => s": $fn").getOrElse("")} with schema: $schema"
+            )
           }
       case (Schema.Type.FIXED, fixed: Fixed) =>
         encodeFixed(fixed.bytes(), schema)
@@ -143,9 +145,13 @@ class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validat
       case (Schema.Type.NULL, None) =>
         Valid(null)
       case (_, null) =>
-        error(s"Not expected null for field: $fieldName with schema: ${schema.getFullName}")
+        error(
+          s"Not expected null for field${fieldName.map(fn => s": $fn").getOrElse("")} with schema: ${schema.getFullName}"
+        )
       case (_, _) =>
-        error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: ${schema.getFullName}")
+        error(
+          s"Not expected type: ${value.getClass.getName} for field: ${fieldName.map(fn => s": $fn").getOrElse("")} with schema: ${schema.getFullName}"
+        )
     }
   }
 
@@ -158,7 +164,7 @@ class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validat
     if (!schema.hasEnumSymbol(symbol)) {
       val allowedEnumValues = schema.getEnumSymbols.asScala.mkString(", ")
       error(
-        s"Not expected symbol: $symbol for field: $fieldName with schema: ${schema.getFullName}, allowed values: $allowedEnumValues"
+        s"Not expected symbol: $symbol for field${fieldName.map(fn => s": $fn").getOrElse("")} with schema: ${schema.getFullName}, allowed values: $allowedEnumValues"
       )
     } else {
       Valid(new EnumSymbol(schema, symbol))
