@@ -5,12 +5,12 @@ import React, { useEffect, useState } from "react";
 import type { SettingsData } from "../actions/nk/assignSettings";
 import { assignSettings } from "../actions/nk/assignSettings";
 import { userSettingSet, userSettingsSetInitial, userSettingsToggle } from "../actions/nk/userSettings";
+import { useUserSettings } from "../common/useUserSettings";
 import LoaderSpinner from "../components/spinner/Spinner";
 import HttpService from "../http/HttpService/instance";
-import { getUserSettings } from "../reducers/selectors/userSettings";
 import type { UserSettings } from "../reducers/userSettings";
 import { waitForWindowValue } from "../reducers/waitForWindowValue";
-import { useAppDispatch, useAppSelector } from "../store/storeHelpers";
+import { useAppDispatch } from "../store/storeHelpers";
 
 declare global {
     interface Window {
@@ -37,8 +37,7 @@ export function SettingsProvider({ children }: PropsWithChildren<unknown>): Reac
     }, [dispatch]);
 
     const theme = useTheme();
-    const settings = useAppSelector(getUserSettings);
-    const lightMode = settings["debug.lightTheme"];
+    const [lightMode] = useUserSettings("debug.lightTheme");
     useEffect(() => {
         theme.setMode(lightMode ? "light" : "dark");
     }, [theme, lightMode]);
