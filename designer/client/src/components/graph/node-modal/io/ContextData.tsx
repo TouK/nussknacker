@@ -2,8 +2,8 @@ import { Box, Slide, useTheme } from "@mui/material";
 import React, { memo, type PropsWithChildren, useCallback } from "react";
 import { TransitionGroup } from "react-transition-group";
 
+import { useUserSettings } from "../../../../common/useUserSettings";
 import { getIsLiveDataWorking } from "../../../../reducers/selectors/getLiveData";
-import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import { ContextAccordion } from "./ContextAccordion";
 import { ContextDataDisplay } from "./ContextDataDisplay";
@@ -28,19 +28,19 @@ export const ContextData = memo(function Data({
     inputVariables: string[];
 }>) {
     const theme = useTheme();
-    const userSettings = useAppSelector(getUserSettings);
+    const [showBlinkAnimations] = useUserSettings("node.inputsAndOutputs.showBlinkAnimations");
     const isLiveDataWorking = useAppSelector(getIsLiveDataWorking);
 
     const onEnter = useCallback(
         (node: HTMLElement, isAppearing: boolean) => {
             if (isAppearing) return;
-            if (!userSettings["node.inputsAndOutputs.showBlinkAnimations"]) return;
+            if (!showBlinkAnimations) return;
             node.animate([{ backgroundColor: theme.palette.success.main }, { backgroundColor: theme.palette.background.paper }], {
                 duration: 3000,
                 easing: "cubic-bezier(0, 0.55, 0.45, 1)",
             });
         },
-        [theme.palette.background.paper, theme.palette.success.main, userSettings],
+        [showBlinkAnimations, theme.palette.background.paper, theme.palette.success.main],
     );
     const onEntered = useCallback((node: HTMLElement, isAppearing: boolean) => {
         if (isAppearing) return;
