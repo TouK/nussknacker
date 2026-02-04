@@ -1,6 +1,9 @@
+import fuse from "fuse.js";
 import { KBarProvider } from "kbar";
 import type { PropsWithChildren } from "react";
 import React from "react";
+
+fuse.config.useExtendedSearch = true;
 
 const actions = [];
 

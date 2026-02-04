@@ -7,7 +7,11 @@ import type { Prettify } from "../components/graph/node-modal/useNodeTypeDetails
 import { SNOW_SNOW_FLAG } from "../containers/SnowSnow";
 
 // empty default values, not visible on __settings until set
-type DynamicSettingsNames = `editor.${ExpressionLang}.noWrap` | `editor.${ExpressionLang}.showLines` | `survey.${string}.closed`;
+type DynamicSettingsNames =
+    | `editor.${ExpressionLang}.noWrap`
+    | `editor.${ExpressionLang}.showLines`
+    | `survey.${string}.closed`
+    | `assistant.tools.${string}.executeWithoutAsking`;
 
 type DeferedString = string & NonNullable<unknown>;
 type KeysOfEntries<T> = T extends Array<[infer U, boolean]> ? U : never;

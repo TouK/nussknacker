@@ -1,6 +1,6 @@
-import { useMessage } from "@assistant-ui/react";
+import type { TextMessagePartProps } from "@assistant-ui/react";
 import { Box, Skeleton, Stack, Typography } from "@mui/material";
-import React, { useMemo } from "react";
+import React from "react";
 
 import { MarkdownStyled } from "../../graph/node-modal/MarkdownStyled";
 import { ActionsContainer, useHandleActions } from "./actions/ActionsContainer";
@@ -36,14 +36,10 @@ function SkeletonSentence() {
     );
 }
 
-export const AssistantMessage = () => {
-    const status = useMessage(({ status }) => status);
-    const content = useMessage(({ content }) => content);
+export const AssistantMessage = ({ status, text }: TextMessagePartProps) => {
     const { showActions, handleShowActions, handleHideActions } = useHandleActions();
 
-    const messageText = useMemo(() => content.map((part) => part.text).join("\n"), [content]);
-
-    if (status.type === "running" && messageText.length === 0) {
+    if (status.type === "running" && text.length === 0) {
         return (
             <Box position={"relative"} onMouseEnter={handleShowActions} onMouseLeave={handleHideActions}>
                 <Box position={"relative"} pb={0.5}>
@@ -53,7 +49,7 @@ export const AssistantMessage = () => {
         );
     }
 
-    if ((status.type === "complete" && messageText.length === 0) || (status.type === "incomplete" && status.reason === "cancelled")) {
+    if ((status.type === "complete" && text.length === 0) || (status.type === "incomplete" && status.reason === "cancelled")) {
         return null;
     }
 
@@ -61,11 +57,11 @@ export const AssistantMessage = () => {
         return (
             <Box position={"relative"} onMouseEnter={handleShowActions} onMouseLeave={handleHideActions}>
                 <Box position={"relative"} pb={0.5}>
-                    <MarkdownStyled>{messageText}</MarkdownStyled>
+                    <MarkdownStyled>{text}</MarkdownStyled>
                     {status.type === "running" ? <SkeletonSentence /> : null}
 
                     <ActionsContainer show={status.type === "complete" && showActions} placement={"left"}>
-                        <CopyContent text={messageText} />
+                        <CopyContent text={text} />
                         <RefreshAssistantAnswer />
                     </ActionsContainer>
                 </Box>

@@ -46,7 +46,8 @@ class KafkaUtilsSpec extends AnyFunSuite {
   test("test KafkaSink creation with defaults set by KafkaUtils") {
     val properties = KafkaUtils.toProducerProperties(
       KafkaComponentsConfig(kafkaProperties = Map("bootstrap.servers" -> "localhost:9200")),
-      clientId = "test"
+      clientId = "test",
+      includeSerializerClassConfig = false
     )
 
     def createSink(): Unit = {
