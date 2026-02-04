@@ -1,12 +1,14 @@
 import { Box, Typography } from "@mui/material";
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useDidMount } from "rooks";
 
+import HttpService from "../../../../../../http/HttpService/instance";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
 import { Expandable } from "../../../../../common/Expandable";
 import MockExpressionField from "../../../editors/expression/MockExpressionField";
 import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
-import { getFindAvailableVariables } from "../../../NodeDetailsContent/selectors";
+import { getFindAvailableVariables, getProcessName, getProcessProperties } from "../../../NodeDetailsContent/selectors";
 import { useGetNodeTestCasesErrors, useIsEditMode, useSetProperty, useValidation } from "../../../useNodeTypeDetailsContentLogic";
 import type { TestingContentProps } from "../TestingContent";
 import { StyledStack } from "./components/Styled";
@@ -22,8 +24,24 @@ export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => 
     const setProperty = useSetProperty({ onChange, node });
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     const testCasesErrors = useGetNodeTestCasesErrors(node);
+    const scenarioName = useAppSelector(getProcessName);
+    const variableTypes = useMemo(() => findAvailableVariables(node.id), [findAvailableVariables, node.id]);
+    const processProperties = useAppSelector(getProcessProperties);
+    const [defaultValue, setDefaultValue] = useState(null);
 
     useValidation({ node, showValidation: true, edges });
+
+    const generateEnricherMockExpression = useCallback(() => {
+        HttpService.generateEnricherMockExpression(scenarioName, {
+            variableTypes,
+            processProperties,
+            enricher: node,
+        }).then((data) => {
+            setDefaultValue(data.enricherMockExpression);
+        });
+    }, [node, processProperties, scenarioName, variableTypes]);
+
+    useDidMount(generateEnricherMockExpression);
 
     return (
         <StyledStack>
@@ -45,9 +63,10 @@ export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => 
                     editedNode={node}
                     showValidation
                     showSwitch
-                    findAvailableVariables={findAvailableVariables}
+                    variableTypes={variableTypes}
                     setNodeDataAt={setProperty}
                     errors={testCasesErrors.enricherMockErrors}
+                    defaultValue={defaultValue}
                 />
             </Expandable>
         </StyledStack>

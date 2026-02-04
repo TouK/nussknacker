@@ -1,6 +1,7 @@
+import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import ResetToDefaultIcon from "@mui/icons-material/Replay";
 import { Box, Button, Menu, Typography } from "@mui/material";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { SyntaxHighlighter } from "../../../../../common/SyntaxHighlighter";
@@ -9,11 +10,12 @@ import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { ExpressionObj } from "./types";
 
 interface Props {
+    variant: "resetToDefault" | "generate";
     defaultValue: ExpressionObj;
     handleChange: (value: ExpressionObj) => void;
 }
 
-const ResetToDefaultButton = ({ defaultValue, handleChange }: Props) => {
+const ResetToDefaultButton = ({ defaultValue, handleChange, variant }: Props) => {
     const { t } = useTranslation();
     const [anchorEl, setAnchorEl] = useState<null | SVGElement>(null);
 
@@ -30,14 +32,17 @@ const ResetToDefaultButton = ({ defaultValue, handleChange }: Props) => {
         handleClose();
     };
 
+    const Icon = useMemo(() => (variant === "resetToDefault" ? ResetToDefaultIcon : AutoFixHighIcon), [variant]);
+    const headerTitle = useMemo(
+        () =>
+            variant === "resetToDefault"
+                ? t("resetToDefault.header", "Reset to default values")
+                : t("generateDefaultValue.header", "Default values"),
+        [t, variant],
+    );
     return (
         <>
-            <ResetToDefaultIcon
-                style={{ cursor: "pointer" }}
-                fontSize="small"
-                onClick={handleIconClick}
-                data-testid={"resetToDefaultButton"}
-            />
+            <Icon style={{ cursor: "pointer" }} fontSize="small" onClick={handleIconClick} data-testid={"resetToDefaultButton"} />
             <Menu
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
@@ -46,7 +51,7 @@ const ResetToDefaultButton = ({ defaultValue, handleChange }: Props) => {
             >
                 <Box sx={{ p: 2 }}>
                     <Typography variant="subtitle1" gutterBottom>
-                        {t("resetToDefault.header", "Reset to default value")}
+                        {headerTitle}
                     </Typography>
                     <SyntaxHighlighter
                         language={defaultValue.language}
@@ -73,6 +78,8 @@ export function ResetToDefault({
     handleChange: (value: ExpressionObj) => void;
 }) {
     const userSettings = useAppSelector(getUserSettings);
+    const variant = useMemo(() => (value ? "resetToDefault" : "generate"), [value]);
+
     if (!userSettings["editor.showResetToDefaultButton"]) {
         return null;
     }
@@ -81,5 +88,5 @@ export function ResetToDefault({
         return null;
     }
 
-    return <ResetToDefaultButton defaultValue={defaultValue} handleChange={handleChange} />;
+    return <ResetToDefaultButton variant={variant} defaultValue={defaultValue} handleChange={handleChange} />;
 }
