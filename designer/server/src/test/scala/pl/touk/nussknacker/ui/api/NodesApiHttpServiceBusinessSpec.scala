@@ -1820,7 +1820,7 @@ class NodesApiHttpServiceBusinessSpec
         )
     }
 
-    "return 400 when enricher returns unsupported type" in {
+    "return 204 when enricher returns unsupported type" in {
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
@@ -1873,7 +1873,7 @@ class NodesApiHttpServiceBusinessSpec
         .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/testCase/enricherMock")
         .Then()
         .statusCode(204)
-        .body(equalTo("Cannot generate sample expression for type: Client"))
+        .body(equalTo(""))
     }
   }
 

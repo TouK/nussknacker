@@ -901,18 +901,14 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           ),
           oneOfVariant(
             NoContent,
-            plainBody[NoContentNodesError]
-              .example(
-                Example.of(
-                  summary = Some("Unsupported expression type during enricher mock generation"),
-                  value = NoContentNodesError.EnricherMockExpressionGenerationError.UnsupportedExpressionType(
-                    Typed.genericTypeClass(
-                      classOf[java.util.List[_]],
-                      List(Typed[java.lang.String])
-                    )
-                  )
+            emptyOutputAs(
+              NoContentNodesError.EnricherMockExpressionGenerationError.UnsupportedExpressionType(
+                Typed.genericTypeClass(
+                  classOf[java.util.List[_]],
+                  List(Typed[java.lang.String])
                 )
               )
+            ).description("Unsupported expression type during enricher mock generation")
           )
         )
       )
