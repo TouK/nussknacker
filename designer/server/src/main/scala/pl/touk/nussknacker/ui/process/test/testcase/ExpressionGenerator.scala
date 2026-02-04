@@ -6,8 +6,11 @@ import pl.touk.nussknacker.engine.api.util.ReflectUtils.JavaEnumConstants
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaListMap
 
+import java.time.{Instant, LocalDate, LocalDateTime, LocalTime}
+import java.util.UUID
 import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
+import scala.jdk.CollectionConverters._
 
 private object ExpressionGenerator {
 
@@ -27,8 +30,8 @@ private object ExpressionGenerator {
     case TypedTaggedValue(underlying, _) =>
       generateForTypingResult(underlying, indentLevel)
 
-    case TypedObjectWithValue(underlying, _) =>
-      generateForTypingResult(underlying, indentLevel)
+    case TypedObjectWithValue(underlying, value) =>
+      generateFromValue(value, underlying, indentLevel)
 
     case klass: TypedClass =>
       generateForClass(klass, indentLevel)
@@ -112,6 +115,69 @@ private object ExpressionGenerator {
       s"{\n$fieldLines\n$closingIndent}"
     }
     Some(recordExpression)
+  }
+
+  private def generateFromValue(value: Any, underlying: TypedClass, indentLevel: Int): Option[String] = {
+    value match {
+      case null =>
+        Some("null")
+
+      case s: String =>
+        val escaped = s
+          .replace("\\", "\\\\")
+          .replace("\"", "\\\"")
+          .replace("\n", "\\n")
+          .replace("\r", "\\r")
+          .replace("\t", "\\t")
+        Some(s""""$escaped"""")
+
+      case b: Boolean =>
+        Some(b.toString)
+
+      case n: Number =>
+        Some(n.toString)
+
+      case instant: Instant =>
+        Some(s""""${instant.toString}"""")
+
+      case localDateTime: LocalDateTime =>
+        Some(s""""${localDateTime.toString}"""")
+
+      case localDate: LocalDate =>
+        Some(s""""${localDate.toString}"""")
+
+      case localTime: LocalTime =>
+        Some(s""""${localTime.toString}"""")
+
+      case uuid: UUID =>
+        Some(s""""${uuid.toString}"""")
+
+      case list: java.util.List[_] =>
+        val elements = list.asScala.toList
+        if (elements.isEmpty) {
+          Some("[]")
+        } else {
+          underlying.params match {
+            case elementType :: Nil =>
+              val elementExpressions = elements.flatMap { element =>
+                elementType match {
+                  case TypedObjectWithValue(elemUnderlying, elemValue) =>
+                    generateFromValue(elemValue, elemUnderlying, indentLevel)
+                  case elemClass: TypedClass =>
+                    generateFromValue(element, elemClass, indentLevel)
+                  case _ =>
+                    None
+                }
+              }
+              Some(elementExpressions.mkString("[", ", ", "]"))
+            case _ =>
+              Some("[]")
+          }
+        }
+
+      case _ =>
+        generateForTypingResult(underlying, indentLevel)
+    }
   }
 
 }

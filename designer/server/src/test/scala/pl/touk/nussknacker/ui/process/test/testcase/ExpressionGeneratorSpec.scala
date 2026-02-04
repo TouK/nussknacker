@@ -60,6 +60,62 @@ class ExpressionGeneratorSpec
       ("local date", Typed[java.time.LocalDate], "\"1900-01-01\""),
       ("local time", Typed[java.time.LocalTime], "\"00:00:00\""),
       ("UUID", Typed[java.util.UUID], "\"00000000-0000-0000-0000-000000000000\""),
+      (
+        "string with value",
+        TypedObjectWithValue(Typed.typedClass[String], "Hello World!"),
+        "\"Hello World!\""
+      ),
+      (
+        "string with escaped characters",
+        TypedObjectWithValue(Typed.typedClass[String], "Line1\nLine2\t\"quoted\"\\backslash"),
+        "\"Line1\\nLine2\\t\\\"quoted\\\"\\\\backslash\""
+      ),
+      ("boolean with value true", TypedObjectWithValue(Typed.typedClass[java.lang.Boolean], true), "true"),
+      ("boolean with value false", TypedObjectWithValue(Typed.typedClass[java.lang.Boolean], false), "false"),
+      ("integer with value", TypedObjectWithValue(Typed.typedClass[Integer], 42), "42"),
+      ("long with value", TypedObjectWithValue(Typed.typedClass[java.lang.Long], 9876543210L), "9876543210"),
+      ("float with value", TypedObjectWithValue(Typed.typedClass[java.lang.Float], 3.14f), "3.14"),
+      ("double with value", TypedObjectWithValue(Typed.typedClass[java.lang.Double], 2.71828), "2.71828"),
+      (
+        "instant with value",
+        TypedObjectWithValue(
+          Typed.typedClass[java.time.Instant],
+          java.time.Instant.parse("2026-02-04T10:30:45Z")
+        ),
+        "\"2026-02-04T10:30:45Z\""
+      ),
+      (
+        "local date time with value",
+        TypedObjectWithValue(
+          Typed.typedClass[java.time.LocalDateTime],
+          java.time.LocalDateTime.parse("2026-02-04T10:30:45")
+        ),
+        "\"2026-02-04T10:30:45\""
+      ),
+      (
+        "local date with value",
+        TypedObjectWithValue(
+          Typed.typedClass[java.time.LocalDate],
+          java.time.LocalDate.parse("2026-02-04")
+        ),
+        "\"2026-02-04\""
+      ),
+      (
+        "local time with value",
+        TypedObjectWithValue(
+          Typed.typedClass[java.time.LocalTime],
+          java.time.LocalTime.parse("10:30:45")
+        ),
+        "\"10:30:45\""
+      ),
+      (
+        "UUID with value",
+        TypedObjectWithValue(
+          Typed.typedClass[java.util.UUID],
+          java.util.UUID.fromString("a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d")
+        ),
+        "\"a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d\""
+      ),
       ("empty record", Typed.record(Map.empty[String, TypingResult]), "{}"),
       (
         "simple record",
@@ -86,6 +142,22 @@ class ExpressionGeneratorSpec
           |}""".stripMargin
       ),
       ("list", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])), "[\"\"]"),
+      (
+        "list with zero elements",
+        TypedObjectWithValue(
+          Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])),
+          java.util.Arrays.asList[String]()
+        ),
+        "[]"
+      ),
+      (
+        "list with two elements",
+        TypedObjectWithValue(
+          Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[Integer])),
+          java.util.Arrays.asList(10, 20)
+        ),
+        "[10, 20]"
+      ),
       (
         "HTTP request/response record",
         httpRequestResponseType,
