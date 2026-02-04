@@ -20,10 +20,10 @@ function forkSignal(parentSignal: AbortSignal): AbortSignal {
     return controller.signal;
 }
 
-export const ModelAdapter: ChatModelAdapter = {
+export const createModelAdapter = (debug = false): ChatModelAdapter => ({
     async *run(chatModelOptions): AsyncGenerator<ChatModelRunResult> {
         const abortSignal = forkSignal(chatModelOptions.abortSignal);
-        const chatStream = initializeChatStream({ ...chatModelOptions, abortSignal });
+        const chatStream = initializeChatStream({ ...chatModelOptions, abortSignal }, debug);
 
         yield {
             content: [],
@@ -100,4 +100,4 @@ export const ModelAdapter: ChatModelAdapter = {
             }
         }
     },
-};
+});

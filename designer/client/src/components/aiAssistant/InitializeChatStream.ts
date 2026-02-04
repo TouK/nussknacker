@@ -4,6 +4,7 @@ import type { EventSourceMessage } from "eventsource-parser";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 
 import httpService from "../../http/HttpService/instance";
+import { mockAssitantFetch } from "./debug/MockAssitantFetch";
 import { extractMessage, extractTools } from "./messageHelpers";
 import { ThreadIdManager } from "./ThreadIdManager";
 
@@ -64,11 +65,15 @@ function smoothTransform(baseDelay: number, nth = 1) {
 
 type ChatStream = AsyncGenerator<ChatStreamParsedEvent>;
 
-export async function* initializeChatStream({ abortSignal, context, messages, unstable_getMessage }: ChatModelRunOptions): ChatStream {
+export async function* initializeChatStream(
+    { abortSignal, context, messages, unstable_getMessage }: ChatModelRunOptions,
+    debug = false,
+): ChatStream {
     const message = extractMessage(messages, unstable_getMessage());
     if (!message) return;
 
-    const response = await httpService.sendChatMessage(
+    const send = debug ? mockAssitantFetch : httpService.sendChatMessage;
+    const response = await send(
         {
             threadId: ThreadIdManager.THREAD_ID,
             message: message,

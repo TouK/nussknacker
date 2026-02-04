@@ -1,9 +1,11 @@
 import { AssistantRuntimeProvider, useLocalRuntime } from "@assistant-ui/react";
 import type { ReactNode } from "react";
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 
+import { useUserSettings } from "../../common/useUserSettings";
 import { addListenerTyped, useAppDispatch } from "../../store/storeHelpers";
-import { ModelAdapter } from "./ModelAdapter";
+import { DebugAiTool } from "./debug/DebugAiTool";
+import { createModelAdapter } from "./ModelAdapter";
 import { prepareHelpMessage } from "./prepareHelpMessage";
 
 export function AiAssistantProvider({
@@ -11,7 +13,10 @@ export function AiAssistantProvider({
 }: Readonly<{
     children: ReactNode;
 }>) {
-    const runtime = useLocalRuntime(ModelAdapter, {});
+    const [debug] = useUserSettings("debug.mockAssistant");
+
+    const getAdapter = useCallback(() => createModelAdapter(debug), [debug]);
+    const runtime = useLocalRuntime(getAdapter(), {});
 
     const dispatch = useAppDispatch();
     useEffect(() => {
@@ -22,5 +27,10 @@ export function AiAssistantProvider({
         );
     }, [dispatch, runtime.thread]);
 
-    return <AssistantRuntimeProvider runtime={runtime}>{children}</AssistantRuntimeProvider>;
+    return (
+        <AssistantRuntimeProvider runtime={runtime}>
+            {debug ? <DebugAiTool /> : null}
+            {children}
+        </AssistantRuntimeProvider>
+    );
 }

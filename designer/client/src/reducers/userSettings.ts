@@ -37,6 +37,7 @@ export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean
         createFlag("debug.editor.forceSpelEditors"),
         createFlag("debug.forceDisableModals"),
         createFlag("debug.lightTheme"),
+        createFlag("debug.mockAssistant"),
         createFlag("debug.nodesAsJson"),
         createFlag("debug.scenario.showNodeAlignToolbar"),
         createFlag("editor.allowForceSwitch"),
