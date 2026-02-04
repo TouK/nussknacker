@@ -23,25 +23,18 @@ private object ExpressionGenerator {
   private def generateForTypingResult(typ: TypingResult, indentLevel: Int): Option[String] = typ match {
     case _: Unknown =>
       Some("null")
-
     case TypedNull =>
       Some("null")
-
     case TypedTaggedValue(underlying, _) =>
       generateForTypingResult(underlying, indentLevel)
-
     case TypedObjectWithValue(underlying, value) =>
       generateFromValue(value, underlying, indentLevel)
-
     case klass: TypedClass =>
       generateForClass(klass, indentLevel)
-
     case union: TypedUnion =>
       generateForTypingResult(union.possibleTypes.head, indentLevel)
-
     case TypedObjectTypingResult(fields, _, _) =>
       generateForRecord(fields, indentLevel)
-
     case _: TypedDict =>
       None
   }
@@ -49,55 +42,39 @@ private object ExpressionGenerator {
   private def generateForClass(typedClass: TypedClass, indentLevel: Int): Option[String] = typedClass match {
     case TypedClass(clazz, _) if clazz == StringClass =>
       Some("\"\"")
-
     case TypedClass(clazz, _) if clazz == BooleanClass =>
       Some("true")
-
     case TypedClass(clazz, _) if clazz == LongClass =>
       Some("0")
-
     case TypedClass(clazz, _) if clazz == FloatClass =>
       Some("0.0")
-
     case TypedClass(clazz, _) if clazz == DoubleClass =>
       Some("0.0")
-
     case TypedClass(clazz, _) if clazz == BigDecimalClass =>
       Some("0.0")
-
     case TypedClass(clazz, _) if clazz == ByteClass =>
       Some("0")
-
     case TypedClass(clazz, _) if clazz == ShortClass =>
       Some("0")
-
     case TypedClass(clazz, _) if isDecimalNumber(clazz) =>
       Some("0")
-
     case TypedClass(ListClass | ArrayClass, elementType :: Nil) =>
       generateForTypingResult(elementType, indentLevel) match {
         case Some(elementExpr) => Some(s"[$elementExpr]")
         case None              => Some("[]")
       }
-
     case TypedClass(JavaEnumConstants(firstEnumConstant :: _), _) =>
       Some(s"#{ T(${typedClass.klass.getName}).${firstEnumConstant.name()} }")
-
     case TypedClass(clazz, _) if clazz == InstantClass =>
       Some("\"1900-01-01T00:00:00Z\"")
-
     case TypedClass(clazz, _) if clazz == LocalDateTimeClass =>
       Some("\"1900-01-01T00:00:00\"")
-
     case TypedClass(clazz, _) if clazz == LocalDateClass =>
       Some("\"1900-01-01\"")
-
     case TypedClass(clazz, _) if clazz == LocalTimeClass =>
       Some("\"00:00:00\"")
-
     case TypedClass(clazz, _) if clazz == UUIDClass =>
       Some("\"00000000-0000-0000-0000-000000000000\"")
-
     case _ =>
       None
   }
@@ -121,7 +98,6 @@ private object ExpressionGenerator {
     value match {
       case null =>
         Some("null")
-
       case s: String =>
         val escaped = s
           .replace("\\", "\\\\")
@@ -130,28 +106,20 @@ private object ExpressionGenerator {
           .replace("\r", "\\r")
           .replace("\t", "\\t")
         Some(s""""$escaped"""")
-
       case b: Boolean =>
         Some(b.toString)
-
       case n: Number =>
         Some(n.toString)
-
       case instant: Instant =>
         Some(s""""${instant.toString}"""")
-
       case localDateTime: LocalDateTime =>
         Some(s""""${localDateTime.toString}"""")
-
       case localDate: LocalDate =>
         Some(s""""${localDate.toString}"""")
-
       case localTime: LocalTime =>
         Some(s""""${localTime.toString}"""")
-
       case uuid: UUID =>
         Some(s""""${uuid.toString}"""")
-
       case list: java.util.List[_] =>
         val elements = list.asScala.toList
         if (elements.isEmpty) {
@@ -174,7 +142,6 @@ private object ExpressionGenerator {
               Some("[]")
           }
         }
-
       case _ =>
         generateForTypingResult(underlying, indentLevel)
     }
