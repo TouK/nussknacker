@@ -6,8 +6,8 @@ import React, { useCallback, useEffect, useMemo } from "react";
 
 import { moveToolbar, registerToolbars } from "../../actions/nk/toolbars";
 import { PanelSide } from "../../actions/nk/ui/panelSide";
+import { useUserSettings } from "../../common/useUserSettings";
 import { getCapabilities } from "../../reducers/selectors/other";
-import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { ToolbarsSide } from "../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import { WindowKind } from "../../windowManager/WindowKind";
@@ -60,8 +60,7 @@ const AbsolutePanel = styled(Box)(({ theme }) => ({
 
 function useShowFloatingToolbar() {
     const { windows } = useWindowManager();
-    const settings = useAppSelector(getUserSettings);
-    const autoApply = settings["node.autoApply"];
+    const [autoApply] = useUserSettings("node.autoApply");
     return useMemo(() => {
         if (!autoApply) return false;
         return windows.filter((w) => [WindowKind.editNode, WindowKind.viewNode].includes(w.kind)).length;

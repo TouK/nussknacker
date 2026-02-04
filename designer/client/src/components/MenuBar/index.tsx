@@ -4,10 +4,9 @@ import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 
 import Nussknacker from "../../assets/img/nussknacker-logo.svg";
+import { useUserSettings } from "../../common/useUserSettings";
 import { EnvironmentTag } from "../../containers/EnvironmentTag";
 import { RootPath } from "../../containers/paths";
-import { getUserSettings } from "../../reducers/selectors/userSettings";
-import { useAppSelector } from "../../store/storeHelpers";
 import ProcessBackButton from "../Process/ProcessBackButton";
 import { Breadcrumbs } from "./breadcrumbs";
 import { HideIfEmbedded } from "./HideIfEmbedded";
@@ -44,9 +43,7 @@ const Logo = styled(Nussknacker)({
 });
 
 export function MenuBar(): React.JSX.Element {
-    const settings = useAppSelector(getUserSettings);
-
-    const showBreadcrumbs = settings["scenario.showBreadcrumbs"];
+    const [showBreadcrumbs] = useUserSettings("scenario.showBreadcrumbs");
 
     const { t } = useTranslation();
 
