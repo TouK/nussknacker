@@ -7,13 +7,12 @@ import { useTranslation } from "react-i18next";
 import urljoin from "url-join";
 
 import { ToolId } from "../../../../actions/nk/toolWindow";
+import { useUserSettings } from "../../../../common/useUserSettings";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
 import type { RootState } from "../../../../reducers";
 import { getCreatorType } from "../../../../reducers/selectors/getCreator";
-import { hasError } from "../../../../reducers/selectors/graph2";
 import { getTestCase } from "../../../../reducers/selectors/testCases";
-import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import type { Edge } from "../../../../types/edge";
 import type { NodeType } from "../../../../types/node";
@@ -24,7 +23,6 @@ import { useOnToolWindow } from "../../../modals/useOnToolWindow";
 import type { Scenario } from "../../../Process/types";
 import { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
 import { useGetButtonFromToolbar } from "../../../toolbarSettings/useToolbarConfig";
-import { nodeValidationError } from "../../graphStyledWrapper";
 import NodeUtils from "../../NodeUtils";
 import { InputOutputContent } from "../io/InputOutputContent";
 import { InputOutputContextProvider } from "../io/InputOutputContext";
@@ -33,7 +31,7 @@ import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubhead
 import { hasValidationTestCasesErrors } from "../NodeDetailsContent/selectors";
 import type { EditedNode } from "../nodeIdFieldHelpers";
 import { TestResultsWrapper } from "../TestResultsWrapper";
-import { useGetNodeErrors, useGetNodeTestCasesErrors } from "../useNodeTypeDetailsContentLogic";
+import { useGetNodeErrors } from "../useNodeTypeDetailsContentLogic";
 import { EditStateFeedback } from "./EditStateFeedback";
 import { GeneralContent } from "./NodeContent/GeneralContent";
 import type { TabDef } from "./NodeContent/TabsWrapper";
@@ -117,7 +115,7 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     const titleData = useTitleData(node);
     const buttons = useMemo(() => [openFragment, cancel, apply].filter(Boolean) as WindowButtonProps[], [apply, cancel, openFragment]);
 
-    const settings = useAppSelector(getUserSettings);
+    const [showInputsAndOutputs, testingTabVisible] = useUserSettings("node.showInputsAndOutputs", "node.showTestingTab");
     const [PortalWrapper, portalRef] = usePortal();
 
     const Content: DefaultContentProps["components"]["Content"] = useCallback(
@@ -139,11 +137,11 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     );
 
     const components: DefaultContentProps["components"] = useMemo(() => {
-        if (settings["node.showInputsAndOutputs"]) {
+        if (showInputsAndOutputs) {
             return { Content, Footer };
         }
         return {};
-    }, [settings, Content, Footer]);
+    }, [showInputsAndOutputs, Content, Footer]);
 
     useOnToolWindow(ToolId.node, node.id);
 
@@ -152,7 +150,6 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     }, [editedNode.$id, editedNode.id, node.id]);
 
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled: buttonFromToolbar?.disabled });
-    const testingTabVisible = settings["node.showTestingTab"];
 
     const generalContent = useMemo(
         () => <GeneralContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />,
