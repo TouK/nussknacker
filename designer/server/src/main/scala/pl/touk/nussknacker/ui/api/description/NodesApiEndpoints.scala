@@ -1980,7 +1980,7 @@ object NodesApiEndpoints {
             case TooManyCharactersGenerated(length, limit) =>
               TestingApiErrorMessages.liveDataFetching.tooManyCharacters(length, limit)
             case EnricherMockExpressionGenerationError.CompilationErrors(errors) =>
-              s"Cannot compile enricher mock. Compilation errors: ${errors.toList.map(e => PrettyValidationErrors.formatErrorMessage(e).message).mkString(", ")}"
+              s"Cannot compile enricher: ${errors.toList.map(e => PrettyValidationErrors.formatErrorMessage(e).message).mkString(", ")}"
             case EnricherMockExpressionGenerationError.OutputVariableNotFound(outputVariableName) =>
               s"Enricher output variable '$outputVariableName' not found"
           }

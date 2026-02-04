@@ -1875,6 +1875,55 @@ class NodesApiHttpServiceBusinessSpec
         .statusCode(204)
         .body(equalTo(""))
     }
+
+    "return 400 when there are compilation errors" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(
+          s"""{
+             |  "variableTypes": {
+             |    "input": {
+             |      "display": "String",
+             |      "type": "TypedClass",
+             |      "refClazzName": "java.lang.String",
+             |      "params": []
+             |    }
+             |  },
+             |  "processProperties": {
+             |    "isFragment": false,
+             |    "additionalFields": {
+             |      "description": null,
+             |      "properties": {
+             |        "parallelism": "",
+             |        "spillStateToDisk": "true",
+             |        "useAsyncInterpretation": "",
+             |        "checkpointIntervalInSeconds": ""
+             |      },
+             |      "metaDataType": "StreamMetaData"
+             |    }
+             |  },
+             |  "enricher": {
+             |    "id": "enricherId",
+             |    "service": {
+             |      "id": "doesNotExistEnricher",
+             |      "parameters": []
+             |    },
+             |    "output": "output",
+             |    "additionalFields": null,
+             |    "type": "Enricher"
+             |  }
+             |}""".stripMargin
+        )
+        .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/testCase/enricherMock")
+        .Then()
+        .statusCode(400)
+        .body(equalTo("Cannot compile enricher: Missing processor/enricher: doesNotExistEnricher"))
+    }
+
   }
 
   private lazy val exampleScenario = ScenarioBuilder

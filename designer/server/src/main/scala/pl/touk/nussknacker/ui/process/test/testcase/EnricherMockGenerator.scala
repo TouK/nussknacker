@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.test.testcase
 
 import cats.effect.SyncIO
 import cats.effect.kernel.Resource
+import cats.syntax.apply._
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
@@ -55,12 +56,12 @@ class EnricherMockGenerator(
       outgoingEdges = Nil
     )
 
-    compilationResult.validationContext
+    (compilationResult.compiledObject, compilationResult.validationContext).tupled
       .leftMap { errors =>
         CompilationErrors(errors)
       }
       .toEither
-      .flatMap { validationContext =>
+      .flatMap { case (_, validationContext) =>
         val outputVariableType = validationContext.localVariables.get(enricher.output)
         outputVariableType.toRight(
           OutputVariableNotFound(enricher.output)
