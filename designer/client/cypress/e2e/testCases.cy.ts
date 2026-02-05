@@ -90,7 +90,7 @@ describe("Test cases", () => {
         cy.get("@graph").matchImage({ screenshotConfig: { padding: 16 } });
     });
 
-    it.only("should set generated value to enricher mock field", () => {
+    it("should set generated value to enricher mock field", () => {
         cy.visitNewProcess(seed, "testCasesWithEnricherMock", "Category2");
         cy.toggleUserFlag("node.showTestingTab", true);
         cy.toggleUserFlag("node.showMockFieldOnEnrichers", true);
