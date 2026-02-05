@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.{IorNel, NonEmptyList, Validated, ValidatedNel}
-import cats.data.Validated.{invalid, invalidNel, valid, Invalid, Valid}
-import cats.instances.list._
+import cats.data.Validated.{invalidNel, Valid}
+import cats.implicits._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
@@ -391,8 +391,7 @@ class ExpressionCompiler(
   )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, TypedExpression] = {
     val validParser = expressionParsers
       .get(n.language)
-      .map(valid)
-      .getOrElse(invalid(NotSupportedExpressionLanguage(n.language)))
+      .toRight(NotSupportedExpressionLanguage(n.language))
       .toValidatedNel
 
     validParser andThen { parser =>

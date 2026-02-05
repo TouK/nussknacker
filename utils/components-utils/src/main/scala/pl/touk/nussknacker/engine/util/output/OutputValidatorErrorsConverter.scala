@@ -6,38 +6,100 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.util.Implicits.RichIterable
+import pl.touk.nussknacker.engine.util.output.OutputErrors.OutputValidatorGroupTypeError
+import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter.TypesSeparator
 
 class OutputValidatorErrorsConverter(schemaParamName: ParameterName) {
 
   import OutputValidatorErrorsMessageFormatter._
 
   final def convertValidationErrors(
-      errors: NonEmptyList[OutputValidatorError]
+      errors: NonEmptyList[OutputValidatorError],
+      detailedDescriptions: Boolean
   )(implicit nodeId: NodeId): CustomNodeError = {
-    val missingFieldsError   = errors.collect { case e: OutputValidatorMissingFieldsError => e }.flatMap(_.fields)
-    val redundantFieldsError = errors.collect { case e: OutputValidatorRedundantFieldsError => e }.flatMap(_.fields)
-    val typeFieldsError = errors
-      .collect { case e: OutputValidatorTypeError => e }
+    val outputErrors = OutputErrors.from(errors)
+    val message      = makeMessage(outputErrors, detailedDescriptions)
+    CustomNodeError(message, Option(schemaParamName))
+  }
+
+}
+
+private[output] final case class OutputErrors private (
+    typeErrors: List[OutputValidatorTypeError],
+    valueErrors: List[OutputValidatorValueError],
+    rangeTypeErrors: List[OutputValidatorRangeTypeError],
+    missingFieldsErrors: List[OutputValidatorMissingFieldsError],
+    redundantFieldsErrors: List[OutputValidatorRedundantFieldsError]
+) {
+
+  def missingFieldNames: List[String] = missingFieldsErrors.flatMap(_.fields)
+
+  def redundantFieldNames: List[String] = redundantFieldsErrors.flatMap(_.fields)
+
+  def typeErrorMessages(detailed: Boolean): List[String] = {
+    typeErrors
       .orderedGroupBy(err => (err.field, err.actual))
       .map { case ((field, actual), errors) =>
         OutputValidatorGroupTypeError(field, actual, errors.map(_.expected).distinct)
       }
-
-    val messageTypeFieldErrors = typeFieldsError.map(err =>
-      s"${err.field.map(f => s"path '$f' ").getOrElse("")}actual: '${err.displayActual}' expected: '${err.displayExpected}'"
-    )
-
-    val fieldsRangeError = errors
-      .collect { case e: OutputValidatorRangeTypeError => e }
-      .map(err =>
-        s"${err.field.map(f => s"path '$f' ").getOrElse("")}actual value: '${err.actual.valueOpt.orNull}' should be ${err.expected.expected}"
-      )
-
-    val message = makeMessage(messageTypeFieldErrors, missingFieldsError, redundantFieldsError, fieldsRangeError)
-    CustomNodeError(message, Option(schemaParamName))
+      .map { err: OutputValidatorGroupTypeError =>
+        s"${withPathDescription(detailed, err.field)}actual: '${err.displayActual}' expected: '${err.displayExpected}'"
+      }
   }
 
-  case class OutputValidatorGroupTypeError(
+  def valueErrorMessages(detailed: Boolean): List[String] = {
+    valueErrors.map { err =>
+      s"${withPathDescription(detailed, err.field)}actual value: '${err.actual.valueOpt.orNull}' should be ${err.expected.expected}"
+    }
+  }
+
+  def rangeErrorMessages(detailed: Boolean): List[String] = {
+    rangeTypeErrors.map { err =>
+      s"${withPathDescription(detailed, err.field)}actual value: '${err.actual.valueOpt.orNull}' should be ${err.expected.expected}"
+    }
+  }
+
+  private def withPathDescription(detailed: Boolean, field: Option[String]): String = {
+    Option.when(detailed)(field.map(f => s"path '$f' ")).flatten.getOrElse("")
+  }
+
+  private def addTypeError(e: OutputValidatorTypeError): OutputErrors = {
+    this.copy(typeErrors = e :: typeErrors)
+  }
+
+  private def addRangeTypeError(e: OutputValidatorRangeTypeError): OutputErrors = {
+    this.copy(rangeTypeErrors = e :: rangeTypeErrors)
+  }
+
+  private def addValueError(e: OutputValidatorValueError): OutputErrors = {
+    this.copy(valueErrors = e :: valueErrors)
+  }
+
+  private def addMissingFieldsError(e: OutputValidatorMissingFieldsError): OutputErrors = {
+    this.copy(missingFieldsErrors = e :: missingFieldsErrors)
+  }
+
+  private def addRedundantFieldsError(e: OutputValidatorRedundantFieldsError): OutputErrors = {
+    this.copy(redundantFieldsErrors = e :: redundantFieldsErrors)
+  }
+
+}
+
+private[output] object OutputErrors {
+
+  def from(errors: NonEmptyList[OutputValidatorError]): OutputErrors = {
+    errors.toList.reverse.foldLeft(OutputErrors(Nil, Nil, Nil, Nil, Nil)) { (acc, error) =>
+      error match {
+        case e: OutputValidatorTypeError            => acc.addTypeError(e)
+        case e: OutputValidatorValueError           => acc.addValueError(e)
+        case e: OutputValidatorRangeTypeError       => acc.addRangeTypeError(e)
+        case e: OutputValidatorMissingFieldsError   => acc.addMissingFieldsError(e)
+        case e: OutputValidatorRedundantFieldsError => acc.addRedundantFieldsError(e)
+      }
+    }
+  }
+
+  private case class OutputValidatorGroupTypeError(
       field: Option[String],
       actual: TypingResult,
       expected: List[OutputValidatorExpected]
@@ -54,10 +116,13 @@ trait OutputValidatorExpected {
 
 sealed trait OutputValidatorError
 
-case class OutputValidatorRangeTypeError(field: Option[String], actual: TypingResult, expected: OutputValidatorExpected)
+case class OutputValidatorTypeError(field: Option[String], actual: TypingResult, expected: OutputValidatorExpected)
     extends OutputValidatorError
 
-case class OutputValidatorTypeError(field: Option[String], actual: TypingResult, expected: OutputValidatorExpected)
+case class OutputValidatorValueError(field: Option[String], actual: TypingResult, expected: OutputValidatorExpected)
+    extends OutputValidatorError
+
+case class OutputValidatorRangeTypeError(field: Option[String], actual: TypingResult, expected: OutputValidatorExpected)
     extends OutputValidatorError
 
 case class OutputValidatorMissingFieldsError(fields: Set[String]) extends OutputValidatorError
