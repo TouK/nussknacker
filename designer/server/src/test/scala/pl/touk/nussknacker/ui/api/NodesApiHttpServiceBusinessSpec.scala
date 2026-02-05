@@ -1814,7 +1814,7 @@ class NodesApiHttpServiceBusinessSpec
           s"""{
              |  "enricherMockExpression": {
              |    "language": "jsonTemplate",
-             |    "expression": "{\\"foo\\": 0}"
+             |    "expression": "{\\n  \\"foo\\": 0\\n}"
              |  }
              |}""".stripMargin
         )
