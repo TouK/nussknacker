@@ -9,5 +9,5 @@ trait TypingResultValidator {
 }
 
 object TypingResultValidator {
-  val emptyValidator: TypingResultValidator = (_: TypingResult) => Validated.Valid((): Unit)
+  val emptyValidator: TypingResultValidator = (_: TypingResult) => Validated.Valid(())
 }

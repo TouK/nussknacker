@@ -143,7 +143,7 @@ trait KafkaAvroSpecMixin
     )
 
     val editorParams: List[(String, expression.Expression)] = List(
-      sinkRawEditorParamName.value -> s"${sink.validationMode.isDefined}".spel
+      sinkRawEditorParamName.value -> s"${sink.rawEditor}".spel
     )
 
     val validationParams: List[(String, expression.Expression)] =
@@ -254,8 +254,9 @@ trait KafkaAvroSpecMixin
       versionOption: SchemaVersionOption,
       valueParams: List[(String, expression.Expression)],
       key: String,
-      validationMode: Option[ValidationMode]
-  ) // TODO: improve it, but now - if defined we use 'raw editor' otherwise 'value editor'
+      validationMode: Option[ValidationMode],
+      rawEditor: Boolean
+  )
 
   object UniversalSinkParam {
 
@@ -271,8 +272,39 @@ trait KafkaAvroSpecMixin
         version,
         (sinkValueParamName.value -> value.spel) :: Nil,
         key,
-        validationMode
+        validationMode,
+        rawEditor = validationMode.isDefined
       )
+
+    def form(
+        topic: TopicName.ForSink,
+        version: SchemaVersionOption,
+        valueParams: List[(String, expression.Expression)],
+        key: String = "",
+    ): UniversalSinkParam = {
+      new UniversalSinkParam(
+        topic,
+        version,
+        valueParams,
+        key,
+        validationMode = None,
+        rawEditor = false
+      )
+    }
+
+    def nonRecordForm(
+        topic: TopicName.ForSink,
+        version: SchemaVersionOption,
+        value: expression.Expression,
+        key: String = "",
+    ): UniversalSinkParam = {
+      form(
+        topic,
+        version,
+        (sinkValueParamName.value -> value) :: Nil,
+        key
+      )
+    }
 
   }
 

@@ -26,7 +26,6 @@ import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sin
 import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunner
 import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunner._
 import pl.touk.nussknacker.engine.spel.SpelExtension._
-import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, SpecialSpELElement, ValidatedValuesDetailedMessage}
 import pl.touk.nussknacker.test.SpecialSpELElement.{EmptyMap, Input}
@@ -302,10 +301,10 @@ class LiteRequestResponseFunctionalTest
         config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString(true)),
         Valid(sampleObjWithAdds)
       ),
-      (conf(schemaObjUnionNullString(), sampleSpELObjWithAdds), invalid(Nil, Nil, List(AdditionalFieldName))),
+      (conf(schemaObjUnionNullString(), sampleSpELObjWithAdds), redundantFields(List(AdditionalFieldName))),
       (conf(schemaObjUnionNullString(true), sampleSpELObjWithAdds), Valid(sampleObjWithAdds)),
       (config(sampleObjWithAdds, schemaObjString(true), schemaObjUnionNullString(true)), Valid(sampleObjWithAdds)),
-      (conf(schemaObjStr, sampleSpELObjWithAdds), invalid(Nil, Nil, List(AdditionalFieldName))),
+      (conf(schemaObjStr, sampleSpELObjWithAdds), redundantFields(List(AdditionalFieldName))),
       (conf(schemaObjString(true), sampleSpELObjWithAdds), Valid(sampleObjWithAdds)),
     )
 
@@ -343,7 +342,7 @@ class LiteRequestResponseFunctionalTest
 
   test("validate pattern properties on sink in editor mode") {
     def invalidTypeInEditorMode(fieldName: String, error: String): Invalid[NonEmptyList[CustomNodeError]] = {
-      val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil, Nil)
+      val finalMessage = s"Provided value does not match scenario output - errors:\nIncorrect type: $error."
       Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(ParameterName(fieldName)))))
     }
     val objectWithNestedPatternPropertiesSchema = JsonSchemaBuilder.parseSchema("""{
@@ -529,31 +528,22 @@ class LiteRequestResponseFunctionalTest
 
   private def validJObj(value: Json): Valid[Json] = Valid(JsonObject(value))
 
-  protected def invalidTypes(typeErrors: String*): Invalid[NonEmptyList[CustomNodeError]] =
-    invalid(typeErrors.toList, Nil, Nil)
-
-  protected def invalidRange(rangeErrors: String*): Invalid[NonEmptyList[CustomNodeError]] =
-    invalid(Nil, Nil, Nil, rangeErrors.toList)
-
-  protected def invalid(
-      typeFieldErrors: List[String],
-      missingFieldsError: List[String],
-      redundantFieldsError: List[String]
-  ): Invalid[NonEmptyList[CustomNodeError]] =
-    invalid(typeFieldErrors, missingFieldsError, redundantFieldsError, Nil)
-
-  protected def invalid(
-      typeFieldErrors: List[String],
-      missingFieldsError: List[String],
-      redundantFieldsError: List[String],
-      rangeTypeError: List[String]
-  ): Invalid[NonEmptyList[CustomNodeError]] = {
-    val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(
-      typeFieldErrors,
-      missingFieldsError,
-      redundantFieldsError,
-      rangeTypeError
+  protected def invalidRange(rangeErrors: String*): Invalid[NonEmptyList[CustomNodeError]] = {
+    invalid(
+      s"Provided value does not match scenario output - errors:\nProvided value is out of range: ${rangeErrors.mkString(",")}."
     )
+  }
+
+  protected def redundantFields(
+      fields: List[String]
+  ): Invalid[NonEmptyList[CustomNodeError]] =
+    invalid(
+      s"Provided value does not match scenario output - errors:\nRedundant fields: ${fields.mkString(",")}."
+    )
+
+  private def invalid(
+      finalMessage: String
+  ): Invalid[NonEmptyList[CustomNodeError]] = {
     Invalid(
       NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(JsonRequestResponseSink.SinkRawValueParamName)))
     )

@@ -50,10 +50,27 @@ object UniversalKafkaSinkFactory {
 
   case class TransformationState(schema: RuntimeSchemaData[ParsedSchema], schemaBasedParameter: SchemaBasedParameter) {
 
-    def validateParams(params: Map[ParameterName, BaseDefinedParameter])(
+    def validateParamsForDynamicForms(params: Map[ParameterName, BaseDefinedParameter])(
         implicit nodeId: NodeId
-    ): List[ProcessCompilationError] =
-      schemaBasedParameter.validateParams(params).swap.map(_.toList).getOrElse(List.empty)
+    ): List[ProcessCompilationError] = {
+      validateParams(params, detailedErrorDescriptions = false)
+    }
+
+    def validateParamsForRawEditor(params: Map[ParameterName, BaseDefinedParameter])(
+        implicit nodeId: NodeId
+    ): List[ProcessCompilationError] = {
+      validateParams(params, detailedErrorDescriptions = true)
+    }
+
+    private def validateParams(params: Map[ParameterName, BaseDefinedParameter], detailedErrorDescriptions: Boolean)(
+        implicit nodeId: NodeId
+    ): List[ProcessCompilationError] = {
+      schemaBasedParameter
+        .validateParams(params, detailedErrorDescriptions = detailedErrorDescriptions)
+        .swap
+        .map(_.toList)
+        .getOrElse(List.empty)
+    }
 
   }
 
@@ -154,7 +171,7 @@ class UniversalKafkaSinkFactory(
           (`sinkValueParamName`, value: BaseDefinedParameter) :: Nil,
           Some(state)
         ) =>
-      val validationAgainstSchemaErrors = state.validateParams(Map(sinkValueParamName -> value))
+      val validationAgainstSchemaErrors = state.validateParamsForRawEditor(Map(sinkValueParamName -> value))
       FinalResults(
         context,
         validationAgainstSchemaErrors,
@@ -214,7 +231,7 @@ class UniversalKafkaSinkFactory(
           valueParams,
           Some(state)
         ) =>
-      val errors = state.validateParams(valueParams.toMap)
+      val errors = state.validateParamsForDynamicForms(valueParams.toMap)
       FinalResults(context, errors, Some(state))
     case TransformationStep(
           (`topicParamName`, DefinedEagerParameter(_: String, _)) ::
@@ -254,7 +271,7 @@ class UniversalKafkaSinkFactory(
           (`sinkValueParamName`, value: BaseDefinedParameter) :: Nil,
           Some(state)
         ) =>
-      val validationAgainstSchemaErrors = state.validateParams(Map(sinkValueParamName -> value))
+      val validationAgainstSchemaErrors = state.validateParamsForRawEditor(Map(sinkValueParamName -> value))
       FinalResults(
         context,
         validationAgainstSchemaErrors,
@@ -300,7 +317,7 @@ class UniversalKafkaSinkFactory(
           (`sinkValueParamName`, value: BaseDefinedParameter) :: Nil,
           Some(state)
         ) =>
-      val errors = state.validateParams(Map(sinkValueParamName -> value))
+      val errors = state.validateParamsForRawEditor(Map(sinkValueParamName -> value))
       FinalResults(context, errors, Some(state))
   }
 

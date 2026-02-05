@@ -240,13 +240,13 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
       Address.record, {
         eventually {
           RecordingExceptionConsumer.exceptionsFor(runId) should have size 1
-          val espExceptionInfo = RecordingExceptionConsumer.exceptionsFor(runId).head
+          val nuExceptionInfo = RecordingExceptionConsumer.exceptionsFor(runId).head
 
-          espExceptionInfo.nodeComponentInfo shouldBe Some(
+          nuExceptionInfo.nodeComponentInfo shouldBe Some(
             NodeComponentInfo("end", ComponentType.Sink, "flinkKafkaAvroSink")
           )
-          espExceptionInfo.throwable shouldBe a[AvroRuntimeException]
-          espExceptionInfo.throwable.getMessage should include("Not expected null for field: Some(street)")
+          nuExceptionInfo.throwable shouldBe a[AvroRuntimeException]
+          nuExceptionInfo.throwable.getMessage should include("Not expected null for field: street")
         }
       }
     )
