@@ -59,7 +59,7 @@ const ResetToDefaultButton = ({ defaultValue, handleChange, variant }: Props) =>
                         {defaultValue.expression}
                     </SyntaxHighlighter>
                     <Button data-testid={"applyDefaultValue"} variant="contained" size="small" onClick={handleApply} sx={{ mt: 2 }}>
-                        {t("resetToDefault.button", "Apply value")}
+                        {t("resetToDefault.button.applyValue", "Apply value")}
                     </Button>
                 </Box>
             </Menu>

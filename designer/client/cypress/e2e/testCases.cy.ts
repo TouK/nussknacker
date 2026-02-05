@@ -100,10 +100,10 @@ describe("Test cases", () => {
         cy.openNodeWindow("Unionreturnobjectservice");
         openTestingTab();
         applyGeneratedMockData();
-        verifyMockData('{"foo": 0}');
+        verifyMockData('{\n  "foo": 0\n}');
         fillMockData('{"foo": 2}');
         applyGeneratedMockData();
-        verifyMockData('{"foo": 0}');
+        verifyMockData('{\n  "foo": 0\n}');
     });
 });
 
