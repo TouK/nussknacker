@@ -6,8 +6,8 @@
 
 <div align="center">
   
-  [![Maven Central](https://maven-badges.herokuapp.com/maven-central/pl.touk.nussknacker/nussknacker-designer_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/pl.touk.nussknacker/nussknacker-designer_2.13)
-  [![Build status](https://github.com/touk/nussknacker/workflows/CI/badge.svg?branch=staging)](https://github.com/touk/nussknacker/actions?query=workflow%3ACI+branch%3Astaging++)
+  [![Maven Central](https://maven-badges.sml.io/maven-central/pl.touk.nussknacker/nussknacker-designer_2.13/badge.svg)](https://maven-badges.sml.io/maven-central/pl.touk.nussknacker/nussknacker-designer_2.13)
+  [![Build status](https://github.com/touk/nussknacker/actions/workflows/pr.yml/badge.svg?branch=staging)](https://github.com/touk/nussknacker/actions?query=workflow%3ACI+branch%3Astaging)
   [![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/touk)](https://artifacthub.io/packages/search?repo=touk)
   [![PR](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING/README.md#Contributing)
 
