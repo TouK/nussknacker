@@ -4,8 +4,8 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 
 import type { StateForSelectTestResults } from "../../../common/TestResultUtils";
 import TestResultUtils from "../../../common/TestResultUtils";
+import { useUserSettings } from "../../../common/useUserSettings";
 import { getTestResults } from "../../../reducers/selectors/testing";
-import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeId } from "../../../types/node";
 import { useInputOutputContext } from "./io/InputOutputContext";
@@ -42,8 +42,7 @@ export function TestResultsWrapper({
     const [testResultsState, setTestResultsState] = useState<StateForSelectTestResults>(
         TestResultUtils.stateForSelectTestResults(nodeResults),
     );
-    const userSettings = useAppSelector(getUserSettings);
-    const showInputsAndOutputs = userSettings["node.showInputsAndOutputs"];
+    const [showInputsAndOutputs] = useUserSettings("node.showInputsAndOutputs");
 
     const io = useInputOutputContext();
     useEffect(() => {

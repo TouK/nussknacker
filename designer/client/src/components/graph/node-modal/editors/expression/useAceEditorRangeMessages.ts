@@ -6,8 +6,7 @@ import type { IMarker } from "react-ace/lib/types";
 import type { Annotation } from "react-ace/types";
 import { v4 as uuid4 } from "uuid";
 
-import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
-import { useAppSelector } from "../../../../../store/storeHelpers";
+import { useUserSettings } from "../../../../../common/useUserSettings";
 import type { FieldError } from "../Validators";
 
 type ErrorCoords = {
@@ -51,8 +50,7 @@ function extractErrorRange(error: FieldError): ErrorCoords | null {
 }
 
 export function useAceEditorRangeMessages(fieldErrors: FieldError[], showLines?: boolean) {
-    const userSettings = useAppSelector(getUserSettings);
-    const showRangeMessages = userSettings["editor.showRangeMessages"];
+    const [showRangeMessages] = useUserSettings("editor.showRangeMessages");
 
     const rangeErrors = useMemo(
         () =>

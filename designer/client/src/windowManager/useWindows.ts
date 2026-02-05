@@ -3,12 +3,12 @@ import { useWindowManager } from "@touk/window-manager";
 import { defaults } from "lodash";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 
+import { useUserSettings } from "../common/useUserSettings";
 import { StickyNoteType } from "../components/graph/utils/stickyNotesUtils";
 import type { ConfirmDialogData } from "../components/modals/GenericConfirmDialog";
 import type { InfoDialogData } from "../components/modals/GenericInfoDialog";
 import type { Scenario } from "../components/Process/types";
 import { getWindowsIdMapping } from "../reducers/selectors/getWindowsIdMapping";
-import { getUserSettings } from "../reducers/selectors/userSettings";
 import type { AppState } from "../store/storeHelpers";
 import { useAppSelector } from "../store/storeHelpers";
 import type { NodeType } from "../types/node";
@@ -61,8 +61,7 @@ export function useWindows(parent?: WindowId) {
 
     const { open: _open, close, closeAll, windows } = windowManager;
     useRemoveFocusOnEscKey(windows.length > 0);
-    const settings = useAppSelector(getUserSettings);
-    const forceDisableModals = useMemo(() => settings["debug.forceDisableModals"], [settings]);
+    const [forceDisableModals, showInputsAndOutputs] = useUserSettings("debug.forceDisableModals", "node.showInputsAndOutputs");
 
     const open = useCallback(
         async <M = never>(windowData: Partial<WindowType<WindowKind, M>> = {}) => {
@@ -97,7 +96,7 @@ export function useWindows(parent?: WindowId) {
                     scenario,
                 },
                 shouldCloseOnEsc: false,
-                layoutData: settings["node.showInputsAndOutputs"]
+                layoutData: showInputsAndOutputs
                     ? {
                           width: window.innerWidth - 2 * DEFAULT_WINDOW_MARGIN,
                           height: window.innerHeight - 2 * DEFAULT_WINDOW_MARGIN,
@@ -111,7 +110,7 @@ export function useWindows(parent?: WindowId) {
                       },
             });
         },
-        [nodeWindowIdMap, open, settings],
+        [nodeWindowIdMap, open, showInputsAndOutputs],
     );
 
     const inform = useCallback(

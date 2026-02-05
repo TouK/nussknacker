@@ -2,10 +2,10 @@ import type { SetStateAction } from "react";
 import React, { useCallback, useMemo } from "react";
 
 import { determineComponentId } from "../../../common/componentUtils";
+import { useUserSettings } from "../../../common/useUserSettings";
 import { getConfiguredAdditionalComponents } from "../../../reducers/selectors/configuredAdditionalComponents";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
 import { getRemoteTenantId, getRemoteWebHost } from "../../../reducers/selectors/isCloudInstance";
-import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { Edge } from "../../../types/edge";
 import type { NodeType } from "../../../types/node";
@@ -35,16 +35,19 @@ export const NodeDetailsContent = ({
 }): React.JSX.Element => {
     const [errors, diagramStructureErrors] = useGetNodeErrors(node);
 
-    const userSettings = useAppSelector(getUserSettings);
+    const [showAggregateSwitcher, showIntegrationsCreators, showInputsAndOutputs, nodesAsJson] = useUserSettings(
+        "node.showAggregateSwitcher",
+        "cloud.showIntegrationsCreators",
+        "node.showInputsAndOutputs",
+        "debug.nodesAsJson",
+    );
 
     const configuredAdditionalComponents = useAppSelector(getConfiguredAdditionalComponents);
     const creatorType = useMemo(() => {
         return getCreatorType(node) || configuredAdditionalComponents.find((c) => c.componentId === determineComponentId(node))?.type;
     }, [configuredAdditionalComponents, node]);
 
-    const nodeSwitcherVisible =
-        creatorType &&
-        (creatorType === "aggregate" ? userSettings["node.showAggregateSwitcher"] : userSettings["cloud.showIntegrationsCreators"]);
+    const nodeSwitcherVisible = creatorType && (creatorType === "aggregate" ? showAggregateSwitcher : showIntegrationsCreators);
 
     const tenantId = useAppSelector(getRemoteTenantId);
     const cloudHost = useAppSelector(getRemoteWebHost);
@@ -56,7 +59,7 @@ export const NodeDetailsContent = ({
     const onCreate = useMemo(() => (creatorType === "aggregate" ? null : goToCreator(creatorType)), [creatorType, goToCreator]);
 
     return (
-        <NodeTable sx={userSettings["node.showInputsAndOutputs"] ? { margin: "0 16px" } : undefined}>
+        <NodeTable sx={showInputsAndOutputs ? { margin: "0 16px" } : undefined}>
             {nodeSwitcherVisible ? (
                 <NodeSwitcher
                     node={node}
@@ -83,7 +86,7 @@ export const NodeDetailsContent = ({
                 />
             </TestResultsWrapper>
             <NodeAdditionalInfo node={node} />
-            {userSettings["debug.nodesAsJson"] && <DebugNodeInspector node={node} />}
+            {nodesAsJson && <DebugNodeInspector node={node} />}
         </NodeTable>
     );
 };

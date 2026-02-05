@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
-import { getUserSettings } from "../../reducers/selectors/userSettings";
-import { addListenerTyped, useAppDispatch, useAppSelector } from "../../store/storeHelpers";
+import { useUserSettings } from "../../common/useUserSettings";
+import { addListenerTyped, useAppDispatch } from "../../store/storeHelpers";
 
 export function useRemoteApply(key: string, callback: () => void) {
     const dispatch = useAppDispatch();
@@ -11,8 +11,7 @@ export function useRemoteApply(key: string, callback: () => void) {
         savedCallback.current = callback;
     }, [callback]);
 
-    const settings = useAppSelector(getUserSettings);
-    const autoApply = settings["node.autoApply"];
+    const [autoApply] = useUserSettings("node.autoApply");
     useEffect(() => {
         if (!autoApply) return;
         return dispatch(

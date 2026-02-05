@@ -3,10 +3,10 @@ import { useTranslation } from "react-i18next";
 
 import { loadProcessState } from "../../../../actions/nk/process";
 import Icon from "../../../../assets/img/toolbarButtons/stop.svg";
+import { useUserSettings } from "../../../../common/useUserSettings";
 import HttpService from "../../../../http/HttpService/instance";
 import { getProcessName, getProcessVersionId, isCancelPossible } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
-import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 import { useWindows } from "../../../../windowManager/useWindows";
@@ -24,9 +24,7 @@ interface CancelDeployPreset {
 }
 
 export default function CancelDeployButton(props: ToolbarButtonProps) {
-    const settings = useAppSelector(getUserSettings);
-
-    const allowQuickCancelDeploy = settings["scenario.allowQuickCancelDeploy"];
+    const [allowQuickCancelDeploy] = useUserSettings("scenario.allowQuickCancelDeploy");
 
     const { t } = useTranslation();
     const dispatch = useAppDispatch();

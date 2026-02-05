@@ -3,9 +3,9 @@ import { g } from "jointjs";
 import React, { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
 import { useDrop } from "react-dnd";
 
+import { useUserSettings } from "../../common/useUserSettings";
 import { getLayout, getProcessCounts, getScenario } from "../../reducers/selectors/graph";
 import type { Capabilities } from "../../reducers/selectors/other";
-import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import type { Edge } from "../../types/edge";
 import type { NodeType } from "../../types/node";
@@ -29,8 +29,7 @@ export type ElementDropResult = {
 };
 
 function usePreviewOffset() {
-    const settings = useAppSelector(getUserSettings);
-    const areAdvancedStickyNotesEnabled = settings["node.advancedStickyNotes"];
+    const [areAdvancedStickyNotesEnabled] = useUserSettings("node.advancedStickyNotes");
 
     const getPaperPreviewOffset = useCallback(
         function getPaperPreviewOffset(paper: dia.Paper, offset: g.PlainPoint, item: NodeType): g.Point {

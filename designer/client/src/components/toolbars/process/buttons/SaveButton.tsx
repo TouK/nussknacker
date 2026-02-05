@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import Icon from "../../../../assets/img/toolbarButtons/save.svg";
+import { useUserSettings } from "../../../../common/useUserSettings";
 import HttpService from "../../../../http/HttpService/instance";
 import {
     getProcessName,
@@ -11,7 +12,6 @@ import {
     isSaveDisabled,
 } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
-import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../windowManager/WindowKind";
@@ -28,9 +28,7 @@ interface SavePreset {
 }
 
 function SaveButton(props: ToolbarButtonProps): React.JSX.Element {
-    const settings = useAppSelector(getUserSettings);
-
-    const allowQuickSave = settings["scenario.allowQuickSave"];
+    const [allowQuickSave] = useUserSettings("scenario.allowQuickSave");
 
     const { handleSaveScenarioAction } = useSaveScenario();
     const { t } = useTranslation();

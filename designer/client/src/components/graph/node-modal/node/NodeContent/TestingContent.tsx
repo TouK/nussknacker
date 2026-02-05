@@ -2,8 +2,7 @@ import { Typography } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
-import { useAppSelector } from "../../../../../store/storeHelpers";
+import { useUserSettings } from "../../../../../common/useUserSettings";
 import type { NodeTypeDetailsContentProps } from "../../NodeTypeDetailsContent";
 import type { NodeState } from "../useNodeState";
 import { Assertions } from "./TestingContentElements/Assertions";
@@ -25,7 +24,7 @@ export const TestingContent = ({ node, edges, onChange }: TestingContentProps) =
 };
 
 export function useTestingContentRenderer() {
-    const settings = useAppSelector(getUserSettings);
+    const [showMockFieldOnEnrichers] = useUserSettings("node.showMockFieldOnEnrichers");
 
     const CONFIG: { when: (node: TestingContentProps["node"]) => boolean; render: (props: TestingContentProps) => React.JSX.Element }[] = [
         {
@@ -38,7 +37,7 @@ export function useTestingContentRenderer() {
             ),
         },
         {
-            when: (node) => settings["node.showMockFieldOnEnrichers"] && node.type === "Enricher" && node.service.id !== "decision-table",
+            when: (node) => showMockFieldOnEnrichers && node.type === "Enricher" && node.service.id !== "decision-table",
             render: ({ node, edges, onChange }) => (
                 <>
                     <MockResponse node={node} edges={edges} onChange={onChange} />
