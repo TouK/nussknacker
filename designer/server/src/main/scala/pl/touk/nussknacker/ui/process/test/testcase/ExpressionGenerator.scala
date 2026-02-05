@@ -92,7 +92,7 @@ private object ExpressionGenerator {
     Some(recordExpression)
   }
 
-  private def generateFromValue(value: Any, underlying: TypedClass, indentLevel: Int): Option[String] = {
+  private def generateFromValue(value: Any, underlying: TypingResult, indentLevel: Int): Option[String] = {
     value match {
       case null =>
         Some("null")
@@ -118,28 +118,7 @@ private object ExpressionGenerator {
         Some(s""""${localTime.toString}"""")
       case uuid: UUID =>
         Some(s""""${uuid.toString}"""")
-      case list: java.util.List[_] =>
-        val elements = list.asScala.toList
-        if (elements.isEmpty) {
-          Some("[]")
-        } else {
-          underlying.params match {
-            case elementType :: Nil =>
-              val elementExpressions = elements.flatMap { element =>
-                elementType match {
-                  case TypedObjectWithValue(elemUnderlying, elemValue) =>
-                    generateFromValue(elemValue, elemUnderlying, indentLevel)
-                  case elemClass: TypedClass =>
-                    generateFromValue(element, elemClass, indentLevel)
-                  case _ =>
-                    None
-                }
-              }
-              Some(elementExpressions.mkString("[", ", ", "]"))
-            case _ =>
-              Some("[]")
-          }
-        }
+      // We could also handle collections and maps (records) here
       case _ =>
         generateForTypingResult(underlying, indentLevel)
     }

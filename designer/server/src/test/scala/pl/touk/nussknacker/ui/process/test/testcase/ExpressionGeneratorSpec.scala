@@ -127,38 +127,42 @@ class ExpressionGeneratorSpec
           |  "age": 0
           |}""".stripMargin
       ),
+      ("list", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[java.lang.Integer])), "[0]"),
       (
         "nested record",
         Typed.record(
           Map(
-            "user"  -> Typed.record(Map("name" -> Typed[String], "active" -> Typed[java.lang.Boolean])),
+            "user" -> Typed.record(
+              Map(
+                "name"   -> Typed[String],
+                "active" -> Typed[java.lang.Boolean],
+                "addresses" -> Typed.genericTypeClass(
+                  classOf[java.util.List[_]],
+                  List(
+                    Typed.record(
+                      Map(
+                        "street" -> Typed[String],
+                        "city"   -> Typed[String]
+                      )
+                    )
+                  )
+                )
+              )
+            ),
             "count" -> Typed[java.lang.Integer]
           )
         ),
         """{
           |  "user": {
           |    "name": "",
-          |    "active": true
+          |    "active": true,
+          |    "addresses": [{
+          |      "street": "",
+          |      "city": ""
+          |    }]
           |  },
           |  "count": 0
           |}""".stripMargin
-      ),
-      ("list", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[java.lang.Integer])), "[0]"),
-      (
-        "list with zero elements",
-        TypedObjectWithValue(
-          Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])),
-          List.empty.asJava
-        ),
-        "[]"
-      ),
-      (
-        "list with two elements",
-        TypedObjectWithValue(
-          Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])),
-          List("abc", "def").asJava
-        ),
-        "[\"abc\", \"def\"]"
       ),
       (
         "HTTP request/response record",
