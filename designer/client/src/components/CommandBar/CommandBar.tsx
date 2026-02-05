@@ -2,18 +2,17 @@ import { Box } from "@mui/material";
 import { KBarAnimator, KBarPortal, KBarPositioner, KBarSearch, useKBar } from "kbar";
 import React, { useEffect } from "react";
 
-import { getUserSettings } from "../../reducers/selectors/userSettings";
-import { useAppSelector } from "../../store/storeHelpers";
+import { useUserSettings } from "../../common/useUserSettings";
 import { ThemedStylesWrapper } from "../ThemedStylesWrapper";
 import { RenderResults } from "./RenderResults";
 
 export function CommandBar() {
     const { query } = useKBar();
-    const settings = useAppSelector(getUserSettings);
+    const [commandBarEnabled] = useUserSettings("experimental.commandBar");
 
     useEffect(() => {
-        query.disable(!settings["experimental.commandBar"]);
-    }, [query, settings]);
+        query.disable(!commandBarEnabled);
+    }, [query, commandBarEnabled]);
 
     return (
         <KBarPortal>

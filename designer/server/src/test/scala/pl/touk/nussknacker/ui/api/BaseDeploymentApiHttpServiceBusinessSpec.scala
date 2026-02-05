@@ -24,7 +24,7 @@ import pl.touk.nussknacker.test.config.{
 import pl.touk.nussknacker.test.containers.FileSystemBind
 
 import java.io.File
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, FileSystems, Path}
 import java.nio.file.attribute.PosixFilePermissions
 
 trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploymentManager {
@@ -72,10 +72,16 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
     .fragmentOutput("out", "out")
 
   private lazy val inputDirectory = {
+    val tempDirectoryAttributes =
+      if (FileSystems.getDefault.supportedFileAttributeViews().contains("posix")) {
+        List(PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxr-xr-x")))
+      } else {
+        Nil // Windows
+      }
     val directory = Files.createTempDirectory(
       s"nusssknacker-${getClass.getSimpleName}-transactions-",
       // be default temp directory is read only for user
-      PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxr-xr-x"))
+      tempDirectoryAttributes: _*
     )
     populateInputTransactionsDirectory(directory)
     directory

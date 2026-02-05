@@ -5,8 +5,7 @@ import type { PropsWithChildren } from "react";
 import React, { useRef, useState } from "react";
 
 import type { NodeResultsForContext } from "../../../../common/TestResultUtils";
-import { getUserSettings } from "../../../../reducers/selectors/userSettings";
-import { useAppSelector } from "../../../../store/storeHelpers";
+import { useUserSettings } from "../../../../common/useUserSettings";
 import { FormControl, FormLabel } from "../editors/FormControl";
 import { InfoTooltip } from "../editors/InfoTooltip/InfoTooltip";
 import { HIDDEN_TEXTAREA_PIXEL_HEIGHT, nodeValue } from "../NodeDetailsContent/NodeTableStyled";
@@ -25,8 +24,7 @@ export default function ExpressionTestResults(props: PropsWithChildren<Expressio
     const [collapsedTestResults, setCollapsedTestResults] = useState(true);
     const testValue = fieldName ? resultsToShow && resultsToShow.expressionResults[fieldName] : null;
     const PrettyIconComponent = collapsedTestResults ? VisibilityOff : Visibility;
-    const userSettings = useAppSelector(getUserSettings);
-    const showInputsAndOutputs = userSettings["node.showInputsAndOutputs"];
+    const [showInputsAndOutputs] = useUserSettings("node.showInputsAndOutputs");
 
     return testValue ? (
         <div>

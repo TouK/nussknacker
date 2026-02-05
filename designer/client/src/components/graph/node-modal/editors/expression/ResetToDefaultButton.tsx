@@ -5,8 +5,7 @@ import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { SyntaxHighlighter } from "../../../../../common/SyntaxHighlighter";
-import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
-import { useAppSelector } from "../../../../../store/storeHelpers";
+import { useUserSettings } from "../../../../../common/useUserSettings";
 import type { ExpressionObj } from "./types";
 
 interface Props {
@@ -77,10 +76,9 @@ export function ResetToDefault({
     defaultValue: ExpressionObj;
     handleChange: (value: ExpressionObj) => void;
 }) {
-    const userSettings = useAppSelector(getUserSettings);
     const variant = useMemo(() => (value ? "resetToDefault" : "generate"), [value]);
-
-    if (!userSettings["editor.showResetToDefaultButton"]) {
+    const [setting] = useUserSettings("editor.showResetToDefaultButton");
+    if (!setting) {
         return null;
     }
 

@@ -20,17 +20,17 @@ object FlinkTypeInfoRegistrar {
   )
 
   def ensureTypeInfosAreRegistered(): Unit = {
-    typeInfoToRegister.foreach { entry =>
-      register(entry)
-    }
+    register(typeInfoToRegister)
   }
 
-  private def register(entry: RegistrationEntry[_]): Unit = {
+  private def register(entries: List[RegistrationEntry[_]]): Unit = {
     // TypeExtractor is not thread safe, and we may arrive here as a result of concurrent initialization
     // of multiple Flink deployment managers
     classOf[TypeExtractor].synchronized {
-      if (TypeExtractor.getTypeInfoFactory(entry.klass) == null) {
-        TypeExtractor.registerFactory(entry.klass, entry.factoryClass)
+      entries.foreach { entry =>
+        if (TypeExtractor.getTypeInfoFactory(entry.klass) == null) {
+          TypeExtractor.registerFactory(entry.klass, entry.factoryClass)
+        }
       }
     }
   }

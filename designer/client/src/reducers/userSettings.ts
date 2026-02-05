@@ -20,7 +20,7 @@ type ExtendRecordValue<T extends Record<string, any>, E> = Prettify<{
 }>;
 
 export type UserSettings = Partial<Readonly<Prettify<Record<DynamicSettingsNames, boolean> & ReturnType<typeof getDefaultUserSettings>>>>;
-export type Setting = NonNullable<keyof UserSettings>;
+export type Setting = NonNullable<keyof UserSettings> | NonNullable<string>;
 
 export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean>) => {
     function createFlag<K extends DynamicSettingsNames | DeferedString>(key: K, defaultValue?: boolean): [K, boolean] {

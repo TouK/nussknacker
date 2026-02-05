@@ -5,10 +5,10 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { testScenarioWithTestCase } from "../../../actions/nk/testingActions";
+import { useUserSettings } from "../../../common/useUserSettings";
 import { getTestCapabilities } from "../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../reducers/selectors/settings";
 import { getInputDataRecords, getTestCase } from "../../../reducers/selectors/testCases";
-import { getUserSettings } from "../../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { WindowContent } from "../../../windowManager/WindowContent";
@@ -38,7 +38,7 @@ export interface TestingData {
 }
 
 function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElement {
-    const settings = useAppSelector(getUserSettings);
+    const [showMockFieldOnEnrichers] = useUserSettings("node.showMockFieldOnEnrichers");
     const maxTestingRecords = useAppSelector(getMaxTestingRecords);
 
     const { t } = useTranslation();
@@ -89,7 +89,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                 title: t("testingForm.testButton.label", "Test"),
                 action: () => {
                     try {
-                        dispatch(testScenarioWithTestCase(testCase, settings["node.showMockFieldOnEnrichers"]));
+                        dispatch(testScenarioWithTestCase(testCase, showMockFieldOnEnrichers));
                         close();
                     } catch (e) {
                         console.error(e.message);
@@ -97,7 +97,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                 },
             },
         ],
-        [t, disableTestButton, close, dispatch, testCase, settings],
+        [t, disableTestButton, close, dispatch, testCase, showMockFieldOnEnrichers],
     );
 
     return (

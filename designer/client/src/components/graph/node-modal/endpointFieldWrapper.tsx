@@ -2,8 +2,7 @@ import React, { useCallback, useMemo } from "react";
 
 import { CopyIconButton } from "../../../common/copyToClipboard/CopyIconButton";
 import { useCopyClipboard } from "../../../common/copyToClipboard/useCopyToClipboard";
-import { getUserSettings } from "../../../reducers/selectors/userSettings";
-import { useAppSelector } from "../../../store/storeHelpers";
+import { useUserSettings } from "../../../common/useUserSettings";
 import { EditorType } from "./editors/expression/types";
 import { FieldAddons } from "./fieldAddons";
 import { GenerateNewEndpoint } from "./node-action-buttons/GenerateNewEndpoint";
@@ -41,10 +40,10 @@ export function EndpointFieldWrapper({
     showValidation,
     fieldErrors,
 }: FieldWrapperProps) {
-    const settings = useAppSelector(getUserSettings);
+    const [showGenerateEndpointButton] = useUserSettings("node.showGenerateEndpointButton");
 
     if (!isEditMode) return <>{children}</>;
-    if (!settings["node.showGenerateEndpointButton"]) return <>{children}</>;
+    if (!showGenerateEndpointButton) return <>{children}</>;
 
     return (
         <>

@@ -4,13 +4,13 @@ import { useTranslation } from "react-i18next";
 import { disableToolTipsHighlight, enableToolTipsHighlight } from "../../../../actions/nk/tooltips";
 import notificationActions from "../../../../actions/notificationActions";
 import Icon from "../../../../assets/img/toolbarButtons/deploy.svg";
+import { useUserSettings } from "../../../../common/useUserSettings";
 import HttpService from "../../../../http/HttpService/instance";
 import type { NodesDeploymentData } from "../../../../http/HttpService/types";
 import { getProcessName, getProcessVersionId, isDeployVisible } from "../../../../reducers/selectors/graph";
 import { hasError, isDeployPossible, isValidationResultPresent } from "../../../../reducers/selectors/graph2";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getIsDeploying } from "../../../../reducers/selectors/scenarioState";
-import { getUserSettings } from "../../../../reducers/selectors/userSettings";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 import { useWindows } from "../../../../windowManager/useWindows";
@@ -31,9 +31,10 @@ interface DeployPreset {
 }
 
 export default function DeployButton(props: ToolbarButtonProps) {
-    const settings = useAppSelector(getUserSettings);
-
-    const allowQuickDeploy = settings["scenario.allowQuickDeploy"];
+    const [allowQuickDeploy, autoSaveDuringDeployRedeploy] = useUserSettings(
+        "scenario.allowQuickDeploy",
+        "toolbar.autoSaveDuringDeployRedeploy",
+    );
 
     const dispatch = useAppDispatch();
 
@@ -85,9 +86,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
                             {
                                 latestVersion: res.data.latestVersion,
                                 modifyBy: res.data.modifiedBy,
-                                versionToDeploy: settings["toolbar.autoSaveDuringDeployRedeploy"]
-                                    ? res.data.localVersion
-                                    : res.data.latestVersion,
+                                versionToDeploy: autoSaveDuringDeployRedeploy ? res.data.localVersion : res.data.latestVersion,
                                 localVersion: res.data.localVersion,
                             },
                         ),
@@ -105,7 +104,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
                 }
             });
         },
-        [confirm, processName, processVersionId, t, settings],
+        [autoSaveDuringDeployRedeploy, confirm, processName, processVersionId, t],
     );
 
     const handleDeploy = useCallback(async () => {

@@ -3,9 +3,8 @@ import type { ReactNode } from "react";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useUserSettings } from "../../../../../common/useUserSettings";
 import { blendDarken, getBorderColor } from "../../../../../containers/theme/helpers";
-import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
-import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { Option } from "../../fragment-input-definition/TypeSelect";
 import { isExtendedEditor } from "../expression/Editor";
 import { getEditorByType, parseExpressionObjForType } from "../expression/EditorByType";
@@ -71,8 +70,7 @@ interface Props {
 
 export const FieldSwitch = ({ availableEditors: editors, onValueChange, expressionObj, children, readOnly, showSwitch = true }: Props) => {
     const { t } = useTranslation();
-    const userSettings = useAppSelector(getUserSettings);
-    const forceSpelEditors = userSettings["debug.editor.forceSpelEditors"];
+    const [forceSpelEditors, allowForceSwitch] = useUserSettings("debug.editor.forceSpelEditors", "editor.allowForceSwitch");
 
     const availableEditors = useMemo(() => {
         if (forceSpelEditors && !editors.find(({ type }) => type === EditorType.SPEL_PARAMETER_EDITOR)) {
@@ -202,7 +200,7 @@ export const FieldSwitch = ({ availableEditors: editors, onValueChange, expressi
                             iconPosition="end"
                             onClickCapture={(event) => {
                                 if (event.target !== event.currentTarget) return;
-                                if (userSettings["editor.allowForceSwitch"] && (event.altKey || event.ctrlKey || event.metaKey)) return;
+                                if (allowForceSwitch && (event.altKey || event.ctrlKey || event.metaKey)) return;
                                 if (!option.isDisabled) return;
                                 event.stopPropagation();
                             }}

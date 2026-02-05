@@ -4,15 +4,15 @@ import { useTranslation } from "react-i18next";
 import { useIntervalWhen } from "rooks";
 
 import { userSettingsToggle } from "../../../../actions/nk/userSettings";
+import { useUserSettings } from "../../../../common/useUserSettings";
 import { SNOW_SNOW_FLAG } from "../../../../containers/SnowSnow";
-import { getUserSettings } from "../../../../reducers/selectors/userSettings";
-import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
+import { useAppDispatch } from "../../../../store/storeHelpers";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 function SnowSnowButton(props: ToolbarButtonProps) {
     const dispatch = useAppDispatch();
-    const userSettings = useAppSelector(getUserSettings);
+    const [isSnowing] = useUserSettings(SNOW_SNOW_FLAG);
     const { t } = useTranslation();
 
     const [Icon, setIcon] = useState(() => AcUnit);
@@ -33,7 +33,7 @@ function SnowSnowButton(props: ToolbarButtonProps) {
             name={t("panels.actions.snow-snow.name", SNOW_SNOW_FLAG)}
             icon={<Icon sx={{ width: "auto", padding: "5%" }} />}
             onClick={() => dispatch(userSettingsToggle([SNOW_SNOW_FLAG]))}
-            isActive={userSettings[SNOW_SNOW_FLAG]}
+            isActive={isSnowing}
         />
     );
 }
