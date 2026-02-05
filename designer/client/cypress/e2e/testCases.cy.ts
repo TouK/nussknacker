@@ -89,6 +89,22 @@ describe("Test cases", () => {
         cy.getNode("Event Generator").parent().as("graph");
         cy.get("@graph").matchImage({ screenshotConfig: { padding: 16 } });
     });
+
+    it.only("should set generated value to enricher mock field", () => {
+        cy.visitNewProcess(seed, "testCasesWithEnricherMock", "Category2");
+        cy.toggleUserFlag("node.showTestingTab", true);
+        cy.toggleUserFlag("node.showMockFieldOnEnrichers", true);
+        cy.toggleUserFlag("editor.showResetToDefaultButton", true);
+        cy.layoutScenario();
+
+        cy.openNodeWindow("Unionreturnobjectservice");
+        openTestingTab();
+        applyGeneratedMockData();
+        verifyMockData('{"foo": 0}');
+        fillMockData('{"foo": 2}');
+        applyGeneratedMockData();
+        verifyMockData('{"foo": 0}');
+    });
 });
 
 const openTestingTab = () => {
@@ -140,5 +156,30 @@ const checkAssertionErrorVisible = (assertionNumber: number, fieldType: "actual"
     });
     cy.get(`[data-testid="assertion-${notSelectedFieldType}-${assertionNumber}"]`).within(() => {
         cy.contains('[data-testid="form-helper-text"]', message).should("not.exist");
+    });
+};
+
+const applyGeneratedMockData = () => {
+    cy.get("[data-testid='resetToDefaultButton']").click();
+    cy.get("[data-testid='applyDefaultValue']").click();
+};
+
+const fillMockData = (mockValue: string) => {
+    cy.get('[id="mock-content"]').within(() => {
+        cy.get(".ace_editor").should("exist");
+        cy.window().then((win) => {
+            const aceEditor = (win as any).ace.edit(Cypress.$(".ace_editor")[0]);
+            aceEditor.setValue(mockValue);
+            aceEditor.clearSelection();
+        });
+    });
+};
+
+const verifyMockData = (mockValue: string) => {
+    cy.get('[id="mock-content"]').within(() => {
+        cy.window().then((win) => {
+            const aceEditor = (win as any).ace.edit(Cypress.$(".ace_editor")[0]);
+            expect(aceEditor.getValue()).to.eq(mockValue);
+        });
     });
 };

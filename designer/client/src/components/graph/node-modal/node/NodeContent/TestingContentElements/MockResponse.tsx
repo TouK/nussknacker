@@ -3,6 +3,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDidMount } from "rooks";
 
+import { useUserSettings } from "../../../../../../common/useUserSettings";
 import HttpService from "../../../../../../http/HttpService/instance";
 import { useAppSelector } from "../../../../../../store/storeHelpers";
 import { Expandable } from "../../../../../common/Expandable";
@@ -28,6 +29,7 @@ export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => 
     const variableTypes = useMemo(() => findAvailableVariables(node.id), [findAvailableVariables, node.id]);
     const processProperties = useAppSelector(getProcessProperties);
     const [defaultValue, setDefaultValue] = useState(null);
+    const [shouldGenerate] = useUserSettings("editor.showResetToDefaultButton");
 
     useValidation({ node, showValidation: true, edges });
 
@@ -41,7 +43,11 @@ export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => 
         });
     }, [node, processProperties, scenarioName, variableTypes]);
 
-    useDidMount(generateEnricherMockExpression);
+    useDidMount(() => {
+        if (shouldGenerate) {
+            generateEnricherMockExpression();
+        }
+    });
 
     return (
         <StyledStack>

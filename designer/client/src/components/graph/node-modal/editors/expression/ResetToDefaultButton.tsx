@@ -35,8 +35,8 @@ const ResetToDefaultButton = ({ defaultValue, handleChange, variant }: Props) =>
     const headerTitle = useMemo(
         () =>
             variant === "resetToDefault"
-                ? t("resetToDefault.header", "Reset to default values")
-                : t("generateDefaultValue.header", "Default values"),
+                ? t("resetToDefault.header", "Reset to default value")
+                : t("generateDefaultValue.header", "Default value"),
         [t, variant],
     );
     return (
@@ -58,8 +58,8 @@ const ResetToDefaultButton = ({ defaultValue, handleChange, variant }: Props) =>
                     >
                         {defaultValue.expression}
                     </SyntaxHighlighter>
-                    <Button variant="contained" size="small" onClick={handleApply} sx={{ mt: 2 }}>
-                        {t("resetToDefault.button", "Apply Default Values")}
+                    <Button data-testid={"applyDefaultValue"} variant="contained" size="small" onClick={handleApply} sx={{ mt: 2 }}>
+                        {t("resetToDefault.button", "Apply value")}
                     </Button>
                 </Box>
             </Menu>
