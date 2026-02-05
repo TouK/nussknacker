@@ -39,7 +39,9 @@ export const MockResponse = ({ node, edges, onChange }: TestingContentProps) => 
             processProperties,
             enricher: node,
         }).then((data) => {
-            setDefaultValue(data.enricherMockExpression);
+            if (data?.enricherMockExpression) {
+                setDefaultValue(data.enricherMockExpression);
+            }
         });
     }, [node, processProperties, scenarioName, variableTypes]);
 

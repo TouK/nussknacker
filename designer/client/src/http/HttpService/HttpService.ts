@@ -691,9 +691,9 @@ export class HttpService {
     generateEnricherMockExpression(
         scenarioName: string,
         payload: { variableTypes: VariableTypes; processProperties: PropertiesType; enricher: NodeType },
-    ): Promise<{ enricherMockExpression: ExpressionObj }> {
+    ): Promise<{ enricherMockExpression?: ExpressionObj } | null> {
         return api
-            .post(`/nodes/${scenarioName}/testCase/enricherMock`, payload)
+            .post(`/nodes/${encodeURIComponent(scenarioName)}/testCase/enricherMock`, payload)
             .then((res) => res.data)
             .catch((error) => {
                 this.#addError(
