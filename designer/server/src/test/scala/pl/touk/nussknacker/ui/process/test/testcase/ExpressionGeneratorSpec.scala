@@ -232,30 +232,6 @@ class ExpressionGeneratorSpec
           |  }
           |}""".stripMargin
       ),
-//      (
-//        "HTTP request/response record with typed body value",
-//        httpRequestResponseType(requestBody = Typed.record(List("a" -> Typed.record(List("nested" -> Typed.record(List("field1" -> Typed[String], "field2" -> Typed[java.lang.Integer]))))))),
-//        """{
-//          |  "request": {
-//          |    "body": {},
-//          |    "headers": [{
-//          |      "name": "",
-//          |      "value": ""
-//          |    }],
-//          |    "method": "",
-//          |    "url": ""
-//          |  },
-//          |  "response": {
-//          |    "body": null,
-//          |    "headers": [{
-//          |      "name": "",
-//          |      "value": ""
-//          |    }],
-//          |    "statusCode": 0,
-//          |    "statusText": ""
-//          |  }
-//          |}""".stripMargin
-//      )
     )
 
     forAll(testCases) { (description, typingResult, expectedExpression) =>
