@@ -83,8 +83,6 @@ private object ExpressionGenerator {
     val fieldExpressions = fields.mapValuesNow(generateForTypingResult(_, indentLevel + 1).getOrElse("null"))
     val recordExpression = if (fieldExpressions.isEmpty) {
       "{}"
-    } else if (fieldExpressions.size == 1) {
-      fieldExpressions.map { case (key, value) => s""""$key": $value""" }.mkString("{", ", ", "}")
     } else {
       val indent        = "  " * (indentLevel + 1)
       val closingIndent = "  " * indentLevel

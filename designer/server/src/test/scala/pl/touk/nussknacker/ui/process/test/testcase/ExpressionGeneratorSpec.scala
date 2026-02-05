@@ -17,6 +17,8 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
+import scala.jdk.CollectionConverters._
+
 class ExpressionGeneratorSpec
     extends AnyFunSuite
     with Matchers
@@ -119,7 +121,7 @@ class ExpressionGeneratorSpec
       ("empty record", Typed.record(Map.empty[String, TypingResult]), "{}"),
       (
         "simple record",
-        Typed.record(Map("first name" -> Typed[String], "age" -> Typed[Integer])),
+        Typed.record(Map("first name" -> Typed[String], "age" -> Typed[java.lang.Integer])),
         """{
           |  "first name": "",
           |  "age": 0
@@ -130,7 +132,7 @@ class ExpressionGeneratorSpec
         Typed.record(
           Map(
             "user"  -> Typed.record(Map("name" -> Typed[String], "active" -> Typed[java.lang.Boolean])),
-            "count" -> Typed[Integer]
+            "count" -> Typed[java.lang.Integer]
           )
         ),
         """{
@@ -141,26 +143,26 @@ class ExpressionGeneratorSpec
           |  "count": 0
           |}""".stripMargin
       ),
-      ("list", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])), "[\"\"]"),
+      ("list", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[java.lang.Integer])), "[0]"),
       (
         "list with zero elements",
         TypedObjectWithValue(
           Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])),
-          java.util.Arrays.asList[String]()
+          List.empty.asJava
         ),
         "[]"
       ),
       (
         "list with two elements",
         TypedObjectWithValue(
-          Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[Integer])),
-          java.util.Arrays.asList(10, 20)
+          Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])),
+          List("abc", "def").asJava
         ),
-        "[10, 20]"
+        "[\"abc\", \"def\"]"
       ),
       (
         "HTTP request/response record",
-        httpRequestResponseType,
+        httpRequestResponseType(),
         """{
           |  "request": {
           |    "body": {},
@@ -181,7 +183,79 @@ class ExpressionGeneratorSpec
           |    "statusText": ""
           |  }
           |}""".stripMargin
-      )
+      ),
+      (
+        "HTTP request/response record with typed body",
+        httpRequestResponseType(requestBody =
+          Typed.record(
+            List(
+              "a" -> Typed.record(
+                List(
+                  "nested" -> Typed.record(
+                    List(
+                      "field1" -> Typed[String],
+                      "field2" -> Typed[java.lang.Integer],
+                      "field3" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[java.lang.Double]))
+                    )
+                  )
+                )
+              )
+            )
+          )
+        ),
+        """{
+          |  "request": {
+          |    "body": {
+          |      "a": {
+          |        "nested": {
+          |          "field1": "",
+          |          "field2": 0,
+          |          "field3": [0.0]
+          |        }
+          |      }
+          |    },
+          |    "headers": [{
+          |      "name": "",
+          |      "value": ""
+          |    }],
+          |    "method": "",
+          |    "url": ""
+          |  },
+          |  "response": {
+          |    "body": null,
+          |    "headers": [{
+          |      "name": "",
+          |      "value": ""
+          |    }],
+          |    "statusCode": 0,
+          |    "statusText": ""
+          |  }
+          |}""".stripMargin
+      ),
+//      (
+//        "HTTP request/response record with typed body value",
+//        httpRequestResponseType(requestBody = Typed.record(List("a" -> Typed.record(List("nested" -> Typed.record(List("field1" -> Typed[String], "field2" -> Typed[java.lang.Integer]))))))),
+//        """{
+//          |  "request": {
+//          |    "body": {},
+//          |    "headers": [{
+//          |      "name": "",
+//          |      "value": ""
+//          |    }],
+//          |    "method": "",
+//          |    "url": ""
+//          |  },
+//          |  "response": {
+//          |    "body": null,
+//          |    "headers": [{
+//          |      "name": "",
+//          |      "value": ""
+//          |    }],
+//          |    "statusCode": 0,
+//          |    "statusText": ""
+//          |  }
+//          |}""".stripMargin
+//      )
     )
 
     forAll(testCases) { (description, typingResult, expectedExpression) =>
@@ -195,7 +269,9 @@ class ExpressionGeneratorSpec
     }
   }
 
-  private def httpRequestResponseType: TypedObjectTypingResult = {
+  private def httpRequestResponseType(
+      requestBody: TypingResult = Typed.record(Map.empty[String, TypingResult])
+  ): TypedObjectTypingResult = {
     val headerRecordType = Typed.record(
       Map(
         "name"  -> Typed[String],
@@ -204,7 +280,7 @@ class ExpressionGeneratorSpec
     )
     val requestType = Typed.record(
       Map(
-        "body"    -> Typed.record(Map.empty[String, TypingResult]),
+        "body"    -> requestBody,
         "headers" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(headerRecordType)),
         "method"  -> Typed[String],
         "url"     -> Typed[String]
@@ -214,7 +290,7 @@ class ExpressionGeneratorSpec
       Map(
         "body"       -> Unknown,
         "headers"    -> Typed.genericTypeClass(classOf[java.util.List[_]], List(headerRecordType)),
-        "statusCode" -> Typed[Integer],
+        "statusCode" -> Typed[java.lang.Integer],
         "statusText" -> Typed[String]
       )
     )
