@@ -5,12 +5,12 @@ import cats.implicits.toTraverseOps
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.{Decoder, Encoder, Json, KeyDecoder, KeyEncoder}
-import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
 import pl.touk.nussknacker.engine.api.{LayoutData, NodeId, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedExpressionValueWithIcon,
@@ -56,6 +56,7 @@ import pl.touk.nussknacker.engine.util.CaretPosition2d
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
+import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 import pl.touk.nussknacker.restmodel.validation.testcase.{
   AssertionIndex,
@@ -72,6 +73,7 @@ import pl.touk.nussknacker.ui.api.TestingApiErrorMessages
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
   BadRequestNodesError,
+  NoContentNodesError,
   NotFoundNodesError
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.BadRequestNodesError.{
@@ -82,6 +84,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
   TooManyRecordsRequested,
   UnsupportedSourcePreview
 }
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.NoContentNodesError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.NotFoundNodesError.{
   NoLiveDataAvailable,
   NoProcessingType,
@@ -97,7 +100,7 @@ import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedObjectTyping
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedTaggedSchemaHelper.typedTaggedTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedUnionSchemaHelper.typedUnionTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.UnknownSchemaHelper.unknownTypeSchema
-import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
+import sttp.model.StatusCode.{BadRequest, NoContent, NotFound, Ok}
 import sttp.tapir._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.Schema.{SName, Typeclass}
@@ -806,6 +809,107 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
         oneOf[NodesError](
           scenarioNotFoundErrorOutput,
           malformedTypingResultErrorOutput
+        )
+      )
+      .withSecurity(auth)
+  }
+
+  lazy val testCaseGenerateEnricherMockEndpoint: SecuredEndpoint[
+    (ProcessName, GenerateEnricherMockRequestDto),
+    NodesError,
+    GenerateEnricherMockResponseDto,
+    Any
+  ] = {
+    baseNuApiEndpoint
+      .summary("Generate an enricher mock expression")
+      .tag("Nodes")
+      .post
+      .in("nodes" / path[ProcessName]("scenarioName") / "testCase" / "enricherMock")
+      .in(
+        jsonBody[GenerateEnricherMockRequestDto]
+          .example(
+            Example.of(
+              value = GenerateEnricherMockRequestDto(
+                variableTypes = Map(
+                  "amount" -> TypingResultInJson(
+                    encoder.apply(
+                      TypedObjectWithValue.apply(
+                        Typed[java.lang.Long].asInstanceOf[TypedClass],
+                        5L
+                      )
+                    )
+                  ),
+                  "name" -> TypingResultInJson(
+                    encoder.apply(
+                      TypedObjectWithValue.apply(
+                        Typed[java.lang.String].asInstanceOf[TypedClass],
+                        "Alice"
+                      )
+                    )
+                  ),
+                ),
+                processProperties = ProcessProperties(StreamMetaData()),
+                enricher = Enricher(
+                  "enricher",
+                  ServiceRef(
+                    "paramService",
+                    List(
+                      EvaluatedParameter(ParameterName("param"), Expression(Language.Spel, "#input.id"))
+                    )
+                  ),
+                  "out",
+                  additionalFields = None
+                )
+              )
+            )
+          )
+      )
+      .out(
+        statusCode(Ok).and(
+          jsonBody[GenerateEnricherMockResponseDto]
+            .example(
+              Example.of(
+                value = GenerateEnricherMockResponseDto(
+                  enricherMockExpression = Expression.jsonTemplate("\"sample\"")
+                )
+              )
+            )
+        )
+      )
+      .errorOut(
+        oneOf[NodesError](
+          oneOfVariant(
+            BadRequest,
+            plainBody[BadRequestNodesError]
+              .examples(
+                List(
+                  Example.of(
+                    summary = Some("Compilation errors during enricher mock generation"),
+                    value = BadRequestNodesError.EnricherMockExpressionGenerationError.CompilationErrors(
+                      NonEmptyList.one(
+                        ProcessCompilationError.MissingParameters(Set(ParameterName("param1")), NodeId("enricher1"))
+                      )
+                    )
+                  ),
+                  Example.of(
+                    summary = Some("Output variable not found during enricher mock generation"),
+                    value =
+                      BadRequestNodesError.EnricherMockExpressionGenerationError.OutputVariableNotFound("outputVar")
+                  )
+                )
+              )
+          ),
+          oneOfVariant(
+            NoContent,
+            emptyOutputAs(
+              NoContentNodesError.EnricherMockExpressionGenerationError.UnsupportedExpressionType(
+                Typed.genericTypeClass(
+                  classOf[java.util.List[_]],
+                  List(Typed[java.lang.String])
+                )
+              )
+            ).description("Unsupported expression type during enricher mock generation")
+          )
         )
       )
       .withSecurity(auth)
@@ -1683,6 +1787,39 @@ object NodesApiEndpoints {
         assertionsAdditionalVariables: Map[String, TypingResult]
     )
 
+    final case class GenerateEnricherMockRequestDto(
+        variableTypes: Map[String, TypingResultInJson],
+        processProperties: ProcessProperties,
+        enricher: Enricher,
+    )
+
+    object GenerateEnricherMockRequestDto {
+      import io.circe.generic.semiauto._
+
+      implicit lazy val enricherEncoderImplicit: Encoder[Enricher] = Encoder[NodeData].contramap(identity)
+
+      implicit lazy val enricherDecoderImplicit: Decoder[Enricher] = Decoder[NodeData].emap {
+        case e: Enricher => Right(e)
+        case other       => Left(s"Expected Enricher but got ${other.getClass.getSimpleName}")
+      }
+
+      implicit lazy val generateEnricherMockRequestDtoEncoder: Encoder[GenerateEnricherMockRequestDto] =
+        deriveEncoder[GenerateEnricherMockRequestDto]
+      implicit lazy val generateEnricherMockRequestDtoDecoder: Decoder[GenerateEnricherMockRequestDto] =
+        deriveDecoder[GenerateEnricherMockRequestDto]
+
+      implicit lazy val sampleEnricherMockRequestDtoSchema: Schema[GenerateEnricherMockRequestDto] = {
+        import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas._
+        Schema.derived[GenerateEnricherMockRequestDto]
+      }
+
+    }
+
+    @derive(schema, encoder, decoder)
+    final case class GenerateEnricherMockResponseDto(
+        enricherMockExpression: Expression,
+    )
+
     // Request doesn't need valid encoder, apart from examples
     @derive(schema, encoder, decoder)
     final case class ParametersValidationRequestDto(
@@ -1816,6 +1953,7 @@ object NodesApiEndpoints {
       sealed trait BadRequestNodesError extends NodesError
       sealed trait NotFoundNodesError   extends NodesError
       sealed trait ForbiddenNodesError  extends NodesError
+      sealed trait NoContentNodesError  extends NodesError
 
       object BadRequestNodesError {
         case class SourceCompilation(nodeId: String, errors: List[String])   extends BadRequestNodesError
@@ -1824,6 +1962,11 @@ object NodesApiEndpoints {
         case class TooManyRecordsRequested(maxRecordsCount: Int)             extends BadRequestNodesError
         case class MalformedTypingResult(msg: String)                        extends BadRequestNodesError
         case class TooManyCharactersGenerated(length: Int, limit: Int)       extends BadRequestNodesError
+
+        object EnricherMockExpressionGenerationError {
+          final case class CompilationErrors(errors: NonEmptyList[ProcessCompilationError]) extends BadRequestNodesError
+          final case class OutputVariableNotFound(outputVariableName: String)               extends BadRequestNodesError
+        }
 
         implicit val badRequestNodesErrorCodec: Codec[String, BadRequestNodesError, CodecFormat.TextPlain] =
           BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestNodesError] {
@@ -1836,6 +1979,10 @@ object NodesApiEndpoints {
             case MalformedTypingResult(msg) => s"The request content was malformed:\n${msg}"
             case TooManyCharactersGenerated(length, limit) =>
               TestingApiErrorMessages.liveDataFetching.tooManyCharacters(length, limit)
+            case EnricherMockExpressionGenerationError.CompilationErrors(errors) =>
+              s"Cannot compile enricher: ${errors.toList.map(e => PrettyValidationErrors.formatErrorMessage(e).message).mkString(", ")}"
+            case EnricherMockExpressionGenerationError.OutputVariableNotFound(outputVariableName) =>
+              s"Enricher output variable '$outputVariableName' not found"
           }
 
         implicit val malformedTypingResultCodec: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
@@ -1874,6 +2021,20 @@ object NodesApiEndpoints {
 
       object ForbiddenNodesError {
         case object NoPermission extends ForbiddenNodesError with CustomAuthorizationError
+      }
+
+      object NoContentNodesError {
+
+        object EnricherMockExpressionGenerationError {
+          final case class UnsupportedExpressionType(typingResult: TypingResult) extends NoContentNodesError
+        }
+
+        implicit val noContentNodesErrorCodec: Codec[String, NoContentNodesError, CodecFormat.TextPlain] =
+          BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoContentNodesError] {
+            case EnricherMockExpressionGenerationError.UnsupportedExpressionType(typingResult) =>
+              s"Cannot generate expression for type: $typingResult"
+          }
+
       }
 
     }

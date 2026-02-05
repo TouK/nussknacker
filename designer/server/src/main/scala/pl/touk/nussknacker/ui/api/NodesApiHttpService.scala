@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.ui.api
 
+import cats.Bifunctor.ops.toAllBifunctorOps
 import cats.data.EitherT
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -52,7 +54,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.SerializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.FetchLiveDataError
-import pl.touk.nussknacker.ui.process.test.testcase.TestCaseVariables
+import pl.touk.nussknacker.ui.process.test.testcase.{EnricherMockGenerator, TestCaseVariables}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
@@ -67,6 +69,7 @@ class NodesApiHttpService(
     processingTypeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _],
     processingTypeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
     processingTypeToScenarioTestServices: ProcessingTypeDataProvider[ScenarioTestService, _],
+    processingTypeToEnricherMockGenerator: ProcessingTypeDataProvider[EnricherMockGenerator, _],
     protected override val scenarioService: ProcessService
 )(override protected implicit val executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
@@ -177,6 +180,40 @@ class NodesApiHttpService(
               .leftMap[NodesError](identity)
             additionalVariables = prepareTestCaseAdditionalVariables(variableTypes)
           } yield additionalVariables
+        }
+      }
+  }
+
+  expose {
+    nodesApiEndpoints.testCaseGenerateEnricherMockEndpoint
+      .serverSecurityLogic(authorizeKnownUser[NodesError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (scenarioName, request) =>
+          for {
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            modelData           <- getModelData(scenarioWithDetails.processingType)
+            enricherMockGenerator = processingTypeToEnricherMockGenerator.forProcessingTypeUnsafe(
+              scenarioWithDetails.processingType
+            )
+            variableTypes <- EitherT
+              .fromEither[Future](
+                decodeVariableTypes(
+                  request.variableTypes,
+                  prepareTypingResultDecoder(modelData.modelClassLoader)
+                )
+              )
+              .leftWiden[NodesError]
+            processVersion = scenarioWithDetails.processVersionUnsafe
+            jobData        = JobData(request.processProperties.toMetaData(processVersion.processName), processVersion)
+            result <- EitherT
+              .fromEither[Future](
+                enricherMockGenerator.generateExpression(
+                  variableTypes,
+                  request.enricher,
+                  jobData
+                )
+              )
+          } yield result
         }
       }
   }
