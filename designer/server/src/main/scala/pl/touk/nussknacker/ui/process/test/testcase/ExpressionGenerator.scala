@@ -10,11 +10,10 @@ import java.time.{Instant, LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
-import scala.jdk.CollectionConverters._
 
 private object ExpressionGenerator {
 
-  def generate(typ: TypingResult): Option[Expression] = {
+  def generateJsonTemplate(typ: TypingResult): Option[Expression] = {
     generateForTypingResult(typ, indentLevel = 0)
       .map(Expression.jsonTemplate)
   }

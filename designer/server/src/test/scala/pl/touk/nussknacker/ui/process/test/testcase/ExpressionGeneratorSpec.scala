@@ -17,8 +17,6 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-import scala.jdk.CollectionConverters._
-
 class ExpressionGeneratorSpec
     extends AnyFunSuite
     with Matchers
@@ -240,7 +238,7 @@ class ExpressionGeneratorSpec
 
     forAll(testCases) { (description, typingResult, expectedExpression) =>
       withClue(s"Test case: $description") {
-        val result = ExpressionGenerator.generate(typingResult)
+        val result = ExpressionGenerator.generateJsonTemplate(typingResult)
 
         result.value.expression shouldBe expectedExpression
         result.value.language shouldBe JsonTemplate
