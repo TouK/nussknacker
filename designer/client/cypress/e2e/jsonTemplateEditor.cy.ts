@@ -47,7 +47,7 @@ describe("JSON template editor", () => {
 
         // Apply default values
         cy.get("[data-testid=window]").find("[data-testid=resetToDefaultButton]").click();
-        cy.contains("button", /apply default values/i).click();
+        cy.contains("button", /apply value/i).click();
 
         // Verify default values
         cy.get("@editor").within(() => {
