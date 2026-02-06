@@ -19,7 +19,7 @@ export function extractMessage(messages: ChatModelRunOptions["messages"], lastAs
                     if (c.type !== "tool-call") return null;
                     if (c.isError) return null;
                     if (EMPTY_RESPONSES.includes(c.result)) return null;
-                    return `${c.toolName}: ${JSON.stringify(c.result)}`;
+                    return `${c.toolName}: ${JSON.stringify(c.result, null, 2)}`;
                 })
                 .filter(Boolean);
             if (results?.length > 0) {

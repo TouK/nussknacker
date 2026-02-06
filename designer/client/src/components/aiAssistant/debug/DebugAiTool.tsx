@@ -12,9 +12,16 @@ export function DebugAiTool() {
         }),
         execute: (args) => {
             console.log(args);
-            return { args };
+            if (Math.random() > 0.6) {
+                throw "random debug failure";
+            }
+            return { ...args, response: prepareMarkdownForCodeBlock(args.response) };
         },
     });
 
     return null;
+}
+
+function prepareMarkdownForCodeBlock(markdown) {
+    return markdown.replaceAll("```", "\\`\\`\\`");
 }
