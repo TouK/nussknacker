@@ -6,6 +6,7 @@ import rehypeExternalLinks from "rehype-external-links";
 import rehypeRaw from "rehype-raw";
 import remarkDirective from "remark-directive";
 import remarkDirectiveRehype from "remark-directive-rehype";
+import remarkGfm from "remark-gfm";
 import remarkHtml from "remark-html";
 
 import { ROUTER_LINK_TAG_NAME, SANITIZED_PASSWORD_TAG_NAME } from "./customTagNames";
@@ -30,7 +31,7 @@ export const MarkdownWithPlugins = ({
                 code: CodeBlock,
                 ...components,
             }}
-            remarkPlugins={[remarkDirective, remarkDirectiveRehype, remarkHtml, ...remarkPlugins]}
+            remarkPlugins={[remarkDirective, remarkGfm, remarkDirectiveRehype, remarkHtml, ...remarkPlugins]}
             rehypePlugins={[[rehypeExternalLinks, { target: linkTarget, rel: ["noopener", "noreferrer"] }], rehypeRaw]}
             {...props}
         >

@@ -11,6 +11,7 @@ import { ThreadIdManager } from "./ThreadIdManager";
 export type ChatStreamEventName = "toolExecutionRequest" | "delta" | "stop" | "error" | NonNullable<string>;
 
 type ChatStreamParsedEvent =
+    | { type: "start" }
     | { type: "tool"; name: string; arguments: Record<string, any> }
     | { type: "delta"; responsePart: string }
     | { type: "stop"; threadId: string }
@@ -72,7 +73,10 @@ export async function* initializeChatStream(
     const message = extractMessage(messages, unstable_getMessage());
     if (!message) return;
 
+    yield { type: "start" };
+
     const send = debug ? mockAssitantFetch : httpService.sendChatMessage;
+
     const response = await send(
         {
             threadId: ThreadIdManager.THREAD_ID,

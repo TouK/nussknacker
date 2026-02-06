@@ -25,16 +25,17 @@ export const createModelAdapter = (debug = false): ChatModelAdapter => ({
         const abortSignal = forkSignal(chatModelOptions.abortSignal);
         const chatStream = initializeChatStream({ ...chatModelOptions, abortSignal }, debug);
 
-        yield {
-            content: [],
-            status: { type: "running" },
-        };
-
         let text = "";
         let calls: ToolCallMessagePart[] = [];
 
         for await (const event of chatStream) {
             switch (event.type) {
+                case "start":
+                    yield {
+                        content: [],
+                        status: { type: "running" },
+                    };
+                    break;
                 case "tool":
                     {
                         calls.push({

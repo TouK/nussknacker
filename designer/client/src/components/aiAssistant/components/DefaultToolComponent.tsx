@@ -1,6 +1,6 @@
-import type { ToolCallMessagePartProps } from "@assistant-ui/react";
+import type { ToolCallMessagePartProps, ToolCallMessagePartStatus } from "@assistant-ui/react";
 import { useThreadModelContext } from "@assistant-ui/react";
-import { Button, ButtonGroup, Paper, Stack, Typography } from "@mui/material";
+import { Button, ButtonGroup, Paper, Stack, styled, Typography } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React from "react";
 
@@ -33,21 +33,36 @@ function HumanActionButton({ action, toolCallId, children }: PropsWithChildren<{
     );
 }
 
+const Error = styled(Typography)(({ theme }) => ({ color: theme.palette.error.main }));
+const Placeholder = styled(Typography)(({ theme }) => ({ color: theme.palette.action.disabled }));
+
+function parseError(status: ToolCallMessagePartStatus) {
+    if (status.type === "incomplete" && typeof status.error === "string") {
+        return `Tool execution failed: ${status.error.replace(/^\[string\] /, "")}`;
+    }
+    return "Tool execution failed!";
+}
+
 export function DefaultToolComponent({ status, toolCallId, toolName }: ToolCallMessagePartProps) {
     const action = useToolHumanAction(toolCallId);
     const { tools } = useThreadModelContext();
-    switch (status.type) {
-        case "requires-action":
-        case "running":
-            return action && tools[toolName] ? (
-                <HumanActionButton action={action} toolCallId={toolCallId}>
-                    <Typography>{tools[toolName].description}</Typography>
-                </HumanActionButton>
-            ) : (
-                <Typography sx={(theme) => ({ color: theme.palette.action.disabled })}>waiting for result...</Typography>
-            );
 
-        default:
-            return null;
+    if (status.type === "complete") return null;
+
+    if (status.type === "incomplete" && status.reason === "error") {
+        return <Error>{parseError(status)}</Error>;
     }
+
+    if (status.type === "requires-action" || status.type === "running") {
+        if (!action || !tools[toolName]) {
+            return <Error>{parseError(status)}</Error>;
+        }
+        return (
+            <HumanActionButton action={action} toolCallId={toolCallId}>
+                <Typography>{tools[toolName].description}</Typography>
+            </HumanActionButton>
+        );
+    }
+
+    return <Placeholder>waiting for results...</Placeholder>;
 }
