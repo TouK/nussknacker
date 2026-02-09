@@ -16,6 +16,7 @@ import type { ChatRequest } from "../../components/aiAssistant/ChatRequest";
 import { withoutHackOfEmptyEdges } from "../../components/graph/GraphPartialsInTS/EdgeUtils";
 import type { AdditionalInfo } from "../../components/graph/node-modal/AdditionalInfoBox";
 import type { ExpressionSuggestion } from "../../components/graph/node-modal/editors/expression/ExpressionSuggester";
+import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
 import { extractStickyNotesFromNodes } from "../../components/graph/utils/stickyNotesUtils";
 import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../../components/Labels/types";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
@@ -41,7 +42,7 @@ import type { AuthenticationSettings } from "../../reducers/settings";
 import type { WithId } from "../../types/common";
 import type { Expression, NodeType, PropertiesType } from "../../types/node";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
-import type { ValidationResult } from "../../types/validation";
+import type { ValidationResult, VariableTypes } from "../../types/validation";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "../parametersUtils";
 import type { ProcessCounts, ResultsWithCountsDto } from "../resultsWithCountsDto";
 import type {
@@ -680,6 +681,23 @@ export class HttpService {
                         "notification.error.failedToFetchTestCaseNodeAdditionalVariables",
                         "Failed to fetch test case node additional variables",
                     ),
+                    error,
+                    true,
+                );
+                return null;
+            });
+    }
+
+    generateEnricherMockExpression(
+        scenarioName: string,
+        payload: { variableTypes: VariableTypes; processProperties: PropertiesType; enricher: NodeType },
+    ): Promise<{ enricherMockExpression?: ExpressionObj } | null> {
+        return api
+            .post(`/nodes/${encodeURIComponent(scenarioName)}/testCase/enricherMock`, payload)
+            .then((res) => res.data)
+            .catch((error) => {
+                this.#addError(
+                    i18next.t("notification.error.failedToGenerateEnricherMockExpression", "Failed to generate enricher mock expression"),
                     error,
                     true,
                 );

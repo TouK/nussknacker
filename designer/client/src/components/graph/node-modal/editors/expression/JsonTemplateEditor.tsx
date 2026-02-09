@@ -1,5 +1,4 @@
 import React, { useMemo } from "react";
-import { useTranslation } from "react-i18next";
 
 import { prepareEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
@@ -12,7 +11,6 @@ import { EditorMode, EditorType, ExpressionLang, type ExpressionObj } from "./ty
 
 export const JsonTemplateEditor = prepareEditor<SpelEditorProps>(
     (props) => {
-        const { t } = useTranslation();
         const { expressionObj, rows = 5, ...passProps } = props;
 
         const language = editorsParameters[EditorType.JSON_TEMPLATE_PARAMETER_EDITOR].language;

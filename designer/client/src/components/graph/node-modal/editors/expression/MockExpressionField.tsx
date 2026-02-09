@@ -1,16 +1,16 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 
 import { setTestCaseMock } from "../../../../../actions/nk/testCasesActions";
-import type ProcessUtils from "../../../../../common/ProcessUtils";
 import { getTestCaseMockForNode } from "../../../../../reducers/selectors/testCases";
 import { useAppDispatch, useAppSelector } from "../../../../../store/storeHelpers";
 import type { UIParameter } from "../../../../../types/definition";
 import type { NodeType } from "../../../../../types/node";
-import type { NodeValidationError } from "../../../../../types/validation";
+import type { NodeValidationError, VariableTypes } from "../../../../../types/validation";
 import { NodeTable } from "../../NodeDetailsContent/NodeTable";
 import { useDiffMark } from "../../PathsToMark";
 import { EditableEditor } from "../EditableEditor";
 import type { OnValueChange } from "./Editor";
+import type { ExpressionObj } from "./types";
 import { EditorType } from "./types";
 
 const MOCK_EXPRESSION_IN_NODE_NAME = "mockExpression";
@@ -28,7 +28,7 @@ const UnknownTypingResult = {
 export const MockExpressionParameter: UIParameter = {
     additionalVariables: {},
     branchParam: false,
-    defaultValue: { expression: "", language: "spel" },
+    defaultValue: { expression: "", language: "jsonTemplate" },
     editors: [{ type: EditorType.JSON_TEMPLATE_PARAMETER_EDITOR }, { type: EditorType.SPEL_PARAMETER_EDITOR }],
     label: "",
     name: MOCK_EXPRESSION_PARAMETER_NAME,
@@ -41,15 +41,16 @@ type Props = {
     isEditMode: boolean;
     showValidation: boolean;
     showSwitch: boolean;
-    findAvailableVariables: ReturnType<typeof ProcessUtils.findAvailableVariables>;
+    variableTypes: VariableTypes;
     setNodeDataAt: <T>(propToMutate: string, newValue: T, defaultValue?: T) => void;
     errors: NodeValidationError[];
+    defaultValue: ExpressionObj;
 };
 
 function MockExpressionField(props: Props): React.JSX.Element {
     const dispatch = useAppDispatch();
 
-    const { editedNode, isEditMode, showValidation, showSwitch, findAvailableVariables, errors } = props;
+    const { editedNode, isEditMode, showValidation, showSwitch, variableTypes, errors, defaultValue } = props;
     const mockExpression = useAppSelector((state) => getTestCaseMockForNode(state, editedNode.id));
 
     const editMock: OnValueChange = useCallback(
@@ -61,8 +62,6 @@ function MockExpressionField(props: Props): React.JSX.Element {
 
     const [isMarked] = useDiffMark();
     const readOnly = !isEditMode;
-
-    const variableTypes = useMemo(() => findAvailableVariables(editedNode.id), [findAvailableVariables, editedNode.id]);
 
     return (
         <NodeTable sx={{ flex: 1, m: 0 }}>
@@ -77,6 +76,7 @@ function MockExpressionField(props: Props): React.JSX.Element {
                 variableTypes={variableTypes}
                 onValueChange={editMock}
                 fieldErrors={errors}
+                defaultValue={defaultValue}
             />
         </NodeTable>
     );

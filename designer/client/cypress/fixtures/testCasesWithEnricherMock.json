@@ -1,0 +1,117 @@
+{
+    "metaData": {
+        "id": "test12123",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "parallelism": "1",
+                "checkpointIntervalInSeconds": "",
+                "maxEvents": "",
+                "numberOfThreads": "1",
+                "spillStateToDisk": "true",
+                "environment": "test",
+                "useAsyncInterpretation": ""
+            },
+            "metaDataType": "StreamMetaData",
+            "showDescription": false
+        }
+    },
+    "nodes": [
+        {
+            "id": "Event Generator",
+            "ref": {
+                "typ": "event-generator",
+                "parameters": [
+                    {
+                        "name": "schedule",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT1M')"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "1"
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "expression": {
+                            "language": "jsonTemplate",
+                            "expression": "{\n\t\"sampleField\": \"#{ #UTIL.uuid }\",\n\t\"dateTime\": \"#{ #DATE.now }\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}"
+                        }
+                    },
+                    {
+                        "name": "Event time",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "#DATE.now"
+                        }
+                    },
+                    {
+                        "name": "Max out-of-orderness",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT10S')"
+                        }
+                    }
+                ]
+            },
+            "additionalFields": {
+                "description": "",
+                "layoutData": {
+                    "x": -212,
+                    "y": -52
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "id": "Unionreturnobjectservice",
+            "service": {
+                "id": "unionReturnObjectService",
+                "parameters": []
+            },
+            "output": "unionreturnobjectservice_output",
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": -208,
+                    "y": 98
+                }
+            },
+            "mockExpression": null,
+            "type": "Enricher"
+        },
+        {
+            "id": "Dead End",
+            "ref": {
+                "typ": "dead-end",
+                "parameters": []
+            },
+            "endResult": null,
+            "isDisabled": null,
+            "additionalFields": {
+                "description": "",
+                "layoutData": {
+                    "x": -183,
+                    "y": 294
+                }
+            },
+            "type": "Sink"
+        }
+    ],
+    "additionalBranches": [],
+    "stickyNotes": [],
+    "testCases": {
+        "value": {
+            "id": "f8757b06-6610-4900-90cc-fd3963356e8e",
+            "name": "Test case 1",
+            "inputs": "[{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"c6e5feae-616d-47af-ade5-89f26f9d8d01\\\",\\n    \\\"dateTime\\\": \\\"2026-02-05T08:22:35.756571Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"0e2094ee-82aa-4876-ada8-5d913b9e8d59\\\",\\n    \\\"dateTime\\\": \\\"2026-02-05T08:22:35.777366Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"805d84c1-60ac-40cb-9b78-a629711af5b0\\\",\\n    \\\"dateTime\\\": \\\"2026-02-05T08:22:35.779763Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"65fea0ea-3227-4370-a0c1-16b1b6b83e8a\\\",\\n    \\\"dateTime\\\": \\\"2026-02-05T08:22:35.779939Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"20d0f6ca-8e46-4d94-ac80-cee9b156ffd7\\\",\\n    \\\"dateTime\\\": \\\"2026-02-05T08:22:35.780053Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"05647543-cdfe-47a4-b759-ff8ab74afc50\\\",\\n    \\\"dateTime\\\": \\\"2026-02-05T08:22:35.780137Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"329d5d28-f008-4c67-9c08-7fddc36d49a7\\\",\\n    \\\"dateTime\\\": \\\"2026-02-05T08:22:35.780542Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"66001de3-b4df-4004-aaed-9133ee4bc55e\\\",\\n    \\\"dateTime\\\": \\\"2026-02-05T08:22:35.781512Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"9e70220c-4be7-4e87-a044-d85c2962aabc\\\",\\n    \\\"dateTime\\\": \\\"2026-02-05T08:22:35.781704Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"47d99e2e-de77-462a-ab6a-412a48067573\\\",\\n    \\\"dateTime\\\": \\\"2026-02-05T08:22:35.781931Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"}]",
+            "mocks": {},
+            "assertions": {}
+        }
+    }
+}
