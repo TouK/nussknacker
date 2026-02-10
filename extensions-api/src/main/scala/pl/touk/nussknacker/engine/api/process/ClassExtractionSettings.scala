@@ -204,6 +204,12 @@ object ClassExtractionSettings {
         }
       ),
       ClassMemberPredicate(
+        ExactClassPredicate(classOf[java.math.BigDecimal]),
+        { case m: Method =>
+          m.getName == ToStringMethod && m.getParameterCount == 0
+        }
+      ),
+      ClassMemberPredicate(
         ClassPredicate { case _ => JvmVersionUtil.jvmMajorVersion > 12 },
         { case m: Method =>
           (Class
