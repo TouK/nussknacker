@@ -51,7 +51,7 @@ export const FieldsRow = styled(Row)({
 
     // aligns better for field row, avoids label collision
     "& .MuiTabs-root": {
-        "position-anchor": editorAnchorName,
+        positionAnchor: editorAnchorName,
         position: "absolute",
         top: "calc(anchor(bottom))",
     },
