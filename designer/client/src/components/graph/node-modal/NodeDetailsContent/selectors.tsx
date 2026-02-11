@@ -19,7 +19,7 @@ import { getNodesDetails } from "./getNodeDetails";
 
 const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);
 
-const getComponentsDefinition = createSelector(getProcessDefinitionData, (s) => s.components);
+export const getComponentsDefinition = createSelector(getProcessDefinitionData, (s) => s.components);
 export const getScenarioProperties = createSelector(getProcessDefinitionData, (s) => (s.scenarioProperties || {}) as UiScenarioProperties);
 export const getScenarioPropertiesConfig = createSelector(getScenarioProperties, ({ propertiesConfig = {} as PropertiesConfig }) => {
     //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)

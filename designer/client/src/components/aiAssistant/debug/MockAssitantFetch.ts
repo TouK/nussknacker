@@ -46,9 +46,11 @@ async function* streamMock(request = "abc", threadId = crypto.randomUUID()) {
 
     if (request.startsWith("/")) {
         await delay(500);
+        const match = request.match(/^\/(.*)(\s|$)/);
+        const toolName = match?.[1] || `debug`;
         yield {
             event: "toolExecutionRequest",
-            data: `{ "type": "tool", "name": "debug", "arguments": ${JSON.stringify({ request, response })} }`,
+            data: `{ "type": "tool", "name": "${toolName}", "arguments": ${JSON.stringify({ request, response })} }`,
         };
     }
     await delay(500);

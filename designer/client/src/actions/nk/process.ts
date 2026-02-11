@@ -1,15 +1,22 @@
+import { produce } from "immer";
+import { set, toPath, get } from "lodash";
 import { omit } from "lodash/fp";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 
 import type { TestCapabilities } from "../../common/TestResultUtils";
+import { useFrontendAiTool } from "../../components/aiAssistant/useFrontendAiTool";
 import type { PredefinedActionName, ProcessName, ProcessStateType, ProcessVersionId, Scenario } from "../../components/Process/types";
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import { memoizeByArgsWithTTL } from "../../helpers/memoizeByArgsWithTTL";
 import HttpService from "../../http/HttpService/instance";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
+import { getSavedScenario, getScenario, getScenarioGraph } from "../../reducers/selectors/graph";
+import { useAppDispatch } from "../../store/storeHelpers";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
+import type { ValidationErrors, ValidationResult } from "../../types/validation";
 import type { Action, ThunkAction } from "../reduxTypes";
 import { Initiator, stopLiveData } from "./liveData";
+import { preApplyValidation } from "./preApplyValidation";
 
 export type ScenarioActions =
     | { type: "PENDING_SCENARIO_ACTION"; action: PredefinedActionName }
@@ -30,7 +37,12 @@ export type ScenarioActions =
           scenario: Scenario;
       }
     | { type: "CLEAR_PROCESS" }
-    | { type: "HIDE_RUN_PROCESS_DETAILS" };
+    | { type: "HIDE_RUN_PROCESS_DETAILS" }
+    | {
+          type: "APPLY_GRAPH_CHANGES";
+          validationResult?: ValidationResult;
+          scenarioGraphAfterChange: ScenarioGraph;
+      };
 
 export function fetchProcessToDisplay(processName: ProcessName, versionId?: ProcessVersionId): ThunkAction<Promise<Scenario>> {
     return (dispatch) => {
@@ -103,5 +115,47 @@ export function hideRunProcessDetails(): ThunkAction {
     return (dispatch, getState) => {
         dispatch(stopLiveData(Initiator.button));
         dispatch(hideTestRunDetails());
+    };
+}
+
+export function unsafe_applyScenarioChanges(
+    changes: { path: string; value: string }[],
+): ThunkAction<Promise<{ scenario: ScenarioGraph } | { errors: ValidationErrors } | string>> {
+    return async (dispatch, getState) => {
+        const state = getState();
+        const scenarioBefore = getScenario(state);
+        const scenarioGraph = getScenarioGraph(state);
+
+        let scenarioGraphAfterChange: ScenarioGraph;
+        try {
+            scenarioGraphAfterChange = produce(scenarioGraph, (draft) => {
+                changes.forEach(({ path, value }) => {
+                    try {
+                        set(draft, path, value);
+                    } catch (e) {
+                        throw `invalid path: ${path}`;
+                    }
+                });
+            });
+        } catch (error) {
+            return error;
+        }
+
+        const response = await dispatch(preApplyValidation(scenarioBefore, scenarioGraphAfterChange));
+        const validationResult = response?.data;
+
+        const hasErrors = ["invalidNodes", "processPropertiesErrors", "globalErrors"].some(
+            (key) => validationResult?.errors[key]?.length > 0,
+        );
+
+        if (hasErrors) return validationResult;
+
+        dispatch({
+            type: "APPLY_GRAPH_CHANGES",
+            validationResult,
+            scenarioGraphAfterChange,
+        });
+
+        return { scenario: scenarioGraphAfterChange };
     };
 }

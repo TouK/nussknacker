@@ -13,7 +13,7 @@ export function DebugAiTool() {
         execute: (args) => {
             console.log(args);
             if (Math.random() > 0.6) {
-                throw "random debug failure";
+                throw new Error("random debug failure");
             }
             return { ...args, response: prepareMarkdownForCodeBlock(args.response) };
         },

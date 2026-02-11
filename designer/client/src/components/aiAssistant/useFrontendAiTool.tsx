@@ -4,14 +4,16 @@ import type { z } from "zod";
 import { useCheckPermission } from "./useCheckPermission";
 import { withAbort } from "./withAbort";
 
-type FrontendAiToolOptions<S extends z.ZodObject, R> = {
+type ZodRecordLike = z.ZodRecord | z.ZodObject;
+
+type FrontendAiToolOptions<S extends ZodRecordLike, R> = {
     toolName: string;
     description: string;
     parameters: S;
     execute: (args: z.infer<S>) => R;
 };
 
-export function useFrontendAiTool<S extends z.ZodObject, R>({ toolName, description, parameters, execute }: FrontendAiToolOptions<S, R>) {
+export function useFrontendAiTool<S extends ZodRecordLike, R>({ toolName, description, parameters, execute }: FrontendAiToolOptions<S, R>) {
     const checkPermission = useCheckPermission();
     useAssistantTool<any, any>({
         toolName,
@@ -23,5 +25,13 @@ export function useFrontendAiTool<S extends z.ZodObject, R>({ toolName, descript
                 await checkPermission(toolName, context);
                 return execute(args);
             }),
+        experimental_onSchemaValidationError: () => rejectToolCall("parameters are not schema-compliant"),
     });
+}
+
+export function rejectToolCall(reason: string) {
+    return {
+        status: "rejected",
+        reason,
+    };
 }

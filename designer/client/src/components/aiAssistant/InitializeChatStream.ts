@@ -12,7 +12,7 @@ export type ChatStreamEventName = "toolExecutionRequest" | "delta" | "stop" | "e
 
 type ChatStreamParsedEvent =
     | { type: "start" }
-    | { type: "tool"; name: string; arguments: Record<string, any> }
+    | { type: "tool"; name: string; arguments: Record<string, any>; callId?: string }
     | { type: "delta"; responsePart: string }
     | { type: "stop"; threadId: string }
     | { type: "aborted" }
@@ -29,6 +29,7 @@ const parseEvent: (eventSourceMessage: ChatEventSourceMessage) => ChatStreamPars
             const parsed = JSON.parse(eventSourceMessage.data);
             return {
                 type: "tool",
+                callId: parsed.id,
                 name: parsed.name,
                 arguments: parsed.arguments,
             };

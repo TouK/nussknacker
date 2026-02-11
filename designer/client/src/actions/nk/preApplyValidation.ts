@@ -9,7 +9,7 @@ import type { ThunkAction } from "../reduxTypes";
 export function preApplyValidation(
     scenarioBefore: Scenario,
     scenarioGraph: ScenarioGraph,
-    controller: AbortController,
+    controller?: AbortController,
 ): ThunkAction<Promise<AxiosResponse<ValidationResult>>> {
     return () => {
         return HttpService.validateProcess(scenarioBefore.name, scenarioGraph.properties.name, scenarioGraph, controller);

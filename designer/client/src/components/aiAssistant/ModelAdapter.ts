@@ -1,4 +1,4 @@
-import type { ChatModelAdapter, ChatModelRunResult, ToolCallMessagePart } from "@assistant-ui/react";
+import type { ChatModelAdapter, ChatModelRunResult, ThreadAssistantMessagePart } from "@assistant-ui/react";
 import type { AssistantMessage } from "assistant-stream";
 import { unstable_runPendingTools } from "assistant-stream";
 
@@ -26,13 +26,13 @@ export const createModelAdapter = (debug = false): ChatModelAdapter => ({
         const chatStream = initializeChatStream({ ...chatModelOptions, abortSignal }, debug);
 
         let text = "";
-        let calls: ToolCallMessagePart[] = [];
+        let calls: ThreadAssistantMessagePart[] = [];
 
         for await (const event of chatStream) {
             switch (event.type) {
                 case "start":
                     yield {
-                        content: [],
+                        content: [{ type: "text", text }, ...calls],
                         status: { type: "running" },
                     };
                     break;
@@ -40,7 +40,7 @@ export const createModelAdapter = (debug = false): ChatModelAdapter => ({
                     {
                         calls.push({
                             type: "tool-call",
-                            toolCallId: crypto.randomUUID(),
+                            toolCallId: event.callId || crypto.randomUUID(),
                             toolName: event.name,
                             args: event.arguments,
                             argsText: JSON.stringify(event.arguments),

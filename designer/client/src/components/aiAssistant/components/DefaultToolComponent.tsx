@@ -10,7 +10,7 @@ import { ToolUsePermission } from "../useCheckPermission";
 function HumanActionButton({ action, toolCallId, children }: PropsWithChildren<{ action: string; toolCallId: string }>) {
     if (action === ToolUsePermission.QUESTION) {
         return (
-            <Stack spacing={1} component={Paper} sx={{ padding: 2, justifySelf: "flex-start" }}>
+            <Stack spacing={1} component={Paper} sx={{ padding: 2, marginY: 0.5, justifySelf: "flex-start" }}>
                 {children}
                 <ButtonGroup variant="outlined" size="small">
                     {Object.keys(ToolUsePermission.ANSWER).map((key) => (
@@ -49,14 +49,12 @@ export function DefaultToolComponent({ status, toolCallId, toolName }: ToolCallM
 
     if (status.type === "complete") return null;
 
-    if (status.type === "incomplete" && status.reason === "error") {
+    if ((status.type === "incomplete" && status.reason === "error") || !tools[toolName]) {
         return <Error>{parseError(status)}</Error>;
     }
 
     if (status.type === "requires-action" || status.type === "running") {
-        if (!action || !tools[toolName]) {
-            return <Error>{parseError(status)}</Error>;
-        }
+        if (!action) return null;
         return (
             <HumanActionButton action={action} toolCallId={toolCallId}>
                 <Typography>{tools[toolName].description}</Typography>

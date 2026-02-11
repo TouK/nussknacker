@@ -6,7 +6,7 @@ import { concat, defaultsDeep, flow, isEqual, partition, sortBy } from "lodash";
 import type { StateWithHistory } from "redux-undo";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction } from "redux-undo";
 
-import type { Action, ActionOfType, Reducer } from "../../actions/reduxTypes";
+import type { Action, Reducer } from "../../actions/reduxTypes";
 import ProcessUtils from "../../common/ProcessUtils";
 import { appendUuidToParameters } from "../../components/graph/node-modal/appendUuid";
 import { fixEmptyValues } from "../../components/graph/node-modal/fixEmptyValues";
@@ -15,7 +15,7 @@ import { addStickyNotesToNodes, StickyNoteType } from "../../components/graph/ut
 import type { Scenario } from "../../components/Process/types";
 import type { Edge } from "../../types/edge";
 import type { NodeType } from "../../types/node";
-import type { ProcessDefinitionData } from "../../types/scenarioGraph";
+import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
 import type { ValidationResult } from "../../types/validation";
 import { fromMeta, nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
@@ -59,10 +59,7 @@ const emptyGraphState: GraphState = {
     testing: initialTestingState,
 };
 
-export function updateValidationResult(
-    state: GraphState,
-    action: ActionOfType<"EDIT_NODE" | "EDIT_PROPERTIES" | "VALIDATION_RESULT">,
-): ValidationResult {
+export function updateValidationResult(state: GraphState, action: { validationResult?: ValidationResult }): ValidationResult {
     if (!action.validationResult) {
         return state.scenario.validationResult;
     }
@@ -116,7 +113,10 @@ const appendScenarioNameToProperties = produce((scenario: Scenario) => {
     };
 });
 
-const updateStateAfterEdit = (state: GraphState, action: ActionOfType<"EDIT_NODE" | "EDIT_PROPERTIES">) => {
+const updateStateAfterEdit = (
+    state: GraphState,
+    action: { validationResult?: ValidationResult; scenarioGraphAfterChange: ScenarioGraph },
+) => {
     return produce(state, (draft) => {
         draft.scenario.scenarioGraph = action.scenarioGraphAfterChange;
         draft.scenario.validationResult = updateValidationResult(draft, action);
@@ -206,6 +206,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
             const updateStateAfterNodeIdChange = getUpdateStateAfterNodeIdChange(action.before.id, action.after.id);
             return updateStateAfterNodeIdChange(updateStateAfterEdit(state, action));
         }
+        case "APPLY_GRAPH_CHANGES":
         case "EDIT_PROPERTIES": {
             return updateStateAfterEdit(state, action);
         }
