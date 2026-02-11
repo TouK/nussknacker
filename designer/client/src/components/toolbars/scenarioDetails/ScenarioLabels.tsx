@@ -68,7 +68,9 @@ const AddLabel = ({ onClick, disabled }: AddLabelProps & { disabled?: boolean })
     );
 };
 
-const StyledAutocomplete = styled(Autocomplete)<{ isEdited: boolean }>(({ isEdited, theme }) => ({
+const StyledAutocomplete = styled(Autocomplete, {
+    shouldForwardProp: (propName: string) => !["isEdited"].includes(propName),
+})<{ isEdited: boolean }>(({ isEdited, theme }) => ({
     ".MuiFormControl-root": {
         margin: 0,
         flexDirection: "column",
