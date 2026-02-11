@@ -6,6 +6,7 @@ import { CopyEndpoint, EndpointFieldWrapper } from "./endpointFieldWrapper";
 import { ParameterExpressionField } from "./ParameterExpressionField";
 import { OverrideKeys } from "./parameterHelpers";
 import type { ParametersListProps, ParameterWithIndex } from "./parametersList";
+import { WebSocketUrlFieldWrapper } from "./webSocketUrlFieldWrapper";
 
 export type ParametersListFieldProps = ParametersListProps & {
     paramWithIndex: ParameterWithIndex;
@@ -20,6 +21,7 @@ export const ParametersListField = ({ getListFieldPath, paramWithIndex, ...props
     const FieldWrapper = useMemo(() => {
         if (paramKey === OverrideKeys.SourceEndpoint) return EndpointFieldWrapper;
         if (paramKey === OverrideKeys.SourceDataSample) return DataSampleFieldWrapper;
+        if (paramKey === OverrideKeys.WebSocketUrl) return WebSocketUrlFieldWrapper;
     }, [paramKey]);
 
     const endAdornment = useMemo(() => {

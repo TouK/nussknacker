@@ -1155,9 +1155,13 @@ export class HttpService {
 
     async nodeActions(
         scenarioName: string,
-        actionName: "send-sample-request" | "generate-endpoint",
+        actionName: "send-sample-request" | "generate-endpoint" | "test-ws-forwarder",
         nodeData: NodeType,
-    ): Promise<{ result: { topic: Expression; actionName: "GENERATE_ENDPOINT" } } | { result: { actionName: "SEND_SAMPLE_REQUEST" } }> {
+    ): Promise<
+        | { result: { topic: Expression; actionName: "GENERATE_ENDPOINT" } }
+        | { result: { actionName: "SEND_SAMPLE_REQUEST" } }
+        | { result: { ok: boolean; remoteStatus?: number; message: string; firstMsg?: string; actionName: "WS_FORWARDER_TEST_RESULT" } }
+    > {
         try {
             const response = await api.post(`/custom/nodes/${scenarioName}/actions`, { actionName, nodeData });
             return response.data;
