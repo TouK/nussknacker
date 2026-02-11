@@ -582,6 +582,16 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     kafkaTestUtils       % "it,test"
   )
 
+lazy val awsManagedFlinkDeploymentManager = (project in flink("aws-managed-flink-deployment-manager"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-aws-managed-flink-deployment-manager",
+  )
+  .dependsOn(
+    commonUtils % Provided,
+    testUtils   % Test,
+  )
+
 lazy val flinkMetricsDeferredReporter = (project in flink("metrics-deferred-reporter"))
   .settings(commonSettings)
   .settings(
@@ -2202,6 +2212,7 @@ lazy val modules = List[ProjectReference](
   requestResponseRuntime,
   liteEngineRuntimeApp,
   flinkDeploymentManager,
+  awsManagedFlinkDeploymentManager,
   flinkDevModel,
   flinkDevModelJava,
   flinkTableApiComponents,
