@@ -4,7 +4,8 @@ import z from "zod";
 
 import { unsafe_applyScenarioChanges } from "../../../actions/nk/process";
 import ProcessUtils from "../../../common/ProcessUtils";
-import { getSavedScenario, getScenarioGraph } from "../../../reducers/selectors/graph";
+import { getSavedScenario, getScenario, getScenarioGraph } from "../../../reducers/selectors/graph";
+import { getProcessState } from "../../../reducers/selectors/scenarioState";
 import { useAppDispatch } from "../../../store/storeHelpers";
 import {
     getComponentsDefinition,
@@ -88,10 +89,16 @@ export const ScenarioDataAIToolkit = () => {
 
     useFrontendAiTool({
         toolName: "get_validation_results",
-        description: `not implemented!`,
+        description: `Get scenario problems, validation state and status`,
         parameters: z.object({}),
         execute: () => {
-            throw "not implemented!";
+            return dispatch((_, getState) => {
+                const state = getState();
+                const scenario = getScenario(state);
+                const scenarioState = getProcessState(state);
+                const { errors, validationErrors, validationWarnings, warnings } = ProcessUtils.getValidationResult(scenario);
+                return { errors, validationErrors, validationWarnings, warnings, scenarioState };
+            });
         },
     });
 
