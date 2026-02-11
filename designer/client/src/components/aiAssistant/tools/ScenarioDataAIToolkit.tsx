@@ -1,3 +1,5 @@
+import { Typography } from "@mui/material";
+import React from "react";
 import z from "zod";
 
 import { unsafe_applyScenarioChanges } from "../../../actions/nk/process";
@@ -9,6 +11,7 @@ import {
     getDynamicParameterDefinitions,
     getFindAvailableVariables,
 } from "../../graph/node-modal/NodeDetailsContent/selectors";
+import { DefaultToolComponent } from "../components/DefaultToolComponent";
 import { rejectToolCall, useFrontendAiTool } from "../useFrontendAiTool";
 
 export const ScenarioDataAIToolkit = () => {
@@ -17,6 +20,11 @@ export const ScenarioDataAIToolkit = () => {
     useFrontendAiTool({
         toolName: "get_scenario",
         description: `Get full raw data of opened scenario graph. Returns nodes and edges. Returned data changes frequently.`,
+        render: (props) => (
+            <DefaultToolComponent {...props}>
+                <Typography>Get scenario data</Typography>
+            </DefaultToolComponent>
+        ),
         parameters: z.object({ draft: z.boolean().optional().describe("get draft or saved version without draft changes") }),
         execute: async ({ draft }) => {
             return dispatch((_, getState) => {
@@ -37,6 +45,11 @@ export const ScenarioDataAIToolkit = () => {
     useFrontendAiTool({
         toolName: "change_scenario_graph",
         description: `Replace values in raw data of opened scenario. Multiple validation layers are enforced, including schema validation, value validation, and full JSON integrity checks. If any validation fails, no changes will be applied. You must return a corrected change list that fully complies with all validation rules.`,
+        render: (props) => (
+            <DefaultToolComponent {...props}>
+                <Typography>Change scenario graph</Typography>
+            </DefaultToolComponent>
+        ),
         parameters: z.object({
             changes: z
                 .array(

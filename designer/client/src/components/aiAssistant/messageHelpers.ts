@@ -23,7 +23,7 @@ export function extractMessage(messages: ChatModelRunOptions["messages"], lastAs
                 })
                 .filter(Boolean);
             if (results?.length > 0) {
-                return { text: results.pop() };
+                return { text: results.join("\n") };
             }
         }
         return;

@@ -43,7 +43,7 @@ function parseError(status: ToolCallMessagePartStatus) {
     return "Tool execution failed!";
 }
 
-export function DefaultToolComponent({ status, toolCallId, toolName }: ToolCallMessagePartProps) {
+export function DefaultToolComponent({ status, toolCallId, toolName, children }: PropsWithChildren<ToolCallMessagePartProps>) {
     const action = useToolHumanAction(toolCallId);
     const { tools } = useThreadModelContext();
 
@@ -57,7 +57,7 @@ export function DefaultToolComponent({ status, toolCallId, toolName }: ToolCallM
         if (!action) return null;
         return (
             <HumanActionButton action={action} toolCallId={toolCallId}>
-                <Typography>{tools[toolName].description}</Typography>
+                {children || <Typography>{tools[toolName].description}</Typography>}
             </HumanActionButton>
         );
     }

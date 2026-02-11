@@ -38,9 +38,10 @@ export const createModelAdapter = (debug = false): ChatModelAdapter => ({
                     break;
                 case "tool":
                     {
+                        const toolCallId = event.callId || crypto.randomUUID();
                         calls.push({
                             type: "tool-call",
-                            toolCallId: event.callId || crypto.randomUUID(),
+                            toolCallId,
                             toolName: event.name,
                             args: event.arguments,
                             argsText: JSON.stringify(event.arguments),
@@ -50,18 +51,6 @@ export const createModelAdapter = (debug = false): ChatModelAdapter => ({
                             status: { type: "requires-action", reason: "tool-calls" },
                         };
                         yield message;
-
-                        const assistantMessage = await unstable_runPendingTools(
-                            { ...message, parts: message.content } as AssistantMessage,
-                            chatModelOptions.context.tools,
-                            abortSignal,
-                            (toolCallId, payload) => {
-                                abortSignal.addEventListener("abort", () => resolveHumanAction(toolCallId), { once: true });
-                                return addPendingHumanResolver(toolCallId, typeof payload === "function" ? payload() : payload);
-                            },
-                        );
-                        calls = assistantMessage.parts.map((p) => p.type === "tool-call" && p).filter(Boolean);
-                        yield assistantMessage;
                     }
                     break;
                 case "delta":
@@ -72,8 +61,24 @@ export const createModelAdapter = (debug = false): ChatModelAdapter => ({
                     };
                     break;
                 case "stop":
-                    ThreadIdManager.THREAD_ID = event.threadId;
-                    break;
+                    {
+                        ThreadIdManager.THREAD_ID = event.threadId;
+                        const assistantMessage = await unstable_runPendingTools(
+                            {
+                                status: { type: "requires-action", reason: "tool-calls" },
+                                parts: [{ type: "text", text }, ...calls],
+                            } as AssistantMessage,
+                            chatModelOptions.context.tools,
+                            abortSignal,
+                            (toolCallId, payload) => {
+                                abortSignal.addEventListener("abort", () => resolveHumanAction(toolCallId), { once: true });
+                                return addPendingHumanResolver(toolCallId, typeof payload === "function" ? payload() : payload);
+                            },
+                        );
+                        calls = assistantMessage.parts.map((p) => p.type === "tool-call" && p).filter(Boolean);
+                        yield assistantMessage;
+                    }
+                    return;
                 case "aborted":
                     yield {
                         status: { type: "incomplete", reason: "cancelled" },

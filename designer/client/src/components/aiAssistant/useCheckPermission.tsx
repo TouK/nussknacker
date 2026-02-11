@@ -28,7 +28,7 @@ export function useCheckPermission() {
             const response = await human(ToolUsePermission.QUESTION);
             dispatch(userSettingSet(alwaysExecuteFlag, response === ToolUsePermission.ANSWER.ALWAYS));
 
-            if (response === ToolUsePermission.ANSWER.NO) return Promise.reject("not allowed!");
+            if (response === ToolUsePermission.ANSWER.NO) return Promise.reject("not allowed by user!");
         },
         [dispatch, userSettings],
     );

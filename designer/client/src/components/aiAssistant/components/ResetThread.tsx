@@ -30,8 +30,10 @@ export const ResetThread = () => {
                     onClick={threadReset}
                     sx={{
                         ":focus": { outline: "none" },
-                        padding: 0.25,
-                        margin: 0.25,
+                        paddingY: 0.2,
+                        paddingX: 0.8,
+                        margin: 0,
+                        borderRadius: 0,
                     }}
                 >
                     reset thread
