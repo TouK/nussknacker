@@ -58,7 +58,7 @@ export function ToolboxCommands({ onSelect }: { onSelect: (item: NodeType) => vo
 
     useFrontendAiTool({
         toolName: "get_components",
-        description: `List available component definitions to create new nodes in current scenario. Component definition includes template for node of this type.`,
+        description: `Use this tool to get a list of all available component definitions that can be used to create new nodes in the current scenario. Each component definition includes a template for a node of that type, which you can then use to create a new node.`,
         parameters: z.object({}),
         execute: () => {
             return flatComponents;
@@ -67,10 +67,18 @@ export function ToolboxCommands({ onSelect }: { onSelect: (item: NodeType) => vo
 
     useFrontendAiTool({
         toolName: "add_new_node",
-        description: `Create new node (or sticky note) from available component definition. After adding check if new node really exists, then you can edit values.`,
+        description: `Use this tool to create a new node in the scenario graph. You need to provide a component ID (which can be obtained using another tool that lists components) and a unique name for the new node. After using this tool, you should verify that the node has been added to the graph, for example by using a tool that gets scenario data.`,
         parameters: z.object({
-            componentId: z.string().describe("id of component definition"),
-            nodeName: z.string().describe("unique name/label of created node"),
+            componentId: z
+                .string()
+                .describe(
+                    "The ID of the component definition to use for creating the node. This can be obtained using another tool that lists components.",
+                ),
+            nodeName: z
+                .string()
+                .describe(
+                    "A unique name or label for the newly created node. This name will be used to identify the node in the scenario graph.",
+                ),
         }),
         render: (props) => (
             <DefaultToolComponent {...props}>

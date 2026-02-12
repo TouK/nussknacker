@@ -9,8 +9,12 @@ export const OpenScenarioAiTool = () => {
 
     useFrontendAiTool({
         toolName: "open_scenario",
-        description: `Open scenario`,
-        parameters: z.object({ name: z.string().describe("scenario name") }),
+        description: `Use this tool to open a scenario (process) in the designer. You need to provide the exact name of the scenario to open.`,
+        parameters: z.object({
+            name: z
+                .string()
+                .describe("The exact name of the scenario to open. You can get a list of available scenarios by using another tool."),
+        }),
         execute: ({ name }) => {
             navigate(visualizationUrl(name));
         },

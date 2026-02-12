@@ -20,13 +20,20 @@ export const ScenarioDataAIToolkit = () => {
 
     useFrontendAiTool({
         toolName: "get_scenario",
-        description: `Get full raw data of opened scenario graph. Returns nodes and edges. Returned data changes frequently. You will recive nodes (as flat array, every node has id), edges (as flat array, every edge connects two nodes by id) and scenario properties`,
+        description: `Use this tool to get the raw data of the currently opened scenario graph. It returns the nodes, edges, and properties of the scenario. The data is returned as a JSON object, with nodes and edges as flat arrays. Each node has a unique ID, and each edge connects two nodes by their IDs. This data can change frequently as the user edits the scenario.`,
         render: (props) => (
             <DefaultToolComponent {...props}>
                 <Typography>Get scenario data</Typography>
             </DefaultToolComponent>
         ),
-        parameters: z.object({ draft: z.boolean().optional().describe("get draft or saved version without draft changes") }),
+        parameters: z.object({
+            draft: z
+                .boolean()
+                .optional()
+                .describe(
+                    "Set to true to get the current draft of the scenario, including any unsaved changes. Set to false to get the last saved version of the scenario.",
+                ),
+        }),
         execute: async ({ draft }) => {
             return dispatch((_, getState) => {
                 const state = getState();
@@ -45,7 +52,7 @@ export const ScenarioDataAIToolkit = () => {
 
     useFrontendAiTool({
         toolName: "change_scenario_values",
-        description: `Replace values in raw data of opened scenario. Multiple validation layers are enforced, including schema validation, value validation, and full JSON integrity checks. If any validation fails, no changes will be applied. You must return a corrected change list that fully complies with all validation rules`,
+        description: `Use this tool to modify the raw data of the currently opened scenario. This tool is powerful but requires careful use. It applies changes by replacing values at specified paths in the scenario's JSON data. The tool enforces multiple validation layers, including schema validation, value validation, and JSON integrity checks. If any validation fails, no changes will be applied. You must provide a list of changes that fully complies with all validation rules.`,
         render: (props) => (
             <DefaultToolComponent {...props}>
                 <Typography>Change scenario graph</Typography>
@@ -59,19 +66,17 @@ export const ScenarioDataAIToolkit = () => {
                             path: z
                                 .string()
                                 .describe(
-                                    "Dot-notation path to the modified field inside the original JSON. Use . for objects and [index:number] for array elements (e.g., edges[2].from). NO SPEL HERE! Be extremely carefull with node indexes - count twice to match right",
+                                    `A dot-notation path to the field to be modified within the scenario's JSON data. Use '.' for nested objects and '[index]' for array elements (e.g., 'nodes[2].expression.expression'). The index in array elements MUST be a number, not an expression (like SpEL). This path must be precise. Be extra careful with array indexes to ensure you are modifying the correct element.`,
                                 ),
                             value: z
                                 // TODO: more types or any on BE
                                 .string()
-                                .describe(
-                                    "The new value that should replace the value at the specified path. Must be the final value after modification.",
-                                ),
+                                .describe(`The new value to be set at the specified path. This must be the final, serialized value.`),
                         })
-                        .describe("Represents a single value modification in raw data of opened scenario."),
+                        .describe(`Represents a single, atomic modification to the raw data of the currently opened scenario.`),
                 )
                 .describe(
-                    "Each array item must represent exactly one field change. Do not include duplicate paths. Do not include unchanged values. Split changes to multiple atomic end-value edits.",
+                    `An array of change objects. Each object must represent exactly one field modification. Do not include duplicate paths or unchanged values. It is recommended to split complex modifications into multiple, atomic, end-value edits.`,
                 ),
         }),
         execute: async ({ changes }) => {
@@ -89,7 +94,7 @@ export const ScenarioDataAIToolkit = () => {
 
     useFrontendAiTool({
         toolName: "get_validation_results",
-        description: `Get scenario problems, validation state and status`,
+        description: `Use this tool to get the current validation status of the scenario. It returns a list of errors, warnings, and other validation problems. It also provides the overall scenario state, which can be useful for understanding if the scenario is ready for deployment.`,
         parameters: z.object({}),
         execute: () => {
             return dispatch((_, getState) => {
