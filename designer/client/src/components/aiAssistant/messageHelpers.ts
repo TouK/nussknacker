@@ -21,7 +21,9 @@ export function extractMessage(messages: ChatModelRunOptions["messages"], lastAs
                     if (c.type !== "tool-call") return null;
                     if (c.isError) return null;
                     if (EMPTY_RESPONSES.includes(c.result)) return null;
-                    return JSON.stringify({ callId: c.toolCallId, result: c.result });
+                    if (responses.has(c.toolCallId)) return null;
+                    responses.add(c.toolCallId);
+                    return JSON.stringify({ toolCallId: c.toolCallId, result: c.result });
                 })
                 .filter(Boolean);
             if (results?.length > 0) {
