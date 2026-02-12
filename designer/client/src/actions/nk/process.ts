@@ -137,25 +137,25 @@ export function unsafe_applyScenarioChanges(
                     }
                 });
             });
+
+            const response = await dispatch(preApplyValidation(scenarioBefore, scenarioGraphAfterChange));
+            const validationResult = response?.data;
+
+            const hasErrors =
+                ["invalidNodes", "processPropertiesErrors", "globalErrors"].some((key) => validationResult?.errors[key]?.length > 0) ||
+                typeof validationResult === "string";
+
+            if (hasErrors) return validationResult;
+
+            dispatch({
+                type: "APPLY_GRAPH_CHANGES",
+                validationResult,
+                scenarioGraphAfterChange,
+            });
+
+            return { scenario: scenarioGraphAfterChange };
         } catch (error) {
-            return error;
+            return error?.message || error;
         }
-
-        const response = await dispatch(preApplyValidation(scenarioBefore, scenarioGraphAfterChange));
-        const validationResult = response?.data;
-
-        const hasErrors =
-            ["invalidNodes", "processPropertiesErrors", "globalErrors"].some((key) => validationResult?.errors[key]?.length > 0) ||
-            typeof validationResult?.errors === "string";
-
-        if (hasErrors) return validationResult;
-
-        dispatch({
-            type: "APPLY_GRAPH_CHANGES",
-            validationResult,
-            scenarioGraphAfterChange,
-        });
-
-        return { scenario: scenarioGraphAfterChange };
     };
 }

@@ -9,6 +9,8 @@ function getLastUserMessage(messages: readonly ThreadMessage[]) {
     return userMessages[userMessages.length - 1];
 }
 
+const responses = new Set();
+
 const EMPTY_RESPONSES = [undefined, null, ""].map((v) => ToolResponse.toResponse(v).result);
 
 export function extractMessage(messages: ChatModelRunOptions["messages"], lastAssistantMessage?: ThreadMessage): ChatRequest["message"] {

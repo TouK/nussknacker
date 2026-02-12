@@ -12,6 +12,10 @@ export function preApplyValidation(
     controller?: AbortController,
 ): ThunkAction<Promise<AxiosResponse<ValidationResult>>> {
     return () => {
-        return HttpService.validateProcess(scenarioBefore.name, scenarioGraph.properties.name, scenarioGraph, controller);
+        try {
+            return HttpService.validateProcess(scenarioBefore.name, scenarioGraph.properties.name, scenarioGraph, controller);
+        } catch (error) {
+            throw error?.response?.data || error.response || error.message;
+        }
     };
 }

@@ -20,7 +20,7 @@ export const ScenarioDataAIToolkit = () => {
 
     useFrontendAiTool({
         toolName: "get_scenario",
-        description: `Get full raw data of opened scenario graph. Returns nodes and edges. Returned data changes frequently.`,
+        description: `Get full raw data of opened scenario graph. Returns nodes and edges. Returned data changes frequently. You will recive nodes (as flat array, every node has id), edges (as flat array, every edge connects two nodes by id) and scenario properties`,
         render: (props) => (
             <DefaultToolComponent {...props}>
                 <Typography>Get scenario data</Typography>
@@ -31,13 +31,13 @@ export const ScenarioDataAIToolkit = () => {
             return dispatch((_, getState) => {
                 const state = getState();
                 if (draft) {
-                    const { nodes, edges } = getScenarioGraph(state);
-                    return { nodes, edges };
+                    const { nodes, edges, properties } = getScenarioGraph(state);
+                    return { nodes, edges, properties };
                 } else {
                     const {
-                        scenarioGraph: { nodes, edges },
+                        scenarioGraph: { nodes, edges, properties },
                     } = getSavedScenario(state);
-                    return { nodes, edges };
+                    return { nodes, edges, properties };
                 }
             });
         },
@@ -45,7 +45,7 @@ export const ScenarioDataAIToolkit = () => {
 
     useFrontendAiTool({
         toolName: "change_scenario_values",
-        description: `Replace values in raw data of opened scenario. Multiple validation layers are enforced, including schema validation, value validation, and full JSON integrity checks. If any validation fails, no changes will be applied. You must return a corrected change list that fully complies with all validation rules.`,
+        description: `Replace values in raw data of opened scenario. Multiple validation layers are enforced, including schema validation, value validation, and full JSON integrity checks. If any validation fails, no changes will be applied. You must return a corrected change list that fully complies with all validation rules`,
         render: (props) => (
             <DefaultToolComponent {...props}>
                 <Typography>Change scenario graph</Typography>
@@ -59,7 +59,7 @@ export const ScenarioDataAIToolkit = () => {
                             path: z
                                 .string()
                                 .describe(
-                                    "Dot-notation path to the modified field inside the original JSON. Use . for objects and [index] for array elements (e.g., edges[2].from).",
+                                    "Dot-notation path to the modified field inside the original JSON. Use . for objects and [index:number] for array elements (e.g., edges[2].from). NO SPEL HERE! Be extremely carefull with node indexes - count twice to match right",
                                 ),
                             value: z
                                 // TODO: more types or any on BE

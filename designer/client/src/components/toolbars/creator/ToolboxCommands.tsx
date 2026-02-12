@@ -58,7 +58,7 @@ export function ToolboxCommands({ onSelect }: { onSelect: (item: NodeType) => vo
 
     useFrontendAiTool({
         toolName: "get_components",
-        description: `List available component definitions to create new nodes`,
+        description: `List available component definitions to create new nodes in current scenario. Component definition includes template for node of this type.`,
         parameters: z.object({}),
         execute: () => {
             return flatComponents;
@@ -67,7 +67,7 @@ export function ToolboxCommands({ onSelect }: { onSelect: (item: NodeType) => vo
 
     useFrontendAiTool({
         toolName: "add_new_node",
-        description: `Create new node from available component definition. After adding check if new node really exists, then you can edit values.`,
+        description: `Create new node (or sticky note) from available component definition. After adding check if new node really exists, then you can edit values.`,
         parameters: z.object({
             componentId: z.string().describe("id of component definition"),
             nodeName: z.string().describe("unique name/label of created node"),
