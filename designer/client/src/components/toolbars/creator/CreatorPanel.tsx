@@ -87,8 +87,6 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
         [dispatch, isOpened, side, toggleCollapse],
     );
 
-    const { componentGroups } = useAppSelector(getProcessDefinitionData);
-
     const selectHandler = useCallback(
         (node?: NodeType, point?: g.PlainPoint, currentNode?: NodeType, currentEdge?: Edge) => {
             const offset = point || intendedCoords.current;
@@ -133,7 +131,6 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
             <ToolBox
                 textFilter={textFilter}
                 filters={filters}
-                data={componentGroups}
                 addGroupLabelElement={({ name }) => (
                     <AddGroupElement
                         url={additionalParams?.addGroupElement}
@@ -154,6 +151,7 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
                     />
                 )}
                 toolSelect={{
+                    generic: selectHandler,
                     onClick: (item) => {
                         if (!isDynamic(side)) return;
                         selectHandler(item);
