@@ -2,7 +2,6 @@ import type { ChatModelAdapter, ChatModelRunResult, ThreadAssistantMessagePart }
 import type { AssistantMessage } from "assistant-stream";
 import { unstable_runPendingTools } from "assistant-stream";
 
-import { isDev, isProd } from "../../devHelpers";
 import { initializeChatStream } from "./InitializeChatStream";
 import { addPendingHumanResolver, resolveHumanAction } from "./PendingHumanResolvers";
 import { ThreadIdManager } from "./ThreadIdManager";
