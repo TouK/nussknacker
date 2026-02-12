@@ -34,7 +34,7 @@ export function addStickyNotesToNodes(data: Scenario): Scenario {
 }
 
 export function extractStickyNotesFromNodes(graph: ScenarioGraph): ScenarioGraph {
-    const [stickyNotes, nodes] = partition(graph.nodes, (node) => node.type === StickyNoteType);
+    const [stickyNotes, nodes] = partition(graph.nodes, (node) => node?.type === StickyNoteType);
     return {
         ...graph,
         nodes: nodes,

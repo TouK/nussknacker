@@ -144,9 +144,9 @@ export function unsafe_applyScenarioChanges(
         const response = await dispatch(preApplyValidation(scenarioBefore, scenarioGraphAfterChange));
         const validationResult = response?.data;
 
-        const hasErrors = ["invalidNodes", "processPropertiesErrors", "globalErrors"].some(
-            (key) => validationResult?.errors[key]?.length > 0,
-        );
+        const hasErrors =
+            ["invalidNodes", "processPropertiesErrors", "globalErrors"].some((key) => validationResult?.errors[key]?.length > 0) ||
+            typeof validationResult?.errors === "string";
 
         if (hasErrors) return validationResult;
 

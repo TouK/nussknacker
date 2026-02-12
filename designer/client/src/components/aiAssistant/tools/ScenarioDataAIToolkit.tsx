@@ -44,7 +44,7 @@ export const ScenarioDataAIToolkit = () => {
     });
 
     useFrontendAiTool({
-        toolName: "change_scenario_graph",
+        toolName: "change_scenario_values",
         description: `Replace values in raw data of opened scenario. Multiple validation layers are enforced, including schema validation, value validation, and full JSON integrity checks. If any validation fails, no changes will be applied. You must return a corrected change list that fully complies with all validation rules.`,
         render: (props) => (
             <DefaultToolComponent {...props}>
@@ -59,7 +59,7 @@ export const ScenarioDataAIToolkit = () => {
                             path: z
                                 .string()
                                 .describe(
-                                    "Dot-notation path to the modified field inside the original JSON. Use . for objects and [index] for array elements (e.g., a.b[0].c).",
+                                    "Dot-notation path to the modified field inside the original JSON. Use . for objects and [index] for array elements (e.g., edges[2].from).",
                                 ),
                             value: z
                                 // TODO: more types or any on BE
@@ -71,7 +71,7 @@ export const ScenarioDataAIToolkit = () => {
                         .describe("Represents a single value modification in raw data of opened scenario."),
                 )
                 .describe(
-                    "Each array item must represent exactly one field change. Do not include duplicate paths. Do not include unchanged values.",
+                    "Each array item must represent exactly one field change. Do not include duplicate paths. Do not include unchanged values. Split changes to multiple atomic end-value edits.",
                 ),
         }),
         execute: async ({ changes }) => {
@@ -102,42 +102,28 @@ export const ScenarioDataAIToolkit = () => {
         },
     });
 
-    useFrontendAiTool({
-        toolName: "get_components",
-        description: `not implemented!`,
-        parameters: z.object({}),
-        execute: () => {
-            throw "not implemented!";
-        },
-    });
-
-    useFrontendAiTool({
-        toolName: "add_new_node",
-        description: `not implemented!`,
-        parameters: z.object({}),
-        execute: () => {
-            throw "not implemented!";
-        },
-    });
-
-    useFrontendAiTool({
-        toolName: "get_node_context",
-        description: `Get variables context and definitons available in node fields`,
-        parameters: z.object({
-            nodeId: z.string().describe("id/name of edited node"),
-        }),
-        execute: async ({ nodeId }) => {
-            return dispatch((_, getState) => {
-                const state = getState();
-                const before = getScenarioGraph(state)?.nodes.find((n) => n.id === nodeId);
-                const dynamicParameterDefinitions = getDynamicParameterDefinitions(state, before);
-                const availableVariables = getFindAvailableVariables(state)?.(before.id);
-                const componentsDefinition = getComponentsDefinition(state);
-                const componentDefinition = ProcessUtils.extractComponentDefinition(before, componentsDefinition);
-                return { dynamicParameterDefinitions, componentDefinition, availableVariables };
-            });
-        },
-    });
+    // TODO: useless for now
+    // useFrontendAiTool({
+    //     toolName: "get_node_context",
+    //     description: `Get variables context and definitons available in node fields`,
+    //     parameters: z.object({
+    //         nodeId: z.string().describe("id/name of edited node"),
+    //     }),
+    //     execute: async ({ nodeId }) => {
+    //         return dispatch((_, getState) => {
+    //             const state = getState();
+    //
+    //             const before = getScenarioGraph(state)?.nodes.find((n) => n.id === nodeId);
+    //             if (!before) return rejectToolCall("no such node!");
+    //
+    //             const dynamicParameterDefinitions = getDynamicParameterDefinitions(state, before);
+    //             const availableVariables = getFindAvailableVariables(state)?.(before.id);
+    //             const componentsDefinition = getComponentsDefinition(state);
+    //             const componentDefinition = ProcessUtils.extractComponentDefinition(before, componentsDefinition);
+    //             return { dynamicParameterDefinitions, componentDefinition, availableVariables };
+    //         });
+    //     },
+    // });
 
     return null;
 };
