@@ -1,10 +1,12 @@
 import { useAssistantApi, useAssistantState } from "@assistant-ui/react";
 import { Box, Button, Slide } from "@mui/material";
 import React, { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
 import { ThreadIdManager } from "../ThreadIdManager";
 
 export const ResetThread = () => {
+    const { t } = useTranslation();
     const api = useAssistantApi();
     const messageCount = useAssistantState(({ thread }) => thread.messages.length);
 
@@ -36,7 +38,7 @@ export const ResetThread = () => {
                         borderRadius: 0,
                     }}
                 >
-                    reset thread
+                    {t("aiAssistant.resetThread", "reset thread")}
                 </Button>
             </Box>
         </Slide>

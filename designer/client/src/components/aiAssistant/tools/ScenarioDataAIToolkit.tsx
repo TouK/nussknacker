@@ -1,5 +1,6 @@
 import { Typography } from "@mui/material";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import z from "zod";
 
 import { unsafe_applyScenarioChanges } from "../../../actions/nk/process";
@@ -12,13 +13,14 @@ import { rejectToolCall, useFrontendAiTool } from "../useFrontendAiTool";
 
 export const ScenarioDataAIToolkit = () => {
     const dispatch = useAppDispatch();
+    const { t } = useTranslation();
 
     useFrontendAiTool({
         toolName: "get_scenario",
         description: `Returns the raw JSON data of the currently opened scenario. The response contains 'nodes' array, 'edges' array, and 'properties' object. Each node has an 'id' field. IMPORTANT: Always check the actual array length in the response before using array indexes - do not assume or estimate array sizes.`,
         render: (props) => (
             <DefaultToolComponent {...props}>
-                <Typography>Get scenario data</Typography>
+                <Typography>{t("aiAssistant.tools.getScenarioData", "Get scenario data")}</Typography>
             </DefaultToolComponent>
         ),
         parameters: z.object({
@@ -48,7 +50,7 @@ export const ScenarioDataAIToolkit = () => {
         description: `Modifies the currently opened scenario by replacing values at specified paths. You can target specific nodes using nodeId or use full paths. BEFORE using this tool, you MUST call get_scenario to read the current data and count array lengths. All changes are validated - if any change fails, none will be applied.`,
         render: (props) => (
             <DefaultToolComponent {...props}>
-                <Typography>Change scenario graph</Typography>
+                <Typography>{t("aiAssistant.tools.changeScenarioGraph", "Change scenario graph")}</Typography>
             </DefaultToolComponent>
         ),
         parameters: z.object({
@@ -106,29 +108,6 @@ export const ScenarioDataAIToolkit = () => {
             });
         },
     });
-
-    // TODO: useless for now
-    // useFrontendAiTool({
-    //     toolName: "get_node_context",
-    //     description: `Get variables context and definitons available in node fields`,
-    //     parameters: z.object({
-    //         nodeId: z.string().describe("id/name of edited node"),
-    //     }),
-    //     execute: async ({ nodeId }) => {
-    //         return dispatch((_, getState) => {
-    //             const state = getState();
-    //
-    //             const before = getScenarioGraph(state)?.nodes.find((n) => n.id === nodeId);
-    //             if (!before) return rejectToolCall("no such node!");
-    //
-    //             const dynamicParameterDefinitions = getDynamicParameterDefinitions(state, before);
-    //             const availableVariables = getFindAvailableVariables(state)?.(before.id);
-    //             const componentsDefinition = getComponentsDefinition(state);
-    //             const componentDefinition = ProcessUtils.extractComponentDefinition(before, componentsDefinition);
-    //             return { dynamicParameterDefinitions, componentDefinition, availableVariables };
-    //         });
-    //     },
-    // });
 
     return null;
 };
