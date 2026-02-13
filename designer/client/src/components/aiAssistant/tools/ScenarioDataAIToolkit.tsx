@@ -20,7 +20,7 @@ export const ScenarioDataAIToolkit = () => {
 
     useFrontendAiTool({
         toolName: "get_scenario",
-        description: `Use this tool to get the raw data of the currently opened scenario graph. It returns the nodes, edges, and properties of the scenario. The data is returned as a JSON object, with nodes and edges as flat arrays. Each node has a unique ID, and each edge connects two nodes by their IDs. This data can change frequently as the user edits the scenario. CRITICAL: When using this data to modify the scenario, pay close attention to array indexes (e.g., in the 'nodes' array). Always verify the array length before accessing an index to avoid errors.`,
+        description: `Use this tool to get the raw data of the currently opened scenario graph. It returns the nodes, edges, and properties of the scenario. The data is returned as a JSON object, with nodes and edges as flat arrays. Each node in the array is an object characterized by a unique 'id' (string) and a 'type' (string) and each edge connects two nodes by their IDs. This data can change frequently as the user edits the scenario. CRITICAL: When using this data to modify the scenario, pay close attention to array indexes (e.g., in the 'nodes' array). Always verify the array length before accessing an index to avoid errors.`,
         render: (props) => (
             <DefaultToolComponent {...props}>
                 <Typography>Get scenario data</Typography>
@@ -52,7 +52,7 @@ export const ScenarioDataAIToolkit = () => {
 
     useFrontendAiTool({
         toolName: "change_scenario_values",
-        description: `Use this tool to modify the raw data of the currently opened scenario. This tool is powerful but requires careful use. It applies changes by replacing values at specified paths in the scenario's JSON data. The tool enforces multiple validation layers, including schema validation, value validation, and JSON integrity checks. If any validation fails, no changes will be applied. You must provide a list of changes that fully complies with all validation rules.`,
+        description: `Use this tool to modify the raw data of the currently opened scenario. This tool is powerful but requires careful use. It applies changes by replacing values at specified paths in the scenario's JSON data. The tool enforces multiple validation layers, including schema validation, value validation, and JSON integrity checks. If any validation fails, no changes will be applied. You must provide a list of changes that fully complies with all validation rules. IMPORTANT: If this tool returns an error, it typically indicates an issue with the change itself, most often an incorrect 'path' in one of the change objects.`,
         render: (props) => (
             <DefaultToolComponent {...props}>
                 <Typography>Change scenario graph</Typography>
