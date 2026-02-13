@@ -20,7 +20,7 @@ export const ScenarioDataAIToolkit = () => {
 
     useFrontendAiTool({
         toolName: "get_scenario",
-        description: `Use this tool to get the raw data of the currently opened scenario graph. It returns the nodes, edges, and properties of the scenario. The data is returned as a JSON object, with nodes and edges as flat arrays. Each node has a unique ID, and each edge connects two nodes by their IDs. This data can change frequently as the user edits the scenario.`,
+        description: `Use this tool to get the raw data of the currently opened scenario graph. It returns the nodes, edges, and properties of the scenario. The data is returned as a JSON object, with nodes and edges as flat arrays. Each node has a unique ID, and each edge connects two nodes by their IDs. This data can change frequently as the user edits the scenario. CRITICAL: When using this data to modify the scenario, pay close attention to array indexes (e.g., in the 'nodes' array). Always verify the array length before accessing an index to avoid errors.`,
         render: (props) => (
             <DefaultToolComponent {...props}>
                 <Typography>Get scenario data</Typography>
@@ -66,7 +66,7 @@ export const ScenarioDataAIToolkit = () => {
                             path: z
                                 .string()
                                 .describe(
-                                    `A dot-notation path to the field to be modified within the scenario's JSON data. Use '.' for nested objects and '[index]' for array elements (e.g., 'nodes[2].expression.expression'). The index in array elements MUST be a number, not an expression (like SpEL). This path must be precise. Be extra careful with array indexes to ensure you are modifying the correct element.`,
+                                    `A dot-notation path to the field to be modified within the scenario's JSON data. Use '.' for nested objects and '[index]' for array elements (e.g., 'nodes[2].expression.expression'). The index in array elements MUST be a number, not an expression (like SpEL). Before using an index for an array like 'nodes', ALWAYS confirm the number of elements in that array to prevent out-of-bounds errors. For example, if 'nodes' has 3 elements, the valid indexes are 0, 1, and 2.`,
                                 ),
                             value: z
                                 // TODO: more types or any on BE

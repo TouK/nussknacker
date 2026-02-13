@@ -67,7 +67,7 @@ export function ToolboxCommands({ onSelect }: { onSelect: (item: NodeType) => vo
 
     useFrontendAiTool({
         toolName: "add_new_node",
-        description: `Use this tool to create a new node in the scenario graph. You need to provide a component ID (which can be obtained using another tool that lists components) and a unique name for the new node. After using this tool, you should verify that the node has been added to the graph, for example by using a tool that gets scenario data.`,
+        description: `Use this tool to create a new node (including sticky notes) in the scenario graph. You need to provide a component ID (which can be obtained using another tool that lists components) and a unique name for the new node. After using this tool, you should verify that the node has been added to the graph, for example by using a tool that gets scenario data. IMPORTANT: Adding a node will append it to the end of the 'nodes' array and may change its length, affecting subsequent indexing.`,
         parameters: z.object({
             componentId: z
                 .string()
