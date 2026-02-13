@@ -1,17 +1,15 @@
 import { produce } from "immer";
-import { set, toPath, get } from "lodash";
+import { set } from "lodash";
 import { omit } from "lodash/fp";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 
 import type { TestCapabilities } from "../../common/TestResultUtils";
-import { useFrontendAiTool } from "../../components/aiAssistant/useFrontendAiTool";
 import type { PredefinedActionName, ProcessName, ProcessStateType, ProcessVersionId, Scenario } from "../../components/Process/types";
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import { memoizeByArgsWithTTL } from "../../helpers/memoizeByArgsWithTTL";
 import HttpService from "../../http/HttpService/instance";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
-import { getSavedScenario, getScenario, getScenarioGraph } from "../../reducers/selectors/graph";
-import { useAppDispatch } from "../../store/storeHelpers";
+import { getScenario, getScenarioGraph } from "../../reducers/selectors/graph";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
 import type { ValidationErrors, ValidationResult } from "../../types/validation";
 import type { Action, ThunkAction } from "../reduxTypes";
@@ -127,18 +125,20 @@ export function unsafe_applyScenarioChanges(
         const scenarioGraph = getScenarioGraph(state);
 
         try {
+            const processedChanges = changes.map(({ nodeId, path, value }) => {
+                if (!nodeId) return { path, value };
+
+                const nodeIndex = scenarioGraph.nodes.findIndex((n) => n.id === nodeId);
+                if (nodeIndex === -1) {
+                    throw `invalid nodeId: ${nodeId}`;
+                }
+
+                return { path: `nodes[${nodeIndex}].${path}`, value };
+            });
             const scenarioGraphAfterChange = produce(scenarioGraph, (draft) => {
-                changes.forEach(({ nodeId, path, value }) => {
-                    let processedPath = path;
-                    if (nodeId) {
-                        const nodeIndex = scenarioGraph.nodes.findIndex((n) => n.id === nodeId);
-                        if (nodeIndex === -1) {
-                            throw `invalid nodeId: ${nodeId}`;
-                        }
-                        processedPath = `nodes[${nodeIndex}].${path}`;
-                    }
+                processedChanges.forEach(({ path, value }) => {
                     try {
-                        set(draft, processedPath, value);
+                        set(draft, path, value);
                     } catch (e) {
                         throw `invalid path: ${path}`;
                     }

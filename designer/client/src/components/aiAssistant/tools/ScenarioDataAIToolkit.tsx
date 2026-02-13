@@ -47,7 +47,7 @@ export const ScenarioDataAIToolkit = () => {
 
     useFrontendAiTool({
         toolName: "change_scenario_values",
-        description: `Modifies the currently opened scenario by replacing values at specified paths. You can target specific nodes using nodeId or use full paths. BEFORE using this tool, you MUST call get_scenario to read the current data and count array lengths. All changes are validated - if any change fails, none will be applied.`,
+        description: `Modifies scenario by replacing values at paths. Use nodeId for node-relative paths or full paths with indexes. MUST call get_scenario first to count array lengths. CRITICAL ATOMIC BEHAVIOR: If ANY change fails (invalid path/nodeId/value), ENTIRE batch is rejected and NO changes apply. On retry, resend ALL changes, not just the fixed one. Changes apply sequentially in array order.`,
         render: (props) => (
             <DefaultToolComponent {...props}>
                 <Typography>{t("aiAssistant.tools.changeScenarioGraph", "Change scenario graph")}</Typography>
@@ -58,17 +58,16 @@ export const ScenarioDataAIToolkit = () => {
                 .array(
                     z
                         .object({
-                            nodeId: z.string().optional().describe("if this is specified path should root from node with this id"),
+                            nodeId: z
+                                .string()
+                                .optional()
+                                .describe(
+                                    "Makes path relative to this node. CRITICAL: ALL nodeIds resolved to indexes BEFORE changes apply, using current state. When renaming node: ALL changes targeting it MUST use OLD id (new id doesn't exist during resolution). Cannot mix old/new ids in same batch.",
+                                ),
                             path: z
                                 .string()
                                 .describe(
-                                    [
-                                        `Dot-notation path with numeric array indexes.`,
-                                        `If nodeId is provided, path is relative to that node (e.g., 'value' or 'expression.expression').`,
-                                        `If nodeId is NOT provided, use full path with array indexes (e.g., 'nodes[0].value', 'properties.name').`,
-                                        `WRONG: 'nodes[#nodeId].value', 'nodes[someExpression].value', 'nodes.0.value'.`,
-                                        `Array indexes must be plain integers. Count items in get_scenario response to determine valid indexes.`,
-                                    ].join(" "),
+                                    "Dot-notation with integer indexes. With nodeId: relative path like 'value', 'expression.expression', 'id'. Without nodeId: full path like 'nodes[0].value', 'edges[2].from'. Count array lengths in get_scenario response. When renaming node: update ALL referencing edges in SAME batch with NEW id value, or entire batch fails.",
                                 ),
                             value: z
                                 // TODO: more types or any on BE
@@ -79,7 +78,9 @@ export const ScenarioDataAIToolkit = () => {
                         })
                         .describe(`A single field modification.`),
                 )
-                .describe(`List of changes to apply atomically. No duplicate paths, no unchanged values.`),
+                .describe(
+                    "Array of changes applied atomically. No duplicate paths. When renaming node: use OLD id in nodeId param for all changes to that node, use NEW id as value in edge paths like 'edges[i].from'.",
+                ),
         }),
         execute: async ({ changes }) => {
             const result = await dispatch(unsafe_applyScenarioChanges(changes));
