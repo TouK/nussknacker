@@ -256,7 +256,7 @@ jobs:
           PROJECT_ROOT: ${{ github.workspace }}
         with:
           cluster-name: "k3s-default"
-          k3d-version: "v5.6.0"
+          k3d-version: "v5.8.3"
           args: >-
             --config=.k3d/single-cluster.yml
             --trace
