@@ -3,7 +3,7 @@ import { ToolResponse } from "assistant-stream";
 import { mapValues, omit } from "lodash";
 
 import type { ChatRequest } from "./ChatRequest";
-import { ThreadIdManager } from "./ThreadIdManager";
+import { wasToolResponseConsumed } from "./ThreadIdManager";
 
 function getLastUserMessage(messages: readonly ThreadMessage[]) {
     const userMessages = messages.filter((m) => m.role === "user");
@@ -20,7 +20,7 @@ export function extractMessage(messages: ChatModelRunOptions["messages"], lastAs
                     if (c.type !== "tool-call") return null;
                     if (c.isError) return null;
                     if (EMPTY_RESPONSES.includes(c.result)) return null;
-                    if (ThreadIdManager.wasToolResponseConsumed(c.toolCallId)) return null;
+                    if (wasToolResponseConsumed(c.toolCallId)) return null;
                     return JSON.stringify({ toolCallId: c.toolCallId, result: c.result });
                 })
                 .filter(Boolean);

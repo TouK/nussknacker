@@ -4,7 +4,7 @@ import { unstable_runPendingTools } from "assistant-stream";
 
 import { initializeChatStream } from "./InitializeChatStream";
 import { addPendingHumanResolver, resolveHumanAction } from "./PendingHumanResolvers";
-import { ThreadIdManager } from "./ThreadIdManager";
+import { setThreadId } from "./ThreadIdManager";
 
 let controller: AbortController;
 function forkSignal(parentSignal: AbortSignal): AbortSignal {
@@ -62,7 +62,7 @@ export const createModelAdapter = (debug = false): ChatModelAdapter => ({
                     break;
                 case "stop":
                     {
-                        ThreadIdManager.THREAD_ID = event.threadId;
+                        setThreadId(event.threadId);
                         const assistantMessage = await unstable_runPendingTools(
                             {
                                 status: { type: "requires-action", reason: "tool-calls" },

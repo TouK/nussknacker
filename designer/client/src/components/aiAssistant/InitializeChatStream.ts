@@ -6,7 +6,7 @@ import { EventSourceParserStream } from "eventsource-parser/stream";
 import httpService from "../../http/HttpService/instance";
 import { mockAssitantFetch } from "./debug/MockAssitantFetch";
 import { extractMessage, extractTools } from "./messageHelpers";
-import { ThreadIdManager } from "./ThreadIdManager";
+import { getThreadId } from "./ThreadIdManager";
 
 export type ChatStreamEventName = "toolExecutionRequest" | "delta" | "stop" | "error" | NonNullable<string>;
 
@@ -80,7 +80,7 @@ export async function* initializeChatStream(
 
     const response = await send(
         {
-            threadId: ThreadIdManager.THREAD_ID,
+            threadId: getThreadId(),
             message: message,
             externalTools: extractTools(context),
         },

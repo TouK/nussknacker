@@ -3,7 +3,7 @@ import { Box, Button, Slide } from "@mui/material";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
-import { ThreadIdManager } from "../ThreadIdManager";
+import { resetThreadId } from "../ThreadIdManager";
 
 export const ResetThread = () => {
     const { t } = useTranslation();
@@ -11,7 +11,7 @@ export const ResetThread = () => {
     const messageCount = useAssistantState(({ thread }) => thread.messages.length);
 
     const threadReset = useCallback(() => {
-        ThreadIdManager.reset();
+        resetThreadId();
         api.threads().switchToNewThread();
     }, [api]);
 
