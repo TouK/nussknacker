@@ -119,19 +119,26 @@ export function hideRunProcessDetails(): ThunkAction {
 }
 
 export function unsafe_applyScenarioChanges(
-    changes: { path: string; value: string }[],
+    changes: { nodeId?: string; path: string; value: string }[],
 ): ThunkAction<Promise<{ scenario: ScenarioGraph } | { errors: ValidationErrors } | string>> {
     return async (dispatch, getState) => {
         const state = getState();
         const scenarioBefore = getScenario(state);
         const scenarioGraph = getScenarioGraph(state);
 
-        let scenarioGraphAfterChange: ScenarioGraph;
         try {
-            scenarioGraphAfterChange = produce(scenarioGraph, (draft) => {
-                changes.forEach(({ path, value }) => {
+            const scenarioGraphAfterChange = produce(scenarioGraph, (draft) => {
+                changes.forEach(({ nodeId, path, value }) => {
+                    let processedPath = path;
+                    if (nodeId) {
+                        const nodeIndex = scenarioGraph.nodes.findIndex((n) => n.id === nodeId);
+                        if (nodeIndex === -1) {
+                            throw `invalid nodeId: ${nodeId}`;
+                        }
+                        processedPath = `nodes[${nodeIndex}].${path}`;
+                    }
                     try {
-                        set(draft, path, value);
+                        set(draft, processedPath, value);
                     } catch (e) {
                         throw `invalid path: ${path}`;
                     }

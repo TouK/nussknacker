@@ -58,7 +58,7 @@ export function ToolboxCommands({ onSelect }: { onSelect: (item: NodeType) => vo
 
     useFrontendAiTool({
         toolName: "get_components",
-        description: `Use this tool to get a list of all available component definitions that can be used to create new nodes in the current scenario. Each component definition includes a template for a node of that type, which you can then use to create a new node.`,
+        description: `Returns all available component definitions for creating new nodes in the scenario. Each component has a componentId and node template.`,
         parameters: z.object({}),
         execute: () => {
             return flatComponents;
@@ -67,18 +67,10 @@ export function ToolboxCommands({ onSelect }: { onSelect: (item: NodeType) => vo
 
     useFrontendAiTool({
         toolName: "add_new_node",
-        description: `Use this tool to create a new node (including sticky notes) in the scenario graph. You need to provide a component ID (which can be obtained using another tool that lists components) and a unique name for the new node. After using this tool, you should verify that the node has been added to the graph, for example by using a tool that gets scenario data. IMPORTANT: Adding a node will append it to the end of the 'nodes' array and may change its length, affecting subsequent indexing.`,
+        description: `Creates a new node in the scenario graph. The node is added to the graph immediately. Get available componentId values using get_components tool.`,
         parameters: z.object({
-            componentId: z
-                .string()
-                .describe(
-                    "The ID of the component definition to use for creating the node. This can be obtained using another tool that lists components.",
-                ),
-            nodeName: z
-                .string()
-                .describe(
-                    "A unique name or label for the newly created node. This name will be used to identify the node in the scenario graph.",
-                ),
+            componentId: z.string().describe("Component definition ID from get_components tool."),
+            nodeName: z.string().describe("Unique name for the new node. This will be the node's id in the graph."),
         }),
         render: (props) => (
             <DefaultToolComponent {...props}>
