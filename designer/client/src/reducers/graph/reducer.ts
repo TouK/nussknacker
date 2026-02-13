@@ -206,7 +206,28 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
             const updateStateAfterNodeIdChange = getUpdateStateAfterNodeIdChange(action.before.id, action.after.id);
             return updateStateAfterNodeIdChange(updateStateAfterEdit(state, action));
         }
-        case "APPLY_GRAPH_CHANGES":
+        case "APPLY_GRAPH_CHANGES": {
+            const graphBefore = state.scenario.scenarioGraph;
+            const graphAfter = action.scenarioGraphAfterChange;
+
+            // Detect renamed nodes by comparing node identities (Immer structural sharing)
+            const renamedNodes = graphBefore.nodes
+                .map((nodeBefore, i) => {
+                    const nodeAfter = graphAfter.nodes[i];
+                    // Node changed and ID changed
+                    if (nodeAfter && nodeBefore !== nodeAfter && nodeBefore.id !== nodeAfter.id) {
+                        return { oldId: nodeBefore.id, newId: nodeAfter.id };
+                    }
+                    return null;
+                })
+                .filter((item): item is { oldId: string; newId: string } => item !== null);
+
+            let newState = updateStateAfterEdit(state, action);
+            renamedNodes.forEach(({ oldId, newId }) => {
+                newState = getUpdateStateAfterNodeIdChange(oldId, newId)(newState);
+            });
+            return newState;
+        }
         case "EDIT_PROPERTIES": {
             return updateStateAfterEdit(state, action);
         }

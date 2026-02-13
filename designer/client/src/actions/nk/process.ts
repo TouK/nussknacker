@@ -10,9 +10,11 @@ import { memoizeByArgsWithTTL } from "../../helpers/memoizeByArgsWithTTL";
 import HttpService from "../../http/HttpService/instance";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { getScenario, getScenarioGraph } from "../../reducers/selectors/graph";
+import type { NodeType } from "../../types/node";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types/scenarioGraph";
 import type { ValidationErrors, ValidationResult } from "../../types/validation";
 import type { Action, ThunkAction } from "../reduxTypes";
+import { calculateProcessAfterChange } from "./calculateProcessAfterChange";
 import { Initiator, stopLiveData } from "./liveData";
 import { preApplyValidation } from "./preApplyValidation";
 
@@ -104,39 +106,29 @@ export function clearProcess(): ThunkAction {
 }
 
 export function hideTestRunDetails(): ThunkAction {
-    return (dispatch, getState) => {
+    return (dispatch) => {
         replaceSearchQuery(omit(["from", "to", "refresh"]));
         dispatch({ type: "HIDE_RUN_PROCESS_DETAILS" });
     };
 }
 export function hideRunProcessDetails(): ThunkAction {
-    return (dispatch, getState) => {
+    return (dispatch) => {
         dispatch(stopLiveData(Initiator.button));
         dispatch(hideTestRunDetails());
     };
 }
 
 export function unsafe_applyScenarioChanges(
-    changes: { nodeId?: string; path: string; value: string }[],
-): ThunkAction<Promise<{ scenario: ScenarioGraph } | { errors: ValidationErrors } | string>> {
+    changes: { path: string; value: string }[],
+): ThunkAction<Promise<{ scenario: ScenarioGraph; validationResult?: ValidationResult } | { errors: ValidationErrors } | string>> {
     return async (dispatch, getState) => {
         const state = getState();
         const scenarioBefore = getScenario(state);
         const scenarioGraph = getScenarioGraph(state);
 
         try {
-            const processedChanges = changes.map(({ nodeId, path, value }) => {
-                if (!nodeId) return { path, value };
-
-                const nodeIndex = scenarioGraph.nodes.findIndex((n) => n.id === nodeId);
-                if (nodeIndex === -1) {
-                    throw `invalid nodeId: ${nodeId}`;
-                }
-
-                return { path: `nodes[${nodeIndex}].${path}`, value };
-            });
             const scenarioGraphAfterChange = produce(scenarioGraph, (draft) => {
-                processedChanges.forEach(({ path, value }) => {
+                changes.forEach(({ path, value }) => {
                     try {
                         set(draft, path, value);
                     } catch (e) {
@@ -145,22 +137,31 @@ export function unsafe_applyScenarioChanges(
                 });
             });
 
-            const response = await dispatch(preApplyValidation(scenarioBefore, scenarioGraphAfterChange));
+            const changedNodes: Array<{ before: NodeType; after: NodeType }> = scenarioGraph.nodes
+                .map((before, i) => ({ before, after: scenarioGraphAfterChange.nodes[i] }))
+                .filter(({ before, after }) => after && before !== after);
+
+            let correctedGraph = scenarioGraphAfterChange;
+
+            for (const { before, after } of changedNodes) {
+                const tempScenario = {
+                    ...scenarioBefore,
+                    scenarioGraph: correctedGraph,
+                };
+
+                correctedGraph = await dispatch(calculateProcessAfterChange(tempScenario, before, after));
+            }
+
+            const response = await dispatch(preApplyValidation(scenarioBefore, correctedGraph));
             const validationResult = response?.data;
-
-            const hasErrors =
-                ["invalidNodes", "processPropertiesErrors", "globalErrors"].some((key) => validationResult?.errors[key]?.length > 0) ||
-                typeof validationResult === "string";
-
-            if (hasErrors) return validationResult;
 
             dispatch({
                 type: "APPLY_GRAPH_CHANGES",
                 validationResult,
-                scenarioGraphAfterChange,
+                scenarioGraphAfterChange: correctedGraph,
             });
 
-            return { scenario: scenarioGraphAfterChange };
+            return { scenario: correctedGraph, validationResult };
         } catch (error) {
             return error?.message || error;
         }

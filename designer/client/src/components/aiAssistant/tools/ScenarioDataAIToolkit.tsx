@@ -47,7 +47,7 @@ export const ScenarioDataAIToolkit = () => {
 
     useFrontendAiTool({
         toolName: "change_scenario_values",
-        description: `Modifies scenario by replacing values at paths. Use nodeId for node-relative paths or full paths with indexes. MUST call get_scenario first to count array lengths. CRITICAL ATOMIC BEHAVIOR: If ANY change fails (invalid path/nodeId/value), ENTIRE batch is rejected and NO changes apply. On retry, resend ALL changes, not just the fixed one. Changes apply sequentially in array order.`,
+        description: `Modifies scenario by replacing values at paths using dot-notation with array indexes. MUST retrieve scenario data first to get correct array indexes. Use for any scenario modifications: single nodes, bulk edits, properties, edges. CRITICAL ATOMIC: if ANY change fails, ENTIRE batch rejected and NO changes apply. Validation runs automatically - errors returned in validationResult but changes still apply (non-blocking validation).`,
         render: (props) => (
             <DefaultToolComponent {...props}>
                 <Typography>{t("aiAssistant.tools.changeScenarioGraph", "Change scenario graph")}</Typography>
@@ -58,28 +58,22 @@ export const ScenarioDataAIToolkit = () => {
                 .array(
                     z
                         .object({
-                            nodeId: z
-                                .string()
-                                .optional()
-                                .describe(
-                                    "Makes path relative to this node. CRITICAL: ALL nodeIds resolved to indexes BEFORE changes apply, using current state. When renaming node: ALL changes targeting it MUST use OLD id (new id doesn't exist during resolution). Cannot mix old/new ids in same batch.",
-                                ),
                             path: z
                                 .string()
                                 .describe(
-                                    "Dot-notation with integer indexes. With nodeId: relative path like 'value', 'expression.expression', 'id'. Without nodeId: full path like 'nodes[0].value', 'edges[2].from'. Count array lengths in get_scenario response. When renaming node: update ALL referencing edges in SAME batch with NEW id value, or entire batch fails.",
+                                    "Dot-notation path with integer indexes from scenario data. Examples: 'nodes[0].id', 'nodes[2].value', 'edges[1].from', 'edges[3].to', 'properties.parallelism'. NEVER guess indexes - always use actual values from retrieved scenario.",
                                 ),
                             value: z
                                 // TODO: more types or any on BE
                                 .string()
                                 .describe(
-                                    `The string value to set. Can be a plain string or a SpEL expression string (e.g., "#input.value" or "42").`,
+                                    `New value to set. String for names/ids, SpEL expression for logic (e.g., "#input.value", "42").`,
                                 ),
                         })
-                        .describe(`A single field modification.`),
+                        .describe(`Single path+value modification.`),
                 )
                 .describe(
-                    "Array of changes applied atomically. No duplicate paths. When renaming node: use OLD id in nodeId param for all changes to that node, use NEW id as value in edge paths like 'edges[i].from'.",
+                    "Array of changes applied atomically in ONE call. This tool modifies EXISTING nodes/edges/properties only - do NOT add/remove nodes. When changing nodes (e.g., renaming nodeId, modifying outputVariableNames), related edges and branch parameters are corrected automatically - do NOT manually update edge references (from/to) or edgeTypes. Only change nodes properties, let the system handle edge updates. NEVER split related changes into separate calls - entire batch must succeed or all changes are rejected.",
                 ),
         }),
         execute: async ({ changes }) => {
@@ -91,7 +85,8 @@ export const ScenarioDataAIToolkit = () => {
                 return rejectToolCall(JSON.stringify(result.errors));
             }
             const { nodes, edges } = result.scenario;
-            return { nodes, edges };
+            const { validationResult } = result;
+            return { nodes, edges, validationResult };
         },
     });
 

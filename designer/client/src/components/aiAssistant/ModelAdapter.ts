@@ -46,6 +46,7 @@ export const createModelAdapter = (debug = false): ChatModelAdapter => ({
                             args: event.arguments,
                             argsText: JSON.stringify(event.arguments),
                         });
+                        console.debug(calls[calls.length - 1]);
                         const message: ChatModelRunResult = {
                             content: [{ type: "text", text }, ...calls],
                             status: { type: "requires-action", reason: "tool-calls" },
