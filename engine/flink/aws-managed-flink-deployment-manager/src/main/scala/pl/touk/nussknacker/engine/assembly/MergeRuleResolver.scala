@@ -30,13 +30,15 @@ class MergeRuleResolver(mergeRules: List[MergeRule]) {
 
 object MergeRuleResolver {
 
-  val fallbackMergeRules: List[MergeRule] = List(
+  private val fallbackMergeRules: List[MergeRule] = List(
     // META-INF/services should be merged line-by-line
     MergeRule("META-INF/services/**", MergeStrategy.FilterDistinctLines),
     // These META-INF entries are either regenerated or not applicable to the uber-jar. Keeping originals can cause conflicts.
     MergeRule("META-INF/MANIFEST.MF", MergeStrategy.Discard),
     MergeRule("META-INF/INDEX.LIST", MergeStrategy.Discard),
     MergeRule("META-INF/DEPENDENCIES", MergeStrategy.Discard),
+    // Discard JPMS module descriptors (a proper solution would be to merge them)
+    MergeRule("**/module-info.class", MergeStrategy.Discard),
     // Signature files are invalid after merging and can fail verification
     MergeRule("META-INF/*.SF", MergeStrategy.Discard),
     MergeRule("META-INF/*.DSA", MergeStrategy.Discard),
@@ -44,7 +46,7 @@ object MergeRuleResolver {
   )
 
   // Based on sbt-assembly
-  def isLicenseFile(entryName: String): Boolean = {
+  private def isLicenseFile(entryName: String): Boolean = {
     val LicenseFilePattern = """(\._license|license|licence|notice|copying)([.]\w+)?$""".r
     fileName(entryName).toLowerCase match {
       case LicenseFilePattern(_, ext) if ext != ".class" => true
@@ -53,7 +55,7 @@ object MergeRuleResolver {
   }
 
   // Based on sbt-assembly
-  def isReadme(entryName: String): Boolean = {
+  private def isReadme(entryName: String): Boolean = {
     val ReadMePattern = """(readme|about)([.]\w+)?$""".r
     fileName(entryName).toLowerCase match {
       case ReadMePattern(_, ext) if ext != ".class" => true

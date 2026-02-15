@@ -27,7 +27,7 @@ class UberJarProvider(
 
   private def buildJar(): Path = {
     val outputDir = createTempOutputDir()
-    val jarPaths  = modelUrls.map { resolvePath(_, outputDir) }
+    val jarPaths  = modelUrls.map(resolvePath)
     modelJarBuilder.buildJar(
       outputDir = outputDir,
       jarFiles = jarPaths,
@@ -43,7 +43,7 @@ class UberJarProvider(
     tempDir
   }
 
-  private def resolvePath(url: URL, tempDir: Path): Path =
+  private def resolvePath(url: URL): Path =
     if (url.getProtocol == "file") {
       Path.of(url.toURI)
     } else {

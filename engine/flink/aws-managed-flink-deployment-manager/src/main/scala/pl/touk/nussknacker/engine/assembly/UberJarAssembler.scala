@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.assembly
 
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.commons.codec.binary.Hex
 import pl.touk.nussknacker.engine.assembly.UberJarAssembler._
 
+import java.io.BufferedOutputStream
 import java.nio.file.{Files, Path, StandardCopyOption}
 import java.security.{DigestOutputStream, MessageDigest}
-import java.util.HexFormat
 import java.util.jar.{Attributes, JarFile, JarOutputStream, Manifest}
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.EnumerationHasAsScala
@@ -26,8 +27,8 @@ class UberJarAssembler(
     Files.createDirectories(outputDir)
     val tempFile = Files.createTempFile(outputDir, uberJarPrefix, ".jar.tmp")
     try {
-      val hash: String = buildJarAndComputeHash(jarFiles, mainClass, tempFile)
-      val finalPath    = outputDir.resolve(s"$uberJarPrefix-$hash.jar")
+      val hash      = buildJarAndComputeHash(jarFiles, mainClass, tempFile)
+      val finalPath = outputDir.resolve(s"$uberJarPrefix-${hash.value}.jar")
       Files.move(tempFile, finalPath, StandardCopyOption.REPLACE_EXISTING)
       finalPath
     } finally {
@@ -35,7 +36,7 @@ class UberJarAssembler(
     }
   }
 
-  private def buildJarAndComputeHash(jarFiles: List[Path], mainClass: String, tempFile: Path) = {
+  private def buildJarAndComputeHash(jarFiles: List[Path], mainClass: String, tempFile: Path): UberJarHash = {
     val digest   = MessageDigest.getInstance(digestAlgorithmForFileName)
     val manifest = buildManifest(mainClass)
     val state = AssemblyState(
@@ -43,15 +44,17 @@ class UberJarAssembler(
       bufferedEntries = mutable.Map.empty[String, BufferedEntry]
     )
     Using.resource(Files.newOutputStream(tempFile)) { fos =>
-      Using.resource(new DigestOutputStream(fos, digest)) { dos =>
-        Using.resource(new JarOutputStream(dos)) { outputJar =>
-          JarEntryWriter.writeManifest(manifest, outputJar)
-          jarFiles.foreach(mergeJarIntoUberJar(_, outputJar, state))
-          JarEntryWriter.writeBufferedEntries(state, outputJar)
+      Using.resource(new BufferedOutputStream(fos)) { bos =>
+        Using.resource(new DigestOutputStream(bos, digest)) { dos =>
+          Using.resource(new JarOutputStream(dos)) { outputJar =>
+            JarEntryWriter.writeManifest(manifest, outputJar)
+            jarFiles.foreach(mergeJarIntoUberJar(_, outputJar, state))
+            JarEntryWriter.writeBufferedEntries(state, outputJar)
+          }
         }
       }
     }
-    HexFormat.of().formatHex(digest.digest())
+    UberJarHash(Hex.encodeHexString(digest.digest()))
   }
 
   private def buildManifest(mainClass: String) = {
@@ -86,6 +89,8 @@ class UberJarAssembler(
 }
 
 object UberJarAssembler {
+
+  private[assembly] final case class UberJarHash(value: String) extends AnyVal
 
   private[assembly] case class WrittenEntry(
       hash: Option[String],

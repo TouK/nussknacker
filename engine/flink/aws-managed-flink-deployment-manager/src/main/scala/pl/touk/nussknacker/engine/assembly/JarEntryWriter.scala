@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.assembly
 
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.commons.codec.binary.Hex
 import pl.touk.nussknacker.engine.assembly.UberJarAssembler._
 
 import java.io.{InputStream, OutputStream}
 import java.nio.file.Path
 import java.security.{DigestInputStream, MessageDigest}
-import java.util.HexFormat
 import java.util.jar.{JarEntry, JarFile, JarOutputStream, Manifest}
 import scala.collection.mutable
 import scala.io.Source
@@ -129,7 +129,7 @@ object JarEntryWriter extends LazyLogging {
         dis.transferTo(OutputStream.nullOutputStream())
       }
     }
-    HexFormat.of().formatHex(messageDigest.digest())
+    Hex.encodeHexString(messageDigest.digest())
   }
 
   private def writeIfFirst(
@@ -153,7 +153,7 @@ object JarEntryWriter extends LazyLogging {
   implicit class JarOutputStreamOps(outputJar: JarOutputStream) {
 
     // timestamp has to be constant for content hash to be deterministic
-    val constantTimestamp = 0L
+    private val constantTimestamp = 0L
 
     def writeStream(entryName: String, openEntryStream: () => InputStream): Unit =
       writeEntry(entryName) { out =>
@@ -176,7 +176,7 @@ object JarEntryWriter extends LazyLogging {
           }
         }
       }
-      HexFormat.of().formatHex(messageDigest.digest())
+      Hex.encodeHexString(messageDigest.digest())
     }
 
     def writeEntry(entryName: String)(write: OutputStream => _): Unit = {

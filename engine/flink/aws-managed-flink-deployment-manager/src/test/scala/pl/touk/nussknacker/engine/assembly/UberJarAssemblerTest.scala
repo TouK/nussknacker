@@ -261,6 +261,28 @@ class UberJarAssemblerTest extends AnyFunSuite with Matchers {
     }
   }
 
+  test("discards JPMS module descriptors by default") {
+    withTempDir { tempDir =>
+      val jar1 = createJar(
+        tempDir,
+        "jar1.jar",
+        List(
+          "module-info.class"                     -> "module a {}",
+          "META-INF/versions/x/module-info.class" -> "module a {}"
+        )
+      )
+
+      val outputJar = new UberJarAssembler(mergeRules = List.empty, uberJarPrefix = "test-jar")
+        .buildJar(tempDir, List(jar1), "com.example.Main")
+
+      Using.resource(new JarFile(outputJar.toFile)) { jarFile =>
+        val names = jarFile.entries().asScala.map(_.getName).toSet
+        names should not contain "module-info.class"
+        names should not contain "META-INF/versions/x/module-info.class"
+      }
+    }
+  }
+
   test("removes temporary jar file when assembly fails") {
     withTempDir { tempDir =>
       val jar1 = createJar(tempDir, "jar1.jar", List("a" -> "v1"))
