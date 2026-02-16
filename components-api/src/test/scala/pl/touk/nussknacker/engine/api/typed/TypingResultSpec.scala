@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 
 import java.time.{LocalDate, LocalDateTime}
 import java.util
-import java.util.Currency
+import java.util.{Collections, Currency}
 
 // TODO: clean-up, split tests for Intersection (equals operator), Default (ternary), number promotion, can be subclass etc.
 class TypingResultSpec
@@ -86,11 +86,48 @@ class TypingResultSpec
     Unknown.canBeLooselyAssignedTo(Typed[Int]) shouldBe true
     Typed[Int].canBeLooselyAssignedTo(Unknown) shouldBe true
 
+    Unknown.canBeStrictlyAssignedTo(Typed[Int]) shouldBe false
+    Typed[Int].canBeStrictlyAssignedTo(Unknown) shouldBe true
+
     Unknown.canBeLooselyAssignedTo(Typed(Typed[String], Typed[Int])) shouldBe true
     Typed(Typed[String], Typed[Int]).canBeLooselyAssignedTo(Unknown) shouldBe true
 
+    Unknown.canBeStrictlyAssignedTo(Typed(Typed[String], Typed[Int])) shouldBe false
+    Typed(Typed[String], Typed[Int]).canBeStrictlyAssignedTo(Unknown) shouldBe true
+
     Unknown.canBeLooselyAssignedTo(typeMap("field1" -> Typed[String])) shouldBe true
     typeMap("field1" -> Typed[String]).canBeLooselyAssignedTo(Unknown) shouldBe true
+
+    Unknown.canBeStrictlyAssignedTo(typeMap("field1" -> Typed[String])) shouldBe false
+    typeMap("field1" -> Typed[String]).canBeStrictlyAssignedTo(Unknown) shouldBe true
+  }
+
+  test("determine if empty collections can be assigned to collection of any type") {
+    val stringList  = Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.fromDetailedType[String]))
+    val unknownList = Typed.genericTypeClass(classOf[java.util.List[_]], List(Unknown))
+    val emptyList   = Typed.fromInstance(Collections.emptyList())
+
+    emptyList.canBeStrictlyAssignedTo(stringList) shouldBe true
+    emptyList.canBeLooselyAssignedTo(stringList) shouldBe true
+
+    emptyList.canBeStrictlyAssignedTo(unknownList) shouldBe true
+    emptyList.canBeLooselyAssignedTo(unknownList) shouldBe true
+
+    unknownList.canBeStrictlyAssignedTo(stringList) shouldBe false
+    unknownList.canBeLooselyAssignedTo(stringList) shouldBe true
+
+    val emptyMap   = Typed.fromInstance(Collections.EMPTY_MAP)
+    val stringMap  = Typed.fromDetailedType[java.util.Map[String, String]]
+    val unknownMap = Typed.fromDetailedType[java.util.Map[String, Any]]
+
+    emptyMap.canBeStrictlyAssignedTo(stringMap) shouldBe true
+    emptyMap.canBeLooselyAssignedTo(stringMap) shouldBe true
+
+    emptyMap.canBeStrictlyAssignedTo(unknownMap) shouldBe true
+    emptyMap.canBeLooselyAssignedTo(unknownMap) shouldBe true
+
+    unknownMap.canBeStrictlyAssignedTo(stringMap) shouldBe false
+    unknownMap.canBeLooselyAssignedTo(stringMap) shouldBe true
   }
 
   test("determine if can be assigned for class") {

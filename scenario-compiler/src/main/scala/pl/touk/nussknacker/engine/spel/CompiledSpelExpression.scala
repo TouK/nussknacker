@@ -143,7 +143,7 @@ class CompiledSpelExpression(
         val evaluationResult = TemplateEvaluationResult(parts)
         if (expectedReturnType == Typed[TemplateEvaluationResult]) {
           evaluationResult.asInstanceOf[T]
-        } else if (expectedReturnType.canBeStrictlyAssignedTo(Typed[CharSequence])) {
+        } else if (expectedReturnType.canBeLooselyAssignedTo(Typed[CharSequence])) {
           evaluationResult.renderedTemplate.asInstanceOf[T]
         } else {
           throw new IllegalStateException(s"Expression parsed with unexpected type: $expectedReturnType")

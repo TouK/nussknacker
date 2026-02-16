@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkTestScenarioRunnerExt
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
+import pl.touk.nussknacker.engine.util.test.{RunListResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
 class ExpressionEvaluationSpec extends AnyFunSuite with FlinkSpec with Matchers {
@@ -20,28 +20,28 @@ class ExpressionEvaluationSpec extends AnyFunSuite with FlinkSpec with Matchers 
     val scenario = createScenario(Expression.spelTemplate(""))
 
     val runResults = runScenario(scenario, List(""))
-    runResults.validValue.successes shouldBe List("")
+    runResults.validValue shouldBe successfulRun(List(""))
   }
 
   test("should run scenario when sink value is non-empty spelTemplate expression") {
     val scenario = createScenario(Expression.spelTemplate("value"))
 
     val runResults = runScenario(scenario, List(""))
-    runResults.validValue.successes shouldBe List("value")
+    runResults.validValue shouldBe successfulRun(List("value"))
   }
 
   test("should run scenario when sink value is empty string spel expression") {
     val scenario = createScenario(Expression.spel("''"))
 
     val runResults = runScenario(scenario, List(""))
-    runResults.validValue.successes shouldBe List("")
+    runResults.validValue shouldBe successfulRun(List(""))
   }
 
   test("should run scenario when sink value is non-empty string spel expression") {
     val scenario = createScenario(Expression.spel("'value'"))
 
     val runResults = runScenario(scenario, List(""))
-    runResults.validValue.successes shouldBe List("value")
+    runResults.validValue shouldBe successfulRun(List("value"))
   }
 
   test("should return error when sink value is empty spel expression") {
@@ -68,5 +68,7 @@ class ExpressionEvaluationSpec extends AnyFunSuite with FlinkSpec with Matchers 
       .build()
       .runWithData[String, String](scenario, data)
   }
+
+  private def successfulRun[T](successes: List[T]) = RunListResult(Nil, successes)
 
 }
