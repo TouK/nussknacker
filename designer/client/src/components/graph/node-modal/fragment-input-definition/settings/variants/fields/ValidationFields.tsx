@@ -1,3 +1,4 @@
+import { FormControlLabel } from "@mui/material";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -12,7 +13,7 @@ import { FieldLabelProvider } from "../../../../editors/RenderFieldLabel";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { nodeValue } from "../../../../NodeDetailsContent/NodeTableStyled";
 import type { FieldName, onChangeType, ValueCompileTimeValidation } from "../../../item/types";
-import { FieldLabel } from "./StyledSettingsComponnets";
+import { CustomSwitch, FieldLabel, SettingLabelStyled } from "./StyledSettingsComponnets";
 
 interface ValidationFields extends ValueCompileTimeValidation {
     variableTypes: VariableTypes;
@@ -27,6 +28,7 @@ interface ValidationFields extends ValueCompileTimeValidation {
 export default function ValidationFields({
     validationExpression,
     validationFailedMessage,
+    strictTypeChecking,
     variableTypes,
     path,
     onChange,
@@ -87,6 +89,27 @@ export default function ValidationFields({
                         fieldErrors={[]}
                     />
                 </div>
+            </FormControl>
+            <FormControl>
+                <FieldLabel
+                    label={t("fragment.validation.strictTypeChecking", "Strict type checking:")}
+                    hintText={t(
+                        "fragment.validation.strictTypeCheckingHint",
+                        "When enabled, the expression result type must match the expected parameter type. If the result type is unknown, it will be marked as a validation error — unless the parameter type explicitly allows unknown.",
+                    )}
+                />
+                <FormControlLabel
+                    control={
+                        <CustomSwitch
+                            checked={strictTypeChecking}
+                            onChange={(event) =>
+                                onChange(`${path}.valueCompileTimeValidation.strictTypeChecking`, event.currentTarget.checked)
+                            }
+                            readOnly={!readOnly}
+                        />
+                    }
+                    label=""
+                />
             </FormControl>
         </>
     );

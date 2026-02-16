@@ -50,6 +50,7 @@ export function ValidationsFields(props: Validation) {
                                                 expression: "true",
                                             },
                                             validationFailedMessage: null,
+                                            strictTypeChecking: false,
                                         };
 
                                         onChange(
@@ -79,6 +80,7 @@ export function ValidationsFields(props: Validation) {
                     onChange={onChange}
                     validationFailedMessage={item.valueCompileTimeValidation.validationFailedMessage}
                     validationExpression={item.valueCompileTimeValidation.validationExpression}
+                    strictTypeChecking={item.valueCompileTimeValidation.strictTypeChecking}
                     variableTypes={variableTypes}
                     readOnly={readOnly}
                     errors={errors}

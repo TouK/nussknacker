@@ -117,7 +117,10 @@ case class FragmentParameterValidator(classDefinitions: ClassDefinitionSet) {
               e,
               paramName = Some(fragmentParameter.name),
               validationCtx = validationContext,
-              expectedType = ExpectedType.loose(validationContext(fragmentParameter.name.value)),
+              expectedType = ExpectedType(
+                validationContext(fragmentParameter.name.value),
+                strictTypeMatch = fragmentParameter.strictTypeChecking.getOrElse(false)
+              )
             )
           )
         }

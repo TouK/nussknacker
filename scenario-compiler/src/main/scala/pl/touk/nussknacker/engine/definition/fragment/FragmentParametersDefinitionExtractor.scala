@@ -108,31 +108,33 @@ class FragmentParametersDefinitionExtractor(
         )
       )
 
-    val param = Parameter
-      .optional(fragmentParameter.name, typ)
-      .copy(
-        editors = extractedEditors.toList,
-        validators = validators.toList,
-        defaultValue = fragmentParameter.initialValue
-          .map(initialValue =>
-            fragmentParameter.valueEditor match {
-              case Some(ValueInputWithDictEditor(_, _)) =>
-                Expression(Language.DictKeyWithLabel, initialValue.expression)
-              case _ => Expression.spel(initialValue.expression)
-            }
-          )
-          .orElse(
-            DefaultValueDeterminerChain.determineParameterDefaultValue(
-              DefaultValueDeterminerParameters(
-                parameterData,
-                !fragmentParameter.required,
-                ParameterConfig.empty,
-                extractedEditors
-              )
+    val baseParam = Parameter.optional(fragmentParameter.name, typ)
+    val param =
+      baseParam
+        .copy(
+          editors = extractedEditors.toList,
+          validators = validators.toList,
+          defaultValue = fragmentParameter.initialValue
+            .map(initialValue =>
+              fragmentParameter.valueEditor match {
+                case Some(ValueInputWithDictEditor(_, _)) =>
+                  Expression(Language.DictKeyWithLabel, initialValue.expression)
+                case _ => Expression.spel(initialValue.expression)
+              }
             )
-          ),
-        hintText = fragmentParameter.hintText
-      )
+            .orElse(
+              DefaultValueDeterminerChain.determineParameterDefaultValue(
+                DefaultValueDeterminerParameters(
+                  parameterData = parameterData,
+                  isOptional = !fragmentParameter.required,
+                  parameterConfig = ParameterConfig.empty,
+                  determinedEditors = extractedEditors
+                )
+              )
+            ),
+          hintText = fragmentParameter.hintText,
+          strictTypeCheck = fragmentParameter.strictTypeChecking.getOrElse(baseParam.strictTypeCheck)
+        )
 
     Writer
       .value[List[PartSubGraphCompilationError], Parameter](param)

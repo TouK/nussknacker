@@ -394,7 +394,13 @@ object node {
         hintText: Option[String],
         valueEditor: Option[ParameterValueInput],
         valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation]
-    )
+    ) {
+
+      def strictTypeChecking: Option[Boolean] = {
+        valueCompileTimeValidation.flatMap(_.strictTypeChecking)
+      }
+
+    }
 
     object FragmentParameter {
 

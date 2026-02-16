@@ -5,5 +5,6 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 
 @JsonCodec case class ParameterValueCompileTimeValidation(
     validationExpression: Expression,
-    validationFailedMessage: Option[String]
+    validationFailedMessage: Option[String],
+    strictTypeChecking: Option[Boolean] // option - backward compatibility
 )

@@ -98,7 +98,11 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
           )
         ),
         valueCompileTimeValidation = Some(
-          ParameterValueCompileTimeValidation(Expression.spel("#value.length() < 7"), Some("some failed message"))
+          ParameterValueCompileTimeValidation(
+            Expression.spel("#value.length() < 7"),
+            Some("some failed message"),
+            None
+          )
         ),
       )
     )
@@ -118,7 +122,14 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
         "allowOtherValue" : false,
         "dictId" : "someDictId"
       },
-      "valueCompileTimeValidation" : null
+      "valueCompileTimeValidation" : {
+        "validationExpression" : {
+          "expression" : "false",
+          "language" : "spel"
+        },
+        "validationFailedMessage" : "some failed message",
+        "strictTypeChecking": true
+      }
     }""") shouldBe Right(
       FragmentParameter(
         ParameterName("paramString"),
@@ -132,7 +143,13 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
             allowOtherValue = false
           )
         ),
-        valueCompileTimeValidation = None
+        valueCompileTimeValidation = Some(
+          ParameterValueCompileTimeValidation(
+            Expression.spel("false"),
+            Some("some failed message"),
+            Some(true)
+          )
+        )
       )
     )
   }

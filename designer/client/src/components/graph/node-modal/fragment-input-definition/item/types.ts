@@ -9,6 +9,7 @@ export type onChangeType = string | number | boolean | FixedValuesOption | Fixed
 export interface ValueCompileTimeValidation {
     validationExpression: Expression;
     validationFailedMessage?: string;
+    strictTypeChecking?: boolean;
 }
 
 export interface FragmentValidation {

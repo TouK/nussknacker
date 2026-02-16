@@ -1221,7 +1221,8 @@ object FlinkMiniClusterScenarioTestRunnerSpec {
       valueCompileTimeValidation = Some(
         ParameterValueCompileTimeValidation(
           validationExpression = Expression.spel("true"),
-          validationFailedMessage = Some("param validation failed")
+          validationFailedMessage = Some("param validation failed"),
+          None
         )
       )
     )

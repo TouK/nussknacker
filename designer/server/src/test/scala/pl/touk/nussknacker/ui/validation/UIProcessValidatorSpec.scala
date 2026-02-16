@@ -943,8 +943,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                   initialValue = None,
                   hintText = None,
                   valueEditor = None,
-                  valueCompileTimeValidation =
-                    Some(ParameterValueCompileTimeValidation(Expression.spel("'a' + 'b'"), Some("some failed message")))
+                  valueCompileTimeValidation = Some(
+                    ParameterValueCompileTimeValidation(Expression.spel("'a' + 'b'"), Some("some failed message"), None)
+                  )
                 ),
                 FragmentParameter(
                   ParameterName("subParam2"),
@@ -955,6 +956,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                   valueCompileTimeValidation = Some(
                     ParameterValueCompileTimeValidation(
                       s"#${ValidationExpressionParameterValidator.variableName} < 7".spel, // invalid operation (comparing string with int)
+                      None,
                       None
                     )
                   )
@@ -2073,7 +2075,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             initialValue = None,
             hintText = None,
             valueEditor = None,
-            valueCompileTimeValidation = Some(ParameterValueCompileTimeValidation(validationExpression, None))
+            valueCompileTimeValidation = Some(ParameterValueCompileTimeValidation(validationExpression, None, None))
           )
         )
       )
@@ -2114,7 +2116,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             hintText = None,
             valueEditor = None,
             valueCompileTimeValidation = Some(
-              ParameterValueCompileTimeValidation(validationExpression, Some("some failed message"))
+              ParameterValueCompileTimeValidation(validationExpression, Some("some failed message"), None)
             )
           )
         )
@@ -2677,7 +2679,7 @@ private object UIProcessValidatorSpec {
       hintText = None,
       valueEditor = None,
       valueCompileTimeValidation = Some(
-        ParameterValueCompileTimeValidation(validationExpression, Some("some custom failure message"))
+        ParameterValueCompileTimeValidation(validationExpression, Some("some custom failure message"), None)
       )
     )
 
