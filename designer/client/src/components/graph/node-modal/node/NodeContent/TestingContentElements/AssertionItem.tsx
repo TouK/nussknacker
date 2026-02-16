@@ -20,6 +20,7 @@ export const ASSERTION_SYMBOLS: Record<string, string> = {
 
 const gridContainerStyle = css({
     "&&&&": {
+        width: "100%",
         display: "grid",
         gridTemplateColumns: "4fr 1fr 4fr",
         gridTemplateRows: "auto auto",
