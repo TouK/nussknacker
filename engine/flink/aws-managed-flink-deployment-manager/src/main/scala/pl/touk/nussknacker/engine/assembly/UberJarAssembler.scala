@@ -36,7 +36,7 @@ class UberJarAssembler(
     }
   }
 
-  private def buildJarAndComputeHash(jarFiles: List[Path], mainClass: String, tempFile: Path): UberJarHash = {
+  private def buildJarAndComputeHash(jarFiles: List[Path], mainClass: String, tempFile: Path) = {
     val digest   = MessageDigest.getInstance(digestAlgorithmForFileName)
     val manifest = buildManifest(mainClass)
     val state = AssemblyState(
