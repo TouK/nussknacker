@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedDict}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
@@ -241,7 +242,7 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
         SpelFlavour.Standard,
         ClassDefinitionTestUtils.createDefinitionForClasses(classOf[EnumSymbol])
       )
-      .parse(expr, validationCtx, Typed.fromDetailedType[T])
+      .parse(expr, validationCtx, ExpectedType.loose(Typed.fromDetailedType[T]))
   }
 
   private def wrapWithRecordSchema(fieldsDefinition: String) =

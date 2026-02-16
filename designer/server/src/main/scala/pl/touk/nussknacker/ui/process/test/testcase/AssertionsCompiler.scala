@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.Expression
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, TestCase}
@@ -106,7 +107,7 @@ class AssertionsCompiler(
         assertion.expression,
         paramName = None,
         context,
-        Typed.typedClass(classOf[AssertionResult])
+        ExpectedType.loose(Typed.typedClass(classOf[AssertionResult])),
       )
       .map(e => CompiledExpressionAssertion(e.expression))
       .leftMap(ExpressionAssertionCompilationError(_, assertion, nodeId))
@@ -147,7 +148,7 @@ class AssertionsCompiler(
         assertion.expected,
         Some(ParameterName(PredicateAssertionCompilationError.Field.Expected.entryName)),
         context,
-        expectedType = Unknown
+        expectedType = ExpectedType.loose(Unknown),
       )
       .leftMap(
         PredicateAssertionCompilationError(
@@ -169,7 +170,7 @@ class AssertionsCompiler(
         assertion.actual,
         Some(ParameterName(PredicateAssertionCompilationError.Field.Actual.entryName)),
         context,
-        expectedType = Unknown
+        expectedType = ExpectedType.loose(Unknown),
       )
       .leftMap(
         PredicateAssertionCompilationError(
@@ -194,7 +195,7 @@ class AssertionsCompiler(
         // See comment below - we report errors on actual field.
         paramName = Some(ParameterName(PredicateAssertionCompilationError.Field.Actual.entryName)),
         context,
-        expectedType = Typed[java.lang.Boolean]
+        expectedType = ExpectedType.loose(Typed[java.lang.Boolean]),
       )
       .leftMap { errors =>
         PredicateAssertionCompilationError(

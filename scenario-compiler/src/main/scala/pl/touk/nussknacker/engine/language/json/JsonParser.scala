@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
 import pl.touk.nussknacker.engine.api.typed.FromInstanceTypeDeterminer
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue, TypingResult}
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -23,12 +24,12 @@ object JsonParser extends ExpressionParser {
   override def parse(
       jsonString: String,
       ctx: ValidationContext,
-      expectedType: TypingResult
+      expectedType: ExpectedType
   ): ValidatedNel[ExpressionParseError, TypedExpression] =
     handleBlankExpressionAsNullExpression(jsonString).getOrElse {
       parseJson(jsonString)
         .andThen { json =>
-          decodeJson(expectedType, json).map { decodedJson =>
+          decodeJson(expectedType.typ, json).map { decodedJson =>
             val typ = JsonFromInstanceTypeDeterminer.fromInstance(decodedJson)
             TypedExpression(
               CompiledJsonExpression(jsonString, json),

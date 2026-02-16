@@ -40,6 +40,7 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedCo
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.expression.parse.{
   CompiledExpression,
   MultipleBranchesTypedValue,
@@ -579,7 +580,12 @@ class NodeCompiler(
     implicit val nodeId: NodeId = NodeId(fod.id)
     fod.fields.map { field =>
       expressionCompiler
-        .compile(field.expression, Some(ParameterName(field.name)), inputContext.validationContext, Unknown)
+        .compile(
+          field.expression,
+          Some(ParameterName(field.name)),
+          inputContext.validationContext,
+          ExpectedType.loose(Unknown)
+        )
         .map(typedExpr => field.name -> typedExpr)
     }
   }.sequence.map(_.toMap)
@@ -612,7 +618,11 @@ class NodeCompiler(
       case Some(mockExpression) =>
         val expectedType =
           serviceCompilationResult.validationContext.map(_.localVariables(enricher.output)).getOrElse(Unknown)
-        compileEnricherMockExpression(mockExpression, expectedType, inputContext.validationContext)
+        compileEnricherMockExpression(
+          mockExpression,
+          ExpectedType.loose(expectedType),
+          inputContext.validationContext
+        )
           .map(Some(_))
       case None => Validated.validNel(None)
     }
@@ -624,7 +634,7 @@ class NodeCompiler(
     )
   }
 
-  private def compileEnricherMockExpression(expression: Expression, expectedType: TypingResult, ctx: ValidationContext)(
+  private def compileEnricherMockExpression(expression: Expression, expectedType: ExpectedType, ctx: ValidationContext)(
       implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, CompiledExpression] = {
     expressionCompiler

@@ -96,6 +96,7 @@ object Parameter {
       changesCanReloadParameters = None,
       nonImportantForExecution = false,
       displayType = true,
+      strictTypeCheck = false,
     )
 
   def optional[T: TypeTag: NotNothing](name: ParameterName): Parameter =
@@ -122,6 +123,7 @@ object Parameter {
       changesCanReloadParameters = None,
       nonImportantForExecution = false,
       displayType = true,
+      strictTypeCheck = false,
     )
 
 }
@@ -156,7 +158,8 @@ case class Parameter(
     category: ParameterCategory,
     changesCanReloadParameters: Option[Boolean],
     nonImportantForExecution: Boolean,
-    displayType: Boolean
+    displayType: Boolean,
+    strictTypeCheck: Boolean,
 ) extends NodeDependency {
 
   def copy(
@@ -190,46 +193,6 @@ case class Parameter(
   }
 
   def copy(
-      name: ParameterName = this.name,
-      typ: TypingResult = this.typ,
-      editors: List[ParameterEditor] = this.editors,
-      validators: List[ParameterValidator] = this.validators,
-      defaultValue: Option[Expression] = this.defaultValue,
-      additionalVariables: Map[String, AdditionalVariable] = this.additionalVariables,
-      variablesToHide: Set[String] = this.variablesToHide,
-      branchParam: Boolean = this.branchParam,
-      isLazyParameter: Boolean = this.isLazyParameter,
-      scalaOptionParameter: Boolean = this.scalaOptionParameter,
-      javaOptionalParameter: Boolean = this.javaOptionalParameter,
-      hintText: Option[String] = this.hintText,
-      labelOpt: Option[String] = this.labelOpt,
-      category: ParameterCategory = this.category,
-      changesCanReloadParameters: Option[Boolean] = this.changesCanReloadParameters,
-      nonImportantForExecution: Boolean = this.nonImportantForExecution,
-      displayType: Boolean = this.displayType,
-  ): Parameter = {
-    new Parameter(
-      name = name,
-      typ = typ,
-      editors = editors,
-      validators = validators,
-      defaultValue = defaultValue,
-      additionalVariables = additionalVariables,
-      variablesToHide = variablesToHide,
-      branchParam = branchParam,
-      isLazyParameter = isLazyParameter,
-      scalaOptionParameter = scalaOptionParameter,
-      javaOptionalParameter = javaOptionalParameter,
-      hintText = hintText,
-      labelOpt = labelOpt,
-      category = category,
-      changesCanReloadParameters = changesCanReloadParameters,
-      nonImportantForExecution = nonImportantForExecution,
-      displayType = displayType,
-    )
-  }
-
-  def apply(
       name: ParameterName,
       typ: TypingResult,
       editors: List[ParameterEditor],
@@ -248,6 +211,48 @@ case class Parameter(
       nonImportantForExecution: Boolean,
       displayType: Boolean,
   ): Parameter = {
+    copy(
+      name = name,
+      typ = typ,
+      editors = editors,
+      validators = validators,
+      defaultValue = defaultValue,
+      additionalVariables = additionalVariables,
+      variablesToHide = variablesToHide,
+      branchParam = branchParam,
+      isLazyParameter = isLazyParameter,
+      scalaOptionParameter = scalaOptionParameter,
+      javaOptionalParameter = javaOptionalParameter,
+      hintText = hintText,
+      labelOpt = labelOpt,
+      category = category,
+      changesCanReloadParameters = changesCanReloadParameters,
+      nonImportantForExecution = nonImportantForExecution,
+      displayType = displayType,
+      strictTypeCheck = false
+    )
+  }
+
+  def copy(
+      name: ParameterName = this.name,
+      typ: TypingResult = this.typ,
+      editors: List[ParameterEditor] = this.editors,
+      validators: List[ParameterValidator] = this.validators,
+      defaultValue: Option[Expression] = this.defaultValue,
+      additionalVariables: Map[String, AdditionalVariable] = this.additionalVariables,
+      variablesToHide: Set[String] = this.variablesToHide,
+      branchParam: Boolean = this.branchParam,
+      isLazyParameter: Boolean = this.isLazyParameter,
+      scalaOptionParameter: Boolean = this.scalaOptionParameter,
+      javaOptionalParameter: Boolean = this.javaOptionalParameter,
+      hintText: Option[String] = this.hintText,
+      labelOpt: Option[String] = this.labelOpt,
+      category: ParameterCategory = this.category,
+      changesCanReloadParameters: Option[Boolean] = this.changesCanReloadParameters,
+      nonImportantForExecution: Boolean = this.nonImportantForExecution,
+      displayType: Boolean = this.displayType,
+      strictTypeCheck: Boolean = this.strictTypeCheck,
+  ): Parameter = {
     new Parameter(
       name = name,
       typ = typ,
@@ -266,40 +271,7 @@ case class Parameter(
       changesCanReloadParameters = changesCanReloadParameters,
       nonImportantForExecution = nonImportantForExecution,
       displayType = displayType,
-    )
-  }
-
-  def apply(
-      name: ParameterName,
-      typ: TypingResult,
-      editors: List[ParameterEditor],
-      validators: List[ParameterValidator],
-      defaultValue: Option[Expression],
-      additionalVariables: Map[String, AdditionalVariable],
-      variablesToHide: Set[String],
-      branchParam: Boolean,
-      isLazyParameter: Boolean,
-      scalaOptionParameter: Boolean,
-      javaOptionalParameter: Boolean,
-  ): Parameter = {
-    new Parameter(
-      name = name,
-      typ = typ,
-      editors = editors,
-      validators = validators,
-      defaultValue = defaultValue,
-      additionalVariables = additionalVariables,
-      variablesToHide = variablesToHide,
-      branchParam = branchParam,
-      isLazyParameter = isLazyParameter,
-      scalaOptionParameter = scalaOptionParameter,
-      javaOptionalParameter = javaOptionalParameter,
-      hintText = None,
-      labelOpt = None,
-      category = ParameterCategory.Standard,
-      changesCanReloadParameters = None,
-      nonImportantForExecution = false,
-      displayType = true
+      strictTypeCheck = strictTypeCheck,
     )
   }
 

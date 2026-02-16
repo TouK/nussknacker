@@ -9,7 +9,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
 import pl.touk.nussknacker.engine.spel.SpelTyper.SpelCompilationException
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -139,7 +140,7 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
       .parse(
         "#COLLECTION.merge(#flinkTableApiRow, #flinkTableApiRow).foo",
         validationCtx,
-        Typed.typedClass(classOf[Int])
+        ExpectedType.loose(Typed.typedClass(classOf[Int]))
       )
       .value
       .expression
@@ -176,7 +177,11 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
     val ctxWithMap = Context.dummy.withVariable("genericRecord", record)
 
     val result = parser
-      .parse("#COLLECTION.merge(#genericRecord, #genericRecord).foo", validationCtx, Typed.typedClass(classOf[Int]))
+      .parse(
+        "#COLLECTION.merge(#genericRecord, #genericRecord).foo",
+        validationCtx,
+        ExpectedType.loose(Typed.typedClass(classOf[Int]))
+      )
       .value
       .expression
       .evaluate[AnyRef](ctxWithMap, globalVariables)

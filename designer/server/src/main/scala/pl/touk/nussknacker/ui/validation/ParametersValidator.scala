@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.SingleInputNodeInputValidationContext
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
@@ -27,7 +28,12 @@ class ParametersValidator(modelData: ModelData, scenarioPropertiesNames: Iterabl
     val context = validationContextGlobalVariablesOnly.copy(localVariables = request.variableTypes)
     request.parameters
       .map(param =>
-        expressionCompiler.compile(param.expression, Some(ParameterName(param.name)), context, param.typ)(NodeId(""))
+        expressionCompiler.compile(
+          param.expression,
+          Some(ParameterName(param.name)),
+          context,
+          ExpectedType.loose(param.typ)
+        )(NodeId(""))
       )
       .collect { case Invalid(a) => a.map(PrettyValidationErrors.formatErrorMessage).toList }
       .flatten

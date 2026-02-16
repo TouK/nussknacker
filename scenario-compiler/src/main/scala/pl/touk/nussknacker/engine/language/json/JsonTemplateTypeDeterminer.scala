@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.json.decoders.{FromJsonSimpleDecoder, From
 import pl.touk.nussknacker.engine.api.typed.{FromInstanceTypeDeterminer, StandardTypesClasses}
 import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.language.json.JsonParsingFailureToExpressionParseErrorConverter.ParsingFailureExt
 import pl.touk.nussknacker.engine.language.json.JsonTemplateTypeDeterminer._
@@ -29,7 +30,7 @@ private[json] class JsonTemplateTypeDeterminer(spelParser: SpelExpressionParser)
   def expressionResultType(
       spelTemplateExpression: CompiledExpression,
       validationContext: ValidationContext,
-      expectedType: TypingResult
+      expectedType: ExpectedType
   ): ValidatedNel[ExpressionParseError, TypingResult] = {
     // We convert spel template to json with placholders, because it is a convenient representation for typing.
     // Another option could be preparation of our own AST mixing Json AST and SpEL AST
@@ -86,7 +87,7 @@ private[json] class JsonTemplateTypeDeterminer(spelParser: SpelExpressionParser)
       validationContext: ValidationContext
   ): ValidatedNel[ExpressionParseError, String] =
     spelParser
-      .parse(expression.value, validationContext, defaultSpelTypingResult)
+      .parse(expression.value, validationContext, ExpectedType.loose(defaultSpelTypingResult))
       .map(_.typingInfo.typingResult)
       .map(_.toValuePlacedInPlaceholder)
       .map { json =>
@@ -126,10 +127,10 @@ private[json] class JsonTemplateTypeDeterminer(spelParser: SpelExpressionParser)
 
   private def computeTypeForJsonWithPlaceholdersFilled(
       validJsonWithPlaceholdersFilled: Json,
-      expectedType: TypingResult
+      expectedType: ExpectedType
   ) = {
     val obj = JsonTypingResultBasedDecoderWithFallbackToSimple.decodeWithFallback(
-      expectedType,
+      expectedType.typ,
       validJsonWithPlaceholdersFilled.hcursor
     )
     JsonTemplateFromInstanceTypeDeterminer.fromInstance(obj)

@@ -58,6 +58,7 @@ object ParametersExtractor {
         changesCanReloadParameters = Some(false),
         nonImportantForExecution = false,
         displayType = true,
+        strictTypeCheck = false,
       ),
       isBodyPart = isBodyPart
     )

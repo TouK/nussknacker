@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 import pl.touk.nussknacker.engine.language.json.JsonParsingFailureToExpressionParseErrorConverter.JsonParseError
 import pl.touk.nussknacker.engine.language.json.JsonTemplateParser.JsonTemplateDecodingException
@@ -428,7 +429,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
       expectedType: TypingResult,
       ctx: ValidationContext = validationContextWithDefaultHelpers,
   ): Validated[NonEmptyList[ExpressionParseError], TypedExpression] = {
-    sut.parse(jsonString, ctx, expectedType)
+    sut.parse(jsonString, ctx, ExpectedType.loose(expectedType))
   }
 
   // This is a copy of ConversionUtils. We can't use it directly, because it would cause a cycle in module dependencies

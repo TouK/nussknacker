@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParamet
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
-import pl.touk.nussknacker.engine.expression.{ExpressionEvaluator, NullExpression}
+import pl.touk.nussknacker.engine.expression.{ExpectedType, ExpressionEvaluator, NullExpression}
 import pl.touk.nussknacker.engine.expression.parse.{
   ExpressionParser,
   MultipleBranchesTypedValue,
@@ -239,7 +239,7 @@ class ExpressionCompiler(
 
     substituteDictKeyExpression(nodeParam.expression, definition.editors, nodeParam.name).andThen { finalExpr =>
       enrichContext(ctxToUse, definition).andThen { finalCtx =>
-        compile(finalExpr, Some(nodeParam.name), finalCtx, definition.typ)
+        compile(finalExpr, Some(nodeParam.name), finalCtx, ExpectedType.fromParameter(definition))
           .map(typedExpression => TypedParameter(nodeParam.name, SingleBranchTypedValue(typedExpression, finalCtx)))
       }
     }
@@ -256,7 +256,7 @@ class ExpressionCompiler(
         substituteDictKeyExpression(expression, definition.editors, paramName).andThen { finalExpr =>
           enrichContext(branchContexts(branchId), definition).andThen { finalCtx =>
             // TODO JOIN: branch id on error field level
-            compile(finalExpr, Some(paramName), finalCtx, definition.typ).map(typedExpression =>
+            compile(finalExpr, Some(paramName), finalCtx, ExpectedType.fromParameter(definition)).map(typedExpression =>
               branchId -> SingleBranchTypedValue(typedExpression, finalCtx)
             )
           }
@@ -350,7 +350,7 @@ class ExpressionCompiler(
         // TODO in the future, we'd like to support more references, see ValidationExpressionParameterValidator
         Map(ValidationExpressionParameterValidator.variableName -> paramType) ++ globalVariables
       ),
-      expectedType = Typed[Boolean]
+      expectedType = ExpectedType.strict(Typed[Boolean]),
     ).leftMap(_.map {
       case e: ExpressionParserCompilationError =>
         InvalidValidationExpression(
@@ -387,7 +387,7 @@ class ExpressionCompiler(
       n: Expression,
       paramName: Option[ParameterName],
       validationCtx: ValidationContext,
-      expectedType: TypingResult
+      expectedType: ExpectedType
   )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, TypedExpression] = {
     val validParser = expressionParsers
       .get(n.language)

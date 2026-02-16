@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.BaseComponentValidatio
 import pl.touk.nussknacker.engine.compile.nodecompilation.BuiltInNodeCompiler._
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.DefaultExpressionIdParamName
@@ -29,7 +30,7 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
       compileExpression(
         variable.value,
         inputContext.validationContext,
-        expectedType = Unknown,
+        expectedType = ExpectedType.loose(Unknown),
         paramName = DefaultExpressionIdParamName,
         outputVar = Some(OutputVar.variable(variable.varName))
       )
@@ -47,7 +48,7 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
       compileExpression(
         filter.expression,
         inputContext.validationContext,
-        expectedType = Typed[Boolean],
+        expectedType = ExpectedType.loose(Typed[Boolean]),
         paramName = DefaultExpressionIdParamName,
         outputVar = None
       )
@@ -72,7 +73,7 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
       compileExpression(
         expr = expression,
         ctx = inputContext.validationContext,
-        expectedType = Unknown,
+        expectedType = ExpectedType.loose(Unknown),
         paramName = NodeExpressionId.DefaultExpressionIdParamName,
         outputVar = Some(OutputVar.switch(output))
       )._2
@@ -84,7 +85,7 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
     val (additionalValidations, caseExpressions) = choices.map { case (outEdge, caseExpr) =>
       val outEdgeParamName = ParameterName(outEdge)
       val (validTypedExpression, nodeCompilation) =
-        compileExpression(caseExpr, caseCtx, Typed[Boolean], outEdgeParamName, None)
+        compileExpression(caseExpr, caseCtx, ExpectedType.loose(Typed[Boolean]), outEdgeParamName, None)
       val validation     = validateBoolean(validTypedExpression, outEdgeParamName, inputContext)
       val caseExpression = nodeCompilation
       (validation, caseExpression)
@@ -122,7 +123,7 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
             field.expression,
             Some(ParameterName(node.recordValueFieldName(index))),
             inputContext.validationContext,
-            Unknown
+            ExpectedType.loose(Unknown),
           )
           .map(result =>
             CompiledIndexedRecordField(compiledgraph.variable.Field(field.name, result.expression), index, result)
@@ -165,7 +166,7 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
   private def compileExpression(
       expr: Expression,
       ctx: ValidationContext,
-      expectedType: TypingResult,
+      expectedType: ExpectedType,
       paramName: ParameterName,
       outputVar: Option[OutputVar]
   )(

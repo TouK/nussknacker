@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 import pl.touk.nussknacker.engine.spel.parser.NuSpelExpressionParser
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
@@ -137,7 +138,7 @@ class SpelExpressionGenSpec
       .withVariable("b", Typed.fromInstance(b), paramName = None)
       .toOption
       .get
-    parser.parse(expr, validationContext, Unknown)
+    parser.parse(expr, validationContext, ExpectedType.loose(Unknown))
   }
 
 }

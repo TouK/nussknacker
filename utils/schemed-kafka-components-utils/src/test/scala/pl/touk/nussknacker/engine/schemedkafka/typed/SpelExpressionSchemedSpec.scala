@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.json.{JsonSchemaBuilder, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelFlavour
@@ -40,7 +41,8 @@ class SpelExpressionSchemedSpec extends AnyFunSuite with Matchers with Validated
       .withVariable("avroRecord", recordType, None)
       .validValue
 
-    val resultType = parser.parse("#avroRecord.get('foo')", ctx, Unknown).validValue.typingInfo.typingResult
+    val resultType =
+      parser.parse("#avroRecord.get('foo')", ctx, ExpectedType.loose(Unknown)).validValue.typingInfo.typingResult
 
     resultType shouldEqual Typed[Int]
   }
@@ -62,7 +64,8 @@ class SpelExpressionSchemedSpec extends AnyFunSuite with Matchers with Validated
       .withVariable("jsonRecord", recordType, None)
       .validValue
 
-    val resultType = parser.parse("#jsonRecord.get('foo')", ctx, Unknown).validValue.typingInfo.typingResult
+    val resultType =
+      parser.parse("#jsonRecord.get('foo')", ctx, ExpectedType.loose(Unknown)).validValue.typingInfo.typingResult
 
     resultType shouldEqual Typed[String]
   }

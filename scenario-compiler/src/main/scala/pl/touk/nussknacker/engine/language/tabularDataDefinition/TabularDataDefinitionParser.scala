@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
   TabularDataDefinitionParserErrorDetails
 }
 import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData
@@ -30,10 +31,13 @@ object TabularDataDefinitionParser extends ExpressionParser {
   override def parse(
       original: String,
       ctx: ValidationContext,
-      expectedType: typing.TypingResult
+      expectedType: ExpectedType
   ): ValidatedNel[ExpressionParseError, TypedExpression] = {
     handleBlankExpressionAsNullExpression(original).getOrElse {
-      parse(original, fromTabularDataToT = createTabularDataDefinitionTypedExpression(_, original, expectedType))
+      parse(
+        original,
+        fromTabularDataToT = createTabularDataDefinitionTypedExpression(_, original, expectedType.typ)
+      )
     }
   }
 

@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelFlavour
@@ -57,7 +58,7 @@ trait BaseSpelSpec {
     )
     val evaluationCtx = Context.dummy.withVariables(localVariables)
     parser
-      .parse(expr, validationCtx, Typed.fromDetailedType[T])
+      .parse(expr, validationCtx, ExpectedType.loose(Typed.fromDetailedType[T]))
       .value
       .expression
       .evaluate[T](evaluationCtx, globalVariables)
@@ -69,7 +70,11 @@ trait BaseSpelSpec {
       globalVariables.mapValuesNow(Typed.fromInstance)
     )
     val evaluationCtx = Context.dummy.withVariables(localVariables)
-    parser.parse(expr, validationCtx, Unknown).value.expression.evaluate[AnyRef](evaluationCtx, globalVariables)
+    parser
+      .parse(expr, validationCtx, ExpectedType.loose(Unknown))
+      .value
+      .expression
+      .evaluate[AnyRef](evaluationCtx, globalVariables)
   }
 
   protected def evaluateType(
@@ -81,7 +86,7 @@ trait BaseSpelSpec {
       localVariables.mapValuesNow(Typed.fromInstance) ++ types,
       globalVariables.mapValuesNow(Typed.fromInstance)
     )
-    parser.parse(expr, validationCtx, Unknown).map(_.returnType.display)
+    parser.parse(expr, validationCtx, ExpectedType.loose(Unknown)).map(_.returnType.display)
   }
 
   protected implicit class ValidatedValue[E, A](validated: ValidatedNel[ExpressionParseError, A]) {

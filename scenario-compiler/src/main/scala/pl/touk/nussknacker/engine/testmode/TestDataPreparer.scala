@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
 import pl.touk.nussknacker.engine.compiledgraph.CompiledParameter
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.expression.{ExpectedType, ExpressionEvaluator}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -94,7 +94,7 @@ class TestDataPreparer(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, AnyRef] = {
     expressionCompiler
-      .compile(expression, Some(parameter.name), validationContext, parameter.typ)(nodeId)
+      .compile(expression, Some(parameter.name), validationContext, ExpectedType.fromParameter(parameter))(nodeId)
       .map { typedExpression =>
         val param = CompiledParameter(typedExpression, parameter)
         evaluator.evaluateParameter(param, dummyContext)(nodeId, jobData).toTry.get.value

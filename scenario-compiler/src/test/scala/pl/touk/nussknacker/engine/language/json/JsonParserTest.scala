@@ -8,6 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectWithValue, Unknown}
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.expression.parse.ExpressionParser.BadTypeExpressionParseError
 import pl.touk.nussknacker.engine.language.json.JsonParser.JsonDecodingError
 import pl.touk.nussknacker.engine.language.json.JsonParsingFailureToExpressionParseErrorConverter.JsonParseError
@@ -178,10 +179,13 @@ class JsonParserTest extends AnyFunSuite with Matchers with LoneElement {
   }
 
   test("should respect expected type") {
-    val compiledExpression = parser.parse("\"2025-01-01\"", ValidationContext.empty, Typed[LocalDate]).validValue
+    val compiledExpression =
+      parser.parse("\"2025-01-01\"", ValidationContext.empty, ExpectedType.loose(Typed[LocalDate])).validValue
     compiledExpression.returnType.withoutValue shouldBe Typed[LocalDate]
 
-    parser.parse("\"illegal-date\"", ValidationContext.empty, Typed[LocalDate]).invalidValue shouldBe NonEmptyList.of(
+    parser
+      .parse("\"illegal-date\"", ValidationContext.empty, ExpectedType.loose(Typed[LocalDate]))
+      .invalidValue shouldBe NonEmptyList.of(
       JsonDecodingError("DecodingFailure at : Text 'illegal-date' could not be parsed at index 0")
     )
   }
@@ -206,12 +210,13 @@ class JsonParserTest extends AnyFunSuite with Matchers with LoneElement {
 
   test("should verify expected type") {
     val expectedType = Typed.record(Seq("foo" -> Typed[String]))
-    val parsingError = parser.parse("{}", ValidationContext.empty, expectedType).invalidValue.toList.loneElement
+    val parsingError =
+      parser.parse("{}", ValidationContext.empty, ExpectedType.loose(expectedType)).invalidValue.toList.loneElement
     parsingError shouldBe BadTypeExpressionParseError(expectedType, Typed.record(Seq.empty))
   }
 
   private def parse(jsonString: String) = {
-    parser.parse(jsonString, ValidationContext.empty, Unknown).map(_.returnType)
+    parser.parse(jsonString, ValidationContext.empty, ExpectedType.loose(Unknown)).map(_.returnType)
   }
 
 }

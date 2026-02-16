@@ -4,7 +4,7 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
 import org.springframework.expression.ParseException
-import org.springframework.expression.spel.{SpelCompilerMode, SpelMessage, SpelParseException, SpelParserConfiguration}
+import org.springframework.expression.spel.{SpelMessage, SpelParseException}
 import pl.touk.nussknacker.engine.api.TemplateEvaluationResult
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
-import pl.touk.nussknacker.engine.expression.IndexBasedTextRange
+import pl.touk.nussknacker.engine.expression.{ExpectedType, IndexBasedTextRange}
 import pl.touk.nussknacker.engine.expression.parse.{ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.SpelExpressionUnderlyingParserError
@@ -39,7 +39,7 @@ class SpelExpressionParser(
   override def parse(
       original: String,
       ctx: ValidationContext,
-      expectedType: TypingResult
+      expectedType: ExpectedType
   ): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val optionalNullExpression =
       if (flavour != SpelFlavour.Template) handleBlankExpressionAsNullExpression(original) else None
@@ -60,7 +60,7 @@ class SpelExpressionParser(
             createExpression(
               original = original,
               initiallyParsedExpression = parsed,
-              expectedType = expectedType
+              expectedType = expectedType.typ
             ),
             collectedTypingResult.typingInfo
           )
@@ -103,9 +103,11 @@ class SpelExpressionParser(
 
   private def validateResultTypeIfNeeded(
       collected: CollectedTypingResult,
-      expectedType: TypingResult,
+      expectedType: ExpectedType,
   ): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
-    if (expectedType == Typed[SpelExpressionRepr] || expectedType == Typed[TemplateEvaluationResult]) {
+    if (expectedType.typ == Typed[SpelExpressionRepr] || expectedType.typ == Typed[
+        TemplateEvaluationResult
+      ]) {
       Valid(collected)
     } else {
       ExpressionParser

@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator.permittedTypesForEditors
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParameterTypingParser
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node.{
@@ -116,7 +117,7 @@ case class FragmentParameterValidator(classDefinitions: ClassDefinitionSet) {
               e,
               paramName = Some(fragmentParameter.name),
               validationCtx = validationContext,
-              expectedType = validationContext(fragmentParameter.name.value),
+              expectedType = ExpectedType.loose(validationContext(fragmentParameter.name.value)),
             )
           )
         }

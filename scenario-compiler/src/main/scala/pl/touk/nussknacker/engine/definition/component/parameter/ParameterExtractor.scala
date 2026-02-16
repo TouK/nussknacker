@@ -78,7 +78,8 @@ object ParameterExtractor {
       // these features are available only for DynamicComponents
       changesCanReloadParameters = Some(false),
       nonImportantForExecution = false,
-      displayType = displayType
+      displayType = displayType,
+      strictTypeCheck = false,
     )
   }
 

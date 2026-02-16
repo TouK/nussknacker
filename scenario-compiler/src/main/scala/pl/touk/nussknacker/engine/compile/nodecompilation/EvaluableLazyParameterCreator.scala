@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compiledgraph.BaseCompiledParameter
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.expression.{ExpectedType, ExpressionEvaluator}
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
@@ -34,7 +34,12 @@ final class EvaluableLazyParameterCreator[T <: AnyRef](
 
   private def createEvaluableLazyParameter(deps: EvaluableLazyParameterCreatorDeps) = {
     val compiledExpression = deps.expressionCompiler
-      .compile(expression, Some(parameterDef.name), inputValidationContext, parameterDef.typ)(nodeId)
+      .compile(
+        expression,
+        Some(parameterDef.name),
+        inputValidationContext,
+        ExpectedType.fromParameter(parameterDef)
+      )(nodeId)
       .valueOr(err =>
         throw new IllegalArgumentException(s"Compilation failed with errors: ${err.toList.mkString(", ")}")
       )

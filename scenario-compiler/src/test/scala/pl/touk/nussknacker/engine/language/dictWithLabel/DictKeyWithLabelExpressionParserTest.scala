@@ -6,6 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue}
+import pl.touk.nussknacker.engine.expression.ExpectedType
 
 import scala.reflect.ClassTag
 
@@ -27,7 +28,7 @@ class DictKeyWithLabelExpressionParserTest extends AnyFunSuite with Matchers wit
   private def checkForDictKeyWithLabelExpressionTypingInfo[T: ClassTag](key: T, label: String) = {
     val jsonString = s"""{"key":"$key","label":"$label"}"""
     val parsedTypingResult = dictKeyWithLabelExpressionParser
-      .parse(jsonString, ValidationContext.empty, Typed.typedClass[T])
+      .parse(jsonString, ValidationContext.empty, ExpectedType.loose(Typed.typedClass[T]))
       .toOption
       .value
       .typingInfo

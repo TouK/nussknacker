@@ -40,6 +40,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils, JavaClassWithVarargs}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
 import pl.touk.nussknacker.engine.expression.parse.ExpressionParser.BadTypeExpressionParseError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{
@@ -209,7 +210,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       methodExecutionForUnknownAllowed,
       dynamicPropertyAccessAllowed
     )
-      .parse(expr, validationCtx, Typed.fromDetailedType[T])
+      .parse(expr, validationCtx, ExpectedType.loose(Typed.fromDetailedType[T]))
   }
 
   private def expressionParser(
@@ -1674,10 +1675,17 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     val passedExpected = Typed.genericTypeClass[java.util.Map[_, _]](
       List(Typed[String], Typed.record(Map("additional" -> Typed[String])))
     )
-    parser.parse("""{"aField": {"additional": 1}}""", ValidationContext.empty, passedExpected) should matchPattern {
-      case Invalid(NonEmptyList(BadTypeExpressionParseError(`passedExpected`, _), Nil)) =>
+    parser.parse(
+      """{"aField": {"additional": 1}}""",
+      ValidationContext.empty,
+      ExpectedType.loose(passedExpected)
+    ) should matchPattern { case Invalid(NonEmptyList(BadTypeExpressionParseError(`passedExpected`, _), Nil)) =>
     }
-    parser.parse("""{"aField": {"additional": "str"}}""", ValidationContext.empty, passedExpected) shouldBe Symbol(
+    parser.parse(
+      """{"aField": {"additional": "str"}}""",
+      ValidationContext.empty,
+      ExpectedType.loose(passedExpected)
+    ) shouldBe Symbol(
       "valid"
     )
   }

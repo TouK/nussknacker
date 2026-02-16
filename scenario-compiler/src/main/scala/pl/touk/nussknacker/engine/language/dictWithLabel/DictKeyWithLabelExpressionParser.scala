@@ -9,8 +9,8 @@ import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _}
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectWithValue, TypingResult}
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.{DictKeyWithLabelExpression, Expression}
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -40,13 +40,13 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
   override def parse(
       keyWithLabel: String,
       ctx: ValidationContext,
-      expectedType: typing.TypingResult
+      expectedType: ExpectedType
   ): Validated[NonEmptyList[ExpressionParseError], TypedExpression] =
     handleBlankExpressionAsNullExpression(keyWithLabel).getOrElse {
       parseDictKeyWithLabelExpression(keyWithLabel).map(expr =>
         TypedExpression(
-          CompiledDictKeyExpression(expr.key, expectedType),
-          DictKeyWithLabelExpressionTypingInfo(expr.key, expr.label, expectedType)
+          CompiledDictKeyExpression(expr.key, expectedType.typ),
+          DictKeyWithLabelExpressionTypingInfo(expr.key, expr.label, expectedType.typ)
         )
       )
     }

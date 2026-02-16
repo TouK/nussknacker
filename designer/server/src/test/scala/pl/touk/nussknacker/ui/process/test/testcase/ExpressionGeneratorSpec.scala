@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.expression.{ExpectedType, ExpressionEvaluator}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.JsonTemplate
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
@@ -280,7 +280,8 @@ class ExpressionGeneratorSpec
       expectedType: TypingResult
   ): Unit = {
     val validationContext = ValidationContext.empty
-    val compilationResult = expressionCompiler.compile(generatedExpression, None, validationContext, expectedType)
+    val compilationResult =
+      expressionCompiler.compile(generatedExpression, None, validationContext, ExpectedType.loose(expectedType))
 
     withClue(s"Expression '$generatedExpression' should compile successfully to type '${expectedType.display}'") {
       compilationResult.validValue

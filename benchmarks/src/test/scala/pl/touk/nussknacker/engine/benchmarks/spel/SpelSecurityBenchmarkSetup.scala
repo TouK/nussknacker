@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.expression.{ExpectedType, ExpressionEvaluator}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -31,7 +31,9 @@ class SpelSecurityBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) 
   private val validationContext = ValidationContext(vars.mapValuesNow(Typed.fromInstance), Map.empty)
 
   private val compiledExpression =
-    expressionCompiler.compile(Expression.spel(expression), None, validationContext, Unknown)(NodeId("")) match {
+    expressionCompiler.compile(Expression.spel(expression), None, validationContext, ExpectedType.loose(Unknown))(
+      NodeId("")
+    ) match {
       case Valid(a)   => a.expression
       case Invalid(e) => throw new IllegalArgumentException(s"Failed to parse: $e")
     }

@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.{Enricher, NodeData}
 import pl.touk.nussknacker.engine.test.testcase.EnricherMock
@@ -97,7 +98,7 @@ private class EnricherMockValidator(
             mockExpression,
             Some(ParameterName("mockExpression")),
             inputContext,
-            typ
+            ExpectedType.loose(typ),
           )
           .void
           .leftMap(convertToEnricherMockErrors)

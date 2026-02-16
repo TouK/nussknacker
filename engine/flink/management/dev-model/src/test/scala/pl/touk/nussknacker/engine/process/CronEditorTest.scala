@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.expression.ExpectedType
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -21,7 +22,10 @@ class CronEditorTest extends AnyFunSuite with Matchers {
   test("parses cron expression") {
     val expression =
       "new com.cronutils.parser.CronParser(T(com.cronutils.model.definition.CronDefinitionBuilder).instanceDefinitionFor(T(com.cronutils.model.CronType).QUARTZ)).parse('0 0 00 1/1 * ? *')"
-    val result = compiler.compile(Expression.spel(expression), None, ValidationContext.empty, Unknown)(NodeId(""))
+    val result =
+      compiler.compile(Expression.spel(expression), None, ValidationContext.empty, ExpectedType.loose(Unknown))(
+        NodeId("")
+      )
     result shouldBe Symbol("valid")
   }
 
