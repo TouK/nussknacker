@@ -15,7 +15,7 @@ class UberJarProvider(
 
   private val modelJarBuilder = new UberJarAssembler(mergeRules, uberJarPrefix)
 
-  def getUberJar(): Path = synchronized {
+  def createOrGetUberJar(): Path = synchronized {
     jarFile match {
       case Some(file) if Files.exists(file) => file
       case _ =>
