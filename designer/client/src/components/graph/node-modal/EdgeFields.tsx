@@ -1,6 +1,6 @@
 import { produce } from "immer";
 import { isEqual, uniq } from "lodash";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
@@ -20,13 +20,13 @@ import type { FieldError } from "./editors/Validators";
 import { FieldsRow } from "./fragment-input-definition/FieldsRow";
 import type { Option } from "./fragment-input-definition/TypeSelect";
 import { TypeSelect } from "./fragment-input-definition/TypeSelect";
-import { useCallbackRef } from "./node/useCallbackRef";
 
 interface Props {
+    edgeId: string;
     index: number;
     readOnly?: boolean;
     value: Edge;
-    onChange: (edge: Edge) => void;
+    onChange: (edgeId: string, edge: Edge) => void;
     edges: Edge[];
     types?: EdgeTypeOption[];
     variableTypes?: VariableTypes;
@@ -35,16 +35,16 @@ interface Props {
 
 export function EdgeFields(props: Props): React.JSX.Element {
     const { t } = useTranslation();
-    const { readOnly, value, index, onChange, edges, types, variableTypes, fieldErrors } = props;
-    const [onChangeRef] = useCallbackRef(onChange, [onChange]);
+    const { edgeId, readOnly, value: edge, index, onChange, edges, types, variableTypes, fieldErrors } = props;
     const scenarioGraph = useAppSelector(getScenarioGraph);
     const processDefinitionData = useAppSelector(getProcessDefinitionData);
 
-    const [edge, setEdge] = useState(value);
-
-    useEffect(() => {
-        onChangeRef.current?.(edge);
-    }, [edge, onChangeRef]);
+    const setEdge = useCallback(
+        (changes: (edge: Edge) => Edge) => {
+            onChange(edgeId, changes(edge));
+        },
+        [edgeId, onChange, edge],
+    );
 
     //NOTE: fragment node preview is read only so we can ignore wrong "process" and nodes here.
     const availableNodes = useMemo(() => scenarioGraph.nodes.filter((n) => NodeUtils.hasInputs(n)), [scenarioGraph.nodes]);
