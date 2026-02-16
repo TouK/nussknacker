@@ -1,41 +1,62 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel, Writer}
+import cats.data.Validated.{Invalid, Valid}
 import cats.instances.list._
 import cats.instances.map._
 import cats.kernel.{Monoid, Semigroup}
 import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
-import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
-import org.springframework.expression.spel.ast._
-import org.springframework.expression.spel.{SpelNode, standard}
 import org.springframework.expression.{EvaluationContext, Expression}
+import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
+import org.springframework.expression.spel.{standard, SpelNode}
+import org.springframework.expression.spel.ast._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
+import pl.touk.nussknacker.engine.api.typed.{AssignabilityDeterminer, ConversionStrategy}
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.NoConversion
 import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.api.typed.{AssignabilityDeterminer, ConversionStrategy}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.{IndexBasedTextRange, NullExpression}
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.{
+  ArgumentTypeError,
+  PartTypeError,
+  SpelExpressionTypingError,
+  SpelExpressionTypingErrorWithTextRange
+}
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.IllegalOperationError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.MissingObjectError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.OperatorError._
-import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.SelectionProjectionError.{IllegalProjectionError, IllegalSelectionError, IllegalSelectionTypeError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.TernaryOperatorError.{InvalidTernaryOperator, TernaryOperatorNotBooleanError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.UnsupportedOperationError.{ArrayConstructorError, BeanReferenceError, MapWithExpressionKeysError, ModificationError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.{ArgumentTypeError, PartTypeError, SpelExpressionTypingError, SpelExpressionTypingErrorWithTextRange}
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.SelectionProjectionError.{
+  IllegalProjectionError,
+  IllegalSelectionError,
+  IllegalSelectionTypeError
+}
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.TernaryOperatorError.{
+  InvalidTernaryOperator,
+  TernaryOperatorNotBooleanError
+}
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.UnsupportedOperationError.{
+  ArrayConstructorError,
+  BeanReferenceError,
+  MapWithExpressionKeysError,
+  ModificationError
+}
 import pl.touk.nussknacker.engine.spel.SpelTyper._
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.{RichSpelNode, SpelNodeId}
 import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
-import pl.touk.nussknacker.engine.spel.parser.{CompositeExpressionsWithTextRanges, ExpressionWithTextRange, SingleExpressionWithTextRange}
+import pl.touk.nussknacker.engine.spel.parser.{
+  CompositeExpressionsWithTextRanges,
+  ExpressionWithTextRange,
+  SingleExpressionWithTextRange
+}
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, MethodReferenceTyper, TypeReferenceTyper}
 import pl.touk.nussknacker.engine.util.MathUtils
 
@@ -551,9 +572,13 @@ private[spel] class SpelTyper(
             CommonSupertypeFinder.Default.commonSupertype(a, b)
 
           val elementType           = if (children.isEmpty) Unknown else children.reduce(getSupertype).withoutValue
-          val childrenCombinedValue = children.flatMap(_.valueOpt).asJava
-
-          typedListWithElementValues(elementType, childrenCombinedValue).validTypingResult
+          val childrenCombinedValue = children.flatMap(_.valueOpt)
+          if (children.size == childrenCombinedValue.size) {
+            // Combine values only if all children have one; partial results would be misleading.
+            typedListWithElementValues(elementType, childrenCombinedValue.asJava).validTypingResult
+          } else {
+            Typed.genericTypeClass(ListClass, List(elementType)).validTypingResult
+          }
         }
 
       case e: InlineMap =>
