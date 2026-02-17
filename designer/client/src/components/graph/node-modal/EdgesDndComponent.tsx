@@ -1,5 +1,5 @@
-import { defaultsDeep } from "lodash";
-import React, { useCallback, useEffect, useMemo } from "react";
+import { defaultsDeep, isEqual } from "lodash";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 
 import type { Edge } from "../../../types/edge";
 import { EdgeKind } from "../../../types/edge";
@@ -13,7 +13,6 @@ import { getValidationErrorsForField } from "./editors/Validators";
 import { NodeRowFieldsProvider } from "./node-row-fields-provider/NodeRowFieldsProvider";
 import { useCallbackRef } from "./node/useCallbackRef";
 import { useStream } from "./node/useStream";
-import type { WithTempId } from "./tempId";
 import { withoutTempId, withTempId } from "./tempId";
 
 interface EdgeType extends Partial<EdgeTypeOption> {
@@ -60,11 +59,29 @@ function withDefaults<T extends Edge>(edge: Partial<T>): T {
 export function EdgesDndComponent(props: Props): React.JSX.Element {
     const { nodeId, label, readOnly, value, onChange, ordered, variableTypes, errors } = props;
 
-    const [onChangeRef] = useCallbackRef((edges) => onChange(edges), [onChange]);
+    const lastEmittedValueRef = useRef<Edge[]>();
+    const [onChangeRef] = useCallbackRef(
+        (edges) => {
+            lastEmittedValueRef.current = edges;
+            onChange(edges);
+        },
+        [onChange],
+    );
+
     const [edge$, setEdges, edges] = useStream<Edge[]>(
         value.map((edge, index) => withTempId(withDefaults(edge), index)),
-        true,
+        false, // Don't auto-update to avoid infinite loop
     );
+
+    // Sync external value changes (but not our own changes)
+    useEffect(() => {
+        // Only update if value changed from outside (not from our own onChange)
+        if (!isEqual(lastEmittedValueRef.current, value)) {
+            const externalEdges = value.map((edge, index) => withTempId(withDefaults(edge), index));
+            setEdges(externalEdges);
+        }
+    }, [value, setEdges]);
+
     useEffect(() => {
         const subscription = edge$.observe((edges) => {
             onChangeRef.current?.(edges.map(withoutTempId));
@@ -83,16 +100,20 @@ export function EdgesDndComponent(props: Props): React.JSX.Element {
     );
 
     const replaceEdge = useCallback(
-        (current: WithTempId<Edge>) => (next: WithTempId<Edge>) => {
-            if (current !== next) {
-                setEdges((edges) =>
-                    edges.map((e, i) => {
-                        if (e === current) return withTempId(withDefaults(next), i);
-                        if (e.to && e.to === next.to) return { ...e, to: current.to };
-                        return e;
-                    }),
-                );
-            }
+        (edgeId: string, next: Edge) => {
+            setEdges((edges) =>
+                edges.map((e) => {
+                    if (e._id === edgeId) {
+                        const updated = { ...next, _id: e._id };
+                        return isEqual(e, updated) ? e : updated;
+                    }
+                    if (e.to && e.to === next.to) {
+                        const current = edges.find((edge) => edge._id === edgeId);
+                        return { ...e, to: current?.to || "" };
+                    }
+                    return e;
+                }),
+            );
         },
         [setEdges],
     );
@@ -123,10 +144,11 @@ export function EdgesDndComponent(props: Props): React.JSX.Element {
                 el: (
                     <EdgeFields
                         key={edge._id || edge.to}
+                        edgeId={edge._id || edge.to}
                         index={index}
                         readOnly={readOnly}
                         value={edge}
-                        onChange={replaceEdge(edge)}
+                        onChange={replaceEdge}
                         edges={array}
                         types={types}
                         variableTypes={variableTypes}
