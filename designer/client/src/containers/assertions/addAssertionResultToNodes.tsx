@@ -6,9 +6,9 @@ import { getStringWidth } from "../../components/graph/EspNode/element";
 import { RECT_HEIGHT, RECT_WIDTH } from "../../components/graph/EspNode/esp";
 import { useGraph } from "../../components/graph/GraphContext";
 import { isModelElement } from "../../components/graph/GraphPartialsInTS/cellUtils";
-import type { TestAssertionResult } from "../../http/resultsWithCountsDto";
 import { getTestAssertionResults } from "../../reducers/selectors/testing";
 import { useAppSelector } from "../../store/storeHelpers";
+import { calculateAssertionResultsSummary } from "./assertionResultsUtils";
 
 export const AddAssertionResultToNodes = () => {
     const graphGetter = useGraph();
@@ -23,12 +23,9 @@ export const AddAssertionResultToNodes = () => {
 
         const nodes = model.getElements().filter(isModelElement);
         nodes.forEach((element) => {
-            // get results for this node (TestAssertionResults is Record<string, TestAssertionResult[]>)
-            const results: TestAssertionResult[] = testAssertionResults?.[element.id] || [];
-            const hasResult = results && results.length > 0;
-            const failedCount = results.filter((r: TestAssertionResult) => r.type === "FailedAssertion").length;
-            const passedCount = results.filter((r: TestAssertionResult) => r.type === "SuccessfulAssertion").length;
-            const total = results.length;
+            const { hasResult, failedCount, passedCount, total } = calculateAssertionResultsSummary(
+                testAssertionResults?.[element.id] ?? [],
+            );
 
             const text = hasResult ? `${passedCount}/${total}` : "";
             const assertionResultWidth = getStringWidth(text);
