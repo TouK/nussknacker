@@ -37,7 +37,7 @@ class StubbedFragmentSourceDefinitionPreparer(
       implementationInvoker =
         (_: Params, _: NodeCompilationDependencies, _: Option[ComponentImplementationSpecificInvocationContext]) =>
           buildSource(inputParameters),
-      parameters = inputParameters,
+      parameters = List.empty,
       outputNames = List.empty,
       docsUrl = None,
       componentGroupName = None,
