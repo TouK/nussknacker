@@ -128,8 +128,14 @@ describe("Fragment", () => {
                 .eq(0)
                 .find("[data-testid='form-helper-text']")
                 .should("not.exist");
+            cy.get("[data-testid='settings:6']")
+                .find("label")
+                .contains(/Strict type checking/i)
+                .siblings()
+                .find("label")
+                .click();
 
-            cy.get("@window").find("[data-testid='settings:6']").matchImage();
+            cy.get("@window").scrollTo("bottom").find("[data-testid='settings:6']").matchImage();
 
             // Provide String Fixed value inputMode
             cy.get("@window").contains("+").click();
