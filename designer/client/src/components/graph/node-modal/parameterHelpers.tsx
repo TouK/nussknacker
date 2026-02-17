@@ -24,7 +24,7 @@ export const OverrideKeys = {
     AggregateEndSession: "custom-aggregate-session/endSessionCondition",
     HttpQueryParameters: "service-http/Query Parameters",
     HttpHeaders: "service-http/Headers",
-    WebSocketUrl: "source-websocket/Url",
+    WebSocketUrl: "source-websocket/URL",
 } as const;
 
 export type ParamKeys = (typeof OverrideKeys)[keyof typeof OverrideKeys] | (string & NonNullable<unknown>);
