@@ -7,7 +7,10 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { moveToolbar, registerToolbars } from "../../actions/nk/toolbars";
 import { PanelSide } from "../../actions/nk/ui/panelSide";
 import { useUserSettings } from "../../common/useUserSettings";
+import { VisibleDataType } from "../../reducers/graph/types";
+import { getVisibleDataType } from "../../reducers/selectors/getLiveData";
 import { getCapabilities } from "../../reducers/selectors/other";
+import { getTestAssertionResults } from "../../reducers/selectors/testing";
 import { ToolbarsSide } from "../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import { WindowKind } from "../../windowManager/WindowKind";
@@ -25,14 +28,16 @@ import { DRAGGABLE_LIST_CLASSNAME, ToolbarsContainer } from "./ToolbarsContainer
 export function useToolbarsVisibility(toolbars: Toolbar[]) {
     const { editFrontend } = useAppSelector(getCapabilities);
     const [showSurvey] = useSurvey();
+    const displayAssertionsResultPanel = useDisplayAssertionsResultPanel();
 
     const hiddenToolbars = useMemo<Record<string, boolean>>(
         () => ({
             "survey-panel": !showSurvey,
             "creator-panel": !editFrontend,
             "creator-panel-dynamic": !editFrontend,
+            "assertion-results-panel": !displayAssertionsResultPanel,
         }),
-        [editFrontend, showSurvey],
+        [displayAssertionsResultPanel, editFrontend, showSurvey],
     );
 
     return useMemo(
@@ -190,6 +195,20 @@ const StyledToolbarsContainer = styled(ToolbarsContainer)(({ theme, side }) => {
 const SideToolbars = (props: PropsOf<typeof StyledToolbarsContainer>) => {
     const { isOpened } = useSidePanel();
     return <StyledToolbarsContainer {...props} disableDnd={!isOpened || props.disableDnd} />;
+};
+
+const useDisplayAssertionsResultPanel = () => {
+    const visibleDataType = useAppSelector(getVisibleDataType);
+    const testAssertionResults = useAppSelector(getTestAssertionResults);
+
+    const hasTestAssertionResults = useMemo(() => {
+        if (!testAssertionResults || typeof testAssertionResults !== "object") return false;
+        const keys = Object.keys(testAssertionResults);
+        if (keys.length === 0) return false;
+        return keys.some((k) => Array.isArray((testAssertionResults as any)[k]) && (testAssertionResults as any)[k].length > 0);
+    }, [testAssertionResults]);
+
+    return useMemo(() => visibleDataType === VisibleDataType.test && hasTestAssertionResults, [hasTestAssertionResults, visibleDataType]);
 };
 
 export default ToolbarsLayer;

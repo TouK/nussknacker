@@ -13,7 +13,9 @@ const getToolbarsState = (state: RootState): ToolbarsStates => state.toolbars ||
 
 const appendSurveyToolbar = produce((draft: WithId<ToolbarsConfig>) => {
     draft.topRight ||= [];
+    draft.topLeft ||= [];
     draft.topRight.unshift({ id: "survey-panel" });
+    draft.topLeft.unshift({ id: "assertion-results-panel", title: "Assertion 123results" });
 });
 
 const appendAlignToolbar = produce((draft: WithId<ToolbarsConfig>) => {
