@@ -1,9 +1,9 @@
-import { Box, Typography } from "@mui/material";
+import { useTheme } from "@mui/material";
 import React from "react";
 
 import type { Assertion } from "../../../../actions/nk/testCasesActions";
-import { SyntaxHighlighter } from "../../../../common/SyntaxHighlighter";
 import { ASSERTION_SYMBOLS } from "../../../graph/node-modal/node/NodeContent/TestingContentElements/AssertionItem";
+import { ScrollableHighlightedExpression } from "./ScrollableHighlightedExpression";
 
 interface Props {
     assertion: Assertion;
@@ -11,18 +11,22 @@ interface Props {
 
 export const AssertionExpression = ({ assertion }: Props) => {
     const operatorToDisplay = ASSERTION_SYMBOLS[assertion.operator];
+    useTheme();
 
-    return (
-        <Box display={"flex"} sx={{ overflowX: "auto" }}>
-            <SyntaxHighlighter language={assertion.expected.language} staticHighlightOptions={{ showGutter: false }}>
-                {assertion.expected.expression}
-            </SyntaxHighlighter>
-            <SyntaxHighlighter language={"plain_text"} staticHighlightOptions={{ showGutter: false }}>
-                {operatorToDisplay}
-            </SyntaxHighlighter>
-            <SyntaxHighlighter language={assertion.expected.language} staticHighlightOptions={{ showGutter: false }}>
-                {assertion.actual.expression}
-            </SyntaxHighlighter>
-        </Box>
-    );
+    const parts = [
+        {
+            expression: assertion.expected.expression,
+            language: assertion.expected.language,
+        },
+        {
+            expression: operatorToDisplay,
+            language: "plain_text",
+        },
+        {
+            expression: assertion.actual.expression,
+            language: assertion.expected.language,
+        },
+    ];
+
+    return <ScrollableHighlightedExpression parts={parts} />;
 };
