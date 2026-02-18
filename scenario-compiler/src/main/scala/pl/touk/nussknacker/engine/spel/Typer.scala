@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.typed.{AssignabilityDeterminer, ConversionStrategy}
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.NoConversion
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses.ListClass
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
@@ -57,7 +58,6 @@ import pl.touk.nussknacker.engine.spel.parser.{
   SingleExpressionWithTextRange
 }
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, MethodReferenceTyper, TypeReferenceTyper}
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.MathUtils
 
 import scala.annotation.tailrec
@@ -586,9 +586,13 @@ private[spel] class Typer(
             CommonSupertypeFinder.Default.commonSupertype(a, b)
 
           val elementType           = if (children.isEmpty) Unknown else children.reduce(getSupertype).withoutValue
-          val childrenCombinedValue = children.flatMap(_.valueOpt).asJava
-
-          typedListWithElementValues(elementType, childrenCombinedValue).validTypingResult
+          val childrenCombinedValue = children.flatMap(_.valueOpt)
+          if (children.size == childrenCombinedValue.size) {
+            // Combine values only if all children have one; partial results would be misleading.
+            typedListWithElementValues(elementType, childrenCombinedValue.asJava).validTypingResult
+          } else {
+            Typed.genericTypeClass(ListClass, List(elementType)).validTypingResult
+          }
         }
 
       case e: InlineMap =>

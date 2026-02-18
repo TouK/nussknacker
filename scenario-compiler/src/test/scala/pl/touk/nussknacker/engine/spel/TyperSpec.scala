@@ -85,6 +85,11 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
       typedListWithElementValues(Typed.typedClass[Int], List(1, 2).asJava)
   }
 
+  test("detect proper List type without value") {
+    typeExpression("{'a','b'.replaceAll('b','c')}").validValue.finalResult.typingResult shouldBe
+      Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[String]))
+  }
+
   test("detect proper selection types - List") {
     typeExpression("{1,2}.?[(#this==1)]").validValue.finalResult.typingResult shouldBe
       Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[Int]))
