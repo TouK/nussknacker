@@ -1,0 +1,176 @@
+{
+    "metaData": {
+        "id": "test",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "parallelism": "1",
+                "checkpointIntervalInSeconds": "",
+                "maxEvents": "",
+                "numberOfThreads": "1",
+                "spillStateToDisk": "true",
+                "environment": "test",
+                "useAsyncInterpretation": ""
+            },
+            "metaDataType": "StreamMetaData",
+            "showDescription": false
+        }
+    },
+    "nodes": [
+        {
+            "id": "Event Generator",
+            "ref": {
+                "typ": "event-generator",
+                "parameters": [
+                    {
+                        "name": "schedule",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT1M')"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "1"
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "expression": {
+                            "language": "jsonTemplate",
+                            "expression": "{\n\t\"sampleField\": \"#{ #UTIL.uuid }\",\n\t\"dateTime\": \"#{ #DATE.now }\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}"
+                        }
+                    },
+                    {
+                        "name": "Event time",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "#DATE.now"
+                        }
+                    },
+                    {
+                        "name": "Max out-of-orderness",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT10S')"
+                        }
+                    }
+                ]
+            },
+            "additionalFields": {
+                "description": "",
+                "layoutData": {
+                    "x": -89,
+                    "y": -182
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "id": "Log",
+            "service": {
+                "id": "log",
+                "parameters": [
+                    {
+                        "name": "logger",
+                        "expression": {
+                            "language": "spel",
+                            "expression": ""
+                        }
+                    },
+                    {
+                        "name": "level",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(org.slf4j.event.Level).DEBUG"
+                        }
+                    },
+                    {
+                        "name": "message",
+                        "expression": {
+                            "language": "spelTemplate",
+                            "expression": ""
+                        }
+                    }
+                ]
+            },
+            "isDisabled": null,
+            "additionalFields": {
+                "description": "",
+                "layoutData": {
+                    "x": -108,
+                    "y": -34
+                }
+            },
+            "type": "Processor"
+        },
+        {
+            "id": "Dead End",
+            "ref": {
+                "typ": "dead-end",
+                "parameters": []
+            },
+            "endResult": null,
+            "isDisabled": null,
+            "additionalFields": {
+                "description": "",
+                "layoutData": {
+                    "x": -117,
+                    "y": 132
+                }
+            },
+            "type": "Sink"
+        }
+    ],
+    "additionalBranches": [],
+    "stickyNotes": [],
+    "testCases": {
+        "value": {
+            "id": "f8757b06-6610-4900-90cc-fd3963356e8e",
+            "name": "Test case 1",
+            "inputs": "[{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"69db68e3-8676-4a6a-8299-bc37b239fb19\\\",\\n    \\\"dateTime\\\": \\\"2026-02-18T11:25:49.265286208Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"97b34a53-c26a-462f-bfdc-81e00cc3bae7\\\",\\n    \\\"dateTime\\\": \\\"2026-02-18T11:25:49.279348625Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"11b27152-a5f0-4d04-b8d1-e140fe4c669e\\\",\\n    \\\"dateTime\\\": \\\"2026-02-18T11:25:49.279898708Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"9d4a4daa-572f-4904-9f37-9a5538c9deb9\\\",\\n    \\\"dateTime\\\": \\\"2026-02-18T11:25:49.280084750Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"d1cdfaac-aa76-40a8-b4aa-0223a1f6bed4\\\",\\n    \\\"dateTime\\\": \\\"2026-02-18T11:25:49.280206125Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"e88f7a28-8eee-4a09-a373-0fcd46ace154\\\",\\n    \\\"dateTime\\\": \\\"2026-02-18T11:25:49.280312625Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"425de17d-a755-42a1-a1b5-ddb32431e0f3\\\",\\n    \\\"dateTime\\\": \\\"2026-02-18T11:25:49.280460708Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"a8392ea6-ec16-4185-9187-efa8a526bdde\\\",\\n    \\\"dateTime\\\": \\\"2026-02-18T11:25:49.280560083Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"13e56907-607b-489c-80b1-1f2fde06ce61\\\",\\n    \\\"dateTime\\\": \\\"2026-02-18T11:25:49.280753500Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"},{\"sourceId\":\"Event Generator\",\"variables\":\"{\\n  \\\"input\\\": {\\n    \\\"sampleField\\\": \\\"dc6ff224-e04d-4d7f-b85d-0a4f9d3556ff\\\",\\n    \\\"dateTime\\\": \\\"2026-02-18T11:25:49.281148292Z\\\",\\n    \\\"type\\\": \\\"example\\\",\\n    \\\"value\\\": 100\\n  }\\n}\"}]",
+            "mocks": {},
+            "assertions": {
+                "Log": [
+                    {
+                        "operator": "equals",
+                        "expected": {
+                            "language": "spel",
+                            "expression": "#contexts[0].input.type"
+                        },
+                        "actual": {
+                            "language": "spel",
+                            "expression": "#contexts[0].input.sampleField"
+                        }
+                    },
+                    {
+                        "operator": "equals",
+                        "expected": {
+                            "language": "spel",
+                            "expression": "1"
+                        },
+                        "actual": {
+                            "language": "spel",
+                            "expression": "1"
+                        }
+                    }
+                ],
+                "Dead End": [
+                    {
+                        "operator": "equals",
+                        "expected": {
+                            "language": "spel",
+                            "expression": "true"
+                        },
+                        "actual": {
+                            "language": "spel",
+                            "expression": "#meta.processName.blank"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

@@ -40,7 +40,7 @@ const AssertionResults = () => {
                     <Expandable
                         key={nodeId}
                         expandableTitle={<AssertionResultTitle title={nodeId} assertionResults={testAssertionResults[nodeId]} />}
-                        componentId={"node-name"}
+                        componentId={nodeId}
                         detailsSx={{ pl: 2, pr: 1, py: 0 }}
                         summarySx={{ minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px" } }}
                     >
