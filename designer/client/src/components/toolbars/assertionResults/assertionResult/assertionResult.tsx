@@ -21,7 +21,7 @@ export const AssertionResult = ({ nodeId }: Props) => {
                 const assertionResult = assertionResults?.[index];
                 if (!assertionResult)
                     return (
-                        <Box key={index}>
+                        <Box key={testCaseAssertion.uuid}>
                             <Box display={"flex"} gap={0.75} alignItems={"center"}>
                                 <AssertionExpression assertion={testCaseAssertion} />
                             </Box>
@@ -29,7 +29,7 @@ export const AssertionResult = ({ nodeId }: Props) => {
                     );
 
                 return (
-                    <Box key={index}>
+                    <Box key={testCaseAssertion.uuid}>
                         <Box display={"flex"} gap={0.75} alignItems={"center"}>
                             <AssertionStatusIcon isSuccess={assertionResult.type === "SuccessfulAssertion"} />
                             <AssertionExpression assertion={testCaseAssertion} />
