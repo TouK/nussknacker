@@ -10,8 +10,9 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId,
   NodesDeploymentData
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, Source}
-import pl.touk.nussknacker.engine.api.test.ScenarioTestData
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord, ScenarioTestParametersRecord}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.EvaluableLazyParameterCreator
@@ -25,6 +26,7 @@ import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.util.source.EmptySource
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.process.compiler.{ComponentDefinitionContext, FlinkProcessCompilerDataFactory}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
@@ -116,11 +118,17 @@ class TestFlinkProcessCompilerDataFactory(
       definitionContext.modelDefinitionWithClasses.classDefinitions,
       modelConfig.globalParametersConfig
     )
-    val fragmentSourceDefinitionPreparer = new StubbedFragmentSourceDefinitionPreparer(
-      fragmentParametersDefinitionExtractor
-    )
 
     scenario.collectAllNodes.collect { case frag: FragmentInputDefinition =>
+      val parameterExpressionsFromTestData: Map[ParameterName, Expression] =
+        scenarioTestData.inputRecords
+          .find(_.sourceId.id == frag.id)
+          .collect { case ScenarioTestParametersRecord(_, parameterExpressions) => parameterExpressions }
+          .getOrElse(Map.empty)
+      val fragmentSourceDefinitionPreparer = new StubbedFragmentSourceDefinitionPreparer(
+        fragmentParametersDefinitionExtractor,
+        parameterExpressionsFromTestData,
+      )
       // We create source definition only to reuse prepareSourceFactory method.
       // Source will have fragment component type to avoid collisions with normal sources
       val fragmentSourceDef = fragmentSourceDefinitionPreparer.createSourceDefinition(frag.id, frag)
