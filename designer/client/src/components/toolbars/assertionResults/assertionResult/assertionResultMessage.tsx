@@ -9,7 +9,11 @@ interface Props {
 
 export const AssertionResultMessage = ({ assertionResult }: Props) => {
     if (assertionResult.type === "FailedAssertion") {
-        return <FormHelperText error>{assertionResult.message}</FormHelperText>;
+        return (
+            <FormHelperText sx={{ ml: 3 }} error>
+                {assertionResult.message}
+            </FormHelperText>
+        );
     }
 
     return null;
