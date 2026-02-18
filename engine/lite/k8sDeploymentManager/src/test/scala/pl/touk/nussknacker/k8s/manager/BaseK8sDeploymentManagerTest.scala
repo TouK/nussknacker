@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateR
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.http.backend.HttpClientError
 import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, VeryPatientScalaFutures}
 import skuber.{k8sInit, ConfigMap, Event, LabelSelector, ListResource, Pod, Resource, Secret, Service}
 import skuber.LabelSelector.dsl._
@@ -114,6 +113,7 @@ class BaseK8sDeploymentManagerTest
 
   override protected def afterAll(): Unit = {
     cleanup()
+    backend.close()
   }
 
   class K8sDeploymentManagerTestFixture(
