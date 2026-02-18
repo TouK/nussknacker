@@ -413,6 +413,7 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     val wireMockServer = AvailablePortFinder.withAvailablePortsBlocked(1)(l => new WireMockServer(l.head))
     wireMockServer.start()
     val clientRequestTimeout = 1.seconds
+    val sttpBackend          = AsyncHttpClientFutureBackend()
     try {
       def stubWithFixedDelay(delay: FiniteDuration): Unit = {
         wireMockServer.stubFor(
@@ -428,6 +429,7 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
       val manager = createDeploymentManager(
         config = defaultConfig
           .copy(restUrl = Some(wireMockServer.baseUrl()), scenarioStateRequestTimeout = clientRequestTimeout),
+        sttpBackend = sttpBackend
       )
 
       val durationLongerThanClientTimeout = clientRequestTimeout.plus(patienceConfig.timeout)
@@ -445,13 +447,14 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
         .futureValue(Timeout(durationLongerThanClientTimeout.plus(1 second)))
       resultWithoutDelay shouldEqual List.empty
     } finally {
+      sttpBackend.close()
       wireMockServer.stop()
     }
   }
 
   private def createDeploymentManager(
       config: FlinkConfig = defaultConfig,
-      sttpBackend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
+      sttpBackend: SttpBackend[Future, Any]
   ): DeploymentManager = {
     val deploymentManagerDependencies = new DeploymentManagerDependencies(
       ExecutionContext.global,

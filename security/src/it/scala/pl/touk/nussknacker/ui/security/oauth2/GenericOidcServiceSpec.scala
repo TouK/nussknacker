@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.security.oauth2
 import com.dimafeng.testcontainers.{ForAllTestContainer, SingleContainer}
 import dasniko.testcontainers.keycloak.KeycloakContainer
 import org.apache.commons.text.StringEscapeUtils
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime._
@@ -20,7 +21,12 @@ import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import java.net.URI
 import scala.concurrent.Future
 
-class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with Matchers with VeryPatientScalaFutures {
+class GenericOidcServiceSpec
+    extends AnyFunSuite
+    with BeforeAndAfterAll
+    with ForAllTestContainer
+    with Matchers
+    with VeryPatientScalaFutures {
 
   private val realmClientSecret = "123456789"
 
@@ -33,6 +39,11 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
   private implicit val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
 
   private def baseUrl: String = s"${container.container.getAuthServerUrl}/realms/$realmId"
+
+  override protected def afterAll(): Unit = {
+    backend.close()
+    super.afterAll()
+  }
 
   test("Basic OpenIDConnect flow") {
     val config = oauth2Conf
