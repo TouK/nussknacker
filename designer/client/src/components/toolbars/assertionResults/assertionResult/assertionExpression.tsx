@@ -11,7 +11,6 @@ interface Props {
 
 export const AssertionExpression = ({ assertion }: Props) => {
     const operatorToDisplay = ASSERTION_SYMBOLS[assertion.operator];
-    useTheme();
 
     const parts = [
         {
