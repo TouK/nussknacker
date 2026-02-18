@@ -1,14 +1,14 @@
 import { Box, Typography, useTheme } from "@mui/material";
 import React from "react";
 
-import { calculateAssertionResultsSummary } from "../../../containers/assertions/assertionResultsUtils";
-import type { TestAssertionResult } from "../../../http/resultsWithCountsDto";
+import { calculateAssertionResultsSummary } from "../../../../containers/assertions/assertionResultsUtils";
+import type { TestAssertionResult } from "../../../../http/resultsWithCountsDto";
 
 interface Props {
     title: string;
     assertionResults: TestAssertionResult[];
 }
-export const AssertionResultsTitle = ({ title, assertionResults }: Props) => {
+export const AssertionResultTitle = ({ title, assertionResults }: Props) => {
     return (
         <Box display={"flex"} alignItems={"center"} gap={0.75}>
             <Typography component={"p"} variant={"body2"}>

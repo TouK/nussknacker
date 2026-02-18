@@ -1,7 +1,7 @@
 import { FormHelperText } from "@mui/material";
 import React from "react";
 
-import type { TestAssertionResult } from "../../../http/resultsWithCountsDto";
+import type { TestAssertionResult } from "../../../../http/resultsWithCountsDto";
 
 interface Props {
     assertionResult: TestAssertionResult;

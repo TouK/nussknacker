@@ -1,9 +1,9 @@
 import { Box } from "@mui/material";
 import React from "react";
 
-import { getTestCaseAssertionsForNode } from "../../../reducers/selectors/testCases";
-import { getTestAssertionResultsForNode } from "../../../reducers/selectors/testing";
-import { useAppSelector } from "../../../store/storeHelpers";
+import { getTestCaseAssertionsForNode } from "../../../../reducers/selectors/testCases";
+import { getTestAssertionResultsForNode } from "../../../../reducers/selectors/testing";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { AssertionExpression } from "./assertionExpression";
 import { AssertionResultMessage } from "./assertionResultMessage";
 import { AssertionStatusIcon } from "./AssertionStatusIcon";
