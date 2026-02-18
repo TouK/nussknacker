@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.lite.kafka
 
 import com.dimafeng.testcontainers._
 import com.typesafe.scalalogging.LazyLogging
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
@@ -16,6 +17,7 @@ import scala.concurrent.Future
 
 class NuKafkaRuntimeDockerProbesTest
     extends AnyFunSuite
+    with BeforeAndAfterAll
     with BaseNuKafkaRuntimeDockerTest
     with Matchers
     with ExtremelyPatientScalaFutures
@@ -45,6 +47,11 @@ class NuKafkaRuntimeDockerProbesTest
 
   private implicit val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
   private val baseManagementUrl                          = uri"http://localhost:$mappedRuntimeApiPort"
+
+  override protected def afterAll(): Unit = {
+    backend.close()
+    super.afterAll()
+  }
 
   test("readiness probe") {
     eventually {
