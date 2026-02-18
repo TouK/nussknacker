@@ -32,7 +32,8 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
         getClass.getClassLoader,
         ClassDefinitionSet(Set.empty[ClassDefinition]),
         GlobalParametersConfig.default
-      )
+      ),
+      Map.empty,
     )
     val parameters: Seq[Parameter] = stubbedSourcePreparer
       .createSourceDefinition("foo", fragmentInputDefinition)
