@@ -10,9 +10,7 @@ import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.containers.{FileSystemBind, WithDockerContainers}
 
-import java.nio.file.{Files, FileSystems, Path}
-import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
-import scala.jdk.CollectionConverters._
+import java.nio.file.Path
 
 trait WithFlinkContainers extends WithDockerContainers { self: Suite with StrictLogging =>
 
@@ -29,7 +27,8 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with Strict
 
   protected def flinkContainers: List[LazyContainer[GenericContainer]] = List(jobManagerContainer, taskManagerContainer)
 
-  protected lazy val savepointDir: Path = prepareSavepointVolumeDir()
+  protected lazy val savepointDir: Path =
+    createMountableTempDirectory("nussknackerFlinkSavepointTest", BindMode.READ_WRITE)
 
   private lazy val flinkImage = prepareFlinkImage()
 
@@ -85,17 +84,6 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with Strict
 
       image.withFileFromString(file, withFlinkLibTweaks)
     }
-  }
-
-  private def prepareSavepointVolumeDir(): Path = {
-    val tempDirectoryAttributes =
-      if (FileSystems.getDefault.supportedFileAttributeViews().contains("posix")) {
-        val allPermissions = PosixFilePermissions.asFileAttribute(PosixFilePermission.values().toSet.asJava)
-        List(allPermissions)
-      } else {
-        Nil // Windows
-      }
-    Files.createTempDirectory("nussknackerFlinkSavepointTest", tempDirectoryAttributes: _*)
   }
 
 }

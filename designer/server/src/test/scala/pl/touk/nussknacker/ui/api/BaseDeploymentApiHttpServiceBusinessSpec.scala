@@ -24,8 +24,7 @@ import pl.touk.nussknacker.test.config.{
 import pl.touk.nussknacker.test.containers.FileSystemBind
 
 import java.io.File
-import java.nio.file.{Files, FileSystems, Path}
-import java.nio.file.attribute.PosixFilePermissions
+import java.nio.file.Path
 
 trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploymentManager {
   self: NuItTest
@@ -72,17 +71,8 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
     .fragmentOutput("out", "out")
 
   private lazy val inputDirectory = {
-    val tempDirectoryAttributes =
-      if (FileSystems.getDefault.supportedFileAttributeViews().contains("posix")) {
-        List(PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxr-xr-x")))
-      } else {
-        Nil // Windows
-      }
-    val directory = Files.createTempDirectory(
-      s"nusssknacker-${getClass.getSimpleName}-transactions-",
-      // be default temp directory is read only for user
-      tempDirectoryAttributes: _*
-    )
+    val directory =
+      createMountableTempDirectory(s"nusssknacker-${getClass.getSimpleName}-transactions-", BindMode.READ_ONLY)
     populateInputTransactionsDirectory(directory)
     directory
   }
@@ -90,12 +80,12 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
   protected def populateInputTransactionsDirectory(rootDirectory: Path): Unit
 
   private lazy val outputDirectory =
-    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-transactions_summary-")
+    createMountableTempDirectory(s"nusssknacker-${getClass.getSimpleName}-transactions_summary-", BindMode.READ_WRITE)
 
   private lazy val inputTransactionsBind = FileSystemBind(
     inputDirectory.toString,
     "/transactions",
-    BindMode.READ_WRITE
+    BindMode.READ_ONLY
   )
 
   private lazy val outputTransactionsSummaryBind = FileSystemBind(
