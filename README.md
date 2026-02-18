@@ -35,7 +35,7 @@ An essential part of Nussknacker is a visual design tool for decision algorithms
 
 The way the data are processed and the features available depend on the processing mode and engine used. 
 
-Nussknacker supports two [processing modes](https://nussknacker.io/documentation/docs/about/ProcessingModes/): streaming and request-response. In streaming mode, Nussknacker uses Kafka as its primary interface: input streams of data and output streams of decisions. In request-response mode, it exposes HTTP endpoints with OpenAPI definitions.
+Nussknacker supports two [processing modes](https://docs.nussknacker.io/about/ProcessingModes/): streaming and request-response. In streaming mode, Nussknacker uses Kafka as its primary interface: input streams of data and output streams of decisions. In request-response mode, it exposes HTTP endpoints with OpenAPI definitions.
 
 Support for batch processing mode is in active development and is planned to be released soon. For a preview, check out our [blog post](https://nussknacker.io/blog/batch-processing-on-apache-flink/).
 
@@ -53,7 +53,7 @@ We discovered that several factors heavily influence the development of algorith
 - **Observability** - experimenting with algorithms requires insights going beyond pure technical metrics like throughput, Kafka topics lag, etc. Out of the box, Nussknacker comes with an integrated and ready-to-use monitoring subsystem which allows monitoring not only technical aspects of the running scenario but also its internal behavior - for example [events count](https://docs.nussknacker.io/scenariosAuthoring/testingAndDebugging/#watching-algorithm-behavior-with-counts) per scenario step. You will not need to spend developers' time on this functionality.
 - **Architecture** - last but not least, the fundamentals on which you build matter. Nussknacker  achieves exceptional throughput, horizontal scalability, resilience, and high availability through the use of tools and platforms known for their rock-solid architecture - Kafka, Flink, and Kubernetes, which handle all processing tasks.
 
-Check out [this document](https://nussknacker.io/documentation/docs/about/KeyFeatures/) for a concise summary of Nussknacker features. 
+Check out [this document](https://docs.nussknacker.io/about/KeyFeatures/) for a concise summary of Nussknacker features. 
 
 
 ## Use cases

@@ -58,7 +58,7 @@ class AzureSchemaRegistryKafkaAvroTest
   private val eventHubsSharedAccessKey =
     Option(System.getenv("AZURE_EVENT_HUBS_SHARED_ACCESS_KEY")).getOrElse("unknown")
 
-  // See https://nussknacker.io/documentation/cloud/azure/#setting-up-nussknacker-cloud
+  // https://docs.nussknacker.io/stepByStepInstructions/AzureEventHubs/#setting-up-nussknacker-cloud
   private val modelConfig = ConfigFactory.parseString(
     s"""{
        |  kafka {

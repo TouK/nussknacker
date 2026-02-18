@@ -68,7 +68,7 @@ When writing documentation please follow these instructions:
     ```
     [main configuration file](./Common#configuration-areas) 
     ```
-* all links to `https://nussknacker.io/documentation/`, but other than `Documentation` section in that page, e.g. to `Quickstart` sections: 
+* all links to `https://docs.nussknacker.io/`, but other than `Documentation` section in that page, e.g. to `Quickstart` sections: 
   * should **not** point to `md` or `mdx` files
   * should **not** be relative
     
@@ -242,7 +242,7 @@ https://github.com/Azure/azure-sdk-for-java/wiki/Azure-Identity-Examples#authent
 To run the tests set up environment variables:
 - AZURE_EVENT_HUBS_NAMESPACE, that is Event Hubs Namespace where schema registry is registered (by default nu-cloud).
 - AZURE_EVENT_HUBS_SHARED_ACCESS_KEY_NAME and AZURE_EVENT_HUBS_SHARED_ACCESS_KEY, to configure Kafka admin client that uses "sasl.jaas.config" to authenticate
-(see properties configuration in https://nussknacker.io/documentation/cloud/azure/#setting-up-nussknacker-cloud)
+(see properties configuration in https://docs.nussknacker.io/stepByStepInstructions/AzureEventHubs/#setting-up-nussknacker-cloud)
 
 ### Using logs in tests
 

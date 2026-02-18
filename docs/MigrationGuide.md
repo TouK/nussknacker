@@ -755,7 +755,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Configuration changes
 * [#5297](https://github.com/TouK/nussknacker/pull/5297) `componentsUiConfig` key handling change:
   * `$processingType-$componentType-$componentName` format was replaced by `$componentType-$componentName` format
-* [#5323](https://github.com/TouK/nussknacker/pull/5323) Support for [the legacy categories configuration format](https://nussknacker.io/documentation/docs/1.12/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories) was removed.
+* [#5323](https://github.com/TouK/nussknacker/pull/5323) Support for [the legacy categories configuration format](https://docs.nussknacker.io/1.12/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories) was removed.
   In the new format, you should specify `category` field inside each scenario type.
 * [#5419](https://github.com/TouK/nussknacker/pull/5419) Support for system properties was removed from model configuration
   (they aren't resolved and added to merged configuration)
@@ -1409,7 +1409,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2624](https://github.com/TouK/nussknacker/pull/2624) Default name for `process` tag is now `scenario`. This affects metrics and count functionalities. 
   Please update you Flink/Telegraf setup accordingly (see [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart/tree/main/telegraf) for details). 
   If you still want to use `process` tag (e.g. you have a lot of dashboards), please set `countsSettings.metricsConfig.scenarioTag` setting to `process`
-  Also, dashboard links format changed, see [documentation](https://nussknacker.io/documentation/docs/configuration/DesignerConfiguration/#metric-dashboard) for the details.
+  Also, dashboard links format changed, see [documentation](https://docs.nussknacker.io/OSS_docs/configuration/DesignerConfiguration/#metric-dashboard) for the details.
 * [#2645](https://github.com/TouK/nussknacker/pull/2645) Default models: `genericModel.jar`, `liteModel.jar`. 
   were merged to `defaultModel.jar`, `managementSample.jar` was renamed to `devModel.jar`. 
   If you use `defaultModel.jar` it's important to include `flinkExecutor.jar` explicitly on model classpath.                         
