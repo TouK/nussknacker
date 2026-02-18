@@ -5,7 +5,9 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.StrictLogging
 import io.circe.Json
 import io.circe.syntax.EncoderOps
+import org.apache.commons.lang3.SystemUtils
 import org.apache.flink.api.common.JobID
+import org.apache.flink.util.FileUtils
 import org.scalatest.Inside.inside
 import org.scalatest.Inspectors.forAll
 import org.scalatest.funsuite.AnyFunSuiteLike
@@ -25,7 +27,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, Exte
 import pl.touk.nussknacker.engine.livedata._
 
 import java.net.URI
-import java.nio.file.{Files, Paths}
+import java.nio.file.Files
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
@@ -279,21 +281,26 @@ trait BaseFlinkDeploymentManagerSpec
     kafkaClient.createTopic(outTopic, 1)
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processName))
+    val tempDir = Files.createTempDirectory("customSavepoint")
     try {
       // we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
       messagesFromTopic(outTopic, 1) shouldBe List("[One element]")
 
-      val savepointDir = Files.createTempDirectory("customSavepoint")
+      val customSavepointDir = if (useMiniClusterForDeployment || !SystemUtils.IS_OS_WINDOWS) {
+        tempDir.toUri
+      } else {
+        URI.create(s"file:/tmp/${tempDir.getFileName}")
+      }
       val savepointPathFuture = deploymentManager
         .processCommand(
           DMMakeScenarioSavepointCommand(
             processEmittingOneElementAfterStart.name,
-            savepointDir = Some(savepointDir.toUri.toString)
+            savepointDir = Some(customSavepointDir.toString)
           )
         )
         .map(_.path)
       val savepointPath = new URI(savepointPathFuture.futureValue)
-      Paths.get(savepointPath).startsWith(savepointDir) shouldBe true
+      savepointPath.toString should startWith(customSavepointDir.toURL.toString)
 
       cancelProcess(processName)
       deployProcessAndWaitIfRunning(
@@ -306,6 +313,7 @@ trait BaseFlinkDeploymentManagerSpec
       messages shouldBe List("[One element]", "[One element, One element]")
     } finally {
       cancelProcess(processName)
+      FileUtils.deleteDirectoryQuietly(tempDir.toFile)
     }
   }
 
