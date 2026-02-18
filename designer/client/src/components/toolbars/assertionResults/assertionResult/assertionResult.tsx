@@ -17,15 +17,27 @@ export const AssertionResult = ({ nodeId }: Props) => {
 
     return (
         <Box display={"flex"} flexDirection={"column"} gap={1}>
-            {testCaseAssertions.map((testCaseAssertion, index) => (
-                <Box key={index}>
-                    <Box display={"flex"} gap={0.75} alignItems={"center"}>
-                        <AssertionStatusIcon isSuccess={assertionResults[index].type === "SuccessfulAssertion"} />
-                        <AssertionExpression assertion={testCaseAssertion} />
+            {testCaseAssertions.map((testCaseAssertion, index) => {
+                const assertionResult = assertionResults?.[index];
+                if (!assertionResult)
+                    return (
+                        <Box key={index}>
+                            <Box display={"flex"} gap={0.75} alignItems={"center"}>
+                                <AssertionExpression assertion={testCaseAssertion} />
+                            </Box>
+                        </Box>
+                    );
+
+                return (
+                    <Box key={index}>
+                        <Box display={"flex"} gap={0.75} alignItems={"center"}>
+                            <AssertionStatusIcon isSuccess={assertionResult.type === "SuccessfulAssertion"} />
+                            <AssertionExpression assertion={testCaseAssertion} />
+                        </Box>
+                        <AssertionResultMessage assertionResult={assertionResult} />
                     </Box>
-                    <AssertionResultMessage assertionResult={assertionResults[index]} />
-                </Box>
-            ))}
+                );
+            })}
         </Box>
     );
 };

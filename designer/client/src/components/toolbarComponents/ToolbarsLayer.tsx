@@ -200,6 +200,7 @@ const SideToolbars = (props: PropsOf<typeof StyledToolbarsContainer>) => {
 const useDisplayAssertionsResultPanel = () => {
     const visibleDataType = useAppSelector(getVisibleDataType);
     const testAssertionResults = useAppSelector(getTestAssertionResults);
+    const [testingTabVisible] = useUserSettings("node.showTestingTab");
 
     const hasTestAssertionResults = useMemo(() => {
         if (!testAssertionResults || typeof testAssertionResults !== "object") return false;
@@ -208,7 +209,10 @@ const useDisplayAssertionsResultPanel = () => {
         return keys.some((k) => Array.isArray((testAssertionResults as any)[k]) && (testAssertionResults as any)[k].length > 0);
     }, [testAssertionResults]);
 
-    return useMemo(() => visibleDataType === VisibleDataType.test && hasTestAssertionResults, [hasTestAssertionResults, visibleDataType]);
+    return useMemo(
+        () => visibleDataType === VisibleDataType.test && hasTestAssertionResults && testingTabVisible,
+        [hasTestAssertionResults, testingTabVisible, visibleDataType],
+    );
 };
 
 export default ToolbarsLayer;
