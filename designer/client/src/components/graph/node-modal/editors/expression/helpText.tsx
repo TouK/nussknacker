@@ -21,7 +21,7 @@ export function useHelpText(language: ExpressionLang) {
                     `You are using an expression-based input, allowing calculations and conditions. Access variables and helpers with \`#\`, e.g., \`#input.someField == 'value'\` or \`#UTIL.split('foo-bar', '-')\`. \n 
 When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n
 Strings need to be quoted; use \`+\` to concatenate multiple strings values. \n
-Use autocompletion to explore available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel).`,
+Use autocompletion to explore available options. To read more see [Documentation](https://docs.nussknacker.io/scenariosAuthoring/introduction/#spel).`,
                 );
                 switch (paramKey) {
                     case OverrideKeys.DecisionTableMatch:
@@ -50,7 +50,7 @@ Use autocompletion to explore available options. To read more see [Documentation
                     `You are using a string-template-based input, allowing text with embedded expressions. Text should not be quoted. \n 
 Embed expression with \`#{ }\`, e.g., \`Hello #{ #input.name }\`.  \n
 When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n
-Use autocompletion to explore available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel)`,
+Use autocompletion to explore available options. To read more see [Documentation](https://docs.nussknacker.io/scenariosAuthoring/introduction/#spel)`,
                 );
             case ExpressionLang.JsonTemplate:
                 return t(
@@ -71,7 +71,7 @@ In placeholders, you can use more complex types such as records and lists. To ma
 \n
 When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`.\n
 \n
-Use autocompletion to explore available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel)`,
+Use autocompletion to explore available options. To read more see [Documentation](https://docs.nussknacker.io/scenariosAuthoring/introduction/#spel)`,
                 );
         }
     }, [language, paramKey, t]);

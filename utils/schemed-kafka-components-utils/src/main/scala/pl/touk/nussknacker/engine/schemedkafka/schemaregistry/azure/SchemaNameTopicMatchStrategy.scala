@@ -60,7 +60,7 @@ object SchemaNameTopicMatchStrategy {
 
   /**
     * Transforms topic name to schema naming convention.
-    * @see https://nussknacker.io/documentation/docs/integration/KafkaIntegration/#association-between-schema-with-topic
+    * @see https://docs.nussknacker.io/integrations/kafka/#association-between-schema-and-topic
     */
   def toSchemaNamingConvention(topicName: UnspecializedTopicName): String =
     topicName.name.toLowerCase.replaceAll("\\W+", " ").split(" ").map(_.capitalize).mkString("")
