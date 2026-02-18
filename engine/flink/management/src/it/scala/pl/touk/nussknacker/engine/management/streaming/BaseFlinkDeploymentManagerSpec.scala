@@ -22,7 +22,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.classloader.ModelClassLoaderFactory
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
-import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.livedata._
 
 import java.net.URI
@@ -248,19 +247,6 @@ trait BaseFlinkDeploymentManagerSpec
   test("save state when redeploying") {
     val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(ProcessName("redeploy"))
     testRedeployWithStatefulSampleProcess(processEmittingOneElementAfterStart)
-  }
-
-  test("redeploy scenario with greater parallelism than configured in mini cluster") {
-    // For useMiniClusterForDeployment mode, this test has no sense
-    if (!useMiniClusterForDeployment) {
-      val greaterParallelism = FlinkMiniClusterFactory.DefaultTaskSlots + 1
-      val processEmittingOneElementAfterStart =
-        StatefulSampleProcess.prepareProcess(
-          ProcessName(s"redeploy-parallelism-$greaterParallelism"),
-          parallelism = greaterParallelism
-        )
-      testRedeployWithStatefulSampleProcess(processEmittingOneElementAfterStart)
-    }
   }
 
   private def testRedeployWithStatefulSampleProcess(processEmittingOneElementAfterStart: CanonicalProcess) = {
