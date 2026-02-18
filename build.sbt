@@ -318,6 +318,7 @@ val ujsonV                    = "4.2.1"
 val igniteV                   = "2.10.0"
 val retryV                    = "0.3.6"
 val restAssuredV              = "5.5.0"
+val awsSdkCommonsCodecV       = "1.17.1"
 
 lazy val commonDockerSettings = {
   Seq(
@@ -580,6 +581,21 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     flinkExecutor        % Test,
     flinkTestUtils       % "it,test",
     kafkaTestUtils       % "it,test"
+  )
+
+lazy val awsManagedFlinkDeploymentManager = (project in flink("aws-managed-flink-deployment-manager"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-aws-managed-flink-deployment-manager",
+    libraryDependencies ++= {
+      Seq(
+        "commons-codec" % "commons-codec" % awsSdkCommonsCodecV
+      )
+    }
+  )
+  .dependsOn(
+    commonUtils % Provided,
+    testUtils   % Test,
   )
 
 lazy val flinkMetricsDeferredReporter = (project in flink("metrics-deferred-reporter"))
@@ -2202,6 +2218,7 @@ lazy val modules = List[ProjectReference](
   requestResponseRuntime,
   liteEngineRuntimeApp,
   flinkDeploymentManager,
+  awsManagedFlinkDeploymentManager,
   flinkDevModel,
   flinkDevModelJava,
   flinkTableApiComponents,
