@@ -1,8 +1,12 @@
 # taskmanager.numberOfTaskSlots will be set by Flink's entrypoint script
 
-jobmanager.memory.flink.size: 800m
-taskmanager.memory.flink.size: 800m
-taskmanager.memory.jvm-metaspace.size: 512m
+jobmanager.memory.process.size: 1200m
+jobmanager.memory.jvm-metaspace.size: 700m
+
+taskmanager.memory.process.size: 1400m
+taskmanager.memory.jvm-metaspace.size: 700m
+taskmanager.memory.managed.fraction: 0.2
+
 env.java.default-opts.all: >-
   --add-opens=java.base/java.nio.charset=ALL-UNNAMED
   --add-opens=java.base/sun.nio.cs=ALL-UNNAMED
