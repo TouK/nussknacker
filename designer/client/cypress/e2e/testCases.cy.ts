@@ -1,3 +1,5 @@
+import { sanitizeHtmlAttribute } from "../../src/common/HtmlUtils";
+
 const seed = "testCases";
 
 describe("Test cases", () => {
@@ -197,5 +199,5 @@ const verifyMockData = (mockValue: string) => {
 };
 
 const expandAssertionItem = (nodeId: string) => {
-    cy.get(`[id="${nodeId}-header"]`).click();
+    cy.get(`[id="${sanitizeHtmlAttribute(nodeId)}-header"]`).click();
 };
