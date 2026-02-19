@@ -9,11 +9,14 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.test.testcase.Assertion
 import pl.touk.nussknacker.engine.test.testcase.Assertion.ExpressionAssertion
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.DeserializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ScenarioValidationError
-import pl.touk.nussknacker.ui.process.test.testcase.{AssertionCompilationError, AssertionValidationError}
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.{
+  ScenarioNodeValidationErrors,
+  ScenarioValidationError
+}
 import pl.touk.nussknacker.ui.process.test.testcase.AssertionCompilationError.{
   ExpressionAssertionCompilationError,
   PredicateAssertionCompilationError
@@ -76,6 +79,8 @@ object TestingApiErrorMessages {
       case PerformTestError.TestResultsSizeExceededError(approxSizeInBytes, maxBytes) =>
         TestingApiErrorMessages.testResultsSizeExceeded(approxSizeInBytes, maxBytes)
       case ScenarioValidationError(errors) =>
+        TestingApiErrorMessages.scenarioHasValidationErrors(errors)
+      case ScenarioNodeValidationErrors(errors) =>
         TestingApiErrorMessages.scenarioHasValidationErrors(errors)
       case PerformTestError.MockConfiguredForNotExistingNodesError(nodeIds) =>
         TestingApiErrorMessages.mocksConfiguredForNotExistingNodes(nodeIds)
@@ -174,6 +179,9 @@ object TestingApiErrorMessages {
 
   def testResultsSizeExceeded(approxSizeInBytes: Long, maxBytes: Long) =
     s"Test results size exceeded (approximate size is $approxSizeInBytes B). The maximum permitted size is $maxBytes B. Contact the system administrator to increase this limit."
+
+  private def scenarioHasValidationErrors(errors: List[NodeValidationError]) =
+    s"Only scenario without validation errors can be tested. Errors: $errors"
 
   private def scenarioHasValidationErrors(errors: ValidationResults.ValidationErrors) =
     s"Only scenario without validation errors can be tested. Errors: $errors"

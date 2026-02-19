@@ -4,8 +4,10 @@ import cats.data.{EitherT, NonEmptyList}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
@@ -35,6 +37,7 @@ import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{
   ParametersDefinitionError,
   TestingCapabilitiesError
 }
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ScenarioNodeValidationErrors
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.validation.ParametersValidator
 
@@ -140,6 +143,20 @@ class ScenarioTestingApiHttpService(
             scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
               scenarioWithDetails.processingType
             )
+            validationErrors <- validateTestData(
+              scenarioName = scenarioName,
+              scenarioGraph = request.scenarioGraph,
+              scenarioWithDetails = scenarioWithDetails,
+              scenarioTestService = scenarioTestService,
+              scenarioTestData = request.testData,
+            )
+            _ <- EitherT.fromEither[Future](
+              Either.cond(
+                test = validationErrors.isEmpty,
+                right = (),
+                left = ErrorResult(TestingApiErrorMessages.from(ScenarioNodeValidationErrors(validationErrors)))
+              )
+            )
             resultWithCounts <- request.testData match {
               case ScenarioTestData.WithParameters(sourceParameters) =>
                 EitherT(
@@ -191,37 +208,53 @@ class ScenarioTestingApiHttpService(
         { case (scenarioName, request) =>
           for {
             scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
-            validator = processingTypeToParametersValidator.forProcessingTypeUnsafe(scenarioWithDetails.processingType)
             scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
               scenarioWithDetails.processingType
             )
-            metaData = request.scenarioGraph.properties.toMetaData(scenarioName)
-            validationResults <- request.testData match {
-              case ScenarioTestData.WithParameters(sourceParameters) =>
-                EitherT
-                  .fromEither[Future](
-                    scenarioTestService
-                      .validateAndGetTestParametersDefinition(
-                        request.scenarioGraph,
-                        scenarioWithDetails.processVersionUnsafe,
-                        scenarioWithDetails.isFragment
-                      )
-                      .left
-                      .map(toDto)
-                  )
-                  .map(validator.validate(sourceParameters, _)(metaData))
-              case ScenarioTestData.WithLiveData(numberOfSamples) =>
-                EitherT
-                  .fromEither[Future](
-                    scenarioTestService.validateRecordsCount[TestingError](numberOfSamples)(
-                      BadRequestTestingError.TooManyRecordsRequested(_)
-                    )
-                  )
-                  .map((_: Unit) => List.empty)
-            }
+            validationResults <- validateTestData(
+              scenarioName = scenarioName,
+              scenarioGraph = request.scenarioGraph,
+              scenarioWithDetails = scenarioWithDetails,
+              scenarioTestService = scenarioTestService,
+              scenarioTestData = request.testData,
+            )
           } yield ParametersValidationResultDto(validationResults, validationPerformed = true)
         }
       }
+  }
+
+  private def validateTestData(
+      scenarioName: ProcessName,
+      scenarioGraph: ScenarioGraph,
+      scenarioWithDetails: ScenarioWithDetails,
+      scenarioTestService: ScenarioTestService,
+      scenarioTestData: ScenarioTestData,
+  )(implicit loggedUser: LoggedUser): EitherT[Future, TestingError, List[ValidationResults.NodeValidationError]] = {
+    val validator = processingTypeToParametersValidator.forProcessingTypeUnsafe(scenarioWithDetails.processingType)
+    val metaData  = scenarioGraph.properties.toMetaData(scenarioName)
+    scenarioTestData match {
+      case ScenarioTestData.WithParameters(sourceParameters) =>
+        EitherT
+          .fromEither[Future](
+            scenarioTestService
+              .validateAndGetTestParametersDefinition(
+                scenarioGraph,
+                scenarioWithDetails.processVersionUnsafe,
+                scenarioWithDetails.isFragment
+              )
+              .left
+              .map(toDto)
+          )
+          .map(validator.validate(sourceParameters, _)(metaData))
+      case ScenarioTestData.WithLiveData(numberOfSamples) =>
+        EitherT
+          .fromEither[Future](
+            scenarioTestService.validateRecordsCount[TestingError](numberOfSamples)(
+              BadRequestTestingError.TooManyRecordsRequested(_)
+            )
+          )
+          .map((_: Unit) => List.empty)
+    }
   }
 
   expose {
