@@ -1,4 +1,3 @@
-import { useTheme } from "@mui/material";
 import React from "react";
 
 import type { Assertion } from "../../../../actions/nk/testCasesActions";

@@ -204,9 +204,9 @@ const useDisplayAssertionsResultPanel = () => {
 
     const hasTestAssertionResults = useMemo(() => {
         if (!testAssertionResults || typeof testAssertionResults !== "object") return false;
-        const keys = Object.keys(testAssertionResults);
-        if (keys.length === 0) return false;
-        return keys.some((k) => Array.isArray((testAssertionResults as any)[k]) && (testAssertionResults as any)[k].length > 0);
+        const values = Object.values(testAssertionResults);
+        if (values.length === 0) return false;
+        return values.some((value) => Array.isArray(value) && value.length > 0);
     }, [testAssertionResults]);
 
     return useMemo(
