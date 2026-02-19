@@ -301,10 +301,10 @@ class NodeCompiler(
         case a: Filter         => compileFilter(a, validationContext)
         case a: Variable       => compileVariable(a, validationContext)
         case a: VariableBuilder =>
-          implicit val nodeId: NodeId = NodeId(a.id)
+          implicit val nodeId: NodeId = a.id
           compileFields(a.fields, validationContext, outputVar = Some(OutputVar.variable(a.varName)))
         case a: FragmentOutputDefinition =>
-          implicit val nodeId: NodeId = NodeId(a.id)
+          implicit val nodeId: NodeId = a.id
           compileFields(a.fields, validationContext, outputVar = None)
         case a: Switch =>
           compileSwitch(
@@ -325,9 +325,9 @@ class NodeCompiler(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
   ): NodeCompilationResult[Source] = {
     import scenarioCompilationDependencies._
-    implicit val nodeId: NodeId = NodeId(nodeData.id)
+    implicit val nodeId: NodeId = nodeData.id
     nodeData match {
-      case source @ Source(_, ref, _) =>
+      case source @ Source(_, _, ref, _) =>
         definitions.getComponent(ComponentType.Source, ref.typ) match {
           case Some(definition) =>
             compileComponentWithContextTransformation[Source](
@@ -347,10 +347,10 @@ class NodeCompiler(
               )
             NodeCompilationResult(Map.empty, None, defaultCtx, error)
         }
-      case frag @ FragmentInputDefinition(id, _, _) =>
+      case frag @ FragmentInputDefinition(id, _, _, _) =>
         val parameterDefinitions = fragmentDefinitionExtractor.extractParametersDefinition(frag)
 
-        val (compilationResult, displayableErrors) = definitions.getComponent(ComponentType.Fragment, id) match {
+        val (compilationResult, displayableErrors) = definitions.getComponent(ComponentType.Fragment, id.value) match {
           // This case is when the fragment is stubbed with test data.
           // The validation of the fragment input is performed before the test execution starts.
           case Some(definition) =>
@@ -456,7 +456,7 @@ class NodeCompiler(
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
   ): NodeCompilationResult[AnyRef] = {
-    implicit val nodeId: NodeId = NodeId(data.id)
+    implicit val nodeId: NodeId = data.id
 
     val outputVar = data.outputVar.map(OutputVar.customNode)
     val defaultCtx = ctx match {
@@ -492,7 +492,7 @@ class NodeCompiler(
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[api.process.Sink] = {
-    implicit val nodeId: NodeId = NodeId(sink.id)
+    implicit val nodeId: NodeId = sink.id
     val ref                     = sink.ref
 
     definitions.getComponent(ComponentType.Sink, ref.typ) match {
@@ -520,7 +520,7 @@ class NodeCompiler(
   )(
       implicit jobData: JobData
   ): NodeCompilationResult[List[CompiledParameter]] = {
-    implicit val nodeId: NodeId = NodeId(fragmentInput.id)
+    implicit val nodeId: NodeId = fragmentInput.id
 
     val ref            = fragmentInput.ref
     val validParamDefs = fragmentDefinitionExtractor.extractParametersDefinition(fragmentInput)
@@ -553,7 +553,7 @@ class NodeCompiler(
       choices: List[(String, Expression)],
       inputContext: SingleInputNodeInputValidationContext,
   ): NodeCompilationResult[(Option[CompiledExpression], List[CompiledExpression])] = {
-    implicit val nodeId: NodeId                     = NodeId(switch.id)
+    implicit val nodeId: NodeId                     = switch.id
     val expressionRaw: Option[(String, Expression)] = Applicative[Option].product(switch.exprVal, switch.expression)
     builtInNodeCompiler.compileSwitch(expressionRaw, choices, inputContext)
   }
@@ -562,7 +562,7 @@ class NodeCompiler(
       filter: Filter,
       inputContext: SingleInputNodeInputValidationContext
   ): NodeCompilationResult[CompiledExpression] = {
-    implicit val nodeId: NodeId = NodeId(filter.id)
+    implicit val nodeId: NodeId = filter.id
     builtInNodeCompiler.compileFilter(filter, inputContext)
   }
 
@@ -570,7 +570,7 @@ class NodeCompiler(
       variable: Variable,
       inputContext: SingleInputNodeInputValidationContext
   ): NodeCompilationResult[CompiledExpression] = {
-    implicit val nodeId: NodeId = NodeId(variable.id)
+    implicit val nodeId: NodeId = variable.id
     builtInNodeCompiler.compileVariable(variable, inputContext)
   }
 
@@ -578,7 +578,7 @@ class NodeCompiler(
       fod: FragmentOutputDefinition,
       inputContext: SingleInputNodeInputValidationContext
   ): ValidatedNel[PartSubGraphCompilationError, Map[String, TypedExpression]] = {
-    implicit val nodeId: NodeId = NodeId(fod.id)
+    implicit val nodeId: NodeId = fod.id
     fod.fields.map { field =>
       expressionCompiler
         .compile(field.expression, Some(ParameterName(field.name)), inputContext.validationContext, Unknown)
@@ -600,14 +600,14 @@ class NodeCompiler(
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
-    implicit val nodeId: NodeId = NodeId(processor.id)
+    implicit val nodeId: NodeId = processor.id
     compileService(processor, inputContext)
   }
 
   private[compile] def compileEnricher(enricher: Enricher, inputContext: SingleInputNodeInputValidationContext)(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[EnricherCompilationResult] = {
-    implicit val nodeId: NodeId  = NodeId(enricher.id)
+    implicit val nodeId: NodeId  = enricher.id
     val serviceCompilationResult = compileService(enricher, inputContext)
 
     val expressionCompilationResult = enricher.mockExpression match {
@@ -920,7 +920,7 @@ class NodeCompiler(
     new NodeCompilationDependencies(
       scenarioCompilationDependencies = scenarioCompilationDependencies,
       nodeData = nodeData,
-      componentUseContext = runtimeMode.createContext(nodesDeploymentData.get(NodeId(nodeData.id))),
+      componentUseContext = runtimeMode.createContext(nodesDeploymentData.get(nodeData.id)),
       inputValidationContext = inputValidationContext
     )
   }

@@ -371,7 +371,7 @@ class FlinkTestScenarioRunner(
       testScenarioCollectorHandler: TestScenarioCollectorHandler
   ) = {
     val allSinks           = scenario.collectAllNodes.collect { case sink: node.Sink => sink }
-    def isSink(id: NodeId) = allSinks.exists(_.id == id.id)
+    def isSink(id: NodeId) = allSinks.exists(_.id == id)
     testScenarioCollectorHandler.resultsCollectingListener.results.externalServiceInvocationResults.flatMap {
       case (id, externalServiceInvocationResults) if isSink(id) =>
         externalServiceInvocationResults.map(_.value)

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph.end.{End, NormalEnd}
@@ -13,7 +14,7 @@ object part {
     type T <: NodeData
     def node: SplittedNode[T]
     def validationContext: ValidationContext
-    def id: String = node.id
+    def id: NodeId = node.id
     def ends: List[TypedEnd]
   }
 

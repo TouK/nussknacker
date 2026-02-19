@@ -115,7 +115,7 @@ class FlinkProcessCompilerDataFactory(
     List(
       LoggingListener,
       new NodeCountingListener(
-        usedNodes.nodes.filterNot(nodesHandledInNextParts).map(n => NodeId(n.id)) ++ usedNodes.nextParts
+        usedNodes.nodes.filterNot(nodesHandledInNextParts).map(n => n.id) ++ usedNodes.nextParts
       ),
       new EndCountingListener(usedNodes.nodes)
     )

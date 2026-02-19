@@ -12,7 +12,7 @@ object PreviousValueParameterNamesMigration extends NodeMigration {
   override val description: String = "Rename Previous Value component parameters"
 
   override def migrateNode(metaData: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
-    case customNode @ CustomNode(_, _, "previousValue", parameters, _) =>
+    case customNode @ CustomNode(_, _, _, "previousValue", parameters, _) =>
       customNode.copy(parameters = renameParameters(parameters))
   }
 

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.defaultmodel.migrations
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, NodeName, StreamMetaData}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.node.{
@@ -35,29 +35,51 @@ class SpelToSpelTemplateNodeMigrationSpec extends AnyFunSuite with Matchers {
   private val metaData         = MetaData("test", StreamMetaData(Some(1)))
 
   test("should migrate custom node") {
-    val node = CustomNode("id", Some("out1"), "typ1", paramsBeforeMigration, additionalFields)
+    val node = CustomNode(NodeId("id"), NodeName("id"), Some("out1"), "typ1", paramsBeforeMigration, additionalFields)
 
     val migrated = SpelToSpelTemplateNodeMigration.migrateNode(metaData)(node)
 
-    migrated shouldBe CustomNode("id", Some("out1"), "typ1", paramsAfterMigration, additionalFields)
+    migrated shouldBe CustomNode(
+      NodeId("id"),
+      NodeName("id"),
+      Some("out1"),
+      "typ1",
+      paramsAfterMigration,
+      additionalFields
+    )
   }
 
   test("should migrate enricher") {
-    val node = Enricher("id", ServiceRef("id", paramsBeforeMigration), "out1", additionalFields)
+    val node = Enricher(NodeId("id"), NodeName("id"), ServiceRef("id", paramsBeforeMigration), "out1", additionalFields)
 
     val migrated = SpelToSpelTemplateNodeMigration.migrateNode(metaData)(node)
 
-    migrated shouldBe Enricher("id", ServiceRef("id", paramsAfterMigration), "out1", additionalFields)
+    migrated shouldBe Enricher(
+      NodeId("id"),
+      NodeName("id"),
+      ServiceRef("id", paramsAfterMigration),
+      "out1",
+      additionalFields
+    )
   }
 
   test("should migrate join") {
     val branchParameters = List(BranchParameters("branchId", paramsBeforeMigration))
-    val node             = Join("id", Some("out1"), "typ1", paramsBeforeMigration, branchParameters, additionalFields)
+    val node = Join(
+      NodeId("id"),
+      NodeName("id"),
+      Some("out1"),
+      "typ1",
+      paramsBeforeMigration,
+      branchParameters,
+      additionalFields
+    )
 
     val migrated = SpelToSpelTemplateNodeMigration.migrateNode(metaData)(node)
 
     migrated shouldBe Join(
-      id = "id",
+      id = NodeId("id"),
+      name = NodeName("id"),
       outputVar = Some("out1"),
       nodeType = "typ1",
       parameters = paramsAfterMigration,
@@ -73,12 +95,13 @@ class SpelToSpelTemplateNodeMigrationSpec extends AnyFunSuite with Matchers {
 
   test("should migrate join branchParameters") {
     val branchParameters = List(BranchParameters("branchId", paramsBeforeMigration))
-    val node             = Join("id", Some("out1"), "typ1", Nil, branchParameters, additionalFields)
+    val node = Join(NodeId("id"), NodeName("id"), Some("out1"), "typ1", Nil, branchParameters, additionalFields)
 
     val migrated = SpelToSpelTemplateNodeMigration.migrateNode(metaData)(node)
 
     migrated shouldBe Join(
-      id = "id",
+      id = NodeId("id"),
+      name = NodeName("id"),
       outputVar = Some("out1"),
       nodeType = "typ1",
       parameters = Nil,
@@ -93,27 +116,42 @@ class SpelToSpelTemplateNodeMigrationSpec extends AnyFunSuite with Matchers {
   }
 
   test("should migrate processor") {
-    val node = Processor("id", ServiceRef("id", paramsBeforeMigration), Some(false), additionalFields)
+    val node =
+      Processor(NodeId("id"), NodeName("id"), ServiceRef("id", paramsBeforeMigration), Some(false), additionalFields)
 
     val migrated = SpelToSpelTemplateNodeMigration.migrateNode(metaData)(node)
 
-    migrated shouldBe Processor("id", ServiceRef("id", paramsAfterMigration), Some(false), additionalFields)
+    migrated shouldBe Processor(
+      NodeId("id"),
+      NodeName("id"),
+      ServiceRef("id", paramsAfterMigration),
+      Some(false),
+      additionalFields
+    )
   }
 
   test("should migrate sink") {
-    val node = Sink("id", SinkRef("id", paramsBeforeMigration), None, Some(false), additionalFields)
+    val node =
+      Sink(NodeId("id"), NodeName("id"), SinkRef("id", paramsBeforeMigration), None, Some(false), additionalFields)
 
     val migrated = SpelToSpelTemplateNodeMigration.migrateNode(metaData)(node)
 
-    migrated shouldBe Sink("id", SinkRef("id", paramsAfterMigration), None, Some(false), additionalFields)
+    migrated shouldBe Sink(
+      NodeId("id"),
+      NodeName("id"),
+      SinkRef("id", paramsAfterMigration),
+      None,
+      Some(false),
+      additionalFields
+    )
   }
 
   test("should migrate source") {
-    val node = Source("id", SourceRef("id", paramsBeforeMigration), additionalFields)
+    val node = Source(NodeId("id"), NodeName("id"), SourceRef("id", paramsBeforeMigration), additionalFields)
 
     val migrated = SpelToSpelTemplateNodeMigration.migrateNode(metaData)(node)
 
-    migrated shouldBe Source("id", SourceRef("id", paramsAfterMigration), additionalFields)
+    migrated shouldBe Source(NodeId("id"), NodeName("id"), SourceRef("id", paramsAfterMigration), additionalFields)
   }
 
 }

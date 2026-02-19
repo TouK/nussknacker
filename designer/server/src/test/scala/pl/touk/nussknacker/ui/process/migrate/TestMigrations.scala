@@ -32,7 +32,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
     override val description = "testMigration1"
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
-      case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
+      case n @ Processor(_, _, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
         n.copy(service = ServiceRef(ProcessTestData.otherExistingServiceId, parameters))
     }
 
@@ -54,7 +54,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
     override val description = "testMigration3"
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
-      case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
+      case n @ Processor(_, _, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
         n.copy(service =
           ServiceRef(
             "non-existing-service-id",
@@ -70,7 +70,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
     override val description = "testMigration4"
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
-      case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
+      case n @ Processor(_, _, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
         n.copy(service =
           ServiceRef(
             "non-existing-service-id",
@@ -94,7 +94,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
     override val description = "testMigration6"
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
-      case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
+      case n @ Processor(_, _, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
         n.copy(service = ServiceRef(ProcessTestData.otherExistingServiceId, parameters))
     }
 
@@ -105,14 +105,14 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
     override val description = "testMigration7"
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
-      case sub @ FragmentInputDefinition(_, subParams, _)
+      case sub @ FragmentInputDefinition(_, _, subParams, _)
           if !subParams
             .exists(_.name == ParameterName("param42")) && subParams.exists(_.name == ParameterName("param1")) =>
         sub.copy(parameters =
           sub.parameters.map(p => if (p.name == ParameterName("param1")) p.copy(name = ParameterName("param42")) else p)
         )
 
-      case sub @ FragmentInput(_, ref, _, _, _)
+      case sub @ FragmentInput(_, _, ref, _, _, _)
           if !ref.parameters
             .exists(_.name == ParameterName("param42")) && ref.parameters.exists(_.name == ParameterName("param1")) =>
         sub.copy(ref =
@@ -131,7 +131,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
     override val description = "testMigration8"
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
-      case n @ Source(_, ref @ SourceRef(ProcessTestData.existingSourceFactory, _), _) =>
+      case n @ Source(_, _, ref @ SourceRef(ProcessTestData.existingSourceFactory, _), _) =>
         n.copy(ref = ref.copy(typ = ProcessTestData.otherExistingSourceFactory))
     }
 
@@ -142,7 +142,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
     override val description = "testMigration9"
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
-      case n @ Source(_, ref @ SourceRef(ProcessTestData.existingSourceFactory, _), _) =>
+      case n @ Source(_, _, ref @ SourceRef(ProcessTestData.existingSourceFactory, _), _) =>
         n.copy(ref = ref.copy(typ = "non-existing-source"))
     }
 

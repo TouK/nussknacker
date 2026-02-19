@@ -27,10 +27,10 @@ class Objects extends Serializable {
               .fromSource(
                 flinkSource,
                 WatermarkStrategy.noWatermarks(),
-                flinkNodeContext.nodeId.id,
+                flinkNodeContext.nodeId.value,
                 TypeInformation.of(classOf[Model])
               )
-              .uid(flinkNodeContext.nodeId.id)
+              .uid(flinkNodeContext.nodeId.value)
               .map(
                 new FlinkContextInitializingFunction(
                   contextInitializer,

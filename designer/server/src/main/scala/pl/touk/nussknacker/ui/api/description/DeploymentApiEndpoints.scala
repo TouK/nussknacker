@@ -216,7 +216,7 @@ object DeploymentApiEndpoints {
         modifiedAt: Instant
     )
 
-    implicit val nodesDeploymentDataCodec: Schema[Map[NodeId, String]] = Schema.schemaForMap[NodeId, String](_.id)
+    implicit val nodesDeploymentDataCodec: Schema[Map[NodeId, String]] = Schema.schemaForMap[NodeId, String](_.value)
 
     sealed trait RunDeploymentError
 

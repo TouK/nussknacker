@@ -75,7 +75,7 @@ object TestingApiErrorMessages {
             sourceId
           )
       case PerformTestError.MissingSourceError(sourceId, recordIndex) =>
-        TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.id)
+        TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.value)
       case PerformTestError.TestResultsSizeExceededError(approxSizeInBytes, maxBytes) =>
         TestingApiErrorMessages.testResultsSizeExceeded(approxSizeInBytes, maxBytes)
       case ScenarioValidationError(errors) =>
@@ -197,7 +197,7 @@ object TestingApiErrorMessages {
       assertion: Assertion,
       nodeId: NodeId
   ) =
-    s"Assertion compilation error. Node: ${nodeId.id}. ${prettyPrintAssertion(assertion)}. Errors: ${errors.toList.mkString(", ")}"
+    s"Assertion compilation error. Node: ${nodeId.value}. ${prettyPrintAssertion(assertion)}. Errors: ${errors.toList.mkString(", ")}"
 
   private def prettyPrintAssertion(assertion: Assertion): String = {
     assertion match {

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.definition.component
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.deployment.{
@@ -45,10 +45,16 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     MetaData("fragment1", FragmentSpecificData()),
     List(
       canonicalnode.FlatNode(
-        FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
+        FragmentInputDefinition(
+          NodeId("start"),
+          NodeName("start"),
+          List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String]))
+        )
       ),
-      canonicalnode.FlatNode(CustomNode("f1", None, ProcessTestData.otherExistingStreamTransformer2, List.empty)),
-      FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+      canonicalnode.FlatNode(
+        CustomNode(NodeId("f1"), NodeName("f1"), None, ProcessTestData.otherExistingStreamTransformer2, List.empty)
+      ),
+      FlatNode(FragmentOutputDefinition(NodeId("out1"), NodeName("out1"), "output", List.empty))
     ),
     List.empty
   )

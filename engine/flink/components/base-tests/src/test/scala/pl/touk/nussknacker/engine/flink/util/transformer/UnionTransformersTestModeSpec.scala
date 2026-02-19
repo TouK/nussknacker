@@ -79,7 +79,7 @@ class UnionTransformersTestModeSpec
       .streaming(scenarioName.value)
       .sources(
         GraphBuilder
-          .source(sourceId.id, "start")
+          .source(sourceId.value, "start")
           .split(
             "split",
             GraphBuilder
@@ -90,7 +90,7 @@ class UnionTransformersTestModeSpec
               .branchEnd(rightBranchId, unionNodeId)
           ),
         unionPart
-          .emptySink(endSinkId.id, "dead-end")
+          .emptySink(endSinkId.value, "dead-end")
       )
     ResultsCollectingListenerHolder.withListener { collectingListener =>
       val modelData = createModelData(data, collectingListener)

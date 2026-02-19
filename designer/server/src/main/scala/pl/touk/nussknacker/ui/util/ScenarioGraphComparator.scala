@@ -11,18 +11,18 @@ object ScenarioGraphComparator {
       currentGraph.nodes.map(node => node.id -> node).toMap,
       otherGraph.nodes.map(node => node.id -> node).toMap
     )(
-      notPresentInOther = current => NodeNotPresentInOther(current.id, current),
-      notPresentInCurrent = other => NodeNotPresentInCurrent(other.id, other),
-      different = (current, other) => NodeDifferent(current.id, current, other)
+      notPresentInOther = current => NodeNotPresentInOther(current.id.value, current),
+      notPresentInCurrent = other => NodeNotPresentInCurrent(other.id.value, other),
+      different = (current, other) => NodeDifferent(current.id.value, current, other)
     )
 
     val edges = getDifferences(
       currentGraph.edges.map(edge => (edge.from, edge.to) -> edge).toMap,
       otherGraph.edges.map(edge => (edge.from, edge.to) -> edge).toMap
     )(
-      notPresentInOther = current => EdgeNotPresentInOther(current.from, current.to, current),
-      notPresentInCurrent = other => EdgeNotPresentInCurrent(other.from, other.to, other),
-      different = (current, other) => EdgeDifferent(current.from, current.to, current, other)
+      notPresentInOther = current => EdgeNotPresentInOther(current.from.value, current.to.value, current),
+      notPresentInCurrent = other => EdgeNotPresentInCurrent(other.from.value, other.to.value, other),
+      different = (current, other) => EdgeDifferent(current.from.value, current.to.value, current, other)
     )
 
     val stickyNotes = getDifferences(

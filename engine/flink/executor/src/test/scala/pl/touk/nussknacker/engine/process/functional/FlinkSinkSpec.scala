@@ -27,7 +27,7 @@ class FlinkSinkSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    SinkAccessingNodeContext.nodeId.id shouldBe "out"
+    SinkAccessingNodeContext.nodeId.value shouldBe "out"
   }
 
 }

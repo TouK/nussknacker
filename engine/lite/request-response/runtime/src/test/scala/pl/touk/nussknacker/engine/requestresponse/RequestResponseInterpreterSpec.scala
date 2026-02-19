@@ -437,7 +437,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
   private def firstIdForFirstSource(scenario: CanonicalProcess): ContextId =
     IncContextIdGenerator
-      .withProcessIdNodeIdPrefix(scenario.metaData, NodeId(scenario.nodes.head.id), taskId = 0)
+      .withProcessIdNodeIdPrefix(scenario.metaData, scenario.nodes.head.id, taskId = 0)
       .nextContextId()
 
 }

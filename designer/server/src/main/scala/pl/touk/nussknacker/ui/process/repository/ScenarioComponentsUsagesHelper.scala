@@ -12,7 +12,7 @@ object ScenarioComponentsUsagesHelper {
       node        <- scenario.collectAllNodes
       componentId <- ComponentIdExtractor.fromScenarioNode(node)
     } yield {
-      (componentId, node.id)
+      (componentId, node.id.value)
     }
     val usagesMap = usagesList.toGroupedMap
     ScenarioComponentsUsages(usagesMap)

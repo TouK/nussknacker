@@ -22,7 +22,7 @@ class ExceptionRateMeter(metricsProvider: MetricsProviderForScenario) {
   private def getMeterForNode(nodeId: NodeId): RateMeter = nodeErrorsMeterMap.getOrElseUpdate(
     nodeId,
     metricsProvider.instantRateMeterWithCount(
-      MetricIdentifier(NonEmptyList.of("error", "instantRateByNode"), Map(nodeIdTag -> nodeId.id))
+      MetricIdentifier(NonEmptyList.of("error", "instantRateByNode"), Map(nodeIdTag -> nodeId.value))
     )
   )
 

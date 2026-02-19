@@ -85,7 +85,7 @@ private class EnricherMockValidator(
   ): ValidatedNel[EnricherMockValidationError, Unit] = {
     expectedOutputVariableType
       .andThen { typ =>
-        implicit val nodeId: NodeId = NodeId(enricher.id)
+        implicit val nodeId: NodeId = enricher.id
         val validationContextWithGlobalVariablesOnly =
           globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(
             scenarioCompilationDependencies.jobData

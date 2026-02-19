@@ -3,7 +3,7 @@ package pl.touk.nussknacker.restmodel
 import io.circe.{parser, Decoder, Encoder, Json}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -21,9 +21,14 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers with EitherValuesDetai
         ProcessAdditionalFields(Some("a"), Map("field1" -> "value1"), StreamMetaData.typeName)
       ),
       List(
-        FragmentInputDefinition("proc1", List(FragmentParameter(ParameterName("param1"), FragmentClazzRef[String]))),
+        FragmentInputDefinition(
+          NodeId("proc1"),
+          NodeName("proc1"),
+          List(FragmentParameter(ParameterName("param1"), FragmentClazzRef[String]))
+        ),
         CustomNode(
-          "id",
+          NodeId("id"),
+          NodeName("id"),
           Some("out1"),
           "typ1",
           List(NodeParameter(ParameterName("name1"), Expression.spel("11"))),
@@ -31,7 +36,7 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers with EitherValuesDetai
         )
       ),
       List(
-        Edge("from1", "to1", None)
+        Edge(NodeId("from1"), NodeId("to1"), None)
       )
     )
 

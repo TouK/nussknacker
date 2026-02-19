@@ -8,7 +8,7 @@ import org.apache.pekko.testkit.TestDuration
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValuesProvided}
@@ -126,7 +126,8 @@ class DefinitionResourcesSpec
         List(
           FlatNode(
             FragmentInputDefinition(
-              "in",
+              NodeId("in"),
+              NodeName("in"),
               List(
                 FragmentParameter(ParameterName("param1"), FragmentClazzRef[String]).copy(
                   valueEditor = Some(
@@ -139,7 +140,7 @@ class DefinitionResourcesSpec
               )
             )
           ),
-          canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+          canonicalnode.FlatNode(FragmentOutputDefinition(NodeId("out1"), NodeName("out1"), "output", List.empty))
         ),
         List.empty
       )
@@ -340,8 +341,8 @@ class DefinitionResourcesSpec
         CanonicalProcess(
           MetaData(fragmentName, FragmentSpecificData()),
           List(
-            FlatNode(FragmentInputDefinition("in", List(), None)),
-            FlatNode(FragmentOutputDefinition("out", "output", List.empty, None))
+            FlatNode(FragmentInputDefinition(NodeId("in"), NodeName("in"), List(), None)),
+            FlatNode(FragmentOutputDefinition(NodeId("out"), NodeName("out"), "output", List.empty, None))
           ),
           List.empty
         )
