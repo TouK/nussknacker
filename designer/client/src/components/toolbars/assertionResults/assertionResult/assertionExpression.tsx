@@ -22,7 +22,7 @@ export const AssertionExpression = ({ assertion }: Props) => {
         },
         {
             expression: assertion.actual.expression,
-            language: assertion.expected.language,
+            language: assertion.actual.language,
         },
     ];
 
