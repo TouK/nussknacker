@@ -1,15 +1,17 @@
 import { useAssistantApi, useAssistantState } from "@assistant-ui/react";
 import { Box, Button, Slide } from "@mui/material";
 import React, { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
-import { ThreadIdManager } from "../ThreadIdManager";
+import { resetThreadId } from "../ThreadIdManager";
 
 export const ResetThread = () => {
+    const { t } = useTranslation();
     const api = useAssistantApi();
     const messageCount = useAssistantState(({ thread }) => thread.messages.length);
 
     const threadReset = useCallback(() => {
-        ThreadIdManager.reset();
+        resetThreadId();
         api.threads().switchToNewThread();
     }, [api]);
 
@@ -30,11 +32,13 @@ export const ResetThread = () => {
                     onClick={threadReset}
                     sx={{
                         ":focus": { outline: "none" },
-                        padding: 0.25,
-                        margin: 0.25,
+                        paddingY: 0.2,
+                        paddingX: 0.8,
+                        margin: 0,
+                        borderRadius: 0,
                     }}
                 >
-                    reset thread
+                    {t("aiAssistant.resetThread", "reset thread")}
                 </Button>
             </Box>
         </Slide>

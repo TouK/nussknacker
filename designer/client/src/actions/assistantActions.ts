@@ -4,7 +4,7 @@ import { delay } from "../utils";
 import type { ThunkAction } from "./reduxTypes";
 
 export type AssistantActions =
-    | { type: "ASSISTANT_OPEN" }
+    | { type: "ASSISTANT_OPEN"; maximized?: boolean }
     | { type: "ASSISTANT_CLOSE" }
     | { type: "ASSISTANT_FOCUS" }
     | { type: "ASSISTANT_ASK"; question: string; realPrompt?: string; contextRawData?: string };
@@ -35,9 +35,9 @@ export function assistantAsk(question: string, prompt?: string): ThunkAction {
     };
 }
 
-export function assistantOpen(): ThunkAction {
+export function assistantOpen(maximized?: boolean): ThunkAction {
     return async (dispatch) => {
-        dispatch({ type: "ASSISTANT_OPEN" });
+        dispatch({ type: "ASSISTANT_OPEN", maximized });
         await delay();
         dispatch({ type: "ASSISTANT_FOCUS" });
     };

@@ -47,7 +47,7 @@ const OpenAssistantButton = () => {
     useEffect(
         () =>
             dispatch(
-                addListenerTyped("ASSISTANT_OPEN", () => {
+                addListenerTyped("ASSISTANT_OPEN", ({ maximized }) => {
                     const buttonBox = buttonRef.current.getBoundingClientRect();
                     open({
                         parent: null,
@@ -57,6 +57,7 @@ const OpenAssistantButton = () => {
                         isResizable: true,
                         isModal: false,
                         isGlobal: true,
+                        isMaximized: maximized,
                         layoutData: {
                             right: window.innerWidth - buttonBox.right,
                             bottom: window.innerHeight - buttonBox.top,

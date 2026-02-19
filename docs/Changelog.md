@@ -547,7 +547,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ##### Administrator
 
-* Added [Exactly-Once](https://nussknacker.io/documentation/docs/operations_guide/Flink/#end-to-end-exactly-once-event-processing) semantics for event processing in streaming mode.
+* Added [Exactly-Once](https://docs.nussknacker.io/OSS_docs/operations_guide/Flink/#end-to-end-exactly-once-event-processing) semantics for event processing in streaming mode.
 * Added impersonate mechanism. When an external system calls the Nussknacker API with a technical user, the impersonated user can be passed and the performed action will be carried on behalf of the impersonated user.
 * Nussknacker Quickstart has been refurbished and is now based on [installation example](https://github.com/TouK/nussknacker-installation-example). Using Nussknacker Quickstart is now even clearer and easier.
 
@@ -699,7 +699,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#5278](https://github.com/TouK/nussknacker/pull/5278) Recreate assembled model JAR for Flink if it got removed (e.g. by systemd-tmpfiles)
 * [#5280](https://github.com/TouK/nussknacker/pull/5280) Security improvement: Checking if user has access rights to fragment's Category for fragments served by definitions API
 * [#5303](https://github.com/TouK/nussknacker/pull/5303) Added `skipNodeResults` parameter to API endpoints that return scenario validation results
-* [#5323](https://github.com/TouK/nussknacker/pull/5323) Removed support for [the legacy categories configuration format](https://nussknacker.io/documentation/docs/1.12/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories)
+* [#5323](https://github.com/TouK/nussknacker/pull/5323) Removed support for [the legacy categories configuration format](https://docs.nussknacker.io/1.12/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories)
 * [#5266](https://github.com/TouK/nussknacker/pull/5266) Security improvement: removed accessing class internals of records in expressions
 * [#5361](https://github.com/TouK/nussknacker/pull/5361) Parameter's label can be specified not only via configuration, but also inside Component's implementation now
 * [#5368](https://github.com/TouK/nussknacker/pull/5368) A hidden features allowing to change `icon` and `docsUrl` inside properties modal by using `componentsUiConfig.$proprties` configuration option, was turned off
@@ -850,7 +850,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ##### Component developer
 * _new_: Introduced OpenAPI documentation for Nu API (partially)
-* _improvement_: [Utils](https://nussknacker.io/documentation/docs/developers_guide/Basics/#modules-architecture-and-conventions) modules enhancements
+* _improvement_: [Utils](https://docs.nussknacker.io/OSS_docs/developers_guide/Basics/#modules-architecture-and-conventions) modules enhancements
 
 ### 1.12.6 (29 Jan 2024)
 
@@ -1246,7 +1246,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#3412](https://github.com/TouK/nussknacker/pull/3412) Corrected filtering disallowed types in methods
 * [#3363](https://github.com/TouK/nussknacker/pull/3363) Kafka consumer no longer set `auto.offset.reset` to `earliest` by default. Instead, Kafka client will use default Kafka value which is `latest`
 * [#3371](https://github.com/TouK/nussknacker/pull/3371) Fix for: Indexing on arrays wasn't possible
-* [#3376](https://github.com/TouK/nussknacker/pull/3376) (Flink) Handling Kafka source deserialization errors by exceptionHandler (https://nussknacker.io/documentation/docs/configuration/model/Flink/#configuring-exception-handling)
+* [#3376](https://github.com/TouK/nussknacker/pull/3376) (Flink) Handling Kafka source deserialization errors by exceptionHandler (https://docs.nussknacker.io/OSS_docs/configuration/model/Flink/#configuring-exception-handling)
 
 ## 1.4
 
@@ -1360,7 +1360,7 @@ description: Stay informed with detailed changelogs covering new features, impro
   * `FinalResults.forValidation` utility method added to easily handle situation when you need to make some validation on context of variables (e.g. add variable checking if it already exists)
 * [#2245](https://github.com/TouK/nussknacker/pull/2245) Periodic process scheduler retries failed scenario deployments based on PeriodicBatchConfig.
   Breaking change in PeriodicProcessListener FailedEvent. Failed event is split into FailedOnDeployEvent and FailedOnRunEvent.
-  Please note that this mechanism only retries when failure on deployment occurs - failure recovery of running scenario should be handled by [restart strategy](https://nussknacker.io/documentation/docs/configuration/model/Flink/#configuring-restart-strategies)
+  Please note that this mechanism only retries when failure on deployment occurs - failure recovery of running scenario should be handled by [restart strategy](https://docs.nussknacker.io/OSS_docs/configuration/model/Flink/#configuring-restart-strategies)
 * [#2304](https://github.com/TouK/nussknacker/pull/2304) Upgrade to Flink 1.14
 * [#2295](https://github.com/TouK/nussknacker/pull/2295) `FlinkLazyParameterFunctionHelper` has additional methods to handle exceptions during evaluation gracefully
 * [#2300](https://github.com/TouK/nussknacker/pull/2300) Enhancement: refactor and improvements at components group

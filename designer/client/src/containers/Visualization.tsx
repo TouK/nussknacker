@@ -13,6 +13,7 @@ import { expandSelection } from "../actions/nk/selection";
 import { useDecodedParams } from "../common/routerUtils";
 import { extractCountParams } from "../common/VisualizationUrl";
 import { isAiAssistantDialog } from "../components/aiAssistant/components/IsAiAssistantDialog";
+import { ScenarioDataAIToolkit } from "../components/aiAssistant/tools/ScenarioDataAIToolkit";
 import { useScenarioCommands } from "../components/CommandBar/scenario/useScenarioCommands";
 import type { Graph } from "../components/graph/Graph";
 import { GraphProvider } from "../components/graph/GraphContext";
@@ -231,6 +232,7 @@ function Visualization() {
                     <PanToNodes />
                     <AdjustNodeOverlapBehavior />
                     <SelectionContextProvider pastePosition={getPastePosition}>
+                        <ScenarioDataAIToolkit />
                         <BindKeyboardShortcuts disabled={windows.filter((w) => !isAiAssistantDialog(w.id)).length > 0} />
                         <Toolbars isReady={dataResolved} externalLayerWrapper={Portal}>
                             <Overlay gridArea="left" gridRow="top">

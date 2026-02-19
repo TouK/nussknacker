@@ -5,17 +5,15 @@ import { cloneDeep } from "lodash";
 import React, { useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import "react-treeview/react-treeview.css";
-import { useSelector } from "react-redux";
 import { useKey } from "rooks";
 
-import { filterComponentsByLabel } from "../../../common/ProcessDefinitionUtils";
 import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
-import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
+import { useFilteredComponentGroups } from "../../../reducers/selectors/getFilteredComponentGroups";
 import type { ComponentGroup } from "../../../types/component";
 import type { NodeType } from "../../../types/node";
-import NodeUtils from "../../graph/NodeUtils";
 import type { ToolProps } from "./Tool";
 import Tool from "./Tool";
+import { ToolboxCommands } from "./ToolboxCommands";
 import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
 
 function StyledToolbox(props: Omit<BoxProps, "sx" | "ref">) {
@@ -133,42 +131,17 @@ export type ToolBoxProps = {
     filters?: ComponentFilter[];
     addTreeElement?: (group: ComponentGroup) => React.ReactElement | null;
     addGroupLabelElement?: (group: ComponentGroup) => React.ReactElement | null;
-    data: ComponentGroup[];
     toolSelect?: Pick<ToolProps, "onClick" | "onDragEnd"> & {
         onEnter?: (item: NodeType, event: KeyboardEvent) => void;
+        generic: (item: NodeType) => void;
     };
 };
 
-export default function ToolBox({ data = [], filters = [], ...props }: ToolBoxProps): React.JSX.Element {
+export default function ToolBox({ filters, ...props }: ToolBoxProps): React.JSX.Element {
     const { t } = useTranslation();
-    const definitionData = useSelector(getProcessDefinitionData);
 
     const textFilters = useMemo(() => props.textFilter?.toLowerCase().split(/\s/).filter(Boolean), [props.textFilter]);
-    const groups = useMemo(
-        () =>
-            data
-                .map((group) => ({
-                    ...group,
-                    components: group.components.filter((component) =>
-                        filters.every((f) => {
-                            switch (f) {
-                                case ComponentFilter.removeNoInputs:
-                                    return NodeUtils.hasInputs(component.node);
-                                case ComponentFilter.removeNoOutputs:
-                                    return NodeUtils.hasOutputs(component.node, definitionData);
-                                case ComponentFilter.sourcesOnly:
-                                    return (
-                                        ["Source", "FragmentInputDefinition"].includes(component.node.type) ||
-                                        component.node.additionalFields?.creatorType
-                                    );
-                            }
-                        }),
-                    ),
-                }))
-                .map((group) => filterComponentsByLabel(textFilters)(group))
-                .filter((g) => g.components.length > 0),
-        [data, definitionData, filters, textFilters],
-    );
+    const groups = useFilteredComponentGroups(filters, textFilters);
 
     useKey(
         "Enter",
@@ -181,6 +154,7 @@ export default function ToolBox({ data = [], filters = [], ...props }: ToolBoxPr
 
     return (
         <StyledToolbox id="toolbox">
+            <ToolboxCommands onSelect={props.toolSelect.generic} />
             {groups.length ? (
                 groups.map((componentGroup) => (
                     <ToolboxComponentGroup

@@ -1,15 +1,23 @@
-export class ThreadIdManager {
-    static #threadId: string;
+let threadId: string | undefined;
+let consumedToolResponses: Set<string> | undefined;
 
-    static get THREAD_ID() {
-        return this.#threadId;
-    }
+export function getThreadId() {
+    return threadId;
+}
 
-    static set THREAD_ID(value: string | undefined) {
-        this.#threadId = value;
-    }
+export function setThreadId(value: string | undefined) {
+    if (value === threadId) return;
+    threadId = value;
+    consumedToolResponses = new Set();
+}
 
-    static reset() {
-        this.#threadId = undefined;
-    }
+export function wasToolResponseConsumed(toolCallId: string): boolean {
+    const responses = (consumedToolResponses ||= new Set());
+    if (responses.has(toolCallId)) return true;
+    responses.add(toolCallId);
+    return false;
+}
+
+export function resetThreadId() {
+    setThreadId(undefined);
 }

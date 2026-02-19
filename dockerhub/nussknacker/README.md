@@ -41,7 +41,7 @@ REST endpoints of deployed scenarios will be exposed at `http://localhost:8181/s
 
 # Configuration
 
-Description about available environment variables and volumes is available on [Installation documentation](https://nussknacker.io/documentation/docs/installation/)
+Description about available environment variables and volumes is available on [Installation documentation](https://docs.nussknacker.io/OSS_docs/installation/)
 
 # License
 

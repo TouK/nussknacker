@@ -27,6 +27,9 @@ export default createRoutesFromElements(
         <Route index element={<DefaultRedirect />} />
         <Route path="/404" element={<NotFound />} />
         <Route path="/__settings" element={<SettingsView />} />
+        <Route path="/__debug">
+            <Route path="ai" Component={loadable(() => import("../components/aiAssistant/debug/DebugView"))} />
+        </Route>
         <Route errorElement={<RouteErrorFallbackComponent />}>
             <Route path={`${VisualizationBasePath}/:processName`} element={<Visualization />} />
             <Route path={`${VisualizationBasePath}/:processName/:version`} element={<Visualization />} />

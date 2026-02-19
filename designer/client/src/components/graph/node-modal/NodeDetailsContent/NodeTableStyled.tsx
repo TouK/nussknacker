@@ -18,7 +18,7 @@ export const NodeTableStyled = styled("div")(({ theme }) => ({
         flexBasis: "60%",
         display: "inline-block",
         width: "100%",
-        "anchor-name": editorAnchorName,
+        anchorName: editorAnchorName,
 
         textarea: {
             overflow: "hidden",

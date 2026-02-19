@@ -1,14 +1,14 @@
-import type { ChatModelAdapter, ChatModelRunResult, ToolCallMessagePart } from "@assistant-ui/react";
+import type { ChatModelAdapter, ChatModelRunResult, ThreadAssistantMessagePart } from "@assistant-ui/react";
 import type { AssistantMessage } from "assistant-stream";
 import { unstable_runPendingTools } from "assistant-stream";
 
 import { initializeChatStream } from "./InitializeChatStream";
 import { addPendingHumanResolver, resolveHumanAction } from "./PendingHumanResolvers";
-import { ThreadIdManager } from "./ThreadIdManager";
+import { setThreadId } from "./ThreadIdManager";
 
 let controller: AbortController;
 function forkSignal(parentSignal: AbortSignal): AbortSignal {
-    controller?.abort();
+    controller?.abort("new signal");
     controller = new AbortController();
 
     if (parentSignal.aborted) {
@@ -20,47 +20,38 @@ function forkSignal(parentSignal: AbortSignal): AbortSignal {
     return controller.signal;
 }
 
-export const ModelAdapter: ChatModelAdapter = {
+export const createModelAdapter = (debug = false): ChatModelAdapter => ({
     async *run(chatModelOptions): AsyncGenerator<ChatModelRunResult> {
         const abortSignal = forkSignal(chatModelOptions.abortSignal);
-        const chatStream = initializeChatStream({ ...chatModelOptions, abortSignal });
-
-        yield {
-            content: [],
-            status: { type: "running" },
-        };
+        const chatStream = initializeChatStream({ ...chatModelOptions, abortSignal }, debug);
 
         let text = "";
-        let calls: ToolCallMessagePart[] = [];
+        let calls: ThreadAssistantMessagePart[] = [];
 
         for await (const event of chatStream) {
             switch (event.type) {
+                case "start":
+                    yield {
+                        content: [{ type: "text", text }, ...calls],
+                        status: { type: "running" },
+                    };
+                    break;
                 case "tool":
                     {
+                        const toolCallId = event.callId || crypto.randomUUID();
                         calls.push({
                             type: "tool-call",
-                            toolCallId: crypto.randomUUID(),
+                            toolCallId,
                             toolName: event.name,
                             args: event.arguments,
                             argsText: JSON.stringify(event.arguments),
                         });
+                        console.debug(calls[calls.length - 1]);
                         const message: ChatModelRunResult = {
                             content: [{ type: "text", text }, ...calls],
                             status: { type: "requires-action", reason: "tool-calls" },
                         };
                         yield message;
-
-                        const assistantMessage = await unstable_runPendingTools(
-                            { ...message, parts: message.content } as AssistantMessage,
-                            chatModelOptions.context.tools,
-                            abortSignal,
-                            (toolCallId, payload) => {
-                                abortSignal.addEventListener("abort", () => resolveHumanAction(toolCallId), { once: true });
-                                return addPendingHumanResolver(toolCallId, typeof payload === "function" ? payload() : payload);
-                            },
-                        );
-                        calls = assistantMessage.parts.map((p) => p.type === "tool-call" && p).filter(Boolean);
-                        yield assistantMessage;
                     }
                     break;
                 case "delta":
@@ -71,8 +62,24 @@ export const ModelAdapter: ChatModelAdapter = {
                     };
                     break;
                 case "stop":
-                    ThreadIdManager.THREAD_ID = event.threadId;
-                    break;
+                    {
+                        setThreadId(event.threadId);
+                        const assistantMessage = await unstable_runPendingTools(
+                            {
+                                status: { type: "requires-action", reason: "tool-calls" },
+                                parts: [{ type: "text", text }, ...calls],
+                            } as AssistantMessage,
+                            chatModelOptions.context.tools,
+                            abortSignal,
+                            (toolCallId, payload) => {
+                                abortSignal.addEventListener("abort", () => resolveHumanAction(toolCallId), { once: true });
+                                return addPendingHumanResolver(toolCallId, typeof payload === "function" ? payload() : payload);
+                            },
+                        );
+                        calls = assistantMessage.parts.map((p) => p.type === "tool-call" && p).filter(Boolean);
+                        yield assistantMessage;
+                    }
+                    return;
                 case "aborted":
                     yield {
                         status: { type: "incomplete", reason: "cancelled" },
@@ -100,4 +107,4 @@ export const ModelAdapter: ChatModelAdapter = {
             }
         }
     },
-};
+});
