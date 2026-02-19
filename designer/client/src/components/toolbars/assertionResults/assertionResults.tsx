@@ -33,7 +33,7 @@ const AssertionResults = () => {
         [testAssertionResults, nodeOrderMap],
     );
     return (
-        <ToolbarWrapper id={"assertion-results-panel"} title={"Assertions result"}>
+        <ToolbarWrapper id={"assertion-results-panel"} title={"Assertion results"}>
             <Box py={1}>
                 <AssertionResultsHeader />
                 {sortedNodeIds.map((nodeId) => (
