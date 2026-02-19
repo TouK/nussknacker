@@ -42,7 +42,7 @@ class ProcessDictSubstitutor(
 
     val rewriter = ProcessNodesRewriter.rewritingAllExpressions { exprIdWithMetadata => expr =>
       val nodeExpressionId             = exprIdWithMetadata.expressionId
-      val nodeTypingInfo               = processTypingInfo.getOrElse(nodeExpressionId.nodeId.id, Map.empty)
+      val nodeTypingInfo               = processTypingInfo.getOrElse(nodeExpressionId.nodeId.value, Map.empty)
       val optionalExpressionTypingInfo = nodeTypingInfo.get(nodeExpressionId.expressionId)
 
       if (expr.language == Expression.Language.DictKeyWithLabel && !expr.expression.isBlank) {
@@ -100,7 +100,7 @@ class ProcessDictSubstitutor(
         val afterSubstitution = ExpressionSubstitutor.substitute(expr.expression, substitutions)
         if (substitutions.nonEmpty)
           logger.debug(
-            s"Found ${substitutions.size} substitutions in expression: ${process.name} > ${nodeExpressionId.nodeId.id} > ${nodeExpressionId.expressionId}. " +
+            s"Found ${substitutions.size} substitutions in expression: ${process.name} > ${nodeExpressionId.nodeId.value} > ${nodeExpressionId.expressionId}. " +
               s"Expression: '${expr.expression}' replaced with '$afterSubstitution'"
           )
         afterSubstitution

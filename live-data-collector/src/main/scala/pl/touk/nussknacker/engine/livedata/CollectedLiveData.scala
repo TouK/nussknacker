@@ -63,7 +63,7 @@ object CollectedLiveData {
   private implicit val exceptionResultEncoder: Encoder[ExceptionResult] = deriveEncoder
   private implicit val exceptionResultDecoder: Decoder[ExceptionResult] = deriveDecoder
 
-  implicit val nodeIdKeyEncoder: KeyEncoder[NodeId] = KeyEncoder.encodeKeyString.contramap(_.id)
+  implicit val nodeIdKeyEncoder: KeyEncoder[NodeId] = KeyEncoder.encodeKeyString.contramap(_.value)
   implicit val nodeIdKeyDecoder: KeyDecoder[NodeId] = KeyDecoder.decodeKeyString.map(NodeId.apply)
 
   implicit val nodeTransitionKeyEncoder: KeyEncoder[NodeTransition] =

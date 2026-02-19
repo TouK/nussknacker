@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.NodeName
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -56,7 +57,7 @@ class DynamicComponentStaticDefinitionDeterminer(
       val outputVariableName =
         if (dynamic.component.nodeDependencies.contains(OutputVariableNameDependency)) Some("fakeOutputVariable")
         else None
-      val fakeNode = CustomNode("fakeNodeId", outputVariableName, dynamic.name, List.empty)
+      val fakeNode = CustomNode(NodeId.generate(), NodeName("fakeNode"), outputVariableName, dynamic.name, List.empty)
       val nodeCompilationDependencies =
         new NodeCompilationDependencies(
           scenarioCompilationDependencies = scenarioCompilationDependencies,

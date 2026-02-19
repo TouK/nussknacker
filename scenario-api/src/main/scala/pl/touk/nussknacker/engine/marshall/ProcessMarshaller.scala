@@ -14,7 +14,7 @@ object ProcessMarshaller {
 
   private implicit val nodeDataEncoder: Encoder[NodeData] = deriveConfiguredEncoder
 
-  private implicit val nodeDataDecoder: Decoder[NodeData] = deriveConfiguredDecoder
+  private implicit val nodeDataDecoder: Decoder[NodeData] = CirceUtil.withNameFromIdFallback(deriveConfiguredDecoder)
 
   private implicit lazy val flatNodeEncode: Encoder[FlatNode] =
     Encoder.apply[NodeData].contramap[FlatNode](_.data)
@@ -38,7 +38,7 @@ object ProcessMarshaller {
 
   private lazy val filterDecode: Decoder[CanonicalNode] =
     for {
-      data      <- deriveConfiguredDecoder[Filter]
+      data      <- CirceUtil.withNameFromIdFallback(deriveConfiguredDecoder[Filter])
       nextFalse <- Decoder.instance(j => Decoder[List[CanonicalNode]].tryDecode(j.downField("nextFalse")))
     } yield FilterNode(data, nextFalse)
 
@@ -56,7 +56,7 @@ object ProcessMarshaller {
 
   private lazy val switchDecode: Decoder[CanonicalNode] =
     for {
-      data        <- deriveConfiguredDecoder[Switch]
+      data        <- CirceUtil.withNameFromIdFallback(deriveConfiguredDecoder[Switch])
       nexts       <- Decoder.instance(j => Decoder[List[Case]].tryDecode(j downField "nexts"))
       defaultNext <- Decoder.instance(j => Decoder[List[CanonicalNode]].tryDecode(j downField "defaultNext"))
     } yield SwitchNode(data, nexts, defaultNext)
@@ -74,7 +74,7 @@ object ProcessMarshaller {
 
   private lazy val splitDecode: Decoder[CanonicalNode] =
     for {
-      data  <- deriveConfiguredDecoder[Split]
+      data  <- CirceUtil.withNameFromIdFallback(deriveConfiguredDecoder[Split])
       nexts <- Decoder.instance(j => Decoder[List[List[CanonicalNode]]].tryDecode(j downField "nexts"))
     } yield SplitNode(data, nexts)
 
@@ -91,7 +91,7 @@ object ProcessMarshaller {
 
   private lazy val fragmentDecode: Decoder[CanonicalNode] =
     for {
-      data  <- deriveConfiguredDecoder[FragmentInput]
+      data  <- CirceUtil.withNameFromIdFallback(deriveConfiguredDecoder[FragmentInput])
       nexts <- Decoder.instance(j => Decoder[Map[String, List[CanonicalNode]]].tryDecode(j downField "outputs"))
     } yield Fragment(data, nexts)
 

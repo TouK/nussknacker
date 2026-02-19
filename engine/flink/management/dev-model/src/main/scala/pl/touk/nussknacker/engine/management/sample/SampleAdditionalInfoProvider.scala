@@ -14,7 +14,7 @@ class SampleAdditionalInfoProvider extends AdditionalInfoProvider {
 
   override def nodeAdditionalInfo(config: Config)(nodeData: node.NodeData): Future[Option[AdditionalInfo]] = {
     nodeData match {
-      case Enricher(_, ServiceRef("paramService", idParam :: Nil), _, _, _) =>
+      case Enricher(_, _, ServiceRef("paramService", idParam :: Nil), _, _, _) =>
         Future.successful(Some {
           val id = idParam.expression.expression.replace("'", "")
           MarkdownAdditionalInfo(s"""

@@ -47,7 +47,7 @@ object ProcessCanonizer {
       case (a @ canonicalnode.FlatNode(data: node.StartingNodeData)) :: tail =>
         uncanonize(a, tail).map(node.SourceNode(data, _))
       case other :: _ =>
-        MaybeArtificial.artificialSource(InvalidRootNode(NodeId(other.id)))
+        MaybeArtificial.artificialSource(InvalidRootNode(other.id))
 
       case _ =>
         MaybeArtificial.artificialSource(EmptyProcess)
@@ -97,7 +97,7 @@ object ProcessCanonizer {
         }
 
       case canonicalnode.SplitNode(bare, Nil) :: Nil =>
-        missingSinkHandler.handleMissingSink(NodeId(bare.id), Some(node.SplitNode(bare, List.empty)))
+        missingSinkHandler.handleMissingSink(bare.id, Some(node.SplitNode(bare, List.empty)))
 
       case (a @ canonicalnode.SplitNode(bare, nexts)) :: Nil =>
         nexts
@@ -108,10 +108,10 @@ object ProcessCanonizer {
           }
 
       case invalidHead :: _ =>
-        MaybeArtificial.missingSinkError(InvalidTailOfBranch(NodeId(invalidHead.id)))
+        MaybeArtificial.missingSinkError(InvalidTailOfBranch(invalidHead.id))
 
       case Nil =>
-        missingSinkHandler.handleMissingSink(NodeId(previous.id), None)
+        missingSinkHandler.handleMissingSink(previous.id, None)
     }
 
 }

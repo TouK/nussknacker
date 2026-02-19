@@ -13,7 +13,7 @@ class ConsumerGroupDeterminer(consumerGroupNamingStrategy: ConsumerGroupNamingSt
   def consumerGroup(processName: ProcessName, nodeId: NodeId): String = {
     consumerGroupNamingStrategy match {
       case ConsumerGroupNamingStrategy.ProcessId       => processName.value
-      case ConsumerGroupNamingStrategy.ProcessIdNodeId => processName.value + "-" + nodeId.id
+      case ConsumerGroupNamingStrategy.ProcessIdNodeId => processName.value + "-" + nodeId.value
     }
   }
 

@@ -167,7 +167,7 @@ class FlinkProcessRegistrar(
 
       val start = source
         .contextStream(env, nodeContext(nodeComponentInfo, Left(ValidationContext.empty)))
-        .process(new SourceMetricsFunction(part.id, compilerData.runtimeMode), contextTypeInformation)
+        .process(new SourceMetricsFunction(part.id.value, compilerData.runtimeMode), contextTypeInformation)
 
       val asyncAssigned = registerInterpretationPart(start, part, InterpretationName, nodeComponentInfo)
 
@@ -180,7 +180,8 @@ class FlinkProcessRegistrar(
         branchEnds: Map[BranchEndDefinition, BranchEndData]
     ): Map[BranchEndDefinition, BranchEndData] = {
       val inputs: Map[String, (DataStream[Context], ValidationContext)] = branchEnds.collect {
-        case (BranchEndDefinition(id, joinId), BranchEndData(validationContext, stream)) if joinPart.id == joinId =>
+        case (BranchEndDefinition(id, joinId), BranchEndData(validationContext, stream))
+            if joinPart.id.value == joinId =>
           id -> (
             stream.map(
               (value: InterpretationResult) => value.finalContext,
@@ -226,7 +227,7 @@ class FlinkProcessRegistrar(
           val typeInformationForVC = TypeInformationDetection.instance.forContext(part.contextBefore)
 
           registerSubsequentPart(
-            sideOutput(start, new OutputTag[InterpretationResult](part.id, typeInformationForTi))
+            sideOutput(start, new OutputTag[InterpretationResult](part.id.value, typeInformationForTi))
               .map((value: InterpretationResult) => value.finalContext, typeInformationForVC),
             part
           )
@@ -238,7 +239,7 @@ class FlinkProcessRegistrar(
         val ti = InterpretationResultTypeInformation.create(validationContext)
         be.definition -> BranchEndData(
           validationContext,
-          sideOutput(start, new OutputTag[InterpretationResult](be.nodeId, ti))
+          sideOutput(start, new OutputTag[InterpretationResult](be.nodeId.value, ti))
         )
       }.toMap
       branchesForParts ++ branchForEnds
@@ -280,7 +281,7 @@ class FlinkProcessRegistrar(
       val withSinkAdded = resultCollector match {
         case testResultCollector: TestServiceInvocationCollector =>
           val typ                 = part.node.data.ref.typ
-          val collectingSink      = testResultCollector.createSinkInvocationCollector(NodeId(part.id), typ)
+          val collectingSink      = testResultCollector.createSinkInvocationCollector(part.id, typ)
           val prepareTestValueFun = sink.prepareTestValueFunction
           withValuePrepared
             .map(
@@ -288,7 +289,7 @@ class FlinkProcessRegistrar(
               customNodeContext.valueWithContextInfo.forUnknown
             )
             .sinkTo(
-              new CollectingSink[AnyRef](compilerDataForProcessPart(None), collectingSink, NodeId(part.id))
+              new CollectingSink[AnyRef](compilerDataForProcessPart(None), collectingSink, part.id)
             )
         case _ =>
           sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfo, Left(contextBefore)))
@@ -333,8 +334,8 @@ class FlinkProcessRegistrar(
     ): SingleOutputStreamOperator[Unit] = {
       val node              = part.node
       val validationContext = part.validationContext
-      val outputContexts = part.ends.map(pe => pe.end.nodeId -> pe.validationContext).toMap ++ (part match {
-        case e: PotentiallyStartPart => e.nextParts.map(np => np.id -> np.validationContext).toMap
+      val outputContexts = part.ends.map(pe => pe.end.nodeId.value -> pe.validationContext).toMap ++ (part match {
+        case e: PotentiallyStartPart => e.nextParts.map(np => np.id.value -> np.validationContext).toMap
         case _                       => Map.empty
       })
       val metaData                      = compilerData.jobData.metaData
@@ -413,7 +414,7 @@ object FlinkProcessRegistrar {
       .map { part =>
         (
           SplittedNodesCollector.collectNodes(part.node).map(_.data),
-          part.cast[PotentiallyStartPart].toList.flatMap(_.nextParts).map(p => NodeId(p.id))
+          part.cast[PotentiallyStartPart].toList.flatMap(_.nextParts).map(p => p.id)
         )
       }
       .getOrElse((Set.empty, Nil))
@@ -450,7 +451,7 @@ object FlinkProcessRegistrar {
       interpretationName: String,
       shouldUseAsyncInterpretation: Boolean
   ): String = {
-    interpretationOperatorName(metaData.name, splittedNode.id, interpretationName, shouldUseAsyncInterpretation)
+    interpretationOperatorName(metaData.name, splittedNode.id.value, interpretationName, shouldUseAsyncInterpretation)
   }
 
   private[registrar] def interpretationOperatorName(

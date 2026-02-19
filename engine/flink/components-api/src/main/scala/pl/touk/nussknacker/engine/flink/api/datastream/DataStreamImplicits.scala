@@ -57,7 +57,7 @@ object DataStreamImplicits extends LazyLogging {
       )
 
     def setUidAndNameToNodeId(nodeId: NodeId): DataStream[T] =
-      stream.setUidAndName(nodeId.id)
+      stream.setUidAndName(nodeId.value)
 
     def setUidAndName(id: String): DataStream[T] = {
       val transformation = stream.getTransformation
@@ -71,7 +71,7 @@ object DataStreamImplicits extends LazyLogging {
   implicit class DataStreamSinkExtension[T](dataStream: DataStreamSink[T]) {
 
     def setUidAndNameToNodeId(nodeId: NodeId): DataStreamSink[T] =
-      dataStream.setUidAndName(nodeId.id)
+      dataStream.setUidAndName(nodeId.value)
 
     def setUidAndName(id: String): DataStreamSink[T] =
       dataStream.uid(id).name(id)

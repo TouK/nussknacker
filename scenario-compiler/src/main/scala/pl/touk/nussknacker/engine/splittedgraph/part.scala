@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.splittedgraph
 
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.graph.node.{
   EndingNode => _,
   OneOutputSubsequentNode => _,
@@ -15,7 +16,7 @@ object part {
   sealed trait ProcessPart {
     type T <: NodeData
     def node: SplittedNode[T]
-    def id: String = node.id
+    def id: NodeId = node.id
     def nextParts: List[SubsequentPart]
     def ends: List[End]
   }

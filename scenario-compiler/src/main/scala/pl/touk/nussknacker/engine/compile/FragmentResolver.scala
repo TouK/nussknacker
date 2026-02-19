@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.compile
 import cats.data._
 import cats.data.Validated.{invalidNel, valid, Invalid, Valid}
 import cats.implicits._
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -63,19 +63,20 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
   private def resolveCanonical(idPrefix: List[String]): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
     iterateOverCanonicals(
       {
-        case canonicalnode.Fragment(FragmentInput(dataId, _, _, Some(true), _), nextNodes)
+        case canonicalnode.Fragment(FragmentInput(dataId, _, _, _, Some(true), _), nextNodes)
             if nextNodes.values.size > 1 =>
-          invalidBranches(DisablingManyOutputsFragment(NodeId(dataId)))
-        case canonicalnode.Fragment(FragmentInput(dataId, _, _, Some(true), _), nextNodes)
+          invalidBranches(DisablingManyOutputsFragment(dataId))
+        case canonicalnode.Fragment(FragmentInput(dataId, _, _, _, Some(true), _), nextNodes)
             if nextNodes.values.isEmpty =>
-          invalidBranches(DisablingNoOutputsFragment(NodeId(dataId)))
-        case canonicalnode.Fragment(data @ FragmentInput(_, _, _, Some(true), _), nextNodesMap) =>
+          invalidBranches(DisablingNoOutputsFragment(dataId))
+        case canonicalnode.Fragment(data @ FragmentInput(_, _, _, _, Some(true), _), nextNodesMap) =>
           // TODO: disabling nodes should be in one place
           val output = nextNodesMap.keys.head
           resolveCanonical(idPrefix)(nextNodesMap.values.head).map { resolvedNexts =>
-            val outputId = s"${NodeDataFun.nodeIdPrefix(idPrefix)(data).id}-$output"
-            FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data)) :: FlatNode(
-              FragmentUsageOutput(outputId, data.id, output, None, None)
+            val prefixedData = NodeDataFun.nodeIdPrefix(idPrefix)(data)
+            val outputId     = s"${prefixedData.id.value}-$output"
+            FlatNode(prefixedData) :: FlatNode(
+              FragmentUsageOutput(NodeId(outputId), NodeName(outputId), data.id, output, None, None)
             ) :: resolvedNexts
           }
         // here is the only interesting part - not disabled fragment
@@ -91,20 +92,20 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
               .sequence[ValidatedWithBranches, (String, List[CanonicalNode])]
               .map(_.toMap)
 
-            val subResolvedV = resolveCanonical(idPrefix :+ fragmentInput.id)(definition.nodes)
+            val subResolvedV = resolveCanonical(idPrefix :+ fragmentInput.id.value)(definition.nodes)
             val additionalResolved =
-              definition.additionalBranches.map(resolveCanonical(idPrefix :+ fragmentInput.id)).sequence
+              definition.additionalBranches.map(resolveCanonical(idPrefix :+ fragmentInput.id.value)).sequence
 
             // we replace fragment outputs with following nodes from parent process
             val nexts = (
               nextResolvedV,
               subResolvedV,
               additionalResolved,
-              additionalApply(definition.validOutputs(NodeId(fragmentInput.id)))
+              additionalApply(definition.validOutputs(fragmentInput.id))
             )
               .mapN { (nodeResolved, nextResolved, additionalResolved, _) =>
                 (
-                  replaceCanonicalList(nodeResolved, fragmentInput.id, fragmentInput.ref.outputVariableNames),
+                  replaceCanonicalList(nodeResolved, fragmentInput.id.value, fragmentInput.ref.outputVariableNames),
                   nextResolved,
                   additionalResolved
                 )
@@ -128,7 +129,7 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
   }
 
   def resolveInput(fragmentInput: FragmentInput): CompilationValid[FragmentGraphDefinition] = {
-    implicit val nodeId: NodeId = NodeId(fragmentInput.id)
+    implicit val nodeId: NodeId = fragmentInput.id
     fragments
       .apply(ProcessName(fragmentInput.ref.id))
       .map(valid)
@@ -149,21 +150,32 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
   ): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
     iterateOverCanonicals(
       {
-        case FlatNode(FragmentOutputDefinition(id, name, fields, add)) => {
-          replacement.get(name) match {
+        case FlatNode(FragmentOutputDefinition(id, _, outputName, fields, add)) => {
+          replacement.get(outputName) match {
             case Some(nodes) if fields.isEmpty =>
-              validBranches(FlatNode(FragmentUsageOutput(id, parentId, name, None, add)) :: nodes)
+              validBranches(
+                FlatNode(
+                  FragmentUsageOutput(id, NodeName(outputName), NodeId(parentId), outputName, None, add)
+                ) :: nodes
+              )
             case Some(nodes) =>
-              val outputName = outputs.getOrElse(
-                name,
-                default = name
+              val varName = outputs.getOrElse(
+                outputName,
+                default = outputName
               ) // when no `outputVariableName` defined we use output name from fragment as variable name
               validBranches(
                 FlatNode(
-                  FragmentUsageOutput(id, parentId, name, Some(FragmentOutputVarDefinition(outputName, fields)), add)
+                  FragmentUsageOutput(
+                    id,
+                    NodeName(outputName),
+                    NodeId(parentId),
+                    outputName,
+                    Some(FragmentOutputVarDefinition(varName, fields)),
+                    add
+                  )
                 ) :: nodes
               )
-            case _ => invalidBranches(FragmentOutputNotDefined(name, Set(NodeId(id), NodeId(parentId))))
+            case _ => invalidBranches(FragmentOutputNotDefined(outputName, Set(id, NodeId(parentId))))
           }
         }
       },
@@ -240,7 +252,7 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
     // this casting is weird, but we want to have both exhaustiveness check and GADT behaviour with copy syntax...
     (nodeData.asInstanceOf[NodeData] match {
       case e: RealNodeData =>
-        e.copy(id = prefixId(e.id))
+        e.copy(id = NodeId(prefixId(e.id.value)))
       case BranchEndData(BranchEndDefinition(id, joinId)) =>
         BranchEndData(BranchEndDefinition(id, prefixId(joinId)))
     }).asInstanceOf[T]

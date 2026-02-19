@@ -7,6 +7,7 @@ import org.apache.pekko.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unm
 import org.scalatest.{BeforeAndAfterEach, Inside}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
@@ -77,7 +78,12 @@ class RemoteEnvironmentResourcesSpec
   }
 
   it should "invoke migration for found scenario" in {
-    val difference = Map("node1" -> NodeNotPresentInCurrent("node1", Filter("node1", Expression.spel("#input == 4"))))
+    val difference = Map(
+      "node1" -> NodeNotPresentInCurrent(
+        "node1",
+        Filter(NodeId("node1"), NodeName("node1"), Expression.spel("#input == 4"))
+      )
+    )
     val remoteEnvironment = new MockRemoteEnvironment(mockDifferences = Map(processName -> difference))
 
     val route = withPermissions(
@@ -115,7 +121,7 @@ class RemoteEnvironmentResourcesSpec
     val processId1 = ProcessName("proc1")
     val processId2 = ProcessName("proc2")
 
-    val difference = NodeNotPresentInOther("a", Filter("a", "".spel))
+    val difference = NodeNotPresentInOther("a", Filter(NodeId("a"), NodeName("a"), "".spel))
 
     val route = withPermissions(
       new RemoteEnvironmentResources(
@@ -152,7 +158,7 @@ class RemoteEnvironmentResourcesSpec
     val processId1 = ProcessName("proc1")
     val processId2 = ProcessName("proc2")
 
-    val difference = NodeNotPresentInOther("a", Filter("a", "".spel))
+    val difference = NodeNotPresentInOther("a", Filter(NodeId("a"), NodeName("a"), "".spel))
 
     val route = withPermissions(
       new RemoteEnvironmentResources(

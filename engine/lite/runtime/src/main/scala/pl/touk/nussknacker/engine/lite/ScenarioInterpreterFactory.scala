@@ -74,7 +74,7 @@ object ScenarioInterpreterFactory {
       val allNodes = process.collectAllNodes
       val countingListeners = List(
         LoggingListener,
-        new NodeCountingListener(allNodes.map(n => NodeId(n.id))),
+        new NodeCountingListener(allNodes.map(n => n.id)),
         new ExceptionCountingListener,
         new EndCountingListener(allNodes),
       )
@@ -118,11 +118,11 @@ object ScenarioInterpreterFactory {
     parts.foldLeft(Map.empty[String, Any]) { (acc, part) =>
       part match {
         case source: SourcePart =>
-          acc + (source.id -> source.obj) ++ extractStartParts(source.nextParts)
+          acc + (source.id.value -> source.obj) ++ extractStartParts(source.nextParts)
         case custom: CustomNodePart =>
-          acc + (custom.id -> custom.transformer) ++ extractStartParts(custom.nextParts)
+          acc + (custom.id.value -> custom.transformer) ++ extractStartParts(custom.nextParts)
         case sink: SinkPart =>
-          acc + (sink.id -> sink.obj)
+          acc + (sink.id.value -> sink.obj)
       }
     }
   }
@@ -207,8 +207,8 @@ object ScenarioInterpreterFactory {
           next: Input => F[ResultType[PartResult]]
       ): ScenarioInputBatch[Input] => InterpreterOutputType = (inputs: ScenarioInputBatch[Input]) =>
         Monoid.combineAll(inputs.value.map {
-          case (source, ctx) if source.value == nextSource.id => next(ctx)
-          case other                                          => base(ScenarioInputBatch(other :: Nil))
+          case (source, ctx) if source.value == nextSource.id.value => next(ctx)
+          case other                                                => base(ScenarioInputBatch(other :: Nil))
         })
 
       // here we rely on the fact that parts are sorted correctly (see ProcessCompiler.compileSources)
@@ -279,7 +279,7 @@ object ScenarioInterpreterFactory {
             partInvoker(compiled, List()).map(prepareResponse(compiled, sink))
           }
         case CustomNodePart(transformerObj, node, _, validationContext, parts, _) =>
-          val nodeId = NodeId(node.id)
+          val nodeId = node.id
           val validatedTransformer = transformerObj match {
             case t: LiteCustomComponent => Valid(t)
             case _                      => Invalid(NonEmptyList.of(UnsupportedPart(nodeId)))
@@ -315,7 +315,7 @@ object ScenarioInterpreterFactory {
     }
 
     private def compilePartInvokers(parts: List[SubsequentPart]): CompilationResult[Map[String, PartInterpreterType]] =
-      parts.map(part => compiledPartInvoker(part).map(compiled => part.id -> compiled)).sequence.map { res =>
+      parts.map(part => compiledPartInvoker(part).map(compiled => part.id.value -> compiled)).sequence.map { res =>
         Writer(res.flatMap(_._2.written).toMap, res.toMap.mapValuesNow(_.value))
       }
 
@@ -411,10 +411,10 @@ object ScenarioInterpreterFactory {
         currentNodeId: NodeId
     ): PartsComputedToPassAndRun = {
       val resultPointingToThis: List[JoinResult] = partResults.collect {
-        case e: JoinResult if e.reference.joinId == currentNodeId.id => e
+        case e: JoinResult if e.reference.joinId == currentNodeId.value => e
       }
       val resultPointingToOthers: List[PartResult] = partResults.collect {
-        case e: JoinResult if e.reference.joinId != currentNodeId.id => e
+        case e: JoinResult if e.reference.joinId != currentNodeId.value => e
       }
       val endResults: List[PartResult] = partResults.collect { case e: EndPartResult[Res @unchecked] => e }
       PartsComputedToPassAndRun(resultPointingToThis, resultPointingToOthers, endResults)
@@ -424,7 +424,7 @@ object ScenarioInterpreterFactory {
         sourcePart: SourcePart
     ): ValidatedNel[ProcessCompilationError, Input => ValidatedNel[ErrorType, Context]] = {
       val SourcePart(sourceObj, node, _, _, _) = sourcePart
-      val nodeId                               = NodeId(node.id)
+      val nodeId                               = node.id
       val validatedSource = (sourceObj, node.data) match {
         case (s: LiteSource[Input @unchecked], _) => Valid(s)
         // Used only in fragment testing, when FragmentInputDefinition is available
@@ -461,7 +461,7 @@ object ScenarioInterpreterFactory {
         customNodePart: CustomNodePart
     ): JoinCompilationResult[JoinDataBatch => InterpreterOutputType] = {
       val CustomNodePart(transformerObj, node, _, validationContext, parts, _) = customNodePart
-      val nodeId                                                               = NodeId(node.id)
+      val nodeId                                                               = node.id
       val validatedTransformer = transformerObj match {
         case t: LiteJoinCustomComponent                               => Valid(t)
         case JoinContextTransformation(_, t: LiteJoinCustomComponent) => Valid(t)

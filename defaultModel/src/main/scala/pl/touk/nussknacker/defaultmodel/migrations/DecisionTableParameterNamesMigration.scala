@@ -13,7 +13,7 @@ object DecisionTableParameterNamesMigration extends NodeMigration {
   override val description: String = "Change Decision Table component parameter names"
 
   override def migrateNode(metaData: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
-    case enricher @ Enricher(_, service @ ServiceRef(_, params), _, _, _) =>
+    case enricher @ Enricher(_, _, service @ ServiceRef(_, params), _, _, _) =>
       enricher.copy(service = service.copy(parameters = renameParams(params)))
   }
 

@@ -4,6 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import io.circe.Json
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -71,7 +72,8 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
     val source    = converted.nodes.head.asInstanceOf[FlatNode].data.asInstanceOf[Source]
 
     source shouldBe Source(
-      "start",
+      NodeId("start"),
+      NodeName("start"),
       SourceRef("source1", List(NodeParameter(ParameterName("param1"), Expression(Language.Spel, "'string1'"))))
     )
   }
@@ -225,7 +227,11 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
   }
 
   private def sinkToVerify(id: String) = {
-    Sink(id, SinkRef("sink", List(NodeParameter(ParameterName("param1"), Expression(Language.Spel, "'string1'")))))
+    Sink(
+      NodeId(id),
+      NodeName(id),
+      SinkRef("sink", List(NodeParameter(ParameterName("param1"), Expression(Language.Spel, "'string1'"))))
+    )
   }
 
   private def migrateAndConvert(oldJson: Json): CanonicalProcess = {

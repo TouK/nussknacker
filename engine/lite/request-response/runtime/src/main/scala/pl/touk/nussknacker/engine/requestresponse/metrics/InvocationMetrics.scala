@@ -42,7 +42,7 @@ class InvocationMetrics(context: EngineRuntimeContext) {
   private def markErrorTimer(startTime: Long, nodeId: Option[NodeId] = None): Unit = {
     val id = nodeId.getOrElse(NodeId("unknown"))
     nodeErrorTimers
-      .getOrElseUpdate(id, espTimer(Map(nodeIdTag -> id.id), NonEmptyList.of("invocation", "failure")))
+      .getOrElseUpdate(id, espTimer(Map(nodeIdTag -> id.value), NonEmptyList.of("invocation", "failure")))
       .update(startTime)
   }
 

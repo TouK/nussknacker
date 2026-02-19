@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.canonicalgraph
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, NodeName, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{
   CanonicalNode,
   Case,
@@ -23,11 +23,12 @@ import scala.language.implicitConversions
 
 class CanonicalProcessTest extends AnyFunSuite with Matchers {
 
-  val source1 = FlatNode(Source("in", SourceRef("sourceType", Nil)))
+  val source1 = FlatNode(Source(NodeId("in"), NodeName("in"), SourceRef("sourceType", Nil)))
 
-  val sink1 = FlatNode(Sink("out", SinkRef("sinkType", Nil)))
+  val sink1 = FlatNode(Sink(NodeId("out"), NodeName("out"), SinkRef("sinkType", Nil)))
 
-  val disabledFilter1 = FilterNode(data = Filter("filter1", "''", isDisabled = Some(true)), List(sink1))
+  val disabledFilter1 =
+    FilterNode(data = Filter(NodeId("filter1"), NodeName("filter1"), "''", isDisabled = Some(true)), List(sink1))
 
   test("#withoutDisabledNodes when all nodes are enabled") {
     val withNodesEnabled = process(List(source1, fragment(List(sink1), isDisabled = false)))
@@ -106,7 +107,7 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
       List(
         source1,
         SwitchNode(
-          data = Switch("switch1"),
+          data = Switch(NodeId("switch1"), NodeName("switch1"), None, None),
           nexts = List(
             Case("''", List(disabledFilter1)),
             Case("''", List(sink1))
@@ -118,7 +119,7 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
       List(
         source1,
         SwitchNode(
-          data = Switch("switch1"),
+          data = Switch(NodeId("switch1"), NodeName("switch1"), None, None),
           nexts = List(
             Case("''", List(sink1))
           ),
@@ -133,7 +134,7 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
       List(
         source1,
         SplitNode(
-          data = Split("split1"),
+          data = Split(NodeId("split1"), NodeName("split1")),
           nexts = List(
             List(
               fragment(
@@ -156,7 +157,7 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
       List(
         source1,
         SplitNode(
-          data = Split("split1"),
+          data = Split(NodeId("split1"), NodeName("split1")),
           nexts = List(
             List(
               fragment(
@@ -174,7 +175,8 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
   private def fragment(output: List[CanonicalNode], isDisabled: Boolean) =
     Fragment(
       FragmentInput(
-        "sub1",
+        NodeId("sub1"),
+        NodeName("sub1"),
         FragmentRef("sub1", Nil, Map.empty),
         isDisabled = Some(isDisabled)
       ),

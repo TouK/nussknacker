@@ -493,7 +493,7 @@ object ProcessCompilationError {
   final case class NodeIdValidationError(errorType: IdErrorType, override val nodeId: NodeId)
       extends IdError
       with InASingleNode {
-    override val id: String = nodeId.id
+    override val id: String = nodeId.value
   }
 
   sealed trait IdErrorType

@@ -76,7 +76,7 @@ class AssertionsCompiler(
       nodesTyping: Map[String, NodeTypingData],
   )(implicit nodeId: NodeId): ValidatedNel[AssertionError, NodeTypingData] = {
     nodesTyping
-      .get(nodeId.id)
+      .get(nodeId.value)
       .map(Valid(_))
       .getOrElse(
         Invalid(

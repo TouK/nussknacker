@@ -105,7 +105,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val process =
         ScenarioBuilder
           .streaming(scenarioName.value)
-          .source(sourceNodeId.id, "input")
+          .source(sourceNodeId.value, "input")
           .customNodeNoOutput("sleep", "sleep", "seconds" -> sleepSecondsInScenario.toString.spel)
           .emptySink("out", "valueMonitor", "Value" -> "#input.value1".spel)
 
@@ -133,7 +133,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val process =
         ScenarioBuilder
           .streaming(scenarioName.value)
-          .source(sourceNodeId.id, "input")
+          .source(sourceNodeId.value, "input")
           .filter("filter1", "#input.value1 > 1".spel)
           .buildSimpleVariable("v1", "variable1", "'ala'".spel)
           .processor("eager1", "collectingEager", "static" -> "'s'".spel, "dynamic" -> "#input.id".spel)
@@ -244,7 +244,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val process =
         ScenarioBuilder
           .streaming(scenarioName.value)
-          .source(sourceNodeId.id, "input")
+          .source(sourceNodeId.value, "input")
           .emptySink("out", "valueMonitor", "Value" -> "#input.value1".spel)
 
       val input = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
@@ -308,7 +308,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val process =
         ScenarioBuilder
           .streaming(scenarioName.value)
-          .source(sourceNodeId.id, "input")
+          .source(sourceNodeId.value, "input")
           .split("splitId1", GraphBuilder.emptySink("out1", "monitor"), GraphBuilder.emptySink("out2", "monitor"))
 
       val results = prepareTestRunner(useIOMonadInInterpreter)
@@ -336,7 +336,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val process =
         ScenarioBuilder
           .streaming(scenarioName.value)
-          .source(sourceNodeId.id, "input")
+          .source(sourceNodeId.value, "input")
           .customNode("cid", "out", "stateCustom", "groupBy" -> "#input.id".spel, "stringVal" -> "'s'".spel)
           .emptySink("out", "valueMonitor", "Value" -> "#input.value1 + ' ' + #out.previous".spel)
 
@@ -449,7 +449,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         ScenarioBuilder
           .streaming(scenarioName.value)
           .parallelism(FlinkMiniClusterFactory.DefaultTaskSlots + 1)
-          .source(sourceNodeId.id, "input")
+          .source(sourceNodeId.value, "input")
           .emptySink("out", "monitor")
 
       val results =
@@ -469,7 +469,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val process =
         ScenarioBuilder
           .streaming(scenarioName.value)
-          .source(sourceNodeId.id, "input")
+          .source(sourceNodeId.value, "input")
           .processor("failing", "throwingService", "throw" -> "#input.value1 == 2".spel)
           .filter("filter", "1 / #input.value1 >= 0".spel)
           .emptySink("out", "monitor")
@@ -526,7 +526,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val process =
         ScenarioBuilder
           .streaming(scenarioName.value)
-          .source(sourceNodeId.id, "input")
+          .source(sourceNodeId.value, "input")
           .processor("failing", "throwingService", "throw" -> "#input.value1 == 2".spel)
           .filter("filter", "1 / #input.value1 >= 0".spel)
           .emptySink("out", "monitor")
@@ -560,7 +560,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val process =
         ScenarioBuilder
           .streaming(scenarioName.value)
-          .source(sourceNodeId.id, "input")
+          .source(sourceNodeId.value, "input")
           .processor("failing", "throwingTransientService", "throw" -> "#input.value1 == 2".spel)
           .emptySink("out", "monitor")
 
@@ -581,21 +581,21 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val process =
         ScenarioBuilder
           .streaming(scenarioName.value)
-          .source(sourceNodeId.id, "jsonInput")
+          .source(sourceNodeId.value, "jsonInput")
           .emptySink("out", "valueMonitor", "Value" -> "#input".spel)
       val testData = ScenarioTestData(
         List(
           ScenarioTestSourceSpecificFormatJsonRecord(
             sourceNodeId,
-            Json.obj(sourceNodeId.id -> Json.fromString("1"), "field" -> Json.fromString("11"))
+            Json.obj(sourceNodeId.value -> Json.fromString("1"), "field" -> Json.fromString("11"))
           ),
           ScenarioTestSourceSpecificFormatJsonRecord(
             sourceNodeId,
-            Json.obj(sourceNodeId.id -> Json.fromString("2"), "field" -> Json.fromString("22"))
+            Json.obj(sourceNodeId.value -> Json.fromString("2"), "field" -> Json.fromString("22"))
           ),
           ScenarioTestSourceSpecificFormatJsonRecord(
             sourceNodeId,
-            Json.obj(sourceNodeId.id -> Json.fromString("3"), "field" -> Json.fromString("33"))
+            Json.obj(sourceNodeId.value -> Json.fromString("3"), "field" -> Json.fromString("33"))
           ),
         )
       )
@@ -645,7 +645,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     "handle custom variables in source" in {
       val process = ScenarioBuilder
         .streaming(scenarioName.value)
-        .source(sourceNodeId.id, "genericSourceWithCustomVariables", "elements" -> "{'abc'}".spel)
+        .source(sourceNodeId.value, "genericSourceWithCustomVariables", "elements" -> "{'abc'}".spel)
         .emptySink("out", "valueMonitor", "Value" -> "#additionalOne + '|' + #additionalTwo".spel)
       val testData =
         ScenarioTestData(List(ScenarioTestSourceSpecificFormatJsonRecord(sourceNodeId, Json.fromString("abc"))))
@@ -674,7 +674,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val process =
         ScenarioBuilder
           .streaming(scenarioName.value)
-          .source(sourceNodeId.id, "input")
+          .source(sourceNodeId.value, "input")
           .emptySink("out", "sinkForInts", "Value" -> "15 / {0, 1}[0]".spel)
 
       val results =
@@ -694,7 +694,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val process =
         ScenarioBuilder
           .streaming(scenarioName.value)
-          .source(sourceNodeId.id, "input")
+          .source(sourceNodeId.value, "input")
           .customNode("cid", "count", "transformWithTime", "seconds" -> "10".spel)
           .emptySink("out", "monitor")
 
@@ -730,7 +730,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         ScenarioBuilder
           .streaming(scenarioName.value)
           .source(
-            sourceNodeId.id,
+            sourceNodeId.value,
             "typedJsonInput",
             "type" -> """{"field1": "String", "field2": "java.lang.String"}""".spel
           )
@@ -757,7 +757,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
       val process = ScenarioBuilder
         .streaming(scenarioName.value)
-        .source(sourceNodeId.id, "input")
+        .source(sourceNodeId.value, "input")
         .enricher(
           "dependent",
           "parsed",
@@ -785,7 +785,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val process = ScenarioBuilder
         .streaming(scenarioName.value)
         .parallelism(1)
-        .source(sourceNodeId.id, "input")
+        .source(sourceNodeId.value, "input")
         .switch(
           "switch",
           "#input.id == 'ala'".spel,
@@ -822,7 +822,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         .streaming(scenarioName.value)
         .sources(
           GraphBuilder
-            .source(sourceNodeId.id, "input")
+            .source(sourceNodeId.value, "input")
             .split(
               "split",
               GraphBuilder.filter("left", "#input.id != 'a'".spel).branchEnd("end1", "join1"),
@@ -1047,7 +1047,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val process =
         ScenarioBuilder
           .streaming(scenarioName.value)
-          .source(sourceNodeId.id, "input")
+          .source(sourceNodeId.value, "input")
           .processor(
             "eager1",
             "collectingEager",
@@ -1081,7 +1081,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val process =
         ScenarioBuilder
           .streaming(scenarioName.value)
-          .source(sourceNodeId.id, "input")
+          .source(sourceNodeId.value, "input")
           .processor(
             "eager1",
             modifiedComponentName,
@@ -1112,7 +1112,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     "should not throw exception when process fragment has parameter validation defined" in {
       val scenario = ScenarioBuilder
         .streaming("scenario1")
-        .source(sourceNodeId.id, "input")
+        .source(sourceNodeId.value, "input")
         .fragmentOneOut("sub", fragmentWithValidationName, "output", "fragmentResult", "param" -> "'asd'".spel)
         .emptySink("out", "valueMonitor", "Value" -> "1".spel)
 
@@ -1131,7 +1131,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
   }
 
   private def createTestRecord(
-      sourceId: String = sourceNodeId.id,
+      sourceId: String = sourceNodeId.value,
       id: String = "0",
       value1: Long = 1
   ): ScenarioTestSourceSpecificFormatJsonRecord =
@@ -1230,9 +1230,9 @@ object FlinkMiniClusterScenarioTestRunnerSpec {
       MetaData(fragmentWithValidationName, FragmentSpecificData()),
       List(
         FlatNode(
-          FragmentInputDefinition("start", List(fragmentParam))
+          FragmentInputDefinition(NodeId("start"), NodeName("start"), List(fragmentParam))
         ),
-        FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+        FlatNode(FragmentOutputDefinition(NodeId("out1"), NodeName("out1"), "output", List.empty))
       ),
       List.empty
     )

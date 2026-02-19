@@ -2,7 +2,7 @@ package pl.touk.nussknacker.defaultmodel.migrations
 
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, NodeName, StreamMetaData}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.node.Source
@@ -14,7 +14,8 @@ class PeriodicToSampleGeneratorSpec extends AnyFreeSpecLike with Matchers {
   "PeriodicToSampleGeneratorMigration should be applied" in {
     val metaData = MetaData("test", StreamMetaData(Some(1)))
     val beforeMigration = Source(
-      id = "periodic",
+      id = NodeId("periodic"),
+      name = NodeName("periodic"),
       ref = SourceRef(
         typ = "periodic",
         parameters = List(
@@ -25,7 +26,8 @@ class PeriodicToSampleGeneratorSpec extends AnyFreeSpecLike with Matchers {
       )
     )
     val expectedAfterMigration = Source(
-      id = "periodic",
+      id = NodeId("periodic"),
+      name = NodeName("periodic"),
       ref = SourceRef(
         typ = "sample-generator",
         parameters = List(
