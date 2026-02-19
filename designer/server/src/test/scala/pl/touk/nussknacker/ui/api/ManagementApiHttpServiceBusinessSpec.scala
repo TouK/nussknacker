@@ -107,7 +107,7 @@ class ManagementApiHttpServiceBusinessSpec
 
   private lazy val exampleScenario = ScenarioBuilder
     .streaming(exampleScenarioName)
-    .source("sourceId", "barSource")
+    .source("sourceId", "genericSourceWithCustomVariables")
     .emptySink("sinkId", "barSink")
 
 }
