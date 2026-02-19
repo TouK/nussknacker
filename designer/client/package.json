@@ -96,6 +96,7 @@
         "rehype-raw": "7.0.0",
         "remark-directive": "3.0.0",
         "remark-directive-rehype": "0.4.2",
+        "remark-gfm": "4.0.1",
         "remark-html": "16.0.1",
         "reselect": "5.1.1",
         "rooks": "8.4.0",

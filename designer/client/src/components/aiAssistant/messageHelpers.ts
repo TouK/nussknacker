@@ -1,8 +1,9 @@
 import type { ChatModelRunOptions, ThreadMessage } from "@assistant-ui/react";
 import { ToolResponse } from "assistant-stream";
-import { mapValues, pick } from "lodash";
+import { mapValues, omit } from "lodash";
 
 import type { ChatRequest } from "./ChatRequest";
+import { wasToolResponseConsumed } from "./ThreadIdManager";
 
 function getLastUserMessage(messages: readonly ThreadMessage[]) {
     const userMessages = messages.filter((m) => m.role === "user");
@@ -19,11 +20,12 @@ export function extractMessage(messages: ChatModelRunOptions["messages"], lastAs
                     if (c.type !== "tool-call") return null;
                     if (c.isError) return null;
                     if (EMPTY_RESPONSES.includes(c.result)) return null;
-                    return `${c.toolName}: ${JSON.stringify(c.result)}`;
+                    if (wasToolResponseConsumed(c.toolCallId)) return null;
+                    return JSON.stringify({ toolCallId: c.toolCallId, result: c.result });
                 })
                 .filter(Boolean);
             if (results?.length > 0) {
-                return { text: results.join("\n\n") };
+                return { text: results.join("\n") };
             }
         }
         return;
@@ -39,7 +41,7 @@ export function extractMessage(messages: ChatModelRunOptions["messages"], lastAs
 }
 
 function pickBasic(schema) {
-    const picked = pick(schema, ["type", "properties", "required", "items", "description"]);
+    const picked = omit(schema, ["$schema", "additionalProperties"]);
     if (picked.properties) {
         picked.properties = mapValues(picked.properties, pickBasic);
     }

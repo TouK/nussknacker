@@ -47,7 +47,7 @@ function mergeWithCustomizer<T>(object: T, source: T, path: string[] = []) {
     });
 }
 
-function adjustEdges(outputEdges: Edge[], nextNode: NodeType, processDefinitionData: ProcessDefinitionData) {
+export function adjustEdges(outputEdges: Edge[], nextNode: NodeType, processDefinitionData: ProcessDefinitionData) {
     switch (nextNode.type) {
         case "Filter": {
             let edgeKinds = [EdgeKind.filterTrue, EdgeKind.filterFalse];
@@ -108,6 +108,7 @@ function adjustEdges(outputEdges: Edge[], nextNode: NodeType, processDefinitionD
         }
     }
     if (NodeUtils.hasOutputs(nextNode, processDefinitionData)) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         return outputEdges.map(({ edgeType, ...edge }) => edge);
     }
     return [];

@@ -7,19 +7,50 @@ function toSSE({ data, event = "delta" }: { data: string; event?: ChatStreamEven
 }
 
 function withEcho(message: string) {
-    return `\\<echo\\> \`\`\`${message}\`\`\``;
+    let string = `echo: \`\`\`${message}\`\`\``;
+    if (message.split("\n").length > 1) {
+        string = `echo: \n\n\`\`\`json\n${message}\n\`\`\``;
+    }
+    if (message.startsWith("/table")) {
+        const table = [
+            ["a1", "b1", "c1"],
+            ["a2", "b2", "c2"],
+            ["a3", "b3", "c3"],
+        ];
+        string += `\n\n${tableToMarkdown(table)}`;
+    }
+    return string;
 }
 
-async function* streamMock(message = "abc", threadId = crypto.randomUUID()) {
-    for (const ch of withEcho(message).split("").filter(Boolean)) {
+function tableToMarkdown(table: string[][]): string {
+    if (!Array.isArray(table) || table.length === 0) return "";
+
+    const escape = (s: string): string => String(s).replace(/\|/g, "\\|");
+
+    const header = "| " + table[0].map(escape).join(" | ") + " |";
+    const separator = "| " + table[0].map(() => "---").join(" | ") + " |";
+    const rows = table.slice(1).map((r) => "| " + r.map(escape).join(" | ") + " |");
+
+    return [header, separator, ...rows].join("\n");
+}
+
+async function* streamMock(request = "abc", threadId = crypto.randomUUID()) {
+    const response = withEcho(request);
+
+    for (const ch of response.split("").filter(Boolean)) {
         await delay(Math.round(Math.random() * 60));
-        yield { data: JSON.stringify({ text: ch }) };
+        yield {
+            data: JSON.stringify({ text: ch }),
+        };
     }
-    if (message.includes(".")) {
+
+    if (request.startsWith("/")) {
         await delay(500);
+        const match = request.match(/^\/(.*)(\s|$)/);
+        const toolName = match?.[1] || `debug`;
         yield {
             event: "toolExecutionRequest",
-            data: `{ "type": "tool", "name": "debug", "arguments": ${JSON.stringify({ request: message, response: withEcho(message) })} }`,
+            data: `{ "type": "tool", "name": "${toolName}", "arguments": ${JSON.stringify({ request, response })} }`,
         };
     }
     await delay(500);
