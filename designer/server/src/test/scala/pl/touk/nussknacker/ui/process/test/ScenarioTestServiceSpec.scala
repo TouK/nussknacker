@@ -800,12 +800,14 @@ class ScenarioTestServiceSpec
           PredicateAssertion(
             Assertion.AssertionOperator.Equals,
             "42".spel,
-            "#contexts[0].otherNameThanInput.a".spel
+            "#contexts[0].otherNameThanInput.a".spel,
+            description = None
           ),
           PredicateAssertion(
             Assertion.AssertionOperator.Equals,
             "44".spel,
-            "#contexts[1].otherNameThanInput.a".spel
+            "#contexts[1].otherNameThanInput.a".spel,
+            description = None
           )
         )
       )

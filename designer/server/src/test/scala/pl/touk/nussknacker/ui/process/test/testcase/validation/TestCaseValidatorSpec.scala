@@ -65,8 +65,13 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       "test1" -> NodeTestCase(
         enricherMock = None,
         assertions = List(
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "'expected'".spel, "#contexts[0].input".spel),
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel)
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "'expected'".spel,
+            "#contexts[0].input".spel,
+            description = None
+          ),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel, description = None)
         )
       )
     )
@@ -182,7 +187,12 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       "test1" -> NodeTestCase(
         enricherMock = None,
         assertions = List(
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "'value'".spel, "#doesNotExist".spel)
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "'value'".spel,
+            "#doesNotExist".spel,
+            description = None
+          )
         )
       )
     )
@@ -220,7 +230,9 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val nodeTestCases: NodeTestCases = Map(
       "validTest" -> NodeTestCase(
         enricherMock = Some(EnricherMock("'valid mock'".spel)),
-        assertions = List(PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel))
+        assertions = List(
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel, description = None)
+        )
       ),
       "invalidMockTest" -> NodeTestCase(
         enricherMock = Some(EnricherMock("#invalidVar".spel)),
@@ -229,9 +241,19 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       "invalidAssertionTest" -> NodeTestCase(
         enricherMock = None,
         assertions = List(
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts[0].doesNotExist".spel),
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel),
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "2".spel, "#contexts[0].doesNotExistOther".spel),
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "1".spel,
+            "#contexts[0].doesNotExist".spel,
+            description = None
+          ),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel, description = None),
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "2".spel,
+            "#contexts[0].doesNotExistOther".spel,
+            description = None
+          ),
         )
       )
     )
@@ -314,10 +336,15 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
         mocks = Map(NodeId(enricher.id) -> EnricherMock("'valid mock'".spel)),
         assertions = Map(
           NodeId(enricher.id) -> List(
-            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel)
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel, description = None)
           ),
           NodeId(filter.id) -> List(
-            PredicateAssertion(Assertion.AssertionOperator.Equals, "'test'".spel, "#contexts[0].input".spel)
+            PredicateAssertion(
+              Assertion.AssertionOperator.Equals,
+              "'test'".spel,
+              "#contexts[0].input".spel,
+              description = None
+            )
           )
         )
       ),
@@ -338,13 +365,33 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
         mocks = Map.empty,
         assertions = Map(
           NodeId(enricher.id) -> List(
-            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts[0].doesNotExist".spel),
-            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel),
-            PredicateAssertion(Assertion.AssertionOperator.Equals, "2".spel, "#contexts[0].doesNotExistOther".spel)
+            PredicateAssertion(
+              Assertion.AssertionOperator.Equals,
+              "1".spel,
+              "#contexts[0].doesNotExist".spel,
+              description = None
+            ),
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel, description = None),
+            PredicateAssertion(
+              Assertion.AssertionOperator.Equals,
+              "2".spel,
+              "#contexts[0].doesNotExistOther".spel,
+              description = None
+            )
           ),
           NodeId(filter.id) -> List(
-            PredicateAssertion(Assertion.AssertionOperator.Equals, "'value'".spel, "#contexts[0].input".spel),
-            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts[0].doesNotExist".spel),
+            PredicateAssertion(
+              Assertion.AssertionOperator.Equals,
+              "'value'".spel,
+              "#contexts[0].input".spel,
+              description = None
+            ),
+            PredicateAssertion(
+              Assertion.AssertionOperator.Equals,
+              "1".spel,
+              "#contexts[0].doesNotExist".spel,
+              description = None
+            ),
           )
         )
       ),

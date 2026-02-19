@@ -71,12 +71,32 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
   test("should run assertions on test nodes results and return assertion result for each assertion") {
     val testCase = prepareTestCase(
       List(
-        ExpressionAssertion("#TESTS.assertEquals('valid', #contexts[0].someVariable)".spel),
-        ExpressionAssertion("#TESTS.assertEquals('valid', #contexts[1].someVariable)".spel),
-        PredicateAssertion(AssertionOperator.Equals, "'valid'".spel, "#contexts[0].someVariable".spel),
-        PredicateAssertion(AssertionOperator.Equals, "'valid'".spel, "#contexts[1].someVariable".spel),
-        PredicateAssertion(AssertionOperator.NotEquals, "'valid'".spel, "#contexts[0].someVariable".spel),
-        PredicateAssertion(AssertionOperator.NotEquals, "'valid'".spel, "#contexts[1].someVariable".spel),
+        ExpressionAssertion("#TESTS.assertEquals('valid', #contexts[0].someVariable)".spel, description = None),
+        ExpressionAssertion("#TESTS.assertEquals('valid', #contexts[1].someVariable)".spel, description = None),
+        PredicateAssertion(
+          AssertionOperator.Equals,
+          "'valid'".spel,
+          "#contexts[0].someVariable".spel,
+          description = None
+        ),
+        PredicateAssertion(
+          AssertionOperator.Equals,
+          "'valid'".spel,
+          "#contexts[1].someVariable".spel,
+          description = None
+        ),
+        PredicateAssertion(
+          AssertionOperator.NotEquals,
+          "'valid'".spel,
+          "#contexts[0].someVariable".spel,
+          description = None
+        ),
+        PredicateAssertion(
+          AssertionOperator.NotEquals,
+          "'valid'".spel,
+          "#contexts[1].someVariable".spel,
+          description = None
+        ),
       )
     )
     val nodesResultsAfterTestRun: Map[NodeId, List[ResultContext[Any]]] = prepareNodeResults(
@@ -123,8 +143,13 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     ) { (expectedExpression, actualExpression, expectedResult) =>
       val testCase = prepareTestCase(
         List(
-          ExpressionAssertion(s"#TESTS.assertEquals($expectedExpression, $actualExpression)".spel),
-          PredicateAssertion(AssertionOperator.Equals, expectedExpression.spel, actualExpression.spel),
+          ExpressionAssertion(s"#TESTS.assertEquals($expectedExpression, $actualExpression)".spel, description = None),
+          PredicateAssertion(
+            AssertionOperator.Equals,
+            expectedExpression.spel,
+            actualExpression.spel,
+            description = None
+          ),
         )
       )
       val nodesResultsAfterTestRun = prepareNodeResults(
@@ -154,7 +179,12 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     ) { (expectedExpression, actualExpression, expectedResult) =>
       val testCase = prepareTestCase(
         List(
-          PredicateAssertion(AssertionOperator.Equals, expectedExpression.spel, actualExpression.spel),
+          PredicateAssertion(
+            AssertionOperator.Equals,
+            expectedExpression.spel,
+            actualExpression.spel,
+            description = None
+          ),
         )
       )
       val nodesResultsAfterTestRun = prepareNodeResults(
@@ -182,7 +212,12 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     ) { (expectedExpression, actualExpression, expectedResult) =>
       val testCase = prepareTestCase(
         List(
-          PredicateAssertion(AssertionOperator.Equals, expectedExpression.spel, actualExpression.spel),
+          PredicateAssertion(
+            AssertionOperator.Equals,
+            expectedExpression.spel,
+            actualExpression.spel,
+            description = None
+          ),
         )
       )
       val nodesResultsAfterTestRun = prepareNodeResults(

@@ -255,7 +255,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                           PredicateAssertion(
                             operator = AssertionOperator.Equals,
                             actual = Expression.spel("#contexts.size"),
-                            expected = Expression.spel("1")
+                            expected = Expression.spel("1"),
+                            description = Some("exactly one event should pass through the node")
                           ),
                         ),
                       ),
@@ -265,12 +266,14 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                           PredicateAssertion(
                             operator = AssertionOperator.Equals,
                             actual = Expression.spel("#contexts.size"),
-                            expected = Expression.spel("1")
+                            expected = Expression.spel("1"),
+                            description = None
                           ),
                           PredicateAssertion(
                             operator = AssertionOperator.Equals,
                             actual = Expression.spel("#contexts[0].doesNotExist"),
-                            expected = Expression.spel("'expected'")
+                            expected = Expression.spel("'expected'"),
+                            description = Some("output field should match the expected value")
                           ),
                         ),
                       )

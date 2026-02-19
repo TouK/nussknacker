@@ -276,19 +276,22 @@ class ValidationResourcesSpec
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
                     actual = "#contexts.size".spel,
-                    expected = "3".spel
+                    expected = "3".spel,
+                    description = None
                   ),
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
                     actual = "#contexts[0].input".spel,
-                    expected = "'abc'".spel
+                    expected = "'abc'".spel,
+                    description = None
                   ),
                 ),
                 NodeId("sink") -> List(
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
                     actual = "#contexts[0].output".spel,
-                    expected = "'def'".spel
+                    expected = "'def'".spel,
+                    description = None
                   ),
                 )
               )
@@ -332,34 +335,40 @@ class ValidationResourcesSpec
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
                     actual = "#contexts.size".spel,
-                    expected = "3".spel
+                    expected = "3".spel,
+                    description = None
                   ),
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
                     actual = "#contexts[0].doesNotExist".spel,
-                    expected = "'abc'".spel
+                    expected = "'abc'".spel,
+                    description = None
                   ),
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
                     actual = "#contexts[0].input".spel,
-                    expected = "'abc'".spel
+                    expected = "'abc'".spel,
+                    description = None
                   ),
                 ),
                 NodeId("sink") -> List(
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
                     actual = "#contexts[0].doesNotExist2".spel,
-                    expected = "'def'".spel
+                    expected = "'def'".spel,
+                    description = None
                   ),
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
                     actual = "#contexts[0].output".spel,
-                    expected = "'def'".spel
+                    expected = "'def'".spel,
+                    description = None
                   ),
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
                     actual = "#contexts[0].doesNotExist3".spel,
-                    expected = "'ghi'".spel
+                    expected = "'ghi'".spel,
+                    description = None
                   ),
                 )
               )

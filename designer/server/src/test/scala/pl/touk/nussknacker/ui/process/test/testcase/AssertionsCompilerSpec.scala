@@ -80,7 +80,9 @@ class AssertionsCompilerSpec
   test("should compile valid assertions for scenario") {
     val test = prepareTestCase(
       Map(
-        NodeId("sink1") -> List(PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel))
+        NodeId("sink1") -> List(
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel, description = None)
+        )
       )
     )
 
@@ -99,7 +101,7 @@ class AssertionsCompilerSpec
     val test = prepareTestCase(
       Map(
         NodeId("notExistingSink") -> List(
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel)
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel, description = None)
         )
       )
     )
@@ -116,9 +118,9 @@ class AssertionsCompilerSpec
   test("should produce errors for multiple assertions") {
     val nodeId = NodeId("sink1")
     val assertionWithSyntaxErrorsInBothExpressions =
-      PredicateAssertion(Assertion.AssertionOperator.Equals, "'123".spel, "#contexts.size,".spel)
+      PredicateAssertion(Assertion.AssertionOperator.Equals, "'123".spel, "#contexts.size,".spel, description = None)
     val assertionComparingUnrelatedTypes =
-      PredicateAssertion(Assertion.AssertionOperator.Equals, "'string'".spel, "123".spel)
+      PredicateAssertion(Assertion.AssertionOperator.Equals, "'string'".spel, "123".spel, description = None)
     val test = prepareTestCase(
       Map(
         nodeId -> List(
@@ -211,27 +213,47 @@ class AssertionsCompilerSpec
       Table[Assertion, ValidatedNel[String, Unit]](
         ("assertion", "compilation result"),
         (
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "'abc'".spel, "'def'".spel),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'abc'".spel, "'def'".spel, description = None),
           Validated.unit,
         ),
         (
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "'abc'".spel, "#CONV.toAny(123)".spel),
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "'abc'".spel,
+            "#CONV.toAny(123)".spel,
+            description = None
+          ),
           Validated.unit,
         ),
         (
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "'abc'".spel, "123".spel),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'abc'".spel, "123".spel, description = None),
           Validated.invalidNel("Operator '==' used with not comparable types: String and Integer")
         ),
         (
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "{'abc', 'def'}".spel, "{'xyz'}".spel),
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "{'abc', 'def'}".spel,
+            "{'xyz'}".spel,
+            description = None
+          ),
           Validated.unit
         ),
         (
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "{'abc', 'def'}".spel, "{123}".spel),
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "{'abc', 'def'}".spel,
+            "{123}".spel,
+            description = None
+          ),
           Validated.invalidNel("Operator '==' used with not comparable types: List[String] and List[Integer]")
         ),
         (
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "{'abc', 'def'}".spel, "#CONV.toAny({'xyz'})".spel),
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "{'abc', 'def'}".spel,
+            "#CONV.toAny({'xyz'})".spel,
+            description = None
+          ),
           Validated.unit
         ),
       )
