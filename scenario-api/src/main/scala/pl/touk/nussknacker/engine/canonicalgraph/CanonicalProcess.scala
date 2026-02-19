@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.canonicalgraph
 
 import cats.data.NonEmptyList
 import io.circe.{Decoder, Encoder}
-import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
@@ -124,7 +124,7 @@ object canonicalnode {
   sealed trait CanonicalNode extends CanonicalTreeNode {
     def data: NodeData
 
-    def id: String = data.id
+    def id: NodeId = data.id
   }
 
   case class FlatNode(data: NodeData) extends CanonicalNode

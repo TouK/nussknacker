@@ -53,7 +53,7 @@ class FragmentParametersDefinitionExtractor(
       fragmentInputDefinition: FragmentInputDefinition,
   ): Writer[List[PartSubGraphCompilationError], List[Parameter]] = {
     extractFragmentParametersDefinition(fragmentInputDefinition.parameters)(
-      NodeId(fragmentInputDefinition.id)
+      fragmentInputDefinition.id
     )
   }
 

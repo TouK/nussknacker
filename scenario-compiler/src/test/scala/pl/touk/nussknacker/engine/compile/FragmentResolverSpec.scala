@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -38,9 +38,9 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", suprocessParameters)),
-        canonicalnode.FilterNode(Filter("f1", "false".spel), List()),
-        FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+        FlatNode(FragmentInputDefinition(NodeId("start"), NodeName("start"), suprocessParameters)),
+        canonicalnode.FilterNode(Filter(NodeId("f1"), NodeName("f1"), "false".spel), List()),
+        FlatNode(FragmentOutputDefinition(NodeId("out1"), NodeName("out1"), "output", List.empty))
       ),
       List.empty
     )
@@ -51,13 +51,13 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     val resolved = resolvedValidated.toOption.get
 
     resolved.nodes.filter(_.isInstanceOf[Fragment]) shouldBe Symbol("empty")
-    resolved.nodes.find(_.id == "f1") shouldBe Symbol("empty")
-    resolved.nodes.find(_.id == "sub-f1") shouldBe Symbol("defined")
-    resolved.nodes.find(_.id == "sub").get.data should matchPattern {
-      case FragmentInput(_, _, _, _, Some(fragmentParameters)) =>
+    resolved.nodes.find(_.id == NodeId("f1")) shouldBe Symbol("empty")
+    resolved.nodes.find(_.id == NodeId("sub-f1")) shouldBe Symbol("defined")
+    resolved.nodes.find(_.id == NodeId("sub")).get.data should matchPattern {
+      case FragmentInput(_, _, _, _, _, Some(fragmentParameters)) =>
     }
-    resolved.nodes.find(_.id == "sub").get.data
-    resolved.nodes.find(_.id == "sub2-f1") shouldBe Symbol("defined")
+    resolved.nodes.find(_.id == NodeId("sub")).get.data
+    resolved.nodes.find(_.id == NodeId("sub2-f1")) shouldBe Symbol("defined")
   }
 
   test("resolve nested fragments") {
@@ -72,11 +72,18 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       MetaData("fragment2", FragmentSpecificData()),
       List(
         FlatNode(
-          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+          FragmentInputDefinition(
+            NodeId("start"),
+            NodeName("start"),
+            List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String]))
+          )
         ),
         canonicalnode
-          .FilterNode(Filter("f1", "#param == 'a'".spel), List(FlatNode(Sink("deadEnd", SinkRef("sink1", List()))))),
-        FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+          .FilterNode(
+            Filter(NodeId("f1"), NodeName("f1"), "#param == 'a'".spel),
+            List(FlatNode(Sink(NodeId("deadEnd"), NodeName("deadEnd"), SinkRef("sink1", List()))))
+          ),
+        FlatNode(FragmentOutputDefinition(NodeId("out1"), NodeName("out1"), "output", List.empty))
       ),
       List.empty
     )
@@ -85,11 +92,23 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       MetaData("fragment1", FragmentSpecificData()),
       List(
         FlatNode(
-          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+          FragmentInputDefinition(
+            NodeId("start"),
+            NodeName("start"),
+            List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String]))
+          )
         ),
         canonicalnode.Fragment(
-          FragmentInput("sub2", FragmentRef("fragment2", List(NodeParameter(ParameterName("param"), "#param".spel)))),
-          Map("output" -> List(FlatNode(FragmentOutputDefinition("sub2Out", "output", List.empty))))
+          FragmentInput(
+            NodeId("sub2"),
+            NodeName("sub2"),
+            FragmentRef("fragment2", List(NodeParameter(ParameterName("param"), "#param".spel)))
+          ),
+          Map(
+            "output" -> List(
+              FlatNode(FragmentOutputDefinition(NodeId("sub2Out"), NodeName("sub2Out"), "output", List.empty))
+            )
+          )
         )
       ),
       List.empty
@@ -101,13 +120,13 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     val resolved = resolvedValidated.toOption.get
 
     resolved.nodes.filter(_.isInstanceOf[Fragment]) shouldBe Symbol("empty")
-    resolved.nodes.find(_.id == "f1") shouldBe Symbol("empty")
-    resolved.nodes.find(_.id == "sub2") shouldBe Symbol("empty")
-    resolved.nodes.find(_.id == "sub2-f1") shouldBe Symbol("empty")
+    resolved.nodes.find(_.id == NodeId("f1")) shouldBe Symbol("empty")
+    resolved.nodes.find(_.id == NodeId("sub2")) shouldBe Symbol("empty")
+    resolved.nodes.find(_.id == NodeId("sub2-f1")) shouldBe Symbol("empty")
 
-    resolved.nodes.find(_.id == "sub") shouldBe Symbol("defined")
-    resolved.nodes.find(_.id == "sub-sub2") shouldBe Symbol("defined")
-    resolved.nodes.find(_.id == "sub-sub2-f1") shouldBe Symbol("defined")
+    resolved.nodes.find(_.id == NodeId("sub")) shouldBe Symbol("defined")
+    resolved.nodes.find(_.id == NodeId("sub-sub2")) shouldBe Symbol("defined")
+    resolved.nodes.find(_.id == NodeId("sub-sub2-f1")) shouldBe Symbol("defined")
   }
 
   test("not resolve fragment with bad outputs") {
@@ -122,10 +141,14 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       MetaData("fragment1", FragmentSpecificData()),
       List(
         FlatNode(
-          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
+          FragmentInputDefinition(
+            NodeId("start"),
+            NodeName("start"),
+            List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String]))
+          )
         ),
-        canonicalnode.FilterNode(Filter("f1", "false".spel), List()),
-        FlatNode(FragmentOutputDefinition("out1", "badoutput", List.empty))
+        canonicalnode.FilterNode(Filter(NodeId("f1"), NodeName("f1"), "false".spel), List()),
+        FlatNode(FragmentOutputDefinition(NodeId("out1"), NodeName("out1"), "badoutput", List.empty))
       ),
       List.empty
     )
@@ -157,14 +180,18 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       MetaData("fragment1", FragmentSpecificData()),
       List(
         FlatNode(
-          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
+          FragmentInputDefinition(
+            NodeId("start"),
+            NodeName("start"),
+            List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String]))
+          )
         ),
-        canonicalnode.FilterNode(Filter("f1", "false".spel), List()),
+        canonicalnode.FilterNode(Filter(NodeId("f1"), NodeName("f1"), "false".spel), List()),
         canonicalnode.SplitNode(
-          Split("s"),
+          Split(NodeId("s"), NodeName("s")),
           List(
-            List(FlatNode(FragmentOutputDefinition("out1", "output", List.empty))),
-            List(FlatNode(FragmentOutputDefinition("out2", "output", List.empty)))
+            List(FlatNode(FragmentOutputDefinition(NodeId("out1"), NodeName("out1"), "output", List.empty))),
+            List(FlatNode(FragmentOutputDefinition(NodeId("out2"), NodeName("out2"), "output", List.empty)))
           )
         )
       ),
@@ -188,10 +215,20 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       MetaData("fragment1", FragmentSpecificData()),
       List(
         FlatNode(
-          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
+          FragmentInputDefinition(
+            NodeId("start"),
+            NodeName("start"),
+            List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String]))
+          )
         ),
-        canonicalnode.FilterNode(Filter("f1", "false".spel), List()),
-        FlatNode(Sink("disabledFragmentMockedSink", SinkRef("disabledFragmentMockedSink", List())))
+        canonicalnode.FilterNode(Filter(NodeId("f1"), NodeName("f1"), "false".spel), List()),
+        FlatNode(
+          Sink(
+            NodeId("disabledFragmentMockedSink"),
+            NodeName("disabledFragmentMockedSink"),
+            SinkRef("disabledFragmentMockedSink", List())
+          )
+        )
       ),
       List.empty
     )
@@ -222,9 +259,13 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       MetaData("emptyFragment", FragmentSpecificData()),
       List(
         FlatNode(
-          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
+          FragmentInputDefinition(
+            NodeId("start"),
+            NodeName("start"),
+            List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String]))
+          )
         ),
-        FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+        FlatNode(FragmentOutputDefinition(NodeId("out1"), NodeName("out1"), "output", List.empty))
       ),
       List.empty
     )
@@ -232,10 +273,14 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       MetaData("fragment1", FragmentSpecificData()),
       List(
         FlatNode(
-          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
+          FragmentInputDefinition(
+            NodeId("start"),
+            NodeName("start"),
+            List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String]))
+          )
         ),
-        canonicalnode.FilterNode(Filter("f1", "false".spel), List()),
-        FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+        canonicalnode.FilterNode(Filter(NodeId("f1"), NodeName("f1"), "false".spel), List()),
+        FlatNode(FragmentOutputDefinition(NodeId("out1"), NodeName("out1"), "output", List.empty))
       ),
       List.empty
     )
@@ -243,27 +288,27 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     val pattern: PartialFunction[ValidatedNel[ProcessCompilationError, CanonicalProcess], _] = {
       case Valid(CanonicalProcess(_, flatNodes, _, _, _)) =>
         flatNodes(0) match {
-          case FlatNode(Source(id, _, _)) =>
-            id shouldBe "source"
+          case FlatNode(Source(id, _, _, _)) =>
+            id shouldBe NodeId("source")
           case e => fail(e.toString)
         }
         flatNodes(1) match {
-          case FlatNode(FragmentInput(id, _, _, _, _)) =>
-            id shouldBe "sub"
+          case FlatNode(FragmentInput(id, _, _, _, _, _)) =>
+            id shouldBe NodeId("sub")
           case e => fail(e.toString)
         }
         flatNodes(2) match {
-          case FlatNode(FragmentUsageOutput(_, _, _, _, _)) =>
+          case FlatNode(FragmentUsageOutput(_, _, _, _, _, _)) =>
           // output id is unpredictable
           case e => fail(e.toString)
         }
         flatNodes(3) match {
-          case canonicalnode.FilterNode(Filter(id, _, _, _), _) =>
-            id shouldBe "d"
+          case canonicalnode.FilterNode(Filter(id, _, _, _, _), _) =>
+            id shouldBe NodeId("d")
           case e => fail(e.toString)
         }
         flatNodes(4) match {
-          case FlatNode(node) => node.id shouldBe "sink"
+          case FlatNode(node) => node.id shouldBe NodeId("sink")
           case e              => fail(e.toString)
         }
 
@@ -324,25 +369,29 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       MetaData("fragment1", FragmentSpecificData()),
       List(
         FlatNode(
-          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
+          FragmentInputDefinition(
+            NodeId("start"),
+            NodeName("start"),
+            List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String]))
+          )
         ),
         canonicalnode.SplitNode(
-          Split("split"),
+          Split(NodeId("split"), NodeName("split")),
           List(
             List(
-              FlatNode(Filter("filter2a", "false".spel)),
+              FlatNode(Filter(NodeId("filter2a"), NodeName("filter2a"), "false".spel)),
               FlatNode(BranchEndData(BranchEndDefinition("join2a", "join1")))
             ),
             List(
-              FlatNode(Filter("filter2b", "false".spel)),
+              FlatNode(Filter(NodeId("filter2b"), NodeName("filter2b"), "false".spel)),
               FlatNode(BranchEndData(BranchEndDefinition("join2b", "join1")))
             )
           )
         )
       ),
       List(
-        FlatNode(Join("join1", None, "union", Nil, Nil, None)),
-        FlatNode(FragmentOutputDefinition("output", "output", Nil, None))
+        FlatNode(Join(NodeId("join1"), NodeName("join1"), None, "union", Nil, Nil, None)),
+        FlatNode(FragmentOutputDefinition(NodeId("output"), NodeName("output"), "output", Nil, None))
       ) :: Nil
     )
 
@@ -408,7 +457,8 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
           Some(
             FragmentNode(
               FragmentInput(
-                id,
+                NodeId(id),
+                NodeName(id),
                 FragmentRef(
                   fragmentId,
                   params.map { case (name, value) => NodeParameter(ParameterName(name), value) }.toList
@@ -431,7 +481,8 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
         Some(
           FragmentNode(
             FragmentInput(
-              id,
+              NodeId(id),
+              NodeName(id),
               FragmentRef(fragmentId, params.map { case (name, value) => NodeParameter(ParameterName(name), value) }),
               isDisabled = Some(true)
             ),
@@ -445,7 +496,8 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
         Some(
           FragmentNode(
             FragmentInput(
-              id,
+              NodeId(id),
+              NodeName(id),
               FragmentRef(
                 fragmentId,
                 params.map { case (name, value) => NodeParameter(ParameterName(name), value) }.toList

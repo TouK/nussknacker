@@ -338,7 +338,7 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
       .listen {
         processInvoker.invokeWithSampleData(process, data)
       }
-      .map(_.id) shouldBe List("id", "testVar", "custom", "split", "out", "custom-ending", "id", "testVar", "custom")
+      .map(_.value) shouldBe List("id", "testVar", "custom", "split", "out", "custom-ending", "id", "testVar", "custom")
   }
 
 }

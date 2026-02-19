@@ -14,7 +14,7 @@ object NodeComponentInfoExtractor {
 
   def fromScenarioNode(nodeData: scenarionode.NodeData): NodeComponentInfo = {
     val componentId = ComponentIdExtractor.fromScenarioNode(nodeData)
-    NodeComponentInfo(NodeId(nodeData.id), componentId)
+    NodeComponentInfo(nodeData.id, componentId)
   }
 
 }

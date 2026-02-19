@@ -11,7 +11,7 @@ object PeriodicToSampleGeneratorMigration extends NodeMigration {
   override val description: String = "Change name of component: periodic -> sample-generator"
 
   override def migrateNode(metaData: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
-    case n @ Source(_, ref @ SourceRef("periodic", _), _) =>
+    case n @ Source(_, _, ref @ SourceRef("periodic", _), _) =>
       n.copy(ref = ref.copy(typ = "sample-generator"))
   }
 

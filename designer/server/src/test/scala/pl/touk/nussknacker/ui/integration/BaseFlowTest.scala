@@ -9,7 +9,7 @@ import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.typelevel.ci._
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId, NodeName, StreamMetaData}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -374,12 +374,13 @@ class BaseFlowTest
       properties = ProcessProperties(FragmentSpecificData()),
       nodes = List(
         FragmentInputDefinition(
-          "input1",
+          NodeId("input1"),
+          NodeName("input1"),
           List(FragmentParameter(ParameterName("badParam"), FragmentClazzRef("i.do.not.exist")))
         ),
-        FragmentOutputDefinition("output1", "out1")
+        FragmentOutputDefinition(NodeId("output1"), NodeName("output1"), "out1")
       ),
-      edges = List(Edge("input1", "output1", None)),
+      edges = List(Edge(NodeId("input1"), NodeId("output1"), None)),
     )
 
     val updateResponse = httpClient.send(
@@ -478,7 +479,11 @@ class BaseFlowTest
 
     def dynamicServiceParameters: Option[List[String]] = {
       val request = NodeValidationRequestDto(
-        nodeData = Processor(nodeUsingDynamicServiceId, ServiceRef("dynamicService", List.empty)),
+        nodeData = Processor(
+          NodeId(nodeUsingDynamicServiceId),
+          NodeName(nodeUsingDynamicServiceId),
+          ServiceRef("dynamicService", List.empty)
+        ),
         processProperties = ProcessProperties(StreamMetaData()),
         variableTypes = Map.empty,
         branchVariableTypes = None,

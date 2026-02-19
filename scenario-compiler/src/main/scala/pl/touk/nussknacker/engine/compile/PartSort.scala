@@ -39,7 +39,7 @@ object PartSort {
     toSort
       .flatMap(NodesCollector.collectNodesInAllParts)
       .collect {
-        case EndingNode(BranchEndData(BranchEndDefinition(_, joinId))) if joinId == part.id =>
+        case EndingNode(BranchEndData(BranchEndDefinition(_, joinId))) if joinId == part.id.value =>
           true
       }
       .isEmpty

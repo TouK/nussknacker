@@ -23,7 +23,8 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
 
   test("should generate test parameters for fragment input definition") {
     val fragmentInputDefinition = FragmentInputDefinition(
-      "",
+      NodeId(""),
+      NodeName(""),
       List(
         FragmentParameter(ParameterName("name"), FragmentClazzRef[String]),
         FragmentParameter(ParameterName("age"), FragmentClazzRef[Long]),

@@ -14,7 +14,9 @@ private[engine] class NodeCountingListener(nodeIds: Iterable[NodeId]) extends Em
     super.open(context)
     counters = nodeIds
       .map(nodeId =>
-        nodeId -> metricsProvider.counter(MetricIdentifier(NonEmptyList.of("nodeCount"), Map(nodeIdTag -> nodeId.id)))
+        nodeId -> metricsProvider.counter(
+          MetricIdentifier(NonEmptyList.of("nodeCount"), Map(nodeIdTag -> nodeId.value))
+        )
       )
       .toMap
   }

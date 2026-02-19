@@ -1415,6 +1415,7 @@ paths:
                 summary: Basic node request
                 value:
                   id: enricher
+                  name: enricher
                   service:
                     id: paramService
                     parameters:
@@ -1533,6 +1534,7 @@ paths:
                 value:
                   nodeData:
                     id: id
+                    name: id
                     expression:
                       language: spel
                       expression: '#longValue > 1'
@@ -1558,6 +1560,7 @@ paths:
                 value:
                   nodeData:
                     id: id
+                    name: id
                     expression:
                       language: spel
                       expression: '#existButString'
@@ -1583,6 +1586,7 @@ paths:
                 value:
                   nodeData:
                     id: enricher
+                    name: enricher
                     service:
                       id: paramService
                       parameters:
@@ -2339,6 +2343,7 @@ paths:
                       showDescription: false
                   nodeData:
                     id: sourceId
+                    name: sourceId
                     ref:
                       typ: source
                       parameters: []
@@ -2625,6 +2630,7 @@ paths:
                   showDescription: false
               enricher:
                 id: enricher
+                name: enricher
                 service:
                   id: paramService
                   parameters:
@@ -7180,9 +7186,9 @@ components:
       title: NodeId
       type: object
       required:
-      - id
+      - value
       properties:
-        id:
+        value:
           type: string
     NodeTestCase:
       title: NodeTestCase

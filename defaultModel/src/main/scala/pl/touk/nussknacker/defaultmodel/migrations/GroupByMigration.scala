@@ -12,7 +12,7 @@ object GroupByMigration extends NodeMigration {
   private val keyByParameterName = ParameterName("keyBy")
 
   override def migrateNode(metadata: MetaData): PartialFunction[NodeData, NodeData] = {
-    case node @ CustomNode(_, _, nodeType, parameters, _)
+    case node @ CustomNode(_, _, _, nodeType, parameters, _)
         if parameters.exists(_.name == keyByParameterName) && nodeType.startsWith("aggregate-") =>
       node.copy(parameters =
         node.parameters.map(p => if (p.name == keyByParameterName) p.copy(name = ParameterName("groupBy")) else p)

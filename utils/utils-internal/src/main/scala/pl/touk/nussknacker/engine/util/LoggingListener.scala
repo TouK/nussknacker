@@ -38,7 +38,7 @@ object LoggingListener extends ProcessListener with Serializable {
   }
 
   override def nodeEntered(nodeId: NodeId, context: Context, metadata: MetaData): Unit = {
-    debug(List(metadata.name.value, nodeId.id), s"Node entered. Context: $context")
+    debug(List(metadata.name.value, nodeId.value), s"Node entered. Context: $context")
   }
 
   override def transitionToNextNode(
@@ -59,11 +59,11 @@ object LoggingListener extends ProcessListener with Serializable {
       context: Context,
       metadata: MetaData
   ): Unit = {
-    debug(List(metadata.name.value, nodeId.id, "end", ref), s"End encountered. Context: $context")
+    debug(List(metadata.name.value, nodeId.value, "end", ref), s"End encountered. Context: $context")
   }
 
   override def deadEndEncountered(lastNodeId: NodeId, context: Context, metadata: MetaData): Unit = {
-    debug(List(metadata.name.value, lastNodeId.id, "deadEnd"), s"Dead end encountered. Context: $context")
+    debug(List(metadata.name.value, lastNodeId.value, "deadEnd"), s"Dead end encountered. Context: $context")
   }
 
   override def expressionEvaluated(
@@ -75,7 +75,7 @@ object LoggingListener extends ProcessListener with Serializable {
       result: Any
   ): Unit = {
     debug(
-      List(metadata.name.value, nodeId.id, "expression"),
+      List(metadata.name.value, nodeId.value, "expression"),
       s"invoked expression: $expr with result $result. Context: $context"
     )
   }
@@ -88,7 +88,7 @@ object LoggingListener extends ProcessListener with Serializable {
       result: Try[Any]
   ): Unit = {
     debug(
-      List(metadata.name.value, nodeId.id, "service", id),
+      List(metadata.name.value, nodeId.value, "service", id),
       s"Invocation ended-up with result: $result. Context: $context"
     )
   }

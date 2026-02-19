@@ -53,7 +53,8 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
     new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
 
   private val enricher = Enricher(
-    id = "testEnricher",
+    id = NodeId("testEnricher"),
+    name = NodeName("testEnricher"),
     service = ServiceRef("testEnricher", List(NodeParameter(ParameterName("par1"), "'test'".spel))),
     output = "enricherOutput"
   )
@@ -144,7 +145,8 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
   test("should return error for mock on non-enricher node") {
     val filter = Filter(
-      id = "filter1",
+      id = NodeId("filter1"),
+      name = NodeName("filter1"),
       expression = Expression.spel("true"),
       isDisabled = None
     )
@@ -307,18 +309,19 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
   test("should validate multiple test cases at scenario level") {
     val filter = Filter(
-      id = "filter1",
+      id = NodeId("filter1"),
+      name = NodeName("filter1"),
       expression = Expression.spel("true"),
       isDisabled = None
     )
 
     val nodes = List(enricher, filter)
     val nodesTyping = Map(
-      enricher.id -> NodeTyping(
+      enricher.id.value -> NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
       ),
-      filter.id -> NodeTyping(
+      filter.id.value -> NodeTyping(
         inputVariables = inputVariableTypes,
         outputVariables = inputVariableTypes
       )
@@ -329,18 +332,13 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
         id = UUID.randomUUID(),
         name = "validTest",
         inputs = "{}",
-        mocks = Map(NodeId(enricher.id) -> EnricherMock("'valid mock'".spel)),
+        mocks = Map(enricher.id -> EnricherMock("'valid mock'".spel)),
         assertions = Map(
-          NodeId(enricher.id) -> List(
-            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel, description = None)
+          enricher.id -> List(
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel)
           ),
-          NodeId(filter.id) -> List(
-            PredicateAssertion(
-              Assertion.AssertionOperator.Equals,
-              "'test'".spel,
-              "#contexts[0].input".spel,
-              description = None
-            )
+          filter.id -> List(
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "'test'".spel, "#contexts[0].input".spel)
           )
         )
       ),
@@ -349,8 +347,8 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
         name = "invalidMockTest",
         inputs = "{}",
         mocks = Map(
-          NodeId(enricher.id) -> EnricherMock("42".spel),
-          NodeId(filter.id)   -> EnricherMock("'not able to mock filter'".spel),
+          enricher.id -> EnricherMock("42".spel),
+          filter.id   -> EnricherMock("'not able to mock filter'".spel),
         ),
         assertions = Map.empty
       ),
@@ -360,30 +358,14 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
         inputs = "{}",
         mocks = Map.empty,
         assertions = Map(
-          NodeId(enricher.id) -> List(
-            PredicateAssertion(
-              Assertion.AssertionOperator.Equals,
-              "1".spel,
-              "#contexts[0].doesNotExist".spel,
-            ),
-            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel, description = None),
-            PredicateAssertion(
-              Assertion.AssertionOperator.Equals,
-              "2".spel,
-              "#contexts[0].doesNotExistOther".spel,
-            )
+          enricher.id -> List(
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts[0].doesNotExist".spel),
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel),
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "2".spel, "#contexts[0].doesNotExistOther".spel)
           ),
-          NodeId(filter.id) -> List(
-            PredicateAssertion(
-              Assertion.AssertionOperator.Equals,
-              "'value'".spel,
-              "#contexts[0].input".spel,
-            ),
-            PredicateAssertion(
-              Assertion.AssertionOperator.Equals,
-              "1".spel,
-              "#contexts[0].doesNotExist".spel,
-            ),
+          filter.id -> List(
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "'value'".spel, "#contexts[0].input".spel),
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts[0].doesNotExist".spel),
           )
         )
       ),
@@ -395,8 +377,8 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       testCases
     )
 
-    result.keySet should contain only (NodeId(enricher.id), NodeId(filter.id))
-    result(NodeId(enricher.id)) shouldBe Map(
+    result.keySet should contain only (enricher.id, filter.id)
+    result(enricher.id) shouldBe Map(
       "invalidMockTest" -> NodeTestCaseValidationErrors(
         enricherMockErrors = Some(
           NonEmptyList.one(
@@ -436,7 +418,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
         )
       )
     )
-    result(NodeId(filter.id)) shouldBe Map(
+    result(filter.id) shouldBe Map(
       "invalidMockTest" -> NodeTestCaseValidationErrors(
         enricherMockErrors = Some(
           NonEmptyList.one(

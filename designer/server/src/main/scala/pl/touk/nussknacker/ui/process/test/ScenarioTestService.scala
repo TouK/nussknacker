@@ -142,7 +142,7 @@ class ScenarioTestService(
     val sources   = canonical.collectAllSources
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       val compiledSourcesById =
-        sources.map(source => NodeId(source.id) -> commonModelDataInfoProvider.nodeCompiler.compileNode(source))
+        sources.map(source => source.id -> commonModelDataInfoProvider.nodeCompiler.compileNode(source))
       compiledSourcesById
         .map { case (sourceId, sourceCompilationResult) =>
           testDataFormatHandler.getTestParametersDefinition(sourceId, sourceCompilationResult).map { parameters =>
@@ -213,7 +213,7 @@ class ScenarioTestService(
       maxNumberOfRecords: Int
   ): Either[FetchLiveDataError, SerializedScenarioRecordsContent] = {
     val jobData = JobData(metaData, ProcessVersion.empty)
-    val nodeId  = NodeId(sourceNodeData.id)
+    val nodeId  = sourceNodeData.id
 
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       for {
@@ -248,7 +248,7 @@ class ScenarioTestService(
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): ValidatedNel[(NodeId, NonEmptyList[ProcessCompilationError]), (NodeId, Source)] = {
-    val nodeId = NodeId(source.id)
+    val nodeId = source.id
     commonModelDataInfoProvider.nodeCompiler
       .compileNode(source)
       .compiledObject
@@ -324,7 +324,7 @@ class ScenarioTestService(
       scenarioGraph: ScenarioGraph,
       mocks: Map[NodeId, EnricherMock]
   ): Either[PerformTestError, ScenarioGraph] = {
-    val existingNodesId           = scenarioGraph.nodes.map(node => NodeId(node.id)).toSet
+    val existingNodesId           = scenarioGraph.nodes.map(node => node.id).toSet
     val mockedNodesId             = mocks.keySet
     val notExistingNodesWithMocks = mockedNodesId.diff(existingNodesId)
 
@@ -338,7 +338,7 @@ class ScenarioTestService(
   private def substituteMocks(scenarioGraph: ScenarioGraph, mocks: Map[NodeId, EnricherMock]) = {
     val nodesWithSubstitutions = scenarioGraph.nodes.map {
       case nodeData @ (enricher: node.Enricher) =>
-        val enricherMockOpt = mocks.get(NodeId(nodeData.id)).map(_.expression)
+        val enricherMockOpt = mocks.get(nodeData.id).map(_.expression)
         // we use provided mock or the one specified in original scenario
         enricher.copy(mockExpression = enricherMockOpt.orElse(enricher.mockExpression))
       case data => data
@@ -462,7 +462,7 @@ class ScenarioTestService(
   ): Either[PerformTestError, ScenarioTestData] = {
     import cats.implicits._
 
-    val allScenarioSourceIds = scenario.collectAllSources.map(n => NodeId(n.id)).toSet
+    val allScenarioSourceIds = scenario.collectAllSources.map(n => n.id).toSet
     preliminaryScenarioRecords.records.zipWithIndex
       .map {
         case (SourceSpecificFormatPreliminaryScenarioRecord(sourceId, record, timestamp), _)

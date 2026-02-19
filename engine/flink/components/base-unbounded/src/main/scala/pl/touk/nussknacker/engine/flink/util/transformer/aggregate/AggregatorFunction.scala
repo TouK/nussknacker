@@ -66,7 +66,7 @@ trait AggregatorFunctionMixin[MapT[K, V]] extends RichFunction { self: StateHold
 
   protected def name: String = "aggregator"
 
-  protected def tags: Map[String, String] = Map(nodeIdTag -> nodeId.id)
+  protected def tags: Map[String, String] = Map(nodeIdTag -> nodeId.value)
 
   protected lazy val metricsProvider: MetricsProviderForScenario = engineRuntimeContext.metricsProvider
 

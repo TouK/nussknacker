@@ -33,10 +33,10 @@ class CsvSource
       .fromSource(
         flinkSource,
         WatermarkStrategy.noWatermarks(),
-        flinkNodeContext.nodeId.id,
+        flinkNodeContext.nodeId.value,
         TypeInformation.of(classOf[Array[String]])
       )
-      .uid(flinkNodeContext.nodeId.id)
+      .uid(flinkNodeContext.nodeId.value)
       .map(
         new FlinkContextInitializingFunction(
           contextInitializer,

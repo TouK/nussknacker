@@ -8,7 +8,7 @@ import org.hamcrest.Matchers._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.must.Matchers.include
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.parameter.{
@@ -650,7 +650,8 @@ class MigrationApiHttpServiceBusinessSpec
       List(
         FlatNode(
           FragmentInputDefinition(
-            "in",
+            NodeId("in"),
+            NodeName("in"),
             List(
               FragmentParameter(
                 ParameterName("param1"),
@@ -659,7 +660,7 @@ class MigrationApiHttpServiceBusinessSpec
             )
           )
         ),
-        canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+        canonicalnode.FlatNode(FragmentOutputDefinition(NodeId("out1"), NodeName("out1"), "output", List.empty))
       ),
       List.empty
     )

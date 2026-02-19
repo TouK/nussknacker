@@ -242,9 +242,11 @@ class NodesApiHttpService(
                 numberOfRecords
               ) match {
                 case Left(FetchLiveDataError.SourcesCompilationError(errorsByNodeIdNel)) =>
-                  Future(Left(SourceCompilation(sourceNodeData.id, errorsByNodeIdNel.head._2.map(_.toString).toList)))
+                  Future(
+                    Left(SourceCompilation(sourceNodeData.id.value, errorsByNodeIdNel.head._2.map(_.toString).toList))
+                  )
                 case Left(FetchLiveDataError.LiveDataFetchingNotSupportedError) =>
-                  Future(Left(UnsupportedSourcePreview(sourceNodeData.id)))
+                  Future(Left(UnsupportedSourcePreview(sourceNodeData.id.value)))
                 case Left(FetchLiveDataError.NoLiveDataAvailableError) =>
                   Future(Left(NoLiveDataAvailable))
                 case Left(FetchLiveDataError.ScenarioRecordsSerializationError(cause)) =>
