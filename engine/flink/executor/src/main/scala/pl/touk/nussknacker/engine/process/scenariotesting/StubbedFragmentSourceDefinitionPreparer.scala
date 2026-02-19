@@ -37,7 +37,11 @@ class StubbedFragmentSourceDefinitionPreparer(
       implementationInvoker =
         (_: Params, _: NodeCompilationDependencies, _: Option[ComponentImplementationSpecificInvocationContext]) =>
           buildSource(inputParameters),
-      parameters = inputParameters,
+      // The source is mocked. The input parameters are validated separately, before test execution.
+      // During test execution, we pretend the there are no input params.
+      // Otherwise, the validation would fail. It is because the parameters are produced after the source is invoked,
+      // and are not available during the validation phase before the source invocation
+      parameters = List.empty,
       outputNames = List.empty,
       docsUrl = None,
       componentGroupName = None,
