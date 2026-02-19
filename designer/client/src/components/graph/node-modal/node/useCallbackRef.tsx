@@ -13,3 +13,12 @@ export function useCallbackRef<C extends (...args: any) => any>(callback: C, dep
 
     return [callbackRef, _callback];
 }
+
+export function useStableCallback(fn) {
+    const ref = useRef(fn);
+    ref.current = fn;
+
+    return useCallback((...args) => {
+        return ref.current?.(...args);
+    }, []);
+}

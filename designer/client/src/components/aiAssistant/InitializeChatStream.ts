@@ -4,13 +4,15 @@ import type { EventSourceMessage } from "eventsource-parser";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 
 import httpService from "../../http/HttpService/instance";
+import { mockAssitantFetch } from "./debug/MockAssitantFetch";
 import { extractMessage, extractTools } from "./messageHelpers";
-import { ThreadIdManager } from "./ThreadIdManager";
+import { getThreadId } from "./ThreadIdManager";
 
 export type ChatStreamEventName = "toolExecutionRequest" | "delta" | "stop" | "error" | NonNullable<string>;
 
 type ChatStreamParsedEvent =
-    | { type: "tool"; name: string; arguments: Record<string, any> }
+    | { type: "start" }
+    | { type: "tool"; name: string; arguments: Record<string, any>; callId?: string }
     | { type: "delta"; responsePart: string }
     | { type: "stop"; threadId: string }
     | { type: "aborted" }
@@ -27,6 +29,7 @@ const parseEvent: (eventSourceMessage: ChatEventSourceMessage) => ChatStreamPars
             const parsed = JSON.parse(eventSourceMessage.data);
             return {
                 type: "tool",
+                callId: parsed.id,
                 name: parsed.name,
                 arguments: parsed.arguments,
             };
@@ -64,13 +67,20 @@ function smoothTransform(baseDelay: number, nth = 1) {
 
 type ChatStream = AsyncGenerator<ChatStreamParsedEvent>;
 
-export async function* initializeChatStream({ abortSignal, context, messages, unstable_getMessage }: ChatModelRunOptions): ChatStream {
+export async function* initializeChatStream(
+    { abortSignal, context, messages, unstable_getMessage }: ChatModelRunOptions,
+    debug = false,
+): ChatStream {
     const message = extractMessage(messages, unstable_getMessage());
     if (!message) return;
 
-    const response = await httpService.sendChatMessage(
+    yield { type: "start" };
+
+    const send = debug ? mockAssitantFetch : httpService.sendChatMessage;
+
+    const response = await send(
         {
-            threadId: ThreadIdManager.THREAD_ID,
+            threadId: getThreadId(),
             message: message,
             externalTools: extractTools(context),
         },

@@ -27,7 +27,7 @@ export const BaseResultItem = forwardRef<HTMLDivElement, ResultItemProps>(functi
         const parentElement = innerRef.current?.parentElement;
         if (!parentElement) return;
 
-        const originalClick = parentElement.click.bind(innerRef.current);
+        const originalClick = parentElement.click.bind(parentElement);
         parentElement.click = () => action.command.perform(action);
 
         return () => {

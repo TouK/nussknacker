@@ -1,5 +1,6 @@
+import type { PropsOf } from "@emotion/react";
 import { type ActionImpl, KBarResults, useKBar, useMatches } from "kbar";
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 
 import { ResultItem } from "./ResultFlagItem";
 import { SectionHeader } from "./SectionHeader";
@@ -10,21 +11,33 @@ function flattenAction(action: ActionImpl): ActionImpl {
 }
 
 export function RenderResults() {
-    const { actions } = useKBar((state) => ({
-        actions: Object.values(state.actions),
-    }));
+    const { aiAssistant, search } = useKBar((state) => {
+        const actions = Object.values(state.actions);
+        const aiAssistant = actions?.find((r) => typeof r !== "string" && r.id === "ai-assistant");
+        return {
+            actions,
+            aiAssistant,
+            search: state.searchQuery.trim(),
+        };
+    });
     const { results, rootActionId } = useMatches();
-    const aiAssistant = actions?.find((r) => typeof r !== "string" && r.id === "ai-assistant");
-    return (
-        <KBarResults
-            items={results.includes(aiAssistant) ? results : [...results, aiAssistant]}
-            onRender={({ item, active }) =>
-                typeof item === "string" ? (
-                    <SectionHeader>{item}</SectionHeader>
-                ) : (
-                    <ResultItem action={flattenAction(item)} active={active} currentRootActionId={rootActionId} />
-                )
-            }
-        />
+
+    const items = useMemo(() => {
+        if (search.length && !results.includes(aiAssistant)) {
+            return [...results, aiAssistant];
+        }
+        return results;
+    }, [aiAssistant, results, search.length]);
+
+    const onRender: PropsOf<typeof KBarResults>["onRender"] = useCallback(
+        ({ item, active }) =>
+            typeof item === "string" ? (
+                <SectionHeader>{item}</SectionHeader>
+            ) : (
+                <ResultItem action={flattenAction(item)} active={active} currentRootActionId={rootActionId} />
+            ),
+        [rootActionId],
     );
+
+    return <KBarResults items={items} onRender={onRender} />;
 }

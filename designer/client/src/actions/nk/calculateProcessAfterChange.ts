@@ -18,7 +18,7 @@ export function calculateProcessAfterChange(
     scenario: Scenario,
     before: NodeType,
     _after: NodeType,
-    outputEdges: Edge[],
+    outputEdges?: Edge[],
 ): ThunkAction<Promise<ScenarioGraph>> {
     return async (_, getState) => {
         let changedGraph = scenario.scenarioGraph;
