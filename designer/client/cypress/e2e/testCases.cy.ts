@@ -199,5 +199,5 @@ const verifyMockData = (mockValue: string) => {
 };
 
 const expandAssertionItem = (nodeId: string) => {
-    cy.get(`[id="${sanitizeHtmlAttribute(nodeId)}-header"]`).click();
+    cy.get(`[id="${nodeId}-header"]`).click();
 };

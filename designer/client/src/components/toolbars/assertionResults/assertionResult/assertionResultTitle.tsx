@@ -24,9 +24,8 @@ interface BadgeProps {
 }
 
 const AssertionResultsBadge = ({ assertionResults }: BadgeProps) => {
-    const { passedCount, total, failedCount } = calculateAssertionResultsSummary(assertionResults);
+    const { passedCount, total, failedCount, hasResult } = calculateAssertionResultsSummary(assertionResults);
     const theme = useTheme();
-    const hasResult = assertionResults && assertionResults.length > 0;
     const fillColor = failedCount > 0 ? theme.palette.error.dark : theme.palette.success.dark;
     const textColor = theme.palette.text.secondary;
 

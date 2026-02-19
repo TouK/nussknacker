@@ -1,7 +1,6 @@
 import { Box } from "@mui/material";
 import React, { useMemo } from "react";
 
-import { sanitizeHtmlAttribute } from "../../../common/HtmlUtils";
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import { getTestAssertionResults } from "../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../store/storeHelpers";
@@ -41,7 +40,7 @@ const AssertionResults = () => {
                     <Expandable
                         key={nodeId}
                         expandableTitle={<AssertionResultTitle title={nodeId} assertionResults={testAssertionResults[nodeId]} />}
-                        componentId={sanitizeHtmlAttribute(nodeId)}
+                        componentId={nodeId}
                         detailsSx={{ pl: 2, pr: 1, py: 0 }}
                         summarySx={{ minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px" } }}
                     >

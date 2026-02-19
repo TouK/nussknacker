@@ -28,7 +28,7 @@ import { DRAGGABLE_LIST_CLASSNAME, ToolbarsContainer } from "./ToolbarsContainer
 export function useToolbarsVisibility(toolbars: Toolbar[]) {
     const { editFrontend } = useAppSelector(getCapabilities);
     const [showSurvey] = useSurvey();
-    const displayAssertionsResultPanel = useDisplayAssertionsResultPanel();
+    const displayAssertionsResultPanel = useDisplayAssertionResultsPanel();
 
     const hiddenToolbars = useMemo<Record<string, boolean>>(
         () => ({
@@ -197,7 +197,7 @@ const SideToolbars = (props: PropsOf<typeof StyledToolbarsContainer>) => {
     return <StyledToolbarsContainer {...props} disableDnd={!isOpened || props.disableDnd} />;
 };
 
-const useDisplayAssertionsResultPanel = () => {
+const useDisplayAssertionResultsPanel = () => {
     const visibleDataType = useAppSelector(getVisibleDataType);
     const testAssertionResults = useAppSelector(getTestAssertionResults);
     const [testingTabVisible] = useUserSettings("node.showTestingTab");
