@@ -564,9 +564,13 @@ private[spel] class Typer(
             CommonSupertypeFinder.Default.commonSupertype(a, b)
 
           val elementType           = if (children.isEmpty) Unknown else children.reduce(getSupertype).withoutValue
-          val childrenCombinedValue = children.flatMap(_.valueOpt).asJava
-
-          typedListWithElementValues(elementType, childrenCombinedValue).validTypingResult
+          val childrenCombinedValue = children.flatMap(_.valueOpt)
+          if (children.size == childrenCombinedValue.size) {
+            // Combine values only if all children have one; partial results would be misleading.
+            typedListWithElementValues(elementType, childrenCombinedValue.asJava).validTypingResult
+          } else {
+            Typed.genericTypeClass(classOf[java.util.List[_]], List(elementType)).validTypingResult
+          }
         }
 
       case e: InlineMap =>
