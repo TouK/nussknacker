@@ -31,17 +31,22 @@ class StubbedFragmentSourceDefinitionPreparer(
 ) {
 
   def createSourceDefinition(name: String, frag: FragmentInputDefinition): ComponentDefinitionWithImplementation = {
-    val inputParameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
+    val inputParameters = fragmentDefinitionExtractor
+      .extractParametersDefinition(frag)
+      .value
+      .map(
+        // The input parameters are validated separately, before test execution.
+        // During test execution, we need to disable input parameter validations:
+        //   - during the test run the parameters are produced after the source is invoked
+        //   - as a result, they are not available when the validation is performed before the source invocation
+        _.copy(validators = Nil)
+      )
     FragmentComponentDefinition(
       name = name,
       implementationInvoker =
         (_: Params, _: NodeCompilationDependencies, _: Option[ComponentImplementationSpecificInvocationContext]) =>
           buildSource(inputParameters),
-      // The source is mocked. The input parameters are validated separately, before test execution.
-      // During test execution, we pretend the there are no input params.
-      // Otherwise, the validation would fail. It is because the parameters are produced after the source is invoked,
-      // and are not available during the validation phase before the source invocation
-      parameters = List.empty,
+      parameters = inputParameters,
       outputNames = List.empty,
       docsUrl = None,
       componentGroupName = None,
