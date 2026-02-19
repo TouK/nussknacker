@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.functional
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
@@ -130,11 +130,19 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       List(
         canonicalnode.FlatNode(
           FragmentInputDefinition(
-            "start",
+            NodeId("start"),
+            NodeName("start"),
             List(FragmentParameter(ParameterName("param"), FragmentClazzRef[java.math.BigDecimal]))
           )
         ),
-        canonicalnode.FlatNode(FragmentOutputDefinition("outB1", "output", List(Field("a", Expression.spel("#param")))))
+        canonicalnode.FlatNode(
+          FragmentOutputDefinition(
+            NodeId("outB1"),
+            NodeName("outB1"),
+            "output",
+            List(Field("a", Expression.spel("#param")))
+          )
+        )
       ),
       List.empty
     )
@@ -143,13 +151,17 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       MetaData("fragment1", FragmentSpecificData()),
       List(
         canonicalnode.FlatNode(
-          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+          FragmentInputDefinition(
+            NodeId("start"),
+            NodeName("start"),
+            List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String]))
+          )
         ),
         canonicalnode.FilterNode(
-          Filter("f1", "#param == 'a'".spel),
-          List(canonicalnode.FlatNode(Sink("end1", SinkRef("monitor", List()))))
+          Filter(NodeId("f1"), NodeName("f1"), "#param == 'a'".spel),
+          List(canonicalnode.FlatNode(Sink(NodeId("end1"), NodeName("end1"), SinkRef("monitor", List()))))
         ),
-        canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+        canonicalnode.FlatNode(FragmentOutputDefinition(NodeId("out1"), NodeName("out1"), "output", List.empty))
       ),
       List.empty
     )
@@ -158,13 +170,19 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       MetaData("splitFragment", FragmentSpecificData()),
       List(
         canonicalnode.FlatNode(
-          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+          FragmentInputDefinition(
+            NodeId("start"),
+            NodeName("start"),
+            List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String]))
+          )
         ),
         canonicalnode.SplitNode(
-          Split("split"),
+          Split(NodeId("split"), NodeName("split")),
           List(
-            List(canonicalnode.FlatNode(Sink("end1", SinkRef("monitor", List())))),
-            List(canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty)))
+            List(canonicalnode.FlatNode(Sink(NodeId("end1"), NodeName("end1"), SinkRef("monitor", List())))),
+            List(
+              canonicalnode.FlatNode(FragmentOutputDefinition(NodeId("out1"), NodeName("out1"), "output", List.empty))
+            )
           )
         )
       ),
@@ -174,9 +192,9 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     val fragmentWithGlobalVar = CanonicalProcess(
       MetaData("fragmentGlobal", FragmentSpecificData()),
       List(
-        canonicalnode.FlatNode(FragmentInputDefinition("start", List())),
-        canonicalnode.FilterNode(Filter("f1", "#processHelper.constant == 4".spel), List()),
-        canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+        canonicalnode.FlatNode(FragmentInputDefinition(NodeId("start"), NodeName("start"), List())),
+        canonicalnode.FilterNode(Filter(NodeId("f1"), NodeName("f1"), "#processHelper.constant == 4".spel), List()),
+        canonicalnode.FlatNode(FragmentOutputDefinition(NodeId("out1"), NodeName("out1"), "output", List.empty))
       ),
       List.empty
     )
@@ -185,17 +203,21 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       MetaData("diamondFragment", FragmentSpecificData()),
       List(
         FlatNode(
-          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
+          FragmentInputDefinition(
+            NodeId("start"),
+            NodeName("start"),
+            List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String]))
+          )
         ),
         canonicalnode.SplitNode(
-          Split("split"),
+          Split(NodeId("split"), NodeName("split")),
           List(
             List(
-              canonicalnode.FilterNode(Filter("filter2a", "true".spel), Nil),
+              canonicalnode.FilterNode(Filter(NodeId("filter2a"), NodeName("filter2a"), "true".spel), Nil),
               FlatNode(BranchEndData(BranchEndDefinition("end1", "join1")))
             ),
             List(
-              canonicalnode.FilterNode(Filter("filter2b", "true".spel), Nil),
+              canonicalnode.FilterNode(Filter(NodeId("filter2b"), NodeName("filter2b"), "true".spel), Nil),
               FlatNode(BranchEndData(BranchEndDefinition("end2", "join1")))
             )
           )
@@ -204,7 +226,8 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       List(
         FlatNode(
           Join(
-            "join1",
+            NodeId("join1"),
+            NodeName("join1"),
             Some("output"),
             "joinBranchExpression",
             Nil,
@@ -215,7 +238,7 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
             None
           )
         ),
-        FlatNode(FragmentOutputDefinition("output22", "output33", Nil, None))
+        FlatNode(FragmentOutputDefinition(NodeId("output22"), NodeName("output22"), "output33", Nil, None))
       ) :: Nil
     )
 

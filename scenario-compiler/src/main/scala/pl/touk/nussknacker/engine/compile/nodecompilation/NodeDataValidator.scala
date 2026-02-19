@@ -70,11 +70,11 @@ class NodeDataValidator(modelData: ModelData) {
           )
         case a: FragmentInput =>
           validateFragment(validationContext, outgoingEdges, a, fragmentResolver)
-        case Split(_, _) | FragmentUsageOutput(_, _, _, _, _) | BranchEndData(_) =>
+        case Split(_, _, _) | FragmentUsageOutput(_, _, _, _, _, _) | BranchEndData(_) =>
           ValidationNotPerformed
       }
 
-      val nodeIdErrors = IdValidator.validateNodeId(NodeId(nodeData.id)) match {
+      val nodeIdErrors = IdValidator.validateNodeId(nodeData.id) match {
         case Validated.Valid(_)   => List.empty
         case Validated.Invalid(e) => e.toList
       }
@@ -93,7 +93,7 @@ class NodeDataValidator(modelData: ModelData) {
       a: FragmentInput,
       fragmentResolver: FragmentResolver
   )(implicit jobData: JobData) = {
-    implicit val nodeId: NodeId = NodeId(a.id)
+    implicit val nodeId: NodeId = a.id
     fragmentResolver
       .resolveInput(a)
       .map { definition =>
@@ -106,7 +106,7 @@ class NodeDataValidator(modelData: ModelData) {
                 val outputName =
                   Validated.fromOption(
                     maybeOutputName,
-                    NonEmptyList.one(UnknownFragmentOutput(output, Set(NodeId(a.id))))
+                    NonEmptyList.one(UnknownFragmentOutput(output, Set(a.id)))
                   )
                 outputName.andThen(name =>
                   inputContext.validationContext.withVariable(OutputVar.fragmentOutput(output, name), Unknown)
@@ -117,7 +117,7 @@ class NodeDataValidator(modelData: ModelData) {
             val outgoingEdgesValidated = outputs
               .map {
                 case Output(name, _) if !outgoingEdges.exists(_.edgeType.contains(EdgeType.FragmentOutput(name))) =>
-                  invalidNel(FragmentOutputNotDefined(name, Set(NodeId(a.id))))
+                  invalidNel(FragmentOutputNotDefined(name, Set(a.id)))
                 case _ =>
                   valid(())
               }

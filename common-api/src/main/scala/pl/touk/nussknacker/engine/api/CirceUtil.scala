@@ -92,6 +92,17 @@ object CirceUtil {
 
   }
 
+  // For backward compatibility: wraps a decoder so that when the "name" field is missing in JSON,
+  // it is automatically filled from the "id" field value (both are plain strings).
+  def withNameFromIdFallback[T](decoder: Decoder[T]): Decoder[T] =
+    Decoder.instance(c => decoder.decodeJson(addNameFromIdIfMissing(c.value)))
+
+  private def addNameFromIdIfMissing(json: Json): Json =
+    json.mapObject { obj =>
+      if (!obj.contains("name")) obj("id").fold(obj)(obj.add("name", _))
+      else obj
+    }
+
   // Be default circe print all empty values as a nulls which can be good for programs because it is more explicit
   // that some value is null, but for people it generates a lot of unnecessary noise
   val humanReadablePrinter: Printer = Printer.spaces2.copy(dropNullValues = true)

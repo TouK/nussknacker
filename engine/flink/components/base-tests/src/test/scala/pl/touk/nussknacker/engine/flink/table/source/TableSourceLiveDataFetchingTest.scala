@@ -8,6 +8,7 @@ import org.scalatest.LoneElement.convertToCollectionLoneElementWrapper
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.livedata.LiveDataProvider
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
@@ -118,7 +119,8 @@ class TableSourceLiveDataFetchingTest extends AnyFunSuite with BeforeAndAfterAll
     val liveDataProvider = nodeCompiler
       .compileNode(
         node.Source(
-          "source",
+          NodeId("source"),
+          NodeName("source"),
           SourceRef(
             "table",
             List(

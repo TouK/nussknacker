@@ -13,7 +13,7 @@ final class NodeCompilationDependencies(
     val componentUseContext: ComponentUseContext,
     val inputValidationContext: NodeInputValidationContext
 ) {
-  implicit def nodeId: NodeId     = NodeId(nodeData.id)
+  implicit def nodeId: NodeId     = nodeData.id
   implicit def metaData: MetaData = scenarioCompilationDependencies.metaData
   implicit def jobData: JobData   = scenarioCompilationDependencies.jobData
   def engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies =

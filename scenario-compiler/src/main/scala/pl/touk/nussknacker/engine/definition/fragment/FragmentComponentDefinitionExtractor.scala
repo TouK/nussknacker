@@ -36,7 +36,7 @@ class FragmentComponentDefinitionExtractor(
   ): Validated[FragmentDefinitionError, ComponentDefinitionWithImplementation] = {
     FragmentGraphDefinitionExtractor.extractFragmentGraph(fragment).map { case (input, _, outputs) =>
       val parameters =
-        parametersExtractor.extractFragmentParametersDefinition(input.parameters)(NodeId(input.id)).value
+        parametersExtractor.extractFragmentParametersDefinition(input.parameters)(input.id).value
       val outputNames = outputs.map(_.name).sorted
       val componentId = determineDesignerWideId(ComponentId(ComponentType.Fragment, fragment.name.value))
       val fragmentSpecificData = MetaDataExtractor

@@ -180,7 +180,7 @@ object EventGeneratorSourceFactory
           .fromSource(
             flinkSource(schedule),
             WatermarkStrategy.noWatermarks(),
-            flinkNodeContext.nodeId.id,
+            flinkNodeContext.nodeId.value,
           )
           .setUidAndNameToNodeId(flinkNodeContext.nodeId)
           .flatMap(

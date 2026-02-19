@@ -40,7 +40,9 @@ object LoggingService extends EagerService {
   )(implicit metaData: MetaData, nodeId: NodeId): ServiceInvoker =
     new ServiceInvoker with WithActionParametersSupport {
       private lazy val logger = LoggerFactory.getLogger(
-        (rootLogger :: metaData.name.value :: nodeId.id :: Option(loggerName).toList).filterNot(_.isBlank).mkString(".")
+        (rootLogger :: metaData.name.value :: nodeId.value :: Option(loggerName).toList)
+          .filterNot(_.isBlank)
+          .mkString(".")
       )
 
       override def invoke(context: Context)(

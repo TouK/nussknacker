@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.canonize
 
 import cats.Applicative
 import cats.data.{NonEmptyList, ValidatedNel}
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -45,15 +46,19 @@ private[engine] object MaybeArtificial {
   // we need to make sure it's unique to prevent weird errors
   private def generateArtificialName() = s"$DummyObjectNamePrefix-${UUID.randomUUID()}"
 
-  def missingSinkError(errors: ProcessUncanonizationError*): MaybeArtificial[Option[node.SubsequentNode]] =
+  def missingSinkError(errors: ProcessUncanonizationError*): MaybeArtificial[Option[node.SubsequentNode]] = {
+    val name = generateArtificialName()
     new MaybeArtificial(
-      Some(node.EndingNode(node.Sink(generateArtificialName(), SinkRef(artificalSourceSinkRef, Nil), None))),
+      Some(node.EndingNode(node.Sink(NodeId.generate(), NodeName(name), SinkRef(artificalSourceSinkRef, Nil), None))),
       errors.toList
     )
+  }
 
-  def artificialSource(errors: ProcessUncanonizationError*): MaybeArtificial[node.SourceNode] =
+  def artificialSource(errors: ProcessUncanonizationError*): MaybeArtificial[node.SourceNode] = {
+    val name = generateArtificialName()
     missingSinkError(errors: _*).map(
-      node.SourceNode(node.Source(generateArtificialName(), SourceRef(artificalSourceSinkRef, Nil)), _)
+      node.SourceNode(node.Source(NodeId.generate(), NodeName(name), SourceRef(artificalSourceSinkRef, Nil)), _)
     )
+  }
 
 }

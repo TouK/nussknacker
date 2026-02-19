@@ -57,7 +57,11 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
     implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
       new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     val result = new NodeDataValidator(modelData).validate(
-      node.Source("sid", SourceRef("one", NodeParameter(ParameterName("toFail"), "''".spel) :: Nil)),
+      node.Source(
+        NodeId("sid"),
+        NodeName("sid"),
+        SourceRef("one", NodeParameter(ParameterName("toFail"), "''".spel) :: Nil)
+      ),
       Map.empty,
       None,
       Nil,

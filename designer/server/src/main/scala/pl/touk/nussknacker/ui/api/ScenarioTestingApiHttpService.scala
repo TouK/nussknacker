@@ -118,7 +118,7 @@ class ScenarioTestingApiHttpService(
                         ) match {
                           case Right(parameters) =>
                             val uiParameters = parameters.map { case (id, params) =>
-                              UISourceParameters(id.id, params.map(DefinitionsService.createUIParameter))
+                              UISourceParameters(id.value, params.map(DefinitionsService.createUIParameter))
                             }.toList
                             CapabilityStatus.Available(TestWithParametersDetails(uiParameters))
                           case Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(_)) =>

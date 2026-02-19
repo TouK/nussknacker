@@ -1795,10 +1795,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         metaData,
         List(),
         List(
-          List(FlatNode(Variable(variableName1, "varName", "'str'".spel))),
-          List(FlatNode(Variable(variableName2, "varName", "'str'".spel))),
-          List(FlatNode(Source(sourceName1, SourceRef("source", List())))),
-          List(FlatNode(Source(sourceName2, SourceRef("source", List())))),
+          List(FlatNode(Variable(NodeId(variableName1), NodeName(variableName1), "varName", "'str'".spel))),
+          List(FlatNode(Variable(NodeId(variableName2), NodeName(variableName2), "varName", "'str'".spel))),
+          List(FlatNode(Source(NodeId(sourceName1), NodeName(sourceName1), SourceRef("source", List())))),
+          List(FlatNode(Source(NodeId(sourceName2), NodeName(sourceName2), SourceRef("source", List())))),
         )
       )
 
