@@ -12,8 +12,9 @@ import org.scalatest.{BeforeAndAfterAll, LoneElement, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ContextId
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValuesProvided}
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
@@ -23,6 +24,7 @@ import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.schemedkafka
 import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
@@ -226,6 +228,64 @@ class SchemedKafkaScenarioTestingSpec
       mockedTimestamp,
       "out",
       Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id")))
+    )
+
+    results.exceptions shouldBe empty
+  }
+
+  test("should handle fragment test parameters in test when the input parameter is required") {
+    val fragmentFixedParameter = FragmentParameter(
+      ParameterName("in"),
+      FragmentClazzRef[java.lang.String],
+      required = true,
+      initialValue = None,
+      hintText = None,
+      valueEditor = Some(
+        ValueInputWithFixedValuesProvided(
+          fixedValuesList = List(
+            FixedExpressionValue("'uno'", "uno"),
+            FixedExpressionValue("'due'", "due"),
+          ),
+          allowOtherValue = false
+        )
+      ),
+      valueCompileTimeValidation = None
+    )
+    val fragment = ScenarioBuilder
+      .fragmentWithRawParameters("fragment1", fragmentFixedParameter)
+      .filter("filter", "#in != 'stop'".spel)
+      .fragmentOutput("fragmentEnd", "output", "out" -> "#in".spel)
+
+    val parameterExpressions = Map(
+      ParameterName("in") -> Expression.spel("'uno'")
+    )
+    val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
+    val results          = testRunner.runTests(fragment, scenarioTestData).futureValue
+
+    nodeResults(results, "fragment1").loneElement shouldBe (
+      ContextId(scenarioId = "fragment1", originatingNodeId = "fragment1", taskId = 0, index = 0),
+      Map(
+        "in" -> Json.fromFields(Seq("pretty" -> Json.fromString("uno")))
+      )
+    )
+
+    nodeResults(results, "fragmentEnd").loneElement shouldBe (
+      ContextId(scenarioId = "fragment1", originatingNodeId = "fragment1", taskId = 0, index = 0),
+      Map(
+        "in"  -> Json.fromFields(Seq("pretty" -> Json.fromString("uno"))),
+        "out" -> Json.fromFields(Seq("pretty" -> Json.fromString("uno")))
+      )
+    )
+
+    val mockedTimestamp = Instant.now()
+    results
+      .invocationResults("fragmentEnd")
+      .loneElement
+      .copy(timestamp = mockedTimestamp) shouldBe ExpressionInvocationResult(
+      ContextId(scenarioId = "fragment1", originatingNodeId = "fragment1", taskId = 0, index = 0),
+      mockedTimestamp,
+      "out",
+      Json.fromFields(Seq("pretty" -> Json.fromString("uno")))
     )
 
     results.exceptions shouldBe empty
