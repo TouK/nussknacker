@@ -22,29 +22,22 @@ import pl.touk.nussknacker.engine.definition.fragment.{
 }
 import pl.touk.nussknacker.engine.flink.api.process.{CustomizableContextInitializerSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 
 // Needed to build source based on FragmentInputDefinition. It allows fragment to be treated as scenario (when it comes to testing)
 // This source adds input parameters to context and allows testing with ad-hoc testing.
 class StubbedFragmentSourceDefinitionPreparer(
-    fragmentDefinitionExtractor: FragmentParametersDefinitionExtractor,
-    parameterExpressionsFromTestData: Map[ParameterName, Expression],
+    fragmentDefinitionExtractor: FragmentParametersDefinitionExtractor
 ) {
 
   def createSourceDefinition(name: String, frag: FragmentInputDefinition): ComponentDefinitionWithImplementation = {
-    val inputParameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value.map { parameter =>
-      parameterExpressionsFromTestData.get(parameter.name) match {
-        case Some(valueFromTestData) => parameter.copy(defaultValue = Some(valueFromTestData))
-        case None                    => parameter
-      }
-    }
+    val inputParameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
     FragmentComponentDefinition(
       name = name,
       implementationInvoker =
         (_: Params, _: NodeCompilationDependencies, _: Option[ComponentImplementationSpecificInvocationContext]) =>
           buildSource(inputParameters),
-      parameters = inputParameters,
+      parameters = List.empty,
       outputNames = List.empty,
       docsUrl = None,
       componentGroupName = None,
