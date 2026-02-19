@@ -2,15 +2,11 @@
 name: CI
 on:
   pull_request:
-    branches:
-      - master
-      - staging
-      - demo
-      - preview/*
-      - release/*
     paths-ignore:
       - '**.md'
       - 'docs/**'
+    branches-ignore:
+      - snapshots-patch/**
   push:
     branches:
       - master
