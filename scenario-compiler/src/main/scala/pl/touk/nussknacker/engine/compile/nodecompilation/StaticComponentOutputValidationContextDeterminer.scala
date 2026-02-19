@@ -34,7 +34,7 @@ class StaticComponentOutputValidationContextDeterminer(
       implicit jobData: JobData
   ): ValidatedNel[ProcessCompilationError, ValidationContext] = {
     implicit val implicitComponentId: ComponentId = staticComponent.id
-    implicit val nodeId: NodeId                   = NodeId(nodeData.id)
+    implicit val nodeId: NodeId                   = nodeData.id
     def outputContextBasedOnResultType(
         returnTypeOpt: Option[TypingResult]
     ): ValidatedNel[ProcessCompilationError, ValidationContext] =

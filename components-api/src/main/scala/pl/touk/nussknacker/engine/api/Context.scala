@@ -55,7 +55,7 @@ final case class ContextId private (
 
   lazy val legacyString: String = List(
     List(scenarioName.value),
-    List(originatingNodeId.id),
+    List(originatingNodeId.value),
     List(taskId.toString),
     List(index.toString),
     contextIdPath.asScala.map(_.value),

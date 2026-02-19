@@ -8,7 +8,7 @@ import io.circe.{Decoder, Encoder, Json, KeyDecoder, KeyEncoder}
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
-import pl.touk.nussknacker.engine.api.{LayoutData, NodeId, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{LayoutData, NodeId, NodeName, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.{
@@ -129,7 +129,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
             Example.of(
               summary = Some("Basic node request"),
               value = Enricher(
-                "enricher",
+                NodeId("enricher"),
+                NodeName("enricher"),
                 ServiceRef(
                   "paramService",
                   List(
@@ -174,7 +175,13 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
             List(
               Example.of(
                 value = NodeValidationRequestDto(
-                  Filter("id", Expression(Language.Spel, "#longValue > 1"), isDisabled = None, additionalFields = None),
+                  Filter(
+                    NodeId("id"),
+                    NodeName("id"),
+                    Expression(Language.Spel, "#longValue > 1"),
+                    isDisabled = None,
+                    additionalFields = None
+                  ),
                   ProcessProperties.apply(
                     ProcessAdditionalFields(description = None, properties = Map.empty, metaDataType = "")
                   ),
@@ -194,7 +201,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                 summary = Some("Validate incorrect Filter node - wrong expression type"),
                 value = NodeValidationRequestDto(
                   Filter(
-                    "id",
+                    NodeId("id"),
+                    NodeName("id"),
                     Expression(Language.Spel, "#existButString"),
                     isDisabled = None,
                     additionalFields = None
@@ -217,7 +225,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                 summary = Some("Validate test cases for enricher node"),
                 value = NodeValidationRequestDto(
                   nodeData = Enricher(
-                    "enricher",
+                    NodeId("enricher"),
+                    NodeName("enricher"),
                     ServiceRef(
                       "paramService",
                       List(
@@ -500,7 +509,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
               summary = Some("Basic fetch request"),
               value = RecordsRequestDto(
                 ProcessProperties(StreamMetaData()),
-                Source("sourceId", SourceRef("source", List.empty), None)
+                Source(NodeId("sourceId"), NodeName("sourceId"), SourceRef("source", List.empty), None)
               )
             )
           )
@@ -850,7 +859,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                 ),
                 processProperties = ProcessProperties(StreamMetaData()),
                 enricher = Enricher(
-                  "enricher",
+                  NodeId("enricher"),
+                  NodeName("enricher"),
                   ServiceRef(
                     "paramService",
                     List(

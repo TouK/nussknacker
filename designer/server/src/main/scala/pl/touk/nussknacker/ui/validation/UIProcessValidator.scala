@@ -214,7 +214,7 @@ class UIProcessValidator(
     }
     val disabledNodesWarnings =
       disabledNodes
-        .map(node => (NodeId(node.id), List(PrettyValidationErrors.formatErrorMessage(DisabledNode(NodeId(node.id))))))
+        .map(node => (node.id, List(PrettyValidationErrors.formatErrorMessage(DisabledNode(node.id)))))
         .toMap
     ValidationResult.warnings(disabledNodesWarnings)
   }
@@ -228,7 +228,7 @@ class UIProcessValidator(
 
   private def validateNodesId(scenarioGraph: ScenarioGraph): ValidationResult = {
     val nodeIdErrors = scenarioGraph.nodes
-      .map(n => IdValidator.validateNodeId(NodeId(n.id)))
+      .map(n => IdValidator.validateNodeId(n.id))
       .collect { case Invalid(e) =>
         e
       }
@@ -269,7 +269,7 @@ class UIProcessValidator(
   }
 
   private def validateEdgeUniqueness(scenarioGraph: ScenarioGraph): ValidationResult = {
-    val edgesByFrom = scenarioGraph.edges.groupBy(e => NodeId(e.from))
+    val edgesByFrom = scenarioGraph.edges.groupBy(e => e.from)
 
     def findNonUniqueEdge(nodeId: NodeId, edgesFromNode: List[Edge]) = {
       val nonUniqueByType = edgesFromNode.groupBy(_.edgeType).collect {
@@ -278,7 +278,7 @@ class UIProcessValidator(
       }
       val nonUniqueByTarget = edgesFromNode.groupBy(_.to).collect {
         case (to, list) if list.size > 1 =>
-          PrettyValidationErrors.formatErrorMessage(NonUniqueEdge(nodeId, to))
+          PrettyValidationErrors.formatErrorMessage(NonUniqueEdge(nodeId, to.value))
       }
       (nonUniqueByType ++ nonUniqueByTarget).toList
     }
@@ -323,7 +323,7 @@ class UIProcessValidator(
       // source & fragment inputs don't have inputs
       .filterNot(n => n.isInstanceOf[FragmentInputDefinition] || n.isInstanceOf[Source])
       .filterNot(n => scenarioGraph.edges.exists(_.to == n.id))
-      .map(n => NodeId(n.id))
+      .map(n => n.id)
 
     if (looseNodesIds.isEmpty) {
       ValidationResult.success
@@ -333,7 +333,7 @@ class UIProcessValidator(
   }
 
   private def validateDuplicates(scenarioGraph: ScenarioGraph): ValidationResult = {
-    val nodeIds    = scenarioGraph.nodes.map(n => NodeId(n.id))
+    val nodeIds    = scenarioGraph.nodes.map(n => n.id)
     val duplicates = nodeIds.groupBy(identity).filter(_._2.size > 1).keys.toList
 
     if (duplicates.isEmpty) {

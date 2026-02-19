@@ -124,9 +124,9 @@ class MetricsTest extends AnyFunSuite with Matchers {
 
     runScenario(scenario, Nil, metricRegistry)
 
-    allNodes.map(_.id).foreach(metricRegistry.nodeCountForNode)
-    allNodes.filter(_.isInstanceOf[EndingNodeData]).map(_.id).foreach(metricRegistry.endCountForNode)
-    allNodes.filter(_.isInstanceOf[DeadEndingData]).map(_.id).foreach(metricRegistry.deadEndCountForNode)
+    allNodes.map(_.id.value).foreach(metricRegistry.nodeCountForNode)
+    allNodes.filter(_.isInstanceOf[EndingNodeData]).map(_.id.value).foreach(metricRegistry.endCountForNode)
+    allNodes.filter(_.isInstanceOf[DeadEndingData]).map(_.id.value).foreach(metricRegistry.deadEndCountForNode)
   }
 
   implicit class MetricsTestHelper(metricRegistry: MetricRegistry) {

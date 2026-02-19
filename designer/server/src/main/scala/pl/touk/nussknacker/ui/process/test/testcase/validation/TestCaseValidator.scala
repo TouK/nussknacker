@@ -27,10 +27,10 @@ class TestCaseValidator(
       nodesTyping: Map[String, TestCaseValidator.NodeTyping],
       testCases: List[TestCase],
   )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): ScenarioTestCasesValidationErrors = {
-    val nodesById = nodes.map(n => NodeId(n.id) -> n).toMap
+    val nodesById = nodes.map(n => n.id -> n).toMap
     val testCasesErrorsByNode = nodesById.flatMap { case (nodeId, node) =>
       val nodeTestCases = prepareNodeTestCases(testCases, nodeId)
-      val nodeTyping    = nodesTyping.getOrElse(nodeId.id, NodeTyping.empty)
+      val nodeTyping    = nodesTyping.getOrElse(nodeId.value, NodeTyping.empty)
       val errors        = validateNodeTestCases(node, nodeTestCases, nodeTyping)
       if (errors.isEmpty) None else Some(nodeId -> errors)
     }
@@ -83,7 +83,7 @@ class TestCaseValidator(
       nodeTestCase.assertions,
       nodeTyping.inputVariables,
       scenarioCompilationDependencies.jobData
-    )(NodeId(nodeData.id))
+    )(nodeData.id)
 
     (enricherMockErrors, assertionsErrors) match {
       case (None, None) => Right(())

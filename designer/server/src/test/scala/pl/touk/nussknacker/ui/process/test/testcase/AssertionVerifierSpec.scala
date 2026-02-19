@@ -56,7 +56,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
   private val nodeId = NodeId("someNode")
 
   private val scenarioTyping: Map[String, NodeTypingData] = Map(
-    nodeId.id -> NodeTypingData(
+    nodeId.value -> NodeTypingData(
       variableTypes = Map(
         "someVariable"   -> Typed.fromInstance("bar"),
         "someJavaList"   -> Typed.fromInstance(new util.ArrayList[String]()),

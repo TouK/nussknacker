@@ -145,7 +145,7 @@ class TestFlinkProcessCompilerDataFactory(
     scenario.collectAllNodes.collect { case frag: FragmentInputDefinition =>
       // We create source definition only to reuse prepareSourceFactory method.
       // Source will have fragment component type to avoid collisions with normal sources
-      val fragmentSourceDef = fragmentSourceDefinitionPreparer.createSourceDefinition(frag.id, frag)
+      val fragmentSourceDef = fragmentSourceDefinitionPreparer.createSourceDefinition(frag.id.value, frag)
       fragmentSourceDef.withImplementationInvoker(
         new TestSourceComponentImplementationInvoker(
           sourceSpecificFormatStubbedSourcePreparer,

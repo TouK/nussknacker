@@ -18,13 +18,13 @@ private[engine] class EndCountingListener(allNodes: Iterable[NodeData]) extends 
     endRateMeters = new Meters(
       "end",
       { case e: EndingNodeData =>
-        e.id
+        e.id.value
       }
     )
     deadEndRateMeters = new Meters(
       "dead_end",
       { case e: DeadEndingData =>
-        e.id
+        e.id.value
       }
     )
   }
@@ -34,7 +34,7 @@ private[engine] class EndCountingListener(allNodes: Iterable[NodeData]) extends 
       context: Context,
       processMetaData: MetaData
   ): Unit = {
-    deadEndRateMeters.mark(lastNodeId.id)
+    deadEndRateMeters.mark(lastNodeId.value)
   }
 
   override def endEncountered(
@@ -43,7 +43,7 @@ private[engine] class EndCountingListener(allNodes: Iterable[NodeData]) extends 
       context: Context,
       processMetaData: MetaData
   ): Unit = {
-    endRateMeters.mark(nodeId.id)
+    endRateMeters.mark(nodeId.value)
   }
 
   private class Meters(name: String, nodeIds: PartialFunction[NodeData, String]) {

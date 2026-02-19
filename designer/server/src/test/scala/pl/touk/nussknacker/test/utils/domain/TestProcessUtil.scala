@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.test.utils.domain
 
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId, NodeName, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.{
   ProcessAction,
   ProcessActionId,
@@ -160,7 +160,13 @@ object TestProcessUtil {
 
   lazy val sampleFragmentGraph: ScenarioGraph =
     createFragmentGraph(
-      List(FragmentInputDefinition("input", List(FragmentParameter(ParameterName("in"), FragmentClazzRef[String]))))
+      List(
+        FragmentInputDefinition(
+          NodeId("input"),
+          NodeName("input"),
+          List(FragmentParameter(ParameterName("in"), FragmentClazzRef[String]))
+        )
+      )
     )
 
   def createFragmentGraph(

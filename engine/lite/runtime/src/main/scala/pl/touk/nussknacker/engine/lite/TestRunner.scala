@@ -89,7 +89,7 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
           .groupBy(_.sourceId)
           .toList
           .flatMap { case (nodeId, scenarioTestRecords) =>
-            val sourceId = SourceId(nodeId.id)
+            val sourceId = SourceId(nodeId.value)
             val source   = getSourceById(sourceId)
             val recordsFromSourceSpecificTestDataFormat: List[Input] =
               testDataPreparer.prepareRecordsForTest(source, scenarioTestRecords)
@@ -151,7 +151,7 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
     val successfulResults = results.value
     successfulResults.foreach { result =>
       testServiceInvocationCollector
-        .createSinkInvocationCollector(result.nodeId, result.nodeId.id)
+        .createSinkInvocationCollector(result.nodeId, result.nodeId.value)
         .collect(result.context, result.result)
     }
   }

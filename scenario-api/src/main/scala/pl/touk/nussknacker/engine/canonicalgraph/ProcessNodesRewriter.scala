@@ -97,7 +97,7 @@ object ProcessNodesRewriter {
 trait ExpressionRewriter {
 
   def rewriteNode[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): T = {
-    implicit val nodeId: NodeId = NodeId(data.id)
+    implicit val nodeId: NodeId = data.id
     rewriteNodeInternal(data).asInstanceOf[T]
   }
 
