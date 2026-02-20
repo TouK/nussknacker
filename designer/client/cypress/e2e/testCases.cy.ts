@@ -1,3 +1,5 @@
+import { sanitizeHtmlAttribute } from "../../src/common/HtmlUtils";
+
 const seed = "testCases";
 
 describe("Test cases", () => {
@@ -105,6 +107,18 @@ describe("Test cases", () => {
         applyGeneratedMockData();
         verifyMockData('{\n  "foo": 0\n}');
     });
+
+    it("should display assertions panel", () => {
+        cy.visitNewProcess(seed, "testCasesWithAssertions.json", "Category2");
+        cy.toggleUserFlag("node.showTestingTab", true);
+        cy.layoutScenario();
+
+        rerunTest();
+
+        expandAssertionItem("Log");
+
+        cy.get('[data-testid="assertion-results-panel"]').matchImage();
+    });
 });
 
 const openTestingTab = () => {
@@ -182,4 +196,8 @@ const verifyMockData = (mockValue: string) => {
             expect(aceEditor.getValue()).to.eq(mockValue);
         });
     });
+};
+
+const expandAssertionItem = (nodeId: string) => {
+    cy.get(`[id="${nodeId}-header"]`).click();
 };

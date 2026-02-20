@@ -31,6 +31,8 @@ export function getToolbarComponent(config?: ToolbarConfig): ComponentType<Toolb
             return SearchPanel;
         case "survey-panel":
             return lazy(() => import("../toolbars/Survey"));
+        case "assertion-results-panel":
+            return lazy(() => import("../toolbars/assertionResults/assertionResults"));
         case "activities-panel":
             return ActivitiesPanel;
         default:
