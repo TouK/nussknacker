@@ -193,7 +193,10 @@ private[engine] object AssignabilityDeterminer {
             ) if MapClass.isAssignableFrom(targetClass) =>
           // Map's key generic param is invariant. We can't just check givenKeyParam == targetKeyParam because of Unknown type which is a kind of wildcard
           condNel(
-            isAssignable(givenKeyParam, targetKeyParam).isValid && isAssignable(targetKeyParam, givenKeyParam).isValid,
+            isAssignable(givenKeyParam, targetKeyParam).isValid && (isAssignable(
+              targetKeyParam,
+              givenKeyParam
+            ).isValid || isUnknown(targetKeyParam)),
             (),
             s"Key types of Maps ${givenKeyParam.display} and ${targetKeyParam.display} are not equals"
           ) andThen { _ =>
@@ -266,6 +269,13 @@ private[engine] object AssignabilityDeterminer {
   // we use explicit autoboxing = true flag, as ClassUtils in commons-lang3:3.3 (used in Flink) cannot handle JDK 11...
   private def isAssignable(from: Class[_], to: Class[_]): ValidatedNel[String, Unit] =
     condNel(ClassUtils.isAssignable(from, to, true), (), s"$from is not assignable to $to")
+
+  private def isUnknown(typingResult: TypingResult): Boolean = {
+    typingResult match {
+      case Unknown(_) => true
+      case _          => false
+    }
+  }
 
 }
 

@@ -52,6 +52,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.{
   GenericFunctionError
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.IllegalOperationError.{
+  IllegalIndexingOperation,
   IllegalInvocationError,
   IllegalProjectionSelectionError,
   InvalidMethodReference,
@@ -611,12 +612,17 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Any]("#processHelper.add(1L, 1)", ctxWithGlobal) shouldBe Symbol("valid")
     parse[Any]("#processHelper.addLongs(1L, 1L)", ctxWithGlobal) shouldBe Symbol("valid")
     parse[Any]("#processHelper.addLongs(1, 1L)", ctxWithGlobal) shouldBe Symbol("valid")
-    parse[Any]("#processHelper.add(#processHelper.toAny('1'), 1)", ctxWithGlobal) shouldBe Symbol("valid")
 
     inside(parse[Any]("#processHelper.add('1', 1)", ctxWithGlobal)) {
       case Invalid(NonEmptyList(SpelExpressionTypingParseError(error: ArgumentTypeError, _), Nil)) =>
         error.message shouldBe s"Mismatch parameter types. Found: add(${Typed.fromInstance("1").display}, ${Typed.fromInstance(1).display}). Required: add(Integer, Integer)"
     }
+
+    inside(parse[Any]("#processHelper.add(#processHelper.toAny('1'), 1)", ctxWithGlobal)) {
+      case Invalid(NonEmptyList(SpelExpressionTypingParseError(error: ArgumentTypeError, _), Nil)) =>
+        error.message shouldBe s"Mismatch parameter types. Found: add(${Unknown.display}, ${Typed.fromInstance(1).display}). Required: add(Integer, Integer)"
+    }
+
   }
 
   test("validate MethodReference for scala varargs") {
@@ -929,8 +935,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("allow access to objects with get method in dot notation") {
     val withObjVar = ctx.withVariable("obj", new SampleObjectWithGetMethod(Map("key1" -> "value1", "key2" -> 20)))
 
-    parse[String]("#obj.key1", withObjVar).validExpression.evaluateSync[String](withObjVar) should equal("value1")
-    parse[Integer]("#obj.key2", withObjVar).validExpression.evaluateSync[Integer](withObjVar) should equal(20)
+    parse[Any]("#obj.key1", withObjVar).validExpression.evaluateSync[String](withObjVar) should equal("value1")
+    parse[Any]("#obj.key2", withObjVar).validExpression.evaluateSync[Integer](withObjVar) should equal(20)
   }
 
   test("check property if is defined even if class has get method") {
@@ -987,8 +993,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("not allow unknown variables in methods") {
     inside(parse[Any]("#processHelper.add(#a, 1)", ctx.withVariable("processHelper", SampleGlobalObject))) {
-      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+      case Invalid(NonEmptyList(error: ExpressionParseError, error2 :: Nil)) =>
         error.message shouldBe "Unresolved reference 'a'"
+        error2.message shouldBe "Mismatch parameter types. Found: add(Unknown, Integer(1)). Required: add(Integer, Integer)"
     }
 
     inside(parse[Any]("T(java.text.NumberFormat).getNumberInstance('PL').format(#a)", ctx)) {
@@ -1679,11 +1686,25 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("indexing on maps and lists should validate expression inside indexer") {
-    List("#processHelper.stringOnStringMap[#invalidRef]", "{1,2,3}[#invalidRef]").map(expr =>
-      parse[Any](expr, ctxWithGlobal).invalidValue.toList should matchPattern {
-        case SpelExpressionTypingParseError(UnresolvedReferenceError("invalidRef"), _) :: Nil =>
+    List("#processHelper.stringOnStringMap[#invalidRef]").foreach { expr =>
+      val result = parse[Any](expr, ctxWithGlobal).invalidValue.toList
+      result should matchPattern {
+        case SpelExpressionTypingParseError(
+              UnresolvedReferenceError("invalidRef"),
+              _
+            ) :: SpelExpressionTypingParseError(IllegalIndexingOperation, _) :: Nil =>
       }
-    )
+    }
+
+    List("{1,2,3}[#invalidRef]").foreach { expr =>
+      val result = parse[Any](expr, ctxWithGlobal).invalidValue.toList
+      result should matchPattern {
+        case SpelExpressionTypingParseError(
+              UnresolvedReferenceError("invalidRef"),
+              _
+            ) :: Nil =>
+      }
+    }
   }
 
   test("indexing on unknown should validate expression inside indexer") {

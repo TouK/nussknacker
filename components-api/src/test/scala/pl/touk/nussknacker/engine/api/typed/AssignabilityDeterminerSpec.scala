@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.ConversionNecessaryForTypeAssignment
   NoConvertionIsNeeded
 }
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.{Loose, Strict}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 
 import java.time.ZoneId
 
@@ -21,10 +21,43 @@ class AssignabilityDeterminerSpec extends AnyFunSuite with Matchers {
     ("sourceType", "targetType", "expectedStrict", "expectedLoose"),
     (Typed[Int], Typed[Int], Valid(NoConvertionIsNeeded), Valid(NoConvertionIsNeeded)),
     (Typed[Int], Typed[Double], Valid(ConvertionIsNeeded(Typed[Double])), Valid(ConvertionIsNeeded(Typed[Double]))),
-    (Typed[List[Int]], Typed[List[Int]], Valid(NoConvertionIsNeeded), Valid(NoConvertionIsNeeded)),
-    (Typed[List[Int]], Typed[List[Any]], Valid(NoConvertionIsNeeded), Valid(NoConvertionIsNeeded)),
-    (Typed[Map[String, Int]], Typed[Map[String, Int]], Valid(NoConvertionIsNeeded), Valid(NoConvertionIsNeeded)),
-    (Typed[Map[String, Int]], Typed[Map[Any, Any]], Valid(NoConvertionIsNeeded), Valid(NoConvertionIsNeeded))
+    (Typed[Int], Unknown, Valid(NoConvertionIsNeeded), Valid(NoConvertionIsNeeded)),
+    (
+      Typed.fromDetailedType[java.util.List[Int]],
+      Unknown,
+      Valid(NoConvertionIsNeeded),
+      Valid(NoConvertionIsNeeded)
+    ),
+    (
+      Typed.fromDetailedType[java.util.List[Int]],
+      Typed.fromDetailedType[java.util.List[Int]],
+      Valid(NoConvertionIsNeeded),
+      Valid(NoConvertionIsNeeded)
+    ),
+    (
+      Typed.fromDetailedType[java.util.List[Int]],
+      Typed.fromDetailedType[java.util.List[Any]],
+      Valid(NoConvertionIsNeeded),
+      Valid(NoConvertionIsNeeded)
+    ),
+    (
+      Typed.fromDetailedType[java.util.Map[String, Int]],
+      Typed.fromDetailedType[java.util.Map[String, Int]],
+      Valid(NoConvertionIsNeeded),
+      Valid(NoConvertionIsNeeded)
+    ),
+    (
+      Typed.fromDetailedType[java.util.Map[String, Int]],
+      Typed.fromDetailedType[java.util.Map[String, Any]],
+      Valid(NoConvertionIsNeeded),
+      Valid(NoConvertionIsNeeded)
+    ),
+    (
+      Typed.fromDetailedType[java.util.Map[String, Int]],
+      Typed.fromDetailedType[java.util.Map[Any, Int]],
+      Valid(NoConvertionIsNeeded),
+      Valid(NoConvertionIsNeeded)
+    ),
   )
 
   test("isAssignable with Strict ConversionStrategy should pass for widening cases") {
@@ -46,7 +79,20 @@ class AssignabilityDeterminerSpec extends AnyFunSuite with Matchers {
     (Typed[Long], Typed[Int], Invalid(NonEmptyList.of("")), Valid(())),
     (Typed[Long], Typed[Short], Invalid(NonEmptyList.of("")), Valid(())),
     (Typed[Double], Typed[Float], Invalid(NonEmptyList.of("")), Valid(())),
-    (Typed[BigDecimal], Typed[Double], Invalid(NonEmptyList.of("")), Valid(()))
+    (Typed[BigDecimal], Typed[Double], Invalid(NonEmptyList.of("")), Valid(())),
+    (Typed[Any], Typed[Int], Invalid(NonEmptyList.of("")), Invalid(NonEmptyList.of(""))),
+    (
+      Typed.fromDetailedType[java.util.List[Any]],
+      Typed.fromDetailedType[java.util.List[Int]],
+      Invalid(NonEmptyList.of("")),
+      Invalid(NonEmptyList.of("")),
+    ),
+    (
+      Typed.fromDetailedType[java.util.Map[String, Any]],
+      Typed.fromDetailedType[java.util.Map[String, Int]],
+      Invalid(NonEmptyList.of("")),
+      Invalid(NonEmptyList.of("")),
+    )
   )
 
   test("isAssignable with Strict ConversionStrategy should fail for narrowing numerical cases") {

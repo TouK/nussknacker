@@ -237,6 +237,23 @@ private[spel] class Typer(
         if (dynamicPropertyAccessAllowed) Unknown.validTypingResult
         else NoPropertyError(record, indexString).invalidTypingResult()
       }
+
+      //      fieldIndexedByLiteralStringOpt
+//        .map(f => f._2.validTypingResult)
+//        .getOrElse {
+//          if (dynamicPropertyAccessAllowed) {
+//            val fieldValues = record.withoutValue.fields.values
+//            fieldValues.headOption
+//              .flatMap { firstFieldValue =>
+//                Option.when(
+//                  fieldValues.tail.forall(nextField => nextField.canBeStrictlyAssignedTo(firstFieldValue))
+//                )(
+//                  firstFieldValue.validTypingResult
+//                )
+//              }
+//              .getOrElse(Unknown.validTypingResult)
+//          } else NoPropertyError(record, indexString).invalidTypingResult()
+//        }
     }
 
     def typeIndexerOnRecord(indexer: Indexer, record: TypedObjectTypingResult) = {
