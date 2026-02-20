@@ -409,7 +409,7 @@ class DBProcessRepository(
   protected def now: Instant = Instant.now()
 
   // We use it only on tests..
-  def changeVersionId(processId: ProcessId, versionId: VersionId, versionIdToUpdate: VersionId) =
+  def changeVersionId(processId: ProcessId, versionId: VersionId, versionIdToUpdate: VersionId): DB[Int] =
     processVersionsTableWithUnit
       .filter(v => v.id === versionId && v.processId === processId)
       .map(_.id)

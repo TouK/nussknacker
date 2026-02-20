@@ -245,9 +245,11 @@ class DBFetchingProcessRepositorySpec
     details.processVersionId shouldBe VersionId.initialVersionId
 
     // change of id for version imitates situation where versionId is different from number of all process versions (ex. after manual JSON removal from DB)
-    dbioRunner.runInTransaction(
-      writingRepo.changeVersionId(details.processId, details.processVersionId, latestVersionId)
-    )
+    dbioRunner
+      .runInTransaction(
+        writingRepo.changeVersionId(details.processId, details.processVersionId, latestVersionId)
+      )
+      .futureValue
 
     val latestDetails = fetchLatestProcessDetails[CanonicalProcess](processName)
     latestDetails.processVersionId shouldBe latestVersionId
