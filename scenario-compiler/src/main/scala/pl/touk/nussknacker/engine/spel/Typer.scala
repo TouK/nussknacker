@@ -212,6 +212,18 @@ private[spel] class Typer(
       }
     }
 
+    def getRecordValueType(record: TypedObjectTypingResult) = {
+      val fieldValues = record.withoutValue.fields.values
+      fieldValues.headOption
+        .flatMap { firstFieldValue =>
+          Option.when(
+            fieldValues.tail.forall(nextField => nextField.canBeStrictlyAssignedTo(firstFieldValue))
+          )(
+            firstFieldValue
+          )
+        }
+    }
+
     def catchUnexpectedErrors(block: => NodeTypingResult): NodeTypingResult = Try(block) match {
       case Success(value) =>
         value
@@ -233,24 +245,11 @@ private[spel] class Typer(
         record: TypedObjectTypingResult
     ): TypingR[TypingResult] = {
       val fieldIndexedByLiteralStringOpt = record.fields.find(_._1 == indexString)
-//      fieldIndexedByLiteralStringOpt.map(f => f._2.validTypingResult).getOrElse {
-//        if (dynamicPropertyAccessAllowed) Unknown.validTypingResult
-//        else NoPropertyError(record, indexString).invalidTypingResult()
-//      }
       fieldIndexedByLiteralStringOpt
         .map(f => f._2.validTypingResult)
         .getOrElse {
           if (dynamicPropertyAccessAllowed) {
-            val fieldValues = record.withoutValue.fields.values
-            fieldValues.headOption
-              .flatMap { firstFieldValue =>
-                Option.when(
-                  fieldValues.tail.forall(nextField => nextField.canBeStrictlyAssignedTo(firstFieldValue))
-                )(
-                  firstFieldValue.validTypingResult
-                )
-              }
-              .getOrElse(Unknown.validTypingResult)
+            getRecordValueType(record).getOrElse(Unknown).validTypingResult
           } else NoPropertyError(record, indexString).invalidTypingResult()
         }
     }
@@ -264,7 +263,7 @@ private[spel] class Typer(
             case _                                      => typeFieldNameReferenceOnRecord(indexString, record)
           }
         case indexKey :: Nil if indexKey.canBeLooselyAssignedTo(Typed[String]) =>
-          if (dynamicPropertyAccessAllowed) Unknown.validTypingResult
+          if (dynamicPropertyAccessAllowed) getRecordValueType(record).getOrElse(Unknown).validTypingResult
           else
             record.runtimeObjType.params match {
               case _ :: value :: Nil if record.runtimeObjType.klass == classOf[java.util.Map[_, _]] =>
