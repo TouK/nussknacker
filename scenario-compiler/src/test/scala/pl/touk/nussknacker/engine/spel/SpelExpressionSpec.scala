@@ -295,6 +295,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       .evaluateSync[java.util.ArrayList[Int]](ctx) should equal(2)
   }
 
+  test("should allow to get value from record by literal key") {
+    parse[String]("{a: 'A', b: 'B'}['a']").validExpression.evaluateSync[String](ctx) should equal("A")
+  }
+
+  test("should allow to get value from record by dynamic key") {
+    parse[String]("{a: 'A', b: #strVal}['b'.replaceAll('b','c')]").validExpression
+      .evaluateSync[String](ctx) should equal(null)
+  }
+
   test("parsing expression that exceeding the limit") {
     parse[String](bigExpression("#strVal", maxSpelExpressionLimit)).validExpression
       .evaluateSync[String](ctx) should equal(" ".padTo(maxSpelExpressionLimit, ' '))
@@ -1035,9 +1044,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         "unknownString" -> ContainerOfUnknown("a"),
       )
     )
-
-    evaluate[Int]("""{{key: "a", value: 5}}.toMap[#unknownString.value]""", context) shouldBe 5
-    evaluate[Integer]("""{{key: "b", value: 5}}.toMap[#unknownString.value]""", context) shouldBe null
+    // typed maps, we know that the key is string, so the #unknownString must be cast to string
+    evaluate[Int]("""{{key: "a", value: 5}}.toMap[#unknownString.value.toString]""", context) shouldBe 5
+    evaluate[Integer]("""{{key: "b", value: 5}}.toMap[#unknownString.value.toString]""", context) shouldBe null
   }
 
   test("validate ternary operator") {
