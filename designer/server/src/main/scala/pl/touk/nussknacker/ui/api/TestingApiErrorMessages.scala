@@ -193,8 +193,8 @@ object TestingApiErrorMessages {
 
   private def prettyPrintAssertion(assertion: Assertion): String = {
     assertion match {
-      case ExpressionAssertion(expression) => s"Assertion expression: ${expression.expression}')"
-      case Assertion.PredicateAssertion(operator, expected, actual) =>
+      case ExpressionAssertion(expression, _) => s"Assertion expression: ${expression.expression}')"
+      case Assertion.PredicateAssertion(operator, expected, actual, _) =>
         s"Assertion: '${operator.entryName}' , expected: ${expected.expression}, actual: ${actual.expression}"
     }
   }

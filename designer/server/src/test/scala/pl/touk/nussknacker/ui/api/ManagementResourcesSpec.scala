@@ -457,8 +457,18 @@ class ManagementResourcesSpec
       ),
       assertions = Map(
         NodeId("endsuffix") -> List(
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "'ala'".spel, "#contexts[0].input[0]".spel),
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "'ala'".spel, "#contexts[1].input[0]".spel),
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "'ala'".spel,
+            "#contexts[0].input[0]".spel,
+            description = Some("first event input should equal 'ala'")
+          ),
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "'ala'".spel,
+            "#contexts[1].input[0]".spel,
+            description = Some("second event input should equal 'ala'")
+          ),
         )
       )
     )
@@ -487,17 +497,29 @@ class ManagementResourcesSpec
       Map.empty,
       Map(
         NodeId("endsuffix") -> List(
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "'ala'".spel, "#contexts[0].input[0]".spel),
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "'ala'".spel, "#contexts[1].input[0]".spel),
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "'ala'".spel,
+            "#contexts[0].input[0]".spel,
+          ),
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "'ala'".spel,
+            "#contexts[1].input[0]".spel,
+          ),
           // The output variable produced by the messagesuffix node is not visible at that node, but rather at the subsequent one (endsuffix).
           PredicateAssertion(
             Assertion.AssertionOperator.Equals,
             "{message: 'message'}".spel,
-            "#contexts[0].output".spel
+            "#contexts[0].output".spel,
           ),
         ),
         NodeId("messagesuffix") -> List(
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "'ala'".spel, "#contexts[0].input[0]".spel),
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "'ala'".spel,
+            "#contexts[0].input[0]".spel,
+          ),
         )
       )
     )
@@ -573,7 +595,11 @@ class ManagementResourcesSpec
       ),
       assertions = Map(
         NodeId("endsuffix") -> List(
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "'b'".spel, "#contexts[0].out1".spel),
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "'b'".spel,
+            "#contexts[0].out1".spel,
+          ),
         )
       )
     )
@@ -605,7 +631,11 @@ class ManagementResourcesSpec
       mocks = Map.empty,
       assertions = Map(
         NodeId("someNotExistingNode") -> List(
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "'ala'".spel, "#contexts[0].input[0]".spel),
+          PredicateAssertion(
+            Assertion.AssertionOperator.Equals,
+            "'ala'".spel,
+            "#contexts[0].input[0]".spel,
+          ),
         )
       )
     )
@@ -656,7 +686,7 @@ class ManagementResourcesSpec
           PredicateAssertion(
             Assertion.AssertionOperator.Equals,
             "{message: 'message'}".spel,
-            "#contexts[0].output".spel
+            "#contexts[0].output".spel,
           ),
         )
       )

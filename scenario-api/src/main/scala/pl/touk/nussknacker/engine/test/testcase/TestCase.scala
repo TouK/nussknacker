@@ -38,10 +38,17 @@ sealed trait Assertion
 
 object Assertion {
 
-  @JsonCodec final case class ExpressionAssertion(expression: Expression) extends Assertion
+  @JsonCodec final case class ExpressionAssertion(
+      expression: Expression,
+      description: Option[String] = None,
+  ) extends Assertion
 
-  @JsonCodec final case class PredicateAssertion(operator: AssertionOperator, expected: Expression, actual: Expression)
-      extends Assertion
+  @JsonCodec final case class PredicateAssertion(
+      operator: AssertionOperator,
+      expected: Expression,
+      actual: Expression,
+      description: Option[String] = None,
+  ) extends Assertion
 
   implicit val assertionEncoder: Encoder[Assertion] = Encoder.instance {
     case expr: ExpressionAssertion => expr.asJson

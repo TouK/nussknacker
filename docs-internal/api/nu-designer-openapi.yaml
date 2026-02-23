@@ -1633,6 +1633,7 @@ paths:
                         actual:
                           language: spel
                           expression: '#contexts.size'
+                        description: exactly one event should pass through the node
                     test-case-2:
                       enricherMock:
                         expression:
@@ -1653,6 +1654,7 @@ paths:
                         actual:
                           language: spel
                           expression: '#contexts[0].doesNotExist'
+                        description: output field should match the expected value
         required: true
       responses:
         '200':
@@ -6199,6 +6201,10 @@ components:
       properties:
         expression:
           $ref: '#/components/schemas/Expression'
+        description:
+          type:
+          - string
+          - 'null'
     ExpressionEvaluationResult_Json:
       title: ExpressionEvaluationResult_Json
       type: object
@@ -7595,6 +7601,10 @@ components:
           $ref: '#/components/schemas/Expression'
         actual:
           $ref: '#/components/schemas/Expression'
+        description:
+          type:
+          - string
+          - 'null'
     ProcessActivity:
       title: ProcessActivity
       type: object
