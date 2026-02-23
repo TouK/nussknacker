@@ -69,7 +69,6 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
             Assertion.AssertionOperator.Equals,
             "'expected'".spel,
             "#contexts[0].input".spel,
-            description = None
           ),
           PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel, description = None)
         )
@@ -191,7 +190,6 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
             Assertion.AssertionOperator.Equals,
             "'value'".spel,
             "#doesNotExist".spel,
-            description = None
           )
         )
       )
@@ -245,14 +243,12 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
             Assertion.AssertionOperator.Equals,
             "1".spel,
             "#contexts[0].doesNotExist".spel,
-            description = None
           ),
           PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel, description = None),
           PredicateAssertion(
             Assertion.AssertionOperator.Equals,
             "2".spel,
             "#contexts[0].doesNotExistOther".spel,
-            description = None
           ),
         )
       )
@@ -369,14 +365,12 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
               Assertion.AssertionOperator.Equals,
               "1".spel,
               "#contexts[0].doesNotExist".spel,
-              description = None
             ),
             PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel, description = None),
             PredicateAssertion(
               Assertion.AssertionOperator.Equals,
               "2".spel,
               "#contexts[0].doesNotExistOther".spel,
-              description = None
             )
           ),
           NodeId(filter.id) -> List(
@@ -384,13 +378,11 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
               Assertion.AssertionOperator.Equals,
               "'value'".spel,
               "#contexts[0].input".spel,
-              description = None
             ),
             PredicateAssertion(
               Assertion.AssertionOperator.Equals,
               "1".spel,
               "#contexts[0].doesNotExist".spel,
-              description = None
             ),
           )
         )

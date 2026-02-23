@@ -501,20 +501,17 @@ class ManagementResourcesSpec
             Assertion.AssertionOperator.Equals,
             "'ala'".spel,
             "#contexts[0].input[0]".spel,
-            description = None
           ),
           PredicateAssertion(
             Assertion.AssertionOperator.Equals,
             "'ala'".spel,
             "#contexts[1].input[0]".spel,
-            description = None
           ),
           // The output variable produced by the messagesuffix node is not visible at that node, but rather at the subsequent one (endsuffix).
           PredicateAssertion(
             Assertion.AssertionOperator.Equals,
             "{message: 'message'}".spel,
             "#contexts[0].output".spel,
-            description = None
           ),
         ),
         NodeId("messagesuffix") -> List(
@@ -522,7 +519,6 @@ class ManagementResourcesSpec
             Assertion.AssertionOperator.Equals,
             "'ala'".spel,
             "#contexts[0].input[0]".spel,
-            description = None
           ),
         )
       )
@@ -603,7 +599,6 @@ class ManagementResourcesSpec
             Assertion.AssertionOperator.Equals,
             "'b'".spel,
             "#contexts[0].out1".spel,
-            description = None
           ),
         )
       )
@@ -640,7 +635,6 @@ class ManagementResourcesSpec
             Assertion.AssertionOperator.Equals,
             "'ala'".spel,
             "#contexts[0].input[0]".spel,
-            description = None
           ),
         )
       )
@@ -693,7 +687,6 @@ class ManagementResourcesSpec
             Assertion.AssertionOperator.Equals,
             "{message: 'message'}".spel,
             "#contexts[0].output".spel,
-            description = None
           ),
         )
       )

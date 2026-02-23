@@ -213,7 +213,7 @@ class AssertionsCompilerSpec
       Table[Assertion, ValidatedNel[String, Unit]](
         ("assertion", "compilation result"),
         (
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "'abc'".spel, "'def'".spel, description = None),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'abc'".spel, "'def'".spel),
           Validated.unit,
         ),
         (
@@ -234,7 +234,6 @@ class AssertionsCompilerSpec
             Assertion.AssertionOperator.Equals,
             "{'abc', 'def'}".spel,
             "{'xyz'}".spel,
-            description = None
           ),
           Validated.unit
         ),
@@ -243,7 +242,6 @@ class AssertionsCompilerSpec
             Assertion.AssertionOperator.Equals,
             "{'abc', 'def'}".spel,
             "{123}".spel,
-            description = None
           ),
           Validated.invalidNel("Operator '==' used with not comparable types: List[String] and List[Integer]")
         ),
@@ -252,7 +250,6 @@ class AssertionsCompilerSpec
             Assertion.AssertionOperator.Equals,
             "{'abc', 'def'}".spel,
             "#CONV.toAny({'xyz'})".spel,
-            description = None
           ),
           Validated.unit
         ),

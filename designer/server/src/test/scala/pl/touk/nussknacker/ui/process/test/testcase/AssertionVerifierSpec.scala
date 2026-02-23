@@ -77,25 +77,21 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
           AssertionOperator.Equals,
           "'valid'".spel,
           "#contexts[0].someVariable".spel,
-          description = None
         ),
         PredicateAssertion(
           AssertionOperator.Equals,
           "'valid'".spel,
           "#contexts[1].someVariable".spel,
-          description = None
         ),
         PredicateAssertion(
           AssertionOperator.NotEquals,
           "'valid'".spel,
           "#contexts[0].someVariable".spel,
-          description = None
         ),
         PredicateAssertion(
           AssertionOperator.NotEquals,
           "'valid'".spel,
           "#contexts[1].someVariable".spel,
-          description = None
         ),
       )
     )
@@ -148,7 +144,6 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
             AssertionOperator.Equals,
             expectedExpression.spel,
             actualExpression.spel,
-            description = None
           ),
         )
       )
@@ -183,7 +178,6 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
             AssertionOperator.Equals,
             expectedExpression.spel,
             actualExpression.spel,
-            description = None
           ),
         )
       )
@@ -216,7 +210,6 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
             AssertionOperator.Equals,
             expectedExpression.spel,
             actualExpression.spel,
-            description = None
           ),
         )
       )

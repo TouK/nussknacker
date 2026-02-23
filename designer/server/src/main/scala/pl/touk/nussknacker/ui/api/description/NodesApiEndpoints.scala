@@ -267,7 +267,6 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                             operator = AssertionOperator.Equals,
                             actual = Expression.spel("#contexts.size"),
                             expected = Expression.spel("1"),
-                            description = None
                           ),
                           PredicateAssertion(
                             operator = AssertionOperator.Equals,
