@@ -97,6 +97,20 @@ export function replaceSearchQuery(callback: ((current: QueryRecord) => QueryRec
     const params = typeof callback === "function" ? callback(parseQuery()) : callback;
     currentURL.search = stringifyQuery(params);
     history.replaceState(currentState, "", currentURL.href);
+    window.dispatchEvent(new PopStateEvent("popstate", { state: currentState }));
+}
+
+export function useSearchQueryParam(key: string): string | undefined {
+    const getParam = useCallback(() => parseQuery(window.location.search)[key] as string | undefined, [key]);
+    const [value, setValue] = useState<string | undefined>(getParam);
+
+    useEffect(() => {
+        const onPopState = () => setValue(getParam());
+        window.addEventListener("popstate", onPopState);
+        return () => window.removeEventListener("popstate", onPopState);
+    }, [getParam]);
+
+    return value;
 }
 
 export function parseWindowsQueryParams<P extends Record<string, string | string[]>>(append: P, remove?: P): Record<string, string[]> {

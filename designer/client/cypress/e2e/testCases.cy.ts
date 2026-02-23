@@ -1,5 +1,3 @@
-import { sanitizeHtmlAttribute } from "../../src/common/HtmlUtils";
-
 const seed = "testCases";
 
 describe("Test cases", () => {
