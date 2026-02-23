@@ -1,5 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react";
 
+import type { TestFormParameters } from "../../../../../../common/TestResultUtils";
+import { TestCapabilityStatus } from "../../../../../../common/TestResultUtils";
 import { getTestCapabilities } from "../../../../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../../../../reducers/selectors/settings";
 import { getInputDataRecordsForSingleSource } from "../../../../../../reducers/selectors/testCases";
@@ -36,9 +38,13 @@ export const InputDataRecords = ({ node, sourceId }: Props) => {
 
     const testCapabilities = useAppSelector(getTestCapabilities);
     const scenarioProperties = useAppSelector(getProcessProperties);
-    const defaultParameter = testCapabilities.testWithParameters.sourceParameters.find(
-        (sourceParameter) => sourceParameter.sourceId === sourceId,
-    );
+
+    const testCapabilitiesParameters = testCapabilities.testWithParameters;
+
+    const defaultParameter: TestFormParameters | undefined =
+        testCapabilitiesParameters.status === TestCapabilityStatus.AVAILABLE
+            ? testCapabilitiesParameters.sourceParameters.find((sourceParameter) => sourceParameter.sourceId === sourceId)
+            : undefined;
 
     const defaultDataRecord = useMemo(
         () =>
@@ -77,7 +83,11 @@ export const InputDataRecords = ({ node, sourceId }: Props) => {
                         onRowUpdated={handleRowUpdated}
                         data={testingDataRecordsForSource}
                         sourceOptions={[sourceId]}
-                        sourceParameters={testCapabilities.testWithParameters.sourceParameters}
+                        sourceParameters={
+                            testCapabilitiesParameters.status === TestCapabilityStatus.AVAILABLE
+                                ? testCapabilitiesParameters.sourceParameters
+                                : []
+                        }
                     />
                 </ContentSize>
                 {recordsToAddLimitExceeded ? <LimitExceededWarning maxTestingRecords={maxTestingRecords} /> : null}

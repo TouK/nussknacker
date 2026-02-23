@@ -17,7 +17,6 @@ import type { Edge } from "../../../../types/edge";
 import type { NodeType } from "../../../../types/node";
 import { WindowContent } from "../../../../windowManager/WindowContent";
 import type { WindowKind } from "../../../../windowManager/WindowKind";
-import { useTestingScenarioEnabled } from "../../../modals/TestingDataRecords/useTestingScenarioEnabled";
 import { useOnNodeWindow } from "../../../modals/useOnToolWindow";
 import type { Scenario } from "../../../Process/types";
 import { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
@@ -149,8 +148,6 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
         return uniq([editedNode.$id, editedNode.id, node.id].filter(Boolean));
     }, [editedNode.$id, editedNode.id, node.id]);
 
-    const testingScenarioEnabled = useTestingScenarioEnabled({ disabled: buttonFromToolbar?.disabled });
-
     const generalContent = useMemo(
         () => <GeneralContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />,
         [editedNode, onChange, outputEdges, readOnly],
@@ -177,12 +174,12 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
                 id: NodeDetailsTab.testing,
                 label: t("nodeDetails.tabs.testing.name", "Testing"),
                 content: testingContent,
-                disabled: !testingScenarioEnabled || !testingTabVisible,
+                disabled: !testingTabVisible,
                 additionalTabContent: <TestCases />,
                 showErrorIndicator: hasNodeTestCasesErrors,
             },
         ],
-        [generalContent, generalErrors.length, hasNodeTestCasesErrors, t, testingContent, testingScenarioEnabled, testingTabVisible],
+        [generalContent, generalErrors.length, hasNodeTestCasesErrors, t, testingContent, testingTabVisible],
     );
 
     return (

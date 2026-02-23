@@ -16,9 +16,16 @@ export interface TestCapabilities {
     testWithLiveData: GenericCapability;
 }
 
-export interface TestWithParametersCapability {
-    status: TestCapabilityStatus;
-    sourceParameters?: TestFormParameters[];
+export type TestWithParametersCapability = TestWithParametersCapabilityAvailable | TestWithParametersCapabilityNotAvailable;
+
+interface TestWithParametersCapabilityAvailable {
+    status: TestCapabilityStatus.AVAILABLE;
+    sourceParameters: TestFormParameters[];
+}
+
+interface TestWithParametersCapabilityNotAvailable {
+    status: TestCapabilityStatus.NOT_AVAILABLE;
+    reason: string;
 }
 
 export interface GenericCapability {
