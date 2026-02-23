@@ -162,10 +162,11 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
             };
         }
         case "UPDATE_TEST_CAPABILITIES": {
+            const testWithParameters = action.capabilities?.testWithParameters;
             return {
                 ...state,
                 testCapabilities: action.capabilities,
-                testFormParameters: action.capabilities?.testWithParameters?.sourceParameters,
+                testFormParameters: testWithParameters.status === "AVAILABLE" ? testWithParameters.sourceParameters : [],
             };
         }
         case "DISPLAY_PROCESS": {

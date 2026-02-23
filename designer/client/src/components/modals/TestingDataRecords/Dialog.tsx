@@ -5,6 +5,7 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { testScenarioWithTestCase } from "../../../actions/nk/testingActions";
+import type { TestFormParameters } from "../../../common/TestResultUtils";
 import { useUserSettings } from "../../../common/useUserSettings";
 import { getTestCapabilities } from "../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../reducers/selectors/settings";
@@ -53,7 +54,9 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
     const testingDataRecords = useAppSelector(getInputDataRecords);
     const testCase = useAppSelector(getTestCase);
 
-    const defaultParameter = testCapabilities.testWithParameters.sourceParameters?.[0];
+    const testWithParameters = testCapabilities.testWithParameters;
+    const defaultParameter: TestFormParameters | undefined =
+        testWithParameters.status === "AVAILABLE" ? testWithParameters.sourceParameters?.[0] : undefined;
 
     const defaultDataRecord = useMemo(
         () =>
@@ -71,8 +74,11 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
         useDataRecordsActions();
 
     const sourceOptions = useMemo(
-        () => testCapabilities.testWithParameters.sourceParameters.flatMap((sourceParameter) => sourceParameter.sourceId),
-        [testCapabilities.testWithParameters.sourceParameters],
+        () =>
+            testWithParameters.status === "AVAILABLE"
+                ? testWithParameters.sourceParameters.flatMap((sourceParameter) => sourceParameter.sourceId)
+                : [],
+        [testWithParameters],
     );
 
     const recordsToAddLimitExceeded = useMemo(
@@ -124,7 +130,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                     </Typography>
                     <Table
                         sourceOptions={sourceOptions}
-                        sourceParameters={testCapabilities.testWithParameters.sourceParameters}
+                        sourceParameters={testWithParameters.status === "AVAILABLE" ? testWithParameters.sourceParameters : []}
                         data={testingDataRecords}
                         cellErrors={cellErrors}
                         onRowUpdated={handleRowUpdated}
