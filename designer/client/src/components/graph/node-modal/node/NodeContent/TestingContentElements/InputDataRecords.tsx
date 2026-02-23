@@ -84,7 +84,9 @@ export const InputDataRecords = ({ node, sourceId }: Props) => {
                         data={testingDataRecordsForSource}
                         sourceOptions={[sourceId]}
                         sourceParameters={
-                            testCapabilitiesParameters.status === "AVAILABLE" ? testCapabilitiesParameters.sourceParameters : []
+                            testCapabilitiesParameters.status === TestCapabilityStatus.AVAILABLE
+                                ? testCapabilitiesParameters.sourceParameters
+                                : []
                         }
                     />
                 </ContentSize>

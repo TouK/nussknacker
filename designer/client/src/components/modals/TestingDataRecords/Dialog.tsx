@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { testScenarioWithTestCase } from "../../../actions/nk/testingActions";
 import type { TestFormParameters } from "../../../common/TestResultUtils";
+import { TestCapabilityStatus } from "../../../common/TestResultUtils";
 import { useUserSettings } from "../../../common/useUserSettings";
 import { getTestCapabilities } from "../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../reducers/selectors/settings";
@@ -56,7 +57,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
 
     const testWithParameters = testCapabilities.testWithParameters;
     const defaultParameter: TestFormParameters | undefined =
-        testWithParameters.status === "AVAILABLE" ? testWithParameters.sourceParameters?.[0] : undefined;
+        testWithParameters.status === TestCapabilityStatus.AVAILABLE ? testWithParameters.sourceParameters?.[0] : undefined;
 
     const defaultDataRecord = useMemo(
         () =>
@@ -75,7 +76,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
 
     const sourceOptions = useMemo(
         () =>
-            testWithParameters.status === "AVAILABLE"
+            testWithParameters.status === TestCapabilityStatus.AVAILABLE
                 ? testWithParameters.sourceParameters.flatMap((sourceParameter) => sourceParameter.sourceId)
                 : [],
         [testWithParameters],
@@ -130,7 +131,9 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                     </Typography>
                     <Table
                         sourceOptions={sourceOptions}
-                        sourceParameters={testWithParameters.status === "AVAILABLE" ? testWithParameters.sourceParameters : []}
+                        sourceParameters={
+                            testWithParameters.status === TestCapabilityStatus.AVAILABLE ? testWithParameters.sourceParameters : []
+                        }
                         data={testingDataRecords}
                         cellErrors={cellErrors}
                         onRowUpdated={handleRowUpdated}

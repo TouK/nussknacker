@@ -8,6 +8,7 @@ import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction
 
 import type { Action, Reducer } from "../../actions/reduxTypes";
 import ProcessUtils from "../../common/ProcessUtils";
+import { TestCapabilityStatus } from "../../common/TestResultUtils";
 import { appendUuidToParameters } from "../../components/graph/node-modal/appendUuid";
 import { fixEmptyValues } from "../../components/graph/node-modal/fixEmptyValues";
 import NodeUtils from "../../components/graph/NodeUtils";
@@ -162,11 +163,11 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
             };
         }
         case "UPDATE_TEST_CAPABILITIES": {
-            const testWithParameters = action.capabilities?.testWithParameters;
+            const testWithParameters = action.capabilities.testWithParameters;
             return {
                 ...state,
                 testCapabilities: action.capabilities,
-                testFormParameters: testWithParameters.status === "AVAILABLE" ? testWithParameters.sourceParameters : [],
+                testFormParameters: testWithParameters.status === TestCapabilityStatus.AVAILABLE ? testWithParameters.sourceParameters : [],
             };
         }
         case "DISPLAY_PROCESS": {
