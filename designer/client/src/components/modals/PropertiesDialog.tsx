@@ -4,7 +4,6 @@ import type { WindowContentProps } from "@touk/window-manager";
 import React, { useEffect } from "react";
 import { useDebounceFn } from "rooks";
 
-import { ToolId } from "../../actions/nk/toolWindow";
 import { validateScenarioProperties } from "../../actions/nk/validationsActions";
 import PropertiesSvg from "../../assets/img/properties.svg";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
@@ -19,7 +18,7 @@ import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDeta
 import { NodeDocs } from "../graph/node-modal/nodeDetails/SubHeader";
 import { getScenarioProperties } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { PropertiesForm } from "../properties/PropertiesForm";
-import { useOnToolWindow } from "./useOnToolWindow";
+import { useOnPropertiesWindow } from "./useOnToolWindow";
 import { usePropertiesState } from "./usePropertiesState";
 
 export const NodeDetailsModalIcon = styled(WindowHeaderIconStyled.withComponent(PropertiesSvg))(({ theme }) => ({
@@ -55,7 +54,7 @@ const PropertiesDialog = ({ ...props }: WindowContentProps) => {
 
     const errors = usePropertiesValidation(isEditMode, editedProperties);
 
-    useOnToolWindow(ToolId.properties);
+    useOnPropertiesWindow();
 
     return (
         <>

@@ -5,7 +5,7 @@ import { nodeDetailsClosed, nodeDetailsOpened } from "../../actions/nk/nodeDetai
 import { toolClosed, ToolId, toolOpened } from "../../actions/nk/toolWindow";
 import { useAppDispatch } from "../../store/storeHelpers";
 
-export function useOnToolWindow(toolId: ToolId, nodeId?: string) {
+export function useOnNodeWindow(nodeId: string) {
     const dispatch = useAppDispatch();
     const { data } = useWindowContext();
 
@@ -15,18 +15,27 @@ export function useOnToolWindow(toolId: ToolId, nodeId?: string) {
     }, [nodeId]);
 
     const onOpen = useCallback(() => {
-        if (toolId === ToolId.node) {
-            dispatch(nodeDetailsOpened(nodeId, data.id));
-            return () => {
-                dispatch(nodeDetailsClosed(nodeId, data.id, nodeId !== nodeIdRef.current));
-            };
-        }
-
-        dispatch(toolOpened(toolId, data.id));
+        dispatch(nodeDetailsOpened(nodeId, data.id));
         return () => {
-            dispatch(toolClosed(toolId, data.id));
+            dispatch(nodeDetailsClosed(nodeId, data.id, nodeId !== nodeIdRef.current));
         };
-    }, [data.id, dispatch, nodeId, toolId]);
+    }, [data.id, dispatch, nodeId]);
+
+    useEffect(() => {
+        return onOpen();
+    }, [onOpen]);
+}
+
+export function useOnPropertiesWindow() {
+    const dispatch = useAppDispatch();
+    const { data } = useWindowContext();
+
+    const onOpen = useCallback(() => {
+        dispatch(toolOpened(ToolId.properties, data.id));
+        return () => {
+            dispatch(toolClosed(ToolId.properties, data.id));
+        };
+    }, [data.id, dispatch]);
 
     useEffect(() => {
         return onOpen();

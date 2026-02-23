@@ -6,7 +6,6 @@ import React, { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import urljoin from "url-join";
 
-import { ToolId } from "../../../../actions/nk/toolWindow";
 import { useUserSettings } from "../../../../common/useUserSettings";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
@@ -19,7 +18,7 @@ import type { NodeType } from "../../../../types/node";
 import { WindowContent } from "../../../../windowManager/WindowContent";
 import type { WindowKind } from "../../../../windowManager/WindowKind";
 import { useTestingScenarioEnabled } from "../../../modals/TestingDataRecords/useTestingScenarioEnabled";
-import { useOnToolWindow } from "../../../modals/useOnToolWindow";
+import { useOnNodeWindow } from "../../../modals/useOnToolWindow";
 import type { Scenario } from "../../../Process/types";
 import { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
 import { useGetButtonFromToolbar } from "../../../toolbarSettings/useToolbarConfig";
@@ -143,7 +142,7 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
         return {};
     }, [showInputsAndOutputs, Content, Footer]);
 
-    useOnToolWindow(ToolId.node, node.id);
+    useOnNodeWindow(node.id);
 
     const nodeId = useMemo(() => {
         return uniq([editedNode.$id, editedNode.id, node.id].filter(Boolean));
