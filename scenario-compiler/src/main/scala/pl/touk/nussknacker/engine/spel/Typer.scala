@@ -398,7 +398,9 @@ private[spel] class Typer(
       case u: Unknown =>
         val w = Writer.value[List[SpelExpressionTypingErrorWithTextRange], TypingResult](u)
         if (anyMethodExecutionForUnknownAllowed) {
-          w
+          unknownPropertyTypeBasedOnMethod(e, u)
+            .map(_.validTypingResult)
+            .getOrElse(w)
         } else {
           // we allow some methods to be used on unknown
           unknownPropertyTypeBasedOnMethod(e, u)
