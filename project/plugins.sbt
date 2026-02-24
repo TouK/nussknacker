@@ -1,6 +1,6 @@
 libraryDependencies ++= Seq(
   "com.github.pathikrit" %% "better-files" % "3.9.2",
-  "com.lihaoyi"          %% "os-lib"       % "0.11.6",
+  "com.lihaoyi"          %% "os-lib"       % "0.11.8",
 )
 
 addDependencyTreePlugin
