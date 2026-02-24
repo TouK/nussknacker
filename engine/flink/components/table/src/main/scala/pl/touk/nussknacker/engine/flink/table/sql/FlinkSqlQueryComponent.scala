@@ -8,8 +8,7 @@ import pl.touk.nussknacker.engine.api.{Context, Context => NkContext, NodeId, Va
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
 import pl.touk.nussknacker.engine.flink.table.sql.FlinkSqlQueryComponentFactory.SqlQuery
-
-import QueryContextSchema.NuContextExtension
+import pl.touk.nussknacker.engine.flink.table.sql.QueryContextSchema.NuContextExtension
 
 class FlinkSqlQueryComponent(query: SqlQuery, contextSchema: QueryContextSchema, nodeId: NodeId)
     extends FlinkCustomStreamTransformation
