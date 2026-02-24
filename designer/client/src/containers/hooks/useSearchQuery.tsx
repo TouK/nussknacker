@@ -88,6 +88,8 @@ export function useSearchQuery<T extends QueryRecord>(): [T, (v: T) => void] {
     return [parsed, updateQuery];
 }
 
+const SEARCH_QUERY_CHANGE_EVENT = "searchQueryChange";
+
 export function replaceSearchQuery(value: QueryRecord): void;
 export function replaceSearchQuery(update: (current: QueryRecord) => QueryRecord): void;
 export function replaceSearchQuery(callback: ((current: QueryRecord) => QueryRecord) | QueryRecord): void {
@@ -97,7 +99,7 @@ export function replaceSearchQuery(callback: ((current: QueryRecord) => QueryRec
     const params = typeof callback === "function" ? callback(parseQuery()) : callback;
     currentURL.search = stringifyQuery(params);
     history.replaceState(currentState, "", currentURL.href);
-    window.dispatchEvent(new PopStateEvent("popstate", { state: currentState }));
+    window.dispatchEvent(new CustomEvent(SEARCH_QUERY_CHANGE_EVENT));
 }
 
 export function useSearchQueryParam(key: string): string | undefined {
@@ -105,9 +107,9 @@ export function useSearchQueryParam(key: string): string | undefined {
     const [value, setValue] = useState<string | undefined>(getParam);
 
     useEffect(() => {
-        const onPopState = () => setValue(getParam());
-        window.addEventListener("popstate", onPopState);
-        return () => window.removeEventListener("popstate", onPopState);
+        const onSearchQueryChange = () => setValue(getParam());
+        window.addEventListener(SEARCH_QUERY_CHANGE_EVENT, onSearchQueryChange);
+        return () => window.removeEventListener(SEARCH_QUERY_CHANGE_EVENT, onSearchQueryChange);
     }, [getParam]);
 
     return value;
