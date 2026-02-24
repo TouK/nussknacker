@@ -3,17 +3,16 @@ package pl.touk.nussknacker.engine.kafka
 import com.typesafe.scalalogging.LazyLogging
 import kafka.server
 import kafka.server.{KafkaRaftServer, Server}
-import kafka.tools.StorageTool
 import org.apache.commons.io.FileUtils
-import org.apache.commons.io.output.NullOutputStream
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerConfig}
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.{IsolationLevel, Uuid}
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringSerializer}
 import org.apache.kafka.common.utils.Time
-import org.apache.kafka.server.common.MetadataVersion
+import org.apache.kafka.metadata.storage.Formatter
 
-import java.io.{File, PrintStream}
+import java.io.{ByteArrayOutputStream, File, PrintStream}
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.{Locale, Properties}
 import scala.language.implicitConversions
@@ -21,7 +20,7 @@ import scala.util.control.NonFatal
 
 // We should consider switching to KafkaClusterTestKit (https://github.com/apache/kafka/blob/3.6/core/src/test/java/kafka/testkit/KafkaClusterTestKit.java),
 // it's used by spring-kafka (https://github.com/spring-projects/spring-kafka/blob/3.1.x/spring-kafka-test/src/main/java/org/springframework/kafka/test/EmbeddedKafkaKraftBroker.java).
-object EmbeddedKafkaKraftServer {
+object EmbeddedKafkaKraftServer extends LazyLogging {
 
   private val localhost: String = "127.0.0.1"
 
@@ -32,11 +31,12 @@ object EmbeddedKafkaKraftServer {
   ): EmbeddedKafkaKraftServer = {
     val kafkaServerLogDir = Files.createTempDirectory("embeddedKafka").toFile
     val clusterId         = Uuid.randomUuid()
+    val nodeId            = 1
     val kafkaConfig =
-      prepareKafkaServerConfig(brokerPort, controllerPort, kafkaServerLogDir, kafkaBrokerConfig, clusterId)
+      prepareKafkaServerConfig(brokerPort, controllerPort, kafkaServerLogDir, kafkaBrokerConfig, clusterId, nodeId)
     val kafkaServer = new EmbeddedKafkaKraftServer(
       () => {
-        prepareRaftStorage(kafkaServerLogDir, kafkaConfig, clusterId)
+        prepareRaftStorage(kafkaServerLogDir, clusterId, nodeId)
         new KafkaRaftServer(kafkaConfig, time = Time.SYSTEM)
       },
       s"$localhost:$brokerPort",
@@ -51,16 +51,17 @@ object EmbeddedKafkaKraftServer {
       controllerPort: Int,
       logDir: File,
       kafkaBrokerConfig: Map[String, String],
-      clusterId: Uuid
+      clusterId: Uuid,
+      nodeId: Int
   ) = {
     val properties = new Properties()
-    properties.setProperty("node.id", "0")
+    properties.setProperty("node.id", nodeId.toString)
     properties.setProperty("process.roles", "broker,controller")
     properties.setProperty("listeners", s"PLAINTEXT://$localhost:$brokerPort,CONTROLLER://$localhost:$controllerPort")
     properties.setProperty("listener.security.protocol.map", s"PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT")
     properties.setProperty("controller.listener.names", s"CONTROLLER")
     properties.setProperty("inter.broker.listener.name", "PLAINTEXT")
-    properties.setProperty("controller.quorum.voters", s"0@$localhost:$controllerPort")
+    properties.setProperty("controller.quorum.voters", s"$nodeId@$localhost:$controllerPort")
     properties.setProperty("cluster.id", clusterId.toString)
     properties.setProperty("num.partitions", "1")
     properties.setProperty("group.initial.rebalance.delay.ms", "0")
@@ -80,14 +81,21 @@ object EmbeddedKafkaKraftServer {
     new server.KafkaConfig(properties)
   }
 
-  private def prepareRaftStorage(logDir: File, kafkaConfig: server.KafkaConfig, clusterId: Uuid) = {
-    StorageTool.formatCommand(
-      new PrintStream(NullOutputStream.INSTANCE),
-      Seq(logDir.getAbsolutePath),
-      StorageTool.buildMetadataProperties(clusterId.toString, kafkaConfig),
-      MetadataVersion.LATEST_PRODUCTION,
-      ignoreFormatted = false
-    )
+  private def prepareRaftStorage(logDir: File, clusterId: Uuid, nodeId: Int): Unit = {
+    val logStream = new ByteArrayOutputStream()
+    try {
+      val logDirAsString = logDir.getAbsolutePath
+      val formatter = new Formatter()
+        .setPrintStream(new PrintStream(logStream))
+        .setClusterId(clusterId.toString)
+        .setNodeId(nodeId)
+        .setControllerListenerName("CONTROLLER")
+        .setMetadataLogDirectory(logDirAsString)
+        .addDirectory(logDirAsString)
+      formatter.run()
+    } finally {
+      logStream.toString(StandardCharsets.UTF_8).trim.linesIterator.foreach(logger.info("[init] {}", _))
+    }
   }
 
 }
