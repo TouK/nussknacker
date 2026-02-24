@@ -248,7 +248,7 @@ val flinkScalaV           = "1.1.6"
 val calciteV              = "1.32.0"
 val avroV                 = "1.12.1"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV                = "3.8.1"
+val kafkaV                = "3.9.2"
 // when updating note that we have copied and modified class org.springframework.expression.spel.ast.Projection
 // and org.springframework.util.NumberUtils and org.springframework.expression.spel.ast.Selection
 val springV               = "6.2.15"
