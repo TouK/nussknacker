@@ -317,6 +317,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8903](https://github.com/TouK/nussknacker/pull/8903) Updated Flink dependency to 1.20.3, Scala to 2.13.18
 * [#8903](https://github.com/TouK/nussknacker/pull/8946) Fix default Kafka EOS configuration on Flink to use a unique transactional id prefix
 * [#9002](https://github.com/TouK/nussknacker/pull/9002)[#9009](https://github.com/TouK/nussknacker/pull/9009) Updated Kafka client 3.6.2 to 3.9.1
+* [#9004](https://github.com/TouK/nussknacker/pull/9004) Added `Flink SQL Query` component
 
 ## 1.18
 
