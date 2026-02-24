@@ -3,17 +3,15 @@ package pl.touk.nussknacker.engine.kafka
 import com.typesafe.scalalogging.LazyLogging
 import kafka.server
 import kafka.server.{KafkaRaftServer, Server}
-import kafka.tools.StorageTool
 import org.apache.commons.io.FileUtils
-import org.apache.commons.io.output.NullOutputStream
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerConfig}
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.{IsolationLevel, Uuid}
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringSerializer}
 import org.apache.kafka.common.utils.Time
-import org.apache.kafka.server.common.MetadataVersion
+import org.apache.kafka.metadata.storage.Formatter
 
-import java.io.{File, PrintStream}
+import java.io.File
 import java.nio.file.Files
 import java.util.{Locale, Properties}
 import scala.language.implicitConversions
@@ -36,7 +34,7 @@ object EmbeddedKafkaKraftServer {
       prepareKafkaServerConfig(brokerPort, controllerPort, kafkaServerLogDir, kafkaBrokerConfig, clusterId)
     val kafkaServer = new EmbeddedKafkaKraftServer(
       () => {
-        prepareRaftStorage(kafkaServerLogDir, kafkaConfig, clusterId)
+        prepareRaftStorage(kafkaServerLogDir, clusterId)
         new KafkaRaftServer(kafkaConfig, time = Time.SYSTEM)
       },
       s"$localhost:$brokerPort",
@@ -80,14 +78,14 @@ object EmbeddedKafkaKraftServer {
     new server.KafkaConfig(properties)
   }
 
-  private def prepareRaftStorage(logDir: File, kafkaConfig: server.KafkaConfig, clusterId: Uuid) = {
-    StorageTool.formatCommand(
-      new PrintStream(NullOutputStream.INSTANCE),
-      Seq(logDir.getAbsolutePath),
-      StorageTool.buildMetadataProperties(clusterId.toString, kafkaConfig),
-      MetadataVersion.LATEST_PRODUCTION,
-      ignoreFormatted = false
-    )
+  private def prepareRaftStorage(logDir: File, clusterId: Uuid): Unit = {
+    new Formatter()
+      .setClusterId(clusterId.toString)
+      .setNodeId(1)
+      .setControllerListenerName("CONTROLLER")
+      .setMetadataLogDirectory(logDir.getAbsolutePath)
+      .addDirectory(logDir.getAbsolutePath)
+      .run()
   }
 
 }
