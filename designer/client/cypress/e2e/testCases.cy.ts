@@ -116,6 +116,10 @@ describe("Test cases", () => {
         expandAssertionItem("Log");
 
         cy.get('[data-testid="assertion-results-panel"]').matchImage();
+
+        openTestingDetails("Log");
+
+        cy.location("search", { timeout: 5000 }).should("match", /activeTab=testing&nodeId=Log/i);
     });
 });
 
@@ -198,4 +202,8 @@ const verifyMockData = (mockValue: string) => {
 
 const expandAssertionItem = (nodeId: string) => {
     cy.get(`[id="${nodeId}-header"]`).click();
+};
+
+const openTestingDetails = (nodeId: string) => {
+    cy.get(`[id="${nodeId}-header"]`).find('[data-testid="OpenInNewIcon"]').click();
 };
