@@ -35,7 +35,7 @@ export const InfoTooltipClick = ({ title, className, customComponentsProps, ente
         <ClickAwayListener onClickAway={handleClickAway}>
             <Tooltip
                 title={<div ref={tooltipRef}>{title}</div>}
-                placement={"bottom-start"}
+                placement={"right"}
                 arrow
                 open={tooltipOpen}
                 onClose={handleSetTooltipClose}

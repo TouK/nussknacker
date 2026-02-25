@@ -1,5 +1,5 @@
 import type { TooltipProps } from "@mui/material";
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import React from "react";
 
 import { InfoTooltipClick } from "./InfoTooltipClick";
@@ -8,7 +8,7 @@ import { StyledInfo } from "./StyledInfo";
 import StyledInfoMarkdown from "./StyledInfoMarkdown";
 
 export interface InfoTooltipProps {
-    title: string | undefined;
+    title: ReactNode | undefined;
     variant?: "hover" | "click";
     children?: ReactElement;
     className?: string;
@@ -30,7 +30,7 @@ export const InfoTooltip = ({
 
     return variant === "hover" ? (
         <InfoTooltipHover
-            title={<StyledInfoMarkdown>{title}</StyledInfoMarkdown>}
+            title={typeof title === "string" ? <StyledInfoMarkdown>{title}</StyledInfoMarkdown> : title}
             className={className}
             customComponentsProps={customComponentsProps}
             enterDelay={enterDelay}
@@ -39,7 +39,7 @@ export const InfoTooltip = ({
         </InfoTooltipHover>
     ) : (
         <InfoTooltipClick
-            title={<StyledInfoMarkdown>{title}</StyledInfoMarkdown>}
+            title={typeof title === "string" ? <StyledInfoMarkdown>{title}</StyledInfoMarkdown> : title}
             className={className}
             customComponentsProps={customComponentsProps}
             enterDelay={enterDelay}

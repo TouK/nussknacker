@@ -64,7 +64,7 @@ export const InfoTooltipHover = ({ title, className, children, customComponentsP
                     {title}
                 </Box>
             }
-            placement="bottom-start"
+            placement="right-start"
             arrow
             open={tooltipOpen}
             onClose={handleSetTooltipClose}
