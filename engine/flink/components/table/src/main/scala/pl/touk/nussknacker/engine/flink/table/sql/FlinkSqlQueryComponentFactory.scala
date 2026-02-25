@@ -46,6 +46,7 @@ object FlinkSqlQueryComponentFactory
     .mandatory[String](flinkSqlQueryParameterName)
     .withCreator(
       modify = _.copy(
+        labelOpt = Some("Query"),
         editors = List(SqlParameterEditor),
         hintText = Some(
           "Flink SQL query starting with SELECT or WITH. Upstream variables are available under 'context' table. " +
