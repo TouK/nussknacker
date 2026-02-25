@@ -1042,7 +1042,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       processValidator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     validationResult should matchPattern {
-      case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil, None), ValidationWarnings.success, _)
+      case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil, None), ValidationWarnings.success, _, _)
           if invalidNodes(NodeId("subIn")).size == 1 && invalidNodes(NodeId("subIn-subVar")).size == 1 =>
     }
   }
@@ -2273,7 +2273,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         isFragment = false,
         labels = List.empty
       )
-    inside(result) { case ValidationResult(errors, _, _) =>
+    inside(result) { case ValidationResult(errors, _, _, _) =>
       inside(errors) { case ValidationErrors(nodeErrors, propertiesErrors, _, _) =>
         nodeErrors should contain key NodeId(" ")
         nodeErrors(NodeId(" ")) should contain(

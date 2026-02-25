@@ -63,7 +63,7 @@ export function useNodeDetailsButtons({
     close: () => void;
     readOnly?: boolean;
 }) {
-    const applyDisabled = useMemo(() => !editedNode["$id" in editedNode ? "$id" : "id"]?.length, [editedNode]);
+    const applyDisabled = useMemo(() => !editedNode["$name" in editedNode ? "$name" : "name"]?.length, [editedNode]);
     const onApply = useCallback(() => performNodeEdit(editedNode, outputEdges), [performNodeEdit, editedNode, outputEdges]);
     return useDialogActions({ readOnly, onApply, onClose: close, paused: applyDisabled });
 }
@@ -145,8 +145,8 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     useOnToolWindow(ToolId.node, node.id);
 
     const nodeId = useMemo(() => {
-        return uniq([editedNode.$id, editedNode.id, node.id].filter(Boolean));
-    }, [editedNode.$id, editedNode.id, node.id]);
+        return uniq([editedNode.id, node.id].filter(Boolean));
+    }, [editedNode.id, node.id]);
 
     const generalContent = useMemo(
         () => <GeneralContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />,

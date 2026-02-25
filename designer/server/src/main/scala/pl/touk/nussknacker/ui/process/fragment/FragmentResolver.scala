@@ -10,6 +10,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class FragmentResolver(fragmentRepository: FragmentRepository) {
 
+  def fetchFragmentsSync(
+      processingType: ProcessingType
+  )(implicit user: LoggedUser): List[CanonicalProcess] =
+    fragmentRepository.fetchLatestFragmentsSync(processingType)
+
   def resolveFragments(
       process: CanonicalProcess,
       processingType: ProcessingType

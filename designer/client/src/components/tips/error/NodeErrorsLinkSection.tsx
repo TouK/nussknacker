@@ -21,6 +21,7 @@ interface NodeErrorsLinkSectionProps {
 export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps): React.JSX.Element {
     const { nodeIds, message, showDetails, scenario } = props;
     const separator = ", ";
+    const nodeNames = scenario.validationResult?.nodeNames;
 
     return (
         !isEmpty(nodeIds) && (
@@ -29,7 +30,11 @@ export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps)
                 {nodeIds.map((nodeId, index) => {
                     const isFragmentNodeReference = NodeUtils.isFragmentNodeReference(nodeId, scenario.scenarioGraph);
                     if (isFragmentNodeReference) {
-                        const { fragmentId, fragmentNodeId } = NodeUtils.getDetailsFromFragmentNode(nodeId, scenario.scenarioGraph);
+                        const { fragmentId, fragmentNodeId, fragmentName } = NodeUtils.getDetailsFromFragmentNode(
+                            nodeId,
+                            scenario.scenarioGraph,
+                        );
+                        const displayName = nodeNames?.[nodeId] ?? (fragmentNodeId ? `${fragmentName} - ${fragmentNodeId}` : fragmentName);
                         return (
                             <React.Fragment key={nodeId}>
                                 <ErrorLinkStyle
@@ -38,7 +43,7 @@ export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps)
                                     target={"_blank"}
                                     to={visualizationUrl(fragmentId, fragmentNodeId)}
                                 >
-                                    {nodeId}
+                                    {displayName}
                                 </ErrorLinkStyle>
                                 {index < nodeIds.length - 1 ? separator : null}
                             </React.Fragment>
@@ -47,7 +52,12 @@ export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps)
                     const details = NodeUtils.getNodeById(nodeId, scenario.scenarioGraph);
                     return (
                         <React.Fragment key={nodeId}>
-                            <NodeErrorLink onClick={(event) => showDetails(event, details)} nodeId={nodeId} disabled={!details} />
+                            <NodeErrorLink
+                                onClick={(event) => showDetails(event, details)}
+                                nodeId={nodeId}
+                                nodeName={nodeNames?.[nodeId] ?? details?.name}
+                                disabled={!details}
+                            />
                             {index < nodeIds.length - 1 ? separator : null}
                         </React.Fragment>
                     );

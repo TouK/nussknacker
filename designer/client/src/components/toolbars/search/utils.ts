@@ -17,7 +17,7 @@ type FilterSelector = { name: string; selector: Selector }[];
 const fieldsSelectors: FilterSelector = [
     {
         name: "name",
-        selector: (node) => node.id,
+        selector: (node) => node.name,
     },
     {
         name: "description",
