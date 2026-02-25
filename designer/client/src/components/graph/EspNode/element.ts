@@ -82,7 +82,9 @@ export const updateNodeCounts =
     (node: shapes.devs.Model): void => {
         if (userSettings["debug.dontRenderCountsOnNodes"]) return;
         const shortCounts = userSettings["node.shortCounts"];
-        const count = processCounts[node.id];
+        const nodeData = node.get("nodeData") as NodeType | undefined;
+        const lookupKey = nodeData?.name || node.id;
+        const count = processCounts[lookupKey];
         const hasCounts = !isEmpty(count);
         const hasErrors = count?.errors > 0;
         const testCounts = getTestCounts(count, shortCounts);
