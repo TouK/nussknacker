@@ -16,8 +16,27 @@ import { useUsagesFilterContext } from "./useUsagesFilterContext";
 
 const icon = <LinkIcon />;
 
-export function getNodeName({ fragmentNodeId, nodeId }: Pick<NodeUsageData, "fragmentNodeId" | "nodeId">): string {
-    return fragmentNodeId ? `${nodeId} ❮${fragmentNodeId}❯` : nodeId;
+export function getNodeName({
+    fragmentNodeId,
+    fragmentNodeName,
+    nodeId,
+    nodeName,
+}: Pick<NodeUsageData, "fragmentNodeId" | "fragmentNodeName" | "nodeId" | "nodeName">): string {
+    const directNode = nodeId || nodeName || "";
+    const fragmentNode = fragmentNodeId || fragmentNodeName;
+    return fragmentNode ? `${directNode} ❮${fragmentNode}❯` : directNode;
+}
+
+export function getNodeSearchText({
+    fragmentNodeId,
+    fragmentNodeName,
+    nodeId,
+    nodeName,
+}: Pick<NodeUsageData, "fragmentNodeId" | "fragmentNodeName" | "nodeId" | "nodeName">): string {
+    return [nodeId, nodeName, fragmentNodeId, fragmentNodeName]
+        .filter((value): value is string => Boolean(value && value.trim()))
+        .join(" ")
+        .toLowerCase();
 }
 
 const nodesFilterRules = createFilterRules<NodeUsageData, UsagesFiltersModel>({
@@ -37,7 +56,7 @@ export const NodesCell = ({
     const filterSegments = useMemo(() => filterText?.toLowerCase().toString().trim().split(/\s/) || [], [filterText]);
 
     const countMatches = useCallback(
-        (node: NodeUsageData) => filterSegments.filter((segment) => getNodeName(node).includes(segment)).length,
+        (node: NodeUsageData) => filterSegments.filter((segment) => getNodeSearchText(node).includes(segment)).length,
         [filterSegments],
     );
 

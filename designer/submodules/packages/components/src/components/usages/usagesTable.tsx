@@ -14,18 +14,19 @@ import { ScenarioStatusFormatted } from "../cellRenderers/scenarioStatusFormatte
 import { TableWrapper } from "../tableWrapper";
 import type { Columns, TableViewData } from "../tableWrapper";
 import type { UsageWithStatus } from "../useComponentsQuery";
-import { getNodeName, NodesCell } from "./nodesCell";
+import { getNodeSearchText, NodesCell } from "./nodesCell";
 import { ScenarioCell } from "./scenarioCell";
 import { USAGES_FILTER, UsagesFiltersModelType, UsagesFiltersUsageType } from "./usagesFiltersModel";
 import type { UsagesFiltersModel } from "./usagesFiltersModel";
 import { useUsagesFilterContext } from "./useUsagesFilterContext";
 
 export function nodeFilter(f, u: NodeUsageData) {
+    const hasFragmentReference = Boolean(u.fragmentNodeId || u.fragmentNodeName);
     switch (f) {
         case UsagesFiltersUsageType.INDIRECT:
-            return u.fragmentNodeId;
+            return hasFragmentReference;
         case UsagesFiltersUsageType.DIRECT:
-            return !u.fragmentNodeId;
+            return !hasFragmentReference;
     }
     return false;
 }
@@ -180,7 +181,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                             .map(({ field }) => {
                                 switch (field) {
                                     case "nodesUsagesData":
-                                        return row[field]?.map(getNodeName).toString().toLowerCase();
+                                        return row[field]?.map(getNodeSearchText).toString();
                                     default:
                                         return row[field]?.toString().toLowerCase();
                                 }
