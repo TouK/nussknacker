@@ -30,6 +30,8 @@ class NodeUtils {
     getNodeById = (nodeId: NodeId, scenarioGraph?: ScenarioGraph) =>
         this.nodesFromScenarioGraph(scenarioGraph).find((n) => n.id === nodeId);
 
+    getNodeByName = (name: string, scenarioGraph: ScenarioGraph) => this.nodesFromScenarioGraph(scenarioGraph).find((n) => n.name === name);
+
     getEdgeById = (edgeId: NodeId, scenarioGraph: ScenarioGraph) =>
         this.edgesFromScenarioGraph(scenarioGraph).find((e) => this.edgeId(e) === edgeId);
 

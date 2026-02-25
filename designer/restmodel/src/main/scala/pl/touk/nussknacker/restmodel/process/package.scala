@@ -24,6 +24,7 @@ package object process {
       errors: ValidationErrors,
       warnings: ValidationWarnings,
       nodeResults: Map[String, NodeTypingData],
+      nodeNames: Map[String, String] = Map.empty,
       newVersion: Option[VersionId]
   )
 
