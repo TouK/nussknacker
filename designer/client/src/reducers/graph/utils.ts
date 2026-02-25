@@ -1,6 +1,7 @@
 import { produce } from "immer";
 import type { Dictionary } from "lodash";
 import { cloneDeep, mapValues, reject, snakeCase, zipObject } from "lodash";
+import { v4 as uuidv4 } from "uuid";
 
 import type { NodesWithPositions } from "../../actions/nk/node";
 import type { NodePosition } from "../../actions/nk/ui/layout";
@@ -78,6 +79,20 @@ export function getIdMapping(currentNodes: Pick<NodeType, "id">[], newNodes: Pic
     return zipObject(initialIds, uniqueIds);
 }
 
+function getNameMapping(
+    currentNodes: Pick<NodeType, "id" | "name">[],
+    newNodes: Pick<NodeType, "id" | "name">[],
+    isCopy?: boolean,
+): Dictionary<string> {
+    const alreadyUsedNames = currentNodes.map((node) => node.name).filter(Boolean);
+    const initialNames = newNodes.map((node) => node.name);
+    const uniqueNames = getUniqueIds(initialNames, alreadyUsedNames, isCopy);
+    return zipObject(
+        newNodes.map((n) => n.id),
+        uniqueNames,
+    );
+}
+
 export function prepareNewNodesWithLayout(
     currentNodes: NodeType[] = [],
     newNodesWithPositions: NodesWithPositions,
@@ -87,28 +102,30 @@ export function prepareNewNodesWithLayout(
     nodes: NodeType[];
     idMapping: Dictionary<string>;
 } {
-    const idMapping = getIdMapping(
-        currentNodes,
-        newNodesWithPositions.map((p) => p.node),
-        isCopy,
+    const newNodes = newNodesWithPositions.map((p) => p.node);
+    const uuidMapping: Dictionary<string> = zipObject(
+        newNodes.map((n) => n.id),
+        newNodes.map(() => uuidv4()),
     );
+    const nameMapping = getNameMapping(currentNodes, newNodes, isCopy);
     return {
         nodes: newNodesWithPositions.map(({ node, position }) =>
             produce(node, (draft) => {
                 // adjust var names - only for new nodes
                 if (!isCopy) {
                     replaceValue(draft, "ref.outputVariableNames", (value) =>
-                        mapValues(value, (v, k) => snakeCase(`${idMapping[draft.id]} ${k}`)),
+                        mapValues(value, (v, k) => snakeCase(`${nameMapping[node.id]} ${k}`)),
                     );
-                    replaceValue(draft, "output", (value) => snakeCase(`${idMapping[draft.id]} ${value}`));
-                    replaceValue(draft, "varName", (value) => snakeCase(`${idMapping[draft.id]} ${value}`));
-                    replaceValue(draft, "outputName", (value) => snakeCase(`${idMapping[draft.id]} ${value}`));
+                    replaceValue(draft, "output", (value) => snakeCase(`${nameMapping[node.id]} ${value}`));
+                    replaceValue(draft, "varName", (value) => snakeCase(`${nameMapping[node.id]} ${value}`));
+                    replaceValue(draft, "outputName", (value) => snakeCase(`${nameMapping[node.id]} ${value}`));
                 }
-                replaceValue(draft, "id", (value) => idMapping[value]);
+                draft.id = uuidMapping[node.id];
+                draft.name = nameMapping[node.id];
                 replaceValue(draft, "branchParameters", (value) =>
                     value?.map((parameter) => ({
                         ...parameter,
-                        branchId: idMapping[parameter.branchId],
+                        branchId: uuidMapping[parameter.branchId],
                     })),
                 );
                 replaceValue(node, "additionalFields.layoutData", () => snapToInt(position), false);
@@ -117,10 +134,10 @@ export function prepareNewNodesWithLayout(
         layout: newNodesWithPositions
             .filter(({ position }) => Boolean(position))
             .map(({ position, node }) => ({
-                id: idMapping[node.id],
+                id: uuidMapping[node.id],
                 position: snapToInt(position),
             })),
-        idMapping,
+        idMapping: uuidMapping,
     };
 }
 

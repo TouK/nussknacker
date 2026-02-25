@@ -1,10 +1,9 @@
 import type { NodeId, NodeType } from "../../../types/node";
 import type { Validator } from "./editors/Validators";
 
-// wise decision to treat a name as an id forced me to do so.
-// now we have consistent id for validation, branch params etc
-export const PROP_NAME = `id`;
-export const FAKE_NAME_PROP_NAME = "$id";
+// node id is a stable UUID; name is the user-editable label
+export const PROP_NAME = `name`;
+export const FAKE_NAME_PROP_NAME = "$name";
 export const PLACEHOLDER_CHARACTER = `‌`;
 export type EditedNode = NodeType & {
     [FAKE_NAME_PROP_NAME]?: string;
@@ -16,8 +15,9 @@ function isEditingNodeId(node: EditedNode | NodeType): node is EditedNode {
 
 export function applyIdFromFakeName(node: EditedNode): NodeType {
     if (!isEditingNodeId(node)) return node;
-    const { [FAKE_NAME_PROP_NAME]: name, ...rest } = node;
-    return { ...rest, [PROP_NAME]: name ?? node[PROP_NAME] };
+    const { [FAKE_NAME_PROP_NAME]: editedName, ...rest } = node;
+    const newName = editedName ?? node[PROP_NAME];
+    return { ...rest, [PROP_NAME]: newName };
 }
 
 export function getCurrentEditedId(node: EditedNode): NodeId {
