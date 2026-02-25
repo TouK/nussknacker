@@ -1,0 +1,51 @@
+{
+  "metaData": {
+    "id": "test-join",
+    "additionalFields": {
+      "properties": {},
+      "metaDataType": "StreamMetaData"
+    }
+  },
+  "nodes": [
+    {
+      "type": "Join",
+      "id": "join1",
+      "outputVar": "joinOut",
+      "nodeType": "union",
+      "parameters": [],
+      "branchParameters": [
+        { "branchId": "source1", "parameters": [] },
+        { "branchId": "source2", "parameters": [] }
+      ]
+    },
+    {
+      "type": "Sink",
+      "id": "sink1",
+      "ref": { "typ": "kafka", "parameters": [] }
+    }
+  ],
+  "additionalBranches": [
+    [
+      {
+        "type": "Source",
+        "id": "source1",
+        "ref": { "typ": "kafka", "parameters": [] }
+      },
+      {
+        "type": "BranchEndData",
+        "definition": { "id": "source1", "joinId": "join1" }
+      }
+    ],
+    [
+      {
+        "type": "Source",
+        "id": "source2",
+        "ref": { "typ": "kafka", "parameters": [] }
+      },
+      {
+        "type": "BranchEndData",
+        "definition": { "id": "source2", "joinId": "join1" }
+      }
+    ]
+  ]
+}
