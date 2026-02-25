@@ -85,7 +85,7 @@ function getNameMapping(
     isCopy?: boolean,
 ): Dictionary<string> {
     const alreadyUsedNames = currentNodes.map((node) => node.name ?? node.id).filter(Boolean);
-    const initialNames = newNodes.map((node) => node.name ?? node.id);
+    const initialNames = newNodes.map((node) => node.name || node.id);
     const uniqueNames = getUniqueIds(initialNames, alreadyUsedNames, isCopy);
     return zipObject(
         newNodes.map((n) => n.id),

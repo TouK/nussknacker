@@ -67,7 +67,7 @@ export const getSelectionState = createSelector(getGraph, (g) => g.selectionStat
 export const canModifySelectedNodes = createSelector(getSelectionState, (s) => !isEmpty(s));
 export const getProcessNodesIds = createSelector(getNodes, (nodes) => nodes.map((n) => n.id));
 export const getProcessNodesNames = createSelector(getNodes, (nodes) => nodes.map((n) => n.name));
-export const hasNodeWithIdPlaceholder = createSelector(getProcessNodesNames, (nodes) => nodes?.some(hasNodeIdPlaceholder));
+export const hasNodeWithIdPlaceholder = createSelector(getProcessNodesNames, (nodes) => nodes?.some((n) => n && hasNodeIdPlaceholder(n)));
 export const isSaveDisabled = createSelector(
     [isPristine, isLatestProcessVersion, hasNodeWithIdPlaceholder],
     (pristine, latest, hasNodeWithIdPlaceholder) => (pristine && latest) || hasNodeWithIdPlaceholder,
