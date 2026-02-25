@@ -235,12 +235,16 @@ class NodeUtils {
         return !isNodePresentInScenarioGraph && scenarioGraph.nodes.some((n) => nodeId.startsWith(n.id));
     };
 
-    getDetailsFromFragmentNode = (nodeId: NodeId, scenarioGraph: ScenarioGraph): { fragmentId: string; fragmentNodeId: string } | null => {
+    getDetailsFromFragmentNode = (
+        nodeId: NodeId,
+        scenarioGraph: ScenarioGraph,
+    ): { fragmentId: string; fragmentNodeId: string; fragmentName: string } | null => {
         if (this.isFragmentNodeReference(nodeId, scenarioGraph)) {
             const fragment = scenarioGraph.nodes.find((n) => nodeId.startsWith(n.id));
             return {
                 fragmentId: fragment.ref?.id,
                 fragmentNodeId: nodeId.replace(`${fragment.id}-`, ""),
+                fragmentName: fragment.name,
             };
         }
         return null;

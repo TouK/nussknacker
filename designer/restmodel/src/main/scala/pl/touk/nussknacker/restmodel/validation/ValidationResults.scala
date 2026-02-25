@@ -23,7 +23,8 @@ object ValidationResults {
   @JsonCodec final case class ValidationResult(
       errors: ValidationErrors,
       warnings: ValidationWarnings,
-      nodeResults: Map[String, NodeTypingData]
+      nodeResults: Map[String, NodeTypingData],
+      nodeNames: Map[String, String] = Map.empty
   ) {
     // At the moment, test cases validation errors are not considered as blocking errors, e.g. during deployment
     val hasErrors: Boolean   = errors.copy(testCasesValidationErrors = None) != ValidationErrors.success
@@ -40,11 +41,15 @@ object ValidationResults {
       ValidationWarnings(
         warnings.invalidNodes.combine(other.warnings.invalidNodes)
       ),
-      nodeResults ++ other.nodeResults
+      nodeResults ++ other.nodeResults,
+      nodeNames ++ other.nodeNames
     )
 
     def withNodeResults(nodeResults: Map[String, NodeTypingData]): ValidationResult =
       copy(nodeResults = nodeResults)
+
+    def withNodeNames(names: Map[String, String]): ValidationResult =
+      copy(nodeNames = names)
 
     def renderNotAllowedErrors: List[NodeValidationError] =
       allErrors.filter(_.errorType == NodeValidationErrorType.RenderNotAllowed)

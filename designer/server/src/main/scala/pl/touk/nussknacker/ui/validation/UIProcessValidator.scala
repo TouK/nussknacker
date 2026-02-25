@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.graph.{Edge, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
 import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessValidator}
-import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
+import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInput, FragmentInputDefinition, NodeData, Source}
 import pl.touk.nussknacker.engine.test.testcase.TestCases
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
@@ -117,7 +117,14 @@ class UIProcessValidator(
       // CanonicalProcess validation.
       deduplicateErrors(uiValidationResult.add(canonicalValidation))
     } else {
-      uiValidationResult
+      val errorAndWarningNodeIds =
+        (uiValidationResult.errors.invalidNodes.keys ++
+          uiValidationResult.warnings.invalidNodes.keys).map(_.value).toSet
+      val nodeNamesForErrors = scenarioGraph.nodes
+        .filter(n => errorAndWarningNodeIds.contains(n.id.value))
+        .map(n => n.id.value -> n.name.value)
+        .toMap
+      uiValidationResult.withNodeNames(nodeNamesForErrors)
     }
   }
 
@@ -174,7 +181,8 @@ class UIProcessValidator(
 
           // TODO: handle types when fragment resolution fails
           val validationResult = resolvedScenarioResult match {
-            case Invalid(fragmentResolutionErrors) => formatErrors(fragmentResolutionErrors)
+            case Invalid(fragmentResolutionErrors) =>
+              formatErrors(fragmentResolutionErrors)
             case Valid(scenario) =>
               val validationResult = validateAndFormatResult(scenario)
               val containsDisabledNodes = canonical.collectAllNodes.exists {
@@ -185,7 +193,8 @@ class UIProcessValidator(
                 val resolvedScenarioWithoutDisabledNodes =
                   fragmentResolver.resolveFragments(canonical.withoutDisabledNodes, processingType)
                 resolvedScenarioWithoutDisabledNodes match {
-                  case Invalid(fragmentResolutionErrors)   => formatErrors(fragmentResolutionErrors)
+                  case Invalid(fragmentResolutionErrors) =>
+                    formatErrors(fragmentResolutionErrors)
                   case Valid(scenarioWithoutDisabledNodes) =>
                     // FIXME: Validation errors for fragment nodes are not properly handled by FE
                     // We add typing data from disabled nodes to have typing and suggestions for expressions in disabled nodes
@@ -196,10 +205,48 @@ class UIProcessValidator(
                 validationResult
               }
           }
-          validationResult.add(additionalValidatorErrors)
+          val finalResult = validationResult.add(additionalValidatorErrors)
+          finalResult.withNodeNames(resolveNodeNamesForResult(finalResult, canonical))
         }
       }
       .unsafeRunSync()
+  }
+
+  private def resolveNodeNamesForResult(
+      result: ValidationResult,
+      canonical: CanonicalProcess
+  )(implicit loggedUser: LoggedUser): Map[String, String] = {
+    val referencedNodeIds =
+      (result.errors.invalidNodes.keys ++ result.warnings.invalidNodes.keys).map(_.value).toSet
+
+    if (referencedNodeIds.isEmpty) return Map.empty
+
+    val canonicalNodesById = canonical.collectAllNodes.map(n => n.id.value -> n).toMap
+
+    lazy val fragmentsByName =
+      fragmentResolver.fetchFragmentsSync(processingType).map(f => f.name.value -> f).toMap
+
+    referencedNodeIds.flatMap { nodeId =>
+      canonicalNodesById.get(nodeId) match {
+        case Some(node) => Some(nodeId -> node.name.value)
+        case None =>
+          canonicalNodesById.keys
+            .find(outerNodeId => nodeId.startsWith(outerNodeId + "-"))
+            .flatMap { outerNodeId =>
+              val outerNode   = canonicalNodesById(outerNodeId)
+              val innerNodeId = nodeId.drop(outerNodeId.length + 1)
+              outerNode match {
+                case fi: FragmentInput =>
+                  fragmentsByName.get(fi.ref.id).flatMap { fragmentCanonical =>
+                    fragmentCanonical.collectAllNodes
+                      .find(_.id.value == innerNodeId)
+                      .map(innerNode => nodeId -> s"${outerNode.name.value} - ${innerNode.name.value}")
+                  }
+                case _ => None
+              }
+            }
+      }
+    }.toMap
   }
 
   private def nodeInfoToResult(typingInfo: NodeTypingInfo) = NodeTypingData(
