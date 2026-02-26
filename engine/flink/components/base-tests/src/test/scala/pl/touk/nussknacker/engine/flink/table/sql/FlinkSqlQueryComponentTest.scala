@@ -53,7 +53,7 @@ class FlinkSqlQueryComponentTest
     .withExtraComponents(additionalComponents)
     .build()
 
-  test("should do select on non-record variable from context table") {
+  test("should do select on non-record variable from data_record table") {
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("source", TestScenarioRunner.testDataSource)
@@ -61,7 +61,7 @@ class FlinkSqlQueryComponentTest
         id = "flink-sql-query-query",
         outputVar = "out",
         customNodeRef = "flink-sql-query",
-        "flinkSqlQuery" -> "SELECT input FROM context".spelTemplate
+        "flinkSqlQuery" -> "SELECT input FROM data_record".spelTemplate
       )
       .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#out".spel)
 
@@ -82,7 +82,7 @@ class FlinkSqlQueryComponentTest
         id = "flink-sql-query",
         outputVar = "out",
         customNodeRef = "flink-sql-query",
-        "flinkSqlQuery" -> "SELECT input FROM context".spelTemplate
+        "flinkSqlQuery" -> "SELECT input FROM data_record".spelTemplate
       )
       .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#out.getField(0) + 1".spel)
 
@@ -99,7 +99,7 @@ class FlinkSqlQueryComponentTest
         id = "flink-sql-query",
         outputVar = "out",
         customNodeRef = "flink-sql-query",
-        "flinkSqlQuery" -> "SELECT input.keyA FROM context".spelTemplate
+        "flinkSqlQuery" -> "SELECT input.keyA FROM data_record".spelTemplate
       )
       .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#out".spel)
 
@@ -126,7 +126,7 @@ class FlinkSqlQueryComponentTest
         id = "flink-sql-query",
         outputVar = "out",
         customNodeRef = "flink-sql-query",
-        "flinkSqlQuery" -> "SELECT * FROM context".spelTemplate
+        "flinkSqlQuery" -> "SELECT * FROM data_record".spelTemplate
       )
       .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#input".spel)
 
@@ -140,16 +140,16 @@ class FlinkSqlQueryComponentTest
     }
   }
 
-  test("should raise error when 'event_time' variable is defined in context") {
+  test("should raise error when 'data_record_time' variable is defined in context") {
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("source", TestScenarioRunner.testDataSource)
-      .buildSimpleVariable("variable", "event_time", "'a'".spel)
+      .buildSimpleVariable("variable", "data_record_time", "'a'".spel)
       .customNode(
         id = "flink-sql-query",
         outputVar = "out",
         customNodeRef = "flink-sql-query",
-        "flinkSqlQuery" -> "SELECT * FROM context".spelTemplate
+        "flinkSqlQuery" -> "SELECT * FROM data_record".spelTemplate
       )
       .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#out".spel)
 
@@ -158,7 +158,7 @@ class FlinkSqlQueryComponentTest
     result.invalidValue.toList.loneElement should matchPattern {
       case CustomNodeError(
             NodeId("flink-sql-query"),
-            "Variable 'event_time' is reserved by Flink SQL component for event-time handling. Please rename or remove this variable",
+            "Variable 'data_record_time' is reserved by Flink SQL component for event-time handling. Please rename or remove this variable",
             None
           ) =>
     }
@@ -172,7 +172,7 @@ class FlinkSqlQueryComponentTest
         "Query cannot be empty"
       ),
       (
-        "SELECT notExistingColumn FROM context",
+        "SELECT notExistingColumn FROM data_record",
         "SQL validation failed. From line 1, column 8 to line 1, column 24: Column 'notExistingColumn' not found in any table"
       ),
       (
@@ -180,15 +180,15 @@ class FlinkSqlQueryComponentTest
         "Unsupported SQL query! sqlQuery() only accepts a single SQL query of type SELECT, UNION, INTERSECT, EXCEPT, VALUES, and ORDER_BY."
       ),
       (
-        "SELECT COUNT(*) FROM context",
+        "SELECT COUNT(*) FROM data_record",
         "doesn't support consuming update changes which is produced by node"
       ),
       (
-        "SELECT ABS() FROM context",
+        "SELECT ABS() FROM data_record",
         "Invalid number of arguments to function 'ABS'. Was expecting 1 arguments"
       ),
       (
-        "SELECT NON_EXISTING_FUNCTION(input) FROM context",
+        "SELECT NON_EXISTING_FUNCTION(input) FROM data_record",
         "SQL validation failed. From line 1, column 8 to line 1, column 35: No match found for function signature NON_EXISTING_FUNCTION(<NUMERIC>)"
       ),
       (
@@ -231,7 +231,7 @@ class FlinkSqlQueryComponentTest
              |  input AS key,
              |  COUNT(*) AS `count`
              |FROM TABLE(
-             |  TUMBLE(TABLE context, DESCRIPTOR(event_time), INTERVAL '1' DAY)
+             |  TUMBLE(TABLE data_record, DESCRIPTOR(data_record_time), INTERVAL '1' DAY)
              |)
              |GROUP BY input, window_start, window_end""".stripMargin.spelTemplate
       )
@@ -261,9 +261,9 @@ class FlinkSqlQueryComponentTest
           """|SELECT
              |  input.num AS num,
              |  SUM(input.num) OVER (
-             |    ORDER BY event_time
+             |    ORDER BY data_record_time
              |  ) AS running_sum
-             |FROM context""".stripMargin.spelTemplate
+             |FROM data_record""".stripMargin.spelTemplate
       )
       .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#out".spel)
 
@@ -293,7 +293,7 @@ class FlinkSqlQueryComponentTest
     )
   }
 
-  test("should allow window top-n") {
+  test("should allow Window Top-N") {
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("source", TestScenarioRunner.testDataSource)
@@ -302,19 +302,18 @@ class FlinkSqlQueryComponentTest
         outputVar = "out",
         customNodeRef = "flink-sql-query",
         "flinkSqlQuery" ->
-          """|WITH ranked AS (
+          """|SELECT input AS top_value
+             |FROM (
              |  SELECT
-             |    input AS top_value,
+             |    input,
              |    ROW_NUMBER() OVER (
              |      PARTITION BY window_start, window_end
              |      ORDER BY input DESC
              |    ) AS top_n_position
              |  FROM TABLE(
-             |    TUMBLE(TABLE context, DESCRIPTOR(event_time), INTERVAL '1' DAY)
+             |    TUMBLE(TABLE data_record, DESCRIPTOR(data_record_time), INTERVAL '1' DAY)
              |  )
              |)
-             |SELECT top_value
-             |FROM ranked
              |WHERE top_n_position <= 2
              |""".stripMargin.spelTemplate
       )
@@ -345,7 +344,7 @@ class FlinkSqlQueryComponentTest
              |  window_end,
              |  ARRAY_AGG(input) AS `values`
              |FROM TABLE(
-             |  TUMBLE(TABLE context, DESCRIPTOR(event_time), INTERVAL '1' SECOND)
+             |  TUMBLE(TABLE data_record, DESCRIPTOR(data_record_time), INTERVAL '1' SECOND)
              |)
              |GROUP BY window_start, window_end
              |""".stripMargin.spelTemplate
@@ -387,11 +386,11 @@ class FlinkSqlQueryComponentTest
         "flinkSqlQuery" ->
           """|SELECT first_val, second_val, third_val
              |FROM (
-             |  SELECT input.num AS num, event_time
-             |  FROM context
+             |  SELECT input.num AS num, data_record_time
+             |  FROM data_record
              |)
              |MATCH_RECOGNIZE (
-             |  ORDER BY event_time, num
+             |  ORDER BY data_record_time, num
              |  MEASURES
              |    A.num AS first_val,
              |    B.num AS second_val,
@@ -508,7 +507,7 @@ class FlinkSqlQueryComponentTest
         id = "flink-sql-query",
         outputVar = "out",
         customNodeRef = "flink-sql-query",
-        "flinkSqlQuery" -> s"SELECT input.* FROM context".spelTemplate
+        "flinkSqlQuery" -> s"SELECT input.* FROM data_record".spelTemplate
       )
       .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#out".spel)
 

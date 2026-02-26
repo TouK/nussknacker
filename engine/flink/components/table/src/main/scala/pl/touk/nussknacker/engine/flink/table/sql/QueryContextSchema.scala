@@ -46,8 +46,8 @@ final case class QueryContextSchema(variables: List[VariableSchema]) {
 }
 
 object QueryContextSchema {
-  val contextTableName = "context"
-  val eventTimeColumn  = "event_time"
+  val contextTableName = "data_record"
+  val eventTimeColumn  = "data_record_time"
 
   def fromValidationContext(validationContext: ValidationContext): QueryContextSchema = {
     val contextColumns = validationContext.localVariables.toList.map { case (variableName, typingResult) =>
