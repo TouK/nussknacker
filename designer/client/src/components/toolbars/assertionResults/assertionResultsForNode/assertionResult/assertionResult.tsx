@@ -25,7 +25,13 @@ export const AssertionResult = ({ assertionResult, testCaseAssertion }: Props) =
     const displayTooltip = assertionResult.type === "FailedAssertion" || testCaseAssertion.description;
 
     const content = (
-        <Box display={"flex"} gap={0.75} alignItems={"center"} sx={{ cursor: displayTooltip && "pointer" }}>
+        <Box
+            data-testid={"assertionResult"}
+            display={"flex"}
+            gap={0.75}
+            alignItems={"center"}
+            sx={{ cursor: displayTooltip ? "pointer" : "default" }}
+        >
             <AssertionStatusIcon isSuccess={assertionResult.type === "SuccessfulAssertion"} />
             {testCaseAssertion.description ? (
                 <Typography variant={"caption"}>{testCaseAssertion.description}</Typography>

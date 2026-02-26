@@ -108,7 +108,7 @@ describe("Test cases", () => {
         verifyMockData('{\n  "foo": 0\n}');
     });
 
-    it("should display assertions panel", () => {
+    it.only("should display assertions panel", () => {
         cy.visitNewProcess(seed, "testCasesWithAssertions.json", "Category2");
         cy.toggleUserFlag("node.showTestingTab", true);
         cy.layoutScenario();
@@ -118,6 +118,10 @@ describe("Test cases", () => {
         expandAssertionItem("Log");
 
         cy.get('[data-testid="assertion-results-panel"]').matchImage();
+
+        showAssertionDetails(0);
+
+        cy.get('[role="tooltip"]').matchImage({ screenshotConfig: { padding: 16 } });
     });
 });
 
@@ -200,4 +204,9 @@ const verifyMockData = (mockValue: string) => {
 
 const expandAssertionItem = (nodeId: string) => {
     cy.get(`[id="${nodeId}-header"]`).click();
+};
+
+const showAssertionDetails = (assertionNumber: number) => {
+    cy.get(`[data-testid="assertionResult`).eq(assertionNumber).click();
+    cy.get('[role="tooltip"]').should("be.visible");
 };
