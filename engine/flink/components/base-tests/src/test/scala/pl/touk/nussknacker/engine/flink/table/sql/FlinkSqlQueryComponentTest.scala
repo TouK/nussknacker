@@ -375,7 +375,7 @@ class FlinkSqlQueryComponentTest
     )
   }
 
-  test("should allow CEP pattern detection") {
+  test("should allow pattern recognition with MATCH_RECOGNIZE") {
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("source", TestScenarioRunner.testDataSource)
