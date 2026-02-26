@@ -11,9 +11,17 @@ interface Props {
     className?: string;
     customComponentsProps?: TooltipProps["componentsProps"];
     enterDelay?: number;
+    placement?: TooltipProps["placement"];
 }
 
-export const InfoTooltipHover = ({ title, className, children, customComponentsProps, enterDelay }: PropsWithChildren<Props>) => {
+export const InfoTooltipHover = ({
+    title,
+    className,
+    children,
+    customComponentsProps,
+    enterDelay,
+    placement = "bottom-start",
+}: PropsWithChildren<Props>) => {
     const { tooltipOpen, tooltipRef, componentsProps, handleSetTooltipOpen, handleSetTooltipClose } = useTooltip({
         customComponentsProps: {
             ...customComponentsProps,
@@ -64,7 +72,7 @@ export const InfoTooltipHover = ({ title, className, children, customComponentsP
                     {title}
                 </Box>
             }
-            placement="right-start"
+            placement={placement}
             arrow
             open={tooltipOpen}
             onClose={handleSetTooltipClose}
