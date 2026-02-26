@@ -1,7 +1,7 @@
 import React from "react";
 
-import type { Assertion } from "../../../../actions/nk/testCasesActions";
-import { ASSERTION_SYMBOLS } from "../../../graph/node-modal/node/NodeContent/TestingContentElements/AssertionItem";
+import type { Assertion } from "../../../../../actions/nk/testCasesActions";
+import { ASSERTION_SYMBOLS } from "../../../../graph/node-modal/node/NodeContent/TestingContentElements/AssertionItem";
 import { ScrollableHighlightedExpression } from "./ScrollableHighlightedExpression";
 
 interface Props {

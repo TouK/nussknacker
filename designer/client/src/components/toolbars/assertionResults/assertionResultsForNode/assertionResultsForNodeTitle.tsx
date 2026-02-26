@@ -8,7 +8,7 @@ interface Props {
     title: string;
     assertionResults: TestAssertionResult[];
 }
-export const AssertionResultTitle = ({ title, assertionResults }: Props) => {
+export const AssertionResultsForNodeTitle = ({ title, assertionResults }: Props) => {
     return (
         <Box display={"flex"} alignItems={"center"} gap={0.75}>
             <Typography component={"p"} variant={"body2"}>

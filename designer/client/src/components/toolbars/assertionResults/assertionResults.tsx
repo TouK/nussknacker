@@ -6,8 +6,8 @@ import { getTestAssertionResults } from "../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../store/storeHelpers";
 import { Expandable } from "../../common/Expandable";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import { AssertionResult } from "./assertionResult/assertionResult";
-import { AssertionResultTitle } from "./assertionResult/assertionResultTitle";
+import { AssertionResultsForNode } from "./assertionResultsForNode/assertionResultsForNode";
+import { AssertionResultsForNodeTitle } from "./assertionResultsForNode/assertionResultsForNodeTitle";
 import { AssertionResultsHeader } from "./assertionResultsHeader";
 
 const AssertionResults = () => {
@@ -39,12 +39,12 @@ const AssertionResults = () => {
                 {sortedNodeIds.map((nodeId) => (
                     <Expandable
                         key={nodeId}
-                        expandableTitle={<AssertionResultTitle title={nodeId} assertionResults={testAssertionResults[nodeId]} />}
+                        expandableTitle={<AssertionResultsForNodeTitle title={nodeId} assertionResults={testAssertionResults[nodeId]} />}
                         componentId={nodeId}
                         detailsSx={{ pl: 2, pr: 1, py: 0 }}
                         summarySx={{ minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px" } }}
                     >
-                        <AssertionResult nodeId={nodeId} />
+                        <AssertionResultsForNode nodeId={nodeId} />
                     </Expandable>
                 ))}
             </Box>
