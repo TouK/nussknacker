@@ -1,5 +1,5 @@
 import { Box, Typography } from "@mui/material";
-import React from "react";
+import React, {Fragment} from "react";
 
 import { getTestCaseAssertionsForNode } from "../../../../reducers/selectors/testCases";
 import { getTestAssertionResultsForNode } from "../../../../reducers/selectors/testing";
@@ -13,7 +13,7 @@ interface Props {
     nodeId: string;
 }
 
-export const AssertionResult = ({ nodeId }: Props) => {
+export const AssertionResultsForNode = ({ nodeId }: Props) => {
     const testCaseAssertions = useAppSelector((state) => getTestCaseAssertionsForNode(state, nodeId));
     const assertionResults = useAppSelector((state) => getTestAssertionResultsForNode(state, nodeId));
 
@@ -22,13 +22,7 @@ export const AssertionResult = ({ nodeId }: Props) => {
             {testCaseAssertions.map((testCaseAssertion, index) => {
                 const assertionResult = assertionResults?.[index];
                 if (!assertionResult) {
-                    return (
-                        <Box key={testCaseAssertion.uuid}>
-                            <Box display={"flex"} gap={0.75} alignItems={"center"}>
-                                <AssertionExpression assertion={testCaseAssertion} />
-                            </Box>
-                        </Box>
-                    );
+                    return null;
                 }
 
                 const tooltipContent = (
@@ -38,17 +32,29 @@ export const AssertionResult = ({ nodeId }: Props) => {
                     </Box>
                 );
 
+                const displayTooltip = assertionResult.type === "FailedAssertion" || testCaseAssertion.description;
+
+                const content = (
+                    <Box display={"flex"} gap={0.75} alignItems={"center"} sx={{ cursor: displayTooltip && "pointer" }}>
+                        <AssertionStatusIcon isSuccess={assertionResult.type === "SuccessfulAssertion"} />
+                        {testCaseAssertion.description ? (
+                            <Typography variant={"caption"}>{testCaseAssertion.description}</Typography>
+                        ) : (
+                            <AssertionExpression assertion={testCaseAssertion} />
+                        )}
+                    </Box>
+                );
+
                 return (
-                    <InfoTooltip key={testCaseAssertion.uuid} variant={"click"} title={tooltipContent}>
-                        <Box display={"flex"} gap={0.75} alignItems={"center"} sx={{ cursor: "pointer" }}>
-                            <AssertionStatusIcon isSuccess={assertionResult.type === "SuccessfulAssertion"} />
-                            {testCaseAssertion.description ? (
-                                <Typography variant={"caption"}>{testCaseAssertion.description}</Typography>
-                            ) : (
-                                <AssertionExpression assertion={testCaseAssertion} />
-                            )}
-                        </Box>
-                    </InfoTooltip>
+                    <Fragment key={testCaseAssertion.uuid}>
+                        {displayTooltip ? (
+                            <InfoTooltip variant={"click"} title={tooltipContent} placement={"right"}>
+                                {content}
+                            </InfoTooltip>
+                        ) : (
+                            content
+                        )}
+                    </Fragment>
                 );
             })}
         </Box>
