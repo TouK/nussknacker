@@ -106,7 +106,7 @@ describe("Test cases", () => {
         verifyMockData('{\n  "foo": 0\n}');
     });
 
-    it.only("should display assertions panel", () => {
+    it("should display assertions panel", () => {
         cy.visitNewProcess(seed, "testCasesWithAssertions.json", "Category2");
         cy.toggleUserFlag("node.showTestingTab", true);
         cy.layoutScenario();
@@ -213,6 +213,6 @@ const openTestingDetails = (nodeId: string) => {
 };
 
 const showAssertionDetails = (assertionNumber: number) => {
-    cy.get(`[data-testid="assertionResult`).eq(assertionNumber).click();
+    cy.get('[data-testid="assertionResult"').eq(assertionNumber).click();
     cy.get('[role="tooltip"]').should("be.visible");
 };
