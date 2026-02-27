@@ -1,4 +1,5 @@
 import { Box, Typography, useTheme } from "@mui/material";
+import type { ReactNode } from "react";
 import React from "react";
 
 import { calculateAssertionResultsSummary } from "../../../../containers/assertions/assertionResultsUtils";
@@ -7,14 +8,15 @@ import type { TestAssertionResult } from "../../../../http/resultsWithCountsDto"
 interface Props {
     title: string;
     assertionResults: TestAssertionResult[];
+    action: ReactNode;
 }
-export const AssertionResultTitle = ({ title, assertionResults }: Props) => {
+
+export const AssertionResultTitle = ({ title, assertionResults, action }: Props) => {
     return (
         <Box display={"flex"} alignItems={"center"} gap={0.75}>
-            <Typography component={"p"} variant={"body2"}>
-                {title}
-            </Typography>
+            <Typography variant={"body2"}>{title}</Typography>
             <AssertionResultsBadge assertionResults={assertionResults} />
+            {action}
         </Box>
     );
 };
