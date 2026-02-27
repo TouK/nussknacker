@@ -61,7 +61,7 @@ class FlinkSqlQueryComponentTest
         id = "flink-sql-query",
         outputVar = "out",
         customNodeRef = "flink-sql-query",
-        "flinkSqlQuery" -> "SELECT input FROM data_record".spelTemplate
+        "flinkSqlQuery" -> "SELECT r.input FROM data_record r".spelTemplate
       )
       .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#out".spel)
 
