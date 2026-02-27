@@ -1,18 +1,12 @@
 import { alpha } from "@mui/material";
-import React, { useCallback, useContext, useMemo } from "react";
+import React, { useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { testScenarioWithTestCase } from "../../../../actions/nk/testingActions";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
-import { convertViewportUnitToPixels } from "../../../../common/convertViewportUnitToPixels";
-import { useUserSettings } from "../../../../common/useUserSettings";
-import { getTestCase, hasInputDataRecordsDefined } from "../../../../reducers/selectors/testCases";
+import { hasInputDataRecordsDefined } from "../../../../reducers/selectors/testCases";
 import { getTestResultsLoading } from "../../../../reducers/selectors/testing";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
-import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
-import { useWindows } from "../../../../windowManager/useWindows";
-import { WindowKind } from "../../../../windowManager/WindowKind";
-import type { TestingData, TestingViewParams } from "../../../modals/TestingDataRecords/Dialog";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { useTestingScenarioEnabled } from "../../../modals/TestingDataRecords/useTestingScenarioEnabled";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import { ButtonsVariant, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons/ToolbarButtons";
@@ -25,11 +19,9 @@ export type ScenarioTestButtonProps = {
     name?: string;
     title?: string;
     titleOverride?: string;
-    docs?: TestingViewParams["docs"];
-    markdownContent?: TestingViewParams["markdownContent"];
 };
 
-const RUN_NEW_TEST = "reNewTest";
+const RUN_ALL = "runAll";
 const RERUN_LAST_TEST = "rerunLastTest";
 
 type Preset = {
@@ -39,67 +31,21 @@ type Preset = {
 };
 
 function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>) {
-    const [showMockFieldOnEnrichers] = useUserSettings("node.showMockFieldOnEnrichers");
-    const { disabled, name, title, titleOverride, docs, markdownContent, type } = props;
+    const { disabled, name, title, titleOverride, type } = props;
     const { t } = useTranslation();
-    const { open } = useWindows();
-    const testCase = useAppSelector(getTestCase);
-    const testingDataRecordsDefined = useAppSelector(hasInputDataRecordsDefined);
-    const dispatch = useAppDispatch();
-
-    const handleRerunLastTest = useCallback(() => {
-        return dispatch(testScenarioWithTestCase(testCase, showMockFieldOnEnrichers));
-    }, [dispatch, showMockFieldOnEnrichers, testCase]);
 
     const presets: Preset[] = useMemo(() => {
         return [
             {
-                label: t("testingForm.test.menu.label", "Run a new test"),
-                value: RUN_NEW_TEST,
-            },
-            {
-                label: t("testingForm.retest.menu.label", "Rerun last test"),
-                value: RERUN_LAST_TEST,
-                isDisabled: !testingDataRecordsDefined,
+                label: t("testingForm.test.menu.label", "Run all"),
+                value: RUN_ALL,
             },
         ];
-    }, [t, testingDataRecordsDefined]);
+    }, [t]);
 
     const isLoading = useAppSelector(getTestResultsLoading);
 
-    const presetActionOnButtonClick = useMemo(() => {
-        return testingDataRecordsDefined ? presets[1] : presets[0];
-    }, [presets, testingDataRecordsDefined]);
-
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled });
-
-    const openDialog = useCallback(
-        (preset?: Preset) => {
-            if (preset?.value === RERUN_LAST_TEST) {
-                handleRerunLastTest();
-                return;
-            }
-            open<TestingData>({
-                id: "scenarioTest",
-                title: t("dialog.title.scenarioTest", "Scenario test"),
-                isResizable: true,
-                isModal: true,
-                kind: WindowKind.scenarioTest,
-                meta: {
-                    viewParams: {
-                        Icon: TestingIcon,
-                        docs,
-                        markdownContent,
-                    },
-                },
-                layoutData: {
-                    minWidth: 1200,
-                    height: convertViewportUnitToPixels("80vh"),
-                },
-            });
-        },
-        [docs, handleRerunLastTest, markdownContent, open, t],
-    );
 
     const { variant } = useContext(ToolbarButtonsContext);
     const side = useContext(ToolbarSideContext);
@@ -162,11 +108,9 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
             }}
             isLoading={isLoading}
             disabled={!testingScenarioEnabled || isLoading}
-            onClick={() => openDialog(presetActionOnButtonClick)}
             type={type}
             presets={presets}
             selected={presetActionOnButtonClick}
-            onPresetChange={(value) => openDialog(value)}
         />
     );
 }
