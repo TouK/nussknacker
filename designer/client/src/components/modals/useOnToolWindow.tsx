@@ -5,6 +5,9 @@ import { nodeDetailsClosed, nodeDetailsOpened } from "../../actions/nk/nodeDetai
 import { toolClosed, ToolId, toolOpened } from "../../actions/nk/toolWindow";
 import { useAppDispatch } from "../../store/storeHelpers";
 
+export function useOnToolWindow(toolId: ToolId.properties): void;
+export function useOnToolWindow(toolId: ToolId.node, nodeId: string): void;
+
 export function useOnToolWindow(toolId: ToolId, nodeId?: string) {
     const dispatch = useAppDispatch();
     const { data } = useWindowContext();

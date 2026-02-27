@@ -34,6 +34,7 @@ import { useGetNodeErrors } from "../useNodeTypeDetailsContentLogic";
 import { EditStateFeedback } from "./EditStateFeedback";
 import { GeneralContent } from "./NodeContent/GeneralContent";
 import type { TabDef } from "./NodeContent/TabsWrapper";
+import { NodeDetailsTab } from "./NodeContent/TabsWrapper";
 import { TabsWrapper } from "./NodeContent/TabsWrapper";
 import { TestingContent } from "./NodeContent/TestingContent";
 import { TestCases } from "./NodeContent/TestingContentElements/TestCases";
@@ -165,11 +166,13 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     const tabs = useMemo<TabDef[]>(
         () => [
             {
+                id: NodeDetailsTab.general,
                 label: t("nodeDetails.tabs.general.name", "General"),
                 content: generalContent,
                 showErrorIndicator: generalErrors.length > 0,
             },
             {
+                id: NodeDetailsTab.testing,
                 label: t("nodeDetails.tabs.testing.name", "Testing"),
                 content: testingContent,
                 disabled: !testingTabVisible,

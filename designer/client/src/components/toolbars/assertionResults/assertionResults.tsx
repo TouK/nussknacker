@@ -6,6 +6,7 @@ import { getTestAssertionResults } from "../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../store/storeHelpers";
 import { Expandable } from "../../common/Expandable";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
+import { OpenNodeTestingDetails } from "./assertionResult/openNodeTestingDetails";
 import { AssertionResultsForNode } from "./assertionResultsForNode/assertionResultsForNode";
 import { AssertionResultsForNodeTitle } from "./assertionResultsForNode/assertionResultsForNodeTitle";
 import { AssertionResultsHeader } from "./assertionResultsHeader";
@@ -36,17 +37,27 @@ const AssertionResults = () => {
         <ToolbarWrapper id={"assertion-results-panel"} title={"Assertion results"}>
             <Box py={1}>
                 <AssertionResultsHeader />
-                {sortedNodeIds.map((nodeId) => (
-                    <Expandable
-                        key={nodeId}
-                        expandableTitle={<AssertionResultsForNodeTitle title={nodeId} assertionResults={testAssertionResults[nodeId]} />}
-                        componentId={nodeId}
-                        detailsSx={{ pl: 2, pr: 1, py: 0 }}
-                        summarySx={{ minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px" } }}
-                    >
-                        <AssertionResultsForNode nodeId={nodeId} />
-                    </Expandable>
-                ))}
+                {sortedNodeIds.map((nodeId) => {
+                    const node = scenarioGraph.nodes.find((node) => node.id === nodeId);
+
+                    return (
+                        <Expandable
+                            key={nodeId}
+                            expandableTitle={
+                                <AssertionResultsForNodeTitle
+                                    title={nodeId}
+                                    assertionResults={testAssertionResults[nodeId]}
+                                    action={node ? <OpenNodeTestingDetails node={node} /> : undefined}
+                                />
+                            }
+                            componentId={nodeId}
+                            detailsSx={{ pl: 2, pr: 1, py: 0 }}
+                            summarySx={{ minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px" } }}
+                        >
+                            <AssertionResultsForNode nodeId={nodeId} />
+                        </Expandable>
+                    );
+                })}
             </Box>
         </ToolbarWrapper>
     );

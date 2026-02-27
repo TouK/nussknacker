@@ -1,9 +1,19 @@
 import { Collapse, Tab, Tabs, Badge } from "@mui/material";
-import React, { useState } from "react";
+import { omit } from "lodash";
+import React, { useEffect, useState } from "react";
 
+import { replaceSearchQuery } from "../../../../../containers/hooks/useSearchQuery";
 import { InfoTooltip } from "../../editors/InfoTooltip/InfoTooltip";
 
+export const ACTIVE_TAB_QUERY_KEY = "activeTab";
+
+export enum NodeDetailsTab {
+    "general" = "general",
+    "testing" = "testing",
+}
+
 export interface TabDef {
+    id: string;
     label: string;
     content: React.ReactNode;
     disabled?: boolean;
@@ -18,18 +28,37 @@ interface Props {
 }
 
 export const TabsWrapper = ({ tabs, hideDisabled, hideIfOne }: Props) => {
-    const [value, setValue] = useState(0);
+    const tabDefs = tabs.filter(({ disabled }) => !disabled || !hideDisabled);
 
-    const handleChange = (_: React.SyntheticEvent, newValue: number) => {
-        setValue(newValue);
+    const [activeTabId, setActiveTabId] = useState<string>(() => {
+        const params = new URLSearchParams(window.location.search);
+        const fromUrl = params.get(ACTIVE_TAB_QUERY_KEY);
+        return tabDefs.find((tab) => tab.id === fromUrl)?.id ?? tabDefs[0]?.id ?? "";
+    });
+
+    useEffect(() => {
+        return () => {
+            replaceSearchQuery((current) => omit(current, ACTIVE_TAB_QUERY_KEY));
+        };
+    }, []);
+
+    // Fallback to first tab if invalid or missing
+    const activeIndex = Math.max(
+        0,
+        tabDefs.findIndex((tab) => tab.id === activeTabId),
+    );
+
+    const handleChange = (_: React.SyntheticEvent, newIndex: number) => {
+        const newTabId = tabDefs[newIndex].id;
+        replaceSearchQuery((current) => ({ ...current, activeTab: newTabId }));
+        setActiveTabId(newTabId);
     };
 
-    const tabDefs = tabs.filter(({ disabled }) => !disabled || !hideDisabled);
     return (
         <>
             <Collapse in={tabDefs.length > 1 || !hideIfOne}>
                 <Tabs
-                    value={value}
+                    value={activeIndex}
                     onChange={handleChange}
                     sx={{
                         "& .MuiTab-root": {
@@ -42,7 +71,10 @@ export const TabsWrapper = ({ tabs, hideDisabled, hideIfOne }: Props) => {
                 >
                     {tabDefs.map((t, i) => (
                         <Tab
-                            key={i}
+                            key={t.id}
+                            id={`tab-${i}`}
+                            aria-controls={`tabpanel-${i}`}
+                            disabled={t.disabled}
                             label={
                                 t.showErrorIndicator ? (
                                     <span style={{ position: "relative", display: "inline-block", paddingRight: "8px" }}>
@@ -63,16 +95,14 @@ export const TabsWrapper = ({ tabs, hideDisabled, hideIfOne }: Props) => {
                                     t.label
                                 )
                             }
-                            id={`tab-${i}`}
-                            aria-controls={`tabpanel-${i}`}
-                            disabled={t.disabled}
                         />
                     ))}
-                    {tabs[value].additionalTabContent}
+                    {tabs[activeIndex].additionalTabContent}
                 </Tabs>
             </Collapse>
-            <div role="tabpanel" id={`tabpanel-${value}`} aria-labelledby={`tab-${value}`}>
-                {tabs[value].content}
+
+            <div role="tabpanel" id={`tabpanel-${activeIndex}`} aria-labelledby={`tab-${activeIndex}`}>
+                {tabDefs[activeIndex]?.content}
             </div>
         </>
     );

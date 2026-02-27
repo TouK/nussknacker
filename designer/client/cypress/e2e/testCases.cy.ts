@@ -1,5 +1,3 @@
-import { sanitizeHtmlAttribute } from "../../src/common/HtmlUtils";
-
 const seed = "testCases";
 
 describe("Test cases", () => {
@@ -122,6 +120,10 @@ describe("Test cases", () => {
         showAssertionDetails(0);
 
         cy.get('[role="tooltip"]').matchImage({ screenshotConfig: { padding: 16 } });
+
+        openTestingDetails("Log");
+
+        cy.location("search", { timeout: 5000 }).should("match", /activeTab=testing&nodeId=Log/i);
     });
 });
 
@@ -204,6 +206,10 @@ const verifyMockData = (mockValue: string) => {
 
 const expandAssertionItem = (nodeId: string) => {
     cy.get(`[id="${nodeId}-header"]`).click();
+};
+
+const openTestingDetails = (nodeId: string) => {
+    cy.get(`[id="${nodeId}-header"]`).find('[data-testid="OpenInNewIcon"]').click();
 };
 
 const showAssertionDetails = (assertionNumber: number) => {
