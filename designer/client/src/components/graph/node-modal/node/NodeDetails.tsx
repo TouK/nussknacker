@@ -18,7 +18,7 @@ import type { Edge } from "../../../../types/edge";
 import type { NodeType } from "../../../../types/node";
 import { WindowContent } from "../../../../windowManager/WindowContent";
 import type { WindowKind } from "../../../../windowManager/WindowKind";
-import { OnToolWindow, useOnToolWindow } from "../../../modals/useOnToolWindow";
+import { useOnToolWindow } from "../../../modals/useOnToolWindow";
 import type { Scenario } from "../../../Process/types";
 import { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
 import { useGetButtonFromToolbar } from "../../../toolbarSettings/useToolbarConfig";

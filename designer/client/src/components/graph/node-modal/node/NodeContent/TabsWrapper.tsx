@@ -1,9 +1,11 @@
 import { Collapse, Tab, Tabs, Badge } from "@mui/material";
 import { omit } from "lodash";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
-import { replaceSearchQuery, useSearchQueryParam } from "../../../../../containers/hooks/useSearchQuery";
+import { replaceSearchQuery } from "../../../../../containers/hooks/useSearchQuery";
 import { InfoTooltip } from "../../editors/InfoTooltip/InfoTooltip";
+
+export const ACTIVE_TAB_QUERY_KEY = "activeTab";
 
 export enum NodeDetailsTab {
     "general" = "general",
@@ -28,11 +30,15 @@ interface Props {
 export const TabsWrapper = ({ tabs, hideDisabled, hideIfOne }: Props) => {
     const tabDefs = tabs.filter(({ disabled }) => !disabled || !hideDisabled);
 
-    const activeTabId = useSearchQueryParam("activeTab");
+    const [activeTabId, setActiveTabId] = useState<string>(() => {
+        const params = new URLSearchParams(window.location.search);
+        const fromUrl = params.get(ACTIVE_TAB_QUERY_KEY);
+        return tabDefs.find((tab) => tab.id === fromUrl)?.id ?? tabDefs[0]?.id ?? "";
+    });
 
     useEffect(() => {
         return () => {
-            replaceSearchQuery((current) => omit(current, "activeTab"));
+            replaceSearchQuery((current) => omit(current, ACTIVE_TAB_QUERY_KEY));
         };
     }, []);
 
@@ -45,6 +51,7 @@ export const TabsWrapper = ({ tabs, hideDisabled, hideIfOne }: Props) => {
     const handleChange = (_: React.SyntheticEvent, newIndex: number) => {
         const newTabId = tabDefs[newIndex].id;
         replaceSearchQuery((current) => ({ ...current, activeTab: newTabId }));
+        setActiveTabId(newTabId);
     };
 
     return (

@@ -6,7 +6,7 @@ import { getScenario } from "../../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import type { NodeType } from "../../../../types/node";
 import { useWindows } from "../../../../windowManager/useWindows";
-import { NodeDetailsTab } from "../../../graph/node-modal/node/NodeContent/TabsWrapper";
+import { ACTIVE_TAB_QUERY_KEY, NodeDetailsTab } from "../../../graph/node-modal/node/NodeContent/TabsWrapper";
 
 interface Props {
     node: NodeType;
@@ -25,7 +25,11 @@ export const OpenNodeTestingDetails = ({ node }: Props) => {
     );
 
     return (
-        <NavLink style={{ display: "flex" }} to={`?activeTab=${NodeDetailsTab.testing}&nodeId=${node.id}`} onClick={openNodeTestingDetails}>
+        <NavLink
+            style={{ display: "flex" }}
+            to={`?${ACTIVE_TAB_QUERY_KEY}=${NodeDetailsTab.testing}&nodeId=${node.id}`}
+            onClick={openNodeTestingDetails}
+        >
             <OpenInNewIcon fontSize={"small"} sx={{ color: (theme) => theme.palette.common.white }} />
         </NavLink>
     );
