@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.Defa
 import pl.touk.nussknacker.engine.api.typed.typing.DisplayStrategy.{DefaultDisplayStrategy, JsonDisplayStrategy}
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 
+import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 import scala.language.implicitConversions
@@ -419,10 +420,97 @@ object typing {
         case Some(Nil)                                             =>
           // It shouldn't happen because only TypedNull can be translated into Set.empty
           throw new IllegalStateException(s"Typed(${possibleTypes.toList.mkString(", ")}) flatten to empty list")
-        case Some(single :: Nil)           => single
-        case Some(first :: second :: rest) => new TypedUnion(first, second, rest)
+        case Some(single :: Nil) => single
+        case Some(atLeastTwoTypes) =>
+          reduceTypes(atLeastTwoTypes) match {
+            case single :: Nil =>
+              single
+            case first :: second :: rest =>
+              new TypedUnion(first, second, rest)
+            case Nil =>
+              // It shouldn't happen
+              throw new IllegalStateException(
+                s"Typed(${atLeastTwoTypes.mkString(", ")}) reduced to empty list"
+              )
+          }
       }
     }
+
+    @tailrec
+    private def reduceTypes(types: List[SingleTypingResult]): List[SingleTypingResult] = {
+      def tryReduce(
+          isEmptyCollectionLiteral: SingleTypingResult => Boolean,
+          findMatchingType: SingleTypingResult => Option[SingleTypingResult]
+      ): Option[List[SingleTypingResult]] = {
+        val indexed = types.zipWithIndex
+        for {
+          (current, emptyIdx) <- indexed.find { case (t, _) => isEmptyCollectionLiteral(t) }
+          (tr, idx)           <- indexed.find { case (t, _) => findMatchingType(t).isDefined }
+        } yield {
+          val replaced = types.updated(idx, tr.withoutValue)
+          replaced.patch(emptyIdx, Nil, 1)
+        }
+      }
+
+      tryReduce(isEmptyListOrArrayLiteral, findListOrNonEmptyListLiteral)
+        .orElse(tryReduce(isEmptyMapLiteral, findMapOrNonEmptyMapLiteral)) match {
+        case Some(reducedTypes) => reduceTypes(reducedTypes)
+        case None               => types
+      }
+    }
+
+    private def isEmptyListOrArrayLiteral(typingResult: SingleTypingResult): Boolean = {
+      typingResult match {
+        case TypedObjectWithValue(TypedClass(aClass, List(Unknown)), value: java.util.List[_])
+            if listClass.isAssignableFrom(aClass) && value.isEmpty =>
+          true
+        case TypedObjectWithValue(TypedClass(aClass, List(Unknown)), value: Array[_])
+            if listClass.isAssignableFrom(aClass) && value.isEmpty =>
+          true
+        case _ =>
+          false
+      }
+    }
+
+    private def findListOrNonEmptyListLiteral(typingResult: SingleTypingResult): Option[SingleTypingResult] = {
+      typingResult match {
+        case tr @ TypedObjectWithValue(TypedClass(aClass, List(_)), value: java.util.List[_])
+            if listClass.isAssignableFrom(aClass) && !value.isEmpty =>
+          Some(tr)
+        case tr @ TypedObjectWithValue(TypedClass(aClass, List(_)), value: Array[_])
+            if listClass.isAssignableFrom(aClass) && !value.isEmpty =>
+          Some(tr)
+        case tr @ TypedClass(aClass, List(_)) if listClass.isAssignableFrom(aClass) =>
+          Some(tr)
+        case _ =>
+          None
+      }
+    }
+
+    private def findMapOrNonEmptyMapLiteral(typingResult: SingleTypingResult): Option[SingleTypingResult] = {
+      typingResult match {
+        case tr @ TypedObjectWithValue(TypedClass(aClass, List(_, _)), value: java.util.Map[_, _])
+            if mapClass.isAssignableFrom(aClass) && !value.isEmpty =>
+          Some(tr)
+        case tr @ TypedClass(aClass, List(_, _)) if mapClass.isAssignableFrom(aClass) =>
+          Some(tr)
+        case _ =>
+          None
+      }
+    }
+
+    private def isEmptyMapLiteral(typingResult: SingleTypingResult): Boolean = {
+      typingResult match {
+        case TypedObjectWithValue(TypedClass(aClass, List(Unknown, Unknown)), value: java.util.Map[_, _])
+            if mapClass.isAssignableFrom(aClass) && value.isEmpty =>
+          true
+        case _ =>
+          false
+      }
+    }
+
+    private val listClass: Class[java.util.List[_]]  = classOf[java.util.List[_]]
+    private val mapClass: Class[java.util.Map[_, _]] = classOf[java.util.Map[_, _]]
 
     def record(fields: Iterable[(String, TypingResult)]): TypedObjectTypingResult =
       TypedObjectTypingResult(ListMap(fields.toSeq: _*), mapBasedRecordUnderlyingType[java.util.Map[_, _]](fields))

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.typed.supertype
 
 import cats.data.NonEmptyList
 import cats.implicits.toTraverseOps
+import pl.touk.nussknacker.engine.api.typed.ConversionNecessaryForTypeAssignment.NoConvertionIsNeeded
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.{
   looseFinder,
   SupertypeClassResolutionStrategy
@@ -95,10 +96,88 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
           case typedClass: TypedClass => TypedObjectWithValue(typedClass, leftValue)
           case other                  => other
         }
-      case (l: TypedObjectWithValue, r) => singleCommonSupertype(l.underlying, r)
-      case (l, r: TypedObjectWithValue) => singleCommonSupertype(l, r.underlying)
-      case (_: TypedDict, _)            => fallback
-      case (_, _: TypedDict)            => fallback
+      case (l: TypedObjectWithValue, r) =>
+        handleEmptyList(l, r)
+          .orElse(handleEmptyMap(l, r))
+          .orElse(singleCommonSupertype(l.underlying, r))
+      case (l, r: TypedObjectWithValue) =>
+        handleEmptyList(r, l)
+          .orElse(handleEmptyMap(r, l))
+          .orElse(singleCommonSupertype(r.underlying, l))
+      case (_: TypedDict, _) => fallback
+      case (_, _: TypedDict) => fallback
+    }
+  }
+
+  private def handleEmptyList(
+      typedObjectWithValue: TypedObjectWithValue,
+      other: SingleTypingResult
+  ): Option[TypedClass] = {
+    asListClass(other).filter(_ => isEmptyListLiteral(typedObjectWithValue))
+  }
+
+  private def handleEmptyMap(
+      typedObjectWithValue: TypedObjectWithValue,
+      other: SingleTypingResult
+  ): Option[TypedClass] = {
+    asMapClass(other).filter(_ => isEmptyMapLiteral(typedObjectWithValue))
+  }
+
+  private def isEmptyListLiteral(typedObjectWithValue: TypedObjectWithValue): Boolean = {
+    (for {
+      _ <- asListClass(typedObjectWithValue).filter { typedClass =>
+        typedClass.params.length == 1 && typedClass.params.forall(isUnknown)
+      }
+      result <- Option(typedObjectWithValue.value).map {
+        case list: java.util.List[_] => list.isEmpty
+        case array: Array[_]         => array.isEmpty
+        case _                       => false
+      }
+    } yield result).contains(true)
+  }
+
+  private def isEmptyMapLiteral(typedObjectWithValue: TypedObjectWithValue): Boolean = {
+    (for {
+      _ <- asMapClass(typedObjectWithValue).filter { typedClass =>
+        typedClass.params.length == 2 && typedClass.params.forall(isUnknown)
+      }
+      result <- Option(typedObjectWithValue.value).map {
+        case map: Map[_, _] => map.isEmpty
+        case _              => false
+      }
+    } yield result).contains(true)
+  }
+
+  private def asListClass(typingResult: SingleTypingResult) = {
+    extractTypedClass(typingResult)
+      .collect {
+        case tc @ TypedClass(aClass, List(_)) if listClass.isAssignableFrom(aClass) => tc
+      }
+  }
+
+  private def asMapClass(typingResult: SingleTypingResult) = {
+    extractTypedClass(typingResult)
+      .collect {
+        case tc @ TypedClass(aClass, List(_, _)) if mapClass.isAssignableFrom(aClass) => tc
+      }
+  }
+
+  private def isUnknown(typingResult: TypingResult): Boolean = {
+    typingResult match {
+      case Unknown(_) => true
+      case _          => false
+    }
+  }
+
+  private val listClass: Class[java.util.List[_]]  = classOf[java.util.List[_]]
+  private val mapClass: Class[java.util.Map[_, _]] = classOf[java.util.Map[_, _]]
+
+  private def extractTypedClass(t: SingleTypingResult): Option[TypedClass] = {
+    t match {
+      case tc: TypedClass              => Some(tc)
+      case tc: TypedObjectWithValue    => Some(tc.underlying)
+      case tc: TypedObjectTypingResult => Some(tc.runtimeObjType)
+      case _                           => None
     }
   }
 
