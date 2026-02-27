@@ -49,8 +49,8 @@ object FlinkSqlQueryComponentFactory
         labelOpt = Some("Query"),
         editors = List(SqlParameterEditor),
         hintText = Some(
-          "Flink SQL query starting with SELECT or WITH. Upstream variables are available under 'context' table. " +
-            "Event time is available under 'event_time' column in 'context' table."
+          "Flink SQL query starting with SELECT or WITH. Upstream variables are available as columns under 'data-record' table. " +
+            "Data record time is available under 'data-record-time' column in 'data-record' table."
         )
       )
     )
