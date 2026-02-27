@@ -29,7 +29,6 @@ import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
-import pl.touk.nussknacker.engine.test.testcase.TestCase
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
@@ -69,7 +68,6 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
-import pl.touk.nussknacker.ui.process.test.testcase.ScenarioWithTestCase
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -495,22 +493,6 @@ trait NuResourcesTest
       "scenarioGraph" -> scenarioGraph.asJson.noSpaces
     )()
     Post(s"/processManagement/test/${scenario.name}", multiPart) ~> withPermissions(
-      deployRoute(),
-      Permission.Deploy,
-      Permission.Read
-    )
-  }
-
-  protected def runTestCase(scenario: CanonicalProcess, testCase: TestCase): RouteTestResult = {
-    implicit val timeout: RouteTestTimeout = RouteTestTimeout(10.seconds.dilated)
-
-    val scenarioGraph = scenario.toScenarioGraph
-
-    val body = HttpEntity(
-      ContentTypes.`application/json`,
-      ScenarioWithTestCase(scenarioGraph, testCase).asJson.noSpaces
-    )
-    Post(s"/processManagement/testCase/${scenario.name}", body) ~> withPermissions(
       deployRoute(),
       Permission.Deploy,
       Permission.Read
