@@ -58,7 +58,7 @@ class FlinkSqlQueryComponentTest
       .streaming("test")
       .source("source", TestScenarioRunner.testDataSource)
       .customNode(
-        id = "flink-sql-query-query",
+        id = "flink-sql-query",
         outputVar = "out",
         customNodeRef = "flink-sql-query",
         "flinkSqlQuery" -> "SELECT input FROM data_record".spelTemplate
