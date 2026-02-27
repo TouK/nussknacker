@@ -2,11 +2,11 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import React, { useCallback } from "react";
 import { NavLink } from "react-router-dom";
 
-import { getScenario } from "../../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../../store/storeHelpers";
-import type { NodeType } from "../../../../types/node";
-import { useWindows } from "../../../../windowManager/useWindows";
-import { ACTIVE_TAB_QUERY_KEY, NodeDetailsTab } from "../../../graph/node-modal/node/NodeContent/TabsWrapper";
+import { getScenario } from "../../../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../../../store/storeHelpers";
+import type { NodeType } from "../../../../../types/node";
+import { useWindows } from "../../../../../windowManager/useWindows";
+import { ACTIVE_TAB_QUERY_KEY, NodeDetailsTab } from "../../../../graph/node-modal/node/NodeContent/TabsWrapper";
 
 interface Props {
     node: NodeType;

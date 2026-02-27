@@ -6,7 +6,7 @@ import { getTestAssertionResults } from "../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../store/storeHelpers";
 import { Expandable } from "../../common/Expandable";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import { OpenNodeTestingDetails } from "./assertionResult/openNodeTestingDetails";
+import { OpenNodeTestingDetails } from "./assertionResultsForNode/assertionResult/openNodeTestingDetails";
 import { AssertionResultsForNode } from "./assertionResultsForNode/assertionResultsForNode";
 import { AssertionResultsForNodeTitle } from "./assertionResultsForNode/assertionResultsForNodeTitle";
 import { AssertionResultsHeader } from "./assertionResultsHeader";

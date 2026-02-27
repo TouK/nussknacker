@@ -1,6 +1,5 @@
 import type { TooltipProps } from "@mui/material";
 import type { ReactElement, ReactNode } from "react";
-import { useMemo } from "react";
 import React from "react";
 
 import { InfoTooltipClick } from "./InfoTooltipClick";

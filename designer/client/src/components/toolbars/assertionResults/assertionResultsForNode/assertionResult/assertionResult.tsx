@@ -9,6 +9,10 @@ import { AssertionExpression } from "./assertionExpression";
 import { AssertionResultMessage } from "./assertionResultMessage";
 import { AssertionStatusIcon } from "./AssertionStatusIcon";
 
+const TOOLTIP_COMPONENTS_PROPS = {
+    tooltip: { sx: { maxWidth: "800px" } },
+};
+
 interface Props {
     assertionResult: TestAssertionResult;
     testCaseAssertion: WithUuid<Assertion>;
@@ -44,7 +48,7 @@ export const AssertionResult = ({ assertionResult, testCaseAssertion }: Props) =
     return (
         <>
             {displayTooltip ? (
-                <InfoTooltip variant={"click"} title={tooltipContent} placement={"right"}>
+                <InfoTooltip variant={"click"} title={tooltipContent} placement={"right"} customComponentsProps={TOOLTIP_COMPONENTS_PROPS}>
                     {content}
                 </InfoTooltip>
             ) : (
