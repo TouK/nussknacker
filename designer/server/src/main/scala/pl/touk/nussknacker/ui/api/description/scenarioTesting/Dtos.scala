@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.test.testcase.TestCase
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
@@ -134,6 +135,12 @@ object Dtos {
         testData: ScenarioTestData,
     )
 
+    @derive(schema, encoder, decoder)
+    final case class PerformTestCaseRequest(
+        scenarioGraph: ScenarioGraph,
+        testCase: TestCase,
+    )
+
     final case class SkipResultsPerNode(value: Boolean)
 
     final case class SkipResultsPerTransition(value: Boolean)
@@ -207,6 +214,7 @@ object Dtos {
 
   implicit def typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
   implicit def scenarioGraphSchema: Schema[ScenarioGraph] = Schema.anyObject
+  implicit def testCaseSchema: Schema[TestCase]           = Schema.anyObject
 
   sealed trait TestingError
 

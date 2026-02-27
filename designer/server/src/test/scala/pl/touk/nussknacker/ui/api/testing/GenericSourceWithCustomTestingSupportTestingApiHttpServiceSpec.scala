@@ -12,7 +12,7 @@ import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandle
 import sttp.client3.Response
 
 class GenericSourceWithCustomTestingSupportTestingApiHttpServiceSpec
-    extends ScenarioTestingApiHttpServiceSpec
+    extends ScenarioTestingApiHttpServiceGenericSpec
     with WithAdHocInvalidParametersTestsLogic
     with EitherValuesDetailedMessage
     with Matchers {

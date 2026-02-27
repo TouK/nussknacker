@@ -20,7 +20,11 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
   ScenarioTestCapabilities
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
+  PerformTestCaseRequest,
+  SkipResultsPerNode,
+  SkipResultsPerTransition
+}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.BadRequestTestingError._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.NotFoundTestingError._
@@ -177,8 +181,8 @@ class ScenarioTestingApiHttpService(
             }
           } yield ResultsWithCountsDto.from(
             resultWithCounts,
-            skipResultsPerNode.getOrElse(SkipResultsPerNode(false)),
-            skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false)),
+            skipResultsPerNode,
+            skipResultsPerTransition,
           )
         }
       }
@@ -249,6 +253,37 @@ class ScenarioTestingApiHttpService(
               }
             )
           } yield parametersDefinition
+        }
+      }
+  }
+
+  expose {
+    scenarioTestingApiEndpoints.scenarioTestCaseEndpoint
+      .serverSecurityLogic(authorizeKnownUser[TestingError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (scenarioName, request, skipResultsPerNode, skipResultsPerTransition) =>
+          for {
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            processId <- EitherT
+              .fromOption[Future](scenarioWithDetails.processId, noScenarioError(scenarioName): TestingError)
+            _ <- isAuthorized(processId, Permission.Deploy)
+            resultWithCounts <- EitherT(
+              processingTypeToScenarioTestServices
+                .forProcessingTypeUnsafe(scenarioWithDetails.processingType)
+                .performTestCase(
+                  request.scenarioGraph,
+                  scenarioWithDetails.processVersionUnsafe,
+                  scenarioWithDetails.isFragment,
+                  request.testCase,
+                )
+            ).leftMap[TestingError] { error =>
+              ErrorResult(TestingApiErrorMessages.from(error))
+            }
+          } yield ResultsWithCountsDto.from(
+            resultWithCounts,
+            skipResultsPerNode,
+            skipResultsPerTransition,
+          )
         }
       }
   }

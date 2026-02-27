@@ -887,9 +887,9 @@ export class HttpService {
         }
 
         const promise = api.post<ResultsWithCountsDto>(
-            `/processManagement/testCase/${encodeURIComponent(scenarioName)}`,
+            `/scenarioTesting/${encodeURIComponent(scenarioName)}/testCase`,
             {
-                scenario: sanitized,
+                scenarioGraph: sanitized,
                 testCase: { ...testCase, inputs: JSON.stringify(sanitizedInputDataRecords) },
             },
             {

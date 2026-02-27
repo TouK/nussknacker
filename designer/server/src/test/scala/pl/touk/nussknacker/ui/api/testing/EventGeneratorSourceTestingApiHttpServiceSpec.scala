@@ -12,7 +12,7 @@ import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import sttp.client3.Response
 
 trait EventGeneratorSourceTestingApiHttpServiceSpec
-    extends ScenarioTestingApiHttpServiceSpec
+    extends ScenarioTestingApiHttpServiceGenericSpec
     with EitherValuesDetailedMessage
     with Matchers {
 

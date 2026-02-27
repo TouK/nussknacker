@@ -31,10 +31,12 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.LiveDataFetching.FetchSourcesLiveDataRequest
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
+  PerformTestCaseRequest,
   PerformTestRequest,
   SkipResultsPerNode,
   SkipResultsPerTransition
 }
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformTestCaseRequest._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformTestRequest._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.{
   BadRequestTestingError,
@@ -184,8 +186,8 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
     (
         ProcessName,
         PerformTestRequest,
-        Option[SkipResultsPerNode],
-        Option[SkipResultsPerTransition],
+        SkipResultsPerNode,
+        SkipResultsPerTransition,
     ),
     TestingError,
     ResultsWithCountsDto,
@@ -203,13 +205,38 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .errorOut(testingErrorOutput)
       .withSecurity(auth)
 
-  implicit def skipResultsPerNodeQueryParam: EndpointInput.Query[Option[SkipResultsPerNode]] =
-    query[Option[Boolean]]("skipResultsPerNode")
-      .map(cond => cond.map(SkipResultsPerNode(_)))(_.map(_.value))
+  def scenarioTestCaseEndpoint: SecuredEndpoint[
+    (
+        ProcessName,
+        PerformTestCaseRequest,
+        SkipResultsPerNode,
+        SkipResultsPerTransition,
+    ),
+    TestingError,
+    ResultsWithCountsDto,
+    Any
+  ] =
+    baseNuApiEndpoint
+      .summary("Perform single test case")
+      .tag("Testing")
+      .post
+      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "testCase")
+      .in(jsonBody[PerformTestCaseRequest])
+      .in(skipResultsPerNodeQueryParam)
+      .in(skipResultsPerTransitionQueryParam)
+      .out(statusCode(Ok).and(jsonBody[ResultsWithCountsDto]))
+      .errorOut(testingErrorOutput)
+      .withSecurity(auth)
+
+  implicit def skipResultsPerNodeQueryParam: EndpointInput.Query[SkipResultsPerNode] =
+    query[Boolean]("skipResultsPerNode")
+      .default(false)
+      .map(SkipResultsPerNode(_))(_.value)
 
   private def skipResultsPerTransitionQueryParam =
-    query[Option[Boolean]]("skipResultsPerTransition")
-      .map(cond => cond.map(SkipResultsPerTransition(_)))(_.map(_.value))
+    query[Boolean]("skipResultsPerTransition")
+      .default(false)
+      .map(SkipResultsPerTransition(_))(_.value)
 
   def scenarioTestGeneratedDataEndpoint: SecuredEndpoint[
     (ProcessName, FetchSourcesLiveDataRequest),
