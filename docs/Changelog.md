@@ -15,6 +15,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#8988](https://github.com/TouK/nussknacker/pull/8988) Fixed fragment test data validation for required or restricted input parameters
 * [#8923](https://github.com/TouK/nussknacker/pull/8923) Add new functions to Collection/Geo/Numeric helpers
 * [#8897](https://github.com/TouK/nussknacker/pull/8897) Fix: Passing TraceId after collect in RequestResponse
 * [#8849](https://github.com/TouK/nussknacker/pull/8849) Vulnerability: Spring upgrade to 6.2.15
