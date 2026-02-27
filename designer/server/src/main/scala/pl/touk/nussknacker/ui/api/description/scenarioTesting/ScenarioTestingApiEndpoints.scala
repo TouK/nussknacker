@@ -31,10 +31,12 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.LiveDataFetching.FetchSourcesLiveDataRequest
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
+  PerformTestCaseRequest,
   PerformTestRequest,
   SkipResultsPerNode,
   SkipResultsPerTransition
 }
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformTestCaseRequest._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformTestRequest._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.{
   BadRequestTestingError,
@@ -197,6 +199,29 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .post
       .in("scenarioTesting" / path[ProcessName]("scenarioName") / "performTest")
       .in(jsonBody[PerformTestRequest])
+      .in(skipResultsPerNodeQueryParam)
+      .in(skipResultsPerTransitionQueryParam)
+      .out(statusCode(Ok).and(jsonBody[ResultsWithCountsDto]))
+      .errorOut(testingErrorOutput)
+      .withSecurity(auth)
+
+  def scenarioTestCaseEndpoint: SecuredEndpoint[
+    (
+        ProcessName,
+        PerformTestCaseRequest,
+        Option[SkipResultsPerNode],
+        Option[SkipResultsPerTransition],
+    ),
+    TestingError,
+    ResultsWithCountsDto,
+    Any
+  ] =
+    baseNuApiEndpoint
+      .summary("Perform single test case")
+      .tag("Testing")
+      .post
+      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "testCase")
+      .in(jsonBody[PerformTestCaseRequest])
       .in(skipResultsPerNodeQueryParam)
       .in(skipResultsPerTransitionQueryParam)
       .out(statusCode(Ok).and(jsonBody[ResultsWithCountsDto]))
