@@ -171,13 +171,15 @@ class UIProcessValidator(
               .add(testCasesValidationResult)
           }
 
+          val fragments = fragmentResolver.fetchFragmentsSync(processingType)
+
           // TODO: should we validate after resolve?
           val additionalValidatorErrors = additionalValidators
             .map(_.validate(canonical))
             .sequence
             .fold(formatErrors, _ => ValidationResult.success)
 
-          val resolvedScenarioResult = fragmentResolver.resolveFragments(canonical, processingType)
+          val resolvedScenarioResult = fragmentResolver.resolveFragments(canonical, fragments)
 
           // TODO: handle types when fragment resolution fails
           val validationResult = resolvedScenarioResult match {
@@ -191,7 +193,7 @@ class UIProcessValidator(
               }
               if (containsDisabledNodes) {
                 val resolvedScenarioWithoutDisabledNodes =
-                  fragmentResolver.resolveFragments(canonical.withoutDisabledNodes, processingType)
+                  fragmentResolver.resolveFragments(canonical.withoutDisabledNodes, fragments)
                 resolvedScenarioWithoutDisabledNodes match {
                   case Invalid(fragmentResolutionErrors) =>
                     formatErrors(fragmentResolutionErrors)
@@ -206,7 +208,7 @@ class UIProcessValidator(
               }
           }
           val finalResult = validationResult.add(additionalValidatorErrors)
-          finalResult.withNodeNames(resolveNodeNamesForResult(finalResult, canonical))
+          finalResult.withNodeNames(resolveNodeNamesForResult(finalResult, canonical, fragments))
         }
       }
       .unsafeRunSync()
@@ -214,7 +216,8 @@ class UIProcessValidator(
 
   private def resolveNodeNamesForResult(
       result: ValidationResult,
-      canonical: CanonicalProcess
+      canonical: CanonicalProcess,
+      fragments: List[CanonicalProcess]
   )(implicit loggedUser: LoggedUser): Map[String, String] = {
     val referencedNodeIds =
       (result.errors.invalidNodes.keys ++ result.warnings.invalidNodes.keys).map(_.value).toSet
@@ -223,28 +226,27 @@ class UIProcessValidator(
 
     val canonicalNodesById = canonical.collectAllNodes.map(n => n.id.value -> n).toMap
 
-    lazy val fragmentsByName =
-      fragmentResolver.fetchFragmentsSync(processingType).map(f => f.name.value -> f).toMap
+    lazy val fragmentsByName = fragments.map(f => f.name.value -> f).toMap
 
     referencedNodeIds.flatMap { nodeId =>
       canonicalNodesById.get(nodeId) match {
         case Some(node) => Some(nodeId -> node.name.value)
         case None =>
-          canonicalNodesById.keys
-            .find(outerNodeId => nodeId.startsWith(outerNodeId + "-"))
-            .flatMap { outerNodeId =>
-              val outerNode   = canonicalNodesById(outerNodeId)
-              val innerNodeId = nodeId.drop(outerNodeId.length + 1)
-              outerNode match {
-                case fi: FragmentInput =>
-                  fragmentsByName.get(fi.ref.id).flatMap { fragmentCanonical =>
-                    fragmentCanonical.collectAllNodes
-                      .find(_.id.value == innerNodeId)
-                      .map(innerNode => nodeId -> s"${outerNode.name.value} - ${innerNode.name.value}")
-                  }
-                case _ => None
-              }
+          for {
+            outerNodeId <- canonicalNodesById.keys.find(outerNodeId => nodeId.startsWith(outerNodeId + "-"))
+            outerNode = canonicalNodesById(outerNodeId)
+            fi <- outerNode match {
+              case fi: FragmentInput => Some(fi)
+              case other =>
+                logger.warn(
+                  s"Node '$outerNodeId' matched by fragment prefix convention but is not a FragmentInput: $other"
+                )
+                None
             }
+            innerNodeId = nodeId.drop(outerNodeId.length + 1)
+            fragmentCanonical <- fragmentsByName.get(fi.ref.id)
+            innerNode         <- fragmentCanonical.collectAllNodes.find(_.id.value == innerNodeId)
+          } yield nodeId -> s"${outerNode.name.value} - ${innerNode.name.value}"
       }
     }.toMap
   }
