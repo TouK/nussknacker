@@ -631,7 +631,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     val resolved = FragmentResolver(List(emptyFragment)).resolve(process)
 
-    resolved should matchPattern { case Invalid(NonEmptyList(InvalidFragment("fragment1", NodeId("sub")), Nil)) =>
+    resolved should matchPattern { case Invalid(NonEmptyList(InvalidFragment("fragment1", NodeId("sub"), _), Nil)) =>
     }
   }
 

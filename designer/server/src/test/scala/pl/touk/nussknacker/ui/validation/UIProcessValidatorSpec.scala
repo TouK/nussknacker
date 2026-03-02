@@ -1992,7 +1992,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     validationResultWithCategory2.errors.invalidNodes shouldBe Map(
       NodeId("subIn") -> List(
-        PrettyValidationErrors.formatErrorMessage(UnknownFragment(fragment.name.value, NodeId("subIn")))
+        PrettyValidationErrors.formatErrorMessage(
+          UnknownFragment(fragment.name.value, NodeId("subIn"), NodeName("subIn"))
+        )
       )
     )
   }

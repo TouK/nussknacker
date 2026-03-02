@@ -29,7 +29,7 @@ object UnionTransformer extends UnionTransformer(None) {
 
   def transformContextsDefinition(outputExpressionByBranchId: Map[String, LazyParameter[AnyRef]], variableName: String)(
       contexts: Map[String, ValidationContext]
-  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): ValidatedNel[ProcessCompilationError, ValidationContext] = {
     val branchReturnTypes = outputExpressionByBranchId.values.map(_.returnType)
     val unifiedReturnType = NonEmptyList.fromList(branchReturnTypes.toList).flatMap { case NonEmptyList(head, tail) =>
       tail.foldLeft(Option(head)) { (acc, el) =>
@@ -38,7 +38,9 @@ object UnionTransformer extends UnionTransformer(None) {
     }
     unifiedReturnType
       .map(unionValidationContext(variableName, contexts, _))
-      .getOrElse(Validated.invalidNel(CannotCreateObjectError("All branch values must be of the same type", nodeId)))
+      .getOrElse(
+        Validated.invalidNel(CannotCreateObjectError("All branch values must be of the same type", nodeId, nodeName))
+      )
   }
 
   private def findSuperTypeCheckingAllFieldsMatchingForObjects(
@@ -91,7 +93,7 @@ class UnionTransformer(watermarkStrategy: Option[WatermarkStrategy[TimestampedVa
   def execute(
       @BranchParamName("Output expression") outputExpressionByBranchId: Map[String, LazyParameter[AnyRef]],
       @OutputVariableName variableName: String
-  )(implicit nodeId: NodeId): JoinContextTransformation =
+  )(implicit nodeId: NodeId, nodeName: NodeName): JoinContextTransformation =
     ContextTransformation.join
       .definedBy(transformContextsDefinition(outputExpressionByBranchId, variableName)(_))
       .implementedBy(

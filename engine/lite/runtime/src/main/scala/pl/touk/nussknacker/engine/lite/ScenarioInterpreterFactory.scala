@@ -282,7 +282,7 @@ object ScenarioInterpreterFactory {
           val nodeId = node.id
           val validatedTransformer = transformerObj match {
             case t: LiteCustomComponent => Valid(t)
-            case _                      => Invalid(NonEmptyList.of(UnsupportedPart(nodeId)))
+            case _                      => Invalid(NonEmptyList.of(UnsupportedPart(nodeId, node.data.name)))
           }
           validatedTransformer.andThen { transformer =>
             val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
@@ -434,7 +434,7 @@ object ScenarioInterpreterFactory {
         // Used only in fragment testing, when FragmentInputDefinition is available
         case (_: Source, _: FragmentInputDefinition) if runtimeMode == RuntimeMode.Test =>
           sourceForFragmentInputTesting
-        case _ => Invalid(NonEmptyList.of(UnsupportedPart(nodeId)))
+        case _ => Invalid(NonEmptyList.of(UnsupportedPart(nodeId, node.data.name)))
       }
       validatedSource.map { source =>
         source.createTransformation(customComponentContext(nodeId, node.data.name))
@@ -469,7 +469,7 @@ object ScenarioInterpreterFactory {
       val validatedTransformer = transformerObj match {
         case t: LiteJoinCustomComponent                               => Valid(t)
         case JoinContextTransformation(_, t: LiteJoinCustomComponent) => Valid(t)
-        case _ => Invalid(NonEmptyList.of(UnsupportedPart(nodeId)))
+        case _ => Invalid(NonEmptyList.of(UnsupportedPart(nodeId, node.data.name)))
       }
       val transformationResult = validatedTransformer.andThen { transformer =>
         val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))

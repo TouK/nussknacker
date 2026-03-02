@@ -210,7 +210,9 @@ protected trait ProcessCompilerBase {
         partInputContexts
           .get(p.id.value)
           .map(compileSubsequentPart(p, _))
-          .getOrElse(CompilationResult(Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(p.id)))))
+          .getOrElse(
+            CompilationResult(Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(p.id, p.node.data.name))))
+          )
       )
       .sequence
   }

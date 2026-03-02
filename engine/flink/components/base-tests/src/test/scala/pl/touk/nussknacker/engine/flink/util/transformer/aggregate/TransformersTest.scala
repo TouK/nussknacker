@@ -1082,7 +1082,9 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   private def validateError(aggregator: String, aggregateBy: String, error: String): Unit = {
     val result = validateConfig(aggregator, aggregateBy)
     result.result shouldBe Symbol("invalid")
-    result.result.swap.toOption.get shouldBe NonEmptyList.of(CannotCreateObjectError(error, NodeId("transform")))
+    result.result.swap.toOption.get shouldBe NonEmptyList.of(
+      CannotCreateObjectError(error, NodeId("transform"), NodeName("transform"))
+    )
   }
 
   private def validateOk(aggregator: String, aggregateBy: String, typingResult: TypingResult): Unit = {
