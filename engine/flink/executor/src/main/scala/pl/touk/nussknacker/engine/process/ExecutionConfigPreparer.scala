@@ -91,6 +91,7 @@ object ExecutionConfigPreparer extends LazyLogging {
         config: ExecutionConfig
     )(jobData: JobData, deploymentData: DeploymentData): Unit = {
       FlinkTypeInfoRegistrar.ensureTypeInfosAreRegistered()
+      FlinkTypeInfoRegistrar.validateKryoTypeRegistrations()
       Serializers.registerSerializers(modelData.modelClassLoader, config)
       if (enableObjectReuse) {
         config.enableObjectReuse()

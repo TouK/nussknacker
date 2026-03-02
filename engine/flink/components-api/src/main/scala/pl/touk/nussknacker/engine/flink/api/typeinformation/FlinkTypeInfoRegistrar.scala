@@ -1,15 +1,25 @@
 package pl.touk.nussknacker.engine.flink.api.typeinformation
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.typeinfo.{TypeInfoFactory, TypeInformation, Types}
 import org.apache.flink.api.java.typeutils.TypeExtractor
+import org.apache.flink.api.java.typeutils.runtime.kryo.ChillSerializerRegistrar
 
 import java.lang.reflect.Type
 import java.time._
 import java.util
+import scala.util.Try
 
-// This class contains registers TypeInfoFactory for commonly used classes in Nussknacker.
-// It is a singleton as Flink's only contains a global registry for such purpose
-object FlinkTypeInfoRegistrar {
+/**
+ * This class registers TypeInfoFactory for commonly used classes in Nussknacker.
+ * It is a singleton as Flink uses a global registry for such purpose.
+ */
+//noinspection ScalaWeakerAccess
+object FlinkTypeInfoRegistrar extends LazyLogging {
+
+  private val FLINK_1_CHILL_PACKAGE_REGISTRAR =
+    "org.apache.flink.api.java.typeutils.runtime.kryo.FlinkChillPackageRegistrar"
+  private val FLINK_2_CHILL_PACKAGE_REGISTRAR = "org.apache.flink.streaming.util.serialize.FlinkChillPackageRegistrar"
 
   private case class RegistrationEntry[T](klass: Class[T], factoryClass: Class[_ <: TypeInfoFactory[T]])
 
@@ -21,6 +31,31 @@ object FlinkTypeInfoRegistrar {
 
   def ensureTypeInfosAreRegistered(): Unit = {
     register(typeInfoToRegister)
+  }
+
+  def validateKryoTypeRegistrations(): Unit = {
+    val chillSerializerRegistrar = Try(Class.forName(FLINK_2_CHILL_PACKAGE_REGISTRAR))
+      .recover { case _: ClassNotFoundException => Class.forName(FLINK_1_CHILL_PACKAGE_REGISTRAR) }
+      .get
+      .getDeclaredConstructor()
+      .newInstance()
+      .asInstanceOf[ChillSerializerRegistrar]
+    if (chillSerializerRegistrar.getNextRegistrationId == 85) {
+      if (!classExists("pl.touk.nussknacker.FlinkScalaBuildInfo")) {
+        logger.warn("flink-scala.jar is missing from classpath - serialization of some Scala types may be broken")
+      } else {
+        logger.warn("flink-scala.jar is loaded after Flink classes - serialization of some Scala types may be broken")
+      }
+    }
+  }
+
+  private def classExists(className: String): Boolean = {
+    try {
+      Class.forName(className)
+      true
+    } catch {
+      case _: ClassNotFoundException => false
+    }
   }
 
   private def register(entries: List[RegistrationEntry[_]]): Unit = {

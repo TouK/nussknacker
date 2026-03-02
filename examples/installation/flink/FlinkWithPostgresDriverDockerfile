@@ -1,19 +1,13 @@
 ARG TOUK_FLINK_VERSION
-
-FROM curlimages/curl:8.9.1 AS lib_provider
+FROM touk/flink:${TOUK_FLINK_VERSION}
 
 # Adding custom libraries ('add other libraries' section):
 # https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/resource-providers/standalone/docker/#further-customization
-WORKDIR /libs
-RUN curl -k --output /libs/postgresql-42.6.0.jar https://repo1.maven.org/maven2/org/postgresql/postgresql/42.6.0/postgresql-42.6.0.jar
+ADD --chmod=644 https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.8/postgresql-42.7.8.jar /opt/flink/lib/postgresql-42.7.8.jar
 
-FROM touk/flink:${TOUK_FLINK_VERSION}
-
-USER root
 RUN echo '#!/bin/sh' > /ex-docker-entrypoint.sh && \
-    echo 'export FLINK_PROPERTIES=$(cat /opt/flink/conf/flink-properties.yml) && /docker-entrypoint.sh "$@"' >> /ex-docker-entrypoint.sh && \
+    echo 'export FLINK_PROPERTIES=$(cat /opt/flink/conf/flink-properties.yml) && exec /docker-entrypoint.sh "$@"' >> /ex-docker-entrypoint.sh && \
     chmod +x /ex-docker-entrypoint.sh
-COPY --from=lib_provider /libs/ /opt/flink/lib/
 
 USER flink
 COPY flink-properties.yml /opt/flink/conf/
