@@ -238,7 +238,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .summary("Perform single test case")
       .tag("Testing")
       .post
-      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "testCase")
+      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "performTestCase")
       .in(jsonBody[PerformTestCaseRequest])
       .in(skipResultsPerNodeQueryParam)
       .in(skipResultsPerTransitionQueryParam)
