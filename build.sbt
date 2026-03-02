@@ -98,6 +98,24 @@ def defaultMergeStrategy: String => MergeStrategy = {
   case x                                                              => MergeStrategy.defaultMergeStrategy(x)
 }
 
+def flinkDeploymentManagerMergeStrategy: String => MergeStrategy = {
+  // flink-scala overrides FlinkChillPackageRegistrar, which is normally solved by proper classpath ordering in Flink
+  case PathList(
+        "org",
+        "apache",
+        "flink",
+        "api",
+        "java",
+        "typeutils",
+        "runtime",
+        "kryo",
+        "FlinkChillPackageRegistrar.class"
+      ) =>
+    MergeStrategy.first
+  case x =>
+    defaultMergeStrategy(x)
+}
+
 def designerMergeStrategy: String => MergeStrategy = {
   // https://tapir.softwaremill.com/en/latest/docs/openapi.html#using-swaggerui-with-sbt-assembly
   case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") =>
@@ -142,6 +160,7 @@ lazy val commonSettings =
       scalaVersion                 := defaultScalaV,
       resolvers ++= Seq(
         "confluent" at "https://packages.confluent.io/maven",
+        "Sonatype Snapshots" at "https://central.sonatype.com/repository/maven-snapshots/",
       ),
       // We ignore k8s tests to keep development setup low-dependency
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
@@ -243,7 +262,7 @@ val flinkCommonsLang3V    = "3.12.0"
 val flinkCommonsTextV     = "1.10.0"
 val flinkCommonsIOV       = "2.15.1"
 val flinkInfluxdbJavaV    = "2.17"
-val flinkScalaV           = "1.1.6"
+val flinkScalaV           = "1.2.1"
 // keep calcite synchronized with version used by current flink-sql-parser
 val calciteV              = "1.32.0"
 val avroV                 = "1.12.1"
@@ -545,6 +564,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
   .settings(publishAssemblySettings: _*)
   .settings(
     name                                            := "nussknacker-flink-manager",
+    assembly / assemblyMergeStrategy                := flinkDeploymentManagerMergeStrategy,
     IntegrationTest / Keys.test                     := (IntegrationTest / Keys.test)
       .dependsOn(
         flinkExecutor / Compile / assembly,
@@ -1489,7 +1509,8 @@ lazy val developmentTestsDeploymentManager = (project in development("deployment
   .settings(commonSettings)
   .settings(assemblyNoScala("developmentTestsManager.jar"): _*)
   .settings(
-    name := "nussknacker-development-tests-manager",
+    name                             := "nussknacker-development-tests-manager",
+    assembly / assemblyMergeStrategy := flinkDeploymentManagerMergeStrategy,
   )
   .dependsOn(
     deploymentManagerApi % Provided,
