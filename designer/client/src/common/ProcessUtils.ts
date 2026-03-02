@@ -62,6 +62,7 @@ class ProcessUtils {
             validationErrors: [],
             validationWarnings: [],
             nodeResults: {},
+            nodeNames: {},
             errors: {
                 globalErrors: [],
                 processPropertiesErrors: [],

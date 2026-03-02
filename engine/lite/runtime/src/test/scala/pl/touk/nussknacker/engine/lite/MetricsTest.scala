@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProvi
 import pl.touk.nussknacker.engine.lite.sample.SampleInput
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.metrics.{Gauge, MetricIdentifier}
-import pl.touk.nussknacker.engine.util.metrics.common.naming.{nodeIdTag, scenarioIdTag}
+import pl.touk.nussknacker.engine.util.metrics.common.naming.{nodeIdTag, nodeNameTag, scenarioIdTag}
 
 import scala.jdk.CollectionConverters._
 
@@ -148,7 +148,11 @@ class MetricsTest extends AnyFunSuite with Matchers {
     val deadEndInstantRateForNode: String => Double = gaugeForNode("dead_end.instantRate")
 
     private def nodeFilter(key: String, nodeId: String): MetricFilter = { (mn, _) =>
-      mn.getKey == key && mn.getTags.asScala.toMap == Map(scenarioIdTag -> scenarioId, nodeIdTag -> nodeId)
+      mn.getKey == key && mn.getTags.asScala.toMap == Map(
+        scenarioIdTag -> scenarioId,
+        nodeIdTag     -> nodeId,
+        nodeNameTag   -> nodeId
+      )
     }
 
   }
