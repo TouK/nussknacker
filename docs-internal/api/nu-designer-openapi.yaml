@@ -6757,6 +6757,18 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_String'
+    Map_NodeId_EnricherMock:
+      title: Map_NodeId_EnricherMock
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/EnricherMock'
+    Map_NodeId_List_Assertion:
+      title: Map_NodeId_List_Assertion
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/Assertion'
     Map_NodeId_String:
       title: Map_NodeId_String
       type: object
@@ -7692,7 +7704,7 @@ components:
         scenarioGraph:
           type: object
         testCase:
-          type: object
+          $ref: '#/components/schemas/TestCase'
     PerformTestRequestJsonBody:
       title: PerformTestRequestJsonBody
       type: object
@@ -8380,6 +8392,27 @@ components:
     TabularTypedDataEditor:
       title: TabularTypedDataEditor
       type: object
+    TestCase:
+      title: TestCase
+      type: object
+      required:
+      - id
+      - name
+      - inputs
+      - mocks
+      - assertions
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        inputs:
+          type: string
+        mocks:
+          $ref: '#/components/schemas/Map_NodeId_EnricherMock'
+        assertions:
+          $ref: '#/components/schemas/Map_NodeId_List_Assertion'
     TestCaseAdditionalVariablesRequestDto:
       title: TestCaseAdditionalVariablesRequestDto
       type: object
