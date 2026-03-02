@@ -34,7 +34,11 @@ import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder.
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ListUtil
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationErrors}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  NodeTypingData,
+  NodeValidationError,
+  ValidationErrors
+}
 import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
@@ -640,6 +644,8 @@ object ScenarioTestService {
         extends PerformTestError
 
     final case class ScenarioValidationError(errors: ValidationErrors) extends PerformTestError
+
+    final case class ScenarioNodeValidationErrors(errors: List[NodeValidationError]) extends PerformTestError
 
   }
 
