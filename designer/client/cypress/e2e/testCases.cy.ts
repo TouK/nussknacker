@@ -156,7 +156,7 @@ const appendFromLiveDataClick = () => {
 };
 
 const rerunTest = () => {
-    cy.intercept("POST", "/api/processManagement/testCase/*").as("retest");
+    cy.intercept("POST", "/api/scenarioTesting/*/performTestCase").as("retest");
     cy.contains('[data-testid="toolbarButton-label"]', /Rerun test/).click();
     cy.wait("@retest");
 };
