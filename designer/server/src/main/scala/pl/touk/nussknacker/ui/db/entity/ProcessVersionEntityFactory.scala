@@ -9,11 +9,13 @@ import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.restmodel.component.{NodeId, ScenarioComponentsUsages}
+import pl.touk.nussknacker.restmodel.component.{NodeId, NodeIdWithNodeName, ScenarioComponentsUsages}
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
+import java.nio.charset.StandardCharsets
 import java.sql.Timestamp
+import java.util.UUID
 
 trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
@@ -184,9 +186,19 @@ final case class ProcessVersionEntityData(
     json.getOrElse(throw new IllegalStateException("Accessing scenario graph json which is not fetched"))
 }
 
-// TODO: Remove this codec and just serialize Map[ComponentId, List[NodeId]]
+@JsonCodec
+private[entity] final case class NodeIdWithNameDto(nodeId: String, nodeName: String)
+
 @JsonCodec
 private[entity] final case class ComponentUsages(
+    componentName: String,
+    componentType: ComponentType,
+    nodeUsages: List[NodeIdWithNameDto]
+)
+
+// Legacy format used before node names were introduced
+@JsonCodec
+private[entity] final case class LegacyComponentUsages(
     componentName: String,
     componentType: ComponentType,
     nodeIds: List[NodeId]
@@ -194,19 +206,35 @@ private[entity] final case class ComponentUsages(
 
 object ScenarioComponentsUsagesJsonCodec {
 
-  implicit val decoder: Decoder[ScenarioComponentsUsages] = implicitly[Decoder[List[ComponentUsages]]].map {
+  private val newDecoder: Decoder[ScenarioComponentsUsages] = implicitly[Decoder[List[ComponentUsages]]].map {
     componentUsagesList =>
-      val componentUsagesMap = componentUsagesList.map { componentUsages =>
-        val componentId = ComponentId(componentUsages.componentType, componentUsages.componentName)
-        componentId -> componentUsages.nodeIds
+      val componentUsagesMap = componentUsagesList.map { cu =>
+        val componentId = ComponentId(cu.componentType, cu.componentName)
+        componentId -> cu.nodeUsages.map(u => NodeIdWithNodeName(u.nodeId, u.nodeName))
       }.toMap
       ScenarioComponentsUsages(componentUsagesMap)
   }
 
+  // Handles data stored before node names were added to the format.
+  // Node names will be populated after re-running the components usages migration.
+  private val legacyDecoder: Decoder[ScenarioComponentsUsages] =
+    implicitly[Decoder[List[LegacyComponentUsages]]].map { componentUsagesList =>
+      val componentUsagesMap = componentUsagesList.map { cu =>
+        val componentId = ComponentId(cu.componentType, cu.componentName)
+        componentId -> cu.nodeIds.map(legacyId => {
+          val uuid = UUID.nameUUIDFromBytes(legacyId.getBytes(StandardCharsets.UTF_8))
+          NodeIdWithNodeName(uuid.toString, legacyId)
+        })
+      }.toMap
+      ScenarioComponentsUsages(componentUsagesMap)
+    }
+
+  implicit val decoder: Decoder[ScenarioComponentsUsages] = newDecoder.or(legacyDecoder)
+
   implicit val encoder: Encoder[ScenarioComponentsUsages] =
     implicitly[Encoder[List[ComponentUsages]]].contramap[ScenarioComponentsUsages](_.value.toList.map {
-      case (ComponentId(componentType, componentName), nodeIds) =>
-        ComponentUsages(componentName, componentType, nodeIds)
+      case (ComponentId(componentType, componentName), nodeUsages) =>
+        ComponentUsages(componentName, componentType, nodeUsages.map(u => NodeIdWithNameDto(u.nodeId, u.nodeName)))
     })
 
 }

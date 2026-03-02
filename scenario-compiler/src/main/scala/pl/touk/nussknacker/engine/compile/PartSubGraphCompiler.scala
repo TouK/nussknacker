@@ -59,7 +59,10 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
       case splittednode.SplitNode(bareNode, nexts) =>
         val compiledNexts = nexts.map(n => compile(n, inputContext)).sequence
         compiledNexts.andThen(nx =>
-          toCompilationResult(Valid(compiledgraph.node.SplitNode(bareNode.id.value, nx.flatten)), Map.empty)
+          toCompilationResult(
+            Valid(compiledgraph.node.SplitNode(bareNode.id.value, bareNode.name.value, nx.flatten)),
+            Map.empty
+          )
         )
 
       case splittednode.FilterNode(f @ Filter(id, _, _, _, _), nextTrue, nextFalse) =>
@@ -73,6 +76,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         )((expr, next, nextFalse) =>
           compiledgraph.node.Filter(
             id = id.value,
+            name = f.name.value,
             expression = expr,
             nextTrue = next.flatten,
             nextFalse = nextFalse.flatten,
@@ -98,6 +102,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
           val compiledCases = caseExpressions.zip(cases).map(k => compiledgraph.node.Case(k._1, k._2))
           compiledgraph.node.Switch(
             id.value,
+            switch.name.value,
             Applicative[Option].product(varName, expr),
             compiledCases,
             defaultNext.flatten
@@ -117,13 +122,13 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
   ): CompilationResult[node.Source] = {
     // just like in a custom node we can't add input context here because it contains output variable context (not input)
     nodeData match {
-      case Source(id, _, ref, _) =>
-        compile(next, inputContext).map(nwc => compiledgraph.node.Source(id.value, Some(ref.typ), nwc))
-      case Join(id, _, _, _, _, _, _) =>
-        compile(next, inputContext).map(nwc => compiledgraph.node.Source(id.value, None, nwc))
-      case FragmentInputDefinition(id, _, _, _) =>
+      case Source(id, name, ref, _) =>
+        compile(next, inputContext).map(nwc => compiledgraph.node.Source(id.value, name.value, Some(ref.typ), nwc))
+      case Join(id, name, _, _, _, _, _) =>
+        compile(next, inputContext).map(nwc => compiledgraph.node.Source(id.value, name.value, None, nwc))
+      case FragmentInputDefinition(id, name, _, _) =>
         // TODO: should we recognize we're compiling only fragment?
-        compile(next, inputContext).map(nwc => compiledgraph.node.Source(id.value, None, nwc))
+        compile(next, inputContext).map(nwc => compiledgraph.node.Source(id.value, name.value, None, nwc))
     }
   }
 
@@ -158,23 +163,25 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         val NodeCompilationResult(typingInfo, parameters, _, validatedServiceRef, _) =
           nodeCompiler.compileProcessor(processor, inputContext)
         toCompilationResult(
-          validatedServiceRef.map(ref => compiledgraph.node.EndingProcessor(id.value, ref, disabled.contains(true))),
+          validatedServiceRef.map(ref =>
+            compiledgraph.node.EndingProcessor(id.value, processor.name.value, ref, disabled.contains(true))
+          ),
           typingInfo,
           parameters,
           outputValidationContext = Some(inputContext.validationContext)
         )
 
-      case Sink(id, _, ref, _, disabled, _) =>
+      case Sink(id, name, ref, _, disabled, _) =>
         toCompilationResult(
-          Valid(compiledgraph.node.Sink(id.value, ref.typ, disabled.contains(true))),
+          Valid(compiledgraph.node.Sink(id.value, name.value, ref.typ, disabled.contains(true))),
           expressionsTypingInfo = Map.empty,
           parameters = None,
           outputValidationContext = None
         )
 
-      case CustomNode(id, _, _, nodeType, _, _) =>
+      case CustomNode(id, name, _, nodeType, _, _) =>
         toCompilationResult(
-          Valid(compiledgraph.node.EndingCustomNode(id.value, nodeType)),
+          Valid(compiledgraph.node.EndingCustomNode(id.value, name.value, nodeType)),
           expressionsTypingInfo = Map.empty,
           parameters = None,
           outputValidationContext = None
@@ -186,13 +193,13 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
           nodeCompiler.compileFragmentInput(fragmentInput, inputContext)
         toCompilationResult(combinedValidParams, typingInfo, parameters, Some(inputContext.validationContext)).map {
           params =>
-            compiledgraph.node.FragmentUsageStart(fragmentInput.id.value, params, None)
+            compiledgraph.node.FragmentUsageStart(fragmentInput.id.value, fragmentInput.name.value, params, None)
         }
-      case FragmentOutputDefinition(id, _, _, Nil, _) =>
+      case FragmentOutputDefinition(id, name, _, Nil, _) =>
         // TODO: should we validate it's process?
         // TODO: does it make sense to validate FragmentOutput?
         toCompilationResult(
-          Valid(compiledgraph.node.FragmentOutput(id.value, Map.empty, isDisabled = false)),
+          Valid(compiledgraph.node.FragmentOutput(id.value, name.value, Map.empty, isDisabled = false)),
           expressionsTypingInfo = Map.empty,
           parameters = None,
           outputValidationContext = None
@@ -201,7 +208,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         val fieldTypedExpressions = nodeCompiler.compileFragmentOutputDefinition(fod, inputContext)
         toCompilationResult(
           fieldTypedExpressions.map(typedExpressions =>
-            compiledgraph.node.FragmentOutput(id.value, typedExpressions, isDisabled = false)
+            compiledgraph.node.FragmentOutput(id.value, fod.name.value, typedExpressions, isDisabled = false)
           ),
           expressionsTypingInfo = Map.empty,
           parameters = None,
@@ -255,9 +262,9 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
           f1 = toCompilationResult(compiledExpression, typingInfo, parameters, newCtx.toOption),
           f2 = compile(next, newCtx.map(SingleInputNodeInputValidationContext(_)).getOrElse(inputContext))
         ) { (_, compiled, compiledNext) =>
-          compiledgraph.node.VariableBuilder(id.value, varName, Left(compiled), compiledNext)
+          compiledgraph.node.VariableBuilder(id.value, variable.name.value, varName, Left(compiled), compiledNext)
         }
-      case VariableBuilder(id, _, varName, fields, _) =>
+      case vb @ VariableBuilder(id, _, varName, fields, _) =>
         implicit val nodeId: NodeId = id
         val NodeCompilationResult(typingInfo, parameters, newCtxV, compiledFields, _) =
           nodeCompiler.compileFields(fields, inputContext, outputVar = Some(OutputVar.variable(varName)))
@@ -266,7 +273,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
           f1 = toCompilationResult(compiledFields, typingInfo, parameters, newCtxV.toOption),
           f2 = compile(next, newCtxV.map(SingleInputNodeInputValidationContext(_)).getOrElse(inputContext))
         ) { (_, compiledFields, compiledNext) =>
-          compiledgraph.node.VariableBuilder(id.value, varName, Right(compiledFields), compiledNext)
+          compiledgraph.node.VariableBuilder(id.value, vb.name.value, varName, Right(compiledFields), compiledNext)
         }
 
       case processor @ Processor(id, _, _, isDisabled, _) =>
@@ -275,7 +282,9 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         CompilationResult.map2(
           toCompilationResult(validatedServiceRef, typingInfo, parameters, Some(inputContext.validationContext)),
           compile(next, inputContext)
-        )((ref, next) => compiledgraph.node.Processor(id.value, ref, next, isDisabled.contains(true)))
+        )((ref, next) =>
+          compiledgraph.node.Processor(id.value, processor.name.value, ref, next, isDisabled.contains(true))
+        )
 
       case enricher @ Enricher(id, _, _, output, _, _) =>
         val NodeCompilationResult(typingInfo, parameters, newCtx, validatedServiceRef, _) =
@@ -288,6 +297,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         )((serviceCompilationResult, _, next) =>
           compiledgraph.node.Enricher(
             id.value,
+            enricher.name.value,
             serviceCompilationResult.serviceRef,
             output,
             next,
@@ -296,9 +306,9 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         )
 
       // here we don't do anything, in subgraphcompiler it's just pass through, we can't add input context here because it contains output variable context (not input)
-      case CustomNode(id, _, _, nodeType, _, _) =>
+      case node @ CustomNode(id, _, _, nodeType, _, _) =>
         CompilationResult.map(fa = compile(next, inputContext))(
-          f = compiledNext => compiledgraph.node.CustomNode(id.value, nodeType, compiledNext)
+          f = compiledNext => compiledgraph.node.CustomNode(id.value, node.name.value, nodeType, compiledNext)
         )
 
       case fragmentInput: FragmentInput =>
@@ -307,21 +317,23 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         CompilationResult.map2(
           toCompilationResult(combinedValidParams, typingInfo, parameters, newCtx.toOption),
           compile(next, newCtx.map(SingleInputNodeInputValidationContext(_)).getOrElse(inputContext))
-        )((params, next) => compiledgraph.node.FragmentUsageStart(fragmentInput.id.value, params, next))
+        )((params, next) =>
+          compiledgraph.node.FragmentUsageStart(fragmentInput.id.value, fragmentInput.name.value, params, next)
+        )
 
-      case FragmentUsageOutput(id, _, fragmentUsageStartNodeId, outputName, None, _) =>
+      case f @ FragmentUsageOutput(id, _, fragmentUsageStartNodeId, outputName, None, _) =>
         // Missing 'parent context' means that fragment has used some component which cleared context. We compile next parts using empty context (but with copied global variables).
         val parentContext = inputContext.validationContext.popContextOrEmptyWithGlobals()
         compile(next, SingleInputNodeInputValidationContext(parentContext))
           .andThen(compiledNext =>
             toCompilationResult(
-              Valid(FragmentUsageEnd(id.value, fragmentUsageStartNodeId.value, None, compiledNext)),
+              Valid(FragmentUsageEnd(id.value, f.name.value, fragmentUsageStartNodeId.value, None, compiledNext)),
               expressionsTypingInfo = Map.empty,
               parameters = None,
               outputValidationContext = Some(parentContext)
             )
           )
-      case FragmentUsageOutput(id, _, fragmentUsageStartNodeId, outputName, Some(outputVar), _) =>
+      case f @ FragmentUsageOutput(id, _, fragmentUsageStartNodeId, outputName, Some(outputVar), _) =>
         implicit val nodeId: NodeId = id
         val NodeCompilationResult(typingInfo, parameters, ctxWithSubOutV, compiledFields, typingResult) =
           nodeCompiler.compileFields(outputVar.fields, inputContext, outputVar = None)
@@ -338,6 +350,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         ) { (_, _, compiledFields, compiledNext) =>
           compiledgraph.node.FragmentUsageEnd(
             id.value,
+            f.name.value,
             fragmentUsageStartNodeId.value,
             Some(node.FragmentOutputVarDefinition(outputVar.name, compiledFields)),
             compiledNext

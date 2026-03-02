@@ -93,7 +93,7 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
                   ComponentUsagesInScenario(
                     name = ProcessName("scenario1"),
                     nodesUsagesData = List(
-                      ScenarioUsageData("csv-source")
+                      ScenarioUsageData("513eab33-d9b3-4c67-a9e7-b84ae184eb64", "csv-source")
                     ),
                     isFragment = false,
                     processCategory = "Category1",
@@ -113,7 +113,7 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
                   ComponentUsagesInScenario(
                     name = ProcessName("scenario1"),
                     nodesUsagesData = List(
-                      ScenarioUsageData("csv-source")
+                      ScenarioUsageData("513eab33-d9b3-4c67-a9e7-b84ae184eb64", "csv-source")
                     ),
                     isFragment = false,
                     processCategory = "Category1",

@@ -244,7 +244,7 @@ object PdfExporter extends LazyLogging {
       NodeSeq.Empty
     } else {
       <block margin-bottom="25pt" margin-top="5pt">
-        <block font-size="13pt" font-weight="bold" text-align="left" id={node.name.value}>
+        <block font-size="13pt" font-weight="bold" text-align="left" id={node.id.value}>
           {node.getClass.getSimpleName} {node.name.value}
         </block>
         <table width="100%" table-layout="fixed">
@@ -312,7 +312,7 @@ object PdfExporter extends LazyLogging {
           <table-row>
               <table-cell border="1pt solid black" padding-left="1pt" font-weight="bold">
                 <block>
-                  <basic-link internal-destination={node.name.value}>
+                  <basic-link internal-destination={node.id.value}>
                     {node.name.value}
                   </basic-link>
                 </block>

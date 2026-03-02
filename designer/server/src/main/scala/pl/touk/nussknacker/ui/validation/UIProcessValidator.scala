@@ -6,7 +6,7 @@ import cats.effect.SyncIO
 import cats.effect.kernel.Resource
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{CustomProcessValidator, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId, NodeName, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDepend
 import pl.touk.nussknacker.engine.api.graph.{Edge, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
-import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessValidator}
+import pl.touk.nussknacker.engine.compile.{NameValidator, NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInput, FragmentInputDefinition, NodeData, Source}
 import pl.touk.nussknacker.engine.test.testcase.TestCases
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
@@ -140,7 +140,7 @@ class UIProcessValidator(
   ): ValidationResult = {
     validateScenarioName(processName, isFragment)
       .add(validateScenarioLabels(labels))
-      .add(validateNodesId(scenarioGraph))
+      .add(validateNodesName(scenarioGraph))
       .add(validateDuplicates(scenarioGraph))
       .add(validateLooseNodes(scenarioGraph))
       .add(validateStickyNotesLength(scenarioGraph))
@@ -261,27 +261,25 @@ class UIProcessValidator(
     }
     val disabledNodesWarnings =
       disabledNodes
-        .map(node => (node.id, List(PrettyValidationErrors.formatErrorMessage(DisabledNode(node.id)))))
+        .map(node => (node.id, List(PrettyValidationErrors.formatErrorMessage(DisabledNode(node.id, node.name)))))
         .toMap
     ValidationResult.warnings(disabledNodesWarnings)
   }
 
   private def validateScenarioName(processName: ProcessName, isFragment: Boolean): ValidationResult = {
-    IdValidator.validateScenarioName(processName, isFragment) match {
+    NameValidator.validateScenarioName(processName, isFragment) match {
       case Valid(_)   => ValidationResult.success
       case Invalid(e) => formatErrors(e)
     }
   }
 
-  private def validateNodesId(scenarioGraph: ScenarioGraph): ValidationResult = {
-    val nodeIdErrors = scenarioGraph.nodes
-      .map(n => IdValidator.validateNodeId(n.id))
-      .collect { case Invalid(e) =>
-        e
-      }
+  private def validateNodesName(scenarioGraph: ScenarioGraph): ValidationResult = {
+    val nodeNameErrors = scenarioGraph.nodes
+      .map(NameValidator.validateNodeName)
+      .collect { case Invalid(e) => e }
       .reduceOption(_ concatNel _)
 
-    nodeIdErrors match {
+    nodeNameErrors match {
       case Some(value) => formatErrors(value)
       case None        => ValidationResult.success
     }
@@ -316,16 +314,18 @@ class UIProcessValidator(
   }
 
   private def validateEdgeUniqueness(scenarioGraph: ScenarioGraph): ValidationResult = {
-    val edgesByFrom = scenarioGraph.edges.groupBy(e => e.from)
+    val edgesByFrom   = scenarioGraph.edges.groupBy(e => e.from)
+    val nodeNamesById = scenarioGraph.nodes.map(n => n.id -> n.name).toMap
 
     def findNonUniqueEdge(nodeId: NodeId, edgesFromNode: List[Edge]) = {
+      val nodeName = nodeNamesById.getOrElse(nodeId, NodeName(nodeId.value))
       val nonUniqueByType = edgesFromNode.groupBy(_.edgeType).collect {
         case (Some(eType), list) if eType.mustBeUnique && list.size > 1 =>
-          PrettyValidationErrors.formatErrorMessage(NonUniqueEdgeType(eType.toString, nodeId))
+          PrettyValidationErrors.formatErrorMessage(NonUniqueEdgeType(eType.toString, nodeId, nodeName))
       }
       val nonUniqueByTarget = edgesFromNode.groupBy(_.to).collect {
         case (to, list) if list.size > 1 =>
-          PrettyValidationErrors.formatErrorMessage(NonUniqueEdge(nodeId, to.value))
+          PrettyValidationErrors.formatErrorMessage(NonUniqueEdge(nodeId, nodeName, to.value))
       }
       (nonUniqueByType ++ nonUniqueByTarget).toList
     }
@@ -366,16 +366,15 @@ class UIProcessValidator(
   }
 
   private def validateLooseNodes(scenarioGraph: ScenarioGraph): ValidationResult = {
-    val looseNodesIds = scenarioGraph.nodes
+    val looseNodes = scenarioGraph.nodes
       // source & fragment inputs don't have inputs
       .filterNot(n => n.isInstanceOf[FragmentInputDefinition] || n.isInstanceOf[Source])
       .filterNot(n => scenarioGraph.edges.exists(_.to == n.id))
-      .map(n => n.id)
 
-    if (looseNodesIds.isEmpty) {
+    if (looseNodes.isEmpty) {
       ValidationResult.success
     } else {
-      formatErrors(NonEmptyList.one(LooseNode(looseNodesIds.toSet)))
+      formatErrors(NonEmptyList.one(LooseNode(looseNodes.map(n => (n.id, n.name)).toSet)))
     }
   }
 

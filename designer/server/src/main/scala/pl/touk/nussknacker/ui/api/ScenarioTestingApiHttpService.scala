@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.{EitherT, NonEmptyList}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
@@ -117,8 +117,13 @@ class ScenarioTestingApiHttpService(
                           scenarioWithDetails.isFragment
                         ) match {
                           case Right(parameters) =>
+                            val nodeNamesById = scenarioGraph.nodes.map(n => n.id -> n.name).toMap
                             val uiParameters = parameters.map { case (id, params) =>
-                              UISourceParameters(id.value, params.map(DefinitionsService.createUIParameter))
+                              UISourceParameters(
+                                id.value,
+                                nodeNamesById.getOrElse(id, NodeName(id.value)).value,
+                                params.map(DefinitionsService.createUIParameter)
+                              )
                             }.toList
                             CapabilityStatus.Available(TestWithParametersDetails(uiParameters))
                           case Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(_)) =>

@@ -26,16 +26,24 @@ package object component {
   import pl.touk.nussknacker.engine.api.CirceUtil._
   import pl.touk.nussknacker.restmodel.codecs.URICodecs._
 
-  type NodeId = String
+  type NodeId   = String
+  type NodeName = String
 
   @ConfiguredJsonCodec sealed trait NodeUsageData {
     def nodeId: NodeId
+    def nodeName: NodeName
   }
 
   object NodeUsageData {
-    final case class FragmentUsageData(fragmentNodeId: String, nodeId: NodeId) extends NodeUsageData
 
-    final case class ScenarioUsageData(nodeId: NodeId) extends NodeUsageData
+    final case class FragmentUsageData(
+        fragmentNodeId: String,
+        fragmentNodeName: String,
+        nodeId: NodeId,
+        nodeName: NodeName
+    ) extends NodeUsageData
+
+    final case class ScenarioUsageData(nodeId: NodeId, nodeName: NodeName) extends NodeUsageData
   }
 
   object ComponentLink {

@@ -17,14 +17,10 @@ import { useUsagesFilterContext } from "./useUsagesFilterContext";
 const icon = <LinkIcon />;
 
 export function getNodeName({
-    fragmentNodeId,
     fragmentNodeName,
-    nodeId,
     nodeName,
 }: Pick<NodeUsageData, "fragmentNodeId" | "fragmentNodeName" | "nodeId" | "nodeName">): string {
-    const directNode = nodeId || nodeName || "";
-    const fragmentNode = fragmentNodeId || fragmentNodeName;
-    return fragmentNode ? `${directNode} ❮${fragmentNode}❯` : directNode;
+    return fragmentNodeName ? `${nodeName} ❮${fragmentNodeName}❯` : nodeName;
 }
 
 export function getNodeSearchText({ fragmentNodeId, fragmentNodeName, nodeId, nodeName, ...rest }: NodeUsageData): string {
@@ -78,7 +74,7 @@ export const NodesCell = ({
                     if (a[0] !== b[0]) {
                         return b[0] - a[0];
                     }
-                    return a[1].nodeId.localeCompare(b[1].nodeId);
+                    return a[1].nodeName.localeCompare(b[1].nodeName);
                 }),
         [countMatches, filtered],
     );

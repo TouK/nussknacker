@@ -103,7 +103,7 @@ export const Table: React.FC<TableProps> = ({
             kind: GridCellKind.Custom,
             isMatch: isSourceSelectCell,
             draw: (drawArgs, cell) => {
-                drawTextCell(drawArgs, cell.data.value, cell.contentAlign);
+                drawTextCell(drawArgs, cell.data.displayValue || cell.data.value, cell.contentAlign);
                 return true;
             },
             provideEditor: () => ({
@@ -111,7 +111,7 @@ export const Table: React.FC<TableProps> = ({
                 deletedValue: (sourceSelectCell) => ({
                     ...sourceSelectCell,
                     copyData: "",
-                    data: { ...(sourceSelectCell as unknown as SourceSelectCell).data, value: "" },
+                    data: { ...(sourceSelectCell as unknown as SourceSelectCell).data, value: "", displayValue: "" },
                 }),
             }),
         }),
@@ -140,7 +140,15 @@ export const Table: React.FC<TableProps> = ({
 
     const defaultVariablesBySourceId = useMemo(() => buildDefaultVariablesMap(sourceParameters), [sourceParameters]);
 
-    const getCellContent = useCallback((item: Item): GridCell => getTestingCellContent(item, data, sourceOptions), [data, sourceOptions]);
+    const sourceNameById = useMemo(
+        () => sourceParameters.reduce<Record<string, string>>((acc, sp) => ({ ...acc, [sp.sourceId]: sp.sourceName }), {}),
+        [sourceParameters],
+    );
+
+    const getCellContent = useCallback(
+        (item: Item): GridCell => getTestingCellContent(item, data, sourceOptions, sourceNameById),
+        [data, sourceOptions, sourceNameById],
+    );
     const buildRowUpdates = useCallback(
         (changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[]): Record<number, TestingDataRecords> =>
             buildInputDataRecordUpdates(changes, data, defaultVariablesBySourceId),

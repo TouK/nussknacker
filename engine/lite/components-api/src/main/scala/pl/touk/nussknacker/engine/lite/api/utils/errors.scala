@@ -17,7 +17,13 @@ object errors {
       ctx: Context
   )(action: => T): Either[ErrorType, T] = {
     Try(action).toEither.left
-      .map(NuExceptionInfo(Some(NodeComponentInfo(customComponentContext.nodeId, componentId)), _, ctx))
+      .map(
+        NuExceptionInfo(
+          Some(NodeComponentInfo(customComponentContext.nodeId, customComponentContext.nodeName, componentId)),
+          _,
+          ctx
+        )
+      )
   }
 
 }

@@ -5,7 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.{forAll, Table}
 import org.scalatest.prop.TableFor2
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -18,7 +18,7 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
     forAll(IdValidationTestData.scenarioIdErrorCases) {
       (scenarioId: String, expectedErrors: List[ProcessCompilationError]) =>
         {
-          IdValidator.validate(validScenario(scenarioId), isFragment = false) match {
+          NameValidator.validate(validScenario(scenarioId), isFragment = false) match {
             case Validated.Invalid(errors) =>
               errors.toList shouldBe expectedErrors
             case Validated.Valid(_) =>
@@ -32,7 +32,7 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
     forAll(IdValidationTestData.fragmentIdErrorCases) {
       (scenarioId: String, expectedErrors: List[ProcessCompilationError]) =>
         {
-          IdValidator.validate(validFragment(scenarioId), isFragment = true) match {
+          NameValidator.validate(validFragment(scenarioId), isFragment = true) match {
             case Validated.Invalid(errors) =>
               errors.toList shouldBe expectedErrors
             case Validated.Valid(_) =>
@@ -45,7 +45,7 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
   test("should handle all cases of node id validation") {
     forAll(IdValidationTestData.nodeIdErrorCases) { (nodeId: String, expectedErrors: List[ProcessCompilationError]) =>
       {
-        IdValidator.validate(validScenario(nodeId = nodeId), isFragment = true) match {
+        NameValidator.validate(validScenario(nodeId = nodeId), isFragment = true) match {
           case Validated.Invalid(errors) =>
             errors.toList shouldBe expectedErrors
           case Validated.Valid(_) =>
@@ -57,11 +57,11 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
 
   test("should validate both scenario and node id") {
     val scenarioWithEmptyIds = validScenario("", "")
-    IdValidator.validate(scenarioWithEmptyIds, isFragment = false) match {
+    NameValidator.validate(scenarioWithEmptyIds, isFragment = false) match {
       case Validated.Invalid(errors) =>
         errors.toList should contain theSameElementsAs List(
           ScenarioNameError(EmptyValue, ProcessName(""), isFragment = false),
-          NodeIdValidationError(EmptyValue, NodeId(""))
+          NodeNameValidationError(EmptyValue, NodeName(""), NodeId(""))
         )
       case Validated.Valid(_) =>
         fail("Validation succeeded, but was expected to fail")
@@ -84,15 +84,15 @@ object IdValidationTestData {
   val nodeIdErrorCases: TableFor2[String, List[IdError]] = Table(
     ("nodeId", "errors"),
     ("validId", List.empty),
-    ("", List(NodeIdValidationError(EmptyValue, NodeId("")))),
-    (" ", List(NodeIdValidationError(BlankId, NodeId(" ")))),
-    ("trailingSpace ", List(NodeIdValidationError(TrailingSpacesId, NodeId("trailingSpace ")))),
-    (" leadingSpace", List(NodeIdValidationError(LeadingSpacesId, NodeId(" leadingSpace")))),
+    ("", List(NodeNameValidationError(EmptyValue, NodeName(""), NodeId("")))),
+    (" ", List(NodeNameValidationError(BlankId, NodeName(" "), NodeId("")))),
+    ("trailingSpace ", List(NodeNameValidationError(TrailingSpacesId, NodeName("trailingSpace "), NodeId("")))),
+    (" leadingSpace", List(NodeNameValidationError(LeadingSpacesId, NodeName(" leadingSpace"), NodeId("")))),
     (
       " leadingAndTrailingSpace ",
       List(
-        NodeIdValidationError(LeadingSpacesId, NodeId(" leadingAndTrailingSpace ")),
-        NodeIdValidationError(TrailingSpacesId, NodeId(" leadingAndTrailingSpace "))
+        NodeNameValidationError(LeadingSpacesId, NodeName(" leadingAndTrailingSpace "), NodeId("")),
+        NodeNameValidationError(TrailingSpacesId, NodeName(" leadingAndTrailingSpace "), NodeId(""))
       )
     ),
   )

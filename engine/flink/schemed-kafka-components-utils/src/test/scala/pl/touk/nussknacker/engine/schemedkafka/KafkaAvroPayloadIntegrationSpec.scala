@@ -6,7 +6,7 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{Assertion, BeforeAndAfter}
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelConfig
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -246,7 +246,7 @@ class KafkaAvroPayloadIntegrationSpec extends AnyFunSuite with FlinkKafkaAvroSpe
           val nuExceptionInfo = RecordingExceptionConsumer.exceptionsFor(runId).head
 
           nuExceptionInfo.nodeComponentInfo shouldBe Some(
-            NodeComponentInfo(NodeId("end"), ComponentType.Sink, "flinkKafkaUniversalSink")
+            NodeComponentInfo(NodeId("end"), NodeName("end"), ComponentType.Sink, "flinkKafkaUniversalSink")
           )
           nuExceptionInfo.throwable shouldBe a[AvroRuntimeException]
           nuExceptionInfo.throwable.getMessage should include("Not expected null for field: street")

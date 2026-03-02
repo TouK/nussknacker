@@ -129,7 +129,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
             Example.of(
               summary = Some("Basic node request"),
               value = Enricher(
-                NodeId("enricher"),
+                NodeId("99ae6a31-a55d-4d52-89af-58f471e7143d"),
                 NodeName("enricher"),
                 ServiceRef(
                   "paramService",
@@ -176,7 +176,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
               Example.of(
                 value = NodeValidationRequestDto(
                   Filter(
-                    NodeId("id"),
+                    NodeId("99ae6a31-a55d-4d52-89af-58f471e7143d"),
                     NodeName("id"),
                     Expression(Language.Spel, "#longValue > 1"),
                     isDisabled = None,
@@ -201,7 +201,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                 summary = Some("Validate incorrect Filter node - wrong expression type"),
                 value = NodeValidationRequestDto(
                   Filter(
-                    NodeId("id"),
+                    NodeId("740bbc64-a688-4a50-9104-be61eadfa82a"),
                     NodeName("id"),
                     Expression(Language.Spel, "#existButString"),
                     isDisabled = None,
@@ -225,7 +225,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                 summary = Some("Validate test cases for enricher node"),
                 value = NodeValidationRequestDto(
                   nodeData = Enricher(
-                    NodeId("enricher"),
+                    NodeId("513eab33-d9b3-4c67-a9e7-b84ae184eb64"),
                     NodeName("enricher"),
                     ServiceRef(
                       "paramService",
@@ -511,7 +511,12 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
               summary = Some("Basic fetch request"),
               value = RecordsRequestDto(
                 ProcessProperties(StreamMetaData()),
-                Source(NodeId("sourceId"), NodeName("sourceId"), SourceRef("source", List.empty), None)
+                Source(
+                  NodeId("513eab33-d9b3-4c67-a9e7-b84ae184eb64"),
+                  NodeName("sourceId"),
+                  SourceRef("source", List.empty),
+                  None
+                )
               )
             )
           )
@@ -861,7 +866,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                 ),
                 processProperties = ProcessProperties(StreamMetaData()),
                 enricher = Enricher(
-                  NodeId("enricher"),
+                  NodeId("99ae6a31-a55d-4d52-89af-58f471e7143d"),
                   NodeName("enricher"),
                   ServiceRef(
                     "paramService",
@@ -899,7 +904,10 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     summary = Some("Compilation errors during enricher mock generation"),
                     value = BadRequestNodesError.EnricherMockExpressionGenerationError.CompilationErrors(
                       NonEmptyList.one(
-                        ProcessCompilationError.MissingParameters(Set(ParameterName("param1")), NodeId("enricher1"))
+                        ProcessCompilationError.MissingParameters(
+                          Set(ParameterName("param1")),
+                          NodeId("99ae6a31-a55d-4d52-89af-58f471e7143d")
+                        )
                       )
                     )
                   ),

@@ -222,7 +222,14 @@ object sample {
           if (input.value == 1) {
             Invalid(
               NuExceptionInfo(
-                Some(NodeComponentInfo(nodeId, ComponentType.Source, "failOnNumber1SourceFactory")),
+                Some(
+                  NodeComponentInfo(
+                    nodeId,
+                    evaluateLazyParameter.nodeName,
+                    ComponentType.Source,
+                    "failOnNumber1SourceFactory"
+                  )
+                ),
                 SourceFailure,
                 Context(dummyContextId(input.contextId))
               )
