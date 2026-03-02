@@ -172,16 +172,17 @@ class NodeCompiler(
       case frag @ FragmentInputDefinition(id, _, _) =>
         val parameterDefinitions = fragmentDefinitionExtractor.extractParametersDefinition(frag)
 
-        val compilationResult = definitions.getComponent(ComponentType.Fragment, id) match {
-          // This case is when the fragment is stubbed with test data
+        val (compilationResult, displayableErrors) = definitions.getComponent(ComponentType.Fragment, id) match {
+          // This case is when the fragment is stubbed with test data.
+          // The validation of the fragment input is performed before the test execution starts.
           case Some(definition) =>
-            compileComponentWithContextTransformation[Source](
+            val nodeCompilationResult = compileComponentWithContextTransformation[Source](
               nodeData = frag,
               customNodeIsEndingNode = None,
               inputContext = SingleInputNodeInputValidationContext(contextWithOnlyGlobalVariables),
               componentDefinition = definition
             ).map(_._1)
-
+            (nodeCompilationResult, Valid(()))
           // For default case, we create a source that supports test with parameters
           case None =>
             val validationContext =
@@ -197,7 +198,7 @@ class NodeCompiler(
               )
             }.sequence
 
-            NodeCompilationResult(
+            val nodeCompilationResult = NodeCompilationResult(
               Map.empty,
               None,
               Valid(validationContext),
@@ -205,26 +206,27 @@ class NodeCompiler(
                 Valid(new FragmentSourceWithTestWithParametersSupportFactory(parameterDefinitions.value).createSource())
               )
             )
+
+            val parameterNameValidation = fragmentParameterValidator.validateParameterNames(parameterDefinitions.value)
+
+            // by relying on name for the field names used on FE, we display the same errors under all fields with the
+            // duplicated name
+            // TODO: display all errors when switching to field name errors not reliant on parameter name
+            lazy val displayUniqueNameReliantErrors = parameterNameValidation.fold(
+              errors => !errors.exists(_.isInstanceOf[DuplicateFragmentInputParameter]),
+              _ => true
+            )
+
+            val validatedUniqueNameReliantErrorsV = nodeCompilationResult.validationContext match {
+              case Valid(validationContext) if displayUniqueNameReliantErrors =>
+                uniqueNameReliantErrors(frag, parameterDefinitions, validationContext)
+              case _ =>
+                Valid(())
+            }
+
+            val displayableErrors = parameterNameValidation |+| validatedUniqueNameReliantErrorsV
+            (nodeCompilationResult, displayableErrors)
         }
-
-        val parameterNameValidation = fragmentParameterValidator.validateParameterNames(parameterDefinitions.value)
-
-        // by relying on name for the field names used on FE, we display the same errors under all fields with the
-        // duplicated name
-        // TODO: display all errors when switching to field name errors not reliant on parameter name
-        lazy val displayUniqueNameReliantErrors = parameterNameValidation.fold(
-          errors => !errors.exists(_.isInstanceOf[DuplicateFragmentInputParameter]),
-          _ => true
-        )
-
-        val validatedUniqueNameReliantErrorsV = compilationResult.validationContext match {
-          case Valid(validationContext) if displayUniqueNameReliantErrors =>
-            uniqueNameReliantErrors(frag, parameterDefinitions, validationContext)
-          case _ =>
-            Valid(())
-        }
-
-        val displayableErrors = parameterNameValidation |+| validatedUniqueNameReliantErrorsV
 
         compilationResult.copy(compiledObject = displayableErrors.andThen(_ => compilationResult.compiledObject))
     }

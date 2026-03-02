@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.definition.component.parameter.StandardParamet
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ListUtil
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
@@ -452,6 +453,7 @@ object ScenarioTestService {
         extends PerformTestError
     final case class MissingSourceError(sourceId: NodeId, recordIndex: Int)                extends PerformTestError
     final case class TestResultsSizeExceededError(approxSizeInBytes: Long, maxBytes: Long) extends PerformTestError
+    final case class ScenarioNodeValidationErrors(errors: List[NodeValidationError])       extends PerformTestError
   }
 
 }

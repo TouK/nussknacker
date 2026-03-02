@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.DeserializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
@@ -24,6 +25,8 @@ object TestingApiErrorMessages {
         TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.id)
       case PerformTestError.TestResultsSizeExceededError(approxSizeInBytes, maxBytes) =>
         TestingApiErrorMessages.testResultsSizeExceeded(approxSizeInBytes, maxBytes)
+      case PerformTestError.ScenarioNodeValidationErrors(errors) =>
+        TestingApiErrorMessages.scenarioHasValidationErrors(errors)
     }
   }
 
@@ -77,5 +80,8 @@ object TestingApiErrorMessages {
 
   def testResultsSizeExceeded(approxSizeInBytes: Long, maxBytes: Long) =
     s"Test results size exceeded (approximate size is $approxSizeInBytes B). The maximum permitted size is $maxBytes B. Contact the system administrator to increase this limit."
+
+  private def scenarioHasValidationErrors(errors: List[NodeValidationError]) =
+    s"Only scenario without validation errors can be tested. Errors: $errors"
 
 }

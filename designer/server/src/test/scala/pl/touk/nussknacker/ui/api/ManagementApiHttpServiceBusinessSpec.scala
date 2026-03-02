@@ -55,7 +55,7 @@ class ManagementApiHttpServiceBusinessSpec
             | "testData": {
             |   "type": "WITH_PARAMETERS",
             |   "sourceParameters": {
-            |     "sourceId": "1",
+            |     "sourceId": "sourceId",
             |     "parameterExpressions": {
             |       "param1": {
             |         "language": "spel",
