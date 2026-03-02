@@ -177,7 +177,7 @@ jobs:
       - uses: ./.github/actions/prepare_sbt_test
       - name: Backend tests
         shell: bash
-        run: ./ciRunSbt.sh test
+        run: ./ciRunSbt.sh "set Seq(ThisBuild / packageDoc / publishArtifact := false, Compile / doc / sources := Seq.empty)" test
       - name: Upload test report
         if: success() || failure()
         uses: actions/upload-artifact@v6
@@ -200,7 +200,7 @@ jobs:
       - uses: ./.github/actions/prepare_sbt_test
       - name: E2E tests
         shell: bash
-        run: ./ciRunSbt.sh e2eTests/Slow/test
+        run: ./ciRunSbt.sh "set Seq(ThisBuild / packageDoc / publishArtifact := false, Compile / doc / sources := Seq.empty)" e2eTests/Slow/test
       - name: Upload test report
         if: success() || failure()
         uses: actions/upload-artifact@v6
@@ -225,7 +225,7 @@ jobs:
         shell: bash
         env:
           dockerUpLatest: true
-        run: ./ciRunSbt.sh It/test
+        run: ./ciRunSbt.sh "set Seq(ThisBuild / packageDoc / publishArtifact := false, Compile / doc / sources := Seq.empty)" It/test
       - name: Upload test report
         if: success() || failure()
         uses: actions/upload-artifact@v6
@@ -265,7 +265,13 @@ jobs:
           AZURE_EVENT_HUBS_SHARED_ACCESS_KEY: ${{ secrets.AZURE_EVENT_HUBS_SHARED_ACCESS_KEY }}
           AZURE_EVENT_HUBS_NAMESPACE: ${{ secrets.AZURE_EVENT_HUBS_NAMESPACE }}
         shell: bash
-        run: ./ciRunSbt.sh designer/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test schemedKafkaComponentsUtils/ExternalDepsTests/test liteKafkaComponentsTests/ExternalDepsTests/test
+        run: >-
+          ./ciRunSbt.sh
+          "set Seq(ThisBuild / packageDoc / publishArtifact := false, Compile / doc / sources := Seq.empty)"
+          designer/Slow/test
+          liteK8sDeploymentManager/ExternalDepsTests/test
+          schemedKafkaComponentsUtils/ExternalDepsTests/test
+          liteKafkaComponentsTests/ExternalDepsTests/test
       - name: docker logs
         if: success() || failure()
         run: |
@@ -394,7 +400,7 @@ jobs:
           addDevArtifacts: true
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
-        run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty" dist/Docker/publishLocal
+        run: sbt "set Seq(ThisBuild / version := \"$NUSSKNACKER_VERSION\", ThisBuild / packageDoc / publishArtifact := false, Compile / doc / sources := Seq.empty)" dist/Docker/publishLocal
       - name: FE tests e2e on build docker image
         if: ${{ env.shouldBuildImage == 'true' }}
         env:
