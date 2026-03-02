@@ -91,6 +91,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
                       TestWithParametersDetails(
                         List(
                           UISourceParameters(
+                            "513eab33-d9b3-4c67-a9e7-b84ae184eb64",
                             "source",
                             List(
                               DefinitionsService.createUIParameter(

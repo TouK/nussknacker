@@ -5,7 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.{forAll, Table}
 import org.scalatest.prop.TableFor3
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   BlankId,
@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   IdError,
   IllegalCharactersId,
   LeadingSpacesId,
-  NodeIdValidationError,
+  NodeNameValidationError,
   ScenarioNameError,
   TrailingSpacesId
 }
@@ -35,7 +35,7 @@ class PrettyValidationErrorsTest extends AnyFunSuite with Matchers with Inside {
     IdErrorTestData.allIdErrors.foreach { error =>
       val formattedErrorType = PrettyValidationErrors.formatErrorMessage(error).errorType
       error match {
-        case NodeIdValidationError(errorType, _) =>
+        case NodeNameValidationError(errorType, _, _) =>
           errorType match {
             case ProcessCompilationError.EmptyValue | ProcessCompilationError.IllegalCharactersId(_) =>
               formattedErrorType shouldBe NodeValidationErrorType.RenderNotAllowed
@@ -50,32 +50,33 @@ class PrettyValidationErrorsTest extends AnyFunSuite with Matchers with Inside {
 
 object IdErrorTestData {
 
-  val emptyIdScenarioError: ScenarioNameError = ScenarioNameError(EmptyValue, ProcessName(""), isFragment = false)
-  val emptyIdFragmentError: ScenarioNameError = ScenarioNameError(EmptyValue, ProcessName(""), isFragment = true)
-  val emptyIdNodeError: NodeIdValidationError = NodeIdValidationError(EmptyValue, NodeId(""))
+  val emptyIdScenarioError: ScenarioNameError   = ScenarioNameError(EmptyValue, ProcessName(""), isFragment = false)
+  val emptyIdFragmentError: ScenarioNameError   = ScenarioNameError(EmptyValue, ProcessName(""), isFragment = true)
+  val emptyIdNodeError: NodeNameValidationError = NodeNameValidationError(EmptyValue, NodeName(""), NodeId(""))
 
-  val blankIdScenarioError: ScenarioNameError = ScenarioNameError(BlankId, ProcessName(" "), isFragment = false)
-  val blankIdFragmentError: ScenarioNameError = ScenarioNameError(BlankId, ProcessName(" "), isFragment = true)
-  val blankIdNodeError: NodeIdValidationError = NodeIdValidationError(BlankId, NodeId(" "))
+  val blankIdScenarioError: ScenarioNameError   = ScenarioNameError(BlankId, ProcessName(" "), isFragment = false)
+  val blankIdFragmentError: ScenarioNameError   = ScenarioNameError(BlankId, ProcessName(" "), isFragment = true)
+  val blankIdNodeError: NodeNameValidationError = NodeNameValidationError(BlankId, NodeName(""), NodeId(" "))
 
   val leadingSpacesIdScenarioError: ScenarioNameError =
     ScenarioNameError(LeadingSpacesId, ProcessName(" leadingSpace"), isFragment = false)
   val leadingSpacesIdFragmentError: ScenarioNameError =
     ScenarioNameError(LeadingSpacesId, ProcessName(" leadingSpace"), isFragment = true)
-  val leadingSpacesIdNodeError: NodeIdValidationError = NodeIdValidationError(LeadingSpacesId, NodeId(" leadingSpace"))
+  val leadingSpacesIdNodeError: NodeNameValidationError =
+    NodeNameValidationError(LeadingSpacesId, NodeName(" leadingSpace"), NodeId(""))
 
   val trailingSpacesIdScenarioError: ScenarioNameError =
     ScenarioNameError(TrailingSpacesId, ProcessName("trailingSpace "), isFragment = false)
   val trailingSpacesIdFragmentError: ScenarioNameError =
     ScenarioNameError(TrailingSpacesId, ProcessName("trailingSpace "), isFragment = true)
-  val trailingSpacesIdNodeError: NodeIdValidationError =
-    NodeIdValidationError(TrailingSpacesId, NodeId("trailingSpace "))
+  val trailingSpacesIdNodeError: NodeNameValidationError =
+    NodeNameValidationError(TrailingSpacesId, NodeName("trailingSpace "), NodeId(""))
 
   val illegalCharsReadable = "Some illegal character (x), another illegal character (!)"
   val illegalCharactersIdScenarioError: ScenarioNameError =
     ScenarioNameError(IllegalCharactersId(illegalCharsReadable), ProcessName("idWithIllegalChars!"), isFragment = false)
-  val illegalCharactersIdNodeError: NodeIdValidationError =
-    NodeIdValidationError(IllegalCharactersId(illegalCharsReadable), NodeId("idWithIllegalChars!"))
+  val illegalCharactersIdNodeError: NodeNameValidationError =
+    NodeNameValidationError(IllegalCharactersId(illegalCharsReadable), NodeName("idWithIllegalChars!"), NodeId(""))
 
   val allIdErrors: Set[IdError] =
     Set(

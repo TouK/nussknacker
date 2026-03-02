@@ -16,15 +16,15 @@ object CompiledNodesCollector {
         n.nexts.flatMap { case Case(_, ch) =>
           collectNodes(ch)
         } ::: collectNodes(n.defaultNext)
-      case n: CustomNode                => collectNodes(n.next)
-      case n: FragmentUsageStart        => collectNodes(n.next)
-      case n: FragmentUsageEnd          => collectNodes(n.next)
-      case SplitNode(_, nextsWithParts) => nextsWithParts.flatMap(next => collectNodes(Some(next)))
-      case _: Sink                      => List.empty
-      case _: BranchEnd                 => List.empty
-      case _: EndingCustomNode          => List.empty
-      case _: EndingProcessor           => List.empty
-      case _: FragmentOutput            => List.empty
+      case n: CustomNode                   => collectNodes(n.next)
+      case n: FragmentUsageStart           => collectNodes(n.next)
+      case n: FragmentUsageEnd             => collectNodes(n.next)
+      case SplitNode(_, _, nextsWithParts) => nextsWithParts.flatMap(next => collectNodes(Some(next)))
+      case _: Sink                         => List.empty
+      case _: BranchEnd                    => List.empty
+      case _: EndingCustomNode             => List.empty
+      case _: EndingProcessor              => List.empty
+      case _: FragmentOutput               => List.empty
     }
     node :: children
   }

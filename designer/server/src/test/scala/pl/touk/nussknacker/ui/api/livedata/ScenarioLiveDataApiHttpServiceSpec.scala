@@ -8,7 +8,7 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
-import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.ProcessListener.Transition.DirectTransition
 import pl.touk.nussknacker.engine.api.component.ComponentType.Source
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
@@ -180,7 +180,8 @@ class ScenarioLiveDataApiHttpServiceSpec
       )
       listener.exceptionThrown(
         NuExceptionInfo(
-          nodeComponentInfo = Some(NodeComponentInfo(NodeId("start"), Source, "start")),
+          nodeComponentInfo =
+            Some(NodeComponentInfo(NodeId("513eab33-d9b3-4c67-a9e7-b84ae184eb64"), NodeName("start"), Source, "start")),
           throwable = new Exception("Something bad happened"),
           context = Context(
             ContextId(

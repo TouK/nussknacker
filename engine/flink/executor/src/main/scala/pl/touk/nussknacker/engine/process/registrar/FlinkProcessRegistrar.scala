@@ -125,6 +125,7 @@ class FlinkProcessRegistrar(
       FlinkCustomNodeContext(
         jobData,
         nodeComponentId.nodeId,
+        nodeComponentId.nodeName,
         compilerData.processTimeout,
         convertToEngineRuntimeContext =
           (r: RuntimeContext) => FlinkEngineRuntimeContextImpl(jobData, RuntimeCtx(r), componentUseContextProvider),
@@ -289,7 +290,7 @@ class FlinkProcessRegistrar(
               customNodeContext.valueWithContextInfo.forUnknown
             )
             .sinkTo(
-              new CollectingSink[AnyRef](compilerDataForProcessPart(None), collectingSink, part.id)
+              new CollectingSink[AnyRef](compilerDataForProcessPart(None), collectingSink, part.id, part.node.data.name)
             )
         case _ =>
           sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfo, Left(contextBefore)))

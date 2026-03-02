@@ -7,7 +7,9 @@ import { Dropdown } from "./Dropdown";
 export interface SourceSelectCellData {
     kind: "source-select-cell";
     value: string;
+    displayValue: string;
     options: string[];
+    optionLabels: string[];
 }
 export type SourceSelectCell = CustomCell<SourceSelectCellData>;
 
@@ -42,7 +44,7 @@ export const SourceEditor: React.FC<EditorProps> = ({ value, onFinishedEditing }
                 padding: 0,
             }}
         >
-            <Dropdown value={value.data.value} options={value.data.options} onValueChange={setVal} />
+            <Dropdown value={value.data.value} options={value.data.options} optionLabels={value.data.optionLabels} onValueChange={setVal} />
         </Box>
     );
 };

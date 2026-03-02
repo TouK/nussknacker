@@ -76,7 +76,7 @@ trait ProcessValidator extends LazyLogging {
 
     try {
       CompilationResult.map4(
-        CompilationResult(IdValidator.validate(process, isFragment)),
+        CompilationResult(NameValidator.validate(process, isFragment)),
         CompilationResult(validateWithCustomProcessValidators(process)),
         CompilationResult(validateUniqueFragmentOutputNames(process, isFragment)),
         compile(process).map(_ => ()): CompilationResult[Unit]

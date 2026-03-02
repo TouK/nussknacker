@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationErro
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, IdValidator, Output}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, NameValidator, Output}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
@@ -74,7 +74,7 @@ class NodeDataValidator(modelData: ModelData) {
           ValidationNotPerformed
       }
 
-      val nodeIdErrors = IdValidator.validateNodeId(nodeData.id) match {
+      val nodeIdErrors = NameValidator.validateNodeName(nodeData) match {
         case Validated.Valid(_)   => List.empty
         case Validated.Invalid(e) => e.toList
       }

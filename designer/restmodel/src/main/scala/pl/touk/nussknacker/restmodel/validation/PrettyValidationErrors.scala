@@ -68,29 +68,30 @@ object PrettyValidationErrors {
           paramName = Some(ParameterName(CanonicalProcess.NameFieldName)),
         )
       case SpecificDataValidationError(field, message) => node(message, message, paramName = Some(field))
-      case NonUniqueEdgeType(etype, nodeId) =>
+      case NonUniqueEdgeType(etype, _, nodeName) =>
         node(
           message = "Edges are not unique",
-          description = s"Node $nodeId has duplicate outgoing edges of type: $etype, it cannot be saved properly",
+          description = s"Node $nodeName has duplicate outgoing edges of type: $etype, it cannot be saved properly",
           errorType = NodeValidationErrorType.SaveNotAllowed
         )
-      case NonUniqueEdge(nodeId, target) =>
+      case NonUniqueEdge(_, nodeName, target) =>
         node(
           message = "Edges are not unique",
-          description = s"Node $nodeId has duplicate outgoing edges to: $target, it cannot be saved properly",
+          description = s"Node $nodeName has duplicate outgoing edges to: $target, it cannot be saved properly",
           errorType = NodeValidationErrorType.SaveNotAllowed
         )
-      case LooseNode(nodeIds) =>
-        val (message, description) = nodeIds.toList match {
-          case nodeId :: Nil =>
+      case LooseNode(nodes) =>
+        val nodeNames = nodes.map(_._2)
+        val (message, description) = nodeNames.toList match {
+          case nodeName :: Nil =>
             (
               "Loose node",
-              s"Node $nodeId is not connected to source, it cannot be saved properly"
+              s"Node $nodeName is not connected to source, it cannot be saved properly"
             )
           case _ =>
             (
               "Loose nodes",
-              s"Nodes ${nodeIds.mkString(", ")} are not connected to source, it cannot be saved properly"
+              s"Nodes ${nodeNames.mkString(", ")} are not connected to source, it cannot be saved properly"
             )
         }
         node(
@@ -115,9 +116,9 @@ object PrettyValidationErrors {
           description,
           errorType = NodeValidationErrorType.SaveNotAllowed
         )
-      case DisabledNode(nodeId) =>
+      case DisabledNode(_, nodeName) =>
         node(
-          message = s"Node $nodeId is disabled",
+          message = s"Node $nodeName is disabled",
           description = "Deploying scenario with disabled node can have unexpected consequences",
           errorType = NodeValidationErrorType.SaveAllowed
         )
@@ -375,19 +376,19 @@ object PrettyValidationErrors {
   private def mapIdErrorToNodeError(error: IdError) = {
     val validatedObjectType = error match {
       case ScenarioNameError(_, _, isFragment) => if (isFragment) "Fragment" else "Scenario"
-      case NodeIdValidationError(_, _)         => "Node"
+      case NodeNameValidationError(_, _, _)    => "Node"
     }
     val errorSeverity = error match {
       case ScenarioNameError(_, _, _) => NodeValidationErrorType.SaveAllowed
-      case NodeIdValidationError(errorType, _) =>
+      case NodeNameValidationError(errorType, _, _) =>
         errorType match {
           case ProcessCompilationError.EmptyValue | IllegalCharactersId(_) => NodeValidationErrorType.RenderNotAllowed
           case _                                                           => NodeValidationErrorType.SaveAllowed
         }
     }
     val fieldName = error match {
-      case ScenarioNameError(_, _, _)  => CanonicalProcess.NameFieldName
-      case NodeIdValidationError(_, _) => pl.touk.nussknacker.engine.graph.node.IdFieldName
+      case ScenarioNameError(_, _, _)       => CanonicalProcess.NameFieldName
+      case NodeNameValidationError(_, _, _) => pl.touk.nussknacker.engine.graph.node.IdFieldName
     }
     val message = error.errorType match {
       case ProcessCompilationError.EmptyValue       => s"$validatedObjectType name is mandatory and cannot be empty"
