@@ -7,7 +7,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.pekko.http.scaladsl.server.Route
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.JobData
+import pl.touk.nussknacker.engine.api.{JobData, NodeName}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaComponentsConfig
@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.lite.{
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.lite.TaskStatus.TaskStatus
 import pl.touk.nussknacker.engine.lite.TestRunner._
+import pl.touk.nussknacker.engine.lite.api.interpreterTypes.SourceId
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{Input, Output}
@@ -115,7 +116,11 @@ class KafkaTransactionalScenarioInterpreter private[kafka] (
 
   private val context: LiteEngineRuntimeContext = engineRuntimeContextPreparer.prepare(jobData)
 
-  private val sourceMetrics = new SourceMetrics(interpreter.sources.keys)
+  private val sourceNodeNames: Map[SourceId, NodeName] = interpreter.sources.keys.flatMap { sourceId =>
+    scenario.collectAllNodes.find(_.id.value == sourceId.value).map(n => sourceId -> n.name)
+  }.toMap
+
+  private val sourceMetrics = new SourceMetrics(sourceNodeNames)
 
   private val interpreterConfig = modelData.modelConfig.underlyingConfig.as[KafkaInterpreterConfig]
 

@@ -74,7 +74,7 @@ object ScenarioInterpreterFactory {
       val allNodes = process.collectAllNodes
       val countingListeners = List(
         LoggingListener,
-        new NodeCountingListener(allNodes.map(n => n.id)),
+        new NodeCountingListener(allNodes.map(n => n.id -> n.name).toMap),
         new ExceptionCountingListener,
         new EndCountingListener(allNodes),
       )

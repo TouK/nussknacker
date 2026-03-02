@@ -577,7 +577,8 @@ object FullOuterJoinTransformerSpec {
           storedTypeInfo: TypeInformation[AnyRef],
           convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
       )(
-          implicit nodeId: NodeId
+          implicit nodeId: NodeId,
+          nodeName: NodeName
       ): KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] = {
         new ProcessFunctionInterceptor(
           super.prepareAggregatorFunction(
