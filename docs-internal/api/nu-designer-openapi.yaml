@@ -5196,12 +5196,12 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/scenarioTesting/{scenarioName}/testCase:
+  /api/scenarioTesting/{scenarioName}/performTestCase:
     post:
       tags:
       - Testing
       summary: Perform single test case
-      operationId: postApiScenariotestingScenarionameTestcase
+      operationId: postApiScenariotestingScenarionamePerformtestcase
       parameters:
       - name: Nu-Impersonate-User-Identity
         in: header
@@ -5219,16 +5219,14 @@ paths:
         in: query
         required: false
         schema:
-          type:
-          - boolean
-          - 'null'
+          default: false
+          type: boolean
       - name: skipResultsPerTransition
         in: query
         required: false
         schema:
-          type:
-          - boolean
-          - 'null'
+          default: false
+          type: boolean
       requestBody:
         content:
           application/json:
@@ -5342,21 +5340,22 @@ paths:
         in: query
         required: false
         schema:
-          type:
-          - boolean
-          - 'null'
+          default: false
+          type: boolean
       - name: skipResultsPerTransition
         in: query
         required: false
         schema:
-          type:
-          - boolean
-          - 'null'
+          default: false
+          type: boolean
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PerformTestRequest'
+              $ref: '#/components/schemas/PerformTestRequestJsonBody'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PerformTestRequestMultiParts'
         required: true
       responses:
         '200':
@@ -7694,8 +7693,8 @@ components:
           type: object
         testCase:
           type: object
-    PerformTestRequest:
-      title: PerformTestRequest
+    PerformTestRequestJsonBody:
+      title: PerformTestRequestJsonBody
       type: object
       required:
       - scenarioGraph
@@ -7705,6 +7704,17 @@ components:
           type: object
         testData:
           $ref: '#/components/schemas/ScenarioTestData'
+    PerformTestRequestMultiParts:
+      title: PerformTestRequestMultiParts
+      type: object
+      required:
+      - scenarioGraph
+      - testData
+      properties:
+        scenarioGraph:
+          type: object
+        testData:
+          type: string
     PeriodParameterEditor:
       title: PeriodParameterEditor
       type: object
