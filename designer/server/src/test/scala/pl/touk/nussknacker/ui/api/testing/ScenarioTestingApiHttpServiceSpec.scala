@@ -321,7 +321,7 @@ class ScenarioTestingApiHttpServiceSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .multiPart("scenarioGraph", ProcessTestData.sampleScenario.toScenarioGraph.asJson.noSpaces)
+        .multiPart("scenarioGraph", ProcessTestData.sampleScenario.toScenarioGraph.asJson.noSpaces, "application/json")
         .multiPart("testData", testDataContent)
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${ProcessTestData.sampleScenario.name}/performTest")
         .Then()
@@ -351,7 +351,7 @@ class ScenarioTestingApiHttpServiceSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .multiPart("scenarioGraph", scenario.toScenarioGraph.asJson.noSpaces)
+        .multiPart("scenarioGraph", scenario.toScenarioGraph.asJson.noSpaces, "application/json")
         .multiPart("testData", testDataContent)
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${scenario.name}/performTest")
         .Then()
@@ -382,7 +382,7 @@ class ScenarioTestingApiHttpServiceSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .multiPart("scenarioGraph", process.toScenarioGraph.asJson.noSpaces)
+        .multiPart("scenarioGraph", process.toScenarioGraph.asJson.noSpaces, "application/json")
         .multiPart("testData", testDataContent)
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${process.name}/performTest")
         .Then()
@@ -409,7 +409,7 @@ class ScenarioTestingApiHttpServiceSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .multiPart("scenarioGraph", process.toScenarioGraph.asJson.noSpaces)
+        .multiPart("scenarioGraph", process.toScenarioGraph.asJson.noSpaces, "application/json")
         .multiPart("testData", tooManyRecords)
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${process.name}/performTest")
         .Then()
@@ -440,7 +440,7 @@ class ScenarioTestingApiHttpServiceSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .multiPart("scenarioGraph", process.toScenarioGraph.asJson.noSpaces)
+        .multiPart("scenarioGraph", process.toScenarioGraph.asJson.noSpaces, "application/json")
         .multiPart("testData", tooManyCharacters)
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${process.name}/performTest")
         .Then()
@@ -472,7 +472,7 @@ class ScenarioTestingApiHttpServiceSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .multiPart("scenarioGraph", process.toScenarioGraph.asJson.noSpaces)
+        .multiPart("scenarioGraph", process.toScenarioGraph.asJson.noSpaces, "application/json")
         .multiPart("testData", testDataContent)
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${process.name}/performTest")
         .Then()
@@ -492,7 +492,7 @@ class ScenarioTestingApiHttpServiceSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .multiPart("scenarioGraph", ProcessTestData.sampleScenario.toScenarioGraph.asJson.noSpaces)
+        .multiPart("scenarioGraph", ProcessTestData.sampleScenario.toScenarioGraph.asJson.noSpaces, "application/json")
         .multiPart("testData", testDataContent)
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${ProcessTestData.sampleScenario.name}/performTest")
         .Then()
