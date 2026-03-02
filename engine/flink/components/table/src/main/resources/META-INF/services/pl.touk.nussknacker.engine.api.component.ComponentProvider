@@ -1,2 +1,3 @@
 pl.touk.nussknacker.engine.flink.table.FlinkTableOpsComponentProvider
 pl.touk.nussknacker.engine.flink.table.FlinkTableDataSourceComponentProvider
+pl.touk.nussknacker.engine.flink.table.FlinkSqlOpsComponentProvider
