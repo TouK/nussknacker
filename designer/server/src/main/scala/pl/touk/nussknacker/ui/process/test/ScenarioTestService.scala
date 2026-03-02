@@ -425,8 +425,9 @@ class ScenarioTestService(
         case scenarioCompilationErrors: ScenarioCompilationErrors =>
           scenarioCompilationErrors.errors
             // TODO: Redesign StubbedFlinkProcessCompilerDataFactory to remove error nesting
-            .collectFirst { case CannotCreateObjectError(_, _, Some(decodingError: TestRecordVariablesDecodingError)) =>
-              Future.successful(Left(toPerformTestError(decodingError)))
+            .collectFirst {
+              case CannotCreateObjectError(_, _, _, Some(decodingError: TestRecordVariablesDecodingError)) =>
+                Future.successful(Left(toPerformTestError(decodingError)))
             }
             .getOrElse {
               throw scenarioCompilationErrors

@@ -41,7 +41,7 @@ class UnionTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   test("unification of different types") {
     val validationResult = validate("123", "'foo'")
     validationResult.result.invalidValue.toList should contain(
-      CannotCreateObjectError("All branch values must be of the same type", NodeId("union"))
+      CannotCreateObjectError("All branch values must be of the same type", NodeId("union"), NodeName("union"))
     )
   }
 

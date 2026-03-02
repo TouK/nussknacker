@@ -346,7 +346,9 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     val resolvedValidated = FragmentResolver(List.empty).resolve(process)
 
     resolvedValidated shouldBe Invalid(
-      NonEmptyList.of(UnknownFragment(id = "fragmentId", nodeId = NodeId("nodeFragmentId")))
+      NonEmptyList.of(
+        UnknownFragment(id = "fragmentId", nodeId = NodeId("nodeFragmentId"), nodeName = NodeName("nodeFragmentId"))
+      )
     )
   }
 

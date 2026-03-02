@@ -53,9 +53,11 @@ object ProcessCompilationError {
     override def nodeIds: Set[NodeId] = Set()
   }
 
-  final case class UnsupportedPart(nodeId: NodeId) extends ProcessCompilationError with InASingleNode
+  final case class UnsupportedPart(nodeId: NodeId, nodeName: NodeName)
+      extends ProcessCompilationError
+      with InASingleNode
 
-  final case class MissingPart(nodeId: NodeId) extends ProcessCompilationError with InASingleNode
+  final case class MissingPart(nodeId: NodeId, nodeName: NodeName) extends ProcessCompilationError with InASingleNode
 
   final case class InvalidRootNode(nodeIds: Set[NodeId]) extends ProcessUncanonizationError with ScenarioGraphLevelError
 
@@ -373,9 +375,13 @@ object ProcessCompilationError {
     override def nodeIds: Set[NodeId] = Set(fragmentNodeId)
   }
 
-  final case class UnknownFragment(id: String, nodeId: NodeId) extends ProcessCompilationError with InASingleNode
+  final case class UnknownFragment(id: String, nodeId: NodeId, nodeName: NodeName)
+      extends ProcessCompilationError
+      with InASingleNode
 
-  final case class InvalidFragment(id: String, nodeId: NodeId) extends ProcessCompilationError with InASingleNode
+  final case class InvalidFragment(id: String, nodeId: NodeId, nodeName: NodeName)
+      extends ProcessCompilationError
+      with InASingleNode
 
   sealed trait DuplicateFragmentOutputNames extends ProcessCompilationError {
     val duplicatedVarName: String
@@ -453,8 +459,12 @@ object ProcessCompilationError {
     override def nodeIds: Set[NodeId] = nodeId.toSet
   }
 
-  final case class CannotCreateObjectError(message: String, nodeId: NodeId, cause: Option[Throwable])
-      extends ProcessCompilationError
+  final case class CannotCreateObjectError(
+      message: String,
+      nodeId: NodeId,
+      nodeName: NodeName,
+      cause: Option[Throwable]
+  ) extends ProcessCompilationError
       with InASingleNode
 
   final case class EagerExpressionEvaluationError(
@@ -467,10 +477,11 @@ object ProcessCompilationError {
 
   object CannotCreateObjectError {
 
-    def apply(message: String, nodeId: NodeId) = new CannotCreateObjectError(message, nodeId, cause = None)
+    def apply(message: String, nodeId: NodeId, nodeName: NodeName): CannotCreateObjectError =
+      new CannotCreateObjectError(message, nodeId, nodeName, cause = None)
 
-    def apply(cause: Throwable, nodeId: NodeId) =
-      new CannotCreateObjectError(cause.getMessage, nodeId, cause = Some(cause))
+    def apply(cause: Throwable, nodeId: NodeId, nodeName: NodeName): CannotCreateObjectError =
+      new CannotCreateObjectError(cause.getMessage, nodeId, nodeName, cause = Some(cause))
   }
 
   final case class ScenarioNameValidationError(message: String, description: String)

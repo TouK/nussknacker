@@ -71,6 +71,7 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
       case CannotCreateObjectError(
             "AdditionalVariableWithFixedValue should not be used with LazyParameters",
             NodeId("sid"),
+            _,
             _
           ) :: Nil =>
     }

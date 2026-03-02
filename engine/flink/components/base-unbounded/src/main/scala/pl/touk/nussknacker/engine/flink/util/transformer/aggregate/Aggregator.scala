@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.apache.flink.api.common.functions.AggregateFunction
-import pl.touk.nussknacker.engine.api.{Hidden, LazyParameter, NodeId}
+import pl.touk.nussknacker.engine.api.{Hidden, LazyParameter, NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -76,11 +76,12 @@ abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
       aggregateBy: LazyParameter[_],
       groupBy: LazyParameter[_]
   )(
-      implicit nodeId: NodeId
+      implicit nodeId: NodeId,
+      nodeName: NodeName
   ): ValidationContext => ValidatedNel[ProcessCompilationError, ValidationContext] = validationCtx =>
     computeOutputType(aggregateBy.returnType)
       // TODO: better error?
-      .leftMap(message => NonEmptyList.of(CannotCreateObjectError(message, nodeId)))
+      .leftMap(message => NonEmptyList.of(CannotCreateObjectError(message, nodeId, nodeName)))
       .andThen { outputType =>
         val ctx = if (emitContext) validationCtx else validationCtx.clearVariables
         ctx.withVariable(variableName, outputType, paramName = None)
