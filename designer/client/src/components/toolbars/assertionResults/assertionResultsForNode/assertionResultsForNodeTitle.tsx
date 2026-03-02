@@ -11,7 +11,7 @@ interface Props {
     action: ReactNode;
 }
 
-export const AssertionResultTitle = ({ title, assertionResults, action }: Props) => {
+export const AssertionResultsForNodeTitle = ({ title, assertionResults, action }: Props) => {
     return (
         <Box display={"flex"} alignItems={"center"} gap={0.75}>
             <Typography variant={"body2"}>{title}</Typography>

@@ -117,6 +117,10 @@ describe("Test cases", () => {
 
         cy.get('[data-testid="assertion-results-panel"]').matchImage();
 
+        showAssertionDetails(0);
+
+        cy.get('[role="tooltip"]').matchImage({ screenshotConfig: { padding: 16 } });
+
         openTestingDetails("Log");
 
         cy.location("search", { timeout: 5000 }).should("match", /activeTab=testing&nodeId=Log/i);
@@ -206,4 +210,9 @@ const expandAssertionItem = (nodeId: string) => {
 
 const openTestingDetails = (nodeId: string) => {
     cy.get(`[id="${nodeId}-header"]`).find('[data-testid="OpenInNewIcon"]').click();
+};
+
+const showAssertionDetails = (assertionNumber: number) => {
+    cy.get('[data-testid="assertionResult"').eq(assertionNumber).click();
+    cy.get('[role="tooltip"]').should("be.visible");
 };

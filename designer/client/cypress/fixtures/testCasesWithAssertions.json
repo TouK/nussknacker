@@ -135,6 +135,7 @@
             "assertions": {
                 "Log": [
                     {
+                        "description": "Assert that the type field is correctly propagated to the Log node",
                         "operator": "equals",
                         "expected": {
                             "language": "spel",

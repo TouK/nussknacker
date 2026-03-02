@@ -8,6 +8,7 @@ import { RowFieldLabel } from "../../../aggregate/rowFieldLabel";
 import { EditableEditor } from "../../../editors/EditableEditor";
 import type { ExpressionObj } from "../../../editors/expression/types";
 import { EditorType, ExpressionLang } from "../../../editors/expression/types";
+import Input from "../../../editors/field/Input";
 import { FieldsRow } from "../../../fragment-input-definition/FieldsRow";
 import { TypeSelect } from "../../../fragment-input-definition/TypeSelect";
 import type { Option } from "../../../fragment-input-definition/TypeSelect";
@@ -22,21 +23,22 @@ const gridContainerStyle = css({
     "&&&&": {
         width: "100%",
         display: "grid",
-        gridTemplateColumns: "4fr 1fr 4fr",
+        gridTemplateColumns: "3fr 3fr 1fr 3fr",
         gridTemplateRows: "auto auto",
-        gridTemplateAreas: `"field field field remove" "expr expr expr remove"`,
+        gridTemplateAreas: `"field field field field remove" "expr expr expr expr remove"`,
     },
 });
 
 interface Props {
     uuid: string;
+    description?: string;
     expected: ExpressionObj;
     operator: "equals" | "notEquals";
     actual: ExpressionObj;
     variableTypes: VariableTypes;
     onChange: (
         uuid: string,
-        updated: Partial<{ expected: ExpressionObj; operator: "equals" | "notEquals"; actual: ExpressionObj }>,
+        updated: Partial<{ description: string; expected: ExpressionObj; operator: "equals" | "notEquals"; actual: ExpressionObj }>,
     ) => void;
     testAssertionResult: TestAssertionResult | undefined;
     index: number;
@@ -45,6 +47,7 @@ interface Props {
 
 const AssertionItemComponent = ({
     uuid,
+    description,
     expected,
     operator,
     actual,
@@ -55,6 +58,13 @@ const AssertionItemComponent = ({
     errors = [],
 }: Props) => {
     const isFirstRow = index === 0;
+
+    const handleDescriptionChange = useCallback(
+        (event) => {
+            onChange(uuid, { description: event.target.value });
+        },
+        [onChange, uuid],
+    );
 
     const handleExpectedChange = useCallback(
         ({ expression }: { expression: string }) => {
@@ -87,9 +97,22 @@ const AssertionItemComponent = ({
         return errors.filter((error) => error.fieldName === "actual") || [];
     }, [errors]);
 
+    const descriptionErrors = useMemo(() => {
+        return errors.filter((error) => error.fieldName === "description") || [];
+    }, [errors]);
+
     return (
         <Box display={"flex"} alignItems={"flex-start"} data-assertion-uuid={uuid}>
             <FieldsRow key={uuid} index={index} uuid={uuid} className={gridContainerStyle}>
+                <RowFieldLabel showLabel={isFirstRow} label="Description" data-testid={`assertion-description-${index}`}>
+                    <Input
+                        value={description}
+                        onChange={handleDescriptionChange}
+                        fieldErrors={descriptionErrors}
+                        showValidation
+                        placeholder={"Optional description"}
+                    />
+                </RowFieldLabel>
                 <RowFieldLabel showLabel={isFirstRow} label="Expected" data-testid={`assertion-expected-${index}`}>
                     <EditableEditor
                         showSwitch={false}
