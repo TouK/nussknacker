@@ -146,16 +146,8 @@ object Dtos {
     ) extends PerformTestRequest
 
     object PerformTestRequestMultiParts {
-
-      implicit val scenarioGraphMultipartPartCodec: Codec[String, ScenarioGraph, CodecFormat.TextPlain] =
-        Codec.string.mapDecode { s =>
-          io.circe.parser.decode[ScenarioGraph](s) match {
-            case Right(sg) => DecodeResult.Value(sg)
-            case Left(err) =>
-              DecodeResult.Error(s, new RuntimeException(s"Could not parse ScenarioGraph: ${err.getMessage}", err))
-          }
-        }(sg => Encoder[ScenarioGraph].apply(sg).noSpaces)
-
+      implicit val scenarioGraphMultipartPartCodec: Codec[String, ScenarioGraph, CodecFormat.Json] =
+        sttp.tapir.json.circe.circeCodec
     }
 
     @derive(schema, encoder, decoder)
