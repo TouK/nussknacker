@@ -13,7 +13,7 @@ export type ValidationResult = {
     nodeResults: NodeResults;
     errors: ValidationErrors;
     warnings?: Pick<ValidationErrors, "invalidNodes">;
-    nodeNames?: Record<string, string>;
+    nodeNames: Record<string, string>;
 };
 
 export type NodeResults = Record<string, NodeTypingData>;

@@ -75,7 +75,7 @@ class MetricsSpec
     val totalCounter = reporter.testMetrics[Counter]("error.instantRate.count")
     totalCounter.exists(_.getCount > 0) shouldBe true
 
-    val nodeCounts = reporter.testMetrics[Counter]("error.instantRateByNode.nodeId.proc2.count")
+    val nodeCounts = reporter.testMetrics[Counter]("error.instantRateByNode.nodeId.proc2.nodeName.proc2.count")
     nodeCounts.exists(_.getCount > 0) shouldBe true
 
   }
@@ -100,12 +100,12 @@ class MetricsSpec
 
     processInvoker.invokeWithSampleData(process, data)
 
-    counter("nodeId.source1.nodeCount") shouldBe 2L
-    counter("nodeId.filter1.nodeCount") shouldBe 2L
-    counter("nodeId.split1.nodeCount") shouldBe 1L
-    counter("nodeId.proc2.nodeCount") shouldBe 1L
-    counter("nodeId.out.nodeCount") shouldBe 1L
-    counter("nodeId.out2.nodeCount") shouldBe 1L
+    counter("nodeId.source1.nodeName.source1.nodeCount") shouldBe 2L
+    counter("nodeId.filter1.nodeName.filter1.nodeCount") shouldBe 2L
+    counter("nodeId.split1.nodeName.split1.nodeCount") shouldBe 1L
+    counter("nodeId.proc2.nodeName.proc2.nodeCount") shouldBe 1L
+    counter("nodeId.out.nodeName.out.nodeCount") shouldBe 1L
+    counter("nodeId.out2.nodeName.out2.nodeCount") shouldBe 1L
   }
 
   test("measure ends") { implicit scenarioName =>
@@ -127,14 +127,14 @@ class MetricsSpec
 
     processInvoker.invokeWithSampleData(process, data)
 
-    counter("end.nodeId.sink.count") shouldBe 1L
-    gauge("end.nodeId.sink.instantRate") should be >= 0.0d
+    counter("end.nodeId.sink.nodeName.sink.count") shouldBe 1L
+    gauge("end.nodeId.sink.nodeName.sink.instantRate") should be >= 0.0d
 
-    counter("end.nodeId.processor.count") shouldBe 1L
-    gauge("end.nodeId.processor.instantRate") should be >= 0.0d
+    counter("end.nodeId.processor.nodeName.processor.count") shouldBe 1L
+    gauge("end.nodeId.processor.nodeName.processor.instantRate") should be >= 0.0d
 
-    counter("end.nodeId.custom node.count") shouldBe 1L
-    gauge("end.nodeId.custom node.instantRate") should be >= 0.0d
+    counter("end.nodeId.custom node.nodeName.custom node.count") shouldBe 1L
+    gauge("end.nodeId.custom node.nodeName.custom node.instantRate") should be >= 0.0d
   }
 
   test("measure dead ends") { implicit scenarioName =>
@@ -158,10 +158,10 @@ class MetricsSpec
 
     processInvoker.invokeWithSampleData(process, data)
 
-    counter("dead_end.nodeId.filter1.count") shouldBe 1L
-    gauge("dead_end.nodeId.filter1.instantRate") should be >= 0.0d
-    counter("dead_end.nodeId.switch2.count") shouldBe 2L
-    gauge("dead_end.nodeId.switch2.instantRate") should be >= 0.0d
+    counter("dead_end.nodeId.filter1.nodeName.filter1.count") shouldBe 1L
+    gauge("dead_end.nodeId.filter1.nodeName.filter1.instantRate") should be >= 0.0d
+    counter("dead_end.nodeId.switch2.nodeName.switch2.count") shouldBe 2L
+    gauge("dead_end.nodeId.switch2.nodeName.switch2.instantRate") should be >= 0.0d
   }
 
   test("open measuring service") { implicit scenarioName =>
@@ -219,13 +219,13 @@ class MetricsSpec
     processInvoker.invokeWithSampleData(scenario, Nil)
 
     allNodes.foreach { node =>
-      counter(s"nodeId.${node.id}.nodeCount") shouldBe 0L
+      counter(s"nodeId.${node.id}.nodeName.${node.id}.nodeCount") shouldBe 0L
     }
     allNodes.filter(_.isInstanceOf[EndingNodeData]).foreach { node =>
-      counter(s"end.nodeId.${node.id}.count") shouldBe 0L
+      counter(s"end.nodeId.${node.id}.nodeName.${node.id}.count") shouldBe 0L
     }
     allNodes.filter(_.isInstanceOf[DeadEndingData]).foreach { node =>
-      counter(s"dead_end.nodeId.${node.id}.count") shouldBe 0L
+      counter(s"dead_end.nodeId.${node.id}.nodeName.${node.id}.count") shouldBe 0L
     }
   }
 
