@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine.util.metrics.common
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.util.metrics._
-import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
+import pl.touk.nussknacker.engine.util.metrics.common.naming.{nodeIdTag, nodeNameTag}
 
 import java.time.Clock
 import java.util.concurrent.atomic.AtomicLong
 
-private[engine] class OneSourceMetrics(sourceId: String, clock: Clock = Clock.systemDefaultZone()) {
+private[engine] class OneSourceMetrics(sourceId: String, sourceName: String, clock: Clock = Clock.systemDefaultZone()) {
 
-  private val tags            = Map(nodeIdTag -> sourceId)
+  private val tags            = Map(nodeIdTag -> sourceId, nodeNameTag -> sourceName)
   private val lastElementTime = new AtomicLong(0)
 
   private var registeredMetricsOpt = Option.empty[OneSourceRegisteredMetrics]

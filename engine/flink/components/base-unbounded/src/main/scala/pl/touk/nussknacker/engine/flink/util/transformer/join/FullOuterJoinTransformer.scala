@@ -189,7 +189,7 @@ class FullOuterJoinTransformer(
         inputType,
         storedTypeInfo,
         context.convertToEngineRuntimeContext
-      )(context.nodeId)
+      )(context.nodeId, context.nodeName)
       val outputType = aggregator.computeOutputTypeUnsafe(inputType)
       val outputTypeInfo =
         TypeInformationDetection.instance.forValueWithContext[AnyRef](ValidationContext(), outputType)
@@ -213,12 +213,14 @@ class FullOuterJoinTransformer(
       storedTypeInfo: TypeInformation[AnyRef],
       convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
   )(
-      implicit nodeId: NodeId
+      implicit nodeId: NodeId,
+      nodeName: NodeName
   ): KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] =
     new FullOuterJoinAggregatorFunction[SortedMap](
       aggregator,
       stateTimeout.toMillis,
       nodeId,
+      nodeName,
       aggregateElementType,
       storedTypeInfo,
       convertToEngineRuntimeContext,

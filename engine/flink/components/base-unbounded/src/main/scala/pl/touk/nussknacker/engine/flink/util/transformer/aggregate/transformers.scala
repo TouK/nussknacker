@@ -46,6 +46,7 @@ object transformers {
                 aggregator,
                 windowLength.toMillis,
                 nodeId,
+                nodeName,
                 aggregateBy.returnType,
                 typeInfos.storedTypeInfo,
                 fctx.convertToEngineRuntimeContext
@@ -55,6 +56,7 @@ object transformers {
                 aggregator,
                 windowLength.toMillis,
                 nodeId,
+                nodeName,
                 aggregateBy.returnType,
                 typeInfos.storedTypeInfo,
                 fctx.convertToEngineRuntimeContext
@@ -138,6 +140,7 @@ object transformers {
                     windowLength.toMillis,
                     offsetDuration.toMillis,
                     nodeId,
+                    nodeName,
                     aggregateBy.returnType,
                     typeInfos.storedTypeInfo,
                     fctx.convertToEngineRuntimeContext
