@@ -161,7 +161,7 @@ class ModelUtilExceptionHandlingSpec
         .exceptionsFor(runId)
         .collect {
           case NuExceptionInfo(
-                Some(NodeComponentInfo(NodeId("join"), _)),
+                Some(NodeComponentInfo(NodeId("join"), _, _)),
                 e: SpelExpressionEvaluationException,
                 _,
                 _,

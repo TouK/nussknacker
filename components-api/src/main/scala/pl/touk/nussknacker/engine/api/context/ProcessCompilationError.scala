@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.context
 import cats.Applicative
 import cats.data.{NonEmptyList, ValidatedNel}
 import io.circe.Json
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, MultiSelectFixedValue, ParameterEditor}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
@@ -69,13 +69,19 @@ object ProcessCompilationError {
 
   final case class DuplicatedNodeIds(nodeIds: Set[NodeId]) extends ProcessCompilationError with ScenarioGraphLevelError
 
-  final case class NonUniqueEdgeType(edgeType: String, nodeId: NodeId)
+  final case class NonUniqueEdgeType(edgeType: String, nodeId: NodeId, nodeName: NodeName)
       extends ProcessCompilationError
       with InASingleNode
 
-  final case class NonUniqueEdge(nodeId: NodeId, target: String) extends ProcessCompilationError with InASingleNode
+  final case class NonUniqueEdge(nodeId: NodeId, nodeName: NodeName, target: String)
+      extends ProcessCompilationError
+      with InASingleNode
 
-  final case class LooseNode(nodeIds: Set[NodeId]) extends ProcessCompilationError with ScenarioGraphLevelError
+  final case class LooseNode(nodes: Set[(NodeId, NodeName)])
+      extends ProcessCompilationError
+      with ScenarioGraphLevelError {
+    override def nodeIds: Set[NodeId] = nodes.map(_._1)
+  }
 
   final case class StickyNotesLimitExceeded(nodeId: NodeId, notesCount: Int, notesLimit: Int)
       extends ProcessCompilationError
@@ -85,7 +91,7 @@ object ProcessCompilationError {
       extends ProcessCompilationError
       with InASingleNode
 
-  final case class DisabledNode(nodeId: NodeId) extends ProcessCompilationError with InASingleNode
+  final case class DisabledNode(nodeId: NodeId, nodeName: NodeName) extends ProcessCompilationError with InASingleNode
 
   final case class NotSupportedExpressionLanguage(languageId: Language, nodeId: NodeId)
       extends PartSubGraphCompilationError
@@ -490,7 +496,7 @@ object ProcessCompilationError {
     override val id: String = name.value
   }
 
-  final case class NodeIdValidationError(errorType: IdErrorType, override val nodeId: NodeId)
+  final case class NodeNameValidationError(errorType: IdErrorType, nodeName: NodeName, override val nodeId: NodeId)
       extends IdError
       with InASingleNode {
     override val id: String = nodeId.value

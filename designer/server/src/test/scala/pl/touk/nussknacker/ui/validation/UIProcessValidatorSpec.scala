@@ -11,7 +11,7 @@ import org.scalatest.matchers.{BeMatcher, MatchResult}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.{CustomProcessValidator, ModelConfig}
-import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.{NodeId, _}
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -112,6 +112,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     Expression.spel(
       s"""#${ValidationExpressionParameterValidator.variableName}.dayOfWeek.name == 'FRIDAY'"""
     )
+
+  private val exampleUUID = "513eab33-d9b3-4c67-a9e7-b84ae184eb64"
 
   test("check for not unique edge types") {
     val process = createGraph(
@@ -2242,7 +2244,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val testedScenario = createGraph(
       List(
         Source(NodeId(blankValue), NodeName(blankValue), SourceRef(ProcessTestData.existingSourceFactory, List())),
-        Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+        Sink(NodeId(exampleUUID), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List()))
       ),
       List(Edge(NodeId(blankValue), NodeId("out"), None))
     )
@@ -2254,7 +2256,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val nodeErrors =
       Map(
         NodeId(blankValue) -> List(
-          PrettyValidationErrors.formatErrorMessage(NodeIdValidationError(BlankId, NodeId(blankValue)))
+          PrettyValidationErrors.formatErrorMessage(
+            NodeNameValidationError(BlankId, NodeName(blankValue), NodeId(exampleUUID))
+          )
         )
       )
     result shouldBe nodeErrors
@@ -2262,7 +2266,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   test("should validate scenario id with error preventing canonized form") {
     val incompleteScenarioWithBlankIds = createGraph(
-      List(Variable(id = NodeId(" "), name = NodeName(" "), varName = "var", value = "".spel)),
+      List(Variable(id = NodeId(exampleUUID), name = NodeName(" "), varName = "var", value = "".spel)),
       List.empty
     )
     val result = TestFactory
@@ -2277,7 +2281,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       inside(errors) { case ValidationErrors(nodeErrors, propertiesErrors, _, _) =>
         nodeErrors should contain key NodeId(" ")
         nodeErrors(NodeId(" ")) should contain(
-          PrettyValidationErrors.formatErrorMessage(NodeIdValidationError(BlankId, NodeId(" ")))
+          PrettyValidationErrors.formatErrorMessage(
+            NodeNameValidationError(BlankId, NodeName(" "), NodeId(exampleUUID))
+          )
         )
         propertiesErrors shouldBe List(
           PrettyValidationErrors.formatErrorMessage(ScenarioNameError(BlankId, ProcessName(" "), isFragment = false))

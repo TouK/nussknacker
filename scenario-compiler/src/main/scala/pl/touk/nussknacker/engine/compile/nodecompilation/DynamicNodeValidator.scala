@@ -59,7 +59,7 @@ class DynamicNodeValidator(
         errors = Nil,
         nodeParameters = compilationDependencies.nodeData.parametersOrEmpty
       )
-    }(compilationDependencies.nodeId, compilationDependencies.metaData)
+    }(compilationDependencies.nodeId, compilationDependencies.nodeName, compilationDependencies.metaData)
   }
 
   private class TransformationStepsProcessor(

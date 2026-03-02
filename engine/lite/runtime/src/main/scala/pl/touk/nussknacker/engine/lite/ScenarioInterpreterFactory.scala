@@ -192,7 +192,7 @@ object ScenarioInterpreterFactory {
           Monad[F].pure[ResultType[PartResult]](
             Writer(
               NuExceptionInfo(
-                Some(NodeComponentInfo(NodeId(source.value), ComponentType.Source, "source")),
+                Some(NodeComponentInfo(NodeId(source.value), NodeName("unknown"), ComponentType.Source, "source")),
                 new IllegalArgumentException(s"Unknown source ${source.value}"),
                 Context.dummy,
               ) :: Nil,
@@ -265,8 +265,8 @@ object ScenarioInterpreterFactory {
         )
         .result
 
-    private def customComponentContext(nodeId: NodeId) =
-      CustomComponentContext[F](nodeId, capabilityTransformer)
+    private def customComponentContext(nodeId: NodeId, nodeName: NodeName) =
+      CustomComponentContext[F](nodeId, nodeName, capabilityTransformer)
 
     private def compiledPartInvoker(
         processPart: ProcessPart,
@@ -286,7 +286,9 @@ object ScenarioInterpreterFactory {
           }
           validatedTransformer.andThen { transformer =>
             val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
-            result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(nodeId))))
+            result.map(rs =>
+              rs.map(transformer.createTransformation(_, customComponentContext(nodeId, node.data.name)))
+            )
           }
       }
 
@@ -295,7 +297,9 @@ object ScenarioInterpreterFactory {
     ): WithSinkTypes[PartInterpreterType] = sink match {
       case sinkWithParams: LiteSink[Res @unchecked] =>
         val (returnType, evaluation) =
-          sinkWithParams.createTransformation[F](customComponentContext(NodeId(compiledNode.id)))
+          sinkWithParams.createTransformation[F](
+            customComponentContext(NodeId(compiledNode.id), NodeName(compiledNode.name))
+          )
 
         it.bimap(
           _.updated(NodeId(compiledNode.id), returnType),
@@ -433,7 +437,7 @@ object ScenarioInterpreterFactory {
         case _ => Invalid(NonEmptyList.of(UnsupportedPart(nodeId)))
       }
       validatedSource.map { source =>
-        source.createTransformation(customComponentContext(nodeId))
+        source.createTransformation(customComponentContext(nodeId, node.data.name))
       }
     }
 
@@ -469,7 +473,7 @@ object ScenarioInterpreterFactory {
       }
       val transformationResult = validatedTransformer.andThen { transformer =>
         val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
-        result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(nodeId))))
+        result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(nodeId, node.data.name))))
       }
       JoinCompilationResult(nodeId, transformationResult)
     }

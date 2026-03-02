@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.{JobData, NodeId, VariableConstants}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId, NodeName, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FatalUnknownError, MissingParameters}
@@ -35,6 +35,7 @@ class StaticComponentOutputValidationContextDeterminer(
   ): ValidatedNel[ProcessCompilationError, ValidationContext] = {
     implicit val implicitComponentId: ComponentId = staticComponent.id
     implicit val nodeId: NodeId                   = nodeData.id
+    implicit val nodeName: NodeName               = nodeData.name
     def outputContextBasedOnResultType(
         returnTypeOpt: Option[TypingResult]
     ): ValidatedNel[ProcessCompilationError, ValidationContext] =
@@ -94,6 +95,7 @@ class StaticComponentOutputValidationContextDeterminer(
       ]
   )(
       implicit nodeId: NodeId,
+      nodeName: NodeName,
       jobData: JobData
   ): ValidatedNel[ProcessCompilationError, ValidationContext] = {
     NodeValidationExceptionHandler.handleExceptionsInValidation {
@@ -123,7 +125,7 @@ class StaticComponentOutputValidationContextDeterminer(
         case (None, _) =>
           handleNonContextTransformingExecutor(executor)
       }
-    }(nodeId, jobData.metaData)
+    }(nodeId, nodeName, jobData.metaData)
   }
 
   private def contextAfterSource(returnTypeOpt: Option[TypingResult])(

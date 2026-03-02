@@ -77,7 +77,7 @@ package object definition {
       label: String
   )
 
-  @JsonCodec final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
+  @JsonCodec final case class UISourceParameters(sourceId: String, sourceName: String, parameters: List[UIParameter])
 
   final case class UINodeEdges(
       componentId: ComponentId,

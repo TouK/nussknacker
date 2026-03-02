@@ -39,6 +39,7 @@ export enum TestCapabilityStatus {
 
 export interface TestFormParameters {
     sourceId: string;
+    sourceName: string;
     parameters: UIParameter[];
 }
 
