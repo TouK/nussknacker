@@ -7,7 +7,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
-import pl.touk.nussknacker.engine.api.{Context => NkContext, NodeId, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{Context => NkContext, NodeId, NodeName, ValueWithContext}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.state.{LatelyEvictableStateFunction, StateHolder}
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
 import pl.touk.nussknacker.engine.util
 import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, MetricsProviderForScenario}
-import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
+import pl.touk.nussknacker.engine.util.metrics.common.naming.{nodeIdTag, nodeNameTag}
 
 import scala.language.higherKinds
 
@@ -31,6 +31,7 @@ class AggregatorFunction[MapT[K, V]](
     protected val aggregator: Aggregator,
     protected val timeWindowLengthMillis: Long,
     override val nodeId: NodeId,
+    override val nodeName: NodeName,
     protected val aggregateElementType: TypingResult,
     protected override val aggregateTypeInformation: TypeInformation[AnyRef],
     val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
@@ -64,9 +65,11 @@ trait AggregatorFunctionMixin[MapT[K, V]] extends RichFunction { self: StateHold
 
   def nodeId: NodeId
 
+  def nodeName: NodeName
+
   protected def name: String = "aggregator"
 
-  protected def tags: Map[String, String] = Map(nodeIdTag -> nodeId.value)
+  protected def tags: Map[String, String] = Map(nodeIdTag -> nodeId.value, nodeNameTag -> nodeName.value)
 
   protected lazy val metricsProvider: MetricsProviderForScenario = engineRuntimeContext.metricsProvider
 

@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.util.metrics.common
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.{Context, EmptyProcessListener, MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{Context, EmptyProcessListener, MetaData, NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.graph.node.{DeadEndingData, EndingNodeData, NodeData}
 import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, RateMeter, WithMetrics}
-import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
+import pl.touk.nussknacker.engine.util.metrics.common.naming.{nodeIdTag, nodeNameTag}
 
 private[engine] class EndCountingListener(allNodes: Iterable[NodeData]) extends EmptyProcessListener with WithMetrics {
 
@@ -18,13 +18,13 @@ private[engine] class EndCountingListener(allNodes: Iterable[NodeData]) extends 
     endRateMeters = new Meters(
       "end",
       { case e: EndingNodeData =>
-        e.id.value
+        (e.id, e.name)
       }
     )
     deadEndRateMeters = new Meters(
       "dead_end",
       { case e: DeadEndingData =>
-        e.id.value
+        (e.id, e.name)
       }
     )
   }
@@ -34,7 +34,7 @@ private[engine] class EndCountingListener(allNodes: Iterable[NodeData]) extends 
       context: Context,
       processMetaData: MetaData
   ): Unit = {
-    deadEndRateMeters.mark(lastNodeId.value)
+    deadEndRateMeters.mark(lastNodeId)
   }
 
   override def endEncountered(
@@ -43,21 +43,21 @@ private[engine] class EndCountingListener(allNodes: Iterable[NodeData]) extends 
       context: Context,
       processMetaData: MetaData
   ): Unit = {
-    endRateMeters.mark(nodeId.value)
+    endRateMeters.mark(nodeId)
   }
 
-  private class Meters(name: String, nodeIds: PartialFunction[NodeData, String]) {
+  private class Meters(name: String, nodeIdAndNames: PartialFunction[NodeData, (NodeId, NodeName)]) {
 
-    val meters: Map[String, RateMeter] = allNodes
-      .collect(nodeIds)
-      .map { nodeId =>
+    val meters: Map[NodeId, RateMeter] = allNodes
+      .collect(nodeIdAndNames)
+      .map { case (nodeId, nodeName) =>
         nodeId -> metricsProvider.instantRateMeterWithCount(
-          MetricIdentifier(NonEmptyList.of(name), Map(nodeIdTag -> nodeId))
+          MetricIdentifier(NonEmptyList.of(name), Map(nodeIdTag -> nodeId.value, nodeNameTag -> nodeName.value))
         )
       }
       .toMap
 
-    def mark(nodeId: String): Unit = meters
+    def mark(nodeId: NodeId): Unit = meters
       .getOrElse(nodeId, throw new IllegalArgumentException(s"Unknown node $nodeId in $name known: ${meters.keySet}"))
       .mark()
 

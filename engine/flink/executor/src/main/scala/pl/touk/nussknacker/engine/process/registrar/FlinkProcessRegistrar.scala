@@ -168,7 +168,10 @@ class FlinkProcessRegistrar(
 
       val start = source
         .contextStream(env, nodeContext(nodeComponentInfo, Left(ValidationContext.empty)))
-        .process(new SourceMetricsFunction(part.id.value, compilerData.runtimeMode), contextTypeInformation)
+        .process(
+          new SourceMetricsFunction(part.id.value, part.node.data.name.value, compilerData.runtimeMode),
+          contextTypeInformation
+        )
 
       val asyncAssigned = registerInterpretationPart(start, part, InterpretationName, nodeComponentInfo)
 
@@ -411,14 +414,13 @@ object FlinkProcessRegistrar {
   private def enrichWithUsedNodes[T](
       original: (UsedNodes, ClassLoader) => T
   )(part: Option[ProcessPart]): ClassLoader => T = {
-    val (nodesToUse, endingParts) = part
-      .map { part =>
-        (
-          SplittedNodesCollector.collectNodes(part.node).map(_.data),
-          part.cast[PotentiallyStartPart].toList.flatMap(_.nextParts).map(p => p.id)
-        )
-      }
-      .getOrElse((Set.empty, Nil))
+    val nodesToUse: Iterable[NodeData] = part.toList
+      .flatMap(p => SplittedNodesCollector.collectNodes(p.node).map(_.data))
+    val endingParts: Map[NodeId, NodeName] = part
+      .flatMap(_.cast[PotentiallyStartPart])
+      .toList
+      .flatMap(_.nextParts)
+      .foldLeft(Map.empty[NodeId, NodeName])((acc, p) => acc + (p.id -> p.node.data.name))
     original(UsedNodes(nodesToUse, endingParts), _)
   }
 

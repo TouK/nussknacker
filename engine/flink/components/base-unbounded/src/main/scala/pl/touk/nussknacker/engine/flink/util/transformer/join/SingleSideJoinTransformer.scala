@@ -170,7 +170,7 @@ class SingleSideJoinTransformer(
           aggregateBy.returnType,
           storedTypeInfo,
           context.convertToEngineRuntimeContext
-        )(context.nodeId)
+        )(context.nodeId, context.nodeName)
 
         val statefulStreamWithUid = keyedMainBranchStream
           .connect(keyedJoinedStream)
@@ -207,12 +207,14 @@ class SingleSideJoinTransformer(
       storedTypeInfo: TypeInformation[AnyRef],
       convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
   )(
-      implicit nodeId: NodeId
+      implicit nodeId: NodeId,
+      nodeName: NodeName
   ): CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] =
     new SingleSideJoinAggregatorFunction[SortedMap](
       aggregator,
       stateTimeout.toMillis,
       nodeId,
+      nodeName,
       aggregateElementType,
       storedTypeInfo,
       convertToEngineRuntimeContext

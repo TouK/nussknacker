@@ -6,7 +6,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
-import pl.touk.nussknacker.engine.api.{Context => NkContext, NodeId, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{Context => NkContext, NodeId, NodeName, ValueWithContext}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.state.StateHolder
@@ -28,6 +28,7 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K, V]](
     protected val timeWindowLengthMillis: Long,
     protected val timeWindowOffsetMillis: Long,
     override val nodeId: NodeId,
+    override val nodeName: NodeName,
     protected val aggregateElementType: TypingResult,
     protected override val aggregateTypeInformation: TypeInformation[AnyRef],
     val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext

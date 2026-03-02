@@ -178,7 +178,7 @@ object SingleSideJoinTransformerSpec {
             aggregateElementType: TypingResult,
             storedTypeInfo: TypeInformation[AnyRef],
             convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
-        )(implicit nodeId: NodeId): CoProcessFunction[ValueWithContext[String], ValueWithContext[
+        )(implicit nodeId: NodeId, nodeName: NodeName): CoProcessFunction[ValueWithContext[String], ValueWithContext[
           StringKeyedValue[AnyRef]
         ], ValueWithContext[AnyRef]] = {
           new CoProcessFunctionInterceptor(
