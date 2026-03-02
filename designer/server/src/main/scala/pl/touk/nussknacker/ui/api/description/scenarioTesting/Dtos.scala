@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api.description.scenarioTesting
 
+import cats.data.NonEmptyList
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import enumeratum.{CirceEnum, Enum, EnumEntry}
@@ -13,10 +14,11 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.test.testcase.TestCase
+import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
+import pl.touk.nussknacker.restmodel.validation.testcase.{AssertionIndex, AssertionValidationError}
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TestingApiErrorMessages
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos._
@@ -235,7 +237,11 @@ object Dtos {
 
   implicit def typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
   implicit def scenarioGraphSchema: Schema[ScenarioGraph] = Schema.anyObject
-  implicit def testCaseSchema: Schema[TestCase]           = Schema.anyObject
+  implicit def testCaseSchema: Schema[TestCase]           = Schema.derived
+  implicit def enricherMocksSchema: Schema[Map[NodeId, EnricherMock]] =
+    Schema.schemaForMap[NodeId, EnricherMock](_.toString)
+  implicit def assertionsSchema: Schema[Map[NodeId, List[Assertion]]] =
+    Schema.schemaForMap[NodeId, List[Assertion]](_.toString)
 
   sealed trait TestingError
 
