@@ -317,7 +317,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map("input" -> Typed[String])
       )
     ) {
-      case ValidationPerformed(CannotCreateObjectError("Some exception", NodeId("tst1"), _) :: Nil, parameters, _, _)
+      case ValidationPerformed(CannotCreateObjectError("Some exception", NodeId("tst1"), _, _) :: Nil, parameters, _, _)
           if parameters.nonEmpty =>
     }
   }
@@ -576,7 +576,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
     ) should matchPattern {
       case ValidationPerformed(
-            List(UnknownFragment("non-existing-fragment", NodeId("frInput"))),
+            List(UnknownFragment("non-existing-fragment", NodeId("frInput"), _)),
             None,
             None,
             _

@@ -1355,7 +1355,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     validate(processWithInvalidExpresssion, failingDefinition).result should matchPattern {
       case Invalid(
             NonEmptyList(
-              CannotCreateObjectError("You passed incorrect parameter, cannot proceed", NodeId("id1"), _),
+              CannotCreateObjectError("You passed incorrect parameter, cannot proceed", NodeId("id1"), _, _),
               Nil
             )
           ) =>

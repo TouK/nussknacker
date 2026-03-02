@@ -133,11 +133,11 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
     fragments
       .apply(ProcessName(fragmentInput.ref.id))
       .map(valid)
-      .getOrElse(invalidNel(UnknownFragment(id = fragmentInput.ref.id, nodeId = nodeId)))
+      .getOrElse(invalidNel(UnknownFragment(id = fragmentInput.ref.id, nodeId = nodeId, nodeName = fragmentInput.name)))
       .andThen { fragment =>
         FragmentGraphDefinitionExtractor
           .extractFragmentGraphDefinition(fragment)
-          .leftMap(_ => InvalidFragment(id = fragmentInput.ref.id, nodeId = nodeId))
+          .leftMap(_ => InvalidFragment(id = fragmentInput.ref.id, nodeId = nodeId, nodeName = fragmentInput.name))
           .toValidatedNel
       }
   }

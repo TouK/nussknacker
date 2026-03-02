@@ -31,7 +31,7 @@ object transformers {
       windowLength: FiniteDuration,
       variableName: String,
       emitWhenEventLeft: Boolean,
-  )(implicit nodeId: NodeId): ContextTransformation = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): ContextTransformation = {
     val preserveContext = !emitWhenEventLeft
     ContextTransformation
       .definedBy(aggregator.toContextTransformation(variableName, preserveContext, aggregateBy, groupBy))
@@ -75,7 +75,7 @@ object transformers {
       windowLength: FiniteDuration,
       variableName: String,
       windowOffset: Option[FiniteDuration] = None
-  )(implicit nodeId: NodeId): ContextTransformation = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): ContextTransformation = {
     tumblingTransformer(
       groupBy,
       groupByParameterName,
@@ -97,7 +97,7 @@ object transformers {
       variableName: String,
       tumblingWindowTrigger: TumblingWindowTrigger,
       windowOffset: Option[FiniteDuration]
-  )(implicit nodeId: NodeId): ContextTransformation = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): ContextTransformation = {
     val preserveContext = tumblingWindowTrigger == TumblingWindowTrigger.OnEvent
     ContextTransformation
       .definedBy(aggregator.toContextTransformation(variableName, preserveContext, aggregateBy, groupBy))
@@ -158,7 +158,7 @@ object transformers {
       endSessionCondition: LazyParameter[java.lang.Boolean],
       sessionWindowTrigger: SessionWindowTrigger,
       variableName: String
-  )(implicit nodeId: NodeId): ContextTransformation = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): ContextTransformation = {
     val preserveContext = sessionWindowTrigger == SessionWindowTrigger.OnEvent
     ContextTransformation
       .definedBy(aggregator.toContextTransformation(variableName, preserveContext, aggregateBy, groupBy))
