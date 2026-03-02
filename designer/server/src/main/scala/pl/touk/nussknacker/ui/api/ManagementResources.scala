@@ -218,47 +218,6 @@ class ManagementResources(
               }
             }
           }
-        } ~
-        // TODO: maybe Write permission is enough here?
-        path("test" / ProcessNameSegment) { processName =>
-          (post & processDetailsForName(
-            processName
-          ) & skipResultsPerTransitionQueryParam & skipResultsPerNodeQueryParam) {
-            (details, skipResultsPerTransition, skipResultsPerNode) =>
-              canDeploy(details.idWithNameUnsafe) {
-                formFields(Symbol("testData"), Symbol("scenarioGraph")) { (testDataContent, scenarioGraphJson) =>
-                  complete {
-                    measureTime("test", metricRegistry) {
-                      parser.parse(scenarioGraphJson).flatMap(Decoder[ScenarioGraph].decodeJson) match {
-                        case Right(scenarioGraph) =>
-                          scenarioTestServices
-                            .forProcessingTypeUnsafe(details.processingType)
-                            .performTest(
-                              scenarioGraph,
-                              details.processVersionUnsafe,
-                              details.isFragment,
-                              SerializedScenarioRecordsContent(testDataContent)
-                            )
-                            .flatMap {
-                              case Left(error) =>
-                                Future.failed(PerformTestDesignerError(TestingApiErrorMessages.from(error)))
-                              case Right(value) =>
-                                mapResultsToHttpResponse(
-                                  ResultsWithCountsDto.from(
-                                    resultsWithCounts = value,
-                                    skipResultsPerNode = SkipResultsPerNode(skipResultsPerNode),
-                                    skipResultsPerTransition = SkipResultsPerTransition(skipResultsPerTransition),
-                                  )
-                                )
-                            }
-                        case Left(error) =>
-                          Future.failed(ProcessUnmarshallingError(error.toString))
-                      }
-                    }
-                  }
-                }
-              }
-          }
         } ~ path(("runOffSchedule" | "performSingleExecution") / ProcessNameSegment) {
           processName => // backward compatibility purpose
             (post & processId(processName) & entity(as[RunOffScheduleRequest])) { (processIdWithName, req) =>
@@ -281,18 +240,8 @@ class ManagementResources(
         }
     }
 
-  private def mapResultsToHttpResponse: ResultsWithCountsDto => Future[HttpResponse] = { results =>
-    Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
-  }
-
   private def toHttpResponse[A: Encoder](a: A)(code: StatusCode): Future[HttpResponse] =
     Marshal(a).to[MessageEntity].map(en => HttpResponse(entity = en, status = code))
-
-  private def skipResultsPerNodeQueryParam =
-    parameters(Symbol("skipResultsPerNode").as[Boolean].withDefault(false))
-
-  private def skipResultsPerTransitionQueryParam =
-    parameters(Symbol("skipResultsPerTransition").as[Boolean].withDefault(false))
 
   private def convertSavepointResultToResponse(future: Future[SavepointResult]) = {
     future

@@ -25,7 +25,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
   TestWithParametersDetails
 }
 import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
-import sttp.tapir.{Codec, CodecFormat, Schema}
+import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
 import sttp.tapir.derevo.schema
 
 import scala.collection.compat._
@@ -129,11 +129,32 @@ object Dtos {
 
   object Test {
 
+    sealed trait PerformTestRequest
+
     @derive(schema, encoder, decoder)
-    final case class PerformTestRequest(
+    final case class PerformTestRequestJsonBody(
         scenarioGraph: ScenarioGraph,
         testData: ScenarioTestData,
-    )
+    ) extends PerformTestRequest
+
+    @derive(schema)
+    final case class PerformTestRequestMultiParts(
+        scenarioGraph: ScenarioGraph,
+        testData: String,
+    ) extends PerformTestRequest
+
+    object PerformTestRequestMultiParts {
+
+      implicit val scenarioGraphMultipartPartCodec: Codec[String, ScenarioGraph, CodecFormat.TextPlain] =
+        Codec.string.mapDecode { s =>
+          io.circe.parser.decode[ScenarioGraph](s) match {
+            case Right(sg) => DecodeResult.Value(sg)
+            case Left(err) =>
+              DecodeResult.Error(s, new RuntimeException(s"Could not parse ScenarioGraph: ${err.getMessage}", err))
+          }
+        }(sg => Encoder[ScenarioGraph].apply(sg).noSpaces)
+
+    }
 
     @derive(schema, encoder, decoder)
     final case class PerformTestCaseRequest(

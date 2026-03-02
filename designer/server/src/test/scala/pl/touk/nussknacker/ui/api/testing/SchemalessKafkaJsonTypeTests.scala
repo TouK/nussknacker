@@ -502,25 +502,19 @@ class SchemalessKafkaJsonTypeTests
 
   "The endpoint for test with custom test data should" - {
     "perform a test on given data" in {
+      val testDataContent =
+        s"""[
+           |  { "sourceId":"$exampleScenarioSourceId","variables": { "input": {"name": "Foo"}, "inputMeta": {"timestamp": 123} } }
+           |]""".stripMargin
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
         }
         .when()
         .basicAuthAllPermUser()
-        .multiPart(
-          "scenarioGraph",
-          exampleScenario.toScenarioGraph.asJson.spaces2,
-          "application/json"
-        )
-        .multiPart(
-          "testData",
-          s"""[
-             |  { "sourceId":"$exampleScenarioSourceId","variables": { "input": {"name": "Foo"}, "inputMeta": {"timestamp": 123} } }
-             |]""".stripMargin,
-          "application/json"
-        )
-        .post(s"$nuDesignerHttpAddress/api/processManagement/test/${exampleScenario.name}")
+        .multiPart("scenarioGraph", exampleScenario.toScenarioGraph.asJson.noSpaces)
+        .multiPart("testData", testDataContent)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
         .Then()
         .statusCode(200)
         .body(s"counts.$exampleScenarioSourceId.all", equalTo(1))

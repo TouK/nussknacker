@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.api
 
 import cats.instances.all._
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
-import io.circe.Json
 import org.apache.pekko.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
 import org.apache.pekko.http.scaladsl.server
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
@@ -11,15 +10,13 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.BeMatcher
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
-import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase, TestCases}
-import pl.touk.nussknacker.engine.test.testcase.Assertion.PredicateAssertion
 import pl.touk.nussknacker.restmodel.DeployRequest
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.security.Permission
@@ -34,7 +31,6 @@ import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
 
 import java.time.Instant
-import java.util.UUID
 
 // TODO: all these tests should be migrated to ManagementApiHttpServiceBusinessSpec or ManagementApiHttpServiceSecuritySpec
 class ManagementResourcesSpec
@@ -404,233 +400,6 @@ class ManagementResourcesSpec
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe FlinkClientStub.stopSavepointPath
       }
-    }
-  }
-
-  test("return test results") {
-    val testDataContent =
-      """[
-        |  {"sourceId":"startProcess","variables":{"input":["ala"]}},
-        |  {"sourceId":"startProcess","variables":{"input":["bela"]}}
-        |]""".stripMargin
-    saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
-
-    testScenario(ProcessTestData.sampleScenario, testDataContent) ~> check {
-
-      status shouldEqual StatusCodes.OK
-
-      val responseJson = responseAs[Json]
-      logger.debug(s"The response from the endpoint running scenario test from files was: $responseJson")
-
-      val ctx = responseJson.hcursor
-        .downField("results")
-        .downField("nodeResults")
-        .downField("endsuffix")
-        .downArray
-        .downField("variables")
-
-      ctx
-        .downField("output")
-        .downField("pretty")
-        .downField("message")
-        .focus shouldBe Some(Json.fromString("message"))
-
-      ctx
-        .downField("input")
-        .downField("pretty")
-        .downN(0)
-        .focus shouldBe Some(Json.fromString("ala"))
-    }
-  }
-
-  test("save and return single test case") {
-    val testDataContent =
-      """[
-        |  {"sourceId":"startProcess","variables":{"input":["ala"]}}
-        |]""".stripMargin
-    val testCase = TestCase(
-      id = UUID.randomUUID(),
-      name = "dummy",
-      inputs = testDataContent,
-      mocks = Map(
-        NodeId("someEnricher") -> EnricherMock("'b'".spel)
-      ),
-      assertions = Map(
-        NodeId("endsuffix") -> List(
-          PredicateAssertion(
-            Assertion.AssertionOperator.Equals,
-            "'ala'".spel,
-            "#contexts[0].input[0]".spel,
-            description = Some("first event input should equal 'ala'")
-          ),
-          PredicateAssertion(
-            Assertion.AssertionOperator.Equals,
-            "'ala'".spel,
-            "#contexts[1].input[0]".spel,
-            description = Some("second event input should equal 'ala'")
-          ),
-        )
-      )
-    )
-    val sampleScenarioWithTestCase = ProcessTestData.sampleScenario.copy(testCases = Some(TestCases.Single(testCase)))
-
-    saveCanonicalProcessAndAssertSuccess(sampleScenarioWithTestCase)
-
-    getProcess(processName) ~> check {
-      val scenarioDetails = responseAs[ScenarioWithDetails]
-      scenarioDetails.scenarioGraph.flatMap(_.testCases) shouldBe Some(TestCases.Single(testCase))
-    }
-  }
-
-  // Tests for the testCase endpoint were migrated to ManagementApiHttpServiceBusinessSpec
-  // using the new POST /api/scenarioTesting/{scenarioName}/testCase endpoint.
-
-  test("nodeTransitionResults returned in test results should include null variables") {
-    val scenario = ScenarioBuilder
-      .streaming(ProcessTestData.sampleProcessName.value)
-      .parallelism(1)
-      .source("startProcess", "csv-source")
-      .emptySink(
-        "end",
-        "kafka-string",
-        TopicParamName.value     -> "'end.topic'".spel,
-        SinkValueParamName.value -> "'foo'".spel
-      )
-    saveCanonicalProcessAndAssertSuccess(scenario)
-
-    val testDataContent =
-      """[
-        |  {"sourceId":"startProcess","variables":{"input":null}}
-        |]""".stripMargin
-    testScenario(scenario, testDataContent) ~> check {
-      status shouldEqual StatusCodes.OK
-
-      val responseJson = responseAs[Json]
-      logger.debug(s"The response from the endpoint running scenario test from files was: $responseJson")
-
-      val inputVariable = responseJson.hcursor
-        .downField("results")
-        .downField("nodeTransitionResults")
-        .downN(0)
-        .downField("results")
-        .downN(0)
-        .downField("variables")
-        .downField("input")
-        .focus
-
-      inputVariable.value shouldBe Json.Null
-    }
-  }
-
-  test("return test results of errors, including null") {
-
-    import pl.touk.nussknacker.engine.spel.SpelExtension._
-
-    val process = ScenarioBuilder
-      .streaming(processName.value)
-      .parallelism(1)
-      .source("startProcess", "csv-source")
-      .filter("input", "new java.math.BigDecimal(null) == 0".spel)
-      .emptySink(
-        "end",
-        "kafka-string",
-        TopicParamName.value     -> "'end.topic'".spel,
-        SinkValueParamName.value -> "''".spel
-      )
-    val testDataContent =
-      """[
-        |  {"sourceId":"startProcess","variables":{"input":["ala"]}},
-        |  {"sourceId":"startProcess","variables":{"input":["bela"]}}
-        |]""".stripMargin
-    saveCanonicalProcessAndAssertSuccess(process)
-
-    testScenario(process, testDataContent) ~> check {
-      status shouldEqual StatusCodes.OK
-    }
-  }
-
-  test("refuses to test if too much data received") {
-
-    import pl.touk.nussknacker.engine.spel.SpelExtension._
-
-    val process = {
-      ScenarioBuilder
-        .streaming(processName.value)
-        .parallelism(1)
-        .source("startProcess", "csv-source")
-        .emptySink(
-          "end",
-          "kafka-string",
-          TopicParamName.value     -> "'end.topic'".spel,
-          SinkValueParamName.value -> "''".spel
-        )
-    }
-    saveCanonicalProcessAndAssertSuccess(process)
-
-    val tooManyRecords = List
-      .fill(50)("""{"sourceId":"startProcess","variables":{"input":[]}}""")
-      .mkString("[", ",", "]")
-    testScenario(process, tooManyRecords) ~> check {
-      status shouldEqual StatusCodes.BadRequest
-      responseAs[
-        String
-      ] shouldBe "Test data has too many records (50). The maximum number of records permitted is 20. Contact the system administrator to increase this limit."
-    }
-
-    val longString = "a long json string".repeat(50)
-    val tooManyCharacters = List
-      .fill(20)(s"""{"sourceId":"startProcess","variables":{"input":"["$longString"]"}}""")
-      .mkString("[", ",", "]")
-    testScenario(process, tooManyCharacters) ~> check {
-      status shouldEqual StatusCodes.BadRequest
-      responseAs[
-        String
-      ] shouldBe "Test data has too many characters (19141). The maximum numbers of permitted characters is 10000. Contact the system administrator to increase this limit."
-    }
-  }
-
-  test("refuses to test if too big test results generated") {
-    import pl.touk.nussknacker.engine.spel.SpelExtension._
-
-    val bigListExpression = (1 to 1000).mkString("{", ",", "}").spel
-    val process = {
-      ScenarioBuilder
-        .streaming(processName.value)
-        .parallelism(1)
-        .source("startProcess", "csv-source")
-        .buildSimpleVariable("big list", "bigList", bigListExpression)
-        .emptySink(
-          "end",
-          "kafka-string",
-          TopicParamName.value     -> "'end.topic'".spel,
-          SinkValueParamName.value -> "''".spel
-        )
-    }
-    saveCanonicalProcessAndAssertSuccess(process)
-
-    val testDataContent = List
-      .fill(10)("""{"sourceId":"startProcess","variables":{"input":[]}}""")
-      .mkString("[", ",", "]")
-    testScenario(process, testDataContent) ~> check {
-      status shouldEqual StatusCodes.BadRequest
-      // Approximate size can differ slightly depending on test execution environment.
-      responseAs[
-        String
-      ] should fullyMatch regex "Test results size exceeded \\(approximate size is \\d+ B\\). The maximum permitted size is 500000 B. Contact the system administrator to increase this limit."
-    }
-  }
-
-  test("rejects test record with non-existing source") {
-    saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
-    val testDataContent =
-      """[
-        |  {"sourceId":"startProcess","variables":{"input":[]}},
-        |  {"sourceId":"unknown","variables":{"input":"foo"}}
-        |]""".stripMargin
-
-    testScenario(ProcessTestData.sampleScenario, testDataContent) ~> check {
-      status shouldEqual StatusCodes.BadRequest
-      responseAs[String] shouldBe "Problem in sample 2 detected: source with id 'unknown' doesn't exist in the scenario"
     }
   }
 

@@ -12,9 +12,8 @@ import io.circe.syntax._
 import io.dropwizard.metrics5.MetricRegistry
 import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
 import org.apache.pekko.http.scaladsl.server.{Directives, Route}
-import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.http.scaladsl.unmarshalling.FromEntityUnmarshaller
-import org.apache.pekko.testkit.TestDuration
 import org.scalatest.{Assertion, BeforeAndAfterEach, OptionValues, Suite}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
@@ -71,7 +70,7 @@ import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
-import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
+import pl.touk.nussknacker.ui.util.NuPathMatchers
 import slick.dbio.DBIOAction
 
 import java.net.URI
@@ -483,21 +482,6 @@ trait NuResourcesTest
       Permission.Deploy,
       Permission.Read
     )
-
-  protected def testScenario(scenario: CanonicalProcess, testDataContent: String): RouteTestResult = {
-    implicit val timeout: RouteTestTimeout = RouteTestTimeout(10.seconds.dilated)
-
-    val scenarioGraph = scenario.toScenarioGraph
-    val multiPart = MultipartUtils.prepareMultiParts(
-      "testData"      -> testDataContent,
-      "scenarioGraph" -> scenarioGraph.asJson.noSpaces
-    )()
-    Post(s"/processManagement/test/${scenario.name}", multiPart) ~> withPermissions(
-      deployRoute(),
-      Permission.Deploy,
-      Permission.Read
-    )
-  }
 
   protected def getProcess(processName: ProcessName): RouteTestResult =
     Get(s"/processes/$processName") ~> withPermissions(processesRoute, Permission.Read)

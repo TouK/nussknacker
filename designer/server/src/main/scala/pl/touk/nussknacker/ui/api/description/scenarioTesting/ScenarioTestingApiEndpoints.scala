@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language.SpelTemplate
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
@@ -33,11 +32,12 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.LiveDataFetch
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
   PerformTestCaseRequest,
   PerformTestRequest,
+  PerformTestRequestJsonBody,
+  PerformTestRequestMultiParts,
   SkipResultsPerNode,
   SkipResultsPerTransition
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformTestCaseRequest._
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformTestRequest._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.{
   BadRequestTestingError,
   NotFoundTestingError
@@ -54,7 +54,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.definition.DefinitionsService
-import sttp.model.StatusCode.{BadRequest, InternalServerError, NotFound, Ok}
+import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.json.circe.jsonBody
@@ -192,18 +192,36 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
     TestingError,
     ResultsWithCountsDto,
     Any
-  ] =
+  ] = {
+    import PerformTestRequestMultiParts._
+
     baseNuApiEndpoint
       .summary("Perform test")
       .tag("Testing")
       .post
       .in("scenarioTesting" / path[ProcessName]("scenarioName") / "performTest")
-      .in(jsonBody[PerformTestRequest])
+      .in(
+        oneOfBody[PerformTestRequest](
+          jsonBody[PerformTestRequestJsonBody].map[PerformTestRequest]((x: PerformTestRequestJsonBody) =>
+            x: PerformTestRequest
+          ) {
+            case jsonBody: PerformTestRequestJsonBody => jsonBody
+            case other => throw new IllegalArgumentException(s"$other should not be used as endpoint output body")
+          },
+          multipartBody[PerformTestRequestMultiParts].map[PerformTestRequest]((x: PerformTestRequestMultiParts) =>
+            x: PerformTestRequest
+          ) {
+            case multiParts: PerformTestRequestMultiParts => multiParts
+            case other => throw new IllegalArgumentException(s"$other should not be used as endpoint output body")
+          },
+        )
+      )
       .in(skipResultsPerNodeQueryParam)
       .in(skipResultsPerTransitionQueryParam)
       .out(statusCode(Ok).and(jsonBody[ResultsWithCountsDto]))
       .errorOut(testingErrorOutput)
       .withSecurity(auth)
+  }
 
   def scenarioTestCaseEndpoint: SecuredEndpoint[
     (

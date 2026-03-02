@@ -34,9 +34,8 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceP
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformTestCaseRequest
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
-import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{quickRequest, Response, UriContext}
-import sttp.model.{MediaType, StatusCode}
+import sttp.model.StatusCode
 
 import java.util.UUID
 
@@ -197,13 +196,10 @@ trait ScenarioTestingApiHttpServiceGenericSpec
     def runTestsFromFile(testDataJson: String) = {
       httpClient.send(
         quickRequest
-          .post(uri"$nuDesignerHttpAddress/api/processManagement/test/${exampleScenario.name}")
-          .contentType(MediaType.MultipartFormData)
+          .post(uri"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
           .multipartBody(
-            sttpPrepareMultiParts(
-              "testData"      -> testDataJson,
-              "scenarioGraph" -> exampleScenario.toScenarioGraph.asJson.noSpaces
-            )()
+            sttp.client3.multipart("scenarioGraph", exampleScenario.toScenarioGraph.asJson.noSpaces),
+            sttp.client3.multipart("testData", testDataJson),
           )
           .auth
           .basic("allpermuser", "allpermuser")

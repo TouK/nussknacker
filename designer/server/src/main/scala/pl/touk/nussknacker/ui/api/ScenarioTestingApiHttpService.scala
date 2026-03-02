@@ -22,6 +22,9 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
   PerformTestCaseRequest,
+  PerformTestRequest,
+  PerformTestRequestJsonBody,
+  PerformTestRequestMultiParts,
   SkipResultsPerNode,
   SkipResultsPerTransition
 }
@@ -39,6 +42,7 @@ import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{
   ParametersDefinitionError,
   TestingCapabilitiesError
 }
+import pl.touk.nussknacker.ui.process.test.SerializedScenarioRecordsContent
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.validation.ParametersValidator
 
@@ -135,7 +139,7 @@ class ScenarioTestingApiHttpService(
     scenarioTestingApiEndpoints.scenarioTestEndpoint
       .serverSecurityLogic(authorizeKnownUser[TestingError])
       .serverLogicEitherT { implicit loggedUser =>
-        { case (scenarioName, request, skipResultsPerNode, skipResultsPerTransition) =>
+        { case (scenarioName, body, skipResultsPerNode, skipResultsPerTransition) =>
           for {
             scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
             processId <- EitherT
@@ -144,39 +148,53 @@ class ScenarioTestingApiHttpService(
             scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
               scenarioWithDetails.processingType
             )
-            resultWithCounts <- request.testData match {
-              case ScenarioTestData.WithParameters(sourceParameters) =>
-                EitherT(
-                  scenarioTestService.performTest(
-                    request.scenarioGraph,
-                    scenarioWithDetails.processVersionUnsafe,
-                    scenarioWithDetails.isFragment,
-                    sourceParameters
-                  )
-                ).leftMap[TestingError] { error =>
-                  ErrorResult(TestingApiErrorMessages.from(error))
-                }
-              case ScenarioTestData.WithLiveData(numberOfSamples) =>
-                scenarioTestService.fetchSourcesLiveData(
-                  request.scenarioGraph,
-                  scenarioWithDetails.processVersionUnsafe,
-                  scenarioWithDetails.isFragment,
-                  numberOfSamples
-                ) match {
-                  case Left(error) =>
-                    EitherT.fromEither[Future](Left(toDto(error)))
-                  case Right(serializedLiveData) =>
+            resultWithCounts <- body match {
+              case PerformTestRequestJsonBody(scenarioGraph, testData) =>
+                testData match {
+                  case ScenarioTestData.WithParameters(sourceParameters) =>
                     EitherT(
-                      scenarioTestService
-                        .performTest(
-                          request.scenarioGraph,
-                          scenarioWithDetails.processVersionUnsafe,
-                          scenarioWithDetails.isFragment,
-                          serializedLiveData
-                        )
+                      scenarioTestService.performTest(
+                        scenarioGraph,
+                        scenarioWithDetails.processVersionUnsafe,
+                        scenarioWithDetails.isFragment,
+                        sourceParameters
+                      )
                     ).leftMap[TestingError] { error =>
                       ErrorResult(TestingApiErrorMessages.from(error))
                     }
+                  case ScenarioTestData.WithLiveData(numberOfSamples) =>
+                    scenarioTestService.fetchSourcesLiveData(
+                      scenarioGraph,
+                      scenarioWithDetails.processVersionUnsafe,
+                      scenarioWithDetails.isFragment,
+                      numberOfSamples
+                    ) match {
+                      case Left(error) =>
+                        EitherT.fromEither[Future](Left(toDto(error)))
+                      case Right(serializedLiveData) =>
+                        EitherT(
+                          scenarioTestService
+                            .performTest(
+                              scenarioGraph,
+                              scenarioWithDetails.processVersionUnsafe,
+                              scenarioWithDetails.isFragment,
+                              serializedLiveData
+                            )
+                        ).leftMap[TestingError] { error =>
+                          ErrorResult(TestingApiErrorMessages.from(error))
+                        }
+                    }
+                }
+              case PerformTestRequestMultiParts(scenarioGraph, testData) =>
+                EitherT(
+                  scenarioTestService.performTest(
+                    scenarioGraph,
+                    scenarioWithDetails.processVersionUnsafe,
+                    scenarioWithDetails.isFragment,
+                    SerializedScenarioRecordsContent(testData)
+                  )
+                ).leftMap[TestingError] { error =>
+                  ErrorResult(TestingApiErrorMessages.from(error))
                 }
             }
           } yield ResultsWithCountsDto.from(

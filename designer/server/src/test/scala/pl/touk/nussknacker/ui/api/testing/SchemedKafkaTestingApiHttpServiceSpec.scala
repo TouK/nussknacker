@@ -467,9 +467,9 @@ class SchemedKafkaTestingApiHttpServiceSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .multiPart("testData", expectedTestDataJson)
         .multiPart("scenarioGraph", exampleScenario.toScenarioGraph.asJson.noSpaces)
-        .post(s"$nuDesignerHttpAddress/api/processManagement/test/${exampleScenario.name}")
+        .multiPart("testData", expectedTestDataJson)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
         .Then()
         .statusCode(200)
         .body(
