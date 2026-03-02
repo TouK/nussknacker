@@ -67,22 +67,29 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
       case (l, r) if l == r => Some(l)
       // TODO We can't do at the beginning if (l.canBeSubclassOf(r) => Some(l) and the same in opposite direction
       //      because canBeSubclassOf handles conversions and many more - see comment next to it
-      case (l: TypedClass, r: TypedClass)                           => classCommonSupertype(l, r)
+      case (l: TypedClass, r: TypedClass) => classCommonSupertype(l, r)
       case (l: TypedObjectTypingResult, r: TypedObjectTypingResult) =>
-        // In most cases we compare java.util.Map or GenericRecord, the only difference can be on generic params, but
-        // still we'll got a class here, so this getOrElse should occur in the rare situations
-        looseFinder
-          .classCommonSupertypeReturningTypedClass(l.runtimeObjType, r.runtimeObjType)
-          .map { commonSupertype =>
-            val fields = prepareFields(l, r)
-            // We don't return None in case when fields are empty, because we can't be sure the intention of the user
-            // e.g. someone can pass json object with missing field declared as optional in schema
-            // and want to compare it with literal record that doesn't have this field
-            Typed.record(fields, commonSupertype)
+        handleEmptyRecords(l, r)
+          .orElse {
+            // In most cases we compare java.util.Map or GenericRecord, the only difference can be on generic params, but
+            // still we'll got a class here, so this getOrElse should occur in the rare situations
+            looseFinder
+              .classCommonSupertypeReturningTypedClass(l.runtimeObjType, r.runtimeObjType)
+              .map { commonSupertype =>
+                val fields = prepareFields(l, r)
+                // We don't return None in case when fields are empty, because we can't be sure the intention of the user
+                // e.g. someone can pass json object with missing field declared as optional in schema
+                // and want to compare it with literal record that doesn't have this field
+                Typed.record(fields, commonSupertype)
+              }
           }
           .orElse(fallback)
-      case (l: TypedObjectTypingResult, r) => singleCommonSupertype(l.runtimeObjType, r)
-      case (l, r: TypedObjectTypingResult) => singleCommonSupertype(l, r.runtimeObjType)
+      case (l: TypedObjectTypingResult, r) =>
+        handleEmptyRecord(l, r)
+          .orElse(singleCommonSupertype(l.runtimeObjType, r))
+      case (l, r: TypedObjectTypingResult) =>
+        handleEmptyRecord(r, l)
+          .orElse(singleCommonSupertype(l, r.runtimeObjType))
       case (TypedTaggedValue(leftType, leftTag), TypedTaggedValue(rightType, rightTag)) if leftTag == rightTag =>
         singleCommonSupertype(leftType, rightType).map {
           case single: SingleTypingResult => TypedTaggedValue(single, leftTag)
@@ -109,11 +116,27 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
     }
   }
 
+  private def handleEmptyRecords(
+      left: TypedObjectTypingResult,
+      right: TypedObjectTypingResult
+  ) = {
+    Option
+      .when(isEmptyRecordLiteral(left))(right)
+      .orElse(Option.when(isEmptyRecordLiteral(right))(left))
+  }
+
   private def handleEmptyList(
       typedObjectWithValue: TypedObjectWithValue,
       other: SingleTypingResult
   ): Option[TypedClass] = {
     asListClass(other).filter(_ => isEmptyListLiteral(typedObjectWithValue))
+  }
+
+  private def handleEmptyRecord(
+      typedObjectWithValue: TypedObjectTypingResult,
+      other: SingleTypingResult
+  ): Option[TypedClass] = {
+    asMapClass(other).filter(_ => isEmptyRecordLiteral(typedObjectWithValue))
   }
 
   private def handleEmptyMap(
@@ -134,6 +157,14 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
         case _                       => false
       }
     } yield result).contains(true)
+  }
+
+  private def isEmptyRecordLiteral(typedObjectTypingResult: TypedObjectTypingResult) = {
+    val expectedType = Typed.genericTypeClass(
+      mapClass,
+      List(Typed.typedClass[String], Unknown)
+    )
+    typedObjectTypingResult.fields.isEmpty && typedObjectTypingResult.runtimeObjType == expectedType
   }
 
   private def isEmptyMapLiteral(typedObjectWithValue: TypedObjectWithValue): Boolean = {

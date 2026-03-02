@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.json.encoders.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.{Loose, Strict}
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.Default.superTypeOfTypes
 import pl.touk.nussknacker.engine.api.typed.typing.DisplayStrategy.{DefaultDisplayStrategy, JsonDisplayStrategy}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.{isUnknown, mapClass}
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 
 import scala.annotation.tailrec
@@ -453,6 +454,8 @@ object typing {
       }
 
       tryReduce(isEmptyListOrArrayLiteral, findListOrNonEmptyListLiteral)
+        .orElse(tryReduce(isEmptyRecordLiteral, findNonEmptyRecord))
+        .orElse(tryReduce(isEmptyRecordLiteral, findMapOrNonEmptyMapLiteral))
         .orElse(tryReduce(isEmptyMapLiteral, findMapOrNonEmptyMapLiteral)) match {
         case Some(reducedTypes) => reduceTypes(reducedTypes)
         case None               => types
@@ -482,6 +485,21 @@ object typing {
           Some(tr)
         case tr @ TypedClass(aClass, List(_)) if listClass.isAssignableFrom(aClass) =>
           Some(tr)
+        case tr @ TypedClass(aClass, List(_)) if collectionClass.isAssignableFrom(aClass) =>
+          Some(tr)
+        case _ =>
+          None
+      }
+    }
+
+    private def findNonEmptyRecord(typingResult: SingleTypingResult): Option[SingleTypingResult] = {
+      typingResult match {
+        case tr @ TypedObjectTypingResult(
+              fields,
+              TypedClass(aClass, List(TypedClass(`stringClass`, Nil), _)),
+              _
+            ) if fields.nonEmpty && mapClass.isAssignableFrom(aClass) =>
+          Some(tr)
         case _ =>
           None
       }
@@ -499,6 +517,28 @@ object typing {
       }
     }
 
+    private def findRecordOrNonEmptyRecordLiteral(typingResult: SingleTypingResult): Option[SingleTypingResult] = {
+      typingResult match {
+        case tr @ TypedObjectWithValue(TypedClass(aClass, List(_, _)), value: java.util.Map[_, _])
+            if mapClass.isAssignableFrom(aClass) && !value.isEmpty =>
+          Some(tr)
+        case tr @ TypedClass(aClass, List(_, _)) if mapClass.isAssignableFrom(aClass) =>
+          Some(tr)
+        case _ =>
+          None
+      }
+    }
+
+    private def isEmptyRecordLiteral(typingResult: SingleTypingResult): Boolean = {
+      typingResult match {
+        case TypedObjectTypingResult(fields, TypedClass(aClass, List(TypedClass(`stringClass`, Nil), valueParam)), _)
+            if fields.isEmpty && mapClass.isAssignableFrom(aClass) && isUnknown(valueParam) =>
+          true
+        case _ =>
+          false
+      }
+    }
+
     private def isEmptyMapLiteral(typingResult: SingleTypingResult): Boolean = {
       typingResult match {
         case TypedObjectWithValue(TypedClass(aClass, List(Unknown, Unknown)), value: java.util.Map[_, _])
@@ -509,8 +549,17 @@ object typing {
       }
     }
 
-    private val listClass: Class[java.util.List[_]]  = classOf[java.util.List[_]]
-    private val mapClass: Class[java.util.Map[_, _]] = classOf[java.util.Map[_, _]]
+    private def isUnknown(typingResult: TypingResult): Boolean = {
+      typingResult match {
+        case Unknown(_) => true
+        case _          => false
+      }
+    }
+
+    private val collectionClass: Class[java.util.Collection[_]] = classOf[java.util.Collection[_]]
+    private val listClass: Class[java.util.List[_]]             = classOf[java.util.List[_]]
+    private val mapClass: Class[java.util.Map[_, _]]            = classOf[java.util.Map[_, _]]
+    private val stringClass: Class[String]                      = classOf[String]
 
     def record(fields: Iterable[(String, TypingResult)]): TypedObjectTypingResult =
       TypedObjectTypingResult(ListMap(fields.toSeq: _*), mapBasedRecordUnderlyingType[java.util.Map[_, _]](fields))

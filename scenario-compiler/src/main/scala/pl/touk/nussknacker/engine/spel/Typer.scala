@@ -562,8 +562,9 @@ private[spel] class Typer(
             )
         }
       // TODO: what should be here?
-      case e: FunctionReference => Unknown.validNodeResult
-
+      case e: FunctionReference =>
+        val functionName = e.toStringAST.stripPrefix("#").takeWhile(_ != '(')
+        UnresolvedReferenceError(functionName).invalidNodeResult
       // TODO: what should be here?
       case e: Identifier => Unknown.validNodeResult
       // TODO: what should be here?
