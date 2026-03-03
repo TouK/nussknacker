@@ -31,7 +31,8 @@
                     "y": 0
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "real-kafka"
         },
         {
             "id": "mapVariable",
@@ -66,7 +67,8 @@
                     "y": 179
                 }
             },
-            "type": "VariableBuilder"
+            "type": "VariableBuilder",
+            "name": "mapVariable"
         },
         {
             "id": "kafka-string",
@@ -97,7 +99,8 @@
                     "y": 360
                 }
             },
-            "type": "Sink"
+            "type": "Sink",
+            "name": "kafka-string"
         }
     ],
     "additionalBranches": []

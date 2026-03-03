@@ -26,7 +26,8 @@
                     "y": 0
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "request"
         },
         {
             "id": "response",
@@ -51,7 +52,8 @@
                     "y": 180
                 }
             },
-            "type": "Sink"
+            "type": "Sink",
+            "name": "response"
         }
     ],
     "additionalBranches": []

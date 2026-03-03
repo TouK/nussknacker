@@ -50,7 +50,8 @@
                     "y": 0
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "input Kafka topic with json content"
         },
         {
             "id": "My first variable declaration",
@@ -66,7 +67,8 @@
                     "y": 180
                 }
             },
-            "type": "Variable"
+            "type": "Variable",
+            "name": "My first variable declaration"
         },
         {
             "id": "output Kafka topic with json content",
@@ -83,7 +85,8 @@
                     "y": 360
                 }
             },
-            "type": "Sink"
+            "type": "Sink",
+            "name": "output Kafka topic with json content"
         }
     ],
     "additionalBranches": []

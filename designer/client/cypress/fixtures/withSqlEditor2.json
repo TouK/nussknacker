@@ -39,7 +39,8 @@
                     "y": -126
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "sql-source"
         }
     ],
     "additionalBranches": [
@@ -65,7 +66,8 @@
                         "y": 0
                     }
                 },
-                "type": "Source"
+                "type": "Source",
+                "name": "sql-source2"
             }
         ],
         [
@@ -90,7 +92,8 @@
                         "y": 126
                     }
                 },
-                "type": "Source"
+                "type": "Source",
+                "name": "sql-source3"
             }
         ]
     ]

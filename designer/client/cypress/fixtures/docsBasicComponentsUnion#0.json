@@ -50,7 +50,8 @@
                     "y": 0
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "source"
         },
         {
             "nexts": [
@@ -69,7 +70,8 @@
                                 "y": 360
                             }
                         },
-                        "type": "Variable"
+                        "type": "Variable",
+                        "name": "branch2"
                     },
                     {
                         "definition": {
@@ -94,7 +96,8 @@
                                 "y": 360
                             }
                         },
-                        "type": "Variable"
+                        "type": "Variable",
+                        "name": "branch1"
                     },
                     {
                         "definition": {
@@ -113,7 +116,8 @@
                     "y": 180
                 }
             },
-            "type": "Split"
+            "type": "Split",
+            "name": "split"
         }
     ],
     "additionalBranches": [
@@ -156,7 +160,8 @@
                         "y": 540
                     }
                 },
-                "type": "Join"
+                "type": "Join",
+                "name": "union"
             },
             {
                 "id": "variable",
@@ -172,7 +177,8 @@
                         "y": 720
                     }
                 },
-                "type": "Variable"
+                "type": "Variable",
+                "name": "variable"
             },
             {
                 "id": "dead-end",
@@ -189,7 +195,8 @@
                         "y": 900
                     }
                 },
-                "type": "Sink"
+                "type": "Sink",
+                "name": "dead-end"
             }
         ]
     ]
