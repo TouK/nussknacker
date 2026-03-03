@@ -38,11 +38,11 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { variant } = useContext(ToolbarButtonsContext);
     const side = useContext(ToolbarSideContext);
 
-    const { presets, runAllPreset } = useScenarioTestPresets();
+    const { presets, runAllPreset, testCasePresets } = useScenarioTestPresets();
     const { hasResult, assertionsIsSuccess } = useAssertionResultsSummary();
     const tooltip = useScenarioTestTooltip({ disabled, title, titleOverride });
 
-    const [selectedPreset, setSelectedPreset] = useState(runAllPreset);
+    const [selectedPreset, setSelectedPreset] = useState(testCasePresets[0] || runAllPreset);
 
     const [showMockFieldOnEnrichers] = useUserSettings("node.showMockFieldOnEnrichers");
     const dispatch = useAppDispatch();

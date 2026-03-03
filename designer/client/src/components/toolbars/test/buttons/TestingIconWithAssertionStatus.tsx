@@ -31,7 +31,6 @@ export const TestingIconWithAssertionStatus = ({ hasResult, assertionsIsSuccess 
                     alignItems: "center",
                     justifyContent: "center",
                     pointerEvents: "none",
-                    "& > svg": { fontSize: "16px" },
                 }}
             >
                 <AssertionStatusIcon isSuccess={assertionsIsSuccess} variant={"dark"} />

@@ -44,7 +44,10 @@ export const useScenarioTestPresets = () => {
     );
 
     const presets: Array<Preset | OptionHeader> = useMemo(
-        () => [runAllPreset, { header: "Test cases" }, ...testCasePresets],
+        () =>
+            testCasePresets.length > 1
+                ? [runAllPreset, { header: "Test cases" }, ...testCasePresets]
+                : [{ header: "Test cases" }, ...testCasePresets],
         [runAllPreset, testCasePresets],
     );
 
