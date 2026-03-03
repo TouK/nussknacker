@@ -48,7 +48,8 @@
                     "y": -160
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "Event Generator"
         },
         {
             "id": "Dead End",
@@ -65,7 +66,8 @@
                     "y": 45
                 }
             },
-            "type": "Sink"
+            "type": "Sink",
+            "name": "Dead End"
         }
     ],
     "additionalBranches": [],

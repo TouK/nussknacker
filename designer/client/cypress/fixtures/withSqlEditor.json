@@ -39,7 +39,8 @@
                     "y": -302
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "sql-source"
         },
         {
             "id": "kafka-string",
@@ -70,7 +71,8 @@
                     "y": -94
                 }
             },
-            "type": "Sink"
+            "type": "Sink",
+            "name": "kafka-string"
         }
     ],
     "additionalBranches": []

@@ -50,7 +50,8 @@
                     "y": 0
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "event-generator"
         },
         {
             "nextFalse": [],
@@ -67,7 +68,8 @@
                     "y": 180
                 }
             },
-            "type": "Filter"
+            "type": "Filter",
+            "name": "only financial ops"
         },
         {
             "id": "output Kafka topic with json content",
@@ -84,7 +86,8 @@
                     "y": 360
                 }
             },
-            "type": "Sink"
+            "type": "Sink",
+            "name": "output Kafka topic with json content"
         }
     ],
     "additionalBranches": []
