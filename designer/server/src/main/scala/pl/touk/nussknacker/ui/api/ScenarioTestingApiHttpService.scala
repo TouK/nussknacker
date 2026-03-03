@@ -45,6 +45,7 @@ import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{
   TestingCapabilitiesError
 }
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ScenarioNodeValidationErrors
+import pl.touk.nussknacker.ui.processreport.NodeCount
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.validation.ParametersValidator
 
@@ -176,11 +177,18 @@ class ScenarioTestingApiHttpService(
                   ErrorResult(TestingApiErrorMessages.from(error))
                 }
             }
-          } yield ResultsWithCountsDto.from(
-            resultWithCounts,
-            skipResultsPerNode,
-            skipResultsPerTransition,
-          )
+          } yield {
+            val scenarioGraph = request match {
+              case PerformTestRequestJsonBody(sg, _)   => sg
+              case PerformTestRequestMultiParts(sg, _) => sg
+            }
+            val nodeIdToName = scenarioGraph.nodes.map(n => n.id -> n.name.value).toMap
+            ResultsWithCountsDto.from(
+              resultWithCounts.copy(counts = translateCounts(resultWithCounts.counts, nodeIdToName)),
+              skipResultsPerNode,
+              skipResultsPerTransition,
+            )
+          }
         }
       }
   }
@@ -353,11 +361,14 @@ class ScenarioTestingApiHttpService(
             ).leftMap[TestingError] { error =>
               ErrorResult(TestingApiErrorMessages.from(error))
             }
-          } yield ResultsWithCountsDto.from(
-            resultWithCounts,
-            skipResultsPerNode,
-            skipResultsPerTransition,
-          )
+          } yield {
+            val nodeIdToName = request.scenarioGraph.nodes.map(n => n.id -> n.name.value).toMap
+            ResultsWithCountsDto.from(
+              resultWithCounts.copy(counts = translateCounts(resultWithCounts.counts, nodeIdToName)),
+              skipResultsPerNode,
+              skipResultsPerTransition,
+            )
+          }
         }
       }
   }
@@ -403,6 +414,12 @@ class ScenarioTestingApiHttpService(
       .toList
       .toMap
   }
+
+  private def translateCounts(
+      counts: Map[NodeId, NodeCount],
+      nodeIdToName: Map[NodeId, String]
+  ): Map[NodeId, NodeCount] =
+    counts.map { case (nodeId, count) => NodeId(nodeIdToName.getOrElse(nodeId, nodeId.value)) -> count }
 
   private def isAuthorized(scenarioId: ProcessId, permission: Permission)(
       implicit loggedUser: LoggedUser
