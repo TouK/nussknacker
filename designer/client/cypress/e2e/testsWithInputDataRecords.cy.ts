@@ -53,7 +53,7 @@ describe("test with events data", () => {
         // Verify if test mode running
         cy.get('[id="tipsPanel"]').contains("Testing mode enabled");
         // verify if node has 10 test results
-        cy.get('[model-id="Event Generator"]').find('[joint-selector="testResultsSummary"]').contains("11");
+        cy.getNode("Event Generator").find('[joint-selector="testResultsSummary"]').contains("11");
         cy.get('[data-selector="SCENARIO_TEST"]').click();
 
         // Rerun test

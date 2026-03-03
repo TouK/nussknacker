@@ -214,7 +214,7 @@ describe("Fragment", () => {
             cy.viewport(1600, 1200);
 
             cy.getNode("@fragmentName").trigger("dblclick");
-            cy.get("#nk-graph-fragment [model-id='input']").scrollIntoView().should("be.visible");
+            cy.get("#nk-graph-fragment [data-node-name='input']").scrollIntoView().should("be.visible");
 
             //FIXME flaky screenshot
             // cy.get("[data-testid=window]")
@@ -426,7 +426,7 @@ describe("Fragment", () => {
             });
         cy.layoutScenario();
 
-        cy.get(`[model-id^=e2e][model-id$=-${seed2}-test-process]`).should("be.visible").trigger("dblclick");
+        cy.get(`[data-node-name^=e2e][data-node-name$=-${seed2}-test-process]`).should("be.visible").trigger("dblclick");
 
         cy.get("[title='Documentation']").should("have.attr", "href", docsUrl).parent().matchImage({
             maxDiffThreshold: 0.04,
