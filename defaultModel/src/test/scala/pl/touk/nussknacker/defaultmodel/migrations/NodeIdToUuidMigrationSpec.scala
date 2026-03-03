@@ -6,12 +6,13 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
+import java.nio.charset.StandardCharsets
+import java.util.UUID
 import scala.io.{Source => IoSource}
 
 class NodeIdToUuidMigrationSpec extends AnyFreeSpecLike with Matchers {
-  // JSONs in tests have no 'name' fields, fallback withNameFromIdFallback fills name from id on parse
 
-  private val UuidRegex = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+  private def uuidOf(s: String) = UUID.nameUUIDFromBytes(s.getBytes(StandardCharsets.UTF_8)).toString
 
   private def loadAndMigrate(resourcePath: String): CanonicalProcess = {
     val json     = IoSource.fromResource(resourcePath).mkString
@@ -24,9 +25,9 @@ class NodeIdToUuidMigrationSpec extends AnyFreeSpecLike with Matchers {
     "simple scenario" - {
       lazy val migrated = loadAndMigrate("migrations/simple-scenario.json")
 
-      "should assign a UUID to every node id" in {
+      "should assign a deterministic UUID to every node id" in {
         migrated.collectAllNodes.foreach { node =>
-          node.id.value should fullyMatch regex UuidRegex
+          node.id.value shouldBe uuidOf(node.name.value)
         }
       }
 
@@ -47,9 +48,9 @@ class NodeIdToUuidMigrationSpec extends AnyFreeSpecLike with Matchers {
     "scenario with a fragment reference" - {
       lazy val migrated = loadAndMigrate("migrations/scenario-with-fragment.json")
 
-      "should assign a UUID to every node id" in {
+      "should assign a deterministic UUID to every node id" in {
         migrated.collectAllNodes.foreach { node =>
-          node.id.value should fullyMatch regex UuidRegex
+          node.id.value shouldBe uuidOf(node.name.value)
         }
       }
 
@@ -65,9 +66,9 @@ class NodeIdToUuidMigrationSpec extends AnyFreeSpecLike with Matchers {
     "scenario with Join (branch parameters)" - {
       lazy val migrated = loadAndMigrate("migrations/scenario-with-join.json")
 
-      "should assign a UUID to every node id" in {
+      "should assign a deterministic UUID to every node id" in {
         migrated.collectAllNodes.filterNot(_.isInstanceOf[BranchEndData]).foreach { node =>
-          node.id.value should fullyMatch regex UuidRegex
+          node.id.value shouldBe uuidOf(node.name.value)
         }
       }
 
@@ -78,23 +79,20 @@ class NodeIdToUuidMigrationSpec extends AnyFreeSpecLike with Matchers {
 
       "should update Join branchParameters branchId to new source UUIDs" in {
         val join = migrated.collectAllNodes.collectFirst { case j: Join => j }.get
-        val source1NewId =
-          migrated.collectAllNodes.collectFirst { case s: Source if s.name.value == "source1" => s.id.value }.get
-        val source2NewId =
-          migrated.collectAllNodes.collectFirst { case s: Source if s.name.value == "source2" => s.id.value }.get
 
-        join.branchParameters.map(_.branchId) should contain theSameElementsAs List(source1NewId, source2NewId)
+        join.branchParameters.map(_.branchId) should contain theSameElementsAs List(
+          uuidOf("source1"),
+          uuidOf("source2")
+        )
       }
 
       "should update BranchEndData definition to reference new UUIDs" in {
-        val join1NewId =
-          migrated.collectAllNodes.collectFirst { case j: Join if j.name.value == "join1" => j.id.value }.get
         val branchEnds = migrated.collectAllNodes.collect { case b: BranchEndData => b }
 
         branchEnds should have size 2
         branchEnds.foreach { branchEnd =>
-          branchEnd.definition.joinId shouldBe join1NewId
-          branchEnd.definition.id should fullyMatch regex UuidRegex
+          branchEnd.definition.joinId shouldBe uuidOf("join1")
+          branchEnd.definition.id should (equal(uuidOf("source1")) or equal(uuidOf("source2")))
         }
       }
     }

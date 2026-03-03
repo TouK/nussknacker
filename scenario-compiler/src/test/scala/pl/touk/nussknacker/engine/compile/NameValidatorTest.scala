@@ -85,14 +85,28 @@ object IdValidationTestData {
     ("nodeId", "errors"),
     ("validId", List.empty),
     ("", List(NodeNameValidationError(EmptyValue, NodeName(""), NodeId("")))),
-    (" ", List(NodeNameValidationError(BlankId, NodeName(" "), NodeId("")))),
-    ("trailingSpace ", List(NodeNameValidationError(TrailingSpacesId, NodeName("trailingSpace "), NodeId("")))),
-    (" leadingSpace", List(NodeNameValidationError(LeadingSpacesId, NodeName(" leadingSpace"), NodeId("")))),
+    (" ", List(NodeNameValidationError(BlankId, NodeName(" "), NodeId(" ")))),
+    (
+      "trailingSpace ",
+      List(NodeNameValidationError(TrailingSpacesId, NodeName("trailingSpace "), NodeId("trailingSpace ")))
+    ),
+    (
+      " leadingSpace",
+      List(NodeNameValidationError(LeadingSpacesId, NodeName(" leadingSpace"), NodeId(" leadingSpace")))
+    ),
     (
       " leadingAndTrailingSpace ",
       List(
-        NodeNameValidationError(LeadingSpacesId, NodeName(" leadingAndTrailingSpace "), NodeId("")),
-        NodeNameValidationError(TrailingSpacesId, NodeName(" leadingAndTrailingSpace "), NodeId(""))
+        NodeNameValidationError(
+          LeadingSpacesId,
+          NodeName(" leadingAndTrailingSpace "),
+          NodeId(" leadingAndTrailingSpace ")
+        ),
+        NodeNameValidationError(
+          TrailingSpacesId,
+          NodeName(" leadingAndTrailingSpace "),
+          NodeId(" leadingAndTrailingSpace ")
+        )
       )
     ),
   )
