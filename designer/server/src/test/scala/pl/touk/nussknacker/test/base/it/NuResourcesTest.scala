@@ -12,9 +12,8 @@ import io.circe.syntax._
 import io.dropwizard.metrics5.MetricRegistry
 import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
 import org.apache.pekko.http.scaladsl.server.{Directives, Route}
-import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.http.scaladsl.unmarshalling.FromEntityUnmarshaller
-import org.apache.pekko.testkit.TestDuration
 import org.scalatest.{Assertion, BeforeAndAfterEach, OptionValues, Suite}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
@@ -29,7 +28,6 @@ import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
-import pl.touk.nussknacker.engine.test.testcase.TestCase
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
@@ -69,11 +67,10 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
-import pl.touk.nussknacker.ui.process.test.testcase.ScenarioWithTestCase
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
-import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
+import pl.touk.nussknacker.ui.util.NuPathMatchers
 import slick.dbio.DBIOAction
 
 import java.net.URI
@@ -485,37 +482,6 @@ trait NuResourcesTest
       Permission.Deploy,
       Permission.Read
     )
-
-  protected def testScenario(scenario: CanonicalProcess, testDataContent: String): RouteTestResult = {
-    implicit val timeout: RouteTestTimeout = RouteTestTimeout(10.seconds.dilated)
-
-    val scenarioGraph = scenario.toScenarioGraph
-    val multiPart = MultipartUtils.prepareMultiParts(
-      "testData"      -> testDataContent,
-      "scenarioGraph" -> scenarioGraph.asJson.noSpaces
-    )()
-    Post(s"/processManagement/test/${scenario.name}", multiPart) ~> withPermissions(
-      deployRoute(),
-      Permission.Deploy,
-      Permission.Read
-    )
-  }
-
-  protected def runTestCase(scenario: CanonicalProcess, testCase: TestCase): RouteTestResult = {
-    implicit val timeout: RouteTestTimeout = RouteTestTimeout(10.seconds.dilated)
-
-    val scenarioGraph = scenario.toScenarioGraph
-
-    val body = HttpEntity(
-      ContentTypes.`application/json`,
-      ScenarioWithTestCase(scenarioGraph, testCase).asJson.noSpaces
-    )
-    Post(s"/processManagement/testCase/${scenario.name}", body) ~> withPermissions(
-      deployRoute(),
-      Permission.Deploy,
-      Permission.Read
-    )
-  }
 
   protected def getProcess(processName: ProcessName): RouteTestResult =
     Get(s"/processes/$processName") ~> withPermissions(processesRoute, Permission.Read)

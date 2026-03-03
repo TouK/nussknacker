@@ -28,26 +28,4 @@ object MultipartUtils {
         .Strict(name, HttpEntity(ContentTypes.`text/plain(UTF-8)`, content), Map("filename" -> fileName))
     )
 
-  def prepareMultiParts(nameContent: (String, String)*)(fileName: String = "file.json"): FormData.Strict = {
-    val bodyPart = nameContent.map { case (name, content) =>
-      Multipart.FormData.BodyPart.Strict(
-        name = name,
-        entity = HttpEntity(ContentTypes.`text/plain(UTF-8)`, content),
-        additionalDispositionParams = Map("filename" -> fileName)
-      )
-    }
-    Multipart.FormData(bodyPart: _*)
-  }
-
-  def sttpPrepareMultiParts(
-      nameContent: (String, String)*
-  )(fileName: String = "file.json"): Seq[Part[RequestBody[Any]]] = {
-    nameContent.toList
-      .map { case (name, content) =>
-        multipart(name, content)
-          .fileName(fileName)
-          .contentType(MediaType.TextPlainUtf8)
-      }
-  }
-
 }

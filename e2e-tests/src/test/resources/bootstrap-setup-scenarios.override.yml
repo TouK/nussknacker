@@ -4,7 +4,7 @@ x-flink-service-with-postgres-driver: &flink-with-postgres-driver
     context: ./flink/
     dockerfile: FlinkWithPostgresDriverDockerfile
     args:
-      TOUK_FLINK_VERSION: "1.1.6-flink1.20.3-scala_2.13"
+      TOUK_FLINK_VERSION: "1.2.1-flink1.20.3-scala_2.13"
 
 services:
 

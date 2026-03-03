@@ -43,8 +43,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeValida
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
 import pl.touk.nussknacker.ui.util.{CorsSupport, SecurityHeadersSupport}
-import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
-import sttp.client3.{quickRequest, UriContext}
+import sttp.client3.{multipart, quickRequest, UriContext}
 import sttp.client3.circe.asJson
 import sttp.model.{Header, MediaType, StatusCode}
 
@@ -429,13 +428,10 @@ class BaseFlowTest
 
     val response = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processManagement/test/${process.name}")
-        .contentType(MediaType.MultipartFormData)
+        .post(uri"$nuDesignerHttpAddress/api/scenarioTesting/${process.name}/performTest")
         .multipartBody(
-          sttpPrepareMultiParts(
-            "testData"      -> testDataContent,
-            "scenarioGraph" -> process.toScenarioGraph.asJson.noSpaces
-          )()
+          multipart("scenarioGraph", process.toScenarioGraph.asJson.noSpaces),
+          multipart("testData", testDataContent),
         )
         .auth
         .basic("admin", "admin")
@@ -611,19 +607,15 @@ class BaseFlowTest
 
     val response = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processManagement/test/${process.name}")
-        .contentType(MediaType.MultipartFormData)
+        .post(uri"$nuDesignerHttpAddress/api/scenarioTesting/${process.name}/performTest")
         .multipartBody(
-          sttpPrepareMultiParts(
-            "testData"      -> data,
-            "scenarioGraph" -> scenarioGraph.asJson.noSpaces
-          )()
+          multipart("scenarioGraph", scenarioGraph.asJson.noSpaces),
+          multipart("testData", data),
         )
         .auth
         .basic("admin", "admin")
     )
     response.code shouldEqual StatusCode.Ok
-    response.bodyAsJson
     io.circe.parser
       .parse(response.body)
       .toOption

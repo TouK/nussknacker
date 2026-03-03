@@ -219,7 +219,7 @@ class BatchDataGenerationSpec
         "application/json"
       )
       .post(
-        s"$designerServiceUrl/api/processManagement/test/$scenarioName"
+        s"$designerServiceUrl/api/scenarioTesting/$scenarioName/performTest"
       )
       .Then()
       .statusCode(200)

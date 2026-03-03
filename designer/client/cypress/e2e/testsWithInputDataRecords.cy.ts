@@ -57,7 +57,7 @@ describe("test with events data", () => {
         cy.get('[data-selector="SCENARIO_TEST"]').click();
 
         // Rerun test
-        cy.intercept("POST", "/api/processManagement/testCase/*").as("retest");
+        cy.intercept("POST", "/api/scenarioTesting/*/performTestCase").as("retest");
         cy.contains('[data-testid="toolbarButton-label"]', /Rerun test/).click();
         cy.wait("@retest");
     });

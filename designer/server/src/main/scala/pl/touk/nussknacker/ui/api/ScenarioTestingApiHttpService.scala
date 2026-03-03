@@ -4,8 +4,10 @@ import cats.data.{EitherT, NonEmptyList}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
@@ -20,7 +22,14 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
   ScenarioTestCapabilities
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
+  PerformTestCaseRequest,
+  PerformTestRequest,
+  PerformTestRequestJsonBody,
+  PerformTestRequestMultiParts,
+  SkipResultsPerNode,
+  SkipResultsPerTransition
+}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.BadRequestTestingError._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.NotFoundTestingError._
@@ -28,13 +37,14 @@ import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.test.{ResultsWithCounts, ScenarioTestService, SerializedScenarioRecordsContent}
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.SerializationError
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{
   FetchLiveDataError,
   ParametersDefinitionError,
   TestingCapabilitiesError
 }
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ScenarioNodeValidationErrors
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.validation.ParametersValidator
 
@@ -140,45 +150,31 @@ class ScenarioTestingApiHttpService(
             scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
               scenarioWithDetails.processingType
             )
-            resultWithCounts <- request.testData match {
-              case ScenarioTestData.WithParameters(sourceParameters) =>
+            resultWithCounts <- request match {
+              case PerformTestRequestJsonBody(scenarioGraph, testData) =>
+                performTest(
+                  scenarioName,
+                  scenarioGraph,
+                  scenarioWithDetails,
+                  scenarioTestService,
+                  testData
+                )
+              case PerformTestRequestMultiParts(scenarioGraph, testData) =>
                 EitherT(
                   scenarioTestService.performTest(
-                    request.scenarioGraph,
+                    scenarioGraph,
                     scenarioWithDetails.processVersionUnsafe,
                     scenarioWithDetails.isFragment,
-                    sourceParameters
+                    SerializedScenarioRecordsContent(testData)
                   )
                 ).leftMap[TestingError] { error =>
                   ErrorResult(TestingApiErrorMessages.from(error))
                 }
-              case ScenarioTestData.WithLiveData(numberOfSamples) =>
-                scenarioTestService.fetchSourcesLiveData(
-                  request.scenarioGraph,
-                  scenarioWithDetails.processVersionUnsafe,
-                  scenarioWithDetails.isFragment,
-                  numberOfSamples
-                ) match {
-                  case Left(error) =>
-                    EitherT.fromEither[Future](Left(toDto(error)))
-                  case Right(serializedLiveData) =>
-                    EitherT(
-                      scenarioTestService
-                        .performTest(
-                          request.scenarioGraph,
-                          scenarioWithDetails.processVersionUnsafe,
-                          scenarioWithDetails.isFragment,
-                          serializedLiveData
-                        )
-                    ).leftMap[TestingError] { error =>
-                      ErrorResult(TestingApiErrorMessages.from(error))
-                    }
-                }
             }
           } yield ResultsWithCountsDto.from(
             resultWithCounts,
-            skipResultsPerNode.getOrElse(SkipResultsPerNode(false)),
-            skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false)),
+            skipResultsPerNode,
+            skipResultsPerTransition,
           )
         }
       }
@@ -191,37 +187,114 @@ class ScenarioTestingApiHttpService(
         { case (scenarioName, request) =>
           for {
             scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
-            validator = processingTypeToParametersValidator.forProcessingTypeUnsafe(scenarioWithDetails.processingType)
             scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
               scenarioWithDetails.processingType
             )
-            metaData = request.scenarioGraph.properties.toMetaData(scenarioName)
-            validationResults <- request.testData match {
-              case ScenarioTestData.WithParameters(sourceParameters) =>
-                EitherT
-                  .fromEither[Future](
-                    scenarioTestService
-                      .validateAndGetTestParametersDefinition(
-                        request.scenarioGraph,
-                        scenarioWithDetails.processVersionUnsafe,
-                        scenarioWithDetails.isFragment
-                      )
-                      .left
-                      .map(toDto)
-                  )
-                  .map(validator.validate(sourceParameters, _)(metaData))
-              case ScenarioTestData.WithLiveData(numberOfSamples) =>
-                EitherT
-                  .fromEither[Future](
-                    scenarioTestService.validateRecordsCount[TestingError](numberOfSamples)(
-                      BadRequestTestingError.TooManyRecordsRequested(_)
-                    )
-                  )
-                  .map((_: Unit) => List.empty)
-            }
+            validationResults <- validateTestData(
+              scenarioName = scenarioName,
+              scenarioGraph = request.scenarioGraph,
+              scenarioWithDetails = scenarioWithDetails,
+              scenarioTestService = scenarioTestService,
+              scenarioTestData = request.testData,
+            )
           } yield ParametersValidationResultDto(validationResults, validationPerformed = true)
         }
       }
+  }
+
+  private def performTest(
+      scenarioName: ProcessName,
+      scenarioGraph: ScenarioGraph,
+      scenarioWithDetails: ScenarioWithDetails,
+      scenarioTestService: ScenarioTestService,
+      scenarioTestData: ScenarioTestData,
+  )(implicit loggedUser: LoggedUser): EitherT[Future, TestingError, ResultsWithCounts] = {
+    for {
+      validationErrors <- validateTestData(
+        scenarioName = scenarioName,
+        scenarioGraph = scenarioGraph,
+        scenarioWithDetails = scenarioWithDetails,
+        scenarioTestService = scenarioTestService,
+        scenarioTestData = scenarioTestData,
+      )
+      _ <- EitherT.fromEither[Future](
+        Either.cond(
+          test = validationErrors.isEmpty,
+          right = (),
+          left = ErrorResult(TestingApiErrorMessages.from(ScenarioNodeValidationErrors(validationErrors)))
+        )
+      )
+      result <- scenarioTestData match {
+        case ScenarioTestData.WithParameters(sourceParameters) =>
+          EitherT(
+            scenarioTestService.performTest(
+              scenarioGraph,
+              scenarioWithDetails.processVersionUnsafe,
+              scenarioWithDetails.isFragment,
+              sourceParameters
+            )
+          ).leftMap[TestingError] { error =>
+            ErrorResult(TestingApiErrorMessages.from(error))
+          }
+        case ScenarioTestData.WithLiveData(numberOfSamples) =>
+          scenarioTestService.fetchSourcesLiveData(
+            scenarioGraph,
+            scenarioWithDetails.processVersionUnsafe,
+            scenarioWithDetails.isFragment,
+            numberOfSamples
+          ) match {
+            case Left(error) =>
+              EitherT.fromEither[Future](Left(toDto(error)))
+            case Right(serializedLiveData) =>
+              EitherT(
+                scenarioTestService
+                  .performTest(
+                    scenarioGraph,
+                    scenarioWithDetails.processVersionUnsafe,
+                    scenarioWithDetails.isFragment,
+                    serializedLiveData
+                  )
+              ).leftMap[TestingError] { error =>
+                ErrorResult(TestingApiErrorMessages.from(error))
+              }
+          }
+      }
+
+    } yield result
+  }
+
+  private def validateTestData(
+      scenarioName: ProcessName,
+      scenarioGraph: ScenarioGraph,
+      scenarioWithDetails: ScenarioWithDetails,
+      scenarioTestService: ScenarioTestService,
+      scenarioTestData: ScenarioTestData,
+  )(implicit loggedUser: LoggedUser): EitherT[Future, TestingError, List[ValidationResults.NodeValidationError]] = {
+    val validator = processingTypeToParametersValidator.forProcessingTypeUnsafe(scenarioWithDetails.processingType)
+    val metaData  = scenarioGraph.properties.toMetaData(scenarioName)
+    scenarioTestData match {
+      case ScenarioTestData.WithParameters(sourceParameters) =>
+        EitherT
+          .fromEither[Future](
+            scenarioTestService
+              .validateAndGetTestParametersDefinition(
+                scenarioGraph,
+                scenarioWithDetails.processVersionUnsafe,
+                scenarioWithDetails.isFragment
+              )
+              .left
+              .map(toDto)
+          )
+          .map(validator.validate(sourceParameters, _)(metaData))
+      case ScenarioTestData.WithLiveData(numberOfSamples) =>
+        EitherT
+          .fromEither[Future](
+            scenarioTestService.validateRecordsCount[TestingError](numberOfSamples)(
+              BadRequestTestingError.TooManyRecordsRequested(_)
+            )
+          )
+          .map((_: Unit) => List.empty)
+    }
   }
 
   expose {
@@ -249,6 +322,37 @@ class ScenarioTestingApiHttpService(
               }
             )
           } yield parametersDefinition
+        }
+      }
+  }
+
+  expose {
+    scenarioTestingApiEndpoints.scenarioTestCaseEndpoint
+      .serverSecurityLogic(authorizeKnownUser[TestingError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (scenarioName, request, skipResultsPerNode, skipResultsPerTransition) =>
+          for {
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            processId <- EitherT
+              .fromOption[Future](scenarioWithDetails.processId, noScenarioError(scenarioName): TestingError)
+            _ <- isAuthorized(processId, Permission.Deploy)
+            resultWithCounts <- EitherT(
+              processingTypeToScenarioTestServices
+                .forProcessingTypeUnsafe(scenarioWithDetails.processingType)
+                .performTestCase(
+                  request.scenarioGraph,
+                  scenarioWithDetails.processVersionUnsafe,
+                  scenarioWithDetails.isFragment,
+                  request.testCase,
+                )
+            ).leftMap[TestingError] { error =>
+              ErrorResult(TestingApiErrorMessages.from(error))
+            }
+          } yield ResultsWithCountsDto.from(
+            resultWithCounts,
+            skipResultsPerNode,
+            skipResultsPerTransition,
+          )
         }
       }
   }

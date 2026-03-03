@@ -11,9 +11,17 @@ interface Props {
     className?: string;
     customComponentsProps?: TooltipProps["componentsProps"];
     enterDelay?: number;
+    placement?: TooltipProps["placement"];
 }
 
-export const InfoTooltipClick = ({ title, className, customComponentsProps, enterDelay, children }: PropsWithChildren<Props>) => {
+export const InfoTooltipClick = ({
+    title,
+    className,
+    customComponentsProps,
+    enterDelay,
+    placement = "bottom-start",
+    children,
+}: PropsWithChildren<Props>) => {
     const { tooltipRef, tooltipOpen, componentsProps, handleSetTooltipClose, handleToggleTooltip } = useTooltip({
         customComponentsProps,
         enterDelay,
@@ -32,10 +40,10 @@ export const InfoTooltipClick = ({ title, className, customComponentsProps, ente
     };
 
     return (
-        <ClickAwayListener onClickAway={handleClickAway}>
+        <ClickAwayListener onClickAway={handleClickAway} mouseEvent={"onPointerDown"}>
             <Tooltip
                 title={<div ref={tooltipRef}>{title}</div>}
-                placement={"bottom-start"}
+                placement={placement}
                 arrow
                 open={tooltipOpen}
                 onClose={handleSetTooltipClose}

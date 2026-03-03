@@ -23,8 +23,7 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessi
 import pl.touk.nussknacker.test.utils.domain.ScenarioToJsonHelper.ScenarioToJson
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
-import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
-import sttp.client3.{quickRequest, UriContext}
+import sttp.client3.{multipart, quickRequest, UriContext}
 import sttp.model.{MediaType, StatusCode}
 
 import java.util.UUID
@@ -269,13 +268,10 @@ class DictsFlowTest
 
     val response = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processManagement/test/${process.name}")
-        .contentType(MediaType.MultipartFormData)
+        .post(uri"$nuDesignerHttpAddress/api/scenarioTesting/${process.name}/performTest")
         .multipartBody(
-          sttpPrepareMultiParts(
-            "testData"      -> """[{"sourceId":"source","variables":{"input":["field1","field2"]}}]""",
-            "scenarioGraph" -> process.toScenarioGraph.asJson.noSpaces
-          )()
+          multipart("scenarioGraph", process.toScenarioGraph.asJson.noSpaces),
+          multipart("testData", """[{"sourceId":"source","variables":{"input":["field1","field2"]}}]"""),
         )
         .auth
         .basic("admin", "admin")

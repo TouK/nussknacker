@@ -6,9 +6,9 @@ import { getTestAssertionResults } from "../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../store/storeHelpers";
 import { Expandable } from "../../common/Expandable";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import { AssertionResult } from "./assertionResult/assertionResult";
-import { AssertionResultTitle } from "./assertionResult/assertionResultTitle";
-import { OpenNodeTestingDetails } from "./assertionResult/openNodeTestingDetails";
+import { OpenNodeTestingDetails } from "./assertionResultsForNode/assertionResult/openNodeTestingDetails";
+import { AssertionResultsForNode } from "./assertionResultsForNode/assertionResultsForNode";
+import { AssertionResultsForNodeTitle } from "./assertionResultsForNode/assertionResultsForNodeTitle";
 import { AssertionResultsHeader } from "./assertionResultsHeader";
 
 const AssertionResults = () => {
@@ -44,7 +44,7 @@ const AssertionResults = () => {
                         <Expandable
                             key={nodeId}
                             expandableTitle={
-                                <AssertionResultTitle
+                                <AssertionResultsForNodeTitle
                                     title={nodeId}
                                     assertionResults={testAssertionResults[nodeId]}
                                     action={node ? <OpenNodeTestingDetails node={node} /> : undefined}
@@ -54,7 +54,7 @@ const AssertionResults = () => {
                             detailsSx={{ pl: 2, pr: 1, py: 0 }}
                             summarySx={{ minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px" } }}
                         >
-                            <AssertionResult nodeId={nodeId} />
+                            <AssertionResultsForNode nodeId={nodeId} />
                         </Expandable>
                     );
                 })}

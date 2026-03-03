@@ -1,8 +1,8 @@
 import { Box, useTheme } from "@mui/material";
 import React from "react";
 
-import { SyntaxHighlighter } from "../../../../common/SyntaxHighlighter";
-import { getScrollStyle } from "../../../graph/node-modal/node/StyledHeader";
+import { SyntaxHighlighter } from "../../../../../common/SyntaxHighlighter";
+import { getScrollStyle } from "../../../../graph/node-modal/node/StyledHeader";
 
 interface HighlightPart {
     expression: string;

@@ -72,6 +72,7 @@ export const Assertions = ({ node, edges }: Props) => {
         (
             uuid: string,
             updated: Partial<{
+                description: string;
                 expected: { expression: string; language: string };
                 operator: "equals" | "notEquals";
                 actual: { expression: string; language: string };
@@ -97,11 +98,12 @@ export const Assertions = ({ node, edges }: Props) => {
                         readOnly={false}
                         errors={[]}
                     >
-                        {testCaseAssertions.map(({ expected, operator, actual, uuid }, index) => (
+                        {testCaseAssertions.map(({ description, expected, operator, actual, uuid }, index) => (
                             <AssertionItem
                                 key={uuid}
                                 uuid={uuid}
                                 onChange={editAssertion}
+                                description={description}
                                 expected={expected}
                                 operator={operator}
                                 actual={actual}

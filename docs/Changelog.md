@@ -15,6 +15,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 
 ### 1.19.0 (Not released yet)
 
+* [#8988](https://github.com/TouK/nussknacker/pull/8988) Fixed fragment test data validation for required or restricted input parameters
 * [#8923](https://github.com/TouK/nussknacker/pull/8923) Add new functions to Collection/Geo/Numeric helpers
 * [#8897](https://github.com/TouK/nussknacker/pull/8897) Fix: Passing TraceId after collect in RequestResponse
 * [#8849](https://github.com/TouK/nussknacker/pull/8849) Vulnerability: Spring upgrade to 6.2.15
@@ -317,6 +318,11 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8903](https://github.com/TouK/nussknacker/pull/8903) Updated Flink dependency to 1.20.3, Scala to 2.13.18
 * [#8903](https://github.com/TouK/nussknacker/pull/8946) Fix default Kafka EOS configuration on Flink to use a unique transactional id prefix
 * [#9002](https://github.com/TouK/nussknacker/pull/9002)[#9009](https://github.com/TouK/nussknacker/pull/9009) Updated Kafka client 3.6.2 to 3.9.1
+* [#9004](https://github.com/TouK/nussknacker/pull/9004) Added `Flink SQL Query` component
+* [#9015](https://github.com/TouK/nussknacker/pull/9015) Updated flink-scala to version 1.2, Flink will no longer overwrite Scala type registrations when encountering a new generic type
+* [#9012](https://github.com/TouK/nussknacker/pull/9012) Migrate test endpoints to Tapir:
+  * `/processManagement/testCase/{scenarioName}` endpoint to `/scenarioTesting/{scenarioName)/performTestCase`
+  * `/processManagement/test/{scenarioName}` to multipart variant of `/scenarioTesting/{scenarioName}/performTest`
 
 ## 1.18
 

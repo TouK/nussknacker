@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.process.util
 
 import com.esotericsoftware.kryo.io.{Input, Output}
-import org.apache.flink.runtime.types.FlinkScalaKryoInstantiator
+import org.apache.flink.api.common.serialization.SerializerConfigImpl
+import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -113,7 +114,7 @@ class SerializersSpec extends AnyFlatSpec with Matchers {
   }
 
   def checkSerializeDeserializeRoundTrip[T](obj: T): T = {
-    val kryo = new FlinkScalaKryoInstantiator().newKryo()
+    val kryo = new KryoSerializer[T](obj.getClass.asInstanceOf[Class[T]], new SerializerConfigImpl).getKryo
     val out  = new Output(1024)
     kryo.writeObject(out, obj)
     val deserialized = kryo.readObject(new Input(out.toBytes), obj.getClass.asInstanceOf[Class[T]])

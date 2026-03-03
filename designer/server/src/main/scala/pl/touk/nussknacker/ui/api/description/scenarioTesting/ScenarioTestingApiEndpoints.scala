@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language.SpelTemplate
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
@@ -31,11 +30,14 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.LiveDataFetching.FetchSourcesLiveDataRequest
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
+  PerformTestCaseRequest,
   PerformTestRequest,
+  PerformTestRequestJsonBody,
+  PerformTestRequestMultiParts,
   SkipResultsPerNode,
   SkipResultsPerTransition
 }
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformTestRequest._
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformTestCaseRequest._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.{
   BadRequestTestingError,
   NotFoundTestingError
@@ -52,7 +54,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.definition.DefinitionsService
-import sttp.model.StatusCode.{BadRequest, InternalServerError, NotFound, Ok}
+import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.json.circe.jsonBody
@@ -184,32 +186,75 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
     (
         ProcessName,
         PerformTestRequest,
-        Option[SkipResultsPerNode],
-        Option[SkipResultsPerTransition],
+        SkipResultsPerNode,
+        SkipResultsPerTransition,
+    ),
+    TestingError,
+    ResultsWithCountsDto,
+    Any
+  ] = {
+    import PerformTestRequestMultiParts._
+
+    baseNuApiEndpoint
+      .summary("Perform test")
+      .tag("Testing")
+      .post
+      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "performTest")
+      .in(
+        oneOfBody[PerformTestRequest](
+          jsonBody[PerformTestRequestJsonBody].map[PerformTestRequest]((x: PerformTestRequestJsonBody) =>
+            x: PerformTestRequest
+          ) {
+            case jsonBody: PerformTestRequestJsonBody => jsonBody
+            case other => throw new IllegalArgumentException(s"$other should not be used as endpoint output body")
+          },
+          multipartBody[PerformTestRequestMultiParts].map[PerformTestRequest]((x: PerformTestRequestMultiParts) =>
+            x: PerformTestRequest
+          ) {
+            case multiParts: PerformTestRequestMultiParts => multiParts
+            case other => throw new IllegalArgumentException(s"$other should not be used as endpoint output body")
+          },
+        )
+      )
+      .in(skipResultsPerNodeQueryParam)
+      .in(skipResultsPerTransitionQueryParam)
+      .out(statusCode(Ok).and(jsonBody[ResultsWithCountsDto]))
+      .errorOut(testingErrorOutput)
+      .withSecurity(auth)
+  }
+
+  def scenarioTestCaseEndpoint: SecuredEndpoint[
+    (
+        ProcessName,
+        PerformTestCaseRequest,
+        SkipResultsPerNode,
+        SkipResultsPerTransition,
     ),
     TestingError,
     ResultsWithCountsDto,
     Any
   ] =
     baseNuApiEndpoint
-      .summary("Perform test")
+      .summary("Perform single test case")
       .tag("Testing")
       .post
-      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "performTest")
-      .in(jsonBody[PerformTestRequest])
+      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "performTestCase")
+      .in(jsonBody[PerformTestCaseRequest])
       .in(skipResultsPerNodeQueryParam)
       .in(skipResultsPerTransitionQueryParam)
       .out(statusCode(Ok).and(jsonBody[ResultsWithCountsDto]))
       .errorOut(testingErrorOutput)
       .withSecurity(auth)
 
-  implicit def skipResultsPerNodeQueryParam: EndpointInput.Query[Option[SkipResultsPerNode]] =
-    query[Option[Boolean]]("skipResultsPerNode")
-      .map(cond => cond.map(SkipResultsPerNode(_)))(_.map(_.value))
+  implicit def skipResultsPerNodeQueryParam: EndpointInput.Query[SkipResultsPerNode] =
+    query[Boolean]("skipResultsPerNode")
+      .default(false)
+      .map(SkipResultsPerNode(_))(_.value)
 
   private def skipResultsPerTransitionQueryParam =
-    query[Option[Boolean]]("skipResultsPerTransition")
-      .map(cond => cond.map(SkipResultsPerTransition(_)))(_.map(_.value))
+    query[Boolean]("skipResultsPerTransition")
+      .default(false)
+      .map(SkipResultsPerTransition(_))(_.value)
 
   def scenarioTestGeneratedDataEndpoint: SecuredEndpoint[
     (ProcessName, FetchSourcesLiveDataRequest),

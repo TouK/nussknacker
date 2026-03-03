@@ -1,26 +1,25 @@
-import { PlayArrow } from "@mui/icons-material";
-import { alpha, styled, Box } from "@mui/material";
-import type { ReactNode } from "react";
-import React, { useCallback, useContext, useMemo, useState } from "react";
+import { alpha, styled } from "@mui/material";
+import React, { useCallback, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { testScenarioWithTestCase } from "../../../../actions/nk/testingActions";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { useUserSettings } from "../../../../common/useUserSettings";
-import { calculateAssertionResultsSummary } from "../../../../containers/assertions/assertionResultsUtils";
 import type { TestCase } from "../../../../reducers/graph/testCase";
 import { getTestCase } from "../../../../reducers/selectors/testCases";
-import { getTestAssertionResults, getTestResultsLoading } from "../../../../reducers/selectors/testing";
+import { getTestResultsLoading } from "../../../../reducers/selectors/testing";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
-import type { OptionHeader } from "../../../graph/node-modal/fragment-input-definition/TypeSelect";
 import { useTestingScenarioEnabled } from "../../../modals/TestingDataRecords/useTestingScenarioEnabled";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import { ButtonsVariant, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons/ToolbarButtons";
 import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer";
 import type { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
 import type { PropsOfButton } from "../../../toolbarSettings/buttons/types";
-import { AssertionStatusIcon } from "../../assertionResults/assertionResult/AssertionStatusIcon";
+import { TestingIconWithAssertionStatus } from "./TestingIconWithAssertionStatus";
+import { useAssertionResultsSummary } from "./useAssertionResultsSummary";
+import { RUN_ALL, useScenarioTestPresets } from "./useScenarioTestPresets";
+import { useScenarioTestTooltip } from "./useScenarioTestTooltip";
 
 export type ScenarioTestButtonProps = {
     type: CustomButtonTypes.scenarioTest;
@@ -29,121 +28,42 @@ export type ScenarioTestButtonProps = {
     titleOverride?: string;
 };
 
-type Preset = {
-    value: string;
-    label: string;
-    isDisabled?: boolean;
-    icon?: ReactNode;
-};
-
-const RUN_ALL = "runAll";
-
 function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>) {
     const { disabled, title, titleOverride, type } = props;
     const { t } = useTranslation();
     const testCase = useAppSelector(getTestCase);
-    const testAssertionResults = useAppSelector(getTestAssertionResults);
-    const allResults = Object.values(testAssertionResults).flat();
-    const { hasResult, failedCount } = calculateAssertionResultsSummary(allResults);
-    const assertionsIsSuccess = hasResult && failedCount === 0;
-    const testCasePresets: Preset[] = useMemo(() => {
-        if (!testCase) return [];
-        return [
-            {
-                icon: hasResult ? <AssertionStatusIcon isSuccess={assertionsIsSuccess} variant={"light"} /> : null,
-                label: testCase.name,
-                value: testCase.id,
-            },
-        ];
-    }, [testCase, hasResult, assertionsIsSuccess]);
-
-    const runAllPreset: Preset = useMemo(
-        () => ({
-            icon: <PlayArrow sx={{ fontSize: "20px" }} />,
-            label: t("testingForm.test.menu.runAll", "Run all"),
-            value: RUN_ALL,
-        }),
-        [t],
-    );
-
-    const [selectedPreset, setSelectedPreset] = useState<Preset | null>(testCasePresets[0] || runAllPreset);
-
-    const presets: Array<Preset | OptionHeader> = useMemo(() => {
-        return [runAllPreset, { header: "Test cases" }, ...testCasePresets];
-    }, [runAllPreset, testCasePresets]);
-
     const isLoading = useAppSelector(getTestResultsLoading);
-
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled });
 
     const { variant } = useContext(ToolbarButtonsContext);
     const side = useContext(ToolbarSideContext);
 
-    const tooltip: string =
-        titleOverride ??
-        (disabled
-            ? t(
-                  "panels.actions.scenarioTest.button.testing-not-available-in-current-state-title",
-                  "Scenario testing is not supported for scenario in current state",
-              )
-            : !testingScenarioEnabled
-            ? t(
-                  "panels.actions.scenarioTest.button.testing-not-available-for-current-sources-title",
-                  "Scenario testing is not supported for currently configured sources",
-              )
-            : title);
+    const { presets, runAllPreset } = useScenarioTestPresets();
+    const { hasResult, assertionsIsSuccess } = useAssertionResultsSummary();
+    const tooltip = useScenarioTestTooltip({ disabled, title, titleOverride });
+
+    const [selectedPreset, setSelectedPreset] = useState(runAllPreset);
 
     const [showMockFieldOnEnrichers] = useUserSettings("node.showMockFieldOnEnrichers");
     const dispatch = useAppDispatch();
     const handleRunTest = useCallback(
-        (testCase: TestCase) => {
-            return dispatch(testScenarioWithTestCase(testCase, showMockFieldOnEnrichers));
-        },
+        (testCase: TestCase) => dispatch(testScenarioWithTestCase(testCase, showMockFieldOnEnrichers)),
         [dispatch, showMockFieldOnEnrichers],
     );
 
+    const icon =
+        selectedPreset.value === RUN_ALL ? (
+            <TestingIcon />
+        ) : (
+            <TestingIconWithAssertionStatus hasResult={hasResult} assertionsIsSuccess={assertionsIsSuccess} />
+        );
+
     return (
         <StyledScenarioTestButton
-            onClick={() => {
-                handleRunTest(testCase);
-            }}
+            onClick={() => handleRunTest(testCase)}
             name={selectedPreset.label}
             title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
-            icon={
-                selectedPreset.value === RUN_ALL ? (
-                    <TestingIcon />
-                ) : (
-                    <Box
-                        component="span"
-                        sx={{
-                            position: "relative",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                        }}
-                    >
-                        <TestingIcon />
-                        {hasResult ? (
-                            <Box
-                                component="span"
-                                sx={{
-                                    position: "absolute",
-                                    top: 0,
-                                    right: 0,
-                                    transform: "translate(5%,0)",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    pointerEvents: "none",
-                                    "& > svg": { fontSize: "16px" },
-                                }}
-                            >
-                                <AssertionStatusIcon isSuccess={assertionsIsSuccess} variant={"dark"} />
-                            </Box>
-                        ) : null}
-                    </Box>
-                )
-            }
+            icon={icon}
             side={side}
             variant={variant}
             isLoading={isLoading}
@@ -157,7 +77,6 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                     //TODO: Implement me when backend ready
                     return;
                 }
-
                 //TODO: Handle multiple test selection when backend ready
                 handleRunTest(testCase);
             }}

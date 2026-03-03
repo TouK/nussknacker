@@ -5,13 +5,17 @@ import io.circe.syntax._
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.scalatest.Assertion
+import org.hamcrest.Matchers.{containsString, equalTo, nullValue}
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.kafka.KafkaFactory
+import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, PredicateAssertion}
 import pl.touk.nussknacker.test.{
   NuRestAssureMatchers,
   PatientScalaFutures,
@@ -24,14 +28,15 @@ import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformTestCaseRequest
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
-import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
-import sttp.client3.{quickRequest, Response, UriContext}
-import sttp.model.{MediaType, StatusCode}
 
-trait ScenarioTestingApiHttpServiceSpec
+import java.util.UUID
+
+class ScenarioTestingApiHttpServiceSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithTestHttpClient
@@ -42,210 +47,12 @@ trait ScenarioTestingApiHttpServiceSpec
     with NuRestAssureMatchers
     with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures
-    with WithAdHocTestsLogic
     with Matchers
     with LazyLogging {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  protected val generatedSamplesCount = 3
-
-  protected def expectedTestDataJson: String
-
-  protected val inputValueNotMatchingExpectedType = "false"
-
-  "The endpoint for capabilities should" - {
-    "return valid capabilities for scenario with all capabilities" in {
-      given()
-        .applicationState {
-          createSavedScenario(exampleScenario)
-        }
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(exampleScenarioGraph.asJson.spaces2)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/capabilities")
-        .Then()
-        .statusCode(200)
-        .equalsJsonBody(
-          s"""{
-             |    "testWithParameters": {
-             |      "status": "AVAILABLE",
-             |      "sourceParameters": $expectedTestParametersJson
-             |    },
-             |    "testWithGeneratedData": {
-             |      "status": "AVAILABLE"
-             |    },
-             |    "testWithLiveData": {
-             |      "status": "AVAILABLE"
-             |    }
-             |}""".stripMargin
-        )
-    }
-    "return valid capabilities for scenario with all capabilities, but user not allowed to deploy" in {
-      given()
-        .applicationState {
-          createSavedScenario(exampleScenario)
-        }
-        .when()
-        .basicAuthWriter()
-        .jsonBody(exampleScenarioGraph.asJson.spaces2)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/capabilities")
-        .Then()
-        .statusCode(200)
-        .equalsJsonBody(
-          s"""{
-             |    "testWithParameters": {
-             |      "status": "NOT_AVAILABLE",
-             |      "reason": "USER_DOES_NOT_HAVE_PERMISSION"
-             |    },
-             |    "testWithGeneratedData": {
-             |      "status": "NOT_AVAILABLE",
-             |      "reason": "USER_DOES_NOT_HAVE_PERMISSION"
-             |    },
-             |    "testWithLiveData": {
-             |      "status": "NOT_AVAILABLE",
-             |      "reason": "USER_DOES_NOT_HAVE_PERMISSION"
-             |    }
-             |}""".stripMargin
-        )
-    }
-    "return Forbidden for user without permissions" in {
-      // TODO lets talk about it, I've changed behaviour of API, in old definition user without permission still got response, but with capabilities disabled.
-      // I thought it might be confusing to return valid response rather then inform user that he cannot get that information.
-      given()
-        .applicationState {
-          createSavedScenario(exampleScenario)
-        }
-        .when()
-        .basicAuthNoPermUser()
-        .jsonBody(exampleScenarioGraph.asJson.spaces2)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/capabilities")
-        .Then()
-        .statusCode(403)
-    }
-  }
-
-  "The endpoint for test data generation should" - {
-    "generate test data" in {
-      given()
-        .applicationState {
-          createSavedScenario(exampleScenario)
-        }
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(testDataGenerationRequest(exampleScenarioGraph.asJson.spaces2, generatedSamplesCount))
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generatedTestData")
-        .Then()
-        .statusCode(200)
-        .equalsJsonBody(expectedTestDataJson)
-    }
-    "refuses to generate too much data" in {
-      given()
-        .applicationState {
-          createSavedScenario(exampleScenario)
-        }
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(testDataGenerationRequest(exampleScenarioGraph.asJson.spaces2, 100))
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generatedTestData")
-        .Then()
-        .statusCode(StatusCodes.BadRequest.intValue)
-        .equalsPlainBody(
-          "Too many records requested. The maximum number of records permitted is 20. Contact the system administrator to increase this limit."
-        )
-    }
-  }
-
-  "The endpoint for generating test parameters should" - {
-    "properly generate parameters for source with support of testParametersDefinition" in {
-      shouldProperlyGetTestParameters()
-    }
-    "return error if scenario does not exists" in {
-      val notExistingScenarioName = exampleScenario.name.value + "_2"
-      given()
-        .applicationState {
-          createSavedScenario(exampleScenario)
-        }
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(s"""{
-              |  "scenarioGraph": ${exampleScenarioGraph.asJson.spaces2},
-              |  "numberOfSamples": 100
-              |}""".stripMargin)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/$notExistingScenarioName/generatedTestData")
-        .Then()
-        .statusCode(StatusCodes.NotFound.intValue)
-        .equalsPlainBody(s"No scenario $notExistingScenarioName found")
-    }
-  }
-
-  "The endpoint for running tests from file should" - {
-
-    def runTestsFromFile(testDataJson: String) = {
-      httpClient.send(
-        quickRequest
-          .post(uri"$nuDesignerHttpAddress/api/processManagement/test/${exampleScenario.name}")
-          .contentType(MediaType.MultipartFormData)
-          .multipartBody(
-            sttpPrepareMultiParts(
-              "testData"      -> testDataJson,
-              "scenarioGraph" -> exampleScenario.toScenarioGraph.asJson.noSpaces
-            )()
-          )
-          .auth
-          .basic("allpermuser", "allpermuser")
-      )
-    }
-
-    "properly parse file and run tests" in {
-      createSavedScenario(exampleScenario)
-
-      val response = runTestsFromFile(expectedTestDataJson)
-
-      logger.debug(s"The response from the endpoint running scenario test from files was: $response")
-      response.code shouldEqual StatusCode.Ok
-      verifyTestFromFileWithCorrectTestDataResponse(response)
-    }
-
-    "return error for empty test data" in {
-      createSavedScenario(exampleScenario)
-
-      val response = runTestsFromFile("[]")
-
-      response.code shouldEqual StatusCode.BadRequest
-      response.body shouldEqual "Test data is empty"
-    }
-
-    "return error for test data containing non existing variable" in {
-      createSavedScenario(exampleScenario)
-
-      val response = runTestsFromFile(s"""[
-          |  {"sourceId":"$exampleScenarioSourceId","variables":{"nonExistingVariable": 123},"upstreamTimestamp":"1970-01-01T00:00:00.123Z"}
-          |]""".stripMargin)
-
-      response.code shouldEqual StatusCode.BadRequest
-      response.body shouldEqual s"Problem in sample 1 detected: Unexpected variable [nonExistingVariable] for source [$exampleScenarioSourceId]"
-    }
-
-    "return error for test data containing variable that doesn't match expected type" in {
-      createSavedScenario(exampleScenario)
-
-      val response = runTestsFromFile(s"""[
-                                         |  {"sourceId":"$exampleScenarioSourceId","variables":{"input":$inputValueNotMatchingExpectedType},"upstreamTimestamp":"1970-01-01T00:00:00.123Z"}
-                                         |]""".stripMargin)
-
-      response.code shouldEqual StatusCode.BadRequest
-      response.body should startWith(
-        s"""Problem in sample 1 detected: Variable [name=input, type=${exampleScenarioInputVariableType.display}, encoded value=$inputValueNotMatchingExpectedType] decoding error for source [$exampleScenarioSourceId]: """
-      )
-    }
-  }
-
   "The endpoint for adhoc validate should" - {
-    "return no errors on valid parameters" in {
-      shouldValidateParametersProperly()
-    }
-
     "return OK even if non-existing source component was used" in {
       val missingSourceId = "missing source"
       val scenarioWithMissingSource: CanonicalProcess =
@@ -288,46 +95,445 @@ trait ScenarioTestingApiHttpServiceSpec
     }
   }
 
-  "The endpoint for adhoc test run should" - {
-    "run scenario and return result" in {
-      shouldProperlyRunAdHocTest()
-    }
-  }
+  "The endpoint for a testCase should" - {
+    "run a test case and return assertion results" in {
+      val testDataContent =
+        """[
+          |  {"sourceId":"startProcess","variables":{"input":["ala"]}},
+          |  {"sourceId":"startProcess","variables":{"input":["bela"]}}
+          |]""".stripMargin
+      val testCase = TestCase(
+        id = UUID.randomUUID(),
+        name = "dummy",
+        inputs = testDataContent,
+        mocks = Map.empty,
+        assertions = Map(
+          NodeId("endsuffix") -> List(
+            PredicateAssertion(
+              Assertion.AssertionOperator.Equals,
+              "'ala'".spel,
+              "#contexts[0].input[0]".spel,
+            ),
+            PredicateAssertion(
+              Assertion.AssertionOperator.Equals,
+              "'ala'".spel,
+              "#contexts[1].input[0]".spel,
+            ),
+            // The output variable produced by the messagesuffix node is not visible at that node, but rather at the subsequent one (endsuffix).
+            PredicateAssertion(
+              Assertion.AssertionOperator.Equals,
+              "{message: 'message'}".spel,
+              "#contexts[0].output".spel,
+            ),
+          ),
+          NodeId("messagesuffix") -> List(
+            PredicateAssertion(
+              Assertion.AssertionOperator.Equals,
+              "'ala'".spel,
+              "#contexts[0].input[0]".spel,
+            ),
+          )
+        )
+      )
 
-  "The endpoint for test with live data should" - {
-    "return error if trying to test with 0 samples" in {
       given()
         .applicationState {
-          createSavedScenario(exampleScenario)
+          createSavedScenario(testCaseScenario)
         }
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(
-          ScenarioTestValidationRequest(
-            testData = ScenarioTestData.WithLiveData(0),
-            scenarioGraph = exampleScenario.toScenarioGraph
-          ).asJson.toString()
-        )
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
+        .jsonBody(PerformTestCaseRequest(testCaseScenario.toScenarioGraph, testCase).asJson.spaces2)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${testCaseScenario.name}/performTestCase")
         .Then()
-        .statusCode(404)
-        .equalsPlainBody(
-          "No live test data available. Please ensure that the storage used by source contains at least one data sample"
+        .statusCode(200)
+        .body("assertionsResults.endsuffix[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
+        .body("assertionsResults.endsuffix[1].type", org.hamcrest.Matchers.equalTo("FailedAssertion"))
+        .body(
+          "assertionsResults.endsuffix[1].message",
+          org.hamcrest.Matchers.equalTo("Expected: ['ala'] but found ['bela']")
         )
+        .body("assertionsResults.endsuffix[2].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
+        .body("assertionsResults.messagesuffix[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
+    }
+
+    "run a test case with mocked enricher service" in {
+      val testDataContent =
+        """[
+          |  {"sourceId":"startProcess","variables":{"input":["ala"]}}
+          |]""".stripMargin
+      val testCase = TestCase(
+        id = UUID.randomUUID(),
+        name = "dummy",
+        inputs = testDataContent,
+        mocks = Map(NodeId("someEnricher") -> EnricherMock("'b'".spel)),
+        assertions = Map(
+          NodeId("endsuffix") -> List(
+            PredicateAssertion(AssertionOperator.Equals, "'b'".spel, "#contexts[0].out1".spel),
+          )
+        )
+      )
+
+      given()
+        .applicationState {
+          createSavedScenario(testCaseEnricherScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(PerformTestCaseRequest(testCaseEnricherScenario.toScenarioGraph, testCase).asJson.spaces2)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${testCaseEnricherScenario.name}/performTestCase")
+        .Then()
+        .statusCode(200)
+        .body("assertionsResults.endsuffix[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
+    }
+
+    "return bad request when asserting on a non-existing node" in {
+      val testDataContent =
+        """[
+          |  {"sourceId":"startProcess","variables":{"input":["ala"]}},
+          |  {"sourceId":"startProcess","variables":{"input":["bela"]}}
+          |]""".stripMargin
+      val invalidTestCase = TestCase(
+        id = UUID.randomUUID(),
+        name = "dummy",
+        inputs = testDataContent,
+        mocks = Map.empty,
+        assertions = Map(
+          NodeId("someNotExistingNode") -> List(
+            PredicateAssertion(AssertionOperator.Equals, "'ala'".spel, "#contexts[0].input[0]".spel),
+          )
+        )
+      )
+
+      given()
+        .applicationState {
+          createSavedScenario(testCaseScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(PerformTestCaseRequest(testCaseScenario.toScenarioGraph, invalidTestCase).asJson.spaces2)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${testCaseScenario.name}/performTestCase")
+        .Then()
+        .statusCode(400)
+        .equalsPlainBody("Assertions configured for not existing nodes: someNotExistingNode")
+    }
+
+    "return bad request when mocking a non-existing node" in {
+      val testDataContent =
+        """[
+          |  {"sourceId":"startProcess","variables":{"input":["ala"]}},
+          |  {"sourceId":"startProcess","variables":{"input":["bela"]}}
+          |]""".stripMargin
+      val invalidTestCase = TestCase(
+        id = UUID.randomUUID(),
+        name = "dummy",
+        inputs = testDataContent,
+        mocks = Map(NodeId("notExistingEnricher") -> EnricherMock("'b'".spel)),
+        assertions = Map.empty
+      )
+
+      given()
+        .applicationState {
+          createSavedScenario(testCaseScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(PerformTestCaseRequest(testCaseScenario.toScenarioGraph, invalidTestCase).asJson.spaces2)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${testCaseScenario.name}/performTestCase")
+        .Then()
+        .statusCode(400)
+        .equalsPlainBody("Mocks configured for not existing nodes: notExistingEnricher")
+    }
+
+    "return bad request when asserting on a non-existing context variable" in {
+      val testDataContent =
+        """[
+          |  {"sourceId":"startProcess","variables":{"input":["ala"]}}
+          |]""".stripMargin
+      val invalidTestCase = TestCase(
+        id = UUID.randomUUID(),
+        name = "dummy",
+        inputs = testDataContent,
+        mocks = Map.empty,
+        assertions = Map(
+          NodeId("messagesuffix") -> List(
+            // output variable is only visible at endsuffix, not at messagesuffix
+            PredicateAssertion(
+              AssertionOperator.Equals,
+              "{message: 'message'}".spel,
+              "#contexts[0].output".spel,
+            ),
+          )
+        )
+      )
+
+      given()
+        .applicationState {
+          createSavedScenario(testCaseScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(PerformTestCaseRequest(testCaseScenario.toScenarioGraph, invalidTestCase).asJson.spaces2)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${testCaseScenario.name}/performTestCase")
+        .Then()
+        .statusCode(400)
+        .body(containsString("There is no property 'output' in type"))
+    }
+
+    "return bad request when running an invalid scenario" in {
+      val testDataContent =
+        """[
+          |  {"sourceId":"source","variables":{"input":["ala"]}},
+          |  {"sourceId":"source","variables":{"input":["bela"]}}
+          |]""".stripMargin
+      val testCase = TestCase(
+        id = UUID.randomUUID(),
+        name = "dummy",
+        inputs = testDataContent,
+        mocks = Map.empty,
+        assertions = Map.empty
+      )
+
+      given()
+        .applicationState {
+          createSavedScenario(ProcessTestData.invalidProcess)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(PerformTestCaseRequest(ProcessTestData.invalidProcess.toScenarioGraph, testCase).asJson.spaces2)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${ProcessTestData.invalidProcess.name}/performTestCase")
+        .Then()
+        .statusCode(400)
+        // todo: should we return something more structured than toString of errors?
+        .body(containsString("Only scenario without validation errors can be tested. Errors: "))
     }
   }
 
-  protected def verifyTestFromFileWithCorrectTestDataResponse(response: Response[String]): Assertion
+  "The endpoint for running tests from file should" - {
+    "return test results" in {
+      val testDataContent =
+        """[
+          |  {"sourceId":"startProcess","variables":{"input":["ala"]}},
+          |  {"sourceId":"startProcess","variables":{"input":["bela"]}}
+          |]""".stripMargin
+      given()
+        .applicationState {
+          createSavedScenario(ProcessTestData.sampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .multiPart("scenarioGraph", ProcessTestData.sampleScenario.toScenarioGraph.asJson.noSpaces, "application/json")
+        .multiPart("testData", testDataContent)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${ProcessTestData.sampleScenario.name}/performTest")
+        .Then()
+        .statusCode(200)
+        .body("results.nodeResults.endsuffix[0].variables.output.pretty.message", equalTo("message"))
+        .body("results.nodeResults.endsuffix[0].variables.input.pretty[0]", equalTo("ala"))
+    }
 
-  private def testDataGenerationRequest(
-      scenarioGraphStr: String,
-      numberOfSamples: Int,
-  ) =
-    s"""{
-       |  "scenarioGraph": $scenarioGraphStr,
-       |  "numberOfSamples": $numberOfSamples
-       |}""".stripMargin
+    "return null variables in nodeTransitionResults" in {
+      val scenario = ScenarioBuilder
+        .streaming(ProcessTestData.sampleProcessName.value)
+        .parallelism(1)
+        .source("startProcess", "csv-source")
+        .emptySink(
+          "end",
+          "kafka-string",
+          KafkaFactory.TopicParamName.value     -> "'end.topic'".spel,
+          KafkaFactory.SinkValueParamName.value -> "'foo'".spel
+        )
+      val testDataContent =
+        """[
+          |  {"sourceId":"startProcess","variables":{"input":null}}
+          |]""".stripMargin
+      given()
+        .applicationState {
+          createSavedScenario(scenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .multiPart("scenarioGraph", scenario.toScenarioGraph.asJson.noSpaces, "application/json")
+        .multiPart("testData", testDataContent)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${scenario.name}/performTest")
+        .Then()
+        .statusCode(200)
+        .body("results.nodeTransitionResults[0].results[0].variables.input", nullValue())
+    }
 
-  protected def exampleScenarioInputVariableType: TypingResult
+    "return test results of errors, including null" in {
+      val process = ScenarioBuilder
+        .streaming(ProcessTestData.sampleProcessName.value)
+        .parallelism(1)
+        .source("startProcess", "csv-source")
+        .filter("input", "new java.math.BigDecimal(null) == 0".spel)
+        .emptySink(
+          "end",
+          "kafka-string",
+          KafkaFactory.TopicParamName.value     -> "'end.topic'".spel,
+          KafkaFactory.SinkValueParamName.value -> "''".spel
+        )
+      val testDataContent =
+        """[
+          |  {"sourceId":"startProcess","variables":{"input":["ala"]}},
+          |  {"sourceId":"startProcess","variables":{"input":["bela"]}}
+          |]""".stripMargin
+      given()
+        .applicationState {
+          createSavedScenario(process)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .multiPart("scenarioGraph", process.toScenarioGraph.asJson.noSpaces, "application/json")
+        .multiPart("testData", testDataContent)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${process.name}/performTest")
+        .Then()
+        .statusCode(200)
+    }
+
+    "refuse to test if too many records received" in {
+      val process = ScenarioBuilder
+        .streaming(ProcessTestData.sampleProcessName.value)
+        .parallelism(1)
+        .source("startProcess", "csv-source")
+        .emptySink(
+          "end",
+          "kafka-string",
+          KafkaFactory.TopicParamName.value     -> "'end.topic'".spel,
+          KafkaFactory.SinkValueParamName.value -> "''".spel
+        )
+      val tooManyRecords = List
+        .fill(50)("""{"sourceId":"startProcess","variables":{"input":[]}}""")
+        .mkString("[", ",", "]")
+      given()
+        .applicationState {
+          createSavedScenario(process)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .multiPart("scenarioGraph", process.toScenarioGraph.asJson.noSpaces, "application/json")
+        .multiPart("testData", tooManyRecords)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${process.name}/performTest")
+        .Then()
+        .statusCode(400)
+        .equalsPlainBody(
+          "Test data has too many records (50). The maximum number of records permitted is 20. Contact the system administrator to increase this limit."
+        )
+    }
+
+    "refuse to test if too many characters in test data" in {
+      val process = ScenarioBuilder
+        .streaming(ProcessTestData.sampleProcessName.value)
+        .parallelism(1)
+        .source("startProcess", "csv-source")
+        .emptySink(
+          "end",
+          "kafka-string",
+          KafkaFactory.TopicParamName.value     -> "'end.topic'".spel,
+          KafkaFactory.SinkValueParamName.value -> "''".spel
+        )
+      val longString = "a long json string".repeat(50)
+      val tooManyCharacters = List
+        .fill(20)(s"""{"sourceId":"startProcess","variables":{"input":"[$longString]"}}""")
+        .mkString("[", ",", "]")
+      given()
+        .applicationState {
+          createSavedScenario(process)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .multiPart("scenarioGraph", process.toScenarioGraph.asJson.noSpaces, "application/json")
+        .multiPart("testData", tooManyCharacters)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${process.name}/performTest")
+        .Then()
+        .statusCode(400)
+        .equalsPlainBody(
+          "Test data has too many characters (19101). The maximum numbers of permitted characters is 10000. Contact the system administrator to increase this limit."
+        )
+    }
+
+    "refuse to test if too big test results generated" in {
+      val bigListExpression = (1 to 1000).mkString("{", ",", "}").spel
+      val process = ScenarioBuilder
+        .streaming(ProcessTestData.sampleProcessName.value)
+        .parallelism(1)
+        .source("startProcess", "csv-source")
+        .buildSimpleVariable("big list", "bigList", bigListExpression)
+        .emptySink(
+          "end",
+          "kafka-string",
+          KafkaFactory.TopicParamName.value     -> "'end.topic'".spel,
+          KafkaFactory.SinkValueParamName.value -> "''".spel
+        )
+      val testDataContent = List
+        .fill(10)("""{"sourceId":"startProcess","variables":{"input":[]}}""")
+        .mkString("[", ",", "]")
+      given()
+        .applicationState {
+          createSavedScenario(process)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .multiPart("scenarioGraph", process.toScenarioGraph.asJson.noSpaces, "application/json")
+        .multiPart("testData", testDataContent)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${process.name}/performTest")
+        .Then()
+        .statusCode(400)
+        .body(containsString("Test results size exceeded"))
+    }
+
+    "reject test record with non-existing source" in {
+      val testDataContent =
+        """[
+          |  {"sourceId":"startProcess","variables":{"input":[]}},
+          |  {"sourceId":"unknown","variables":{"input":"foo"}}
+          |]""".stripMargin
+      given()
+        .applicationState {
+          createSavedScenario(ProcessTestData.sampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .multiPart("scenarioGraph", ProcessTestData.sampleScenario.toScenarioGraph.asJson.noSpaces, "application/json")
+        .multiPart("testData", testDataContent)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${ProcessTestData.sampleScenario.name}/performTest")
+        .Then()
+        .statusCode(400)
+        .equalsPlainBody("Problem in sample 2 detected: source with id 'unknown' doesn't exist in the scenario")
+    }
+  }
+
+  private val testCaseScenario = ScenarioBuilder
+    .streaming("testCaseScenario")
+    .parallelism(1)
+    .additionalFields(properties = Map("environment" -> "test"))
+    .source("startProcess", "csv-source")
+    .filter("input", "#input != null".spel)
+    .to(
+      GraphBuilder
+        .buildVariable("messagesuffix", "output", "message" -> "'message'".spel)
+        .emptySink(
+          "endsuffix",
+          "kafka-string",
+          KafkaFactory.TopicParamName.value     -> "'end.topic'".spel,
+          KafkaFactory.SinkValueParamName.value -> "#output".spel
+        )
+    )
+
+  private val testCaseEnricherScenario = ScenarioBuilder
+    .streaming("testCaseEnricherScenario")
+    .parallelism(1)
+    .additionalFields(properties = Map("environment" -> "test"))
+    .source("startProcess", "csv-source")
+    .enricher("someEnricher", "out1", "paramService", "param" -> "'a'".spel)
+    .filter("input", "#input != null".spel)
+    .to(
+      GraphBuilder
+        .buildVariable("messagesuffix", "output", "message" -> "'message'".spel)
+        .emptySink(
+          "endsuffix",
+          "kafka-string",
+          KafkaFactory.TopicParamName.value     -> "'end.topic'".spel,
+          KafkaFactory.SinkValueParamName.value -> "#output".spel
+        )
+    )
 
 }
