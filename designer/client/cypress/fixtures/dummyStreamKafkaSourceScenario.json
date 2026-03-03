@@ -44,7 +44,8 @@
                     "y": 0
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "kafka"
         },
         {
             "id": "dead-end",
@@ -61,7 +62,8 @@
                     "y": 180
                 }
             },
-            "type": "Sink"
+            "type": "Sink",
+            "name": "dead-end"
         }
     ],
     "additionalBranches": []
