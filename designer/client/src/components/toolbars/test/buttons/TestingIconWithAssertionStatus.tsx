@@ -2,7 +2,7 @@ import { Box } from "@mui/material";
 import React from "react";
 
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
-import { AssertionStatusIcon } from "../../assertionResults/assertionResult/AssertionStatusIcon";
+import { AssertionStatusIcon } from "../../assertionResults/assertionResultsForNode/assertionResult/AssertionStatusIcon";
 
 interface Props {
     hasResult: boolean;

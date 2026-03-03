@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { getTestCase } from "../../../../reducers/selectors/testCases";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import type { OptionHeader } from "../../../graph/node-modal/fragment-input-definition/TypeSelect";
-import { AssertionStatusIcon } from "../../assertionResults/assertionResult/AssertionStatusIcon";
+import { AssertionStatusIcon } from "../../assertionResults/assertionResultsForNode/assertionResult/AssertionStatusIcon";
 import { useAssertionResultsSummary } from "./useAssertionResultsSummary";
 
 export const RUN_ALL = "runAll";
