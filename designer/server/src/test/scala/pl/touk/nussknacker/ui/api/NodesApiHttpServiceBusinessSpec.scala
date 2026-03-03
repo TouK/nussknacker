@@ -515,7 +515,7 @@ class NodesApiHttpServiceBusinessSpec
              |  },
              |  "validationErrors": [
              |    {
-             |      "typ": "NodeIdValidationError",
+             |      "typ": "NodeNameValidationError",
              |      "message": "Node name cannot be blank",
              |      "description": "Blank node name",
              |      "fieldName": "$$id",
@@ -1503,16 +1503,16 @@ class NodesApiHttpServiceBusinessSpec
         .body(
           matchJsonWithRegexValues(
             s"""[
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}}
+               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}}
                |]""".stripMargin
           )
         )
@@ -2046,6 +2046,7 @@ class NodesApiHttpServiceBusinessSpec
        |}""".stripMargin
 
   private lazy val sourceTestingScenarioSourceId = "sourceId"
+  private lazy val uuidLikeRegex                 = "[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}"
 
   private lazy val sourceTestingScenario = ScenarioBuilder
     .streaming("source_testing_scenario")

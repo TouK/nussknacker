@@ -174,6 +174,7 @@ class SchemedKafkaTestingApiHttpServiceSpec
     s"""[
        |  {
        |    "sourceId": "$exampleScenarioSourceId",
+       |    "sourceName": "$exampleScenarioSourceId",
        |    "parameters": [
        |      {
        |        "name": "$InputVariablesParameterName",

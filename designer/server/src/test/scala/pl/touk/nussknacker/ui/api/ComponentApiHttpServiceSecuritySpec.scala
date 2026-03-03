@@ -120,7 +120,7 @@ class ComponentApiHttpServiceSecuritySpec
             matchJsonWithRegexValues(
               s"""[{
                  |  "name": "${scenario1.name}",
-                 |  "nodesUsagesData": [ { "nodeId": "source", "type": "ScenarioUsageData" } ],
+                 |  "nodesUsagesData": [ { "nodeId": "source", "nodeName": "source", "type": "ScenarioUsageData" } ],
                  |  "isFragment": false,
                  |  "processCategory": "${category1.stringify}",
                  |  "modificationDate": "${regexes.zuluDateRegex}",
@@ -179,7 +179,7 @@ class ComponentApiHttpServiceSecuritySpec
             matchJsonWithRegexValues(
               s"""[{
                  |  "name": "${scenario2.name}",
-                 |  "nodesUsagesData": [ { "nodeId": "source", "type": "ScenarioUsageData" } ],
+                 |  "nodesUsagesData": [ { "nodeId": "source", "nodeName": "source", "type": "ScenarioUsageData" } ],
                  |  "isFragment": false,
                  |  "processCategory": "${category2.stringify}",
                  |  "modificationDate": "${regexes.zuluDateRegex}",

@@ -32,6 +32,7 @@ class EventGeneratorSourceWithStaticIntValueTestingApiHttpServiceSpec
     s"""[
        |  {
        |    "sourceId": "$exampleScenarioSourceId",
+       |    "sourceName": "$exampleScenarioSourceId",
        |    "parameters": [
        |      {
        |        "name": "$InputVariablesParameterName",
