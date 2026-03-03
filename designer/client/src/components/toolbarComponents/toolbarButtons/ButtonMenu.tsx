@@ -105,34 +105,51 @@ export const ButtonMenu = forwardRef<HTMLButtonElement, ToolbarButtonMenuWrapper
                     setAnchorPosition(null);
                 }}
             >
-                {options.map((option) => {
-                    if (isOptionHeader(option)) {
-                        const header = option.header;
-                        return (
-                            <Typography key={header} variant={"subtitle1"} color={"text.secondary"} sx={{ px: 2, py: 1 }}>
-                                {header}
-                            </Typography>
-                        );
-                    }
-
-                    return (
-                        <MenuItem
-                            key={option.value}
-                            selected={option.value === selected?.value}
-                            disabled={option.isDisabled}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onChange(option);
-                                setAnchorPosition(null);
-                            }}
-                        >
-                            {option.icon && <ListItemIcon sx={{ minWidth: "26px !important" }}>{option.icon}</ListItemIcon>}
-                            <ListItemText>{option.label}</ListItemText>
-                        </MenuItem>
-                    );
-                })}
+                {options.map((option) => (
+                    <MenuOption
+                        key={isOptionHeader(option) ? option.header : option.value}
+                        option={option}
+                        selected={selected}
+                        onChange={(value) => {
+                            onChange(value);
+                            setAnchorPosition(null);
+                        }}
+                    />
+                ))}
             </Menu>
             {buttonProps?.children}
         </ToolbarButton>
     );
 });
+
+function MenuOption<T extends Option>({
+    option,
+    selected,
+    onChange,
+}: {
+    option: T | OptionHeader;
+    selected: T;
+    onChange: (value: T) => void;
+}) {
+    if (isOptionHeader(option)) {
+        return (
+            <Typography key={option.header} variant={"subtitle1"} color={"text.secondary"} sx={{ px: 2, py: 1 }}>
+                {option.header}
+            </Typography>
+        );
+    }
+
+    return (
+        <MenuItem
+            selected={option.value === selected?.value}
+            disabled={option.isDisabled}
+            onClick={(e) => {
+                e.stopPropagation();
+                onChange(option as T);
+            }}
+        >
+            {option.icon && <ListItemIcon sx={{ "&&": { minWidth: 22 } }}>{option.icon}</ListItemIcon>}
+            <ListItemText sx={{ pl: option.icon ? 0 : 0.75 }}>{option.label}</ListItemText>
+        </MenuItem>
+    );
+}
