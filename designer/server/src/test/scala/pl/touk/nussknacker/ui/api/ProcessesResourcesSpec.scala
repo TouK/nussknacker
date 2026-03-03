@@ -24,6 +24,9 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension._
+import pl.touk.nussknacker.engine.test.testcase
+import pl.touk.nussknacker.engine.test.testcase.{EnricherMock, TestCase, TestCases}
+import pl.touk.nussknacker.engine.test.testcase.Assertion.PredicateAssertion
 import pl.touk.nussknacker.restmodel.process.UpdateScenarioResponse
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -63,6 +66,7 @@ import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPer
 import pl.touk.nussknacker.ui.server.RouteInterceptor
 
 import java.time.Instant
+import java.util.UUID
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
@@ -1487,6 +1491,45 @@ class ProcessesResourcesSpec
   test("fetching toolbar definitions for not exist process should return 404 response") {
     getProcessToolbars(processName) ~> check {
       status shouldEqual StatusCodes.NotFound
+    }
+  }
+
+  test("save and return single test case") {
+    val testDataContent =
+      """[
+        |  {"sourceId":"startProcess","variables":{"input":["ala"]}}
+        |]""".stripMargin
+    val testCase = TestCase(
+      id = UUID.randomUUID(),
+      name = "dummy",
+      inputs = testDataContent,
+      mocks = Map(
+        NodeId("someEnricher") -> EnricherMock("'b'".spel)
+      ),
+      assertions = Map(
+        NodeId("endsuffix") -> List(
+          PredicateAssertion(
+            testcase.Assertion.AssertionOperator.Equals,
+            "'ala'".spel,
+            "#contexts[0].input[0]".spel,
+            description = Some("first event input should equal 'ala'")
+          ),
+          PredicateAssertion(
+            testcase.Assertion.AssertionOperator.Equals,
+            "'ala'".spel,
+            "#contexts[1].input[0]".spel,
+            description = Some("second event input should equal 'ala'")
+          ),
+        )
+      )
+    )
+    val sampleScenarioWithTestCase = ProcessTestData.sampleScenario.copy(testCases = Some(TestCases.Single(testCase)))
+
+    saveCanonicalProcessAndAssertSuccess(sampleScenarioWithTestCase, Category1)
+
+    getProcess(processName) ~> check {
+      val scenarioDetails = responseAs[ScenarioWithDetails]
+      scenarioDetails.scenarioGraph.flatMap(_.testCases) shouldBe Some(TestCases.Single(testCase))
     }
   }
 

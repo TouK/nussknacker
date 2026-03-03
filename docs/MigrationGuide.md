@@ -57,9 +57,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7658](https://github.com/TouK/nussknacker/pull/7658) `/app/processingtype/reload` endpoint doesn't reload Deployment Managers
 * [#7693](https://github.com/TouK/nussknacker/pull/7693) Scenario migration uses `MigrateScenarioRequestDtoV3` where `remoteUserName` is removed. To provide username use impersonation mechanism.
 * [#7871](https://github.com/TouK/nussknacker/pull/7871) `CustomHttpServiceProvider` providing Pekko route was renamed to `PekkoCustomHttpServiceProvider`.
-* [#7959](https://github.com/TouK/nussknacker/pull/7959) Scenario testing API changes:
+* [#7959](https://github.com/TouK/nussknacker/pull/7959)[#9012](https://github.com/TouK/nussknacker/pull/9012) Scenario testing API changes:
     * Scenario testing API (on path prefix `/scenarioTesting`) is refactored, with modified endpoint paths and request/response format
-    * 2 endpoints moved from `/processManagement` API to `/scenarioTesting` API - `/test` (test with form) and `/generateAndTest` (test with generated data) and merged into a single endpoints `/performTest`
+    * endpoints moved from `/processManagement` API to `/scenarioTesting` API
+        * `/test` (test with form)
+        * `/generateAndTest` (test with generated data) and merged into a single endpoints `/performTest`
+        * `/test` to `/performTest`
+        * `/testCase` to `/performTestCase`
 `   * introduced` new representation of test results, grouped per transition between nodes (toggleable in on API request level)
 
 ### Code API changes

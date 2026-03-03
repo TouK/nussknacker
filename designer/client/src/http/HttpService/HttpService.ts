@@ -855,7 +855,7 @@ export class HttpService {
         data.append("testData", file);
         data.append("scenarioGraph", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
 
-        const promise = api.post<ResultsWithCountsDto>(`/processManagement/test/${encodeURIComponent(processName)}`, data, {
+        const promise = api.post<ResultsWithCountsDto>(`/scenarioTesting/${encodeURIComponent(processName)}/performTest`, data, {
             params: {
                 skipResultsPerTransition: this.#skipResultsPerTransition,
             },
@@ -887,9 +887,9 @@ export class HttpService {
         }
 
         const promise = api.post<ResultsWithCountsDto>(
-            `/processManagement/testCase/${encodeURIComponent(scenarioName)}`,
+            `/scenarioTesting/${encodeURIComponent(scenarioName)}/performTestCase`,
             {
-                scenario: sanitized,
+                scenarioGraph: sanitized,
                 testCase: { ...testCase, inputs: JSON.stringify(sanitizedInputDataRecords) },
             },
             {

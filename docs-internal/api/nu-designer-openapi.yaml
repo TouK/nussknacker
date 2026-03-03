@@ -5196,6 +5196,127 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/scenarioTesting/{scenarioName}/performTestCase:
+    post:
+      tags:
+      - Testing
+      summary: Perform single test case
+      operationId: postApiScenariotestingScenarionamePerformtestcase
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: skipResultsPerNode
+        in: query
+        required: false
+        schema:
+          default: false
+          type: boolean
+      - name: skipResultsPerTransition
+        in: query
+        required: false
+        schema:
+          default: false
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerformTestCaseRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsWithCountsDto'
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: Too many characters were generated
+                  value: Too many characters were found in the fetched data (5000).
+                    The maximum numbers of permitted characters is 2000. Contact the
+                    system administrator to increase this limit.
+                Example1:
+                  summary: Too many records requested
+                  value: Too many records requested. The maximum number of records
+                    permitted is 1000. Contact the system administrator to increase
+                    this limit.
+                Example2:
+                  summary: Scenario validation error
+                  value: |-
+                    Scenario is invalid.
+                    Node errors:
+                      source: Bad expression
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+                Example1:
+                  summary: No live test data available
+                  value: No live test data available. Please ensure that the storage
+                    used by source contains at least one data sample
+                Example2:
+                  summary: No sources with test data generation available
+                  value: No sources with live data fetching support available
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
   /api/scenarioTesting/{scenarioName}/performTest:
     post:
       tags:
@@ -5219,21 +5340,22 @@ paths:
         in: query
         required: false
         schema:
-          type:
-          - boolean
-          - 'null'
+          default: false
+          type: boolean
       - name: skipResultsPerTransition
         in: query
         required: false
         schema:
-          type:
-          - boolean
-          - 'null'
+          default: false
+          type: boolean
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PerformTestRequest'
+              $ref: '#/components/schemas/PerformTestRequestJsonBody'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PerformTestRequestMultiParts'
         required: true
       responses:
         '200':
@@ -6635,6 +6757,18 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_String'
+    Map_NodeId_EnricherMock:
+      title: Map_NodeId_EnricherMock
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/EnricherMock'
+    Map_NodeId_List_Assertion:
+      title: Map_NodeId_List_Assertion
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/Assertion'
     Map_NodeId_String:
       title: Map_NodeId_String
       type: object
@@ -7560,8 +7694,19 @@ components:
             $ref: '#/components/schemas/NodeValidationError'
         validationPerformed:
           type: boolean
-    PerformTestRequest:
-      title: PerformTestRequest
+    PerformTestCaseRequest:
+      title: PerformTestCaseRequest
+      type: object
+      required:
+      - scenarioGraph
+      - testCase
+      properties:
+        scenarioGraph:
+          type: object
+        testCase:
+          $ref: '#/components/schemas/TestCase'
+    PerformTestRequestJsonBody:
+      title: PerformTestRequestJsonBody
       type: object
       required:
       - scenarioGraph
@@ -7571,6 +7716,17 @@ components:
           type: object
         testData:
           $ref: '#/components/schemas/ScenarioTestData'
+    PerformTestRequestMultiParts:
+      title: PerformTestRequestMultiParts
+      type: object
+      required:
+      - scenarioGraph
+      - testData
+      properties:
+        scenarioGraph:
+          type: object
+        testData:
+          type: string
     PeriodParameterEditor:
       title: PeriodParameterEditor
       type: object
@@ -8236,6 +8392,27 @@ components:
     TabularTypedDataEditor:
       title: TabularTypedDataEditor
       type: object
+    TestCase:
+      title: TestCase
+      type: object
+      required:
+      - id
+      - name
+      - inputs
+      - mocks
+      - assertions
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        inputs:
+          type: string
+        mocks:
+          $ref: '#/components/schemas/Map_NodeId_EnricherMock'
+        assertions:
+          $ref: '#/components/schemas/Map_NodeId_List_Assertion'
     TestCaseAdditionalVariablesRequestDto:
       title: TestCaseAdditionalVariablesRequestDto
       type: object
