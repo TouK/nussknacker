@@ -150,6 +150,7 @@ class SchemalessKafkaJsonTypeTests
     s"""[
        |  {
        |    "sourceId": "start",
+       |    "sourceName": "start",
        |    "parameters": [
        |      {
        |        "name": "$InputVariablesParameterName",

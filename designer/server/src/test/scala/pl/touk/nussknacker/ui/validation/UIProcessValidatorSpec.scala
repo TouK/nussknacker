@@ -2281,8 +2281,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     inside(result) { case ValidationResult(errors, _, _, _) =>
       inside(errors) { case ValidationErrors(nodeErrors, propertiesErrors, _, _) =>
-        nodeErrors should contain key NodeId(" ")
-        nodeErrors(NodeId(" ")) should contain(
+        nodeErrors should contain key NodeId(exampleUUID)
+        nodeErrors(NodeId(exampleUUID)) should contain(
           PrettyValidationErrors.formatErrorMessage(
             NodeNameValidationError(BlankId, NodeName(" "), NodeId(exampleUUID))
           )
