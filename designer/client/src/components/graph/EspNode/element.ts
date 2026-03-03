@@ -134,6 +134,8 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
             inPorts: NodeUtils.hasInputs(node) ? ["In"] : [],
             outPorts: NodeUtils.hasOutputs(node, processDefinitionData) ? ["Out"] : [],
             attrs: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                ".": { "data-node-name": node.name } as any,
                 background: {
                     fill: blendLighten(theme.palette.background.paper, 0.04),
                     opacity: node.isDisabled ? 0.5 : 1,

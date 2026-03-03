@@ -15,7 +15,7 @@ describe("Expression suggester", () => {
     it("should display colorfull and sorted completions", () => {
         cy.visitNewProcess(seed, "variables");
         cy.layoutScenario();
-        cy.get("[model-id=kafka-string]").trigger("dblclick");
+        cy.getNode("kafka-string").trigger("dblclick");
         cy.get("[data-testid=window]").as("modal");
         cy.get("[title=Value]").next().find(".ace_editor").click().type(".").contains(/\.$/);
         cy.get(".ace_autocomplete")
@@ -36,7 +36,7 @@ describe("Expression suggester", () => {
     it("should display javadocs", () => {
         cy.viewport(1600, 1200);
         cy.visitNewProcess(seed, "variables");
-        cy.get("[model-id=kafka-string]").trigger("dblclick");
+        cy.getNode("kafka-string").trigger("dblclick");
         cy.get("[data-testid=window]").as("modal");
         cy.get("[title=Value]").next().find(".ace_editor").click().type("{selectall}#DATE_FORMAT.parseLocalDat");
         cy.get(".ace_autocomplete").should("be.visible");
@@ -51,7 +51,7 @@ describe("Expression suggester", () => {
     it("should display completions for second line (bugfix)", () => {
         cy.visitNewProcess(seed, "variables");
         cy.layoutScenario();
-        cy.get("[model-id=kafka-string]").trigger("dblclick");
+        cy.getNode("kafka-string").trigger("dblclick");
         cy.get("[data-testid=window]").as("modal");
         cy.get("[title=Value]").next().find(".ace_editor").click().type(" +{enter}#").contains(/^.$/m);
         cy.get(".ace_autocomplete")

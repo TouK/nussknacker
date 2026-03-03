@@ -37,7 +37,7 @@ describe("Sql editor", () => {
 
     it("should insert '#{ # }' snippet when '#{' provided", () => {
         cy.visitNewProcess(seed, "withSqlEditor");
-        cy.get("[model-id=sql-source]").should("be.visible").trigger("dblclick");
+        cy.getNode("sql-source").should("be.visible").trigger("dblclick");
         cy.get("[title='sql']").next().find(".ace_editor").should("be.visible").parent().as("editor");
 
         cy.get("@editor").click();

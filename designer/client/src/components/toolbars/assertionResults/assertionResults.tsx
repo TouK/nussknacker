@@ -39,18 +39,19 @@ const AssertionResults = () => {
                 <AssertionResultsHeader />
                 {sortedNodeIds.map((nodeId) => {
                     const node = scenarioGraph.nodes.find((node) => node.id === nodeId);
+                    const displayName = node?.name ?? nodeId;
 
                     return (
                         <Expandable
                             key={nodeId}
                             expandableTitle={
                                 <AssertionResultsForNodeTitle
-                                    title={nodeId}
+                                    title={displayName}
                                     assertionResults={testAssertionResults[nodeId]}
                                     action={node ? <OpenNodeTestingDetails node={node} /> : undefined}
                                 />
                             }
-                            componentId={nodeId}
+                            componentId={displayName}
                             detailsSx={{ pl: 2, pr: 1, py: 0 }}
                             summarySx={{ minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px" } }}
                         >

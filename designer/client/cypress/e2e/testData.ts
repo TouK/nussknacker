@@ -38,7 +38,18 @@ describe("test data", () => {
 
         // Verify if the newly generated data are visible, it's 12 because table header + 10 data rows + table footer + 1 initially added row
         cy.get("@window").find('table[aria-rowcount="13"]');
-    });
+        cy.get("@testDialogFooter").contains("button", "Test").click();
+
+        // Verify if test mode running
+        cy.get('[id="tipsPanel"]').contains("Testing mode enabled");
+        // verify if node has 10 test results
+        cy.getNode("Event Generator").find('[joint-selector="testResultsSummary"]').contains("11");
+        cy.get('[data-selector="SCENARIO_TEST"]').click();
+
+        // Rerun test
+        cy.intercept("POST", "/api/scenarioTesting/*/performTestCase").as("retest");
+        cy.contains('[data-testid="toolbarButton-label"]', /Rerun test/).click();
+        cy.wait("@retest");
 
     it("should block adding new records if records limit exceeded", () => {
         cy.viewport(1920, 1080);
