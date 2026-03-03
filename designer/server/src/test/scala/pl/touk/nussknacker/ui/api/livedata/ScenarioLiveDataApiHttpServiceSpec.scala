@@ -104,6 +104,7 @@ class ScenarioLiveDataApiHttpServiceSpec
     }
     "return present data" in {
       val exampleScenario = createExampleScenario()
+      val exceptionNodeId = "513eab33-d9b3-4c67-a9e7-b84ae184eb64"
       val listener = LiveDataCollectingListener.createListenerFor(
         processIdWithName = ProcessIdWithName(ProcessId(1), exampleScenario.name),
         deploymentIdOpt = None,
@@ -295,12 +296,12 @@ class ScenarioLiveDataApiHttpServiceSpec
              |            }
              |          }
              |        },
-             |        "nodeId": "start",
+             |        "nodeId": "$exceptionNodeId",
              |        "throwable": "Something bad happened"
              |      }
              |    ],
              |    "exceptionsByNodeId": {
-             |      "start": [
+             |      "$exceptionNodeId": [
              |        {
              |          "context": {
              |            "cid": {
@@ -318,7 +319,7 @@ class ScenarioLiveDataApiHttpServiceSpec
              |              }
              |            }
              |          },
-             |          "nodeId": "start",
+             |          "nodeId": "$exceptionNodeId",
              |          "throwable": "Something bad happened"
              |        }
              |      ]

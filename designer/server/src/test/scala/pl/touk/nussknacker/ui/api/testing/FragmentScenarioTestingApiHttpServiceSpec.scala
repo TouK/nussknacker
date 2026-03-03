@@ -73,6 +73,7 @@ class FragmentScenarioTestingApiHttpServiceSpec
         s"""[
            |  {
            |    "sourceId": "fragment",
+           |    "sourceName": "fragment",
            |    "parameters": [
            |      {
            |        "name": "$InputVariablesParameterName",
@@ -159,6 +160,7 @@ class FragmentScenarioTestingApiHttpServiceSpec
         s"""[
            |  {
            |    "sourceId": "fragment",
+           |    "sourceName": "fragment",
            |    "parameters": [
            |      {
            |        "name": "$InputVariablesParameterName",

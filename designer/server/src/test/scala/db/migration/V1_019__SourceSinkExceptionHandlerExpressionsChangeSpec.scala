@@ -17,6 +17,8 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
+import java.util.UUID
+
 class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpec with Matchers {
 
   private val migrationFunc = V1_019__SourceSinkExceptionHandlerExpressionsChange.processJson _
@@ -71,10 +73,10 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
     val converted = migrateAndConvert(oldJson)
     val source    = converted.nodes.head.asInstanceOf[FlatNode].data.asInstanceOf[Source]
 
-    source shouldBe Source(
-      NodeId("start"),
-      NodeName("start"),
-      SourceRef("source1", List(NodeParameter(ParameterName("param1"), Expression(Language.Spel, "'string1'"))))
+    source.name shouldBe NodeName("start")
+    source.ref shouldBe SourceRef(
+      "source1",
+      List(NodeParameter(ParameterName("param1"), Expression(Language.Spel, "'string1'")))
     )
   }
 
@@ -107,10 +109,10 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
     val converted = migrateAndConvert(oldJson)
 
     val sink1 = converted.nodes(1).asInstanceOf[FilterNode].nextFalse.head.data.asInstanceOf[Sink]
-    sink1 shouldBe sinkToVerify("sink1")
+    assertConvertedSink(sink1, "sink1")
 
     val sink2 = converted.nodes.last.data.asInstanceOf[Sink]
-    sink2 shouldBe sinkToVerify("sink2")
+    assertConvertedSink(sink2, "sink2")
   }
 
   it should "convert sink in split" in {
@@ -140,9 +142,9 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
 
     val nexts = converted.nodes(1).asInstanceOf[SplitNode].nexts
 
-    nexts(0).head.data shouldBe sinkToVerify("sink1")
+    assertConvertedSink(nexts(0).head.data.asInstanceOf[Sink], "sink1")
 
-    nexts(1).head.data shouldBe sinkToVerify("sink2")
+    assertConvertedSink(nexts(1).head.data.asInstanceOf[Sink], "sink2")
   }
 
   it should "convert sink in switch" in {
@@ -187,10 +189,10 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
     val switch = converted.nodes(1).asInstanceOf[SwitchNode]
 
     val sink1 = switch.nexts.head.nodes.head.data
-    sink1 shouldBe sinkToVerify("sink1")
+    assertConvertedSink(sink1.asInstanceOf[Sink], "sink1")
 
     val defaultNext = switch.defaultNext
-    defaultNext.head.data shouldBe sinkToVerify("sink2")
+    assertConvertedSink(defaultNext.head.data.asInstanceOf[Sink], "sink2")
 
   }
 
@@ -222,16 +224,20 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
     val converted = migrateAndConvert(oldJson)
 
     val sink1 = converted.nodes(1).asInstanceOf[Fragment].outputs("output1").head.data.asInstanceOf[Sink]
-    sink1 shouldBe sinkToVerify("sink1")
+    assertConvertedSink(sink1, "sink1")
 
   }
 
-  private def sinkToVerify(id: String) = {
+  private def sinkToVerify(id: String) =
     Sink(
       NodeId(id),
       NodeName(id),
       SinkRef("sink", List(NodeParameter(ParameterName("param1"), Expression(Language.Spel, "'string1'"))))
     )
+
+  private def assertConvertedSink(sink: Sink, expectedName: String): Unit = {
+    UUID.fromString(sink.id.value)
+    sinkToVerify(expectedName).copy(id = sink.id) shouldBe sink
   }
 
   private def migrateAndConvert(oldJson: Json): CanonicalProcess = {
