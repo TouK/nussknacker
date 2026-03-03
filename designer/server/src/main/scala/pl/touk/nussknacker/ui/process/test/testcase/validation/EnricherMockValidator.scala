@@ -127,7 +127,7 @@ private object EnricherMockValidator {
     def enricherMockForNonEnricherNode(nodeData: NodeData): EnricherMockValidationError =
       EnricherMockValidationError(
         typ = "MockForNonEnricherNode",
-        message = s"Mock configured for non-enricher node '${nodeData.id}'",
+        message = s"Mock configured for non-enricher node '${nodeData.name.value}'",
         description = "Mocks can only be configured for enricher nodes",
         details = None
       )
