@@ -17,6 +17,7 @@ import pl.touk.nussknacker.test.config.{
   WithSimplifiedDesignerConfig
 }
 
+import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 class NodesApiHttpServiceBusinessSpec
@@ -1503,16 +1504,16 @@ class NodesApiHttpServiceBusinessSpec
         .body(
           matchJsonWithRegexValues(
             s"""[
-               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"$uuidLikeRegex","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}}
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}}
                |]""".stripMargin
           )
         )
@@ -2046,7 +2047,8 @@ class NodesApiHttpServiceBusinessSpec
        |}""".stripMargin
 
   private lazy val sourceTestingScenarioSourceId = "sourceId"
-  private lazy val uuidLikeRegex                 = "[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}"
+  private lazy val sourceTestingScenarioSourceUuid =
+    UUID.nameUUIDFromBytes(sourceTestingScenarioSourceId.getBytes(StandardCharsets.UTF_8)).toString
 
   private lazy val sourceTestingScenario = ScenarioBuilder
     .streaming("source_testing_scenario")

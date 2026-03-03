@@ -23,6 +23,9 @@ import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 
+import java.nio.charset.StandardCharsets
+import java.util.UUID
+
 class ProcessMarshallerSpec
     extends AnyFlatSpec
     with Matchers
@@ -261,8 +264,11 @@ class ProcessMarshallerSpec
       NodeData.nodeDataDecoder.decodeJson(oldFormat).fold(k => throw new IllegalArgumentException(k), identity)
     nodeData.asInstanceOf[Sink].legacyEndResultExpression shouldBe Some(Expression.spel("#someInput"))
 
-    // After round-trip encoding, the format includes the new "name" field
-    val newFormat = oldFormat.mapObject(_.add("name", Json.fromString("t1")))
+    // After round-trip encoding, the format includes the new "name" field and UUID-ified "id"
+    val uuidForT1 = UUID.nameUUIDFromBytes("t1".getBytes(StandardCharsets.UTF_8)).toString
+    val newFormat = oldFormat
+      .mapObject(_.add("name", Json.fromString("t1")))
+      .mapObject(_.add("id", Json.fromString(uuidForT1)))
     NodeData.nodeDataEncoder(nodeData).deepDropNullValues shouldBe newFormat
   }
 
