@@ -2,9 +2,8 @@ package pl.touk.nussknacker.engine.process.util
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.serialization.SerializerConfigImpl
 import org.apache.flink.api.java.typeutils.AvroUtils
-
-import scala.reflect.internal.util.ScalaClassLoader.apply
 
 object Serializers extends LazyLogging {
 
@@ -18,16 +17,21 @@ object Serializers extends LazyLogging {
       modelClassLoader: ClassLoader,
       executionConfig: ExecutionConfig
   ): Unit = {
-    modelClassLoader
-      .tryToLoadClass(genericRecordClassName) match {
-      case Some(genericRecordClass) =>
-        logger.debug(s"$genericRecordClassName is available on classpath. Registering default avro-kryo serializers")
-        AvroUtils.getAvroUtils.addAvroSerializersIfRequired(executionConfig.getSerializerConfig, genericRecordClass)
-      case None =>
-        logger.debug(
-          s"$genericRecordClassName is not available on classpath. Skipping default avro-kryo serializers registration"
-        )
-    }
+    // do not replace with 'tryToLoadClass', it may return a different Class instance than 'loadClass'
+    val genericRecordClass =
+      try {
+        modelClassLoader.loadClass(genericRecordClassName)
+      } catch {
+        case _: ClassNotFoundException =>
+          logger.debug(
+            s"$genericRecordClassName is not available on classpath. Skipping default avro-kryo serializers registration"
+          )
+          return
+      }
+
+    logger.debug(s"$genericRecordClassName is available on classpath. Registering default avro-kryo serializers")
+    val serializerConfig = executionConfig.getSerializerConfig.asInstanceOf[SerializerConfigImpl]
+    AvroUtils.getAvroUtils.addAvroSerializersIfRequired(serializerConfig, genericRecordClass)
   }
 
 }

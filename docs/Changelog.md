@@ -319,6 +319,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8903](https://github.com/TouK/nussknacker/pull/8946) Fix default Kafka EOS configuration on Flink to use a unique transactional id prefix
 * [#9002](https://github.com/TouK/nussknacker/pull/9002)[#9009](https://github.com/TouK/nussknacker/pull/9009) Updated Kafka client 3.6.2 to 3.9.1
 * [#9004](https://github.com/TouK/nussknacker/pull/9004) Added `Flink SQL Query` component
+* [#9015](https://github.com/TouK/nussknacker/pull/9015) Updated flink-scala to version 1.2, Flink will no longer overwrite Scala type registrations when encountering a new generic type
 * [#9012](https://github.com/TouK/nussknacker/pull/9012) Migrate test endpoints to Tapir:
   * `/processManagement/testCase/{scenarioName}` endpoint to `/scenarioTesting/{scenarioName)/performTestCase`
   * `/processManagement/test/{scenarioName}` to multipart variant of `/scenarioTesting/{scenarioName}/performTest`
