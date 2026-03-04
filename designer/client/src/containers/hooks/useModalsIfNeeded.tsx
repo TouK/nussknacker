@@ -32,7 +32,7 @@ export function useModalsIfNeeded() {
         (scenario: Scenario) => {
             const [nodeIds] = getWindowsParams();
             return nodeIds
-                .map((id) => NodeUtils.getNodeByName(id, scenario.scenarioGraph) ?? NodeUtils.getNodeById(id, scenario.scenarioGraph))
+                .map((id) => NodeUtils.getNodeById(id, scenario.scenarioGraph))
                 .filter(Boolean)
                 .map((node) => openNodeWindow(node, scenario))
                 .filter(Boolean);
