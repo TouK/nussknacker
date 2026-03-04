@@ -122,7 +122,7 @@ function isCustomName(editedNode: NodeType, componentGroups: ComponentGroup[]) {
     const nodeCreatorType = fakeNodeCreatorType(editedNode);
     const componentId = nodeCreatorType ? `${fakeComponentType}-${nodeCreatorType}` : determineComponentId(editedNode);
     const component = componentGroups.flatMap((g) => g.components).find((c) => componentId === c.componentId);
-    return !component || !compareNames(component.label, editedNode.$name ?? editedNode.name ?? editedNode.id);
+    return !component || !compareNames(component.label, editedNode.$name ?? editedNode.name);
 }
 
 export function replaceNodeData(
@@ -141,7 +141,7 @@ export function replaceNodeData(
     const nextNode = defaultsDeep(
         {
             id: editedNode.id,
-            $name: isNameChanged ? editedNode.$name ?? editedNode.name : componentId ? object.name ?? object.id : null,
+            $name: isNameChanged ? editedNode.$name ?? editedNode.name : componentId ? object.name : null,
         },
         mergeWithCustomizer(
             {

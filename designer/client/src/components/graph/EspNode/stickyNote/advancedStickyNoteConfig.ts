@@ -224,6 +224,7 @@ export const stickyNoteAdvancedBorder: dia.MarkupNodeJSON = {
 const dimensions = { width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT };
 export const advancedNoteModel: StickyNoteNodeType = {
     id: "StickyNoteToAdd",
+    name: "StickyNoteToAdd",
     type: StickyNoteType,
     isDisabled: false,
     content: "#### ✏️ Double click to edit",
