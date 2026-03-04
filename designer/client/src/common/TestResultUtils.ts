@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import { head, isEqual, omit, uniq, uniqWith, values } from "lodash";
+import { head, isEqual, omit, uniqBy, uniqWith, values } from "lodash";
 
 import type {
     ExceptionResultJson,
@@ -55,6 +55,12 @@ export interface StateForSelectTestResults {
     testResultsIdToShow?: string;
 }
 
+export interface AvailableContext {
+    id: string;
+    display: string;
+    sourceNodeId?: NodeId;
+}
+
 export interface NodeResultsForContext {
     context: ResultContextJson;
     externalInvocationResultsForEveryContext: ExternalServiceInvocationResultJson[];
@@ -92,8 +98,15 @@ class TestResultUtils {
         return {};
     };
 
-    availableContexts = (testResults: NodeTestResults) => {
-        return uniq(testResults.nodeResults.map((nr) => ({ id: nr.id, display: this._contextDisplay(nr) })));
+    availableContexts = (testResults: NodeTestResults): AvailableContext[] => {
+        return uniqBy(
+            testResults.nodeResults.map((nr) => ({
+                id: nr.id,
+                display: this._contextDisplay(nr),
+                sourceNodeId: nr.cid?.nid,
+            })),
+            "id",
+        );
     };
 
     hasTestResults = (testResults?: NodeTestResults): boolean => {

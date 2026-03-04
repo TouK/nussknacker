@@ -17,17 +17,6 @@
             "id": "input",
             "parameters": [
                 {
-                    "name": "name_value_string_any_value",
-                    "typ": {
-                        "refClazzName": "String"
-                    },
-                    "required": false,
-                    "initialValue": null,
-                    "hintText": "",
-                    "valueEditor": null,
-                    "valueCompileTimeValidation": null
-                },
-                {
                     "name": "i111",
                     "typ": {
                         "refClazzName": "java.lang.String"
@@ -57,6 +46,17 @@
                     "required": false,
                     "initialValue": null,
                     "hintText": null,
+                    "valueEditor": null,
+                    "valueCompileTimeValidation": null
+                },
+                {
+                    "name": "name_value_string_any_value",
+                    "typ": {
+                        "refClazzName": "String"
+                    },
+                    "required": false,
+                    "initialValue": null,
+                    "hintText": "",
                     "valueEditor": null,
                     "valueCompileTimeValidation": null
                 },

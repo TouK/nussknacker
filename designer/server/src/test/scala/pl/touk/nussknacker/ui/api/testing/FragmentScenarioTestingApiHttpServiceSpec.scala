@@ -6,12 +6,14 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValuesProvided}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
+import pl.touk.nussknacker.engine.test.testcase.TestCase
 import pl.touk.nussknacker.test.{
   NuRestAssureMatchers,
   PatientScalaFutures,
@@ -24,7 +26,10 @@ import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformTestCaseRequest
 import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
+
+import java.util.UUID
 
 class FragmentScenarioTestingApiHttpServiceSpec
     extends AnyFreeSpecLike
@@ -239,6 +244,42 @@ class FragmentScenarioTestingApiHttpServiceSpec
              |    }
              |}""".stripMargin
         )
+    }
+  }
+
+  "The endpoint for a testCase should" - {
+    "run a test case for fragment with variables without input wrapper" in {
+      val fragment = exampleFragment(fragmentRawStringParameter)
+      val scenarioGraphWithEnvironment = {
+        val graph = fragment.toScenarioGraph
+        graph.copy(
+          properties = graph.properties.copy(
+            additionalFields = graph.properties.additionalFields.copy(
+              properties = graph.properties.additionalFields.properties + ("environment" -> "test")
+            )
+          )
+        )
+      }
+      val testCase = TestCase(
+        id = UUID.randomUUID(),
+        name = "fragment-test-case",
+        inputs = """[
+            |  {"sourceId":"fragment","variables":{"paramRawString":"abc"}}
+            |]""".stripMargin,
+        mocks = Map.empty[NodeId, pl.touk.nussknacker.engine.test.testcase.EnricherMock],
+        assertions = Map.empty,
+      )
+
+      given()
+        .applicationState {
+          createSavedScenario(fragment)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(PerformTestCaseRequest(scenarioGraphWithEnvironment, testCase).asJson.spaces2)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${fragment.name}/performTestCase")
+        .Then()
+        .statusCode(200)
     }
   }
 
