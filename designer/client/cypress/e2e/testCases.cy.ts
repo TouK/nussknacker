@@ -16,12 +16,12 @@ describe("Test cases", () => {
         cy.layoutScenario();
 
         cy.openNodeWindow("Event Generator");
-        openTestingTab();
+        cy.openNodeDetailsTestingTab();
         appendFromLiveDataClick();
         cy.applyNodeChanges();
 
         cy.openNodeWindow("Enricher");
-        openTestingTab();
+        cy.openNodeDetailsTestingTab();
         addEmptyAssertion();
         addEmptyAssertion();
         addEmptyAssertion();
@@ -35,7 +35,7 @@ describe("Test cases", () => {
         rerunTest();
 
         cy.openNodeWindow("Enricher");
-        openTestingTab();
+        cy.openNodeDetailsTestingTab();
         checkAssertionResult(0, "Expected: [100] but found [0]");
         checkAssertionResult(1, "ok");
         checkAssertionResult(2, "ok");
@@ -54,7 +54,7 @@ describe("Test cases", () => {
         cy.layoutScenario();
 
         cy.openNodeWindow("Enricher");
-        openTestingTab();
+        cy.openNodeDetailsTestingTab();
         addEmptyAssertion();
         fillAssertion(0, "10", "#wrongActual");
         cy.applyNodeChanges();
@@ -72,14 +72,14 @@ describe("Test cases", () => {
         cy.layoutScenario();
 
         cy.openNodeWindow("Event Generator");
-        openTestingTab();
+        cy.openNodeDetailsTestingTab();
         appendFromLiveDataClick();
         addEmptyAssertion();
         fillAssertion(0, "#contexts.size", "10");
         cy.applyNodeChanges();
 
         cy.openNodeWindow("Enricher");
-        openTestingTab();
+        cy.openNodeDetailsTestingTab();
         addEmptyAssertion();
         fillAssertion(0, "10", "2");
         cy.applyNodeChanges();
@@ -98,7 +98,7 @@ describe("Test cases", () => {
         cy.layoutScenario();
 
         cy.openNodeWindow("Unionreturnobjectservice");
-        openTestingTab();
+        cy.openNodeDetailsTestingTab();
         applyGeneratedMockData();
         verifyMockData('{\n  "foo": 0\n}');
         fillMockData('{"foo": 2}');
@@ -127,12 +127,6 @@ describe("Test cases", () => {
     });
 });
 
-const openTestingTab = () => {
-    cy.get('[role="tab"]')
-        .contains(/testing/i)
-        .click();
-};
-
 const addEmptyAssertion = () => {
     cy.get('[id="Assertions-content"]').within(() => {
         cy.get('button[title="Add field"]').click();
@@ -156,9 +150,9 @@ const appendFromLiveDataClick = () => {
 };
 
 const rerunTest = () => {
-    cy.intercept("POST", "/api/scenarioTesting/*/performTestCase").as("retest");
-    cy.contains('[data-testid="toolbarButton-label"]', /Rerun test/).click();
-    cy.wait("@retest");
+    cy.intercept("POST", "/api/scenarioTesting/*/performTestCase").as("scenarioTest");
+    cy.get('[data-selector="SCENARIO_TEST"]').click();
+    cy.wait("@scenarioTest");
 };
 
 const checkAssertionResult = (assertionNumber: number, message: string) => {
