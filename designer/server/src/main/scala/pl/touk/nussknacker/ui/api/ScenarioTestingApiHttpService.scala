@@ -419,7 +419,13 @@ class ScenarioTestingApiHttpService(
       counts: Map[NodeId, NodeCount],
       nodeIdToName: Map[NodeId, String]
   ): Map[NodeId, NodeCount] =
-    counts.map { case (nodeId, count) => NodeId(nodeIdToName.getOrElse(nodeId, nodeId.value)) -> count }
+    counts.map { case (nodeId, count) =>
+      val nodeName = nodeIdToName.getOrElse(
+        nodeId,
+        throw new IllegalStateException(s"Missing node name for nodeId [${nodeId.value}] while translating test counts")
+      )
+      NodeId(nodeName) -> count
+    }
 
   private def isAuthorized(scenarioId: ProcessId, permission: Permission)(
       implicit loggedUser: LoggedUser

@@ -35,7 +35,7 @@ export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNode
 
     useInitEffect(initFragmentData);
 
-    const fragmentCounts = (processCounts[nodeToDisplay.id] || {}).fragmentCounts || {};
+    const fragmentCounts = (nodeToDisplay.name ? processCounts[nodeToDisplay.name] : undefined)?.fragmentCounts || {};
 
     if (!fragmentContent) {
         return null;
