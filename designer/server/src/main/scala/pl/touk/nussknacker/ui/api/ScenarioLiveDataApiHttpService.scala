@@ -92,27 +92,10 @@ class ScenarioLiveDataApiHttpService(
             }
           }
         } yield {
-          val nodeIdToName: Map[NodeId, String] =
-            scenarioWithDetails.scenarioGraphUnsafe.nodes.map(n => n.id -> n.name.value).toMap
-          val counts = computeCounts(scenarioWithDetails, liveData)
-          ResultsWithCountsDto.from(liveData, translateCounts(counts, nodeIdToName))
+          ResultsWithCountsDto.from(liveData, computeCounts(scenarioWithDetails, liveData))
         }
       }
   }
-
-  private def translateCounts(
-      counts: Map[NodeId, NodeCount],
-      nodeIdToName: Map[NodeId, String]
-  ): Map[NodeId, NodeCount] =
-    counts.map { case (nodeId, count) =>
-      val nodeName = nodeIdToName.getOrElse(
-        nodeId,
-        throw new IllegalStateException(
-          s"Missing node name for nodeId [${nodeId.value}] while translating live-data counts"
-        )
-      )
-      NodeId(nodeName) -> count
-    }
 
   private def computeCounts(scenarioWithDetails: ScenarioWithDetails, liveData: CollectedLiveData)(
       implicit loggedUser: LoggedUser

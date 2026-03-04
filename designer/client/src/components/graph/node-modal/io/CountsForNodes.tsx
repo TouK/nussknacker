@@ -47,10 +47,21 @@ const useNodeColors = () => {
     };
 };
 
+const useNodeDisplayName = () => {
+    const scenarioGraph = useAppSelector(getScenarioGraph);
+    return (id: string): string => {
+        if (id === null) {
+            return NULL_OUTPUT_NAME;
+        }
+        return NodeUtils.getNodeById(id, scenarioGraph)?.name || id;
+    };
+};
+
 const Arrow = () => <span>→</span>;
 
 export function CountsForNodes({ nodes, reversed }: { nodes: NodeCount[]; reversed?: boolean }) {
     const nodeColors = useNodeColors();
+    const nodeDisplayName = useNodeDisplayName();
     const { onToggle, filter } = useFilterContext();
     return (
         <Stack spacing={0.75} useFlexGap direction="row" sx={{ flexWrap: "wrap" }}>
@@ -64,7 +75,7 @@ export function CountsForNodes({ nodes, reversed }: { nodes: NodeCount[]; revers
                             <Stack direction={reversed ? "row-reverse" : "row"} spacing={0.5} sx={{ alignItems: "center" }}>
                                 {typeof count === "number" ? <Count>{count}</Count> : null}
                                 <Arrow />
-                                <span>{id || NULL_OUTPUT_NAME}</span>
+                                <span>{nodeDisplayName(id)}</span>
                             </Stack>
                         }
                         sx={{
@@ -80,6 +91,7 @@ export function CountsForNodes({ nodes, reversed }: { nodes: NodeCount[]; revers
 
 export function RelatedNodes({ nodeIds, reversed }: { nodeIds: string[]; reversed?: boolean }) {
     const nodeColors = useNodeColors();
+    const nodeDisplayName = useNodeDisplayName();
     return (
         <Stack spacing={0.5} direction="row">
             {nodeIds.map((id) => (
@@ -88,7 +100,7 @@ export function RelatedNodes({ nodeIds, reversed }: { nodeIds: string[]; reverse
                     label={
                         <Stack direction={reversed ? "row-reverse" : "row"} spacing={0.5} sx={{ alignItems: "center" }}>
                             <Arrow />
-                            <span>{id || NULL_OUTPUT_NAME}</span>
+                            <span>{nodeDisplayName(id)}</span>
                         </Stack>
                     }
                     size="small"
