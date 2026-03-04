@@ -438,7 +438,8 @@ object node {
 
   }
 
-  val IdFieldName = "$id"
+  val IdFieldName   = "$id"
+  val NameFieldName = "$name"
   // TODO: move these FragmentInputDefinition related vals/def under FragmentInputDefinition for better organization
   val ParameterFieldNamePrefix      = "$param"
   val ParameterNameFieldName        = "$name"

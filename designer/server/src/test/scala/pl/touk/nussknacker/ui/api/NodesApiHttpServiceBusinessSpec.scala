@@ -519,7 +519,7 @@ class NodesApiHttpServiceBusinessSpec
              |      "typ": "NodeNameValidationError",
              |      "message": "Node name cannot be blank",
              |      "description": "Blank node name",
-             |      "fieldName": "$$id",
+             |      "fieldName": "$$name",
              |      "errorType": "SaveAllowed",
              |      "details": null
              |    }

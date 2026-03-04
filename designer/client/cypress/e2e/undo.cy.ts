@@ -58,8 +58,8 @@ describe("Undo/Redo", () => {
 
     it("should work for drop on edge", () => {
         cy.get("@graph").matchImage(screenshotOptions);
-        cy.getNode("boundedSource-enricher").find("[event=remove]").eq(0).click();
-        cy.getNode("enricher-dynamicService").find("[event=remove]").eq(0).click();
+        cy.get('[model-id="boundedSource-enricher"]').find("[event=remove]").eq(0).click();
+        cy.get('[model-id="enricher-dynamicService"]').find("[event=remove]").eq(0).click();
         cy.get("[data-testid='component:Customfilter']")
             .should("be.visible")
             .drag("#nk-graph-main", {

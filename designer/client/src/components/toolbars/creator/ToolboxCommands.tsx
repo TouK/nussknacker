@@ -22,7 +22,7 @@ export function ToolboxCommands({ onSelect }: { onSelect: (item: NodeType) => vo
 
     const addToGraph = useCallback(
         ({ label, node }: Component) => {
-            onSelect({ ...cloneDeep(node), id: label });
+            onSelect({ ...cloneDeep(node), id: label, name: label });
         },
         [onSelect],
     );

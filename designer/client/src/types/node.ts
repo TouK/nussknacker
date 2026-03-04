@@ -16,7 +16,7 @@ export type BranchParametersTemplate = $TodoType;
 
 export type NodeType<F extends Field = Field> = {
     id: string;
-    name?: string;
+    name: string;
     type: Type;
     isDisabled?: boolean;
     additionalFields?: {
