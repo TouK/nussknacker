@@ -15,6 +15,7 @@
     "nodes": [
         {
             "id": "input",
+            "name": "input",
             "parameters": [
                 {
                     "name": "i111",
@@ -164,11 +165,11 @@
                     "y": 0
                 }
             },
-            "type": "FragmentInputDefinition",
-            "name": "input"
+            "type": "FragmentInputDefinition"
         },
         {
             "id": "output",
+            "name": "output",
             "outputName": "testOutput",
             "fields": [
                 {
@@ -193,8 +194,7 @@
                     "y": 0
                 }
             },
-            "type": "FragmentOutputDefinition",
-            "name": "output"
+            "type": "FragmentOutputDefinition"
         }
     ],
     "additionalBranches": [],
