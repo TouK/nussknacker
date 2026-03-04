@@ -117,7 +117,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
                         variant={"hover"}
                         title={t(
                             "testingDialog.description",
-                            `Use prepared set of input data records to verify the scenario before deploying it. <br /> The sources will be stubbed with data records below during test invocation.`,
+                            `Use prepared set of input records to verify the scenario before deploying it. <br /> The sources will be stubbed with records below during test invocation.`,
                         )}
                     />
                 </Box>
@@ -127,7 +127,7 @@ function Dialog(props: WindowContentProps<WindowKind, TestingData>): ReactElemen
             <ContentSize sx={{ paddingX: 3, paddingY: 3 }}>
                 <Stack spacing={2}>
                     <Typography m={0} variant="h3">
-                        {t("testingDialog.label.inputDataRecords", "Input data records")}
+                        {t("testingDialog.label.inputDataRecords", "Input records")}
                     </Typography>
                     <Table
                         sourceOptions={sourceOptions}
