@@ -162,9 +162,15 @@ object RequestResponseInterpreter {
   }
 
   def testRunner[Effect[_]: Monad: InterpreterShape: CapabilityTransformer: EffectUnwrapper]: TestRunner =
-    new InterpreterTestRunner[Effect, Request[Any], AnyRef] {
-      override protected def transformToEngineSpecificInputRecord(testRecord: Any): Request[Any] =
-        Request(testRecord)
+    new InterpreterTestRunner[Effect, Any, AnyRef] {
+      override protected def transformToEngineSpecificInputRecord(
+          testRecord: Any,
+          source: pl.touk.nussknacker.engine.api.process.Source
+      ): Any =
+        source match {
+          case _: RequestResponseSource[_] => Request(testRecord)
+          case _                           => testRecord
+        }
     }
 
 }
