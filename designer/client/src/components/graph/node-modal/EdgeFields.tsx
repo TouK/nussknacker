@@ -61,7 +61,7 @@ export function EdgeFields(props: Props): React.JSX.Element {
     }, [availableNodes, otherEdges, processDefinitionData]);
 
     const nodeNameById = useMemo(
-        () => Object.fromEntries(freeNodes.concat(targetNodes).map((n) => [n.id, n.name || n.id])),
+        () => Object.fromEntries(freeNodes.concat(targetNodes).map((n) => [n.id, n.name])),
         [freeNodes, targetNodes],
     );
     const targetOptions = useMemo<Option[]>(() => {
@@ -69,7 +69,7 @@ export function EdgeFields(props: Props): React.JSX.Element {
         return [
             { label: "⇢", value: "" },
             ...targets.map((nodeId) => ({
-                label: `➝ ${nodeNameById[nodeId] ?? nodeId}`,
+                label: `➝ ${nodeNameById[nodeId]}`,
                 value: nodeId,
                 isUsed: edges.some((e) => e.to === nodeId && !isEqual(e, edge)),
             })),

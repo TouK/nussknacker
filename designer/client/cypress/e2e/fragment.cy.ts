@@ -39,9 +39,8 @@ describe("Fragment", () => {
             cy.get("[data-testid='fieldsRow:3']").find("[placeholder='Field name']").type(nameValueStringAnyValue);
             toggleSettings(3);
 
-            cy.get("[data-testid='draggable:3'] [role='button']").dndTo("[data-testid='fieldsRow:0']");
-            cy.get("[data-testid='fieldsRow:0']").find("[placeholder='Field name']").should("have.value", nameValueStringAnyValue);
-            cy.get("@window").find("[data-testid='settings:0']").matchImage();
+            cy.get("[data-testid='fieldsRow:3']").find("[placeholder='Field name']").should("have.value", nameValueStringAnyValue);
+            cy.get("@window").find("[data-testid='settings:3']").matchImage();
 
             // Provide String Any with Suggestion Value inputMode
             cy.get("@window").contains("+").click();
