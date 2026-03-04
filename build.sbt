@@ -1893,10 +1893,10 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
       Seq(
         "org.apache.flink"   % "flink-sql-parser"              % flinkV,
         "org.apache.calcite" % "calcite-linq4j"                % calciteV, // required by fliink-sql-parser
-        "org.apache.flink"   % "flink-streaming-java"          % flinkV              % Provided,
-        "org.apache.flink"   % "flink-table-api-java"          % flinkV              % Provided,
-        "org.apache.flink"   % "flink-table-api-java-bridge"   % flinkV              % Provided,
-        "org.apache.flink"   % "flink-connector-jdbc-postgres" % jdbcFlinkConnectorV % Test,
+        "org.apache.flink"   % "flink-connector-jdbc-postgres" % jdbcFlinkConnectorV, // needed for type validation
+        "org.apache.flink"   % "flink-streaming-java"          % flinkV % Provided,
+        "org.apache.flink"   % "flink-table-api-java"          % flinkV % Provided,
+        "org.apache.flink"   % "flink-table-api-java-bridge"   % flinkV % Provided,
       )
     },
     assembly / assemblyMergeStrategy := {

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.TopicName.ForSource
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.flink.table.FlinkTableDataSourceComponentProvider
+import pl.touk.nussknacker.engine.flink.table.io.FlinkTableIOComponentProvider
 import pl.touk.nussknacker.engine.flink.util.test.FlinkNodeCompiler.FlinkNodeCompilerExt
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -79,7 +79,7 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
        |""".stripMargin
 
   override lazy val additionalComponents: List[ComponentDefinition] =
-    FlinkTableDataSourceComponentProvider.create(ConfigFactory.parseString(tableComponentsConfig))
+    FlinkTableIOComponentProvider.create(ConfigFactory.parseString(tableComponentsConfig))
 
   private val givenKey  = "foo-key"
   private val givenData = 1
