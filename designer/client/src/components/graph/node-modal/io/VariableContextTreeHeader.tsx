@@ -26,8 +26,8 @@ export function VariableContextTreeHeader({
         >
             <Typography variant="subtitle1">
                 {direction === "input"
-                    ? t("variableContext.header.input", "Input data records")
-                    : t("variableContext.header.output", "Output data records")}
+                    ? t("variableContext.header.input", "Incoming records")
+                    : t("variableContext.header.output", "Outgoing records")}
             </Typography>
             <CountsForNodes
                 nodes={transitionNodesIds.map(({ id, totalCount, results }) => ({

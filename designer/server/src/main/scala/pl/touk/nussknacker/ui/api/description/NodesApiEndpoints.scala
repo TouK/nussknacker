@@ -254,7 +254,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                         assertions = List(
                           PredicateAssertion(
                             operator = AssertionOperator.Equals,
-                            actual = Expression.spel("#contexts.size"),
+                            actual = Expression.spel("#records.size"),
                             expected = Expression.spel("1"),
                             description = Some("exactly one event should pass through the node")
                           ),
@@ -265,12 +265,12 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                         assertions = List(
                           PredicateAssertion(
                             operator = AssertionOperator.Equals,
-                            actual = Expression.spel("#contexts.size"),
+                            actual = Expression.spel("#records.size"),
                             expected = Expression.spel("1"),
                           ),
                           PredicateAssertion(
                             operator = AssertionOperator.Equals,
-                            actual = Expression.spel("#contexts[0].doesNotExist"),
+                            actual = Expression.spel("#records[0].doesNotExist"),
                             expected = Expression.spel("'expected'"),
                             description = Some("output field should match the expected value")
                           ),

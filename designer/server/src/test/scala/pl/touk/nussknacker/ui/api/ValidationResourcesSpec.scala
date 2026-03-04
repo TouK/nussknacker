@@ -275,19 +275,19 @@ class ValidationResourcesSpec
                 NodeId("enricher") -> List(
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
-                    actual = "#contexts.size".spel,
+                    actual = "#records.size".spel,
                     expected = "3".spel,
                   ),
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
-                    actual = "#contexts[0].input".spel,
+                    actual = "#records[0].input".spel,
                     expected = "'abc'".spel,
                   ),
                 ),
                 NodeId("sink") -> List(
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
-                    actual = "#contexts[0].output".spel,
+                    actual = "#records[0].output".spel,
                     expected = "'def'".spel,
                   ),
                 )
@@ -331,34 +331,34 @@ class ValidationResourcesSpec
                 NodeId("enricher") -> List(
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
-                    actual = "#contexts.size".spel,
+                    actual = "#records.size".spel,
                     expected = "3".spel,
                   ),
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
-                    actual = "#contexts[0].doesNotExist".spel,
+                    actual = "#records[0].doesNotExist".spel,
                     expected = "'abc'".spel,
                   ),
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
-                    actual = "#contexts[0].input".spel,
+                    actual = "#records[0].input".spel,
                     expected = "'abc'".spel,
                   ),
                 ),
                 NodeId("sink") -> List(
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
-                    actual = "#contexts[0].doesNotExist2".spel,
+                    actual = "#records[0].doesNotExist2".spel,
                     expected = "'def'".spel,
                   ),
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
-                    actual = "#contexts[0].output".spel,
+                    actual = "#records[0].output".spel,
                     expected = "'def'".spel,
                   ),
                   PredicateAssertion(
                     operator = AssertionOperator.Equals,
-                    actual = "#contexts[0].doesNotExist3".spel,
+                    actual = "#records[0].doesNotExist3".spel,
                     expected = "'ghi'".spel,
                   ),
                 )
@@ -396,7 +396,7 @@ class ValidationResourcesSpec
                     typ = "ExpressionParserCompilationError",
                     message = "There is no property 'doesNotExist' in type: Record{input: Unknown}",
                     description = "There is problem with expression in field [actual] - it could not be parsed.",
-                    details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(25, 0))),
+                    details = Some(CoordinatesBasedTextRange(TextCoordinates(12, 0), TextCoordinates(24, 0))),
                     fieldName = Some("actual"),
                   )
                 )
@@ -423,7 +423,7 @@ class ValidationResourcesSpec
                     typ = "ExpressionParserCompilationError",
                     message = "There is no property 'doesNotExist2' in type: Record{input: Unknown, output: String}",
                     description = "There is problem with expression in field [actual] - it could not be parsed.",
-                    details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(26, 0))),
+                    details = Some(CoordinatesBasedTextRange(TextCoordinates(12, 0), TextCoordinates(25, 0))),
                     fieldName = Some("actual"),
                   )
                 ),
@@ -432,7 +432,7 @@ class ValidationResourcesSpec
                     typ = "ExpressionParserCompilationError",
                     message = "There is no property 'doesNotExist3' in type: Record{input: Unknown, output: String}",
                     description = "There is problem with expression in field [actual] - it could not be parsed.",
-                    details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(26, 0))),
+                    details = Some(CoordinatesBasedTextRange(TextCoordinates(12, 0), TextCoordinates(25, 0))),
                     fieldName = Some("actual"),
                   )
                 )

@@ -952,24 +952,24 @@ class ExpressionSuggesterSpec
   }
 
   test("should suggest tests case variables") {
-    val contextsVariableType = Typed.genericTypeClass(
+    val recordsVariableType = Typed.genericTypeClass(
       classOf[util.List[_]],
       List(Typed.record(Map("varString" -> Typed[String], "varInteger" -> Typed[Integer])))
     )
     val testsVariableType = Typed.fromInstance(testcase.tests)
     val localVariables = Map(
-      TestCaseVariables.ContextsNodeVariableName -> contextsVariableType,
-      TestCaseVariables.TestsGlobalVariableName  -> testsVariableType
+      TestCaseVariables.RecordsNodeVariableName -> recordsVariableType,
+      TestCaseVariables.TestsGlobalVariableName -> testsVariableType
     )
     def testCaseSuggestions(expression: Expression): List[ExpressionSuggestion] =
       suggestions(expressionSuggesterWithTestCaseGlobalVariables, localVariables, expression)
 
-    testCaseSuggestions(Expression.spel("#cont")) shouldBe List(suggestion("#contexts", contextsVariableType))
-    testCaseSuggestions(Expression.spel("#contexts[0].var")) shouldBe List(
+    testCaseSuggestions(Expression.spel("#reco")) shouldBe List(suggestion("#records", recordsVariableType))
+    testCaseSuggestions(Expression.spel("#records[0].var")) shouldBe List(
       suggestion("varInteger", Typed[Integer]),
       suggestion("varString", Typed[String]),
     )
-    testCaseSuggestions(Expression.spel("#contexts[0].varS")) shouldBe List(suggestion("varString", Typed[String]))
+    testCaseSuggestions(Expression.spel("#records[0].varS")) shouldBe List(suggestion("varString", Typed[String]))
     testCaseSuggestions(Expression.spel("#TEST")) shouldBe List(suggestion("#TESTS", testsVariableType))
     forAll(testCaseSuggestions(Expression.spel("#TESTS.as"))) { suggestion =>
       suggestion.methodName should startWith("assert")

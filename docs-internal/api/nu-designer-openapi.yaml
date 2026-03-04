@@ -1632,7 +1632,7 @@ paths:
                           expression: '1'
                         actual:
                           language: spel
-                          expression: '#contexts.size'
+                          expression: '#records.size'
                         description: exactly one event should pass through the node
                     test-case-2:
                       enricherMock:
@@ -1646,14 +1646,14 @@ paths:
                           expression: '1'
                         actual:
                           language: spel
-                          expression: '#contexts.size'
+                          expression: '#records.size'
                       - operator: equals
                         expected:
                           language: spel
                           expression: '''expected'''
                         actual:
                           language: spel
-                          expression: '#contexts[0].doesNotExist'
+                          expression: '#records[0].doesNotExist'
                         description: output field should match the expected value
         required: true
       responses:
