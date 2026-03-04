@@ -1,6 +1,6 @@
-import { calculateAssertionResultsSummary } from "../../../../containers/assertions/assertionResultsUtils";
-import { getTestAssertionResults } from "../../../../reducers/selectors/testing";
-import { useAppSelector } from "../../../../store/storeHelpers";
+import { calculateAssertionResultsSummary } from "../../../../../containers/assertions/assertionResultsUtils";
+import { getTestAssertionResults } from "../../../../../reducers/selectors/testing";
+import { useAppSelector } from "../../../../../store/storeHelpers";
 
 export const useAssertionResultsSummary = () => {
     const testAssertionResults = useAppSelector(getTestAssertionResults);

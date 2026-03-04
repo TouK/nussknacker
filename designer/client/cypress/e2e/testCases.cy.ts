@@ -32,7 +32,7 @@ describe("Test cases", () => {
         cy.contains(/^save$/i).click();
         cy.contains(/^ok$/i).click();
         cy.reload();
-        rerunTest();
+        cy.runCurrentTestCase();
 
         cy.openNodeWindow("Enricher");
         cy.openNodeDetailsTestingTab();
@@ -84,7 +84,7 @@ describe("Test cases", () => {
         fillAssertion(0, "10", "2");
         cy.applyNodeChanges();
 
-        rerunTest();
+        cy.runCurrentTestCase();
 
         cy.getNode("Event Generator").parent().as("graph");
         cy.get("@graph").matchImage({ screenshotConfig: { padding: 16 } });
@@ -111,7 +111,7 @@ describe("Test cases", () => {
         cy.toggleUserFlag("node.showTestingTab", true);
         cy.layoutScenario();
 
-        rerunTest();
+        cy.runCurrentTestCase();
 
         expandAssertionItem("Log");
 
@@ -147,12 +147,6 @@ const appendFromLiveDataClick = () => {
     cy.get("[data-testid=window]")
         .contains("button", /Append from live data/i)
         .click();
-};
-
-const rerunTest = () => {
-    cy.intercept("POST", "/api/scenarioTesting/*/performTestCase").as("scenarioTest");
-    cy.get('[data-selector="SCENARIO_TEST"]').click();
-    cy.wait("@scenarioTest");
 };
 
 const checkAssertionResult = (assertionNumber: number, message: string) => {

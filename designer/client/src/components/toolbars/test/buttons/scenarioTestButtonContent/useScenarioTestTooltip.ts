@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 
-import { useTestingScenarioEnabled } from "../../../modals/TestingDataRecords/useTestingScenarioEnabled";
+import { useTestingScenarioEnabled } from "../../../../modals/TestingDataRecords/useTestingScenarioEnabled";
 
 interface Props {
     disabled?: boolean;

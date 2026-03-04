@@ -364,6 +364,12 @@ describe("Process", () => {
 
         cy.addTestRecord();
 
+        cy.applyNodeChanges();
+
+        cy.runCurrentTestCase();
+
+        cy.openNodeWindow("request");
+
         cy.get("[data-testid=window]")
             .contains(/^Test case/i)
             .should("be.visible");

@@ -3,6 +3,7 @@ declare global {
     namespace Cypress {
         interface Chainable {
             addTestRecord: typeof addTestRecord;
+            runCurrentTestCase: typeof runCurrentTestCase;
         }
     }
 }
@@ -23,6 +24,13 @@ const addTestRecord = (callback?: () => void) => {
     });
 };
 
+const runCurrentTestCase = () => {
+    cy.intercept("POST", "/api/scenarioTesting/*/performTestCase").as("scenarioTest");
+    cy.get('[data-selector="SCENARIO_TEST"]').click();
+    cy.wait("@scenarioTest");
+};
+
 Cypress.Commands.add("addTestRecord", addTestRecord);
+Cypress.Commands.add("runCurrentTestCase", runCurrentTestCase);
 
 export default {};

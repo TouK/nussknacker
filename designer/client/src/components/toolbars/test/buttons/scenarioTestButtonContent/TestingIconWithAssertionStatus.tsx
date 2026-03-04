@@ -1,8 +1,8 @@
 import { Box } from "@mui/material";
 import React from "react";
 
-import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
-import { AssertionStatusIcon } from "../../assertionResults/assertionResultsForNode/assertionResult/AssertionStatusIcon";
+import TestingIcon from "../../../../../assets/img/toolbarButtons/test.svg";
+import { AssertionStatusIcon } from "../../../assertionResults/assertionResultsForNode/assertionResult/AssertionStatusIcon";
 
 interface Props {
     hasResult: boolean;
@@ -26,7 +26,7 @@ export const TestingIconWithAssertionStatus = ({ hasResult, assertionsIsSuccess 
                 sx={{
                     position: "absolute",
                     top: 0,
-                    right: 0,
+                    left: -2,
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",

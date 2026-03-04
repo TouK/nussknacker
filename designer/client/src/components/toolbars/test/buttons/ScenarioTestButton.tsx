@@ -16,10 +16,10 @@ import { ButtonsVariant, ToolbarButtonsContext } from "../../../toolbarComponent
 import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer";
 import type { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
 import type { PropsOfButton } from "../../../toolbarSettings/buttons/types";
-import { TestingIconWithAssertionStatus } from "./TestingIconWithAssertionStatus";
-import { useAssertionResultsSummary } from "./useAssertionResultsSummary";
-import { RUN_ALL, useScenarioTestPresets } from "./useScenarioTestPresets";
-import { useScenarioTestTooltip } from "./useScenarioTestTooltip";
+import { TestingIconWithAssertionStatus } from "./scenarioTestButtonContent/TestingIconWithAssertionStatus";
+import { useAssertionResultsSummary } from "./scenarioTestButtonContent/useAssertionResultsSummary";
+import { RUN_ALL, useScenarioTestPresets } from "./scenarioTestButtonContent/useScenarioTestPresets";
+import { useScenarioTestTooltip } from "./scenarioTestButtonContent/useScenarioTestTooltip";
 
 export type ScenarioTestButtonProps = {
     type: CustomButtonTypes.scenarioTest;
