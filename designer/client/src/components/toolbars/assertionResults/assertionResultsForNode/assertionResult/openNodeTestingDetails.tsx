@@ -27,7 +27,7 @@ export const OpenNodeTestingDetails = ({ node }: Props) => {
     return (
         <NavLink
             style={{ display: "flex" }}
-            to={`?${ACTIVE_TAB_QUERY_KEY}=${NodeDetailsTab.testing}&nodeId=${node.name}`}
+            to={`?${ACTIVE_TAB_QUERY_KEY}=${NodeDetailsTab.testing}&nodeId=${node.id}`}
             onClick={openNodeTestingDetails}
         >
             <OpenInNewIcon fontSize={"small"} sx={{ color: (theme) => theme.palette.common.white }} />

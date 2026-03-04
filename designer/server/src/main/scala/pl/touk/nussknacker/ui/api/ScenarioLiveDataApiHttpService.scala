@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.{ContextId, ContextIdPathPart, NodeId}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentManager,
   LiveDataPreviewStoredInDesignerDb,
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
 }
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcessConverter
-import pl.touk.nussknacker.engine.livedata.{CollectedLiveData, LiveDataCollectingListenerStorageHolder, NodeTransition}
+import pl.touk.nussknacker.engine.livedata.{CollectedLiveData, LiveDataCollectingListenerStorageHolder}
 import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichTupleList}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
@@ -94,48 +94,25 @@ class ScenarioLiveDataApiHttpService(
         } yield {
           val nodeIdToName: Map[NodeId, String] =
             scenarioWithDetails.scenarioGraphUnsafe.nodes.map(n => n.id -> n.name.value).toMap
-          val translatedLiveData = translateCollectedLiveData(liveData, nodeIdToName)
-          val counts             = computeCounts(scenarioWithDetails, liveData)
-          val translatedCounts = counts.map { case (nodeId, count) =>
-            NodeId(nodeIdToName.getOrElse(nodeId, nodeId.value)) -> count
-          }
-          ResultsWithCountsDto.from(translatedLiveData, translatedCounts)
+          val counts = computeCounts(scenarioWithDetails, liveData)
+          ResultsWithCountsDto.from(liveData, translateCounts(counts, nodeIdToName))
         }
       }
   }
 
-  private def translateCollectedLiveData(
-      liveData: CollectedLiveData,
+  private def translateCounts(
+      counts: Map[NodeId, NodeCount],
       nodeIdToName: Map[NodeId, String]
-  ): CollectedLiveData = {
-    def translateNId(nodeId: NodeId): NodeId = NodeId(nodeIdToName.getOrElse(nodeId, nodeId.value))
-    def translateCtxId(ctxId: ContextId): ContextId = ContextId(
-      ctxId.scenarioName,
-      translateNId(ctxId.originatingNodeId),
-      ctxId.taskId,
-      ctxId.index,
-      ctxId.path.map(p => ContextIdPathPart(translateNId(p.nodeId), p.value))
-    )
-    CollectedLiveData(
-      timestamp = liveData.timestamp,
-      nodeTransitions = liveData.nodeTransitions.map { case (transition, data) =>
-        NodeTransition(
-          translateNId(transition.sourceNodeId),
-          transition.destinationNodeId.map(translateNId),
-          transition.isDirectTransition
-        ) -> data.copy(samples = data.samples.map(s => s.copy(contextId = translateCtxId(s.contextId))))
-      },
-      expressionEvaluationResults = liveData.expressionEvaluationResults.map { case (nodeId, results) =>
-        translateNId(nodeId) -> results.map(r => r.copy(contextId = translateCtxId(r.contextId)))
-      },
-      externalServiceInvocationResults = liveData.externalServiceInvocationResults.map { case (nodeId, results) =>
-        translateNId(nodeId) -> results.map(r => r.copy(contextId = translateCtxId(r.contextId)))
-      },
-      exceptions = liveData.exceptions.map { case (nodeId, results) =>
-        translateNId(nodeId) -> results.map(r => r.copy(contextId = translateCtxId(r.contextId)))
-      }
-    )
-  }
+  ): Map[NodeId, NodeCount] =
+    counts.map { case (nodeId, count) =>
+      val nodeName = nodeIdToName.getOrElse(
+        nodeId,
+        throw new IllegalStateException(
+          s"Missing node name for nodeId [${nodeId.value}] while translating live-data counts"
+        )
+      )
+      NodeId(nodeName) -> count
+    }
 
   private def computeCounts(scenarioWithDetails: ScenarioWithDetails, liveData: CollectedLiveData)(
       implicit loggedUser: LoggedUser
