@@ -623,7 +623,7 @@ class NodesApiHttpServiceBusinessSpec
              |          "operator": "equals",
              |          "actual": {
              |            "language": "spel",
-             |            "expression": "#contexts.size"
+             |            "expression": "#records.size"
              |          },
              |          "expected": {
              |            "language": "spel",
@@ -853,7 +853,7 @@ class NodesApiHttpServiceBusinessSpec
              |          "operator": "equals",
              |          "actual": {
              |            "language": "spel",
-             |            "expression": "#contexts.size"
+             |            "expression": "#records.size"
              |          },
              |          "expected": {
              |            "language": "spel",
@@ -864,7 +864,7 @@ class NodesApiHttpServiceBusinessSpec
              |          "operator": "equals",
              |          "actual": {
              |            "language": "spel",
-             |            "expression": "#contexts[0].input"
+             |            "expression": "#records[0].input"
              |          },
              |          "expected": {
              |            "language": "spel",
@@ -894,7 +894,7 @@ class NodesApiHttpServiceBusinessSpec
              |          "operator": "equals",
              |          "actual": {
              |            "language": "spel",
-             |            "expression": "#contexts[0].doesNotExist"
+             |            "expression": "#records[0].doesNotExist"
              |          },
              |          "expected": {
              |            "language": "spel",
@@ -905,7 +905,7 @@ class NodesApiHttpServiceBusinessSpec
              |          "operator": "equals",
              |          "actual": {
              |            "language": "spel",
-             |            "expression": "#contexts.size"
+             |            "expression": "#records.size"
              |          },
              |          "expected": {
              |            "language": "spel",
@@ -916,7 +916,7 @@ class NodesApiHttpServiceBusinessSpec
              |          "operator": "equals",
              |          "actual": {
              |            "language": "spel",
-             |            "expression": "#contexts[0].doesNotExist2"
+             |            "expression": "#records[0].doesNotExist2"
              |          },
              |          "expected": {
              |            "language": "spel",

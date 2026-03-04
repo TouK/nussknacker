@@ -67,7 +67,7 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
       .getOrElse(nodeId, List.empty)
       .map(_.variables.asJava)
       .asJava
-    Context(ContextId.dummy, Map(TestCaseVariables.ContextsNodeVariableName -> resultsForNode))
+    Context(ContextId.dummy, Map(TestCaseVariables.RecordsNodeVariableName -> resultsForNode))
   }
 
   private def evaluateExpressionAssertion(
