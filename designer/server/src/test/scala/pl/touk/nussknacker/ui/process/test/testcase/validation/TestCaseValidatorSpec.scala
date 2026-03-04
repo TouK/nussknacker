@@ -286,7 +286,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
                 typ = "ExpressionParserCompilationError",
                 message = "There is no property 'doesNotExist' in type: Record{input: String}",
                 description = "There is problem with expression in field [actual] - it could not be parsed.",
-                details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(25, 0))),
+                details = Some(CoordinatesBasedTextRange(TextCoordinates(12, 0), TextCoordinates(24, 0))),
                 fieldName = Some("actual"),
               )
             ),
@@ -295,7 +295,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
                 typ = "ExpressionParserCompilationError",
                 message = "There is no property 'doesNotExistOther' in type: Record{input: String}",
                 description = "There is problem with expression in field [actual] - it could not be parsed.",
-                details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(30, 0))),
+                details = Some(CoordinatesBasedTextRange(TextCoordinates(12, 0), TextCoordinates(29, 0))),
                 fieldName = Some("actual"),
               )
             )
@@ -419,7 +419,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
                 typ = "ExpressionParserCompilationError",
                 message = "There is no property 'doesNotExist' in type: Record{input: String}",
                 description = "There is problem with expression in field [actual] - it could not be parsed.",
-                details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(25, 0))),
+                details = Some(CoordinatesBasedTextRange(TextCoordinates(12, 0), TextCoordinates(24, 0))),
                 fieldName = Some("actual"),
               )
             ),
@@ -428,7 +428,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
                 typ = "ExpressionParserCompilationError",
                 message = "There is no property 'doesNotExistOther' in type: Record{input: String}",
                 description = "There is problem with expression in field [actual] - it could not be parsed.",
-                details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(30, 0))),
+                details = Some(CoordinatesBasedTextRange(TextCoordinates(12, 0), TextCoordinates(29, 0))),
                 fieldName = Some("actual"),
               )
             )
@@ -459,7 +459,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
                 typ = "ExpressionParserCompilationError",
                 message = "There is no property 'doesNotExist' in type: Record{input: String}",
                 description = "There is problem with expression in field [actual] - it could not be parsed.",
-                details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(25, 0))),
+                details = Some(CoordinatesBasedTextRange(TextCoordinates(12, 0), TextCoordinates(24, 0))),
                 fieldName = Some("actual"),
               )
             )

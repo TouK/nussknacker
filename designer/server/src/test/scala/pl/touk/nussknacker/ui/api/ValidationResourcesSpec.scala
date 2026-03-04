@@ -396,7 +396,7 @@ class ValidationResourcesSpec
                     typ = "ExpressionParserCompilationError",
                     message = "There is no property 'doesNotExist' in type: Record{input: Unknown}",
                     description = "There is problem with expression in field [actual] - it could not be parsed.",
-                    details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(25, 0))),
+                    details = Some(CoordinatesBasedTextRange(TextCoordinates(12, 0), TextCoordinates(24, 0))),
                     fieldName = Some("actual"),
                   )
                 )
@@ -423,7 +423,7 @@ class ValidationResourcesSpec
                     typ = "ExpressionParserCompilationError",
                     message = "There is no property 'doesNotExist2' in type: Record{input: Unknown, output: String}",
                     description = "There is problem with expression in field [actual] - it could not be parsed.",
-                    details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(26, 0))),
+                    details = Some(CoordinatesBasedTextRange(TextCoordinates(12, 0), TextCoordinates(25, 0))),
                     fieldName = Some("actual"),
                   )
                 ),
@@ -432,7 +432,7 @@ class ValidationResourcesSpec
                     typ = "ExpressionParserCompilationError",
                     message = "There is no property 'doesNotExist3' in type: Record{input: Unknown, output: String}",
                     description = "There is problem with expression in field [actual] - it could not be parsed.",
-                    details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(26, 0))),
+                    details = Some(CoordinatesBasedTextRange(TextCoordinates(12, 0), TextCoordinates(25, 0))),
                     fieldName = Some("actual"),
                   )
                 )
