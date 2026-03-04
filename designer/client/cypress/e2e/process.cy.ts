@@ -368,6 +368,8 @@ describe("Process", () => {
 
         cy.runCurrentTestCase();
 
+        cy.toggleUserFlag("node.showTestingTab", false);
+
         cy.openNodeWindow("request");
 
         cy.get("[data-testid=window]")
