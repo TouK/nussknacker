@@ -83,7 +83,7 @@ export const updateNodeCounts =
         if (userSettings["debug.dontRenderCountsOnNodes"]) return;
         const shortCounts = userSettings["node.shortCounts"];
         const nodeData = node.get("nodeData") as NodeType | undefined;
-        const lookupKey = nodeData?.name;
+        const lookupKey = nodeData?.id;
         const count = processCounts[lookupKey];
         const hasCounts = !isEmpty(count);
         const hasErrors = count?.errors > 0;

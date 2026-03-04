@@ -30,7 +30,7 @@ export function displayProcessCounts(processCounts: ProcessCounts, refresh?: Ref
 export const clearProcessCounts = () => displayProcessCounts({});
 
 const extendWithEmpty = (processCounts: ProcessCounts, scenarioGraph: ScenarioGraph): ProcessCounts => ({
-    ...Object.fromEntries(scenarioGraph.nodes.map(({ id, name }) => [name || id, { fragmentCounts: {} }])),
+    ...Object.fromEntries(scenarioGraph.nodes.map(({ id }) => [id, { fragmentCounts: {} }])),
     ...processCounts,
 });
 
