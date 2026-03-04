@@ -39,11 +39,11 @@
           "y": 0
         }
       },
-      "type": "Source"
+      "type": "Source",
+      "name": "transactions"
     },
     {
-      "nextFalse": [
-      ],
+      "nextFalse": [],
       "id": "only large ones",
       "expression": {
         "language": "spel",
@@ -57,7 +57,8 @@
           "y": 180
         }
       },
-      "type": "Filter"
+      "type": "Filter",
+      "name": "only large ones"
     },
     {
       "id": "send for audit",
@@ -117,9 +118,9 @@
           "y": 360
         }
       },
-      "type": "Sink"
+      "type": "Sink",
+      "name": "send for audit"
     }
   ],
-  "additionalBranches": [
-  ]
+  "additionalBranches": []
 }

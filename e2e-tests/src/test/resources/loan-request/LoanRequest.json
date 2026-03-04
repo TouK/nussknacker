@@ -16,8 +16,7 @@
       "id": "request",
       "ref": {
         "typ": "request",
-        "parameters": [
-        ]
+        "parameters": []
       },
       "additionalFields": {
         "description": null,
@@ -26,11 +25,11 @@
           "y": 0
         }
       },
-      "type": "Source"
+      "type": "Source",
+      "name": "request"
     },
     {
-      "defaultNext": [
-      ],
+      "defaultNext": [],
       "nexts": [
         {
           "expression": {
@@ -68,7 +67,8 @@
                   "y": 360
                 }
               },
-              "type": "Sink"
+              "type": "Sink",
+              "name": "loan response"
             }
           ]
         },
@@ -79,8 +79,7 @@
           },
           "nodes": [
             {
-              "defaultNext": [
-              ],
+              "defaultNext": [],
               "nexts": [
                 {
                   "expression": {
@@ -118,7 +117,8 @@
                           "y": 540
                         }
                       },
-                      "type": "Sink"
+                      "type": "Sink",
+                      "name": "Warsaw mortgage"
                     }
                   ]
                 },
@@ -165,7 +165,8 @@
                           "y": 540
                         }
                       },
-                      "type": "Sink"
+                      "type": "Sink",
+                      "name": "Other city mortgage"
                     }
                   ]
                 }
@@ -178,7 +179,8 @@
                   "y": 360
                 }
               },
-              "type": "Switch"
+              "type": "Switch",
+              "name": "switch"
             }
           ]
         },
@@ -218,7 +220,8 @@
                   "y": 360
                 }
               },
-              "type": "Sink"
+              "type": "Sink",
+              "name": "unknown"
             }
           ]
         }
@@ -231,9 +234,9 @@
           "y": 180
         }
       },
-      "type": "Switch"
+      "type": "Switch",
+      "name": "loan type"
     }
   ],
-  "additionalBranches": [
-  ]
+  "additionalBranches": []
 }
