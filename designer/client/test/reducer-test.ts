@@ -25,6 +25,7 @@ const baseProcessState: Scenario = {
             {
                 type: "Source",
                 id: "kafka-transaction",
+                name: "kafka-transaction",
                 ref: {
                     typ: "kafka-transaction",
                     parameters: [],
@@ -36,6 +37,7 @@ const baseProcessState: Scenario = {
             {
                 type: "Filter",
                 id: "filter",
+                name: "filter",
                 expression: {
                     language: "spel",
                     expression: "4 / (#input.length -5) >= 0",
@@ -44,6 +46,7 @@ const baseProcessState: Scenario = {
             {
                 type: "Enricher",
                 id: "paramService",
+                name: "paramService",
                 service: {
                     id: "paramService",
                     parameters: [
@@ -61,6 +64,7 @@ const baseProcessState: Scenario = {
             {
                 type: "Sink",
                 id: "sendSms",
+                name: "sendSms",
                 ref: {
                     typ: "sendSms",
                     parameters: [],
@@ -130,6 +134,7 @@ const reduceAll = (actions) => {
 const testNode = {
     type: "Enricher",
     id: "Enricher ID",
+    name: "Enricher ID",
     service: {
         id: "paramService",
         parameters: [
@@ -163,7 +168,7 @@ describe("Store", () => {
         });
 
         it("should add single node with unique name", () => {
-            const result = reduceAll([nodeAdded({ ...testNode, id: "kafka-transaction" }, testPosition)]);
+            const result = reduceAll([nodeAdded({ ...testNode, id: "kafka-transaction", name: "kafka-transaction" }, testPosition)]);
             const scenarioGraph = getScenarioGraph(result);
 
             const addedNode = NodeUtils.getNodeByName("kafka-transaction 1", scenarioGraph);
@@ -175,11 +180,11 @@ describe("Store", () => {
             const action = nodesWithEdgesAdded(
                 [
                     {
-                        node: { ...testNode, id: "kafka-transaction" },
+                        node: { ...testNode, id: "kafka-transaction", name: "kafka-transaction" },
                         position: { x: 10, y: 20 },
                     },
                     {
-                        node: { ...testNode, id: "filter" },
+                        node: { ...testNode, id: "filter", name: "filter" },
                         position: { x: 10, y: 20 },
                     },
                 ],
@@ -198,11 +203,11 @@ describe("Store", () => {
                 nodesWithEdgesAdded(
                     [
                         {
-                            node: { ...testNode, id: "newNode" },
+                            node: { ...testNode, id: "newNode", name: "newNode" },
                             position: testPosition,
                         },
                         {
-                            node: { ...testNode, id: "kafka-transaction" },
+                            node: { ...testNode, id: "kafka-transaction", name: "kafka-transaction" },
                             position: testPosition,
                         },
                     ],

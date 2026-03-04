@@ -147,7 +147,7 @@ export default function ToolBox({ filters, ...props }: ToolBoxProps): React.JSX.
         "Enter",
         (event) => {
             const { node, label } = groups[0].components[0];
-            props.toolSelect.onEnter({ ...cloneDeep(node), id: label }, event);
+            props.toolSelect.onEnter({ ...cloneDeep(node), id: label, name: label }, event);
         },
         { when: props.toolSelect?.onEnter && groups.length === 1 && groups[0].components.length === 1 },
     );
