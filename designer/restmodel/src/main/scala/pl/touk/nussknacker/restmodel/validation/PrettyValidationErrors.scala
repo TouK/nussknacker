@@ -390,7 +390,7 @@ object PrettyValidationErrors {
     }
     val fieldName = error match {
       case ScenarioNameError(_, _, _)       => CanonicalProcess.NameFieldName
-      case NodeNameValidationError(_, _, _) => pl.touk.nussknacker.engine.graph.node.IdFieldName
+      case NodeNameValidationError(_, _, _) => pl.touk.nussknacker.engine.graph.node.NameFieldName
     }
     val message = error.errorType match {
       case ProcessCompilationError.EmptyValue       => s"$validatedObjectType name is mandatory and cannot be empty"
