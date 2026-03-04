@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.flink.table.join.TableJoinComponent
 
 class FlinkTableOpsComponentProvider extends ComponentProvider with LazyLogging {
 
-  override def providerName: String = "flinkTableOps"
+  override def providerName: String = "flinkBatchOps"
 
   override def resolveConfigForExecution(config: Config): Config = config
 

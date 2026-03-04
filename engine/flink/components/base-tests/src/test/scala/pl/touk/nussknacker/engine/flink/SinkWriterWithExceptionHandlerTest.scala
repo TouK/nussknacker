@@ -1,25 +1,20 @@
-package pl.touk.nussknacker.engine.flink.table.sink
+package pl.touk.nussknacker.engine.flink
 
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.api.connector.sink2.{Sink, SinkWriter, WriterInitContext}
-import org.scalatest.{BeforeAndAfterAll, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, LoneElement}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.api.FlinkEngineContextOps._
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
-import pl.touk.nussknacker.engine.flink.api.process.{
-  BasicFlinkSink,
-  FlinkCustomNodeContext,
-  FlinkLazyParameterFunctionHelper
-}
+import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSink, FlinkCustomNodeContext, FlinkLazyParameterFunctionHelper}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
-import pl.touk.nussknacker.engine.flink.table.utils.ModelClassLoaderSimulationSuite
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkTestScenarioRunnerExt
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
@@ -36,8 +31,7 @@ class SinkWriterWithExceptionHandlerTest
     with PatientScalaFutures
     with LoneElement
     with ValidatedValuesDetailedMessage
-    with BeforeAndAfterAll
-    with ModelClassLoaderSimulationSuite {
+    with BeforeAndAfterAll {
 
   private lazy val sinkComponent: ComponentDefinition = ComponentDefinition(name = "sinkV2", component = CollectSink)
   private lazy val flinkMiniClusterWithServices       = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
