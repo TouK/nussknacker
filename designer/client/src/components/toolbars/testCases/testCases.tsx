@@ -11,7 +11,7 @@ import { AssertionResultsForNode } from "./assertionResultsForNode/assertionResu
 import { AssertionResultsForNodeTitle } from "./assertionResultsForNode/assertionResultsForNodeTitle";
 import { AssertionResultsHeader } from "./assertionResultsHeader";
 
-const AssertionResults = () => {
+const TestCases = () => {
     const testAssertionResults = useAppSelector(getTestAssertionResults);
     const scenarioGraph = useAppSelector(getScenarioGraph);
 
@@ -34,7 +34,7 @@ const AssertionResults = () => {
         [testAssertionResults, nodeOrderMap],
     );
     return (
-        <ToolbarWrapper id={"assertion-results-panel"} title={"Assertion results"}>
+        <ToolbarWrapper id={"test-cases-panel"} title={"Test cases"}>
             <Box py={1}>
                 <AssertionResultsHeader />
                 {sortedNodeIds.map((nodeId) => {
@@ -63,4 +63,4 @@ const AssertionResults = () => {
     );
 };
 
-export default AssertionResults;
+export default TestCases;
