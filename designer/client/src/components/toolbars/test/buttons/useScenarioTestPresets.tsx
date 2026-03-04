@@ -24,7 +24,7 @@ export const useScenarioTestPresets = () => {
     const { hasResult, assertionsIsSuccess } = useAssertionResultsSummary();
 
     const testCasePresets: Preset[] = useMemo(() => {
-        if (!testCase) return [];
+        if (Object.keys(testCase).length === 0) return [];
         return [
             {
                 icon: hasResult ? <AssertionStatusIcon isSuccess={assertionsIsSuccess} variant={"light"} /> : null,
@@ -43,12 +43,11 @@ export const useScenarioTestPresets = () => {
         [t],
     );
 
+    const testCasesHeader = useMemo(() => ({ header: t("testingForm.test.menu.testCasesHeader", "Test cases") }), [t]);
+
     const presets: Array<Preset | OptionHeader> = useMemo(
-        () =>
-            testCasePresets.length > 1
-                ? [runAllPreset, { header: "Test cases" }, ...testCasePresets]
-                : [{ header: "Test cases" }, ...testCasePresets],
-        [runAllPreset, testCasePresets],
+        () => (testCasePresets.length > 0 ? [runAllPreset, testCasesHeader, ...testCasePresets] : [testCasesHeader, ...testCasePresets]),
+        [runAllPreset, testCasePresets, testCasesHeader],
     );
 
     return { presets, testCasePresets, runAllPreset };

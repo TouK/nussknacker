@@ -23,7 +23,6 @@ import { useScenarioTestTooltip } from "./useScenarioTestTooltip";
 
 export type ScenarioTestButtonProps = {
     type: CustomButtonTypes.scenarioTest;
-    name?: string;
     title?: string;
     titleOverride?: string;
 };
@@ -86,7 +85,9 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
 
 export default ScenarioTestButton;
 
-const StyledScenarioTestButton = styled(ToolbarButton)<{ side: ToolbarsSide; variant: ButtonsVariant }>(({ theme, side, variant }) => {
+const StyledScenarioTestButton = styled(ToolbarButton, {
+    shouldForwardProp: (prop) => prop !== "side" && prop !== "variant",
+})<{ side: ToolbarsSide; variant: ButtonsVariant }>(({ theme, side, variant }) => {
     const normal = theme.palette.primary.main;
     const highlight = theme.palette.primary.light;
     const isHorizontal =

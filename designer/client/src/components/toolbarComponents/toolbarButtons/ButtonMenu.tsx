@@ -133,7 +133,14 @@ function MenuOption<T extends Option>({
 }) {
     if (isOptionHeader(option)) {
         return (
-            <Typography key={option.header} variant={"subtitle1"} color={"text.secondary"} sx={{ px: 2, py: 1 }}>
+            <Typography
+                id={`menu-group-${option.header}`}
+                role="presentation"
+                aria-hidden
+                variant="subtitle2"
+                color="text.secondary"
+                sx={{ px: 2, py: 1 }}
+            >
                 {option.header}
             </Typography>
         );
@@ -142,13 +149,20 @@ function MenuOption<T extends Option>({
     return (
         <MenuItem
             selected={option.value === selected?.value}
+            autoFocus={option.value === selected?.value}
             disabled={option.isDisabled}
+            aria-disabled={option.isDisabled}
+            aria-current={option.value === selected?.value ? "true" : undefined}
             onClick={(e) => {
                 e.stopPropagation();
                 onChange(option as T);
             }}
         >
-            {option.icon && <ListItemIcon sx={{ "&&": { minWidth: 22 } }}>{option.icon}</ListItemIcon>}
+            {option.icon && (
+                <ListItemIcon aria-hidden sx={{ "&&": { minWidth: 22 } }}>
+                    {option.icon}
+                </ListItemIcon>
+            )}
             <ListItemText sx={{ pl: option.icon ? 0 : 0.75 }}>{option.label}</ListItemText>
         </MenuItem>
     );
