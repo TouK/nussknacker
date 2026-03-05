@@ -1,5 +1,4 @@
 import { Box, Typography } from "@mui/material";
-import { styled } from "@mui/material/styles";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -8,14 +7,7 @@ import { getTestCaseAssertions, getTestCaseMocks, getInputDataRecords } from "..
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";
 import { SectionHeader } from "../../CommandBar/SectionHeader";
-import { ComponentIcon } from "../creator/ComponentIcon";
-
-const NodeIcon = styled(ComponentIcon)({
-    minWidth: "1.25em",
-    maxWidth: "1.25em",
-    minHeight: "1.25em",
-    maxHeight: "1.25em",
-});
+import { NodeIcon } from "./NodeIcon";
 
 const NodeRow = ({ node }: { node: NodeType | undefined; label: string }) => (
     <Box display="flex" alignItems="center" gap={0.75} py={0.25}>

@@ -117,11 +117,12 @@ const ResultsContent = ({ sortedNodeIds, testAssertionResults, scenarioGraphNode
                             title={nodeId}
                             assertionResults={testAssertionResults[nodeId]}
                             action={node ? <OpenNodeTestingDetails node={node} /> : undefined}
+                            node={node}
                         />
                     }
                     componentId={nodeId}
                     detailsSx={{ pl: 2, pr: 1, py: 0 }}
-                    summarySx={{ minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px" } }}
+                    summarySx={{ px: 0.5, minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px", overflow: "hidden" } }}
                 >
                     <AssertionResultsForNode nodeId={nodeId} />
                 </Expandable>

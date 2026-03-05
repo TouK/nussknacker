@@ -4,17 +4,23 @@ import React from "react";
 
 import { calculateAssertionResultsSummary } from "../../../../containers/assertions/assertionResultsUtils";
 import type { TestAssertionResult } from "../../../../http/resultsWithCountsDto";
+import type { NodeType } from "../../../../types/node";
+import { NodeIcon } from "../NodeIcon";
 
 interface Props {
     title: string;
     assertionResults: TestAssertionResult[];
     action: ReactNode;
+    node?: NodeType;
 }
 
-export const AssertionResultsForNodeTitle = ({ title, assertionResults, action }: Props) => {
+export const AssertionResultsForNodeTitle = ({ title, assertionResults, action, node }: Props) => {
     return (
-        <Box display={"flex"} alignItems={"center"} gap={0.75}>
-            <Typography variant={"body2"}>{title}</Typography>
+        <Box display={"flex"} alignItems={"center"} gap={0.75} minWidth={0}>
+            {node && <NodeIcon node={node} />}
+            <Typography variant={"body2"} noWrap sx={{ flex: "1 1 0", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {title}
+            </Typography>
             <AssertionResultsBadge assertionResults={assertionResults} />
             {action}
         </Box>
