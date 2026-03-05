@@ -1,4 +1,5 @@
 import { spawn } from "child_process";
+import { platform } from "process";
 
 import chalk from "chalk";
 import { debounce } from "lodash";
@@ -18,14 +19,14 @@ export class SimpleScriptPlugin {
         for (const script of scripts) {
             this.log(chalk.blue(script));
             await new Promise((resolve, reject) => {
-                const [command, ...args] = script.split(" ");
-                const process = spawn(command, args, { shell: true });
+                const shell = platform === "win32" && !!process.env.MSYSTEM ? process.env.SHELL : true;
+                const child = spawn(script, { shell });
                 if (verbose) {
-                    process.stdout.on("data", (data) => this.log(data.toString()));
+                    child.stdout.on("data", (data) => this.log(data.toString()));
                 }
-                process.stderr.on("data", (error) => this.error(error.toString()));
-                process.on("close", (code) => resolve(code));
-                process.on("error", (err) => reject(err));
+                child.stderr.on("data", (error) => this.error(error.toString()));
+                child.on("close", (code) => resolve(code));
+                child.on("error", (err) => reject(err));
             });
         }
         this.log(chalk.green("All done."));

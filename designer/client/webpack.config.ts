@@ -66,7 +66,7 @@ const config: Configuration = {
     },
     devtool: isProd ? "source-map" : "eval-source-map",
     watchOptions: {
-        ignored: /^(?!.*\/src\/).*$/,
+        ignored: /^(?!.*[/\\]src[/\\]).*$/,
     },
     devServer: {
         server: process.env.HTTPS === "true" ? "https" : "http",
@@ -240,7 +240,7 @@ const config: Configuration = {
             },
             {
                 test: /\.[tj]sx?$/,
-                exclude: /node_modules\/(?!@hello-pangea\/dnd\/src)/,
+                exclude: /node_modules[/\\](?!@hello-pangea[/\\]dnd[/\\]src)/,
                 use: ["babel-loader"],
             },
             {
