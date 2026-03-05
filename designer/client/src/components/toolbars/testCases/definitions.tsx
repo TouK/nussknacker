@@ -2,13 +2,17 @@ import { Box, Typography } from "@mui/material";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { getScenarioGraph } from "../../../reducers/selectors/graph";
-import { getTestCaseAssertions, getTestCaseMocks, getInputDataRecords } from "../../../reducers/selectors/testCases";
-import { useAppSelector } from "../../../store/storeHelpers";
+import { resetSelection } from "../../../actions/nk/selection";
+import { replaceSearchQuery } from "../../../containers/hooks/useSearchQuery";
+import { getScenario, getScenarioGraph, getSelectionState } from "../../../reducers/selectors/graph";
+import { getInputDataRecords, getTestCaseAssertions, getTestCaseMocks } from "../../../reducers/selectors/testCases";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";
+import { useWindows } from "../../../windowManager/useWindows";
 import { SectionHeader } from "../../CommandBar/SectionHeader";
 import { useGraph } from "../../graph/GraphContext";
 import { nodeFound, nodeFoundHover } from "../../graph/graphStyledWrapper";
+import { ACTIVE_TAB_QUERY_KEY, NodeDetailsTab } from "../../graph/node-modal/node/NodeContent/TabsWrapper";
 import { NodeIcon } from "./NodeIcon";
 
 export const Definitions = () => {
@@ -77,9 +81,19 @@ export const Definitions = () => {
 
 const NodeRow = ({ node }: { node: NodeType | undefined; label: string }) => {
     const { onMouseEnter: handleMouseEnter, onMouseLeave: handleMouseLeave } = useNodeHover(node?.id);
+    const handleClick = useNodeSelectOrOpen(node);
 
     return (
-        <Box display="flex" alignItems="center" gap={0.75} py={0.25} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+        <Box
+            display="flex"
+            alignItems="center"
+            gap={0.75}
+            py={0.25}
+            onClick={handleClick}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            sx={{ cursor: node ? "pointer" : "default" }}
+        >
             {node && <NodeIcon node={node} />}
             <Typography variant="body2">{node?.id ?? ""}</Typography>
         </Box>
@@ -106,4 +120,26 @@ function useNodeHover(nodeId: string | undefined) {
     }, [nodeId, graphGetter]);
 
     return { onMouseEnter, onMouseLeave };
+}
+
+function useNodeSelectOrOpen(node: NodeType | undefined) {
+    const graphGetter = useGraph();
+    const { openNodeWindow } = useWindows();
+    const scenario = useAppSelector(getScenario);
+    const dispatch = useAppDispatch();
+    const selectionState = useAppSelector(getSelectionState);
+
+    const isNodeSelected = useCallback((node: NodeType) => selectionState.includes(node.id), [selectionState]);
+
+    return useCallback(() => {
+        if (!node) return;
+        if (isNodeSelected(node)) {
+            replaceSearchQuery((current) => ({ ...current, [ACTIVE_TAB_QUERY_KEY]: [NodeDetailsTab.testing] }));
+            openNodeWindow(node, scenario);
+        } else {
+            const graph = graphGetter();
+            graph.fitToNode(node.id);
+            dispatch(resetSelection(node.id));
+        }
+    }, [dispatch, graphGetter, isNodeSelected, node, openNodeWindow, scenario]);
 }
