@@ -120,7 +120,6 @@
         "@babel/preset-react": "7.16.7",
         "@babel/preset-typescript": "7.16.7",
         "@cypress/browserify-preprocessor": "3.0.2",
-        "@cypress/code-coverage": "3.14.6",
         "@emotion/jest": "11.10.5",
         "@fontsource/inter": "5.0.16",
         "@fontsource/roboto-mono": "4.5.8",
@@ -193,7 +192,6 @@
         "less": "4.1.2",
         "less-loader": "10.2.0",
         "lint-staged": "13.0.3",
-        "merge-cypress-jest-coverage": "1.7.0",
         "moment-locales-webpack-plugin": "1.2.0",
         "patch-package": "7.0.0",
         "path-browserify": "1.0.1",
@@ -275,7 +273,6 @@
         "test:e2e:linux": "docker run $([ \"$(uname)\" != 'Darwin' ] && echo --user $(id -u):$(id -g)) --ipc=host --add-host=host.docker.internal:host-gateway -it -v $PWD:/client -w /client cypress/included:15.3.0 --config baseUrl=http://host.docker.internal:3000",
         "@comment script versions updating image snapshots": "",
         "test:e2e:linux:update": "docker run $([ \"$(uname)\" != 'Darwin' ] && echo --user $(id -u):$(id -g)) --ipc=host --add-host=host.docker.internal:host-gateway -it -v $PWD:/client -w /client -e CYPRESS_SNAPSHOT_UPDATE=true cypress/included:15.3.0 --config baseUrl=http://host.docker.internal:3000",
-        "coverage": "npx merge-cypress-jest-coverage",
         "commit": "lint-staged --allow-empty",
         "make-types": "make-federated-types --outputDir ./.federated-types",
         "prepare": "cd ../.. && husky install"
