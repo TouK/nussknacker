@@ -140,7 +140,7 @@ class UIProcessValidator(
   ): ValidationResult = {
     validateScenarioName(processName, isFragment)
       .add(validateScenarioLabels(labels))
-      .add(validateNodesName(scenarioGraph))
+      .add(validateNodesIdAndName(scenarioGraph))
       .add(validateDuplicates(scenarioGraph))
       .add(validateLooseNodes(scenarioGraph))
       .add(validateStickyNotesLength(scenarioGraph))
@@ -218,7 +218,7 @@ class UIProcessValidator(
       result: ValidationResult,
       canonical: CanonicalProcess,
       fragments: List[CanonicalProcess]
-  )(implicit loggedUser: LoggedUser): Map[String, String] = {
+  ): Map[String, String] = {
     val referencedNodeIds =
       (result.errors.invalidNodes.keys ++ result.warnings.invalidNodes.keys).map(_.value).toSet
 
@@ -275,9 +275,9 @@ class UIProcessValidator(
     }
   }
 
-  private def validateNodesName(scenarioGraph: ScenarioGraph): ValidationResult = {
+  private def validateNodesIdAndName(scenarioGraph: ScenarioGraph): ValidationResult = {
     val nodeNameErrors = scenarioGraph.nodes
-      .map(NameValidator.validateNodeName)
+      .map(NameValidator.validateNode)
       .collect { case Invalid(e) => e }
       .reduceOption(_ concatNel _)
 
@@ -381,13 +381,23 @@ class UIProcessValidator(
   }
 
   private def validateDuplicates(scenarioGraph: ScenarioGraph): ValidationResult = {
-    val nodeIds    = scenarioGraph.nodes.map(n => n.id)
-    val duplicates = nodeIds.groupBy(identity).filter(_._2.size > 1).keys.toList
+    val nodeIds       = scenarioGraph.nodes.map(_.id)
+    val duplicatedIds = nodeIds.groupBy(identity).filter(_._2.size > 1).keys.toSet
+    val duplicatedNames = scenarioGraph.nodes
+      .groupBy(_.name)
+      .collect { case (name, nodes) if nodes.map(_.id).distinct.size > 1 => name -> nodes.map(_.id).toSet }
 
-    if (duplicates.isEmpty) {
+    val errors =
+      List(
+        if (duplicatedIds.isEmpty) None else Some(DuplicatedNodeIds(duplicatedIds)),
+        if (duplicatedNames.isEmpty) None
+        else Some(DuplicatedNodeNames(duplicatedNames.keySet, duplicatedNames.values.flatten.toSet))
+      ).flatten
+
+    if (errors.isEmpty) {
       ValidationResult.success
     } else {
-      formatErrors(NonEmptyList.one(DuplicatedNodeIds(duplicates.toSet)))
+      formatErrors(NonEmptyList.fromListUnsafe(errors))
     }
   }
 

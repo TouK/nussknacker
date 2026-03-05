@@ -919,10 +919,20 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
 
   test("should validate node id in all cases") {
     forAll(IdValidationTestData.nodeIdErrorCases) { (nodeId: String, expectedErrors: List[ProcessCompilationError]) =>
-      validate(Variable(NodeId(nodeId), NodeName(nodeId), "varName", "1".spel, None), Map.empty) match {
+      validate(Variable(NodeId(nodeId), NodeName("validNodeName"), "varName", "1".spel, None), Map.empty) match {
         case ValidationPerformed(errors, _, _, _) => errors shouldBe expectedErrors
         case ValidationNotPerformed               => fail("should not happen")
       }
+    }
+  }
+
+  test("should validate node name in all cases") {
+    forAll(IdValidationTestData.nodeNameErrorCases) {
+      (nodeName: String, expectedErrors: List[ProcessCompilationError]) =>
+        validate(Variable(NodeId("validNodeId"), NodeName(nodeName), "varName", "1".spel, None), Map.empty) match {
+          case ValidationPerformed(errors, _, _, _) => errors shouldBe expectedErrors
+          case ValidationNotPerformed               => fail("should not happen")
+        }
     }
   }
 

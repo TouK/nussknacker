@@ -35,6 +35,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -476,19 +477,47 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test("should handle all cases node id validation") {
+  test("should handle all cases node id validation independently from node name") {
     forAll(IdValidationTestData.nodeIdErrorCases) { (nodeId: String, expectedErrors: List[ProcessCompilationError]) =>
       {
         val scenario = ScenarioBuilder
           .streaming("scenarioId")
           .source(nodeId, "source")
           .emptySink("sinkId", "sink")
+          .mapAllNodes(_.map {
+            case FlatNode(source: Source) if source.ref.typ == "source" =>
+              FlatNode(source.copy(name = NodeName("validNodeName")))
+            case node =>
+              node
+          })
         validate(scenario, baseDefinition).result match {
           case Valid(_)   => expectedErrors shouldBe empty
           case Invalid(e) => e.toList shouldBe expectedErrors
-
         }
       }
+    }
+  }
+
+  test("should handle all cases node name validation independently from node id") {
+    forAll(IdValidationTestData.nodeNameErrorCases) {
+      (nodeName: String, expectedErrors: List[ProcessCompilationError]) =>
+        {
+          val scenario = ScenarioBuilder
+            .streaming("scenarioId")
+            .source("validNodeId", "source")
+            .emptySink("sinkId", "sink")
+            .mapAllNodes(_.map {
+              case FlatNode(source: Source) if source.id == NodeId("validNodeId") =>
+                FlatNode(source.copy(name = NodeName(nodeName)))
+              case node =>
+                node
+            })
+          validate(scenario, baseDefinition).result match {
+            case Valid(_)   => expectedErrors shouldBe empty
+            case Invalid(e) => e.toList shouldBe expectedErrors
+
+          }
+        }
     }
   }
 
@@ -516,6 +545,21 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         )
     validate(processWithDuplicatedIds, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(DuplicatedNodeIds(_), _)) =>
+    }
+  }
+
+  test("find duplicated node names") {
+    val sameName = NodeName("same")
+    val process = CanonicalProcess(
+      MetaData("process1", StreamMetaData()),
+      List(
+        FlatNode(Source(NodeId("1"), sameName, SourceRef("source", Nil))),
+        FlatNode(Sink(NodeId("2"), sameName, SinkRef("sink", Nil))),
+      )
+    )
+
+    validate(process, baseDefinition).result should matchPattern {
+      case Invalid(NonEmptyList(DuplicatedNodeNames(_, _), _)) =>
     }
   }
 

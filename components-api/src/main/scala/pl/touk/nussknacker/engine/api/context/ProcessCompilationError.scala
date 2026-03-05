@@ -71,6 +71,12 @@ object ProcessCompilationError {
 
   final case class DuplicatedNodeIds(nodeIds: Set[NodeId]) extends ProcessCompilationError with ScenarioGraphLevelError
 
+  final case class DuplicatedNodeNames(duplicatedNames: Set[NodeName], duplicatedIds: Set[NodeId])
+      extends ProcessCompilationError
+      with ScenarioGraphLevelError {
+    override def nodeIds: Set[NodeId] = duplicatedIds
+  }
+
   final case class NonUniqueEdgeType(edgeType: String, nodeId: NodeId, nodeName: NodeName)
       extends ProcessCompilationError
       with InASingleNode
@@ -508,6 +514,12 @@ object ProcessCompilationError {
   }
 
   final case class NodeNameValidationError(errorType: IdErrorType, nodeName: NodeName, override val nodeId: NodeId)
+      extends IdError
+      with InASingleNode {
+    override val id: String = nodeId.value
+  }
+
+  final case class NodeIdValidationError(errorType: IdErrorType, override val nodeId: NodeId)
       extends IdError
       with InASingleNode {
     override val id: String = nodeId.value

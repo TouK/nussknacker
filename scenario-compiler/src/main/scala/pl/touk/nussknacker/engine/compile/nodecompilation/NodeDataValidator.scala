@@ -74,7 +74,7 @@ class NodeDataValidator(modelData: ModelData) {
           ValidationNotPerformed
       }
 
-      val nodeIdErrors = NameValidator.validateNodeName(nodeData) match {
+      val nodeIdErrors = NameValidator.validateNode(nodeData) match {
         case Validated.Valid(_)   => List.empty
         case Validated.Invalid(e) => e.toList
       }

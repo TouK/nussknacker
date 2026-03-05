@@ -17,10 +17,13 @@ object NameValidator {
   def validate(process: CanonicalProcess, isFragment: Boolean): ValidatedNel[ProcessCompilationError, Unit] = {
     val scenarioNameValidationResult = validateScenarioName(process.name, isFragment)
     val nodesNameValidationResult = process.nodes
-      .map(node => validateNodeName(node.data))
+      .map(node => validateNode(node.data))
       .combineAll
+    val nodeNamesUniquenessValidationResult = validateUniqueNodeNames(process)
 
-    scenarioNameValidationResult.combine(nodesNameValidationResult)
+    scenarioNameValidationResult
+      .combine(nodesNameValidationResult)
+      .combine(nodeNamesUniquenessValidationResult)
   }
 
   def validateScenarioName(
@@ -28,6 +31,12 @@ object NameValidator {
       isFragment: Boolean
   ): ValidatedNel[ProcessCompilationError, Unit] =
     validateName(scenarioName.value).leftMap(_.map(ScenarioNameError(_, scenarioName, isFragment)))
+
+  def validateNode(nodeData: NodeData): ValidatedNel[ProcessCompilationError, Unit] =
+    validateNodeId(nodeData).combine(validateNodeName(nodeData))
+
+  def validateNodeId(nodeData: NodeData): ValidatedNel[ProcessCompilationError, Unit] =
+    validateName(nodeData.id.value).leftMap(_.map(NodeIdValidationError(_, nodeData.id)))
 
   def validateNodeName(nodeData: NodeData): ValidatedNel[ProcessCompilationError, Unit] =
     validateName(nodeData.name.value, nodeNameIllegalCharacters, nodeNameIllegalCharactersReadable)
@@ -68,5 +77,21 @@ object NameValidator {
 
   private def validate(condition: Boolean, error: IdErrorType) =
     if (condition) invalidNel(error) else valid(())
+
+  private def validateUniqueNodeNames(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
+    val duplicatedNodeNames = process.collectAllNodes
+      .groupBy(_.name)
+      .collect { case (name, nodes) if nodes.map(_.id).distinct.size > 1 => name -> nodes.map(_.id).toSet }
+    if (duplicatedNodeNames.isEmpty) {
+      valid(())
+    } else {
+      invalidNel(
+        DuplicatedNodeNames(
+          duplicatedNodeNames.keySet,
+          duplicatedNodeNames.values.flatten.toSet
+        )
+      )
+    }
+  }
 
 }

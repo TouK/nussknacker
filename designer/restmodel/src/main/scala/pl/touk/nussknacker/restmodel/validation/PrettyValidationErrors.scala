@@ -52,6 +52,12 @@ object PrettyValidationErrors {
           description = s"Duplicate node ids: ${ids.mkString(", ")}",
           errorType = NodeValidationErrorType.RenderNotAllowed
         )
+      case DuplicatedNodeNames(names, _) =>
+        node(
+          message = "Two nodes cannot have same name",
+          description = s"Duplicate node names: ${names.map(_.value).toList.sorted.mkString(", ")}",
+          errorType = NodeValidationErrorType.SaveNotAllowed
+        )
       case EmptyProcess       => node("Empty scenario", "Scenario is empty, please add some nodes")
       case InvalidRootNode(_) => node("Invalid root node", "Scenario can start only from source node")
       case InvalidTailOfBranch(_) =>
@@ -376,9 +382,10 @@ object PrettyValidationErrors {
   private def getErrorTypeName(error: ProcessCompilationError) = ReflectUtils.simpleNameWithoutSuffix(error.getClass)
 
   private def mapIdErrorToNodeError(error: IdError) = {
-    val validatedObjectType = error match {
-      case ScenarioNameError(_, _, isFragment) => if (isFragment) "Fragment" else "Scenario"
-      case NodeNameValidationError(_, _, _)    => "Node"
+    val (validatedObjectType, validatedObjectAttribute) = error match {
+      case ScenarioNameError(_, _, isFragment) => (if (isFragment) "Fragment" else "Scenario", "name")
+      case NodeNameValidationError(_, _, _)    => ("Node", "name")
+      case NodeIdValidationError(_, _)         => ("Node", "id")
     }
     val errorSeverity = error match {
       case ScenarioNameError(_, _, _) => NodeValidationErrorType.SaveAllowed
@@ -387,27 +394,37 @@ object PrettyValidationErrors {
           case ProcessCompilationError.EmptyValue | IllegalCharactersId(_) => NodeValidationErrorType.RenderNotAllowed
           case _                                                           => NodeValidationErrorType.SaveAllowed
         }
+      case NodeIdValidationError(errorType, _) =>
+        errorType match {
+          case ProcessCompilationError.EmptyValue | IllegalCharactersId(_) => NodeValidationErrorType.RenderNotAllowed
+          case _                                                           => NodeValidationErrorType.SaveAllowed
+        }
     }
     val fieldName = error match {
       case ScenarioNameError(_, _, _)       => CanonicalProcess.NameFieldName
       case NodeNameValidationError(_, _, _) => pl.touk.nussknacker.engine.graph.node.NameFieldName
+      case NodeIdValidationError(_, _)      => pl.touk.nussknacker.engine.graph.node.IdFieldName
     }
     val message = error.errorType match {
-      case ProcessCompilationError.EmptyValue       => s"$validatedObjectType name is mandatory and cannot be empty"
-      case ProcessCompilationError.BlankId          => s"$validatedObjectType name cannot be blank"
-      case ProcessCompilationError.LeadingSpacesId  => s"$validatedObjectType name cannot have leading spaces"
-      case ProcessCompilationError.TrailingSpacesId => s"$validatedObjectType name cannot have trailing spaces"
+      case ProcessCompilationError.EmptyValue =>
+        s"$validatedObjectType $validatedObjectAttribute is mandatory and cannot be empty"
+      case ProcessCompilationError.BlankId => s"$validatedObjectType $validatedObjectAttribute cannot be blank"
+      case ProcessCompilationError.LeadingSpacesId =>
+        s"$validatedObjectType $validatedObjectAttribute cannot have leading spaces"
+      case ProcessCompilationError.TrailingSpacesId =>
+        s"$validatedObjectType $validatedObjectAttribute cannot have trailing spaces"
       case ProcessCompilationError.IllegalCharactersId(illegalCharactersHumanReadable) =>
-        s"$validatedObjectType name contains invalid characters. $illegalCharactersHumanReadable are not allowed"
+        s"$validatedObjectType $validatedObjectAttribute contains invalid characters. $illegalCharactersHumanReadable are not allowed"
     }
     val description = error.errorType match {
-      case ProcessCompilationError.EmptyValue      => s"Empty ${validatedObjectType.toLowerCase} name"
-      case ProcessCompilationError.BlankId         => s"Blank ${validatedObjectType.toLowerCase} name"
-      case ProcessCompilationError.LeadingSpacesId => s"Leading spaces in ${validatedObjectType.toLowerCase} name"
+      case ProcessCompilationError.EmptyValue => s"Empty ${validatedObjectType.toLowerCase} $validatedObjectAttribute"
+      case ProcessCompilationError.BlankId    => s"Blank ${validatedObjectType.toLowerCase} $validatedObjectAttribute"
+      case ProcessCompilationError.LeadingSpacesId =>
+        s"Leading spaces in ${validatedObjectType.toLowerCase} $validatedObjectAttribute"
       case ProcessCompilationError.TrailingSpacesId =>
-        s"Trailing spaces in ${validatedObjectType.toLowerCase} name"
+        s"Trailing spaces in ${validatedObjectType.toLowerCase} $validatedObjectAttribute"
       case ProcessCompilationError.IllegalCharactersId(_) =>
-        s"Invalid characters in ${validatedObjectType.toLowerCase} name"
+        s"Invalid characters in ${validatedObjectType.toLowerCase} $validatedObjectAttribute"
     }
     NodeValidationError(
       typ = getErrorTypeName(error),

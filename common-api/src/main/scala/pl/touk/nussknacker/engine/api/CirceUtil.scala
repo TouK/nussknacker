@@ -93,8 +93,8 @@ object CirceUtil {
 
   }
 
-  // For backward compatibility: wraps a decoder so that when the "name" field is missing in JSON,
-  // it is automatically filled from the "id" field value (both are plain strings).
+  // For backward compatibility: wraps a decoder, so that when the "name" field is missing in JSON, "name" is filled from the "id" value,
+  // and "id" is replaced with a deterministic UUID generated from that name.
   def withNameFromIdFallback[T](decoder: Decoder[T]): Decoder[T] =
     Decoder.instance(c => decoder.decodeJson(fillNameAndGenerateIdIfMissing(c.value)))
 

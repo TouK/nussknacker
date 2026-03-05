@@ -9,13 +9,14 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import scala.io.{Source => IoSource}
+import scala.util.Using
 
 class NodeIdToUuidMigrationSpec extends AnyFreeSpecLike with Matchers {
 
   private def uuidOf(s: String) = UUID.nameUUIDFromBytes(s.getBytes(StandardCharsets.UTF_8)).toString
 
   private def loadAndMigrate(resourcePath: String): CanonicalProcess = {
-    val json     = IoSource.fromResource(resourcePath).mkString
+    val json     = Using.resource(IoSource.fromResource(resourcePath))(_.mkString)
     val scenario = ProcessMarshaller.fromJson(json).valueOr(err => fail(s"Failed to parse JSON: $err"))
     NodeIdToUuidMigration.migrateProcess(scenario, "category")
   }

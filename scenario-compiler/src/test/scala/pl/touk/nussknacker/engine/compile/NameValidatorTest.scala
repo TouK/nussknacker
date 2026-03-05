@@ -5,12 +5,16 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.{forAll, Table}
 import org.scalatest.prop.TableFor2
-import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, NodeName, StreamMetaData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
+import pl.touk.nussknacker.engine.graph.node.{Sink, Source}
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 
 class IdValidatorTest extends AnyFunSuite with Matchers {
 
@@ -45,7 +49,7 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
   test("should handle all cases of node id validation") {
     forAll(IdValidationTestData.nodeIdErrorCases) { (nodeId: String, expectedErrors: List[ProcessCompilationError]) =>
       {
-        NameValidator.validate(validScenario(nodeId = nodeId), isFragment = true) match {
+        NameValidator.validate(validScenario(nodeId = nodeId, nodeName = "validNodeName"), isFragment = true) match {
           case Validated.Invalid(errors) =>
             errors.toList shouldBe expectedErrors
           case Validated.Valid(_) =>
@@ -55,12 +59,27 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
     }
   }
 
-  test("should validate both scenario and node id") {
-    val scenarioWithEmptyIds = validScenario("", "")
+  test("should handle all cases of node name validation") {
+    forAll(IdValidationTestData.nodeNameErrorCases) {
+      (nodeName: String, expectedErrors: List[ProcessCompilationError]) =>
+        {
+          NameValidator.validate(validScenario(nodeId = "validNodeId", nodeName = nodeName), isFragment = true) match {
+            case Validated.Invalid(errors) =>
+              errors.toList shouldBe expectedErrors
+            case Validated.Valid(_) =>
+              expectedErrors shouldBe empty
+          }
+        }
+    }
+  }
+
+  test("should validate scenario, node id and node name") {
+    val scenarioWithEmptyIds = validScenario("", "", "")
     NameValidator.validate(scenarioWithEmptyIds, isFragment = false) match {
       case Validated.Invalid(errors) =>
         errors.toList should contain theSameElementsAs List(
           ScenarioNameError(EmptyValue, ProcessName(""), isFragment = false),
+          NodeIdValidationError(EmptyValue, NodeId("")),
           NodeNameValidationError(EmptyValue, NodeName(""), NodeId(""))
         )
       case Validated.Valid(_) =>
@@ -68,11 +87,40 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
     }
   }
 
-  private def validScenario(id: String = "id", nodeId: String = "nodeId"): CanonicalProcess =
+  test("should validate duplicated node names") {
+    val scenarioWithDuplicatedNodeNames = CanonicalProcess(
+      MetaData("id", StreamMetaData()),
+      List(
+        FlatNode(Source(NodeId("source1"), NodeName("same"), SourceRef("source", Nil))),
+        FlatNode(Sink(NodeId("sink1"), NodeName("same"), SinkRef("sink", Nil))),
+      )
+    )
+
+    NameValidator.validate(scenarioWithDuplicatedNodeNames, isFragment = false) match {
+      case Validated.Invalid(errors) =>
+        errors.toList should contain(
+          DuplicatedNodeNames(Set(NodeName("same")), Set(NodeId("source1"), NodeId("sink1")))
+        )
+      case Validated.Valid(_) =>
+        fail("Validation succeeded, but was expected to fail")
+    }
+  }
+
+  private def validScenario(
+      id: String = "id",
+      nodeId: String = "nodeId",
+      nodeName: String = "nodeName"
+  ): CanonicalProcess =
     ScenarioBuilder
       .streaming(id)
       .source(nodeId, "source")
       .emptySink("sinkId", "sink")
+      .mapAllNodes(_.map {
+        case FlatNode(source: Source) =>
+          FlatNode(source.copy(name = NodeName(nodeName)))
+        case node =>
+          node
+      })
 
   private def validFragment(id: String): CanonicalProcess =
     ScenarioBuilder.fragmentWithInputNodeId(id, "input").emptySink("sinkId", "test")
@@ -84,15 +132,43 @@ object IdValidationTestData {
   val nodeIdErrorCases: TableFor2[String, List[IdError]] = Table(
     ("nodeId", "errors"),
     ("validId", List.empty),
-    ("", List(NodeNameValidationError(EmptyValue, NodeName(""), NodeId("")))),
-    (" ", List(NodeNameValidationError(BlankId, NodeName(" "), NodeId(" ")))),
+    ("", List(NodeIdValidationError(EmptyValue, NodeId("")))),
+    (" ", List(NodeIdValidationError(BlankId, NodeId(" ")))),
     (
       "trailingSpace ",
-      List(NodeNameValidationError(TrailingSpacesId, NodeName("trailingSpace "), NodeId("trailingSpace ")))
+      List(NodeIdValidationError(TrailingSpacesId, NodeId("trailingSpace ")))
     ),
     (
       " leadingSpace",
-      List(NodeNameValidationError(LeadingSpacesId, NodeName(" leadingSpace"), NodeId(" leadingSpace")))
+      List(NodeIdValidationError(LeadingSpacesId, NodeId(" leadingSpace")))
+    ),
+    (
+      " leadingAndTrailingSpace ",
+      List(
+        NodeIdValidationError(
+          LeadingSpacesId,
+          NodeId(" leadingAndTrailingSpace ")
+        ),
+        NodeIdValidationError(
+          TrailingSpacesId,
+          NodeId(" leadingAndTrailingSpace ")
+        )
+      )
+    ),
+  )
+
+  val nodeNameErrorCases: TableFor2[String, List[IdError]] = Table(
+    ("nodeName", "errors"),
+    ("validName", List.empty),
+    ("", List(NodeNameValidationError(EmptyValue, NodeName(""), NodeId("validNodeId")))),
+    (" ", List(NodeNameValidationError(BlankId, NodeName(" "), NodeId("validNodeId")))),
+    (
+      "trailingSpace ",
+      List(NodeNameValidationError(TrailingSpacesId, NodeName("trailingSpace "), NodeId("validNodeId")))
+    ),
+    (
+      " leadingSpace",
+      List(NodeNameValidationError(LeadingSpacesId, NodeName(" leadingSpace"), NodeId("validNodeId")))
     ),
     (
       " leadingAndTrailingSpace ",
@@ -100,12 +176,22 @@ object IdValidationTestData {
         NodeNameValidationError(
           LeadingSpacesId,
           NodeName(" leadingAndTrailingSpace "),
-          NodeId(" leadingAndTrailingSpace ")
+          NodeId("validNodeId")
         ),
         NodeNameValidationError(
           TrailingSpacesId,
           NodeName(" leadingAndTrailingSpace "),
-          NodeId(" leadingAndTrailingSpace ")
+          NodeId("validNodeId")
+        )
+      )
+    ),
+    (
+      "name.with.dot",
+      List(
+        NodeNameValidationError(
+          IllegalCharactersId("Quotation mark (\"), dot (.) and apostrophe (')"),
+          NodeName("name.with.dot"),
+          NodeId("validNodeId")
         )
       )
     ),

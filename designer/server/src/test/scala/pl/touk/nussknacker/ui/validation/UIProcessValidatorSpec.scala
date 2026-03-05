@@ -453,6 +453,31 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     )
   }
 
+  test("check for duplicated names") {
+    val duplicatedName = NodeName("same")
+    val process = createGraph(
+      List(
+        Source(NodeId("in"), duplicatedName, SourceRef(ProcessTestData.existingSourceFactory, List())),
+        Filter(NodeId("middle"), duplicatedName, Expression.spel("''")),
+        Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(Edge(NodeId("in"), NodeId("middle"), None), Edge(NodeId("middle"), NodeId("out"), None))
+    )
+    val result = validateWithConfiguredProperties(process)
+
+    result.errors.globalErrors should have size 1
+    val globalError = result.errors.globalErrors.head
+    globalError.error shouldBe NodeValidationError(
+      typ = "DuplicatedNodeNames",
+      message = "Two nodes cannot have same name",
+      description = "Duplicate node names: same",
+      fieldName = None,
+      errorType = SaveNotAllowed,
+      details = None
+    )
+    globalError.nodeIds.toSet shouldBe Set(NodeId("in"), NodeId("middle"))
+  }
+
   test("validate missing required scenario properties") {
     val processValidator = ProcessTestData.testProcessValidator(
       scenarioProperties = Map(
@@ -2245,10 +2270,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val blankValue = " "
     val testedScenario = createGraph(
       List(
-        Source(NodeId(blankValue), NodeName(blankValue), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        Source(
+          NodeId(blankValue),
+          NodeName("valid-node-name"),
+          SourceRef(ProcessTestData.existingSourceFactory, List())
+        ),
         Sink(NodeId(exampleUUID), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List()))
       ),
-      List(Edge(NodeId(blankValue), NodeId("out"), None))
+      List(Edge(NodeId(blankValue), NodeId(exampleUUID), None))
     )
     val result = TestFactory
       .flinkProcessValidator()
@@ -2259,7 +2288,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       Map(
         NodeId(blankValue) -> List(
           PrettyValidationErrors.formatErrorMessage(
-            NodeNameValidationError(BlankId, NodeName(blankValue), NodeId(exampleUUID))
+            NodeIdValidationError(BlankId, NodeId(blankValue))
           )
         )
       )
