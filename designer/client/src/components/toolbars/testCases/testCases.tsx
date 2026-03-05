@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { getTestAssertionResults } from "../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../store/storeHelpers";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
+import { Definitions } from "./definitions";
 import { Results } from "./results";
 import { TestCaseHeader } from "./testCaseHeader";
 import type { TestCaseMode } from "./TestCaseSwitchMode";
@@ -19,6 +20,7 @@ const TestCases = () => {
                 <TestCaseHeader />
                 <TestCaseSwitchMode value={mode} onChange={setMode} />
                 {mode === "results" && <Results testAssertionResults={testAssertionResults} />}
+                {mode === "definitions" && <Definitions />}
             </Box>
         </ToolbarWrapper>
     );
