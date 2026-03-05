@@ -29,6 +29,12 @@ class TableRegistrationTest
     FlinkMiniClusterFactory
       .createUnitTestsMiniClusterWithServices()
 
+  override protected def beforeAll(): Unit = {
+    super.beforeAll()
+    // Ensure the PostgreSQL JDBC driver is loaded
+    Class.forName("org.postgresql.Driver")
+  }
+
   override protected def afterAll(): Unit = {
     super.afterAll()
     miniClusterWithServices.close()
