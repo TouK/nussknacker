@@ -27,7 +27,10 @@ import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 
 object TestingApiErrorMessages {
 
-  def from(performTestError: ScenarioTestService.PerformTestError): String = {
+  def from(
+      performTestError: ScenarioTestService.PerformTestError,
+      nodeNamesById: Map[NodeId, String] = Map.empty
+  ): String = {
     performTestError match {
       case PerformTestError.DeserializationError(cause) =>
         cause match {
@@ -90,9 +93,9 @@ object TestingApiErrorMessages {
           case AssertionConfiguredForNotExistingNodesError(notExistingNodeIds) =>
             TestingApiErrorMessages.assertionsConfiguredForNotExistingNodes(notExistingNodeIds)
           case ExpressionAssertionCompilationError(errors, assertion, nodeId) =>
-            TestingApiErrorMessages.assertionCompilationError(errors, assertion, nodeId)
+            TestingApiErrorMessages.assertionCompilationError(errors, assertion, nodeId, nodeNamesById)
           case PredicateAssertionCompilationError(errors, assertion, _, nodeId) =>
-            TestingApiErrorMessages.assertionCompilationError(errors, assertion, nodeId)
+            TestingApiErrorMessages.assertionCompilationError(errors, assertion, nodeId, nodeNamesById)
         }
     }
   }
@@ -195,9 +198,13 @@ object TestingApiErrorMessages {
   private def assertionCompilationError(
       errors: NonEmptyList[ProcessCompilationError],
       assertion: Assertion,
-      nodeId: NodeId
+      nodeId: NodeId,
+      nodeNamesById: Map[NodeId, String]
   ) =
-    s"Assertion compilation error. Node: ${nodeId.value}. ${prettyPrintAssertion(assertion)}. Errors: ${errors.toList.mkString(", ")}"
+    s"Assertion compilation error. Node: ${nodeDisplayName(nodeId, nodeNamesById)}. ${prettyPrintAssertion(assertion)}. Errors: ${errors.toList.mkString(", ")}"
+
+  private def nodeDisplayName(nodeId: NodeId, nodeNamesById: Map[NodeId, String]): String =
+    nodeNamesById.getOrElse(nodeId, nodeId.value)
 
   private def prettyPrintAssertion(assertion: Assertion): String = {
     assertion match {

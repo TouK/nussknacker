@@ -173,7 +173,7 @@ class ScenarioTestingApiHttpService(
                     SerializedScenarioRecordsContent(testData)
                   )
                 ).leftMap[TestingError] { error =>
-                  ErrorResult(TestingApiErrorMessages.from(error))
+                  ErrorResult(TestingApiErrorMessages.from(error, nodeNamesById(scenarioGraph)))
                 }
             }
           } yield {
@@ -241,7 +241,7 @@ class ScenarioTestingApiHttpService(
               sourceParameters
             )
           ).leftMap[TestingError] { error =>
-            ErrorResult(TestingApiErrorMessages.from(error))
+            ErrorResult(TestingApiErrorMessages.from(error, nodeNamesById(scenarioGraph)))
           }
         case ScenarioTestData.WithLiveData(numberOfSamples) =>
           scenarioTestService.fetchSourcesLiveData(
@@ -262,7 +262,7 @@ class ScenarioTestingApiHttpService(
                     serializedLiveData
                   )
               ).leftMap[TestingError] { error =>
-                ErrorResult(TestingApiErrorMessages.from(error))
+                ErrorResult(TestingApiErrorMessages.from(error, nodeNamesById(scenarioGraph)))
               }
           }
       }
@@ -353,7 +353,7 @@ class ScenarioTestingApiHttpService(
                   request.testCase,
                 )
             ).leftMap[TestingError] { error =>
-              ErrorResult(TestingApiErrorMessages.from(error))
+              ErrorResult(TestingApiErrorMessages.from(error, nodeNamesById(request.scenarioGraph)))
             }
           } yield {
             ResultsWithCountsDto.from(
@@ -407,6 +407,9 @@ class ScenarioTestingApiHttpService(
       .toList
       .toMap
   }
+
+  private def nodeNamesById(scenarioGraph: ScenarioGraph): Map[NodeId, String] =
+    scenarioGraph.nodes.map(node => node.id -> node.name.value).toMap
 
   private def isAuthorized(scenarioId: ProcessId, permission: Permission)(
       implicit loggedUser: LoggedUser
