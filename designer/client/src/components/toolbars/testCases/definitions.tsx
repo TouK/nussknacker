@@ -1,5 +1,5 @@
 import { Box, Typography } from "@mui/material";
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
@@ -7,14 +7,9 @@ import { getTestCaseAssertions, getTestCaseMocks, getInputDataRecords } from "..
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";
 import { SectionHeader } from "../../CommandBar/SectionHeader";
+import { useGraph } from "../../graph/GraphContext";
+import { nodeFound, nodeFoundHover } from "../../graph/graphStyledWrapper";
 import { NodeIcon } from "./NodeIcon";
-
-const NodeRow = ({ node }: { node: NodeType | undefined; label: string }) => (
-    <Box display="flex" alignItems="center" gap={0.75} py={0.25}>
-        {node && <NodeIcon node={node} />}
-        <Typography variant="body2">{node?.id ?? ""}</Typography>
-    </Box>
-);
 
 export const Definitions = () => {
     const { t } = useTranslation();
@@ -23,12 +18,12 @@ export const Definitions = () => {
     const assertions = useAppSelector(getTestCaseAssertions);
     const scenarioGraph = useAppSelector(getScenarioGraph);
 
-    const nodes = scenarioGraph.nodes ?? [];
-    const findNode = (id: string) => nodes.find((n) => n.id === id);
+    const nodes = useMemo(() => scenarioGraph.nodes ?? [], [scenarioGraph.nodes]);
+    const findNode = useCallback((id: string) => nodes.find((n) => n.id === id), [nodes]);
 
-    const sourceIds = [...new Set(inputDataRecords.map((r) => r.sourceId))];
-    const mockNodeIds = Object.keys(mocks).filter((nodeId) => mocks[nodeId]?.expression?.expression?.trim() !== "");
-    const assertionNodeIds = Object.keys(assertions);
+    const sourceIds = useMemo(() => [...new Set(inputDataRecords.map((r) => r.sourceId))], [inputDataRecords]);
+    const mockNodeIds = useMemo(() => Object.keys(mocks).filter((nodeId) => mocks[nodeId]?.expression?.expression?.trim() !== ""), [mocks]);
+    const assertionNodeIds = useMemo(() => Object.keys(assertions), [assertions]);
 
     return (
         <Box>
@@ -79,3 +74,36 @@ export const Definitions = () => {
         </Box>
     );
 };
+
+const NodeRow = ({ node }: { node: NodeType | undefined; label: string }) => {
+    const { onMouseEnter: handleMouseEnter, onMouseLeave: handleMouseLeave } = useNodeHover(node?.id);
+
+    return (
+        <Box display="flex" alignItems="center" gap={0.75} py={0.25} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+            {node && <NodeIcon node={node} />}
+            <Typography variant="body2">{node?.id ?? ""}</Typography>
+        </Box>
+    );
+};
+
+function useNodeHover(nodeId: string | undefined) {
+    const graphGetter = useGraph();
+
+    const onMouseEnter = useCallback(() => {
+        if (!nodeId) return;
+        const graph = graphGetter();
+        if (!graph) return;
+        graph.highlightNode(nodeId, nodeFound);
+        graph.highlightNode(nodeId, nodeFoundHover);
+    }, [nodeId, graphGetter]);
+
+    const onMouseLeave = useCallback(() => {
+        if (!nodeId) return;
+        const graph = graphGetter();
+        if (!graph) return;
+        graph.unhighlightNode(nodeId, nodeFound);
+        graph.unhighlightNode(nodeId, nodeFoundHover);
+    }, [nodeId, graphGetter]);
+
+    return { onMouseEnter, onMouseLeave };
+}
