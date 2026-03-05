@@ -1,10 +1,13 @@
-import { mapValues, omitBy, pickBy } from "lodash";
 import path from "path";
-import { Configuration, container, WatchIgnorePlugin } from "webpack";
+
+import { mapValues, omitBy, pickBy } from "lodash";
+import type { Configuration } from "webpack";
+import { container, WatchIgnorePlugin } from "webpack";
 import WebpackRemoteTypesPlugin from "webpack-remote-types-plugin";
 import extractUrlAndGlobal from "webpack/lib/util/extractUrlAndGlobal";
-import { SimpleScriptPlugin } from "./simpleScriptPlugin";
+
 import { hash } from "../../../client/version";
+import { SimpleScriptPlugin } from "./simpleScriptPlugin";
 
 // ModuleFederationPluginOptions is not exported, have to find another way
 type MFPOptions = ConstructorParameters<typeof container.ModuleFederationPlugin>[0];
@@ -123,9 +126,9 @@ export function withModuleFederationPlugins(cfg?: ModuleFederationParams): (wCfg
                     // this .tgz with types for exposed modules lands in public root
                     // and could be downloaded by remote side (e.g. `webpack-remote-types-plugin`).
                     `mkdir -p "${webpackConfig.output.path}"`,
-                    `tar -C .federated-types/${federationConfig.name} -czf "${path.join(
-                        webpackConfig.output.path,
-                        `${federationConfig.name}-dts.tgz`,
+                    `tar -C .federated-types/${federationConfig.name} -czf "${path.relative(
+                        process.cwd(),
+                        path.join(webpackConfig.output.path, `${federationConfig.name}-dts.tgz`),
                     )}" .`,
                 ]),
                 new container.ModuleFederationPlugin({
