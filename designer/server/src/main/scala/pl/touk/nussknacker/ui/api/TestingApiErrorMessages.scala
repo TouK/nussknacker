@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.NonEmptyList
 import io.circe.{DecodingFailure, Json}
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -28,8 +28,7 @@ import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 object TestingApiErrorMessages {
 
   def from(
-      performTestError: ScenarioTestService.PerformTestError,
-      nodeNamesById: Map[NodeId, String] = Map.empty
+      performTestError: ScenarioTestService.PerformTestError
   ): String = {
     performTestError match {
       case PerformTestError.DeserializationError(cause) =>
@@ -92,10 +91,10 @@ object TestingApiErrorMessages {
         errors.head match {
           case AssertionConfiguredForNotExistingNodesError(notExistingNodeIds) =>
             TestingApiErrorMessages.assertionsConfiguredForNotExistingNodes(notExistingNodeIds)
-          case ExpressionAssertionCompilationError(errors, assertion, nodeId) =>
-            TestingApiErrorMessages.assertionCompilationError(errors, assertion, nodeId, nodeNamesById)
-          case PredicateAssertionCompilationError(errors, assertion, _, nodeId) =>
-            TestingApiErrorMessages.assertionCompilationError(errors, assertion, nodeId, nodeNamesById)
+          case ExpressionAssertionCompilationError(errors, assertion, nodeId, nodeName) =>
+            TestingApiErrorMessages.assertionCompilationError(errors, assertion, nodeId, nodeName)
+          case PredicateAssertionCompilationError(errors, assertion, _, nodeId, nodeName) =>
+            TestingApiErrorMessages.assertionCompilationError(errors, assertion, nodeId, nodeName)
         }
     }
   }
@@ -199,12 +198,9 @@ object TestingApiErrorMessages {
       errors: NonEmptyList[ProcessCompilationError],
       assertion: Assertion,
       nodeId: NodeId,
-      nodeNamesById: Map[NodeId, String]
+      nodeName: NodeName
   ) =
-    s"Assertion compilation error. Node: ${nodeDisplayName(nodeId, nodeNamesById)}. ${prettyPrintAssertion(assertion)}. Errors: ${errors.toList.mkString(", ")}"
-
-  private def nodeDisplayName(nodeId: NodeId, nodeNamesById: Map[NodeId, String]): String =
-    nodeNamesById.getOrElse(nodeId, nodeId.value)
+    s"Assertion compilation error. Node: ${nodeName.value}. ${prettyPrintAssertion(assertion)}. Errors: ${errors.toList.mkString(", ")}"
 
   private def prettyPrintAssertion(assertion: Assertion): String = {
     assertion match {

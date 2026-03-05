@@ -10,7 +10,7 @@ import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.{DecodingFailure, Json}
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, NodeName, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ScenarioCompilationErrors}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
@@ -309,7 +309,12 @@ class ScenarioTestService(
         prepareTestData(preliminaryScenarioTestRecords, scenarioWithTyping.scenario)
       )
       compiledAssertions <- EitherT.fromEither[Future](
-        compileAssertions(testCase, scenarioWithTyping.nodesTyping, jobData)
+        compileAssertions(
+          testCase,
+          scenarioWithTyping.nodesTyping,
+          jobData,
+          scenarioWithTyping.scenario.collectAllNodes.map(node => node.id -> node.name).toMap
+        )
       )
       testResults <- EitherT(
         performTestWithDeserializedRecords(processVersion, scenarioWithTyping.scenario, scenarioTestData)
@@ -366,10 +371,11 @@ class ScenarioTestService(
   private def compileAssertions(
       test: TestCase,
       nodesTyping: Map[String, NodeTypingData],
-      jobData: JobData
+      jobData: JobData,
+      nodeNamesById: Map[NodeId, NodeName]
   ): Either[PerformTestError, CompiledAssertions] = {
     assertionCompiler
-      .compile(test, nodesTyping, jobData)
+      .compile(test, nodesTyping, jobData, nodeNamesById)
       .fold(
         errors => Left(AssertionErrors(errors)),
         Right(_)

@@ -12,7 +12,10 @@ object ValidationErrorOps {
           .filterNot(_.isEmpty)
           .map {
             _.map { case (nodeId, nodeErrors) =>
-              val nodeLabel = nodeNamesById.getOrElse(nodeId, nodeId.value)
+              val nodeLabel = nodeNamesById
+                .get(nodeId)
+                .map(nodeName => s"$nodeName (id: ${nodeId.value})")
+                .getOrElse(nodeId.value)
               s"\n  $nodeLabel: ${nodeErrors.map(_.message).mkString(", ")}"
             }.mkString("\nNode errors:", "", "")
           }

@@ -36,11 +36,15 @@ class AssertionsCompiler(
   def compile(
       testCase: TestCase,
       scenarioTypingResult: Map[String, NodeTypingData],
-      jobData: JobData
+      jobData: JobData,
+      nodeNamesById: Map[NodeId, NodeName],
   ): ValidatedNel[AssertionError, CompiledAssertions] = {
     testCase.assertions
       .map { case (nodeId, assertions) =>
-        compileNodeAssertions(assertions, scenarioTypingResult, jobData)(nodeId)
+        compileNodeAssertions(assertions, scenarioTypingResult, jobData)(
+          nodeId,
+          nodeNamesById.getOrElse(nodeId, NodeName(nodeId.value))
+        )
           .tupleLeft(nodeId)
       }
       .toList
@@ -53,7 +57,7 @@ class AssertionsCompiler(
       assertions: List[Assertion],
       nodesTyping: Map[String, NodeTypingData],
       jobData: JobData
-  )(implicit nodeId: NodeId): ValidatedNel[AssertionError, List[CompiledAssertion]] = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): ValidatedNel[AssertionError, List[CompiledAssertion]] = {
     validateTypingExistence(nodesTyping).andThen { nodeTypingData =>
       compileForNode(assertions, nodeTypingData.variableTypes, jobData).sequence
     }
@@ -64,7 +68,7 @@ class AssertionsCompiler(
       assertions: List[Assertion],
       variableTypes: Map[String, TypingResult],
       jobData: JobData
-  )(implicit nodeId: NodeId): List[ValidatedNel[AssertionCompilationError, CompiledAssertion]] = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): List[ValidatedNel[AssertionCompilationError, CompiledAssertion]] = {
     val ctx = TestCaseVariables.extendNodeVariablesValidationContext(
       globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData),
       variableTypes
@@ -88,7 +92,7 @@ class AssertionsCompiler(
   private def compileAssertion(
       context: ValidationContext,
       assertion: Assertion
-  )(implicit nodeId: NodeId): ValidatedNel[AssertionCompilationError, CompiledAssertion] = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): ValidatedNel[AssertionCompilationError, CompiledAssertion] = {
     assertion match {
       case expressionAssertion: ExpressionAssertion =>
         compileExpressionAssertion(context, expressionAssertion)
@@ -100,7 +104,10 @@ class AssertionsCompiler(
   private def compileExpressionAssertion(
       context: ValidationContext,
       assertion: ExpressionAssertion,
-  )(implicit nodeId: NodeId): ValidatedNel[ExpressionAssertionCompilationError, CompiledExpressionAssertion] = {
+  )(
+      implicit nodeId: NodeId,
+      nodeName: NodeName
+  ): ValidatedNel[ExpressionAssertionCompilationError, CompiledExpressionAssertion] = {
     expressionCompiler
       .compile(
         assertion.expression,
@@ -109,14 +116,17 @@ class AssertionsCompiler(
         Typed.typedClass(classOf[AssertionResult])
       )
       .map(e => CompiledExpressionAssertion(e.expression))
-      .leftMap(ExpressionAssertionCompilationError(_, assertion, nodeId))
+      .leftMap(ExpressionAssertionCompilationError(_, assertion, nodeId, nodeName))
       .toValidatedNel
   }
 
   private def compilePredicateAssertion(
       context: ValidationContext,
       assertion: PredicateAssertion
-  )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, CompiledAssertion] = {
+  )(
+      implicit nodeId: NodeId,
+      nodeName: NodeName
+  ): ValidatedNel[PredicateAssertionCompilationError, CompiledAssertion] = {
     val expectedCompiled = compileExpectedExpression(context, assertion)
     val actualCompiled   = compileActualExpression(context, assertion)
     (expectedCompiled, actualCompiled).tupled.andThen { case (expectedExpression, actualExpression) =>
@@ -141,7 +151,7 @@ class AssertionsCompiler(
   private def compileExpectedExpression(
       context: ValidationContext,
       assertion: PredicateAssertion
-  )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, TypedExpression] = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): ValidatedNel[PredicateAssertionCompilationError, TypedExpression] = {
     expressionCompiler
       .compile(
         assertion.expected,
@@ -154,7 +164,8 @@ class AssertionsCompiler(
           _,
           assertion,
           PredicateAssertionCompilationError.Field.Expected,
-          nodeId
+          nodeId,
+          nodeName
         )
       )
       .toValidatedNel
@@ -163,7 +174,7 @@ class AssertionsCompiler(
   private def compileActualExpression(
       context: ValidationContext,
       assertion: PredicateAssertion,
-  )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, TypedExpression] = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): ValidatedNel[PredicateAssertionCompilationError, TypedExpression] = {
     expressionCompiler
       .compile(
         assertion.actual,
@@ -176,7 +187,8 @@ class AssertionsCompiler(
           _,
           assertion,
           PredicateAssertionCompilationError.Field.Actual,
-          nodeId
+          nodeId,
+          nodeName
         )
       )
       .toValidatedNel
@@ -185,7 +197,7 @@ class AssertionsCompiler(
   private def compileComparisonExpression(
       context: ValidationContext,
       assertion: PredicateAssertion,
-  )(implicit nodeId: NodeId): ValidatedNel[PredicateAssertionCompilationError, TypedExpression] = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): ValidatedNel[PredicateAssertionCompilationError, TypedExpression] = {
     expressionCompiler
       .compile(
         // Compiling the below expression can result in errors like: Operator '==' used with not comparable types: String and Integer
@@ -204,7 +216,8 @@ class AssertionsCompiler(
           assertion,
           // If comparison expression fails to compile because of uncomparable types, we report the error on actual field.
           PredicateAssertionCompilationError.Field.Actual,
-          nodeId
+          nodeId,
+          nodeName
         )
       }
       .toValidatedNel
@@ -246,7 +259,8 @@ object AssertionCompilationError {
   final case class ExpressionAssertionCompilationError(
       errors: NonEmptyList[ProcessCompilationError],
       assertion: ExpressionAssertion,
-      nodeId: NodeId
+      nodeId: NodeId,
+      nodeName: NodeName
   ) extends AssertionCompilationError
 
   final case class PredicateAssertionCompilationError(
@@ -254,6 +268,7 @@ object AssertionCompilationError {
       assertion: PredicateAssertion,
       field: PredicateAssertionCompilationError.Field,
       nodeId: NodeId,
+      nodeName: NodeName,
   ) extends AssertionCompilationError
 
   object PredicateAssertionCompilationError {
