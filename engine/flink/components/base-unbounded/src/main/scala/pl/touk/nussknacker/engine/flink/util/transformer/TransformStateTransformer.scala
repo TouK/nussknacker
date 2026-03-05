@@ -60,7 +60,7 @@ object TransformStateTransformer extends CustomStreamTransformer {
               ),
               ctx.valueWithContextInfo.forClass[AnyRef](classOf[String])
             )
-            .setUidAndNameToNodeId(ctx.nodeId)
+            .setUidAndName(ctx.nodeId.value, ctx.nodeName.value)
         }
       )
 

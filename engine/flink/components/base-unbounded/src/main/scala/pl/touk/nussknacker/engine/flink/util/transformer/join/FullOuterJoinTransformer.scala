@@ -198,7 +198,7 @@ class FullOuterJoinTransformer(
         .reduce(_.connectAndMerge(_))
         .keyBy((v: ValueWithContext[StringKeyedValue[AnyRef]]) => v.value.key)
         .process(aggregatorFunction, outputTypeInfo)
-        .setUidAndNameToNodeId(context.nodeId)
+        .setUidAndName(context.nodeId.value, context.nodeName.value)
 
       watermarkStrategy
         .map(new TimestampAssignmentHelper(_)(outputTypeInfo).assignTimestampsAndWatermarks(stream))

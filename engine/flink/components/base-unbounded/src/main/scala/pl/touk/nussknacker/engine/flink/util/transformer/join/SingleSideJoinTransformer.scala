@@ -180,7 +180,7 @@ class SingleSideJoinTransformer(
           )
           // TODO: Add TypeInfo, it's probably outputType from AggregatorFunctionMixin?
           .process(aggregatorFunction)
-          .setUidAndNameToNodeId(context.nodeId)
+          .setUidAndName(context.nodeId.value, context.nodeName.value)
 
         watermarkStrategy
           .map(

@@ -64,7 +64,7 @@ object transformers {
           start
             .groupByWithValue(groupBy, groupByParameterName, aggregateBy, preserveContext)
             .process(aggregatorFunction, typeInfos.returnedValueTypeInfo)
-            .setUidAndNameToNodeId(ctx.nodeId)
+            .setUidAndName(ctx.nodeId.value, ctx.nodeName.value)
         })
       )
   }
@@ -146,7 +146,7 @@ object transformers {
                     fctx.convertToEngineRuntimeContext
                   )
                 )
-          }).setUidAndNameToNodeId(ctx.nodeId)
+          }).setUidAndName(ctx.nodeId.value, ctx.nodeName.value)
         })
       )
   }
@@ -188,7 +188,7 @@ object transformers {
               keyedStream.extendedEventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
             case SessionWindowTrigger.OnEnd =>
               keyedStream.extendedWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger, preserveContext)
-          }).setUidAndNameToNodeId(ctx.nodeId)
+          }).setUidAndName(ctx.nodeId.value, ctx.nodeName.value)
         })
       )
   }

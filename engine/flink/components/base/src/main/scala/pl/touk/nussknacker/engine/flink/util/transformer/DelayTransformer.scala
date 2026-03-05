@@ -50,7 +50,7 @@ class DelayTransformer extends CustomStreamTransformer with Serializable {
           prepareDelayFunction(ctx, delay),
           ctx.valueWithContextInfo.forNull[AnyRef]
         )
-        .setUidAndNameToNodeId(ctx.nodeId)
+        .setUidAndName(ctx.nodeId.value, ctx.nodeName.value)
     }
 
   protected def defaultKey(ctx: Context): String = ""

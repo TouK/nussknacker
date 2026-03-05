@@ -182,7 +182,7 @@ object EventGeneratorSourceFactory
             WatermarkStrategy.noWatermarks(),
             flinkNodeContext.nodeId.value,
           )
-          .setUidAndNameToNodeId(flinkNodeContext.nodeId)
+          .setUidAndName(flinkNodeContext.nodeId.value, flinkNodeContext.nodeName.value)
           .flatMap(
             (_: Void, out: Collector[Void]) => {
               // This 'null' is a dummy value. It has to exist for each event, but its value is completely ignored.

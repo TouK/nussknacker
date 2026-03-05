@@ -257,7 +257,7 @@ object SampleNodes {
             case (SimpleFromValueWithContext(ctx, sr), None) =>
               (ValueWithContext(SimpleRecordWithPreviousValue(sr, 0, stringVal), ctx), Some(sr.value1))
           }(context.valueWithContextInfo.forUnknown, TypeInformation.of(classOf[Long]))
-          .setUidAndNameToNodeId(nodeId)
+          .setUidAndName(nodeId.value, context.nodeName.value)
       )
 
     object SimpleFromValueWithContext {

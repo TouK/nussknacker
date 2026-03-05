@@ -369,7 +369,7 @@ class FlinkProcessRegistrar(
             TimeUnit.MILLISECONDS,
             asyncExecutionContextPreparer.bufferSize
           )
-          .setUidAndName(node.id + "-$async")
+          .setUidAndName(node.id + "-$async", node.data.name.value + "-async")
       } else {
         val ti = InterpretationResultTypeInformation.create(outputContexts)
         stream.flatMap(
