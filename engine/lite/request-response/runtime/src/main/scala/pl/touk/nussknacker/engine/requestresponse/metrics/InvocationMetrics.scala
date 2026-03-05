@@ -3,11 +3,12 @@ package pl.touk.nussknacker.engine.requestresponse.metrics
 import cats.Monad
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
+import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.util.metrics.MetricIdentifier
-import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
+import pl.touk.nussknacker.engine.util.metrics.common.naming.{nodeIdTag, nodeNameTag}
 import pl.touk.nussknacker.engine.util.service.EspTimer
 
 import scala.language.higherKinds
@@ -29,7 +30,7 @@ class InvocationMetrics(context: EngineRuntimeContext) {
     try {
       implicitly[Monad[Effect]].map(invocation) { result =>
         result match {
-          case Invalid(errors) => errors.toList.foreach(ex => markErrorTimer(start, ex.nodeComponentInfo.map(_.nodeId)))
+          case Invalid(errors) => errors.toList.foreach(ex => markErrorTimer(start, ex.nodeComponentInfo))
           case Valid(_)        => successTimer.update(start)
         }
         result
@@ -39,10 +40,14 @@ class InvocationMetrics(context: EngineRuntimeContext) {
     }
   }
 
-  private def markErrorTimer(startTime: Long, nodeId: Option[NodeId] = None): Unit = {
-    val id = nodeId.getOrElse(NodeId("unknown"))
+  private def markErrorTimer(startTime: Long, nodeInfo: Option[NodeComponentInfo] = None): Unit = {
+    val id       = nodeInfo.map(_.nodeId).getOrElse(NodeId("unknown"))
+    val nodeName = nodeInfo.map(_.nodeName).getOrElse(NodeName(id.value))
     nodeErrorTimers
-      .getOrElseUpdate(id, espTimer(Map(nodeIdTag -> id.value), NonEmptyList.of("invocation", "failure")))
+      .getOrElseUpdate(
+        id,
+        espTimer(Map(nodeIdTag -> id.value, nodeNameTag -> nodeName.value), NonEmptyList.of("invocation", "failure"))
+      )
       .update(startTime)
   }
 

@@ -69,12 +69,16 @@ object ProcessCompilationError {
       extends ProcessUncanonizationError
       with ScenarioGraphLevelError
 
-  final case class DuplicatedNodeIds(nodeIds: Set[NodeId]) extends ProcessCompilationError with ScenarioGraphLevelError
-
-  final case class DuplicatedNodeNames(duplicatedNames: Set[NodeName], duplicatedIds: Set[NodeId])
+  final case class DuplicatedNodeIds(duplicatedNodes: Map[NodeId, Set[NodeName]])
       extends ProcessCompilationError
       with ScenarioGraphLevelError {
-    override def nodeIds: Set[NodeId] = duplicatedIds
+    override def nodeIds: Set[NodeId] = duplicatedNodes.keySet
+  }
+
+  final case class DuplicatedNodeNames(duplicatedNames: Set[NodeName], affectedNodeIds: Set[NodeId])
+      extends ProcessCompilationError
+      with ScenarioGraphLevelError {
+    override def nodeIds: Set[NodeId] = affectedNodeIds
   }
 
   final case class NonUniqueEdgeType(edgeType: String, nodeId: NodeId, nodeName: NodeName)
@@ -363,7 +367,8 @@ object ProcessCompilationError {
       paramName: ParameterName,
       language: Language,
       parameterEditors: List[ParameterEditor],
-      nodeId: NodeId
+      nodeId: NodeId,
+      nodeName: NodeName
   ) extends PartSubGraphCompilationError
       with InASingleNode
 
@@ -461,7 +466,11 @@ object ProcessCompilationError {
       CustomNodeError(nodeId, message, paramName)
   }
 
-  final case class FatalUnknownError(message: String, nodeId: Option[NodeId]) extends ProcessCompilationError {
+  final case class FatalUnknownError(
+      message: String,
+      nodeId: Option[NodeId],
+      nodeName: Option[NodeName] = None
+  ) extends ProcessCompilationError {
     override def nodeIds: Set[NodeId] = nodeId.toSet
   }
 
@@ -513,7 +522,7 @@ object ProcessCompilationError {
     override val id: String = name.value
   }
 
-  final case class NodeNameValidationError(errorType: IdErrorType, nodeName: NodeName, override val nodeId: NodeId)
+  final case class NodeNameValidationError(errorType: IdErrorType, override val nodeId: NodeId, nodeName: NodeName)
       extends IdError
       with InASingleNode {
     override val id: String = nodeId.value

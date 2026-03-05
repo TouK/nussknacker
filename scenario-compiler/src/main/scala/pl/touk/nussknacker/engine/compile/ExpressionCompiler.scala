@@ -4,7 +4,7 @@ import cats.data.{IorNel, NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{invalidNel, Valid}
 import cats.implicits._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{JobData, NodeId}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
@@ -135,6 +135,7 @@ class ExpressionCompiler(
       inputContext: SingleInputNodeInputValidationContext
   )(
       implicit nodeId: NodeId,
+      nodeName: NodeName,
       jobData: JobData
   ): IorNel[PartSubGraphCompilationError, List[CompiledParameter]] = {
     compileNodeParameters(
@@ -160,6 +161,7 @@ class ExpressionCompiler(
       treatEagerParametersAsLazy: Boolean = false
   )(
       implicit nodeId: NodeId,
+      nodeName: NodeName,
       jobData: JobData
   ): IorNel[PartSubGraphCompilationError, List[(TypedParameter, Parameter)]] = {
     def compileParameters(parameterByName: Map[ParameterName, NodeParameter]) = {
@@ -233,7 +235,8 @@ class ExpressionCompiler(
       definition: Parameter,
       treatEagerParametersAsLazy: Boolean = false
   )(
-      implicit nodeId: NodeId
+      implicit nodeId: NodeId,
+      nodeName: NodeName
   ): ValidatedNel[PartSubGraphCompilationError, TypedParameter] = {
     val ctxToUse = if (definition.isLazyParameter || treatEagerParametersAsLazy) ctx else ctx.clearVariables
 
@@ -249,7 +252,7 @@ class ExpressionCompiler(
       branchIdAndExpressions: List[(String, Expression)],
       branchContexts: Map[String, ValidationContext],
       definition: Parameter
-  )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, TypedParameter] = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): ValidatedNel[PartSubGraphCompilationError, TypedParameter] = {
     branchIdAndExpressions
       .map { case (branchId, expression) =>
         val paramName = definition.name.withBranchId(branchId)
@@ -271,7 +274,8 @@ class ExpressionCompiler(
       editors: List[ParameterEditor],
       paramName: ParameterName
   )(
-      implicit nodeId: NodeId
+      implicit nodeId: NodeId,
+      nodeName: NodeName
   ): ValidatedNel[PartSubGraphCompilationError, Expression] = {
     def substitute(dictId: String) = {
       DictKeyWithLabelExpressionParser
@@ -298,7 +302,7 @@ class ExpressionCompiler(
       expression.language == DictKeyWithLabel
 
     val incompatibleChangeToParameterDefinitionDetected: ValidatedNel[PartSubGraphCompilationError, Expression] =
-      invalidNel(IncompatibleParameterDefinitionModification(paramName, expression.language, editors, nodeId))
+      invalidNel(IncompatibleParameterDefinitionModification(paramName, expression.language, editors, nodeId, nodeName))
 
     def validateAndSubstitute(expression: Expression): ValidatedNel[PartSubGraphCompilationError, Expression] = {
       editors match {

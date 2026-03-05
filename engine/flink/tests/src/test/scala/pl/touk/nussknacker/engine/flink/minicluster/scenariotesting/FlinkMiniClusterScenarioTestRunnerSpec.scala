@@ -1069,7 +1069,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
                 ParameterName("static"),
                 `DictKeyWithLabel`,
                 List(SpelParameterEditor, SpelTemplateParameterEditor),
-                NodeId("eager1")
+                NodeId("eager1"),
+                NodeName("eager1")
               ) :: Nil
             ) =>
       }

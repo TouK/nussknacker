@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.dict
 import cats.data.{Validated, ValidatedNel}
 import cats.data.Validated.{invalidNel, Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.IncompatibleParameterDefinitionModification
 import pl.touk.nussknacker.engine.api.definition._
@@ -19,6 +19,7 @@ object DictKeyParameterAdapter extends LazyLogging {
       canonicalProcess: CanonicalProcess,
       parametersToAdapt: List[ParameterToAdapt],
   ): CanonicalProcess = {
+    val nodeNamesById = canonicalProcess.collectAllNodes.map(node => node.id -> node.name).toMap
     val rewriter = ProcessNodesRewriter.rewritingAllExpressions { exprIdWithMetadata => original =>
       val parameterToAdaptForExpressionOpt = parametersToAdapt.find { error =>
         error.nodeId == exprIdWithMetadata.expressionId.nodeId &&
@@ -34,7 +35,9 @@ object DictKeyParameterAdapter extends LazyLogging {
             parameterToAdapt.parameterEditors,
             parameterToAdapt.paramName
           )(
-            exprIdWithMetadata.expressionId.nodeId
+            exprIdWithMetadata.expressionId.nodeId,
+            nodeNamesById
+              .getOrElse(exprIdWithMetadata.expressionId.nodeId, NodeName(exprIdWithMetadata.expressionId.nodeId.value))
           ) match {
             case Valid(modified) =>
               logger.info(
@@ -59,10 +62,11 @@ object DictKeyParameterAdapter extends LazyLogging {
       editors: List[ParameterEditor],
       paramName: ParameterName,
   )(
-      implicit nodeId: NodeId
+      implicit nodeId: NodeId,
+      nodeName: NodeName
   ): ValidatedNel[PartSubGraphCompilationError, Expression] = {
     val incompatibleChangeToParameterDefinitionDetected: ValidatedNel[PartSubGraphCompilationError, Expression] =
-      invalidNel(IncompatibleParameterDefinitionModification(paramName, expression.language, editors, nodeId))
+      invalidNel(IncompatibleParameterDefinitionModification(paramName, expression.language, editors, nodeId, nodeName))
 
     def adaptToSpel(
         expression: Expression

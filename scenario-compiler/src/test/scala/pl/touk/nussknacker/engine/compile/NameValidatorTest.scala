@@ -80,7 +80,7 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
         errors.toList should contain theSameElementsAs List(
           ScenarioNameError(EmptyValue, ProcessName(""), isFragment = false),
           NodeIdValidationError(EmptyValue, NodeId("")),
-          NodeNameValidationError(EmptyValue, NodeName(""), NodeId(""))
+          NodeNameValidationError(EmptyValue, NodeId(""), NodeName(""))
         )
       case Validated.Valid(_) =>
         fail("Validation succeeded, but was expected to fail")
@@ -160,28 +160,28 @@ object IdValidationTestData {
   val nodeNameErrorCases: TableFor2[String, List[IdError]] = Table(
     ("nodeName", "errors"),
     ("validName", List.empty),
-    ("", List(NodeNameValidationError(EmptyValue, NodeName(""), NodeId("validNodeId")))),
-    (" ", List(NodeNameValidationError(BlankId, NodeName(" "), NodeId("validNodeId")))),
+    ("", List(NodeNameValidationError(EmptyValue, NodeId("validNodeId"), NodeName("")))),
+    (" ", List(NodeNameValidationError(BlankId, NodeId("validNodeId"), NodeName(" ")))),
     (
       "trailingSpace ",
-      List(NodeNameValidationError(TrailingSpacesId, NodeName("trailingSpace "), NodeId("validNodeId")))
+      List(NodeNameValidationError(TrailingSpacesId, NodeId("validNodeId"), NodeName("trailingSpace ")))
     ),
     (
       " leadingSpace",
-      List(NodeNameValidationError(LeadingSpacesId, NodeName(" leadingSpace"), NodeId("validNodeId")))
+      List(NodeNameValidationError(LeadingSpacesId, NodeId("validNodeId"), NodeName(" leadingSpace")))
     ),
     (
       " leadingAndTrailingSpace ",
       List(
         NodeNameValidationError(
           LeadingSpacesId,
-          NodeName(" leadingAndTrailingSpace "),
-          NodeId("validNodeId")
+          NodeId("validNodeId"),
+          NodeName(" leadingAndTrailingSpace ")
         ),
         NodeNameValidationError(
           TrailingSpacesId,
-          NodeName(" leadingAndTrailingSpace "),
-          NodeId("validNodeId")
+          NodeId("validNodeId"),
+          NodeName(" leadingAndTrailingSpace ")
         )
       )
     ),
@@ -190,8 +190,8 @@ object IdValidationTestData {
       List(
         NodeNameValidationError(
           IllegalCharactersId("Quotation mark (\"), dot (.) and apostrophe (')"),
-          NodeName("name.with.dot"),
-          NodeId("validNodeId")
+          NodeId("validNodeId"),
+          NodeName("name.with.dot")
         )
       )
     ),

@@ -40,7 +40,7 @@ object NameValidator {
 
   def validateNodeName(nodeData: NodeData): ValidatedNel[ProcessCompilationError, Unit] =
     validateName(nodeData.name.value, nodeNameIllegalCharacters, nodeNameIllegalCharactersReadable)
-      .leftMap(_.map(NodeNameValidationError(_, nodeData.name, nodeData.id)))
+      .leftMap(_.map(NodeNameValidationError(_, nodeData.id, nodeData.name)))
 
   private def validateName(
       id: String,

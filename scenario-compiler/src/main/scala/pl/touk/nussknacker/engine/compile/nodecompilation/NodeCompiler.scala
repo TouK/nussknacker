@@ -520,7 +520,8 @@ class NodeCompiler(
   )(
       implicit jobData: JobData
   ): NodeCompilationResult[List[CompiledParameter]] = {
-    implicit val nodeId: NodeId = fragmentInput.id
+    implicit val nodeId: NodeId     = fragmentInput.id
+    implicit val nodeName: NodeName = fragmentInput.name
 
     val ref            = fragmentInput.ref
     val validParamDefs = fragmentDefinitionExtractor.extractParametersDefinition(fragmentInput)
@@ -641,6 +642,7 @@ class NodeCompiler(
       implicit nodeId: NodeId,
       scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+    implicit val nodeName: NodeName = serviceNodeData.name
 
     definitions.getComponent(ComponentType.Service, serviceNodeData.componentId) match {
       case Some(componentDefinition) if componentDefinition.component.isInstanceOf[EagerService] =>
@@ -715,6 +717,7 @@ class NodeCompiler(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
       nodeId: NodeId
   ): NodeCompilationResult[(ComponentExecutor, List[NodeParameter])] = {
+    implicit val nodeName: NodeName = nodeData.name
     componentDefinition match {
       case dynamicComponent: DynamicComponentDefinitionWithImplementation =>
         val nodeCompilationDependencies = createNodeCompilationDependencies(nodeData, inputContext)
@@ -827,6 +830,7 @@ class NodeCompiler(
       nodeInputValidationContext: NodeInputValidationContext,
   )(f: List[(TypedParameter, Parameter)] => IorNel[ProcessCompilationError, T])(
       implicit nodeId: NodeId,
+      nodeName: NodeName,
       scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, T]) = {
     import scenarioCompilationDependencies._
@@ -871,6 +875,7 @@ class NodeCompiler(
         nodeId: NodeId
     ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
       import scenarioCompilationDependencies._
+      implicit val nodeName: NodeName = serviceNodeData.name
       val computedParameters =
         expressionCompiler.compileExecutorComponentNodeParameters(
           componentDefinition.parameters,

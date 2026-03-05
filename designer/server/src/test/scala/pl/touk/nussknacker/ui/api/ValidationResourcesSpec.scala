@@ -173,16 +173,27 @@ class ValidationResourcesSpec
 
     val duplicateIds = newScenarioGraph(
       List(
-        Source(NodeId("s1"), NodeName("s1"), SourceRef(ProcessTestData.existingSourceFactory, List())),
-        node.Sink(NodeId("s1"), NodeName("s1"), SinkRef(ProcessTestData.existingSinkFactory, List()), None)
+        Source(
+          NodeId("123e4567-e89b-12d3-a456-426614174000"),
+          NodeName("source-node"),
+          SourceRef(ProcessTestData.existingSourceFactory, List())
+        ),
+        node.Sink(
+          NodeId("123e4567-e89b-12d3-a456-426614174000"),
+          NodeName("sink-node"),
+          SinkRef(ProcessTestData.existingSinkFactory, List()),
+          None
+        )
       ),
-      List(Edge(NodeId("s1"), NodeId("s1"), None))
+      List(
+        Edge(NodeId("123e4567-e89b-12d3-a456-426614174000"), NodeId("123e4567-e89b-12d3-a456-426614174000"), None)
+      )
     )
 
     createAndValidateScenario(duplicateIds, ProcessName("p2")) {
       status shouldEqual StatusCodes.BadRequest
       val entity = entityAs[String]
-      entity should include("Duplicate node ids: s1")
+      entity should include("Duplicate node ids: 123e4567-e89b-12d3-a456-426614174000 (sink-node, source-node)")
     }
   }
 

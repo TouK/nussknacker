@@ -74,15 +74,15 @@ class NodeDataValidator(modelData: ModelData) {
           ValidationNotPerformed
       }
 
-      val nodeIdErrors = NameValidator.validateNode(nodeData) match {
+      val nodeNameErrors = NameValidator.validateNode(nodeData) match {
         case Validated.Valid(_)   => List.empty
         case Validated.Invalid(e) => e.toList
       }
 
       compilationErrors match {
-        case e: ValidationPerformed => e.copy(errors = e.errors ++ nodeIdErrors)
+        case e: ValidationPerformed => e.copy(errors = e.errors ++ nodeNameErrors)
         case ValidationNotPerformed =>
-          ValidationPerformed(nodeIdErrors, parameters = None, expressionType = None, outputValidationContext = None)
+          ValidationPerformed(nodeNameErrors, parameters = None, expressionType = None, outputValidationContext = None)
       }
     }
   }

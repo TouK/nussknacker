@@ -177,15 +177,13 @@ protected trait ProcessCompilerBase {
 
   private def findDuplicates(parts: NonEmptyList[SourcePart]): Validated[ProcessCompilationError, Unit] = {
     val allNodes = NodesCollector.collectNodesInAllParts(parts)
-    val duplicatedIds =
-      allNodes.map(n => n.id).groupBy(identity).collect {
-        case (id, grouped) if grouped.size > 1 =>
-          id
-      }
-    if (duplicatedIds.isEmpty)
+    val duplicatedNodes = allNodes
+      .groupBy(_.id)
+      .collect { case (id, groupedNodes) if groupedNodes.size > 1 => id -> groupedNodes.map(_.data.name).toSet }
+    if (duplicatedNodes.isEmpty)
       valid(())
     else
-      invalid(DuplicatedNodeIds(duplicatedIds.toSet))
+      invalid(DuplicatedNodeIds(duplicatedNodes))
   }
 
   private def compile(source: SourcePart, branchEndContexts: BranchEndContexts)(

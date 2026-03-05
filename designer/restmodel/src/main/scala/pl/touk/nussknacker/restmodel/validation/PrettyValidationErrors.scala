@@ -46,10 +46,16 @@ object PrettyValidationErrors {
           description = s"Failed to load $refClazzName",
           paramName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
         )
-      case DuplicatedNodeIds(ids) =>
+      case DuplicatedNodeIds(nodesById) =>
+        val duplicatedIdsWithNames = nodesById.toList
+          .sortBy { case (id, _) => id.value }
+          .map { case (id, names) =>
+            val sortedNames = names.map(_.value).toList.sorted
+            s"${id.value} (${sortedNames.mkString(", ")})"
+          }
         node(
           message = "Two nodes cannot have same id",
-          description = s"Duplicate node ids: ${ids.mkString(", ")}",
+          description = s"Duplicate node ids: ${duplicatedIdsWithNames.mkString(", ")}",
           errorType = NodeValidationErrorType.RenderNotAllowed
         )
       case DuplicatedNodeNames(names, _) =>
@@ -177,9 +183,14 @@ object PrettyValidationErrors {
         node("Unknown fragment", s"Node $nodeName uses fragment $id which is missing")
       case InvalidFragment(id, _, nodeName) =>
         node("Invalid fragment", s"Node $nodeName uses fragment $id which is invalid")
-      case FatalUnknownError(message, maybeNodeId) =>
+      case FatalUnknownError(message, maybeNodeId, maybeNodeName) =>
+        val nodeContext = maybeNodeName
+          .map(_.value)
+          .orElse(maybeNodeId.map(_.value))
+          .map(node => s" for node $node")
+          .getOrElse("")
         node(
-          s"Unknown, fatal validation error${maybeNodeId.map(nodeId => s" for node $nodeId")}",
+          s"Unknown, fatal validation error$nodeContext",
           s"Fatal error: $message, please check configuration and logs for details"
         )
       case CannotCreateObjectError(message, _, nodeName, _) =>
@@ -315,10 +326,10 @@ object PrettyValidationErrors {
           description = message,
           paramName = Some(paramName)
         )
-      case IncompatibleParameterDefinitionModification(paramName, language, parameterEditors, nodeId) =>
+      case IncompatibleParameterDefinitionModification(paramName, language, parameterEditors, nodeId, nodeName) =>
         node(
           message =
-            s"There is an incompatible parameter [${paramName.value}] in component [$nodeId]. Its value cannot be used for target editors [${parameterEditors.mkString(", ")}] ",
+            s"There is an incompatible parameter [${paramName.value}] in component [${nodeName.value}]. Its value cannot be used for target editors [${parameterEditors.mkString(", ")}] ",
           description =
             s"Incompatible change to the parameter's definition detected. None of editors $parameterEditors supports '$language' language",
           paramName = Some(paramName),

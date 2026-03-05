@@ -10,16 +10,22 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   BlankId,
   EmptyValue,
+  FatalUnknownError,
   IdError,
   IllegalCharactersId,
+  IncompatibleParameterDefinitionModification,
   LeadingSpacesId,
   NodeIdValidationError,
   NodeNameValidationError,
   ScenarioNameError,
   TrailingSpacesId
 }
+import pl.touk.nussknacker.engine.api.definition.{SpelParameterEditor, SpelTemplateParameterEditor}
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.IncompatibleParameterDefinitionErrorDetails
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.DictKeyWithLabel
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType
 
@@ -79,17 +85,63 @@ class PrettyValidationErrorsTest extends AnyFunSuite with Matchers with Inside {
       )
   }
 
+  test("should properly map duplicated node ids error with node names") {
+    PrettyValidationErrors
+      .formatErrorMessage(
+        ProcessCompilationError.DuplicatedNodeIds(
+          Map(NodeId("id1") -> Set(NodeName("source"), NodeName("sink")))
+        )
+      ) shouldBe
+      ValidationResults.NodeValidationError(
+        typ = "DuplicatedNodeIds",
+        message = "Two nodes cannot have same id",
+        description = "Duplicate node ids: id1 (sink, source)",
+        fieldName = None,
+        errorType = NodeValidationErrorType.RenderNotAllowed,
+        details = None
+      )
+  }
+
+  test("should use node name in incompatible parameter error message when provided") {
+    val nodeId    = NodeId("node-id")
+    val paramName = ParameterName("param1")
+    val editors   = List(SpelParameterEditor, SpelTemplateParameterEditor)
+    val error =
+      IncompatibleParameterDefinitionModification(
+        paramName,
+        DictKeyWithLabel,
+        editors,
+        nodeId,
+        NodeName("friendly-node")
+      )
+
+    val formatted = PrettyValidationErrors.formatErrorMessage(error)
+
+    formatted.message should include("component [friendly-node]")
+    formatted.message should not include "component [node-id]"
+    formatted.details shouldBe Some(IncompatibleParameterDefinitionErrorDetails(paramName, editors, nodeId))
+  }
+
+  test("should prefer node name over node id for fatal unknown error") {
+    val formatted = PrettyValidationErrors.formatErrorMessage(
+      FatalUnknownError("boom", Some(NodeId("node-id")), Some(NodeName("friendly-node")))
+    )
+
+    formatted.message should include("for node friendly-node")
+    formatted.message should not include "for node node-id"
+  }
+
 }
 
 object IdErrorTestData {
 
   val emptyIdScenarioError: ScenarioNameError   = ScenarioNameError(EmptyValue, ProcessName(""), isFragment = false)
   val emptyIdFragmentError: ScenarioNameError   = ScenarioNameError(EmptyValue, ProcessName(""), isFragment = true)
-  val emptyIdNodeError: NodeNameValidationError = NodeNameValidationError(EmptyValue, NodeName(""), NodeId(""))
+  val emptyIdNodeError: NodeNameValidationError = NodeNameValidationError(EmptyValue, NodeId(""), NodeName(""))
 
   val blankIdScenarioError: ScenarioNameError   = ScenarioNameError(BlankId, ProcessName(" "), isFragment = false)
   val blankIdFragmentError: ScenarioNameError   = ScenarioNameError(BlankId, ProcessName(" "), isFragment = true)
-  val blankIdNodeError: NodeNameValidationError = NodeNameValidationError(BlankId, NodeName(""), NodeId(" "))
+  val blankIdNodeError: NodeNameValidationError = NodeNameValidationError(BlankId, NodeId(" "), NodeName(""))
   val blankIdNodeIdError: NodeIdValidationError = NodeIdValidationError(BlankId, NodeId(" "))
 
   val leadingSpacesIdScenarioError: ScenarioNameError =
@@ -97,7 +149,7 @@ object IdErrorTestData {
   val leadingSpacesIdFragmentError: ScenarioNameError =
     ScenarioNameError(LeadingSpacesId, ProcessName(" leadingSpace"), isFragment = true)
   val leadingSpacesIdNodeError: NodeNameValidationError =
-    NodeNameValidationError(LeadingSpacesId, NodeName(" leadingSpace"), NodeId(""))
+    NodeNameValidationError(LeadingSpacesId, NodeId(""), NodeName(" leadingSpace"))
   val leadingSpacesIdNodeIdError: NodeIdValidationError =
     NodeIdValidationError(LeadingSpacesId, NodeId(" leadingSpace"))
 
@@ -106,7 +158,7 @@ object IdErrorTestData {
   val trailingSpacesIdFragmentError: ScenarioNameError =
     ScenarioNameError(TrailingSpacesId, ProcessName("trailingSpace "), isFragment = true)
   val trailingSpacesIdNodeError: NodeNameValidationError =
-    NodeNameValidationError(TrailingSpacesId, NodeName("trailingSpace "), NodeId(""))
+    NodeNameValidationError(TrailingSpacesId, NodeId(""), NodeName("trailingSpace "))
   val trailingSpacesIdNodeIdError: NodeIdValidationError =
     NodeIdValidationError(TrailingSpacesId, NodeId("trailingSpace "))
 
@@ -114,7 +166,7 @@ object IdErrorTestData {
   val illegalCharactersIdScenarioError: ScenarioNameError =
     ScenarioNameError(IllegalCharactersId(illegalCharsReadable), ProcessName("idWithIllegalChars!"), isFragment = false)
   val illegalCharactersIdNodeError: NodeNameValidationError =
-    NodeNameValidationError(IllegalCharactersId(illegalCharsReadable), NodeName("idWithIllegalChars!"), NodeId(""))
+    NodeNameValidationError(IllegalCharactersId(illegalCharsReadable), NodeId(""), NodeName("idWithIllegalChars!"))
   val illegalCharactersIdNodeIdError: NodeIdValidationError =
     NodeIdValidationError(IllegalCharactersId(illegalCharsReadable), NodeId("idWithIllegalChars!"))
 

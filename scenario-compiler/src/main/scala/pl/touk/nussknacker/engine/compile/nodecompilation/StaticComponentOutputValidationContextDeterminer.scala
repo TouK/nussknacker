@@ -119,7 +119,8 @@ class StaticComponentOutputValidationContextDeterminer(
           Invalid(
             FatalUnknownError(
               message = s"Invalid ContextTransformation class $transformation for contexts: $ctx",
-              nodeId = Some(nodeId)
+              nodeId = Some(nodeId),
+              nodeName = Some(nodeName)
             )
           ).toValidatedNel
         case (None, _) =>

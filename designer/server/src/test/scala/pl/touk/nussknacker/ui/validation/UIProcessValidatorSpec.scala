@@ -272,13 +272,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("check for duplicated ids") {
+    val duplicatedId = NodeId("550e8400-e29b-41d4-a716-446655440000")
     val process = createGraph(
       List(
-        Source(NodeId("inID"), NodeName("inID"), SourceRef(ProcessTestData.existingSourceFactory, List())),
-        Filter(NodeId("inID"), NodeName("inID"), Expression.spel("''")),
+        Source(duplicatedId, NodeName("source-dup"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        Filter(duplicatedId, NodeName("filter-dup"), Expression.spel("''")),
         Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List()))
       ),
-      List(Edge(NodeId("inID"), NodeId("inID"), None), Edge(NodeId("inID"), NodeId("out"), None))
+      List(Edge(duplicatedId, duplicatedId, None), Edge(duplicatedId, NodeId("out"), None))
     )
     val result = validateWithConfiguredProperties(process)
 
@@ -287,28 +288,29 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         NodeValidationError(
           typ = "DuplicatedNodeIds",
           message = "Two nodes cannot have same id",
-          description = "Duplicate node ids: inID",
+          description = "Duplicate node ids: 550e8400-e29b-41d4-a716-446655440000 (filter-dup, source-dup)",
           fieldName = None,
           errorType = RenderNotAllowed,
           details = None
         ),
-        List(NodeId("inID"))
+        List(duplicatedId)
       )
     )
   }
 
   test("check for duplicated ids when duplicated id is switch id") {
+    val duplicatedId = NodeId("11111111-2222-3333-4444-555555555555")
     val process = createGraph(
       List(
         Source(NodeId("in"), NodeName("in"), SourceRef(ProcessTestData.existingSourceFactory, List())),
-        Switch(NodeId("switchID"), NodeName("switchID"), None, None),
+        Switch(duplicatedId, NodeName("switch-main"), None, None),
         Sink(NodeId("out"), NodeName("out"), SinkRef(ProcessTestData.existingSinkFactory, List())),
-        Sink(NodeId("switchID"), NodeName("switchID"), SinkRef(ProcessTestData.existingSinkFactory, List()))
+        Sink(duplicatedId, NodeName("sink-duplicate-id"), SinkRef(ProcessTestData.existingSinkFactory, List()))
       ),
       List(
-        Edge(NodeId("in"), NodeId("switchID"), None),
-        Edge(NodeId("switchID"), NodeId("out"), Some(SwitchDefault)),
-        Edge(NodeId("switchID"), NodeId("switch"), Some(NextSwitch(Expression.spel("''"))))
+        Edge(NodeId("in"), duplicatedId, None),
+        Edge(duplicatedId, NodeId("out"), Some(SwitchDefault)),
+        Edge(duplicatedId, NodeId("switch"), Some(NextSwitch(Expression.spel("''"))))
       )
     )
 
@@ -319,12 +321,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         NodeValidationError(
           typ = "DuplicatedNodeIds",
           message = "Two nodes cannot have same id",
-          description = "Duplicate node ids: switchID",
+          description = "Duplicate node ids: 11111111-2222-3333-4444-555555555555 (sink-duplicate-id, switch-main)",
           fieldName = None,
           errorType = RenderNotAllowed,
           details = None
         ),
-        List(NodeId("switchID"))
+        List(duplicatedId)
       )
     )
     result.errors.invalidNodes shouldBe empty
@@ -2313,7 +2315,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         nodeErrors should contain key NodeId(exampleUUID)
         nodeErrors(NodeId(exampleUUID)) should contain(
           PrettyValidationErrors.formatErrorMessage(
-            NodeNameValidationError(BlankId, NodeName(" "), NodeId(exampleUUID))
+            NodeNameValidationError(BlankId, NodeId(exampleUUID), NodeName(" "))
           )
         )
         propertiesErrors shouldBe List(

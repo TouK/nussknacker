@@ -63,6 +63,7 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
 
     decodedPayload.processName shouldBe metaData.name
     decodedPayload.nodeId shouldBe Some(NodeId("nodeId"))
+    decodedPayload.nodeName shouldBe Some(NodeName("nodeId"))
     decodedPayload.exceptionInput shouldBe Some("input1")
     decodedPayload.message shouldBe Some("mess")
     decodedPayload.timestamp shouldBe 111

@@ -381,8 +381,9 @@ class UIProcessValidator(
   }
 
   private def validateDuplicates(scenarioGraph: ScenarioGraph): ValidationResult = {
-    val nodeIds       = scenarioGraph.nodes.map(_.id)
-    val duplicatedIds = nodeIds.groupBy(identity).filter(_._2.size > 1).keys.toSet
+    val duplicatedIds = scenarioGraph.nodes
+      .groupBy(_.id)
+      .collect { case (id, nodes) if nodes.size > 1 => id -> nodes.map(_.name).toSet }
     val duplicatedNames = scenarioGraph.nodes
       .groupBy(_.name)
       .collect { case (name, nodes) if nodes.map(_.id).distinct.size > 1 => name -> nodes.map(_.id).toSet }
