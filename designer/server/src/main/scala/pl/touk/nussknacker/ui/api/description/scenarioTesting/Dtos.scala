@@ -253,7 +253,7 @@ object Dtos {
       implicit val badRequestTestingErrorCodec: Codec[String, BadRequestTestingError, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestTestingError] {
           case SourcesCompilationError(errors) =>
-            errors.toHumanReadableMessage
+            errors.toHumanReadableMessage()
           case TooManyCharactersGenerated(length, limit) =>
             TestingApiErrorMessages.liveDataFetching.tooManyCharacters(length, limit)
           case TooManyRecordsRequested(maxRecordsCount) =>

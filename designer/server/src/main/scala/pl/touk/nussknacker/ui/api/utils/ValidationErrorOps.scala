@@ -1,17 +1,19 @@
 package pl.touk.nussknacker.ui.api.utils
 
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 
 object ValidationErrorOps {
 
   implicit class ValidationErrorOps(val errors: ValidationErrors) extends AnyVal {
 
-    def toHumanReadableMessage: String = {
+    def toHumanReadableMessage(nodeNamesById: Map[NodeId, String] = Map.empty): String = {
       s"Scenario is invalid.${Option(errors.invalidNodes)
           .filterNot(_.isEmpty)
           .map {
             _.map { case (nodeId, nodeErrors) =>
-              s"\n  $nodeId: ${nodeErrors.map(_.message).mkString(", ")}"
+              val nodeLabel = nodeNamesById.getOrElse(nodeId, nodeId.value)
+              s"\n  $nodeLabel: ${nodeErrors.map(_.message).mkString(", ")}"
             }.mkString("\nNode errors:", "", "")
           }
           .getOrElse("")}" +
