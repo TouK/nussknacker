@@ -31,6 +31,7 @@ class Objects extends Serializable {
                 TypeInformation.of(classOf[Model])
               )
               .uid(flinkNodeContext.nodeId.value)
+              .name(flinkNodeContext.nodeName.value)
               .map(
                 new FlinkContextInitializingFunction(
                   contextInitializer,

@@ -37,6 +37,7 @@ case class CollectionSource[T](
         flinkNodeContext.nodeId.value,
       )
       .uid(flinkNodeContext.nodeId.value)
+      .name(flinkNodeContext.nodeName.value)
       .map(
         new FlinkContextInitializingFunction(
           contextInitializer,

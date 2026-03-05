@@ -46,6 +46,7 @@ class DataRecordsSource(
         flinkNodeContext.nodeId.value,
       )
       .uid(flinkNodeContext.nodeId.value)
+      .name(flinkNodeContext.nodeName.value)
       .flatMap(
         new DataRecordContextInitializingFunction(
           flinkNodeContext.nodeId,

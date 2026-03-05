@@ -37,6 +37,7 @@ class CsvSource
         TypeInformation.of(classOf[Array[String]])
       )
       .uid(flinkNodeContext.nodeId.value)
+      .name(flinkNodeContext.nodeName.value)
       .map(
         new FlinkContextInitializingFunction(
           contextInitializer,

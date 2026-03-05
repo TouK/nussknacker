@@ -24,7 +24,7 @@ class NoEndingSource(val implementWatermarkStrategyForTest: Boolean)
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
-    // 1. set UID
+    // 1. set UID and operator name
     val rawSourceWithUid = env
       .fromSource(
         flinkSource,
@@ -33,6 +33,7 @@ class NoEndingSource(val implementWatermarkStrategyForTest: Boolean)
         TypeInformation.of(classOf[String])
       )
       .uid(flinkNodeContext.nodeId.value)
+      .name(flinkNodeContext.nodeName.value)
 
     // 2. assign timestamp and watermark policy
     val rawSourceWithUidAndTimestamp = watermarkStrategy

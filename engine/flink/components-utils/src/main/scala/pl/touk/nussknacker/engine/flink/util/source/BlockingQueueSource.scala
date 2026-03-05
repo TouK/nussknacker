@@ -50,6 +50,7 @@ class BlockingQueueSource[T](returnType: TypingResult, extractTimestampFun: T =>
         TypeInformationDetection.instance.forType[T](returnType)
       )
       .uid(flinkNodeContext.nodeId.value)
+      .name(flinkNodeContext.nodeName.value)
       .map(
         new FlinkContextInitializingFunction(
           contextInitializer,
