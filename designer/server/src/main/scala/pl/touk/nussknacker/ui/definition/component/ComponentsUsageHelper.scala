@@ -39,9 +39,15 @@ object ComponentsUsageHelper {
       storedUsage
     )
 
-    val scenariosComponentUsages        = flattenUsages(processesDetails.filter(_.isFragment == false))
-    val fragmentsComponentUsages        = flattenUsages(processesDetails.filter(_.isFragment == true))
-    val groupedFragmentsComponentUsages = fragmentsComponentUsages.groupBy(_.processDetails.name)
+    val scenariosComponentUsages = flattenUsages(processesDetails.filter(_.isFragment == false))
+    val fragmentsComponentUsages = flattenUsages(processesDetails.filter(_.isFragment == true))
+    val groupedFragmentsComponentUsages = fragmentsComponentUsages
+      .groupBy(_.processDetails)
+      .flatMap { case (fragmentProcessDetails, usages) =>
+        fragmentProcessIdentifiers(fragmentProcessDetails).map(_ -> usages)
+      }
+      .groupBy { case (fragmentIdentifier, _) => fragmentIdentifier }
+      .mapValuesNow(_.flatMap { case (_, usages) => usages })
 
     val scenarioUsagesWithResolvedFragments: List[ScenarioComponentsUsage[NodeUsageData]] =
       scenariosComponentUsages.flatMap {
@@ -54,7 +60,7 @@ object ComponentsUsageHelper {
           val fragmentUsageRefined: ScenarioComponentsUsage[NodeUsageData] =
             fragmentUsage.copy(nodeUsageData = ScenarioUsageData(fragmentNodeUsage.nodeId, fragmentNodeUsage.nodeName))
           val fragmentsUsages: List[ScenarioComponentsUsage[NodeUsageData]] =
-            groupedFragmentsComponentUsages.get(ProcessName(fragmentName)).toList.flatten.map {
+            groupedFragmentsComponentUsages.get(fragmentName).toList.flatten.map {
               case u @ ScenarioComponentsUsage(_, _, _, innerNodeUsage: NodeIdWithNodeName) =>
                 val refinedUsage: ScenarioComponentsUsage[NodeUsageData] =
                   u.copy(
@@ -99,5 +105,18 @@ object ComponentsUsageHelper {
       processDetails: ScenarioWithDetailsEntity[_],
       nodeUsageData: NodeUsageDataShape
   )
+
+  private def fragmentProcessIdentifiers(fragmentProcessDetails: ScenarioWithDetailsEntity[_]): Set[String] =
+    Set(
+      fragmentProcessDetails.name.value,
+      fragmentProcessDetails.processId.value.toString
+    ) ++ {
+      // For resolving fragment-myFragment or streaming-fragment-myFragment (not only myFragment or processId)
+      val fragmentComponentId = ComponentId(ComponentType.Fragment, fragmentProcessDetails.name.value)
+      Set(
+        fragmentComponentId.toString,
+        DesignerWideComponentId.default(fragmentProcessDetails.processingType, fragmentComponentId).value
+      )
+    }
 
 }
