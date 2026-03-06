@@ -30,7 +30,7 @@ class ValidationErrorOpsSpec extends AnyFunSuite with Matchers {
 
     new ValidationErrorOps.ValidationErrorOps(errors)
       .toHumanReadableMessage(Map(nodeId -> "friendly-node")) should include(
-      "friendly-node (id: node-id-1): Some message"
+      "friendly-node: Some message"
     )
   }
 
