@@ -59,7 +59,16 @@ export const Definitions = () => {
             ) : (
                 <Box px={1.5} pb={1}>
                     {assertionNodeIds.map((nodeId) => (
-                        <NodeRow key={nodeId} node={findNode(nodeId)} label={nodeId} badge={assertions[nodeId]?.length} />
+                        <NodeRow
+                            key={nodeId}
+                            node={findNode(nodeId)}
+                            label={nodeId}
+                            badge={t("testCases.definitions.testAssertions", {
+                                count: assertions[nodeId]?.length,
+                                defaultValue_one: "{{count}} assertion",
+                                defaultValue_other: "{{count}} assertions",
+                            })}
+                        />
                     ))}
                 </Box>
             )}
@@ -85,9 +94,11 @@ const EmptySection = ({ children }: PropsWithChildren) => (
         </Typography>
     </Box>
 );
-const NodeRow = ({ node, badge }: { node: NodeType | undefined; label: string; badge?: number }) => {
+const NodeRow = ({ node, label, badge }: { node: NodeType | undefined; label: string; badge?: string }) => {
     const { onMouseEnter: handleMouseEnter, onMouseLeave: handleMouseLeave } = useNodeHover(node?.id);
     const handleClick = useNodeSelectOrOpen(node);
+
+    const labelToShow = label ?? node?.id ?? "";
 
     return (
         <Box
@@ -101,12 +112,18 @@ const NodeRow = ({ node, badge }: { node: NodeType | undefined; label: string; b
             sx={{ cursor: node ? "pointer" : "default" }}
         >
             {node && <NodeIcon node={node} />}
-            <Typography variant="body2">{node?.id ?? ""}</Typography>
-            {badge !== undefined && (
-                <Typography variant="caption" color="text.disabled" sx={{ ml: "auto" }}>
-                    {badge}
+
+            <Box display="flex" alignItems="center" gap={0.5}>
+                <Typography variant="body2" component="span">
+                    {labelToShow}
                 </Typography>
-            )}
+
+                {badge && (
+                    <Typography variant="overline" color="text.disabled" sx={{ ml: 0.5 }}>
+                        {badge}
+                    </Typography>
+                )}
+            </Box>
         </Box>
     );
 };
