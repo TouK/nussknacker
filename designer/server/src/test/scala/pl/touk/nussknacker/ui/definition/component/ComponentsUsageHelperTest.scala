@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
 }
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
@@ -28,7 +28,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentCl
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.restmodel.component.{NodeUsageData, ScenarioComponentsUsages}
-import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
+import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.{toCanonical, wrapGraphWithScenarioDetailsEntity}
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
@@ -412,6 +412,66 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         withClue(s"componentId: $componentId") {
           result(componentId) should contain theSameElementsAs usages
         }
+      }
+    }
+  }
+
+  test("should resolve fragment usages by supported fragment identifiers") {
+    import pl.touk.nussknacker.engine.util.Implicits._
+
+    val fragmentProcessId = ProcessId(123L)
+    val fragmentProcess   = ProcessName("fragmentWithDifferentId")
+    val fragmentScenarioById = fragmentScenario
+      .copy(name = fragmentProcess, processId = fragmentProcessId, isFragment = true)
+
+    val fragmentIdentifiers = Table(
+      "fragmentIdentifier",
+      fragmentProcessId.value.toString,
+      ComponentId(Fragment, fragmentProcess.value).toString,
+      DesignerWideComponentId.default("streaming", ComponentId(Fragment, fragmentProcess.value)).value
+    )
+
+    forAll(fragmentIdentifiers) { fragmentIdentifier =>
+      val processWithFragmentById = ScenarioBuilder
+        .streaming("processWithFragmentById")
+        .source("source", ProcessTestData.existingSourceFactory)
+        .fragment(
+          "fragmentNode",
+          fragmentIdentifier,
+          Nil,
+          Map.empty,
+          Map(
+            "sink" -> GraphBuilder.emptySink("sink", ProcessTestData.existingSinkFactory)
+          )
+        )
+
+      val processDetailsWithFragmentById =
+        wrapGraphWithScenarioDetailsEntity(
+          processWithFragmentById.name,
+          processWithFragmentById.toScenarioGraph,
+        )
+
+      val result = ComponentsUsageHelper
+        .computeComponentsUsage(
+          withComponentsUsages(List(processDetailsWithFragmentById, fragmentScenarioById)),
+          processingTypeAndInfoToNonFragmentDesignerWideId
+        )
+        .mapValuesNow(_.map { case (baseProcessDetails, nodeIds) =>
+          (baseProcessDetails.mapScenario(_ => ()), nodeIds)
+        })
+
+      val expectedUsages = List(
+        (
+          processDetailsWithFragmentById.mapScenario(_ => ()),
+          List(FragmentUsageData("fragmentNode", "fragmentNode", "f1", "f1"))
+        ),
+        (fragmentScenarioById.mapScenario(_ => ()), List(ScenarioUsageData("f1", "f1")))
+      )
+
+      withClue(s"fragmentIdentifier: $fragmentIdentifier") {
+        result(
+          sid(CustomComponent, ProcessTestData.otherExistingStreamTransformer2)
+        ) should contain theSameElementsAs expectedUsages
       }
     }
   }

@@ -47,6 +47,7 @@ describe("Fragment", () => {
         };
 
         it("should allow adding input parameters", () => {
+            cy.intercept("POST", "**/api/nodes/**/validation").as("nodeValidation");
             cy.visitNewFragment(seed, "fragment");
 
             cy.openNodeWindow("input").as("window");
@@ -61,6 +62,8 @@ describe("Fragment", () => {
                 .find("[data-testid='fieldsRow:3']")
                 .find("[placeholder='Field name']")
                 .should("have.value", nameValueStringAnyValue);
+            // Validation response updates fields section; wait for it before screenshot to avoid detached subject.
+            cy.wait("@nodeValidation");
             cy.get("@window").find("[data-testid='settings:3']").matchImage();
 
             // Provide String Any with Suggestion Value inputMode
