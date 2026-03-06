@@ -244,16 +244,21 @@ object Dtos {
     sealed trait BadRequestTestingError extends TestingError
 
     object BadRequestTestingError {
-      final case class TooManyCharactersGenerated(length: Int, limit: Int)     extends BadRequestTestingError
-      final case class TooManyRecordsRequested(maxRecordsCount: Int)           extends BadRequestTestingError
-      final case class SourcesCompilationError(errors: ValidationErrors)       extends BadRequestTestingError
+      final case class TooManyCharactersGenerated(length: Int, limit: Int) extends BadRequestTestingError
+      final case class TooManyRecordsRequested(maxRecordsCount: Int)       extends BadRequestTestingError
+
+      final case class SourcesCompilationError(
+          errors: ValidationErrors,
+          nodeNamesById: Map[NodeId, String]
+      ) extends BadRequestTestingError
+
       final case class TestingWithCustomInputNotSupportedError(nodeId: NodeId) extends BadRequestTestingError
       final case class ErrorResult(message: String)                            extends BadRequestTestingError
 
       implicit val badRequestTestingErrorCodec: Codec[String, BadRequestTestingError, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestTestingError] {
-          case SourcesCompilationError(errors) =>
-            errors.toHumanReadableMessage()
+          case SourcesCompilationError(errors, nodeNamesById) =>
+            errors.toHumanReadableMessage(nodeNamesById)
           case TooManyCharactersGenerated(length, limit) =>
             TestingApiErrorMessages.liveDataFetching.tooManyCharacters(length, limit)
           case TooManyRecordsRequested(maxRecordsCount) =>

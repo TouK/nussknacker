@@ -368,7 +368,21 @@ class DefinitionResourcesSpec
           .asString
           .value
 
+        val fragmentNodeRefId = response
+          .downField("componentGroups")
+          .downAt(_.hcursor.get[String]("name").rightValue == "fragments")
+          .downField("components")
+          .downAt(_.hcursor.get[String]("label").rightValue == fragmentName)
+          .downField("node")
+          .downField("ref")
+          .downField("id")
+          .focus
+          .value
+          .asString
+          .value
+
         label shouldBe fragmentName
+        fragmentNodeRefId shouldBe fragmentName
       }
     }
   }

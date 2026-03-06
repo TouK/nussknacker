@@ -339,7 +339,8 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
                   globalErrors = List.empty,
                   processPropertiesErrors = List.empty,
                   testCasesValidationErrors = None,
-                )
+                ),
+                nodeNamesById = Map(NodeId("source") -> "source")
               )
             )
           )

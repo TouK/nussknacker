@@ -251,7 +251,7 @@ class ScenarioTestingApiHttpService(
             numberOfSamples
           ) match {
             case Left(error) =>
-              EitherT.fromEither[Future](Left(toDto(error)))
+              EitherT.fromEither[Future](Left(toDto(error, scenarioGraph)))
             case Right(serializedLiveData) =>
               EitherT(
                 scenarioTestService
@@ -290,7 +290,7 @@ class ScenarioTestingApiHttpService(
                 scenarioWithDetails.isFragment
               )
               .left
-              .map(toDto)
+              .map(error => toDto(error, scenarioGraph))
           )
           .map(validator.validate(sourceParameters, _)(metaData))
       case ScenarioTestData.WithLiveData(numberOfSamples) =>
@@ -323,7 +323,7 @@ class ScenarioTestingApiHttpService(
               ) match {
                 case Left(error) =>
                   logger.info(s"Could not generate test data: $error")
-                  Future(Left(toDto(error)))
+                  Future(Left(toDto(error, request.scenarioGraph)))
                 case Right(serializedLiveData) =>
                   Future(Right(serializedLiveData.content))
               }
@@ -366,22 +366,26 @@ class ScenarioTestingApiHttpService(
       }
   }
 
-  private def toDto(error: ParametersDefinitionError): TestingError = {
+  private def toDto(error: ParametersDefinitionError, scenarioGraph: ScenarioGraph): TestingError = {
+    val nodeNamesById = extractNodeNamesById(scenarioGraph)
     error match {
       case ParametersDefinitionError.SourcesCompilationError(nodesWithErrors) =>
         SourcesCompilationError(
-          ValidationErrors.initial(invalidNodes = collectInvalidNodes(nodesWithErrors))
+          ValidationErrors.initial(invalidNodes = collectInvalidNodes(nodesWithErrors)),
+          nodeNamesById = nodeNamesById
         )
       case ParametersDefinitionError.TestingWithCustomInputNotSupportedError(nodeId) =>
         BadRequestTestingError.TestingWithCustomInputNotSupportedError(nodeId)
     }
   }
 
-  private def toDto(error: FetchLiveDataError): TestingError = {
+  private def toDto(error: FetchLiveDataError, scenarioGraph: ScenarioGraph): TestingError = {
+    val nodeNamesById = extractNodeNamesById(scenarioGraph)
     error match {
       case FetchLiveDataError.SourcesCompilationError(nodesWithErrors) =>
         SourcesCompilationError(
-          ValidationErrors.initial(invalidNodes = collectInvalidNodes(nodesWithErrors))
+          ValidationErrors.initial(invalidNodes = collectInvalidNodes(nodesWithErrors)),
+          nodeNamesById = nodeNamesById
         )
       case FetchLiveDataError.NoLiveDataAvailableError =>
         NoLiveDataAvailable
@@ -396,6 +400,9 @@ class ScenarioTestingApiHttpService(
         TooManyRecordsRequested(maxRecordsCount)
     }
   }
+
+  private def extractNodeNamesById(scenarioGraph: ScenarioGraph): Map[NodeId, String] =
+    scenarioGraph.nodes.map(node => node.id -> node.name.value).toMap
 
   private def collectInvalidNodes(
       nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]

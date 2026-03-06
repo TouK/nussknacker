@@ -33,7 +33,7 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
   private val context = Context(ContextId.dummy, variables, None, Some(TraceId.generate()))
 
   private val exception = NuExceptionInfo(
-    Some(NodeComponentInfo(NodeId("nodeId"), NodeName("nodeId"), ComponentType.Service, "componentName")),
+    Some(NodeComponentInfo(NodeId("nodeId"), NodeName("nodeName"), ComponentType.Service, "componentName")),
     new Exception("mess"),
     context,
     "input1",
@@ -63,7 +63,7 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
 
     decodedPayload.processName shouldBe metaData.name
     decodedPayload.nodeId shouldBe Some(NodeId("nodeId"))
-    decodedPayload.nodeName shouldBe Some(NodeName("nodeId"))
+    decodedPayload.nodeName shouldBe Some(NodeName("nodeName"))
     decodedPayload.exceptionInput shouldBe Some("input1")
     decodedPayload.message shouldBe Some("mess")
     decodedPayload.timestamp shouldBe 111

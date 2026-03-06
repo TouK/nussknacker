@@ -7,7 +7,7 @@ object ValidationErrorOps {
 
   implicit class ValidationErrorOps(val errors: ValidationErrors) extends AnyVal {
 
-    def toHumanReadableMessage(nodeNamesById: Map[NodeId, String] = Map.empty): String = {
+    def toHumanReadableMessage(nodeNamesById: Map[NodeId, String]): String = {
       s"Scenario is invalid.${Option(errors.invalidNodes)
           .filterNot(_.isEmpty)
           .map {
