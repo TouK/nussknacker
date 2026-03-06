@@ -59,7 +59,7 @@ export const Definitions = () => {
             ) : (
                 <Box px={1.5} pb={1}>
                     {assertionNodeIds.map((nodeId) => (
-                        <NodeRow key={nodeId} node={findNode(nodeId)} label={nodeId} />
+                        <NodeRow key={nodeId} node={findNode(nodeId)} label={nodeId} badge={assertions[nodeId]?.length} />
                     ))}
                 </Box>
             )}
@@ -85,7 +85,7 @@ const EmptySection = ({ children }: PropsWithChildren) => (
         </Typography>
     </Box>
 );
-const NodeRow = ({ node }: { node: NodeType | undefined; label: string }) => {
+const NodeRow = ({ node, badge }: { node: NodeType | undefined; label: string; badge?: number }) => {
     const { onMouseEnter: handleMouseEnter, onMouseLeave: handleMouseLeave } = useNodeHover(node?.id);
     const handleClick = useNodeSelectOrOpen(node);
 
@@ -102,6 +102,11 @@ const NodeRow = ({ node }: { node: NodeType | undefined; label: string }) => {
         >
             {node && <NodeIcon node={node} />}
             <Typography variant="body2">{node?.id ?? ""}</Typography>
+            {badge !== undefined && (
+                <Typography variant="caption" color="text.disabled" sx={{ ml: "auto" }}>
+                    {badge}
+                </Typography>
+            )}
         </Box>
     );
 };
