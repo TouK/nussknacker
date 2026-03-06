@@ -24,8 +24,6 @@ module.exports = (on, config) => {
     }
     require("@frsource/cypress-plugin-visual-regression-diff/dist/plugins").initPlugin(on, config);
 
-    require("@cypress/code-coverage/task")(on, config);
-
     const options = browserify.defaultOptions;
     // transform[1][1] is "babelify"
     // so we just add our code instrumentation plugin to the list
