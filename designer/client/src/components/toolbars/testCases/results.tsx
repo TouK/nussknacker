@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { testScenarioWithTestCase } from "../../../actions/nk/testingActions";
 import { useUserSettings } from "../../../common/useUserSettings";
 import type { TestAssertionResults } from "../../../http/resultsWithCountsDto";
-import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import { getTestCase } from "../../../reducers/selectors/testCases";
 import { getTestResultsLoading } from "../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
@@ -15,13 +14,13 @@ import { useTestingScenarioEnabled } from "../../modals/TestingDataRecords/useTe
 import { OpenNodeTestingDetails } from "./assertionResultsForNode/assertionResult/openNodeTestingDetails";
 import { AssertionResultsForNode } from "./assertionResultsForNode/assertionResultsForNode";
 import { AssertionResultsForNodeTitle } from "./assertionResultsForNode/assertionResultsForNodeTitle";
+import { useScenarioNodeOrder } from "./useScenarioNodeOrder";
 
 interface Props {
     testAssertionResults: TestAssertionResults;
 }
 
 export const Results = ({ testAssertionResults }: Props) => {
-    const scenarioGraph = useAppSelector(getScenarioGraph);
     const testCase = useAppSelector(getTestCase);
     const dispatch = useAppDispatch();
     const [showMockFieldOnEnrichers] = useUserSettings("node.showMockFieldOnEnrichers");
@@ -33,23 +32,11 @@ export const Results = ({ testAssertionResults }: Props) => {
         dispatch(testScenarioWithTestCase(testCase, showMockFieldOnEnrichers));
     }, [dispatch, testCase, showMockFieldOnEnrichers]);
 
-    const nodeOrderMap = useMemo(
-        () =>
-            scenarioGraph.nodes.reduce((acc, node, index) => {
-                acc[node.id] = index;
-                return acc;
-            }, {} as Record<string, number>),
-        [scenarioGraph.nodes],
-    );
+    const { nodes, sortByScenarioOrder } = useScenarioNodeOrder();
 
     const sortedNodeIds = useMemo(
-        () =>
-            Object.keys(testAssertionResults).sort((nodeIdA, nodeIdB) => {
-                const orderA = nodeOrderMap[nodeIdA] ?? Infinity;
-                const orderB = nodeOrderMap[nodeIdB] ?? Infinity;
-                return orderA - orderB;
-            }),
-        [testAssertionResults, nodeOrderMap],
+        () => sortByScenarioOrder(Object.keys(testAssertionResults)),
+        [testAssertionResults, sortByScenarioOrder],
     );
 
     if (sortedNodeIds.length === 0) {
@@ -63,13 +50,7 @@ export const Results = ({ testAssertionResults }: Props) => {
         );
     }
 
-    return (
-        <ResultsContent
-            sortedNodeIds={sortedNodeIds}
-            testAssertionResults={testAssertionResults}
-            scenarioGraphNodes={scenarioGraph.nodes}
-        />
-    );
+    return <ResultsContent sortedNodeIds={sortedNodeIds} testAssertionResults={testAssertionResults} scenarioGraphNodes={nodes} />;
 };
 
 const NoResults = ({

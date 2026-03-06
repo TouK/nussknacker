@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { resetSelection } from "../../../actions/nk/selection";
 import { replaceSearchQuery } from "../../../containers/hooks/useSearchQuery";
-import { getScenario, getScenarioGraph, getSelectionState } from "../../../reducers/selectors/graph";
+import { getScenario, getSelectionState } from "../../../reducers/selectors/graph";
 import { getInputDataRecords, getTestCaseAssertions, getTestCaseMocks } from "../../../reducers/selectors/testCases";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";
@@ -14,20 +14,26 @@ import { useGraph } from "../../graph/GraphContext";
 import { nodeFound, nodeFoundHover } from "../../graph/graphStyledWrapper";
 import { ACTIVE_TAB_QUERY_KEY, NodeDetailsTab } from "../../graph/node-modal/node/NodeContent/TabsWrapper";
 import { NodeIcon } from "./NodeIcon";
+import { useScenarioNodeOrder } from "./useScenarioNodeOrder";
 
 export const Definitions = () => {
     const { t } = useTranslation();
     const inputDataRecords = useAppSelector(getInputDataRecords);
     const mocks = useAppSelector(getTestCaseMocks);
     const assertions = useAppSelector(getTestCaseAssertions);
-    const scenarioGraph = useAppSelector(getScenarioGraph);
 
-    const nodes = useMemo(() => scenarioGraph.nodes ?? [], [scenarioGraph.nodes]);
+    const { nodes, sortByScenarioOrder } = useScenarioNodeOrder();
     const findNode = useCallback((id: string) => nodes.find((n) => n.id === id), [nodes]);
 
-    const sourceIds = useMemo(() => [...new Set(inputDataRecords.map((r) => r.sourceId))], [inputDataRecords]);
-    const mockNodeIds = useMemo(() => Object.keys(mocks).filter((nodeId) => mocks[nodeId]?.expression?.expression?.trim() !== ""), [mocks]);
-    const assertionNodeIds = useMemo(() => Object.keys(assertions), [assertions]);
+    const sourceIds = useMemo(
+        () => sortByScenarioOrder([...new Set(inputDataRecords.map((r) => r.sourceId))]),
+        [inputDataRecords, sortByScenarioOrder],
+    );
+    const mockNodeIds = useMemo(
+        () => sortByScenarioOrder(Object.keys(mocks).filter((nodeId) => mocks[nodeId]?.expression?.expression?.trim() !== "")),
+        [mocks, sortByScenarioOrder],
+    );
+    const assertionNodeIds = useMemo(() => sortByScenarioOrder(Object.keys(assertions)), [assertions, sortByScenarioOrder]);
 
     return (
         <Box>
