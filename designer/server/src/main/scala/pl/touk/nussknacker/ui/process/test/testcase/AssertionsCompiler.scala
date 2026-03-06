@@ -39,15 +39,18 @@ class AssertionsCompiler(
       jobData: JobData,
       nodeNamesById: Map[NodeId, NodeName],
   ): ValidatedNel[AssertionError, CompiledAssertions] = {
-    testCase.assertions
+    testCase.assertions.toList
       .map { case (nodeId, assertions) =>
-        compileNodeAssertions(assertions, scenarioTypingResult, jobData)(
-          nodeId,
-          nodeNamesById.getOrElse(nodeId, NodeName(nodeId.value))
-        )
-          .tupleLeft(nodeId)
+        nodeNamesById
+          .get(nodeId)
+          .map { nodeName =>
+            compileNodeAssertions(assertions, scenarioTypingResult, jobData)(nodeId, nodeName)
+              .tupleLeft(nodeId)
+          }
+          .getOrElse(
+            Invalid(NonEmptyList.one(AssertionConfiguredForNotExistingNodesError(NonEmptyList.one(nodeId))))
+          )
       }
-      .toList
       .sequence
       .map(assertions => CompiledAssertions(assertions.toMap))
   }

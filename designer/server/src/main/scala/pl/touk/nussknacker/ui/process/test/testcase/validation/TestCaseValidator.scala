@@ -83,7 +83,7 @@ class TestCaseValidator(
       nodeTestCase.assertions,
       nodeTyping.inputVariables,
       scenarioCompilationDependencies.jobData
-    )(nodeData.id)
+    )(nodeData.id, nodeData.name)
 
     (enricherMockErrors, assertionsErrors) match {
       case (None, None) => Right(())

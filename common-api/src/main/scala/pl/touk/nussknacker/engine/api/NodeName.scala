@@ -8,6 +8,8 @@ final case class NodeName(value: String) {
 }
 
 object NodeName {
+  val unknown: NodeName = NodeName("unknown node name")
+
   implicit val encoder: Encoder[NodeName] = Encoder.encodeString.contramap(_.value)
   implicit val decoder: Decoder[NodeName] = Decoder.decodeString.map(NodeName(_))
 

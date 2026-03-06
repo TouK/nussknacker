@@ -9,7 +9,7 @@ import io.circe
 import io.circe._
 import io.circe.derivation.deriveCodec
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -252,8 +252,9 @@ object Dtos {
           nodeNamesById: Map[NodeId, String]
       ) extends BadRequestTestingError
 
-      final case class TestingWithCustomInputNotSupportedError(nodeId: NodeId) extends BadRequestTestingError
-      final case class ErrorResult(message: String)                            extends BadRequestTestingError
+      final case class TestingWithCustomInputNotSupportedError(nodeId: NodeId, nodeName: NodeName)
+          extends BadRequestTestingError
+      final case class ErrorResult(message: String) extends BadRequestTestingError
 
       implicit val badRequestTestingErrorCodec: Codec[String, BadRequestTestingError, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestTestingError] {
@@ -263,8 +264,8 @@ object Dtos {
             TestingApiErrorMessages.liveDataFetching.tooManyCharacters(length, limit)
           case TooManyRecordsRequested(maxRecordsCount) =>
             TestingApiErrorMessages.liveDataFetching.requestedTooManyRecordsToFetch(maxRecordsCount)
-          case TestingWithCustomInputNotSupportedError(sourceId) =>
-            TestingApiErrorMessages.testingWithCustomInput.notSupportedBySource(sourceId)
+          case TestingWithCustomInputNotSupportedError(sourceId, sourceName) =>
+            TestingApiErrorMessages.testingWithCustomInput.notSupportedBySource(sourceId, sourceName)
           case ErrorResult(message) =>
             message
         }

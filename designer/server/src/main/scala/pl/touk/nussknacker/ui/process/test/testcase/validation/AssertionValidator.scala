@@ -18,9 +18,11 @@ private class AssertionValidator(
       assertions: List[Assertion],
       inputVariableTypes: Map[String, TypingResult],
       jobData: JobData
-  )(implicit nodeId: NodeId): Option[Map[AssertionIndex, NonEmptyList[AssertionValidationError]]] = {
-    implicit val nodeName: NodeName = NodeName(nodeId.value)
-    val compilationResults          = assertionsCompiler.compileForNode(assertions, inputVariableTypes, jobData)
+  )(
+      implicit nodeId: NodeId,
+      nodeName: NodeName
+  ): Option[Map[AssertionIndex, NonEmptyList[AssertionValidationError]]] = {
+    val compilationResults = assertionsCompiler.compileForNode(assertions, inputVariableTypes, jobData)
     val errorsMap = compilationResults.zipWithIndex.collect { case (Invalid(errors), index) =>
       index -> convertToAssertionErrors(errors)
     }.toMap

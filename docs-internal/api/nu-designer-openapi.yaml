@@ -932,7 +932,7 @@ paths:
                   value: |-
                     Scenario is invalid.
                     Node errors:
-                      filter: Bad expression
+                      Unknown node name: Bad expression
                     Global errors: Empty scenario
                     Properties errors: Configured property parallelism is missing
                 Example3:
@@ -2371,11 +2371,12 @@ paths:
               examples:
                 Example0:
                   summary: Source compilation error
-                  value: 'Cannot compile source ''sourceId''. Errors: Invalid source
-                    configuration'
+                  value: 'Cannot compile source ''source name'' (id: sourceId). Errors:
+                    Invalid source configuration'
                 Example1:
                   summary: Unsupported source preview
-                  value: Source 'sourceId' doesn't support records preview
+                  value: 'Source ''source name'' (id: sourceId) doesn''t support records
+                    preview'
                 Example2:
                   summary: Invalid node type
                   value: 'Expected Filter but got: Source'

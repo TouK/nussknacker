@@ -320,7 +320,7 @@ class UIProcessValidator(
     val nodeNamesById = scenarioGraph.nodes.map(n => n.id -> n.name).toMap
 
     def findNonUniqueEdge(nodeId: NodeId, edgesFromNode: List[Edge]) = {
-      val nodeName = nodeNamesById.getOrElse(nodeId, NodeName(nodeId.value))
+      val nodeName = nodeNamesById.getOrElse(nodeId, NodeName.unknown)
       val nonUniqueByType = edgesFromNode.groupBy(_.edgeType).collect {
         case (Some(eType), list) if eType.mustBeUnique && list.size > 1 =>
           PrettyValidationErrors.formatErrorMessage(NonUniqueEdgeType(eType.toString, nodeId, nodeName))

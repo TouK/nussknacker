@@ -39,7 +39,7 @@ const AssertionResults = () => {
                 <AssertionResultsHeader />
                 {sortedNodeIds.map((nodeId) => {
                     const node = scenarioGraph.nodes.find((node) => node.id === nodeId);
-                    const displayName = node?.name ?? nodeId;
+                    const displayName = node?.name ?? "Unknown node name";
 
                     return (
                         <Expandable
@@ -51,7 +51,7 @@ const AssertionResults = () => {
                                     action={node ? <OpenNodeTestingDetails node={node} /> : undefined}
                                 />
                             }
-                            componentId={displayName}
+                            componentId={nodeId}
                             detailsSx={{ pl: 2, pr: 1, py: 0 }}
                             summarySx={{ minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px" } }}
                         >

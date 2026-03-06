@@ -243,10 +243,16 @@ class NodesApiHttpService(
               ) match {
                 case Left(FetchLiveDataError.SourcesCompilationError(errorsByNodeIdNel)) =>
                   Future(
-                    Left(SourceCompilation(sourceNodeData.id.value, errorsByNodeIdNel.head._2.map(_.toString).toList))
+                    Left(
+                      SourceCompilation(
+                        sourceNodeData.id.value,
+                        sourceNodeData.name.value,
+                        errorsByNodeIdNel.head._2.map(_.toString).toList
+                      )
+                    )
                   )
                 case Left(FetchLiveDataError.LiveDataFetchingNotSupportedError) =>
-                  Future(Left(UnsupportedSourcePreview(sourceNodeData.id.value)))
+                  Future(Left(UnsupportedSourcePreview(sourceNodeData.id.value, sourceNodeData.name.value)))
                 case Left(FetchLiveDataError.NoLiveDataAvailableError) =>
                   Future(Left(NoLiveDataAvailable))
                 case Left(FetchLiveDataError.ScenarioRecordsSerializationError(cause)) =>

@@ -543,11 +543,11 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                 List(
                   Example.of(
                     summary = Some("Source compilation error"),
-                    value = SourceCompilation("sourceId", List("Invalid source configuration"))
+                    value = SourceCompilation("sourceId", "source name", List("Invalid source configuration"))
                   ),
                   Example.of(
                     summary = Some("Unsupported source preview"),
-                    value = UnsupportedSourcePreview("sourceId")
+                    value = UnsupportedSourcePreview("sourceId", "source name")
                   ),
                   Example.of(
                     summary = Some("Invalid node type"),
@@ -1976,12 +1976,13 @@ object NodesApiEndpoints {
       sealed trait NoContentNodesError  extends NodesError
 
       object BadRequestNodesError {
-        case class SourceCompilation(nodeId: String, errors: List[String])   extends BadRequestNodesError
-        case class UnsupportedSourcePreview(nodeId: String)                  extends BadRequestNodesError
-        case class InvalidNodeType(expectedType: String, actualType: String) extends BadRequestNodesError
-        case class TooManyRecordsRequested(maxRecordsCount: Int)             extends BadRequestNodesError
-        case class MalformedTypingResult(msg: String)                        extends BadRequestNodesError
-        case class TooManyCharactersGenerated(length: Int, limit: Int)       extends BadRequestNodesError
+        case class SourceCompilation(nodeId: String, nodeName: String, errors: List[String])
+            extends BadRequestNodesError
+        case class UnsupportedSourcePreview(nodeId: String, nodeName: String) extends BadRequestNodesError
+        case class InvalidNodeType(expectedType: String, actualType: String)  extends BadRequestNodesError
+        case class TooManyRecordsRequested(maxRecordsCount: Int)              extends BadRequestNodesError
+        case class MalformedTypingResult(msg: String)                         extends BadRequestNodesError
+        case class TooManyCharactersGenerated(length: Int, limit: Int)        extends BadRequestNodesError
 
         object EnricherMockExpressionGenerationError {
           final case class CompilationErrors(errors: NonEmptyList[ProcessCompilationError]) extends BadRequestNodesError
@@ -1990,9 +1991,10 @@ object NodesApiEndpoints {
 
         implicit val badRequestNodesErrorCodec: Codec[String, BadRequestNodesError, CodecFormat.TextPlain] =
           BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestNodesError] {
-            case SourceCompilation(nodeId, errors) =>
-              s"Cannot compile source '$nodeId'. Errors: ${errors.mkString(", ")}"
-            case UnsupportedSourcePreview(nodeId)          => s"Source '$nodeId' doesn't support records preview"
+            case SourceCompilation(nodeId, nodeName, errors) =>
+              s"Cannot compile source '$nodeName' (id: $nodeId). Errors: ${errors.mkString(", ")}"
+            case UnsupportedSourcePreview(nodeId, nodeName) =>
+              s"Source '$nodeName' (id: $nodeId) doesn't support records preview"
             case InvalidNodeType(expectedType, actualType) => s"Expected $expectedType but got: ${actualType}"
             case TooManyRecordsRequested(maxRecordsCount) =>
               TestingApiErrorMessages.liveDataFetching.requestedTooManyRecordsToFetch(maxRecordsCount)

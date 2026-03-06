@@ -30,23 +30,27 @@ object DictKeyParameterAdapter extends LazyLogging {
           logger.info(
             s"Found parameter [${parameterToAdapt.paramName.value}] in node [${parameterToAdapt.nodeId}] that needs to be adapted to editors [${parameterToAdapt.parameterEditors.mkString(",")}]"
           )
-          adaptDictKeyExpressionToAvailableEditors(
-            original,
-            parameterToAdapt.parameterEditors,
-            parameterToAdapt.paramName
-          )(
-            exprIdWithMetadata.expressionId.nodeId,
-            nodeNamesById
-              .getOrElse(exprIdWithMetadata.expressionId.nodeId, NodeName(exprIdWithMetadata.expressionId.nodeId.value))
-          ) match {
-            case Valid(modified) =>
-              logger.info(
-                s"Adaptation successful for parameter [${parameterToAdapt.paramName.value}] in node [${parameterToAdapt.nodeId}]: [$original] adapted to [$modified]"
-              )
-              modified
-            case Invalid(_) =>
-              logger.info(
-                s"Adaptation not successful for parameter [${parameterToAdapt.paramName.value}] in node [${parameterToAdapt.nodeId}]: using original value without modification"
+          nodeNamesById.get(exprIdWithMetadata.expressionId.nodeId) match {
+            case Some(nodeName) =>
+              adaptDictKeyExpressionToAvailableEditors(
+                original,
+                parameterToAdapt.parameterEditors,
+                parameterToAdapt.paramName
+              )(exprIdWithMetadata.expressionId.nodeId, nodeName) match {
+                case Valid(modified) =>
+                  logger.info(
+                    s"Adaptation successful for parameter [${parameterToAdapt.paramName.value}] in node [${parameterToAdapt.nodeId}]: [$original] adapted to [$modified]"
+                  )
+                  modified
+                case Invalid(_) =>
+                  logger.info(
+                    s"Adaptation not successful for parameter [${parameterToAdapt.paramName.value}] in node [${parameterToAdapt.nodeId}]: using original value without modification"
+                  )
+                  original
+              }
+            case None =>
+              logger.warn(
+                s"Cannot adapt parameter [${parameterToAdapt.paramName.value}] for missing node name of node [${parameterToAdapt.nodeId}]"
               )
               original
           }

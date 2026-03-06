@@ -131,14 +131,20 @@ class ScenarioTestingApiHttpService(
                           case Right(parameters) =>
                             val nodeNamesById = scenarioGraph.nodes.map(n => n.id -> n.name).toMap
                             val uiParameters = parameters.map { case (id, params) =>
+                              val nodeName = nodeNamesById
+                                .get(id)
+                                .fold {
+                                  logger.warn(s"Missing source node name for id: ${id.value}")
+                                  "Unknown node name"
+                                }(_.value)
                               UISourceParameters(
                                 id.value,
-                                nodeNamesById.getOrElse(id, NodeName(id.value)).value,
+                                nodeName,
                                 params.map(DefinitionsService.createUIParameter)
                               )
                             }.toList
                             CapabilityStatus.Available(TestWithParametersDetails(uiParameters))
-                          case Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(_)) =>
+                          case Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(_, _)) =>
                             CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
                           case Left(ParametersDefinitionError.SourcesCompilationError(_)) =>
                             CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
@@ -386,8 +392,8 @@ class ScenarioTestingApiHttpService(
           ValidationErrors.initial(invalidNodes = collectInvalidNodes(nodesWithErrors)),
           nodeNamesById = ScenarioTestingApiHttpService.filterNodeNamesById(nodesWithErrors, nodeNamesById)
         )
-      case ParametersDefinitionError.TestingWithCustomInputNotSupportedError(nodeId) =>
-        BadRequestTestingError.TestingWithCustomInputNotSupportedError(nodeId)
+      case ParametersDefinitionError.TestingWithCustomInputNotSupportedError(nodeId, nodeName) =>
+        BadRequestTestingError.TestingWithCustomInputNotSupportedError(nodeId, nodeName)
     }
   }
 

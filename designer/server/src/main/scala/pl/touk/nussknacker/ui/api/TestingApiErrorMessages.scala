@@ -55,16 +55,17 @@ object TestingApiErrorMessages {
           case TestDataFormatHandler.InputVariablesExpressionDecodingError(message) =>
             TestingApiErrorMessages.passedParameters.inputVariablesExpressionDecodingError(message)
         }
-      case PerformTestError.UnexpectedVariableInTestRecordError(variableName, sourceId, testRecordIndex) =>
+      case PerformTestError.UnexpectedVariableInTestRecordError(variableName, sourceId, sourceName, testRecordIndex) =>
         TestingApiErrorMessages
           .problemInSample(testRecordIndex)
-          .unexpectedVariableInTestRecordError(variableName, sourceId)
+          .unexpectedVariableInTestRecordError(variableName, sourceId, sourceName)
       case PerformTestError.TestRecordVariableDecodingError(
             variableName,
             variableType,
             encodedVariable,
             cause,
             sourceId,
+            sourceName,
             testRecordIndex
           ) =>
         TestingApiErrorMessages
@@ -74,7 +75,8 @@ object TestingApiErrorMessages {
             variableType,
             encodedVariable,
             cause,
-            sourceId
+            sourceId,
+            sourceName
           )
       case PerformTestError.MissingSourceError(sourceId, recordIndex) =>
         TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.value)
@@ -141,8 +143,8 @@ object TestingApiErrorMessages {
 
   object testingWithCustomInput {
 
-    def notSupportedBySource(sourceId: NodeId) =
-      s"Testing with custom input is not supported by source '$sourceId'"
+    def notSupportedBySource(sourceId: NodeId, sourceName: NodeName) =
+      s"Testing with custom input is not supported by source '${sourceName.value}' (id: ${sourceId.value})"
 
   }
 
@@ -160,19 +162,27 @@ object TestingApiErrorMessages {
     def missingSource(sourceId: String): String =
       messageForSample(s"source with id '$sourceId' doesn't exist in the scenario")
 
-    def unexpectedVariableInTestRecordError(variableName: String, sourceId: NodeId): String =
-      messageForSample(s"Unexpected variable [$variableName] for source [$sourceId]")
+    def unexpectedVariableInTestRecordError(
+        variableName: String,
+        sourceId: NodeId,
+        sourceName: Option[NodeName]
+    ): String =
+      messageForSample(s"Unexpected variable [$variableName] for source [${sourceLabel(sourceId, sourceName)}]")
 
     def testRecordVariableDecodingError(
         variableName: String,
         variableType: TypingResult,
         encodedVariable: Json,
         cause: DecodingFailure,
-        sourceId: NodeId
+        sourceId: NodeId,
+        sourceName: Option[NodeName]
     ): String =
       messageForSample(
-        s"Variable [name=$variableName, type=${variableType.display}, encoded value=${encodedVariable.noSpaces}] decoding error for source [$sourceId]: ${cause.message}"
+        s"Variable [name=$variableName, type=${variableType.display}, encoded value=${encodedVariable.noSpaces}] decoding error for source [${sourceLabel(sourceId, sourceName)}]: ${cause.message}"
       )
+
+    private def sourceLabel(sourceId: NodeId, sourceName: Option[NodeName]) =
+      sourceName.fold(s"id: ${sourceId.value}")(name => s"${name.value} (id: ${sourceId.value})")
 
     private def messageForSample(message: String) =
       s"Problem in sample ${recordIndex + 1} detected: $message"

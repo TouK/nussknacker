@@ -42,7 +42,7 @@ class InvocationMetrics(context: EngineRuntimeContext) {
 
   private def markErrorTimer(startTime: Long, nodeInfo: Option[NodeComponentInfo] = None): Unit = {
     val id       = nodeInfo.map(_.nodeId).getOrElse(NodeId("unknown"))
-    val nodeName = nodeInfo.map(_.nodeName).getOrElse(NodeName(id.value))
+    val nodeName = nodeInfo.map(_.nodeName).getOrElse(NodeName.unknown)
     nodeErrorTimers
       .getOrElseUpdate(
         id,

@@ -146,16 +146,17 @@ class ScenarioTestService(
     val sources   = canonical.collectAllSources
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       val compiledSourcesById =
-        sources.map(source => source.id -> commonModelDataInfoProvider.nodeCompiler.compileNode(source))
+        sources.map(source => source.id -> (source.name, commonModelDataInfoProvider.nodeCompiler.compileNode(source)))
       compiledSourcesById
-        .map { case (sourceId, sourceCompilationResult) =>
-          testDataFormatHandler.getTestParametersDefinition(sourceId, sourceCompilationResult).map { parameters =>
-            val enrichedParameters = StandardParameterEnrichment.enrichParameterDefinitions(
-              original = parameters,
-              parametersConfig = Map.empty,
-              globalParametersConfig = modelData.modelConfig.globalParametersConfig
-            )
-            sourceId -> enrichedParameters
+        .map { case (sourceId, (sourceName, sourceCompilationResult)) =>
+          testDataFormatHandler.getTestParametersDefinition(sourceId, sourceName, sourceCompilationResult).map {
+            parameters =>
+              val enrichedParameters = StandardParameterEnrichment.enrichParameterDefinitions(
+                original = parameters,
+                parametersConfig = Map.empty,
+                globalParametersConfig = modelData.modelConfig.globalParametersConfig
+              )
+              sourceId -> enrichedParameters
           }
         }
         .sequence
@@ -416,6 +417,7 @@ class ScenarioTestService(
       canonical: CanonicalProcess,
       scenarioTestData: ScenarioTestData
   )(implicit ec: ExecutionContext, user: LoggedUser) = {
+    val sourceNamesById = canonical.collectAllSources.map(source => source.id -> source.name).toMap
     testExecutorService
       .testProcess(
         processVersion,
@@ -426,14 +428,14 @@ class ScenarioTestService(
       .recoverWith[Either[PerformTestError, TestResults[Json]]] {
         // Lite engine
         case decodingError: TestRecordVariablesDecodingError =>
-          Future.successful(Left(toPerformTestError(decodingError)))
+          Future.successful(Left(toPerformTestError(decodingError, sourceNamesById)))
         // Flink engine
         case scenarioCompilationErrors: ScenarioCompilationErrors =>
           scenarioCompilationErrors.errors
             // TODO: Redesign StubbedFlinkProcessCompilerDataFactory to remove error nesting
             .collectFirst {
               case CannotCreateObjectError(_, _, _, Some(decodingError: TestRecordVariablesDecodingError)) =>
-                Future.successful(Left(toPerformTestError(decodingError)))
+                Future.successful(Left(toPerformTestError(decodingError, sourceNamesById)))
             }
             .getOrElse {
               throw scenarioCompilationErrors
@@ -441,11 +443,19 @@ class ScenarioTestService(
       }
   }
 
-  private def toPerformTestError(decodingError: TestRecordVariablesDecodingError): PerformTestError = {
+  private def toPerformTestError(
+      decodingError: TestRecordVariablesDecodingError,
+      sourceNamesById: Map[NodeId, NodeName]
+  ): PerformTestError = {
     decodingError match {
       case CommonTestDataFormatVariablesDecoder
             .UnexpectedVariableInTestRecordError(variableName, sourceId, testRecordIndex) =>
-        PerformTestError.UnexpectedVariableInTestRecordError(variableName, sourceId, testRecordIndex)
+        PerformTestError.UnexpectedVariableInTestRecordError(
+          variableName,
+          sourceId,
+          sourceNamesById.get(sourceId),
+          testRecordIndex
+        )
       case CommonTestDataFormatVariablesDecoder
             .TestRecordVariableDecodingError(
               variableName,
@@ -462,6 +472,7 @@ class ScenarioTestService(
             encodedVariable,
             cause,
             sourceId,
+            sourceNamesById.get(sourceId),
             testRecordIndex
           )
     }
@@ -597,7 +608,8 @@ object ScenarioTestService {
         nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
     ) extends ParametersDefinitionError
 
-    final case class TestingWithCustomInputNotSupportedError(nodeId: NodeId) extends ParametersDefinitionError
+    final case class TestingWithCustomInputNotSupportedError(nodeId: NodeId, nodeName: NodeName)
+        extends ParametersDefinitionError
 
   }
 
@@ -629,8 +641,12 @@ object ScenarioTestService {
         cause: TestDataFormatHandler.ExpressionsToTestDataConversionError
     ) extends PerformTestError
 
-    final case class UnexpectedVariableInTestRecordError(variableName: String, sourceId: NodeId, testRecordIndex: Int)
-        extends PerformTestError
+    final case class UnexpectedVariableInTestRecordError(
+        variableName: String,
+        sourceId: NodeId,
+        sourceName: Option[NodeName],
+        testRecordIndex: Int
+    ) extends PerformTestError
 
     final case class TestRecordVariableDecodingError(
         variableName: String,
@@ -638,6 +654,7 @@ object ScenarioTestService {
         encodedVariable: Json,
         cause: DecodingFailure,
         sourceId: NodeId,
+        sourceName: Option[NodeName],
         testRecordIndex: Int,
     ) extends PerformTestError
 

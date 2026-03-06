@@ -14,7 +14,7 @@ object ValidationErrorOps {
             _.map { case (nodeId, nodeErrors) =>
               val nodeLabel = nodeNamesById
                 .get(nodeId)
-                .getOrElse(nodeId.value)
+                .getOrElse("Unknown node name")
               s"\n  $nodeLabel: ${nodeErrors.map(_.message).mkString(", ")}"
             }.mkString("\nNode errors:", "", "")
           }

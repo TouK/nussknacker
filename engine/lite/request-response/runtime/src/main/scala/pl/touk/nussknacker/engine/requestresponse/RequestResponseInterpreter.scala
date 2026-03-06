@@ -56,7 +56,7 @@ object RequestResponseInterpreter {
   )(
       implicit ec: ExecutionContext
   ): Validated[NonEmptyList[ProcessCompilationError], RequestResponseScenarioInterpreter[Effect]] = {
-    val nodeNameByNodeId = process.collectAllNodes.map(n => n.id.value -> n.name).toMap
+    val nodeNameByNodeId = process.collectAllNodes.map(n => n.id -> n.name).toMap
     ScenarioInterpreterFactory
       .createInterpreter[Effect, Any, AnyRef](
         process,
@@ -82,7 +82,7 @@ object RequestResponseInterpreter {
       val context: LiteEngineRuntimeContext,
       statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Effect, Any, AnyRef],
       securityConfig: Option[RequestResponseSecurityConfig],
-      nodeNameByNodeId: Map[String, NodeName]
+      nodeNameByNodeId: Map[NodeId, NodeName]
   ) extends PathOpenApiDefinitionGenerator
       with AutoCloseable {
 
@@ -101,7 +101,7 @@ object RequestResponseInterpreter {
       case more => throw new IllegalArgumentException(s"More than one source for request-response: ${more.map(_._1)}")
     }
 
-    val sourceName: NodeName = nodeNameByNodeId.getOrElse(sourceId.value, NodeName(sourceId.value))
+    val sourceName: NodeName = nodeNameByNodeId.getOrElse(NodeId(sourceId.value), NodeName.unknown)
 
     private def invoke(
         input: Request[Any]
