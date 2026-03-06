@@ -11,6 +11,7 @@ import { getTestResultsLoading } from "../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";
 import { Expandable } from "../../common/Expandable";
+import { useTestingScenarioEnabled } from "../../modals/TestingDataRecords/useTestingScenarioEnabled";
 import { OpenNodeTestingDetails } from "./assertionResultsForNode/assertionResult/openNodeTestingDetails";
 import { AssertionResultsForNode } from "./assertionResultsForNode/assertionResultsForNode";
 import { AssertionResultsForNodeTitle } from "./assertionResultsForNode/assertionResultsForNodeTitle";
@@ -25,6 +26,8 @@ export const Results = ({ testAssertionResults }: Props) => {
     const dispatch = useAppDispatch();
     const [showMockFieldOnEnrichers] = useUserSettings("node.showMockFieldOnEnrichers");
     const isLoading = useAppSelector(getTestResultsLoading);
+
+    const testingScenarioEnabled = useTestingScenarioEnabled({ disabled: false });
 
     const handleRun = useCallback(() => {
         dispatch(testScenarioWithTestCase(testCase, showMockFieldOnEnrichers));
@@ -50,7 +53,14 @@ export const Results = ({ testAssertionResults }: Props) => {
     );
 
     if (sortedNodeIds.length === 0) {
-        return <NoResults onRun={handleRun} testCaseName={testCase.name} isRunTestButtonDisabled={isLoading} />;
+        return (
+            <NoResults
+                onRun={handleRun}
+                testCaseName={testCase.name}
+                isRunTestButtonDisabled={isLoading}
+                isRunTestButtonVisible={testingScenarioEnabled}
+            />
+        );
     }
 
     return (
@@ -66,10 +76,12 @@ const NoResults = ({
     onRun,
     testCaseName,
     isRunTestButtonDisabled,
+    isRunTestButtonVisible,
 }: {
     onRun: () => void;
     testCaseName: string;
     isRunTestButtonDisabled: boolean;
+    isRunTestButtonVisible: boolean;
 }) => {
     const { t } = useTranslation();
 
@@ -77,22 +89,24 @@ const NoResults = ({
         <Box px={1.5} py={1}>
             <Typography variant="body2" color="text.secondary">
                 {t("testCases.results.noResults", "No results yet.")}{" "}
-                <Button
-                    variant="text"
-                    size="small"
-                    onClick={onRun}
-                    disabled={isRunTestButtonDisabled}
-                    sx={{
-                        fontSize: "inherit",
-                        fontWeight: "inherit",
-                        p: 0,
-                        minWidth: 0,
-                        verticalAlign: "baseline",
-                        textTransform: "lowercase",
-                    }}
-                >
-                    {t("testCases.results.run", "Run {{name}}", { name: testCaseName })}
-                </Button>
+                {isRunTestButtonVisible && (
+                    <Button
+                        variant="text"
+                        size="small"
+                        onClick={onRun}
+                        disabled={isRunTestButtonDisabled}
+                        sx={{
+                            fontSize: "inherit",
+                            fontWeight: "inherit",
+                            p: 0,
+                            minWidth: 0,
+                            verticalAlign: "baseline",
+                            textTransform: "lowercase",
+                        }}
+                    >
+                        {t("testCases.results.run", "Run {{name}}", { name: testCaseName })}
+                    </Button>
+                )}
             </Typography>
         </Box>
     );
