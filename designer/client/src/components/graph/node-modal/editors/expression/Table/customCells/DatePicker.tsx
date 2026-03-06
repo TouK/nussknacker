@@ -1,5 +1,4 @@
-import type { CustomCell, EditableGridCell } from "@glideapps/glide-data-grid";
-import type { ProvideEditorComponent } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
+import type { CustomCell, EditableGridCell, ProvideEditorComponent } from "@glideapps/glide-data-grid";
 import moment from "moment";
 import React, { useMemo } from "react";
 import { useWindowSize } from "rooks";

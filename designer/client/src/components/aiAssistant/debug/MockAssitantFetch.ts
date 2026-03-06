@@ -34,7 +34,7 @@ function tableToMarkdown(table: string[][]): string {
     return [header, separator, ...rows].join("\n");
 }
 
-async function* streamMock(request = "abc", threadId = crypto.randomUUID()) {
+async function* streamMock(request = "abc", threadId: string = crypto.randomUUID()) {
     const response = withEcho(request);
 
     for (const ch of response.split("").filter(Boolean)) {

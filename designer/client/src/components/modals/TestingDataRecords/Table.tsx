@@ -3,15 +3,16 @@ import type {
     DataEditorProps,
     DataEditorRef,
     EditListItem,
+    GetRowThemeCallback,
     GridCell,
+    GridColumn,
     GridMouseCellEventArgs,
     GridSelection,
     Item,
+    ProvideEditorComponent,
     Theme,
 } from "@glideapps/glide-data-grid";
 import DataEditor, { CompactSelection, type CustomRenderer, drawTextCell, GridCellKind } from "@glideapps/glide-data-grid";
-import type { GridColumn, ProvideEditorComponent } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
-import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
 import { Box, useTheme } from "@mui/material";
 import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import React, { useCallback, useMemo, useRef, useState } from "react";
