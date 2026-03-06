@@ -1,16 +1,17 @@
 import type { PropsOf } from "@emotion/react";
 import { ArrowDropDown } from "@mui/icons-material";
-import { Menu, MenuItem, styled } from "@mui/material";
+import { ListItemIcon, ListItemText, Menu, MenuItem, styled, Typography } from "@mui/material";
 import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import React, { forwardRef, useContext } from "react";
 
-import type { Option } from "../../graph/node-modal/fragment-input-definition/TypeSelect";
+import type { Option, OptionHeader } from "../../graph/node-modal/fragment-input-definition/TypeSelect";
+import { isOptionHeader } from "../../graph/node-modal/fragment-input-definition/TypeSelect";
 import { Button } from "./Button";
 import { ToolbarButton } from "./ToolbarButton";
 import { ButtonsVariant, ToolbarButtonsContext } from "./ToolbarButtons";
 
 type ToolbarButtonMenuWrapperProps<T = Option> = {
-    options: T[];
+    options: Array<T | OptionHeader>;
     selected: T;
     onChange: (value: T) => void;
     className?: string;
@@ -87,7 +88,7 @@ export const ButtonMenu = forwardRef<HTMLButtonElement, ToolbarButtonMenuWrapper
                         : 0,
                 }}
                 className={"toolbarButton-MenuExpand"}
-                disabled={buttonProps.disabled}
+                disabled={buttonProps?.disabled}
                 onClick={(e) => {
                     e.stopPropagation();
                     setAnchorPosition({ top: e.clientY, left: e.clientX });
@@ -105,21 +106,64 @@ export const ButtonMenu = forwardRef<HTMLButtonElement, ToolbarButtonMenuWrapper
                 }}
             >
                 {options.map((option) => (
-                    <MenuItem
-                        key={option.value}
-                        selected={option.value === selected?.value}
-                        disabled={option.isDisabled}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onChange(option);
+                    <MenuOption
+                        key={isOptionHeader(option) ? option.header : option.value}
+                        option={option}
+                        selected={selected}
+                        onChange={(value) => {
+                            onChange(value);
                             setAnchorPosition(null);
                         }}
-                    >
-                        {option.label}
-                    </MenuItem>
+                    />
                 ))}
             </Menu>
-            {buttonProps.children}
+            {buttonProps?.children}
         </ToolbarButton>
     );
 });
+
+function MenuOption<T extends Option>({
+    option,
+    selected,
+    onChange,
+}: {
+    option: T | OptionHeader;
+    selected: T;
+    onChange: (value: T) => void;
+}) {
+    if (isOptionHeader(option)) {
+        return (
+            <Typography
+                id={`menu-group-${option.header}`}
+                role="presentation"
+                aria-hidden
+                variant="subtitle2"
+                color="text.secondary"
+                sx={{ px: 2, py: 1 }}
+            >
+                {option.header}
+            </Typography>
+        );
+    }
+
+    return (
+        <MenuItem
+            selected={option.value === selected?.value}
+            autoFocus={option.value === selected?.value}
+            disabled={option.isDisabled}
+            aria-disabled={option.isDisabled}
+            aria-current={option.value === selected?.value ? "true" : undefined}
+            onClick={(e) => {
+                e.stopPropagation();
+                onChange(option as T);
+            }}
+        >
+            {option.icon && (
+                <ListItemIcon aria-hidden sx={{ "&&": { minWidth: 22 } }}>
+                    {option.icon}
+                </ListItemIcon>
+            )}
+            <ListItemText sx={{ pl: option.icon ? 0 : 0.75 }}>{option.label}</ListItemText>
+        </MenuItem>
+    );
+}

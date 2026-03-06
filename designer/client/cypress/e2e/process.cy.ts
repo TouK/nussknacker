@@ -358,13 +358,20 @@ describe("Process", () => {
         cy.viewport(1500, 800);
         cy.layoutScenario();
 
-        cy.contains("button", "Test").should("be.enabled").click();
-        cy.addTestRecord();
-        cy.get("[data-testid=window]")
-            .contains(/^test$/i)
-            .should("be.enabled")
-            .click();
+        cy.toggleUserFlag("node.showTestingTab", true);
         cy.openNodeWindow("request");
+        cy.openNodeDetailsTestingTab();
+
+        cy.addTestRecord();
+
+        cy.applyNodeChanges();
+
+        cy.runCurrentTestCase();
+
+        cy.toggleUserFlag("node.showTestingTab", false);
+
+        cy.openNodeWindow("request");
+
         cy.get("[data-testid=window]")
             .contains(/^Test case/i)
             .should("be.visible");

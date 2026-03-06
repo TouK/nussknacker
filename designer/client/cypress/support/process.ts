@@ -37,6 +37,7 @@ declare global {
             unarchiveProcess: typeof unarchiveProcess;
             migrateProcess: typeof migrateProcess;
             verifySaveIndicator: typeof verifySaveIndicator;
+            openNodeDetailsTestingTab: typeof openNodeDetailsTestingTab;
         }
     }
 }
@@ -442,6 +443,13 @@ function verifySaveIndicator() {
         });
 }
 
+function openNodeDetailsTestingTab() {
+    cy.get("[role=tab]")
+        .contains(/testing/i)
+        .should("be.visible")
+        .click();
+}
+
 Cypress.Commands.add("createTestProcess", createTestProcess);
 Cypress.Commands.add("deleteTestProcess", deleteTestProcess);
 Cypress.Commands.add("getTestProcesses", getTestProcesses);
@@ -471,4 +479,5 @@ Cypress.Commands.add("archiveProcess", archiveProcess);
 Cypress.Commands.add("unarchiveProcess", unarchiveProcess);
 Cypress.Commands.add("migrateProcess", migrateProcess);
 Cypress.Commands.add("verifySaveIndicator", verifySaveIndicator);
+Cypress.Commands.add("openNodeDetailsTestingTab", openNodeDetailsTestingTab);
 export default {};
