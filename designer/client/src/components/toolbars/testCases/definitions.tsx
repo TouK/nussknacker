@@ -31,7 +31,9 @@ export const Definitions = () => {
 
     return (
         <Box>
-            <SectionHeader count={sourceIds.length}>{t("testCases.definitions.sources", "Sources")}</SectionHeader>
+            <SectionHeader count={sourceIds.length} nodeIds={sourceIds}>
+                {t("testCases.definitions.sources", "Sources")}
+            </SectionHeader>
             {sourceIds.length === 0 ? (
                 <EmptySection>{t("testCases.definitions.noSources", "No sources defined.")}</EmptySection>
             ) : (
@@ -51,7 +53,9 @@ export const Definitions = () => {
                 </Box>
             )}
 
-            <SectionHeader count={mockNodeIds.length}>{t("testCases.definitions.mocks", "Mocks")}</SectionHeader>
+            <SectionHeader count={mockNodeIds.length} nodeIds={mockNodeIds}>
+                {t("testCases.definitions.mocks", "Mocks")}
+            </SectionHeader>
             {mockNodeIds.length === 0 ? (
                 <EmptySection>{t("testCases.definitions.noMocks", "No mocks defined.")}</EmptySection>
             ) : (
@@ -62,7 +66,9 @@ export const Definitions = () => {
                 </Box>
             )}
 
-            <SectionHeader count={assertionNodeIds.length}>{t("testCases.definitions.assertions", "Assertions")}</SectionHeader>
+            <SectionHeader count={assertionNodeIds.length} nodeIds={assertionNodeIds}>
+                {t("testCases.definitions.assertions", "Assertions")}
+            </SectionHeader>
             {assertionNodeIds.length === 0 ? (
                 <EmptySection>{t("testCases.definitions.noAssertions", "No assertions defined.")}</EmptySection>
             ) : (
@@ -85,9 +91,19 @@ export const Definitions = () => {
     );
 };
 
-const SectionHeader = ({ children, count }: PropsWithChildren<{ count: number }>) => {
+const SectionHeader = ({ children, count, nodeIds = [] }: PropsWithChildren<{ count: number; nodeIds?: string[] }>) => {
+    const { onMouseEnter, onMouseLeave } = useNodeGroupHover(nodeIds);
     return (
-        <Box display="flex" alignItems="center" gap={0.75} pl={2} pb={0.5}>
+        <Box
+            display="flex"
+            alignItems="center"
+            gap={0.75}
+            pl={2}
+            pb={0.5}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+            sx={{ cursor: nodeIds.length > 0 ? "default" : undefined }}
+        >
             <Typography variant={"subtitle2"} color={"text.secondary"}>
                 {children}
             </Typography>
@@ -179,4 +195,28 @@ function useNodeSelectOrOpen(node: NodeType | undefined) {
             dispatch(resetSelection(node.id));
         }
     }, [dispatch, graphGetter, isNodeSelected, node, openNodeWindow, scenario]);
+}
+
+function useNodeGroupHover(nodeIds: string[]) {
+    const graphGetter = useGraph();
+
+    const onMouseEnter = useCallback(() => {
+        const graph = graphGetter();
+        if (!graph) return;
+        nodeIds.forEach((id) => {
+            graph.highlightNode(id, nodeFound);
+            graph.highlightNode(id, nodeFoundHover);
+        });
+    }, [nodeIds, graphGetter]);
+
+    const onMouseLeave = useCallback(() => {
+        const graph = graphGetter();
+        if (!graph) return;
+        nodeIds.forEach((id) => {
+            graph.unhighlightNode(id, nodeFound);
+            graph.unhighlightNode(id, nodeFoundHover);
+        });
+    }, [nodeIds, graphGetter]);
+
+    return { onMouseEnter, onMouseLeave };
 }
