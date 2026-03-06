@@ -1,4 +1,3 @@
-import { styled } from "@mui/material/styles";
 import { memoize } from "lodash";
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -11,6 +10,7 @@ import type { ProcessDefinitionData } from "../../../types/scenarioGraph";
 import { StickyNoteType } from "../../graph/utils/stickyNotesUtils";
 import { InlineSvg } from "../../SvgDiv";
 import { Icon } from "./Icon";
+
 let preloadedIndex = 0;
 const preloadBeImage = memoize((src: string): string | null => {
     if (!src) {

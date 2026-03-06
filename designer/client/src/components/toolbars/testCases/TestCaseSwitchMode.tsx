@@ -21,6 +21,10 @@ const StyledToggleButton = styled(ToggleButton)(({ theme }) => ({
     fontWeight: theme.typography.caption.fontWeight,
     textTransform: "none",
     lineHeight: 1.75,
+    color: theme.palette.text.primary,
+    "&.Mui-selected": {
+        color: theme.palette.primary.main,
+    },
 }));
 
 export const TestCaseSwitchMode = ({ value, onChange }: Props) => {
