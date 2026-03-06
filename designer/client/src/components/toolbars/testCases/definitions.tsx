@@ -1,4 +1,4 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Chip, Typography } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -31,7 +31,7 @@ export const Definitions = () => {
 
     return (
         <Box>
-            <SectionHeader>{t("testCases.definitions.sources", "Sources")}</SectionHeader>
+            <SectionHeader count={sourceIds.length}>{t("testCases.definitions.sources", "Sources")}</SectionHeader>
             {sourceIds.length === 0 ? (
                 <EmptySection>{t("testCases.definitions.noSources", "No sources defined.")}</EmptySection>
             ) : (
@@ -42,7 +42,7 @@ export const Definitions = () => {
                 </Box>
             )}
 
-            <SectionHeader>{t("testCases.definitions.mocks", "Mocks")}</SectionHeader>
+            <SectionHeader count={mockNodeIds.length}>{t("testCases.definitions.mocks", "Mocks")}</SectionHeader>
             {mockNodeIds.length === 0 ? (
                 <EmptySection>{t("testCases.definitions.noMocks", "No mocks defined.")}</EmptySection>
             ) : (
@@ -53,7 +53,7 @@ export const Definitions = () => {
                 </Box>
             )}
 
-            <SectionHeader>{t("testCases.definitions.assertions", "Assertions")}</SectionHeader>
+            <SectionHeader count={assertionNodeIds.length}>{t("testCases.definitions.assertions", "Assertions")}</SectionHeader>
             {assertionNodeIds.length === 0 ? (
                 <EmptySection>{t("testCases.definitions.noAssertions", "No assertions defined.")}</EmptySection>
             ) : (
@@ -67,11 +67,14 @@ export const Definitions = () => {
     );
 };
 
-const SectionHeader = ({ children }: PropsWithChildren) => {
+const SectionHeader = ({ children, count }: PropsWithChildren<{ count: number }>) => {
     return (
-        <Typography pl={2} pb={0.5} variant={"subtitle2"} color={"text.secondary"}>
-            {children}
-        </Typography>
+        <Box display="flex" alignItems="center" gap={0.75} pl={2} pb={0.5}>
+            <Typography variant={"subtitle2"} color={"text.secondary"}>
+                {children}
+            </Typography>
+            <Chip label={count} size="small" sx={{ height: 16, fontSize: "0.65rem", "& .MuiChip-label": { px: 0.75 } }} />
+        </Box>
     );
 };
 
