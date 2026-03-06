@@ -37,7 +37,16 @@ export const Definitions = () => {
             ) : (
                 <Box px={1.5} pb={1}>
                     {sourceIds.map((sourceId) => (
-                        <NodeRow key={sourceId} node={findNode(sourceId)} label={sourceId} />
+                        <NodeRow
+                            key={sourceId}
+                            node={findNode(sourceId)}
+                            label={sourceId}
+                            badge={t("testCases.definitions.testAssertions", {
+                                count: inputDataRecords.length,
+                                defaultValue_one: "{{count}} event",
+                                defaultValue_other: "{{count}} events",
+                            })}
+                        />
                     ))}
                 </Box>
             )}
