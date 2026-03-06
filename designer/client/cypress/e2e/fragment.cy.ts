@@ -27,6 +27,12 @@ describe("Fragment", () => {
         const toggleSettings = (fieldNumber: number) => {
             cy.get("@window").find(`[data-testid='fieldsRow:${fieldNumber}']`).find("[title='Options']").click();
         };
+        const matchSettingsImage = (fieldNumber: number) => {
+            const selector = `[data-testid='settings:${fieldNumber}']`;
+            cy.get("@window").find(selector).should("be.visible");
+            // Re-query immediately before screenshot to avoid detached element during async re-render.
+            cy.get("@window").find(selector).matchImage();
+        };
         const setFieldName = (fieldNumber: number, value: string) => {
             const fieldSelector = `[data-testid='fieldsRow:${fieldNumber}'] [placeholder='Field name']`;
             cy.window().then((win) => {
@@ -61,7 +67,7 @@ describe("Fragment", () => {
                 .find("[data-testid='fieldsRow:3']")
                 .find("[placeholder='Field name']")
                 .should("have.value", nameValueStringAnyValue);
-            cy.get("@window").find("[data-testid='settings:3']").matchImage();
+            matchSettingsImage(3);
 
             // Provide String Any with Suggestion Value inputMode
             cy.get("@window").contains("+").click();
@@ -103,7 +109,7 @@ describe("Fragment", () => {
                 .contains("not unique")
                 .should("be.visible");
 
-            cy.get("@window").find("[data-testid='settings:4']").matchImage();
+            matchSettingsImage(4);
 
             // Provide String Fixed value inputMode
             cy.get("@window").contains("+").click();
@@ -124,7 +130,7 @@ describe("Fragment", () => {
                 .eq(0)
                 .find("[data-testid='form-helper-text']")
                 .should("not.exist");
-            cy.get("@window").find("[data-testid='settings:5']").matchImage();
+            matchSettingsImage(5);
 
             // Provide non String or Boolean Any Value inputMode
             cy.get("@window").contains("+").click();
@@ -149,7 +155,7 @@ describe("Fragment", () => {
                 .find("[data-testid='form-helper-text']")
                 .should("not.exist");
 
-            cy.get("@window").find("[data-testid='settings:6']").matchImage();
+            matchSettingsImage(6);
 
             // Provide String Fixed value inputMode
             cy.get("@window").contains("+").click();
