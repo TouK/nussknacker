@@ -25,9 +25,9 @@ describe("Test cases", () => {
         addEmptyAssertion();
         addEmptyAssertion();
         addEmptyAssertion();
-        fillAssertion(0, "#contexts[0].input.value", "0");
-        fillAssertion(1, "#contexts.size", "10");
-        fillAssertion(2, "#contexts.size", "11", "!=");
+        fillAssertion(0, "#records[0].input.value", "0");
+        fillAssertion(1, "#records.size", "10");
+        fillAssertion(2, "#records.size", "11", "!=");
         cy.applyNodeChanges();
         cy.contains(/^save$/i).click();
         cy.contains(/^ok$/i).click();
@@ -75,7 +75,7 @@ describe("Test cases", () => {
         cy.openNodeDetailsTestingTab();
         appendFromLiveDataClick();
         addEmptyAssertion();
-        fillAssertion(0, "#contexts.size", "10");
+        fillAssertion(0, "#records.size", "10");
         cy.applyNodeChanges();
 
         cy.openNodeWindow("Enricher");

@@ -623,7 +623,7 @@ class NodesApiHttpServiceBusinessSpec
              |          "operator": "equals",
              |          "actual": {
              |            "language": "spel",
-             |            "expression": "#contexts.size"
+             |            "expression": "#records.size"
              |          },
              |          "expected": {
              |            "language": "spel",
@@ -853,7 +853,7 @@ class NodesApiHttpServiceBusinessSpec
              |          "operator": "equals",
              |          "actual": {
              |            "language": "spel",
-             |            "expression": "#contexts.size"
+             |            "expression": "#records.size"
              |          },
              |          "expected": {
              |            "language": "spel",
@@ -864,7 +864,7 @@ class NodesApiHttpServiceBusinessSpec
              |          "operator": "equals",
              |          "actual": {
              |            "language": "spel",
-             |            "expression": "#contexts[0].input"
+             |            "expression": "#records[0].input"
              |          },
              |          "expected": {
              |            "language": "spel",
@@ -894,7 +894,7 @@ class NodesApiHttpServiceBusinessSpec
              |          "operator": "equals",
              |          "actual": {
              |            "language": "spel",
-             |            "expression": "#contexts[0].doesNotExist"
+             |            "expression": "#records[0].doesNotExist"
              |          },
              |          "expected": {
              |            "language": "spel",
@@ -905,7 +905,7 @@ class NodesApiHttpServiceBusinessSpec
              |          "operator": "equals",
              |          "actual": {
              |            "language": "spel",
-             |            "expression": "#contexts.size"
+             |            "expression": "#records.size"
              |          },
              |          "expected": {
              |            "language": "spel",
@@ -916,7 +916,7 @@ class NodesApiHttpServiceBusinessSpec
              |          "operator": "equals",
              |          "actual": {
              |            "language": "spel",
-             |            "expression": "#contexts[0].doesNotExist2"
+             |            "expression": "#records[0].doesNotExist2"
              |          },
              |          "expected": {
              |            "language": "spel",
@@ -968,11 +968,11 @@ class NodesApiHttpServiceBusinessSpec
             |            "description": "There is problem with expression in field [actual] - it could not be parsed.",
             |            "details": {
             |              "start": {
-            |                "column": 13,
+            |                "column": 12,
             |                "row": 0
             |              },
             |              "end": {
-            |                "column": 25,
+            |                "column": 24,
             |                "row": 0
             |              },
             |              "type": "CoordinatesBasedTextRange"
@@ -1004,11 +1004,11 @@ class NodesApiHttpServiceBusinessSpec
             |            "description": "There is problem with expression in field [actual] - it could not be parsed.",
             |            "details": {
             |              "start": {
-            |                "column": 13,
+            |                "column": 12,
             |                "row": 0
             |              },
             |              "end": {
-            |                "column": 26,
+            |                "column": 25,
             |                "row": 0
             |              },
             |              "type": "CoordinatesBasedTextRange"
@@ -1669,7 +1669,7 @@ class NodesApiHttpServiceBusinessSpec
             |      "params": [
             |      ]
             |    },
-            |    "contexts": {
+            |    "records": {
             |      "display": "List[Record{input: Record{dateTime: Instant, sampleField: String, type: String, value: Integer}, sampleVariable: String(sample value)}]",
             |      "type": "TypedClass",
             |      "refClazzName": "java.util.List",

@@ -15,8 +15,8 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeTypingData
 
 object TestCaseVariables {
 
-  final val TestsGlobalVariableName  = "TESTS"
-  final val ContextsNodeVariableName = "contexts"
+  final val TestsGlobalVariableName = "TESTS"
+  final val RecordsNodeVariableName = "records"
 
   def extendClassDefinitionSet(
       classDefinitionSet: ClassDefinitionSet,
@@ -37,19 +37,13 @@ object TestCaseVariables {
     validationContext
       .withVariablesUnsafe(
         TestsGlobalVariableName -> testsGlobalVariableType,
-        ContextsNodeVariableName -> Typed.genericTypeClass(
-          classOf[java.util.List[_]],
-          List(Typed.record(variableTypes))
-        ),
+        RecordsNodeVariableName -> recordsNodeVariableType(variableTypes),
       )
 
   def getNodeVariablesTyping(variablesForNode: Map[String, TypingResult]): Map[String, TypingResult] =
     Map(
       TestsGlobalVariableName -> testsGlobalVariableType,
-      ContextsNodeVariableName -> Typed.genericTypeClass(
-        classOf[java.util.List[_]],
-        List(Typed.record(variablesForNode))
-      ),
+      RecordsNodeVariableName -> recordsNodeVariableType(variablesForNode),
     )
 
   def extendGlobalVariables(globalVariables: Map[String, ObjectWithType]): Map[String, ObjectWithType] =
@@ -57,5 +51,11 @@ object TestCaseVariables {
       (TestsGlobalVariableName -> ObjectWithType(tests, testsGlobalVariableType))
 
   private def testsGlobalVariableType: typing.TypingResult = Typed.fromInstance(tests)
+
+  private def recordsNodeVariableType(variablesForNode: Map[String, TypingResult]): typing.TypingResult =
+    Typed.genericTypeClass(
+      classOf[java.util.List[_]],
+      List(Typed.record(variablesForNode))
+    )
 
 }

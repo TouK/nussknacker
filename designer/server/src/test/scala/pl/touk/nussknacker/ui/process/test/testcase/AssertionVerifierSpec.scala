@@ -71,27 +71,27 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
   test("should run assertions on test nodes results and return assertion result for each assertion") {
     val testCase = prepareTestCase(
       List(
-        ExpressionAssertion("#TESTS.assertEquals('valid', #contexts[0].someVariable)".spel, description = None),
-        ExpressionAssertion("#TESTS.assertEquals('valid', #contexts[1].someVariable)".spel, description = None),
+        ExpressionAssertion("#TESTS.assertEquals('valid', #records[0].someVariable)".spel, description = None),
+        ExpressionAssertion("#TESTS.assertEquals('valid', #records[1].someVariable)".spel, description = None),
         PredicateAssertion(
           AssertionOperator.Equals,
           "'valid'".spel,
-          "#contexts[0].someVariable".spel,
+          "#records[0].someVariable".spel,
         ),
         PredicateAssertion(
           AssertionOperator.Equals,
           "'valid'".spel,
-          "#contexts[1].someVariable".spel,
+          "#records[1].someVariable".spel,
         ),
         PredicateAssertion(
           AssertionOperator.NotEquals,
           "'valid'".spel,
-          "#contexts[0].someVariable".spel,
+          "#records[0].someVariable".spel,
         ),
         PredicateAssertion(
           AssertionOperator.NotEquals,
           "'valid'".spel,
-          "#contexts[1].someVariable".spel,
+          "#records[1].someVariable".spel,
         ),
       )
     )
@@ -122,7 +122,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
         ("{}", "{}", SuccessfulAssertion),
         ("{:}", "{:}", SuccessfulAssertion),
         ("#CONV.toAny('abc')", "'abc'", SuccessfulAssertion),
-        ("{'foo'}", "#contexts[0].someJavaList", SuccessfulAssertion),
+        ("{'foo'}", "#records[0].someJavaList", SuccessfulAssertion),
         ("{'foo'}", "{'foo'}", SuccessfulAssertion),
         ("{'foo': 'bar'}", "{'foo': 'bar'}", SuccessfulAssertion),
         ("1", "1L", SuccessfulAssertion),
@@ -163,10 +163,10 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     forAll(
       Table(
         ("expected expression", "actual expression", "expected assertion result"),
-        ("1", "#contexts[0].someBigDecimal", SuccessfulAssertion),
-        ("1L", "#contexts[0].someBigDecimal", SuccessfulAssertion),
-        ("1.0", "#contexts[0].someBigDecimal", SuccessfulAssertion),
-        ("1.0f", "#contexts[0].someBigDecimal", SuccessfulAssertion),
+        ("1", "#records[0].someBigDecimal", SuccessfulAssertion),
+        ("1L", "#records[0].someBigDecimal", SuccessfulAssertion),
+        ("1.0", "#records[0].someBigDecimal", SuccessfulAssertion),
+        ("1.0f", "#records[0].someBigDecimal", SuccessfulAssertion),
         ("1", "T(java.math.BigDecimal).ONE", SuccessfulAssertion),
         ("{a: 1}", """#CONV.toJson('{"a": 1}')""", SuccessfulAssertion),
         ("{a: 1}", """#CONV.toJson('{"a": 2}')""", FailedAssertion("Expected: [{'a': 1}] but found [{'a': 2}]")),
@@ -199,8 +199,8 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
         ("expected expression", "actual expression", "expected assertion result"),
         ("", "", SuccessfulAssertion),
         ("  ", "    ", SuccessfulAssertion),
-        ("", "#contexts[0].someBigDecimal", SuccessfulAssertion),
-        ("   ", "#contexts[0].someBigDecimal", SuccessfulAssertion),
+        ("", "#records[0].someBigDecimal", SuccessfulAssertion),
+        ("   ", "#records[0].someBigDecimal", SuccessfulAssertion),
         ("{a: 1}", "  ", SuccessfulAssertion),
       )
     ) { (expectedExpression, actualExpression, expectedResult) =>

@@ -139,11 +139,11 @@
                         "operator": "equals",
                         "expected": {
                             "language": "spel",
-                            "expression": "#contexts[0].input.type"
+                            "expression": "#records[0].input.type"
                         },
                         "actual": {
                             "language": "spel",
-                            "expression": "#contexts[0].input.sampleField"
+                            "expression": "#records[0].input.sampleField"
                         }
                     },
                     {

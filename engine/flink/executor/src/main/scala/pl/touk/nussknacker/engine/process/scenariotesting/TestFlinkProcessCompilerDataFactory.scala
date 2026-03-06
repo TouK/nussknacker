@@ -207,7 +207,7 @@ class TestFlinkProcessCompilerDataFactory(
           )
         case _ =>
           logger.debug(
-            s"Preparing source stubbed with ${commonFormatRecords.size} test data records in the common format for component [${componentDefinition.id}]"
+            s"Preparing source stubbed with ${commonFormatRecords.size} test records in the common format for component [${componentDefinition.id}]"
           )
           CommonTestDataFormatStubbedSourcePreparer.prepareSubbedSource(
             commonFormatRecords,

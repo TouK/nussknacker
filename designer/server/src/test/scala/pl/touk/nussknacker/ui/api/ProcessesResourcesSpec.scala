@@ -1511,13 +1511,13 @@ class ProcessesResourcesSpec
           PredicateAssertion(
             testcase.Assertion.AssertionOperator.Equals,
             "'ala'".spel,
-            "#contexts[0].input[0]".spel,
+            "#records[0].input[0]".spel,
             description = Some("first event input should equal 'ala'")
           ),
           PredicateAssertion(
             testcase.Assertion.AssertionOperator.Equals,
             "'ala'".spel,
-            "#contexts[1].input[0]".spel,
+            "#records[1].input[0]".spel,
             description = Some("second event input should equal 'ala'")
           ),
         )

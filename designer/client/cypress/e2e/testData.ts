@@ -62,7 +62,7 @@ describe("test data", () => {
             .click()
             .click(); // second click fires validation when limit exceeded
 
-        cy.contains('[role="alert"]', /The maximum number of 20 Input data records has been exceeded/).should("be.visible");
+        cy.contains('[role="alert"]', /The maximum number of 20 input records has been exceeded/).should("be.visible");
 
         cy.get("@window")
             .contains("button", /Append from live data/i)
