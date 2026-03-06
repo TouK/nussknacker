@@ -1131,7 +1131,8 @@ export class HttpService {
         return api.get<ActivitiesResponse>(`/processes/${scenarioName}/activity/activities`);
     }
 
-    sendChatMessage({ threadId, message, externalTools = [] }: ChatRequest, abortSignal: AbortSignal) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    sendChatMessage({ type, ...body }: ChatRequest, abortSignal: AbortSignal) {
         const headers = {
             "Content-Type": "application/json",
             Accept: "text/event-stream",
@@ -1147,7 +1148,7 @@ export class HttpService {
             SystemUtils.setAuthHeader({
                 method: "POST",
                 headers,
-                body: JSON.stringify({ message, threadId, externalTools }),
+                body: JSON.stringify(body),
                 signal: abortSignal,
             }),
         );

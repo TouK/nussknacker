@@ -1,5 +1,6 @@
 import { delay } from "../../../utils";
 import type { ChatRequest } from "../ChatRequest";
+import { ChatRequestType } from "../ChatRequest";
 import type { ChatStreamEventName } from "../InitializeChatStream";
 
 function toSSE({ data, event = "delta" }: { data: string; event?: ChatStreamEventName }) {
@@ -60,8 +61,10 @@ async function* streamMock(request = "abc", threadId: string = crypto.randomUUID
     };
 }
 
-export function mockAssitantFetch({ threadId, message, externalTools }: ChatRequest, signal: AbortSignal) {
-    console.debug({ message, threadId, externalTools });
+export function mockAssitantFetch(request: ChatRequest, signal: AbortSignal) {
+    console.debug(request);
+    const messageText =
+        request.type === ChatRequestType.MESSAGE ? request.message.text : `[tool results: ${request.toolExecutionResults.length}]`;
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
@@ -71,7 +74,7 @@ export function mockAssitantFetch({ threadId, message, externalTools }: ChatRequ
             signal?.addEventListener("abort", abort);
 
             try {
-                for await (const msg of streamMock(message.text, threadId)) {
+                for await (const msg of streamMock(messageText, request.threadId)) {
                     if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
                     controller.enqueue(encoder.encode(toSSE(msg)));
                 }
