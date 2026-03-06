@@ -81,7 +81,7 @@ class AssertionsCompilerSpec
     val test = prepareTestCase(
       Map(
         NodeId("sink1") -> List(
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel, description = None)
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel, description = None)
         )
       )
     )
@@ -94,14 +94,14 @@ class AssertionsCompilerSpec
       compiledAssertions.assertions(NodeId("sink1")).head.asInstanceOf[CompiledPredicateAssertion]
     compiledAssertion.operator shouldBe Assertion.AssertionOperator.Equals
     compiledAssertion.expectedExpression.original shouldBe "1"
-    compiledAssertion.actualExpression.original shouldBe "#contexts.size"
+    compiledAssertion.actualExpression.original shouldBe "#records.size"
   }
 
   test("should produce errors for assertions on missing nodes") {
     val test = prepareTestCase(
       Map(
         NodeId("notExistingSink") -> List(
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#contexts.size".spel, description = None)
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel, description = None)
         )
       )
     )
@@ -118,7 +118,7 @@ class AssertionsCompilerSpec
   test("should produce errors for multiple assertions") {
     val nodeId = NodeId("sink1")
     val assertionWithSyntaxErrorsInBothExpressions =
-      PredicateAssertion(Assertion.AssertionOperator.Equals, "'123".spel, "#contexts.size,".spel, description = None)
+      PredicateAssertion(Assertion.AssertionOperator.Equals, "'123".spel, "#records.size,".spel, description = None)
     val assertionComparingUnrelatedTypes =
       PredicateAssertion(Assertion.AssertionOperator.Equals, "'string'".spel, "123".spel, description = None)
     val test = prepareTestCase(
@@ -178,7 +178,7 @@ class AssertionsCompilerSpec
         message shouldBe "Unexpected text"
         parameterName shouldBe PredicateAssertionCompilationError.Field.Actual.entryName
         field shouldBe PredicateAssertionCompilationError.Field.Actual
-        originalExpr shouldBe "#contexts.size,"
+        originalExpr shouldBe "#records.size,"
         details shouldBe defined
         assertion shouldBe assertionWithSyntaxErrorsInBothExpressions
     }

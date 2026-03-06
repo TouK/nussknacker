@@ -1,6 +1,6 @@
 import { styled, useTheme } from "@mui/material";
 import { isEmpty } from "lodash";
-import type { HTMLProps } from "react";
+import type { HTMLProps, ReactNode } from "react";
 import React, { useCallback, useState } from "react";
 import CreatableSelect from "react-select/creatable";
 
@@ -30,6 +30,15 @@ export interface Option {
     label: string;
     isDisabled?: boolean;
     isUsed?: boolean;
+    icon?: ReactNode;
+}
+
+export interface OptionHeader {
+    header: string;
+}
+
+export function isOptionHeader(option: Option | OptionHeader): option is OptionHeader {
+    return (option as OptionHeader).header !== undefined;
 }
 
 interface TypeSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "options" | "onBlur" | "onChange"> {

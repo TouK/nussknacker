@@ -23,7 +23,7 @@ export const LimitExceededWarning = ({ maxTestingRecords }: Props) => {
         >
             {t(
                 "testingDialog.warning.dataRecordsLimitExceeded",
-                "The maximum number of {{maxTestingRecords}} Input data records has been exceeded.",
+                "The maximum number of {{maxTestingRecords}} input records has been exceeded.",
                 { maxTestingRecords },
             )}
         </Alert>

@@ -4,7 +4,7 @@ import { useAppSelector } from "../../../store/storeHelpers";
 import { useAdhocTestingAvailability } from "../AdhocTesting/useAdhocTestingAvailability";
 
 interface Props {
-    disabled: boolean;
+    disabled: boolean | undefined;
 }
 
 export const useTestingScenarioEnabled = ({ disabled }: Props) => {
