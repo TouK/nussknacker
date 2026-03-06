@@ -58,6 +58,8 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     }
     resolved.nodes.find(_.id == NodeId("sub")).get.data
     resolved.nodes.find(_.id == NodeId("sub2-f1")) shouldBe Symbol("defined")
+    resolved.nodes.find(_.id == NodeId("sub-f1")).map(_.data.name) shouldBe Some(NodeName("sub-f1"))
+    resolved.nodes.find(_.id == NodeId("sub2-f1")).map(_.data.name) shouldBe Some(NodeName("sub2-f1"))
   }
 
   test("resolve nested fragments") {

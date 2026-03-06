@@ -50,6 +50,18 @@ import pl.touk.nussknacker.ui.validation.ParametersValidator
 
 import scala.concurrent.{ExecutionContext, Future}
 
+object ScenarioTestingApiHttpService {
+
+  private[api] def filterNodeNamesById(
+      nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])],
+      nodeNamesById: Map[NodeId, String]
+  ): Map[NodeId, String] = {
+    val nodeIdsWithErrors = nodesWithErrors.map(_._1).toList.toSet
+    nodeNamesById.filter { case (nodeId, _) => nodeIdsWithErrors.contains(nodeId) }
+  }
+
+}
+
 class ScenarioTestingApiHttpService(
     authManager: AuthManager,
     scenarioAuthorizer: AuthorizeProcess,
@@ -372,7 +384,7 @@ class ScenarioTestingApiHttpService(
       case ParametersDefinitionError.SourcesCompilationError(nodesWithErrors) =>
         SourcesCompilationError(
           ValidationErrors.initial(invalidNodes = collectInvalidNodes(nodesWithErrors)),
-          nodeNamesById = nodeNamesById
+          nodeNamesById = ScenarioTestingApiHttpService.filterNodeNamesById(nodesWithErrors, nodeNamesById)
         )
       case ParametersDefinitionError.TestingWithCustomInputNotSupportedError(nodeId) =>
         BadRequestTestingError.TestingWithCustomInputNotSupportedError(nodeId)
@@ -385,7 +397,7 @@ class ScenarioTestingApiHttpService(
       case FetchLiveDataError.SourcesCompilationError(nodesWithErrors) =>
         SourcesCompilationError(
           ValidationErrors.initial(invalidNodes = collectInvalidNodes(nodesWithErrors)),
-          nodeNamesById = nodeNamesById
+          nodeNamesById = ScenarioTestingApiHttpService.filterNodeNamesById(nodesWithErrors, nodeNamesById)
         )
       case FetchLiveDataError.NoLiveDataAvailableError =>
         NoLiveDataAvailable

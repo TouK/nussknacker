@@ -1825,6 +1825,24 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
+  test("allow same node name in scenario and inside used fragment") {
+    val scenario = ScenarioBuilder
+      .streaming("scenario1")
+      .source("source", "source")
+      .filter("filter", "true".spel)
+      .fragmentOneOut("fragRef", "frag1", "output", "fragmentResult")
+      .emptySink("sink", "sink")
+
+    val fragment = ScenarioBuilder
+      .fragment("frag1")
+      .filter("filter", "true".spel)
+      .fragmentOutput("out", "output")
+
+    val resolver = FragmentResolver(List(fragment))
+
+    resolver.resolve(scenario).andThen(validate(_, baseDefinition).result) shouldBe Symbol("valid")
+  }
+
   // This tests an artificial canonical process which cannot be created through conversion from ScenarioGraph because of
   // skipping loose nodes and empty main branch. We added it to show that the canonical errors folding algorithm works
   // correctly.
