@@ -1,4 +1,5 @@
 import { Box, Typography } from "@mui/material";
+import type { PropsWithChildren } from "react";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -9,7 +10,6 @@ import { getInputDataRecords, getTestCaseAssertions, getTestCaseMocks } from "..
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";
 import { useWindows } from "../../../windowManager/useWindows";
-import { SectionHeader } from "../../CommandBar/SectionHeader";
 import { useGraph } from "../../graph/GraphContext";
 import { nodeFound, nodeFoundHover } from "../../graph/graphStyledWrapper";
 import { ACTIVE_TAB_QUERY_KEY, NodeDetailsTab } from "../../graph/node-modal/node/NodeContent/TabsWrapper";
@@ -33,11 +33,7 @@ export const Definitions = () => {
         <Box>
             <SectionHeader>{t("testCases.definitions.sources", "Sources")}</SectionHeader>
             {sourceIds.length === 0 ? (
-                <Box px={1.5} pb={1}>
-                    <Typography variant="body2" color="text.secondary">
-                        {t("testCases.definitions.noSources", "No sources defined.")}
-                    </Typography>
-                </Box>
+                <EmptySection>{t("testCases.definitions.noSources", "No sources defined.")}</EmptySection>
             ) : (
                 <Box px={1.5} pb={1}>
                     {sourceIds.map((sourceId) => (
@@ -48,11 +44,7 @@ export const Definitions = () => {
 
             <SectionHeader>{t("testCases.definitions.mocks", "Mocks")}</SectionHeader>
             {mockNodeIds.length === 0 ? (
-                <Box px={1.5} pb={1}>
-                    <Typography variant="body2" color="text.secondary">
-                        {t("testCases.definitions.noMocks", "No mocks defined.")}
-                    </Typography>
-                </Box>
+                <EmptySection>{t("testCases.definitions.noMocks", "No mocks defined.")}</EmptySection>
             ) : (
                 <Box px={1.5} pb={1}>
                     {mockNodeIds.map((nodeId) => (
@@ -63,11 +55,7 @@ export const Definitions = () => {
 
             <SectionHeader>{t("testCases.definitions.assertions", "Assertions")}</SectionHeader>
             {assertionNodeIds.length === 0 ? (
-                <Box px={1.5} pb={1}>
-                    <Typography variant="body2" color="text.secondary">
-                        {t("testCases.definitions.noAssertions", "No assertions defined.")}
-                    </Typography>
-                </Box>
+                <EmptySection>{t("testCases.definitions.noAssertions", "No assertions defined.")}</EmptySection>
             ) : (
                 <Box px={1.5} pb={1}>
                     {assertionNodeIds.map((nodeId) => (
@@ -79,6 +67,21 @@ export const Definitions = () => {
     );
 };
 
+const SectionHeader = ({ children }: PropsWithChildren) => {
+    return (
+        <Typography pl={2} pb={0.5} variant={"subtitle2"} color={"text.secondary"}>
+            {children}
+        </Typography>
+    );
+};
+
+const EmptySection = ({ children }: PropsWithChildren) => (
+    <Box px={2} pb={1}>
+        <Typography variant="body2" color="text.secondary">
+            {children}
+        </Typography>
+    </Box>
+);
 const NodeRow = ({ node }: { node: NodeType | undefined; label: string }) => {
     const { onMouseEnter: handleMouseEnter, onMouseLeave: handleMouseLeave } = useNodeHover(node?.id);
     const handleClick = useNodeSelectOrOpen(node);
