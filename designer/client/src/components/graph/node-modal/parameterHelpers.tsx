@@ -22,8 +22,10 @@ export const OverrideKeys = {
     SourceDataSample: "source-webhook/Data sample",
     DecisionTableMatch: "service-decision-table/Match condition",
     AggregateEndSession: "custom-aggregate-session/endSessionCondition",
+    HttpBody: "service-http/Body",
     HttpQueryParameters: "service-http/Query Parameters",
     HttpHeaders: "service-http/Headers",
+    WebhookBody: "sink-webhook/Body",
     WebSocketUrl: "source-websocket/URL",
     SinkKafkaValue: "sink-kafka/Value",
 } as const;

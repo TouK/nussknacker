@@ -3,6 +3,7 @@ import { Dialog, DialogContent, IconButton, Tooltip } from "@mui/material";
 import React, { useCallback, useRef, useState } from "react";
 
 import ProcessUtils from "../../../common/ProcessUtils";
+import { useUserSettings } from "../../../common/useUserSettings";
 import HttpService from "../../../http/HttpService/instance";
 import type { RootState } from "../../../reducers";
 import { getProcessingType } from "../../../reducers/selectors/graph";
@@ -76,6 +77,7 @@ export default function Variable({ node, setProperty, isEditMode, showValidation
     });
     const readOnly = !isEditMode;
     const processingType = useAppSelector(getProcessingType);
+    const [showDataMapper] = useUserSettings("node.showDataMapper");
     const [dataMapperContext, setDataMapperContext] = useState<ContextData>({});
     const contextFetched = useRef(false);
 
@@ -112,13 +114,14 @@ export default function Variable({ node, setProperty, isEditMode, showValidation
         setMapperOpen(true);
     }, [processingType, variableTypes]);
 
-    const mapperButton = isEditMode ? (
-        <Tooltip title="Open Data Mapper">
-            <IconButton size="small" onClick={handleOpenMapper} sx={{ p: "2px" }}>
-                <AccountTreeIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-        </Tooltip>
-    ) : null;
+    const mapperButton =
+        isEditMode && showDataMapper ? (
+            <Tooltip title="Open Data Mapper">
+                <IconButton size="small" onClick={handleOpenMapper} sx={{ p: "2px" }}>
+                    <AccountTreeIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+            </Tooltip>
+        ) : null;
 
     return (
         <>

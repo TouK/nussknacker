@@ -9,10 +9,8 @@ import type { NodeType } from "../../../types/node";
 import type { TopicEntry } from "../../dataMapper/DataMapper";
 import { DataMapper } from "../../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../../dataMapper/DataMapperDialogTitle";
-import { ExpressionLang } from "./editors/expression/types";
-import { EditorType } from "./editors/expression/types";
-import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
-import { getProcessName, getProcessProperties } from "./NodeDetailsContent/selectors";
+import { EditorType, ExpressionLang } from "./editors/expression/types";
+import { getFindAvailableVariables, getProcessName, getProcessProperties } from "./NodeDetailsContent/selectors";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 interface Props {
