@@ -1047,7 +1047,8 @@ export function DataMapper({
     variableTypes,
     fetchTopicDefinitions: fetchTopicDefinitionsOverride,
 }: DataMapperProps = {}): React.JSX.Element {
-    const [context, setContext] = useState<ContextData>(initialContext ?? SAMPLE_CONTEXT);
+    // When variableTypes are provided the context is built from them — no need for hardcoded demo data.
+    const [context, setContext] = useState<ContextData>(() => initialContext ?? (variableTypes ? {} : SAMPLE_CONTEXT));
 
     // Enrich context with type information: fills in empty/missing variables using variableTypes
     // so that List[Record{...}] variables show their element structure in the tree
@@ -1089,8 +1090,18 @@ export function DataMapper({
     const [topicEntries, setTopicEntries] = useState<TopicEntry[]>([]);
     const [topicsLoading, setTopicsLoading] = useState(false);
     const [contextFilter, setContextFilter] = useState("");
+    const [dropZoneActive, setDropZoneActive] = useState(false);
 
     const addField = () => setFields((f) => [...f, makeField()]);
+
+    const addFieldFromDrop = (path: string) => {
+        const lastSegment = path.split(".").pop()?.replace(/\?/g, "") ?? "";
+        const field = makeField(lastSegment);
+        field.expression = path;
+        setFields((f) => [...f, field]);
+        setDragOverId(null);
+        setDropZoneActive(false);
+    };
 
     const removeField = (id: number) => {
         setFields((f) => f.filter((x) => x.id !== id));
@@ -1147,7 +1158,14 @@ export function DataMapper({
     );
 
     const onDrop = (path: string, fieldId: number) => {
-        setFields((f) => f.map((x) => (x.id === fieldId ? { ...x, expression: path } : x)));
+        const lastSegment = path.split(".").pop()?.replace(/\?/g, "") ?? "";
+        setFields((prev) =>
+            prev.map((x) => {
+                if (x.id !== fieldId) return x;
+                const nameUpdate = !x.name?.trim() && lastSegment ? { name: lastSegment } : {};
+                return { ...x, expression: path, ...nameUpdate };
+            }),
+        );
         setDragOverId(null);
     };
 
@@ -1479,13 +1497,50 @@ export function DataMapper({
                                         onDrop={(path) => onDrop(path, f.id)}
                                     />
                                 ))}
+                                {/* Drop zone — creates a new field when a context variable is dropped */}
+                                <Box
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        setDropZoneActive(true);
+                                    }}
+                                    onDragLeave={() => setDropZoneActive(false)}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        const path = e.dataTransfer.getData("text/plain");
+                                        if (path) addFieldFromDrop(path);
+                                        else setDropZoneActive(false);
+                                    }}
+                                    sx={(theme) => ({
+                                        mt: fields.length > 0 ? 0.5 : 0,
+                                        minHeight: fields.length === 0 ? 120 : 40,
+                                        borderRadius: 1,
+                                        border: `2px dashed ${dropZoneActive ? theme.palette.primary.main : "transparent"}`,
+                                        backgroundColor: dropZoneActive ? alpha(theme.palette.primary.main, 0.06) : "transparent",
+                                        transition: "border-color 0.15s, background-color 0.15s",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                    })}
+                                >
+                                    {fields.length === 0 && !dropZoneActive && (
+                                        <Box sx={{ textAlign: "center", color: "text.disabled" }}>
+                                            <Typography sx={{ fontSize: 12 }}>No output fields yet.</Typography>
+                                            <Typography sx={{ fontSize: 11 }}>
+                                                Drag a variable here or use <strong>Add Field</strong> above.
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                    {dropZoneActive && (
+                                        <Typography sx={{ fontSize: 11, color: "primary.main" }}>Drop to add field</Typography>
+                                    )}
+                                </Box>
                             </ScrollArea>
                         </PanelPaper>
 
-                        {/* Expression output — always visible below Target Record */}
-                        <PanelPaper>
+                        {/* Expression output — secondary/muted panel */}
+                        <PanelPaper sx={{ opacity: 0.65, "&:hover": { opacity: 1 }, transition: "opacity 0.2s" }}>
                             <PanelHeader>
-                                <Typography sx={{ fontSize: 13, fontWeight: 600 }}>Expression</Typography>
+                                <Typography sx={{ fontSize: 12, fontWeight: 500, color: "text.secondary" }}>Expression</Typography>
                                 <Tooltip title="Copy to clipboard">
                                     <IconButton size="small" onClick={() => navigator.clipboard?.writeText(genSpel())}>
                                         <ContentCopyIcon sx={{ fontSize: 16 }} />
