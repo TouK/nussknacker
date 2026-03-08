@@ -6,6 +6,7 @@ import { CopyEndpoint, EndpointFieldWrapper } from "./endpointFieldWrapper";
 import { ParameterExpressionField } from "./ParameterExpressionField";
 import { OverrideKeys } from "./parameterHelpers";
 import type { ParametersListProps, ParameterWithIndex } from "./parametersList";
+import { SinkKafkaValueDataMapper } from "./SinkKafkaValueDataMapper";
 import { WebSocketUrlFieldWrapper } from "./webSocketUrlFieldWrapper";
 
 export type ParametersListFieldProps = ParametersListProps & {
@@ -27,7 +28,16 @@ export const ParametersListField = ({ getListFieldPath, paramWithIndex, ...props
     const endAdornment = useMemo(() => {
         if (paramKey === OverrideKeys.SourceEndpoint)
             return <CopyEndpoint parameter={param} parameterDefinitions={props.parameterDefinitions} />;
-    }, [param, paramKey, props.parameterDefinitions]);
+        if (paramKey === OverrideKeys.SinkKafkaValue && props.isEditMode)
+            return (
+                <SinkKafkaValueDataMapper
+                    node={props.node}
+                    parameterDefinitions={props.parameterDefinitions}
+                    valuePath={`${listFieldPath}.expression`}
+                    setProperty={props.setProperty}
+                />
+            );
+    }, [listFieldPath, param, paramKey, props.isEditMode, props.node, props.parameterDefinitions, props.setProperty]);
 
     return (
         <ParameterExpressionField

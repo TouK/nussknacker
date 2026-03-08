@@ -25,6 +25,7 @@ export const OverrideKeys = {
     HttpQueryParameters: "service-http/Query Parameters",
     HttpHeaders: "service-http/Headers",
     WebSocketUrl: "source-websocket/URL",
+    SinkKafkaValue: "sink-kafka/Value",
 } as const;
 
 export type ParamKeys = (typeof OverrideKeys)[keyof typeof OverrideKeys] | (string & NonNullable<unknown>);
