@@ -48,7 +48,6 @@ export const Definitions = () => {
                         <NodeRow
                             key={sourceId}
                             node={findNode(sourceId)}
-                            label={sourceId}
                             badge={t("testCases.definitions.testAssertions", {
                                 count: inputDataRecords.length,
                                 defaultValue_one: "{{count}} event",
@@ -67,7 +66,7 @@ export const Definitions = () => {
             ) : (
                 <Box px={1.5} pb={1}>
                     {mockNodeIds.map((nodeId) => (
-                        <NodeRow key={nodeId} node={findNode(nodeId)} label={nodeId} />
+                        <NodeRow key={nodeId} node={findNode(nodeId)} />
                     ))}
                 </Box>
             )}
@@ -83,7 +82,6 @@ export const Definitions = () => {
                         <NodeRow
                             key={nodeId}
                             node={findNode(nodeId)}
-                            label={nodeId}
                             badge={t("testCases.definitions.testAssertions", {
                                 count: assertions[nodeId]?.length,
                                 defaultValue_one: "{{count}} assertion",
@@ -125,11 +123,9 @@ const EmptySection = ({ children }: PropsWithChildren) => (
         </Typography>
     </Box>
 );
-const NodeRow = ({ node, label, badge }: { node: NodeType | undefined; label: string; badge?: string }) => {
+const NodeRow = ({ node, badge }: { node: NodeType | undefined; badge?: string }) => {
     const { onMouseEnter: handleMouseEnter, onMouseLeave: handleMouseLeave } = useNodeHover(node?.id);
     const handleClick = useNodeSelectOrOpen(node);
-
-    const labelToShow = label ?? node?.id ?? "";
 
     return (
         <Box
@@ -144,13 +140,13 @@ const NodeRow = ({ node, label, badge }: { node: NodeType | undefined; label: st
         >
             {node && <NodeIcon node={node} />}
 
-            <Box display="flex" alignItems="center" gap={0.5}>
-                <Typography variant="body2" component="span">
-                    {labelToShow}
+            <Box display="flex" alignItems="center" gap={0.5} width={"100%"}>
+                <Typography variant="body2" component="span" noWrap sx={{ overflow: "hidden", textOverflow: "ellipsis", maxWidth: "65%" }}>
+                    {node.name}
                 </Typography>
 
                 {badge && (
-                    <Typography variant="overline" color="text.disabled" sx={{ ml: 0.5 }}>
+                    <Typography variant="overline" whiteSpace={"nowrap"} color="text.disabled" sx={{ ml: 0.5 }}>
                         {badge}
                     </Typography>
                 )}
