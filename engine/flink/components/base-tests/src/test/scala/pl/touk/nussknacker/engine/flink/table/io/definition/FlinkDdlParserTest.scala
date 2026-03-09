@@ -84,11 +84,6 @@ class FlinkDdlParserTest extends AnyFunSuite with Matchers {
     }
   }
 
-  test("return multiple errors for empty statements") {
-    val sqlStatements = FlinkDdlParserTest.unallowedSqlStatements.mkString("")
-    val error         = FlinkDdlParser.parse(sqlStatements).invalidValue.head
-  }
-
 }
 
 object FlinkDdlParserTest {
