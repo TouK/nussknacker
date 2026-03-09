@@ -109,7 +109,7 @@ const ResultsContent = ({ sortedNodeIds, testAssertionResults, scenarioGraphNode
                     key={nodeId}
                     expandableTitle={
                         <AssertionResultsForNodeTitle
-                            title={nodeId}
+                            title={node.name}
                             assertionResults={testAssertionResults[nodeId]}
                             action={node ? <OpenNodeTestingDetails node={node} /> : undefined}
                             node={node}
