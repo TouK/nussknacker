@@ -1310,20 +1310,6 @@ export function DataMapper({
                         </Typography>
                     </Box>
                 )}
-                <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                    <Chip label={`${mappedCount} / ${fields.length} mapped`} size="small" variant="outlined" />
-                    {onInsert && (
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            size="small"
-                            onClick={() => onInsert(genSpel())}
-                            sx={{ textTransform: "none" }}
-                        >
-                            Apply
-                        </Button>
-                    )}
-                </Box>
             </Box>
 
             {/* Scrollable content area (panels + SpEL output) */}
@@ -1400,11 +1386,16 @@ export function DataMapper({
 
                     {/* Right: Target Record + Expression output */}
                     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
-                        <PanelPaper>
+                        <PanelPaper sx={{ backgroundColor: "transparent" }}>
                             <PanelHeader>
                                 <Box>
                                     <Typography sx={{ fontSize: 13, fontWeight: 600 }}>Target Record</Typography>
-                                    <Typography sx={{ fontSize: 11, color: "text.secondary" }}>Output is a {"{...}"} record</Typography>
+                                    <Chip
+                                        label={`${mappedCount} / ${fields.length} mapped`}
+                                        size="small"
+                                        variant="outlined"
+                                        sx={{ height: 16, fontSize: 10, "& .MuiChip-label": { px: "5px" } }}
+                                    />
                                 </Box>
                                 <Box sx={{ display: "flex", gap: 0.75 }}>
                                     <Tooltip title="Auto-fill unmapped fields by matching field names to context variables">
@@ -1538,7 +1529,9 @@ export function DataMapper({
                         </PanelPaper>
 
                         {/* Expression output — secondary/muted panel */}
-                        <PanelPaper sx={{ opacity: 0.65, "&:hover": { opacity: 1 }, transition: "opacity 0.2s" }}>
+                        <PanelPaper
+                            sx={{ opacity: 0.65, "&:hover": { opacity: 1 }, transition: "opacity 0.2s", backgroundColor: "transparent" }}
+                        >
                             <PanelHeader>
                                 <Typography sx={{ fontSize: 12, fontWeight: 500, color: "text.secondary" }}>Expression</Typography>
                                 <Tooltip title="Copy to clipboard">
@@ -1556,12 +1549,16 @@ export function DataMapper({
 
             {/* Footer */}
             <Box
-                sx={{
+                sx={(theme) => ({
                     flexShrink: 0,
                     display: "flex",
+                    alignItems: "center",
                     gap: 3,
-                    ...(onInsert ? { px: 2.5, py: 1, borderTop: 1, borderColor: "divider" } : { pt: 1 }),
-                }}
+                    px: 2.5,
+                    py: 1,
+                    borderTop: `1px solid ${theme.palette.divider}`,
+                    backgroundColor: alpha(theme.palette.background.paper, 0.6),
+                })}
             >
                 <Typography variant="caption" color="text.secondary">
                     Drag source variable → target field to map
@@ -1569,9 +1566,18 @@ export function DataMapper({
                 <Typography variant="caption" color="text.secondary">
                     Click field to edit name, type, or write an expression with autocomplete
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                    Use &quot;Load Context&quot; to paste your own context JSON
-                </Typography>
+                <Box sx={{ flex: 1 }} />
+                {onInsert && (
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        onClick={() => onInsert(genSpel())}
+                        sx={{ textTransform: "none" }}
+                    >
+                        Apply
+                    </Button>
+                )}
             </Box>
         </RootBox>
     );
