@@ -1,10 +1,12 @@
 import React, { useMemo } from "react";
 
+import { useUserSettings } from "../../../common/useUserSettings";
 import type { UIParameter } from "../../../types/definition";
 import type { Edge } from "../../../types/edge";
 import { EdgeKind } from "../../../types/edge";
 import type { NodeType } from "../../../types/node";
 import type { NodeValidationError, VariableTypes } from "../../../types/validation";
+import { FilterConditionBuilder } from "../../conditionBuilder/FilterConditionBuilder";
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
 import { EdgesDndComponent } from "./EdgesDndComponent";
@@ -37,6 +39,7 @@ export function Filter({
     showValidation?: boolean;
 }): React.JSX.Element {
     const [, isCompareView] = useDiffMark();
+    const [showConditionBuilder] = useUserSettings("node.showConditionBuilder");
     const edgeTypes = useMemo(
         () => [
             { value: EdgeKind.filterTrue, onlyOne: true },
@@ -57,6 +60,16 @@ export function Filter({
                 errors={errors}
                 isEditMode={isEditMode}
                 node={node}
+                endAdornment={
+                    isEditMode && showConditionBuilder ? (
+                        <FilterConditionBuilder
+                            node={node}
+                            variableTypes={variableTypes}
+                            setProperty={setProperty}
+                            expression={node.expression}
+                        />
+                    ) : null
+                }
             />
             <DisableField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
             {!isCompareView ? (
