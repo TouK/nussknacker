@@ -16,13 +16,24 @@ interface Props {
 
 export const AssertionResultsForNodeTitle = ({ title, assertionResults, action, node }: Props) => {
     return (
-        <Box display={"flex"} alignItems={"center"} gap={0.75} minWidth={0}>
+        <Box
+            display={"flex"}
+            alignItems={"center"}
+            gap={0.75}
+            minWidth={0}
+            width={"100%"}
+            sx={{
+                "&:not(:hover) .action-slot": { visibility: "hidden" },
+            }}
+        >
             {node && <NodeIcon node={node} />}
-            <Typography variant={"body2"} noWrap sx={{ flex: "1 1 0", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <Typography variant={"body2"} noWrap sx={{ overflow: "hidden", textOverflow: "ellipsis" }}>
                 {title}
             </Typography>
             <AssertionResultsBadge assertionResults={assertionResults} />
-            {action}
+            <Box className="action-slot" display={"flex"} alignItems={"center"}>
+                {action}
+            </Box>
         </Box>
     );
 };
