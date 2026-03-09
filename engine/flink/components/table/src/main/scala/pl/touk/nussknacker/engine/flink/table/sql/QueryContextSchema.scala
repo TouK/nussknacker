@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.api.{Context => NuContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
-import pl.touk.nussknacker.engine.flink.table.utils.ToTableTypeEncoder
-import pl.touk.nussknacker.engine.flink.table.utils.simulateddatatype.ToSimulatedDataTypeConverter
+import pl.touk.nussknacker.engine.flink.table.typing.ToTableTypeEncoder
+import pl.touk.nussknacker.engine.flink.table.typing.simulateddatatype.ToSimulatedDataTypeConverter
 
 final case class VariableSchema(name: String, typingResult: TypingResult)
 
