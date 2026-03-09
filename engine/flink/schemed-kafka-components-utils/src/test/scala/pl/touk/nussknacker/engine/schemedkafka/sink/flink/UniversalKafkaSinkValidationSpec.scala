@@ -89,7 +89,8 @@ class UniversalKafkaSinkValidationSpec extends AnyFunSuite with KafkaSchemaRegis
     val nodeCompilationDependencies = new NodeCompilationDependencies(
       scenarioCompilationDependencies =
         new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty),
-      nodeData = Source("id", SourceRef("typ", params.toList.map(p => NodeParameter(p._1, p._2)))),
+      nodeData =
+        Source(NodeId("id"), NodeName("id"), SourceRef("typ", params.toList.map(p => NodeParameter(p._1, p._2)))),
       componentUseContext = LiveRuntime(None),
       inputValidationContext = SingleInputNodeInputValidationContext(ValidationContext.empty)
     )

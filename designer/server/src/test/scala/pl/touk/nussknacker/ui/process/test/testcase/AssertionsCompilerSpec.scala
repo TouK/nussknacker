@@ -149,6 +149,7 @@ class AssertionsCompilerSpec
             ),
             assertion,
             field,
+            _,
             _
           ) =>
         message shouldBe "Cannot find terminating ' for string"
@@ -173,6 +174,7 @@ class AssertionsCompilerSpec
             ),
             assertion,
             field,
+            _,
             _
           ) =>
         message shouldBe "Unexpected text"
@@ -197,7 +199,8 @@ class AssertionsCompilerSpec
             ),
             assertion,
             field,
-            `nodeId`
+            `nodeId`,
+            _
           ) =>
         message shouldBe "Operator '==' used with not comparable types: String and Integer"
         parameterName shouldBe PredicateAssertionCompilationError.Field.Actual.entryName
@@ -267,7 +270,7 @@ class AssertionsCompilerSpec
       val actualCompilationResult = compilationResult.void
         .leftMap { errors =>
           errors.flatMap {
-            case PredicateAssertionCompilationError(compilationErrors, _, _, _) =>
+            case PredicateAssertionCompilationError(compilationErrors, _, _, _, _) =>
               compilationErrors.map {
                 case ExpressionParserCompilationError(message, _, _, _, _) =>
                   message
@@ -290,7 +293,8 @@ class AssertionsCompilerSpec
     val assertionCompilationResult = assertionsCompiler.compile(
       test,
       typing,
-      jobData
+      jobData,
+      scenario.collectAllNodes.map(node => node.id -> node.name).toMap
     )
     assertionCompilationResult
   }

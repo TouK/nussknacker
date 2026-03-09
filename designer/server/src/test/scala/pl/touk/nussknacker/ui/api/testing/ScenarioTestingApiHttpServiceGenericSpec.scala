@@ -233,7 +233,8 @@ trait ScenarioTestingApiHttpServiceGenericSpec
           |]""".stripMargin)
 
       response.code shouldEqual StatusCode.BadRequest
-      response.body shouldEqual s"Problem in sample 1 detected: Unexpected variable [nonExistingVariable] for source [$exampleScenarioSourceId]"
+      response.body shouldEqual
+        s"Problem in sample 1 detected: Unexpected variable [nonExistingVariable] for source [$exampleScenarioSourceId (id: $exampleScenarioSourceId)]"
     }
 
     "return error for test data containing variable that doesn't match expected type" in {
@@ -245,7 +246,7 @@ trait ScenarioTestingApiHttpServiceGenericSpec
 
       response.code shouldEqual StatusCode.BadRequest
       response.body should startWith(
-        s"""Problem in sample 1 detected: Variable [name=input, type=${exampleScenarioInputVariableType.display}, encoded value=$inputValueNotMatchingExpectedType] decoding error for source [$exampleScenarioSourceId]: """
+        s"""Problem in sample 1 detected: Variable [name=input, type=${exampleScenarioInputVariableType.display}, encoded value=$inputValueNotMatchingExpectedType] decoding error for source [$exampleScenarioSourceId (id: $exampleScenarioSourceId)]: """
       )
     }
   }

@@ -4,6 +4,8 @@ object naming {
 
   val nodeIdTag = "nodeId"
 
+  val nodeNameTag = "nodeName"
+
   val scenarioIdTag = "scenario"
 
 }

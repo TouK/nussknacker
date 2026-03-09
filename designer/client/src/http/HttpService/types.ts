@@ -94,7 +94,9 @@ export type DeployResponse = {
 
 export type NodeUsageData = {
     fragmentNodeId?: string;
+    fragmentNodeName?: string;
     nodeId: string;
+    nodeName: string;
     type: string;
 };
 

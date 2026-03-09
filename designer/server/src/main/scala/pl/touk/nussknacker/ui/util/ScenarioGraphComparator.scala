@@ -1,28 +1,34 @@
 package pl.touk.nussknacker.ui.util
 
 import io.circe.generic.extras.ConfiguredJsonCodec
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.graph.node.{NodeData, StickyNote}
 
 object ScenarioGraphComparator {
 
   def compare(currentGraph: ScenarioGraph, otherGraph: ScenarioGraph): Map[String, Difference] = {
+    val nodeNameById: Map[NodeId, String] =
+      (currentGraph.nodes ++ otherGraph.nodes).map(n => n.id -> n.name.value).toMap
+
     val nodes = getDifferences(
       currentGraph.nodes.map(node => node.id -> node).toMap,
       otherGraph.nodes.map(node => node.id -> node).toMap
     )(
-      notPresentInOther = current => NodeNotPresentInOther(current.id, current),
-      notPresentInCurrent = other => NodeNotPresentInCurrent(other.id, other),
-      different = (current, other) => NodeDifferent(current.id, current, other)
+      notPresentInOther = current => NodeNotPresentInOther(current.name.value, current),
+      notPresentInCurrent = other => NodeNotPresentInCurrent(other.name.value, other),
+      different = (current, other) => NodeDifferent(current.name.value, current, other)
     )
 
     val edges = getDifferences(
       currentGraph.edges.map(edge => (edge.from, edge.to) -> edge).toMap,
       otherGraph.edges.map(edge => (edge.from, edge.to) -> edge).toMap
     )(
-      notPresentInOther = current => EdgeNotPresentInOther(current.from, current.to, current),
-      notPresentInCurrent = other => EdgeNotPresentInCurrent(other.from, other.to, other),
-      different = (current, other) => EdgeDifferent(current.from, current.to, current, other)
+      notPresentInOther =
+        current => EdgeNotPresentInOther(nodeNameById(current.from), nodeNameById(current.to), current),
+      notPresentInCurrent = other => EdgeNotPresentInCurrent(nodeNameById(other.from), nodeNameById(other.to), other),
+      different =
+        (current, other) => EdgeDifferent(nodeNameById(current.from), nodeNameById(current.to), current, other)
     )
 
     val stickyNotes = getDifferences(

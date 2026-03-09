@@ -215,8 +215,10 @@ describe("Components list", () => {
                 force: true,
             });
         cy.verifySaveIndicator();
+        cy.intercept("PUT", "/api/processes/*").as("saveProcess");
         cy.contains(/^save$/i).click();
         cy.contains(/^ok$/i).click();
+        cy.wait("@saveProcess").its("response.statusCode").should("eq", 200);
 
         cy.viewport(1400, 600);
         cy.visit("/components/usages/builtin-filter");

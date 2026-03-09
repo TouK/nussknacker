@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.splittedgraph
 
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 
@@ -7,7 +8,7 @@ object splittednode {
 
   sealed trait SplittedNode[+T <: NodeData] {
     def data: T
-    def id: String = data.id
+    def id: NodeId = data.id
     def isEnding: Boolean
   }
 
@@ -48,13 +49,13 @@ object splittednode {
   }
 
   sealed trait Next {
-    def id: String
+    def id: NodeId
   }
 
   case class NextNode(node: SubsequentNode[_ <: NodeData]) extends Next {
-    def id = node.id
+    def id: NodeId = node.id
   }
 
-  case class PartRef(id: String) extends Next
+  case class PartRef(id: NodeId) extends Next
 
 }

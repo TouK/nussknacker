@@ -5,6 +5,7 @@ import org.scalatest.{EitherValues, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.NodeName
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -101,6 +102,7 @@ class KafkaExceptionConsumerSpec
 
       message.processName.value shouldBe scenarioName
       message.nodeId shouldBe Some(NodeId("shouldFail"))
+      message.nodeName shouldBe Some(NodeName("shouldFail"))
       message.message shouldBe Some("Expression [1/{0, 1}[0] != 10] evaluation failed, message: / by zero")
       message.exceptionInput shouldBe Some("1/{0, 1}[0] != 10")
       message.stackTrace.value should include("evaluation failed, message:")

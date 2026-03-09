@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.validation
 
 import cats.data.Validated.Invalid
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, NodeName, ProcessVersion}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -36,8 +36,9 @@ class ParametersValidator(modelData: ModelData, scenarioPropertiesNames: Iterabl
   def validate(sourceParameters: TestSourceParameters, parametersDefinition: Map[NodeId, List[Parameter]])(
       implicit metaData: MetaData
   ): List[NodeValidationError] = {
-    implicit val sourceNodeId: NodeId = NodeId(sourceParameters.sourceId)
-    implicit val jobData: JobData     = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
+    implicit val sourceNodeId: NodeId     = NodeId(sourceParameters.sourceId)
+    implicit val sourceNodeName: NodeName = NodeName(sourceParameters.sourceId)
+    implicit val jobData: JobData         = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
 
     val context = validationContextGlobalVariablesOnly
     val parameterList: List[Parameter] =

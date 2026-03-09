@@ -5,7 +5,7 @@ import cats.implicits.{toBifunctorOps, toTraverseOps}
 import io.circe.parser
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestDataGenerator, TestWithParametersSupport}
@@ -53,23 +53,25 @@ class SourceSpecificDataFormatHandler(modelData: ModelData) extends TestDataForm
 
   override def getTestParametersDefinition(
       sourceId: NodeId,
+      sourceName: NodeName,
       sourceCompilationResult: NodeCompilationResult[Source]
   ): Either[ScenarioTestService.ParametersDefinitionError, List[Parameter]] = {
     for {
       compiledSource <- sourceCompilationResult.compiledObject.toEither.leftMap(errors =>
         ParametersDefinitionError.SourcesCompilationError(NonEmptyList.one(sourceId -> errors))
       )
-      testParameters <- getTestParameters(sourceId, compiledSource)
+      testParameters <- getTestParameters(sourceId, sourceName, compiledSource)
     } yield testParameters
   }
 
   private def getTestParameters(
       sourceId: NodeId,
+      sourceName: NodeName,
       compiledSource: Source,
   ): Either[ParametersDefinitionError, List[Parameter]] = {
     compiledSource match {
       case s: TestWithParametersSupport[_] => Right(s.testParametersDefinition)
-      case _ => Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(sourceId))
+      case _ => Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(sourceId, sourceName))
     }
   }
 

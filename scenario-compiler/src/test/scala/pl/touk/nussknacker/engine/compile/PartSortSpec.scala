@@ -14,7 +14,7 @@ class PartSortSpec extends AnyFunSuite with Matchers {
   private def sortSourceIds(roots: NonEmptyList[SourceNode]): List[String] = {
     val process  = EspProcess(MetaData("proc1", StreamMetaData()), roots)
     val splitted = ProcessSplitter.split(process)
-    PartSort.sort(splitted.sources.toList).map(_.id)
+    PartSort.sort(splitted.sources.toList).map(_.id.value)
   }
 
   test("sort simple join") {

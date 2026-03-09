@@ -8,14 +8,14 @@ object ComponentIdExtractor {
 
   def fromCompiledNode(node: compilednode.Node): Option[ComponentId] = {
     node match {
-      case compilednode.Source(_, Some(ref), _)            => Some(ComponentId(ComponentType.Source, ref))
-      case compilednode.Source(_, None, _)                 => None
-      case sink: compilednode.Sink                         => Some(ComponentId(ComponentType.Sink, sink.ref))
-      case _: compilednode.Filter                          => Some(BuiltInComponentId.Filter)
-      case _: compilednode.SplitNode                       => Some(BuiltInComponentId.Split)
-      case _: compilednode.Switch                          => Some(BuiltInComponentId.Choice)
-      case compilednode.VariableBuilder(_, _, Left(_), _)  => Some(BuiltInComponentId.Variable)
-      case compilednode.VariableBuilder(_, _, Right(_), _) => Some(BuiltInComponentId.RecordVariable)
+      case compilednode.Source(_, _, Some(ref), _)            => Some(ComponentId(ComponentType.Source, ref))
+      case compilednode.Source(_, _, None, _)                 => None
+      case sink: compilednode.Sink                            => Some(ComponentId(ComponentType.Sink, sink.ref))
+      case _: compilednode.Filter                             => Some(BuiltInComponentId.Filter)
+      case _: compilednode.SplitNode                          => Some(BuiltInComponentId.Split)
+      case _: compilednode.Switch                             => Some(BuiltInComponentId.Choice)
+      case compilednode.VariableBuilder(_, _, _, Left(_), _)  => Some(BuiltInComponentId.Variable)
+      case compilednode.VariableBuilder(_, _, _, Right(_), _) => Some(BuiltInComponentId.RecordVariable)
       case customNode: compilednode.CustomNode => Some(ComponentId(ComponentType.CustomComponent, customNode.ref))
       case customNode: compilednode.EndingCustomNode =>
         Some(ComponentId(ComponentType.CustomComponent, customNode.ref))

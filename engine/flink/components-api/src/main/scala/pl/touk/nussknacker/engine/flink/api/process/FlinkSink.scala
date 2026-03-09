@@ -58,7 +58,7 @@ trait BasicFlinkSink extends FlinkSink {
         TypeInformationDetection.instance.forType(typeResult).asInstanceOf[TypeInformation[Value]]
       )
       .sinkTo(toFlinkSink(flinkNodeContext))
-      .setUidAndNameToNodeId(flinkNodeContext.nodeId)
+      .setUidAndName(flinkNodeContext.nodeId.value, flinkNodeContext.nodeName.value)
 
   def valueFunction(
       helper: FlinkLazyParameterFunctionHelper

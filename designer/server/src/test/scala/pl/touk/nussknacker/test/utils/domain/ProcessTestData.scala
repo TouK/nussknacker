@@ -346,17 +346,19 @@ object ProcessTestData {
       ),
       nodes = List(
         node.Source(
-          id = "sourceId",
+          id = NodeId("sourceId"),
+          name = NodeName("sourceId"),
           ref = SourceRef(existingSourceFactory, List.empty),
           additionalFields = Some(UserDefinedAdditionalNodeFields(Some("node description"), None))
         ),
         node.Sink(
-          id = "sinkId",
+          id = NodeId("sinkId"),
+          name = NodeName("sinkId"),
           ref = SinkRef(existingSinkFactory, List.empty),
           additionalFields = None
         )
       ),
-      edges = List(Edge(from = "sourceId", to = "sinkId", edgeType = None)),
+      edges = List(Edge(from = NodeId("sourceId"), to = NodeId("sinkId"), edgeType = None)),
     )
   }
 
@@ -371,9 +373,13 @@ object ProcessTestData {
       MetaData(sampleFragmentName.value, FragmentSpecificData()),
       List(
         FlatNode(
-          FragmentInputDefinition("in", List(FragmentParameter(ParameterName("param1"), FragmentClazzRef[String])))
+          FragmentInputDefinition(
+            NodeId("in"),
+            NodeName("in"),
+            List(FragmentParameter(ParameterName("param1"), FragmentClazzRef[String]))
+          )
         ),
-        canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+        canonicalnode.FlatNode(FragmentOutputDefinition(NodeId("out1"), NodeName("out1"), "output", List.empty))
       ),
       List.empty
     )
@@ -384,9 +390,13 @@ object ProcessTestData {
     MetaData(sampleFragmentName.value, FragmentSpecificData()),
     List(
       canonicalnode.FlatNode(
-        FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        FragmentInputDefinition(
+          NodeId("start"),
+          NodeName("start"),
+          List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String]))
+        )
       ),
-      canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+      canonicalnode.FlatNode(FragmentOutputDefinition(NodeId("out1"), NodeName("out1"), "output", List.empty))
     ),
     List.empty
   )
@@ -397,7 +407,8 @@ object ProcessTestData {
       List(
         FlatNode(
           FragmentInputDefinition(
-            "in",
+            NodeId("in"),
+            NodeName("in"),
             List(
               FragmentParameter(
                 ParameterName("param1"),
@@ -406,7 +417,7 @@ object ProcessTestData {
             )
           )
         ),
-        canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+        canonicalnode.FlatNode(FragmentOutputDefinition(NodeId("out1"), NodeName("out1"), "output", List.empty))
       ),
       List.empty
     )
@@ -416,13 +427,17 @@ object ProcessTestData {
       MetaData(sampleFragmentName.value, FragmentSpecificData()),
       List(
         FlatNode(
-          FragmentInputDefinition("in", List(FragmentParameter(ParameterName("param1"), FragmentClazzRef[String])))
+          FragmentInputDefinition(
+            NodeId("in"),
+            NodeName("in"),
+            List(FragmentParameter(ParameterName("param1"), FragmentClazzRef[String]))
+          )
         ),
         SplitNode(
-          Split("split"),
+          Split(NodeId("split"), NodeName("split")),
           List(
-            List(FlatNode(FragmentOutputDefinition("out", "out1", List.empty))),
-            List(FlatNode(FragmentOutputDefinition("out2", "out2", List.empty)))
+            List(FlatNode(FragmentOutputDefinition(NodeId("out"), NodeName("out"), "out1", List.empty))),
+            List(FlatNode(FragmentOutputDefinition(NodeId("out2"), NodeName("out2"), "out2", List.empty)))
           )
         )
       ),
@@ -435,14 +450,18 @@ object ProcessTestData {
       MetaData(sampleFragmentName.value, FragmentSpecificData()),
       List(
         FlatNode(
-          FragmentInputDefinition("in", List(FragmentParameter(ParameterName("param2"), FragmentClazzRef[String])))
+          FragmentInputDefinition(
+            NodeId("in"),
+            NodeName("in"),
+            List(FragmentParameter(ParameterName("param2"), FragmentClazzRef[String]))
+          )
         ),
         SplitNode(
-          Split("split"),
+          Split(NodeId("split"), NodeName("split")),
           List(
-            List(FlatNode(FragmentOutputDefinition("out", "out1", List.empty))),
-            List(FlatNode(FragmentOutputDefinition("out2", "out2", List.empty))),
-            List(FlatNode(FragmentOutputDefinition("out3", "out2", List.empty)))
+            List(FlatNode(FragmentOutputDefinition(NodeId("out"), NodeName("out"), "out1", List.empty))),
+            List(FlatNode(FragmentOutputDefinition(NodeId("out2"), NodeName("out2"), "out2", List.empty))),
+            List(FlatNode(FragmentOutputDefinition(NodeId("out3"), NodeName("out3"), "out2", List.empty)))
           )
         )
       ),

@@ -10,13 +10,14 @@ import pl.touk.nussknacker.engine.util.metrics.common.OneSourceMetrics
 
 private[registrar] class SourceMetricsFunction[T](
     sourceId: String,
+    sourceName: String,
     componentUseContextProvider: RuntimeMode
 ) extends ProcessFunction[T, T] {
 
   @transient private var metrics: OneSourceMetrics = _
 
   override def open(openContext: OpenContext): Unit = {
-    metrics = new OneSourceMetrics(sourceId)
+    metrics = new OneSourceMetrics(sourceId, sourceName)
     val metricsProvider = createMetricsProvider(componentUseContextProvider, RuntimeCtx(getRuntimeContext))
     metrics.registerOwnMetrics(metricsProvider)
   }

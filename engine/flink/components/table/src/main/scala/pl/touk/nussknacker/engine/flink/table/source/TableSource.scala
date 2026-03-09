@@ -80,7 +80,8 @@ class TableSource(
       }
       .getOrElse(selectQuery)
 
-    val streamOfRow = tableEnv.toDataStream(finalQuery).setUidAndNameToNodeId(flinkNodeContext.nodeId)
+    val streamOfRow =
+      tableEnv.toDataStream(finalQuery).setUidAndName(flinkNodeContext.nodeId.value, flinkNodeContext.nodeName.value)
 
     streamOfRow
       .flatMap(

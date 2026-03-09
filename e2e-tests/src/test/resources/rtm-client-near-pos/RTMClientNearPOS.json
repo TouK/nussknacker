@@ -41,7 +41,8 @@
           "y": 0
         }
       },
-      "type": "Source"
+      "type": "Source",
+      "name": "stream of given clients geo location"
     },
     {
       "id": "enrich with contact history data",
@@ -86,11 +87,11 @@
           "y": 180
         }
       },
-      "type": "Enricher"
+      "type": "Enricher",
+      "name": "enrich with contact history data"
     },
     {
-      "nextFalse": [
-      ],
+      "nextFalse": [],
       "id": "client is not contacted in last X Days",
       "expression": {
         "language": "spel",
@@ -104,7 +105,8 @@
           "y": 360
         }
       },
-      "type": "Filter"
+      "type": "Filter",
+      "name": "client is not contacted in last X Days"
     },
     {
       "id": "enrich with data from list of blocked clients",
@@ -149,11 +151,11 @@
           "y": 540
         }
       },
-      "type": "Enricher"
+      "type": "Enricher",
+      "name": "enrich with data from list of blocked clients"
     },
     {
-      "nextFalse": [
-      ],
+      "nextFalse": [],
       "id": "client is not blocked",
       "expression": {
         "language": "spel",
@@ -167,7 +169,8 @@
           "y": 720
         }
       },
-      "type": "Filter"
+      "type": "Filter",
+      "name": "client is not blocked"
     },
     {
       "id": "enrich with client data",
@@ -212,7 +215,8 @@
           "y": 900
         }
       },
-      "type": "Enricher"
+      "type": "Enricher",
+      "name": "enrich with client data"
     },
     {
       "id": "extract consents from client data",
@@ -228,11 +232,11 @@
           "y": 1080
         }
       },
-      "type": "Variable"
+      "type": "Variable",
+      "name": "extract consents from client data"
     },
     {
-      "nextFalse": [
-      ],
+      "nextFalse": [],
       "id": "client has marketing consents",
       "expression": {
         "language": "spel",
@@ -246,7 +250,8 @@
           "y": 1260
         }
       },
-      "type": "Filter"
+      "type": "Filter",
+      "name": "client has marketing consents"
     },
     {
       "id": "enrich with POS info",
@@ -291,11 +296,11 @@
           "y": 1440
         }
       },
-      "type": "Enricher"
+      "type": "Enricher",
+      "name": "enrich with POS info"
     },
     {
-      "nextFalse": [
-      ],
+      "nextFalse": [],
       "id": "POS is currently opened",
       "expression": {
         "language": "spel",
@@ -309,7 +314,8 @@
           "y": 1620
         }
       },
-      "type": "Filter"
+      "type": "Filter",
+      "name": "POS is currently opened"
     },
     {
       "id": "Count when distance to POS is lower than 1 km",
@@ -366,11 +372,11 @@
           "y": 1800
         }
       },
-      "type": "CustomNode"
+      "type": "CustomNode",
+      "name": "Count when distance to POS is lower than 1 km"
     },
     {
-      "nextFalse": [
-      ],
+      "nextFalse": [],
       "id": "2 events received with location near POS from session of X time",
       "expression": {
         "language": "spel",
@@ -384,7 +390,8 @@
           "y": 1980
         }
       },
-      "type": "Filter"
+      "type": "Filter",
+      "name": "2 events received with location near POS from session of X time"
     },
     {
       "id": "decisions priorities and notification content by consent and client type",
@@ -415,7 +422,8 @@
           "y": 2160
         }
       },
-      "type": "Enricher"
+      "type": "Enricher",
+      "name": "decisions priorities and notification content by consent and client type"
     },
     {
       "id": "choose best decision",
@@ -431,11 +439,11 @@
           "y": 2340
         }
       },
-      "type": "Variable"
+      "type": "Variable",
+      "name": "choose best decision"
     },
     {
-      "defaultNext": [
-      ],
+      "defaultNext": [],
       "nexts": [
         {
           "expression": {
@@ -501,7 +509,8 @@
                   "y": 2700
                 }
               },
-              "type": "Sink"
+              "type": "Sink",
+              "name": "SMS"
             }
           ]
         },
@@ -569,7 +578,8 @@
                   "y": 2700
                 }
               },
-              "type": "Sink"
+              "type": "Sink",
+              "name": "EMAIL"
             }
           ]
         },
@@ -637,7 +647,8 @@
                   "y": 2700
                 }
               },
-              "type": "Sink"
+              "type": "Sink",
+              "name": "PUSH"
             }
           ]
         }
@@ -652,9 +663,9 @@
           "y": 2520
         }
       },
-      "type": "Switch"
+      "type": "Switch",
+      "name": "split by notification type"
     }
   ],
-  "additionalBranches": [
-  ]
+  "additionalBranches": []
 }

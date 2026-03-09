@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId, NodeName, ProcessVersion}
 import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, SpelParameterEditor}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.compile.ProcessValidator
@@ -251,7 +251,10 @@ class EventGeneratorSourceFactorySpec
 
   test("node compilation should return number editor for count parameter") {
     val parametersDefinition =
-      nodeCompiler.compileNode(Source("source id", SourceRef("event-generator", List.empty))).parameters.value
+      nodeCompiler
+        .compileNode(Source(NodeId("source id"), NodeName("source id"), SourceRef("event-generator", List.empty)))
+        .parameters
+        .value
 
     val countDefinition = parametersDefinition.find(_.name.value == "count").value
     countDefinition.editors shouldBe List(SpelParameterEditor)

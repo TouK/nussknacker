@@ -33,6 +33,7 @@ private[definition] class MethodBasedComponentImplementationInvoker(
     val additional =
       compilationDependencies.metaData ::
         compilationDependencies.nodeId ::
+        compilationDependencies.nodeName ::
         compilationDependencies.componentUseContext ::
         compilationDependencies.engineScenarioCompilationDependencies.nodeCompilationDependencies.map(_.value) :::
         componentSpecificAdditional

@@ -12,12 +12,17 @@ import type { SearchQuery } from "./SearchResults";
 
 type SelectorResult = { expression: string } | string;
 type Selector = (node: NodeType) => SelectorResult | SelectorResult[];
-type FilterSelector = { name: string; selector: Selector }[];
+type FilterSelector = { name: string; selector: Selector; exactMatch?: boolean }[];
 
 const fieldsSelectors: FilterSelector = [
     {
-        name: "name",
+        name: "id",
         selector: (node) => node.id,
+        exactMatch: true,
+    },
+    {
+        name: "name",
+        selector: (node) => node.name,
     },
     {
         name: "description",
@@ -71,16 +76,27 @@ const fieldsSelectors: FilterSelector = [
     },
 ];
 
-function matchFilters(value: SelectorResult, filterValues: string[]): boolean {
+function matchFilters(value: SelectorResult, filterValues: string[], exactMatch = false): boolean {
     const resolved = typeof value === "string" ? value : value?.expression;
-    return filterValues.length && filterValues.some((filter) => filter != "" && resolved?.toLowerCase().includes(filter.toLowerCase()));
+    return (
+        filterValues.length &&
+        filterValues.some((filter) => {
+            if (filter == "" || !resolved) {
+                return false;
+            }
+            if (exactMatch) {
+                return resolved.toLowerCase() === filter.toLowerCase();
+            }
+            return resolved.toLowerCase().includes(filter.toLowerCase());
+        })
+    );
 }
 
 const findFields = (filterValues: string[], node: NodeType) => {
     return uniq(
-        fieldsSelectors.flatMap(({ name, selector }) =>
+        fieldsSelectors.flatMap(({ name, selector, exactMatch }) =>
             ensureArray(selector(node))
-                .filter((v) => matchFilters(v, filterValues))
+                .filter((v) => matchFilters(v, filterValues, exactMatch))
                 .map(() => name),
         ),
     );
@@ -88,9 +104,9 @@ const findFields = (filterValues: string[], node: NodeType) => {
 
 const findFieldsUsingSelectorWithName = (selectorName: string, filterValues: string[], node: NodeType) => {
     return uniq(
-        selectorByName(selectorName).flatMap(({ name, selector }) =>
+        selectorByName(selectorName).flatMap(({ name, selector, exactMatch }) =>
             ensureArray(selector(node))
-                .filter((v) => matchFilters(v, filterValues))
+                .filter((v) => matchFilters(v, filterValues, exactMatch))
                 .map(() => name),
         ),
     );
@@ -116,6 +132,7 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
     const displayNames = useMemo(
         () => ({
             name: t("panels.search.field.name", "Name"),
+            id: t("panels.search.field.id", "Id"),
             description: t("panels.search.field.description", "Description"),
             label: t("panels.search.field.label", "Label"),
             value: t("panels.search.field.value", "Value"),

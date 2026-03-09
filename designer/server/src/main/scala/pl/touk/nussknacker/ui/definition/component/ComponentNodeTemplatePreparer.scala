@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.definition.component
 
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.definition.component._
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -29,26 +30,32 @@ private[component] object ComponentNodeTemplatePreparer {
     ) = {
       val nodeTemplate = (component.id, component.componentTypeSpecificData) match {
         case (BuiltInComponentId.Filter, _) =>
-          Filter("", Expression.spel("true"))
+          Filter(NodeId.generate(), NodeName(""), Expression.spel("true"))
         case (BuiltInComponentId.Split, _) =>
-          Split("")
+          Split(NodeId.generate(), NodeName(""))
         case (BuiltInComponentId.Choice, _) =>
-          Switch("")
+          Switch(NodeId.generate(), NodeName(""), None, None)
         case (BuiltInComponentId.Variable, _) =>
-          Variable("", "varName", Expression.spel("'value'"))
+          Variable(NodeId.generate(), NodeName(""), "varName", Expression.spel("'value'"))
         case (BuiltInComponentId.RecordVariable, _) =>
-          VariableBuilder("", "varName", List(Field("fieldName", Expression.spel("'value'"))))
+          VariableBuilder(
+            NodeId.generate(),
+            NodeName(""),
+            "varName",
+            List(Field("fieldName", Expression.spel("'value'")))
+          )
         case (BuiltInComponentId.FragmentInputDefinition, _) =>
-          FragmentInputDefinition("", List.empty)
+          FragmentInputDefinition(NodeId.generate(), NodeName(""), List.empty)
         case (BuiltInComponentId.FragmentOutputDefinition, _) =>
-          FragmentOutputDefinition("", "output", List.empty)
+          FragmentOutputDefinition(NodeId.generate(), NodeName(""), "output", List.empty)
         case (id, ServiceSpecificData) if staticDefinition.hasReturn =>
-          Enricher("", serviceRef(id, staticDefinition), "output")
+          Enricher(NodeId.generate(), NodeName(""), serviceRef(id, staticDefinition), "output")
         case (id, ServiceSpecificData) =>
-          Processor("", serviceRef(id, staticDefinition))
+          Processor(NodeId.generate(), NodeName(""), serviceRef(id, staticDefinition))
         case (id, CustomComponentSpecificData(true, _)) =>
           Join(
-            "",
+            NodeId.generate(),
+            NodeName(""),
             if (staticDefinition.hasReturn) Some("outputVar") else None,
             id.name,
             parameterTemplates(staticDefinition),
@@ -56,18 +63,23 @@ private[component] object ComponentNodeTemplatePreparer {
           )
         case (id, CustomComponentSpecificData(false, _)) =>
           CustomNode(
-            "",
+            NodeId.generate(),
+            NodeName(""),
             if (staticDefinition.hasReturn) Some("outputVar") else None,
             id.name,
             parameterTemplates(staticDefinition)
           )
         case (id, SinkSpecificData) =>
-          Sink("", SinkRef(id.name, parameterTemplates(staticDefinition)))
+          Sink(NodeId.generate(), NodeName(""), SinkRef(id.name, parameterTemplates(staticDefinition)))
         case (id, SourceSpecificData) =>
-          Source("", SourceRef(id.name, parameterTemplates(staticDefinition)))
+          Source(NodeId.generate(), NodeName(""), SourceRef(id.name, parameterTemplates(staticDefinition)))
         case (id, FragmentSpecificData(outputNames)) =>
           val outputs = outputNames.map(name => (name, name)).toMap
-          FragmentInput("", FragmentRef(id.name, parameterTemplates(staticDefinition), outputs))
+          FragmentInput(
+            NodeId.generate(),
+            NodeName(""),
+            FragmentRef(id.name, parameterTemplates(staticDefinition), outputs)
+          )
         case (_, BuiltInComponentSpecificData) =>
           throw new IllegalStateException(s"Not expected component: $component")
       }

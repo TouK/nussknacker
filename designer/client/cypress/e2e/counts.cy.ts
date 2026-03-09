@@ -53,7 +53,7 @@ describe("Counts", () => {
         cy.get("[data-testid=window]").contains("10 seconds").should("be.visible");
     });
 
-    it("should display question mark when renaming a node and updating the count", () => {
+    it("should keep count visible after renaming a node", () => {
         const fakeResponse = {
             periodic: { all: 10, errors: 0, fragmentCounts: {} },
             "dead-end": { all: 120, errors: 10, fragmentCounts: {} },
@@ -88,9 +88,7 @@ describe("Counts", () => {
 
         cy.get("[data-testid=window]").contains(/^ok$/i).click();
 
-        cy.getNode("event-generator").parent().as("graph");
-
-        cy.get("@graph").matchImage({ screenshotConfig: { padding: 16 } });
+        cy.getNode("dead-end12").find('[joint-selector="testResultsSummary"]').should("contain.text", "120").and("not.contain.text", "?");
     });
 
     it("should be cleaned with hide button", () => {

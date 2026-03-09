@@ -34,9 +34,10 @@ case class CollectionSource[T](
       .fromSource(
         flinkSource(list, env.getConfig, flinkNodeContext),
         watermarkStrategy.getOrElse(WatermarkStrategy.noWatermarks()),
-        flinkNodeContext.nodeId.id,
+        flinkNodeContext.nodeId.value,
       )
-      .uid(flinkNodeContext.nodeId.id)
+      .uid(flinkNodeContext.nodeId.value)
+      .name(flinkNodeContext.nodeName.value)
       .map(
         new FlinkContextInitializingFunction(
           contextInitializer,

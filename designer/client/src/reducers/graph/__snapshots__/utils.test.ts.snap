@@ -3,27 +3,27 @@
 exports[`GraphUtils prepareNewNodesWithLayout should update union output expression parameter with an updated node name when new unique node ids created 1`] = `
 {
   "idMapping": {
-    "union": "union (copy 1)",
-    "variable 1": "variable 1 (copy 1)",
-    "variable 2": "variable 2 (copy 1)",
+    "union": "1960a6d0-ee25-4c38-a81b-3720738dfccf",
+    "variable 1": "e7a058ef-126b-4959-ae1f-d1bfd91a6529",
+    "variable 2": "a493b327-b57f-4ef6-bd61-eb008b83d241",
   },
   "layout": [
     {
-      "id": "variable 1 (copy 1)",
+      "id": "e7a058ef-126b-4959-ae1f-d1bfd91a6529",
       "position": {
         "x": 350,
         "y": 859,
       },
     },
     {
-      "id": "variable 2 (copy 1)",
+      "id": "a493b327-b57f-4ef6-bd61-eb008b83d241",
       "position": {
         "x": 710,
         "y": 859,
       },
     },
     {
-      "id": "union (copy 1)",
+      "id": "1960a6d0-ee25-4c38-a81b-3720738dfccf",
       "position": {
         "x": 530,
         "y": 1039,
@@ -39,8 +39,9 @@ exports[`GraphUtils prepareNewNodesWithLayout should update union output express
           "y": 859,
         },
       },
-      "id": "variable 1 (copy 1)",
+      "id": "e7a058ef-126b-4959-ae1f-d1bfd91a6529",
       "label": "variable",
+      "name": "variable 1 (copy 1)",
       "type": "Variable",
       "value": {
         "expression": "'value'",
@@ -56,8 +57,9 @@ exports[`GraphUtils prepareNewNodesWithLayout should update union output express
           "y": 859,
         },
       },
-      "id": "variable 2 (copy 1)",
+      "id": "a493b327-b57f-4ef6-bd61-eb008b83d241",
       "label": "variable",
+      "name": "variable 2 (copy 1)",
       "type": "Variable",
       "value": {
         "expression": "'value'",
@@ -75,7 +77,7 @@ exports[`GraphUtils prepareNewNodesWithLayout should update union output express
       },
       "branchParameters": [
         {
-          "branchId": "variable 1 (copy 1)",
+          "branchId": "e7a058ef-126b-4959-ae1f-d1bfd91a6529",
           "parameters": [
             {
               "expression": {
@@ -87,7 +89,7 @@ exports[`GraphUtils prepareNewNodesWithLayout should update union output express
           ],
         },
         {
-          "branchId": "variable 2 (copy 1)",
+          "branchId": "a493b327-b57f-4ef6-bd61-eb008b83d241",
           "parameters": [
             {
               "expression": {
@@ -99,8 +101,9 @@ exports[`GraphUtils prepareNewNodesWithLayout should update union output express
           ],
         },
       ],
-      "id": "union (copy 1)",
+      "id": "1960a6d0-ee25-4c38-a81b-3720738dfccf",
       "label": "union",
+      "name": "union (copy 1)",
       "nodeType": "union",
       "outputVar": "outputVar",
       "parameters": [],

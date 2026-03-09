@@ -76,9 +76,10 @@ class FlinkKafkaSource[K, V](
       .fromSource(
         flinkSource(flinkNodeContext),
         WatermarkStrategy.noWatermarks(),
-        flinkNodeContext.nodeId.id
+        flinkNodeContext.nodeId.value
       )
-      .uid(flinkNodeContext.nodeId.id)
+      .uid(flinkNodeContext.nodeId.value)
+      .name(flinkNodeContext.nodeName.value)
       // 1. deserialize event, initialize Context and compute event time
       .flatMap(
         new FlinkKafkaSourceContextInitializingFunction[K, V](

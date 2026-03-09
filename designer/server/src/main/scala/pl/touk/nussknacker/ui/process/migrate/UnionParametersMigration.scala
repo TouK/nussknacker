@@ -14,7 +14,7 @@ final case class UnionParametersMigration(migratedNodeType: String = "union") ex
   private val newOutputExpressionParameterName = ParameterName("Output expression")
 
   override def migrateNode(metadata: MetaData): PartialFunction[NodeData, NodeData] = {
-    case node @ CustomNode(_, _, nodeType, parameters, _)
+    case node @ CustomNode(_, _, _, nodeType, parameters, _)
         if parameters.exists(_.name == oldValueParameterName) && nodeType == migratedNodeType =>
       node.copy(parameters =
         node.parameters.map(p =>

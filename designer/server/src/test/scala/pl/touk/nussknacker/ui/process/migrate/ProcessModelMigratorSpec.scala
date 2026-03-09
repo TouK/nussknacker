@@ -83,7 +83,7 @@ class ProcessModelMigratorSpec extends AnyFlatSpec with BeforeAndAfterEach with 
 
   private def extractProcessor(migrationResult: MigrationResult) = {
     val service = for {
-      node      <- migrationResult.process.nodes.find(_.id == "processor")
+      node      <- migrationResult.process.nodes.find(_.id.value == "processor")
       flatNode  <- node.cast[FlatNode]
       processor <- flatNode.data.asProcessor
     } yield processor.service

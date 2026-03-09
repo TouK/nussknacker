@@ -37,7 +37,7 @@ class NodeValidator(
 
     val nodeDataValidator = new NodeDataValidator(modelData)
 
-    val edges = validationRequest.outgoingEdges.getOrElse(Nil).map(e => OutgoingEdge(e.to, e.edgeType))
+    val edges = validationRequest.outgoingEdges.getOrElse(Nil).map(e => OutgoingEdge(e.to.value, e.edgeType))
 
     // We create fragmentResolver for each request, because it requires LoggedUser to fetch fragments
     val fragmentResolver =

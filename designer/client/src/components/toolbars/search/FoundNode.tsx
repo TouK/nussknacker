@@ -23,7 +23,7 @@ export function FoundNode({ node, highlights, fields }: Props) {
         <Stack spacing={0.5} padding={0.5}>
             <Typography variant="body1" component={Stack} direction="row" spacing={0.5} whiteSpace="normal">
                 <NodeIcon node={node} sx={{}} />
-                <SearchHighlighter highlights={highlights}>{node.id}</SearchHighlighter>
+                <SearchHighlighter highlights={highlights}>{node.name}</SearchHighlighter>
             </Typography>
             <Typography variant="caption" paddingX={0.5} color={(t) => t.palette.text.disabled} whiteSpace="normal">
                 {fields.join(", ")}

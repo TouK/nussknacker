@@ -314,13 +314,13 @@ function getNode(nameOrAlias: string) {
         let selector = "";
         const match = name.match(/(.*)\*\*(.*)/);
         if (!match) {
-            selector = `[model-id="${name}"]`;
+            selector = `[data-node-name="${name}"]`;
         } else {
             if (match[1]) {
-                selector = `[model-id^="${match[1]}"]`;
+                selector = `[data-node-name^="${match[1]}"]`;
             }
             if (match[2]) {
-                selector += `[model-id$="${match[2]}"]`;
+                selector += `[data-node-name$="${match[2]}"]`;
             }
         }
         return cy.get(selector, { timeout: 30000, log: false }).should("be.visible");

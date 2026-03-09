@@ -6,6 +6,7 @@ import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.{ProcessVersion => RuntimeVersionData}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
   DesignerWideComponentId,
@@ -126,7 +127,7 @@ class DeploymentService(
   private def getScenarioGraphVersion(scenarioMetadata: ScenarioMetadata, deployer: LoggedUser) = {
     EitherT(
       scenarioGraphVersionService.getValidResolvedLatestScenarioGraphVersion(scenarioMetadata, deployer)
-    ).leftMap[RunDeploymentError](error => ScenarioGraphValidationError(error.errors))
+    ).leftMap[RunDeploymentError](error => ScenarioGraphValidationError(error.errors, error.nodeNamesById))
   }
 
   private def getScenarioMetadata(
@@ -380,7 +381,10 @@ object DeploymentService {
 
   case object NoPermissionError extends RunDeploymentError with GetDeploymentStatusError
 
-  final case class ScenarioGraphValidationError(errors: ValidationErrors) extends RunDeploymentError
+  final case class ScenarioGraphValidationError(
+      errors: ValidationErrors,
+      nodeNamesById: Map[NodeId, String] = Map.empty
+  ) extends RunDeploymentError
 
   final case class DeployValidationError(message: String) extends RunDeploymentError
 

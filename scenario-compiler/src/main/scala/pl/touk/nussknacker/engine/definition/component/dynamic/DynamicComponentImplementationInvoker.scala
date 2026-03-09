@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.dynamic
 
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, NodeName, Params}
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DynamicComponent,
   OutputVariableNameValue,
@@ -26,6 +26,8 @@ class DynamicComponentImplementationInvoker(obj: DynamicComponent) extends Compo
     val additionalParams = obj.nodeDependencies.map {
       case TypedNodeDependency(klazz) if klazz == classOf[NodeId] =>
         TypedNodeDependencyValue(compilationDependencies.nodeId)
+      case TypedNodeDependency(klazz) if klazz == classOf[NodeName] =>
+        TypedNodeDependencyValue(compilationDependencies.nodeName)
       case TypedNodeDependency(klazz) if klazz == classOf[MetaData] =>
         TypedNodeDependencyValue(compilationDependencies.metaData)
       case TypedNodeDependency(klazz) if klazz == classOf[ComponentUseContext] =>

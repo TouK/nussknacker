@@ -23,6 +23,9 @@ import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 
+import java.nio.charset.StandardCharsets
+import java.util.UUID
+
 class ProcessMarshallerSpec
     extends AnyFlatSpec
     with Matchers
@@ -234,26 +237,39 @@ class ProcessMarshallerSpec
         id shouldBe expectedBadNodeId
       }
     }
-    val source = FlatNode(Source("s1", SourceRef("a", List())))
+    val source = FlatNode(Source(NodeId("s1"), NodeName("s1"), SourceRef("a", List())))
 
-    checkOneInvalid("filter", source, canonicalnode.FilterNode(Filter("filter", Expression(Language.Spel, "")), List()))
-    checkOneInvalid("split", source, canonicalnode.SplitNode(Split("split"), List.empty))
-    checkOneInvalid("switch", source, canonicalnode.SwitchNode(Switch("switch"), List.empty, List.empty))
+    checkOneInvalid(
+      "filter",
+      source,
+      canonicalnode.FilterNode(Filter(NodeId("filter"), NodeName("filter"), Expression(Language.Spel, "")), List())
+    )
+    checkOneInvalid("split", source, canonicalnode.SplitNode(Split(NodeId("split"), NodeName("split")), List.empty))
+    checkOneInvalid(
+      "switch",
+      source,
+      canonicalnode.SwitchNode(Switch(NodeId("switch"), NodeName("switch"), None, None), List.empty, List.empty)
+    )
   }
 
   it should "handle legacy endResult" in {
-    val nodeDataCodec: Codec[NodeData] = deriveConfiguredCodec
-
+    // Old JSON without "name" field - backward compat fills it from "id"
     val oldFormat = Json.obj(
       "id"        -> Json.fromString("t1"),
       "type"      -> Json.fromString("Sink"),
       "ref"       -> Json.obj("typ" -> Json.fromString("t2"), "parameters" -> Json.arr()),
       "endResult" -> Json.obj("language" -> Json.fromString("spel"), "expression" -> Json.fromString("#someInput"))
     )
-    val nodeData = nodeDataCodec.decodeJson(oldFormat).fold(k => throw new IllegalArgumentException(k), identity)
+    val nodeData =
+      NodeData.nodeDataDecoder.decodeJson(oldFormat).fold(k => throw new IllegalArgumentException(k), identity)
     nodeData.asInstanceOf[Sink].legacyEndResultExpression shouldBe Some(Expression.spel("#someInput"))
 
-    nodeDataCodec(nodeData).deepDropNullValues shouldBe oldFormat
+    // After round-trip encoding, the format includes the new "name" field and UUID-ified "id"
+    val uuidForT1 = UUID.nameUUIDFromBytes("t1".getBytes(StandardCharsets.UTF_8)).toString
+    val newFormat = oldFormat
+      .mapObject(_.add("name", Json.fromString("t1")))
+      .mapObject(_.add("id", Json.fromString(uuidForT1)))
+    NodeData.nodeDataEncoder(nodeData).deepDropNullValues shouldBe newFormat
   }
 
   private def marshallAndUnmarshall(process: CanonicalProcess): CanonicalProcess = {

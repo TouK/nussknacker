@@ -36,7 +36,8 @@
                     "y": 0
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "kafka-json-source"
         },
         {
             "nextFalse": [],
@@ -53,7 +54,8 @@
                     "y": 135
                 }
             },
-            "type": "Filter"
+            "type": "Filter",
+            "name": "filter"
         },
         {
             "nextFalse": [],
@@ -70,7 +72,8 @@
                     "y": 270
                 }
             },
-            "type": "Filter"
+            "type": "Filter",
+            "name": "filter 1"
         },
         {
             "nextFalse": [],
@@ -87,7 +90,8 @@
                     "y": 405
                 }
             },
-            "type": "Filter"
+            "type": "Filter",
+            "name": "filter 2"
         },
         {
             "nextFalse": [],
@@ -104,7 +108,8 @@
                     "y": 540
                 }
             },
-            "type": "Filter"
+            "type": "Filter",
+            "name": "filter 3"
         },
         {
             "nextFalse": [],
@@ -121,7 +126,8 @@
                     "y": 675
                 }
             },
-            "type": "Filter"
+            "type": "Filter",
+            "name": "filter 4"
         },
         {
             "defaultNext": [
@@ -140,7 +146,8 @@
                             "y": 945
                         }
                     },
-                    "type": "Filter"
+                    "type": "Filter",
+                    "name": "filter 7"
                 },
                 {
                     "nextFalse": [],
@@ -157,7 +164,8 @@
                             "y": 1080
                         }
                     },
-                    "type": "Filter"
+                    "type": "Filter",
+                    "name": "filter 8"
                 },
                 {
                     "id": "kafka-json-sink (copy 1)",
@@ -173,7 +181,8 @@
                             "y": 1215
                         }
                     },
-                    "type": "Sink"
+                    "type": "Sink",
+                    "name": "kafka-json-sink (copy 1)"
                 }
             ],
             "nexts": [
@@ -198,7 +207,8 @@
                                     "y": 945
                                 }
                             },
-                            "type": "Filter"
+                            "type": "Filter",
+                            "name": "filter 5"
                         },
                         {
                             "nextFalse": [],
@@ -215,7 +225,8 @@
                                     "y": 1080
                                 }
                             },
-                            "type": "Filter"
+                            "type": "Filter",
+                            "name": "filter 6"
                         },
                         {
                             "id": "kafka-json-sink",
@@ -231,7 +242,8 @@
                                     "y": 1217
                                 }
                             },
-                            "type": "Sink"
+                            "type": "Sink",
+                            "name": "kafka-json-sink"
                         }
                     ]
                 }
@@ -249,7 +261,8 @@
                     "y": 810
                 }
             },
-            "type": "Switch"
+            "type": "Switch",
+            "name": "switch"
         }
     ],
     "additionalBranches": []

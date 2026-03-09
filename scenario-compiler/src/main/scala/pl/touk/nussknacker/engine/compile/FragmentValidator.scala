@@ -21,7 +21,7 @@ object FragmentValidator {
       val duplicatedOutputNamesWithNodeIds = fragmentOutputNodes
         .groupBy(_.outputName)
         .collect {
-          case (name, nodes) if nodes.size > 1 => name -> nodes.map(n => NodeId(n.id)).toSet
+          case (name, nodes) if nodes.size > 1 => name -> nodes.map(_.id).toSet
         }
       duplicatedOutputNamesWithNodeIds
         .map(n => invalidNel(DuplicateFragmentOutputNamesInFragment(n._1, n._2)))

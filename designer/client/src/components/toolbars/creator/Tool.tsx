@@ -50,7 +50,7 @@ export type ToolProps = {
 };
 
 function Tool({ label, nodeModel, highlights = [], disabled, tooltip, onClick, onDragEnd }: ToolProps): React.JSX.Element {
-    const item: NodeType = useMemo(() => ({ ...cloneDeep(nodeModel), id: label }), [label, nodeModel]);
+    const item: NodeType = useMemo(() => ({ ...cloneDeep(nodeModel), id: label, name: label }), [label, nodeModel]);
     const [, drag, preview] = useDrag(() => ({
         type: DndTypes.ELEMENT,
         item,

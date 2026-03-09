@@ -39,6 +39,7 @@ class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValu
        |  "nodes" : [
        |    {
        |      "id" : "$sourceNodeId",
+       |      "name" : "$sourceNodeId",
        |      "ref" : {
        |        "typ" : "$sourceType",
        |        "parameters" : [
@@ -57,6 +58,7 @@ class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValu
        |      "nextFalse" : [
        |      ],
        |      "id" : "filter",
+       |      "name" : "filter",
        |      "expression" : {
        |        "language" : "spel",
        |        "expression" : "#input != 123"
@@ -65,6 +67,7 @@ class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValu
        |    },
        |    {
        |      "id" : "sink",
+       |      "name" : "sink",
        |      "ref" : {
        |        "typ" : "sink-type",
        |        "parameters" : [
@@ -89,7 +92,7 @@ class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValu
   test("should be able to parse scenario and easily extract its fields") {
     val canonicalScenario = ProcessMarshaller.fromJson(scenarioJson).toEither.rightValue
     canonicalScenario.name.value shouldEqual scenarioName
-    canonicalScenario.nodes.head.data.id shouldEqual sourceNodeId
+    canonicalScenario.nodes.head.data.id.value shouldEqual sourceNodeId
     canonicalScenario.nodes.head.data.asInstanceOf[Source].ref.typ shouldEqual sourceType
   }
 

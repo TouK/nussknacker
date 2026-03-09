@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
+import pl.touk.nussknacker.restmodel.component.{NodeIdWithNodeName, ScenarioComponentsUsages}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
@@ -309,8 +309,8 @@ class DBFetchingProcessRepositorySpec
     val latestDetails = fetchLatestProcessDetails[ScenarioComponentsUsages](processName)
     latestDetails.json shouldBe ScenarioComponentsUsages(
       Map(
-        ComponentId(ComponentType.Source, "source") -> List("source1"),
-        ComponentId(ComponentType.Sink, "sink")     -> List("sink1"),
+        ComponentId(ComponentType.Source, "source") -> List(NodeIdWithNodeName("source1", "source1")),
+        ComponentId(ComponentType.Sink, "sink")     -> List(NodeIdWithNodeName("sink1", "sink1")),
       )
     )
 
@@ -323,8 +323,8 @@ class DBFetchingProcessRepositorySpec
 
     fetchLatestProcessDetails[ScenarioComponentsUsages](processName).json shouldBe ScenarioComponentsUsages(
       Map(
-        ComponentId(ComponentType.Source, "source")  -> List("source1"),
-        ComponentId(ComponentType.Sink, "otherSink") -> List("sink1"),
+        ComponentId(ComponentType.Source, "source")  -> List(NodeIdWithNodeName("source1", "source1")),
+        ComponentId(ComponentType.Sink, "otherSink") -> List(NodeIdWithNodeName("sink1", "sink1")),
       )
     )
   }

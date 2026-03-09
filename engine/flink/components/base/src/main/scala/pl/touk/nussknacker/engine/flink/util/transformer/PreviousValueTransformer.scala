@@ -32,7 +32,7 @@ case object PreviousValueTransformer extends CustomStreamTransformer {
           new PreviousValueFunction(value, ctx.lazyParameterHelper, valueTypeInfo),
           ctx.valueWithContextInfo.forType(valueTypeInfo)
         )
-        .setUidAndNameToNodeId(ctx.nodeId)
+        .setUidAndName(ctx.nodeId.value, ctx.nodeName.value)
     },
     value.returnType
   )

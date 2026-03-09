@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
+import { determineComponentId } from "../../../common/componentUtils";
 import type { NodeType, Parameter } from "../../../types/node";
 import type { ProcessDefinitionData } from "../../../types/scenarioGraph";
 
@@ -9,13 +10,14 @@ export const useParametersList = (
     isEditMode: boolean,
     setNodeState: (newParams: Parameter[]) => void,
 ) => {
-    const { type, ref } = editedNode;
+    const { ref } = editedNode;
     const { componentGroups } = processDefinitionData;
     const [initialized, setInitialized] = useState(false);
+    const componentId = determineComponentId(editedNode);
 
     const nodeDefinition = useMemo(
-        () => componentGroups?.flatMap((g) => g.components)?.find((n) => n.node.type === type && n.label === ref.id)?.node,
-        [componentGroups, ref.id, type],
+        () => componentGroups?.flatMap((g) => g.components)?.find((component) => component.componentId === componentId)?.node,
+        [componentGroups, componentId],
     );
 
     const leaveRedundant = !nodeDefinition || !isEditMode;

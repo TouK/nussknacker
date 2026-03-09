@@ -189,7 +189,7 @@ class FullOuterJoinTransformer(
         inputType,
         storedTypeInfo,
         context.convertToEngineRuntimeContext
-      )(context.nodeId)
+      )(context.nodeId, context.nodeName)
       val outputType = aggregator.computeOutputTypeUnsafe(inputType)
       val outputTypeInfo =
         TypeInformationDetection.instance.forValueWithContext[AnyRef](ValidationContext(), outputType)
@@ -198,7 +198,7 @@ class FullOuterJoinTransformer(
         .reduce(_.connectAndMerge(_))
         .keyBy((v: ValueWithContext[StringKeyedValue[AnyRef]]) => v.value.key)
         .process(aggregatorFunction, outputTypeInfo)
-        .setUidAndNameToNodeId(context.nodeId)
+        .setUidAndName(context.nodeId.value, context.nodeName.value)
 
       watermarkStrategy
         .map(new TimestampAssignmentHelper(_)(outputTypeInfo).assignTimestampsAndWatermarks(stream))
@@ -213,12 +213,14 @@ class FullOuterJoinTransformer(
       storedTypeInfo: TypeInformation[AnyRef],
       convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
   )(
-      implicit nodeId: NodeId
+      implicit nodeId: NodeId,
+      nodeName: NodeName
   ): KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] =
     new FullOuterJoinAggregatorFunction[SortedMap](
       aggregator,
       stateTimeout.toMillis,
       nodeId,
+      nodeName,
       aggregateElementType,
       storedTypeInfo,
       convertToEngineRuntimeContext,

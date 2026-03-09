@@ -43,9 +43,10 @@ class DataRecordsSource(
       .fromSource(
         flinkSource(env.getConfig),
         WatermarkStrategy.noWatermarks(),
-        flinkNodeContext.nodeId.id,
+        flinkNodeContext.nodeId.value,
       )
-      .uid(flinkNodeContext.nodeId.id)
+      .uid(flinkNodeContext.nodeId.value)
+      .name(flinkNodeContext.nodeName.value)
       .flatMap(
         new DataRecordContextInitializingFunction(
           flinkNodeContext.nodeId,

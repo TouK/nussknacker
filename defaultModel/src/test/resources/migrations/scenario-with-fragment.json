@@ -1,0 +1,38 @@
+{
+  "metaData": {
+    "id": "test-with-fragment",
+    "additionalFields": {
+      "properties": {},
+      "metaDataType": "StreamMetaData"
+    }
+  },
+  "nodes": [
+    {
+      "type": "Source",
+      "id": "source1",
+      "name": "source1",
+      "ref": { "typ": "kafka", "parameters": [] }
+    },
+    {
+      "type": "FragmentInput",
+      "id": "myFragment",
+      "name": "myFragment",
+      "ref": {
+        "id": "myFragmentDef",
+        "parameters": [],
+        "outputVariableNames": { "out": "outputVar" }
+      },
+      "outputs": {
+        "out": [
+          {
+            "type": "Sink",
+            "id": "sink1",
+            "name": "sink1",
+            "ref": { "typ": "kafka", "parameters": [] }
+          }
+        ]
+      }
+    }
+  ],
+  "additionalBranches": []
+}

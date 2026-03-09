@@ -19,6 +19,7 @@ export const scenarioGraph: ScenarioGraph = {
     nodes: [
         {
             id: "choice",
+            name: "choice",
             expression: null,
             exprVal: null,
             additionalFields: {
@@ -33,6 +34,7 @@ export const scenarioGraph: ScenarioGraph = {
         },
         {
             id: "variable 1",
+            name: "variable 1",
             varName: "varName1",
             value: {
                 language: "spel",
@@ -50,6 +52,7 @@ export const scenarioGraph: ScenarioGraph = {
         },
         {
             id: "variable 2",
+            name: "variable 2",
             varName: "varName2",
             value: {
                 language: "spel",
@@ -67,6 +70,7 @@ export const scenarioGraph: ScenarioGraph = {
         },
         {
             id: "union",
+            name: "union",
             outputVar: "outputVar",
             nodeType: "union",
             parameters: [],
@@ -154,6 +158,7 @@ export const nodesWithPositions: NodesWithPositions = [
     {
         node: {
             id: "variable 1",
+            name: "variable 1",
             varName: "varName1",
             value: {
                 language: "spel",
@@ -177,6 +182,7 @@ export const nodesWithPositions: NodesWithPositions = [
     {
         node: {
             id: "variable 2",
+            name: "variable 2",
             varName: "varName2",
             value: {
                 language: "spel",
@@ -200,6 +206,7 @@ export const nodesWithPositions: NodesWithPositions = [
     {
         node: {
             id: "union",
+            name: "union",
             outputVar: "outputVar",
             nodeType: "union",
             parameters: [],

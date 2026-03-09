@@ -50,7 +50,8 @@
                     "y": 0
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "event-generator"
         },
         {
             "nexts": [
@@ -70,7 +71,8 @@
                                 "y": 360
                             }
                         },
-                        "type": "Sink"
+                        "type": "Sink",
+                        "name": "sink 1"
                     }
                 ],
                 [
@@ -89,7 +91,8 @@
                                 "y": 360
                             }
                         },
-                        "type": "Sink"
+                        "type": "Sink",
+                        "name": "sink 2"
                     }
                 ]
             ],
@@ -101,7 +104,8 @@
                     "y": 180
                 }
             },
-            "type": "Split"
+            "type": "Split",
+            "name": "split"
         }
     ],
     "additionalBranches": []

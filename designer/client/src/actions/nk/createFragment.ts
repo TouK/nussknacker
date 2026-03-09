@@ -24,6 +24,7 @@ const FRAGMENT_TEMPLATE = {
     nodes: [
         {
             id: "input",
+            name: "input",
             parameters: [],
             additionalFields: {
                 description: null,
@@ -36,6 +37,7 @@ const FRAGMENT_TEMPLATE = {
         },
         {
             id: "output",
+            name: "output",
             outputName: "output",
             fields: [],
             additionalFields: {
@@ -74,6 +76,6 @@ export function createFragment(): ThunkAction<Promise<NodeType | null>> {
             .find((g) => g.name.toLowerCase() === "fragments")
             ?.components.find((c) => c.componentId === `fragment-${uniqueName}`);
 
-        return component ? { ...component.node, id: component.label } : null;
+        return component ? { ...component.node, id: component.label, name: component.label } : null;
     };
 }

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.{EitherT, NonEmptyList}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
@@ -49,6 +49,18 @@ import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.validation.ParametersValidator
 
 import scala.concurrent.{ExecutionContext, Future}
+
+object ScenarioTestingApiHttpService {
+
+  private[api] def filterNodeNamesById(
+      nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])],
+      nodeNamesById: Map[NodeId, String]
+  ): Map[NodeId, String] = {
+    val nodeIdsWithErrors = nodesWithErrors.map(_._1).toList.toSet
+    nodeNamesById.filter { case (nodeId, _) => nodeIdsWithErrors.contains(nodeId) }
+  }
+
+}
 
 class ScenarioTestingApiHttpService(
     authManager: AuthManager,
@@ -117,11 +129,22 @@ class ScenarioTestingApiHttpService(
                           scenarioWithDetails.isFragment
                         ) match {
                           case Right(parameters) =>
+                            val nodeNamesById = scenarioGraph.nodes.map(n => n.id -> n.name).toMap
                             val uiParameters = parameters.map { case (id, params) =>
-                              UISourceParameters(id.id, params.map(DefinitionsService.createUIParameter))
+                              val nodeName = nodeNamesById
+                                .get(id)
+                                .fold {
+                                  logger.warn(s"Missing source node name for id: ${id.value}")
+                                  "Unknown node name"
+                                }(_.value)
+                              UISourceParameters(
+                                id.value,
+                                nodeName,
+                                params.map(DefinitionsService.createUIParameter)
+                              )
                             }.toList
                             CapabilityStatus.Available(TestWithParametersDetails(uiParameters))
-                          case Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(_)) =>
+                          case Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(_, _)) =>
                             CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
                           case Left(ParametersDefinitionError.SourcesCompilationError(_)) =>
                             CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
@@ -171,11 +194,13 @@ class ScenarioTestingApiHttpService(
                   ErrorResult(TestingApiErrorMessages.from(error))
                 }
             }
-          } yield ResultsWithCountsDto.from(
-            resultWithCounts,
-            skipResultsPerNode,
-            skipResultsPerTransition,
-          )
+          } yield {
+            ResultsWithCountsDto.from(
+              resultWithCounts,
+              skipResultsPerNode,
+              skipResultsPerTransition,
+            )
+          }
         }
       }
   }
@@ -244,7 +269,7 @@ class ScenarioTestingApiHttpService(
             numberOfSamples
           ) match {
             case Left(error) =>
-              EitherT.fromEither[Future](Left(toDto(error)))
+              EitherT.fromEither[Future](Left(toDto(error, scenarioGraph)))
             case Right(serializedLiveData) =>
               EitherT(
                 scenarioTestService
@@ -283,7 +308,7 @@ class ScenarioTestingApiHttpService(
                 scenarioWithDetails.isFragment
               )
               .left
-              .map(toDto)
+              .map(error => toDto(error, scenarioGraph))
           )
           .map(validator.validate(sourceParameters, _)(metaData))
       case ScenarioTestData.WithLiveData(numberOfSamples) =>
@@ -316,7 +341,7 @@ class ScenarioTestingApiHttpService(
               ) match {
                 case Left(error) =>
                   logger.info(s"Could not generate test data: $error")
-                  Future(Left(toDto(error)))
+                  Future(Left(toDto(error, request.scenarioGraph)))
                 case Right(serializedLiveData) =>
                   Future(Right(serializedLiveData.content))
               }
@@ -348,31 +373,37 @@ class ScenarioTestingApiHttpService(
             ).leftMap[TestingError] { error =>
               ErrorResult(TestingApiErrorMessages.from(error))
             }
-          } yield ResultsWithCountsDto.from(
-            resultWithCounts,
-            skipResultsPerNode,
-            skipResultsPerTransition,
-          )
+          } yield {
+            ResultsWithCountsDto.from(
+              resultWithCounts,
+              skipResultsPerNode,
+              skipResultsPerTransition,
+            )
+          }
         }
       }
   }
 
-  private def toDto(error: ParametersDefinitionError): TestingError = {
+  private def toDto(error: ParametersDefinitionError, scenarioGraph: ScenarioGraph): TestingError = {
+    val nodeNamesById = extractNodeNamesById(scenarioGraph)
     error match {
       case ParametersDefinitionError.SourcesCompilationError(nodesWithErrors) =>
         SourcesCompilationError(
-          ValidationErrors.initial(invalidNodes = collectInvalidNodes(nodesWithErrors))
+          ValidationErrors.initial(invalidNodes = collectInvalidNodes(nodesWithErrors)),
+          nodeNamesById = ScenarioTestingApiHttpService.filterNodeNamesById(nodesWithErrors, nodeNamesById)
         )
-      case ParametersDefinitionError.TestingWithCustomInputNotSupportedError(nodeId) =>
-        BadRequestTestingError.TestingWithCustomInputNotSupportedError(nodeId)
+      case ParametersDefinitionError.TestingWithCustomInputNotSupportedError(nodeId, nodeName) =>
+        BadRequestTestingError.TestingWithCustomInputNotSupportedError(nodeId, nodeName)
     }
   }
 
-  private def toDto(error: FetchLiveDataError): TestingError = {
+  private def toDto(error: FetchLiveDataError, scenarioGraph: ScenarioGraph): TestingError = {
+    val nodeNamesById = extractNodeNamesById(scenarioGraph)
     error match {
       case FetchLiveDataError.SourcesCompilationError(nodesWithErrors) =>
         SourcesCompilationError(
-          ValidationErrors.initial(invalidNodes = collectInvalidNodes(nodesWithErrors))
+          ValidationErrors.initial(invalidNodes = collectInvalidNodes(nodesWithErrors)),
+          nodeNamesById = ScenarioTestingApiHttpService.filterNodeNamesById(nodesWithErrors, nodeNamesById)
         )
       case FetchLiveDataError.NoLiveDataAvailableError =>
         NoLiveDataAvailable
@@ -387,6 +418,9 @@ class ScenarioTestingApiHttpService(
         TooManyRecordsRequested(maxRecordsCount)
     }
   }
+
+  private def extractNodeNamesById(scenarioGraph: ScenarioGraph): Map[NodeId, String] =
+    scenarioGraph.nodes.map(node => node.id -> node.name.value).toMap
 
   private def collectInvalidNodes(
       nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]

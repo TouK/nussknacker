@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.lite.api
 
 import cats.{~>, Monad}
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.api.{Context, NodeId, TraceId}
+import pl.touk.nussknacker.engine.api.{Context, NodeId, NodeName, TraceId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.{Sink, Source}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -22,6 +22,7 @@ object customComponentTypes {
 
   case class CustomComponentContext[F[_]](
       nodeId: NodeId,
+      nodeName: NodeName,
       capabilityTransformer: CapabilityTransformer[F]
   )
 

@@ -216,7 +216,7 @@ object DeploymentApiEndpoints {
         modifiedAt: Instant
     )
 
-    implicit val nodesDeploymentDataCodec: Schema[Map[NodeId, String]] = Schema.schemaForMap[NodeId, String](_.id)
+    implicit val nodesDeploymentDataCodec: Schema[Map[NodeId, String]] = Schema.schemaForMap[NodeId, String](_.value)
 
     sealed trait RunDeploymentError
 
@@ -239,7 +239,10 @@ object DeploymentApiEndpoints {
 
     final case class CommentValidationError(message: String) extends BadRequestRunDeploymentError
 
-    final case class ScenarioGraphValidationError(errors: ValidationErrors) extends BadRequestRunDeploymentError
+    final case class ScenarioGraphValidationError(
+        errors: ValidationErrors,
+        nodeNamesById: Map[NodeId, String] = Map.empty
+    ) extends BadRequestRunDeploymentError
 
     final case class DeployValidationError(message: String) extends BadRequestRunDeploymentError
 
@@ -251,12 +254,13 @@ object DeploymentApiEndpoints {
 
     implicit val badRequestRunDeploymentErrorCodec: Codec[String, BadRequestRunDeploymentError, CodecFormat.TextPlain] =
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestRunDeploymentError] {
-        case ScenarioNotFoundError(scenarioName)  => s"Scenario $scenarioName not found"
-        case DeploymentOfFragmentError            => s"Deployment of fragment is not allowed"
-        case DeploymentOfArchivedScenarioError    => s"Deployment of archived scenario is not allowed"
-        case CommentValidationError(message)      => message
-        case ScenarioGraphValidationError(errors) => errors.toHumanReadableMessage // TODO: Move to some details field
-        case DeployValidationError(message)       => message
+        case ScenarioNotFoundError(scenarioName) => s"Scenario $scenarioName not found"
+        case DeploymentOfFragmentError           => s"Deployment of fragment is not allowed"
+        case DeploymentOfArchivedScenarioError   => s"Deployment of archived scenario is not allowed"
+        case CommentValidationError(message)     => message
+        case ScenarioGraphValidationError(errors, nodeNamesById) =>
+          errors.toHumanReadableMessage(nodeNamesById) // TODO: Move to some details field
+        case DeployValidationError(message) => message
       }
 
     implicit val conflictingDeploymentIdErrorCodec: Codec[String, ConflictRunDeploymentError, CodecFormat.TextPlain] =

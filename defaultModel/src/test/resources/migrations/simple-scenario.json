@@ -1,0 +1,31 @@
+{
+  "metaData": {
+    "id": "test-simple",
+    "additionalFields": {
+      "properties": {},
+      "metaDataType": "StreamMetaData"
+    }
+  },
+  "nodes": [
+    {
+      "type": "Source",
+      "id": "source1",
+      "name": "source1",
+      "ref": { "typ": "kafka", "parameters": [] }
+    },
+    {
+      "type": "Filter",
+      "id": "filter1",
+      "name": "filter1",
+      "expression": { "language": "spel", "expression": "#input.amount > 0" },
+      "nextFalse": []
+    },
+    {
+      "type": "Sink",
+      "id": "sink1",
+      "name": "sink1",
+      "ref": { "typ": "kafka", "parameters": [] }
+    }
+  ],
+  "additionalBranches": []
+}

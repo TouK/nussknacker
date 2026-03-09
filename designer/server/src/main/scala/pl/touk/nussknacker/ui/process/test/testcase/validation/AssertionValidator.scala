@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.test.testcase.validation
 
 import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
-import pl.touk.nussknacker.engine.api.{JobData, NodeId}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.test.testcase.Assertion
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
@@ -18,7 +18,10 @@ private class AssertionValidator(
       assertions: List[Assertion],
       inputVariableTypes: Map[String, TypingResult],
       jobData: JobData
-  )(implicit nodeId: NodeId): Option[Map[AssertionIndex, NonEmptyList[AssertionValidationError]]] = {
+  )(
+      implicit nodeId: NodeId,
+      nodeName: NodeName
+  ): Option[Map[AssertionIndex, NonEmptyList[AssertionValidationError]]] = {
     val compilationResults = assertionsCompiler.compileForNode(assertions, inputVariableTypes, jobData)
     val errorsMap = compilationResults.zipWithIndex.collect { case (Invalid(errors), index) =>
       index -> convertToAssertionErrors(errors)
@@ -30,7 +33,7 @@ private class AssertionValidator(
       assertionErrors: NonEmptyList[AssertionCompilationError]
   ): NonEmptyList[AssertionValidationError] = {
     assertionErrors.flatMap {
-      case ExpressionAssertionCompilationError(errors, _, _) =>
+      case ExpressionAssertionCompilationError(errors, _, _, _) =>
         errors.map { error =>
           val prettyError = PrettyValidationErrors.formatErrorMessage(error)
           AssertionValidationError(
@@ -41,7 +44,7 @@ private class AssertionValidator(
             fieldName = None,
           )
         }
-      case AssertionCompilationError.PredicateAssertionCompilationError(errors, _, field, _) =>
+      case AssertionCompilationError.PredicateAssertionCompilationError(errors, _, field, _, _) =>
         errors.map { error =>
           val prettyError = PrettyValidationErrors.formatErrorMessage(error)
           AssertionValidationError(

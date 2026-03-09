@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.definition.component
 
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
-import pl.touk.nussknacker.restmodel.component.{NodeId, NodeUsageData, ScenarioComponentsUsages}
+import pl.touk.nussknacker.restmodel.component.{NodeIdWithNodeName, NodeUsageData, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData._
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
@@ -25,18 +25,29 @@ object ComponentsUsageHelper {
     def flattenUsages(processesDetails: List[ScenarioWithDetailsEntity[ScenarioComponentsUsages]]) = for {
       processDetails  <- processesDetails
       componentIdNode <- processDetails.json.value.toList
-      (componentId, nodeIds) = componentIdNode
+      (componentId, nodeUsages) = componentIdNode
       designerWideComponentId = processingTypeAndInfoToNonFragmentDesignerWideId
         .get(processDetails.processingType, componentId)
         .getOrElse(
           DesignerWideComponentId.default(processDetails.processingType, componentId)
         ) // the orElse case is for fragments - fragment ids won't be present in the map but must be equal to default
-      nodeId <- nodeIds
-    } yield ScenarioComponentsUsage[NodeId](designerWideComponentId, componentId, processDetails, nodeId)
+      storedUsage <- nodeUsages
+    } yield ScenarioComponentsUsage[NodeIdWithNodeName](
+      designerWideComponentId,
+      componentId,
+      processDetails,
+      storedUsage
+    )
 
-    val scenariosComponentUsages        = flattenUsages(processesDetails.filter(_.isFragment == false))
-    val fragmentsComponentUsages        = flattenUsages(processesDetails.filter(_.isFragment == true))
-    val groupedFragmentsComponentUsages = fragmentsComponentUsages.groupBy(_.processDetails.name)
+    val scenariosComponentUsages = flattenUsages(processesDetails.filter(_.isFragment == false))
+    val fragmentsComponentUsages = flattenUsages(processesDetails.filter(_.isFragment == true))
+    val groupedFragmentsComponentUsages = fragmentsComponentUsages
+      .groupBy(_.processDetails)
+      .flatMap { case (fragmentProcessDetails, usages) =>
+        fragmentProcessIdentifiers(fragmentProcessDetails).map(_ -> usages)
+      }
+      .groupBy { case (fragmentIdentifier, _) => fragmentIdentifier }
+      .mapValuesNow(_.flatMap { case (_, usages) => usages })
 
     val scenarioUsagesWithResolvedFragments: List[ScenarioComponentsUsage[NodeUsageData]] =
       scenariosComponentUsages.flatMap {
@@ -44,28 +55,36 @@ object ComponentsUsageHelper {
               _,
               ComponentId(ComponentType.Fragment, fragmentName),
               processDetails,
-              fragmentNodeId
+              fragmentNodeUsage
             ) =>
           val fragmentUsageRefined: ScenarioComponentsUsage[NodeUsageData] =
-            fragmentUsage.copy(nodeUsageData = ScenarioUsageData(fragmentNodeId))
+            fragmentUsage.copy(nodeUsageData = ScenarioUsageData(fragmentNodeUsage.nodeId, fragmentNodeUsage.nodeName))
           val fragmentsUsages: List[ScenarioComponentsUsage[NodeUsageData]] =
-            groupedFragmentsComponentUsages.get(ProcessName(fragmentName)).toList.flatten.map {
-              case u @ ScenarioComponentsUsage(_, _, _, nodeId: NodeId) =>
+            groupedFragmentsComponentUsages.get(fragmentName).toList.flatten.map {
+              case u @ ScenarioComponentsUsage(_, _, _, innerNodeUsage: NodeIdWithNodeName) =>
                 val refinedUsage: ScenarioComponentsUsage[NodeUsageData] =
-                  u.copy(processDetails = processDetails, nodeUsageData = FragmentUsageData(fragmentNodeId, nodeId))
+                  u.copy(
+                    processDetails = processDetails,
+                    nodeUsageData = FragmentUsageData(
+                      fragmentNodeUsage.nodeId,
+                      fragmentNodeUsage.nodeName,
+                      innerNodeUsage.nodeId,
+                      innerNodeUsage.nodeName
+                    )
+                  )
                 refinedUsage
             }
           fragmentUsageRefined :: fragmentsUsages
-        case usageOfOtherComponentType @ ScenarioComponentsUsage(_, _, _, nodeId) =>
+        case usageOfOtherComponentType @ ScenarioComponentsUsage(_, _, _, storedUsage) =>
           val usageOfOtherComponentTypeRefined: ScenarioComponentsUsage[NodeUsageData] =
-            usageOfOtherComponentType.copy(nodeUsageData = ScenarioUsageData(nodeId))
+            usageOfOtherComponentType.copy(nodeUsageData = ScenarioUsageData(storedUsage.nodeId, storedUsage.nodeName))
           List(usageOfOtherComponentTypeRefined)
       }
 
     val fragmentUsages: List[ScenarioComponentsUsage[NodeUsageData]] = fragmentsComponentUsages.flatMap {
-      case componentUsage @ ScenarioComponentsUsage(_, _, _, nodeId: NodeId) =>
+      case componentUsage @ ScenarioComponentsUsage(_, _, _, storedUsage: NodeIdWithNodeName) =>
         val usage: ScenarioComponentsUsage[NodeUsageData] =
-          componentUsage.copy(nodeUsageData = ScenarioUsageData(nodeId))
+          componentUsage.copy(nodeUsageData = ScenarioUsageData(storedUsage.nodeId, storedUsage.nodeName))
         List(usage)
     }
 
@@ -86,5 +105,18 @@ object ComponentsUsageHelper {
       processDetails: ScenarioWithDetailsEntity[_],
       nodeUsageData: NodeUsageDataShape
   )
+
+  private def fragmentProcessIdentifiers(fragmentProcessDetails: ScenarioWithDetailsEntity[_]): Set[String] =
+    Set(
+      fragmentProcessDetails.name.value,
+      fragmentProcessDetails.processId.value.toString
+    ) ++ {
+      // For resolving fragment-myFragment or streaming-fragment-myFragment (not only myFragment or processId)
+      val fragmentComponentId = ComponentId(ComponentType.Fragment, fragmentProcessDetails.name.value)
+      Set(
+        fragmentComponentId.toString,
+        DesignerWideComponentId.default(fragmentProcessDetails.processingType, fragmentComponentId).value
+      )
+    }
 
 }
