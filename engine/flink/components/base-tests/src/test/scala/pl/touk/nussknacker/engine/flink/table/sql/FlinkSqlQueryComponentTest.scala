@@ -157,7 +157,7 @@ class FlinkSqlQueryComponentTest
     result.invalidValue.toList.loneElement should matchPattern {
       case CustomNodeError(
             NodeId("flink-sql-query"),
-            "Variable 'record_time' is reserved by Flink SQL component for record time handling. Please rename or remove this variable",
+            "Variable 'record_time' is reserved by Flink SQL component for record's timestamp handling. Please rename or remove this variable",
             None
           ) =>
     }

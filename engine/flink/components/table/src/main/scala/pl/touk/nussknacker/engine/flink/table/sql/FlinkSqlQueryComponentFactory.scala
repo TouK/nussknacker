@@ -53,7 +53,7 @@ object FlinkSqlQueryComponentFactory
         defaultValue = Some(Expression.spelTemplate("SELECT r.* FROM record r")),
         hintText = Some(
           "Flink SQL query starting with SELECT or WITH. Upstream variables are available as columns under 'record' table. " +
-            "Record time is available under 'record_time' column in 'record' table."
+            "Record's timestamp is available under 'record_time' column in 'record' table."
         )
       )
     )
@@ -121,7 +121,7 @@ object FlinkSqlQueryComponentFactory
   private def buildReservedEventTimeVariableError(implicit nodeId: NodeId): CustomNodeError =
     CustomNodeError(
       message =
-        s"Variable '${QueryContextSchema.recordTimeColumn}' is reserved by Flink SQL component for record time handling. " +
+        s"Variable '${QueryContextSchema.recordTimeColumn}' is reserved by Flink SQL component for record's timestamp handling. " +
           s"Please rename or remove this variable",
       paramName = None
     )
