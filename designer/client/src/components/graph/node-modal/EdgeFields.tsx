@@ -1,6 +1,8 @@
+import AccountTreeIcon from "@mui/icons-material/AccountTree";
+import { Button, Dialog, DialogContent } from "@mui/material";
 import { produce } from "immer";
 import { isEqual, uniq } from "lodash";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
@@ -10,6 +12,8 @@ import type { Edge } from "../../../types/edge";
 import { EdgeKind } from "../../../types/edge";
 import type { NodeId } from "../../../types/node";
 import type { VariableTypes } from "../../../types/validation";
+import { ConditionBuilder } from "../../conditionBuilder/ConditionBuilder";
+import { DataMapperDialogTitle } from "../../dataMapper/DataMapperDialogTitle";
 import NodeUtils from "../NodeUtils";
 import type { EdgeTypeOption } from "./EdgeTypeSelect";
 import { EdgeTypeSelect } from "./EdgeTypeSelect";
@@ -38,7 +42,7 @@ export function EdgeFields(props: Props): React.JSX.Element {
     const { edgeId, readOnly, value: edge, index, onChange, edges, types, variableTypes, fieldErrors } = props;
     const scenarioGraph = useAppSelector(getScenarioGraph);
     const processDefinitionData = useAppSelector(getProcessDefinitionData);
-
+    const [conditionBuilderOpen, setConditionBuilderOpen] = useState(false);
     const setEdge = useCallback(
         (changes: (edge: Edge) => Edge) => {
             onChange(edgeId, changes(edge));
@@ -113,65 +117,113 @@ export function EdgeFields(props: Props): React.JSX.Element {
         [setEdge],
     );
 
+    const sourceNode = useMemo(() => scenarioGraph.nodes.find((n) => n.id === edge.from), [scenarioGraph.nodes, edge.from]);
+
+    const conditionBuilderAdornment = useMemo(() => {
+        if (readOnly || edge.edgeType?.type !== EdgeKind.switchNext) return undefined;
+        return (
+            <Button
+                size="small"
+                variant="contained"
+                color="primary"
+                onClick={() => setConditionBuilderOpen(true)}
+                sx={{
+                    minWidth: "unset",
+                    padding: "1px 4px",
+                    fontSize: 10,
+                    lineHeight: 1.4,
+                    textTransform: "none",
+                    position: "relative",
+                    zIndex: 1,
+                }}
+            >
+                <AccountTreeIcon sx={{ fontSize: 12 }} />
+            </Button>
+        );
+    }, [readOnly, edge.edgeType?.type]);
+
     const showType = useMemo(() => types.length > 1 || uniq(edges.map((e) => e.edgeType?.type)).length > 1, [edges, types.length]);
     return (
-        <FieldsRow
-            uuid={edge._id}
-            index={index}
-            sx={{
-                "&&&&": {
-                    display: "grid",
-                    gridTemplateColumns: "1fr 2fr auto",
-                },
-                ".fieldRemove": { gridArea: "1 / 3" },
-                "& :has(>.edge-value)": { gridColumn: "span 2" },
-                "& :has(>.edge-value) + .edge-target": { gridColumn: "span 2" },
-                "& .edge-type + :has(>.edge-value)": { gridColumn: "span 1" },
-            }}
-        >
-            {showType ? (
-                <EdgeTypeSelect
-                    readOnly={readOnly || types.length < 2}
-                    edge={edge}
-                    onChange={onTypeChange}
-                    options={types}
-                    className="edge-type"
-                />
-            ) : null}
+        <>
+            <FieldsRow
+                uuid={edge._id}
+                index={index}
+                sx={{
+                    "&&&&": {
+                        display: "grid",
+                        gridTemplateColumns: "1fr 2fr auto",
+                    },
+                    ".fieldRemove": { gridArea: "1 / 3" },
+                    "& :has(>.edge-value)": { gridColumn: "span 2" },
+                    "& :has(>.edge-value) + .edge-target": { gridColumn: "span 2" },
+                    "& .edge-type + :has(>.edge-value)": { gridColumn: "span 1" },
+                }}
+            >
+                {showType ? (
+                    <EdgeTypeSelect
+                        readOnly={readOnly || types.length < 2}
+                        edge={edge}
+                        onChange={onTypeChange}
+                        options={types}
+                        className="edge-type"
+                    />
+                ) : null}
 
-            {edge.edgeType?.type === EdgeKind.switchNext ? (
-                <EditableEditor
-                    variableTypes={variableTypes}
-                    fieldLabel={t("node.fields.edge.expression", "Expression")}
-                    expressionObj={{
-                        expression: edge.edgeType?.condition?.expression !== undefined ? edge.edgeType?.condition?.expression : "true",
-                        language: edge.edgeType?.condition?.language || ExpressionLang.SpEL,
-                    }}
-                    readOnly={readOnly}
-                    onValueChange={onValueChange}
-                    fieldErrors={fieldErrors}
-                    showValidation
-                    showSwitch={false}
-                    valueClassName={"edge-value"}
-                />
-            ) : null}
+                {edge.edgeType?.type === EdgeKind.switchNext ? (
+                    <EditableEditor
+                        variableTypes={variableTypes}
+                        fieldLabel={t("node.fields.edge.expression", "Expression")}
+                        expressionObj={{
+                            expression: edge.edgeType?.condition?.expression !== undefined ? edge.edgeType?.condition?.expression : "true",
+                            language: edge.edgeType?.condition?.language || ExpressionLang.SpEL,
+                        }}
+                        readOnly={readOnly}
+                        onValueChange={onValueChange}
+                        fieldErrors={fieldErrors}
+                        showValidation
+                        showSwitch={false}
+                        valueClassName={"edge-value"}
+                        inputAdornmentEnd={conditionBuilderAdornment}
+                    />
+                ) : null}
 
-            <TypeSelect
-                title={
-                    targetOptions.length
-                        ? t("node.fields.edge.target", "Edge target node")
-                        : t("node.fields.edge.target.empty", "No free target nodes")
-                }
-                onChange={onTargetChange}
-                value={
-                    readOnly
-                        ? { value: edge.to, label: nodeNameById[edge.to] ?? edge.to }
-                        : targetOptions.find((option) => option.value === edge.to)
-                }
-                options={targetOptions}
-                readOnly={readOnly || targetOptions.length <= 1}
-                className="edge-target"
-            />
-        </FieldsRow>
+                <TypeSelect
+                    title={
+                        targetOptions.length
+                            ? t("node.fields.edge.target", "Edge target node")
+                            : t("node.fields.edge.target.empty", "No free target nodes")
+                    }
+                    onChange={onTargetChange}
+                    value={
+                        readOnly
+                            ? { value: edge.to, label: nodeNameById[edge.to] ?? edge.to }
+                            : targetOptions.find((option) => option.value === edge.to)
+                    }
+                    options={targetOptions}
+                    readOnly={readOnly || targetOptions.length <= 1}
+                    className="edge-target"
+                />
+            </FieldsRow>
+            {conditionBuilderOpen && sourceNode && (
+                <Dialog open onClose={() => setConditionBuilderOpen(false)} maxWidth="lg" fullWidth>
+                    <DataMapperDialogTitle node={sourceNode} onClose={() => setConditionBuilderOpen(false)} title="condition builder" />
+                    <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                        <ConditionBuilder
+                            onInsert={(spel) => {
+                                onValueChange({ expression: spel, language: ExpressionLang.SpEL });
+                                setConditionBuilderOpen(false);
+                            }}
+                            variableTypes={variableTypes}
+                            initialExpression={
+                                edge.edgeType?.condition?.language === ExpressionLang.SpEL &&
+                                edge.edgeType?.condition?.expression !== "true"
+                                    ? edge.edgeType?.condition?.expression
+                                    : undefined
+                            }
+                        />
+                    </DialogContent>
+                </Dialog>
+            )}
+        </>
     );
 }

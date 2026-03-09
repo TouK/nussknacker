@@ -36,6 +36,7 @@ interface Props {
     validationLabelInfo?: ReactNode;
     placeholder?: string;
     endAdornment?: ReactNode;
+    inputAdornmentEnd?: ReactNode;
     defaultValue?: ExpressionObj | string;
 }
 

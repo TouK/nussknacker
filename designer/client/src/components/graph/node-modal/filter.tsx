@@ -10,6 +10,9 @@ import { FilterConditionBuilder } from "../../conditionBuilder/FilterConditionBu
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
 import { EdgesDndComponent } from "./EdgesDndComponent";
+import { ExpressionLang } from "./editors/expression/types";
+import { getValidationErrorsForField } from "./editors/Validators";
+import { FieldAddons } from "./fieldAddons";
 import { IdField } from "./IdField";
 import { useDiffMark } from "./PathsToMark";
 import { StaticExpressionField } from "./StaticExpressionField";
@@ -60,17 +63,17 @@ export function Filter({
                 errors={errors}
                 isEditMode={isEditMode}
                 node={node}
-                endAdornment={
-                    isEditMode && showConditionBuilder ? (
-                        <FilterConditionBuilder
-                            node={node}
-                            variableTypes={variableTypes}
-                            setProperty={setProperty}
-                            expression={node.expression}
-                        />
-                    ) : null
-                }
             />
+            {isEditMode && showConditionBuilder && (
+                <FieldAddons hasError={showValidation && getValidationErrorsForField(errors, "$expression").length > 0}>
+                    <FilterConditionBuilder
+                        node={node}
+                        variableTypes={variableTypes}
+                        onInsert={(spel) => setProperty("expression", { expression: spel, language: ExpressionLang.SpEL })}
+                        expression={node.expression}
+                    />
+                </FieldAddons>
+            )}
             <DisableField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
             {!isCompareView ? (
                 <EdgesDndComponent

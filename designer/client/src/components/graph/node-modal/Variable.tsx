@@ -1,5 +1,4 @@
-import AccountTreeIcon from "@mui/icons-material/AccountTree";
-import { Dialog, DialogContent, IconButton, Tooltip } from "@mui/material";
+import { Box, Dialog, DialogContent } from "@mui/material";
 import React, { useCallback, useRef, useState } from "react";
 
 import ProcessUtils from "../../../common/ProcessUtils";
@@ -21,7 +20,9 @@ import { EditorType, ExpressionLang } from "./editors/expression/types";
 import LabeledInput from "./editors/field/LabeledInput";
 import { FieldLabelConsumer } from "./editors/RenderFieldLabel";
 import { getValidationErrorsForField } from "./editors/Validators";
+import { FieldAddons } from "./fieldAddons";
 import { IdField } from "./IdField";
+import { StyledLoadingButton } from "./node-action-buttons/StyledLoadingButton";
 import { getExpressionType, getNodeTypingInfo } from "./NodeDetailsContent/selectors";
 import { useDiffMark } from "./PathsToMark";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
@@ -114,15 +115,6 @@ export default function Variable({ node, setProperty, isEditMode, showValidation
         setMapperOpen(true);
     }, [processingType, variableTypes]);
 
-    const mapperButton =
-        isEditMode && showDataMapper ? (
-            <Tooltip title="Open Data Mapper">
-                <IconButton size="small" onClick={handleOpenMapper} sx={{ p: "2px" }}>
-                    <AccountTreeIcon sx={{ fontSize: 16 }} />
-                </IconButton>
-            </Tooltip>
-        ) : null;
-
     return (
         <>
             <IdField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
@@ -150,8 +142,14 @@ export default function Variable({ node, setProperty, isEditMode, showValidation
                 fieldErrors={getValidationErrorsForField(errors, "$expression")}
                 variableTypes={variableTypes}
                 validationLabelInfo={inferredVariableType}
-                endAdornment={mapperButton}
             />
+            {isEditMode && showDataMapper && (
+                <FieldAddons hasError={showValidation && getValidationErrorsForField(errors, "$expression").length > 0}>
+                    <Box display="flex" flexDirection="column" alignItems="flex-end" width="100%">
+                        <StyledLoadingButton title="Data Mapper" action={handleOpenMapper} />
+                    </Box>
+                </FieldAddons>
+            )}
             <DescriptionField
                 isEditMode={!readOnly}
                 showValidation={showValidation}
