@@ -13,9 +13,10 @@ import { Subtype } from "../graph/node-modal/nodeDetails/Subtype";
 interface Props {
     node: NodeType;
     onClose: () => void;
+    title?: string;
 }
 
-export function DataMapperDialogTitle({ node, onClose }: Props): React.JSX.Element {
+export function DataMapperDialogTitle({ node, onClose, title = "data mapper" }: Props): React.JSX.Element {
     const theme = useTheme();
     const iconFill = theme.palette.custom.getNodeStyles(node.type).fill;
     const bg =
@@ -54,7 +55,7 @@ export function DataMapperDialogTitle({ node, onClose }: Props): React.JSX.Eleme
             }}
         >
             <IconModalTitle startIcon={icon} sx={{ textTransform: "lowercase", span: { px: 1.6 } }}>
-                data mapper
+                {title}
             </IconModalTitle>
 
             <Divider orientation="vertical" flexItem sx={{ my: 1 }} />

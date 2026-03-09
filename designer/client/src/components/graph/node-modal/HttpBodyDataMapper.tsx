@@ -1,5 +1,4 @@
-import AccountTreeIcon from "@mui/icons-material/AccountTree";
-import { Dialog, DialogContent, IconButton, Tooltip } from "@mui/material";
+import { Box, Dialog, DialogContent } from "@mui/material";
 import React, { useCallback, useMemo, useState } from "react";
 
 import { useAppSelector } from "../../../store/storeHelpers";
@@ -7,6 +6,7 @@ import type { NodeType } from "../../../types/node";
 import { DataMapper } from "../../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../../dataMapper/DataMapperDialogTitle";
 import { ExpressionLang } from "./editors/expression/types";
+import { StyledLoadingButton } from "./node-action-buttons/StyledLoadingButton";
 import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
@@ -52,11 +52,9 @@ export function HttpBodyDataMapper({ node, valuePath, setProperty }: Props): Rea
 
     return (
         <>
-            <Tooltip title="Open Data Mapper">
-                <IconButton size="small" onClick={() => setOpen(true)} sx={{ p: "2px" }}>
-                    <AccountTreeIcon sx={{ fontSize: 16 }} />
-                </IconButton>
-            </Tooltip>
+            <Box display="flex" flexDirection="column" alignItems="flex-end" width="100%">
+                <StyledLoadingButton title="Data Mapper" action={() => setOpen(true)} />
+            </Box>
             {open && (
                 <Dialog open onClose={() => setOpen(false)} maxWidth="xl" fullWidth>
                     <DataMapperDialogTitle node={node} onClose={() => setOpen(false)} />
