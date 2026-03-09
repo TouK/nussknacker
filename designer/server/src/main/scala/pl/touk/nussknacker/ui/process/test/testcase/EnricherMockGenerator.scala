@@ -3,12 +3,12 @@ package pl.touk.nussknacker.ui.process.test.testcase
 import cats.effect.SyncIO
 import cats.effect.kernel.Resource
 import cats.syntax.apply._
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Enricher
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.GenerateEnricherMockResponseDto
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError
@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
 class EnricherMockGenerator(
     modelData: ModelData,
     engineScenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies]
-) {
+) extends LazyLogging {
 
   private val nodeCompiler = NodeCompiler.forValidation(modelData)
 
@@ -76,6 +76,7 @@ class EnricherMockGenerator(
               )
             )
           case None =>
+            logger.debug("Unsupported expression type for enricher mock generation: {}", typingResult)
             Left(
               UnsupportedExpressionType(typingResult)
             )
