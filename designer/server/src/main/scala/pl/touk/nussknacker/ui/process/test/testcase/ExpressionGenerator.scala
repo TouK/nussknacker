@@ -57,6 +57,12 @@ private object ExpressionGenerator {
       Some("0")
     case TypedClass(clazz, _) if isDecimalNumber(clazz) =>
       Some("0")
+    case TypedClass(MapClass, (keyType: SingleTypingResult) :: valueType :: Nil)
+        if keyType.runtimeObjType.klass == StringClass =>
+      val valueExpr     = generateForTypingResult(valueType, indentLevel + 1).getOrElse("null")
+      val indent        = "  " * (indentLevel + 1)
+      val closingIndent = "  " * indentLevel
+      Some(s"""{\n$indent"field": $valueExpr\n$closingIndent}""")
     case TypedClass(ListClass | ArrayClass, elementType :: Nil) =>
       generateForTypingResult(elementType, indentLevel) match {
         case Some(elementExpr) => Some(s"[$elementExpr]")
