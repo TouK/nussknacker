@@ -136,6 +136,13 @@ class ExpressionGeneratorSpec
       ),
       ("list", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[java.lang.Integer])), "[0]"),
       (
+        "map with string key",
+        Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Typed[java.lang.Integer])),
+        """{
+          |  "field": 0
+          |}""".stripMargin
+      ),
+      (
         "nested record",
         Typed.record(
           Map(
