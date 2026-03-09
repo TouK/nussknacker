@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Store Nodes added should add multiple nodes with unique id 1`] = `
+exports[`Store Nodes added should add multiple nodes with unique names 1`] = `
 {
   "additionalFields": {
     "layoutData": {
@@ -8,7 +8,8 @@ exports[`Store Nodes added should add multiple nodes with unique id 1`] = `
       "y": 20,
     },
   },
-  "id": "kafka-transaction (copy 1)",
+  "id": "uuid-1",
+  "name": "kafka-transaction (copy 1)",
   "output": "output",
   "service": {
     "id": "paramService",
@@ -26,7 +27,7 @@ exports[`Store Nodes added should add multiple nodes with unique id 1`] = `
 }
 `;
 
-exports[`Store Nodes added should add multiple nodes with unique id 2`] = `
+exports[`Store Nodes added should add multiple nodes with unique names 2`] = `
 {
   "additionalFields": {
     "layoutData": {
@@ -34,7 +35,8 @@ exports[`Store Nodes added should add multiple nodes with unique id 2`] = `
       "y": 20,
     },
   },
-  "id": "kafka-transaction (copy 2)",
+  "id": "uuid-3",
+  "name": "kafka-transaction (copy 2)",
   "output": "output",
   "service": {
     "id": "paramService",
@@ -52,7 +54,7 @@ exports[`Store Nodes added should add multiple nodes with unique id 2`] = `
 }
 `;
 
-exports[`Store Nodes added should add multiple nodes with unique id 3`] = `
+exports[`Store Nodes added should add multiple nodes with unique names 3`] = `
 {
   "additionalFields": {
     "layoutData": {
@@ -60,7 +62,8 @@ exports[`Store Nodes added should add multiple nodes with unique id 3`] = `
       "y": 20,
     },
   },
-  "id": "filter (copy 2)",
+  "id": "uuid-4",
+  "name": "filter (copy 2)",
   "output": "output",
   "service": {
     "id": "paramService",
@@ -86,7 +89,8 @@ exports[`Store Nodes added should add nodes with edges 1`] = `
       "y": 20,
     },
   },
-  "id": "newNode",
+  "id": "uuid-1",
+  "name": "newNode",
   "output": "output",
   "service": {
     "id": "paramService",
@@ -112,7 +116,8 @@ exports[`Store Nodes added should add nodes with edges 2`] = `
       "y": 20,
     },
   },
-  "id": "kafka-transaction (copy 1)",
+  "id": "uuid-2",
+  "name": "kafka-transaction (copy 1)",
   "output": "output",
   "service": {
     "id": "paramService",
@@ -138,7 +143,8 @@ exports[`Store Nodes added should add single node 1`] = `
       "y": 20,
     },
   },
-  "id": "Enricher ID",
+  "id": "uuid-2",
+  "name": "Enricher ID",
   "output": "enricher_id_output",
   "service": {
     "id": "paramService",
@@ -156,7 +162,7 @@ exports[`Store Nodes added should add single node 1`] = `
 }
 `;
 
-exports[`Store Nodes added should add single node with unique id 1`] = `
+exports[`Store Nodes added should add single node with unique name 1`] = `
 {
   "additionalFields": {
     "layoutData": {
@@ -164,7 +170,8 @@ exports[`Store Nodes added should add single node with unique id 1`] = `
       "y": 20,
     },
   },
-  "id": "kafka-transaction 1",
+  "id": "uuid-1",
+  "name": "kafka-transaction 1",
   "output": "kafka_transaction_1_output",
   "service": {
     "id": "paramService",

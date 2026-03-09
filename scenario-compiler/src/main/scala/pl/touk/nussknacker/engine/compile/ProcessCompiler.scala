@@ -76,7 +76,7 @@ trait ProcessValidator extends LazyLogging {
 
     try {
       CompilationResult.map4(
-        CompilationResult(IdValidator.validate(process, isFragment)),
+        CompilationResult(NameValidator.validate(process, isFragment)),
         CompilationResult(validateWithCustomProcessValidators(process)),
         CompilationResult(validateUniqueFragmentOutputNames(process, isFragment)),
         compile(process).map(_ => ()): CompilationResult[Unit]
@@ -177,15 +177,13 @@ protected trait ProcessCompilerBase {
 
   private def findDuplicates(parts: NonEmptyList[SourcePart]): Validated[ProcessCompilationError, Unit] = {
     val allNodes = NodesCollector.collectNodesInAllParts(parts)
-    val duplicatedIds =
-      allNodes.map(n => NodeId(n.id)).groupBy(identity).collect {
-        case (id, grouped) if grouped.size > 1 =>
-          id
-      }
-    if (duplicatedIds.isEmpty)
+    val duplicatedNodes = allNodes
+      .groupBy(_.id)
+      .collect { case (id, groupedNodes) if groupedNodes.size > 1 => id -> groupedNodes.map(_.data.name).toSet }
+    if (duplicatedNodes.isEmpty)
       valid(())
     else
-      invalid(DuplicatedNodeIds(duplicatedIds.toSet))
+      invalid(DuplicatedNodeIds(duplicatedNodes))
   }
 
   private def compile(source: SourcePart, branchEndContexts: BranchEndContexts)(
@@ -208,9 +206,11 @@ protected trait ProcessCompilerBase {
     parts
       .map(p =>
         partInputContexts
-          .get(p.id)
+          .get(p.id.value)
           .map(compileSubsequentPart(p, _))
-          .getOrElse(CompilationResult(Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(NodeId(p.id))))))
+          .getOrElse(
+            CompilationResult(Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(p.id, p.node.data.name))))
+          )
       )
       .sequence
   }
@@ -244,7 +244,7 @@ protected trait ProcessCompilerBase {
     )
     val typesForParts = validatedSource.typing.mapValuesNow(_.inputValidationContext)
     val nodeTypingInfo = Map(
-      part.id -> NodeTypingInfo(contextWithOnlyGlobalVariables, typingInfo, parameters, initialCtx.toOption)
+      part.id.value -> NodeTypingInfo(contextWithOnlyGlobalVariables, typingInfo, parameters, initialCtx.toOption)
     )
 
     CompilationResult.map4(
@@ -258,7 +258,7 @@ protected trait ProcessCompilerBase {
         splittednode.SourceNode(sourceData, part.node.next),
         ctx,
         nextParts,
-        part.ends.map(e => TypedEnd(e, typesForParts.getOrElse(e.nodeId, ValidationContext.empty)))
+        part.ends.map(e => TypedEnd(e, typesForParts.getOrElse(e.nodeId.value, ValidationContext.empty)))
       )
     }
   }
@@ -271,7 +271,7 @@ protected trait ProcessCompilerBase {
   ): CompilationResult[part.SinkPart] = {
     val NodeCompilationResult(typingInfo, parameters, outputCtx, compiledSink, _) =
       nodeCompiler.compileSink(node.data, SingleInputNodeInputValidationContext(ctx))
-    val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters, outputCtx.toOption))
+    val nodeTypingInfo = Map(node.id.value -> NodeTypingInfo(ctx, typingInfo, parameters, outputCtx.toOption))
     CompilationResult.map2(
       sub.validate(node, SingleInputNodeInputValidationContext(ctx)),
       CompilationResult(nodeTypingInfo, compiledSink)
@@ -286,7 +286,7 @@ protected trait ProcessCompilerBase {
   ): CompilationResult[compiledgraph.part.CustomNodePart] = {
     val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) =
       nodeCompiler.compileCustomNodeObject(node, SingleInputNodeInputValidationContext(ctx))
-    val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters, validatedNextCtx.toOption))
+    val nodeTypingInfo = Map(node.id.value -> NodeTypingInfo(ctx, typingInfo, parameters, validatedNextCtx.toOption))
 
     CompilationResult
       .map2(
@@ -318,7 +318,7 @@ protected trait ProcessCompilerBase {
       case Left(singleContext) => SingleInputNodeInputValidationContext(singleContext)
       case Right(branchEndContexts) =>
         MultipleInputBranchesNodeInputValidationContext(
-          branchEndContexts.contextsForJoin(node.id),
+          branchEndContexts.contextsForJoin(node.id.value),
           contextWithOnlyGlobalVariables
         )
     }
@@ -336,7 +336,7 @@ protected trait ProcessCompilerBase {
     val nextPartsValidation = sub.validate(node, nextPartInputValidationContext)
     val typesForParts       = nextPartsValidation.typing.mapValuesNow(_.inputValidationContext)
     val nodeTypingInfo = Map(
-      node.id -> NodeTypingInfo(
+      node.id.value -> NodeTypingInfo(
         ctx.left.getOrElse(contextWithOnlyGlobalVariables),
         typingInfo,
         parameters,
@@ -358,7 +358,7 @@ protected trait ProcessCompilerBase {
           ctx.left.getOrElse(ValidationContext.empty),
           nextCtx,
           nextPartsCompiled,
-          part.ends.map(e => TypedEnd(e, typesForParts.getOrElse(e.nodeId, ValidationContext.empty)))
+          part.ends.map(e => TypedEnd(e, typesForParts.getOrElse(e.nodeId.value, ValidationContext.empty)))
         )
       }
       .distinctErrors

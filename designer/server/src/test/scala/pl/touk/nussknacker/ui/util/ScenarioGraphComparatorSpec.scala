@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.util
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -19,21 +19,24 @@ class ScenarioGraphComparatorSpec extends AnyFunSuite with Matchers {
     val other   = toDisplayable(_.emptySink("end", "testSink"))
 
     ScenarioGraphComparator.compare(current, other) shouldBe Map(
-      "Node 'filter1'" -> NodeNotPresentInOther("filter1", Filter("filter1", "#input == 4".spel)),
+      "Node 'filter1'" -> NodeNotPresentInOther(
+        "filter1",
+        Filter(NodeId("filter1"), NodeName("filter1"), "#input == 4".spel)
+      ),
       "Edge from 'start' to 'filter1'" -> EdgeNotPresentInOther(
         "start",
         "filter1",
-        Edge("start", "filter1", None)
+        Edge(NodeId("start"), NodeId("filter1"), None)
       ),
       "Edge from 'filter1' to 'end'" -> EdgeNotPresentInOther(
         "filter1",
         "end",
-        Edge("filter1", "end", Some(FilterTrue))
+        Edge(NodeId("filter1"), NodeId("end"), Some(FilterTrue))
       ),
       "Edge from 'start' to 'end'" -> EdgeNotPresentInCurrent(
         "start",
         "end",
-        Edge("start", "end", None)
+        Edge(NodeId("start"), NodeId("end"), None)
       )
     )
   }
@@ -43,21 +46,24 @@ class ScenarioGraphComparatorSpec extends AnyFunSuite with Matchers {
     val other   = toDisplayable(_.filter("filter1", "#input == 4".spel).emptySink("end", "testSink"))
 
     ScenarioGraphComparator.compare(current, other) shouldBe Map(
-      "Node 'filter1'" -> NodeNotPresentInCurrent("filter1", Filter("filter1", "#input == 4".spel)),
+      "Node 'filter1'" -> NodeNotPresentInCurrent(
+        "filter1",
+        Filter(NodeId("filter1"), NodeName("filter1"), "#input == 4".spel)
+      ),
       "Edge from 'start' to 'filter1'" -> EdgeNotPresentInCurrent(
         "start",
         "filter1",
-        Edge("start", "filter1", None)
+        Edge(NodeId("start"), NodeId("filter1"), None)
       ),
       "Edge from 'filter1' to 'end'" -> EdgeNotPresentInCurrent(
         "filter1",
         "end",
-        Edge("filter1", "end", Some(FilterTrue))
+        Edge(NodeId("filter1"), NodeId("end"), Some(FilterTrue))
       ),
       "Edge from 'start' to 'end'" -> EdgeNotPresentInOther(
         "start",
         "end",
-        Edge("start", "end", None)
+        Edge(NodeId("start"), NodeId("end"), None)
       )
     )
   }
@@ -69,8 +75,8 @@ class ScenarioGraphComparatorSpec extends AnyFunSuite with Matchers {
     ScenarioGraphComparator.compare(current, other) shouldBe Map(
       "Node 'filter1'" -> NodeDifferent(
         "filter1",
-        Filter("filter1", "#input == 4".spel),
-        Filter("filter1", "#input == 8".spel)
+        Filter(NodeId("filter1"), NodeName("filter1"), "#input == 4".spel),
+        Filter(NodeId("filter1"), NodeName("filter1"), "#input == 8".spel)
       )
     )
   }
@@ -83,8 +89,8 @@ class ScenarioGraphComparatorSpec extends AnyFunSuite with Matchers {
       "Edge from 'switch1' to 'end1'" -> EdgeDifferent(
         "switch1",
         "end1",
-        Edge("switch1", "end1", Some(NextSwitch("current".spel))),
-        Edge("switch1", "end1", Some(NextSwitch("other".spel)))
+        Edge(NodeId("switch1"), NodeId("end1"), Some(NextSwitch("current".spel))),
+        Edge(NodeId("switch1"), NodeId("end1"), Some(NextSwitch("other".spel)))
       )
     )
   }

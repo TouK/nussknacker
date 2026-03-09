@@ -6,7 +6,7 @@ import cats.effect.SyncIO
 import cats.effect.kernel.Resource
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{CustomProcessValidator, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId, NodeName, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDepend
 import pl.touk.nussknacker.engine.api.graph.{Edge, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
-import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessValidator}
-import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
+import pl.touk.nussknacker.engine.compile.{NameValidator, NodeTypingInfo, ProcessValidator}
+import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInput, FragmentInputDefinition, NodeData, Source}
 import pl.touk.nussknacker.engine.test.testcase.TestCases
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
@@ -117,7 +117,14 @@ class UIProcessValidator(
       // CanonicalProcess validation.
       deduplicateErrors(uiValidationResult.add(canonicalValidation))
     } else {
-      uiValidationResult
+      val errorAndWarningNodeIds =
+        (uiValidationResult.errors.invalidNodes.keys ++
+          uiValidationResult.warnings.invalidNodes.keys).map(_.value).toSet
+      val nodeNamesForErrors = scenarioGraph.nodes
+        .filter(n => errorAndWarningNodeIds.contains(n.id.value))
+        .map(n => n.id.value -> n.name.value)
+        .toMap
+      uiValidationResult.withNodeNames(nodeNamesForErrors)
     }
   }
 
@@ -133,7 +140,7 @@ class UIProcessValidator(
   ): ValidationResult = {
     validateScenarioName(processName, isFragment)
       .add(validateScenarioLabels(labels))
-      .add(validateNodesId(scenarioGraph))
+      .add(validateNodesIdAndName(scenarioGraph))
       .add(validateDuplicates(scenarioGraph))
       .add(validateLooseNodes(scenarioGraph))
       .add(validateStickyNotesLength(scenarioGraph))
@@ -164,17 +171,20 @@ class UIProcessValidator(
               .add(testCasesValidationResult)
           }
 
+          val fragments = fragmentResolver.fetchFragmentsSync(processingType)
+
           // TODO: should we validate after resolve?
           val additionalValidatorErrors = additionalValidators
             .map(_.validate(canonical))
             .sequence
             .fold(formatErrors, _ => ValidationResult.success)
 
-          val resolvedScenarioResult = fragmentResolver.resolveFragments(canonical, processingType)
+          val resolvedScenarioResult = fragmentResolver.resolveFragments(canonical, fragments)
 
           // TODO: handle types when fragment resolution fails
           val validationResult = resolvedScenarioResult match {
-            case Invalid(fragmentResolutionErrors) => formatErrors(fragmentResolutionErrors)
+            case Invalid(fragmentResolutionErrors) =>
+              formatErrors(fragmentResolutionErrors)
             case Valid(scenario) =>
               val validationResult = validateAndFormatResult(scenario)
               val containsDisabledNodes = canonical.collectAllNodes.exists {
@@ -183,9 +193,10 @@ class UIProcessValidator(
               }
               if (containsDisabledNodes) {
                 val resolvedScenarioWithoutDisabledNodes =
-                  fragmentResolver.resolveFragments(canonical.withoutDisabledNodes, processingType)
+                  fragmentResolver.resolveFragments(canonical.withoutDisabledNodes, fragments)
                 resolvedScenarioWithoutDisabledNodes match {
-                  case Invalid(fragmentResolutionErrors)   => formatErrors(fragmentResolutionErrors)
+                  case Invalid(fragmentResolutionErrors) =>
+                    formatErrors(fragmentResolutionErrors)
                   case Valid(scenarioWithoutDisabledNodes) =>
                     // FIXME: Validation errors for fragment nodes are not properly handled by FE
                     // We add typing data from disabled nodes to have typing and suggestions for expressions in disabled nodes
@@ -196,10 +207,48 @@ class UIProcessValidator(
                 validationResult
               }
           }
-          validationResult.add(additionalValidatorErrors)
+          val finalResult = validationResult.add(additionalValidatorErrors)
+          finalResult.withNodeNames(resolveNodeNamesForResult(finalResult, canonical, fragments))
         }
       }
       .unsafeRunSync()
+  }
+
+  private def resolveNodeNamesForResult(
+      result: ValidationResult,
+      canonical: CanonicalProcess,
+      fragments: List[CanonicalProcess]
+  ): Map[String, String] = {
+    val referencedNodeIds =
+      (result.errors.invalidNodes.keys ++ result.warnings.invalidNodes.keys).map(_.value).toSet
+
+    if (referencedNodeIds.isEmpty) return Map.empty
+
+    val canonicalNodesById = canonical.collectAllNodes.map(n => n.id.value -> n).toMap
+
+    lazy val fragmentsByName = fragments.map(f => f.name.value -> f).toMap
+
+    referencedNodeIds.flatMap { nodeId =>
+      canonicalNodesById.get(nodeId) match {
+        case Some(node) => Some(nodeId -> node.name.value)
+        case None =>
+          for {
+            outerNodeId <- canonicalNodesById.keys.find(outerNodeId => nodeId.startsWith(outerNodeId + "-"))
+            outerNode = canonicalNodesById(outerNodeId)
+            fi <- outerNode match {
+              case fi: FragmentInput => Some(fi)
+              case other =>
+                logger.warn(
+                  s"Node '$outerNodeId' matched by fragment prefix convention but is not a FragmentInput: $other"
+                )
+                None
+            }
+            innerNodeId = nodeId.drop(outerNodeId.length + 1)
+            fragmentCanonical <- fragmentsByName.get(fi.ref.id)
+            innerNode         <- fragmentCanonical.collectAllNodes.find(_.id.value == innerNodeId)
+          } yield nodeId -> s"${outerNode.name.value} - ${innerNode.name.value}"
+      }
+    }.toMap
   }
 
   private def nodeInfoToResult(typingInfo: NodeTypingInfo) = NodeTypingData(
@@ -214,27 +263,25 @@ class UIProcessValidator(
     }
     val disabledNodesWarnings =
       disabledNodes
-        .map(node => (NodeId(node.id), List(PrettyValidationErrors.formatErrorMessage(DisabledNode(NodeId(node.id))))))
+        .map(node => (node.id, List(PrettyValidationErrors.formatErrorMessage(DisabledNode(node.id, node.name)))))
         .toMap
     ValidationResult.warnings(disabledNodesWarnings)
   }
 
   private def validateScenarioName(processName: ProcessName, isFragment: Boolean): ValidationResult = {
-    IdValidator.validateScenarioName(processName, isFragment) match {
+    NameValidator.validateScenarioName(processName, isFragment) match {
       case Valid(_)   => ValidationResult.success
       case Invalid(e) => formatErrors(e)
     }
   }
 
-  private def validateNodesId(scenarioGraph: ScenarioGraph): ValidationResult = {
-    val nodeIdErrors = scenarioGraph.nodes
-      .map(n => IdValidator.validateNodeId(NodeId(n.id)))
-      .collect { case Invalid(e) =>
-        e
-      }
+  private def validateNodesIdAndName(scenarioGraph: ScenarioGraph): ValidationResult = {
+    val nodeNameErrors = scenarioGraph.nodes
+      .map(NameValidator.validateNode)
+      .collect { case Invalid(e) => e }
       .reduceOption(_ concatNel _)
 
-    nodeIdErrors match {
+    nodeNameErrors match {
       case Some(value) => formatErrors(value)
       case None        => ValidationResult.success
     }
@@ -269,16 +316,18 @@ class UIProcessValidator(
   }
 
   private def validateEdgeUniqueness(scenarioGraph: ScenarioGraph): ValidationResult = {
-    val edgesByFrom = scenarioGraph.edges.groupBy(e => NodeId(e.from))
+    val edgesByFrom   = scenarioGraph.edges.groupBy(e => e.from)
+    val nodeNamesById = scenarioGraph.nodes.map(n => n.id -> n.name).toMap
 
     def findNonUniqueEdge(nodeId: NodeId, edgesFromNode: List[Edge]) = {
+      val nodeName = nodeNamesById.getOrElse(nodeId, NodeName.unknown)
       val nonUniqueByType = edgesFromNode.groupBy(_.edgeType).collect {
         case (Some(eType), list) if eType.mustBeUnique && list.size > 1 =>
-          PrettyValidationErrors.formatErrorMessage(NonUniqueEdgeType(eType.toString, nodeId))
+          PrettyValidationErrors.formatErrorMessage(NonUniqueEdgeType(eType.toString, nodeId, nodeName))
       }
       val nonUniqueByTarget = edgesFromNode.groupBy(_.to).collect {
         case (to, list) if list.size > 1 =>
-          PrettyValidationErrors.formatErrorMessage(NonUniqueEdge(nodeId, to))
+          PrettyValidationErrors.formatErrorMessage(NonUniqueEdge(nodeId, nodeName, to.value))
       }
       (nonUniqueByType ++ nonUniqueByTarget).toList
     }
@@ -319,27 +368,37 @@ class UIProcessValidator(
   }
 
   private def validateLooseNodes(scenarioGraph: ScenarioGraph): ValidationResult = {
-    val looseNodesIds = scenarioGraph.nodes
+    val looseNodes = scenarioGraph.nodes
       // source & fragment inputs don't have inputs
       .filterNot(n => n.isInstanceOf[FragmentInputDefinition] || n.isInstanceOf[Source])
       .filterNot(n => scenarioGraph.edges.exists(_.to == n.id))
-      .map(n => NodeId(n.id))
 
-    if (looseNodesIds.isEmpty) {
+    if (looseNodes.isEmpty) {
       ValidationResult.success
     } else {
-      formatErrors(NonEmptyList.one(LooseNode(looseNodesIds.toSet)))
+      formatErrors(NonEmptyList.one(LooseNode(looseNodes.map(n => (n.id, n.name)).toSet)))
     }
   }
 
   private def validateDuplicates(scenarioGraph: ScenarioGraph): ValidationResult = {
-    val nodeIds    = scenarioGraph.nodes.map(n => NodeId(n.id))
-    val duplicates = nodeIds.groupBy(identity).filter(_._2.size > 1).keys.toList
+    val duplicatedIds = scenarioGraph.nodes
+      .groupBy(_.id)
+      .collect { case (id, nodes) if nodes.size > 1 => id -> nodes.map(_.name).toSet }
+    val duplicatedNames = scenarioGraph.nodes
+      .groupBy(_.name)
+      .collect { case (name, nodes) if nodes.map(_.id).distinct.size > 1 => name -> nodes.map(_.id).toSet }
 
-    if (duplicates.isEmpty) {
+    val errors =
+      List(
+        if (duplicatedIds.isEmpty) None else Some(DuplicatedNodeIds(duplicatedIds)),
+        if (duplicatedNames.isEmpty) None
+        else Some(DuplicatedNodeNames(duplicatedNames.keySet, duplicatedNames.values.flatten.toSet))
+      ).flatten
+
+    if (errors.isEmpty) {
       ValidationResult.success
     } else {
-      formatErrors(NonEmptyList.one(DuplicatedNodeIds(duplicates.toSet)))
+      formatErrors(NonEmptyList.fromListUnsafe(errors))
     }
   }
 

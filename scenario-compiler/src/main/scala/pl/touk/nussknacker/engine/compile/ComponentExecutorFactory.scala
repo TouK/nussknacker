@@ -25,7 +25,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
   ): IorNel[ProcessCompilationError, ComponentExecutor] = {
     NodeValidationExceptionHandler.handleExceptions {
       doCreateComponentExecutor[ComponentExecutor](deps)
-    }(deps.nodeId, deps.metaData).toIor
+    }(deps.nodeId, deps.nodeName, deps.metaData).toIor
   }
 
   private def doCreateComponentExecutor[ComponentExecutor: ClassTag](
@@ -56,7 +56,9 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
       case a: ComponentExecutor => a
       case _ =>
         throw new ClassCastException(
-          s"Object returned by [${deps.componentDefinition.id}] component is ${Option(invocationResult).map(ir => s"of ${ir.getClass.getName} class").orNull} but should be a ${classTag[ComponentExecutor].runtimeClass.getName}"
+          s"Object returned by [${deps.componentDefinition.id}] component is ${Option(invocationResult)
+              .map(ir => s"of ${ir.getClass.getName} class")
+              .orNull} but should be a ${classTag[ComponentExecutor].runtimeClass.getName}"
         )
     }
   }
@@ -73,6 +75,7 @@ object ComponentExecutorFactory {
       val invocationContext: Option[ComponentImplementationSpecificInvocationContext],
   ) {
     implicit def nodeId: NodeId     = nodeCompilationDependencies.nodeId
+    implicit def nodeName: NodeName = nodeCompilationDependencies.nodeName
     implicit def metaData: MetaData = nodeCompilationDependencies.metaData
     implicit def jobData: JobData   = nodeCompilationDependencies.jobData
   }

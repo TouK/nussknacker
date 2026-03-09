@@ -278,14 +278,14 @@ class TableJoinTest
         .source("orders-source", TestScenarioRunner.testDataSource)
         .filter("orders-filter", "#input.type == 'order'".spel)
         .buildVariable("example-transformations", "out", mainBranchLocalVariableFields.toSeq: _*)
-        .branchEnd(mainBranchId, joinNodeId.id),
+        .branchEnd(mainBranchId, joinNodeId.value),
       GraphBuilder
         .source("products-source", TestScenarioRunner.testDataSource)
         .filter("product-filter", "#input.type == 'product'".spel)
-        .branchEnd(joinedBranchId, joinNodeId.id),
+        .branchEnd(joinedBranchId, joinNodeId.value),
       GraphBuilder
         .join(
-          joinNodeId.id,
+          joinNodeId.value,
           "join",
           Some("product"),
           List(

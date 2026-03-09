@@ -35,6 +35,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -476,19 +477,47 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test("should handle all cases node id validation") {
+  test("should handle all cases node id validation independently from node name") {
     forAll(IdValidationTestData.nodeIdErrorCases) { (nodeId: String, expectedErrors: List[ProcessCompilationError]) =>
       {
         val scenario = ScenarioBuilder
           .streaming("scenarioId")
           .source(nodeId, "source")
           .emptySink("sinkId", "sink")
+          .mapAllNodes(_.map {
+            case FlatNode(source: Source) if source.ref.typ == "source" =>
+              FlatNode(source.copy(name = NodeName("validNodeName")))
+            case node =>
+              node
+          })
         validate(scenario, baseDefinition).result match {
           case Valid(_)   => expectedErrors shouldBe empty
           case Invalid(e) => e.toList shouldBe expectedErrors
-
         }
       }
+    }
+  }
+
+  test("should handle all cases node name validation independently from node id") {
+    forAll(IdValidationTestData.nodeNameErrorCases) {
+      (nodeName: String, expectedErrors: List[ProcessCompilationError]) =>
+        {
+          val scenario = ScenarioBuilder
+            .streaming("scenarioId")
+            .source("validNodeId", "source")
+            .emptySink("sinkId", "sink")
+            .mapAllNodes(_.map {
+              case FlatNode(source: Source) if source.id == NodeId("validNodeId") =>
+                FlatNode(source.copy(name = NodeName(nodeName)))
+              case node =>
+                node
+            })
+          validate(scenario, baseDefinition).result match {
+            case Valid(_)   => expectedErrors shouldBe empty
+            case Invalid(e) => e.toList shouldBe expectedErrors
+
+          }
+        }
     }
   }
 
@@ -516,6 +545,21 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         )
     validate(processWithDuplicatedIds, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(DuplicatedNodeIds(_), _)) =>
+    }
+  }
+
+  test("find duplicated node names") {
+    val sameName = NodeName("same")
+    val process = CanonicalProcess(
+      MetaData("process1", StreamMetaData()),
+      List(
+        FlatNode(Source(NodeId("1"), sameName, SourceRef("source", Nil))),
+        FlatNode(Sink(NodeId("2"), sameName, SinkRef("sink", Nil))),
+      )
+    )
+
+    validate(process, baseDefinition).result should matchPattern {
+      case Invalid(NonEmptyList(DuplicatedNodeNames(_, _), _)) =>
     }
   }
 
@@ -1355,7 +1399,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     validate(processWithInvalidExpresssion, failingDefinition).result should matchPattern {
       case Invalid(
             NonEmptyList(
-              CannotCreateObjectError("You passed incorrect parameter, cannot proceed", NodeId("id1"), _),
+              CannotCreateObjectError("You passed incorrect parameter, cannot proceed", NodeId("id1"), _, _),
               Nil
             )
           ) =>
@@ -1781,6 +1825,24 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
+  test("allow same node name in scenario and inside used fragment") {
+    val scenario = ScenarioBuilder
+      .streaming("scenario1")
+      .source("source", "source")
+      .filter("filter", "true".spel)
+      .fragmentOneOut("fragRef", "frag1", "output", "fragmentResult")
+      .emptySink("sink", "sink")
+
+    val fragment = ScenarioBuilder
+      .fragment("frag1")
+      .filter("filter", "true".spel)
+      .fragmentOutput("out", "output")
+
+    val resolver = FragmentResolver(List(fragment))
+
+    resolver.resolve(scenario).andThen(validate(_, baseDefinition).result) shouldBe Symbol("valid")
+  }
+
   // This tests an artificial canonical process which cannot be created through conversion from ScenarioGraph because of
   // skipping loose nodes and empty main branch. We added it to show that the canonical errors folding algorithm works
   // correctly.
@@ -1795,10 +1857,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         metaData,
         List(),
         List(
-          List(FlatNode(Variable(variableName1, "varName", "'str'".spel))),
-          List(FlatNode(Variable(variableName2, "varName", "'str'".spel))),
-          List(FlatNode(Source(sourceName1, SourceRef("source", List())))),
-          List(FlatNode(Source(sourceName2, SourceRef("source", List())))),
+          List(FlatNode(Variable(NodeId(variableName1), NodeName(variableName1), "varName", "'str'".spel))),
+          List(FlatNode(Variable(NodeId(variableName2), NodeName(variableName2), "varName", "'str'".spel))),
+          List(FlatNode(Source(NodeId(sourceName1), NodeName(sourceName1), SourceRef("source", List())))),
+          List(FlatNode(Source(NodeId(sourceName2), NodeName(sourceName2), SourceRef("source", List())))),
         )
       )
 

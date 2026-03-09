@@ -4,10 +4,11 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.api.{DataTypes, Schema}
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.catalog.Column.{ComputedColumn, MetadataColumn, PhysicalColumn}
 import org.apache.flink.types.Row
+import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.livedata.{DataRecord, DataRecords, LiveDataProvider}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -18,7 +19,6 @@ import pl.touk.nussknacker.engine.api.process.{
   TestWithParametersSupport
 }
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{
   CustomizableContextInitializerSource,
@@ -28,8 +28,8 @@ import pl.touk.nussknacker.engine.flink.api.process.{
 }
 import pl.touk.nussknacker.engine.flink.table.io.definition.{FlinkDataDefinition, TableDefinition}
 import pl.touk.nussknacker.engine.flink.table.io.source.TableSource.{
-  SQL_FILTERING_EXPRESSION_PARAMETER_NAME,
-  filteringInternalViewName
+  filteringInternalViewName,
+  SQL_FILTERING_EXPRESSION_PARAMETER_NAME
 }
 import pl.touk.nussknacker.engine.flink.table.io.source.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.typing.DataTypesExtensions._
@@ -86,7 +86,7 @@ class TableSource(
 
     tableEnv
       .toDataStream(finalQuery)
-      .setUidAndNameToNodeId(flinkNodeContext.nodeId)
+      .setUidAndName(flinkNodeContext.nodeId.value, flinkNodeContext.nodeName.value)
       .flatMap(
         ContextInitializingFunction(
           flinkNodeContext.nodeId,

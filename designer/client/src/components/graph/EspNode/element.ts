@@ -82,7 +82,9 @@ export const updateNodeCounts =
     (node: shapes.devs.Model): void => {
         if (userSettings["debug.dontRenderCountsOnNodes"]) return;
         const shortCounts = userSettings["node.shortCounts"];
-        const count = processCounts[node.id];
+        const nodeData = node.get("nodeData") as NodeType | undefined;
+        const lookupKey = nodeData?.id;
+        const count = processCounts[lookupKey];
         const hasCounts = !isEmpty(count);
         const hasErrors = count?.errors > 0;
         const testCounts = getTestCounts(count, shortCounts);
@@ -108,7 +110,7 @@ export const updateNodeCounts =
 export function makeElement(processDefinitionData: ProcessDefinitionData, theme: Theme): (node: NodeType) => shapes.devs.Model {
     return (node: NodeType) => {
         const description = node.additionalFields?.description;
-        const { text: bodyContent } = getBodyContent(node.id);
+        const { text: bodyContent } = getBodyContent(node.name);
         const { text: helpContent } = getBodyContent(description ? "𝒊" : "");
 
         const iconHref = getComponentIconSrc(node, processDefinitionData);
@@ -132,6 +134,8 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
             inPorts: NodeUtils.hasInputs(node) ? ["In"] : [],
             outPorts: NodeUtils.hasOutputs(node, processDefinitionData) ? ["Out"] : [],
             attrs: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                ".": { "data-node-name": node.name } as any,
                 background: {
                     fill: blendLighten(theme.palette.background.paper, 0.04),
                     opacity: node.isDisabled ? 0.5 : 1,

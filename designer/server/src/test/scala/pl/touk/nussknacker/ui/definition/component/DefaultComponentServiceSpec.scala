@@ -785,22 +785,26 @@ class DefaultComponentServiceSpec
 
     val testingData = Table(
       ("user", "componentId", "expected"),
-      (admin, fragmentComponentId, List((FraudProcessWithFragment, List(ScenarioUsageData(FraudFragmentName.value))))),
+      (
+        admin,
+        fragmentComponentId,
+        List((FraudProcessWithFragment, List(ScenarioUsageData(FraudFragmentName.value, FraudFragmentName.value))))
+      ),
       (
         admin,
         sharedSourceComponentId,
         List(
-          (CanceledFraudProcessWith2Enrichers, List(ScenarioUsageData(DefaultSourceName))),
-          (DeployedFraudProcessWith2Filters, List(ScenarioUsageData(DefaultSourceName))),
-          (FraudProcess, List(ScenarioUsageData(DefaultSourceName))),
-          (FraudProcessWithFragment, List(ScenarioUsageData(SecondSourceName))),
-          (MarketingProcess, List(ScenarioUsageData(DefaultSourceName))),
+          (CanceledFraudProcessWith2Enrichers, List(ScenarioUsageData(DefaultSourceName, DefaultSourceName))),
+          (DeployedFraudProcessWith2Filters, List(ScenarioUsageData(DefaultSourceName, DefaultSourceName))),
+          (FraudProcess, List(ScenarioUsageData(DefaultSourceName, DefaultSourceName))),
+          (FraudProcessWithFragment, List(ScenarioUsageData(SecondSourceName, SecondSourceName))),
+          (MarketingProcess, List(ScenarioUsageData(DefaultSourceName, DefaultSourceName))),
         )
       ),
       (
         admin,
         fraudNotSharedSourceComponentId,
-        List((FraudProcessWithNotSharedSource, List(ScenarioUsageData(DefaultSourceName))))
+        List((FraudProcessWithNotSharedSource, List(ScenarioUsageData(DefaultSourceName, DefaultSourceName))))
       ),
       (
         admin,
@@ -808,7 +812,10 @@ class DefaultComponentServiceSpec
         List(
           (
             CanceledFraudProcessWith2Enrichers,
-            List(ScenarioUsageData(DefaultCustomName), ScenarioUsageData(SecondCustomName))
+            List(
+              ScenarioUsageData(DefaultCustomName, DefaultCustomName),
+              ScenarioUsageData(SecondCustomName, SecondCustomName)
+            )
           )
         )
       ),
@@ -818,12 +825,23 @@ class DefaultComponentServiceSpec
         List(
           (
             DeployedFraudProcessWith2Filters,
-            List(ScenarioUsageData(DefaultFilterName), ScenarioUsageData(SecondFilterName))
+            List(
+              ScenarioUsageData(DefaultFilterName, DefaultFilterName),
+              ScenarioUsageData(SecondFilterName, SecondFilterName)
+            )
           ),
-          (FraudFragment, List(ScenarioUsageData(FragmentFilterName))),
+          (FraudFragment, List(ScenarioUsageData(FragmentFilterName, FragmentFilterName))),
           (
             FraudProcessWithFragment,
-            List(ScenarioUsageData(SecondFilterName), FragmentUsageData(FraudFragment.name.value, FragmentFilterName))
+            List(
+              ScenarioUsageData(SecondFilterName, SecondFilterName),
+              FragmentUsageData(
+                FraudFragment.name.value,
+                FraudFragment.name.value,
+                FragmentFilterName,
+                FragmentFilterName
+              )
+            )
           ),
         )
       ),

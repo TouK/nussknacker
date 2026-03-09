@@ -41,25 +41,25 @@ class ProcessCounter(fragmentRepository: FragmentRepository) {
       nodes.flatMap {
         // TODO: this is a bit of a hack. Metric for fragment input is counted in node with fragment occurrence id...
         // We want to count it though while testing fragments
-        case FlatNode(FragmentInputDefinition(id, _, _)) if !isFragment =>
-          Map(NodeId(id) -> nodeCountOption(None))
+        case FlatNode(FragmentInputDefinition(id, _, _, _)) if !isFragment =>
+          Map(id -> nodeCountOption(None))
         // BranchEndData is kind of artificial entity
         case FlatNode(BranchEndData(_)) => Map.empty[NodeId, NodeCount]
-        case FlatNode(node)             => Map(NodeId(node.id) -> nodeCount(NodeId(node.id)))
+        case FlatNode(node)             => Map(node.id -> nodeCount(node.id))
         case FilterNode(node, nextFalse) =>
-          computeCountsSamePrefixes(nextFalse) + (NodeId(node.id) -> nodeCount(NodeId(node.id)))
+          computeCountsSamePrefixes(nextFalse) + (node.id -> nodeCount(node.id))
         case SwitchNode(node, nexts, defaultNext) =>
           computeCountsSamePrefixes(nexts.flatMap(_.nodes)) ++ computeCountsSamePrefixes(
             defaultNext
-          ) + (NodeId(node.id) -> nodeCount(NodeId(node.id)))
+          ) + (node.id -> nodeCount(node.id))
         case SplitNode(node, nexts) =>
-          computeCountsSamePrefixes(nexts.flatten) + (NodeId(node.id) -> nodeCount(NodeId(node.id)))
+          computeCountsSamePrefixes(nexts.flatten) + (node.id -> nodeCount(node.id))
         case Fragment(node, outputs) =>
           // TODO: validate that process exists
           val fragment = fragmentRepository.fetchLatestFragmentSync(ProcessName(node.ref.id)).get
-          computeCountsSamePrefixes(outputs.values.flatten) + (NodeId(node.id) -> nodeCount(
-            NodeId(node.id),
-            computeCounts(prefixes :+ NodeId(node.id))(fragment.allStartNodes)
+          computeCountsSamePrefixes(outputs.values.flatten) + (node.id -> nodeCount(
+            node.id,
+            computeCounts(prefixes :+ node.id)(fragment.allStartNodes)
           ))
       }.toMap
 

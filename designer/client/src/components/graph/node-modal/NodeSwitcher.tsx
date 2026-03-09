@@ -52,9 +52,9 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
                 editedNode,
                 {
                     ...component.node,
-                    id: createUniqueName(
+                    name: createUniqueName(
                         component.label,
-                        nodes.map((n) => n.id).filter((i) => i !== editedNode.id),
+                        nodes.map((n) => n.name).filter((n) => n !== (editedNode.$name ?? editedNode.name)),
                     ),
                 },
                 processDefinitionData,

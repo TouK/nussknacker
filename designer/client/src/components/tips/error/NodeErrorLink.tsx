@@ -8,8 +8,13 @@ import { NavLink } from "react-router-dom";
 import type { NodeId } from "../../../types/node";
 import { ErrorLinkStyle } from "./styled";
 
-export const NodeErrorLink = (props: { onClick: MouseEventHandler<HTMLAnchorElement>; nodeId: NodeId; disabled?: boolean }) => {
-    const { onClick, nodeId, disabled } = props;
+export const NodeErrorLink = (props: {
+    onClick: MouseEventHandler<HTMLAnchorElement>;
+    nodeId: NodeId;
+    nodeName: string;
+    disabled?: boolean;
+}) => {
+    const { onClick, nodeId, nodeName, disabled } = props;
     const theme = useTheme();
 
     return disabled ? (
@@ -22,12 +27,12 @@ export const NodeErrorLink = (props: { onClick: MouseEventHandler<HTMLAnchorElem
                 }),
             )}
         >
-            {nodeId}
+            {nodeName}
         </ErrorLinkStyle>
     ) : (
         <ErrorLinkStyle variant={"body2"} component={NavLink} to={`?nodeId=${nodeId}`} onClick={onClick}>
             {/* blank values don't render as links so this is a workaround */}
-            {nodeId.trim() === "" ? "blank" : nodeId}
+            {nodeName.trim() === "" ? "blank" : nodeName}
         </ErrorLinkStyle>
     );
 };

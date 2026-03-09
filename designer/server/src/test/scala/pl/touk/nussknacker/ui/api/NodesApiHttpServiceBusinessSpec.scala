@@ -17,6 +17,7 @@ import pl.touk.nussknacker.test.config.{
   WithSimplifiedDesignerConfig
 }
 
+import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 class NodesApiHttpServiceBusinessSpec
@@ -515,10 +516,10 @@ class NodesApiHttpServiceBusinessSpec
              |  },
              |  "validationErrors": [
              |    {
-             |      "typ": "NodeIdValidationError",
+             |      "typ": "NodeNameValidationError",
              |      "message": "Node name cannot be blank",
              |      "description": "Blank node name",
-             |      "fieldName": "$$id",
+             |      "fieldName": "$$name",
              |      "errorType": "SaveAllowed",
              |      "details": null
              |    }
@@ -1503,16 +1504,16 @@ class NodesApiHttpServiceBusinessSpec
         .body(
           matchJsonWithRegexValues(
             s"""[
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
-               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}}
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}},
+               |  {"sourceId":"$sourceTestingScenarioSourceUuid","variables":{"input":{"value":"test-\\\\d+","timestamp":123}}}
                |]""".stripMargin
           )
         )
@@ -2046,6 +2047,8 @@ class NodesApiHttpServiceBusinessSpec
        |}""".stripMargin
 
   private lazy val sourceTestingScenarioSourceId = "sourceId"
+  private lazy val sourceTestingScenarioSourceUuid =
+    UUID.nameUUIDFromBytes(sourceTestingScenarioSourceId.getBytes(StandardCharsets.UTF_8)).toString
 
   private lazy val sourceTestingScenario = ScenarioBuilder
     .streaming("source_testing_scenario")

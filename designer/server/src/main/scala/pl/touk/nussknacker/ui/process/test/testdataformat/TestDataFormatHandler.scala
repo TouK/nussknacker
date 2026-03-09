@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.test.testdataformat
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.Source
@@ -38,6 +38,7 @@ trait TestDataFormatHandler {
 
   def getTestParametersDefinition(
       sourceId: NodeId,
+      sourceName: NodeName,
       sourceCompilationResult: NodeCompilationResult[Source],
   ): Either[ParametersDefinitionError, List[Parameter]]
 

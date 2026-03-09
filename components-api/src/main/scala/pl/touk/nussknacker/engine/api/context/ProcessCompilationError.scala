@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.context
 import cats.Applicative
 import cats.data.{NonEmptyList, ValidatedNel}
 import io.circe.Json
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, MultiSelectFixedValue, ParameterEditor}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
@@ -53,9 +53,11 @@ object ProcessCompilationError {
     override def nodeIds: Set[NodeId] = Set()
   }
 
-  final case class UnsupportedPart(nodeId: NodeId) extends ProcessCompilationError with InASingleNode
+  final case class UnsupportedPart(nodeId: NodeId, nodeName: NodeName)
+      extends ProcessCompilationError
+      with InASingleNode
 
-  final case class MissingPart(nodeId: NodeId) extends ProcessCompilationError with InASingleNode
+  final case class MissingPart(nodeId: NodeId, nodeName: NodeName) extends ProcessCompilationError with InASingleNode
 
   final case class InvalidRootNode(nodeIds: Set[NodeId]) extends ProcessUncanonizationError with ScenarioGraphLevelError
 
@@ -67,15 +69,31 @@ object ProcessCompilationError {
       extends ProcessUncanonizationError
       with ScenarioGraphLevelError
 
-  final case class DuplicatedNodeIds(nodeIds: Set[NodeId]) extends ProcessCompilationError with ScenarioGraphLevelError
+  final case class DuplicatedNodeIds(duplicatedNodes: Map[NodeId, Set[NodeName]])
+      extends ProcessCompilationError
+      with ScenarioGraphLevelError {
+    override def nodeIds: Set[NodeId] = duplicatedNodes.keySet
+  }
 
-  final case class NonUniqueEdgeType(edgeType: String, nodeId: NodeId)
+  final case class DuplicatedNodeNames(duplicatedNames: Set[NodeName], affectedNodeIds: Set[NodeId])
+      extends ProcessCompilationError
+      with ScenarioGraphLevelError {
+    override def nodeIds: Set[NodeId] = affectedNodeIds
+  }
+
+  final case class NonUniqueEdgeType(edgeType: String, nodeId: NodeId, nodeName: NodeName)
       extends ProcessCompilationError
       with InASingleNode
 
-  final case class NonUniqueEdge(nodeId: NodeId, target: String) extends ProcessCompilationError with InASingleNode
+  final case class NonUniqueEdge(nodeId: NodeId, nodeName: NodeName, target: String)
+      extends ProcessCompilationError
+      with InASingleNode
 
-  final case class LooseNode(nodeIds: Set[NodeId]) extends ProcessCompilationError with ScenarioGraphLevelError
+  final case class LooseNode(nodes: Set[(NodeId, NodeName)])
+      extends ProcessCompilationError
+      with ScenarioGraphLevelError {
+    override def nodeIds: Set[NodeId] = nodes.map(_._1)
+  }
 
   final case class StickyNotesLimitExceeded(nodeId: NodeId, notesCount: Int, notesLimit: Int)
       extends ProcessCompilationError
@@ -85,7 +103,7 @@ object ProcessCompilationError {
       extends ProcessCompilationError
       with InASingleNode
 
-  final case class DisabledNode(nodeId: NodeId) extends ProcessCompilationError with InASingleNode
+  final case class DisabledNode(nodeId: NodeId, nodeName: NodeName) extends ProcessCompilationError with InASingleNode
 
   final case class NotSupportedExpressionLanguage(languageId: Language, nodeId: NodeId)
       extends PartSubGraphCompilationError
@@ -349,7 +367,8 @@ object ProcessCompilationError {
       paramName: ParameterName,
       language: Language,
       parameterEditors: List[ParameterEditor],
-      nodeId: NodeId
+      nodeId: NodeId,
+      nodeName: NodeName
   ) extends PartSubGraphCompilationError
       with InASingleNode
 
@@ -367,9 +386,13 @@ object ProcessCompilationError {
     override def nodeIds: Set[NodeId] = Set(fragmentNodeId)
   }
 
-  final case class UnknownFragment(id: String, nodeId: NodeId) extends ProcessCompilationError with InASingleNode
+  final case class UnknownFragment(id: String, nodeId: NodeId, nodeName: NodeName)
+      extends ProcessCompilationError
+      with InASingleNode
 
-  final case class InvalidFragment(id: String, nodeId: NodeId) extends ProcessCompilationError with InASingleNode
+  final case class InvalidFragment(id: String, nodeId: NodeId, nodeName: NodeName)
+      extends ProcessCompilationError
+      with InASingleNode
 
   sealed trait DuplicateFragmentOutputNames extends ProcessCompilationError {
     val duplicatedVarName: String
@@ -443,12 +466,20 @@ object ProcessCompilationError {
       CustomNodeError(nodeId, message, paramName)
   }
 
-  final case class FatalUnknownError(message: String, nodeId: Option[NodeId]) extends ProcessCompilationError {
+  final case class FatalUnknownError(
+      message: String,
+      nodeId: Option[NodeId],
+      nodeName: Option[NodeName] = None
+  ) extends ProcessCompilationError {
     override def nodeIds: Set[NodeId] = nodeId.toSet
   }
 
-  final case class CannotCreateObjectError(message: String, nodeId: NodeId, cause: Option[Throwable])
-      extends ProcessCompilationError
+  final case class CannotCreateObjectError(
+      message: String,
+      nodeId: NodeId,
+      nodeName: NodeName,
+      cause: Option[Throwable]
+  ) extends ProcessCompilationError
       with InASingleNode
 
   final case class EagerExpressionEvaluationError(
@@ -461,10 +492,11 @@ object ProcessCompilationError {
 
   object CannotCreateObjectError {
 
-    def apply(message: String, nodeId: NodeId) = new CannotCreateObjectError(message, nodeId, cause = None)
+    def apply(message: String, nodeId: NodeId, nodeName: NodeName): CannotCreateObjectError =
+      new CannotCreateObjectError(message, nodeId, nodeName, cause = None)
 
-    def apply(cause: Throwable, nodeId: NodeId) =
-      new CannotCreateObjectError(cause.getMessage, nodeId, cause = Some(cause))
+    def apply(cause: Throwable, nodeId: NodeId, nodeName: NodeName): CannotCreateObjectError =
+      new CannotCreateObjectError(cause.getMessage, nodeId, nodeName, cause = Some(cause))
   }
 
   final case class ScenarioNameValidationError(message: String, description: String)
@@ -490,10 +522,16 @@ object ProcessCompilationError {
     override val id: String = name.value
   }
 
+  final case class NodeNameValidationError(errorType: IdErrorType, override val nodeId: NodeId, nodeName: NodeName)
+      extends IdError
+      with InASingleNode {
+    override val id: String = nodeId.value
+  }
+
   final case class NodeIdValidationError(errorType: IdErrorType, override val nodeId: NodeId)
       extends IdError
       with InASingleNode {
-    override val id: String = nodeId.id
+    override val id: String = nodeId.value
   }
 
   sealed trait IdErrorType

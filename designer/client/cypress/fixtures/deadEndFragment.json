@@ -40,7 +40,8 @@
                     "y": 0
                 }
             },
-            "type": "FragmentInputDefinition"
+            "type": "FragmentInputDefinition",
+            "name": "input"
         },
         {
             "id": "dead-end",
@@ -57,7 +58,8 @@
                     "y": 0
                 }
             },
-            "type": "Sink"
+            "type": "Sink",
+            "name": "dead-end"
         }
     ],
     "additionalBranches": []

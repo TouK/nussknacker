@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.context.transformation
 
 import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.{NodeId, Params}
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName, Params}
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, WrongParameters}
@@ -66,10 +66,10 @@ sealed trait DynamicComponent extends Component {
       inputContext: InputContext,
       outputVariable: Option[String],
       ex: Throwable
-  )(implicit nodeId: NodeId): FinalResults = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): FinalResults = {
     val fallback =
       prepareFinalResultWithOptionalVariable(inputContext, outputVariable.map(name => (name, Unknown)), step.state)
-    fallback.withErrors(fallback.errors :+ CannotCreateObjectError(ex, nodeId))
+    fallback.withErrors(fallback.errors :+ CannotCreateObjectError(ex, nodeId, nodeName))
   }
 
   protected def fallbackFinalResult(

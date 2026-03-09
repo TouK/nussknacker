@@ -32,9 +32,9 @@ private[registrar] case class AsyncInterpretationDeterminer(
   private def containsServices(splittedNode: splittednode.SplittedNode[NodeData]): Boolean = {
     val nodes = SplittedNodesCollector.collectNodes(splittedNode).map(_.data)
     nodes.exists {
-      case _: Enricher                    => true
-      case Processor(_, _, isDisabled, _) => !isDisabled.getOrElse(false)
-      case _                              => false
+      case _: Enricher                       => true
+      case Processor(_, _, _, isDisabled, _) => !isDisabled.getOrElse(false)
+      case _                                 => false
     }
   }
 

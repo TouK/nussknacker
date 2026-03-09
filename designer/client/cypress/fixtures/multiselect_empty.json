@@ -65,7 +65,8 @@
                     "y": -103
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "Event Generator"
         },
         {
             "id": "Service",
@@ -82,7 +83,8 @@
                 }
             },
             "mockExpression": null,
-            "type": "Enricher"
+            "type": "Enricher",
+            "name": "Service"
         },
         {
             "id": "Dead End",
@@ -99,7 +101,8 @@
                     "y": 416
                 }
             },
-            "type": "Sink"
+            "type": "Sink",
+            "name": "Dead End"
         }
     ],
     "additionalBranches": [],

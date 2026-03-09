@@ -28,7 +28,7 @@ describe("Process", () => {
                     force: true,
                 });
             cy.layoutScenario();
-            cy.get("[model-id$=Choice-sendSms-true]").should("be.visible").trigger("dblclick");
+            cy.get("[model-id$=-true]").should("be.visible").trigger("dblclick");
 
             cy.get("[data-testid=window]").should("be.visible");
             cy.get("[data-testid=window]").find("[data-testid='fieldsRow:0']").find(".ace_editor").as("input");

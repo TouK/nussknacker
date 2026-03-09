@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.NonEmptyList
 import io.circe.{DecodingFailure, Json}
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -27,7 +27,9 @@ import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 
 object TestingApiErrorMessages {
 
-  def from(performTestError: ScenarioTestService.PerformTestError): String = {
+  def from(
+      performTestError: ScenarioTestService.PerformTestError
+  ): String = {
     performTestError match {
       case PerformTestError.DeserializationError(cause) =>
         cause match {
@@ -53,16 +55,17 @@ object TestingApiErrorMessages {
           case TestDataFormatHandler.InputVariablesExpressionDecodingError(message) =>
             TestingApiErrorMessages.passedParameters.inputVariablesExpressionDecodingError(message)
         }
-      case PerformTestError.UnexpectedVariableInTestRecordError(variableName, sourceId, testRecordIndex) =>
+      case PerformTestError.UnexpectedVariableInTestRecordError(variableName, sourceId, sourceName, testRecordIndex) =>
         TestingApiErrorMessages
           .problemInSample(testRecordIndex)
-          .unexpectedVariableInTestRecordError(variableName, sourceId)
+          .unexpectedVariableInTestRecordError(variableName, sourceId, sourceName)
       case PerformTestError.TestRecordVariableDecodingError(
             variableName,
             variableType,
             encodedVariable,
             cause,
             sourceId,
+            sourceName,
             testRecordIndex
           ) =>
         TestingApiErrorMessages
@@ -72,10 +75,11 @@ object TestingApiErrorMessages {
             variableType,
             encodedVariable,
             cause,
-            sourceId
+            sourceId,
+            sourceName
           )
       case PerformTestError.MissingSourceError(sourceId, recordIndex) =>
-        TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.id)
+        TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.value)
       case PerformTestError.TestResultsSizeExceededError(approxSizeInBytes, maxBytes) =>
         TestingApiErrorMessages.testResultsSizeExceeded(approxSizeInBytes, maxBytes)
       case ScenarioValidationError(errors) =>
@@ -89,10 +93,10 @@ object TestingApiErrorMessages {
         errors.head match {
           case AssertionConfiguredForNotExistingNodesError(notExistingNodeIds) =>
             TestingApiErrorMessages.assertionsConfiguredForNotExistingNodes(notExistingNodeIds)
-          case ExpressionAssertionCompilationError(errors, assertion, nodeId) =>
-            TestingApiErrorMessages.assertionCompilationError(errors, assertion, nodeId)
-          case PredicateAssertionCompilationError(errors, assertion, _, nodeId) =>
-            TestingApiErrorMessages.assertionCompilationError(errors, assertion, nodeId)
+          case ExpressionAssertionCompilationError(errors, assertion, nodeId, nodeName) =>
+            TestingApiErrorMessages.assertionCompilationError(errors, assertion, nodeId, nodeName)
+          case PredicateAssertionCompilationError(errors, assertion, _, nodeId, nodeName) =>
+            TestingApiErrorMessages.assertionCompilationError(errors, assertion, nodeId, nodeName)
         }
     }
   }
@@ -139,8 +143,8 @@ object TestingApiErrorMessages {
 
   object testingWithCustomInput {
 
-    def notSupportedBySource(sourceId: NodeId) =
-      s"Testing with custom input is not supported by source '$sourceId'"
+    def notSupportedBySource(sourceId: NodeId, sourceName: NodeName) =
+      s"Testing with custom input is not supported by source '${sourceName.value}' (id: ${sourceId.value})"
 
   }
 
@@ -158,19 +162,27 @@ object TestingApiErrorMessages {
     def missingSource(sourceId: String): String =
       messageForSample(s"source with id '$sourceId' doesn't exist in the scenario")
 
-    def unexpectedVariableInTestRecordError(variableName: String, sourceId: NodeId): String =
-      messageForSample(s"Unexpected variable [$variableName] for source [$sourceId]")
+    def unexpectedVariableInTestRecordError(
+        variableName: String,
+        sourceId: NodeId,
+        sourceName: Option[NodeName]
+    ): String =
+      messageForSample(s"Unexpected variable [$variableName] for source [${sourceLabel(sourceId, sourceName)}]")
 
     def testRecordVariableDecodingError(
         variableName: String,
         variableType: TypingResult,
         encodedVariable: Json,
         cause: DecodingFailure,
-        sourceId: NodeId
+        sourceId: NodeId,
+        sourceName: Option[NodeName]
     ): String =
       messageForSample(
-        s"Variable [name=$variableName, type=${variableType.display}, encoded value=${encodedVariable.noSpaces}] decoding error for source [$sourceId]: ${cause.message}"
+        s"Variable [name=$variableName, type=${variableType.display}, encoded value=${encodedVariable.noSpaces}] decoding error for source [${sourceLabel(sourceId, sourceName)}]: ${cause.message}"
       )
+
+    private def sourceLabel(sourceId: NodeId, sourceName: Option[NodeName]) =
+      sourceName.fold(s"id: ${sourceId.value}")(name => s"${name.value} (id: ${sourceId.value})")
 
     private def messageForSample(message: String) =
       s"Problem in sample ${recordIndex + 1} detected: $message"
@@ -195,9 +207,10 @@ object TestingApiErrorMessages {
   private def assertionCompilationError(
       errors: NonEmptyList[ProcessCompilationError],
       assertion: Assertion,
-      nodeId: NodeId
+      nodeId: NodeId,
+      nodeName: NodeName
   ) =
-    s"Assertion compilation error. Node: ${nodeId.id}. ${prettyPrintAssertion(assertion)}. Errors: ${errors.toList.mkString(", ")}"
+    s"Assertion compilation error. Node: ${nodeName.value}. ${prettyPrintAssertion(assertion)}. Errors: ${errors.toList.mkString(", ")}"
 
   private def prettyPrintAssertion(assertion: Assertion): String = {
     assertion match {

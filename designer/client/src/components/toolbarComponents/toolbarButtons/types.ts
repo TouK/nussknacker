@@ -1,6 +1,7 @@
 import type React from "react";
 import type { DropEvent } from "react-dropzone";
 
+import type { OptionHeader } from "../../graph/node-modal/fragment-input-definition/TypeSelect";
 import type { ButtonProgressProps } from "../../toolbars/test/buttons/ButtonProgress";
 import type { BuiltinButtonTypes, CustomButtonTypes } from "../../toolbarSettings/buttons/buttonsMap";
 
@@ -26,7 +27,7 @@ type FileButtonProps = BaseButtonProps & {
 };
 
 type PresetsButtonProps<Preset = { value: string; label: string; isDisabled?: boolean }> = BaseButtonProps & {
-    presets: Preset[];
+    presets: Array<Preset | OptionHeader>;
     selected: Preset | null;
     onPresetChange: (value: Preset) => void;
 };

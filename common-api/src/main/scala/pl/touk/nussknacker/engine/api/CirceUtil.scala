@@ -6,6 +6,7 @@ import io.circe.generic.extras.Configuration
 
 import java.net.{URI, URL}
 import java.nio.charset.StandardCharsets
+import java.util.UUID
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
 
@@ -91,6 +92,24 @@ object CirceUtil {
     }
 
   }
+
+  // For backward compatibility: wraps a decoder, so that when the "name" field is missing in JSON, "name" is filled from the "id" value,
+  // and "id" is replaced with a deterministic UUID generated from that name.
+  def withNameFromIdFallback[T](decoder: Decoder[T]): Decoder[T] =
+    Decoder.instance(c => decoder.decodeJson(fillNameAndGenerateIdIfMissing(c.value)))
+
+  private def fillNameAndGenerateIdIfMissing(json: Json): Json =
+    json.mapObject { obj =>
+      if (obj.contains("name")) obj
+      else {
+        obj("id")
+          .flatMap(_.asString)
+          .fold(obj) { id =>
+            val uuid = UUID.nameUUIDFromBytes(id.getBytes(StandardCharsets.UTF_8)).toString
+            obj.add("name", Json.fromString(id)).add("id", Json.fromString(uuid))
+          }
+      }
+    }
 
   // Be default circe print all empty values as a nulls which can be good for programs because it is more explicit
   // that some value is null, but for people it generates a lot of unnecessary noise

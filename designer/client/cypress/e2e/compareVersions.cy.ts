@@ -31,7 +31,9 @@ describe("Compare versions", () => {
         cy.contains("fragment_xxx-test-process").last().should("be.visible").drag("#nk-graph-main", { target: { x, y } });
 
         // Connect Existing node to the fragment
-        cy.get(`[model-id="boundedSource"] [port="Out"]`).dndTo(`[model-id^="e2e"][model-id$="fragment_xxx-test-process"] [port="In"]`);
+        cy.get(`[data-node-name="boundedSource"] [port="Out"]`).dndTo(
+            `[data-node-name^="e2e"][data-node-name$="fragment_xxx-test-process"] [port="In"]`,
+        );
 
         // Change fragment param and save changes
         cy.openNodeWindow("e2e**fragment_xxx-test-process");

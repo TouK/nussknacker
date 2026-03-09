@@ -55,7 +55,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
   test("perform test on mocks") {
     val process = ScenarioBuilder
       .requestResponse("proc1")
-      .source(sourceId.id, "request1-post-source")
+      .source(sourceId.value, "request1-post-source")
       .filter("filter1", "#input.field1() == 'a'".spel)
       .enricher("enricher", "var1", "enricherService")
       .processor("processor", "processorService")
@@ -103,7 +103,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
   test("detect errors in nodes") {
     val process = ScenarioBuilder
       .requestResponse("proc1")
-      .source(sourceId.id, "request1-post-source")
+      .source(sourceId.value, "request1-post-source")
       .filter("occasionallyThrowFilter", "#input.field1() == 'a' ? 1/{0, 1}[0] == 0 : true".spel)
       .filter("filter1", "#input.field1() == 'a'".spel)
       .enricher("enricher", "var1", "enricherService")
@@ -132,7 +132,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
   test("get results on parameter sinks") {
     val process = ScenarioBuilder
       .requestResponse("proc1")
-      .source(sourceId.id, "request1-post-source")
+      .source(sourceId.value, "request1-post-source")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1()".spel)
 
     val scenarioTestData = ScenarioTestData(List(createTestRecord("a", "b")))
@@ -165,7 +165,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       .streaming("proc1")
       .sources(
         GraphBuilder
-          .source(sourceId.id, "request1-post-source")
+          .source(sourceId.value, "request1-post-source")
           .split(
             "spl",
             GraphBuilder.buildSimpleVariable("v1", "v1", "'aa'".spel).branchEnd(branch1NodeId, "union1"),
@@ -345,7 +345,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
   }
 
   private def contextIdGenForFirstSource(scenario: CanonicalProcess): IncContextIdGenerator =
-    contextIdGenForNodeId(scenario, NodeId(scenario.nodes.head.id))
+    contextIdGenForNodeId(scenario, scenario.nodes.head.id)
 
   private def contextIdGenForNodeId(scenario: CanonicalProcess, nodeId: NodeId): IncContextIdGenerator =
     IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, nodeId, taskId = 0)

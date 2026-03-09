@@ -31,7 +31,7 @@ object transformers {
       windowLength: FiniteDuration,
       variableName: String,
       emitWhenEventLeft: Boolean,
-  )(implicit nodeId: NodeId): ContextTransformation = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): ContextTransformation = {
     val preserveContext = !emitWhenEventLeft
     ContextTransformation
       .definedBy(aggregator.toContextTransformation(variableName, preserveContext, aggregateBy, groupBy))
@@ -46,6 +46,7 @@ object transformers {
                 aggregator,
                 windowLength.toMillis,
                 nodeId,
+                nodeName,
                 aggregateBy.returnType,
                 typeInfos.storedTypeInfo,
                 fctx.convertToEngineRuntimeContext
@@ -55,6 +56,7 @@ object transformers {
                 aggregator,
                 windowLength.toMillis,
                 nodeId,
+                nodeName,
                 aggregateBy.returnType,
                 typeInfos.storedTypeInfo,
                 fctx.convertToEngineRuntimeContext
@@ -62,7 +64,7 @@ object transformers {
           start
             .groupByWithValue(groupBy, groupByParameterName, aggregateBy, preserveContext)
             .process(aggregatorFunction, typeInfos.returnedValueTypeInfo)
-            .setUidAndNameToNodeId(ctx.nodeId)
+            .setUidAndName(ctx.nodeId.value, ctx.nodeName.value)
         })
       )
   }
@@ -75,7 +77,7 @@ object transformers {
       windowLength: FiniteDuration,
       variableName: String,
       windowOffset: Option[FiniteDuration] = None
-  )(implicit nodeId: NodeId): ContextTransformation = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): ContextTransformation = {
     tumblingTransformer(
       groupBy,
       groupByParameterName,
@@ -97,7 +99,7 @@ object transformers {
       variableName: String,
       tumblingWindowTrigger: TumblingWindowTrigger,
       windowOffset: Option[FiniteDuration]
-  )(implicit nodeId: NodeId): ContextTransformation = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): ContextTransformation = {
     val preserveContext = tumblingWindowTrigger == TumblingWindowTrigger.OnEvent
     ContextTransformation
       .definedBy(aggregator.toContextTransformation(variableName, preserveContext, aggregateBy, groupBy))
@@ -138,12 +140,13 @@ object transformers {
                     windowLength.toMillis,
                     offsetDuration.toMillis,
                     nodeId,
+                    nodeName,
                     aggregateBy.returnType,
                     typeInfos.storedTypeInfo,
                     fctx.convertToEngineRuntimeContext
                   )
                 )
-          }).setUidAndNameToNodeId(ctx.nodeId)
+          }).setUidAndName(ctx.nodeId.value, ctx.nodeName.value)
         })
       )
   }
@@ -158,7 +161,7 @@ object transformers {
       endSessionCondition: LazyParameter[java.lang.Boolean],
       sessionWindowTrigger: SessionWindowTrigger,
       variableName: String
-  )(implicit nodeId: NodeId): ContextTransformation = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): ContextTransformation = {
     val preserveContext = sessionWindowTrigger == SessionWindowTrigger.OnEvent
     ContextTransformation
       .definedBy(aggregator.toContextTransformation(variableName, preserveContext, aggregateBy, groupBy))
@@ -185,7 +188,7 @@ object transformers {
               keyedStream.extendedEventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
             case SessionWindowTrigger.OnEnd =>
               keyedStream.extendedWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger, preserveContext)
-          }).setUidAndNameToNodeId(ctx.nodeId)
+          }).setUidAndName(ctx.nodeId.value, ctx.nodeName.value)
         })
       )
   }

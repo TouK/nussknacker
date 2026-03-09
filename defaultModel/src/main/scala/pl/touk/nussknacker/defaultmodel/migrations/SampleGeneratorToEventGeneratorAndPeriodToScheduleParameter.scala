@@ -13,7 +13,7 @@ object SampleGeneratorToEventGeneratorAndPeriodToScheduleParameter extends NodeM
     "and its parameter: period -> schedule"
 
   override def migrateNode(metaData: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
-    case source @ Source(_, ref @ SourceRef("sample-generator", _), _) =>
+    case source @ Source(_, _, ref @ SourceRef("sample-generator", _), _) =>
       source.copy(ref =
         ref.copy(
           typ = "event-generator",

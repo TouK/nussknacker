@@ -5,6 +5,7 @@ import React from "react";
 interface Props {
     value: string;
     options: string[];
+    optionLabels?: string[];
     onValueChange: (val: string) => void;
 }
 
@@ -20,10 +21,10 @@ const StyledList = styled(List)(() => ({
     overflowY: "auto",
 }));
 
-export const Dropdown: React.FC<Props> = ({ value, options, onValueChange }) => {
+export const Dropdown: React.FC<Props> = ({ value, options, optionLabels, onValueChange }) => {
     return (
         <StyledList tabIndex={0} role="listbox" dense disablePadding>
-            {options.map((option) => (
+            {options.map((option, index) => (
                 <ListItemButton
                     key={option}
                     role="option"
@@ -33,7 +34,7 @@ export const Dropdown: React.FC<Props> = ({ value, options, onValueChange }) => 
                         onValueChange(option);
                     }}
                 >
-                    <ListItemText primaryTypographyProps={{ noWrap: true }} primary={option} />
+                    <ListItemText primaryTypographyProps={{ noWrap: true }} primary={optionLabels?.[index] ?? option} />
                 </ListItemButton>
             ))}
             {!options.length && (

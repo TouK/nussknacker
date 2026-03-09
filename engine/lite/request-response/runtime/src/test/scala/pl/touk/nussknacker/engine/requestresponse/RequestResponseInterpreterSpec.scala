@@ -278,7 +278,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
     result.invalidValue.toList should matchPattern {
       case NuExceptionInfo(
-            Some(NodeComponentInfo(NodeId("sinkId"), Some(ComponentId(ComponentType.Sink, "unknown")))),
+            Some(NodeComponentInfo(NodeId("sinkId"), _, Some(ComponentId(ComponentType.Sink, "unknown")))),
             SinkException("FailingSink failed"),
             Context(`contextId`, variables, None, Some(traceId)),
             _,
@@ -437,7 +437,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
   private def firstIdForFirstSource(scenario: CanonicalProcess): ContextId =
     IncContextIdGenerator
-      .withProcessIdNodeIdPrefix(scenario.metaData, NodeId(scenario.nodes.head.id), taskId = 0)
+      .withProcessIdNodeIdPrefix(scenario.metaData, scenario.nodes.head.id, taskId = 0)
       .nextContextId()
 
 }

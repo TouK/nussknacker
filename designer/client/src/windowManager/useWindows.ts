@@ -88,7 +88,7 @@ export function useWindows(parent?: WindowId) {
             return open({
                 // , and / allowed in nodeId
                 id: encodeURIComponent(node.id),
-                title: node.id,
+                title: node.name,
                 isResizable: true,
                 kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
                 meta: {

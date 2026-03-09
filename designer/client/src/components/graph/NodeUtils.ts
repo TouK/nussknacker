@@ -30,6 +30,8 @@ class NodeUtils {
     getNodeById = (nodeId: NodeId, scenarioGraph?: ScenarioGraph) =>
         this.nodesFromScenarioGraph(scenarioGraph).find((n) => n.id === nodeId);
 
+    getNodeByName = (name: string, scenarioGraph: ScenarioGraph) => this.nodesFromScenarioGraph(scenarioGraph).find((n) => n.name === name);
+
     getEdgeById = (edgeId: NodeId, scenarioGraph: ScenarioGraph) =>
         this.edgesFromScenarioGraph(scenarioGraph).find((e) => this.edgeId(e) === edgeId);
 
@@ -235,12 +237,16 @@ class NodeUtils {
         return !isNodePresentInScenarioGraph && scenarioGraph.nodes.some((n) => nodeId.startsWith(n.id));
     };
 
-    getDetailsFromFragmentNode = (nodeId: NodeId, scenarioGraph: ScenarioGraph): { fragmentId: string; fragmentNodeId: string } | null => {
+    getDetailsFromFragmentNode = (
+        nodeId: NodeId,
+        scenarioGraph: ScenarioGraph,
+    ): { fragmentId: string; fragmentNodeId: string; fragmentName: string } | null => {
         if (this.isFragmentNodeReference(nodeId, scenarioGraph)) {
             const fragment = scenarioGraph.nodes.find((n) => nodeId.startsWith(n.id));
             return {
                 fragmentId: fragment.ref?.id,
                 fragmentNodeId: nodeId.replace(`${fragment.id}-`, ""),
+                fragmentName: fragment.name,
             };
         }
         return null;

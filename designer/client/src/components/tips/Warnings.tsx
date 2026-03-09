@@ -49,19 +49,22 @@ const Warnings = ({ warnings, showDetails, scenarioGraph }: WarningsProps) => {
                             {headerMessageByWarningType.get(warningType)}
                         </Typography>
                         <div style={{ display: "inline" }}>
-                            {warnings.map((warning, index) => (
-                                <Typography
-                                    variant={"body2"}
-                                    fontWeight={"bold"}
-                                    component={LinkStyled}
-                                    key={uuid4()}
-                                    to={""}
-                                    onClick={(event) => showDetails(event, NodeUtils.getNodeById(warning.key, scenarioGraph))}
-                                >
-                                    {warning.key}
-                                    {index < warnings.length - 1 ? separator : null}
-                                </Typography>
-                            ))}
+                            {warnings.map((warning, index) => {
+                                const node = NodeUtils.getNodeById(warning.key, scenarioGraph);
+                                return (
+                                    <Typography
+                                        variant={"body2"}
+                                        fontWeight={"bold"}
+                                        component={LinkStyled}
+                                        key={uuid4()}
+                                        to={""}
+                                        onClick={(event) => showDetails(event, node)}
+                                    >
+                                        {node?.name ?? warning.key}
+                                        {index < warnings.length - 1 ? separator : null}
+                                    </Typography>
+                                );
+                            })}
                         </div>
                     </div>
                 ))}

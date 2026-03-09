@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.version
 
 import cats.data.{EitherT, Validated}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
@@ -45,7 +46,14 @@ class ScenarioGraphVersionService(
           .forProcessingTypeUnsafe(scenarioMetadata.processingType)(user)
           .validateCanonicalProcess(scenarioGraphVersion.jsonUnsafe, processVersion, scenarioMetadata.isFragment)(user)
         // TODO: what about warnings?
-        Either.cond(!validationResult.hasErrors, (), ScenarioGraphValidationError(validationResult.errors))
+        Either.cond(
+          !validationResult.hasErrors,
+          (),
+          ScenarioGraphValidationError(
+            validationResult.errors,
+            validationResult.nodeNames.map { case (nodeId, nodeName) => NodeId(nodeId) -> nodeName }
+          )
+        )
       }
       // TODO: scenario was already resolved during validation - use it here
       resolvedCanonicalProcess <- EitherT(
@@ -71,6 +79,9 @@ class ScenarioGraphVersionService(
 
 object ScenarioGraphVersionService {
 
-  final case class ScenarioGraphValidationError(errors: ValidationErrors)
+  final case class ScenarioGraphValidationError(
+      errors: ValidationErrors,
+      nodeNamesById: Map[NodeId, String] = Map.empty
+  )
 
 }

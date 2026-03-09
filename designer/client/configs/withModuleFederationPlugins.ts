@@ -71,9 +71,9 @@ export const withModuleFederationPlugins = (webpackConfig: Configuration, cfg?: 
                 // this .tgz with types for exposed modules lands in public root
                 // and could be downloaded by remote side (e.g. `webpack-remote-types-plugin`).
                 `mkdir -p "${webpackConfig.output.path}"`,
-                `tar -C .federated-types/${federationConfig.name} -czf "${path.join(
-                    webpackConfig.output.path,
-                    `${federationConfig.name}-dts.tgz`,
+                `tar -C .federated-types/${federationConfig.name} -czf "${path.relative(
+                    process.cwd(),
+                    path.join(webpackConfig.output.path, `${federationConfig.name}-dts.tgz`),
                 )}" .`,
             ]),
             new container.ModuleFederationPlugin({

@@ -59,13 +59,13 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
         GraphBuilder
           .source("source", "start-main")
           .buildSimpleVariable("build-key", KeyVariableName, "#input.key".spel)
-          .branchEnd(MainBranchId, JoinNodeId.id),
+          .branchEnd(MainBranchId, JoinNodeId.value),
         GraphBuilder
           .source("joined-source", "start-joined")
-          .branchEnd(JoinedBranchId, JoinNodeId.id),
+          .branchEnd(JoinedBranchId, JoinNodeId.value),
         GraphBuilder
           .join(
-            JoinNodeId.id,
+            JoinNodeId.value,
             customElementName,
             Some(OutVariableName),
             List(
@@ -82,7 +82,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
             "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT2H')".spel,
             "aggregateBy" -> "{last: #input.value, list: #input.value, approxCardinality: #input.value, sum: #input.value } ".spel
           )
-          .emptySink(EndNodeId.id, "dead-end")
+          .emptySink(EndNodeId.value, "dead-end")
       )
 
     val key    = "fooKey"
@@ -178,7 +178,7 @@ object SingleSideJoinTransformerSpec {
             aggregateElementType: TypingResult,
             storedTypeInfo: TypeInformation[AnyRef],
             convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
-        )(implicit nodeId: NodeId): CoProcessFunction[ValueWithContext[String], ValueWithContext[
+        )(implicit nodeId: NodeId, nodeName: NodeName): CoProcessFunction[ValueWithContext[String], ValueWithContext[
           StringKeyedValue[AnyRef]
         ], ValueWithContext[AnyRef]] = {
           new CoProcessFunctionInterceptor(

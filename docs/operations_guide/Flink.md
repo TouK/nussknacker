@@ -294,8 +294,11 @@ Each of metrics described in [common part](./Common.md) comes with the following
 * slot (important for large parallelism)
 * host
 * nodeId
+* nodeName
 * env (so that one dashboard can be used by multiple Flink/Nussknacker installations)
 * operator_name (used instead of nodeId in Flink internal metrics, important for e.g. RocksDB metrics)
+
+For node-level metrics, `nodeId` is a technical identifier, while `nodeName` is a user-visible node label.
 
 Nussknacker comes with a Grafana dashboard; you can use it or extend/modify according to your needs.
 

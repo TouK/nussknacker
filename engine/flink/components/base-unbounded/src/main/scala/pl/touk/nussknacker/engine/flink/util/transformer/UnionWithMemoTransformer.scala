@@ -118,7 +118,7 @@ class UnionWithMemoTransformer(
             afterOptionalAssigner
               .keyBy((v: ValueWithContext[KeyedValue[String, util.Map[String, AnyRef]]]) => v.value.key)
               .process(new UnionMemoFunction(stateTimeout, mapTypeInfo), returnTypeInfo)
-              .setUidAndNameToNodeId(context.nodeId)
+              .setUidAndName(context.nodeId.value, context.nodeName.value)
               .asInstanceOf[SingleOutputStreamOperator[ValueWithContext[AnyRef]]]
           }
 
