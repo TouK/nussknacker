@@ -111,7 +111,7 @@ def flinkDeploymentManagerMergeStrategy: String => MergeStrategy = {
         "kryo",
         "FlinkChillPackageRegistrar.class"
       ) =>
-    MergeStrategy.first
+    MergeStrategies.onlyFromArtifact("flink-scala_2.13")
   case x =>
     defaultMergeStrategy(x)
 }
