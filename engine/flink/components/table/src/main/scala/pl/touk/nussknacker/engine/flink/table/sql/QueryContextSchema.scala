@@ -39,15 +39,15 @@ final case class QueryContextSchema(variables: List[VariableSchema]) {
   def tableSchemaWithEventTime: Schema = Schema
     .newBuilder()
     .fromRowDataType(rowAlignedDataType)
-    .columnByMetadata(QueryContextSchema.eventTimeColumn, "TIMESTAMP_LTZ(3)", "rowtime", true)
-    .watermark(QueryContextSchema.eventTimeColumn, "SOURCE_WATERMARK()")
+    .columnByMetadata(QueryContextSchema.recordTimeColumn, "TIMESTAMP_LTZ(3)", "rowtime", true)
+    .watermark(QueryContextSchema.recordTimeColumn, "SOURCE_WATERMARK()")
     .build()
 
 }
 
 object QueryContextSchema {
-  val contextTableName = "data_record"
-  val eventTimeColumn  = "data_record_time"
+  val contextTableName = "record"
+  val recordTimeColumn = "record_time"
 
   def fromValidationContext(validationContext: ValidationContext): QueryContextSchema = {
     val contextColumns = validationContext.localVariables.toList.map { case (variableName, typingResult) =>
