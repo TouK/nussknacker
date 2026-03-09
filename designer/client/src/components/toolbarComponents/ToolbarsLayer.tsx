@@ -7,8 +7,6 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { moveToolbar, registerToolbars } from "../../actions/nk/toolbars";
 import { PanelSide } from "../../actions/nk/ui/panelSide";
 import { useUserSettings } from "../../common/useUserSettings";
-import { VisibleDataType } from "../../reducers/graph/types";
-import { getVisibleDataType } from "../../reducers/selectors/getLiveData";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { ToolbarsSide } from "../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
@@ -27,16 +25,16 @@ import { DRAGGABLE_LIST_CLASSNAME, ToolbarsContainer } from "./ToolbarsContainer
 export function useToolbarsVisibility(toolbars: Toolbar[]) {
     const { editFrontend } = useAppSelector(getCapabilities);
     const [showSurvey] = useSurvey();
-    const displayAssertionsResultPanel = useDisplayTestCasesPanel();
+    const [testingTabVisible] = useUserSettings("node.showTestingTab");
 
     const hiddenToolbars = useMemo<Record<string, boolean>>(
         () => ({
             "survey-panel": !showSurvey,
             "creator-panel": !editFrontend,
             "creator-panel-dynamic": !editFrontend,
-            "test-cases-panel": !displayAssertionsResultPanel,
+            "test-cases-panel": !testingTabVisible,
         }),
-        [displayAssertionsResultPanel, editFrontend, showSurvey],
+        [editFrontend, showSurvey, testingTabVisible],
     );
 
     return useMemo(
@@ -194,13 +192,6 @@ const StyledToolbarsContainer = styled(ToolbarsContainer)(({ theme, side }) => {
 const SideToolbars = (props: PropsOf<typeof StyledToolbarsContainer>) => {
     const { isOpened } = useSidePanel();
     return <StyledToolbarsContainer {...props} disableDnd={!isOpened || props.disableDnd} />;
-};
-
-const useDisplayTestCasesPanel = () => {
-    const visibleDataType = useAppSelector(getVisibleDataType);
-    const [testingTabVisible] = useUserSettings("node.showTestingTab");
-
-    return useMemo(() => visibleDataType === VisibleDataType.test && testingTabVisible, [testingTabVisible, visibleDataType]);
 };
 
 export default ToolbarsLayer;

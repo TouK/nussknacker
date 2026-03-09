@@ -10,7 +10,7 @@ import { TestCaseHeader } from "./testCaseHeader";
 import type { TestCaseMode } from "./TestCaseSwitchMode";
 import { TestCaseSwitchMode } from "./TestCaseSwitchMode";
 
-const TestCases = () => {
+const TestCasesPanel = () => {
     const testAssertionResults = useAppSelector(getTestAssertionResults);
     const [mode, setMode] = useState<TestCaseMode>("results");
 
@@ -26,4 +26,4 @@ const TestCases = () => {
     );
 };
 
-export default TestCases;
+export default TestCasesPanel;

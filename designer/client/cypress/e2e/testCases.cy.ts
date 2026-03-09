@@ -115,7 +115,7 @@ describe("Test cases", () => {
 
         expandAssertionItem("Log");
 
-        cy.get('[data-testid="assertion-results-panel"]').matchImage();
+        cy.get('[data-testid="test-cases-panel"]').matchImage();
 
         showAssertionDetails(0);
 
