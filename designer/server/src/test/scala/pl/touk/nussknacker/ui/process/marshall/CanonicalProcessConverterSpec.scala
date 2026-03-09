@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.marshall
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, NodeName, StreamMetaData}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -40,10 +40,10 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
     val scenarioGraph = ScenarioGraph(
       ProcessProperties(metaData),
       List(
-        Processor("e", ServiceRef("ref", List())),
-        Source("s", SourceRef("sourceRef", List()))
+        Processor(NodeId("e"), NodeName("e"), ServiceRef("ref", List())),
+        Source(NodeId("s"), NodeName("s"), SourceRef("sourceRef", List()))
       ),
-      List(Edge("s", "e", None))
+      List(Edge(NodeId("s"), NodeId("e"), None))
     )
 
     scenarioGraphCanonicalRoundTrip(scenarioGraph).nodes.toSet shouldBe scenarioGraph.nodes.toSet
@@ -53,15 +53,15 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
     val scenarioGraph = ScenarioGraph(
       ProcessProperties(metaData),
       List(
-        Processor("e", ServiceRef("ref", List.empty)),
-        Join("j1", Some("out1"), "joinRef", List.empty, List(BranchParameters("s1", List()))),
-        Source("s2", SourceRef("sourceRef", List.empty)),
-        Source("s1", SourceRef("sourceRef", List.empty))
+        Processor(NodeId("e"), NodeName("e"), ServiceRef("ref", List.empty)),
+        Join(NodeId("j1"), NodeName("j1"), Some("out1"), "joinRef", List.empty, List(BranchParameters("s1", List()))),
+        Source(NodeId("s2"), NodeName("s2"), SourceRef("sourceRef", List.empty)),
+        Source(NodeId("s1"), NodeName("s1"), SourceRef("sourceRef", List.empty))
       ),
       List(
-        Edge("s1", "j1", None),
-        Edge("s2", "j1", None),
-        Edge("j1", "e", None)
+        Edge(NodeId("s1"), NodeId("j1"), None),
+        Edge(NodeId("s2"), NodeId("j1"), None),
+        Edge(NodeId("j1"), NodeId("e"), None)
       )
     )
 
@@ -105,10 +105,10 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
     val scenarioGraph = process.toScenarioGraph
 
     scenarioGraph.edges.toSet shouldBe Set(
-      Edge("sourceId1", "join1", None),
-      Edge("sourceId2", "filter2", None),
-      Edge("filter2", "join1", Some(FilterTrue)),
-      Edge("join1", "end", None)
+      Edge(NodeId("sourceId1"), NodeId("join1"), None),
+      Edge(NodeId("sourceId2"), NodeId("filter2"), None),
+      Edge(NodeId("filter2"), NodeId("join1"), Some(FilterTrue)),
+      Edge(NodeId("join1"), NodeId("end"), None)
     )
   }
 
@@ -126,7 +126,7 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
 
     val foundNodes = process.toScenarioGraph.nodes
 
-    foundNodes.map(_.id).toSet shouldBe Set("sourceId1", "split1", "join1", "end")
+    foundNodes.map(_.id.value).toSet shouldBe Set("sourceId1", "split1", "join1", "end")
   }
 
   test("Handle switch/split/filter => union case") {
@@ -151,9 +151,9 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
         )
       val edges = process.toScenarioGraph.edges
       edges.toSet shouldBe Set(
-        Edge("source1", nodeId, None),
-        Edge(nodeId, "join1", typ),
-        Edge("join1", "end", None)
+        Edge(NodeId("source1"), NodeId(nodeId), None),
+        Edge(NodeId(nodeId), NodeId("join1"), typ),
+        Edge(NodeId("join1"), NodeId("end"), None)
       ) ++ additionalEdges
     }
 
@@ -161,13 +161,13 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
     testCase(
       _.filter(nodeId, "false".spel, branchEnd).emptySink("end2", "out1"),
       Some(FilterFalse),
-      Set(Edge(nodeId, "end2", Some(FilterTrue)))
+      Set(Edge(NodeId(nodeId), NodeId("end2"), Some(FilterTrue)))
     )
     testCase(_.switch(nodeId, "false".spel, "out1", Case("1".spel, branchEnd)), Some(NextSwitch("1".spel)))
     testCase(
       _.switch(nodeId, "false".spel, "out1", branchEnd, Case("1".spel, GraphBuilder.emptySink("end2", "out1"))),
       Some(SwitchDefault),
-      Set(Edge(nodeId, "end2", Some(NextSwitch("1".spel))))
+      Set(Edge(NodeId(nodeId), NodeId("end2"), Some(NextSwitch("1".spel))))
     )
   }
 

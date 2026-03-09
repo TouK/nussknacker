@@ -8,7 +8,7 @@ import io.circe.{Decoder, Encoder, Json, KeyDecoder, KeyEncoder}
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
-import pl.touk.nussknacker.engine.api.{LayoutData, NodeId, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{LayoutData, NodeId, NodeName, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.{
@@ -129,7 +129,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
             Example.of(
               summary = Some("Basic node request"),
               value = Enricher(
-                "enricher",
+                NodeId("99ae6a31-a55d-4d52-89af-58f471e7143d"),
+                NodeName("enricher"),
                 ServiceRef(
                   "paramService",
                   List(
@@ -174,7 +175,13 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
             List(
               Example.of(
                 value = NodeValidationRequestDto(
-                  Filter("id", Expression(Language.Spel, "#longValue > 1"), isDisabled = None, additionalFields = None),
+                  Filter(
+                    NodeId("99ae6a31-a55d-4d52-89af-58f471e7143d"),
+                    NodeName("id"),
+                    Expression(Language.Spel, "#longValue > 1"),
+                    isDisabled = None,
+                    additionalFields = None
+                  ),
                   ProcessProperties.apply(
                     ProcessAdditionalFields(description = None, properties = Map.empty, metaDataType = "")
                   ),
@@ -194,7 +201,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                 summary = Some("Validate incorrect Filter node - wrong expression type"),
                 value = NodeValidationRequestDto(
                   Filter(
-                    "id",
+                    NodeId("740bbc64-a688-4a50-9104-be61eadfa82a"),
+                    NodeName("id"),
                     Expression(Language.Spel, "#existButString"),
                     isDisabled = None,
                     additionalFields = None
@@ -217,7 +225,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                 summary = Some("Validate test cases for enricher node"),
                 value = NodeValidationRequestDto(
                   nodeData = Enricher(
-                    "enricher",
+                    NodeId("513eab33-d9b3-4c67-a9e7-b84ae184eb64"),
+                    NodeName("enricher"),
                     ServiceRef(
                       "paramService",
                       List(
@@ -502,7 +511,12 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
               summary = Some("Basic fetch request"),
               value = RecordsRequestDto(
                 ProcessProperties(StreamMetaData()),
-                Source("sourceId", SourceRef("source", List.empty), None)
+                Source(
+                  NodeId("513eab33-d9b3-4c67-a9e7-b84ae184eb64"),
+                  NodeName("sourceId"),
+                  SourceRef("source", List.empty),
+                  None
+                )
               )
             )
           )
@@ -529,11 +543,11 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                 List(
                   Example.of(
                     summary = Some("Source compilation error"),
-                    value = SourceCompilation("sourceId", List("Invalid source configuration"))
+                    value = SourceCompilation("sourceId", "source name", List("Invalid source configuration"))
                   ),
                   Example.of(
                     summary = Some("Unsupported source preview"),
-                    value = UnsupportedSourcePreview("sourceId")
+                    value = UnsupportedSourcePreview("sourceId", "source name")
                   ),
                   Example.of(
                     summary = Some("Invalid node type"),
@@ -852,7 +866,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                 ),
                 processProperties = ProcessProperties(StreamMetaData()),
                 enricher = Enricher(
-                  "enricher",
+                  NodeId("99ae6a31-a55d-4d52-89af-58f471e7143d"),
+                  NodeName("enricher"),
                   ServiceRef(
                     "paramService",
                     List(
@@ -889,7 +904,10 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     summary = Some("Compilation errors during enricher mock generation"),
                     value = BadRequestNodesError.EnricherMockExpressionGenerationError.CompilationErrors(
                       NonEmptyList.one(
-                        ProcessCompilationError.MissingParameters(Set(ParameterName("param1")), NodeId("enricher1"))
+                        ProcessCompilationError.MissingParameters(
+                          Set(ParameterName("param1")),
+                          NodeId("99ae6a31-a55d-4d52-89af-58f471e7143d")
+                        )
                       )
                     )
                   ),
@@ -1958,12 +1976,13 @@ object NodesApiEndpoints {
       sealed trait NoContentNodesError  extends NodesError
 
       object BadRequestNodesError {
-        case class SourceCompilation(nodeId: String, errors: List[String])   extends BadRequestNodesError
-        case class UnsupportedSourcePreview(nodeId: String)                  extends BadRequestNodesError
-        case class InvalidNodeType(expectedType: String, actualType: String) extends BadRequestNodesError
-        case class TooManyRecordsRequested(maxRecordsCount: Int)             extends BadRequestNodesError
-        case class MalformedTypingResult(msg: String)                        extends BadRequestNodesError
-        case class TooManyCharactersGenerated(length: Int, limit: Int)       extends BadRequestNodesError
+        case class SourceCompilation(nodeId: String, nodeName: String, errors: List[String])
+            extends BadRequestNodesError
+        case class UnsupportedSourcePreview(nodeId: String, nodeName: String) extends BadRequestNodesError
+        case class InvalidNodeType(expectedType: String, actualType: String)  extends BadRequestNodesError
+        case class TooManyRecordsRequested(maxRecordsCount: Int)              extends BadRequestNodesError
+        case class MalformedTypingResult(msg: String)                         extends BadRequestNodesError
+        case class TooManyCharactersGenerated(length: Int, limit: Int)        extends BadRequestNodesError
 
         object EnricherMockExpressionGenerationError {
           final case class CompilationErrors(errors: NonEmptyList[ProcessCompilationError]) extends BadRequestNodesError
@@ -1972,9 +1991,10 @@ object NodesApiEndpoints {
 
         implicit val badRequestNodesErrorCodec: Codec[String, BadRequestNodesError, CodecFormat.TextPlain] =
           BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestNodesError] {
-            case SourceCompilation(nodeId, errors) =>
-              s"Cannot compile source '$nodeId'. Errors: ${errors.mkString(", ")}"
-            case UnsupportedSourcePreview(nodeId)          => s"Source '$nodeId' doesn't support records preview"
+            case SourceCompilation(nodeId, nodeName, errors) =>
+              s"Cannot compile source '$nodeName' (id: $nodeId). Errors: ${errors.mkString(", ")}"
+            case UnsupportedSourcePreview(nodeId, nodeName) =>
+              s"Source '$nodeName' (id: $nodeId) doesn't support records preview"
             case InvalidNodeType(expectedType, actualType) => s"Expected $expectedType but got: ${actualType}"
             case TooManyRecordsRequested(maxRecordsCount) =>
               TestingApiErrorMessages.liveDataFetching.requestedTooManyRecordsToFetch(maxRecordsCount)

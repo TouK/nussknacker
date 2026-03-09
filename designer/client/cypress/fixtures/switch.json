@@ -38,7 +38,8 @@
                     "y": 0
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "source"
         },
         {
             "defaultNext": [],
@@ -64,7 +65,8 @@
                                     "y": 360
                                 }
                             },
-                            "type": "Sink"
+                            "type": "Sink",
+                            "name": "dead-end(true)"
                         }
                     ]
                 },
@@ -89,7 +91,8 @@
                                     "y": 360
                                 }
                             },
-                            "type": "Sink"
+                            "type": "Sink",
+                            "name": "dead-end(false)"
                         }
                     ]
                 }
@@ -107,7 +110,8 @@
                     "y": 180
                 }
             },
-            "type": "Switch"
+            "type": "Switch",
+            "name": "switch"
         }
     ],
     "additionalBranches": []

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.defaultmodel
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import io.circe.Json
 import org.scalatest.{LoneElement, OptionValues}
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.VariableConstants.InputVariableName
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
@@ -223,7 +223,8 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
 
     val compilationResult = nodeCompiler.compileNode(
       node.Source(
-        "id",
+        NodeId("id"),
+        NodeName("id"),
         SourceRef(
           "table",
           Parameter(
@@ -321,7 +322,8 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
     nodeCompiler
       .compileNode(
         node.Source(
-          "id",
+          NodeId("id"),
+          NodeName("id"),
           SourceRef(
             "event-generator",
             Parameter(ParameterName("schedule"), "T(java.time.Duration).parse('PT1S')".spel) ::
@@ -347,7 +349,8 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
     val nodeCompilationResult = nodeCompiler
       .compileNode(
         node.Source(
-          "id",
+          NodeId("id"),
+          NodeName("id"),
           SourceRef(
             "event-generator",
             Parameter(ParameterName("schedule"), "T(java.time.Duration).parse('PT1S')".spel) ::
@@ -386,7 +389,8 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
     val nodeCompilationResult = nodeCompiler
       .compileNode(
         node.Source(
-          "id",
+          NodeId("id"),
+          NodeName("id"),
           SourceRef(
             "event-generator",
             Parameter(ParameterName("schedule"), "T(java.time.Duration).parse('PT1S')".spel) ::
@@ -421,7 +425,8 @@ class CustomWatermarkStrategySpec extends FlinkWithKafkaSuite with OptionValues 
     val nodeCompilationResult = nodeCompiler
       .compileNode(
         node.Source(
-          "id",
+          NodeId("id"),
+          NodeName("id"),
           SourceRef(
             "kafka",
             Parameter(ParameterName("Topic"), s"'$inputTopic'".spel) ::

@@ -41,7 +41,8 @@
                     "y": 0
                 }
             },
-            "type": "FragmentInputDefinition"
+            "type": "FragmentInputDefinition",
+            "name": "input"
         },
         {
             "id": "output",
@@ -69,7 +70,8 @@
                     "y": 0
                 }
             },
-            "type": "FragmentOutputDefinition"
+            "type": "FragmentOutputDefinition",
+            "name": "output"
         }
     ],
     "additionalBranches": []

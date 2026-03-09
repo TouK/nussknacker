@@ -36,7 +36,7 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
 
   private val nodeCompilationContext = new NodeCompilationDependencies(
     scenarioCompilationDependencies = scenarioCompilationDependencies,
-    nodeData = Processor("id", ServiceRef("id", List.empty)),
+    nodeData = Processor(NodeId("id"), NodeName("id"), ServiceRef("id", List.empty)),
     componentUseContext = componentUseContext,
     inputValidationContext = SingleInputNodeInputValidationContext(ValidationContext.empty)
   )

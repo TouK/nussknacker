@@ -89,11 +89,11 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
           .groupBy(_.sourceId)
           .toList
           .flatMap { case (nodeId, scenarioTestRecords) =>
-            val sourceId = SourceId(nodeId.id)
+            val sourceId = SourceId(nodeId.value)
             val source   = getSourceById(sourceId)
             val recordsFromSourceSpecificTestDataFormat: List[Input] =
               testDataPreparer.prepareRecordsForTest(source, scenarioTestRecords)
-            val recordsFromCommonTestDataFormat = decodeCommonFormatRecords(scenarioTestRecords, nodeId)
+            val recordsFromCommonTestDataFormat = decodeCommonFormatRecords(scenarioTestRecords, nodeId, source)
             (recordsFromSourceSpecificTestDataFormat ++ recordsFromCommonTestDataFormat)
               .map(record => sourceId -> record)
           }
@@ -114,7 +114,11 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
   }
 
   // We currently have a limited support for "common" test data format for Lite engine. See inline comments for details
-  private def decodeCommonFormatRecords(scenarioTestRecords: List[ScenarioTestRecord], sourceNodeId: NodeId) = {
+  private def decodeCommonFormatRecords(
+      scenarioTestRecords: List[ScenarioTestRecord],
+      sourceNodeId: NodeId,
+      source: Source,
+  ) = {
     val commonFormatRecords = scenarioTestRecords.zipWithIndex.collect {
       case (record: ScenarioTestCommonFormatJsonRecord, index) => (record, index)
     }
@@ -123,21 +127,26 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
         "Common format test records in input test data were found. Will be used experimental test records decoding mechanism"
       )
     }
-    // For test data encoding will be used FromJsonSimpleDecoder instead of FromJsonSchemaBasedDecoder. It doesn't handle some types properly.
-    // To make it work correctly, we should redesign Lite compilation approach to pass here source's output ValidationContext
-    val validationContext = ValidationContext.empty.withVariableUnsafe(VariableConstants.InputVariableName, Unknown)
-    val decoder           = new CommonTestDataFormatVariablesDecoder(validationContext, sourceNodeId)
+    // For test data encoding we use Unknown for each provided variable name because at this stage we don't have source output typing here.
+    val variableNames = commonFormatRecords.flatMap { case (record, _) => record.variables.keys }.toSet
+    val validationContext = variableNames.foldLeft(ValidationContext.empty) { case (ctx, variableName) =>
+      ctx.withVariableUnsafe(variableName, Unknown)
+    }
+    val decoder = new CommonTestDataFormatVariablesDecoder(validationContext, sourceNodeId)
     commonFormatRecords.map { case (record, testRecordIndex) =>
-      // It will work only when in test data there is only one "input" variable and. To make it work for other cases, we should redesign ScenarioInputBatch
-      assume(
-        record.variables.keySet == Set(VariableConstants.InputVariableName),
-        s"Test record should contain '${VariableConstants.InputVariableName}' variable"
-      )
-
-      val value = decoder.decode(record.variables, testRecordIndex)(VariableConstants.InputVariableName)
-      transformToEngineSpecificInputRecord(value)
+      val decodedVariables = decoder.decode(record.variables, testRecordIndex)
+      val value =
+        if (decodedVariables.keySet == Set(VariableConstants.InputVariableName)) {
+          decodedVariables(VariableConstants.InputVariableName)
+        } else {
+          decodedVariables
+        }
+      transformToEngineSpecificInputRecord(value, source)
     }
   }
+
+  protected def transformToEngineSpecificInputRecord(testRecord: Any, source: Source): Input =
+    transformToEngineSpecificInputRecord(testRecord)
 
   // FIXME: it doesn't work properly with KafkaLite Engine, we should add proper converting method
   protected def transformToEngineSpecificInputRecord(testRecord: Any): Input = {
@@ -151,7 +160,7 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
     val successfulResults = results.value
     successfulResults.foreach { result =>
       testServiceInvocationCollector
-        .createSinkInvocationCollector(result.nodeId, result.nodeId.id)
+        .createSinkInvocationCollector(result.nodeId, result.nodeId.value)
         .collect(result.context, result.result)
     }
   }

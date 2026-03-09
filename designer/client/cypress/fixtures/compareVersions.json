@@ -38,7 +38,8 @@
                     "y": 0
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "boundedSource"
         }
     ],
     "additionalBranches": []

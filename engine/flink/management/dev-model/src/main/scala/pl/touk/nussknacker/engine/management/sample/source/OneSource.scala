@@ -21,10 +21,11 @@ class OneSource extends FlinkSource with CustomizableContextInitializerSource[St
       .fromSource(
         flinkSource,
         WatermarkStrategy.noWatermarks(),
-        flinkNodeContext.nodeId.id,
+        flinkNodeContext.nodeId.value,
         TypeInformation.of(classOf[String])
       )
-      .uid(flinkNodeContext.nodeId.id)
+      .uid(flinkNodeContext.nodeId.value)
+      .name(flinkNodeContext.nodeName.value)
       .map(
         new FlinkContextInitializingFunction(
           contextInitializer,

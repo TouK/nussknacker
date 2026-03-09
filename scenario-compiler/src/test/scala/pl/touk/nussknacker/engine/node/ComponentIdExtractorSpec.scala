@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.node
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node._
@@ -24,37 +25,43 @@ class ComponentIdExtractorSpec
   it should "create ComponentId for NodeData" in {
     val testingData = Table(
       ("nodeData", "expected"),
-      (Filter("", "".spel), Some(BuiltInComponentId.Filter)),
-      (Switch(""), Some(BuiltInComponentId.Choice)),
-      (VariableBuilder("", "", Nil), Some(BuiltInComponentId.RecordVariable)),
-      (Variable("", "", "".spel), Some(BuiltInComponentId.Variable)),
-      (Split(""), Some(BuiltInComponentId.Split)),
-      (FragmentInputDefinition("", Nil), Some(BuiltInComponentId.FragmentInputDefinition)),
-      (FragmentOutputDefinition("", ""), Some(BuiltInComponentId.FragmentOutputDefinition)),
+      (Filter(NodeId(""), NodeName(""), "".spel), Some(BuiltInComponentId.Filter)),
+      (Switch(NodeId(""), NodeName(""), None, None), Some(BuiltInComponentId.Choice)),
+      (VariableBuilder(NodeId(""), NodeName(""), "", Nil), Some(BuiltInComponentId.RecordVariable)),
+      (Variable(NodeId(""), NodeName(""), "", "".spel), Some(BuiltInComponentId.Variable)),
+      (Split(NodeId(""), NodeName("")), Some(BuiltInComponentId.Split)),
+      (FragmentInputDefinition(NodeId(""), NodeName(""), Nil), Some(BuiltInComponentId.FragmentInputDefinition)),
+      (FragmentOutputDefinition(NodeId(""), NodeName(""), ""), Some(BuiltInComponentId.FragmentOutputDefinition)),
       (
-        Source("source", SourceRef(componentName, Nil)),
+        Source(NodeId("source"), NodeName("source"), SourceRef(componentName, Nil)),
         Some(ComponentId(ComponentType.Source, componentName))
       ),
-      (Sink("sink", SinkRef(componentName, Nil)), Some(ComponentId(ComponentType.Sink, componentName))),
       (
-        Enricher("enricher", ServiceRef(componentName, Nil), "out"),
+        Sink(NodeId("sink"), NodeName("sink"), SinkRef(componentName, Nil)),
+        Some(ComponentId(ComponentType.Sink, componentName))
+      ),
+      (
+        Enricher(NodeId("enricher"), NodeName("enricher"), ServiceRef(componentName, Nil), "out"),
         Some(ComponentId(ComponentType.Service, componentName))
       ),
       (
-        Processor("processor", ServiceRef(componentName, Nil)),
+        Processor(NodeId("processor"), NodeName("processor"), ServiceRef(componentName, Nil)),
         Some(ComponentId(ComponentType.Service, componentName))
       ),
       (
-        CustomNode("custom", None, componentName, Nil),
+        CustomNode(NodeId("custom"), NodeName("custom"), None, componentName, Nil),
         Some(ComponentId(ComponentType.CustomComponent, componentName))
       ),
       (
-        FragmentInput("fragment", FragmentRef(componentName, Nil)),
+        FragmentInput(NodeId("fragment"), NodeName("fragment"), FragmentRef(componentName, Nil)),
         Some(ComponentId(ComponentType.Fragment, componentName))
       ),
-      (FragmentUsageOutput("output", "fragmentId", "", None), None),
+      (FragmentUsageOutput(NodeId("output"), NodeName("output"), NodeId("fragmentId"), "", None), None),
       (BranchEndData(BranchEndDefinition("", "")), None),
-      (Source("source", SourceRef(componentId, Nil)), Some(ComponentId(ComponentType.Source, componentId))),
+      (
+        Source(NodeId("source"), NodeName("source"), SourceRef(componentId, Nil)),
+        Some(ComponentId(ComponentType.Source, componentId))
+      ),
     )
 
     forAll(testingData) { (nodeData: NodeData, expected: Option[ComponentId]) =>

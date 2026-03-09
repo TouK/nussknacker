@@ -83,7 +83,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')".spel,
           )
-          .emptySink(EndNodeId.id, "dead-end")
+          .emptySink(EndNodeId.value, "dead-end")
       )
 
     val input1 = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -453,7 +453,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')".spel,
           )
-          .emptySink(EndNodeId.id, "dead-end")
+          .emptySink(EndNodeId.value, "dead-end")
       )
 
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -502,7 +502,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')".spel,
           )
-          .emptySink(EndNodeId.id, "dead-end")
+          .emptySink(EndNodeId.value, "dead-end")
       )
 
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -577,7 +577,8 @@ object FullOuterJoinTransformerSpec {
           storedTypeInfo: TypeInformation[AnyRef],
           convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
       )(
-          implicit nodeId: NodeId
+          implicit nodeId: NodeId,
+          nodeName: NodeName
       ): KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] = {
         new ProcessFunctionInterceptor(
           super.prepareAggregatorFunction(

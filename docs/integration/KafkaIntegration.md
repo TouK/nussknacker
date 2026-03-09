@@ -219,7 +219,8 @@ Errors can be sent to specified Kafka topic in following json format (see below 
 ```json
 {
   "processName" : "Premium Customer Scenario",
-  "nodeId" : "filter premium customers",
+  "nodeId" : "513eab33-d9b3-4c67-a9e7-b84ae184eb64",
+  "nodeName" : "filter premium customers",
   "message" : "Unknown exception",
   "exceptionInput" : "SpelExpressionEvaluationException:Expression [1/0 != 10] evaluation failed, message: / by zero",
   "inputEvent" : "{ \" field1\": \"vaulue1\" }",
@@ -231,6 +232,8 @@ Errors can be sent to specified Kafka topic in following json format (see below 
   }
 }
 ```
+
+In exception payloads, `nodeId` is a technical identifier of a node, while `nodeName` is a user-visible node label.
 
 Following properties can be configured (please look at correct engine page : [Lite](../../configuration/model/Lite#exception-handling) or [Flink](../../configuration/model/Flink#configuring-exception-handling), 
 to see where they should be set):

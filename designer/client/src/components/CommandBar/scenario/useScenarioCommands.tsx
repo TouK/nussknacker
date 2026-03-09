@@ -27,7 +27,7 @@ export function useScenarioCommands() {
                         await delay(10);
                         openNodeWindow(n, scenario);
                     },
-                    name: n.id,
+                    name: n.name,
                     icon: <ComponentIcon node={n} />,
                     parent: "openNode/",
                     priority: Priority.LOW,

@@ -60,17 +60,21 @@ export function EdgeFields(props: Props): React.JSX.Element {
         });
     }, [availableNodes, otherEdges, processDefinitionData]);
 
+    const nodeNameById = useMemo(
+        () => Object.fromEntries(freeNodes.concat(targetNodes).map((n) => [n.id, n.name])),
+        [freeNodes, targetNodes],
+    );
     const targetOptions = useMemo<Option[]>(() => {
         const targets = uniq(freeNodes.concat(targetNodes).map((n) => n.id));
         return [
             { label: "⇢", value: "" },
-            ...targets.map((freeInput) => ({
-                label: `➝ ${freeInput}`,
-                value: freeInput,
-                isUsed: edges.some((e) => e.to === freeInput && !isEqual(e, edge)),
+            ...targets.map((nodeId) => ({
+                label: `➝ ${nodeNameById[nodeId]}`,
+                value: nodeId,
+                isUsed: edges.some((e) => e.to === nodeId && !isEqual(e, edge)),
             })),
         ];
-    }, [edge, edges, freeNodes, targetNodes]);
+    }, [edge, edges, freeNodes, nodeNameById, targetNodes]);
 
     const onValueChange = useCallback(
         ({ expression, language }: ExpressionObj) => {
@@ -159,7 +163,11 @@ export function EdgeFields(props: Props): React.JSX.Element {
                         : t("node.fields.edge.target.empty", "No free target nodes")
                 }
                 onChange={onTargetChange}
-                value={readOnly ? { value: edge.to, label: edge.to } : targetOptions.find((option) => option.value === edge.to)}
+                value={
+                    readOnly
+                        ? { value: edge.to, label: nodeNameById[edge.to] ?? edge.to }
+                        : targetOptions.find((option) => option.value === edge.to)
+                }
                 options={targetOptions}
                 readOnly={readOnly || targetOptions.length <= 1}
                 className="edge-target"

@@ -56,7 +56,7 @@ describe("Connection error", () => {
             cy.visitNewProcess(NAME, "filter");
 
             cy.intercept("POST", "/api/nodes/*/validation").as("validation");
-            cy.get("[model-id='filter']").dblclick();
+            cy.getNode("filter").dblclick();
             cy.wait("@validation");
 
             cy.intercept("/api/notifications?scenarioName=*", { statusCode: 502 });

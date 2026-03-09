@@ -38,7 +38,8 @@
                     "y": 0
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "source"
         },
         {
             "nextFalse": [
@@ -57,7 +58,8 @@
                             "y": 360
                         }
                     },
-                    "type": "Sink"
+                    "type": "Sink",
+                    "name": "dead-end(false)"
                 }
             ],
             "id": "filter",
@@ -73,7 +75,8 @@
                     "y": 180
                 }
             },
-            "type": "Filter"
+            "type": "Filter",
+            "name": "filter"
         },
         {
             "id": "dead-end(true)",
@@ -90,7 +93,8 @@
                     "y": 360
                 }
             },
-            "type": "Sink"
+            "type": "Sink",
+            "name": "dead-end(true)"
         }
     ],
     "additionalBranches": []

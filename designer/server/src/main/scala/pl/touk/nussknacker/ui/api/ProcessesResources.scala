@@ -145,6 +145,7 @@ class ProcessesResources(
                       errors = result.validationResult.errors,
                       warnings = result.validationResult.warnings,
                       nodeResults = result.validationResult.nodeResults,
+                      nodeNames = result.validationResult.nodeNames,
                       newVersion = result.updated.newVersion,
                     )
                   }

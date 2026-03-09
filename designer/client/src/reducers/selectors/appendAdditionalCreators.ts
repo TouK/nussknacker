@@ -19,6 +19,7 @@ const getCreator = (type: string): Component => ({
     label: type,
     node: {
         id: type,
+        name: type,
         type: "VariableBuilder",
         varName: getFakeVarName(type),
         additionalFields: {

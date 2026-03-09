@@ -33,7 +33,8 @@ export function AdvancedSearchFilters({
 
     const displayNames = useMemo(
         () => ({
-            name: t("panels.search.field.id", "Name"),
+            id: t("panels.search.field.id", "Id"),
+            name: t("panels.search.field.name", "Name"),
             description: t("panels.search.field.description", "Description"),
             type: t("panels.search.field.type", "Type"),
             label: t("panels.search.field.paramName", "Label"),
@@ -93,6 +94,9 @@ export function AdvancedSearchFilters({
             }}
         >
             <Typography fontWeight="bold">{t("search.panel.advancedFilters.label", "Advanced Search")}</Typography>
+            <SearchLabeledInput name="id" value={filterFields?.id || []} setFilterFields={setFilterFields}>
+                <SearchLabel label={displayNames["id"]} />
+            </SearchLabeledInput>
             <SearchLabeledInput name="name" value={filterFields?.name || []} setFilterFields={setFilterFields}>
                 <SearchLabel label={displayNames["name"]} />
             </SearchLabeledInput>

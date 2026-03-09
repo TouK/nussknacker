@@ -52,7 +52,7 @@ object sampleTransformers {
         @ParamName("windowLength") @DefaultValue("T(java.time.Duration).parse('PT1H')") length: java.time.Duration,
         @ParamName("emitWhenEventLeft") @DefaultValue("false") emitWhenEventLeft: Boolean,
         @OutputVariableName variableName: String
-    )(implicit nodeId: NodeId): ContextTransformation = {
+    )(implicit nodeId: NodeId, nodeName: NodeName): ContextTransformation = {
       val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
       transformers.slidingTransformer(
         groupBy,
@@ -110,7 +110,7 @@ object sampleTransformers {
         @ParamName("windowLength") @DefaultValue("T(java.time.Duration).parse('PT1H')") length: java.time.Duration,
         @ParamName("emitWhen") trigger: TumblingWindowTrigger,
         @OutputVariableName variableName: String
-    )(implicit nodeId: NodeId): ContextTransformation = {
+    )(implicit nodeId: NodeId, nodeName: NodeName): ContextTransformation = {
       val windowDuration = FiniteDuration(length.toMillis, TimeUnit.MILLISECONDS)
       val maybeOffset = config.tumblingWindowsOffset
         .map(j => FiniteDuration(j.toMillis, TimeUnit.MILLISECONDS))
@@ -176,7 +176,7 @@ object sampleTransformers {
         ) sessionTimeout: java.time.Duration,
         @ParamName("emitWhen") trigger: SessionWindowTrigger,
         @OutputVariableName variableName: String
-    )(implicit nodeId: NodeId): ContextTransformation = {
+    )(implicit nodeId: NodeId, nodeName: NodeName): ContextTransformation = {
       val sessionTimeoutDuration = Duration(sessionTimeout.toMillis, TimeUnit.MILLISECONDS)
       transformers.sessionWindowTransformer(
         groupBy,

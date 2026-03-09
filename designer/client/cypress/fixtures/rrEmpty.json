@@ -25,7 +25,8 @@
                     "y": 0
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "request"
         },
         {
             "id": "dead-end",
@@ -42,7 +43,8 @@
                     "y": 180
                 }
             },
-            "type": "Sink"
+            "type": "Sink",
+            "name": "dead-end"
         }
     ],
     "additionalBranches": []

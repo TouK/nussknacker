@@ -387,7 +387,7 @@ class KafkaAvroPayloadSourceFactorySpec
     val nodeCompilationDependencies = new NodeCompilationDependencies(
       scenarioCompilationDependencies =
         new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty),
-      nodeData = Source("id", SourceRef("typ", paramsList)),
+      nodeData = Source(NodeId("id"), NodeName("id"), SourceRef("typ", paramsList)),
       componentUseContext = LiveRuntime(None),
       inputValidationContext = SingleInputNodeInputValidationContext(ValidationContext.empty)
     )

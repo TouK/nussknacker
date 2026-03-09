@@ -39,13 +39,14 @@ const AssertionResults = () => {
                 <AssertionResultsHeader />
                 {sortedNodeIds.map((nodeId) => {
                     const node = scenarioGraph.nodes.find((node) => node.id === nodeId);
+                    const displayName = node?.name ?? "Unknown node name";
 
                     return (
                         <Expandable
                             key={nodeId}
                             expandableTitle={
                                 <AssertionResultsForNodeTitle
-                                    title={nodeId}
+                                    title={displayName}
                                     assertionResults={testAssertionResults[nodeId]}
                                     action={node ? <OpenNodeTestingDetails node={node} /> : undefined}
                                 />

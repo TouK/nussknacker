@@ -9,7 +9,7 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.types.logical.RowType
 import org.apache.flink.types.Row
 import org.apache.flink.util.Collector
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId, NodeName, ValueWithContext}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.FlinkEngineContextOps._
@@ -75,6 +75,7 @@ class TableSink(
 class EncodeAsTableTypeFunction private (
     exceptionHandlerPreparer: RuntimeContext => ExceptionHandler,
     nodeId: NodeId,
+    nodeName: NodeName,
     sinkRowType: RowType,
     producedType: TypeInformation[Row]
 ) extends RichFlatMapFunction[ValueWithContext[AnyRef], Row]
@@ -89,7 +90,7 @@ class EncodeAsTableTypeFunction private (
 
   override def flatMap(valueWithContext: ValueWithContext[AnyRef], out: Collector[Row]): Unit = {
     exceptionHandler
-      .handling(Some(NodeComponentInfo(nodeId, ComponentType.Sink, "table")), valueWithContext.context) {
+      .handling(Some(NodeComponentInfo(nodeId, nodeName, ComponentType.Sink, "table")), valueWithContext.context) {
         ToTableTypeSchemaBasedEncoder.encodeAsRow(valueWithContext.value, sinkRowType)
       }
       .foreach(out.collect)
@@ -118,6 +119,7 @@ object EncodeAsTableTypeFunction {
     new EncodeAsTableTypeFunction(
       flinkNodeContext.exceptionHandlerPreparer.narrowToRuntimeCtx,
       flinkNodeContext.nodeId,
+      flinkNodeContext.nodeName,
       sinkRowType,
       producedType
     )

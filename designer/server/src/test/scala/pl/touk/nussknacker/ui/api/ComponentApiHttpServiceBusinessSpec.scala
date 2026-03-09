@@ -86,7 +86,7 @@ class ComponentApiHttpServiceBusinessSpec
           matchJsonWithRegexValues(
             s"""[{
                |  "name": "$scenarioName",
-               |  "nodesUsagesData": [ { "nodeId": "source", "type": "ScenarioUsageData" } ],
+               |  "nodesUsagesData": [ { "nodeId": "source", "nodeName": "source", "type": "ScenarioUsageData" } ],
                |  "isFragment": false,
                |  "processCategory": "${Category1.stringify}",
                |  "modificationDate": "${regexes.zuluDateRegex}",

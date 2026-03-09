@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.processreport
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, NodeId, NodeName}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -102,10 +102,10 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
           CanonicalProcess(
             MetaData("fragment1", FragmentSpecificData()),
             List(
-              FlatNode(FragmentInputDefinition("subInput1", List())),
-              FlatNode(Filter("subFilter1", "".spel)),
-              FlatNode(Filter("subFilter2", "".spel)),
-              FlatNode(FragmentOutputDefinition("outId1", "out1", List.empty))
+              FlatNode(FragmentInputDefinition(NodeId("subInput1"), NodeName("subInput1"), List())),
+              FlatNode(Filter(NodeId("subFilter1"), NodeName("subFilter1"), "".spel)),
+              FlatNode(Filter(NodeId("subFilter2"), NodeName("subFilter2"), "".spel)),
+              FlatNode(FragmentOutputDefinition(NodeId("outId1"), NodeName("outId1"), "out1", List.empty))
             ),
             List.empty
           )

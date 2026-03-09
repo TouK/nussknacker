@@ -106,7 +106,7 @@ class LiteTestScenarioRunner(
   ): SynchronousResult = {
     val testSource = ComponentDefinition(TestScenarioRunner.testDataSource, new SimpleSourceFactory(Typed[INPUT]))
     val testSink   = ComponentDefinition(TestScenarioRunner.testResultSink, SimpleSinkFactory)
-    val inputId    = scenario.nodes.head.id
+    val inputId    = scenario.nodes.head.id.value
     val inputBatch = ScenarioInputBatch(data.map(d => (SourceId(inputId), d: Any)))
     val jobData    = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
 

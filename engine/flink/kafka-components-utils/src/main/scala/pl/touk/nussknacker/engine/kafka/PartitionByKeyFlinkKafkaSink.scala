@@ -30,7 +30,7 @@ object PartitionByKeyFlinkKafkaSink {
           case SinkDeliveryGuarantee.ExactlyOnce =>
             sinkBuilder
               .setDeliveryGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
-              .setTransactionalIdPrefix(s"$clientId-${nodeId.id}")
+              .setTransactionalIdPrefix(s"$clientId-${nodeId.value}")
           case SinkDeliveryGuarantee.AtLeastOnce =>
             sinkBuilder.setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
           case SinkDeliveryGuarantee.None =>

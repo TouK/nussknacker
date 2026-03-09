@@ -91,7 +91,9 @@ class ScenarioLiveDataApiHttpService(
                 )
             }
           }
-        } yield ResultsWithCountsDto.from(liveData, computeCounts(scenarioWithDetails, liveData))
+        } yield {
+          ResultsWithCountsDto.from(liveData, computeCounts(scenarioWithDetails, liveData))
+        }
       }
   }
 

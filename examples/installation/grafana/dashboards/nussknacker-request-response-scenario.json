@@ -100,12 +100,12 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "[[tag_scenario]] - [[tag_nodeId]]",
+          "alias": "[[tag_scenario]] - [[tag_nodeName]]",
           "datasource": "influx",
           "dsType": "influxdb",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"count\"), 1s) AS value\n  FROM \"invocation.success.histogram\"\n  WHERE scenario =~ /^$scenarioName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), scenario, nodeId, instanceId\n)\nGROUP BY time($__interval), scenario, nodeId\n",
+          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"count\"), 1s) AS value\n  FROM \"invocation.success.histogram\"\n  WHERE scenario =~ /^$scenarioName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), scenario, nodeId, nodeName, instanceId\n)\nGROUP BY time($__interval), scenario, nodeId, nodeName\n",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series"
@@ -198,21 +198,21 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "[[tag_scenario]] - [[tag_nodeId]]",
+          "alias": "[[tag_scenario]] - [[tag_nodeName]]",
           "datasource": "influx",
           "dsType": "influxdb",
           "hide": false,
           "policy": "default",
-          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"count\"), 1s) AS value\n  FROM \"end.count\"\n  WHERE scenario =~ /^$scenarioName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), scenario, nodeId, instanceId\n)\nGROUP BY time($__interval), scenario, nodeId\n",
+          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"count\"), 1s) AS value\n  FROM \"end.count\"\n  WHERE scenario =~ /^$scenarioName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), scenario, nodeId, nodeName, instanceId\n)\nGROUP BY time($__interval), scenario, nodeId, nodeName\n",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series"
         },
         {
-          "alias": "[[tag_scenario]] - [[tag_nodeId]]",
+          "alias": "[[tag_scenario]] - [[tag_nodeName]]",
           "datasource": "influx",
           "hide": false,
-          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"count\"), 1s) AS value\n  FROM \"dead_end.count\"\n  WHERE scenario =~ /^$scenarioName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), scenario, nodeId, instanceId\n)\nGROUP BY time($__interval), scenario, nodeId\n",
+          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"count\"), 1s) AS value\n  FROM \"dead_end.count\"\n  WHERE scenario =~ /^$scenarioName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), scenario, nodeId, nodeName, instanceId\n)\nGROUP BY time($__interval), scenario, nodeId, nodeName\n",
           "rawQuery": true,
           "refId": "B",
           "resultFormat": "time_series"
@@ -305,12 +305,12 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "[[tag_scenario]] - [[tag_nodeId]]",
+          "alias": "[[tag_scenario]] - [[tag_nodeName]]",
           "datasource": "influx",
           "dsType": "influxdb",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"count\"), 1s) AS value\n  FROM \"error.instantRateByNode.count\"\n  WHERE scenario =~ /^$scenarioName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), scenario, nodeId, instanceId\n)\nGROUP BY time($__interval), scenario, nodeId\n",
+          "query": "SELECT sum(value)\nFROM (\n  SELECT non_negative_derivative(last(\"count\"), 1s) AS value\n  FROM \"error.instantRateByNode.count\"\n  WHERE scenario =~ /^$scenarioName$/ AND env = '$env' AND $timeFilter\n  GROUP BY time($__interval), scenario, nodeId, nodeName, instanceId\n)\nGROUP BY time($__interval), scenario, nodeId, nodeName\n",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series"

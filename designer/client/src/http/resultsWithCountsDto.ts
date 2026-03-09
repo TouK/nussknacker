@@ -1,5 +1,17 @@
 import type { NodeId } from "../types/node";
 
+export interface ContextIdPathPartJson {
+    n: NodeId;
+    t: string;
+}
+
+export interface ContextIdJson {
+    nid: NodeId;
+    tid: number;
+    idx: number;
+    path: ContextIdPathPartJson[];
+}
+
 export interface Variable {
     original?: string;
     pretty: unknown;
@@ -7,6 +19,7 @@ export interface Variable {
 
 export interface ResultContextJson {
     id: string;
+    cid?: ContextIdJson;
     timestamp: string; // ISO
     variables: Record<string, Variable>;
 }

@@ -74,7 +74,8 @@
                     "y": 0
                 }
             },
-            "type": "FragmentInputDefinition"
+            "type": "FragmentInputDefinition",
+            "name": "input"
         },
         {
             "nextFalse": [
@@ -97,7 +98,8 @@
                             "y": 360
                         }
                     },
-                    "type": "FragmentOutputDefinition"
+                    "type": "FragmentOutputDefinition",
+                    "name": "failureOutput"
                 }
             ],
             "id": "filter",
@@ -113,7 +115,8 @@
                     "y": 180
                 }
             },
-            "type": "Filter"
+            "type": "Filter",
+            "name": "filter"
         },
         {
             "id": "successOutput",
@@ -134,7 +137,8 @@
                     "y": 360
                 }
             },
-            "type": "FragmentOutputDefinition"
+            "type": "FragmentOutputDefinition",
+            "name": "successOutput"
         }
     ],
     "additionalBranches": []

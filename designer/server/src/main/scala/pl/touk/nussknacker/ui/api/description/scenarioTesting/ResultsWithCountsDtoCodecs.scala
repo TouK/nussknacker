@@ -55,7 +55,7 @@ object ResultsWithCountsDtoCodecs {
 
     implicit val nodeTransitionResultEncoder: Encoder[NodeTransitionResult] = Encoder.instance { value =>
       val baseFields: List[(String, Option[Json])] = List(
-        "sourceNodeId"      -> Some(value.sourceNodeId.id.asJson),
+        "sourceNodeId"      -> Some(value.sourceNodeId.value.asJson),
         "destinationNodeId" -> Some(value.destinationNodeId.asJson), // Always include json field (even when None)
         "results"           -> Some(value.results.asJson),
         "totalCount"        -> value.totalCount.map(Json.fromLong),  // Drop json field when None

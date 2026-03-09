@@ -6,7 +6,7 @@ import io.circe
 import io.circe.{parser, Json}
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.definition.{JsonParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.json.encoders.StrictToJsonEncoder
 import pl.touk.nussknacker.engine.api.livedata.LiveDataProvider
@@ -68,6 +68,7 @@ class CommonDataFormatHandler(modelData: ModelData) extends TestDataFormatHandle
 
   override def getTestParametersDefinition(
       sourceId: NodeId,
+      sourceName: NodeName,
       sourceCompilationResult: NodeCompilationResult[Source]
   ): Either[ScenarioTestService.ParametersDefinitionError, List[Parameter]] = {
     for {

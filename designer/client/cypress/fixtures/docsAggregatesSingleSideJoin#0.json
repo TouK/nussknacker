@@ -89,7 +89,8 @@
                     "y": 180
                 }
             },
-            "type": "Join"
+            "type": "Join",
+            "name": "single-side-join"
         },
         {
             "id": "tracked subscriber operations",
@@ -106,7 +107,8 @@
                     "y": 360
                 }
             },
-            "type": "Sink"
+            "type": "Sink",
+            "name": "tracked subscriber operations"
         }
     ],
     "additionalBranches": [
@@ -146,7 +148,8 @@
                         "y": 0
                     }
                 },
-                "type": "Source"
+                "type": "Source",
+                "name": "subscriber alerts"
             },
             {
                 "definition": {
@@ -192,7 +195,8 @@
                         "y": 0
                     }
                 },
-                "type": "Source"
+                "type": "Source",
+                "name": "audit - all events"
             },
             {
                 "definition": {

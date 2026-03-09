@@ -205,33 +205,33 @@ object PdfExporter extends LazyLogging {
 
   private def nodeDetails(node: NodeData) = {
     val nodeData: List[(String, String)] = node match {
-      case Source(_, SourceRef(typ, params), _) =>
+      case Source(_, _, SourceRef(typ, params), _) =>
         ("Type", typ) :: params.map(p => (p.name.value, p.expression.expression))
-      case Filter(_, expression, _, _) => List(("Expression", expression.expression))
-      case Enricher(_, ServiceRef(typ, params), output, _, _) =>
+      case Filter(_, _, expression, _, _) => List(("Expression", expression.expression))
+      case Enricher(_, _, ServiceRef(typ, params), output, _, _) =>
         ("Type", typ) :: ("Output", output) :: params.map(p => (p.name.value, p.expression.expression))
       // TODO: what about Swtich??
-      case Switch(_, expression, exprVal, _) => expression.map(e => ("Expression", e.expression)).toList
-      case Processor(_, ServiceRef(typ, params), _, _) =>
+      case Switch(_, _, expression, exprVal, _) => expression.map(e => ("Expression", e.expression)).toList
+      case Processor(_, _, ServiceRef(typ, params), _, _) =>
         ("Type", typ) :: params.map(p => (p.name.value, p.expression.expression))
-      case Sink(_, SinkRef(typ, params), _, _, _) =>
+      case Sink(_, _, SinkRef(typ, params), _, _, _) =>
         ("Type", typ) :: params.map(p => (p.name.value, p.expression.expression))
-      case CustomNode(_, output, typ, params, _) =>
+      case CustomNode(_, _, output, typ, params, _) =>
         ("Type", typ) :: ("Output", output.getOrElse("")) :: params.map(p => (p.name.value, p.expression.expression))
-      case FragmentInput(_, FragmentRef(typ, params, _), _, _, _) =>
+      case FragmentInput(_, _, FragmentRef(typ, params, _), _, _, _) =>
         ("Type", typ) :: params.map(p => (p.name.value, p.expression.expression))
-      case FragmentInputDefinition(_, parameters, _) => parameters.map(p => p.name.value -> p.typ.refClazzName)
-      case FragmentOutputDefinition(_, outputName, fields, _) =>
+      case FragmentInputDefinition(_, _, parameters, _) => parameters.map(p => p.name.value -> p.typ.refClazzName)
+      case FragmentOutputDefinition(_, _, outputName, fields, _) =>
         ("Output name", outputName) :: fields.map(p => p.name -> p.expression.expression)
-      case Variable(_, name, expr, _) => (name -> expr.expression) :: Nil
-      case VariableBuilder(_, name, fields, _) =>
+      case Variable(_, _, name, expr, _) => (name -> expr.expression) :: Nil
+      case VariableBuilder(_, _, name, fields, _) =>
         ("Variable name", name) :: fields.map(p => p.name -> p.expression.expression)
-      case Join(_, output, typ, parameters, branch, _) =>
+      case Join(_, _, output, typ, parameters, branch, _) =>
         ("Type", typ) :: ("Output", output.getOrElse("")) ::
           parameters.map(p => p.name.value -> p.expression.expression) ++ branch.flatMap(bp =>
             bp.parameters.map(p => s"${bp.branchId} - ${p.name.value}" -> p.expression.expression)
           )
-      case Split(_, _) => ("No parameters", "") :: Nil
+      case Split(_, _, _) => ("No parameters", "") :: Nil
       // This should not happen in properly resolved scenario...
       case _: BranchEndData       => throw new IllegalArgumentException("Should not happen during PDF export")
       case _: FragmentUsageOutput => throw new IllegalArgumentException("Should not happen during PDF export")
@@ -244,8 +244,8 @@ object PdfExporter extends LazyLogging {
       NodeSeq.Empty
     } else {
       <block margin-bottom="25pt" margin-top="5pt">
-        <block font-size="13pt" font-weight="bold" text-align="left" id={node.id}>
-          {node.getClass.getSimpleName} {node.id}
+        <block font-size="13pt" font-weight="bold" text-align="left" id={node.id.value}>
+          {node.getClass.getSimpleName} {node.name.value}
         </block>
         <table width="100%" table-layout="fixed">
           <table-column xmlns:fox="http://xmlgraphics.apache.org/fop/extensions" fox:header="true" column-width="proportional-column-width(2)"/>
@@ -312,8 +312,8 @@ object PdfExporter extends LazyLogging {
           <table-row>
               <table-cell border="1pt solid black" padding-left="1pt" font-weight="bold">
                 <block>
-                  <basic-link internal-destination={node.id}>
-                    {node.id}
+                  <basic-link internal-destination={node.id.value}>
+                    {node.name.value}
                   </basic-link>
                 </block>
               </table-cell>

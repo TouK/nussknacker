@@ -49,13 +49,13 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       .sources(
         GraphBuilder
           .source("start-foo", "start-foo")
-          .branchEnd(BranchFooId, UnionNodeId.id),
+          .branchEnd(BranchFooId, UnionNodeId.value),
         GraphBuilder
           .source("start-bar", "start-bar")
-          .branchEnd(BranchBarId, UnionNodeId.id),
+          .branchEnd(BranchBarId, UnionNodeId.value),
         GraphBuilder
           .join(
-            UnionNodeId.id,
+            UnionNodeId.value,
             "union-memo",
             Some(OutVariableName),
             List(
@@ -70,7 +70,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')".spel
           )
-          .emptySink(EndNodeId.id, "dead-end")
+          .emptySink(EndNodeId.value, "dead-end")
       )
 
     val key       = "fooKey"
@@ -111,13 +111,13 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       .sources(
         GraphBuilder
           .source("start-foo", "start-foo")
-          .branchEnd(BranchFooId, UnionNodeId.id),
+          .branchEnd(BranchFooId, UnionNodeId.value),
         GraphBuilder
           .source("start-bar", "start-bar")
-          .branchEnd(BranchBarId, UnionNodeId.id),
+          .branchEnd(BranchBarId, UnionNodeId.value),
         GraphBuilder
           .join(
-            UnionNodeId.id,
+            UnionNodeId.value,
             "union-memo",
             Some(OutVariableName),
             List(
@@ -132,7 +132,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')".spel
           )
-          .emptySink(EndNodeId.id, "dead-end")
+          .emptySink(EndNodeId.value, "dead-end")
       )
 
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -163,13 +163,13 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       .sources(
         GraphBuilder
           .source("start-foo", "start-foo")
-          .branchEnd(BranchFooId, UnionNodeId.id),
+          .branchEnd(BranchFooId, UnionNodeId.value),
         GraphBuilder
           .source("start-bar", "start-bar")
-          .branchEnd(BranchBarId, UnionNodeId.id),
+          .branchEnd(BranchBarId, UnionNodeId.value),
         GraphBuilder
           .join(
-            UnionNodeId.id,
+            UnionNodeId.value,
             "union-memo",
             Some(OutVariableName),
             List(
@@ -184,7 +184,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')".spel
           )
-          .emptySink(EndNodeId.id, "dead-end")
+          .emptySink(EndNodeId.value, "dead-end")
       )
 
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))

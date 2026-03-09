@@ -19,8 +19,9 @@ export const StickyNoteDefinition: ComponentDefinition = {
 // `addStickyNotesToNodes` - Merges sticky notes with nodes.
 // `extractStickyNotesFromNodes` - Separates sticky notes from nodes.
 export function addStickyNotesToNodes(data: Scenario): Scenario {
-    const stickyNotesWithType = data.scenarioGraph.stickyNotes.map((name) => ({
-        ...name,
+    const stickyNotesWithType = data.scenarioGraph.stickyNotes.map((stickyNote) => ({
+        ...stickyNote,
+        name: stickyNote.id,
         type: StickyNoteType,
         errors: [],
     }));

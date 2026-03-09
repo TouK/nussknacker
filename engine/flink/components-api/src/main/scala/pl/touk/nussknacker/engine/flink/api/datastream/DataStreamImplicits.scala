@@ -6,7 +6,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.functions.co.CoMapFunction
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 
 import scala.language.higherKinds
@@ -56,13 +56,10 @@ object DataStreamImplicits extends LazyLogging {
         }
       )
 
-    def setUidAndNameToNodeId(nodeId: NodeId): DataStream[T] =
-      stream.setUidAndName(nodeId.id)
-
-    def setUidAndName(id: String): DataStream[T] = {
+    def setUidAndName(uid: String, name: String): DataStream[T] = {
       val transformation = stream.getTransformation
-      transformation.setUid(id)
-      transformation.setName(id)
+      transformation.setUid(uid)
+      transformation.setName(name)
       stream
     }
 
@@ -70,11 +67,8 @@ object DataStreamImplicits extends LazyLogging {
 
   implicit class DataStreamSinkExtension[T](dataStream: DataStreamSink[T]) {
 
-    def setUidAndNameToNodeId(nodeId: NodeId): DataStreamSink[T] =
-      dataStream.setUidAndName(nodeId.id)
-
-    def setUidAndName(id: String): DataStreamSink[T] =
-      dataStream.uid(id).name(id)
+    def setUidAndName(uid: String, name: String): DataStreamSink[T] =
+      dataStream.uid(uid).name(name)
 
   }
 
