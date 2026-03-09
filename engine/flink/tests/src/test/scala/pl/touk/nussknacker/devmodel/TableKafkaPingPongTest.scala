@@ -5,11 +5,9 @@ import io.circe.Json
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import pl.touk.nussknacker.defaultmodel.{FlinkWithKafkaSuite, TopicConfig}
 import pl.touk.nussknacker.devmodel.TestData._
-import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.flink.table.FlinkTableDataSourceComponentProvider
-import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
+import pl.touk.nussknacker.engine.flink.table.io.{FlinkTableIOComponentProvider, TableComponentFactoryUtils}
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
@@ -111,7 +109,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
   private lazy val tableKafkaComponentsConfig: Config = ConfigFactory.parseString(kafkaTableConfig)
 
   override lazy val additionalComponents: List[ComponentDefinition] =
-    FlinkTableDataSourceComponentProvider.create(tableKafkaComponentsConfig)
+    FlinkTableIOComponentProvider.create(tableKafkaComponentsConfig)
 
   test("should ping-pong with sql kafka source and DataStream kafka sink") {
     val topics = createAndRegisterTopicConfig(topicNaming1, simpleTypesSchema)
@@ -125,7 +123,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
       .source(
         "start",
         tableComponentName,
-        TableComponentFactory.tableNameParamName.value -> s"'`default_catalog`.`default_database`.`$sqlInputTableNameTest1`'".spel
+        TableComponentFactoryUtils.tableNameParamName.value -> s"'`default_catalog`.`default_database`.`$sqlInputTableNameTest1`'".spel
       )
       .filter("filterId", "#input.someInt != 1".spel)
       .emptySink(
@@ -163,7 +161,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
       .source(
         sourceId,
         tableComponentName,
-        TableComponentFactory.tableNameParamName.value -> s"'`default_catalog`.`default_database`.`$sqlInputTableNameTest2`'".spel
+        TableComponentFactoryUtils.tableNameParamName.value -> s"'`default_catalog`.`default_database`.`$sqlInputTableNameTest2`'".spel
       )
       .filter("filterId", "#input.someInt != 1".spel)
       .emptySink(
@@ -196,7 +194,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
       .source(
         "start",
         tableComponentName,
-        TableComponentFactory.tableNameParamName.value -> s"'`default_catalog`.`default_database`.`$sqlInputTableNameTest3`'".spel
+        TableComponentFactoryUtils.tableNameParamName.value -> s"'`default_catalog`.`default_database`.`$sqlInputTableNameTest3`'".spel
       )
       .emptySink(
         "end",
