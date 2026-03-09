@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.util.ReflectUtils.JavaEnumConstants
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaListMap
 
-import java.time.{Instant, LocalDate, LocalDateTime, LocalTime}
+import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, ZonedDateTime}
 import java.util.UUID
 import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
@@ -64,6 +64,8 @@ private object ExpressionGenerator {
       }
     case TypedClass(JavaEnumConstants(firstEnumConstant :: _), _) =>
       Some(s"#{ T(${typedClass.klass.getName}).${firstEnumConstant.name()} }")
+    case TypedClass(clazz, _) if clazz == ZonedDateTimeClass =>
+      Some("\"1900-01-01T00:00:00+00:00[UTC]\"")
     case TypedClass(clazz, _) if clazz == InstantClass =>
       Some("\"1900-01-01T00:00:00Z\"")
     case TypedClass(clazz, _) if clazz == LocalDateTimeClass =>
@@ -115,6 +117,8 @@ private object ExpressionGenerator {
         Some(s""""${localDate.toString}"""")
       case localTime: LocalTime =>
         Some(s""""${localTime.toString}"""")
+      case zonedDateTime: ZonedDateTime =>
+        Some(s""""${zonedDateTime.toString}"""")
       case uuid: UUID =>
         Some(s""""${uuid.toString}"""")
       // We could also handle collections and maps (records) here

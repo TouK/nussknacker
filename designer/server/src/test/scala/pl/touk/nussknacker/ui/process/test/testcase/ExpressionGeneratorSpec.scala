@@ -59,6 +59,7 @@ class ExpressionGeneratorSpec
       ("local date time", Typed[java.time.LocalDateTime], "\"1900-01-01T00:00:00\""),
       ("local date", Typed[java.time.LocalDate], "\"1900-01-01\""),
       ("local time", Typed[java.time.LocalTime], "\"00:00:00\""),
+      ("zoned date time", Typed[java.time.ZonedDateTime], "\"1900-01-01T00:00:00+00:00[UTC]\""),
       ("UUID", Typed[java.util.UUID], "\"00000000-0000-0000-0000-000000000000\""),
       (
         "string with value",
@@ -107,6 +108,14 @@ class ExpressionGeneratorSpec
           java.time.LocalTime.parse("10:30:45")
         ),
         "\"10:30:45\""
+      ),
+      (
+        "zoned date time with value",
+        TypedObjectWithValue(
+          Typed.typedClass[java.time.ZonedDateTime],
+          java.time.ZonedDateTime.parse("2026-02-04T10:30:45+01:00[Europe/Warsaw]")
+        ),
+        "\"2026-02-04T10:30:45+01:00[Europe/Warsaw]\""
       ),
       (
         "UUID with value",
