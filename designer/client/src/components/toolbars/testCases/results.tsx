@@ -10,6 +10,7 @@ import { getTestResultsLoading } from "../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";
 import { Expandable } from "../../common/Expandable";
+import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
 import { useTestingScenarioEnabled } from "../../modals/TestingDataRecords/useTestingScenarioEnabled";
 import { OpenNodeTestingDetails } from "./assertionResultsForNode/assertionResult/openNodeTestingDetails";
 import { AssertionResultsForNode } from "./assertionResultsForNode/assertionResultsForNode";
@@ -99,29 +100,39 @@ interface ResultsContentProps {
     scenarioGraphNodes: NodeType[];
 }
 
-const ResultsContent = ({ sortedNodeIds, testAssertionResults, scenarioGraphNodes }: ResultsContentProps) => (
-    <>
-        {sortedNodeIds.map((nodeId) => {
-            const node = scenarioGraphNodes.find((node) => node.id === nodeId);
+const ResultsContent = ({ sortedNodeIds, testAssertionResults, scenarioGraphNodes }: ResultsContentProps) => {
+    const { t } = useTranslation();
 
-            return (
-                <Expandable
-                    key={nodeId}
-                    expandableTitle={
-                        <AssertionResultsForNodeTitle
-                            title={node.name}
-                            assertionResults={testAssertionResults[nodeId]}
-                            action={node ? <OpenNodeTestingDetails node={node} /> : undefined}
-                            node={node}
-                        />
-                    }
-                    componentId={nodeId}
-                    detailsSx={{ pl: 2, pr: 1, py: 0 }}
-                    summarySx={{ px: 0.5, minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px", overflow: "hidden" } }}
-                >
-                    <AssertionResultsForNode nodeId={nodeId} />
-                </Expandable>
-            );
-        })}
-    </>
-);
+    return (
+        <>
+            {sortedNodeIds.map((nodeId) => {
+                const node = scenarioGraphNodes.find((node) => node.id === nodeId);
+
+                return (
+                    <Expandable
+                        key={nodeId}
+                        expandableTitle={
+                            <AssertionResultsForNodeTitle
+                                title={node.name}
+                                assertionResults={testAssertionResults[nodeId]}
+                                action={
+                                    node ? (
+                                        <InfoTooltip variant={"hover"} title={t("testCases.run", "Open node testing details")}>
+                                            <OpenNodeTestingDetails node={node} />
+                                        </InfoTooltip>
+                                    ) : undefined
+                                }
+                                node={node}
+                            />
+                        }
+                        componentId={nodeId}
+                        detailsSx={{ pl: 2, pr: 1, py: 0 }}
+                        summarySx={{ px: 0.5, minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px", overflow: "hidden" } }}
+                    >
+                        <AssertionResultsForNode nodeId={nodeId} />
+                    </Expandable>
+                );
+            })}
+        </>
+    );
+};

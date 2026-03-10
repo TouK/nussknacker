@@ -1,4 +1,5 @@
-import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
+import { Box, CircularProgress, Typography } from "@mui/material";
+import SvgIcon from "@mui/material/SvgIcon/SvgIcon";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -10,7 +11,7 @@ import { getTestAssertionResults, getTestResultsLoading } from "../../../reducer
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { Expandable } from "../../common/Expandable";
 import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
-import { useTestingScenarioEnabled } from "../../modals/TestingDataRecords/useTestingScenarioEnabled";
+import { Button } from "../../toolbarComponents/toolbarButtons/Button";
 import { AssertionResultsBadge } from "./assertionResultsForNode/AssertionResultsBadge";
 import { Definitions } from "./definitions";
 import { Results } from "./results";
@@ -51,7 +52,6 @@ const TestCaseTitle = ({ testCase }: TestCaseTitleProps) => {
     const testAssertionResults = useAppSelector(getTestAssertionResults);
     const allResults = Object.values(testAssertionResults).flat();
     const isLoading = useAppSelector(getTestResultsLoading);
-    const testingScenarioEnabled = useTestingScenarioEnabled({ disabled: undefined });
     const [showMockFieldOnEnrichers] = useUserSettings("node.showMockFieldOnEnrichers");
     const dispatch = useAppDispatch();
 
@@ -83,7 +83,9 @@ const TestCaseTitle = ({ testCase }: TestCaseTitleProps) => {
                 <CircularProgress size={14} />
             ) : (
                 <InfoTooltip variant={"hover"} title={t("testCases.run", "Run test")}>
-                    <TestingIcon />
+                    <SvgIcon fontSize={"small"} className={"action-slot"} onClick={handleRun}>
+                        <TestingIcon />
+                    </SvgIcon>
                 </InfoTooltip>
             )}
         </Box>
