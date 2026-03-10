@@ -1,1 +1,1 @@
-pl.touk.nussknacker.engine.flink.table.utils.RowToJsonSchemaBasedEncoderCustomisation
+pl.touk.nussknacker.engine.flink.table.typing.RowToJsonSchemaBasedEncoderCustomisation
