@@ -59,7 +59,16 @@ class ExpressionGeneratorSpec
       ("local date time", Typed[java.time.LocalDateTime], "\"1900-01-01T00:00:00\""),
       ("local date", Typed[java.time.LocalDate], "\"1900-01-01\""),
       ("local time", Typed[java.time.LocalTime], "\"00:00:00\""),
+      ("zoned date time", Typed[java.time.ZonedDateTime], "\"1900-01-01T00:00:00+00:00[UTC]\""),
+      ("offset date time", Typed[java.time.OffsetDateTime], "\"1900-01-01T00:00:00+00:00\""),
+      ("duration", Typed[java.time.Duration], "\"PT0H\""),
+      ("period", Typed[java.time.Period], "\"P0D\""),
+      ("zone offset", Typed[java.time.ZoneOffset], "\"+00:00\""),
+      ("zone id", Typed[java.time.ZoneId], "\"UTC\""),
       ("UUID", Typed[java.util.UUID], "\"00000000-0000-0000-0000-000000000000\""),
+      ("currency", Typed[java.util.Currency], "\"USD\""),
+      ("locale", Typed[java.util.Locale], "\"en\""),
+      ("charset", Typed[java.nio.charset.Charset], "\"UTF-8\""),
       (
         "string with value",
         TypedObjectWithValue(Typed.typedClass[String], "Hello World!"),
@@ -109,12 +118,78 @@ class ExpressionGeneratorSpec
         "\"10:30:45\""
       ),
       (
+        "zoned date time with value",
+        TypedObjectWithValue(
+          Typed.typedClass[java.time.ZonedDateTime],
+          java.time.ZonedDateTime.parse("2026-02-04T10:30:45+01:00[Europe/Warsaw]")
+        ),
+        "\"2026-02-04T10:30:45+01:00[Europe/Warsaw]\""
+      ),
+      (
+        "offset date time with value",
+        TypedObjectWithValue(
+          Typed.typedClass[java.time.OffsetDateTime],
+          java.time.OffsetDateTime.parse("2026-02-04T10:30:45+01:00")
+        ),
+        "\"2026-02-04T10:30:45+01:00\""
+      ),
+      (
+        "duration with value",
+        TypedObjectWithValue(
+          Typed.typedClass[java.time.Duration],
+          java.time.Duration.parse("PT1H30M")
+        ),
+        "\"PT1H30M\""
+      ),
+      (
+        "period with value",
+        TypedObjectWithValue(
+          Typed.typedClass[java.time.Period],
+          java.time.Period.parse("P1Y2M3D")
+        ),
+        "\"P1Y2M3D\""
+      ),
+      (
+        "zone offset with value",
+        TypedObjectWithValue(
+          Typed.typedClass[java.time.ZoneOffset],
+          java.time.ZoneOffset.of("+02:00")
+        ),
+        "\"+02:00\""
+      ),
+      (
+        "zone id with value",
+        TypedObjectWithValue(
+          Typed.typedClass[java.time.ZoneId],
+          java.time.ZoneId.of("Europe/Warsaw")
+        ),
+        "\"Europe/Warsaw\""
+      ),
+      (
         "UUID with value",
         TypedObjectWithValue(
           Typed.typedClass[java.util.UUID],
           java.util.UUID.fromString("a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d")
         ),
         "\"a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d\""
+      ),
+      (
+        "currency with value",
+        TypedObjectWithValue(Typed.typedClass[java.util.Currency], java.util.Currency.getInstance("EUR")),
+        "\"EUR\""
+      ),
+      (
+        "locale with value",
+        TypedObjectWithValue(Typed.typedClass[java.util.Locale], java.util.Locale.forLanguageTag("pl-PL")),
+        "\"pl_PL\""
+      ),
+      (
+        "charset with value",
+        TypedObjectWithValue(
+          Typed.typedClass[java.nio.charset.Charset],
+          java.nio.charset.Charset.forName("ISO-8859-1")
+        ),
+        "\"ISO-8859-1\""
       ),
       ("empty record", Typed.record(Map.empty[String, TypingResult]), "{}"),
       (
@@ -126,6 +201,13 @@ class ExpressionGeneratorSpec
           |}""".stripMargin
       ),
       ("list", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[java.lang.Integer])), "[0]"),
+      (
+        "map with string key",
+        Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Typed[java.lang.Integer])),
+        """{
+          |  "field": 0
+          |}""".stripMargin
+      ),
       (
         "nested record",
         Typed.record(
