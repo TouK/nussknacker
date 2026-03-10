@@ -1,0 +1,289 @@
+import { genSpel, parseConditionPart, parseSpel } from "./spelUtils";
+
+/** Collapse all whitespace sequences to a single space and trim. */
+function normalize(s: string): string {
+    return s.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Round-trip test cases: [input, expectedNormalizedOutput]
+ *
+ * The expected output is the expression with:
+ *  - outer parentheses stripped from each condition part
+ *  - whitespace normalized to single spaces
+ *
+ * Cases marked (*) are similar to another case in the list —
+ * consider keeping only one.
+ */
+const ROUND_TRIP_CASES: [string, string][] = [
+    // ── simple comparisons ────────────────────────────────────────────────────
+    ["#transactionVolumeStats.count > 5", "#transactionVolumeStats.count > 5"],
+
+    // (*) same pattern as above, differs only in field/value names
+    ["#transactionVolumeStats.totalAmount > 20000", "#transactionVolumeStats.totalAmount > 20000"],
+
+    // arithmetic in left operand
+    ["#distanceInKm / #timeInHours > 900", "#distanceInKm / #timeInHours > 900"],
+
+    // string literal on right side
+    ['#customerData.billType == "STANDARD"', '#customerData.billType == "STANDARD"'],
+
+    // long string value with special characters (slashes, dots, dashes)
+    [
+        '#messageSchema == "iglu:com.snowplowanalytics.snowplow/payload_data/jsonschema/1-0-4"',
+        '#messageSchema == "iglu:com.snowplowanalytics.snowplow/payload_data/jsonschema/1-0-4"',
+    ],
+
+    // ── outer parentheses stripped ────────────────────────────────────────────
+    ["(#timeInHours == 0 ) || (#distanceInKm == 0)", "#timeInHours == 0 || #distanceInKm == 0"],
+
+    // ── whitespace normalization ──────────────────────────────────────────────
+
+    // no space before || and extra spaces inside operands
+    [
+        "#userStats.sum > 10 * #customer.daily_amount_transactions_limit ||#userStats.count >  #customer.daily_transactions_limit",
+        "#userStats.sum > 10 * #customer.daily_amount_transactions_limit || #userStats.count > #customer.daily_transactions_limit",
+    ],
+
+    // no spaces around && and multiple spaces between conditions
+    [
+        "#anonymousUserId != null &&#product.slug != null &&#product.viewTimestamp != null",
+        "#anonymousUserId != null && #product.slug != null && #product.viewTimestamp != null",
+    ],
+
+    // extreme whitespace inside a single condition
+    [
+        "#NUMERIC.abs(    #statistics.get(#ROW.measurementName).average    - #statistics.get(#ROW.measurementName).previousAverage)> #ROW.alertThreshold    * #statistics.get(#ROW.measurementName).standardDeviation",
+        "#NUMERIC.abs( #statistics.get(#ROW.measurementName).average - #statistics.get(#ROW.measurementName).previousAverage) > #ROW.alertThreshold * #statistics.get(#ROW.measurementName).standardDeviation",
+    ],
+
+    [
+        "#statistics.get(#ROW.measurementName).max> #statistics.get(#ROW.measurementName).average    + #ROW.alertThreshold        * #statistics.get(#ROW.measurementName).standardDeviation",
+        "#statistics.get(#ROW.measurementName).max > #statistics.get(#ROW.measurementName).average + #ROW.alertThreshold * #statistics.get(#ROW.measurementName).standardDeviation",
+    ],
+
+    // ── method calls with inner parentheses ──────────────────────────────────
+
+    // nested function call with parens in left operand
+    [
+        "#NUMERIC.abs(#advancedTransactionStats.avgAmount - (#advancedTransactionStats.totalAmount / #advancedTransactionStats.count)) < 100",
+        "#NUMERIC.abs(#advancedTransactionStats.avgAmount - (#advancedTransactionStats.totalAmount / #advancedTransactionStats.count)) < 100",
+    ],
+
+    // method calls with arguments in both conditions
+    [
+        "#DATE.toInstant(#input.eventDate).atZone('UTC').hour >= 1 && #DATE.toInstant(#input.eventDate).atZone('UTC').hour <= 5",
+        "#DATE.toInstant(#input.eventDate).atZone('UTC').hour >= 1 && #DATE.toInstant(#input.eventDate).atZone('UTC').hour <= 5",
+    ],
+
+    // ── multiple conditions ───────────────────────────────────────────────────
+
+    // (*) simpler && case (similar to DATE case above)
+    [
+        "#advancedTransactionStats.count >= 5 && #advancedTransactionStats.maxAmount > 2000",
+        "#advancedTransactionStats.count >= 5 && #advancedTransactionStats.maxAmount > 2000",
+    ],
+
+    // mixed >= and < in same expression (tests that < doesn't greedily match <=)
+    [
+        "#aggregate.durationSum >= #ROW.durationAggFrom && #aggregate.durationSum < #ROW.durationAggTo",
+        "#aggregate.durationSum >= #ROW.durationAggFrom && #aggregate.durationSum < #ROW.durationAggTo",
+    ],
+
+    // three conditions
+    [
+        "#snowplowEvent['e'] == 'se' && #snowplowEvent['se_ac'] == 'product-view' && #snowplowEvent['se_la'] != null",
+        "#snowplowEvent['e'] == 'se' && #snowplowEvent['se_ac'] == 'product-view' && #snowplowEvent['se_la'] != null",
+    ],
+
+    ["#input.location.x == 1 && #input.location.y == 3", "#input.location.x == 1 && #input.location.y == 3"],
+
+    // second condition is a plain method call — treated as "is true"
+    [
+        "#input.type == 'SIMPLE' && #input.data.idHex.startsWith(\"340225c835a558aa\")",
+        "#input.type == 'SIMPLE' && #input.data.idHex.startsWith(\"340225c835a558aa\")",
+    ],
+
+    // ── SpEL collection operators (treated as opaque "is true" conditions) ───
+
+    // collection selection ?[...]
+    ["#shopAndOnlineViews.?[#this.isPremium].size > 0", "#shopAndOnlineViews.?[#this.isPremium].size > 0"],
+
+    // first-match ^[...] — whole expression is a boolean, no comparison operator
+    ["#products.^[#this.id == #productViewEvent.productId]", "#products.^[#this.id == #productViewEvent.productId]"],
+];
+
+describe("spelUtils", () => {
+    describe("parseSpel + genSpel round-trip", () => {
+        it.each(ROUND_TRIP_CASES)("round-trips: %s", (input, expectedNormalized) => {
+            const parsed = parseSpel(input);
+
+            expect(parsed).not.toBeNull();
+
+            const generated = genSpel(parsed!.conditions, parsed!.combinator);
+            expect(normalize(generated)).toBe(expectedNormalized);
+        });
+    });
+
+    describe("outer parentheses handling", () => {
+        it("single condition wrapped in parens parses identically to unwrapped", () => {
+            const wrapped = parseSpel("(#isOutOfBorder == true)");
+            const plain = parseSpel("#isOutOfBorder == true");
+
+            expect(wrapped).not.toBeNull();
+            expect(wrapped).toEqual(plain);
+        });
+
+        it("each part wrapped in parens parses identically to unwrapped", () => {
+            const wrapped = parseSpel('(#isOutOfBorder == true) || ("123123".toInteger >= 1231)');
+            const plain = parseSpel('#isOutOfBorder == true || "123123".toInteger >= 1231');
+
+            expect(wrapped).not.toBeNull();
+            expect(wrapped).toEqual(plain);
+        });
+
+        it("doubly-nested outer parens are stripped", () => {
+            const double = parseSpel("((#x == 1))");
+            const plain = parseSpel("#x == 1");
+
+            expect(double).not.toBeNull();
+            expect(double).toEqual(plain);
+        });
+    });
+
+    describe("empty expression returns null", () => {
+        it("returns null for empty string", () => {
+            expect(parseSpel("")).toBeNull();
+        });
+
+        it("returns null for whitespace-only string", () => {
+            expect(parseSpel("   ")).toBeNull();
+        });
+    });
+});
+
+// ─── parseConditionPart ───────────────────────────────────────────────────────
+
+describe("parseConditionPart", () => {
+    describe("null-check operators", () => {
+        it("== null  →  operator '== null', empty right", () => {
+            expect(parseConditionPart("#x == null")).toEqual({ left: "#x", operator: "== null", right: "" });
+        });
+
+        it("!= null  →  operator '!= null', empty right", () => {
+            expect(parseConditionPart("#x != null")).toEqual({ left: "#x", operator: "!= null", right: "" });
+        });
+
+        it("nested accessor == null", () => {
+            expect(parseConditionPart("#input.userId == null")).toEqual({
+                left: "#input.userId",
+                operator: "== null",
+                right: "",
+            });
+        });
+    });
+
+    describe("boolean operators", () => {
+        it("plain identifier  →  is true", () => {
+            expect(parseConditionPart("#x.active")).toEqual({ left: "#x.active", operator: "is true", right: "" });
+        });
+
+        it("!expr  →  is false", () => {
+            expect(parseConditionPart("!#x.active")).toEqual({ left: "#x.active", operator: "is false", right: "" });
+        });
+
+        it("method call with no comparison  →  is true", () => {
+            expect(parseConditionPart('#input.data.idHex.startsWith("340225")')).toEqual({
+                left: '#input.data.idHex.startsWith("340225")',
+                operator: "is true",
+                right: "",
+            });
+        });
+
+        it("collection operator ^[...]  →  is true", () => {
+            expect(parseConditionPart("#products.^[#this.id == #productViewEvent.productId]")).toEqual({
+                left: "#products.^[#this.id == #productViewEvent.productId]",
+                operator: "is true",
+                right: "",
+            });
+        });
+    });
+
+    describe("comparison operators — no greedy match between < and <=", () => {
+        it("parses <= without being grabbed by <", () => {
+            expect(parseConditionPart("#x <= 5")).toEqual({ left: "#x", operator: "<=", right: "5" });
+        });
+
+        it("parses >= without being grabbed by >", () => {
+            expect(parseConditionPart("#x >= 5")).toEqual({ left: "#x", operator: ">=", right: "5" });
+        });
+
+        it("parses < when followed by a plain value (not =)", () => {
+            expect(parseConditionPart("#x < 5")).toEqual({ left: "#x", operator: "<", right: "5" });
+        });
+
+        it("parens in left operand — operator found at depth 0", () => {
+            // outer parens wrap only the left side, not the whole expression,
+            // so they are preserved in the left value
+            expect(parseConditionPart("(#a + #b) > 10")).toEqual({ left: "(#a + #b)", operator: ">", right: "10" });
+        });
+    });
+
+    describe("known limitation: unquoted string literals containing < or >", () => {
+        // The parser does not handle quoted strings, so a `<` or `>` that appears
+        // inside a string literal is found at depth 0 and triggers a wrong match.
+        it('misparses #x > "a<b" — < inside string literal is matched first', () => {
+            const result = parseConditionPart('#x > "a<b"');
+            // The result is wrong: < inside the string is found before the outer >
+            expect(result).not.toEqual({ left: "#x", operator: ">", right: '"a<b"' });
+        });
+    });
+});
+
+// ─── genSpel ─────────────────────────────────────────────────────────────────
+
+describe("genSpel", () => {
+    it("single condition — is true", () => {
+        expect(genSpel([{ id: 1, left: "#x.active", operator: "is true", right: "" }], "&&")).toBe("#x.active");
+    });
+
+    it("single condition — is false", () => {
+        expect(genSpel([{ id: 1, left: "#x.active", operator: "is false", right: "" }], "&&")).toBe("!#x.active");
+    });
+
+    it("single condition — == null", () => {
+        expect(genSpel([{ id: 1, left: "#x", operator: "== null", right: "" }], "&&")).toBe("#x == null");
+    });
+
+    it("single condition — != null", () => {
+        expect(genSpel([{ id: 1, left: "#x", operator: "!= null", right: "" }], "&&")).toBe("#x != null");
+    });
+
+    it("two conditions joined with &&", () => {
+        expect(
+            genSpel(
+                [
+                    { id: 1, left: "#a", operator: ">", right: "0" },
+                    { id: 2, left: "#b", operator: "== null", right: "" },
+                ],
+                "&&",
+            ),
+        ).toBe("#a > 0 && #b == null");
+    });
+
+    it("two conditions joined with ||", () => {
+        expect(
+            genSpel(
+                [
+                    { id: 1, left: "#a", operator: "is true", right: "" },
+                    { id: 2, left: "#b", operator: "is false", right: "" },
+                ],
+                "||",
+            ),
+        ).toBe("#a || !#b");
+    });
+
+    it("empty conditions array returns empty string", () => {
+        expect(genSpel([], "&&")).toBe("");
+    });
+});
