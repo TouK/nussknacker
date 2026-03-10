@@ -6,8 +6,20 @@ import pl.touk.nussknacker.engine.api.util.ReflectUtils.JavaEnumConstants
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaListMap
 
-import java.time.{Instant, LocalDate, LocalDateTime, LocalTime}
-import java.util.UUID
+import java.nio.charset.Charset
+import java.time.{
+  Duration,
+  Instant,
+  LocalDate,
+  LocalDateTime,
+  LocalTime,
+  OffsetDateTime,
+  Period,
+  ZonedDateTime,
+  ZoneId,
+  ZoneOffset
+}
+import java.util.{Currency, Locale, UUID}
 import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
 
@@ -57,6 +69,12 @@ private object ExpressionGenerator {
       Some("0")
     case TypedClass(clazz, _) if isDecimalNumber(clazz) =>
       Some("0")
+    case TypedClass(MapClass, (keyType: SingleTypingResult) :: valueType :: Nil)
+        if keyType.runtimeObjType.klass == StringClass =>
+      val valueExpr     = generateForTypingResult(valueType, indentLevel + 1).getOrElse("null")
+      val indent        = "  " * (indentLevel + 1)
+      val closingIndent = "  " * indentLevel
+      Some(s"""{\n$indent"field": $valueExpr\n$closingIndent}""")
     case TypedClass(ListClass | ArrayClass, elementType :: Nil) =>
       generateForTypingResult(elementType, indentLevel) match {
         case Some(elementExpr) => Some(s"[$elementExpr]")
@@ -64,6 +82,10 @@ private object ExpressionGenerator {
       }
     case TypedClass(JavaEnumConstants(firstEnumConstant :: _), _) =>
       Some(s"#{ T(${typedClass.klass.getName}).${firstEnumConstant.name()} }")
+    case TypedClass(clazz, _) if clazz == ZonedDateTimeClass =>
+      Some("\"1900-01-01T00:00:00+00:00[UTC]\"")
+    case TypedClass(clazz, _) if clazz == OffsetDateTimeClass =>
+      Some("\"1900-01-01T00:00:00+00:00\"")
     case TypedClass(clazz, _) if clazz == InstantClass =>
       Some("\"1900-01-01T00:00:00Z\"")
     case TypedClass(clazz, _) if clazz == LocalDateTimeClass =>
@@ -72,8 +94,22 @@ private object ExpressionGenerator {
       Some("\"1900-01-01\"")
     case TypedClass(clazz, _) if clazz == LocalTimeClass =>
       Some("\"00:00:00\"")
+    case TypedClass(clazz, _) if clazz == DurationClass =>
+      Some("\"PT0H\"")
+    case TypedClass(clazz, _) if clazz == PeriodClass =>
+      Some("\"P0D\"")
+    case TypedClass(clazz, _) if clazz == ZoneOffsetClass =>
+      Some("\"+00:00\"")
+    case TypedClass(clazz, _) if clazz == ZoneIdClass =>
+      Some("\"UTC\"")
     case TypedClass(clazz, _) if clazz == UUIDClass =>
       Some("\"00000000-0000-0000-0000-000000000000\"")
+    case TypedClass(clazz, _) if clazz == CurrencyClass =>
+      Some("\"USD\"")
+    case TypedClass(clazz, _) if clazz == LocaleClass =>
+      Some("\"en\"")
+    case TypedClass(clazz, _) if clazz == CharsetClass =>
+      Some("\"UTF-8\"")
     case _ =>
       None
   }
@@ -115,8 +151,26 @@ private object ExpressionGenerator {
         Some(s""""${localDate.toString}"""")
       case localTime: LocalTime =>
         Some(s""""${localTime.toString}"""")
+      case zonedDateTime: ZonedDateTime =>
+        Some(s""""${zonedDateTime.toString}"""")
+      case offsetDateTime: OffsetDateTime =>
+        Some(s""""${offsetDateTime.toString}"""")
+      case duration: Duration =>
+        Some(s""""${duration.toString}"""")
+      case period: Period =>
+        Some(s""""${period.toString}"""")
+      case zoneOffset: ZoneOffset =>
+        Some(s""""${zoneOffset.toString}"""")
+      case zoneId: ZoneId =>
+        Some(s""""${zoneId.toString}"""")
       case uuid: UUID =>
         Some(s""""${uuid.toString}"""")
+      case currency: Currency =>
+        Some(s""""${currency.toString}"""")
+      case locale: Locale =>
+        Some(s""""${locale.toString}"""")
+      case charset: Charset =>
+        Some(s""""${charset.toString}"""")
       // We could also handle collections and maps (records) here
       case _ =>
         generateForTypingResult(underlying, indentLevel)

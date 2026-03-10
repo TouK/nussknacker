@@ -1,14 +1,15 @@
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import { Box, CircularProgress, IconButton, Tooltip, Typography } from "@mui/material";
+import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { testScenarioWithTestCase } from "../../../actions/nk/testingActions";
+import TestingIcon from "../../../assets/img/toolbarButtons/test.svg";
 import { useUserSettings } from "../../../common/useUserSettings";
 import type { TestCase } from "../../../reducers/graph/testCase";
 import { getTestAssertionResults, getTestResultsLoading } from "../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { Expandable } from "../../common/Expandable";
+import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
 import { useTestingScenarioEnabled } from "../../modals/TestingDataRecords/useTestingScenarioEnabled";
 import { AssertionResultsBadge } from "./assertionResultsForNode/AssertionResultsBadge";
 import { Definitions } from "./definitions";
@@ -78,19 +79,13 @@ const TestCaseTitle = ({ testCase }: TestCaseTitleProps) => {
                 {testCase.name}
             </Typography>
             <AssertionResultsBadge assertionResults={allResults} />
-            <Tooltip title={t("testCases.run", "Run test")} placement={"top"}>
-                <span>
-                    <IconButton
-                        className="action-slot"
-                        size="small"
-                        disabled={!testingScenarioEnabled || isLoading}
-                        onClick={handleRun}
-                        sx={{ p: 0.25 }}
-                    >
-                        {isLoading ? <CircularProgress size={14} /> : <PlayArrowIcon sx={{ fontSize: "16px" }} />}
-                    </IconButton>
-                </span>
-            </Tooltip>
+            {isLoading ? (
+                <CircularProgress size={14} />
+            ) : (
+                <InfoTooltip variant={"hover"} title={t("testCases.run", "Run test")}>
+                    <TestingIcon />
+                </InfoTooltip>
+            )}
         </Box>
     );
 };
