@@ -85,6 +85,7 @@ export function useDataMapper({
     const [contextFilter, setContextFilter] = useState("");
     const [dropZoneActive, setDropZoneActive] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<Record<number, FieldError[]>>({});
+    const [nullSafe, setNullSafe] = useState(false);
 
     const enrichedContext = useMemo<ContextData>(() => {
         if (!variableTypes) return context;
@@ -111,14 +112,17 @@ export function useDataMapper({
 
     const addField = useCallback(() => setFields((f) => [...f, makeField()]), []);
 
-    const addFieldFromDrop = useCallback((path: string) => {
-        const lastSegment = path.split(".").pop()?.replace(/\?/g, "") ?? "";
-        const field = makeField(lastSegment);
-        field.expression = path;
-        setFields((f) => [...f, field]);
-        setDragOverId(null);
-        setDropZoneActive(false);
-    }, []);
+    const addFieldFromDrop = useCallback(
+        (path: string) => {
+            const lastSegment = path.split(".").pop()?.replace(/\?/g, "") ?? "";
+            const field = makeField(lastSegment);
+            field.expression = nullSafe ? toNullSafe(`#${path}`) : path;
+            setFields((f) => [...f, field]);
+            setDragOverId(null);
+            setDropZoneActive(false);
+        },
+        [nullSafe],
+    );
 
     const removeField = useCallback(
         (id: number) => {
@@ -207,32 +211,38 @@ export function useDataMapper({
                 if (f.expression) return f;
                 const normalized = f.name.toLowerCase().replace(/[_\s]/g, "");
                 const match = pathMap.get(normalized);
-                return match ? { ...f, expression: toNullSafe(`#${match}`) } : f;
+                const expr = `#${match}`;
+                return match ? { ...f, expression: nullSafe ? toNullSafe(expr) : expr } : f;
             });
         }
         setFields(autoMap);
-    }, [enrichedContext]);
+    }, [enrichedContext, nullSafe]);
 
     const onTreeSelect = useCallback(
         (path: string) => {
             setSelPath(path);
             if (selField != null) {
-                setFields((f) => updateInTree(f, selField, (x) => ({ ...x, expression: toNullSafe(`#${path}`) })));
+                const expr = nullSafe ? toNullSafe(`#${path}`) : `#${path}`;
+                setFields((f) => updateInTree(f, selField, (x) => ({ ...x, expression: expr })));
             }
         },
-        [selField],
+        [selField, nullSafe],
     );
 
-    const onDrop = useCallback((path: string, fieldId: number) => {
-        const lastSegment = path.split(".").pop()?.replace(/\?/g, "") ?? "";
-        setFields((prev) =>
-            updateInTree(prev, fieldId, (x) => {
-                const nameUpdate = !x.name?.trim() && lastSegment ? { name: lastSegment } : {};
-                return { ...x, expression: path, ...nameUpdate };
-            }),
-        );
-        setDragOverId(null);
-    }, []);
+    const onDrop = useCallback(
+        (path: string, fieldId: number) => {
+            const lastSegment = path.split(".").pop()?.replace(/\?/g, "") ?? "";
+            const expr = nullSafe ? toNullSafe(`#${path}`) : path;
+            setFields((prev) =>
+                updateInTree(prev, fieldId, (x) => {
+                    const nameUpdate = !x.name?.trim() && lastSegment ? { name: lastSegment } : {};
+                    return { ...x, expression: expr, ...nameUpdate };
+                }),
+            );
+            setDragOverId(null);
+        },
+        [nullSafe],
+    );
 
     const applyTargetSample = useCallback((parsed: unknown, mode: "replace" | "merge"): string | null => {
         const newFields = fieldsFromSample(parsed);
@@ -346,6 +356,7 @@ export function useDataMapper({
         dropZoneActive,
         mappedCount,
         fieldErrors,
+        nullSafe,
         // setters
         setSelField,
         setDragOverId,
@@ -354,6 +365,7 @@ export function useDataMapper({
         setShowTopicPicker,
         setContextFilter,
         setDropZoneActive,
+        setNullSafe,
         // callbacks
         spelOutput,
         addField,

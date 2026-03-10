@@ -3,7 +3,21 @@ import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import SearchIcon from "@mui/icons-material/Search";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import { alpha, Box, Button, Chip, Collapse, IconButton, InputAdornment, styled, TextField, Tooltip, Typography } from "@mui/material";
+import {
+    alpha,
+    Box,
+    Button,
+    Chip,
+    Collapse,
+    FormControlLabel,
+    IconButton,
+    InputAdornment,
+    styled,
+    Switch,
+    TextField,
+    Tooltip,
+    Typography,
+} from "@mui/material";
 import React from "react";
 
 import type { VariableTypes } from "../../types/validation";
@@ -161,7 +175,24 @@ export function DataMapper({
                                         sx={{ height: 16, fontSize: 10, "& .MuiChip-label": { px: "5px" } }}
                                     />
                                 </Box>
-                                <Box sx={{ display: "flex", gap: 0.75 }}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                                    <Tooltip title="Use null-safe navigation (?.) when assigning expressions from context (auto-map, drag & drop, click to insert)">
+                                        <FormControlLabel
+                                            control={
+                                                <Switch
+                                                    size="small"
+                                                    checked={dm.nullSafe}
+                                                    onChange={(e) => dm.setNullSafe(e.target.checked)}
+                                                />
+                                            }
+                                            label={
+                                                <Typography sx={{ fontSize: 11, color: "text.secondary", userSelect: "none" }}>
+                                                    Null-safe
+                                                </Typography>
+                                            }
+                                            sx={{ mr: 0.5 }}
+                                        />
+                                    </Tooltip>
                                     <Tooltip title="Auto-fill unmapped fields by matching field names to context variables">
                                         <Button
                                             startIcon={<AutoFixHighIcon />}
