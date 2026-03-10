@@ -4,11 +4,11 @@ import React from "react";
 import { getTestCase } from "../../../reducers/selectors/testCases";
 import { useAppSelector } from "../../../store/storeHelpers";
 
-export const AssertionResultsHeader = () => {
+export const TestCaseHeader = () => {
     const testCase = useAppSelector(getTestCase);
 
     return (
-        <Box display={"flex"} ml={0.5} mb={1}>
+        <Box display={"flex"} mx={1} mb={1}>
             <Typography variant={"body1"} color={"text.primary"}>
                 {testCase.name}
             </Typography>
