@@ -1,5 +1,5 @@
 import { Box, Dialog, DialogContent } from "@mui/material";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 
 import ProcessUtils from "../../../common/ProcessUtils";
 import { useUserSettings } from "../../../common/useUserSettings";
@@ -22,6 +22,7 @@ import { FieldLabelConsumer } from "./editors/RenderFieldLabel";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { FieldAddons } from "./fieldAddons";
 import { IdField } from "./IdField";
+import { useInputOutputContext } from "./io/InputOutputContext";
 import { StyledLoadingButton } from "./node-action-buttons/StyledLoadingButton";
 import { getExpressionType, getNodeTypingInfo } from "./NodeDetailsContent/selectors";
 import { useDiffMark } from "./PathsToMark";
@@ -82,6 +83,13 @@ export default function Variable({ node, setProperty, isEditMode, showValidation
     const [dataMapperContext, setDataMapperContext] = useState<ContextData>({});
     const contextFetched = useRef(false);
 
+    const ioContext = useInputOutputContext();
+    const incomingContext = useMemo<ContextData | undefined>(() => {
+        const [contexts] = ioContext?.getAvailableContexts("input") ?? [[]];
+        if (!contexts.length) return undefined;
+        return Object.fromEntries(Object.entries(contexts[0].variables).map(([k, v]) => [k, v.pretty]));
+    }, [ioContext]);
+
     const handleInsert = useCallback(
         (spel: string) => {
             onExpressionChange({ expression: spel, language: ExpressionLang.SpEL });
@@ -91,7 +99,10 @@ export default function Variable({ node, setProperty, isEditMode, showValidation
     );
 
     const handleOpenMapper = useCallback(async () => {
-        if (!contextFetched.current) {
+        if (incomingContext) {
+            setDataMapperContext(incomingContext);
+            contextFetched.current = true;
+        } else if (!contextFetched.current) {
             contextFetched.current = true;
             try {
                 const { data: suggestions } = await HttpService.getExpressionSuggestions(processingType, {
@@ -113,7 +124,7 @@ export default function Variable({ node, setProperty, isEditMode, showValidation
             }
         }
         setMapperOpen(true);
-    }, [processingType, variableTypes]);
+    }, [processingType, variableTypes, incomingContext]);
 
     return (
         <>

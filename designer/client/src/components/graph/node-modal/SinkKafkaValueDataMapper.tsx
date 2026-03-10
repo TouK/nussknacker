@@ -5,10 +5,11 @@ import HttpService from "../../../http/HttpService/instance";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { UIParameter } from "../../../types/definition";
 import type { NodeType } from "../../../types/node";
-import type { TopicEntry } from "../../dataMapper/DataMapper";
+import type { ContextData, TopicEntry } from "../../dataMapper/DataMapper";
 import { DataMapper } from "../../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../../dataMapper/DataMapperDialogTitle";
 import { EditorType, ExpressionLang } from "./editors/expression/types";
+import { useInputOutputContext } from "./io/InputOutputContext";
 import { StyledLoadingButton } from "./node-action-buttons/StyledLoadingButton";
 import { getFindAvailableVariables, getProcessName, getProcessProperties } from "./NodeDetailsContent/selectors";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
@@ -88,6 +89,13 @@ export function SinkKafkaValueDataMapper({ node, parameterDefinitions, valuePath
         return entries;
     }, [node, parameterDefinitions, processName, processProperties, topicEntries]);
 
+    const ioContext = useInputOutputContext();
+    const initialContext = useMemo<ContextData | undefined>(() => {
+        const [contexts] = ioContext?.getAvailableContexts("input") ?? [[]];
+        if (!contexts.length) return undefined;
+        return Object.fromEntries(Object.entries(contexts[0].variables).map(([k, v]) => [k, v.pretty]));
+    }, [ioContext]);
+
     const handleInsert = useCallback(
         (spel: string) => {
             setProperty(valuePath, { expression: spel, language: ExpressionLang.SpEL });
@@ -109,6 +117,7 @@ export function SinkKafkaValueDataMapper({ node, parameterDefinitions, valuePath
                             onInsert={handleInsert}
                             fetchTopicDefinitions={fetchTopicDefinitions}
                             variableTypes={variableTypes}
+                            initialContext={initialContext}
                             initialExpression={
                                 (
                                     node.ref as {
