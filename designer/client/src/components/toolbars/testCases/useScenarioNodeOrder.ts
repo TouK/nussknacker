@@ -8,19 +8,10 @@ export function useScenarioNodeOrder() {
 
     const nodes = useMemo(() => scenarioGraph.nodes ?? [], [scenarioGraph.nodes]);
 
-    const nodeOrderMap = useMemo(
-        () =>
-            nodes.reduce((acc, node, index) => {
-                acc[node.id] = index;
-                return acc;
-            }, {} as Record<string, number>),
+    const sortByScenarioOrder = useCallback(
+        (ids: string[]) => [...ids].sort((a, b) => (nodes[a] ?? Infinity) - (nodes[b] ?? Infinity)),
         [nodes],
     );
 
-    const sortByScenarioOrder = useCallback(
-        (ids: string[]) => [...ids].sort((a, b) => (nodeOrderMap[a] ?? Infinity) - (nodeOrderMap[b] ?? Infinity)),
-        [nodeOrderMap],
-    );
-
-    return { nodes, nodeOrderMap, sortByScenarioOrder };
+    return { nodes, sortByScenarioOrder };
 }

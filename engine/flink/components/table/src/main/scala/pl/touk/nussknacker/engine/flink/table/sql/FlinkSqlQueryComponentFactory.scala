@@ -20,8 +20,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
-import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions.LogicalTypeExtension
-import pl.touk.nussknacker.engine.flink.table.utils.ToTableTypeEncoder
+import pl.touk.nussknacker.engine.flink.table.typing.ToTableTypeEncoder
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import scala.jdk.CollectionConverters._
@@ -31,6 +30,8 @@ object FlinkSqlQueryComponentFactory
     extends CustomStreamTransformer
     with SingleInputDynamicComponent
     with AllProcessingModesComponent {
+
+  import pl.touk.nussknacker.engine.flink.table.typing.DataTypesExtensions.LogicalTypeExtension
 
   final case class SqlQuery(sql: String, outputType: TypingResult)
   final case class TransformationState(query: SqlQuery, input: QueryContextSchema)

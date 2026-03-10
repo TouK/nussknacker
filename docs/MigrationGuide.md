@@ -45,6 +45,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   now we always set uid to node id in stateful operators
 * [#8842](https://github.com/TouK/nussknacker/pull/8842) Due to changes in Flink serialization ([FLIP-398](https://cwiki.apache.org/confluence/display/FLINK/FLIP-398:+Improve+Serialization+Configuration+And+Usage+In+Flink))
   we decided to remove `avroKryoGenericRecordSchemaIdSerialization` optimization config option. It will cause decrease of performance when Avro record is serialized using Kryo, because record will be serialized together with its Avro schema.
+* [#9037](https://github.com/TouK/nussknacker/pull/9037) Changes around Table-API based Component Providers:
+  * Component Provider for Table Source and Table Sink - rename from `flinkTableDataSource` to `flinkTableIO`
+  * Component Provider for Join and Aggregate components
+    * renamed from `flinkTableOps` to `flinkBatchOps`
+    * is no longer loaded by default - no need to disable it for streaming configurations, and for batch configurations,
+      it can be enabled by `components.flinkBatchOps.disabled: false` config under `modelConfig`
 
 ### REST API changes
 
