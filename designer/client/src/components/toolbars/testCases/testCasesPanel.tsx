@@ -1,3 +1,4 @@
+import { Box } from "@mui/material";
 import React from "react";
 
 import { getTestCase } from "../../../reducers/selectors/testCases";
@@ -10,7 +11,9 @@ const TestCasesPanel = () => {
 
     return (
         <ToolbarWrapper id={"test-cases-panel"} title={"Test cases"}>
-            <TestCaseExpandable testCase={testCase} />
+            <Box my={1}>
+                <TestCaseExpandable testCase={testCase} />
+            </Box>
         </ToolbarWrapper>
     );
 };
