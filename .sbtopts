@@ -2,6 +2,7 @@
 -J-Xms2g
 -J-Xmx6g
 -J-XX:ReservedCodeCacheSize=256M
+-J-XX:NonProfiledCodeHeapSize=196m
 -J-XX:MaxMetaspaceSize=5g
 -J-XX:+UnlockExperimentalVMOptions
 -J-XX:-UseJVMCICompiler
