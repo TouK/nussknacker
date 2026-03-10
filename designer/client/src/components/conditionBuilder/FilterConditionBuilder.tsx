@@ -1,11 +1,12 @@
 import { Box, Dialog, DialogContent } from "@mui/material";
-import React, { useState } from "react";
-
+import React, { useMemo, useState } from "react";
 
 import type { NodeType } from "../../types/node";
 import type { VariableTypes } from "../../types/validation";
+import type { ContextData } from "../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../dataMapper/DataMapperDialogTitle";
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
+import { useInputOutputContext } from "../graph/node-modal/io/InputOutputContext";
 import { StyledLoadingButton } from "../graph/node-modal/node-action-buttons/StyledLoadingButton";
 import { ConditionBuilder } from "./ConditionBuilder";
 
@@ -18,6 +19,13 @@ interface Props {
 
 export function FilterConditionBuilder({ node, variableTypes, onInsert, expression }: Props): React.JSX.Element {
     const [open, setOpen] = useState(false);
+
+    const ioContext = useInputOutputContext();
+    const contextData = useMemo<ContextData | undefined>(() => {
+        const [contexts] = ioContext?.getAvailableContexts("input") ?? [[]];
+        if (!contexts.length) return undefined;
+        return Object.fromEntries(Object.entries(contexts[0].variables).map(([k, v]) => [k, v.pretty]));
+    }, [ioContext]);
 
     const handleInsert = (spel: string) => {
         onInsert(spel);
@@ -36,6 +44,7 @@ export function FilterConditionBuilder({ node, variableTypes, onInsert, expressi
                         <ConditionBuilder
                             onInsert={handleInsert}
                             variableTypes={variableTypes}
+                            contextData={contextData}
                             initialExpression={expression?.language === ExpressionLang.SpEL ? expression.expression : undefined}
                         />
                     </DialogContent>

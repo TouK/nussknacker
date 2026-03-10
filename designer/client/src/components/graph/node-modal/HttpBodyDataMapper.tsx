@@ -4,8 +4,10 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";
 import { DataMapper } from "../../dataMapper/DataMapper";
+import type { ContextData } from "../../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../../dataMapper/DataMapperDialogTitle";
 import { ExpressionLang } from "./editors/expression/types";
+import { useInputOutputContext } from "./io/InputOutputContext";
 import { StyledLoadingButton } from "./node-action-buttons/StyledLoadingButton";
 import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
@@ -42,6 +44,13 @@ export function HttpBodyDataMapper({ node, valuePath, setProperty }: Props): Rea
         return vars;
     }, [findAvailableVariables, node]);
 
+    const ioContext = useInputOutputContext();
+    const initialContext = useMemo<ContextData | undefined>(() => {
+        const [contexts] = ioContext?.getAvailableContexts("input") ?? [[]];
+        if (!contexts.length) return undefined;
+        return Object.fromEntries(Object.entries(contexts[0].variables).map(([k, v]) => [k, v.pretty]));
+    }, [ioContext]);
+
     const handleInsert = useCallback(
         (spel: string) => {
             setProperty(valuePath, { expression: spel, language: ExpressionLang.SpEL });
@@ -59,7 +68,12 @@ export function HttpBodyDataMapper({ node, valuePath, setProperty }: Props): Rea
                 <Dialog open onClose={() => setOpen(false)} maxWidth="xl" fullWidth>
                     <DataMapperDialogTitle node={node} onClose={() => setOpen(false)} />
                     <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                        <DataMapper onInsert={handleInsert} variableTypes={variableTypes} initialExpression={getBodyExpression(node)} />
+                        <DataMapper
+                            onInsert={handleInsert}
+                            variableTypes={variableTypes}
+                            initialExpression={getBodyExpression(node)}
+                            initialContext={initialContext}
+                        />
                     </DialogContent>
                 </Dialog>
             )}

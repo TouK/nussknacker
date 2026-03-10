@@ -12,6 +12,7 @@ import { EdgeKind } from "../../../types/edge";
 import type { NodeId } from "../../../types/node";
 import type { VariableTypes } from "../../../types/validation";
 import { ConditionBuilder } from "../../conditionBuilder/ConditionBuilder";
+import type { ContextData } from "../../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../../dataMapper/DataMapperDialogTitle";
 import NodeUtils from "../NodeUtils";
 import type { EdgeTypeOption } from "./EdgeTypeSelect";
@@ -23,6 +24,7 @@ import type { FieldError } from "./editors/Validators";
 import { FieldsRow } from "./fragment-input-definition/FieldsRow";
 import type { Option } from "./fragment-input-definition/TypeSelect";
 import { TypeSelect } from "./fragment-input-definition/TypeSelect";
+import { useInputOutputContext } from "./io/InputOutputContext";
 
 interface Props {
     edgeId: string;
@@ -117,6 +119,13 @@ export function EdgeFields(props: Props): React.JSX.Element {
     );
 
     const sourceNode = useMemo(() => scenarioGraph.nodes.find((n) => n.id === edge.from), [scenarioGraph.nodes, edge.from]);
+
+    const ioContext = useInputOutputContext();
+    const conditionBuilderContextData = useMemo<ContextData | undefined>(() => {
+        const [contexts] = ioContext?.getAvailableContexts("input") ?? [[]];
+        if (!contexts.length) return undefined;
+        return Object.fromEntries(Object.entries(contexts[0].variables).map(([k, v]) => [k, v.pretty]));
+    }, [ioContext]);
 
     const conditionBuilderAdornment = useMemo(() => {
         if (readOnly || edge.edgeType?.type !== EdgeKind.switchNext) return undefined;
@@ -213,6 +222,7 @@ export function EdgeFields(props: Props): React.JSX.Element {
                                 setConditionBuilderOpen(false);
                             }}
                             variableTypes={variableTypes}
+                            contextData={conditionBuilderContextData}
                             initialExpression={
                                 edge.edgeType?.condition?.language === ExpressionLang.SpEL &&
                                 edge.edgeType?.condition?.expression !== "true"
