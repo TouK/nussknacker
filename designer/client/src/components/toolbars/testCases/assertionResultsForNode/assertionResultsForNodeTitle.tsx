@@ -23,7 +23,8 @@ export const AssertionResultsForNodeTitle = ({ title, assertionResults, action, 
             minWidth={0}
             width={"100%"}
             sx={{
-                "&:not(:hover) .action-slot": { visibility: "hidden" },
+                "& .action-slot": { opacity: 0, transition: "opacity 0.15s" },
+                "&:hover .action-slot": { opacity: 1 },
             }}
         >
             {node && <NodeIcon node={node} />}
