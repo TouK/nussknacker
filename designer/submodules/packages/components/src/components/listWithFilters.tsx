@@ -169,7 +169,7 @@ export function Components(): JSX.Element {
                     return t("table.filter.desc.SHOW_ARCHIVED", "Archived visible");
                 case "USAGES":
                     return t("table.filter.desc.USAGES", "Used {{val}} times", {
-                        val: value === 0 ? `${value}` : value <= 0 ? `< ${-value}` : `≥ ${value}`,
+                        val: typeof value === "string" || value === 0 ? `${value}` : value <= 0 ? `< ${-value}` : `≥ ${value}`,
                         interpolation: { escapeValue: false },
                     });
                 case "PROCESSING_MODE":

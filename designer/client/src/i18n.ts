@@ -1,8 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
 import i18next from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
+import Backend from "i18next-http-backend";
 import intervalPlural from "i18next-intervalplural-postprocessor";
-import Backend from "i18next-xhr-backend";
 import moment from "moment";
 import { initReactI18next } from "react-i18next";
 import urlJoin from "url-join";
