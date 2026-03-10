@@ -236,18 +236,19 @@ export function DataMapper({
                                     <FieldRow
                                         key={f.id}
                                         field={f}
-                                        isSelected={dm.selField === f.id}
-                                        isDragOver={dm.dragOverId === f.id}
+                                        depth={0}
+                                        selFieldId={dm.selField}
+                                        dragOverFieldId={dm.dragOverId}
                                         variableTypes={variableTypes ?? {}}
-                                        onSelect={() => dm.setSelField(dm.selField === f.id ? null : f.id)}
-                                        onChange={(key, val) => dm.updateField(f.id, key, val)}
-                                        onMapEntryAdd={() => dm.addMapEntry(f.id)}
-                                        onRemove={() => dm.removeField(f.id)}
-                                        onMoveUp={() => dm.moveField(f.id, -1)}
-                                        onMoveDown={() => dm.moveField(f.id, 1)}
-                                        onDragOver={() => dm.setDragOverId(f.id)}
-                                        onDragLeave={() => dm.setDragOverId(null)}
-                                        onDrop={(path) => dm.onDrop(path, f.id)}
+                                        fieldErrors={dm.fieldErrors}
+                                        onSelectId={(id) => dm.setSelField(dm.selField === id ? null : id)}
+                                        onDragOverId={dm.setDragOverId}
+                                        onChange={dm.updateField}
+                                        onAddChild={dm.addChildField}
+                                        onRemove={dm.removeField}
+                                        onMove={dm.moveField}
+                                        onDrop={dm.onDrop}
+                                        onValidateExpression={dm.validateExpression}
                                     />
                                 ))}
                                 {/* Drop zone */}

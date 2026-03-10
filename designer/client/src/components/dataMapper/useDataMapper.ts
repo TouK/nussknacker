@@ -4,17 +4,20 @@ import HttpService from "../../http/HttpService/instance";
 import { useAppSelector } from "../../store/storeHelpers";
 import type { VariableTypes } from "../../types/validation";
 import { toNullSafe, typingResultToSample } from "../builderComponents/typeUtils";
+import type { FieldError } from "../graph/node-modal/editors/Validators";
 import { getProcessName, getProcessProperties } from "../graph/node-modal/NodeDetailsContent/selectors";
 import type { ContextData, FieldDef, TopicEntry } from "./dataMapperUtils";
 import {
+    checkTypeCompatibility,
+    EXPR_PROBE_NODE_BASE,
     fieldsFromSample,
     genSpelFromFields,
     INITIAL_FIELDS,
     KAFKA_TOPIC_PROBE_NODE,
     makeField,
-    makeMapEntry,
     nextId,
     parseSpelToFields,
+    refClazzToNuType,
     SAMPLE_CONTEXT,
 } from "./dataMapperUtils";
 
@@ -24,6 +27,32 @@ interface UseDataMapperOptions {
     variableTypes?: VariableTypes;
     isEmbedded: boolean;
     fetchTopicDefinitionsOverride?: () => Promise<TopicEntry[]>;
+}
+
+// ─── Tree helpers ─────────────────────────────────────────────────────────────
+
+function updateInTree(fields: FieldDef[], id: number, updater: (f: FieldDef) => FieldDef): FieldDef[] {
+    return fields.map((f) => {
+        if (f.id === id) return updater(f);
+        if (f.children.length > 0) return { ...f, children: updateInTree(f.children, id, updater) };
+        return f;
+    });
+}
+
+function removeFromTree(fields: FieldDef[], id: number): FieldDef[] {
+    return fields.filter((f) => f.id !== id).map((f) => (f.children.length > 0 ? { ...f, children: removeFromTree(f.children, id) } : f));
+}
+
+function moveInTree(fields: FieldDef[], id: number, dir: 1 | -1): FieldDef[] {
+    const idx = fields.findIndex((f) => f.id === id);
+    if (idx >= 0) {
+        const ni = idx + dir;
+        if (ni < 0 || ni >= fields.length) return fields;
+        const c = [...fields];
+        [c[idx], c[ni]] = [c[ni], c[idx]];
+        return c;
+    }
+    return fields.map((f) => (f.children.length > 0 ? { ...f, children: moveInTree(f.children, id, dir) } : f));
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
@@ -55,6 +84,7 @@ export function useDataMapper({
     const [topicsLoading, setTopicsLoading] = useState(false);
     const [contextFilter, setContextFilter] = useState("");
     const [dropZoneActive, setDropZoneActive] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState<Record<number, FieldError[]>>({});
 
     const enrichedContext = useMemo<ContextData>(() => {
         if (!variableTypes) return context;
@@ -76,7 +106,7 @@ export function useDataMapper({
         return merged;
     }, [context, variableTypes]);
 
-    const mappedCount = useMemo(() => fields.filter((f) => f.expression || (f.useMapBuilder && f.mapEntries.length > 0)).length, [fields]);
+    const mappedCount = useMemo(() => fields.filter((f) => f.isRecord || f.expression).length, [fields]);
     const spelOutput = useCallback(() => genSpelFromFields(fields), [fields]);
 
     const addField = useCallback(() => setFields((f) => [...f, makeField()]), []);
@@ -92,31 +122,72 @@ export function useDataMapper({
 
     const removeField = useCallback(
         (id: number) => {
-            setFields((f) => f.filter((x) => x.id !== id));
+            setFields((f) => removeFromTree(f, id));
             if (selField === id) setSelField(null);
         },
         [selField],
     );
 
     const updateField = useCallback((id: number, key: keyof FieldDef, val: unknown) => {
-        setFields((f) => f.map((x) => (x.id !== id ? x : { ...x, [key]: val })));
+        setFields((f) => updateInTree(f, id, (x) => ({ ...x, [key]: val })));
     }, []);
 
     const moveField = useCallback((id: number, dir: 1 | -1) => {
-        setFields((f) => {
-            const idx = f.findIndex((x) => x.id === id);
-            if (idx < 0) return f;
-            const ni = idx + dir;
-            if (ni < 0 || ni >= f.length) return f;
-            const c = [...f];
-            [c[idx], c[ni]] = [c[ni], c[idx]];
-            return c;
+        setFields((f) => moveInTree(f, id, dir));
+    }, []);
+
+    const addChildField = useCallback((parentId: number) => {
+        setFields((fs) => updateInTree(fs, parentId, (f) => ({ ...f, children: [...f.children, makeField()] })));
+    }, []);
+
+    const clearFieldErrors = useCallback((id: number) => {
+        setFieldErrors((prev) => {
+            if (!(id in prev)) return prev;
+            const next = { ...prev };
+            delete next[id];
+            return next;
         });
     }, []);
 
-    const addMapEntry = useCallback((fieldId: number) => {
-        setFields((fs) => fs.map((f) => (f.id !== fieldId ? f : { ...f, mapEntries: [...f.mapEntries, makeMapEntry()] })));
-    }, []);
+    const validateExpression = useCallback(
+        async (id: number, expression: string, nuType?: FieldDef["type"]) => {
+            if (!processName || !processProperties) return;
+            if (!expression.trim()) {
+                clearFieldErrors(id);
+                return;
+            }
+            const nodeData = { ...EXPR_PROBE_NODE_BASE, value: { language: "spel", expression } };
+            const result = await HttpService.validateNode(processName, {
+                nodeData: nodeData as never,
+                variableTypes: variableTypes ?? {},
+                branchVariableTypes: {},
+                outgoingEdges: [],
+                testCases: {},
+                processProperties,
+            });
+            if (!result) return;
+            const errors: FieldError[] = result.validationErrors.map(({ message, description, details }) => ({
+                message,
+                description,
+                details,
+            }));
+            if (errors.length === 0) {
+                if (nuType && nuType !== "Any") {
+                    const typeMismatch = checkTypeCompatibility(result.expressionType, nuType);
+                    if (typeMismatch) {
+                        errors.push({ message: typeMismatch, description: null, details: null });
+                    }
+                } else if (nuType === "Any" && result.expressionType) {
+                    const inferred = refClazzToNuType(result.expressionType.refClazzName);
+                    if (inferred !== "Any") {
+                        setFields((prev) => updateInTree(prev, id, (f) => (f.type === "Any" ? { ...f, type: inferred } : f)));
+                    }
+                }
+            }
+            setFieldErrors((prev) => ({ ...prev, [id]: errors }));
+        },
+        [processName, processProperties, variableTypes, clearFieldErrors],
+    );
 
     const handleAutoMap = useCallback(() => {
         const pathMap = new Map<string, string>();
@@ -129,21 +200,24 @@ export function useDataMapper({
             }
         }
         Object.entries(enrichedContext).forEach(([key, val]) => traverse(val, key));
-        setFields((prev) =>
-            prev.map((f) => {
-                if (f.expression || (f.useMapBuilder && f.mapEntries.length > 0)) return f;
+
+        function autoMap(fs: FieldDef[]): FieldDef[] {
+            return fs.map((f) => {
+                if (f.isRecord) return { ...f, children: autoMap(f.children) };
+                if (f.expression) return f;
                 const normalized = f.name.toLowerCase().replace(/[_\s]/g, "");
                 const match = pathMap.get(normalized);
                 return match ? { ...f, expression: toNullSafe(`#${match}`) } : f;
-            }),
-        );
+            });
+        }
+        setFields(autoMap);
     }, [enrichedContext]);
 
     const onTreeSelect = useCallback(
         (path: string) => {
             setSelPath(path);
             if (selField != null) {
-                setFields((f) => f.map((x) => (x.id === selField ? { ...x, expression: toNullSafe(`#${path}`) } : x)));
+                setFields((f) => updateInTree(f, selField, (x) => ({ ...x, expression: toNullSafe(`#${path}`) })));
             }
         },
         [selField],
@@ -152,8 +226,7 @@ export function useDataMapper({
     const onDrop = useCallback((path: string, fieldId: number) => {
         const lastSegment = path.split(".").pop()?.replace(/\?/g, "") ?? "";
         setFields((prev) =>
-            prev.map((x) => {
-                if (x.id !== fieldId) return x;
+            updateInTree(prev, fieldId, (x) => {
                 const nameUpdate = !x.name?.trim() && lastSegment ? { name: lastSegment } : {};
                 return { ...x, expression: path, ...nameUpdate };
             }),
@@ -165,11 +238,11 @@ export function useDataMapper({
         const newFields = fieldsFromSample(parsed);
         if (newFields.length === 0) return 'JSON must be a flat object, e.g. {"name": "value"}';
         if (mode === "replace") {
-            setFields(newFields.map((f) => ({ ...f, id: nextId() })));
+            setFields(newFields);
         } else {
             setFields((prev) => {
                 const existing = new Set(prev.map((x) => x.name));
-                const toAdd = newFields.filter((nf) => !existing.has(nf.name)).map((f) => ({ ...f, id: nextId() }));
+                const toAdd = newFields.filter((nf) => !existing.has(nf.name));
                 return [...prev, ...toAdd];
             });
         }
@@ -253,7 +326,7 @@ export function useDataMapper({
     const applyTopicSchema = useCallback((entry: TopicEntry) => {
         const newFields = fieldsFromSample(entry.schema);
         if (newFields.length === 0) return;
-        setFields(newFields.map((f) => ({ ...f, id: nextId() })));
+        setFields(newFields);
         setShowTopicPicker(false);
     }, []);
 
@@ -272,6 +345,7 @@ export function useDataMapper({
         contextFilter,
         dropZoneActive,
         mappedCount,
+        fieldErrors,
         // setters
         setSelField,
         setDragOverId,
@@ -287,7 +361,9 @@ export function useDataMapper({
         removeField,
         updateField,
         moveField,
-        addMapEntry,
+        addChildField,
+        validateExpression,
+        clearFieldErrors,
         handleAutoMap,
         onTreeSelect,
         onDrop,

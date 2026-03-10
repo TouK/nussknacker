@@ -1,5 +1,4 @@
 import { fieldsFromSample, genSpelFromFields, inferNuType, makeField, parseSpelToFields, splitTopLevel } from "./dataMapperUtils";
-import type { MapEntryDef } from "./dataMapperUtils";
 
 // ─── inferNuType ──────────────────────────────────────────────────────────────
 
@@ -89,8 +88,8 @@ describe("parseSpelToFields", () => {
             name: "name",
             expression: "#input.name",
             type: "Any",
-            mapEntries: [],
-            useMapBuilder: false,
+            children: [],
+            isRecord: false,
         });
     });
 
@@ -107,13 +106,21 @@ describe("parseSpelToFields", () => {
         expect(result![0]).toMatchObject({ name: "id", expression: "", type: "Any" });
     });
 
-    it("nested record value → Map field with useMapBuilder=true and correct entries", () => {
+    it("nested record value → Map field with isRecord=true and correct children", () => {
         const result = parseSpelToFields("{ meta: { key: #x, val: #y } }");
         expect(result).toHaveLength(1);
-        expect(result![0]).toMatchObject({ name: "meta", type: "Map", useMapBuilder: true });
-        expect(result![0].mapEntries).toHaveLength(2);
-        expect(result![0].mapEntries[0]).toMatchObject({ key: "key", expression: "#x" });
-        expect(result![0].mapEntries[1]).toMatchObject({ key: "val", expression: "#y" });
+        expect(result![0]).toMatchObject({ name: "meta", type: "Map", isRecord: true });
+        expect(result![0].children).toHaveLength(2);
+        expect(result![0].children[0]).toMatchObject({ name: "key", expression: "#x" });
+        expect(result![0].children[1]).toMatchObject({ name: "val", expression: "#y" });
+    });
+
+    it("deeply nested record value → recursive children", () => {
+        const result = parseSpelToFields("{ outer: { inner: { leaf: #x } } }");
+        expect(result).toHaveLength(1);
+        expect(result![0]).toMatchObject({ name: "outer", isRecord: true });
+        expect(result![0].children[0]).toMatchObject({ name: "inner", isRecord: true });
+        expect(result![0].children[0].children[0]).toMatchObject({ name: "leaf", expression: "#x" });
     });
 
     it("skips parts without a colon", () => {
@@ -157,48 +164,41 @@ describe("genSpelFromFields", () => {
         expect(genSpelFromFields([f1, f2])).toBe("{\n  a: #x,\n  b: #y\n}");
     });
 
-    it("map field with entries generates nested record", () => {
+    it("record field with children generates nested SpEL record", () => {
         const f = makeField("meta", "Map");
-        f.useMapBuilder = true;
-        f.mapEntries = [
-            { id: 1, key: "k1", expression: "#x" },
-            { id: 2, key: "k2", expression: "#y" },
-        ] satisfies MapEntryDef[];
+        f.isRecord = true;
+        const c1 = makeField("k1");
+        c1.expression = "#x";
+        const c2 = makeField("k2");
+        c2.expression = "#y";
+        f.children = [c1, c2];
         expect(genSpelFromFields([f])).toBe("{\n  meta: {\n    k1: #x,\n    k2: #y\n  }\n}");
     });
 
-    it("map entries with empty keys are skipped", () => {
-        const f = makeField("meta", "Map");
-        f.useMapBuilder = true;
-        f.mapEntries = [
-            { id: 1, key: "", expression: "#x" },
-            { id: 2, key: "k2", expression: "#y" },
-        ] satisfies MapEntryDef[];
-        const out = genSpelFromFields([f]);
-        expect(out).toContain("k2: #y");
-        expect(out).not.toMatch(/^\s*: #x/m);
+    it("deeply nested record generates correct indentation", () => {
+        const outer = makeField("outer", "Map");
+        outer.isRecord = true;
+        const inner = makeField("inner", "Map");
+        inner.isRecord = true;
+        const leaf = makeField("leaf");
+        leaf.expression = "#x";
+        inner.children = [leaf];
+        outer.children = [inner];
+        expect(genSpelFromFields([outer])).toBe("{\n  outer: {\n    inner: {\n      leaf: #x\n    }\n  }\n}");
     });
 
-    it("map entry with empty expression uses null placeholder", () => {
+    it("record field with no children renders empty record {}", () => {
         const f = makeField("meta", "Map");
-        f.useMapBuilder = true;
-        f.mapEntries = [{ id: 1, key: "k", expression: "" }] satisfies MapEntryDef[];
-        expect(genSpelFromFields([f])).toContain("k: null");
+        f.isRecord = true;
+        f.children = [];
+        expect(genSpelFromFields([f])).toBe("{\n  meta: {}\n}");
     });
 
-    it("map field with useMapBuilder=false renders as plain expression", () => {
+    it("map field with isRecord=false renders as plain expression", () => {
         const f = makeField("meta", "Map");
-        f.useMapBuilder = false;
+        f.isRecord = false;
         f.expression = "#input.meta";
         expect(genSpelFromFields([f])).toBe("{\n  meta: #input.meta\n}");
-    });
-
-    it("map field with useMapBuilder=true but empty entries falls back to null", () => {
-        const f = makeField("meta", "Map");
-        f.useMapBuilder = true;
-        f.mapEntries = [];
-        // useMapBuilder=true but no entries: condition `f.useMapBuilder && f.mapEntries.length > 0` is false
-        expect(genSpelFromFields([f])).toBe("{\n  meta: null\n}");
     });
 });
 
@@ -227,8 +227,17 @@ describe("fieldsFromSample", () => {
         expect(result.find((f) => f.name === "meta")).toMatchObject({ type: "Map" });
     });
 
-    it("all returned fields have empty expression and no mapEntries", () => {
+    it("all returned fields have empty expression and no children", () => {
         const result = fieldsFromSample({ x: 1 });
-        expect(result[0]).toMatchObject({ expression: "", mapEntries: [], useMapBuilder: false });
+        expect(result[0]).toMatchObject({ expression: "", children: [], isRecord: false });
+    });
+
+    it("nested object becomes a record field with children", () => {
+        const result = fieldsFromSample({ address: { city: "Warsaw", zip: "00-001" } });
+        expect(result).toHaveLength(1);
+        expect(result[0]).toMatchObject({ name: "address", type: "Map", isRecord: true });
+        expect(result[0].children).toHaveLength(2);
+        expect(result[0].children[0]).toMatchObject({ name: "city", type: "String" });
+        expect(result[0].children[1]).toMatchObject({ name: "zip", type: "String" });
     });
 });
