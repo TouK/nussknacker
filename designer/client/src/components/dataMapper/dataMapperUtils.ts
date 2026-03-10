@@ -1,11 +1,40 @@
+import type { TypingResult } from "../../types/definition";
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type NuType = "String" | "Integer" | "Long" | "Float" | "Double" | "Boolean" | "BigDecimal" | "List" | "Map" | "Any";
 
-export interface MapEntryDef {
-    id: number;
-    key: string;
-    expression: string;
+const NU_TYPE_CLASS_MAP: Partial<Record<NuType, string[]>> = {
+    String: ["java.lang.String"],
+    Integer: ["java.lang.Integer"],
+    Long: ["java.lang.Long"],
+    Float: ["java.lang.Float"],
+    Double: ["java.lang.Double"],
+    Boolean: ["java.lang.Boolean"],
+    BigDecimal: ["java.math.BigDecimal"],
+    List: ["java.util.List"],
+    Map: ["java.util.Map"],
+};
+
+/** Maps a Java refClazzName to the closest NuType. */
+export function refClazzToNuType(refClazzName: string | undefined): NuType {
+    if (!refClazzName) return "Any";
+    for (const [nuType, classes] of Object.entries(NU_TYPE_CLASS_MAP) as [NuType, string[]][]) {
+        if (classes.some((c) => refClazzName === c || refClazzName.startsWith(c))) return nuType;
+    }
+    return "Any";
+}
+
+/** Returns a type-mismatch error message if the backend-inferred type doesn't match the declared NuType. */
+export function checkTypeCompatibility(expressionType: TypingResult | undefined, nuType: NuType): string | null {
+    if (nuType === "Any" || !expressionType) return null;
+    const expectedClasses = NU_TYPE_CLASS_MAP[nuType];
+    if (!expectedClasses) return null;
+    const actualClass = expressionType.refClazzName;
+    if (!actualClass) return null;
+    if (expectedClasses.some((c) => actualClass === c || actualClass.startsWith(c))) return null;
+    const actual = expressionType.display ?? actualClass.split(".").pop() ?? actualClass;
+    return `Type mismatch: expected ${nuType} but expression returns ${actual}`;
 }
 
 export interface FieldDef {
@@ -13,8 +42,8 @@ export interface FieldDef {
     name: string;
     type: NuType;
     expression: string;
-    mapEntries: MapEntryDef[];
-    useMapBuilder: boolean;
+    children: FieldDef[]; // non-empty or isRecord=true → nested record mode
+    isRecord: boolean;
 }
 
 export type ContextData = Record<string, unknown>;
@@ -40,11 +69,7 @@ export function nextId(): number {
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
 export function makeField(name = "", type: NuType = "String"): FieldDef {
-    return { id: _nextId++, name, type, expression: "", mapEntries: [], useMapBuilder: false };
-}
-
-export function makeMapEntry(): MapEntryDef {
-    return { id: _nextId++, key: "", expression: "" };
+    return { id: _nextId++, name, type, expression: "", children: [], isRecord: false };
 }
 
 export function inferNuType(val: unknown): NuType {
@@ -60,15 +85,15 @@ export function inferNuType(val: unknown): NuType {
     return "Any";
 }
 
-export function fieldsFromSample(obj: unknown): Array<Omit<FieldDef, "id">> {
+export function fieldsFromSample(obj: unknown): FieldDef[] {
     if (typeof obj !== "object" || obj === null || Array.isArray(obj)) return [];
-    return Object.entries(obj as Record<string, unknown>).map(([k, v]) => ({
-        name: k,
-        type: inferNuType(v),
-        expression: "",
-        mapEntries: [],
-        useMapBuilder: false,
-    }));
+    return Object.entries(obj as Record<string, unknown>).map(([k, v]) => {
+        if (typeof v === "object" && v !== null && !Array.isArray(v)) {
+            const children = fieldsFromSample(v);
+            return { ...makeField(k, "Map"), isRecord: true, children };
+        }
+        return makeField(k, inferNuType(v));
+    });
 }
 
 /** Split top-level comma-separated entries respecting nested braces. */
@@ -95,7 +120,7 @@ export function splitTopLevel(inner: string): string[] {
     return parts.filter(Boolean);
 }
 
-/** Parse a SpEL record expression `{ key: expr, ... }` back into FieldDef[]. */
+/** Parse a SpEL record expression `{ key: expr, ... }` back into FieldDef[] (recursive). */
 export function parseSpelToFields(expression: string): FieldDef[] | null {
     const trimmed = expression.trim();
     if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return null;
@@ -111,21 +136,12 @@ export function parseSpelToFields(expression: string): FieldDef[] | null {
         const val = part.slice(colonIdx + 1).trim();
         if (!name) continue;
 
-        // Nested record → Build Map mode
+        // Nested record → recurse
         if (val.startsWith("{") && val.endsWith("}")) {
-            const mapParts = splitTopLevel(val.slice(1, -1).trim());
-            const mapEntries: MapEntryDef[] = mapParts
-                .map((mp) => {
-                    const ci = mp.indexOf(":");
-                    if (ci === -1) return null;
-                    const k = mp.slice(0, ci).trim();
-                    const v = mp.slice(ci + 1).trim();
-                    return { id: nextId(), key: k, expression: v };
-                })
-                .filter((e): e is MapEntryDef => e !== null);
+            const children = parseSpelToFields(val) ?? [];
             const f = makeField(name, "Map");
-            f.mapEntries = mapEntries;
-            f.useMapBuilder = true;
+            f.isRecord = true;
+            f.children = children;
             fields.push(f);
             continue;
         }
@@ -136,7 +152,7 @@ export function parseSpelToFields(expression: string): FieldDef[] | null {
             continue;
         }
 
-        // Any SpEL expression (including #path)
+        // Any SpEL expression
         const field = makeField(name, "Any");
         field.expression = val;
         fields.push(field);
@@ -210,21 +226,28 @@ export const SAMPLE_CONTEXT: ContextData = {
 };
 
 export const INITIAL_FIELDS: Array<Omit<FieldDef, "id">> = [
-    { name: "icao24", type: "String", expression: "", mapEntries: [], useMapBuilder: false },
-    { name: "callsign", type: "String", expression: "", mapEntries: [], useMapBuilder: false },
-    { name: "origin_country", type: "String", expression: "", mapEntries: [], useMapBuilder: false },
-    { name: "time_position", type: "Integer", expression: "", mapEntries: [], useMapBuilder: false },
-    { name: "last_contact", type: "Integer", expression: "", mapEntries: [], useMapBuilder: false },
-    { name: "longitude", type: "Float", expression: "", mapEntries: [], useMapBuilder: false },
-    { name: "latitude", type: "Float", expression: "", mapEntries: [], useMapBuilder: false },
-    { name: "baro_altitude", type: "Float", expression: "", mapEntries: [], useMapBuilder: false },
-    { name: "on_ground", type: "Boolean", expression: "", mapEntries: [], useMapBuilder: false },
-    { name: "velocity", type: "Float", expression: "", mapEntries: [], useMapBuilder: false },
-    { name: "true_track", type: "Float", expression: "", mapEntries: [], useMapBuilder: false },
-    { name: "vertical_rate", type: "Float", expression: "", mapEntries: [], useMapBuilder: false },
-    { name: "geo_altitude", type: "Float", expression: "", mapEntries: [], useMapBuilder: false },
-    { name: "squawk", type: "String", expression: "", mapEntries: [], useMapBuilder: false },
+    { name: "icao24", type: "String", expression: "", children: [], isRecord: false },
+    { name: "callsign", type: "String", expression: "", children: [], isRecord: false },
+    { name: "origin_country", type: "String", expression: "", children: [], isRecord: false },
+    { name: "time_position", type: "Integer", expression: "", children: [], isRecord: false },
+    { name: "last_contact", type: "Integer", expression: "", children: [], isRecord: false },
+    { name: "longitude", type: "Float", expression: "", children: [], isRecord: false },
+    { name: "latitude", type: "Float", expression: "", children: [], isRecord: false },
+    { name: "baro_altitude", type: "Float", expression: "", children: [], isRecord: false },
+    { name: "on_ground", type: "Boolean", expression: "", children: [], isRecord: false },
+    { name: "velocity", type: "Float", expression: "", children: [], isRecord: false },
+    { name: "true_track", type: "Float", expression: "", children: [], isRecord: false },
+    { name: "vertical_rate", type: "Float", expression: "", children: [], isRecord: false },
+    { name: "geo_altitude", type: "Float", expression: "", children: [], isRecord: false },
+    { name: "squawk", type: "String", expression: "", children: [], isRecord: false },
 ];
+
+export const EXPR_PROBE_NODE_BASE = {
+    type: "Variable",
+    id: "_dm-expr-probe",
+    varName: "_probe",
+    additionalFields: { layoutData: { x: 0, y: 0 }, description: "" },
+} as const;
 
 export const KAFKA_TOPIC_PROBE_NODE = {
     type: "Sink",
@@ -236,14 +259,16 @@ export const KAFKA_TOPIC_PROBE_NODE = {
     branchParametersTemplate: [],
 } as const;
 
-/** Generate a SpEL record expression `{\n  key: expr,\n  ...\n}` from fields. */
-export function genSpelFromFields(fields: FieldDef[]): string {
+/** Generate a SpEL record expression `{\n  key: expr,\n  ...\n}` from fields (recursive). */
+export function genSpelFromFields(fields: FieldDef[], depth = 0): string {
+    const outerIndent = "  ".repeat(depth);
+    const innerIndent = "  ".repeat(depth + 1);
     const lines = fields.map((f) => {
-        if (f.useMapBuilder && f.mapEntries.length > 0) {
-            const entries = f.mapEntries.filter((e) => e.key).map((e) => `    ${e.key}: ${e.expression || "null"}`);
-            return `  ${f.name}: {\n${entries.join(",\n")}\n  }`;
+        if (f.isRecord) {
+            if (f.children.length === 0) return `${innerIndent}${f.name}: {}`;
+            return `${innerIndent}${f.name}: ${genSpelFromFields(f.children, depth + 1)}`;
         }
-        return `  ${f.name}: ${f.expression || "null"}`;
+        return `${innerIndent}${f.name}: ${f.expression || "null"}`;
     });
-    return `{\n${lines.join(",\n")}\n}`;
+    return `{\n${lines.join(",\n")}\n${outerIndent}}`;
 }
