@@ -1,4 +1,3 @@
-import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import { Button, Dialog, DialogContent } from "@mui/material";
 import { produce } from "immer";
 import { isEqual, uniq } from "lodash";
@@ -129,7 +128,7 @@ export function EdgeFields(props: Props): React.JSX.Element {
                 onClick={() => setConditionBuilderOpen(true)}
                 sx={{
                     minWidth: "unset",
-                    padding: "1px 4px",
+                    padding: "1px 6px",
                     fontSize: 10,
                     lineHeight: 1.4,
                     textTransform: "none",
@@ -137,7 +136,7 @@ export function EdgeFields(props: Props): React.JSX.Element {
                     zIndex: 1,
                 }}
             >
-                <AccountTreeIcon sx={{ fontSize: 12 }} />
+                Build
             </Button>
         );
     }, [readOnly, edge.edgeType?.type]);
@@ -153,10 +152,10 @@ export function EdgeFields(props: Props): React.JSX.Element {
                         display: "grid",
                         gridTemplateColumns: "1fr 2fr auto",
                     },
+                    "&&&&:has(.edge-value)": {
+                        gridTemplateColumns: "2fr 1fr auto",
+                    },
                     ".fieldRemove": { gridArea: "1 / 3" },
-                    "& :has(>.edge-value)": { gridColumn: "span 2" },
-                    "& :has(>.edge-value) + .edge-target": { gridColumn: "span 2" },
-                    "& .edge-type + :has(>.edge-value)": { gridColumn: "span 1" },
                 }}
             >
                 {showType ? (

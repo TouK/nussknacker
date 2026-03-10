@@ -166,7 +166,7 @@ export function ConditionBuilder({ onInsert, initialExpression, variableTypes }:
                         )}
 
                         {/* Conditions panel */}
-                        <PanelPaper>
+                        <PanelPaper sx={{ backgroundColor: "transparent" }}>
                             <PanelHeader>
                                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
                                     <Typography sx={{ fontSize: 13, fontWeight: 600 }}>Conditions</Typography>
