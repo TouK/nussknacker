@@ -1,12 +1,13 @@
 import DeleteIcon from "@mui/icons-material/Delete";
 import { alpha, Box, IconButton, MenuItem, Select, Tooltip, Typography, useTheme } from "@mui/material";
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 
 import type { VariableTypes } from "../../types/validation";
 import { clearAceSelectionAfterDrop } from "../builderComponents/aceUtils";
 import { SpelEditorContainer } from "../builderComponents/panelStyles";
 import { ExpressionSuggest } from "../graph/node-modal/editors/expression/ExpressionSuggest";
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
+import type { FieldError } from "../graph/node-modal/editors/Validators";
 import type { Condition } from "./spelUtils";
 import { NO_RHS_OPERATORS, OPERATORS } from "./spelUtils";
 
@@ -20,6 +21,9 @@ interface ConditionRowProps {
     onUpdate: (id: number, key: keyof Condition, value: string) => void;
     onRemove: (id: number) => void;
     isLast: boolean;
+    leftErrors: FieldError[];
+    rightErrors: FieldError[];
+    onValidate: (side: "left" | "right", expression: string) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -32,11 +36,28 @@ export function ConditionRow({
     onUpdate,
     onRemove,
     isLast,
+    leftErrors,
+    rightErrors,
+    onValidate,
 }: ConditionRowProps): React.JSX.Element {
     const theme = useTheme();
     const leftContainerRef = useRef<HTMLElement>(null);
     const rightContainerRef = useRef<HTMLElement>(null);
     const isNullOp = NO_RHS_OPERATORS.has(condition.operator);
+
+    const onValidateRef = useRef(onValidate);
+    onValidateRef.current = onValidate;
+
+    useEffect(() => {
+        const timer = setTimeout(() => onValidateRef.current("left", condition.left), 500);
+        return () => clearTimeout(timer);
+    }, [condition.left]);
+
+    useEffect(() => {
+        if (isNullOp) return;
+        const timer = setTimeout(() => onValidateRef.current("right", condition.right), 500);
+        return () => clearTimeout(timer);
+    }, [condition.right, isNullOp]);
 
     return (
         <Box
@@ -75,8 +96,9 @@ export function ConditionRow({
                             rows: 1,
                             placeholder: "left operand",
                         }}
+                        showValidation
                         variableTypes={variableTypes}
-                        fieldErrors={[]}
+                        fieldErrors={leftErrors}
                     />
                 </Box>
             </SpelEditorContainer>
@@ -116,8 +138,9 @@ export function ConditionRow({
                                 rows: 1,
                                 placeholder: "right operand",
                             }}
+                            showValidation
                             variableTypes={variableTypes}
-                            fieldErrors={[]}
+                            fieldErrors={rightErrors}
                         />
                     </Box>
                 </SpelEditorContainer>
