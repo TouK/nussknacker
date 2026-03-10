@@ -10,6 +10,7 @@ import type { VariableTypes } from "../../types/validation";
 import { ContextTreeNode } from "../builderComponents/ContextTreeNode";
 import { PanelHeader, PanelPaper, ScrollArea, SpelOutput } from "../builderComponents/panelStyles";
 import { typingResultToSample } from "../builderComponents/typeUtils";
+import type { ContextData } from "../dataMapper/DataMapper";
 import { EXPR_PROBE_NODE_BASE } from "../dataMapper/dataMapperUtils";
 import type { FieldError } from "../graph/node-modal/editors/Validators";
 import { getProcessName, getProcessProperties } from "../graph/node-modal/NodeDetailsContent/selectors";
@@ -35,11 +36,13 @@ export interface ConditionBuilderProps {
     onInsert?: (spel: string) => void;
     initialExpression?: string;
     variableTypes?: VariableTypes;
+    /** Real values from the last incoming record; used to populate the Context Variables tree. */
+    contextData?: ContextData;
 }
 
 // ─── ConditionBuilder ─────────────────────────────────────────────────────────
 
-export function ConditionBuilder({ onInsert, initialExpression, variableTypes }: ConditionBuilderProps): React.JSX.Element {
+export function ConditionBuilder({ onInsert, initialExpression, variableTypes, contextData }: ConditionBuilderProps): React.JSX.Element {
     const theme = useTheme();
     const focusedEditorContainerRef = useRef<HTMLElement | null>(null);
     const processName = useAppSelector(getProcessName);
@@ -111,7 +114,7 @@ export function ConditionBuilder({ onInsert, initialExpression, variableTypes }:
     const filledConditions = useMemo(() => conditions.filter((c) => c.left.trim()), [conditions]);
     const preview = useMemo(() => genSpel(filledConditions, combinator), [filledConditions, combinator]);
 
-    // Context tree data from variableTypes
+    // Context tree data from variableTypes, enriched with real values when available
     const contextEntries = useMemo<[string, unknown][]>(() => {
         if (!variableTypes) return [];
         return Object.entries(variableTypes)
@@ -120,10 +123,11 @@ export function ConditionBuilder({ onInsert, initialExpression, variableTypes }:
                 return key.toLowerCase().includes(contextFilter.toLowerCase());
             })
             .map(([key, typingResult]) => {
-                const sample = typingResultToSample(typingResult);
-                return [`#${key}`, sample ?? null] as [string, unknown];
+                const realValue = contextData?.[key];
+                const value = realValue !== undefined ? realValue : typingResultToSample(typingResult);
+                return [`#${key}`, value ?? null] as [string, unknown];
             });
-    }, [variableTypes, contextFilter]);
+    }, [variableTypes, contextFilter, contextData]);
 
     const handleTreeInsert = useCallback((text: string) => {
         const container = focusedEditorContainerRef.current;
