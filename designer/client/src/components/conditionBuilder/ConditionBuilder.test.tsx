@@ -4,6 +4,19 @@ import React from "react";
 import { NuThemeProvider } from "../../containers/theme/nuThemeProvider";
 import { ConditionBuilder } from "./ConditionBuilder";
 
+jest.mock("../../store/storeHelpers", () => ({
+    useAppSelector: jest.fn().mockReturnValue(null),
+}));
+
+jest.mock("../../http/HttpService/instance", () => ({
+    default: { validateNode: jest.fn() },
+}));
+
+jest.mock("../graph/node-modal/NodeDetailsContent/selectors", () => ({
+    getProcessName: "getProcessName",
+    getProcessProperties: "getProcessProperties",
+}));
+
 // Mock Ace-editor-based sub-components so we don't need a real DOM canvas
 jest.mock("./ConditionRow", () => ({
     ConditionRow: ({ condition, index, onRemove, onUpdate, isLast }: any) => (

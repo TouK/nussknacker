@@ -4,10 +4,15 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { alpha, Box, Button, Chip, InputAdornment, MenuItem, Select, styled, TextField, Typography, useTheme } from "@mui/material";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
+import HttpService from "../../http/HttpService/instance";
+import { useAppSelector } from "../../store/storeHelpers";
 import type { VariableTypes } from "../../types/validation";
 import { ContextTreeNode } from "../builderComponents/ContextTreeNode";
 import { PanelHeader, PanelPaper, ScrollArea, SpelOutput } from "../builderComponents/panelStyles";
 import { typingResultToSample } from "../builderComponents/typeUtils";
+import { EXPR_PROBE_NODE_BASE } from "../dataMapper/dataMapperUtils";
+import type { FieldError } from "../graph/node-modal/editors/Validators";
+import { getProcessName, getProcessProperties } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { ConditionRow } from "./ConditionRow";
 import type { Combinator, Condition } from "./spelUtils";
 import { genSpel, makeCondition, parseSpel } from "./spelUtils";
@@ -37,6 +42,36 @@ export interface ConditionBuilderProps {
 export function ConditionBuilder({ onInsert, initialExpression, variableTypes }: ConditionBuilderProps): React.JSX.Element {
     const theme = useTheme();
     const focusedEditorContainerRef = useRef<HTMLElement | null>(null);
+    const processName = useAppSelector(getProcessName);
+    const processProperties = useAppSelector(getProcessProperties);
+
+    const [conditionErrors, setConditionErrors] = useState<Record<number, { left: FieldError[]; right: FieldError[] }>>({});
+
+    const validateExpression = useCallback(
+        async (id: number, side: "left" | "right", expression: string) => {
+            if (!processName || !processProperties || !expression.trim()) {
+                setConditionErrors((prev) => ({ ...prev, [id]: { ...prev[id], [side]: [] } }));
+                return;
+            }
+            const nodeData = { ...EXPR_PROBE_NODE_BASE, value: { language: "spel", expression } };
+            const result = await HttpService.validateNode(processName, {
+                nodeData: nodeData as never,
+                variableTypes: variableTypes ?? {},
+                branchVariableTypes: {},
+                outgoingEdges: [],
+                testCases: {},
+                processProperties,
+            });
+            if (!result) return;
+            const errors: FieldError[] = result.validationErrors.map(({ message, description, details }) => ({
+                message,
+                description,
+                details,
+            }));
+            setConditionErrors((prev) => ({ ...prev, [id]: { ...prev[id], [side]: errors } }));
+        },
+        [processName, processProperties, variableTypes],
+    );
 
     const [contextFilter, setContextFilter] = useState("");
 
@@ -73,7 +108,8 @@ export function ConditionBuilder({ onInsert, initialExpression, variableTypes }:
         setConditions((prev) => [...prev, makeCondition()]);
     }, []);
 
-    const preview = useMemo(() => genSpel(conditions, combinator), [conditions, combinator]);
+    const filledConditions = useMemo(() => conditions.filter((c) => c.left.trim()), [conditions]);
+    const preview = useMemo(() => genSpel(filledConditions, combinator), [filledConditions, combinator]);
 
     // Context tree data from variableTypes
     const contextEntries = useMemo<[string, unknown][]>(() => {
@@ -198,6 +234,9 @@ export function ConditionBuilder({ onInsert, initialExpression, variableTypes }:
                                         onUpdate={updateCondition}
                                         onRemove={removeCondition}
                                         isLast={conditions.length === 1}
+                                        leftErrors={conditionErrors[cond.id]?.left ?? []}
+                                        rightErrors={conditionErrors[cond.id]?.right ?? []}
+                                        onValidate={(side, expr) => validateExpression(cond.id, side, expr)}
                                     />
                                 ))}
 
