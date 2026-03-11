@@ -87,7 +87,8 @@ export default function Variable({ node, setProperty, isEditMode, showValidation
     const incomingContext = useMemo<ContextData | undefined>(() => {
         const [contexts] = ioContext?.getAvailableContexts("input") ?? [[]];
         if (!contexts.length) return undefined;
-        const vars = contexts[0].variables;
+        const selected = ioContext?.state.inputDataSetId ? contexts.find((c) => c.id === ioContext.state.inputDataSetId) : undefined;
+        const vars = (selected ?? contexts[0]).variables;
         return Object.fromEntries(Object.keys(vars).map((k) => [k, vars[k].pretty]));
     }, [ioContext]);
 
