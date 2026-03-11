@@ -9,10 +9,12 @@ import type { FieldError } from "../graph/node-modal/editors/Validators";
 import { getProcessName, getProcessProperties } from "../graph/node-modal/NodeDetailsContent/selectors";
 import type { ContextData, FieldDef, TopicEntry } from "./dataMapperUtils";
 import {
+    applyTypeConversion,
     checkTypeCompatibility,
     EXPR_PROBE_NODE_BASE,
     fieldsFromSample,
     genSpelFromFields,
+    getNuTypeAtPath,
     INITIAL_FIELDS,
     makeField,
     nextId,
@@ -24,6 +26,7 @@ import {
 interface UseDataMapperOptions {
     initialContext?: ContextData;
     initialExpression?: string;
+    initialFields?: FieldDef[];
     variableTypes?: VariableTypes;
     isEmbedded: boolean;
     fetchTopicDefinitionsOverride?: () => Promise<TopicEntry[]>;
@@ -55,10 +58,22 @@ function moveInTree(fields: FieldDef[], id: number, dir: 1 | -1): FieldDef[] {
     return fields.map((f) => (f.children.length > 0 ? { ...f, children: moveInTree(f.children, id, dir) } : f));
 }
 
+function findInTree(fields: FieldDef[], id: number): FieldDef | undefined {
+    for (const f of fields) {
+        if (f.id === id) return f;
+        if (f.children.length > 0) {
+            const found = findInTree(f.children, id);
+            if (found) return found;
+        }
+    }
+    return undefined;
+}
+
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function useDataMapper({
     initialContext,
     initialExpression,
+    initialFields: initialFieldsProp,
     variableTypes,
     isEmbedded,
     fetchTopicDefinitionsOverride,
@@ -69,6 +84,7 @@ export function useDataMapper({
 
     const [context, setContext] = useState<ContextData>(() => initialContext ?? (variableTypes ? {} : SAMPLE_CONTEXT));
     const [fields, setFields] = useState<FieldDef[]>(() => {
+        if (initialFieldsProp && initialFieldsProp.length > 0) return initialFieldsProp;
         if (initialExpression) {
             const parsed = parseSpelToFields(initialExpression);
             if (parsed) return parsed;
@@ -115,14 +131,16 @@ export function useDataMapper({
 
     const addFieldFromDrop = useCallback(
         (path: string) => {
-            const lastSegment = path.split(".").pop()?.replace(/\?/g, "") ?? "";
-            const field = makeField(lastSegment);
-            field.expression = nullSafe ? toNullSafe(`#${path}`) : path;
+            const rawPath = path.replace(/^#/, "").replace(/\?/g, "");
+            const lastSegment = rawPath.split(".").pop() ?? "";
+            const sourceType = variableTypes ? getNuTypeAtPath(variableTypes, rawPath) : undefined;
+            const field = makeField(lastSegment, sourceType ?? "Any");
+            field.expression = nullSafe ? toNullSafe(`#${rawPath}`) : `#${rawPath}`;
             setFields((f) => [...f, field]);
             setDragOverId(null);
             setDropZoneActive(false);
         },
-        [nullSafe],
+        [nullSafe, variableTypes],
     );
 
     const removeField = useCallback(
@@ -223,26 +241,35 @@ export function useDataMapper({
         (path: string) => {
             setSelPath(path);
             if (selField != null) {
-                const expr = nullSafe ? toNullSafe(`#${path}`) : `#${path}`;
-                setFields((f) => updateInTree(f, selField, (x) => ({ ...x, expression: expr })));
+                const baseExpr = nullSafe ? toNullSafe(`#${path}`) : `#${path}`;
+                const sourceType = variableTypes ? getNuTypeAtPath(variableTypes, path) : undefined;
+                setFields((f) => {
+                    const targetField = findInTree(f, selField);
+                    const expr = applyTypeConversion(baseExpr, sourceType, targetField?.type ?? "Any");
+                    return updateInTree(f, selField, (x) => ({ ...x, expression: expr }));
+                });
             }
         },
-        [selField, nullSafe],
+        [selField, nullSafe, variableTypes],
     );
 
     const onDrop = useCallback(
         (path: string, fieldId: number) => {
-            const lastSegment = path.split(".").pop()?.replace(/\?/g, "") ?? "";
-            const expr = nullSafe ? toNullSafe(`#${path}`) : path;
-            setFields((prev) =>
-                updateInTree(prev, fieldId, (x) => {
+            const rawPath = path.replace(/^#/, "").replace(/\?/g, "");
+            const lastSegment = rawPath.split(".").pop() ?? "";
+            const baseExpr = nullSafe ? toNullSafe(`#${rawPath}`) : `#${rawPath}`;
+            const sourceType = variableTypes ? getNuTypeAtPath(variableTypes, rawPath) : undefined;
+            setFields((prev) => {
+                const targetField = findInTree(prev, fieldId);
+                const expr = applyTypeConversion(baseExpr, sourceType, targetField?.type ?? "Any");
+                return updateInTree(prev, fieldId, (x) => {
                     const nameUpdate = !x.name?.trim() && lastSegment ? { name: lastSegment } : {};
                     return { ...x, expression: expr, ...nameUpdate };
-                }),
-            );
+                });
+            });
             setDragOverId(null);
         },
-        [nullSafe],
+        [nullSafe, variableTypes],
     );
 
     const applyTargetSample = useCallback((parsed: unknown, mode: "replace" | "merge"): string | null => {

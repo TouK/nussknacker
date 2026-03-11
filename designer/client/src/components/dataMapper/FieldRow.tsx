@@ -43,6 +43,14 @@ const TypeChip = styled(Chip)<{ nutype: NuType | "Record" }>(({ theme, nutype })
         List: "#D4B4E8",
         Map: "#B4E8E8",
         Record: "#93C5FD",
+        ZonedDateTime: "#F0C6A0",
+        LocalDate: "#F0D4A0",
+        LocalDateTime: "#F0E0A0",
+        LocalTime: "#E8F0A0",
+        Instant: "#C6A0F0",
+        Duration: "#A0C6F0",
+        Period: "#A0F0C6",
+        OffsetDateTime: "#F0A0C6",
         Any: theme.palette.text.disabled,
     };
     return {
@@ -64,6 +72,7 @@ export interface FieldRowProps {
     dragOverFieldId: number | null;
     variableTypes: VariableTypes;
     fieldErrors: Record<number, FieldError[]>;
+    hideFieldControls?: boolean;
     onSelectId: (id: number | null) => void;
     onDragOverId: (id: number | null) => void;
     onChange: (id: number, key: keyof FieldDef, val: unknown) => void;
@@ -83,6 +92,7 @@ export function FieldRow({
     dragOverFieldId,
     variableTypes,
     fieldErrors,
+    hideFieldControls,
     onSelectId,
     onDragOverId,
     onChange,
@@ -107,7 +117,7 @@ export function FieldRow({
     onValidateRef.current = onValidateExpression;
     useEffect(() => {
         if (field.isRecord) return;
-        const timer = setTimeout(() => onValidateRef.current(field.id, field.expression, field.type), 500);
+        const timer = setTimeout(() => onValidateRef.current(field.id, field.expression, field.type), 300);
         return () => clearTimeout(timer);
     }, [field.id, field.isRecord, field.expression, field.type]);
 
@@ -157,14 +167,29 @@ export function FieldRow({
                 }}
             >
                 <Tooltip
-                    title={field.isRecord ? "Record field" : hasSrc ? "Mapped" : "Not yet mapped — drag a field or type a value"}
+                    title={
+                        field.isRecord
+                            ? "Record field"
+                            : hasSrc
+                            ? errors.length > 0
+                                ? errors.map((e) => e.message).join("; ")
+                                : "Mapped"
+                            : "Not yet mapped — drag a field or type a value"
+                    }
                     placement="left"
                 >
                     <Box sx={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
                         {field.isRecord ? (
                             <Box sx={{ width: 8, height: 8, borderRadius: 1, backgroundColor: "#93C5FD" }} />
                         ) : hasSrc ? (
-                            <Box sx={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: theme.palette.success.main }} />
+                            <Box
+                                sx={{
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: "50%",
+                                    backgroundColor: errors.length > 0 ? theme.palette.error.main : theme.palette.success.main,
+                                }}
+                            />
                         ) : (
                             <WarningAmberIcon sx={{ fontSize: 14, color: "warning.main", opacity: 0.8 }} />
                         )}
@@ -204,42 +229,46 @@ export function FieldRow({
                     />
                 )}
                 <Box sx={{ flex: 1 }} />
-                <Tooltip title="Move up">
-                    <IconButton
-                        size="small"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onMove(field.id, -1);
-                        }}
-                        sx={{ p: "2px", color: "text.disabled" }}
-                    >
-                        <ArrowUpwardIcon sx={{ fontSize: 14 }} />
-                    </IconButton>
-                </Tooltip>
-                <Tooltip title="Move down">
-                    <IconButton
-                        size="small"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onMove(field.id, 1);
-                        }}
-                        sx={{ p: "2px", color: "text.disabled" }}
-                    >
-                        <ArrowDownwardIcon sx={{ fontSize: 14 }} />
-                    </IconButton>
-                </Tooltip>
-                <Tooltip title="Remove field">
-                    <IconButton
-                        size="small"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onRemove(field.id);
-                        }}
-                        sx={{ p: "2px", color: "text.disabled", "&:hover": { color: "error.main" } }}
-                    >
-                        <DeleteIcon sx={{ fontSize: 14 }} />
-                    </IconButton>
-                </Tooltip>
+                {!hideFieldControls && (
+                    <>
+                        <Tooltip title="Move up">
+                            <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onMove(field.id, -1);
+                                }}
+                                sx={{ p: "2px", color: "text.disabled" }}
+                            >
+                                <ArrowUpwardIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Move down">
+                            <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onMove(field.id, 1);
+                                }}
+                                sx={{ p: "2px", color: "text.disabled" }}
+                            >
+                                <ArrowDownwardIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Remove field">
+                            <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRemove(field.id);
+                                }}
+                                sx={{ p: "2px", color: "text.disabled", "&:hover": { color: "error.main" } }}
+                            >
+                                <DeleteIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                        </Tooltip>
+                    </>
+                )}
             </Box>
 
             {/* Expanded editor */}
@@ -357,6 +386,7 @@ export function FieldRow({
                             dragOverFieldId={dragOverFieldId}
                             variableTypes={variableTypes}
                             fieldErrors={fieldErrors}
+                            hideFieldControls={hideFieldControls}
                             onSelectId={onSelectId}
                             onDragOverId={onDragOverId}
                             onChange={onChange}

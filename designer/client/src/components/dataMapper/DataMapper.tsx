@@ -24,7 +24,7 @@ import type { VariableTypes } from "../../types/validation";
 import { ContextTreeNode } from "../builderComponents/ContextTreeNode";
 import { PanelHeader, PanelPaper, ScrollArea, SpelOutput } from "../builderComponents/panelStyles";
 import { treeNodeMatchesFilter } from "../builderComponents/typeUtils";
-import type { ContextData, TopicEntry } from "./dataMapperUtils";
+import type { ContextData, FieldDef, TopicEntry } from "./dataMapperUtils";
 import { FieldRow } from "./FieldRow";
 import { SampleJsonPanel } from "./SampleJsonPanel";
 import { TopicPickerPanel } from "./TopicPickerPanel";
@@ -54,9 +54,12 @@ interface DataMapperProps {
     onInsert?: (spel: string) => void;
     initialContext?: ContextData;
     initialExpression?: string;
+    initialFields?: FieldDef[];
     variableTypes?: VariableTypes;
     /** Override the default topic fetching (which uses a generic kafka sink probe). */
     fetchTopicDefinitions?: () => Promise<TopicEntry[]>;
+    /** Hide Add Field, From Schema and From Sample controls (e.g. when fields are fixed by schema). */
+    hideFieldControls?: boolean;
 }
 
 // ─── DataMapper ───────────────────────────────────────────────────────────────
@@ -65,12 +68,15 @@ export function DataMapper({
     onInsert,
     initialContext,
     initialExpression,
+    initialFields,
     variableTypes,
     fetchTopicDefinitions: fetchTopicDefinitionsOverride,
+    hideFieldControls,
 }: DataMapperProps = {}): React.JSX.Element {
     const dm = useDataMapper({
         initialContext,
         initialExpression,
+        initialFields,
         variableTypes,
         isEmbedded: !!onInsert,
         fetchTopicDefinitionsOverride,
@@ -210,37 +216,43 @@ export function DataMapper({
                                             Auto-map
                                         </Button>
                                     </Tooltip>
-                                    <Button
-                                        startIcon={<AddIcon />}
-                                        size="small"
-                                        variant="outlined"
-                                        onClick={dm.addField}
-                                        sx={{ fontSize: 12, textTransform: "none" }}
-                                    >
-                                        Add Field
-                                    </Button>
-                                    <Button
-                                        size="small"
-                                        variant={dm.showTopicPicker ? "contained" : "outlined"}
-                                        color={dm.showTopicPicker ? "primary" : "inherit"}
-                                        onClick={() => (dm.showTopicPicker ? dm.setShowTopicPicker(false) : dm.handleOpenTopicPicker())}
-                                        sx={{ fontSize: 12, textTransform: "none" }}
-                                    >
-                                        From Schema
-                                    </Button>
-                                    <Button
-                                        startIcon={<UploadFileIcon />}
-                                        size="small"
-                                        variant={dm.showTargetSample ? "contained" : "outlined"}
-                                        color={dm.showTargetSample ? "secondary" : "inherit"}
-                                        onClick={() => {
-                                            dm.setShowTargetSample((v) => !v);
-                                            dm.setShowTopicPicker(false);
-                                        }}
-                                        sx={{ fontSize: 12, textTransform: "none" }}
-                                    >
-                                        From Sample
-                                    </Button>
+                                    {!hideFieldControls && (
+                                        <>
+                                            <Button
+                                                startIcon={<AddIcon />}
+                                                size="small"
+                                                variant="outlined"
+                                                onClick={dm.addField}
+                                                sx={{ fontSize: 12, textTransform: "none" }}
+                                            >
+                                                Add Field
+                                            </Button>
+                                            <Button
+                                                size="small"
+                                                variant={dm.showTopicPicker ? "contained" : "outlined"}
+                                                color={dm.showTopicPicker ? "primary" : "inherit"}
+                                                onClick={() =>
+                                                    dm.showTopicPicker ? dm.setShowTopicPicker(false) : dm.handleOpenTopicPicker()
+                                                }
+                                                sx={{ fontSize: 12, textTransform: "none" }}
+                                            >
+                                                From Schema
+                                            </Button>
+                                            <Button
+                                                startIcon={<UploadFileIcon />}
+                                                size="small"
+                                                variant={dm.showTargetSample ? "contained" : "outlined"}
+                                                color={dm.showTargetSample ? "secondary" : "inherit"}
+                                                onClick={() => {
+                                                    dm.setShowTargetSample((v) => !v);
+                                                    dm.setShowTopicPicker(false);
+                                                }}
+                                                sx={{ fontSize: 12, textTransform: "none" }}
+                                            >
+                                                From Sample
+                                            </Button>
+                                        </>
+                                    )}
                                 </Box>
                             </PanelHeader>
                             <Collapse in={dm.showTargetSample}>
@@ -272,6 +284,7 @@ export function DataMapper({
                                         dragOverFieldId={dm.dragOverId}
                                         variableTypes={variableTypes ?? {}}
                                         fieldErrors={dm.fieldErrors}
+                                        hideFieldControls={hideFieldControls}
                                         onSelectId={(id) => dm.setSelField(dm.selField === id ? null : id)}
                                         onDragOverId={dm.setDragOverId}
                                         onChange={dm.updateField}
