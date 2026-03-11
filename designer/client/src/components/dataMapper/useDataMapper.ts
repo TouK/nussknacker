@@ -102,7 +102,7 @@ export function useDataMapper({
     const [contextFilter, setContextFilter] = useState("");
     const [dropZoneActive, setDropZoneActive] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<Record<number, FieldError[]>>({});
-    const [nullSafe, setNullSafe] = useState(false);
+    const [nullSafe, setNullSafe] = useState(true);
 
     const enrichedContext = useMemo<ContextData>(() => {
         if (!variableTypes) return context;
