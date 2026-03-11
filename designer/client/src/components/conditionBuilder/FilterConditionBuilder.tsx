@@ -24,7 +24,8 @@ export function FilterConditionBuilder({ node, variableTypes, onInsert, expressi
     const contextData = useMemo<ContextData | undefined>(() => {
         const [contexts] = ioContext?.getAvailableContexts("input") ?? [[]];
         if (!contexts.length) return undefined;
-        return Object.fromEntries(Object.entries(contexts[0].variables).map(([k, v]) => [k, v.pretty]));
+        const vars = contexts[0].variables;
+        return Object.fromEntries(Object.keys(vars).map((k) => [k, vars[k].pretty]));
     }, [ioContext]);
 
     const handleInsert = (spel: string) => {

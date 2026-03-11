@@ -51,6 +51,8 @@ export type ContextData = Record<string, unknown>;
 export interface TopicEntry {
     topic: string;
     schema: Record<string, unknown>;
+    /** Display name of the Kafka connector this topic belongs to. */
+    sourceLabel?: string;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
