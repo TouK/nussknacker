@@ -10,7 +10,6 @@
     {
       "type": "Join",
       "id": "join1",
-      "name": "join1",
       "outputVar": "joinOut",
       "nodeType": "union",
       "parameters": [],
@@ -18,12 +17,6 @@
         { "branchId": "source1", "parameters": [] },
         { "branchId": "source2", "parameters": [] }
       ]
-    },
-    {
-      "type": "Sink",
-      "id": "sink1",
-      "name": "sink1",
-      "ref": { "typ": "kafka", "parameters": [] }
     }
   ],
   "additionalBranches": [
@@ -31,7 +24,6 @@
       {
         "type": "Source",
         "id": "source1",
-        "name": "source1",
         "ref": { "typ": "kafka", "parameters": [] }
       },
       {
@@ -43,7 +35,6 @@
       {
         "type": "Source",
         "id": "source2",
-        "name": "source2",
         "ref": { "typ": "kafka", "parameters": [] }
       },
       {
