@@ -71,6 +71,17 @@ export default function BranchParameters({
                                     const variables = findAvailableVariables(contextId, param);
                                     const fieldName = `${paramName} for branch ${branchId}`;
                                     const fieldLabel = nodeNameById[branchId] || branchId;
+                                    const fieldErrors = getValidationErrorsForField(errors, fieldName).map((error) => {
+                                        if (fieldLabel === branchId) {
+                                            return error;
+                                        }
+                                        const replaceBranchId = (text: string): string => text.split(branchId).join(fieldLabel);
+                                        return {
+                                            ...error,
+                                            message: replaceBranchId(error.message),
+                                            description: replaceBranchId(error.description),
+                                        };
+                                    });
 
                                     if (!paramValue) {
                                         return null;
@@ -90,7 +101,7 @@ export default function BranchParameters({
                                             setNodeDataAt={setNodeDataAt}
                                             testResultsToShow={testResultsToShow}
                                             variableTypes={variables}
-                                            fieldErrors={getValidationErrorsForField(errors, fieldName)}
+                                            fieldErrors={fieldErrors}
                                         />
                                     );
                                 })}
