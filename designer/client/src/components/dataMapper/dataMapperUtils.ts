@@ -2,7 +2,25 @@ import type { TypingResult } from "../../types/definition";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type NuType = "String" | "Integer" | "Long" | "Float" | "Double" | "Boolean" | "BigDecimal" | "List" | "Map" | "Any";
+export type NuType =
+    | "String"
+    | "Integer"
+    | "Long"
+    | "Float"
+    | "Double"
+    | "Boolean"
+    | "BigDecimal"
+    | "List"
+    | "Map"
+    | "ZonedDateTime"
+    | "LocalDate"
+    | "LocalDateTime"
+    | "LocalTime"
+    | "Instant"
+    | "Duration"
+    | "Period"
+    | "OffsetDateTime"
+    | "Any";
 
 const NU_TYPE_CLASS_MAP: Partial<Record<NuType, string[]>> = {
     String: ["java.lang.String"],
@@ -14,6 +32,14 @@ const NU_TYPE_CLASS_MAP: Partial<Record<NuType, string[]>> = {
     BigDecimal: ["java.math.BigDecimal"],
     List: ["java.util.List"],
     Map: ["java.util.Map"],
+    ZonedDateTime: ["java.time.ZonedDateTime"],
+    LocalDate: ["java.time.LocalDate"],
+    LocalDateTime: ["java.time.LocalDateTime"],
+    LocalTime: ["java.time.LocalTime"],
+    Instant: ["java.time.Instant"],
+    Duration: ["java.time.Duration"],
+    Period: ["java.time.Period"],
+    OffsetDateTime: ["java.time.OffsetDateTime"],
 };
 
 /** Maps a Java refClazzName to the closest NuType. */
@@ -57,7 +83,119 @@ export interface TopicEntry {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-export const NU_TYPES: NuType[] = ["String", "Integer", "Long", "Float", "Double", "Boolean", "BigDecimal", "List", "Map", "Any"];
+export const NU_TYPES: NuType[] = [
+    "String",
+    "Integer",
+    "Long",
+    "Float",
+    "Double",
+    "Boolean",
+    "BigDecimal",
+    "List",
+    "Map",
+    "ZonedDateTime",
+    "LocalDate",
+    "LocalDateTime",
+    "LocalTime",
+    "Instant",
+    "Duration",
+    "Period",
+    "OffsetDateTime",
+    "Any",
+];
+
+// ─── Type conversions ─────────────────────────────────────────────────────────
+
+export const TYPE_CONVERSIONS: Partial<Record<NuType, Partial<Record<NuType, (expr: string) => string>>>> = {
+    ZonedDateTime: {
+        Long: (e) => `#DATE.toEpochMilli(${e})`,
+        Instant: (e) => `${e}.toInstant()`,
+        LocalDate: (e) => `${e}.toLocalDate()`,
+        LocalDateTime: (e) => `${e}.toLocalDateTime()`,
+        LocalTime: (e) => `${e}.toLocalTime()`,
+        OffsetDateTime: (e) => `${e}.toOffsetDateTime()`,
+        String: (e) => `${e}.toString()`,
+    },
+    Instant: {
+        Long: (e) => `${e}.toEpochMilli()`,
+        ZonedDateTime: (e) => `${e}.atZone(#DATE.defaultTimeZone)`,
+        LocalDate: (e) => `${e}.atZone(#DATE.defaultTimeZone).toLocalDate()`,
+        LocalDateTime: (e) => `${e}.atZone(#DATE.defaultTimeZone).toLocalDateTime()`,
+        LocalTime: (e) => `${e}.atZone(#DATE.defaultTimeZone).toLocalTime()`,
+        OffsetDateTime: (e) => `${e}.atOffset(#DATE.UTCOffset)`,
+        String: (e) => `${e}.toString()`,
+    },
+    Long: {
+        Instant: (e) => `#DATE.toInstant(${e})`,
+        ZonedDateTime: (e) => `#DATE.toInstant(${e}).atZone(#DATE.defaultTimeZone)`,
+        LocalDate: (e) => `#DATE.toInstant(${e}).atZone(#DATE.defaultTimeZone).toLocalDate()`,
+        LocalDateTime: (e) => `#DATE.toInstant(${e}).atZone(#DATE.defaultTimeZone).toLocalDateTime()`,
+        LocalTime: (e) => `#DATE.toInstant(${e}).atZone(#DATE.defaultTimeZone).toLocalTime()`,
+    },
+    LocalDate: {
+        ZonedDateTime: (e) => `${e}.atStartOfDay(#DATE.defaultTimeZone)`,
+        LocalDateTime: (e) => `${e}.atStartOfDay()`,
+        Instant: (e) => `${e}.atStartOfDay(#DATE.defaultTimeZone).toInstant()`,
+        Long: (e) => `#DATE.toEpochMilli(${e}.atStartOfDay(#DATE.defaultTimeZone))`,
+        String: (e) => `${e}.toString()`,
+    },
+    LocalDateTime: {
+        ZonedDateTime: (e) => `${e}.atZone(#DATE.defaultTimeZone)`,
+        LocalDate: (e) => `${e}.toLocalDate()`,
+        LocalTime: (e) => `${e}.toLocalTime()`,
+        Instant: (e) => `${e}.atZone(#DATE.defaultTimeZone).toInstant()`,
+        Long: (e) => `#DATE.toEpochMilli(${e}, #DATE.defaultTimeZone)`,
+        String: (e) => `${e}.toString()`,
+    },
+    LocalTime: {
+        String: (e) => `${e}.toString()`,
+        LocalDateTime: (e) => `${e}.atDate(#DATE.now().toLocalDate())`,
+        ZonedDateTime: (e) => `${e}.atDate(#DATE.now().toLocalDate()).atZone(#DATE.defaultTimeZone)`,
+    },
+    OffsetDateTime: {
+        ZonedDateTime: (e) => `${e}.toZonedDateTime()`,
+        Instant: (e) => `${e}.toInstant()`,
+        Long: (e) => `#DATE.toEpochMilli(${e})`,
+        LocalDate: (e) => `${e}.toLocalDate()`,
+        LocalDateTime: (e) => `${e}.toLocalDateTime()`,
+        LocalTime: (e) => `${e}.toLocalTime()`,
+        String: (e) => `${e}.toString()`,
+    },
+    String: {
+        ZonedDateTime: (e) => `#DATE_FORMAT.parseZonedDateTime(${e}, "yyyyMMdd-HH:mm:ss.SSS")`,
+        LocalDateTime: (e) => `#DATE_FORMAT.parseLocalDateTime(${e}, "yyyyMMdd-HH:mm:ss.SSS")`,
+        LocalDate: (e) => `#DATE_FORMAT.parseLocalDate(${e}, "yyyyMMdd-HH:mm:ss.SSS")`,
+    },
+    Duration: {
+        Long: (e) => `${e}.toMillis()`,
+        String: (e) => `${e}.toString()`,
+    },
+    Period: {
+        String: (e) => `${e}.toString()`,
+    },
+};
+
+/** Apply a type conversion from sourceType to targetType, or return expr unchanged if no conversion available. */
+export function applyTypeConversion(expr: string, sourceType: NuType | undefined, targetType: NuType): string {
+    if (!sourceType || sourceType === targetType || targetType === "Any" || sourceType === "Any") return expr;
+    const conversion = TYPE_CONVERSIONS[sourceType]?.[targetType];
+    return conversion ? conversion(expr) : expr;
+}
+
+/** Get the NuType of a value at a dotted path within variableTypes (strips leading # and ? from path). */
+export function getNuTypeAtPath(variableTypes: Record<string, TypingResult>, path: string): NuType | undefined {
+    const parts = path.replace(/^#/, "").replace(/\?/g, "").split(".").filter(Boolean);
+    if (parts.length === 0) return undefined;
+    let current: TypingResult | undefined = variableTypes[parts[0]];
+    if (!current) return undefined;
+    for (let i = 1; i < parts.length; i++) {
+        const fields = (current as { fields?: Record<string, TypingResult> }).fields;
+        if (!fields) return undefined;
+        current = fields[parts[i]];
+        if (!current) return undefined;
+    }
+    return refClazzToNuType(current.refClazzName);
+}
 
 // ─── ID counter ───────────────────────────────────────────────────────────────
 

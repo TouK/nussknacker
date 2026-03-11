@@ -546,7 +546,7 @@ describe("nested record: onDrop", () => {
         act(() => result.current.addChildField(parentId));
         const childId = result.current.fields[0].children[0].id;
         act(() => result.current.onDrop("input.city", childId));
-        expect(result.current.fields[0].children[0].expression).toBe("input.city");
+        expect(result.current.fields[0].children[0].expression).toBe("#input.city");
     });
 });
 
@@ -618,7 +618,7 @@ describe("addFieldFromDrop", () => {
         expect(result.current.fields).toHaveLength(1);
         expect(result.current.fields[0]).toMatchObject({
             name: "name",
-            expression: "input.user.name",
+            expression: "#input.user.name",
         });
     });
 
@@ -637,7 +637,7 @@ describe("onDrop", () => {
         act(() => result.current.addField());
         const id = result.current.fields[0].id;
         act(() => result.current.onDrop("input.city", id));
-        expect(result.current.fields[0].expression).toBe("input.city");
+        expect(result.current.fields[0].expression).toBe("#input.city");
     });
 
     it("fills in name from last path segment when field has no name", () => {

@@ -12,6 +12,7 @@ import { IdField } from "./IdField";
 import { findParameters } from "./NodeDetailsContent/helpers";
 import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 import { NodeField } from "./NodeField";
+import { OpenApiEnricherDataMapper } from "./OpenApiEnricherDataMapper";
 import { ParametersListWithOverrides } from "./ParametersListWithOverrides";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
@@ -50,6 +51,9 @@ export function EnricherProcessor({
                 setProperty={setProperty}
                 getListFieldPath={(index: number) => `service.parameters[${index}]`}
             >
+                {node.type === "Enricher" && isEditMode && (
+                    <OpenApiEnricherDataMapper node={node} parameterDefinitions={parameterDefinitions} setProperty={setProperty} />
+                )}
                 {node.type === "Enricher" ? (
                     <NodeField
                         isEditMode={isEditMode}
