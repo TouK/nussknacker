@@ -286,4 +286,67 @@ describe("genSpel", () => {
     it("empty conditions array returns empty string", () => {
         expect(genSpel([], "&&")).toBe("");
     });
+
+    it("matches generates left matches 'pattern'", () => {
+        expect(genSpel([{ id: 1, left: "#input.name", operator: "matches", right: "[A-Z]{3}.*" }], "&&")).toBe(
+            "#input.name matches '[A-Z]{3}.*'",
+        );
+    });
+
+    it("not matches generates !(left matches 'pattern')", () => {
+        expect(genSpel([{ id: 1, left: "#input.code", operator: "not matches", right: "\\d+" }], "&&")).toBe(
+            "!(#input.code matches '\\d+')",
+        );
+    });
+});
+
+// ─── matches operator ─────────────────────────────────────────────────────────
+
+describe("matches operator", () => {
+    it("parses: left matches 'pattern'", () => {
+        expect(parseConditionPart("#input.name matches '[A-Z]{3}.*'")).toEqual({
+            left: "#input.name",
+            operator: "matches",
+            right: "[A-Z]{3}.*",
+        });
+    });
+
+    it("parses: left matches with double-quoted pattern", () => {
+        expect(parseConditionPart('#input.name matches "[A-Z]{3}.*"')).toEqual({
+            left: "#input.name",
+            operator: "matches",
+            right: "[A-Z]{3}.*",
+        });
+    });
+
+    it("parses: !(left matches 'pattern') as not matches", () => {
+        expect(parseConditionPart("!(#input.code matches '\\d+')")).toEqual({
+            left: "#input.code",
+            operator: "not matches",
+            right: "\\d+",
+        });
+    });
+
+    it("round-trips matches", () => {
+        const input = "#input.name matches '[A-Z]{3}.*'";
+        const parsed = parseSpel(input);
+        expect(parsed).not.toBeNull();
+        expect(normalize(genSpel(parsed!.conditions, parsed!.combinator))).toBe(input);
+    });
+
+    it("round-trips not matches", () => {
+        const input = "!(#input.code matches '\\d+')";
+        const parsed = parseSpel(input);
+        expect(parsed).not.toBeNull();
+        expect(normalize(genSpel(parsed!.conditions, parsed!.combinator))).toBe(input);
+    });
+
+    it("matches combined with && condition", () => {
+        const input = "#input.active == true && #input.name matches '[A-Z].*'";
+        const parsed = parseSpel(input);
+        expect(parsed).not.toBeNull();
+        expect(parsed!.conditions).toHaveLength(2);
+        expect(parsed!.conditions[1]).toEqual({ left: "#input.name", operator: "matches", right: "[A-Z].*" });
+        expect(normalize(genSpel(parsed!.conditions, parsed!.combinator))).toBe(input);
+    });
 });
