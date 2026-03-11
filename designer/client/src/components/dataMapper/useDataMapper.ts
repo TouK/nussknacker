@@ -23,6 +23,12 @@ import {
     SAMPLE_CONTEXT,
 } from "./dataMapperUtils";
 
+export interface ContextRecord {
+    id: string;
+    label: string;
+    data: ContextData;
+}
+
 interface UseDataMapperOptions {
     initialContext?: ContextData;
     initialExpression?: string;
@@ -30,6 +36,7 @@ interface UseDataMapperOptions {
     variableTypes?: VariableTypes;
     isEmbedded: boolean;
     fetchTopicDefinitionsOverride?: () => Promise<TopicEntry[]>;
+    availableContexts?: ContextRecord[];
 }
 
 // ─── Tree helpers ─────────────────────────────────────────────────────────────
@@ -77,12 +84,16 @@ export function useDataMapper({
     variableTypes,
     isEmbedded,
     fetchTopicDefinitionsOverride,
+    availableContexts,
 }: UseDataMapperOptions) {
     const processName = useAppSelector(getProcessName);
     const processProperties = useAppSelector(getProcessProperties);
     const processDefinitionData = useAppSelector(getProcessDefinitionData);
 
-    const [context, setContext] = useState<ContextData>(() => initialContext ?? (variableTypes ? {} : SAMPLE_CONTEXT));
+    const [context, setContext] = useState<ContextData>(
+        () => availableContexts?.[0]?.data ?? initialContext ?? (variableTypes ? {} : SAMPLE_CONTEXT),
+    );
+    const [selectedContextId, setSelectedContextId] = useState<string | null>(null);
     const [fields, setFields] = useState<FieldDef[]>(() => {
         if (initialFieldsProp && initialFieldsProp.length > 0) return initialFieldsProp;
         if (initialExpression) {
@@ -171,6 +182,22 @@ export function useDataMapper({
             return next;
         });
     }, []);
+
+    const selectContext = useCallback(
+        (id: string) => {
+            if (selectedContextId === id) {
+                // collapse → back to first record
+                setSelectedContextId(null);
+                setContext(availableContexts?.[0]?.data ?? {});
+            } else {
+                const ctx = availableContexts?.find((c) => c.id === id);
+                if (!ctx) return;
+                setSelectedContextId(id);
+                setContext(ctx.data);
+            }
+        },
+        [availableContexts, selectedContextId],
+    );
 
     const validateExpression = useCallback(
         async (id: number, expression: string, nuType?: FieldDef["type"]) => {
@@ -413,6 +440,8 @@ export function useDataMapper({
         mappedCount,
         fieldErrors,
         nullSafe,
+        selectedContextId,
+        availableContexts,
         // setters
         setSelField,
         setDragOverId,
@@ -432,6 +461,7 @@ export function useDataMapper({
         addChildField,
         validateExpression,
         clearFieldErrors,
+        selectContext,
         handleAutoMap,
         onTreeSelect,
         onDrop,

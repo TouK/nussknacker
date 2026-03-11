@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from "react";
 
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";
-import type { ContextData } from "../../dataMapper/DataMapper";
+import type { ContextData, ContextRecord } from "../../dataMapper/DataMapper";
 import { DataMapper } from "../../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../../dataMapper/DataMapperDialogTitle";
 import { ExpressionLang } from "./editors/expression/types";
@@ -24,11 +24,13 @@ export function SinkKafkaValueDataMapper({ node, valuePath, setProperty }: Props
     const variableTypes = useMemo(() => findAvailableVariables(node.id), [findAvailableVariables, node.id]);
 
     const ioContext = useInputOutputContext();
-    const initialContext = useMemo<ContextData | undefined>(() => {
+    const availableContexts = useMemo<ContextRecord[]>(() => {
         const [contexts] = ioContext?.getAvailableContexts("input") ?? [[]];
-        if (!contexts.length) return undefined;
-        const vars = contexts[0].variables;
-        return Object.fromEntries(Object.keys(vars).map((k) => [k, vars[k].pretty]));
+        return contexts.map((ctx, i) => {
+            const vars = ctx.variables;
+            const data: ContextData = Object.fromEntries(Object.keys(vars).map((k) => [k, vars[k].pretty]));
+            return { id: ctx.id, label: `Record ${i + 1}`, data };
+        });
     }, [ioContext]);
 
     const handleInsert = useCallback(
@@ -51,7 +53,7 @@ export function SinkKafkaValueDataMapper({ node, valuePath, setProperty }: Props
                         <DataMapper
                             onInsert={handleInsert}
                             variableTypes={variableTypes}
-                            initialContext={initialContext}
+                            availableContexts={availableContexts}
                             initialExpression={
                                 (
                                     node.ref as {
