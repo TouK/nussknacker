@@ -1,6 +1,6 @@
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type Operator = "==" | "!=" | "<" | "<=" | ">" | ">=" | "== null" | "!= null" | "is true" | "is false";
+export type Operator = "==" | "!=" | "<" | "<=" | ">" | ">=" | "== null" | "!= null" | "is true" | "is false" | "matches" | "not matches";
 export type Combinator = "&&" | "||";
 
 export interface Condition {
@@ -28,6 +28,8 @@ export const OPERATORS: { value: Operator; label: string }[] = [
     { value: ">=", label: "greater than or equal" },
     { value: "== null", label: "is null" },
     { value: "!= null", label: "is not null" },
+    { value: "matches", label: "matches (regex)" },
+    { value: "not matches", label: "not matches (regex)" },
 ];
 
 /** Operators that have no right-hand operand. */
@@ -38,6 +40,36 @@ export const NO_RHS_OPERATORS = new Set<Operator>(["== null", "!= null", "is tru
 let _nextCondId = 1;
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
+
+/** Operators whose right-hand side is a plain regex string (not a SpEL expression). */
+export const REGEX_OPERATORS = new Set<Operator>(["matches", "not matches"]);
+
+/** Find the position of ` matches ` keyword at depth 0, or -1 if not found. */
+function findMatchesKeyword(expr: string): number {
+    const keyword = " matches ";
+    let depth = 0;
+    for (let i = 0; i <= expr.length - keyword.length; i++) {
+        const ch = expr[i];
+        if (ch === "(" || ch === "[") {
+            depth++;
+            continue;
+        }
+        if (ch === ")" || ch === "]") {
+            depth--;
+            continue;
+        }
+        if (depth === 0 && expr.startsWith(keyword, i)) return i;
+    }
+    return -1;
+}
+
+/** Strip surrounding single or double quotes from a string literal. */
+function stripStringLiteral(s: string): string {
+    if ((s.startsWith("'") && s.endsWith("'")) || (s.startsWith('"') && s.endsWith('"'))) {
+        return s.slice(1, -1);
+    }
+    return s;
+}
 
 export function findOpIndex(expr: string, op: string): number {
     let depth = 0;
@@ -82,6 +114,26 @@ function stripOuterParens(s: string): string {
 
 export function parseConditionPart(part: string): Omit<Condition, "id"> | null {
     const trimmed = stripOuterParens(part.trim());
+
+    // Check for "not matches": !(left matches 'pattern')
+    if (trimmed.startsWith("!")) {
+        const inner = stripOuterParens(trimmed.slice(1).trim());
+        const mIdx = findMatchesKeyword(inner);
+        if (mIdx !== -1) {
+            const left = inner.slice(0, mIdx).trim();
+            const rightRaw = inner.slice(mIdx + " matches ".length).trim();
+            return { left, operator: "not matches", right: stripStringLiteral(rightRaw) };
+        }
+    }
+
+    // Check for "matches": left matches 'pattern'
+    const mIdx = findMatchesKeyword(trimmed);
+    if (mIdx !== -1) {
+        const left = trimmed.slice(0, mIdx).trim();
+        const rightRaw = trimmed.slice(mIdx + " matches ".length).trim();
+        return { left, operator: "matches", right: stripStringLiteral(rightRaw) };
+    }
+
     // Try operators in precedence order (longer first to avoid partial matches)
     const opsToTry: Operator[] = ["<=", ">=", "==", "!=", "<", ">"];
     for (const op of opsToTry) {
@@ -188,6 +240,8 @@ export function genSpel(conditions: Condition[], combinator: Combinator): string
         if (c.operator === "is true") return c.left;
         if (c.operator === "is false") return `!${c.left}`;
         if (c.operator === "== null" || c.operator === "!= null") return `${c.left} ${c.operator}`;
+        if (c.operator === "matches") return `${c.left} matches '${c.right}'`;
+        if (c.operator === "not matches") return `!(${c.left} matches '${c.right}')`;
         return `${c.left} ${c.operator} ${c.right}`;
     });
     return parts.join(` ${combinator} `);

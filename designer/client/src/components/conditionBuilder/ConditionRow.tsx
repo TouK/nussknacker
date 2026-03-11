@@ -1,5 +1,5 @@
 import DeleteIcon from "@mui/icons-material/Delete";
-import { alpha, Box, IconButton, MenuItem, Select, Tooltip, Typography, useTheme } from "@mui/material";
+import { alpha, Box, IconButton, MenuItem, Select, TextField, Tooltip, Typography, useTheme } from "@mui/material";
 import React, { useEffect, useRef } from "react";
 
 import type { VariableTypes } from "../../types/validation";
@@ -9,7 +9,7 @@ import { ExpressionSuggest } from "../graph/node-modal/editors/expression/Expres
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import type { FieldError } from "../graph/node-modal/editors/Validators";
 import type { Condition } from "./spelUtils";
-import { NO_RHS_OPERATORS, OPERATORS } from "./spelUtils";
+import { NO_RHS_OPERATORS, OPERATORS, REGEX_OPERATORS } from "./spelUtils";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -44,6 +44,7 @@ export function ConditionRow({
     const leftContainerRef = useRef<HTMLElement>(null);
     const rightContainerRef = useRef<HTMLElement>(null);
     const isNullOp = NO_RHS_OPERATORS.has(condition.operator);
+    const isRegexOp = REGEX_OPERATORS.has(condition.operator);
 
     const onValidateRef = useRef(onValidate);
     onValidateRef.current = onValidate;
@@ -117,8 +118,18 @@ export function ConditionRow({
                 ))}
             </Select>
 
-            {/* Right expression (hidden for null operators) */}
-            {!isNullOp ? (
+            {/* Right expression */}
+            {isNullOp ? (
+                <Box sx={{ flex: 1 }} />
+            ) : isRegexOp ? (
+                <TextField
+                    size="small"
+                    value={condition.right}
+                    onChange={(e) => onUpdate(condition.id, "right", e.target.value)}
+                    placeholder="regex pattern, e.g. [A-Z]{3}.*"
+                    sx={{ flex: 1, "& .MuiInputBase-input": { fontSize: 12, fontFamily: "monospace", py: "5px" } }}
+                />
+            ) : (
                 <SpelEditorContainer onDrop={(e) => clearAceSelectionAfterDrop(e.currentTarget)}>
                     <Box
                         ref={rightContainerRef}
@@ -144,8 +155,6 @@ export function ConditionRow({
                         />
                     </Box>
                 </SpelEditorContainer>
-            ) : (
-                <Box sx={{ flex: 1 }} />
             )}
 
             {/* Remove */}
