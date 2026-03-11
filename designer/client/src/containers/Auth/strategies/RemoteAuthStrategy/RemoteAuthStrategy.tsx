@@ -30,7 +30,14 @@ function createAuthWrapper(url: ModuleUrl, onInit: AuthLibCallback): FunctionCom
 
 export const RemoteAuthStrategy: StrategyConstructor = class RemoteAuthStrategy implements Strategy {
     private pendingClient = PendingPromise.withTimeout<AuthClient>();
-    Wrapper = createAuthWrapper(this.urlWithScope, (auth) => this.pendingClient.resolve(auth));
+    private _wrapper?: FunctionComponent;
+
+    get Wrapper(): FunctionComponent {
+        if (!this._wrapper) {
+            this._wrapper = createAuthWrapper(this.urlWithScope, (auth) => this.pendingClient.resolve(auth));
+        }
+        return this._wrapper;
+    }
 
     async inteceptor(error?: {
         response?: {
