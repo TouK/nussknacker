@@ -29,10 +29,10 @@ describe("initial state", () => {
         expect(result.current.fields).toEqual([]);
     });
 
-    it("not embedded + no expression → INITIAL_FIELDS (14 predefined fields)", () => {
+    it("not embedded + no expression → INITIAL_FIELDS (predefined fields)", () => {
         const { result } = renderHook(() => useDataMapper({ isEmbedded: false }));
         expect(result.current.fields.length).toBeGreaterThan(0);
-        expect(result.current.fields[0]).toMatchObject({ name: "icao24", type: "String" });
+        expect(result.current.fields[0]).toMatchObject({ name: "id", type: "Long" });
     });
 
     it("initialExpression is parsed into fields", () => {

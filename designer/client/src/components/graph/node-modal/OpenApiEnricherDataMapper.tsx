@@ -39,11 +39,12 @@ export function OpenApiEnricherDataMapper({ node, parameterDefinitions, setPrope
         return Object.fromEntries(Object.keys(vars).map((k) => [k, vars[k].pretty]));
     }, [ioContext]);
 
-    // Show only for enrichers with a dynamic service selector (OpenAPI pattern)
-    const hasDynamicSelector = useMemo(() => parameterDefinitions.some((p) => p.changesCanReloadParameters), [parameterDefinitions]);
-
-    // Parameters that are actual service inputs (not the selector itself)
+    // Parameters that are actual service inputs (exclude selectors that reload other parameters)
     const mappableParams = useMemo(() => parameterDefinitions.filter((p) => !p.changesCanReloadParameters), [parameterDefinitions]);
+
+    // Only show when all parameters have specific types — enrichers with Any/unknown typed params
+    // (like HTTP Body) use the per-parameter DataMapper instead
+    const allParamsTyped = useMemo(() => mappableParams.every((p) => refClazzToNuType(p.typ?.refClazzName) !== "Any"), [mappableParams]);
 
     const initialFields = useMemo<FieldDef[] | undefined>(() => {
         if (mappableParams.length === 0) return undefined;
@@ -76,7 +77,7 @@ export function OpenApiEnricherDataMapper({ node, parameterDefinitions, setPrope
         [node, setProperty],
     );
 
-    if (!showDataMapper || !hasDynamicSelector || mappableParams.length === 0) return null;
+    if (!showDataMapper || mappableParams.length === 0 || !allParamsTyped) return null;
 
     return (
         <>
