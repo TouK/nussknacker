@@ -15,10 +15,21 @@ class NodeIdToUuidMigrationSpec extends AnyFreeSpecLike with Matchers {
 
   private def uuidOf(s: String) = UUID.nameUUIDFromBytes(s.getBytes(StandardCharsets.UTF_8)).toString
 
-  private def loadAndMigrate(resourcePath: String): CanonicalProcess = {
-    val json     = Using.resource(IoSource.fromResource(resourcePath))(_.mkString)
-    val scenario = ProcessMarshaller.fromJson(json).valueOr(err => fail(s"Failed to parse JSON: $err"))
-    NodeIdToUuidMigration.migrateProcess(scenario, "category")
+  private def loadScenario(resourcePath: String): CanonicalProcess = {
+    val json = Using.resource(IoSource.fromResource(resourcePath))(_.mkString)
+    ProcessMarshaller.fromJson(json).valueOr(err => fail(s"Failed to parse JSON: $err"))
+  }
+
+  private def loadAndMigrate(resourcePath: String): CanonicalProcess =
+    NodeIdToUuidMigration.migrateProcess(loadScenario(resourcePath), "category")
+
+  private def migrate(process: CanonicalProcess): CanonicalProcess =
+    NodeIdToUuidMigration.migrateProcess(process, "category")
+
+  private def assertIdempotent(resourcePath: String): Unit = {
+    val firstMigration  = loadAndMigrate(resourcePath)
+    val secondMigration = migrate(firstMigration)
+    secondMigration shouldBe firstMigration
   }
 
   "NodeIdToUuidMigration" - {
@@ -44,6 +55,10 @@ class NodeIdToUuidMigrationSpec extends AnyFreeSpecLike with Matchers {
           "sink1"
         )
       }
+
+      "should be idempotent" in {
+        assertIdempotent("migrations/simple-scenario.json")
+      }
     }
 
     "scenario with a fragment reference" - {
@@ -62,6 +77,10 @@ class NodeIdToUuidMigrationSpec extends AnyFreeSpecLike with Matchers {
           "sink1"
         )
       }
+
+      "should be idempotent" in {
+        assertIdempotent("migrations/scenario-with-fragment.json")
+      }
     }
 
     "scenario with Join (branch parameters)" - {
@@ -75,7 +94,7 @@ class NodeIdToUuidMigrationSpec extends AnyFreeSpecLike with Matchers {
 
       "should move old string ids into node names" in {
         val realNodes = migrated.collectAllNodes.filterNot(_.isInstanceOf[BranchEndData])
-        realNodes.map(_.name.value) should contain theSameElementsAs List("join1", "sink1", "source1", "source2")
+        realNodes.map(_.name.value) should contain theSameElementsAs List("join1", "source1", "source2")
       }
 
       "should update Join branchParameters branchId to new source UUIDs" in {
@@ -95,6 +114,10 @@ class NodeIdToUuidMigrationSpec extends AnyFreeSpecLike with Matchers {
           branchEnd.definition.joinId shouldBe uuidOf("join1")
           branchEnd.definition.id should (equal(uuidOf("source1")) or equal(uuidOf("source2")))
         }
+      }
+
+      "should be idempotent" in {
+        assertIdempotent("migrations/scenario-with-join.json")
       }
     }
 

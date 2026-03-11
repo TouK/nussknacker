@@ -9,28 +9,39 @@ import pl.touk.nussknacker.engine.migration.ProcessMigration
 
 import java.nio.charset.StandardCharsets
 import java.util.UUID
+import scala.util.Try
 
 object NodeIdToUuidMigration extends ProcessMigration {
 
   override def description: String = "Migrate node IDs to node name, introduce nodeId as static uuid"
 
   override def migrateProcess(canonicalProcess: CanonicalProcess, category: String): CanonicalProcess = {
-    // BranchEndData nodes have synthetic IDs ($edge-...), not real node IDs — skip them
-    val idMapping: Map[String, String] = canonicalProcess.collectAllNodes.map { n =>
-      val uuidBasedOnID = UUID.nameUUIDFromBytes(n.id.value.getBytes(StandardCharsets.UTF_8))
-      n.id.value -> uuidBasedOnID.toString
-    }.toMap
+    val realNodes    = canonicalProcess.collectAllNodes.filterNot(_.isInstanceOf[BranchEndData])
+    val migratedById = realNodes.map(node => node.id.value -> migratedNodeId(node.id.value)).toMap
+    val idMapping = realNodes.foldLeft(migratedById) { case (acc, node) =>
+      // In legacy scenarios decoded without `name`, `name` is filled from old id while `id` can already be UUID.
+      // Keep id-mapping authoritative and add name aliases to resolve join/branch references.
+      if (acc.contains(node.name.value)) acc else acc + (node.name.value -> migratedById(node.id.value))
+    }
 
     def mapId(oldId: String): String = idMapping.getOrElse(oldId, oldId)
 
-    canonicalProcess.mapAllNodes(rewriteNodes(_, mapId))
+    canonicalProcess.mapAllNodes(rewriteNodes(_, mapId, migratedNodeId))
   }
 
-  private def rewriteNodes(nodes: List[CanonicalNode], mapId: String => String): List[CanonicalNode] =
-    nodes.map(rewriteNode(_, mapId))
+  private def rewriteNodes(
+      nodes: List[CanonicalNode],
+      mapId: String => String,
+      migratedNodeId: String => String
+  ): List[CanonicalNode] =
+    nodes.map(rewriteNode(_, mapId, migratedNodeId))
 
-  private def rewriteNode(node: CanonicalNode, mapId: String => String): CanonicalNode = {
-    def id(n: NodeData): NodeId = NodeId(mapId(n.id.value))
+  private def rewriteNode(
+      node: CanonicalNode,
+      mapId: String => String,
+      migratedNodeId: String => String
+  ): CanonicalNode = {
+    def id(n: NodeData): NodeId = NodeId(migratedNodeId(n.id.value))
 
     node match {
       case canonicalnode.FlatNode(data) =>
@@ -56,21 +67,27 @@ object NodeIdToUuidMigration extends ProcessMigration {
         }
         canonicalnode.FlatNode(newData)
       case canonicalnode.FilterNode(data, nextFalse) =>
-        canonicalnode.FilterNode(data.copy(id = id(data)), rewriteNodes(nextFalse, mapId))
+        canonicalnode.FilterNode(data.copy(id = id(data)), rewriteNodes(nextFalse, mapId, migratedNodeId))
       case canonicalnode.SwitchNode(data, nexts, defaultNext) =>
         canonicalnode.SwitchNode(
           data.copy(id = id(data)),
-          nexts.map(c => c.copy(nodes = rewriteNodes(c.nodes, mapId))),
-          rewriteNodes(defaultNext, mapId)
+          nexts.map(c => c.copy(nodes = rewriteNodes(c.nodes, mapId, migratedNodeId))),
+          rewriteNodes(defaultNext, mapId, migratedNodeId)
         )
       case canonicalnode.SplitNode(data, nexts) =>
-        canonicalnode.SplitNode(data.copy(id = id(data)), nexts.map(rewriteNodes(_, mapId)))
+        canonicalnode.SplitNode(data.copy(id = id(data)), nexts.map(rewriteNodes(_, mapId, migratedNodeId)))
       case canonicalnode.Fragment(data, outputs) =>
         canonicalnode.Fragment(
           data.copy(id = id(data)),
-          outputs.map { case (k, v) => k -> rewriteNodes(v, mapId) }
+          outputs.map { case (k, v) => k -> rewriteNodes(v, mapId, migratedNodeId) }
         )
     }
   }
+
+  private def migratedNodeId(id: String): String =
+    if (isUuid(id)) id else UUID.nameUUIDFromBytes(id.getBytes(StandardCharsets.UTF_8)).toString
+
+  private def isUuid(value: String): Boolean =
+    Try(UUID.fromString(value)).isSuccess
 
 }
