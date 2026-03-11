@@ -1,4 +1,4 @@
-import { Box, CircularProgress, Typography } from "@mui/material";
+import { Box, CircularProgress, Divider, Typography } from "@mui/material";
 import SvgIcon from "@mui/material/SvgIcon/SvgIcon";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -11,9 +11,9 @@ import { getTestAssertionResults, getTestResultsLoading } from "../../../reducer
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { Expandable } from "../../common/Expandable";
 import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
-import { Button } from "../../toolbarComponents/toolbarButtons/Button";
 import { AssertionResultsBadge } from "./assertionResultsForNode/AssertionResultsBadge";
 import { Definitions } from "./definitions";
+import { Footer } from "./footer";
 import { Results } from "./results";
 import type { TestCaseMode } from "./TestCaseSwitchMode";
 import { TestCaseSwitchMode } from "./TestCaseSwitchMode";
@@ -39,6 +39,8 @@ export const TestCaseExpandable = ({ testCase }: TestCaseExpandableProps) => {
             <TestCaseSwitchMode value={mode} onChange={setMode} />
             {mode === "results" && <Results testAssertionResults={testAssertionResults} />}
             {mode === "definitions" && <Definitions />}
+            <Divider sx={{ mt: 1.5 }} />
+            <Footer />
         </Expandable>
     );
 };

@@ -14,8 +14,6 @@ const TestCasesPanel = () => {
         <ToolbarWrapper id={"test-cases-panel"} title={"Test cases"}>
             <Box mt={1} mb={0.5}>
                 <TestCaseExpandable testCase={testCase} />
-                <Divider sx={{ mt: 1.5 }} />
-                <Footer />
             </Box>
         </ToolbarWrapper>
     );
