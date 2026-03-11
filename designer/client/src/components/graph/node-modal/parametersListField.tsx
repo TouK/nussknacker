@@ -37,17 +37,10 @@ export const ParametersListField = ({ getListFieldPath, paramWithIndex, ...props
 
     const dataMapperAddon = useMemo(() => {
         if (paramKey === OverrideKeys.SinkKafkaValue && props.isEditMode && showDataMapper)
-            return (
-                <SinkKafkaValueDataMapper
-                    node={props.node}
-                    parameterDefinitions={props.parameterDefinitions}
-                    valuePath={`${listFieldPath}.expression`}
-                    setProperty={props.setProperty}
-                />
-            );
+            return <SinkKafkaValueDataMapper node={props.node} valuePath={`${listFieldPath}.expression`} setProperty={props.setProperty} />;
         if ((paramKey === OverrideKeys.HttpBody || paramKey === OverrideKeys.WebhookBody) && props.isEditMode && showDataMapper)
             return <HttpBodyDataMapper node={props.node} valuePath={`${listFieldPath}.expression`} setProperty={props.setProperty} />;
-    }, [listFieldPath, paramKey, props.isEditMode, props.node, props.parameterDefinitions, props.setProperty, showDataMapper]);
+    }, [listFieldPath, paramKey, props.isEditMode, props.node, props.setProperty, showDataMapper]);
 
     const fieldErrors = useMemo(() => getValidationErrorsForField(props.errors, param.name), [props.errors, param.name]);
 

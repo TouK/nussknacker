@@ -13,6 +13,21 @@ interface TopicPickerPanelProps {
 
 export function TopicPickerPanel({ loading, entries, onSelect, onClose }: TopicPickerPanelProps): React.JSX.Element {
     const theme = useTheme();
+
+    // Group entries by sourceLabel
+    const groups = React.useMemo(() => {
+        const map = new Map<string, TopicEntry[]>();
+        for (const e of entries) {
+            const label = e.sourceLabel ?? "Kafka";
+            const existing = map.get(label);
+            if (existing) existing.push(e);
+            else map.set(label, [e]);
+        }
+        return map;
+    }, [entries]);
+
+    const multipleGroups = groups.size > 1;
+
     return (
         <SamplePanel>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
@@ -26,25 +41,34 @@ export function TopicPickerPanel({ loading, entries, onSelect, onClose }: TopicP
                 <Typography sx={{ fontSize: 12, color: "text.secondary", py: 1 }}>No topics with defined schemas found.</Typography>
             )}
             {!loading && entries.length > 0 && (
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
-                    {entries.map((e) => {
-                        const fieldCount = Object.keys(e.schema).length;
-                        return (
-                            <Chip
-                                key={e.topic}
-                                label={`${e.topic} (${fieldCount} fields)`}
-                                size="small"
-                                clickable
-                                onClick={() => onSelect(e)}
-                                sx={{
-                                    fontSize: 12,
-                                    backgroundColor: alpha(theme.palette.primary.main, 0.12),
-                                    color: theme.palette.primary.light,
-                                    "&:hover": { backgroundColor: alpha(theme.palette.primary.main, 0.25) },
-                                }}
-                            />
-                        );
-                    })}
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    {Array.from(groups.entries()).map(([label, groupEntries]) => (
+                        <Box key={label}>
+                            {multipleGroups && (
+                                <Typography sx={{ fontSize: 11, fontWeight: 600, color: "text.secondary", mb: 0.5 }}>{label}</Typography>
+                            )}
+                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+                                {groupEntries.map((e) => {
+                                    const fieldCount = Object.keys(e.schema).length;
+                                    return (
+                                        <Chip
+                                            key={e.topic}
+                                            label={`${e.topic} (${fieldCount} fields)`}
+                                            size="small"
+                                            clickable
+                                            onClick={() => onSelect(e)}
+                                            sx={{
+                                                fontSize: 12,
+                                                backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                                                color: theme.palette.primary.light,
+                                                "&:hover": { backgroundColor: alpha(theme.palette.primary.main, 0.25) },
+                                            }}
+                                        />
+                                    );
+                                })}
+                            </Box>
+                        </Box>
+                    ))}
                 </Box>
             )}
         </SamplePanel>

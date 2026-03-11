@@ -124,7 +124,8 @@ export function EdgeFields(props: Props): React.JSX.Element {
     const conditionBuilderContextData = useMemo<ContextData | undefined>(() => {
         const [contexts] = ioContext?.getAvailableContexts("input") ?? [[]];
         if (!contexts.length) return undefined;
-        return Object.fromEntries(Object.entries(contexts[0].variables).map(([k, v]) => [k, v.pretty]));
+        const vars = contexts[0].variables;
+        return Object.fromEntries(Object.keys(vars).map((k) => [k, vars[k].pretty]));
     }, [ioContext]);
 
     const conditionBuilderAdornment = useMemo(() => {

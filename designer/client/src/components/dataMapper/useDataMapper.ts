@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 
 import HttpService from "../../http/HttpService/instance";
+import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { useAppSelector } from "../../store/storeHelpers";
 import type { VariableTypes } from "../../types/validation";
 import { toNullSafe, typingResultToSample } from "../builderComponents/typeUtils";
@@ -13,7 +14,6 @@ import {
     fieldsFromSample,
     genSpelFromFields,
     INITIAL_FIELDS,
-    KAFKA_TOPIC_PROBE_NODE,
     makeField,
     nextId,
     parseSpelToFields,
@@ -65,6 +65,7 @@ export function useDataMapper({
 }: UseDataMapperOptions) {
     const processName = useAppSelector(getProcessName);
     const processProperties = useAppSelector(getProcessProperties);
+    const processDefinitionData = useAppSelector(getProcessDefinitionData);
 
     const [context, setContext] = useState<ContextData>(() => initialContext ?? (variableTypes ? {} : SAMPLE_CONTEXT));
     const [fields, setFields] = useState<FieldDef[]>(() => {
@@ -268,55 +269,83 @@ export function useDataMapper({
     }, []);
 
     const defaultFetchTopicDefinitions = useCallback(async (): Promise<TopicEntry[]> => {
-        if (!processName || !processProperties) return [];
-        const probe = await HttpService.validateNode(processName, {
-            nodeData: KAFKA_TOPIC_PROBE_NODE as never,
-            variableTypes: {},
-            branchVariableTypes: {},
-            outgoingEdges: [],
-            testCases: {},
-            processProperties,
-        });
-        if (!probe) return [];
-        const topicParam = probe.parameters?.find((p) => p.name === "Topic");
-        const fixedEditor = topicParam?.editors?.find((e) => e.type === "FixedValuesParameterEditor") as
-            | { possibleValues: { expression: string; label: string }[] }
-            | undefined;
-        const topics = (fixedEditor?.possibleValues ?? []).filter((pv) => pv.label && pv.expression && pv.expression !== "''");
-        if (topics.length === 0) return [];
+        if (!processName || !processProperties || !processDefinitionData) return [];
 
-        const results = await Promise.allSettled(
-            topics.map(async ({ expression, label }) => {
-                const nodeWithTopic = {
-                    ...KAFKA_TOPIC_PROBE_NODE,
-                    ref: { ...KAFKA_TOPIC_PROBE_NODE.ref, parameters: [{ name: "Topic", expression: { language: "spel", expression } }] },
-                };
-                const data = await HttpService.validateNode(processName, {
-                    nodeData: nodeWithTopic as never,
+        // Find all configured Kafka sink component templates
+        const kafkaSinks = (processDefinitionData.componentGroups ?? [])
+            .flatMap((g) => g.components)
+            .filter((c) => {
+                const ref = (c.node as unknown as { ref?: { typ?: string } }).ref;
+                return c.node.type === "Sink" && ref?.typ?.endsWith("kafka");
+            });
+
+        if (kafkaSinks.length === 0) return [];
+
+        const allEntries = await Promise.all(
+            kafkaSinks.map(async (c) => {
+                const sourceLabel = c.label === "Topic" ? "Default Kafka" : c.label;
+                const ref = (c.node as unknown as { ref: { typ: string; parameters: Array<{ name: string; expression: unknown }> } }).ref;
+                const probeBase = { ...c.node, id: "_spel-mapper-probe", name: "" };
+
+                // Step 1: get topic list for this kafka type
+                const probe = await HttpService.validateNode(processName, {
+                    nodeData: probeBase as never,
                     variableTypes: {},
                     branchVariableTypes: {},
                     outgoingEdges: [],
                     testCases: {},
                     processProperties,
                 });
-                if (!data) return null;
-                const valueParam = data.parameters?.find((p) => p.name === "Value");
-                const defaultExpr = valueParam?.defaultValue?.expression;
-                if (!defaultExpr) return null;
-                try {
-                    const parsed = JSON.parse(defaultExpr);
-                    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed) || Object.keys(parsed).length === 0)
-                        return null;
-                    return { topic: label, schema: parsed as Record<string, unknown> };
-                } catch {
-                    return null;
-                }
+                if (!probe) return [];
+
+                const topicParam = probe.parameters?.find((p) => p.name === "Topic");
+                const fixedEditor = topicParam?.editors?.find((e) => e.type === "FixedValuesParameterEditor") as
+                    | { possibleValues: { expression: string; label: string }[] }
+                    | undefined;
+                const topics = (fixedEditor?.possibleValues ?? []).filter((pv) => pv.label && pv.expression && pv.expression !== "''");
+                if (topics.length === 0) return [];
+
+                // Step 2: for each topic fetch its Value schema
+                const results = await Promise.allSettled(
+                    topics.map(async ({ expression, label }) => {
+                        const nodeWithTopic = {
+                            ...probeBase,
+                            ref: {
+                                ...ref,
+                                parameters: ref.parameters.map((p) =>
+                                    p.name === "Topic" ? { ...p, expression: { language: "spel", expression } } : p,
+                                ),
+                            },
+                        };
+                        const data = await HttpService.validateNode(processName, {
+                            nodeData: nodeWithTopic as never,
+                            variableTypes: {},
+                            branchVariableTypes: {},
+                            outgoingEdges: [],
+                            testCases: {},
+                            processProperties,
+                        });
+                        if (!data) return null;
+                        const valueParam = data.parameters?.find((p) => p.name === "Value");
+                        const defaultExpr = valueParam?.defaultValue?.expression;
+                        if (!defaultExpr) return null;
+                        try {
+                            const parsed = JSON.parse(defaultExpr);
+                            if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed) || Object.keys(parsed).length === 0)
+                                return null;
+                            return { topic: label, schema: parsed as Record<string, unknown>, sourceLabel };
+                        } catch {
+                            return null;
+                        }
+                    }),
+                );
+                return results
+                    .filter((r) => r.status === "fulfilled" && r.value !== null)
+                    .map((r) => (r as PromiseFulfilledResult<TopicEntry>).value);
             }),
         );
-        return results
-            .filter((r): r is PromiseFulfilledResult<TopicEntry> => r.status === "fulfilled" && r.value !== null)
-            .map((r) => r.value);
-    }, [processName, processProperties]);
+        return allEntries.flat();
+    }, [processName, processProperties, processDefinitionData]);
 
     const fetchTopicDefinitions = fetchTopicDefinitionsOverride ?? defaultFetchTopicDefinitions;
 
