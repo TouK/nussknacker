@@ -37,11 +37,9 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { variant } = useContext(ToolbarButtonsContext);
     const side = useContext(ToolbarSideContext);
 
-    const { presets, runAllPreset, testCasePresets } = useScenarioTestPresets();
+    const { presets, activeTestCasePreset } = useScenarioTestPresets();
     const { hasResult, assertionsIsSuccess } = useAssertionResultsSummary();
     const tooltip = useScenarioTestTooltip({ disabled, title, titleOverride });
-
-    const [selectedPreset, setSelectedPreset] = useState(testCasePresets[0] || runAllPreset);
 
     const [showMockFieldOnEnrichers] = useUserSettings("node.showMockFieldOnEnrichers");
     const dispatch = useAppDispatch();
@@ -51,7 +49,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     );
 
     const icon =
-        selectedPreset.value === RUN_ALL ? (
+        activeTestCasePreset.value === RUN_ALL ? (
             <TestingIcon />
         ) : (
             <TestingIconWithAssertionStatus hasResult={hasResult} assertionsIsSuccess={assertionsIsSuccess} />
@@ -60,7 +58,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     return (
         <StyledScenarioTestButton
             onClick={() => handleRunTest(testCase)}
-            name={selectedPreset.label}
+            name={activeTestCasePreset.label}
             title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
             icon={icon}
             side={side}
@@ -69,9 +67,9 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
             disabled={!testingScenarioEnabled || isLoading}
             type={type}
             presets={presets}
-            selected={selectedPreset}
+            selected={activeTestCasePreset}
             onPresetChange={(preset) => {
-                setSelectedPreset(preset);
+                // setSelectedPreset(preset);
                 if (preset.value === RUN_ALL) {
                     //TODO: Implement me when backend ready
                     return;

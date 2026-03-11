@@ -6,11 +6,17 @@ import type { TestingDataRecords } from "../../components/modals/TestingDataReco
 import { safeParseExpression } from "../../components/modals/TestingDataRecords/utils";
 import type { TestCase } from "../graph/testCase";
 import { getScenarioGraph } from "./graph";
+import { getActiveTestCaseId } from "./testing";
 
 const getNodeId = (_: unknown, nodeId: string) => nodeId;
 
 export const getTestCase = createSelector(getScenarioGraph, ({ testCases }) => testCases?.value ?? ({} as TestCase));
 export const getTestCaseOptions = createSelector(getTestCase, ({ name, id }) => [{ label: name, value: id }]);
+export const getActiveTestCaseOption = createSelector(
+    getTestCaseOptions,
+    getActiveTestCaseId,
+    (testCaseOptions, activeTestCaseId) => testCaseOptions.find((option) => option.value === activeTestCaseId) || null,
+);
 export const getTestCaseAssertions = createSelector(getTestCase, ({ assertions }) => assertions);
 export const getTestCaseAssertionsForNode = createSelector(
     getTestCaseAssertions,

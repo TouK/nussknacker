@@ -177,6 +177,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
                 scenario: adjustedScenario,
                 scenarioLoading: false,
                 layout: fromMeta(adjustedScenario.scenarioGraph),
+                testing: {
+                    ...state.testing,
+                    activeTestCaseId: adjustedScenario.scenarioGraph.testCases.value.id,
+                },
             };
         }
         case "CORRECT_INVALID_SCENARIO": {
