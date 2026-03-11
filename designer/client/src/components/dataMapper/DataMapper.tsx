@@ -226,7 +226,7 @@ export function DataMapper({
                                         onClick={() => (dm.showTopicPicker ? dm.setShowTopicPicker(false) : dm.handleOpenTopicPicker())}
                                         sx={{ fontSize: 12, textTransform: "none" }}
                                     >
-                                        From Topic
+                                        From Schema
                                     </Button>
                                     <Button
                                         startIcon={<UploadFileIcon />}
