@@ -82,7 +82,7 @@ const TestCaseTitle = ({ testCase }: TestCaseTitleProps) => {
             {isLoading ? (
                 <CircularProgress size={14} />
             ) : (
-                <InfoTooltip variant={"hover"} title={t("testCases.run", "Run test")}>
+                <InfoTooltip variant={"hover"} title={t("testCases.run", "Run test")} enterDelay={500}>
                     <SvgIcon fontSize={"small"} className={"action-slot"} onClick={handleRun}>
                         <TestingIcon />
                     </SvgIcon>

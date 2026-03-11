@@ -117,7 +117,11 @@ const ResultsContent = ({ sortedNodeIds, testAssertionResults, scenarioGraphNode
                                 assertionResults={testAssertionResults[nodeId]}
                                 action={
                                     node ? (
-                                        <InfoTooltip variant={"hover"} title={t("testCases.run", "Open node testing details")}>
+                                        <InfoTooltip
+                                            variant={"hover"}
+                                            title={t("testCases.run", "Open node testing details")}
+                                            enterDelay={500}
+                                        >
                                             <OpenNodeTestingDetails node={node} />
                                         </InfoTooltip>
                                     ) : undefined
@@ -127,7 +131,7 @@ const ResultsContent = ({ sortedNodeIds, testAssertionResults, scenarioGraphNode
                         }
                         componentId={nodeId}
                         detailsSx={{ pl: 2, pr: 1, py: 0 }}
-                        summarySx={{ px: 0.5, minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px", overflow: "hidden" } }}
+                        summarySx={{ px: 1.25, minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px", overflow: "hidden" } }}
                     >
                         <AssertionResultsForNode nodeId={nodeId} />
                     </Expandable>
