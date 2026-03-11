@@ -5,7 +5,7 @@ import { useUserSettings } from "../../../common/useUserSettings";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { UIParameter } from "../../../types/definition";
 import type { NodeType } from "../../../types/node";
-import type { ContextData, ContextRecord } from "../../dataMapper/DataMapper";
+import type { ContextData } from "../../dataMapper/DataMapper";
 import { DataMapper } from "../../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../../dataMapper/DataMapperDialogTitle";
 import { makeField, parseSpelToFields, refClazzToNuType } from "../../dataMapper/dataMapperUtils";
@@ -31,13 +31,12 @@ export function OpenApiEnricherDataMapper({ node, parameterDefinitions, setPrope
     const variableTypes = useMemo(() => findAvailableVariables(node.id), [findAvailableVariables, node.id]);
 
     const ioContext = useInputOutputContext();
-    const availableContexts = useMemo<ContextRecord[]>(() => {
+    const initialContext = useMemo<ContextData | undefined>(() => {
         const [contexts] = ioContext?.getAvailableContexts("input") ?? [[]];
-        return contexts.map((ctx, i) => {
-            const vars = ctx.variables;
-            const data: ContextData = Object.fromEntries(Object.keys(vars).map((k) => [k, vars[k].pretty]));
-            return { id: ctx.id, label: `Record ${i + 1}`, data };
-        });
+        if (!contexts.length) return undefined;
+        const selected = ioContext?.state.inputDataSetId ? contexts.find((c) => c.id === ioContext.state.inputDataSetId) : undefined;
+        const vars = (selected ?? contexts[0]).variables;
+        return Object.fromEntries(Object.keys(vars).map((k) => [k, vars[k].pretty]));
     }, [ioContext]);
 
     // Show only for enrichers with a dynamic service selector (OpenAPI pattern)
@@ -91,7 +90,7 @@ export function OpenApiEnricherDataMapper({ node, parameterDefinitions, setPrope
                         <DataMapper
                             onInsert={handleInsert}
                             variableTypes={variableTypes}
-                            availableContexts={availableContexts}
+                            initialContext={initialContext}
                             initialFields={initialFields}
                             fetchTopicDefinitions={() => Promise.resolve([])}
                             hideFieldControls

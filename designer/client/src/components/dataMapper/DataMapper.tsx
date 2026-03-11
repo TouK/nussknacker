@@ -1,7 +1,6 @@
 import AddIcon from "@mui/icons-material/Add";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SearchIcon from "@mui/icons-material/Search";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import {
@@ -29,7 +28,6 @@ import type { ContextData, FieldDef, TopicEntry } from "./dataMapperUtils";
 import { FieldRow } from "./FieldRow";
 import { SampleJsonPanel } from "./SampleJsonPanel";
 import { TopicPickerPanel } from "./TopicPickerPanel";
-import type { ContextRecord } from "./useDataMapper";
 import { useDataMapper } from "./useDataMapper";
 
 // ─── Styled ───────────────────────────────────────────────────────────────────
@@ -48,7 +46,7 @@ const RootBox = styled(Box, { shouldForwardProp: (p) => p !== "embedded" })<{ em
 
 // ─── Re-exports for consumers ─────────────────────────────────────────────────
 
-export type { ContextData, ContextRecord, TopicEntry };
+export type { ContextData, TopicEntry };
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -62,8 +60,6 @@ interface DataMapperProps {
     fetchTopicDefinitions?: () => Promise<TopicEntry[]>;
     /** Hide Add Field, From Schema and From Sample controls (e.g. when fields are fixed by schema). */
     hideFieldControls?: boolean;
-    /** All available incoming test records — user can expand one to use its variable values. */
-    availableContexts?: ContextRecord[];
 }
 
 // ─── DataMapper ───────────────────────────────────────────────────────────────
@@ -76,7 +72,6 @@ export function DataMapper({
     variableTypes,
     fetchTopicDefinitions: fetchTopicDefinitionsOverride,
     hideFieldControls,
-    availableContexts,
 }: DataMapperProps = {}): React.JSX.Element {
     const dm = useDataMapper({
         initialContext,
@@ -85,7 +80,6 @@ export function DataMapper({
         variableTypes,
         isEmbedded: !!onInsert,
         fetchTopicDefinitionsOverride,
-        availableContexts,
     });
 
     return (
@@ -136,59 +130,6 @@ export function DataMapper({
                                 onClose={() => dm.setShowContextSample(false)}
                             />
                         </Collapse>
-                        {dm.availableContexts && dm.availableContexts.length > 1 && (
-                            <Box sx={{ px: 1, pt: 1 }}>
-                                <Typography
-                                    sx={{
-                                        fontSize: 10,
-                                        color: "text.disabled",
-                                        mb: 0.5,
-                                        textTransform: "uppercase",
-                                        letterSpacing: "0.05em",
-                                    }}
-                                >
-                                    Incoming records
-                                </Typography>
-                                {dm.availableContexts.map((ctx) => {
-                                    const isExpanded = dm.selectedContextId === ctx.id;
-                                    return (
-                                        <Box
-                                            key={ctx.id}
-                                            onClick={() => dm.selectContext(ctx.id)}
-                                            sx={(theme) => ({
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 0.5,
-                                                px: 1,
-                                                py: "3px",
-                                                mb: "2px",
-                                                borderRadius: 1,
-                                                cursor: "pointer",
-                                                border: `1px solid ${isExpanded ? theme.palette.primary.main : theme.palette.divider}`,
-                                                backgroundColor: isExpanded ? alpha(theme.palette.primary.main, 0.08) : "transparent",
-                                                "&:hover": {
-                                                    backgroundColor: isExpanded
-                                                        ? alpha(theme.palette.primary.main, 0.12)
-                                                        : alpha(theme.palette.action.hover, 0.4),
-                                                },
-                                            })}
-                                        >
-                                            <ExpandMoreIcon
-                                                sx={{
-                                                    fontSize: 14,
-                                                    color: isExpanded ? "primary.main" : "text.disabled",
-                                                    transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)",
-                                                    transition: "transform 0.15s",
-                                                }}
-                                            />
-                                            <Typography sx={{ fontSize: 11, flex: 1, color: isExpanded ? "primary.main" : "text.primary" }}>
-                                                {ctx.label}
-                                            </Typography>
-                                        </Box>
-                                    );
-                                })}
-                            </Box>
-                        )}
                         <Box sx={{ px: 1, pt: 1, pb: 0.5 }}>
                             <TextField
                                 size="small"
