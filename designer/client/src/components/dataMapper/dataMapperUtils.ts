@@ -51,6 +51,8 @@ export function refClazzToNuType(refClazzName: string | undefined): NuType {
     return "Any";
 }
 
+const NUMERIC_NU_TYPES = new Set<NuType>(["Integer", "Long", "Float", "Double", "BigDecimal"]);
+
 /** Returns a type-mismatch error message if the backend-inferred type doesn't match the declared NuType. */
 export function checkTypeCompatibility(expressionType: TypingResult | undefined, nuType: NuType): string | null {
     if (nuType === "Any" || !expressionType) return null;
@@ -59,6 +61,9 @@ export function checkTypeCompatibility(expressionType: TypingResult | undefined,
     const actualClass = expressionType.refClazzName;
     if (!actualClass) return null;
     if (expectedClasses.some((c) => actualClass === c || actualClass.startsWith(c))) return null;
+    // Numeric types are mutually compatible (SpEL/Java allows numeric coercions)
+    const actualNuType = refClazzToNuType(actualClass);
+    if (NUMERIC_NU_TYPES.has(nuType) && NUMERIC_NU_TYPES.has(actualNuType)) return null;
     const actual = expressionType.display ?? actualClass.split(".").pop() ?? actualClass;
     return `Type mismatch: expected ${nuType} but expression returns ${actual}`;
 }
