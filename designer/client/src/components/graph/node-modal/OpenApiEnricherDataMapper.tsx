@@ -10,7 +10,7 @@ import { DataMapper } from "../../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../../dataMapper/DataMapperDialogTitle";
 import { makeField, parseSpelToFields, refClazzToNuType } from "../../dataMapper/dataMapperUtils";
 import type { FieldDef } from "../../dataMapper/dataMapperUtils";
-import { ExpressionLang } from "./editors/expression/types";
+import { EditorType, ExpressionLang } from "./editors/expression/types";
 import { useInputOutputContext } from "./io/InputOutputContext";
 import { StyledLoadingButton } from "./node-action-buttons/StyledLoadingButton";
 import { findParameters } from "./NodeDetailsContent/helpers";
@@ -39,8 +39,15 @@ export function OpenApiEnricherDataMapper({ node, parameterDefinitions, setPrope
         return Object.fromEntries(Object.keys(vars).map((k) => [k, vars[k].pretty]));
     }, [ioContext]);
 
-    // Parameters that are actual service inputs (exclude selectors that reload other parameters)
-    const mappableParams = useMemo(() => parameterDefinitions.filter((p) => !p.changesCanReloadParameters), [parameterDefinitions]);
+    // Parameters that are actual service inputs — exclude selectors (changesCanReloadParameters)
+    // and fixed-value dropdowns (only FixedValuesParameterEditor, no SpelParameterEditor)
+    const mappableParams = useMemo(
+        () =>
+            parameterDefinitions.filter(
+                (p) => !p.changesCanReloadParameters && p.editors?.some((e) => e.type === EditorType.SPEL_PARAMETER_EDITOR),
+            ),
+        [parameterDefinitions],
+    );
 
     // Only show when all parameters have specific types — enrichers with Any/unknown typed params
     // (like HTTP Body) use the per-parameter DataMapper instead
