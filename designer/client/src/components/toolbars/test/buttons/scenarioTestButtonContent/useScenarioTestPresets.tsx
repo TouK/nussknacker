@@ -37,7 +37,7 @@ export const useScenarioTestPresets = () => {
 
     const activeTestCaseId = useAppSelector(getActiveTestCaseId);
 
-    const activeTestCasePreset = testCasePresets.find((testCasePreset) => testCasePreset.value === activeTestCaseId) ?? testCasePresets[0];
+    const activeTestCasePreset = testCasePresets.find((testCasePreset) => testCasePreset.value === activeTestCaseId);
 
     const runAllPreset: Preset = useMemo(
         () => ({

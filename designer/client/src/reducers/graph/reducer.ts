@@ -26,7 +26,7 @@ import { appendHistorySquashLogic } from "./historySquash";
 import type { NestedKeyOf } from "./lodashWrappers";
 import { omit, pick } from "./lodashWrappers";
 import { selectionState } from "./selectionState";
-import { testCaseReducer } from "./testCase";
+import { initialTestCasesState, testCaseReducer } from "./testCase";
 import { initialTestingState, testingReducer } from "./testing";
 import type { GraphState } from "./types";
 import { VisibleDataType } from "./types";
@@ -49,7 +49,7 @@ const emptyGraphState: GraphState = {
             edges: [],
             properties: null,
             stickyNotes: [],
-            testCases: null,
+            testCases: initialTestCasesState,
         },
     } as Scenario,
     layout: [],
@@ -179,7 +179,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
                 layout: fromMeta(adjustedScenario.scenarioGraph),
                 testing: {
                     ...state.testing,
-                    activeTestCaseId: adjustedScenario?.scenarioGraph?.testCases?.value?.id ?? null,
+                    activeTestCaseId:
+                        adjustedScenario?.scenarioGraph?.testCases?.value?.id || state.scenario?.scenarioGraph?.testCases?.value?.id,
                 },
             };
         }
