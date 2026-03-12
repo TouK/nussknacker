@@ -3,6 +3,7 @@ import React from "react";
 
 import ProcessUtils from "../../../common/ProcessUtils";
 import type { NodeResultsForContext } from "../../../common/TestResultUtils";
+import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { UIParameter } from "../../../types/definition";
 import type { NodeType } from "../../../types/node";
@@ -43,6 +44,10 @@ export default function BranchParameters({
     //TODO: maybe we can rely only on node?
     const branchParameters = parameterDefinitions?.filter((p) => p.branchParam);
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
+    const scenarioGraph = useAppSelector(getScenarioGraph);
+    const nodeNameById = React.useMemo<Record<string, string>>(() => {
+        return Object.fromEntries((scenarioGraph.nodes || []).map((graphNode) => [graphNode.id, graphNode.name]));
+    }, [scenarioGraph.nodes]);
 
     return (
         <FieldLabelProvider>
@@ -65,6 +70,18 @@ export default function BranchParameters({
                                     const contextId = ProcessUtils.findContextForBranch(node, branchId);
                                     const variables = findAvailableVariables(contextId, param);
                                     const fieldName = `${paramName} for branch ${branchId}`;
+                                    const fieldLabel = nodeNameById[branchId] || branchId;
+                                    const fieldErrors = getValidationErrorsForField(errors, fieldName).map((error) => {
+                                        if (fieldLabel === branchId) {
+                                            return error;
+                                        }
+                                        const replaceBranchId = (text: string): string => text.split(branchId).join(fieldLabel);
+                                        return {
+                                            ...error,
+                                            message: replaceBranchId(error.message),
+                                            description: replaceBranchId(error.description),
+                                        };
+                                    });
 
                                     if (!paramValue) {
                                         return null;
@@ -74,7 +91,7 @@ export default function BranchParameters({
                                         <ExpressionField
                                             key={`${paramName}-${branchId}`}
                                             fieldName={fieldName}
-                                            fieldLabel={branchId}
+                                            fieldLabel={fieldLabel}
                                             exprPath={expressionPath}
                                             isEditMode={isEditMode}
                                             editedNode={node}
@@ -84,7 +101,7 @@ export default function BranchParameters({
                                             setNodeDataAt={setNodeDataAt}
                                             testResultsToShow={testResultsToShow}
                                             variableTypes={variables}
-                                            fieldErrors={getValidationErrorsForField(errors, fieldName)}
+                                            fieldErrors={fieldErrors}
                                         />
                                     );
                                 })}

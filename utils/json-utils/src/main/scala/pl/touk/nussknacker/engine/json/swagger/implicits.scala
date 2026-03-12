@@ -1,6 +1,11 @@
 package pl.touk.nussknacker.engine.json.swagger
 
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, ParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{
+  FixedExpressionValue,
+  FixedValuesParameterEditor,
+  ParameterEditor,
+  SpelParameterEditor
+}
 
 object implicits {
 
@@ -13,7 +18,8 @@ object implicits {
           List(
             FixedValuesParameterEditor(
               values.map(value => FixedExpressionValue(s"'$value'", value.asInstanceOf[String]))
-            )
+            ),
+            SpelParameterEditor
           )
         // Default for others
         case _ => Nil
