@@ -78,3 +78,28 @@ export function determineComponentId(node: NodeType) {
     const componentName = determineComponentName(node);
     return componentType && componentName ? `${componentType}-${componentName}` : null;
 }
+
+// Multi-word kinds that can't be extracted by simple last-segment split
+const MULTI_WORD_KINDS = ["decision-table", "flink-sql-query"];
+
+/** Enricher kinds that get the node-level OpenAPI-style DataMapper (named params, no schema loading) */
+export const DATA_MAPPER_OPENAPI_ENRICHER_KINDS = new Set(["openAPI", "lookup"]);
+
+/** Enricher kinds that get the node-level ConditionBuilder */
+export const CONDITION_BUILDER_ENRICHER_KINDS = new Set(["decision-table"]);
+
+/** Extracts the component kind from a componentId, e.g.:
+ *  sink-kafka            → "kafka"
+ *  service-petstore-openAPI → "openAPI"
+ *  service-aiven-postgres-lookup → "lookup"
+ *  service-decision-table → "decision-table"  (multi-word exception)
+ *  custom-flink-sql-query → "flink-sql-query" (multi-word exception)
+ */
+export function getComponentKind(componentId: string | null): string | null {
+    if (!componentId) return null;
+    for (const kind of MULTI_WORD_KINDS) {
+        if (componentId.endsWith(`-${kind}`)) return kind;
+    }
+    const lastDash = componentId.lastIndexOf("-");
+    return lastDash >= 0 ? componentId.slice(lastDash + 1) : componentId;
+}

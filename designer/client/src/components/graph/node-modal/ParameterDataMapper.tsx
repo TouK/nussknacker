@@ -3,8 +3,8 @@ import React, { useCallback, useMemo, useState } from "react";
 
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";
-import { DataMapper } from "../../dataMapper/DataMapper";
 import type { ContextData } from "../../dataMapper/DataMapper";
+import { DataMapper } from "../../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../../dataMapper/DataMapperDialogTitle";
 import { ExpressionLang } from "./editors/expression/types";
 import { useInputOutputContext } from "./io/InputOutputContext";
@@ -14,35 +14,24 @@ import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 interface Props {
     node: NodeType;
+    paramName: string;
     valuePath: string;
     setProperty: SetProperty;
 }
 
-function getBodyExpression(node: NodeType): string | undefined {
-    if (node.type === "Sink" || node.type === "Source") {
-        return (node.ref as { parameters: Array<{ name: string; expression: { language: string; expression: string } }> }).parameters?.find(
-            (p) => p.name === "Body",
-        )?.expression?.expression;
-    }
-    return (
-        node as unknown as { service: { parameters: Array<{ name: string; expression: { language: string; expression: string } }> } }
-    ).service?.parameters?.find((p) => p.name === "Body")?.expression?.expression;
+function getParamExpression(node: NodeType, paramName: string): string | undefined {
+    const params =
+        node.type === "Sink" || node.type === "Source"
+            ? (node.ref as { parameters?: Array<{ name: string; expression: { expression: string } }> }).parameters
+            : (node as unknown as { service?: { parameters?: Array<{ name: string; expression: { expression: string } }> } }).service
+                  ?.parameters;
+    return params?.find((p) => p.name === paramName)?.expression?.expression;
 }
 
-export function HttpBodyDataMapper({ node, valuePath, setProperty }: Props): React.JSX.Element {
+export function ParameterDataMapper({ node, paramName, valuePath, setProperty }: Props): React.JSX.Element {
     const [open, setOpen] = useState(false);
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
-    const variableTypes = useMemo(() => {
-        const vars = findAvailableVariables(node.id);
-        // For Enricher nodes the output variable is produced by this node itself —
-        // it must not appear as an available input variable in its own expressions.
-        const outputVar: string | undefined = node.type === "Enricher" ? node.output : undefined;
-        if (outputVar && outputVar in vars) {
-            const { [outputVar]: _omit, ...rest } = vars;
-            return rest;
-        }
-        return vars;
-    }, [findAvailableVariables, node]);
+    const variableTypes = useMemo(() => findAvailableVariables(node.id), [findAvailableVariables, node.id]);
 
     const ioContext = useInputOutputContext();
     const initialContext = useMemo<ContextData | undefined>(() => {
@@ -73,8 +62,8 @@ export function HttpBodyDataMapper({ node, valuePath, setProperty }: Props): Rea
                         <DataMapper
                             onInsert={handleInsert}
                             variableTypes={variableTypes}
-                            initialExpression={getBodyExpression(node)}
                             initialContext={initialContext}
+                            initialExpression={getParamExpression(node, paramName)}
                         />
                     </DialogContent>
                 </Dialog>

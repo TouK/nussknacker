@@ -38,11 +38,19 @@ export interface ConditionBuilderProps {
     variableTypes?: VariableTypes;
     /** Real values from the last incoming record; used to populate the Context Variables tree. */
     contextData?: ContextData;
+    /** Keys (without #) to pin to the top and render with accent color (e.g. "ROW" for decision-table). */
+    highlightKeys?: Set<string>;
 }
 
 // ─── ConditionBuilder ─────────────────────────────────────────────────────────
 
-export function ConditionBuilder({ onInsert, initialExpression, variableTypes, contextData }: ConditionBuilderProps): React.JSX.Element {
+export function ConditionBuilder({
+    onInsert,
+    initialExpression,
+    variableTypes,
+    contextData,
+    highlightKeys,
+}: ConditionBuilderProps): React.JSX.Element {
     const theme = useTheme();
     const focusedEditorContainerRef = useRef<HTMLElement | null>(null);
     const processName = useAppSelector(getProcessName);
@@ -122,12 +130,17 @@ export function ConditionBuilder({ onInsert, initialExpression, variableTypes, c
                 if (!contextFilter) return true;
                 return key.toLowerCase().includes(contextFilter.toLowerCase());
             })
+            .sort(([a], [b]) => {
+                const aHigh = highlightKeys?.has(a) ? -1 : 0;
+                const bHigh = highlightKeys?.has(b) ? -1 : 0;
+                return aHigh - bHigh;
+            })
             .map(([key, typingResult]) => {
                 const realValue = contextData?.[key];
                 const value = realValue !== undefined ? realValue : typingResultToSample(typingResult);
                 return [`#${key}`, value ?? null] as [string, unknown];
             });
-    }, [variableTypes, contextFilter, contextData]);
+    }, [variableTypes, contextFilter, contextData, highlightKeys]);
 
     const handleTreeInsert = useCallback((text: string) => {
         const container = focusedEditorContainerRef.current;
@@ -148,7 +161,7 @@ export function ConditionBuilder({ onInsert, initialExpression, variableTypes, c
             <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0, display: "flex", flexDirection: "column", gap: 2, p: 2.5 }}>
                 <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
                     {/* Left: Context Variables */}
-                    <PanelPaper sx={{ width: 280, flexShrink: 0 }}>
+                    <PanelPaper sx={{ width: 360, flexShrink: 0 }}>
                         <PanelHeader>
                             <Box>
                                 <Typography sx={{ fontSize: 13, fontWeight: 600 }}>Context Variables</Typography>
@@ -186,6 +199,7 @@ export function ConditionBuilder({ onInsert, initialExpression, variableTypes, c
                                         path={name}
                                         depth={0}
                                         onSelect={handleTreeInsert}
+                                        highlight={highlightKeys?.has(name.replace(/^#/, ""))}
                                     />
                                 ))
                             )}

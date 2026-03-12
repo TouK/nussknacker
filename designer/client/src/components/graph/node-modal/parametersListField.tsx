@@ -6,11 +6,10 @@ import { useParamKey } from "./editors/ParamKeyProvider";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { CopyEndpoint, EndpointFieldWrapper } from "./endpointFieldWrapper";
 import { FieldAddons } from "./fieldAddons";
-import { HttpBodyDataMapper } from "./HttpBodyDataMapper";
+import { ParameterDataMapper } from "./ParameterDataMapper";
 import { ParameterExpressionField } from "./ParameterExpressionField";
 import { OverrideKeys } from "./parameterHelpers";
 import type { ParametersListProps, ParameterWithIndex } from "./parametersList";
-import { SinkKafkaValueDataMapper } from "./SinkKafkaValueDataMapper";
 import { WebSocketUrlFieldWrapper } from "./webSocketUrlFieldWrapper";
 
 export type ParametersListFieldProps = ParametersListProps & {
@@ -36,11 +35,20 @@ export const ParametersListField = ({ getListFieldPath, paramWithIndex, ...props
     }, [param, paramKey, props.parameterDefinitions]);
 
     const dataMapperAddon = useMemo(() => {
-        if (paramKey === OverrideKeys.SinkKafkaValue && props.isEditMode && showDataMapper)
-            return <SinkKafkaValueDataMapper node={props.node} valuePath={`${listFieldPath}.expression`} setProperty={props.setProperty} />;
-        if ((paramKey === OverrideKeys.HttpBody || paramKey === OverrideKeys.WebhookBody) && props.isEditMode && showDataMapper)
-            return <HttpBodyDataMapper node={props.node} valuePath={`${listFieldPath}.expression`} setProperty={props.setProperty} />;
-    }, [listFieldPath, paramKey, props.isEditMode, props.node, props.setProperty, showDataMapper]);
+        if (
+            (paramKey === OverrideKeys.SinkKafkaValue || paramKey === OverrideKeys.HttpBody || paramKey === OverrideKeys.WebhookBody) &&
+            props.isEditMode &&
+            showDataMapper
+        )
+            return (
+                <ParameterDataMapper
+                    node={props.node}
+                    paramName={param.name}
+                    valuePath={`${listFieldPath}.expression`}
+                    setProperty={props.setProperty}
+                />
+            );
+    }, [listFieldPath, param.name, paramKey, props.isEditMode, props.node, props.setProperty, showDataMapper]);
 
     const fieldErrors = useMemo(() => getValidationErrorsForField(props.errors, param.name), [props.errors, param.name]);
 
