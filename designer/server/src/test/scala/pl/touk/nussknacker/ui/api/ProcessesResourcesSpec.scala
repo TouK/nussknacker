@@ -1531,6 +1531,11 @@ class ProcessesResourcesSpec
     getProcess(processName) ~> check {
       val scenarioDetails = responseAs[ScenarioWithDetails]
       scenarioDetails.scenarioGraph.flatMap(_.testCases) shouldBe Some(TestCases(NonEmptyList.one(testCase)))
+
+      val json            = responseAs[Json]
+      val testCasesCursor = json.hcursor.downField("scenarioGraph").downField("testCases")
+      testCasesCursor.downField("value").as[TestCase].value shouldBe testCase
+      testCasesCursor.downField("list").as[List[TestCase]].value shouldBe List(testCase)
     }
   }
 
