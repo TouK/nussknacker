@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogContent } from "@mui/material";
+import { Button } from "@mui/material";
 import { produce } from "immer";
 import { isEqual, uniq } from "lodash";
 import React, { useCallback, useMemo, useState } from "react";
@@ -11,9 +11,7 @@ import type { Edge } from "../../../types/edge";
 import { EdgeKind } from "../../../types/edge";
 import type { NodeId } from "../../../types/node";
 import type { VariableTypes } from "../../../types/validation";
-import { ConditionBuilder } from "../../conditionBuilder/ConditionBuilder";
-import type { ContextData } from "../../dataMapper/DataMapper";
-import { DataMapperDialogTitle } from "../../dataMapper/DataMapperDialogTitle";
+import { ConditionBuilderComponent } from "../../conditionBuilder/ConditionBuilderComponent";
 import NodeUtils from "../NodeUtils";
 import type { EdgeTypeOption } from "./EdgeTypeSelect";
 import { EdgeTypeSelect } from "./EdgeTypeSelect";
@@ -24,7 +22,6 @@ import type { FieldError } from "./editors/Validators";
 import { FieldsRow } from "./fragment-input-definition/FieldsRow";
 import type { Option } from "./fragment-input-definition/TypeSelect";
 import { TypeSelect } from "./fragment-input-definition/TypeSelect";
-import { useInputOutputContext } from "./io/InputOutputContext";
 
 interface Props {
     edgeId: string;
@@ -43,7 +40,6 @@ export function EdgeFields(props: Props): React.JSX.Element {
     const { edgeId, readOnly, value: edge, index, onChange, edges, types, variableTypes, fieldErrors } = props;
     const scenarioGraph = useAppSelector(getScenarioGraph);
     const processDefinitionData = useAppSelector(getProcessDefinitionData);
-    const [conditionBuilderOpen, setConditionBuilderOpen] = useState(false);
     const setEdge = useCallback(
         (changes: (edge: Edge) => Edge) => {
             onChange(edgeId, changes(edge));
@@ -120,37 +116,40 @@ export function EdgeFields(props: Props): React.JSX.Element {
 
     const sourceNode = useMemo(() => scenarioGraph.nodes.find((n) => n.id === edge.from), [scenarioGraph.nodes, edge.from]);
 
-    const ioContext = useInputOutputContext();
-    const conditionBuilderContextData = useMemo<ContextData | undefined>(() => {
-        const [contexts] = ioContext?.getAvailableContexts("input") ?? [[]];
-        if (!contexts.length) return undefined;
-        const selected = ioContext?.state.inputDataSetId ? contexts.find((c) => c.id === ioContext.state.inputDataSetId) : undefined;
-        const vars = (selected ?? contexts[0]).variables;
-        return Object.fromEntries(Object.keys(vars).map((k) => [k, vars[k].pretty]));
-    }, [ioContext]);
-
     const conditionBuilderAdornment = useMemo(() => {
         if (readOnly || edge.edgeType?.type !== EdgeKind.switchNext) return undefined;
         return (
-            <Button
-                size="small"
-                variant="contained"
-                color="primary"
-                onClick={() => setConditionBuilderOpen(true)}
-                sx={{
-                    minWidth: "unset",
-                    padding: "1px 6px",
-                    fontSize: 10,
-                    lineHeight: 1.4,
-                    textTransform: "none",
-                    position: "relative",
-                    zIndex: 1,
-                }}
-            >
-                Build
-            </Button>
+            <ConditionBuilderComponent
+                node={sourceNode!}
+                onInsert={(spel) => onValueChange({ expression: spel, language: ExpressionLang.SpEL })}
+                initialExpression={
+                    edge.edgeType?.condition?.language === ExpressionLang.SpEL && edge.edgeType?.condition?.expression !== "true"
+                        ? edge.edgeType.condition.expression
+                        : undefined
+                }
+                variableTypes={variableTypes}
+                renderTrigger={(onClick) => (
+                    <Button
+                        size="small"
+                        variant="contained"
+                        color="primary"
+                        onClick={onClick}
+                        sx={{
+                            minWidth: "unset",
+                            padding: "1px 6px",
+                            fontSize: 10,
+                            lineHeight: 1.4,
+                            textTransform: "none",
+                            position: "relative",
+                            zIndex: 1,
+                        }}
+                    >
+                        Build
+                    </Button>
+                )}
+            />
         );
-    }, [readOnly, edge.edgeType?.type]);
+    }, [readOnly, edge.edgeType, onValueChange, variableTypes, sourceNode]);
 
     const showType = useMemo(() => types.length > 1 || uniq(edges.map((e) => e.edgeType?.type)).length > 1, [edges, types.length]);
     return (
@@ -214,27 +213,6 @@ export function EdgeFields(props: Props): React.JSX.Element {
                     className="edge-target"
                 />
             </FieldsRow>
-            {conditionBuilderOpen && sourceNode && (
-                <Dialog open onClose={() => setConditionBuilderOpen(false)} maxWidth="xl" fullWidth>
-                    <DataMapperDialogTitle node={sourceNode} onClose={() => setConditionBuilderOpen(false)} title="condition builder" />
-                    <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                        <ConditionBuilder
-                            onInsert={(spel) => {
-                                onValueChange({ expression: spel, language: ExpressionLang.SpEL });
-                                setConditionBuilderOpen(false);
-                            }}
-                            variableTypes={variableTypes}
-                            contextData={conditionBuilderContextData}
-                            initialExpression={
-                                edge.edgeType?.condition?.language === ExpressionLang.SpEL &&
-                                edge.edgeType?.condition?.expression !== "true"
-                                    ? edge.edgeType?.condition?.expression
-                                    : undefined
-                            }
-                        />
-                    </DialogContent>
-                </Dialog>
-            )}
         </>
     );
 }

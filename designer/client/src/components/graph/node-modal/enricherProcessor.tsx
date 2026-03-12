@@ -1,5 +1,5 @@
-import { Box, Dialog, DialogContent } from "@mui/material";
-import React, { useCallback, useMemo, useState } from "react";
+import { Box } from "@mui/material";
+import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -13,9 +13,8 @@ import type { UIParameter } from "../../../types/definition";
 import type { NodeType } from "../../../types/node";
 import type { NodeValidationError, VariableTypes } from "../../../types/validation";
 import { typingResultToSample } from "../../builderComponents/typeUtils";
-import { ConditionBuilder } from "../../conditionBuilder/ConditionBuilder";
+import { ConditionBuilderComponent } from "../../conditionBuilder/ConditionBuilderComponent";
 import type { ContextData } from "../../dataMapper/DataMapper";
-import { DataMapperDialogTitle } from "../../dataMapper/DataMapperDialogTitle";
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
 import type { TableData } from "./editors/expression/Table/state/tableState";
@@ -24,7 +23,6 @@ import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { useInputOutputContext } from "./io/InputOutputContext";
 import { NamedParamsDataMapper } from "./NamedParamsDataMapper";
-import { StyledLoadingButton } from "./node-action-buttons/StyledLoadingButton";
 import { findParameters } from "./NodeDetailsContent/helpers";
 import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 import { NodeField } from "./NodeField";
@@ -73,8 +71,6 @@ export function EnricherProcessor({
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     const kind = getComponentKind(determineComponentId(node));
 
-    // ── Decision-table ConditionBuilder ──────────────────────────────────────
-    const [conditionBuilderOpen, setConditionBuilderOpen] = useState(false);
     const variableTypes = useMemo(() => findAvailableVariables(node.id), [findAvailableVariables, node.id]);
     const ioContext = useInputOutputContext();
 
@@ -136,11 +132,9 @@ export function EnricherProcessor({
             if (paramIndex >= 0) {
                 setProperty(`service.parameters[${paramIndex}].expression`, { expression: spel, language: ExpressionLang.SpEL });
             }
-            setConditionBuilderOpen(false);
         },
         [booleanParam, currentParams, setProperty],
     );
-    // ─────────────────────────────────────────────────────────────────────────
 
     return (
         <>
@@ -161,33 +155,18 @@ export function EnricherProcessor({
                     <NamedParamsDataMapper node={node} parameterDefinitions={parameterDefinitions} setProperty={setProperty} />
                 )}
                 {node.type === "Enricher" && isEditMode && kind && CONDITION_BUILDER_ENRICHER_KINDS.has(kind) && booleanParam && (
-                    <>
-                        <Box display="flex" flexDirection="column" alignItems="flex-end" width="100%">
-                            <StyledLoadingButton title="Condition Builder" action={() => setConditionBuilderOpen(true)} />
-                        </Box>
-                        {conditionBuilderOpen && (
-                            <Dialog open onClose={() => setConditionBuilderOpen(false)} maxWidth="xl" fullWidth>
-                                <DataMapperDialogTitle
-                                    node={node}
-                                    onClose={() => setConditionBuilderOpen(false)}
-                                    title="condition builder"
-                                />
-                                <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                                    <ConditionBuilder
-                                        onInsert={handleConditionInsert}
-                                        variableTypes={mergedVariableTypes}
-                                        contextData={conditionBuilderContextData}
-                                        initialExpression={initialExpression}
-                                        highlightKeys={
-                                            booleanParam?.additionalVariables
-                                                ? new Set(Object.keys(booleanParam.additionalVariables))
-                                                : undefined
-                                        }
-                                    />
-                                </DialogContent>
-                            </Dialog>
-                        )}
-                    </>
+                    <Box display="flex" flexDirection="column" alignItems="flex-end" width="100%">
+                        <ConditionBuilderComponent
+                            node={node}
+                            onInsert={handleConditionInsert}
+                            variableTypes={mergedVariableTypes}
+                            contextData={conditionBuilderContextData}
+                            initialExpression={initialExpression}
+                            highlightKeys={
+                                booleanParam.additionalVariables ? new Set(Object.keys(booleanParam.additionalVariables)) : undefined
+                            }
+                        />
+                    </Box>
                 )}
                 {node.type === "Enricher" ? (
                     <NodeField
