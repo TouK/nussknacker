@@ -1,6 +1,7 @@
-import { Box, Dialog, DialogContent } from "@mui/material";
+import { Dialog, DialogContent } from "@mui/material";
 import React, { useMemo, useState } from "react";
 
+import { useUserSettings } from "../../common/useUserSettings";
 import type { NodeType } from "../../types/node";
 import type { VariableTypes } from "../../types/validation";
 import type { ContextData } from "../dataMapper/DataMapper";
@@ -12,16 +13,30 @@ import { ConditionBuilder } from "./ConditionBuilder";
 
 interface Props {
     node: NodeType;
-    variableTypes?: VariableTypes;
     onInsert: (spel: string) => void;
-    expression: { language: string; expression: string } | undefined;
+    initialExpression?: string;
+    variableTypes?: VariableTypes;
+    highlightKeys?: Set<string>;
+    /** Override context data; if omitted, derived from ioContext. */
+    contextData?: ContextData;
+    /** Custom trigger button; if omitted, renders StyledLoadingButton. */
+    renderTrigger?: (onClick: () => void) => React.ReactNode;
 }
 
-export function FilterConditionBuilder({ node, variableTypes, onInsert, expression }: Props): React.JSX.Element {
+export function ConditionBuilderComponent({
+    node,
+    onInsert,
+    initialExpression,
+    variableTypes,
+    highlightKeys,
+    contextData: contextDataProp,
+    renderTrigger,
+}: Props): React.JSX.Element | null {
+    const [showConditionBuilder] = useUserSettings("node.showConditionBuilder");
     const [open, setOpen] = useState(false);
 
     const ioContext = useInputOutputContext();
-    const contextData = useMemo<ContextData | undefined>(() => {
+    const ioContextData = useMemo<ContextData | undefined>(() => {
         const [contexts] = ioContext?.getAvailableContexts("input") ?? [[]];
         if (!contexts.length) return undefined;
         const selected = ioContext?.state.inputDataSetId ? contexts.find((c) => c.id === ioContext.state.inputDataSetId) : undefined;
@@ -29,25 +44,30 @@ export function FilterConditionBuilder({ node, variableTypes, onInsert, expressi
         return Object.fromEntries(Object.keys(vars).map((k) => [k, vars[k].pretty]));
     }, [ioContext]);
 
-    const handleInsert = (spel: string) => {
-        onInsert(spel);
-        setOpen(false);
-    };
+    const contextData = contextDataProp ?? ioContextData;
+
+    if (!showConditionBuilder) return null;
 
     return (
         <>
-            <Box display="flex" flexDirection="column" alignItems="flex-end" width="100%">
+            {renderTrigger ? (
+                renderTrigger(() => setOpen(true))
+            ) : (
                 <StyledLoadingButton title="Condition Builder" action={() => setOpen(true)} />
-            </Box>
+            )}
             {open && (
                 <Dialog open onClose={() => setOpen(false)} maxWidth="xl" fullWidth>
                     <DataMapperDialogTitle node={node} onClose={() => setOpen(false)} title="condition builder" />
                     <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
                         <ConditionBuilder
-                            onInsert={handleInsert}
+                            onInsert={(spel) => {
+                                onInsert(spel);
+                                setOpen(false);
+                            }}
                             variableTypes={variableTypes}
                             contextData={contextData}
-                            initialExpression={expression?.language === ExpressionLang.SpEL ? expression.expression : undefined}
+                            initialExpression={initialExpression}
+                            highlightKeys={highlightKeys}
                         />
                     </DialogContent>
                 </Dialog>
