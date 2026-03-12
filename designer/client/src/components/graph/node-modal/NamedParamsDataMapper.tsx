@@ -23,14 +23,11 @@ interface Props {
     setProperty: SetProperty;
 }
 
-export function OpenApiEnricherDataMapper({ node, parameterDefinitions, setProperty }: Props): React.JSX.Element | null {
+export function NamedParamsDataMapper({ node, parameterDefinitions, setProperty }: Props): React.JSX.Element | null {
     const mappableParams = useMemo(
         () =>
             parameterDefinitions.filter(
-                (p) =>
-                    !p.changesCanReloadParameters &&
-                    p.editors?.some((e) => e.type === EditorType.SPEL_PARAMETER_EDITOR) &&
-                    resolveParamNuType(p.typ) !== "Any",
+                (p) => !p.changesCanReloadParameters && p.editors?.some((e) => e.type === EditorType.SPEL_PARAMETER_EDITOR),
             ),
         [parameterDefinitions],
     );
