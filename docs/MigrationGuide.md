@@ -226,6 +226,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * If you used Kafka source/sink components in your scenarios then state of these scenarios won't be restored
 * [#8997](https://github.com/TouK/nussknacker/pull/8997) Operational impact of random/stable technical node IDs:
   * During first migration of existing scenarios, node ids change to UUIDs, so external tools comparing scenario JSON by node ids can observe large one-time diffs.
+  * Migration `NodeIdToUuidMigration` must be applied in model migration list, so legacy scenarios are migrated to UUID-based node ids.
   * Metrics dimensions based on `nodeId` changed to UUID values. If dashboards/alerts used former human-readable ids, they require updates.
     Where available, prefer `nodeName` metric tag for human-readable presentation.
   * Kafka consumer groups using naming strategy containing `nodeId` (e.g. `processId-nodeId`) will change identifiers after migration.
