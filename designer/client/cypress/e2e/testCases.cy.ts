@@ -110,7 +110,7 @@ describe("Test cases", () => {
         verifyMockData('{\n  "foo": 0\n}');
     });
 
-    it("should display assertions panel", () => {
+    it.only("should display assertions panel", () => {
         cy.visitNewProcess(seed, "testCasesWithAssertions.json", "Category2");
         cy.toggleUserFlag("node.showTestingTab", true);
         cy.toggleUserFlag("scenario.showTestCasesPanel", true);
@@ -119,6 +119,9 @@ describe("Test cases", () => {
         cy.runCurrentTestCase();
 
         expandAssertionItem("Log");
+
+        // Scroll to the bottom of panel
+        cy.contains('[data-testid="test-cases-panel"]', "Last run:").should("be.visible").click();
 
         cy.get('[data-testid="test-cases-panel"]').matchImage();
 
