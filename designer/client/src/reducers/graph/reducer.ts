@@ -179,7 +179,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
                 layout: fromMeta(adjustedScenario.scenarioGraph),
                 testing: {
                     ...state.testing,
-                    activeTestCaseId: adjustedScenario.scenarioGraph.testCases.value.id,
+                    activeTestCaseId: adjustedScenario?.scenarioGraph?.testCases?.value?.id ?? null,
                 },
             };
         }
