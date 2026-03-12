@@ -445,7 +445,7 @@ class UIProcessValidator(
     scenario.testCases match {
       case None =>
         ValidationResult.success
-      case Some(TestCases.Single(testCase)) =>
+      case Some(TestCases(testCases)) =>
         val testCasesNodeTyping = nodesTyping.mapValuesNow { typingInfo =>
           TestCaseValidator.NodeTyping(
             inputVariables = typingInfo.inputValidationContext.localVariables,
@@ -453,7 +453,7 @@ class UIProcessValidator(
           )
         }
         val testCasesValidationErrors =
-          testCaseValidator.validateScenarioTestCases(scenario.collectAllNodes, testCasesNodeTyping, List(testCase))
+          testCaseValidator.validateScenarioTestCases(scenario.collectAllNodes, testCasesNodeTyping, testCases.toList)
         if (testCasesValidationErrors.isEmpty) {
           ValidationResult.success
         } else {
