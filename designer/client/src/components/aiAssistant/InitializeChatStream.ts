@@ -1,20 +1,24 @@
 //TODO: Find out how to pass threadId to the AiAssistant and use it instead of this variable
 import type { ChatModelRunOptions } from "@assistant-ui/react";
+import type { ReadonlyJSONObject } from "assistant-stream/utils";
 import type { EventSourceMessage } from "eventsource-parser";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 
 import httpService from "../../http/HttpService/instance";
+import type { ChatRequest, ToolCallId, ToolName } from "./ChatRequest";
+import { ChatRequestType } from "./ChatRequest";
 import { mockAssitantFetch } from "./debug/MockAssitantFetch";
-import { extractMessage, extractTools } from "./messageHelpers";
+import { extractMessage, extractToolResults, extractTools } from "./messageHelpers";
+import type { ThreadId } from "./ThreadIdManager";
 import { getThreadId } from "./ThreadIdManager";
 
 export type ChatStreamEventName = "toolExecutionRequest" | "delta" | "stop" | "error" | NonNullable<string>;
 
 type ChatStreamParsedEvent =
     | { type: "start" }
-    | { type: "tool"; name: string; arguments: Record<string, any>; callId?: string }
+    | { type: "tool"; name: ToolName; arguments: ReadonlyJSONObject; callId?: ToolCallId }
     | { type: "delta"; responsePart: string }
-    | { type: "stop"; threadId: string }
+    | { type: "stop"; threadId: ThreadId }
     | { type: "aborted" }
     | { type: "error" }
     | { type: "unknown"; originalType?: string; data: string };
@@ -72,20 +76,20 @@ export async function* initializeChatStream(
     debug = false,
 ): ChatStream {
     const message = extractMessage(messages, unstable_getMessage());
-    if (!message) return;
+    const toolExecutionResults = extractToolResults(messages, unstable_getMessage());
+    if (!message && !toolExecutionResults) return;
 
     yield { type: "start" };
 
     const send = debug ? mockAssitantFetch : httpService.sendChatMessage;
+    const externalTools = extractTools(context);
+    const threadId = getThreadId();
 
-    const response = await send(
-        {
-            threadId: getThreadId(),
-            message: message,
-            externalTools: extractTools(context),
-        },
-        abortSignal,
-    );
+    const request: ChatRequest = toolExecutionResults
+        ? { type: ChatRequestType.TOOL_RESULTS, threadId, externalTools, toolExecutionResults }
+        : { type: ChatRequestType.MESSAGE, threadId, externalTools, message };
+
+    const response = await send(request, abortSignal);
 
     if (!response.ok) {
         console.error("Failed to fetch chat stream: ", response.statusText);
