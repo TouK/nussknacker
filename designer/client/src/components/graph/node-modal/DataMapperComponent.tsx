@@ -7,7 +7,7 @@ import type { NodeType } from "../../../types/node";
 import type { ContextData } from "../../dataMapper/DataMapper";
 import { DataMapper } from "../../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../../dataMapper/DataMapperDialogTitle";
-import type { FieldDef, TopicEntry } from "../../dataMapper/dataMapperUtils";
+import type { FieldDef } from "../../dataMapper/dataMapperUtils";
 import { useInputOutputContext } from "./io/InputOutputContext";
 import { StyledLoadingButton } from "./node-action-buttons/StyledLoadingButton";
 import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
@@ -18,7 +18,6 @@ interface Props {
     initialExpression?: string;
     initialFields?: FieldDef[];
     hideFieldControls?: boolean;
-    fetchTopicDefinitions?: () => Promise<TopicEntry[]>;
 }
 
 export function DataMapperComponent({
@@ -27,7 +26,6 @@ export function DataMapperComponent({
     initialExpression,
     initialFields,
     hideFieldControls,
-    fetchTopicDefinitions,
 }: Props): React.JSX.Element | null {
     const [showDataMapper] = useUserSettings("node.showDataMapper");
     const [open, setOpen] = useState(false);
@@ -64,7 +62,6 @@ export function DataMapperComponent({
                             initialContext={initialContext}
                             initialExpression={initialExpression}
                             initialFields={initialFields}
-                            fetchTopicDefinitions={fetchTopicDefinitions ?? (() => Promise.resolve([]))}
                             hideFieldControls={hideFieldControls}
                         />
                     </DialogContent>
