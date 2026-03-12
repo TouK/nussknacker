@@ -23,11 +23,11 @@ import { EditorType, ExpressionLang } from "./editors/expression/types";
 import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { useInputOutputContext } from "./io/InputOutputContext";
+import { NamedParamsDataMapper } from "./NamedParamsDataMapper";
 import { StyledLoadingButton } from "./node-action-buttons/StyledLoadingButton";
 import { findParameters } from "./NodeDetailsContent/helpers";
 import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 import { NodeField } from "./NodeField";
-import { OpenApiEnricherDataMapper } from "./OpenApiEnricherDataMapper";
 import { ParametersListWithOverrides } from "./ParametersListWithOverrides";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
@@ -158,7 +158,7 @@ export function EnricherProcessor({
                 getListFieldPath={(index: number) => `service.parameters[${index}]`}
             >
                 {node.type === "Enricher" && isEditMode && kind && DATA_MAPPER_OPENAPI_ENRICHER_KINDS.has(kind) && (
-                    <OpenApiEnricherDataMapper node={node} parameterDefinitions={parameterDefinitions} setProperty={setProperty} />
+                    <NamedParamsDataMapper node={node} parameterDefinitions={parameterDefinitions} setProperty={setProperty} />
                 )}
                 {node.type === "Enricher" && isEditMode && kind && CONDITION_BUILDER_ENRICHER_KINDS.has(kind) && booleanParam && (
                     <>
