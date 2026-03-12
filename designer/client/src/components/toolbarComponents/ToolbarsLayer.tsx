@@ -25,16 +25,16 @@ import { DRAGGABLE_LIST_CLASSNAME, ToolbarsContainer } from "./ToolbarsContainer
 export function useToolbarsVisibility(toolbars: Toolbar[]) {
     const { editFrontend } = useAppSelector(getCapabilities);
     const [showSurvey] = useSurvey();
-    const [testingTabVisible] = useUserSettings("node.showTestingTab");
+    const [testCasesPanelVisible] = useUserSettings("scenario.showTestCasesPanel");
 
     const hiddenToolbars = useMemo<Record<string, boolean>>(
         () => ({
             "survey-panel": !showSurvey,
             "creator-panel": !editFrontend,
             "creator-panel-dynamic": !editFrontend,
-            "test-cases-panel": !testingTabVisible,
+            "test-cases-panel": !testCasesPanelVisible,
         }),
-        [editFrontend, showSurvey, testingTabVisible],
+        [editFrontend, showSurvey, testCasesPanelVisible],
     );
 
     return useMemo(

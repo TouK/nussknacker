@@ -88,8 +88,15 @@ object CanonicalProcessConverter {
   }
 
   def fromScenarioGraph(graph: ScenarioGraph, name: ProcessName): CanonicalProcess = {
-    val nodesMap          = graph.nodes.groupBy(_.id).mapValuesNow(_.head)
-    val edgesFromMapStart = graph.edges.groupBy(_.from)
+    val nodesMap = graph.nodes.groupBy(_.id).mapValuesNow(_.head)
+    val nodeIdAliasesByName = graph.nodes.foldLeft(Map.empty[NodeId, NodeId]) { case (acc, node) =>
+      val alias = NodeId(node.name.value)
+      if (nodesMap.contains(alias)) acc else acc + (alias -> node.id)
+    }
+    def normalizeNodeId(nodeId: NodeId): NodeId = nodeIdAliasesByName.getOrElse(nodeId, nodeId)
+    val normalizedEdges =
+      graph.edges.map(edge => edge.copy(from = normalizeNodeId(edge.from), to = normalizeNodeId(edge.to)))
+    val edgesFromMapStart = normalizedEdges.groupBy(_.from)
     val rootsUnflattened =
       findRootNodes(graph).map(headNode => unFlattenNode(nodesMap, None)(headNode, edgesFromMapStart))
     val nodes              = rootsUnflattened.headOption.getOrElse(List.empty)
@@ -106,8 +113,14 @@ object CanonicalProcessConverter {
       nodesMap: Map[NodeId, NodeData],
       stopAtJoin: Option[Edge]
   )(n: NodeData, edgesFromMap: Map[NodeId, List[Edge]]): List[canonicalnode.CanonicalNode] = {
+    def nodeOrThrow(nodeId: NodeId): NodeData =
+      nodesMap.getOrElse(nodeId, throw new IllegalArgumentException(s"Cannot find node for id: ${nodeId.value}"))
+
     def unflattenEdgeEnd(id: NodeId, e: Edge): List[canonicalnode.CanonicalNode] = {
-      unFlattenNode(nodesMap, Some(e))(nodesMap(e.to), edgesFromMap.updated(id, edgesFromMap(id).filterNot(_ == e)))
+      unFlattenNode(nodesMap, Some(e))(
+        nodeOrThrow(e.to),
+        edgesFromMap.updated(id, edgesFromMap.getOrElse(id, List()).filterNot(_ == e))
+      )
     }
 
     def getEdges(id: NodeId): List[Edge] = edgesFromMap.getOrElse(id, List())

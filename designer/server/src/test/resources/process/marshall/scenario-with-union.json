@@ -1,0 +1,311 @@
+{
+  "metaData": {
+    "id": "example-scenario",
+    "additionalFields": {
+      "description": null,
+      "properties": {},
+      "metaDataType": "StreamMetaData",
+      "showDescription": false
+    }
+  },
+  "nodes": [
+    {
+      "id": "user stream",
+      "ref": {
+        "typ": "kafka",
+        "parameters": [
+          {
+            "name": "Topic",
+            "expression": {
+              "language": "spel",
+              "expression": "'example-input'"
+            }
+          },
+          {
+            "name": "Schema version",
+            "expression": {
+              "language": "spel",
+              "expression": "'latest'"
+            }
+          },
+          {
+            "name": "Event time",
+            "expression": {
+              "language": "spel",
+              "expression": "#inputMeta.timestamp"
+            }
+          },
+          {
+            "name": "Max out-of-orderness",
+            "expression": {
+              "language": "spel",
+              "expression": "T(java.time.Duration).parse('PT1M')"
+            }
+          },
+          {
+            "name": "Idleness",
+            "expression": {
+              "language": "spel",
+              "expression": "T(java.time.Duration).parse('PT3M')"
+            }
+          }
+        ]
+      },
+      "additionalFields": {
+        "description": null,
+        "layoutData": {
+          "x": 378,
+          "y": -76
+        }
+      },
+      "type": "Source"
+    },
+    {
+      "defaultNext": [],
+      "nexts": [
+        {
+          "expression": {
+            "language": "spel",
+            "expression": "true"
+          },
+          "nodes": [
+            {
+              "id": "variable",
+              "varName": "name",
+              "value": {
+                "language": "spel",
+                "expression": "\"mystring\".contains(\"my\").toString.length"
+              },
+              "additionalFields": {
+                "description": null,
+                "layoutData": {
+                  "x": 360,
+                  "y": 360
+                }
+              },
+              "type": "Variable"
+            },
+            {
+              "nexts": [
+                [
+                  {
+                    "id": "Logging",
+                    "service": {
+                      "id": "logger",
+                      "parameters": [
+                        {
+                          "name": "message",
+                          "expression": {
+                            "language": "spelTemplate",
+                            "expression": "Dupa"
+                          }
+                        },
+                        {
+                          "name": "logger",
+                          "expression": {
+                            "language": "spel",
+                            "expression": ""
+                          }
+                        }
+                      ]
+                    },
+                    "isDisabled": null,
+                    "additionalFields": {
+                      "description": null,
+                      "layoutData": {
+                        "x": 69,
+                        "y": 732
+                      }
+                    },
+                    "type": "Processor"
+                  },
+                  {
+                    "id": "greeting",
+                    "ref": {
+                      "typ": "kafka",
+                      "parameters": [
+                        {
+                          "name": "Topic",
+                          "expression": {
+                            "language": "spel",
+                            "expression": "'example-output'"
+                          }
+                        },
+                        {
+                          "name": "Schema version",
+                          "expression": {
+                            "language": "spel",
+                            "expression": "'latest'"
+                          }
+                        },
+                        {
+                          "name": "Key",
+                          "expression": {
+                            "language": "spel",
+                            "expression": ""
+                          }
+                        },
+                        {
+                          "name": "Raw editor",
+                          "expression": {
+                            "language": "spel",
+                            "expression": "false"
+                          }
+                        },
+                        {
+                          "name": "message",
+                          "expression": {
+                            "language": "spel",
+                            "expression": "'Hello ' + #name"
+                          }
+                        }
+                      ]
+                    },
+                    "endResult": null,
+                    "isDisabled": null,
+                    "additionalFields": {
+                      "description": null,
+                      "layoutData": {
+                        "x": -244,
+                        "y": 928
+                      }
+                    },
+                    "type": "Sink"
+                  }
+                ],
+                [
+                  {
+                    "definition": {
+                      "id": "Split",
+                      "joinId": "Union"
+                    },
+                    "type": "BranchEndData"
+                  }
+                ]
+              ],
+              "id": "Split",
+              "additionalFields": {
+                "description": null,
+                "layoutData": {
+                  "x": 360,
+                  "y": 540
+                }
+              },
+              "type": "Split"
+            }
+          ]
+        },
+        {
+          "expression": {
+            "language": "spel",
+            "expression": "true"
+          },
+          "nodes": [
+            {
+              "id": "Dead End 1",
+              "ref": {
+                "typ": "dead-end",
+                "parameters": []
+              },
+              "endResult": null,
+              "isDisabled": null,
+              "additionalFields": {
+                "description": null,
+                "layoutData": {
+                  "x": -311,
+                  "y": 425
+                }
+              },
+              "type": "Sink"
+            }
+          ]
+        },
+        {
+          "expression": {
+            "language": "spel",
+            "expression": "true"
+          },
+          "nodes": [
+            {
+              "id": "Variable 1",
+              "varName": "variable_1_var_name",
+              "value": {
+                "language": "jsonTemplate",
+                "expression": "Hello #{ #input.name + #input.name }"
+              },
+              "additionalFields": {
+                "description": null,
+                "layoutData": {
+                  "x": 373,
+                  "y": 256
+                }
+              },
+              "type": "Variable"
+            }
+          ]
+        }
+      ],
+      "id": "Choice",
+      "expression": null,
+      "exprVal": null,
+      "additionalFields": {
+        "description": null,
+        "layoutData": {
+          "x": 377,
+          "y": 115
+        }
+      },
+      "type": "Switch"
+    }
+  ],
+  "additionalBranches": [
+    [
+      {
+        "id": "Union",
+        "outputVar": "outputVar",
+        "nodeType": "union",
+        "parameters": [],
+        "branchParameters": [
+          {
+            "branchId": "Split",
+            "parameters": [
+              {
+                "name": "Output expression",
+                "expression": {
+                  "language": "spel",
+                  "expression": "#input.name"
+                }
+              }
+            ]
+          }
+        ],
+        "additionalFields": {
+          "description": null,
+          "layoutData": {
+            "x": 370,
+            "y": 1080
+          }
+        },
+        "type": "Join"
+      },
+      {
+        "id": "Dead End",
+        "ref": {
+          "typ": "dead-end",
+          "parameters": []
+        },
+        "endResult": null,
+        "isDisabled": null,
+        "additionalFields": {
+          "description": null,
+          "layoutData": {
+            "x": 370,
+            "y": 1260
+          }
+        },
+        "type": "Sink"
+      }
+    ]
+  ],
+  "stickyNotes": []
+}

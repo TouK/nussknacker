@@ -5,10 +5,12 @@ import io.circe.Json.fromString
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, SpelParameterEditor}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.json.swagger._
 import pl.touk.nussknacker.engine.json.swagger.decode.FromJsonSchemaBasedDecoder
+import pl.touk.nussknacker.engine.json.swagger.implicits.RichSwaggerTyped
 
 class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with TableDrivenPropertyChecks {
 
@@ -213,6 +215,25 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     val onlyEnumSchema = JsonSchemaBuilder.parseSchema("""{ "enum": ["one", "two", "three"] }""".stripMargin)
     SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(onlyEnumSchema).typingResult shouldBe enumType
+  }
+
+  test("should map string enum to fixed values and expression editors") {
+    val schema =
+      JsonSchemaBuilder.parseSchema("""{ "type": "string", "enum": ["placed", "approved", "delivered"] }""".stripMargin)
+
+    val editors = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).editorList
+
+    val expectedValues = Set(
+      FixedExpressionValue("'placed'", "placed"),
+      FixedExpressionValue("'approved'", "approved"),
+      FixedExpressionValue("'delivered'", "delivered")
+    )
+
+    editors match {
+      case List(FixedValuesParameterEditor(values), SpelParameterEditor) =>
+        values.toSet shouldBe expectedValues
+      case _ => fail(s"Unexpected editors: $editors")
+    }
   }
 
   test("should support enums of various types") {
