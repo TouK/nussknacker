@@ -215,7 +215,7 @@ export function EdgeFields(props: Props): React.JSX.Element {
                 />
             </FieldsRow>
             {conditionBuilderOpen && sourceNode && (
-                <Dialog open onClose={() => setConditionBuilderOpen(false)} maxWidth="lg" fullWidth>
+                <Dialog open onClose={() => setConditionBuilderOpen(false)} maxWidth="xl" fullWidth>
                     <DataMapperDialogTitle node={sourceNode} onClose={() => setConditionBuilderOpen(false)} title="condition builder" />
                     <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
                         <ConditionBuilder

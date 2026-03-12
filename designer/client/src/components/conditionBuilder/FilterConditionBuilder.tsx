@@ -40,7 +40,7 @@ export function FilterConditionBuilder({ node, variableTypes, onInsert, expressi
                 <StyledLoadingButton title="Condition Builder" action={() => setOpen(true)} />
             </Box>
             {open && (
-                <Dialog open onClose={() => setOpen(false)} maxWidth="lg" fullWidth>
+                <Dialog open onClose={() => setOpen(false)} maxWidth="xl" fullWidth>
                     <DataMapperDialogTitle node={node} onClose={() => setOpen(false)} title="condition builder" />
                     <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
                         <ConditionBuilder

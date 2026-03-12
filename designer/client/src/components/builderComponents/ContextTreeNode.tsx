@@ -20,6 +20,8 @@ export interface ContextTreeNodeProps {
     forceOpen?: boolean;
     /** When true, prepends `#` and applies toNullSafe to drag data (used by DataMapper). */
     nullSafeDrag?: boolean;
+    /** When true, renders this node with a warning/accent color to indicate it's a special variable (e.g. #ROW). */
+    highlight?: boolean;
 }
 
 export function ContextTreeNode({
@@ -32,6 +34,7 @@ export function ContextTreeNode({
     filterText,
     forceOpen: forceOpenProp,
     nullSafeDrag,
+    highlight,
 }: ContextTreeNodeProps): React.JSX.Element {
     const theme = useTheme();
     const filter = filterText?.toLowerCase() ?? "";
@@ -83,13 +86,19 @@ export function ContextTreeNode({
                     mt: isTopLevel ? "2px" : 0,
                     backgroundColor: isTopLevel
                         ? isSelected
-                            ? alpha(theme.palette.primary.main, 0.2)
-                            : alpha(theme.palette.primary.main, 0.07)
+                            ? alpha(highlight ? theme.palette.warning.main : theme.palette.primary.main, 0.2)
+                            : alpha(highlight ? theme.palette.warning.main : theme.palette.primary.main, 0.07)
                         : isSelected
                         ? alpha(theme.palette.primary.main, 0.15)
                         : "transparent",
                     border: `1px solid ${
-                        isSelected ? theme.palette.primary.main : isTopLevel ? alpha(theme.palette.primary.main, 0.25) : "transparent"
+                        isSelected
+                            ? highlight
+                                ? theme.palette.warning.main
+                                : theme.palette.primary.main
+                            : isTopLevel
+                            ? alpha(highlight ? theme.palette.warning.main : theme.palette.primary.main, 0.25)
+                            : "transparent"
                     }`,
                     "&:hover": {
                         backgroundColor: isSelected ? alpha(theme.palette.primary.main, 0.2) : alpha(theme.palette.action.hover, 0.5),
@@ -105,7 +114,12 @@ export function ContextTreeNode({
                         ))}
                 </Box>
                 <Typography
-                    sx={{ fontSize: 12, fontWeight: isTopLevel ? 700 : 500, color: isTopLevel ? "primary.main" : "text.primary", mr: 1 }}
+                    sx={{
+                        fontSize: 12,
+                        fontWeight: isTopLevel ? 700 : 500,
+                        color: isTopLevel ? (highlight ? "warning.main" : "primary.main") : "text.primary",
+                        mr: 1,
+                    }}
                 >
                     {name}
                 </Typography>
@@ -116,8 +130,8 @@ export function ContextTreeNode({
                         height: 16,
                         fontSize: 10,
                         mr: 1,
-                        backgroundColor: alpha(theme.palette.primary.main, 0.15),
-                        color: theme.palette.primary.light,
+                        backgroundColor: alpha(highlight ? theme.palette.warning.main : theme.palette.primary.main, 0.15),
+                        color: highlight ? theme.palette.warning.main : theme.palette.primary.light,
                         "& .MuiChip-label": { px: "5px" },
                     }}
                 />
