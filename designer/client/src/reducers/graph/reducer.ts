@@ -128,6 +128,7 @@ const adjustScenarioData = flow(
     addStickyNotesToNodes,
     appendScenarioNameToProperties,
     produce((draft: WritableDraft<Scenario>) => {
+        draft.scenarioGraph.testCases = draft.scenarioGraph.testCases || initialTestCasesState;
         draft.scenarioGraph.nodes?.forEach((nodeDraft) => {
             appendUuidToParameters(nodeDraft);
             fixEmptyValues(nodeDraft);
@@ -152,6 +153,9 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
             const newNodeids = sortBy(adjustedScenario.scenarioGraph.nodes.map((n) => n.id));
             const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null;
 
+            const activeTestCaseId =
+                adjustedScenario?.scenarioGraph?.testCases?.value?.id || state.scenario?.scenarioGraph?.testCases?.value?.id;
+
             return {
                 ...state,
                 scenarioLoading: false,
@@ -159,6 +163,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
                 scenario: {
                     ...state.scenario,
                     ...adjustedScenario,
+                },
+                testing: {
+                    ...state.testing,
+                    activeTestCaseId,
                 },
             };
         }
@@ -172,6 +180,9 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
         }
         case "DISPLAY_PROCESS": {
             const adjustedScenario = adjustScenarioData(action.scenario);
+            const activeTestCaseId =
+                adjustedScenario?.scenarioGraph?.testCases?.value?.id || state.scenario?.scenarioGraph?.testCases?.value?.id;
+
             return {
                 ...state,
                 scenario: adjustedScenario,
@@ -179,8 +190,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
                 layout: fromMeta(adjustedScenario.scenarioGraph),
                 testing: {
                     ...state.testing,
-                    activeTestCaseId:
-                        adjustedScenario?.scenarioGraph?.testCases?.value?.id || state.scenario?.scenarioGraph?.testCases?.value?.id,
+                    activeTestCaseId,
                 },
             };
         }
