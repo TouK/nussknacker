@@ -88,15 +88,8 @@ class KafkaK8sSupport(k8s: KubernetesClient)(private implicit val system: ActorS
 
     val srContainer = Container(
       name = srPodName,
-      image = "confluentinc/cp-schema-registry:7.5.13",
-      env = List(
-        EnvVar("SCHEMA_REGISTRY_HOST_NAME", "schemaregistry"),
-        EnvVar("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", s"$kafkaServiceName:9092")
-      ),
-      readinessProbe = Some(
-        Probe(new HTTPGetAction(Left(8081), path = "/subjects"), periodSeconds = Some(1), failureThreshold = Some(60))
-      ),
-      livenessProbe = Some(Probe(new HTTPGetAction(Left(8081), path = "/subjects")))
+      image = "ghcr.io/axonops/axonops-schema-registry:0.2.1",
+      readinessProbe = Some(Probe(new HTTPGetAction(Left(8081), path = "/health/ready"))),
     )
     val srPod = Pod(
       metadata = ObjectMeta(name = srPodName, labels = Map("run" -> srPodName)),
@@ -172,7 +165,7 @@ class KafkaK8sSupport(k8s: KubernetesClient)(private implicit val system: ActorS
 
   private def runInPod(
       podName: String,
-      command: String,
+      command: Seq[String],
       end: String => Boolean,
       input: Option[String] = None
   ): String = {
@@ -189,7 +182,7 @@ class KafkaK8sSupport(k8s: KubernetesClient)(private implicit val system: ActorS
     k8s
       .exec(
         podName,
-        command.split(" ").toIndexedSeq,
+        command,
         maybeStdout = Some(sink),
         maybeStdin = inputSource,
         maybeClose = Some(close)
@@ -207,8 +200,17 @@ class KafkaK8sSupport(k8s: KubernetesClient)(private implicit val system: ActorS
   }
 
   def createSchema(name: String, schema: String, schemaType: String = "JSON"): Unit = {
-    val req     = s"""{"schemaType":"$schemaType","schema":"${schema.replace(""""""", """\"""")}"}"""
-    val command = s"curl -v -H Content-Type:application/json localhost:8081/subjects/$name/versions -d $req"
+    val req = s"""{"schemaType":"$schemaType","schema":"${schema.replace(""""""", """\"""")}"}"""
+    val command = Seq(
+      "wget",
+      "--header",
+      "Content-Type: application/json",
+      "--post-data",
+      req,
+      "-O",
+      "-",
+      s"localhost:8081/subjects/$name/versions"
+    )
     runInPod(srPodName, command, _.contains(""""id":"""))
   }
 
