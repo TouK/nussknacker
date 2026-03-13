@@ -33,12 +33,8 @@ trait BaseNuKafkaRuntimeDockerTest
 
   protected val schemaRegistryContainer: GenericContainer = {
     GenericContainer(
-      "confluentinc/cp-schema-registry:7.5.13",
+      "ghcr.io/axonops/axonops-schema-registry:0.2.1",
       exposedPorts = Seq(schemaRegistryPort),
-      env = Map(
-        "SCHEMA_REGISTRY_HOST_NAME"                    -> schemaRegistryHostname,
-        "SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS" -> dockerNetworkKafkaBoostrapServer
-      )
     ).configure { configureNetwork(_, schemaRegistryHostname) }
   }
 
