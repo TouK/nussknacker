@@ -195,7 +195,6 @@ object PrettyValidationErrors {
         )
       case CannotCreateObjectError(message, _, nodeName, _) =>
         node(s"Could not create $nodeName: $message", s"Could not create $nodeName: $message")
-      case UnresolvedFragment(id) => node("Unresolved fragment", s"fragment $id encountered, this should not happen")
       case FragmentOutputNotDefined(id, _) => node(s"Output $id not defined", "Please check fragment definition")
       case UnknownFragmentOutput(id, _)    => node(s"Unknown fragment output $id", "Please check fragment definition")
       case DisablingManyOutputsFragment(_) =>
