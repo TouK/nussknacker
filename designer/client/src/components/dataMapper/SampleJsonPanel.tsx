@@ -44,9 +44,7 @@ export function SampleJsonPanel({ title, placeholder, mergeLabel, onApply, onClo
             setError(err);
             return;
         }
-        setText("");
         setError("");
-        onClose();
     };
 
     return (
