@@ -1,7 +1,7 @@
 import { Button } from "@mui/material";
 import { produce } from "immer";
 import { isEqual, uniq } from "lodash";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
@@ -117,10 +117,10 @@ export function EdgeFields(props: Props): React.JSX.Element {
     const sourceNode = useMemo(() => scenarioGraph.nodes.find((n) => n.id === edge.from), [scenarioGraph.nodes, edge.from]);
 
     const conditionBuilderAdornment = useMemo(() => {
-        if (readOnly || edge.edgeType?.type !== EdgeKind.switchNext) return undefined;
+        if (readOnly || edge.edgeType?.type !== EdgeKind.switchNext || !sourceNode) return undefined;
         return (
             <ConditionBuilderComponent
-                node={sourceNode!}
+                node={sourceNode}
                 onInsert={(spel) => onValueChange({ expression: spel, language: ExpressionLang.SpEL })}
                 initialExpression={
                     edge.edgeType?.condition?.language === ExpressionLang.SpEL && edge.edgeType?.condition?.expression !== "true"
@@ -144,7 +144,7 @@ export function EdgeFields(props: Props): React.JSX.Element {
                             zIndex: 1,
                         }}
                     >
-                        Build
+                        Builder
                     </Button>
                 )}
             />

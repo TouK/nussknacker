@@ -3,6 +3,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { alpha, Box, Chip, Collapse, Typography, useTheme } from "@mui/material";
 import React, { useState } from "react";
 
+import type { TypingResult } from "../../types/definition";
 import { inferDisplayType, treeNodeMatchesFilter, toNullSafe } from "./typeUtils";
 
 export interface ContextTreeNodeProps {
@@ -22,6 +23,26 @@ export interface ContextTreeNodeProps {
     nullSafeDrag?: boolean;
     /** When true, renders this node with a warning/accent color to indicate it's a special variable (e.g. #ROW). */
     highlight?: boolean;
+    /** TypingResult of this node's value; used for type-aware path generation (SpEL picker). */
+    typing?: TypingResult;
+    /** When true, clicking an expandable node also calls onSelect (not just toggles expand). */
+    selectExpandable?: boolean;
+    /** When true, uses type-aware path notation: `?.key` for typed objects, `['key']` for Unknown/Map types. */
+    useTypedPaths?: boolean;
+    /** When false and useTypedPaths is true, typed objects use `.key` instead of `?.key`. Defaults to true. */
+    nullSafe?: boolean;
+}
+
+function hasKnownFields(typing: TypingResult | undefined): boolean {
+    if (!typing) return false;
+    const fields = (typing as { fields?: unknown }).fields;
+    return !!fields && typeof fields === "object" && Object.keys(fields as object).length > 0;
+}
+
+function getChildTyping(typing: TypingResult | undefined, key: string): TypingResult | undefined {
+    if (!typing) return undefined;
+    const fields = (typing as { fields?: Record<string, TypingResult> }).fields;
+    return fields?.[key];
 }
 
 export function ContextTreeNode({
@@ -35,6 +56,10 @@ export function ContextTreeNode({
     forceOpen: forceOpenProp,
     nullSafeDrag,
     highlight,
+    typing,
+    selectExpandable,
+    useTypedPaths,
+    nullSafe = true,
 }: ContextTreeNodeProps): React.JSX.Element {
     const theme = useTheme();
     const filter = filterText?.toLowerCase() ?? "";
@@ -152,20 +177,35 @@ export function ContextTreeNode({
             </Box>
             <Collapse in={forceOpen || open}>
                 {isExpandable &&
-                    visibleChildren.map(([k, v]) => (
-                        <ContextTreeNode
-                            key={k}
-                            name={k}
-                            value={v}
-                            path={isArr ? `${path}[${k}]` : `${path}.${k}`}
-                            depth={depth + 1}
-                            onSelect={onSelect}
-                            selectedPath={selectedPath}
-                            filterText={filterText}
-                            forceOpen={forceOpenProp}
-                            nullSafeDrag={nullSafeDrag}
-                        />
-                    ))}
+                    visibleChildren.map(([k, v]) => {
+                        const childPath = isArr
+                            ? `${path}[${k}]`
+                            : useTypedPaths
+                            ? hasKnownFields(typing)
+                                ? nullSafe
+                                    ? `${path}?.${k}`
+                                    : `${path}.${k}`
+                                : `${path}['${k}']`
+                            : `${path}.${k}`;
+                        return (
+                            <ContextTreeNode
+                                key={k}
+                                name={k}
+                                value={v}
+                                path={childPath}
+                                depth={depth + 1}
+                                onSelect={onSelect}
+                                selectedPath={selectedPath}
+                                filterText={filterText}
+                                forceOpen={forceOpenProp}
+                                nullSafeDrag={nullSafeDrag}
+                                typing={useTypedPaths ? getChildTyping(typing, k) : undefined}
+                                selectExpandable={selectExpandable}
+                                useTypedPaths={useTypedPaths}
+                                nullSafe={nullSafe}
+                            />
+                        );
+                    })}
             </Collapse>
         </Box>
     );

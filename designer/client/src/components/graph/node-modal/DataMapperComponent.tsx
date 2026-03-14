@@ -47,7 +47,7 @@ export function DataMapperComponent({
     return (
         <>
             <Box display="flex" flexDirection="column" alignItems="flex-end" width="100%">
-                <StyledLoadingButton title="Data Mapper" action={() => setOpen(true)} />
+                <StyledLoadingButton title="Builder" action={() => setOpen(true)} />
             </Box>
             {open && (
                 <Dialog open onClose={() => setOpen(false)} maxWidth="xl" fullWidth>
