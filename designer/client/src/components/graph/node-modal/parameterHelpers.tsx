@@ -28,6 +28,7 @@ export const OverrideKeys = {
     WebhookBody: "sink-webhook/Body",
     WebSocketUrl: "source-websocket/URL",
     SinkKafkaValue: "sink-kafka/Value",
+    ForEachElements: "custom-for-each/Elements",
 } as const;
 
 export type ParamKeys = (typeof OverrideKeys)[keyof typeof OverrideKeys] | (string & NonNullable<unknown>);

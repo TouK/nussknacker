@@ -159,7 +159,7 @@ export default function Variable({ node, setProperty, isEditMode, showValidation
             {isEditMode && showDataMapper && (
                 <FieldAddons hasError={showValidation && getValidationErrorsForField(errors, "$expression").length > 0}>
                     <Box display="flex" flexDirection="column" alignItems="flex-end" width="100%">
-                        <StyledLoadingButton title="Data Mapper" action={handleOpenMapper} />
+                        <StyledLoadingButton title="Builder" action={handleOpenMapper} />
                     </Box>
                 </FieldAddons>
             )}
