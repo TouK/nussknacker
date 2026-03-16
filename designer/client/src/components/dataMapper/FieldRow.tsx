@@ -1,6 +1,7 @@
 import AddIcon from "@mui/icons-material/Add";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
@@ -340,25 +341,59 @@ export function FieldRow({
 
                     {/* SpEL expression (leaf only) */}
                     {!field.isRecord && (
-                        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5, mt: 1 }}>
-                            <Typography sx={{ fontSize: 11, color: "text.secondary", width: 70, pt: "6px" }}>value</Typography>
-                            <Box sx={{ flex: 1 }}>
-                                <SpelEditorContainer onDrop={(e) => clearAceSelectionAfterDrop(e.currentTarget)}>
-                                    <ExpressionSuggest
-                                        inputProps={{
-                                            value: field.expression,
-                                            language: ExpressionLang.SpEL,
-                                            onValueChange: stableExpressionChange,
-                                            rows: 1,
-                                            placeholder: "#input.field or #MATH.abs(#input.value)",
-                                        }}
-                                        showValidation
-                                        variableTypes={variableTypes}
-                                        fieldErrors={errors}
-                                    />
-                                </SpelEditorContainer>
+                        <>
+                            <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5, mt: 1 }}>
+                                <Typography sx={{ fontSize: 11, color: "text.secondary", width: 70, pt: "6px" }}>value</Typography>
+                                <Box sx={{ flex: 1 }}>
+                                    <SpelEditorContainer onDrop={(e) => clearAceSelectionAfterDrop(e.currentTarget)}>
+                                        <ExpressionSuggest
+                                            inputProps={{
+                                                value: field.expression,
+                                                language: ExpressionLang.SpEL,
+                                                onValueChange: stableExpressionChange,
+                                                rows: 1,
+                                                placeholder: "#input.field or #MATH.abs(#input.value)",
+                                            }}
+                                            showValidation
+                                            variableTypes={variableTypes}
+                                            fieldErrors={errors}
+                                        />
+                                    </SpelEditorContainer>
+                                </Box>
                             </Box>
-                        </Box>
+                            {field.defaultValue !== undefined ? (
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 1 }}>
+                                    <Typography sx={{ fontSize: 11, color: "text.secondary", width: 70 }}>default</Typography>
+                                    <TextField
+                                        value={field.defaultValue}
+                                        onChange={(e) => onChange(field.id, "defaultValue", e.target.value)}
+                                        size="small"
+                                        placeholder="e.g. '', 0, false, null"
+                                        sx={{ flex: 1, "& .MuiInputBase-input": { fontSize: 12, fontFamily: "monospace", py: "5px" } }}
+                                    />
+                                    <Tooltip title="Remove default value">
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => onChange(field.id, "defaultValue", undefined)}
+                                            sx={{ p: "2px", color: "text.disabled", flexShrink: 0 }}
+                                        >
+                                            <CloseIcon sx={{ fontSize: 14 }} />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
+                            ) : (
+                                <Box sx={{ mt: 0.5 }}>
+                                    <Button
+                                        size="small"
+                                        startIcon={<AddIcon sx={{ fontSize: 12 }} />}
+                                        onClick={() => onChange(field.id, "defaultValue", "")}
+                                        sx={{ fontSize: 11, textTransform: "none", color: "text.secondary", py: "2px" }}
+                                    >
+                                        Add default value
+                                    </Button>
+                                </Box>
+                            )}
+                        </>
                     )}
                 </Box>
             </Collapse>

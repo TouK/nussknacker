@@ -75,6 +75,7 @@ export interface FieldDef {
     name: string;
     type: NuType;
     expression: string;
+    defaultValue?: string;
     children: FieldDef[]; // non-empty or isRecord=true → nested record mode
     isRecord: boolean;
 }
@@ -369,7 +370,9 @@ export function genSpelFromFields(fields: FieldDef[], depth = 0): string {
             if (f.children.length === 0) return `${innerIndent}${f.name}: {}`;
             return `${innerIndent}${f.name}: ${genSpelFromFields(f.children, depth + 1)}`;
         }
-        return `${innerIndent}${f.name}: ${f.expression || "null"}`;
+        const expr = f.expression || "null";
+        const value = f.expression && f.defaultValue !== undefined ? `${f.expression} != null ? ${f.expression} : ${f.defaultValue}` : expr;
+        return `${innerIndent}${f.name}: ${value}`;
     });
     return `{\n${lines.join(",\n")}\n${outerIndent}}`;
 }
