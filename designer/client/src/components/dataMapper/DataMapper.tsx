@@ -18,7 +18,7 @@ import {
     Tooltip,
     Typography,
 } from "@mui/material";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 
 import type { VariableTypes } from "../../types/validation";
 import { ContextTreeNode } from "../builderComponents/ContextTreeNode";
@@ -82,6 +82,15 @@ export function DataMapper({
         fetchTopicDefinitionsOverride,
     });
 
+    const fieldsScrollRef = useRef<HTMLDivElement>(null);
+    const prevFieldsLengthRef = useRef(dm.fields.length);
+    useEffect(() => {
+        if (dm.fields.length > prevFieldsLengthRef.current && fieldsScrollRef.current) {
+            fieldsScrollRef.current.scrollTop = fieldsScrollRef.current.scrollHeight;
+        }
+        prevFieldsLengthRef.current = dm.fields.length;
+    }, [dm.fields.length]);
+
     return (
         <RootBox embedded={!!onInsert}>
             {/* Header */}
@@ -100,11 +109,18 @@ export function DataMapper({
             <Box
                 sx={
                     onInsert
-                        ? { flex: 1, overflowY: "auto", minHeight: 0, display: "flex", flexDirection: "column", gap: 2, p: 2.5 }
+                        ? { flex: 1, overflow: "hidden", minHeight: 0, display: "flex", flexDirection: "column", gap: 2, p: 2.5 }
                         : { display: "contents" }
                 }
             >
-                <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
+                <Box
+                    sx={{
+                        display: "flex",
+                        gap: 2,
+                        alignItems: "flex-start",
+                        ...(onInsert && { flex: 1, minHeight: 0, alignItems: "stretch" }),
+                    }}
+                >
                     {/* Left: Context Variables */}
                     <PanelPaper sx={{ width: 360, flexShrink: 0 }}>
                         <PanelHeader>
@@ -147,7 +163,7 @@ export function DataMapper({
                                 sx={{ "& .MuiInputBase-input": { fontSize: 12, py: "4px" } }}
                             />
                         </Box>
-                        <ScrollArea sx={{ p: 1, pt: 0.5 }}>
+                        <ScrollArea sx={{ p: 1, pt: 0.5, ...(onInsert && { flex: 1, minHeight: 0, maxHeight: "none" }) }}>
                             {Object.entries(dm.enrichedContext)
                                 .filter(
                                     ([key, val]) => !dm.contextFilter || treeNodeMatchesFilter(key, val, dm.contextFilter.toLowerCase()),
@@ -169,8 +185,8 @@ export function DataMapper({
                     </PanelPaper>
 
                     {/* Right: Target Record + Expression */}
-                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
-                        <PanelPaper sx={{ backgroundColor: "transparent" }}>
+                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, ...(onInsert && { minHeight: 0 }) }}>
+                        <PanelPaper sx={{ backgroundColor: "transparent", ...(onInsert && { flex: 1, minHeight: 0 }) }}>
                             <PanelHeader>
                                 <Box>
                                     <Typography sx={{ fontSize: 13, fontWeight: 600 }}>Target Record</Typography>
@@ -274,7 +290,7 @@ export function DataMapper({
                                     onClose={() => dm.setShowTopicPicker(false)}
                                 />
                             </Collapse>
-                            <ScrollArea sx={{ p: 1 }}>
+                            <ScrollArea ref={fieldsScrollRef} sx={{ p: 1, ...(onInsert && { flex: 1, minHeight: 0, maxHeight: "none" }) }}>
                                 {dm.fields.map((f) => (
                                     <FieldRow
                                         key={f.id}
@@ -337,7 +353,13 @@ export function DataMapper({
 
                         {/* Expression output */}
                         <PanelPaper
-                            sx={{ opacity: 0.65, "&:hover": { opacity: 1 }, transition: "opacity 0.2s", backgroundColor: "transparent" }}
+                            sx={{
+                                opacity: 0.65,
+                                "&:hover": { opacity: 1 },
+                                transition: "opacity 0.2s",
+                                backgroundColor: "transparent",
+                                ...(onInsert && { maxHeight: 200, flexShrink: 0, overflowY: "auto" }),
+                            }}
                         >
                             <PanelHeader>
                                 <Typography sx={{ fontSize: 12, fontWeight: 500, color: "text.secondary" }}>Expression</Typography>
