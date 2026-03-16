@@ -69,7 +69,10 @@ export const ParametersListField = ({ getListFieldPath, paramWithIndex, ...props
             );
         }
         if (
-            (paramKey === OverrideKeys.SinkKafkaValue || paramKey === OverrideKeys.HttpBody || paramKey === OverrideKeys.WebhookBody) &&
+            (paramKey === OverrideKeys.SinkKafkaValue ||
+                paramKey === OverrideKeys.HttpBody ||
+                paramKey === OverrideKeys.WebhookBody ||
+                paramKey === OverrideKeys.SourceEventGeneratorValue) &&
             showDataMapper
         ) {
             const paramDef = props.parameterDefinitions?.find((p) => p.name === param.name);
