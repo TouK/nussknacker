@@ -2,8 +2,9 @@ import { Box, styled } from "@mui/material";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
+import { changeActiveTestCase } from "../../../../../../actions/nk/testingActions";
 import { getActiveTestCaseOption, getTestCaseOptions } from "../../../../../../reducers/selectors/testCases";
-import { useAppSelector } from "../../../../../../store/storeHelpers";
+import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
 import { useWindows } from "../../../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../../../windowManager/WindowKind";
 import { StyledButton } from "../../../../styledButton";
@@ -21,14 +22,23 @@ export const TestCases = () => {
     const testCaseOptions = useAppSelector(getTestCaseOptions);
     const activeTestCaseOption = useAppSelector(getActiveTestCaseOption);
 
+    const dispatch = useAppDispatch();
+
     const { open } = useWindows();
     const onDisplayEnterpriseInfo = useCallback(() => {
         open({ kind: WindowKind.enterpriseFeatureInfo, layoutData: { width: 500 } });
     }, [open]);
 
+    const changeActiveTestCaseOption = useCallback(
+        (testCaseId: string) => {
+            dispatch(changeActiveTestCase(testCaseId));
+        },
+        [dispatch],
+    );
+
     return (
         <Box ml={4} pt={1.25} display={"flex"} gap={1}>
-            <StyledTestCasesSelect options={testCaseOptions} onChange={() => "noop"} value={activeTestCaseOption} />
+            <StyledTestCasesSelect options={testCaseOptions} onChange={changeActiveTestCaseOption} value={activeTestCaseOption} />
             {/*<InfoTooltip title={"Edit name"} variant={"hover"} enterDelay={500}>*/}
             {/*    <StyledActionButton>*/}
             {/*        <EditIcon />*/}

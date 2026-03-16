@@ -1,8 +1,8 @@
 import { alpha, styled } from "@mui/material";
-import React, { useCallback, useContext, useState } from "react";
+import React, { useCallback, useContext } from "react";
 import { useTranslation } from "react-i18next";
 
-import { testScenarioWithTestCase } from "../../../../actions/nk/testingActions";
+import { changeActiveTestCase, testScenarioWithTestCase } from "../../../../actions/nk/testingActions";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { useUserSettings } from "../../../../common/useUserSettings";
 import type { TestCase } from "../../../../reducers/graph/testCase";
@@ -55,6 +55,13 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
             <TestingIconWithAssertionStatus hasResult={hasResult} assertionsIsSuccess={assertionsIsSuccess} />
         );
 
+    const changeActiveTestCaseOption = useCallback(
+        (testCaseId: string) => {
+            dispatch(changeActiveTestCase(testCaseId));
+        },
+        [dispatch],
+    );
+
     return (
         <StyledScenarioTestButton
             onClick={() => handleRunTest(testCase)}
@@ -69,13 +76,12 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
             presets={presets}
             selected={activeTestCasePreset}
             onPresetChange={(preset) => {
-                // setSelectedPreset(preset);
                 if (preset.value === RUN_ALL) {
                     //TODO: Implement me when backend ready
                     return;
                 }
                 //TODO: Handle multiple test selection when backend ready
-                handleRunTest(testCase);
+                changeActiveTestCaseOption(preset.value);
             }}
         />
     );

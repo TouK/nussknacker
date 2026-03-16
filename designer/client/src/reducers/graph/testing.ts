@@ -69,6 +69,12 @@ export const testingReducer: Reducer<GraphState["testing"]> = (state = initialTe
                 testResults: action.results?.results || null,
             };
         }
+        case "CHANGE_ACTIVE_TEST_CASE": {
+            return {
+                ...state,
+                activeTestCaseId: action.testCaseId,
+            };
+        }
         default:
             return state;
     }

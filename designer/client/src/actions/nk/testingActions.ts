@@ -1,7 +1,6 @@
 import type { ProcessName } from "src/components/Process/types";
 
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
-import { mapInputDataRecordsToRunTestsFormat } from "../../components/modals/TestingDataRecords/utils";
 import HttpService from "../../http/HttpService/instance";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
 import type { ResultsWithCountsDto, TestAssertionResults, TestResultsDto } from "../../http/resultsWithCountsDto";
@@ -71,7 +70,8 @@ export type TestsActions =
       }
     | {
           type: "CLEAR_TEST_ASSERTIONS_RESULTS";
-      };
+      }
+    | { type: "CHANGE_ACTIVE_TEST_CASE"; testCaseId: string };
 
 function wrapWithTestAction(
     fn: (
@@ -113,6 +113,13 @@ export function displayTestAssertionsResults(assertionsResults: TestAssertionRes
     return {
         type: "DISPLAY_TEST_ASSERTIONS_RESULTS",
         assertionsResults,
+    };
+}
+
+export function changeActiveTestCase(testCaseId: string): Action {
+    return {
+        type: "CHANGE_ACTIVE_TEST_CASE",
+        testCaseId,
     };
 }
 
