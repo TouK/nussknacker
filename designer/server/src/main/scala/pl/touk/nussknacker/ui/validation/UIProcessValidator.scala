@@ -21,8 +21,6 @@ import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeTypingData,
-  NodeValidationError,
-  NodeValidationErrorType,
   UIGlobalError,
   ValidationErrors,
   ValidationResult
@@ -448,43 +446,13 @@ class UIProcessValidator(
       case None =>
         ValidationResult.success
       case Some(TestCases(testCases)) =>
-        val duplicateNameResult = validateTestCaseNameUniqueness(
-          testCaseValidator.duplicateTestCaseNames(testCases.toList)
-        )
         val testCasesNodeTyping = nodesTyping.mapValuesNow { typingInfo =>
           TestCaseValidator.NodeTyping(
             inputVariables = typingInfo.inputValidationContext.localVariables,
             outputVariables = typingInfo.outputValidationContext.map(_.localVariables).getOrElse(Map.empty),
           )
         }
-        val testCasesValidationErrors =
-          testCaseValidator.validateScenarioTestCases(scenario.collectAllNodes, testCasesNodeTyping, testCases.toList)
-        val testCasesResult =
-          if (testCasesValidationErrors.isEmpty) ValidationResult.success
-          else ValidationResult.errors(testCasesValidationErrors = Some(testCasesValidationErrors))
-        duplicateNameResult.add(testCasesResult)
-    }
-  }
-
-  private def validateTestCaseNameUniqueness(duplicateNames: List[String]): ValidationResult = {
-    if (duplicateNames.isEmpty) {
-      ValidationResult.success
-    } else {
-      ValidationResult.errors(
-        globalErrors = duplicateNames.toList.map { name =>
-          UIGlobalError(
-            error = NodeValidationError(
-              typ = "DuplicateTestCaseName",
-              message = s"Duplicate test case name: '$name'",
-              description = "Test case names must be unique",
-              fieldName = None,
-              errorType = NodeValidationErrorType.SaveAllowed,
-              details = None,
-            ),
-            nodeIds = List.empty,
-          )
-        }
-      )
+        testCaseValidator.validateScenarioTestCases(scenario.collectAllNodes, testCasesNodeTyping, testCases.toList)
     }
   }
 
