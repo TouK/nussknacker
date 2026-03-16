@@ -18,8 +18,11 @@ interface Props {
     highlightKeys?: Set<string>;
     /** Override context data; if omitted, derived from ioContext. */
     contextData?: ContextData;
-    /** Custom trigger button; if omitted, renders StyledLoadingButton. */
+    /** Custom trigger button; if omitted, renders BuilderIconButton. */
     renderTrigger?: (onClick: () => void) => React.ReactNode;
+    /** Controlled mode: open state managed externally. */
+    open?: boolean;
+    onClose?: () => void;
 }
 
 export function ConditionBuilderComponent({
@@ -30,9 +33,13 @@ export function ConditionBuilderComponent({
     highlightKeys,
     contextData: contextDataProp,
     renderTrigger,
+    open: openProp,
+    onClose,
 }: Props): React.JSX.Element | null {
     const [showConditionBuilder] = useUserSettings("node.showFieldExpressionBuilder");
-    const [open, setOpen] = useState(false);
+    const [openInternal, setOpenInternal] = useState(false);
+    const isControlled = openProp !== undefined;
+    const open = isControlled ? openProp : openInternal;
 
     const ioContext = useInputOutputContext();
     const ioContextData = useMemo<ContextData | undefined>(() => {
@@ -47,17 +54,20 @@ export function ConditionBuilderComponent({
 
     if (!showConditionBuilder) return null;
 
+    const handleClose = () => (isControlled ? onClose?.() : setOpenInternal(false));
+
     return (
         <>
-            {renderTrigger ? renderTrigger(() => setOpen(true)) : <BuilderIconButton onClick={() => setOpen(true)} />}
+            {!isControlled &&
+                (renderTrigger ? renderTrigger(() => setOpenInternal(true)) : <BuilderIconButton onClick={() => setOpenInternal(true)} />)}
             {open && (
-                <Dialog open onClose={() => setOpen(false)} maxWidth="xl" fullWidth>
-                    <DataMapperDialogTitle node={node} onClose={() => setOpen(false)} title="condition builder" />
+                <Dialog open onClose={handleClose} maxWidth="xl" fullWidth>
+                    <DataMapperDialogTitle node={node} onClose={handleClose} title="condition builder" />
                     <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
                         <ConditionBuilder
                             onInsert={(spel) => {
                                 onInsert(spel);
-                                setOpen(false);
+                                handleClose();
                             }}
                             variableTypes={variableTypes}
                             contextData={contextData}

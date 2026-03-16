@@ -14,6 +14,7 @@ import type { NodeType } from "../../../types/node";
 import type { NodeValidationError, VariableTypes } from "../../../types/validation";
 import { typingResultToSample } from "../../builderComponents/typeUtils";
 import { ConditionBuilderComponent } from "../../conditionBuilder/ConditionBuilderComponent";
+import { ConditionBuilderContext } from "../../conditionBuilder/ConditionBuilderContext";
 import type { ContextData } from "../../dataMapper/DataMapper";
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
@@ -72,6 +73,7 @@ export function EnricherProcessor({
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     const kind = getComponentKind(determineComponentId(node));
     const isDataMapper = node.type === "Enricher" && isEditMode && kind && DATA_MAPPER_OPENAPI_ENRICHER_KINDS.has(kind);
+    const isConditionBuilder = node.type === "Enricher" && isEditMode && kind && CONDITION_BUILDER_ENRICHER_KINDS.has(kind);
 
     const [mapperOpen, setMapperOpen] = useState(false);
     const [mapperFocusField, setMapperFocusField] = useState<string | undefined>();
@@ -79,6 +81,9 @@ export function EnricherProcessor({
         setMapperFocusField(fieldName);
         setMapperOpen(true);
     }, []);
+
+    const [condBuilderOpen, setCondBuilderOpen] = useState(false);
+    const openCondBuilder = useCallback(() => setCondBuilderOpen(true), []);
 
     const variableTypes = useMemo(() => findAvailableVariables(node.id), [findAvailableVariables, node.id]);
     const ioContext = useInputOutputContext();
@@ -146,32 +151,32 @@ export function EnricherProcessor({
     );
 
     return (
-        <NamedParamsMapperContext.Provider value={isDataMapper ? openMapper : null}>
-            <IdField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
-            <ParametersListWithOverrides
-                parameters={findParameters(node)}
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                showSwitch={showSwitch}
-                node={node}
-                findAvailableVariables={findAvailableVariables}
-                parameterDefinitions={parameterDefinitions}
-                errors={errors}
-                setProperty={setProperty}
-                getListFieldPath={(index: number) => `service.parameters[${index}]`}
-            >
-                {isDataMapper && (
-                    <NamedParamsDataMapper
-                        node={node}
-                        parameterDefinitions={parameterDefinitions}
-                        setProperty={setProperty}
-                        open={mapperOpen}
-                        focusFieldName={mapperFocusField}
-                        onClose={() => setMapperOpen(false)}
-                    />
-                )}
-                {node.type === "Enricher" && isEditMode && kind && CONDITION_BUILDER_ENRICHER_KINDS.has(kind) && booleanParam && (
-                    <Box display="flex" flexDirection="column" alignItems="flex-end" width="100%">
+        <ConditionBuilderContext.Provider value={isConditionBuilder && booleanParam ? openCondBuilder : null}>
+            <NamedParamsMapperContext.Provider value={isDataMapper ? openMapper : null}>
+                <IdField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
+                <ParametersListWithOverrides
+                    parameters={findParameters(node)}
+                    isEditMode={isEditMode}
+                    showValidation={showValidation}
+                    showSwitch={showSwitch}
+                    node={node}
+                    findAvailableVariables={findAvailableVariables}
+                    parameterDefinitions={parameterDefinitions}
+                    errors={errors}
+                    setProperty={setProperty}
+                    getListFieldPath={(index: number) => `service.parameters[${index}]`}
+                >
+                    {isDataMapper && (
+                        <NamedParamsDataMapper
+                            node={node}
+                            parameterDefinitions={parameterDefinitions}
+                            setProperty={setProperty}
+                            open={mapperOpen}
+                            focusFieldName={mapperFocusField}
+                            onClose={() => setMapperOpen(false)}
+                        />
+                    )}
+                    {isConditionBuilder && booleanParam && (
                         <ConditionBuilderComponent
                             node={node}
                             onInsert={handleConditionInsert}
@@ -181,38 +186,40 @@ export function EnricherProcessor({
                             highlightKeys={
                                 booleanParam.additionalVariables ? new Set(Object.keys(booleanParam.additionalVariables)) : undefined
                             }
+                            open={condBuilderOpen}
+                            onClose={() => setCondBuilderOpen(false)}
                         />
-                    </Box>
-                )}
-                {node.type === "Enricher" ? (
-                    <NodeField
+                    )}
+                    {node.type === "Enricher" ? (
+                        <NodeField
+                            isEditMode={isEditMode}
+                            showValidation={showValidation}
+                            node={node}
+                            setProperty={setProperty}
+                            fieldType={FieldType.input}
+                            fieldLabel={t("nodes.enricher.output", "Output variable name")}
+                            fieldName={"output"}
+                            errors={errors}
+                        />
+                    ) : null}
+                    {node.type === "Processor" ? (
+                        <DisableField
+                            node={node}
+                            isEditMode={isEditMode}
+                            showValidation={showValidation}
+                            setProperty={setProperty}
+                            errors={errors}
+                        />
+                    ) : null}
+                    <DescriptionField
+                        node={node}
                         isEditMode={isEditMode}
                         showValidation={showValidation}
-                        node={node}
-                        setProperty={setProperty}
-                        fieldType={FieldType.input}
-                        fieldLabel={t("nodes.enricher.output", "Output variable name")}
-                        fieldName={"output"}
-                        errors={errors}
-                    />
-                ) : null}
-                {node.type === "Processor" ? (
-                    <DisableField
-                        node={node}
-                        isEditMode={isEditMode}
-                        showValidation={showValidation}
                         setProperty={setProperty}
                         errors={errors}
                     />
-                ) : null}
-                <DescriptionField
-                    node={node}
-                    isEditMode={isEditMode}
-                    showValidation={showValidation}
-                    setProperty={setProperty}
-                    errors={errors}
-                />
-            </ParametersListWithOverrides>
-        </NamedParamsMapperContext.Provider>
+                </ParametersListWithOverrides>
+            </NamedParamsMapperContext.Provider>
+        </ConditionBuilderContext.Provider>
     );
 }
