@@ -40,6 +40,54 @@ Use autocompletion to explore available options. To read more see [Documentation
                             ),
                             helpText,
                         );
+                    case OverrideKeys.ForEachElements:
+                        return mergeTexts(
+                            t(
+                                "editors.spelEditor.additionalInfoText.forEachElements",
+                                `A SpEL expression that must return a collection — for each item a separate event will be emitted downstream with the item available as the output variable.`,
+                            ),
+                            helpText,
+                        );
+                    case OverrideKeys.SinkKafkaValue:
+                        return mergeTexts(
+                            t(
+                                "editors.spelEditor.additionalInfoText.sinkKafkaValue",
+                                `A record sent as the Kafka message payload. Map fields from available variables to build the message body.`,
+                            ),
+                            helpText,
+                        );
+                    case OverrideKeys.HttpBody:
+                        return mergeTexts(
+                            t(
+                                "editors.spelEditor.additionalInfoText.httpBody",
+                                `Request body sent to the HTTP endpoint. Use the builder to map source fields to the expected payload structure.`,
+                            ),
+                            helpText,
+                        );
+                    case OverrideKeys.WebhookBody:
+                        return mergeTexts(
+                            t(
+                                "editors.spelEditor.additionalInfoText.webhookBody",
+                                `Request body sent to the webhook. Use the builder to map source fields to the expected payload structure.`,
+                            ),
+                            helpText,
+                        );
+                    case OverrideKeys.HttpQueryParameters:
+                        return mergeTexts(
+                            t(
+                                "editors.spelEditor.additionalInfoText.httpQueryParameters",
+                                `Key-value pairs appended to the HTTP request URL as query string parameters.`,
+                            ),
+                            helpText,
+                        );
+                    case OverrideKeys.HttpHeaders:
+                        return mergeTexts(
+                            t(
+                                "editors.spelEditor.additionalInfoText.httpHeaders",
+                                `HTTP request headers sent with the call, e.g. \`Authorization\`, \`Content-Type\`.`,
+                            ),
+                            helpText,
+                        );
                     default:
                         return helpText;
                 }
