@@ -69,6 +69,7 @@ final class DesignerConfig private (
     val http: HttpConfig,
     val attachments: AttachmentsConfig,
     val assistantSettings: AssistantSettings,
+    val testCasesSettings: TestCasesSettings,
     val globalLimitsConfig: GlobalLimitsConfig
 ) {
 
@@ -161,6 +162,8 @@ object DesignerConfig {
     val attachments                   = AttachmentsConfig.parse(resolvedConfig)
     val assistantSettings =
       resolvedConfig.getAs[AssistantSettings]("assistantSettings").getOrElse(AssistantSettings.disabled)
+    val testCasesSettings =
+      resolvedConfig.getAs[TestCasesSettings]("testCasesSettings").getOrElse(TestCasesSettings.default)
 
     val limitsConfig = if (resolvedConfig.hasPath("globalLimits")) {
       Try(resolvedConfig.getConfig("globalLimits").getInt("maxActiveScenariosCount")) match {
@@ -211,6 +214,7 @@ object DesignerConfig {
       http = http,
       attachments = attachments,
       assistantSettings = assistantSettings,
+      testCasesSettings = testCasesSettings,
       globalLimitsConfig = limitsConfig
     )
   }
