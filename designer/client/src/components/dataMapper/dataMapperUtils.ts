@@ -61,8 +61,10 @@ export function checkTypeCompatibility(expressionType: TypingResult | undefined,
     const actualClass = expressionType.refClazzName;
     if (!actualClass) return null;
     if (expectedClasses.some((c) => actualClass === c || actualClass.startsWith(c))) return null;
-    // Numeric types are mutually compatible (SpEL/Java allows numeric coercions)
     const actualNuType = refClazzToNuType(actualClass);
+    // Unknown/Object expression type — skip check, backend will validate
+    if (actualNuType === "Any") return null;
+    // Numeric types are mutually compatible (SpEL/Java allows numeric coercions)
     if (NUMERIC_NU_TYPES.has(nuType) && NUMERIC_NU_TYPES.has(actualNuType)) return null;
     const actual = expressionType.display ?? actualClass.split(".").pop() ?? actualClass;
     return `Type mismatch: expected ${nuType} but expression returns ${actual}`;
