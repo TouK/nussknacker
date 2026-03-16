@@ -153,11 +153,16 @@ class KafkaK8sSupport(k8s: KubernetesClient)(private implicit val system: ActorS
     }
   }
 
-  def readFromTopic(name: String, count: Int): List[String] = {
+  def readFromTopic(name: String, count: Int, secondsToWait: Int = 5): List[String] = {
     Using.resource(kafkaClient.createConsumer()) { consumer =>
       new RichKafkaConsumer(consumer)
-        .consumeWithConsumerRecord(name, 5)
-        .map(record => new String(record.value()))
+        .consumeWithConsumerRecord(name, secondsToWait)
+        .map { record =>
+          logger.info(
+            s"Read Kafka message: ${record.topic()}:${record.partition()}:${record.offset()} = ${new String(record.value())}"
+          )
+          new String(record.value())
+        }
         .take(count)
         .toList
     }

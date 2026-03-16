@@ -12,13 +12,11 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{ComponentProvider, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.deployment.{
-  DataFreshnessPolicy,
   DeploymentUpdateStrategy,
   DMRunDeploymentCommand,
   DMValidateScenarioCommand
 }
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -33,7 +31,6 @@ import skuber.json.format._
 import skuber.networking.v1.Ingress
 import sttp.client3._
 
-import scala.concurrent.ExecutionContext.Implicits._
 import scala.jdk.CollectionConverters._
 import scala.language.reflectiveCalls
 import scala.util.Random
@@ -46,7 +43,6 @@ class K8sDeploymentManagerReqRespTest
     with EitherValuesDetailedMessage
     with LazyLogging {
 
-  private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
   private val givenServicePort = 12345 // some random, remote port, we don't need to worry about collisions
 
   test("deployment of req-resp ping-pong") {
@@ -178,13 +174,7 @@ class K8sDeploymentManagerReqRespTest
             )
           )
           .futureValue
-        eventually {
-          val state = f.manager.getScenarioDeploymentsStatuses(secondVersionInfo.processName).map(_.value).futureValue
-          state.length shouldBe 1
-          state.map(_.status) should matchPattern {
-            case List(SimpleStateStatus.Running(version, _)) if version.value == secondVersion =>
-          }
-        }
+        waitForRunning(f.manager, secondVersionInfo)
         val versionsAfterRedeploy = checkVersions()
         versionsAfterRedeploy shouldEqual Set(secondVersion)
       }
@@ -260,7 +250,7 @@ class K8sDeploymentManagerReqRespTest
           )
         )
         .futureValue
-      f.waitForRunning(newVersion)
+      waitForRunning(f.manager, newVersion)
       val servicesForScenario = k8s
         .listSelected[ListResource[Service]](LabelSelector(requirementForName(newVersion.processName)))
         .futureValue
