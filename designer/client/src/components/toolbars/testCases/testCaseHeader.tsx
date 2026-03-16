@@ -1,11 +1,11 @@
 import { Box, Typography } from "@mui/material";
 import React from "react";
 
-import { getTestCase } from "../../../reducers/selectors/testCases";
+import { getActiveTestCase } from "../../../reducers/selectors/testCases";
 import { useAppSelector } from "../../../store/storeHelpers";
 
 export const TestCaseHeader = () => {
-    const testCase = useAppSelector(getTestCase);
+    const testCase = useAppSelector(getActiveTestCase);
 
     return (
         <Box display={"flex"} mx={1} mb={1}>

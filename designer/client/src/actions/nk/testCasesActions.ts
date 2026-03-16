@@ -1,12 +1,14 @@
 import type { WithUuid } from "../../components/graph/node-modal/appendUuid";
 import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
+import type { TestCase } from "../../reducers/graph/testCase";
 import {
     getTestCaseAssertions,
     getTestCaseAssertionsForNode,
     getInputDataRecords,
     getTestCaseMocks,
 } from "../../reducers/selectors/testCases";
+import { getActiveTestCaseId } from "../../reducers/selectors/testing";
 import type { ThunkAction } from "../reduxTypes";
 
 export type Assertion = { description?: string; expected: ExpressionObj; operator: "equals" | "notEquals"; actual: ExpressionObj };
@@ -15,10 +17,7 @@ export type Assertions = Record<string, Assertion[]>;
 export type Mock = { expression: ExpressionObj };
 export type Mocks = Record<string, Mock>;
 
-export type TestCasesActions =
-    | { type: "SET_TEST_CASE_ASSERTIONS"; assertions: Assertions }
-    | { type: "SET_TEST_CASE_INPUTS"; inputs: string }
-    | { type: "SET_TEST_CASE_MOCKS"; mocks: Mocks };
+export type TestCasesActions = { type: "UPDATE_TEST_CASE"; testCaseId: string; updates: Partial<TestCase> };
 
 export function setTestCaseAssertions(nodeId: string, updater: (prev: WithUuid<Assertion>[]) => WithUuid<Assertion>[]): ThunkAction {
     return (dispatch, getState) => {
@@ -27,9 +26,14 @@ export function setTestCaseAssertions(nodeId: string, updater: (prev: WithUuid<A
         const next = updater(prev);
 
         const testingAssertions = getTestCaseAssertions(state);
+        const activeTestCaseId = getActiveTestCaseId(state);
+
         dispatch({
-            type: "SET_TEST_CASE_ASSERTIONS",
-            assertions: { ...testingAssertions, [nodeId]: next },
+            type: "UPDATE_TEST_CASE",
+            testCaseId: activeTestCaseId,
+            updates: {
+                assertions: { ...testingAssertions, [nodeId]: next },
+            },
         });
     };
 }
@@ -39,10 +43,14 @@ export function setTestCaseInputs(updater: (prev: TestingDataRecords[]) => Testi
         const state = getState();
         const prev = getInputDataRecords(state);
         const next = updater(prev);
+        const activeTestCaseId = getActiveTestCaseId(state);
 
         dispatch({
-            type: "SET_TEST_CASE_INPUTS",
-            inputs: JSON.stringify(next),
+            type: "UPDATE_TEST_CASE",
+            testCaseId: activeTestCaseId,
+            updates: {
+                inputs: JSON.stringify(next),
+            },
         });
     };
 }
@@ -52,9 +60,14 @@ export function setTestCaseMock(nodeId: string, expression: ExpressionObj): Thun
         const state = getState();
 
         const mocks = getTestCaseMocks(state);
+        const activeTestCaseId = getActiveTestCaseId(state);
+
         dispatch({
-            type: "SET_TEST_CASE_MOCKS",
-            mocks: { ...mocks, [nodeId]: { expression } },
+            type: "UPDATE_TEST_CASE",
+            testCaseId: activeTestCaseId,
+            updates: {
+                mocks: { ...mocks, [nodeId]: { expression } },
+            },
         });
     };
 }

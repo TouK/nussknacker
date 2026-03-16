@@ -10,27 +10,36 @@ import { getActiveTestCaseId } from "./testing";
 
 const getNodeId = (_: unknown, nodeId: string) => nodeId;
 
-export const getTestCase = createSelector(getScenarioGraph, ({ testCases }) => testCases?.value ?? ({} as TestCase));
-export const getTestCaseOptions = createSelector(getTestCase, ({ name, id }) => [{ label: name, value: id }]);
+export const getTestCases = createSelector(getScenarioGraph, ({ testCases }) => testCases?.list ?? []);
+export const getActiveTestCase = createSelector(getTestCases, getActiveTestCaseId, (testCases, activeTestCaseId) =>
+    testCases.find((testCase) => testCase.id === activeTestCaseId),
+);
+
+export const getTestCaseOptions = createSelector(getTestCases, (testCases) =>
+    testCases.map(({ id, name }) => ({ label: name, value: id })),
+);
 export const getActiveTestCaseOption = createSelector(
     getTestCaseOptions,
     getActiveTestCaseId,
     (testCaseOptions, activeTestCaseId) => testCaseOptions.find((option) => option.value === activeTestCaseId) || null,
 );
-export const getTestCaseAssertions = createSelector(getTestCase, ({ assertions }) => assertions);
+export const getTestCaseAssertions = createSelector(getActiveTestCase, ({ assertions }) => assertions);
 export const getTestCaseAssertionsForNode = createSelector(
     getTestCaseAssertions,
     getNodeId,
     (assertions, nodeId) => assertions[nodeId]?.map(withUuid) || [],
 );
 
-export const getTestCaseMocks = createSelector(getTestCase, ({ mocks }) => mocks);
+export const getTestCaseMocks = createSelector(getActiveTestCase, ({ mocks }) => mocks);
 export const getTestCaseMockForNode = createSelector(
     getTestCaseMocks,
     getNodeId,
     (mocks, nodeId) => mocks[nodeId] || { expression: MockExpressionParameter.defaultValue },
 );
-export const getInputDataRecords = createSelector(getTestCase, ({ inputs }) => safeParseExpression<TestingDataRecords[]>(inputs) || []);
+export const getInputDataRecords = createSelector(
+    getActiveTestCase,
+    ({ inputs }) => safeParseExpression<TestingDataRecords[]>(inputs) || [],
+);
 
 const getSourceId = (_: unknown, sourceId: string) => sourceId;
 export const getInputDataRecordsForSingleSource = createSelector([getInputDataRecords, getSourceId], (testCaseInputs, sourceId: string) =>
@@ -38,9 +47,7 @@ export const getInputDataRecordsForSingleSource = createSelector([getInputDataRe
 );
 export const hasInputDataRecordsDefined = createSelector(getInputDataRecords, (inputDataRecords) => inputDataRecords.length > 0);
 
-export const getTestCaseNodeValidationData = createSelector(getScenarioGraph, getNodeId, ({ testCases }, nodeId) => {
-    const testCase = testCases?.value ?? ({} as TestCase);
-
+export const getTestCaseNodeValidationData = createSelector(getActiveTestCase, getNodeId, (testCase, nodeId) => {
     return {
         [testCase.name]: {
             ...testCase,

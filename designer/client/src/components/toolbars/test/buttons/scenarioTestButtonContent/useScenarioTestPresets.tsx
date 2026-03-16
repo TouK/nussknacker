@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { getTestCase } from "../../../../../reducers/selectors/testCases";
+import { getActiveTestCase } from "../../../../../reducers/selectors/testCases";
 import { getActiveTestCaseId } from "../../../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { OptionHeader } from "../../../../graph/node-modal/fragment-input-definition/TypeSelect";
@@ -21,7 +21,7 @@ export type Preset = {
 
 export const useScenarioTestPresets = () => {
     const { t } = useTranslation();
-    const testCase = useAppSelector(getTestCase);
+    const testCase = useAppSelector(getActiveTestCase);
     const { hasResult, assertionsIsSuccess } = useAssertionResultsSummary();
 
     const testCasePresets: Preset[] = useMemo(() => {
@@ -35,9 +35,7 @@ export const useScenarioTestPresets = () => {
         ];
     }, [testCase, hasResult, assertionsIsSuccess]);
 
-    const activeTestCaseId = useAppSelector(getActiveTestCaseId);
-
-    const activeTestCasePreset = testCasePresets.find((testCasePreset) => testCasePreset.value === activeTestCaseId);
+    const activeTestCasePreset = testCasePresets.find((testCasePreset) => testCasePreset.value === testCase.id) || null;
 
     const runAllPreset: Preset = useMemo(
         () => ({

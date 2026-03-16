@@ -136,6 +136,10 @@ const adjustScenarioData = flow(
     }),
 );
 
+const getDefaultActiveTestCaseId = (actionGraph: ScenarioGraph, stateGraph: ScenarioGraph): string | null => {
+    return actionGraph?.testCases?.list[0]?.id || stateGraph?.testCases?.list[0]?.id;
+};
+
 const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): GraphState => {
     const currentNodes = state.scenario.scenarioGraph.nodes;
     const currentEdges = state.scenario.scenarioGraph.edges;
@@ -153,8 +157,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
             const newNodeids = sortBy(adjustedScenario.scenarioGraph.nodes.map((n) => n.id));
             const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null;
 
-            const activeTestCaseId =
-                adjustedScenario?.scenarioGraph?.testCases?.value?.id || state.scenario?.scenarioGraph?.testCases?.value?.id;
+            const activeTestCaseId = getDefaultActiveTestCaseId(adjustedScenario.scenarioGraph, state.scenario.scenarioGraph);
 
             return {
                 ...state,
@@ -180,8 +183,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
         }
         case "DISPLAY_PROCESS": {
             const adjustedScenario = adjustScenarioData(action.scenario);
-            const activeTestCaseId =
-                adjustedScenario?.scenarioGraph?.testCases?.value?.id || state.scenario?.scenarioGraph?.testCases?.value?.id;
+            const activeTestCaseId = getDefaultActiveTestCaseId(adjustedScenario.scenarioGraph, state.scenario.scenarioGraph);
 
             return {
                 ...state,

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { testScenarioWithTestCase } from "../../../actions/nk/testingActions";
 import { useUserSettings } from "../../../common/useUserSettings";
 import type { TestAssertionResults } from "../../../http/resultsWithCountsDto";
-import { getTestCase } from "../../../reducers/selectors/testCases";
+import { getActiveTestCase } from "../../../reducers/selectors/testCases";
 import { getTestResultsLoading } from "../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";
@@ -21,7 +21,7 @@ interface Props {
 }
 
 export const Results = ({ testAssertionResults }: Props) => {
-    const testCase = useAppSelector(getTestCase);
+    const testCase = useAppSelector(getActiveTestCase);
     const dispatch = useAppDispatch();
     const [showMockFieldOnEnrichers] = useUserSettings("node.showMockFieldOnEnrichers");
     const isLoading = useAppSelector(getTestResultsLoading);

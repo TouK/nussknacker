@@ -7,7 +7,7 @@ import {
     validateNodeData,
 } from "../../../actions/nk/nodeDetails";
 import type { RootState } from "../../../reducers";
-import { getTestCase, getTestCaseNodeValidationData } from "../../../reducers/selectors/testCases";
+import { getActiveTestCase, getTestCaseNodeValidationData } from "../../../reducers/selectors/testCases";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { Edge } from "../../../types/edge";
 import type { NodeType, Parameter } from "../../../types/node";
@@ -168,7 +168,7 @@ export function useGetNodeTestCasesErrors(node: NodeType): {
     enricherMockErrors: NodeValidationError[];
     assertionsErrors: Record<string, NodeValidationError[]>;
 } {
-    const testCase = useAppSelector(getTestCase);
+    const testCase = useAppSelector(getActiveTestCase);
     const currentTestCasesErrors = useAppSelector((state: RootState) =>
         getValidationTestCasesErrors(state, { nodeId: node.id, testCaseId: testCase.name }),
     );

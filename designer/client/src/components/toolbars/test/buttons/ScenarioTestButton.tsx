@@ -6,7 +6,7 @@ import { testScenarioWithTestCase } from "../../../../actions/nk/testingActions"
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { useUserSettings } from "../../../../common/useUserSettings";
 import type { TestCase } from "../../../../reducers/graph/testCase";
-import { getTestCase } from "../../../../reducers/selectors/testCases";
+import { getActiveTestCase } from "../../../../reducers/selectors/testCases";
 import { getTestResultsLoading } from "../../../../reducers/selectors/testing";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
@@ -30,7 +30,7 @@ export type ScenarioTestButtonProps = {
 function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>) {
     const { disabled, title, titleOverride, type } = props;
     const { t } = useTranslation();
-    const testCase = useAppSelector(getTestCase);
+    const testCase = useAppSelector(getActiveTestCase);
     const isLoading = useAppSelector(getTestResultsLoading);
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled });
 

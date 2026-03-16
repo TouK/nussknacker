@@ -12,7 +12,7 @@ import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
 import type { RootState } from "../../../../reducers";
 import { getCreatorType } from "../../../../reducers/selectors/getCreator";
-import { getTestCase } from "../../../../reducers/selectors/testCases";
+import { getActiveTestCase } from "../../../../reducers/selectors/testCases";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import type { Edge } from "../../../../types/edge";
 import type { NodeType } from "../../../../types/node";
@@ -92,7 +92,7 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
 
     const { node, editedNode, onChange, outputEdges, performNodeEdit, editState } = useNodeState(data.meta);
     const [generalErrors] = useGetNodeErrors(node);
-    const testCase = useAppSelector(getTestCase);
+    const testCase = useAppSelector(getActiveTestCase);
     const hasNodeTestCasesErrors = useAppSelector((state) =>
         hasValidationTestCasesErrors(state, { nodeId: node.id, testCaseId: testCase.name }),
     );
