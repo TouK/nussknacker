@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { getActiveTestCase } from "../../../../../reducers/selectors/testCases";
+import { getTestCases } from "../../../../../reducers/selectors/testCases";
 import { getActiveTestCaseId } from "../../../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { OptionHeader } from "../../../../graph/node-modal/fragment-input-definition/TypeSelect";
@@ -21,21 +21,20 @@ export type Preset = {
 
 export const useScenarioTestPresets = () => {
     const { t } = useTranslation();
-    const testCase = useAppSelector(getActiveTestCase);
+    const testCases = useAppSelector(getTestCases);
+    const activeTestCaseId = useAppSelector(getActiveTestCaseId);
     const { hasResult, assertionsIsSuccess } = useAssertionResultsSummary();
 
     const testCasePresets: Preset[] = useMemo(() => {
-        if (Object.keys(testCase).length === 0) return [];
-        return [
-            {
-                icon: hasResult ? <AssertionStatusIcon isSuccess={assertionsIsSuccess} variant={"light"} /> : null,
-                label: testCase.name,
-                value: testCase.id,
-            },
-        ];
-    }, [testCase, hasResult, assertionsIsSuccess]);
+        if (testCases.length === 0) return [];
+        return testCases.map((testCase) => ({
+            icon: hasResult ? <AssertionStatusIcon isSuccess={assertionsIsSuccess} variant={"light"} /> : null,
+            label: testCase.name,
+            value: testCase.id,
+        }));
+    }, [testCases, hasResult, assertionsIsSuccess]);
 
-    const activeTestCasePreset = testCasePresets.find((testCasePreset) => testCasePreset.value === testCase.id) || null;
+    const activeTestCasePreset = testCasePresets.find((testCasePreset) => testCasePreset.value === activeTestCaseId) || null;
 
     const runAllPreset: Preset = useMemo(
         () => ({
