@@ -3,6 +3,7 @@ import React, { useContext, useMemo, useState } from "react";
 import { useUserSettings } from "../../../common/useUserSettings";
 import type { NodeType } from "../../../types/node";
 import { typingResultToSample } from "../../builderComponents/typeUtils";
+import { ConditionBuilderContext } from "../../conditionBuilder/ConditionBuilderContext";
 import { fieldsFromSample } from "../../dataMapper/dataMapperUtils";
 import { SpelExpressionPickerComponent } from "../../spelExpressionPicker/SpelExpressionPickerComponent";
 import { DataMapperComponent } from "./DataMapperComponent";
@@ -87,14 +88,27 @@ export const ParametersListField = ({ getListFieldPath, paramWithIndex, ...props
         [namedParamsMapperContext, paramDef],
     );
 
+    const conditionBuilderContext = useContext(ConditionBuilderContext);
+    const isConditionBuilderParam = !!conditionBuilderContext && paramKey === OverrideKeys.DecisionTableMatch;
+
     const inputAdornmentEnd = useMemo(
         () =>
             hasBuilder ? (
                 <BuilderIconButton onClick={() => setBuilderOpen(true)} label={builderLabel} />
             ) : isNamedParamsMappable ? (
                 <BuilderIconButton onClick={() => namedParamsMapperContext!(param.name)} label="Data Mapper" />
+            ) : isConditionBuilderParam ? (
+                <BuilderIconButton onClick={() => conditionBuilderContext!()} label="Condition Builder" />
             ) : undefined,
-        [hasBuilder, builderLabel, isNamedParamsMappable, namedParamsMapperContext, param.name],
+        [
+            hasBuilder,
+            builderLabel,
+            isNamedParamsMappable,
+            namedParamsMapperContext,
+            param.name,
+            isConditionBuilderParam,
+            conditionBuilderContext,
+        ],
     );
 
     return (
