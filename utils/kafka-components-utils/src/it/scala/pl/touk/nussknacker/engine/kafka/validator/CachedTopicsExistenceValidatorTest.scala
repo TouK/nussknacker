@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka._
 
 import java.util.{Collections, UUID}
+import java.util.concurrent.TimeUnit
 
 class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest
     extends BaseCachedTopicsExistenceValidatorTest(
@@ -165,7 +166,7 @@ abstract class BaseCachedTopicsExistenceValidatorTest(kafkaAutoCreateEnabled: Bo
   private def createKafkaTopic(name: String): Unit = {
     val topic = new NewTopic(name, Collections.emptyMap())
     KafkaUtils.usingAdminClient(defaultKafkaConfig) {
-      _.createTopics(Collections.singletonList[NewTopic](topic))
+      _.createTopics(Collections.singletonList[NewTopic](topic)).all().get(5, TimeUnit.SECONDS)
     }
   }
 
