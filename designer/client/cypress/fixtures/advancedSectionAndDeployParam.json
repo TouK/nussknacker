@@ -52,7 +52,8 @@
                     "y": -285
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "Event Generator"
         },
         {
             "id": "Log",
@@ -90,7 +91,8 @@
                     "y": -158
                 }
             },
-            "type": "Processor"
+            "type": "Processor",
+            "name": "Log"
         },
         {
             "id": "Dead End",
@@ -107,7 +109,8 @@
                     "y": -8
                 }
             },
-            "type": "Sink"
+            "type": "Sink",
+            "name": "Dead End"
         }
     ],
     "additionalBranches": []

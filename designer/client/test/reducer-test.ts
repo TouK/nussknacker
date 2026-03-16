@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from "uuid";
 import { nodeAdded, nodesWithEdgesAdded } from "../src/actions/nk/node";
 import NodeUtils from "../src/components/graph/NodeUtils";
 import { Scenario } from "../src/components/Process/types";
@@ -5,6 +6,14 @@ import rootReducer from "../src/reducers/index";
 import { getLayout, getScenario, getScenarioGraph } from "../src/reducers/selectors/graph";
 import type { Edge } from "../src/types/edge";
 import type { NodeType } from "../src/types/node";
+
+jest.mock("uuid");
+
+let uuidCounter: number;
+beforeEach(() => {
+    uuidCounter = 0;
+    (uuidv4 as jest.Mock).mockImplementation(() => `uuid-${++uuidCounter}`);
+});
 
 const baseProcessState: Scenario = {
     name: "xxx",
@@ -16,6 +25,7 @@ const baseProcessState: Scenario = {
             {
                 type: "Source",
                 id: "kafka-transaction",
+                name: "kafka-transaction",
                 ref: {
                     typ: "kafka-transaction",
                     parameters: [],
@@ -27,6 +37,7 @@ const baseProcessState: Scenario = {
             {
                 type: "Filter",
                 id: "filter",
+                name: "filter",
                 expression: {
                     language: "spel",
                     expression: "4 / (#input.length -5) >= 0",
@@ -35,6 +46,7 @@ const baseProcessState: Scenario = {
             {
                 type: "Enricher",
                 id: "paramService",
+                name: "paramService",
                 service: {
                     id: "paramService",
                     parameters: [
@@ -52,6 +64,7 @@ const baseProcessState: Scenario = {
             {
                 type: "Sink",
                 id: "sendSms",
+                name: "sendSms",
                 ref: {
                     typ: "sendSms",
                     parameters: [],
@@ -121,6 +134,7 @@ const reduceAll = (actions) => {
 const testNode = {
     type: "Enricher",
     id: "Enricher ID",
+    name: "Enricher ID",
     service: {
         id: "paramService",
         parameters: [
@@ -146,37 +160,42 @@ describe("Store", () => {
     describe("Nodes added", () => {
         it("should add single node", () => {
             const result = reduceAll([nodeAdded(testNode, testPosition)]);
+            const scenarioGraph = getScenarioGraph(result);
 
-            expect(NodeUtils.getNodeById(testNode.id, getScenarioGraph(result))).toMatchSnapshot();
-            expect(getLayout(result).find((n) => n.id === testNode.id).position).toEqual(testPosition);
+            const addedNode = NodeUtils.getNodeByName("Enricher ID", scenarioGraph);
+            expect(addedNode).toMatchSnapshot();
+            expect(getLayout(result).find((n) => n.id === addedNode.id).position).toEqual(testPosition);
         });
 
-        it("should add single node with unique id", () => {
-            const result = reduceAll([nodeAdded({ ...testNode, id: "kafka-transaction" }, testPosition)]);
+        it("should add single node with unique name", () => {
+            const result = reduceAll([nodeAdded({ ...testNode, id: "kafka-transaction", name: "kafka-transaction" }, testPosition)]);
+            const scenarioGraph = getScenarioGraph(result);
 
-            expect(NodeUtils.getNodeById("kafka-transaction 1", getScenarioGraph(result))).toMatchSnapshot();
-            expect(getLayout(result).find((n) => n.id === "kafka-transaction 1").position).toEqual(testPosition);
+            const addedNode = NodeUtils.getNodeByName("kafka-transaction 1", scenarioGraph);
+            expect(addedNode).toMatchSnapshot();
+            expect(getLayout(result).find((n) => n.id === addedNode.id).position).toEqual(testPosition);
         });
 
-        it("should add multiple nodes with unique id", () => {
+        it("should add multiple nodes with unique names", () => {
             const action = nodesWithEdgesAdded(
                 [
                     {
-                        node: { ...testNode, id: "kafka-transaction" },
+                        node: { ...testNode, id: "kafka-transaction", name: "kafka-transaction" },
                         position: { x: 10, y: 20 },
                     },
                     {
-                        node: { ...testNode, id: "filter" },
+                        node: { ...testNode, id: "filter", name: "filter" },
                         position: { x: 10, y: 20 },
                     },
                 ],
                 [],
             );
             const result = reduceAll([action, action]);
+            const scenarioGraph = getScenarioGraph(result);
 
-            expect(NodeUtils.getNodeById("kafka-transaction (copy 1)", getScenarioGraph(result))).toMatchSnapshot();
-            expect(NodeUtils.getNodeById("kafka-transaction (copy 2)", getScenarioGraph(result))).toMatchSnapshot();
-            expect(NodeUtils.getNodeById("filter (copy 2)", getScenarioGraph(result))).toMatchSnapshot();
+            expect(NodeUtils.getNodeByName("kafka-transaction (copy 1)", scenarioGraph)).toMatchSnapshot();
+            expect(NodeUtils.getNodeByName("kafka-transaction (copy 2)", scenarioGraph)).toMatchSnapshot();
+            expect(NodeUtils.getNodeByName("filter (copy 2)", scenarioGraph)).toMatchSnapshot();
         });
 
         it("should add nodes with edges", () => {
@@ -184,11 +203,11 @@ describe("Store", () => {
                 nodesWithEdgesAdded(
                     [
                         {
-                            node: { ...testNode, id: "newNode" },
+                            node: { ...testNode, id: "newNode", name: "newNode" },
                             position: testPosition,
                         },
                         {
-                            node: { ...testNode, id: "kafka-transaction" },
+                            node: { ...testNode, id: "kafka-transaction", name: "kafka-transaction" },
                             position: testPosition,
                         },
                     ],
@@ -196,11 +215,16 @@ describe("Store", () => {
                 ),
             ]);
 
-            expect(NodeUtils.getNodeById("newNode", getScenarioGraph(result))).toMatchSnapshot();
-            expect(NodeUtils.getNodeById("kafka-transaction (copy 1)", getScenarioGraph(result))).toMatchSnapshot();
-            expect(NodeUtils.getEdgeById("newNode-kafka-transaction (copy 1)", getScenarioGraph(result))).toEqual({
-                from: "newNode",
-                to: "kafka-transaction (copy 1)",
+            const scenarioGraph = getScenarioGraph(result);
+            const newNodeNode = NodeUtils.getNodeByName("newNode", scenarioGraph);
+            const kafkaCopyNode = NodeUtils.getNodeByName("kafka-transaction (copy 1)", scenarioGraph);
+
+            expect(newNodeNode).toMatchSnapshot();
+            expect(kafkaCopyNode).toMatchSnapshot();
+
+            expect(NodeUtils.getEdgeById(`${newNodeNode.id}-${kafkaCopyNode.id}`, scenarioGraph)).toEqual({
+                from: newNodeNode.id,
+                to: kafkaCopyNode.id,
             });
         });
     });

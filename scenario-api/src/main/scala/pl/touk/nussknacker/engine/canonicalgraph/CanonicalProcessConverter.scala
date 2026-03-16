@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.canonicalgraph
 
-import pl.touk.nussknacker.engine.api.graph
+import pl.touk.nussknacker.engine.api.{graph, NodeId}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
@@ -72,12 +72,12 @@ object CanonicalProcessConverter {
     }
 
   private def createNextEdge(
-      id: String,
+      id: NodeId,
       tail: List[CanonicalNode],
       edgeType: Option[EdgeType] = None
   ): List[Edge] = {
     tail.headOption.map {
-      case FlatNode(BranchEndData(BranchEndDefinition(_, joinId))) => graph.Edge(id, joinId, edgeType)
+      case FlatNode(BranchEndData(BranchEndDefinition(_, joinId))) => graph.Edge(id, NodeId(joinId), edgeType)
       case n                                                       => graph.Edge(id, n.id, edgeType)
     }.toList
   }
@@ -88,8 +88,15 @@ object CanonicalProcessConverter {
   }
 
   def fromScenarioGraph(graph: ScenarioGraph, name: ProcessName): CanonicalProcess = {
-    val nodesMap          = graph.nodes.groupBy(_.id).mapValuesNow(_.head)
-    val edgesFromMapStart = graph.edges.groupBy(_.from)
+    val nodesMap = graph.nodes.groupBy(_.id).mapValuesNow(_.head)
+    val nodeIdAliasesByName = graph.nodes.foldLeft(Map.empty[NodeId, NodeId]) { case (acc, node) =>
+      val alias = NodeId(node.name.value)
+      if (nodesMap.contains(alias)) acc else acc + (alias -> node.id)
+    }
+    def normalizeNodeId(nodeId: NodeId): NodeId = nodeIdAliasesByName.getOrElse(nodeId, nodeId)
+    val normalizedEdges =
+      graph.edges.map(edge => edge.copy(from = normalizeNodeId(edge.from), to = normalizeNodeId(edge.to)))
+    val edgesFromMapStart = normalizedEdges.groupBy(_.from)
     val rootsUnflattened =
       findRootNodes(graph).map(headNode => unFlattenNode(nodesMap, None)(headNode, edgesFromMapStart))
     val nodes              = rootsUnflattened.headOption.getOrElse(List.empty)
@@ -103,14 +110,20 @@ object CanonicalProcessConverter {
     process.nodes.filter(n => n.isInstanceOf[StartingNodeData])
 
   private def unFlattenNode(
-      nodesMap: Map[String, NodeData],
+      nodesMap: Map[NodeId, NodeData],
       stopAtJoin: Option[Edge]
-  )(n: NodeData, edgesFromMap: Map[String, List[Edge]]): List[canonicalnode.CanonicalNode] = {
-    def unflattenEdgeEnd(id: String, e: Edge): List[canonicalnode.CanonicalNode] = {
-      unFlattenNode(nodesMap, Some(e))(nodesMap(e.to), edgesFromMap.updated(id, edgesFromMap(id).filterNot(_ == e)))
+  )(n: NodeData, edgesFromMap: Map[NodeId, List[Edge]]): List[canonicalnode.CanonicalNode] = {
+    def nodeOrThrow(nodeId: NodeId): NodeData =
+      nodesMap.getOrElse(nodeId, throw new IllegalArgumentException(s"Cannot find node for id: ${nodeId.value}"))
+
+    def unflattenEdgeEnd(id: NodeId, e: Edge): List[canonicalnode.CanonicalNode] = {
+      unFlattenNode(nodesMap, Some(e))(
+        nodeOrThrow(e.to),
+        edgesFromMap.updated(id, edgesFromMap.getOrElse(id, List()).filterNot(_ == e))
+      )
     }
 
-    def getEdges(id: String): List[Edge] = edgesFromMap.getOrElse(id, List())
+    def getEdges(id: NodeId): List[Edge] = edgesFromMap.getOrElse(id, List())
 
     val handleNestedNodes: PartialFunction[(NodeData, Option[Edge]), List[canonicalnode.CanonicalNode]] = {
       case (data: Filter, _) =>
@@ -150,7 +163,7 @@ object CanonicalProcessConverter {
         // We are using "from" node's id as a branchId because for now branchExpressions are inside Join nodes and it is convenient
         // way to connect both two things.
         val joinId = edgeConnectedToJoin.from
-        canonicalnode.FlatNode(BranchEndData(BranchEndDefinition(joinId, data.id))) :: Nil
+        canonicalnode.FlatNode(BranchEndData(BranchEndDefinition(joinId.value, data.id.value))) :: Nil
 
     }
     (handleNestedNodes orElse (handleDirectNodes andThen { n =>

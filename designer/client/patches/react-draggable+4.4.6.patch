@@ -1,0 +1,30 @@
+diff --git a/node_modules/react-draggable/build/cjs/Draggable.js b/node_modules/react-draggable/build/cjs/Draggable.js
+index c29d967..b471117 100644
+--- a/node_modules/react-draggable/build/cjs/Draggable.js
++++ b/node_modules/react-draggable/build/cjs/Draggable.js
+@@ -206,8 +206,8 @@ class Draggable extends React.Component /*:: <DraggableProps, DraggableState>*/{
+   // React Strict Mode compatibility: if `nodeRef` is passed, we will use it instead of trying to find
+   // the underlying DOM node ourselves. See the README for more information.
+   findDOMNode() /*: ?HTMLElement*/{
+-    var _this$props$nodeRef$c, _this$props;
+-    return (_this$props$nodeRef$c = (_this$props = this.props) === null || _this$props === void 0 || (_this$props = _this$props.nodeRef) === null || _this$props === void 0 ? void 0 : _this$props.current) !== null && _this$props$nodeRef$c !== void 0 ? _this$props$nodeRef$c : _reactDom.default.findDOMNode(this);
++    var _this$props, _this$props2;
++    return (_this$props = this.props) !== null && _this$props !== void 0 && _this$props.nodeRef ? (_this$props2 = this.props) === null || _this$props2 === void 0 || (_this$props2 = _this$props2.nodeRef) === null || _this$props2 === void 0 ? void 0 : _this$props2.current : _reactDom.default.findDOMNode(this);
+   }
+   render() /*: ReactElement<any>*/{
+     const {
+diff --git a/node_modules/react-draggable/build/web/react-draggable.min.js b/node_modules/react-draggable/build/web/react-draggable.min.js
+index a34fbc5..3aa1ce9 100644
+--- a/node_modules/react-draggable/build/web/react-draggable.min.js
++++ b/node_modules/react-draggable/build/web/react-draggable.min.js
+@@ -1096,8 +1096,8 @@ class Draggable extends external_commonjs_react_commonjs2_react_amd_react_root_R
+   // React Strict Mode compatibility: if `nodeRef` is passed, we will use it instead of trying to find
+   // the underlying DOM node ourselves. See the README for more information.
+   findDOMNode() /*: ?HTMLElement*/{
+-    var _this$props$nodeRef$c, _this$props;
+-    return (_this$props$nodeRef$c = (_this$props = this.props) === null || _this$props === void 0 || (_this$props = _this$props.nodeRef) === null || _this$props === void 0 ? void 0 : _this$props.current) !== null && _this$props$nodeRef$c !== void 0 ? _this$props$nodeRef$c : external_commonjs_react_dom_commonjs2_react_dom_amd_react_dom_root_ReactDOM_default().findDOMNode(this);
++    var _this$props, _this$props2;
++    return (_this$props = this.props) !== null && _this$props !== void 0 && _this$props.nodeRef ? (_this$props2 = this.props) === null || _this$props2 === void 0 || (_this$props2 = _this$props2.nodeRef) === null || _this$props2 === void 0 ? void 0 : _this$props2.current : external_commonjs_react_dom_commonjs2_react_dom_amd_react_dom_root_ReactDOM_default().findDOMNode(this);
+   }
+   render() /*: ReactElement<any>*/{
+     const {

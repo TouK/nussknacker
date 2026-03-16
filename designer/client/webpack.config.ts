@@ -9,6 +9,7 @@ import HtmlWebpackPlugin from "html-webpack-plugin";
 import MomentLocalesPlugin from "moment-locales-webpack-plugin";
 import path from "path";
 import postcss_move_props_to_bg_image_query from "postcss-move-props-to-bg-image-query";
+import TerserPlugin from "terser-webpack-plugin";
 import type { Configuration } from "webpack";
 import webpack from "webpack";
 
@@ -47,6 +48,20 @@ const config: Configuration = {
         maxEntrypointSize: 3000000,
         maxAssetSize: 3000000,
     },
+    optimization: isProd
+        ? {
+              minimizer: [
+                  new TerserPlugin({
+                      terserOptions: {
+                          compress: {
+                              passes: 2,
+                              pure_funcs: ["console.debug"],
+                          },
+                      },
+                  }),
+              ],
+          }
+        : undefined,
     resolve: {
         extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
         fallback: {

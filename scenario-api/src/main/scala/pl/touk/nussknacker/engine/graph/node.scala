@@ -5,7 +5,7 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder, deriveUnwrappedCodec}
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
+import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData, NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{
@@ -34,7 +34,7 @@ object node {
   sealed trait NodeWithData extends Node {
     def data: NodeData
 
-    def id: String = data.id
+    def id: NodeId = data.id
   }
 
   sealed trait OneOutputNode extends NodeWithData {
@@ -74,7 +74,8 @@ object node {
   @JsonCodec case class UserDefinedAdditionalNodeFields(description: Option[String], layoutData: Option[LayoutData])
 
   sealed trait NodeData {
-    def id: String
+    def id: NodeId
+    def name: NodeName
 
     def additionalFields: Option[UserDefinedAdditionalNodeFields]
 
@@ -98,7 +99,7 @@ object node {
 
   object NodeData {
     implicit val nodeDataEncoder: Encoder[NodeData] = deriveConfiguredEncoder
-    implicit val nodeDataDecoder: Decoder[NodeData] = deriveConfiguredDecoder
+    implicit val nodeDataDecoder: Decoder[NodeData] = withNameFromIdFallback(deriveConfiguredDecoder)
   }
 
   // this represents node that originates from real node on UI, in contrast with Branch
@@ -158,8 +159,12 @@ object node {
 
   sealed trait DeadEndingData extends NodeData
 
-  case class Source(id: String, ref: SourceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
-      extends SourceNodeData
+  case class Source(
+      id: NodeId,
+      name: NodeName,
+      ref: SourceRef,
+      additionalFields: Option[UserDefinedAdditionalNodeFields] = None
+  ) extends SourceNodeData
       with WithComponent
       with RealNodeData
       with WithParameters {
@@ -170,7 +175,8 @@ object node {
 
   // TODO JOIN: move branchParameters to BranchEnd
   case class Join(
-      id: String,
+      id: NodeId,
+      name: NodeName,
       outputVar: Option[String],
       // TODO: rename to componentId
       nodeType: String,
@@ -183,7 +189,8 @@ object node {
   }
 
   case class Filter(
-      id: String,
+      id: NodeId,
+      name: NodeName,
       expression: Expression,
       isDisabled: Option[Boolean] = None,
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
@@ -193,16 +200,11 @@ object node {
       with RealNodeData
       with DeadEndingData
 
-  object Switch {
-
-    def apply(id: String): Switch = Switch(id, None, None)
-
-  }
-
   // expression and expressionVal are deprecated, will be removed in the future
   // TODO: rename to Choice
   case class Switch(
-      id: String,
+      id: NodeId,
+      name: NodeName,
       expression: Option[Expression],
       exprVal: Option[String],
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
@@ -213,7 +215,8 @@ object node {
 
   // TODO: rename to RecordVariable
   case class VariableBuilder(
-      id: String,
+      id: NodeId,
+      name: NodeName,
       varName: String,
       fields: List[Field],
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
@@ -222,15 +225,19 @@ object node {
       with CompilableNodeData
 
   case class Variable(
-      id: String,
+      id: NodeId,
+      name: NodeName,
       varName: String,
       value: Expression,
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends OneOutputSubsequentNodeData
       with CompilableNodeData
 
-  case class Split(id: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
-      extends NodeData
+  case class Split(
+      id: NodeId,
+      name: NodeName,
+      additionalFields: Option[UserDefinedAdditionalNodeFields] = None
+  ) extends NodeData
       with RealNodeData
 
   sealed trait ServiceNodeData
@@ -249,7 +256,8 @@ object node {
   }
 
   case class Enricher(
-      id: String,
+      id: NodeId,
+      name: NodeName,
       override val service: ServiceRef,
       output: String,
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None,
@@ -261,7 +269,8 @@ object node {
   }
 
   case class CustomNode(
-      id: String,
+      id: NodeId,
+      name: NodeName,
       outputVar: Option[String],
       // TODO: rename to componentId
       nodeType: String,
@@ -274,7 +283,8 @@ object node {
   }
 
   case class Processor(
-      id: String,
+      id: NodeId,
+      name: NodeName,
       service: ServiceRef,
       isDisabled: Option[Boolean] = None,
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
@@ -290,7 +300,8 @@ object node {
 
     override val additionalFields: Option[UserDefinedAdditionalNodeFields] = None
 
-    override val id: String = definition.artificialNodeId
+    override val id: NodeId     = NodeId(definition.artificialNodeId)
+    override val name: NodeName = NodeName(definition.artificialNodeId)
   }
 
   // id - id of particular branch ending in joinId, currently on UI it's id of *previous* node (i.e. node where branch edge originates)
@@ -307,7 +318,8 @@ object node {
   }
 
   case class Sink(
-      id: String,
+      id: NodeId,
+      name: NodeName,
       ref: SinkRef,
       // this field is left only to make it possible to write NodeMigration (see SinkExpressionMigration in generic)
       @JsonKey("endResult") legacyEndResultExpression: Option[Expression] = None,
@@ -326,7 +338,8 @@ object node {
 
   // TODO: A better way of passing information regarding fragment parameter definition
   case class FragmentInput(
-      id: String,
+      id: NodeId,
+      name: NodeName,
       ref: FragmentRef,
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None,
       isDisabled: Option[Boolean] = None,
@@ -350,8 +363,9 @@ object node {
 
   // this is used after resolving fragment, used for detecting when fragment ends and context should change
   case class FragmentUsageOutput(
-      id: String,
-      fragmentUsageStartNodeId: String,
+      id: NodeId,
+      name: NodeName,
+      fragmentUsageStartNodeId: NodeId,
       outputName: String,
       outputVar: Option[FragmentOutputVarDefinition],
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
@@ -361,7 +375,8 @@ object node {
 
   // this is used only in fragment definition
   case class FragmentInputDefinition(
-      id: String,
+      id: NodeId,
+      name: NodeName,
       parameters: List[FragmentParameter],
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends SourceNodeData
@@ -369,7 +384,8 @@ object node {
 
   // this is used only in fragment definition
   case class FragmentOutputDefinition(
-      id: String,
+      id: NodeId,
+      name: NodeName,
       outputName: String,
       fields: List[Field] = List.empty,
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
@@ -422,7 +438,8 @@ object node {
 
   }
 
-  val IdFieldName = "$id"
+  val IdFieldName   = "$id"
+  val NameFieldName = "$name"
   // TODO: move these FragmentInputDefinition related vals/def under FragmentInputDefinition for better organization
   val ParameterFieldNamePrefix      = "$param"
   val ParameterNameFieldName        = "$name"

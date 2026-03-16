@@ -98,7 +98,7 @@ object ResultsWithCountsDto {
   import sttp.tapir.json.circe._
 
   implicit def nodeIdSchema: Schema[NodeId]                             = Schema.derived
-  implicit def nodeIdKeyMapSchema[V: Schema]: Schema[Map[NodeId, V]]    = Schema.schemaForMap[NodeId, V](_.id)
+  implicit def nodeIdKeyMapSchema[V: Schema]: Schema[Map[NodeId, V]]    = Schema.schemaForMap[NodeId, V](_.value)
   implicit def contextIdPathPartDtoSchema: Schema[ContextIdPathPartDto] = Schema.derived
   implicit def contextIdSchema: Schema[ContextId] =
     Schema.derived[ContextIdDto].map(_ => None)(ContextIdDto.from)

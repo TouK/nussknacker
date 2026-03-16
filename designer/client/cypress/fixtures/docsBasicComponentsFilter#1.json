@@ -50,7 +50,8 @@
                     "y": 0
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "source"
         },
         {
             "nextFalse": [
@@ -69,7 +70,8 @@
                             "y": 360
                         }
                     },
-                    "type": "Sink"
+                    "type": "Sink",
+                    "name": "false sink"
                 }
             ],
             "id": "conditional filter",
@@ -85,7 +87,8 @@
                     "y": 180
                 }
             },
-            "type": "Filter"
+            "type": "Filter",
+            "name": "conditional filter"
         },
         {
             "id": "true sink",
@@ -102,7 +105,8 @@
                     "y": 360
                 }
             },
-            "type": "Sink"
+            "type": "Sink",
+            "name": "true sink"
         }
     ],
     "additionalBranches": []

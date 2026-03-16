@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import cats.implicits.toTraverseOps
 import cats.instances.list._
-import io.circe.{parser, Decoder}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.LoneElement._
 import org.scalatest.exceptions.TestFailedException
@@ -1632,73 +1631,12 @@ class DeploymentServiceSpec
   private def graphForExampleScenarioWithAdditionalVariableAdded(
       variableId: String = "newVariableAddedFromGraph"
   ): ScenarioGraph = {
-    val scenarioGraphJson =
-      s"""
-        |{
-        |  "properties" : {
-        |    "additionalFields" : {
-        |      "description" : null,
-        |      "properties" : {
-        |        "parallelism" : "",
-        |        "spillStateToDisk" : "true",
-        |        "useAsyncInterpretation" : "",
-        |        "checkpointIntervalInSeconds" : ""
-        |      },
-        |      "metaDataType" : "StreamMetaData",
-        |      "showDescription" : false
-        |    }
-        |  },
-        |  "nodes" : [
-        |    {
-        |      "id" : "source",
-        |      "ref" : {
-        |        "typ" : "barSource",
-        |        "parameters" : [
-        |        ]
-        |      },
-        |      "additionalFields" : null,
-        |      "type" : "Source"
-        |    },
-        |    {
-        |      "id" : "$variableId",
-        |      "varName" : "newVar",
-        |      "value" : {
-        |        "language" : "spelTemplate",
-        |        "expression" : "updated process with new variable"
-        |      },
-        |      "additionalFields" : null,
-        |      "type" : "Variable"
-        |    },
-        |    {
-        |      "id" : "sink",
-        |      "ref" : {
-        |        "typ" : "barSink",
-        |        "parameters" : [
-        |        ]
-        |      },
-        |      "endResult" : null,
-        |      "isDisabled" : null,
-        |      "additionalFields" : null,
-        |      "type" : "Sink"
-        |    }
-        |  ],
-        |  "edges" : [
-        |    {
-        |      "from" : "source",
-        |      "to" : "$variableId",
-        |      "edgeType" : null
-        |    },
-        |    {
-        |      "from" : "$variableId",
-        |      "to" : "sink",
-        |      "edgeType" : null
-        |    }
-        |  ],
-        |  "stickyNotes" : [
-        |  ]
-        |}
-        |""".stripMargin
-    parser.parse(scenarioGraphJson).flatMap(Decoder[ScenarioGraph].decodeJson).rightValue
+    ScenarioBuilder
+      .streaming("scenario-for-deployment")
+      .source("source", ProcessTestData.existingSourceFactory)
+      .buildSimpleVariable(variableId, "newVar", "updated process with new variable".spelTemplate)
+      .emptySink("sink", ProcessTestData.existingSinkFactory)
+      .toScenarioGraph
   }
 
   private def mapActivitiesToTypeWithVersionAndUser(activities: Seq[ScenarioActivity]): Seq[(String, Long, String)] =

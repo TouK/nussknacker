@@ -50,7 +50,8 @@
                     "y": 0
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "event-generator"
         },
         {
             "id": "node label goes here",
@@ -92,7 +93,8 @@
                     "y": 180
                 }
             },
-            "type": "VariableBuilder"
+            "type": "VariableBuilder",
+            "name": "node label goes here"
         },
         {
             "id": "variable",
@@ -108,7 +110,8 @@
                     "y": 360
                 }
             },
-            "type": "Variable"
+            "type": "Variable",
+            "name": "variable"
         },
         {
             "id": "dead-end",
@@ -125,7 +128,8 @@
                     "y": 540
                 }
             },
-            "type": "Sink"
+            "type": "Sink",
+            "name": "dead-end"
         }
     ],
     "additionalBranches": []

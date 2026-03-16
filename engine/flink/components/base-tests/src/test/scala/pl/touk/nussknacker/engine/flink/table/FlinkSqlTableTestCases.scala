@@ -1,11 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table
 
-import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition.FlinkSqlDdlStatement.{
-  CatalogName,
-  CatalogType,
-  CreateCatalog,
-  SqlOption
-}
+import pl.touk.nussknacker.engine.flink.table.io.definition.FlinkSqlDdlStatement._
 
 object FlinkSqlTableTestCases {
 

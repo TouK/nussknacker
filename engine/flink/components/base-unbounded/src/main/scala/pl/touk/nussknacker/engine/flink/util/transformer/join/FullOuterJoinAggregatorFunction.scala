@@ -18,6 +18,7 @@ class FullOuterJoinAggregatorFunction[MapT[_, _]](
     protected val aggregator: Aggregator,
     protected val timeWindowLengthMillis: Long,
     override val nodeId: NodeId,
+    override val nodeName: NodeName,
     protected val aggregateElementType: TypingResult,
     override protected val aggregateTypeInformation: TypeInformation[AnyRef],
     val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,

@@ -20,8 +20,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
-import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions.LogicalTypeExtension
-import pl.touk.nussknacker.engine.flink.table.utils.ToTableTypeEncoder
+import pl.touk.nussknacker.engine.flink.table.typing.ToTableTypeEncoder
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import scala.jdk.CollectionConverters._
@@ -31,6 +30,8 @@ object FlinkSqlQueryComponentFactory
     extends CustomStreamTransformer
     with SingleInputDynamicComponent
     with AllProcessingModesComponent {
+
+  import pl.touk.nussknacker.engine.flink.table.typing.DataTypesExtensions.LogicalTypeExtension
 
   final case class SqlQuery(sql: String, outputType: TypingResult)
   final case class TransformationState(query: SqlQuery, input: QueryContextSchema)
@@ -49,10 +50,10 @@ object FlinkSqlQueryComponentFactory
       modify = _.copy(
         labelOpt = Some("Query"),
         editors = List(SqlParameterEditor),
-        defaultValue = Some(Expression.spelTemplate("SELECT r.* FROM data_record r")),
+        defaultValue = Some(Expression.spelTemplate("SELECT r.* FROM record r")),
         hintText = Some(
-          "Flink SQL query starting with SELECT or WITH. Upstream variables are available as columns under 'data-record' table. " +
-            "Data record time is available under 'data-record-time' column in 'data-record' table."
+          "Flink SQL query starting with SELECT or WITH. Upstream variables are available as columns under 'record' table. " +
+            "Record's timestamp is available under 'record_time' column in 'record' table."
         )
       )
     )
@@ -101,7 +102,7 @@ object FlinkSqlQueryComponentFactory
       implicit nodeId: NodeId
   ): ValidatedNel[CustomNodeError, Unit] = {
     val reservedVariableValidation =
-      if (context.variables.contains(QueryContextSchema.eventTimeColumn)) {
+      if (context.variables.contains(QueryContextSchema.recordTimeColumn)) {
         buildReservedEventTimeVariableError.invalidNel
       } else {
         ().validNel
@@ -120,7 +121,7 @@ object FlinkSqlQueryComponentFactory
   private def buildReservedEventTimeVariableError(implicit nodeId: NodeId): CustomNodeError =
     CustomNodeError(
       message =
-        s"Variable '${QueryContextSchema.eventTimeColumn}' is reserved by Flink SQL component for event-time handling. " +
+        s"Variable '${QueryContextSchema.recordTimeColumn}' is reserved by Flink SQL component for record's timestamp handling. " +
           s"Please rename or remove this variable",
       paramName = None
     )

@@ -10,7 +10,7 @@ import org.apache.pekko.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unm
 import org.scalatest.{Assertion, BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{NodeId, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName, StreamMetaData}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
@@ -159,10 +159,10 @@ class ValidationResourcesSpec
   it should "return fatal error for bad ids" in {
     val invalidCharacters = newScenarioGraph(
       List(
-        Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
-        node.Sink("f1\"'", SinkRef(ProcessTestData.existingSinkFactory, List()), None)
+        Source(NodeId("s1"), NodeName("s1"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        node.Sink(NodeId("f1\"'"), NodeName("f1\"'"), SinkRef(ProcessTestData.existingSinkFactory, List()), None)
       ),
-      List(Edge("s1", "f1\"'", None))
+      List(Edge(NodeId("s1"), NodeId("f1\"'"), None))
     )
 
     createAndValidateScenario(invalidCharacters, ProcessName("p1")) {
@@ -173,26 +173,37 @@ class ValidationResourcesSpec
 
     val duplicateIds = newScenarioGraph(
       List(
-        Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
-        node.Sink("s1", SinkRef(ProcessTestData.existingSinkFactory, List()), None)
+        Source(
+          NodeId("123e4567-e89b-12d3-a456-426614174000"),
+          NodeName("source-node"),
+          SourceRef(ProcessTestData.existingSourceFactory, List())
+        ),
+        node.Sink(
+          NodeId("123e4567-e89b-12d3-a456-426614174000"),
+          NodeName("sink-node"),
+          SinkRef(ProcessTestData.existingSinkFactory, List()),
+          None
+        )
       ),
-      List(Edge("s1", "s1", None))
+      List(
+        Edge(NodeId("123e4567-e89b-12d3-a456-426614174000"), NodeId("123e4567-e89b-12d3-a456-426614174000"), None)
+      )
     )
 
     createAndValidateScenario(duplicateIds, ProcessName("p2")) {
       status shouldEqual StatusCodes.BadRequest
       val entity = entityAs[String]
-      entity should include("Duplicate node ids: s1")
+      entity should include("Duplicate node ids: 123e4567-e89b-12d3-a456-426614174000 (sink-node, source-node)")
     }
   }
 
   it should "find errors in scenario of bad shape" in {
     val invalidShapeProcess = newScenarioGraph(
       List(
-        Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
-        node.Filter("f1", Expression.spel("false"))
+        Source(NodeId("s1"), NodeName("s1"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+        node.Filter(NodeId("f1"), NodeName("f1"), Expression.spel("false"))
       ),
-      List(Edge("s1", "f1", None))
+      List(Edge(NodeId("s1"), NodeId("f1"), None))
     )
 
     createAndValidateScenario(invalidShapeProcess, ProcessName("p1")) {
@@ -237,12 +248,21 @@ class ValidationResourcesSpec
 
   it should "warn if scenario has disabled filter or processor" in {
     val nodes = List(
-      node.Source("source1", SourceRef(ProcessTestData.existingSourceFactory, List())),
-      node.Filter("filter1", Expression.spel("false"), isDisabled = Some(true)),
-      node.Processor("proc1", ServiceRef(ProcessTestData.existingServiceId, List.empty), isDisabled = Some(true)),
-      node.Sink("sink1", SinkRef(ProcessTestData.existingSinkFactory, List.empty))
+      node.Source(NodeId("source1"), NodeName("source1"), SourceRef(ProcessTestData.existingSourceFactory, List())),
+      node.Filter(NodeId("filter1"), NodeName("filter1"), Expression.spel("false"), isDisabled = Some(true)),
+      node.Processor(
+        NodeId("proc1"),
+        NodeName("proc1"),
+        ServiceRef(ProcessTestData.existingServiceId, List.empty),
+        isDisabled = Some(true)
+      ),
+      node.Sink(NodeId("sink1"), NodeName("sink1"), SinkRef(ProcessTestData.existingSinkFactory, List.empty))
     )
-    val edges = List(Edge("source1", "filter1", None), Edge("filter1", "proc1", None), Edge("proc1", "sink1", None))
+    val edges = List(
+      Edge(NodeId("source1"), NodeId("filter1"), None),
+      Edge(NodeId("filter1"), NodeId("proc1"), None),
+      Edge(NodeId("proc1"), NodeId("sink1"), None)
+    )
     val processWithDisabledFilterAndProcessor = newScenarioGraph(nodes, edges)
 
     createAndValidateScenario(processWithDisabledFilterAndProcessor, ProcessName("p1")) {

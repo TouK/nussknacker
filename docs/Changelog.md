@@ -16,6 +16,10 @@ description: Stay informed with detailed changelogs covering new features, impro
 ### 1.19.0 (Not released yet)
 
 * [#8988](https://github.com/TouK/nussknacker/pull/8988) Fixed fragment test data validation for required or restricted input parameters
+* [#8997](https://github.com/TouK/nussknacker/pull/8997) Introduce Node IDs as a stable UUIDs
+  * Each scenario node now has two distinct fields: a stable `id` (UUID, never changes) and a user-editable `name` (human-readable label).
+  * Existing scenarios are migrated, the old human-readable ID becomes the node `name`, and a new UUID is generated as `id`.
+  * Introduce `nodeNames` field to `ValidationResult` response to easily translate uuid to user-friendly names. Fragment inner nodes are covered using the `"fragmentName - innerNodeName"` format.
 * [#8923](https://github.com/TouK/nussknacker/pull/8923) Add new functions to Collection/Geo/Numeric helpers
 * [#8897](https://github.com/TouK/nussknacker/pull/8897) Fix: Passing TraceId after collect in RequestResponse
 * [#8849](https://github.com/TouK/nussknacker/pull/8849) Vulnerability: Spring upgrade to 6.2.15
@@ -324,6 +328,10 @@ description: Stay informed with detailed changelogs covering new features, impro
   * `/processManagement/testCase/{scenarioName}` endpoint to `/scenarioTesting/{scenarioName)/performTestCase`
   * `/processManagement/test/{scenarioName}` to multipart variant of `/scenarioTesting/{scenarioName}/performTest`
 * [#8943](https://github.com/TouK/nussknacker/pull/8943) Replaced `spring-jcl` library with contemporary version of `commons-logging` 
+* [#9037](https://github.com/TouK/nussknacker/pull/9037) Improvments to Table Source and Table Sink components:
+  * Optimized table discovery through configurable caching (especially important for catalogs for systems with slow connections)
+  * More precise validation and error messages during scenario authoring
+  * Fixed bug for non-deterministic validation multiple validations were performent at the same time
 
 ## 1.18
 

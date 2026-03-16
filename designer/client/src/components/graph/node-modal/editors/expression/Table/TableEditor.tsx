@@ -2,6 +2,7 @@ import { css } from "@emotion/css";
 import type {
     DataEditorProps,
     DataEditorRef,
+    GetRowThemeCallback,
     GridCell,
     GridColumn,
     GridSelection,
@@ -11,7 +12,6 @@ import type {
     Rectangle,
 } from "@glideapps/glide-data-grid";
 import DataEditor, { CompactSelection, GridCellKind } from "@glideapps/glide-data-grid";
-import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
 import { Box } from "@mui/material";
 import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import i18next from "i18next";

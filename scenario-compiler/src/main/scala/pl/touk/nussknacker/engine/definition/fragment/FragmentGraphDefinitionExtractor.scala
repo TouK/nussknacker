@@ -34,8 +34,8 @@ object FragmentGraphDefinitionExtractor {
   }
 
   private def collectOutputs(fragment: CanonicalProcess): List[Output] = {
-    fragment.collectAllNodes.collect { case FragmentOutputDefinition(_, name, fields, _) =>
-      Output(name, fields.nonEmpty)
+    fragment.collectAllNodes.collect { case FragmentOutputDefinition(_, _, outputName, fields, _) =>
+      Output(outputName, fields.nonEmpty)
     }
   }
 

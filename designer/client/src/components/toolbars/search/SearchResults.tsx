@@ -12,6 +12,7 @@ import { FoundNode } from "./FoundNode";
 import { resolveSearchQuery, useFilteredNodes } from "./utils";
 
 export type SearchQuery = {
+    id?: string[];
     name?: string[];
     description?: string[];
     type?: string[];

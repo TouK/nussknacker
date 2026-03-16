@@ -47,7 +47,9 @@ trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
         }
         .leftMap(ex =>
           NuExceptionInfo(
-            Some(NodeComponentInfo(componentContext.nodeId, ComponentType.Source, "unknown")),
+            Some(
+              NodeComponentInfo(componentContext.nodeId, componentContext.nodeName, ComponentType.Source, "unknown")
+            ),
             ex,
             context
           )

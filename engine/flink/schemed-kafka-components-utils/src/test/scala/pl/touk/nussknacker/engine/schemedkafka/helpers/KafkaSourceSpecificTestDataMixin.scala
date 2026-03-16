@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.Assertion
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
@@ -90,7 +91,7 @@ trait KafkaSourceSpecificTestDataMixin {
 
     nodeCompiler
       .compileNode(
-        SourceNode("mock-id", SourceRef("kafka", nodeParameters))
+        SourceNode(NodeId("mock-id"), NodeName("mock-id"), SourceRef("kafka", nodeParameters))
       )
       .compiledObject
       .map(_.asInstanceOf[Source with TestDataGenerator with SourceTestSupport[AnyRef]])

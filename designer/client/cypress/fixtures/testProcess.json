@@ -38,7 +38,8 @@
                     "y": 0
                 }
             },
-            "type": "Source"
+            "type": "Source",
+            "name": "boundedSource"
         },
         {
             "id": "enricher",
@@ -69,7 +70,8 @@
                     "y": 180
                 }
             },
-            "type": "Enricher"
+            "type": "Enricher",
+            "name": "enricher"
         },
         {
             "id": "dynamicService",
@@ -85,7 +87,8 @@
                     "y": 360
                 }
             },
-            "type": "Processor"
+            "type": "Processor",
+            "name": "dynamicService"
         },
         {
             "id": "sendSms",
@@ -109,7 +112,8 @@
                     "y": 540
                 }
             },
-            "type": "Sink"
+            "type": "Sink",
+            "name": "sendSms"
         }
     ],
     "additionalBranches": []

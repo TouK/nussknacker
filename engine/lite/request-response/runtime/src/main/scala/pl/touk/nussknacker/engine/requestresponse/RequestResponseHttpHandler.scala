@@ -5,7 +5,7 @@ import cats.data.{EitherT, NonEmptyList}
 import cats.implicits.toFunctorOps
 import io.circe.Json
 import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest}
-import pl.touk.nussknacker.engine.api.{Context, NodeId}
+import pl.touk.nussknacker.engine.api.{Context, NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
@@ -61,7 +61,13 @@ class RequestResponseHttpHandler[Effect[_]: Monad](
       Try(value).toEither.left.map(ex =>
         NonEmptyList.one(
           NuExceptionInfo(
-            Some(NodeComponentInfo(NodeId(requestResponseInterpreter.sourceId.value), None)),
+            Some(
+              NodeComponentInfo(
+                NodeId(requestResponseInterpreter.sourceId.value),
+                requestResponseInterpreter.sourceName,
+                None
+              )
+            ),
             ex,
             Context.dummy,
           )

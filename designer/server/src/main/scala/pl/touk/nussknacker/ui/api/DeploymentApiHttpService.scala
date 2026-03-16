@@ -53,8 +53,8 @@ class DeploymentApiHttpService(
                   case DeploymentService.DeploymentOfArchivedScenarioError =>
                     DeploymentOfArchivedScenarioError
                   case DeploymentService.NoPermissionError => NoPermissionError
-                  case DeploymentService.ScenarioGraphValidationError(errors) =>
-                    ScenarioGraphValidationError(errors)
+                  case DeploymentService.ScenarioGraphValidationError(errors, nodeNamesById) =>
+                    ScenarioGraphValidationError(errors, nodeNamesById)
                   case DeploymentService.DeployValidationError(message) =>
                     DeployValidationError(message)
                   case DeploymentService.MaxActiveScenariosCountExceededError(maxCount) =>

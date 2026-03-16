@@ -46,11 +46,23 @@ object PrettyValidationErrors {
           description = s"Failed to load $refClazzName",
           paramName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
         )
-      case DuplicatedNodeIds(ids) =>
+      case DuplicatedNodeIds(nodesById) =>
+        val duplicatedIdsWithNames = nodesById.toList
+          .sortBy { case (id, _) => id.value }
+          .map { case (id, names) =>
+            val sortedNames = names.map(_.value).toList.sorted
+            s"${id.value} (${sortedNames.mkString(", ")})"
+          }
         node(
           message = "Two nodes cannot have same id",
-          description = s"Duplicate node ids: ${ids.mkString(", ")}",
+          description = s"Duplicate node ids: ${duplicatedIdsWithNames.mkString(", ")}",
           errorType = NodeValidationErrorType.RenderNotAllowed
+        )
+      case DuplicatedNodeNames(names, _) =>
+        node(
+          message = "Two nodes cannot have same name",
+          description = s"Duplicate node names: ${names.map(_.value).toList.sorted.mkString(", ")}",
+          errorType = NodeValidationErrorType.SaveNotAllowed
         )
       case EmptyProcess       => node("Empty scenario", "Scenario is empty, please add some nodes")
       case InvalidRootNode(_) => node("Invalid root node", "Scenario can start only from source node")
@@ -68,29 +80,30 @@ object PrettyValidationErrors {
           paramName = Some(ParameterName(CanonicalProcess.NameFieldName)),
         )
       case SpecificDataValidationError(field, message) => node(message, message, paramName = Some(field))
-      case NonUniqueEdgeType(etype, nodeId) =>
+      case NonUniqueEdgeType(etype, _, nodeName) =>
         node(
           message = "Edges are not unique",
-          description = s"Node $nodeId has duplicate outgoing edges of type: $etype, it cannot be saved properly",
+          description = s"Node $nodeName has duplicate outgoing edges of type: $etype, it cannot be saved properly",
           errorType = NodeValidationErrorType.SaveNotAllowed
         )
-      case NonUniqueEdge(nodeId, target) =>
+      case NonUniqueEdge(_, nodeName, target) =>
         node(
           message = "Edges are not unique",
-          description = s"Node $nodeId has duplicate outgoing edges to: $target, it cannot be saved properly",
+          description = s"Node $nodeName has duplicate outgoing edges to: $target, it cannot be saved properly",
           errorType = NodeValidationErrorType.SaveNotAllowed
         )
-      case LooseNode(nodeIds) =>
-        val (message, description) = nodeIds.toList match {
-          case nodeId :: Nil =>
+      case LooseNode(nodes) =>
+        val nodeNames = nodes.map(_._2)
+        val (message, description) = nodeNames.toList match {
+          case nodeName :: Nil =>
             (
               "Loose node",
-              s"Node $nodeId is not connected to source, it cannot be saved properly"
+              s"Node $nodeName is not connected to source, it cannot be saved properly"
             )
           case _ =>
             (
               "Loose nodes",
-              s"Nodes ${nodeIds.mkString(", ")} are not connected to source, it cannot be saved properly"
+              s"Nodes ${nodeNames.mkString(", ")} are not connected to source, it cannot be saved properly"
             )
         }
         node(
@@ -115,9 +128,9 @@ object PrettyValidationErrors {
           description,
           errorType = NodeValidationErrorType.SaveNotAllowed
         )
-      case DisabledNode(nodeId) =>
+      case DisabledNode(_, nodeName) =>
         node(
-          message = s"Node $nodeId is disabled",
+          message = s"Node $nodeName is disabled",
           description = "Deploying scenario with disabled node can have unexpected consequences",
           errorType = NodeValidationErrorType.SaveAllowed
         )
@@ -164,18 +177,24 @@ object PrettyValidationErrors {
         )
       case NotSupportedExpressionLanguage(languageId, _) =>
         node(s"Language $languageId is not supported", "Currently only SPEL expressions are supported")
-      case MissingPart(id)             => node("MissingPart", s"Node $id has missing part")
-      case UnsupportedPart(id)         => node("UnsupportedPart", s"Type of node $id is unsupported right now")
-      case UnknownFragment(id, nodeId) => node("Unknown fragment", s"Node $nodeId uses fragment $id which is missing")
-      case InvalidFragment(id, nodeId) => node("Invalid fragment", s"Node $nodeId uses fragment $id which is invalid")
-      case FatalUnknownError(message, maybeNodeId) =>
+      case MissingPart(_, nodeName)     => node("MissingPart", s"Node $nodeName has missing part")
+      case UnsupportedPart(_, nodeName) => node("UnsupportedPart", s"Type of node $nodeName is unsupported right now")
+      case UnknownFragment(id, _, nodeName) =>
+        node("Unknown fragment", s"Node $nodeName uses fragment $id which is missing")
+      case InvalidFragment(id, _, nodeName) =>
+        node("Invalid fragment", s"Node $nodeName uses fragment $id which is invalid")
+      case FatalUnknownError(message, maybeNodeId, maybeNodeName) =>
+        val nodeContext = maybeNodeName
+          .map(_.value)
+          .orElse(maybeNodeId.map(_.value))
+          .map(node => s" for node $node")
+          .getOrElse("")
         node(
-          s"Unknown, fatal validation error${maybeNodeId.map(nodeId => s" for node $nodeId")}",
+          s"Unknown, fatal validation error$nodeContext",
           s"Fatal error: $message, please check configuration and logs for details"
         )
-      case CannotCreateObjectError(message, nodeId, _) =>
-        node(s"Could not create $nodeId: $message", s"Could not create $nodeId: $message")
-      case UnresolvedFragment(id) => node("Unresolved fragment", s"fragment $id encountered, this should not happen")
+      case CannotCreateObjectError(message, _, nodeName, _) =>
+        node(s"Could not create $nodeName: $message", s"Could not create $nodeName: $message")
       case FragmentOutputNotDefined(id, _) => node(s"Output $id not defined", "Please check fragment definition")
       case UnknownFragmentOutput(id, _)    => node(s"Unknown fragment output $id", "Please check fragment definition")
       case DisablingManyOutputsFragment(_) =>
@@ -306,10 +325,10 @@ object PrettyValidationErrors {
           description = message,
           paramName = Some(paramName)
         )
-      case IncompatibleParameterDefinitionModification(paramName, language, parameterEditors, nodeId) =>
+      case IncompatibleParameterDefinitionModification(paramName, language, parameterEditors, nodeId, nodeName) =>
         node(
           message =
-            s"There is an incompatible parameter [${paramName.value}] in component [$nodeId]. Its value cannot be used for target editors [${parameterEditors.mkString(", ")}] ",
+            s"There is an incompatible parameter [${paramName.value}] in component [${nodeName.value}]. Its value cannot be used for target editors [${parameterEditors.mkString(", ")}] ",
           description =
             s"Incompatible change to the parameter's definition detected. None of editors $parameterEditors supports '$language' language",
           paramName = Some(paramName),
@@ -373,12 +392,18 @@ object PrettyValidationErrors {
   private def getErrorTypeName(error: ProcessCompilationError) = ReflectUtils.simpleNameWithoutSuffix(error.getClass)
 
   private def mapIdErrorToNodeError(error: IdError) = {
-    val validatedObjectType = error match {
-      case ScenarioNameError(_, _, isFragment) => if (isFragment) "Fragment" else "Scenario"
-      case NodeIdValidationError(_, _)         => "Node"
+    val (validatedObjectType, validatedObjectAttribute) = error match {
+      case ScenarioNameError(_, _, isFragment) => (if (isFragment) "Fragment" else "Scenario", "name")
+      case NodeNameValidationError(_, _, _)    => ("Node", "name")
+      case NodeIdValidationError(_, _)         => ("Node", "id")
     }
     val errorSeverity = error match {
       case ScenarioNameError(_, _, _) => NodeValidationErrorType.SaveAllowed
+      case NodeNameValidationError(errorType, _, _) =>
+        errorType match {
+          case ProcessCompilationError.EmptyValue | IllegalCharactersId(_) => NodeValidationErrorType.RenderNotAllowed
+          case _                                                           => NodeValidationErrorType.SaveAllowed
+        }
       case NodeIdValidationError(errorType, _) =>
         errorType match {
           case ProcessCompilationError.EmptyValue | IllegalCharactersId(_) => NodeValidationErrorType.RenderNotAllowed
@@ -386,25 +411,30 @@ object PrettyValidationErrors {
         }
     }
     val fieldName = error match {
-      case ScenarioNameError(_, _, _)  => CanonicalProcess.NameFieldName
-      case NodeIdValidationError(_, _) => pl.touk.nussknacker.engine.graph.node.IdFieldName
+      case ScenarioNameError(_, _, _)       => CanonicalProcess.NameFieldName
+      case NodeNameValidationError(_, _, _) => pl.touk.nussknacker.engine.graph.node.NameFieldName
+      case NodeIdValidationError(_, _)      => pl.touk.nussknacker.engine.graph.node.IdFieldName
     }
     val message = error.errorType match {
-      case ProcessCompilationError.EmptyValue       => s"$validatedObjectType name is mandatory and cannot be empty"
-      case ProcessCompilationError.BlankId          => s"$validatedObjectType name cannot be blank"
-      case ProcessCompilationError.LeadingSpacesId  => s"$validatedObjectType name cannot have leading spaces"
-      case ProcessCompilationError.TrailingSpacesId => s"$validatedObjectType name cannot have trailing spaces"
+      case ProcessCompilationError.EmptyValue =>
+        s"$validatedObjectType $validatedObjectAttribute is mandatory and cannot be empty"
+      case ProcessCompilationError.BlankId => s"$validatedObjectType $validatedObjectAttribute cannot be blank"
+      case ProcessCompilationError.LeadingSpacesId =>
+        s"$validatedObjectType $validatedObjectAttribute cannot have leading spaces"
+      case ProcessCompilationError.TrailingSpacesId =>
+        s"$validatedObjectType $validatedObjectAttribute cannot have trailing spaces"
       case ProcessCompilationError.IllegalCharactersId(illegalCharactersHumanReadable) =>
-        s"$validatedObjectType name contains invalid characters. $illegalCharactersHumanReadable are not allowed"
+        s"$validatedObjectType $validatedObjectAttribute contains invalid characters. $illegalCharactersHumanReadable are not allowed"
     }
     val description = error.errorType match {
-      case ProcessCompilationError.EmptyValue      => s"Empty ${validatedObjectType.toLowerCase} name"
-      case ProcessCompilationError.BlankId         => s"Blank ${validatedObjectType.toLowerCase} name"
-      case ProcessCompilationError.LeadingSpacesId => s"Leading spaces in ${validatedObjectType.toLowerCase} name"
+      case ProcessCompilationError.EmptyValue => s"Empty ${validatedObjectType.toLowerCase} $validatedObjectAttribute"
+      case ProcessCompilationError.BlankId    => s"Blank ${validatedObjectType.toLowerCase} $validatedObjectAttribute"
+      case ProcessCompilationError.LeadingSpacesId =>
+        s"Leading spaces in ${validatedObjectType.toLowerCase} $validatedObjectAttribute"
       case ProcessCompilationError.TrailingSpacesId =>
-        s"Trailing spaces in ${validatedObjectType.toLowerCase} name"
+        s"Trailing spaces in ${validatedObjectType.toLowerCase} $validatedObjectAttribute"
       case ProcessCompilationError.IllegalCharactersId(_) =>
-        s"Invalid characters in ${validatedObjectType.toLowerCase} name"
+        s"Invalid characters in ${validatedObjectType.toLowerCase} $validatedObjectAttribute"
     }
     NodeValidationError(
       typ = getErrorTypeName(error),

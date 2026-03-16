@@ -13,14 +13,14 @@ const AsyncSvg = loadable.lib(
         const match = src?.match(absoluteExp);
 
         if (!match) {
-            throw `${src} is not svg path`;
+            throw new Error(`${src} is not svg path`);
         }
 
         if (match.groups.root) {
             const response = await fetch(match.groups.proto ? src : absoluteBePath(src));
             const html = await response.text();
             if (!html.trim().endsWith("</svg>")) {
-                throw "response text is not valid svg";
+                throw new Error("response text is not valid svg");
             }
             return html;
         }
@@ -47,7 +47,7 @@ export interface InlineSvgProps extends DetailedHTMLProps<HTMLAttributes<HTMLDiv
     }>;
 }
 
-export const InlineSvg = ({ FallbackComponent, src, id, ...rest }: InlineSvgProps): React.JSX.Element => (
+export const InlineSvg = ({ FallbackComponent = () => null, src, id, ...rest }: InlineSvgProps): React.JSX.Element => (
     <ErrorBoundary FallbackComponent={() => <FallbackComponent {...rest} />}>
         <AsyncSvg src={src}>
             {(__html) => <Flex {...rest} dangerouslySetInnerHTML={{ __html: id ? __html.replace("<svg ", `<svg id="${id}"`) : __html }} />}

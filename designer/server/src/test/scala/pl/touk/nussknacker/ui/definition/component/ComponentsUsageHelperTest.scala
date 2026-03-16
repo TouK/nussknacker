@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.definition.component
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.deployment.{
@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
 }
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
@@ -28,7 +28,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentCl
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.restmodel.component.{NodeUsageData, ScenarioComponentsUsages}
-import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
+import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.{toCanonical, wrapGraphWithScenarioDetailsEntity}
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
@@ -45,10 +45,16 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     MetaData("fragment1", FragmentSpecificData()),
     List(
       canonicalnode.FlatNode(
-        FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
+        FragmentInputDefinition(
+          NodeId("start"),
+          NodeName("start"),
+          List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String]))
+        )
       ),
-      canonicalnode.FlatNode(CustomNode("f1", None, ProcessTestData.otherExistingStreamTransformer2, List.empty)),
-      FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+      canonicalnode.FlatNode(
+        CustomNode(NodeId("f1"), NodeName("f1"), None, ProcessTestData.otherExistingStreamTransformer2, List.empty)
+      ),
+      FlatNode(FragmentOutputDefinition(NodeId("out1"), NodeName("out1"), "output", List.empty))
     ),
     List.empty
   )
@@ -295,16 +301,16 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         List(processDetails1ButDeployed),
         Map(
           sid(Source, ProcessTestData.existingSourceFactory) -> List(
-            (processDetails1ButDeployed, List(ScenarioUsageData("source")))
+            (processDetails1ButDeployed, List(ScenarioUsageData("source", "source")))
           ),
           sid(CustomComponent, ProcessTestData.existingStreamTransformer) -> List(
-            (processDetails1ButDeployed, List(ScenarioUsageData("custom")))
+            (processDetails1ButDeployed, List(ScenarioUsageData("custom", "custom")))
           ),
           oid(ProcessTestData.overriddenOtherExistingStreamTransformer) -> List(
-            (processDetails1ButDeployed, List(ScenarioUsageData("custom2")))
+            (processDetails1ButDeployed, List(ScenarioUsageData("custom2", "custom2")))
           ),
           sid(Sink, ProcessTestData.existingSinkFactory) -> List(
-            (processDetails1ButDeployed, List(ScenarioUsageData("sink")))
+            (processDetails1ButDeployed, List(ScenarioUsageData("sink", "sink")))
           ),
         )
       ),
@@ -312,19 +318,19 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         List(processDetails1ButDeployed, processDetails2),
         Map(
           sid(Source, ProcessTestData.existingSourceFactory) -> List(
-            (processDetails1ButDeployed, List(ScenarioUsageData("source"))),
-            (processDetails2, List(ScenarioUsageData("source")))
+            (processDetails1ButDeployed, List(ScenarioUsageData("source", "source"))),
+            (processDetails2, List(ScenarioUsageData("source", "source")))
           ),
           sid(CustomComponent, ProcessTestData.existingStreamTransformer) -> List(
-            (processDetails1ButDeployed, List(ScenarioUsageData("custom")))
+            (processDetails1ButDeployed, List(ScenarioUsageData("custom", "custom")))
           ),
           oid(ProcessTestData.overriddenOtherExistingStreamTransformer) -> List(
-            (processDetails1ButDeployed, List(ScenarioUsageData("custom2"))),
-            (processDetails2, List(ScenarioUsageData("custom")))
+            (processDetails1ButDeployed, List(ScenarioUsageData("custom2", "custom2"))),
+            (processDetails2, List(ScenarioUsageData("custom", "custom")))
           ),
           sid(Sink, ProcessTestData.existingSinkFactory) -> List(
-            (processDetails1ButDeployed, List(ScenarioUsageData("sink"))),
-            (processDetails2, List(ScenarioUsageData("sink")))
+            (processDetails1ButDeployed, List(ScenarioUsageData("sink", "sink"))),
+            (processDetails2, List(ScenarioUsageData("sink", "sink")))
           ),
         )
       ),
@@ -332,30 +338,33 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         List(processDetailsWithSomeBasesStreaming, processDetailsWithSomeBasesFraud),
         Map(
           sid(Source, ProcessTestData.existingSourceFactory) -> List(
-            (processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("source")))
+            (processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("source", "source")))
           ),
           sid(Sink, ProcessTestData.existingSinkFactory) -> List(
-            (processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("out1")))
+            (processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("out1", "out1")))
           ),
           sid(Sink, ProcessTestData.existingSinkFactory2) -> List(
-            (processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("out2")))
+            (processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("out2", "out2")))
           ),
           bid(BuiltInComponentId.Filter) -> List(
-            (processDetailsWithSomeBasesFraud, List(ScenarioUsageData("checkId"))),
-            (processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("checkId"), ScenarioUsageData("checkId2")))
+            (processDetailsWithSomeBasesFraud, List(ScenarioUsageData("checkId", "checkId"))),
+            (
+              processDetailsWithSomeBasesStreaming,
+              List(ScenarioUsageData("checkId", "checkId"), ScenarioUsageData("checkId2", "checkId2"))
+            )
           ),
           bid(BuiltInComponentId.Choice) -> List(
-            (processDetailsWithSomeBasesFraud, List(ScenarioUsageData("switchFraud"))),
-            (processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("switchStreaming")))
+            (processDetailsWithSomeBasesFraud, List(ScenarioUsageData("switchFraud", "switchFraud"))),
+            (processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("switchStreaming", "switchStreaming")))
           ),
           fid(Source, ProcessTestData.existingSourceFactory) -> List(
-            (processDetailsWithSomeBasesFraud, List(ScenarioUsageData("source")))
+            (processDetailsWithSomeBasesFraud, List(ScenarioUsageData("source", "source")))
           ),
           fid(Sink, ProcessTestData.existingSinkFactory) -> List(
-            (processDetailsWithSomeBasesFraud, List(ScenarioUsageData("out1")))
+            (processDetailsWithSomeBasesFraud, List(ScenarioUsageData("out1", "out1")))
           ),
           fid(Sink, ProcessTestData.existingSinkFactory2) -> List(
-            (processDetailsWithSomeBasesFraud, List(ScenarioUsageData("out2")))
+            (processDetailsWithSomeBasesFraud, List(ScenarioUsageData("out2", "out2")))
           ),
         )
       ),
@@ -363,23 +372,23 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         List(processDetailsWithFragment, fragmentScenario),
         Map(
           sid(Source, ProcessTestData.existingSourceFactory) -> List(
-            (processDetailsWithFragment, List(ScenarioUsageData("source")))
+            (processDetailsWithFragment, List(ScenarioUsageData("source", "source")))
           ),
           sid(CustomComponent, ProcessTestData.otherExistingStreamTransformer2) -> List(
-            (processDetailsWithFragment, List(ScenarioUsageData("custom"))),
-            (fragmentScenario, List(ScenarioUsageData("f1")))
+            (processDetailsWithFragment, List(ScenarioUsageData("custom", "custom"))),
+            (fragmentScenario, List(ScenarioUsageData("f1", "f1")))
           ),
           sid(Sink, ProcessTestData.existingSinkFactory) -> List(
-            (processDetailsWithFragment, List(ScenarioUsageData("sink")))
+            (processDetailsWithFragment, List(ScenarioUsageData("sink", "sink")))
           ),
           sid(Fragment, fragment.name.value) -> List(
-            (processDetailsWithFragment, List(ScenarioUsageData(fragment.name.value)))
+            (processDetailsWithFragment, List(ScenarioUsageData(fragment.name.value, fragment.name.value)))
           ),
           bid(BuiltInComponentId.FragmentInputDefinition) -> List(
-            (fragmentScenario, List(ScenarioUsageData("start")))
+            (fragmentScenario, List(ScenarioUsageData("start", "start")))
           ),
           bid(BuiltInComponentId.FragmentOutputDefinition) -> List(
-            (fragmentScenario, List(ScenarioUsageData("out1")))
+            (fragmentScenario, List(ScenarioUsageData("out1", "out1")))
           ),
         )
       )
@@ -403,6 +412,66 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         withClue(s"componentId: $componentId") {
           result(componentId) should contain theSameElementsAs usages
         }
+      }
+    }
+  }
+
+  test("should resolve fragment usages by supported fragment identifiers") {
+    import pl.touk.nussknacker.engine.util.Implicits._
+
+    val fragmentProcessId = ProcessId(123L)
+    val fragmentProcess   = ProcessName("fragmentWithDifferentId")
+    val fragmentScenarioById = fragmentScenario
+      .copy(name = fragmentProcess, processId = fragmentProcessId, isFragment = true)
+
+    val fragmentIdentifiers = Table(
+      "fragmentIdentifier",
+      fragmentProcessId.value.toString,
+      ComponentId(Fragment, fragmentProcess.value).toString,
+      DesignerWideComponentId.default("streaming", ComponentId(Fragment, fragmentProcess.value)).value
+    )
+
+    forAll(fragmentIdentifiers) { fragmentIdentifier =>
+      val processWithFragmentById = ScenarioBuilder
+        .streaming("processWithFragmentById")
+        .source("source", ProcessTestData.existingSourceFactory)
+        .fragment(
+          "fragmentNode",
+          fragmentIdentifier,
+          Nil,
+          Map.empty,
+          Map(
+            "sink" -> GraphBuilder.emptySink("sink", ProcessTestData.existingSinkFactory)
+          )
+        )
+
+      val processDetailsWithFragmentById =
+        wrapGraphWithScenarioDetailsEntity(
+          processWithFragmentById.name,
+          processWithFragmentById.toScenarioGraph,
+        )
+
+      val result = ComponentsUsageHelper
+        .computeComponentsUsage(
+          withComponentsUsages(List(processDetailsWithFragmentById, fragmentScenarioById)),
+          processingTypeAndInfoToNonFragmentDesignerWideId
+        )
+        .mapValuesNow(_.map { case (baseProcessDetails, nodeIds) =>
+          (baseProcessDetails.mapScenario(_ => ()), nodeIds)
+        })
+
+      val expectedUsages = List(
+        (
+          processDetailsWithFragmentById.mapScenario(_ => ()),
+          List(FragmentUsageData("fragmentNode", "fragmentNode", "f1", "f1"))
+        ),
+        (fragmentScenarioById.mapScenario(_ => ()), List(ScenarioUsageData("f1", "f1")))
+      )
+
+      withClue(s"fragmentIdentifier: $fragmentIdentifier") {
+        result(
+          sid(CustomComponent, ProcessTestData.otherExistingStreamTransformer2)
+        ) should contain theSameElementsAs expectedUsages
       }
     }
   }

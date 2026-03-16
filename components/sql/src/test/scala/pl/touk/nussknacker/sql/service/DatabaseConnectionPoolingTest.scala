@@ -6,6 +6,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.LoneElement.convertToCollectionLoneElementWrapper
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -101,7 +102,8 @@ class DatabaseConnectionPoolingTest
     def compileEnricherNode() = {
       nodeCompiler.compileNode(
         Enricher(
-          "query-enricher",
+          NodeId("query-enricher"),
+          NodeName("query-enricher"),
           ServiceRef(
             "query-enricher",
             List(

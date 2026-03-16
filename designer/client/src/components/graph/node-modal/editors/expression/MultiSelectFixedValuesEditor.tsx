@@ -76,7 +76,7 @@ export const MultiSelectFixedValuesEditor = prepareEditor<{ editorConfig: Editor
         );
 
         const selectedOptions = useMemo(() => {
-            return values.map((value) => editorConfig.possibleValues.find((v) => v.value === value) || { value });
+            return values.map((value) => editorConfig.possibleValues.find((v) => v.value === value) || { value, label: value });
         }, [editorConfig.possibleValues, values]);
 
         const groups = useMemo(() => uniq(editorConfig.possibleValues.map((v) => v.group)), [editorConfig.possibleValues]);

@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.{
   JobData,
   MetaData,
   NodeId,
+  NodeName,
   ProcessVersion,
   VariableConstants
 }
@@ -1081,7 +1082,9 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   private def validateError(aggregator: String, aggregateBy: String, error: String): Unit = {
     val result = validateConfig(aggregator, aggregateBy)
     result.result shouldBe Symbol("invalid")
-    result.result.swap.toOption.get shouldBe NonEmptyList.of(CannotCreateObjectError(error, NodeId("transform")))
+    result.result.swap.toOption.get shouldBe NonEmptyList.of(
+      CannotCreateObjectError(error, NodeId("transform"), NodeName("transform"))
+    )
   }
 
   private def validateOk(aggregator: String, aggregateBy: String, typingResult: TypingResult): Unit = {
@@ -1218,7 +1221,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       List(
         canonicalnode.FlatNode(
           FragmentInputDefinition(
-            "start",
+            NodeId("start"),
+            NodeName("start"),
             List(
               FragmentParameter(ParameterName("aggBy"), FragmentClazzRef[Int]),
               FragmentParameter(ParameterName("key"), FragmentClazzRef[String])
@@ -1227,7 +1231,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         ),
         canonicalnode.FlatNode(
           CustomNode(
-            "agg",
+            NodeId("agg"),
+            NodeName("agg"),
             Some("aggresult"),
             "aggregate-tumbling",
             List(
@@ -1244,7 +1249,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         ),
         canonicalnode.FlatNode(
           FragmentOutputDefinition(
-            "out1",
+            NodeId("out1"),
+            NodeName("out1"),
             "aggregate",
             List(Field("key", "#key".spel), Field("aggresult", "#aggresult".spel))
           )

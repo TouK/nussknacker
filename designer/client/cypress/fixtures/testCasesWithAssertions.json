@@ -19,6 +19,7 @@
     "nodes": [
         {
             "id": "Event Generator",
+            "name": "Event Generator",
             "ref": {
                 "typ": "event-generator",
                 "parameters": [
@@ -70,6 +71,7 @@
         },
         {
             "id": "Log",
+            "name": "Log",
             "service": {
                 "id": "log",
                 "parameters": [
@@ -108,6 +110,7 @@
         },
         {
             "id": "Dead End",
+            "name": "Dead End",
             "ref": {
                 "typ": "dead-end",
                 "parameters": []

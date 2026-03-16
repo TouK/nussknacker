@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.node.Case
+import pl.touk.nussknacker.restmodel.component.NodeIdWithNodeName
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{
   existingSinkFactory,
   existingSinkFactory2,
@@ -33,7 +34,7 @@ class ScenarioComponentsUsagesHelperTest extends AnyFunSuite with Matchers {
 
     val usages = ScenarioComponentsUsagesHelper.compute(scenario)
 
-    usages.value shouldBe Map(
+    usages.value.map { case (k, vs) => k -> vs.map(_.nodeName) } shouldBe Map(
       ComponentId(ComponentType.Source, existingSourceFactory) -> List("source"),
       BuiltInComponentId.Filter                                -> List("checkId", "checkId2"),
       BuiltInComponentId.Variable                              -> List("var1"),

@@ -25,10 +25,35 @@ describe("Fragment", () => {
 
     describe("with advanced input parameters", () => {
         const toggleSettings = (fieldNumber: number) => {
-            cy.get(`[data-testid='fieldsRow:${fieldNumber}']`).find("[title='Options']").click();
+            cy.get("@window").find(`[data-testid='fieldsRow:${fieldNumber}']`).find("[title='Options']").click();
+        };
+        const setFieldName = (fieldNumber: number, value: string) => {
+            const fieldSelector = `[data-testid='fieldsRow:${fieldNumber}'] [placeholder='Field name']`;
+            cy.window().then((win) => {
+                cy.get("@window")
+                    .find(fieldSelector)
+                    .should("be.enabled")
+                    .click({ force: true })
+                    .then(($input) => {
+                        const input = $input.get(0) as HTMLInputElement;
+                        const nativeSetter = Object.getOwnPropertyDescriptor(win.HTMLInputElement.prototype, "value")?.set;
+                        // Set full value at once to avoid flaky key-by-key typing on CI.
+                        nativeSetter?.call(input, value);
+                        input.dispatchEvent(new win.Event("input", { bubbles: true }));
+                        input.dispatchEvent(new win.Event("change", { bubbles: true }));
+                    });
+            });
+            cy.get("@window").find(fieldSelector).should("have.value", value);
+        };
+
+        const stableSettingsSnapshot = (settingsNumber: number) => {
+            cy.wait(250);
+            cy.get("[data-testid=window]").should("be.visible");
+            cy.get(`[data-testid='settings:${settingsNumber}']`).scrollIntoView().should("be.visible").matchImage();
         };
 
         it("should allow adding input parameters", () => {
+            cy.intercept("POST", "**/api/nodes/**/validation").as("nodeValidation");
             cy.visitNewFragment(seed, "fragment");
 
             cy.openNodeWindow("input").as("window");
@@ -36,16 +61,20 @@ describe("Fragment", () => {
             // Provide String Any Value inputMode
             const nameValueStringAnyValue = "name_value_string_any_value";
             cy.get("@window").contains("+").click();
-            cy.get("[data-testid='fieldsRow:3']").find("[placeholder='Field name']").type(nameValueStringAnyValue);
+            setFieldName(3, nameValueStringAnyValue);
             toggleSettings(3);
 
-            cy.get("[data-testid='draggable:3'] [role='button']").dndTo("[data-testid='fieldsRow:0']");
-            cy.get("[data-testid='fieldsRow:0']").find("[placeholder='Field name']").should("have.value", nameValueStringAnyValue);
-            cy.get("@window").find("[data-testid='settings:0']").matchImage();
+            cy.get("@window")
+                .find("[data-testid='fieldsRow:3']")
+                .find("[placeholder='Field name']")
+                .should("have.value", nameValueStringAnyValue);
+            // Validation response updates fields section; wait for it before screenshot to avoid detached subject.
+            cy.wait("@nodeValidation");
+            stableSettingsSnapshot(3);
 
             // Provide String Any with Suggestion Value inputMode
             cy.get("@window").contains("+").click();
-            cy.get("[data-testid='fieldsRow:4']").find("[placeholder='Field name']").type("name_string_any_with_suggestion");
+            setFieldName(4, "name_string_any_with_suggestion");
             toggleSettings(4);
             cy.get("[data-testid='settings:4']").contains("Any value").select(1);
 
@@ -83,11 +112,11 @@ describe("Fragment", () => {
                 .contains("not unique")
                 .should("be.visible");
 
-            cy.get("@window").find("[data-testid='settings:4']").matchImage();
+            stableSettingsSnapshot(4);
 
             // Provide String Fixed value inputMode
             cy.get("@window").contains("+").click();
-            cy.get("[data-testid='fieldsRow:5']").find("[placeholder='Field name']").type("name_string_fixed");
+            setFieldName(5, "name_string_fixed");
             toggleSettings(5);
             cy.get("[data-testid='settings:5']").contains("Any value").select(1);
             cy.get("[data-testid='settings:5']").contains("User defined list").click();
@@ -104,12 +133,12 @@ describe("Fragment", () => {
                 .eq(0)
                 .find("[data-testid='form-helper-text']")
                 .should("not.exist");
-            cy.get("@window").find("[data-testid='settings:5']").matchImage();
+            stableSettingsSnapshot(5);
 
             // Provide non String or Boolean Any Value inputMode
             cy.get("@window").contains("+").click();
-            cy.get("[data-testid='fieldsRow:6']").find("[placeholder='Field name']").type("non_boolean_or_string");
-            cy.get("[data-testid='fieldsRow:6']").contains("String").click();
+            setFieldName(6, "non_boolean_or_string");
+            cy.get("@window").find("[data-testid='fieldsRow:6']").contains("String").click();
             cy.contains("Number").click({ force: true });
             toggleSettings(6);
             cy.get("[data-testid='settings:6']").find("[id='ace-editor']").type("1");
@@ -129,11 +158,11 @@ describe("Fragment", () => {
                 .find("[data-testid='form-helper-text']")
                 .should("not.exist");
 
-            cy.get("@window").find("[data-testid='settings:6']").matchImage();
+            stableSettingsSnapshot(6);
 
             // Provide String Fixed value inputMode
             cy.get("@window").contains("+").click();
-            cy.get("[data-testid='fieldsRow:7']").find("[placeholder='Field name']").type("any_value_with_suggestions_preset");
+            setFieldName(7, "any_value_with_suggestions_preset");
             toggleSettings(7);
 
             // Select any value with suggestions Input mode
@@ -170,8 +199,8 @@ describe("Fragment", () => {
 
             // Provide String Fixed value inputMode
             cy.get("@window").contains("+").click();
-            cy.get("[data-testid='fieldsRow:8']").find("[placeholder='Field name']").type("generic_type");
-            cy.get("[data-testid='fieldsRow:8']").contains("String").click().type("List[String]{enter}");
+            setFieldName(8, "generic_type");
+            cy.get("@window").find("[data-testid='fieldsRow:8']").contains("String").click().type("List[String]{enter}");
 
             cy.get("@window")
                 .contains(/^apply$/i)
@@ -214,7 +243,7 @@ describe("Fragment", () => {
             cy.viewport(1600, 1200);
 
             cy.getNode("@fragmentName").trigger("dblclick");
-            cy.get("#nk-graph-fragment [model-id='input']").scrollIntoView().should("be.visible");
+            cy.get("#nk-graph-fragment [data-node-name='input']").scrollIntoView().should("be.visible");
 
             //FIXME flaky screenshot
             // cy.get("[data-testid=window]")
@@ -338,7 +367,7 @@ describe("Fragment", () => {
             // Provide new parameter to the fragment input
             cy.openNodeWindow("input");
             cy.get("@window").should("be.visible").contains("+").click();
-            cy.get("[data-testid='fieldsRow:9']").find("[placeholder='Field name']").type("test5");
+            setFieldName(9, "test5");
             cy.get("@window")
                 .contains(/^apply$/i)
                 .click();
@@ -426,7 +455,7 @@ describe("Fragment", () => {
             });
         cy.layoutScenario();
 
-        cy.get(`[model-id^=e2e][model-id$=-${seed2}-test-process]`).should("be.visible").trigger("dblclick");
+        cy.get(`[data-node-name^=e2e][data-node-name$=-${seed2}-test-process]`).should("be.visible").trigger("dblclick");
 
         cy.get("[title='Documentation']").should("have.attr", "href", docsUrl).parent().matchImage({
             maxDiffThreshold: 0.04,

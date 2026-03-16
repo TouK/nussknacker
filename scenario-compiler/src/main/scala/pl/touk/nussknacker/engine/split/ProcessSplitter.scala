@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.split
 
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph._
@@ -35,7 +36,7 @@ object ProcessSplitter {
     SinkPart(node)
   }
 
-  private def traverse(nodeId: String, nextNodeOpt: Option[SubsequentNode]): NextWithParts = {
+  private def traverse(nodeId: NodeId, nextNodeOpt: Option[SubsequentNode]): NextWithParts = {
     nextNodeOpt match {
       case Some(next) =>
         traverse(next)
@@ -139,7 +140,7 @@ object ProcessSplitter {
     def apply(next: splittednode.Next, nextParts: List[SubsequentPart], ends: List[End]): NextWithParts =
       NextWithParts(Some(next), nextParts, ends)
 
-    def end(nodeId: String): NextWithParts =
+    def end(nodeId: NodeId): NextWithParts =
       NextWithParts(None, List.empty, List(NormalEnd(nodeId)))
   }
 

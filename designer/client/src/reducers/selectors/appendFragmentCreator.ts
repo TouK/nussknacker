@@ -23,6 +23,7 @@ export const appendFragmentCreator = curryRight((groups: ComponentGroup[], isFra
         componentId: `fragment-${FRAGMENT_TEMPLATE_ID}`,
         node: {
             id: "",
+            name: "new fragment",
             ref: {
                 id: FRAGMENT_TEMPLATE_ID,
                 parameters: [],

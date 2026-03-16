@@ -23,7 +23,7 @@ object Union extends CustomStreamTransformer {
   def execute(
       @BranchParamName("Output expression") outputExpressionByBranchId: Map[String, LazyParameter[AnyRef]],
       @OutputVariableName variableName: String
-  )(implicit nodeId: NodeId): JoinContextTransformation = {
+  )(implicit nodeId: NodeId, nodeName: NodeName): JoinContextTransformation = {
     ContextTransformation.join
       .definedBy { contexts =>
         val branchReturnTypes = outputExpressionByBranchId.values.map(_.returnType)
@@ -36,7 +36,8 @@ object Union extends CustomStreamTransformer {
         unifiedReturnType
           .map(unionValidationContext(variableName, contexts, _))
           .getOrElse(
-            Validated.invalidNel(CannotCreateObjectError("All branch values must be of the same type", nodeId))
+            Validated
+              .invalidNel(CannotCreateObjectError("All branch values must be of the same type", nodeId, nodeName))
           )
       }
       .implementedBy(new LiteJoinCustomComponent {

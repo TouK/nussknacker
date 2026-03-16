@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.{Validated, ValidatedNel}
 import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CannotCreateObjectError,
@@ -19,13 +19,13 @@ object NodeValidationExceptionHandler extends LazyLogging {
 
   def handleExceptions[T](
       f: => T
-  )(implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
+  )(implicit nodeId: NodeId, nodeName: NodeName, metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
     handleExceptionsInValidation(Valid(f))
   }
 
   def handleExceptionsInValidation[T](
       f: => ValidatedNel[ProcessCompilationError, T]
-  )(implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
+  )(implicit nodeId: NodeId, nodeName: NodeName, metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
     try {
       f
     } catch {
@@ -35,10 +35,10 @@ object NodeValidationExceptionHandler extends LazyLogging {
         Validated.invalidNel(CustomNodeError(exc.message, exc.paramName))
       case NonFatal(e) =>
         logger.error(
-          s"Exception during validation handling of node '${nodeId.id}' in scenario ${metaData.name.value}",
+          s"Exception during validation handling of node '${nodeName.value}' (${nodeId.value}) in scenario ${metaData.name.value}",
           e
         )
-        Validated.invalidNel(CannotCreateObjectError(e, nodeId))
+        Validated.invalidNel(CannotCreateObjectError(e, nodeId, nodeName))
     }
   }
 

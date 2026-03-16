@@ -1,7 +1,7 @@
 import { isEmpty } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import { getProcessNodesIds } from "../../../reducers/selectors/graph";
+import { getProcessNodesNames } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeValidationError } from "../../../types/validation";
 import Field, { FieldType } from "./editors/field/Field";
@@ -30,7 +30,7 @@ interface IdFieldProps {
 }
 
 export function IdField({ isEditMode, node, setProperty, showValidation, errors }: IdFieldProps): React.JSX.Element {
-    const nodes = useAppSelector(getProcessNodesIds);
+    const nodes = useAppSelector(getProcessNodesNames);
     // stable node id before edits
     const [otherNodes] = useState(() => nodes.filter((n) => n !== node[PROP_NAME]));
 

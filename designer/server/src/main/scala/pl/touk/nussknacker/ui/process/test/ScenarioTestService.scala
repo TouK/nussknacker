@@ -10,7 +10,7 @@ import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.{DecodingFailure, Json}
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, NodeName, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ScenarioCompilationErrors}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
@@ -146,16 +146,17 @@ class ScenarioTestService(
     val sources   = canonical.collectAllSources
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       val compiledSourcesById =
-        sources.map(source => NodeId(source.id) -> commonModelDataInfoProvider.nodeCompiler.compileNode(source))
+        sources.map(source => source.id -> (source.name, commonModelDataInfoProvider.nodeCompiler.compileNode(source)))
       compiledSourcesById
-        .map { case (sourceId, sourceCompilationResult) =>
-          testDataFormatHandler.getTestParametersDefinition(sourceId, sourceCompilationResult).map { parameters =>
-            val enrichedParameters = StandardParameterEnrichment.enrichParameterDefinitions(
-              original = parameters,
-              parametersConfig = Map.empty,
-              globalParametersConfig = modelData.modelConfig.globalParametersConfig
-            )
-            sourceId -> enrichedParameters
+        .map { case (sourceId, (sourceName, sourceCompilationResult)) =>
+          testDataFormatHandler.getTestParametersDefinition(sourceId, sourceName, sourceCompilationResult).map {
+            parameters =>
+              val enrichedParameters = StandardParameterEnrichment.enrichParameterDefinitions(
+                original = parameters,
+                parametersConfig = Map.empty,
+                globalParametersConfig = modelData.modelConfig.globalParametersConfig
+              )
+              sourceId -> enrichedParameters
           }
         }
         .sequence
@@ -217,7 +218,7 @@ class ScenarioTestService(
       maxNumberOfRecords: Int
   ): Either[FetchLiveDataError, SerializedScenarioRecordsContent] = {
     val jobData = JobData(metaData, ProcessVersion.empty)
-    val nodeId  = NodeId(sourceNodeData.id)
+    val nodeId  = sourceNodeData.id
 
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       for {
@@ -252,7 +253,7 @@ class ScenarioTestService(
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): ValidatedNel[(NodeId, NonEmptyList[ProcessCompilationError]), (NodeId, Source)] = {
-    val nodeId = NodeId(source.id)
+    val nodeId = source.id
     commonModelDataInfoProvider.nodeCompiler
       .compileNode(source)
       .compiledObject
@@ -309,7 +310,12 @@ class ScenarioTestService(
         prepareTestData(preliminaryScenarioTestRecords, scenarioWithTyping.scenario)
       )
       compiledAssertions <- EitherT.fromEither[Future](
-        compileAssertions(testCase, scenarioWithTyping.nodesTyping, jobData)
+        compileAssertions(
+          testCase,
+          scenarioWithTyping.nodesTyping,
+          jobData,
+          scenarioWithTyping.scenario.collectAllNodes.map(node => node.id -> node.name).toMap
+        )
       )
       testResults <- EitherT(
         performTestWithDeserializedRecords(processVersion, scenarioWithTyping.scenario, scenarioTestData)
@@ -328,7 +334,7 @@ class ScenarioTestService(
       scenarioGraph: ScenarioGraph,
       mocks: Map[NodeId, EnricherMock]
   ): Either[PerformTestError, ScenarioGraph] = {
-    val existingNodesId           = scenarioGraph.nodes.map(node => NodeId(node.id)).toSet
+    val existingNodesId           = scenarioGraph.nodes.map(node => node.id).toSet
     val mockedNodesId             = mocks.keySet
     val notExistingNodesWithMocks = mockedNodesId.diff(existingNodesId)
 
@@ -342,7 +348,7 @@ class ScenarioTestService(
   private def substituteMocks(scenarioGraph: ScenarioGraph, mocks: Map[NodeId, EnricherMock]) = {
     val nodesWithSubstitutions = scenarioGraph.nodes.map {
       case nodeData @ (enricher: node.Enricher) =>
-        val enricherMockOpt = mocks.get(NodeId(nodeData.id)).map(_.expression)
+        val enricherMockOpt = mocks.get(nodeData.id).map(_.expression)
         // we use provided mock or the one specified in original scenario
         enricher.copy(mockExpression = enricherMockOpt.orElse(enricher.mockExpression))
       case data => data
@@ -366,10 +372,11 @@ class ScenarioTestService(
   private def compileAssertions(
       test: TestCase,
       nodesTyping: Map[String, NodeTypingData],
-      jobData: JobData
+      jobData: JobData,
+      nodeNamesById: Map[NodeId, NodeName]
   ): Either[PerformTestError, CompiledAssertions] = {
     assertionCompiler
-      .compile(test, nodesTyping, jobData)
+      .compile(test, nodesTyping, jobData, nodeNamesById)
       .fold(
         errors => Left(AssertionErrors(errors)),
         Right(_)
@@ -410,6 +417,7 @@ class ScenarioTestService(
       canonical: CanonicalProcess,
       scenarioTestData: ScenarioTestData
   )(implicit ec: ExecutionContext, user: LoggedUser) = {
+    val sourceNamesById = canonical.collectAllSources.map(source => source.id -> source.name).toMap
     testExecutorService
       .testProcess(
         processVersion,
@@ -420,13 +428,14 @@ class ScenarioTestService(
       .recoverWith[Either[PerformTestError, TestResults[Json]]] {
         // Lite engine
         case decodingError: TestRecordVariablesDecodingError =>
-          Future.successful(Left(toPerformTestError(decodingError)))
+          Future.successful(Left(toPerformTestError(decodingError, sourceNamesById)))
         // Flink engine
         case scenarioCompilationErrors: ScenarioCompilationErrors =>
           scenarioCompilationErrors.errors
             // TODO: Redesign StubbedFlinkProcessCompilerDataFactory to remove error nesting
-            .collectFirst { case CannotCreateObjectError(_, _, Some(decodingError: TestRecordVariablesDecodingError)) =>
-              Future.successful(Left(toPerformTestError(decodingError)))
+            .collectFirst {
+              case CannotCreateObjectError(_, _, _, Some(decodingError: TestRecordVariablesDecodingError)) =>
+                Future.successful(Left(toPerformTestError(decodingError, sourceNamesById)))
             }
             .getOrElse {
               throw scenarioCompilationErrors
@@ -434,11 +443,19 @@ class ScenarioTestService(
       }
   }
 
-  private def toPerformTestError(decodingError: TestRecordVariablesDecodingError): PerformTestError = {
+  private def toPerformTestError(
+      decodingError: TestRecordVariablesDecodingError,
+      sourceNamesById: Map[NodeId, NodeName]
+  ): PerformTestError = {
     decodingError match {
       case CommonTestDataFormatVariablesDecoder
             .UnexpectedVariableInTestRecordError(variableName, sourceId, testRecordIndex) =>
-        PerformTestError.UnexpectedVariableInTestRecordError(variableName, sourceId, testRecordIndex)
+        PerformTestError.UnexpectedVariableInTestRecordError(
+          variableName,
+          sourceId,
+          sourceNamesById.get(sourceId),
+          testRecordIndex
+        )
       case CommonTestDataFormatVariablesDecoder
             .TestRecordVariableDecodingError(
               variableName,
@@ -455,6 +472,7 @@ class ScenarioTestService(
             encodedVariable,
             cause,
             sourceId,
+            sourceNamesById.get(sourceId),
             testRecordIndex
           )
     }
@@ -466,7 +484,7 @@ class ScenarioTestService(
   ): Either[PerformTestError, ScenarioTestData] = {
     import cats.implicits._
 
-    val allScenarioSourceIds = scenario.collectAllSources.map(n => NodeId(n.id)).toSet
+    val allScenarioSourceIds = scenario.collectAllSources.map(n => n.id).toSet
     preliminaryScenarioRecords.records.zipWithIndex
       .map {
         case (SourceSpecificFormatPreliminaryScenarioRecord(sourceId, record, timestamp), _)
@@ -590,7 +608,8 @@ object ScenarioTestService {
         nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
     ) extends ParametersDefinitionError
 
-    final case class TestingWithCustomInputNotSupportedError(nodeId: NodeId) extends ParametersDefinitionError
+    final case class TestingWithCustomInputNotSupportedError(nodeId: NodeId, nodeName: NodeName)
+        extends ParametersDefinitionError
 
   }
 
@@ -622,8 +641,12 @@ object ScenarioTestService {
         cause: TestDataFormatHandler.ExpressionsToTestDataConversionError
     ) extends PerformTestError
 
-    final case class UnexpectedVariableInTestRecordError(variableName: String, sourceId: NodeId, testRecordIndex: Int)
-        extends PerformTestError
+    final case class UnexpectedVariableInTestRecordError(
+        variableName: String,
+        sourceId: NodeId,
+        sourceName: Option[NodeName],
+        testRecordIndex: Int
+    ) extends PerformTestError
 
     final case class TestRecordVariableDecodingError(
         variableName: String,
@@ -631,6 +654,7 @@ object ScenarioTestService {
         encodedVariable: Json,
         cause: DecodingFailure,
         sourceId: NodeId,
+        sourceName: Option[NodeName],
         testRecordIndex: Int,
     ) extends PerformTestError
 

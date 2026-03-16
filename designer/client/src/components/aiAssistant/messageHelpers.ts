@@ -2,7 +2,15 @@ import type { ChatModelRunOptions, ThreadMessage } from "@assistant-ui/react";
 import { ToolResponse } from "assistant-stream";
 import { mapValues, omit } from "lodash";
 
-import type { ChatRequest } from "./ChatRequest";
+import type {
+    ChatRequest,
+    ChatRequestWithMessage,
+    ChatRequestWithToolResults,
+    ToolCallId,
+    ToolExecutionResult,
+    ToolName,
+    ToolResult,
+} from "./ChatRequest";
 import { wasToolResponseConsumed } from "./ThreadIdManager";
 
 function getLastUserMessage(messages: readonly ThreadMessage[]) {
@@ -12,23 +20,12 @@ function getLastUserMessage(messages: readonly ThreadMessage[]) {
 
 const EMPTY_RESPONSES = [undefined, null, ""].map((v) => ToolResponse.toResponse(v).result);
 
-export function extractMessage(messages: ChatModelRunOptions["messages"], lastAssistantMessage?: ThreadMessage): ChatRequest["message"] {
+export function extractMessage(
+    messages: ChatModelRunOptions["messages"],
+    lastAssistantMessage?: ThreadMessage,
+): ChatRequestWithMessage["message"] | null {
     if (lastAssistantMessage?.content.length > 0 && !messages.find((m) => m.id === lastAssistantMessage.id)) {
-        if (lastAssistantMessage.content[lastAssistantMessage.content.length - 1].type === "tool-call") {
-            const results = lastAssistantMessage?.content
-                .map((c) => {
-                    if (c.type !== "tool-call") return null;
-                    if (c.isError) return null;
-                    if (EMPTY_RESPONSES.includes(c.result)) return null;
-                    if (wasToolResponseConsumed(c.toolCallId)) return null;
-                    return JSON.stringify({ toolCallId: c.toolCallId, result: c.result });
-                })
-                .filter(Boolean);
-            if (results?.length > 0) {
-                return { text: results.join("\n") };
-            }
-        }
-        return;
+        return null;
     }
 
     const lastUserMessage = getLastUserMessage(messages);
@@ -38,6 +35,33 @@ export function extractMessage(messages: ChatModelRunOptions["messages"], lastAs
     }
 
     return { text: "" };
+}
+
+export function extractToolResults(
+    messages: ChatModelRunOptions["messages"],
+    lastAssistantMessage?: ThreadMessage,
+): ChatRequestWithToolResults["toolExecutionResults"] | null {
+    if (!lastAssistantMessage?.content.length) return null;
+    if (messages.find((m) => m.id === lastAssistantMessage.id)) return null;
+
+    const lastContent = lastAssistantMessage.content[lastAssistantMessage.content.length - 1];
+    if (lastContent.type !== "tool-call") return null;
+
+    const results: ToolExecutionResult[] = lastAssistantMessage.content
+        .map((c) => {
+            if (c.type !== "tool-call") return null;
+            if (c.isError) return null;
+            if (EMPTY_RESPONSES.includes(c.result)) return null;
+            if (wasToolResponseConsumed(c.toolCallId)) return null;
+            return {
+                id: c.toolCallId as ToolCallId,
+                name: c.toolName as ToolName,
+                result: c.result as ToolResult,
+            };
+        })
+        .filter(Boolean);
+
+    return results.length > 0 ? results : null;
 }
 
 function pickBasic(schema) {
@@ -56,7 +80,11 @@ export function extractTools({ tools }: ChatModelRunOptions["context"]): ChatReq
     return Object.entries(tools)
         .map(([name, { type, description, parameters }]) => {
             if (type !== "frontend") return;
-            return { name, description, parameters: pickBasic(parameters) };
+            return {
+                name: name as ToolName,
+                description: description,
+                parameters: pickBasic(parameters),
+            };
         })
         .filter(Boolean);
 }

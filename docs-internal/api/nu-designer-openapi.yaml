@@ -37,7 +37,8 @@ paths:
                   value:
                   - name: scenario1
                     nodesUsagesData:
-                    - nodeId: csv-source
+                    - nodeId: 513eab33-d9b3-4c67-a9e7-b84ae184eb64
+                      nodeName: csv-source
                       type: ScenarioUsageData
                     isFragment: false
                     processCategory: Category1
@@ -51,7 +52,8 @@ paths:
                   value:
                   - name: scenario1
                     nodesUsagesData:
-                    - nodeId: csv-source
+                    - nodeId: 513eab33-d9b3-4c67-a9e7-b84ae184eb64
+                      nodeName: csv-source
                       type: ScenarioUsageData
                     isFragment: false
                     processCategory: Category1
@@ -930,7 +932,7 @@ paths:
                   value: |-
                     Scenario is invalid.
                     Node errors:
-                      filter: Bad expression
+                      Unknown node name: Bad expression
                     Global errors: Empty scenario
                     Properties errors: Configured property parallelism is missing
                 Example3:
@@ -1414,7 +1416,8 @@ paths:
               Example:
                 summary: Basic node request
                 value:
-                  id: enricher
+                  id: 99ae6a31-a55d-4d52-89af-58f471e7143d
+                  name: enricher
                   service:
                     id: paramService
                     parameters:
@@ -1532,7 +1535,8 @@ paths:
                 summary: Validate correct Filter node
                 value:
                   nodeData:
-                    id: id
+                    id: 99ae6a31-a55d-4d52-89af-58f471e7143d
+                    name: id
                     expression:
                       language: spel
                       expression: '#longValue > 1'
@@ -1557,7 +1561,8 @@ paths:
                 summary: Validate incorrect Filter node - wrong expression type
                 value:
                   nodeData:
-                    id: id
+                    id: 740bbc64-a688-4a50-9104-be61eadfa82a
+                    name: id
                     expression:
                       language: spel
                       expression: '#existButString'
@@ -1582,7 +1587,8 @@ paths:
                 summary: Validate test cases for enricher node
                 value:
                   nodeData:
-                    id: enricher
+                    id: 513eab33-d9b3-4c67-a9e7-b84ae184eb64
+                    name: enricher
                     service:
                       id: paramService
                       parameters:
@@ -2338,7 +2344,8 @@ paths:
                       metaDataType: StreamMetaData
                       showDescription: false
                   nodeData:
-                    id: sourceId
+                    id: 513eab33-d9b3-4c67-a9e7-b84ae184eb64
+                    name: sourceId
                     ref:
                       typ: source
                       parameters: []
@@ -2364,11 +2371,12 @@ paths:
               examples:
                 Example0:
                   summary: Source compilation error
-                  value: 'Cannot compile source ''sourceId''. Errors: Invalid source
-                    configuration'
+                  value: 'Cannot compile source ''source name'' (id: sourceId). Errors:
+                    Invalid source configuration'
                 Example1:
                   summary: Unsupported source preview
-                  value: Source 'sourceId' doesn't support records preview
+                  value: 'Source ''source name'' (id: sourceId) doesn''t support records
+                    preview'
                 Example2:
                   summary: Invalid node type
                   value: 'Expected Filter but got: Source'
@@ -2624,7 +2632,8 @@ paths:
                   metaDataType: StreamMetaData
                   showDescription: false
               enricher:
-                id: enricher
+                id: 99ae6a31-a55d-4d52-89af-58f471e7143d
+                name: enricher
                 service:
                   id: paramService
                   parameters:
@@ -5093,7 +5102,8 @@ paths:
                   value:
                     testWithParameters:
                       sourceParameters:
-                      - sourceId: source
+                      - sourceId: 513eab33-d9b3-4c67-a9e7-b84ae184eb64
+                        sourceName: source
                         parameters:
                         - name: name
                           typ:
@@ -6557,11 +6567,17 @@ components:
       type: object
       required:
       - fragmentNodeId
+      - fragmentNodeName
       - nodeId
+      - nodeName
       properties:
         fragmentNodeId:
           type: string
+        fragmentNodeName:
+          type: string
         nodeId:
+          type: string
+        nodeName:
           type: string
     GenerateEnricherMockRequestDto:
       title: GenerateEnricherMockRequestDto
@@ -7314,9 +7330,9 @@ components:
       title: NodeId
       type: object
       required:
-      - id
+      - value
       properties:
-        id:
+        value:
           type: string
     NodeTestCase:
       title: NodeTestCase
@@ -8178,8 +8194,11 @@ components:
       type: object
       required:
       - nodeId
+      - nodeName
       properties:
         nodeId:
+          type: string
+        nodeName:
           type: string
     ServiceRef:
       title: ServiceRef

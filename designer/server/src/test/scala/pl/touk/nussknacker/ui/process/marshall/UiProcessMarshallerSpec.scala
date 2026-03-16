@@ -64,6 +64,7 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
        |        {
        |            "type" : "Source",
        |            "id" : "start",
+       |            "name" : "start",
        |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "Topic", "expression": { "language": "spel", "expression": "in.topic" }}]},
        |            "additionalFields": { "description": "$someNodeDescription"}
        |        }

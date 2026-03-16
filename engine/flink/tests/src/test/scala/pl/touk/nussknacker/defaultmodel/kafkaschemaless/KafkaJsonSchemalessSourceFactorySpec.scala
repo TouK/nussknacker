@@ -8,6 +8,7 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistryClientHolder
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
@@ -208,7 +209,8 @@ class KafkaJsonSchemalessSourceFactorySpec
   protected def validateParamsAndGetValidationContext(
       nodeParameters: List[NodeParameter]
   ): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-    val compilationResult = nodeCompiler.compileNode(SourceNode("mock-id", SourceRef("kafka", nodeParameters)))
+    val compilationResult =
+      nodeCompiler.compileNode(SourceNode(NodeId("mock-id"), NodeName("mock-id"), SourceRef("kafka", nodeParameters)))
     compilationResult.compiledObject.andThen { _ =>
       compilationResult.validationContext
     }

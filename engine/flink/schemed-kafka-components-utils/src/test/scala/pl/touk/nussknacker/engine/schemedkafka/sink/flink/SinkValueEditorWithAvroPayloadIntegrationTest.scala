@@ -7,7 +7,7 @@ import org.apache.avro.generic.GenericRecord
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelConfig
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ScenarioCompilationErrors
@@ -238,7 +238,7 @@ class SinkValueEditorWithAvroPayloadIntegrationTest
     val nuExceptionInfo = RecordingExceptionConsumer.exceptionsFor(runId).head
 
     nuExceptionInfo.nodeComponentInfo shouldBe Some(
-      NodeComponentInfo(NodeId("end"), ComponentType.Sink, "flinkKafkaUniversalSink")
+      NodeComponentInfo(NodeId("end"), NodeName("end"), ComponentType.Sink, "flinkKafkaUniversalSink")
     )
     nuExceptionInfo.throwable shouldBe a[AvroRuntimeException]
     nuExceptionInfo.throwable.getMessage should include(message)

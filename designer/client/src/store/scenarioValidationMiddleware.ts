@@ -18,7 +18,7 @@ const debouncedValidate = debounce((dispatch: ThunkDispatch, getState: () => Roo
     const scenarioName = getProcessName(state);
     const scenarioGraph = produce(getScenarioGraph(state), (draft) => {
         draft.nodes.forEach((node) => {
-            node.id = cleanNodeIdPlaceholder(node.id);
+            node.name = cleanNodeIdPlaceholder(node.name);
         });
     });
     const unsavedOrCurrentName = getUnsavedOrCurrentName(state);

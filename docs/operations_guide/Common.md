@@ -121,24 +121,25 @@ Below we describe common
 
 #### Common metrics
 
-| Measurement             | Additional tags | Metric type             | Notes                                                   |
-|-------------------------|-----------------|-------------------------|---------------------------------------------------------|
-| nodeCount               | nodeId          | counter                 | used e.g. by count functionality                        |
-| error.instantRate       | -               | instantRate             |                                                         |
-| error.instantRateByNode | nodeId          | instantRate             | nodeId is `unknown` if we fail to detect exact place    |
-| service.OK              | serviceName     | histogram + instantRate | histogram of successful invocation times                |
-| service.FAIL            | serviceName     | histogram + instantRate | histogram of successful invocation times                |
+| Measurement             | Additional tags  | Metric type             | Notes                                                   |
+|-------------------------|------------------|-------------------------|---------------------------------------------------------|
+| nodeCount               | nodeId, nodeName | counter                 | used e.g. by count functionality                        |
+| error.instantRate       | -                | instantRate             |                                                         |
+| error.instantRateByNode | nodeId, nodeName | instantRate             | nodeId is `unknown` if we fail to detect exact place    |
+| service.OK              | serviceName      | histogram + instantRate | histogram of successful invocation times                |
+| service.FAIL            | serviceName      | histogram + instantRate | histogram of successful invocation times                |
 
 #### Streaming metrics
 
-| Measurement                 | Additional tags | Metric type           | Description                                                                    |
-|-----------------------------|-----------------|-----------------------|--------------------------------------------------------------------------------|
-| source                      | nodeId          | instantRate + counter |                                                                                |
-| eventtimedelay.histogram    | nodeId          | histogram             | only for sources with eventTime, measures delay from event time to system time |
-| eventtimedelay.minimalDelay | nodeId          | gauge                 | time from last event (eventTime) to system time                                |
-| end                         | nodeId          | instantRate + counter | for sinks and end processors                                                   |
-| dead_end                    | nodeId          | instantRate + counter | for event filtered out on filters, choices etc.                                |
+| Measurement                 | Additional tags  | Metric type           | Description                                                                    |
+|-----------------------------|------------------|-----------------------|--------------------------------------------------------------------------------|
+| source                      | nodeId, nodeName | instantRate + counter |                                                                                |
+| eventtimedelay.histogram    | nodeId, nodeName | histogram             | only for sources with eventTime, measures delay from event time to system time |
+| eventtimedelay.minimalDelay | nodeId, nodeName | gauge                 | time from last event (eventTime) to system time                                |
+| end                         | nodeId, nodeName | instantRate + counter | for sinks and end processors                                                   |
+| dead_end                    | nodeId, nodeName | instantRate + counter | for event filtered out on filters, choices etc.                                |
 
+For node-level metrics, `nodeId` is a technical identifier (typically UUID-like), while `nodeName` is a user-visible node label.
 
 Each of these metrics comes with the tags specific for execution engine:
 

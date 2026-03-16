@@ -2,7 +2,7 @@ package pl.touk.nussknacker.defaultmodel.migrations
 
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, NodeName, StreamMetaData}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -15,7 +15,8 @@ class DecisionTableParameterNamesMigrationSpec extends AnyFreeSpecLike with Matc
   "DecisionTableParameterNamesMigration should be applied" in {
     val metaData = MetaData("test", StreamMetaData(Some(1)))
     val beforeMigration = Enricher(
-      id = "decision-table",
+      id = NodeId("decision-table"),
+      name = NodeName("decision-table"),
       service = ServiceRef(
         id = "decision-table-service",
         parameters = List(
@@ -26,7 +27,8 @@ class DecisionTableParameterNamesMigrationSpec extends AnyFreeSpecLike with Matc
       output = "Output",
     )
     val expectedAfterMigration = Enricher(
-      id = "decision-table",
+      id = NodeId("decision-table"),
+      name = NodeName("decision-table"),
       service = ServiceRef(
         id = "decision-table-service",
         parameters = List(

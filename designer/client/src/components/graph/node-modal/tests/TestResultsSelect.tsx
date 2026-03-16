@@ -4,6 +4,8 @@ import React from "react";
 
 import type { NodeTestResults, StateForSelectTestResults } from "../../../../common/TestResultUtils";
 import TestResultUtils from "../../../../common/TestResultUtils";
+import { getNodes } from "../../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { FormControl, FormLabel } from "../editors/FormControl";
 import type { Option } from "../fragment-input-definition/TypeSelect";
 import { TypeSelect } from "../fragment-input-definition/TypeSelect";
@@ -16,6 +18,7 @@ export interface TestResultsSelectProps {
 
 export default function TestResultsSelect(props: TestResultsSelectProps): React.JSX.Element {
     const { results, value, onChange } = props;
+    const sourceNameById = useAppSelector(getNodes).reduce<Record<string, string>>((acc, node) => ({ ...acc, [node.id]: node.name }), {});
 
     const theme = useTheme();
 
@@ -23,8 +26,8 @@ export default function TestResultsSelect(props: TestResultsSelectProps): React.
         return null;
     }
 
-    const availableContexts: Option[] = TestResultUtils.availableContexts(results).map(({ id, display }) => ({
-        label: `${id} ${display}`,
+    const availableContexts: Option[] = TestResultUtils.availableContexts(results).map(({ id, display, sourceNodeId }) => ({
+        label: `${sourceNodeId ? id.replace(sourceNodeId, sourceNameById[sourceNodeId] || sourceNodeId) : id} ${display}`.trim(),
         value: id,
     }));
 

@@ -63,6 +63,7 @@ class GenericSourceWithCustomTestingSupportTestingApiHttpServiceSpec
     s"""[
        |  {
        |    "sourceId": "$exampleScenarioSourceId",
+       |    "sourceName": "$exampleScenarioSourceId",
        |    "parameters": [
        |      {
        |        "name": "$InputVariablesParameterName",

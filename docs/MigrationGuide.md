@@ -45,6 +45,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   now we always set uid to node id in stateful operators
 * [#8842](https://github.com/TouK/nussknacker/pull/8842) Due to changes in Flink serialization ([FLIP-398](https://cwiki.apache.org/confluence/display/FLINK/FLIP-398:+Improve+Serialization+Configuration+And+Usage+In+Flink))
   we decided to remove `avroKryoGenericRecordSchemaIdSerialization` optimization config option. It will cause decrease of performance when Avro record is serialized using Kryo, because record will be serialized together with its Avro schema.
+* [#9037](https://github.com/TouK/nussknacker/pull/9037) Changes around Table-API based Component Providers:
+  * Component Provider for Table Source and Table Sink - rename from `flinkTableDataSource` to `flinkTableIO`
+  * Component Provider for Join and Aggregate components
+    * renamed from `flinkTableOps` to `flinkBatchOps`
+    * is no longer loaded by default - no need to disable it for streaming configurations, and for batch configurations,
+      it can be enabled by `components.flinkBatchOps.disabled: false` config under `modelConfig`
 
 ### REST API changes
 
@@ -65,6 +71,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
         * `/test` to `/performTest`
         * `/testCase` to `/performTestCase`
 `   * introduced` new representation of test results, grouped per transition between nodes (toggleable in on API request level)
+* [#8997](https://github.com/TouK/nussknacker/pull/8997) Node IDs were changed to technical UUIDs and separated from user-facing node names:
+  * Existing scenarios are automatically migrated: previous human-readable node id is moved to node `name`, and a new UUID is generated as node `id`.
+  * In scenario JSON and HTTP DTOs, node `id` is now technical and stable (UUID), while node `name` is user-editable and should be used for UI-facing text.
+  * `ValidationResult` response contains `nodeNames` map (`nodeId -> nodeName`) to allow clients to render readable node labels.
+  * `KafkaExceptionInfo` payload now contains `nodeName`, and existing `nodeId` field now contains technical UUID values (not user labels).
+  * Links/query params that point to nodes by id (e.g. visualization URLs with `nodeId=...`) now require technical UUIDs. Old links based on former human-readable ids stop matching nodes.
 
 ### Code API changes
 
@@ -181,6 +193,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `KafkaComponentsConfig.kafkaAddress` was removed
 * [#8576](https://github.com/TouK/nussknacker/pull/8576) `NodeId` value class become used more frequently in the API:
   `NodeComponentInfo`, `ContextId`, `ProcessCompilationError`, `ProcessListener` and `FlinkCustomNodeContext`
+* [#8997](https://github.com/TouK/nussknacker/pull/8997) Node identity semantics changed in API modules:
+  * `NodeId` should be treated as internal technical identity (UUID) and not shown to end users as a readable label.
+  * `NodeName` is now the user-facing label; for user-visible errors/logs/messages use `NodeName`, optionally with `NodeId` only as technical details.
+  * If your custom code (including integrations based on `*-api` modules) assumed `nodeId == displayed node name`, it must be updated to use both fields explicitly.
+  * In places where you serialize/deserialize scenario-related HTTP payloads, ensure mappings preserve both `id` and `name` fields.
 * [#8632](https://github.com/TouK/nussknacker/pull/8632) `DynamicComponent`'s `[T]` generic parameter was replaced with `Implementation` type
   We recommend to not invoke `DynamicComponent.implemenation()` method directly. To check how component behave during compilation, use `TestNodeCompiler` instead.
   Read [Testing](../docs/developers_guide/Testing.md) for more info.
@@ -207,6 +224,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
     * We lost support for old ConsumerRecord constructor supported by Flink 1.14 / 1.15
     * If you used Kafka source/sink components in your scenarios then state of these scenarios won't be restored
+* [#8997](https://github.com/TouK/nussknacker/pull/8997) Operational impact of random/stable technical node IDs:
+  * During first migration of existing scenarios, node ids change to UUIDs, so external tools comparing scenario JSON by node ids can observe large one-time diffs.
+  * Migration `NodeIdToUuidMigration` must be applied in model migration list, so legacy scenarios are migrated to UUID-based node ids.
+  * Metrics dimensions based on `nodeId` changed to UUID values. If dashboards/alerts used former human-readable ids, they require updates.
+    Where available, prefer `nodeName` metric tag for human-readable presentation.
+  * Kafka consumer groups using naming strategy containing `nodeId` (e.g. `processId-nodeId`) will change identifiers after migration.
+    This can require offsets migration / planned cutover.
+  * Flink operator UIDs are now based on technical node IDs. For scenarios migrated from old ids, savepoints/checkpoints created before migration can become incompatible.
 * [#7257](https://github.com/TouK/nussknacker/pull/7257) [#7259](https://github.com/TouK/nussknacker/pull/7259) `components-api` module
   doesn't depend on `async-http-client-backend-future`, `http-utils` module is delivered by `flink-executor` and `lite-runtime` modules.
   If your component had compile-time dependency to `http-utils`, it should be replaced by provided scope

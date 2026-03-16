@@ -3,15 +3,16 @@ import type {
     DataEditorProps,
     DataEditorRef,
     EditListItem,
+    GetRowThemeCallback,
     GridCell,
+    GridColumn,
     GridMouseCellEventArgs,
     GridSelection,
     Item,
+    ProvideEditorComponent,
     Theme,
 } from "@glideapps/glide-data-grid";
 import DataEditor, { CompactSelection, type CustomRenderer, drawTextCell, GridCellKind } from "@glideapps/glide-data-grid";
-import type { GridColumn, ProvideEditorComponent } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
-import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
 import { Box, useTheme } from "@mui/material";
 import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import React, { useCallback, useMemo, useRef, useState } from "react";
@@ -103,7 +104,7 @@ export const Table: React.FC<TableProps> = ({
             kind: GridCellKind.Custom,
             isMatch: isSourceSelectCell,
             draw: (drawArgs, cell) => {
-                drawTextCell(drawArgs, cell.data.value, cell.contentAlign);
+                drawTextCell(drawArgs, cell.data.displayValue || cell.data.value, cell.contentAlign);
                 return true;
             },
             provideEditor: () => ({
@@ -111,7 +112,7 @@ export const Table: React.FC<TableProps> = ({
                 deletedValue: (sourceSelectCell) => ({
                     ...sourceSelectCell,
                     copyData: "",
-                    data: { ...(sourceSelectCell as unknown as SourceSelectCell).data, value: "" },
+                    data: { ...(sourceSelectCell as unknown as SourceSelectCell).data, value: "", displayValue: "" },
                 }),
             }),
         }),
@@ -140,7 +141,15 @@ export const Table: React.FC<TableProps> = ({
 
     const defaultVariablesBySourceId = useMemo(() => buildDefaultVariablesMap(sourceParameters), [sourceParameters]);
 
-    const getCellContent = useCallback((item: Item): GridCell => getTestingCellContent(item, data, sourceOptions), [data, sourceOptions]);
+    const sourceNameById = useMemo(
+        () => sourceParameters.reduce<Record<string, string>>((acc, sp) => ({ ...acc, [sp.sourceId]: sp.sourceName }), {}),
+        [sourceParameters],
+    );
+
+    const getCellContent = useCallback(
+        (item: Item): GridCell => getTestingCellContent(item, data, sourceOptions, sourceNameById),
+        [data, sourceOptions, sourceNameById],
+    );
     const buildRowUpdates = useCallback(
         (changes: readonly (EditListItem | { location: Item; value: SourceSelectCell })[]): Record<number, TestingDataRecords> =>
             buildInputDataRecordUpdates(changes, data, defaultVariablesBySourceId),

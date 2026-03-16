@@ -4,7 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
-import pl.touk.nussknacker.engine.api.{ContextId, JobData, MetaData, NodeId, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{ContextId, JobData, MetaData, NodeId, NodeName, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -56,7 +56,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
   private val nodeId = NodeId("someNode")
 
   private val scenarioTyping: Map[String, NodeTypingData] = Map(
-    nodeId.id -> NodeTypingData(
+    nodeId.value -> NodeTypingData(
       variableTypes = Map(
         "someVariable"   -> Typed.fromInstance("bar"),
         "someJavaList"   -> Typed.fromInstance(new util.ArrayList[String]()),
@@ -231,8 +231,8 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
   ): List[AssertionResult] = {
     val jobData = JobData(MetaData("someScenario", StreamMetaData()), ProcessVersion.empty)
     val compiledTestCase = assertionsCompiler
-      .compile(testCase, scenarioTyping, jobData)
-      .fold(errors => throw new IllegalStateException(s"Test compilation errors: $errors"), identity)
+      .compile(testCase, scenarioTyping, jobData, Map(nodeId -> NodeName(nodeId.value)))
+      .fold(errors => throw new IllegalStateException(s"Test compilation errors: $errors"), compiled => compiled)
     val results = assertionVerifier.verify(
       compiledTestCase,
       nodesResultsAfterTestRun,

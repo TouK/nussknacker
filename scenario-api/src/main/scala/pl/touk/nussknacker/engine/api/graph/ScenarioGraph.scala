@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.graph
 import io.circe.{Codec, Decoder, Encoder, HCursor}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.graph.EdgeType
@@ -46,7 +46,7 @@ object ScenarioGraph {
 
 }
 
-@JsonCodec final case class Edge(from: String, to: String, edgeType: Option[EdgeType])
+@JsonCodec final case class Edge(from: NodeId, to: NodeId, edgeType: Option[EdgeType])
 
 // We have the same additionalFields name as in NodeData because properties are treated as node on the FE side
 // TODO: remove additionalFields nesting when we stop treating properties as a node on the FE side

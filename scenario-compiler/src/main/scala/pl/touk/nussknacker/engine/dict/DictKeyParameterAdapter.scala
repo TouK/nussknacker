@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.dict
 import cats.data.{Validated, ValidatedNel}
 import cats.data.Validated.{invalidNel, Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.IncompatibleParameterDefinitionModification
 import pl.touk.nussknacker.engine.api.definition._
@@ -19,6 +19,7 @@ object DictKeyParameterAdapter extends LazyLogging {
       canonicalProcess: CanonicalProcess,
       parametersToAdapt: List[ParameterToAdapt],
   ): CanonicalProcess = {
+    val nodeNamesById = canonicalProcess.collectAllNodes.map(node => node.id -> node.name).toMap
     val rewriter = ProcessNodesRewriter.rewritingAllExpressions { exprIdWithMetadata => original =>
       val parameterToAdaptForExpressionOpt = parametersToAdapt.find { error =>
         error.nodeId == exprIdWithMetadata.expressionId.nodeId &&
@@ -29,21 +30,27 @@ object DictKeyParameterAdapter extends LazyLogging {
           logger.info(
             s"Found parameter [${parameterToAdapt.paramName.value}] in node [${parameterToAdapt.nodeId}] that needs to be adapted to editors [${parameterToAdapt.parameterEditors.mkString(",")}]"
           )
-          adaptDictKeyExpressionToAvailableEditors(
-            original,
-            parameterToAdapt.parameterEditors,
-            parameterToAdapt.paramName
-          )(
-            exprIdWithMetadata.expressionId.nodeId
-          ) match {
-            case Valid(modified) =>
-              logger.info(
-                s"Adaptation successful for parameter [${parameterToAdapt.paramName.value}] in node [${parameterToAdapt.nodeId}]: [$original] adapted to [$modified]"
-              )
-              modified
-            case Invalid(_) =>
-              logger.info(
-                s"Adaptation not successful for parameter [${parameterToAdapt.paramName.value}] in node [${parameterToAdapt.nodeId}]: using original value without modification"
+          nodeNamesById.get(exprIdWithMetadata.expressionId.nodeId) match {
+            case Some(nodeName) =>
+              adaptDictKeyExpressionToAvailableEditors(
+                original,
+                parameterToAdapt.parameterEditors,
+                parameterToAdapt.paramName
+              )(exprIdWithMetadata.expressionId.nodeId, nodeName) match {
+                case Valid(modified) =>
+                  logger.info(
+                    s"Adaptation successful for parameter [${parameterToAdapt.paramName.value}] in node [${parameterToAdapt.nodeId}]: [$original] adapted to [$modified]"
+                  )
+                  modified
+                case Invalid(_) =>
+                  logger.info(
+                    s"Adaptation not successful for parameter [${parameterToAdapt.paramName.value}] in node [${parameterToAdapt.nodeId}]: using original value without modification"
+                  )
+                  original
+              }
+            case None =>
+              logger.warn(
+                s"Cannot adapt parameter [${parameterToAdapt.paramName.value}] for missing node name of node [${parameterToAdapt.nodeId}]"
               )
               original
           }
@@ -59,10 +66,11 @@ object DictKeyParameterAdapter extends LazyLogging {
       editors: List[ParameterEditor],
       paramName: ParameterName,
   )(
-      implicit nodeId: NodeId
+      implicit nodeId: NodeId,
+      nodeName: NodeName
   ): ValidatedNel[PartSubGraphCompilationError, Expression] = {
     val incompatibleChangeToParameterDefinitionDetected: ValidatedNel[PartSubGraphCompilationError, Expression] =
-      invalidNel(IncompatibleParameterDefinitionModification(paramName, expression.language, editors, nodeId))
+      invalidNel(IncompatibleParameterDefinitionModification(paramName, expression.language, editors, nodeId, nodeName))
 
     def adaptToSpel(
         expression: Expression

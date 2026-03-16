@@ -1,0 +1,127 @@
+import { Box, Button, Typography } from "@mui/material";
+import React, { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+
+import { testScenarioWithTestCase } from "../../../actions/nk/testingActions";
+import { useUserSettings } from "../../../common/useUserSettings";
+import type { TestAssertionResults } from "../../../http/resultsWithCountsDto";
+import { getTestCase } from "../../../reducers/selectors/testCases";
+import { getTestResultsLoading } from "../../../reducers/selectors/testing";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
+import type { NodeType } from "../../../types/node";
+import { Expandable } from "../../common/Expandable";
+import { useTestingScenarioEnabled } from "../../modals/TestingDataRecords/useTestingScenarioEnabled";
+import { OpenNodeTestingDetails } from "./assertionResultsForNode/assertionResult/openNodeTestingDetails";
+import { AssertionResultsForNode } from "./assertionResultsForNode/assertionResultsForNode";
+import { AssertionResultsForNodeTitle } from "./assertionResultsForNode/assertionResultsForNodeTitle";
+import { useScenarioNodeOrder } from "./useScenarioNodeOrder";
+
+interface Props {
+    testAssertionResults: TestAssertionResults;
+}
+
+export const Results = ({ testAssertionResults }: Props) => {
+    const testCase = useAppSelector(getTestCase);
+    const dispatch = useAppDispatch();
+    const [showMockFieldOnEnrichers] = useUserSettings("node.showMockFieldOnEnrichers");
+    const isLoading = useAppSelector(getTestResultsLoading);
+
+    const testingScenarioEnabled = useTestingScenarioEnabled({ disabled: false });
+
+    const handleRun = useCallback(() => {
+        dispatch(testScenarioWithTestCase(testCase, showMockFieldOnEnrichers));
+    }, [dispatch, testCase, showMockFieldOnEnrichers]);
+
+    const { nodes, sortByScenarioOrder } = useScenarioNodeOrder();
+
+    const sortedNodeIds = useMemo(
+        () => sortByScenarioOrder(Object.keys(testAssertionResults)),
+        [testAssertionResults, sortByScenarioOrder],
+    );
+
+    if (sortedNodeIds.length === 0) {
+        return (
+            <NoResults
+                onRun={handleRun}
+                testCaseName={testCase.name}
+                isRunTestButtonDisabled={isLoading}
+                isRunTestButtonVisible={testingScenarioEnabled}
+            />
+        );
+    }
+
+    return <ResultsContent sortedNodeIds={sortedNodeIds} testAssertionResults={testAssertionResults} scenarioGraphNodes={nodes} />;
+};
+
+const NoResults = ({
+    onRun,
+    testCaseName,
+    isRunTestButtonDisabled,
+    isRunTestButtonVisible,
+}: {
+    onRun: () => void;
+    testCaseName: string;
+    isRunTestButtonDisabled: boolean;
+    isRunTestButtonVisible: boolean;
+}) => {
+    const { t } = useTranslation();
+
+    return (
+        <Box px={1.5} py={1}>
+            <Typography variant="body2" color="text.secondary">
+                {t("testCases.results.noResults", "No results yet.")}{" "}
+                {isRunTestButtonVisible && (
+                    <Button
+                        variant="text"
+                        size="small"
+                        onClick={onRun}
+                        disabled={isRunTestButtonDisabled}
+                        sx={{
+                            fontSize: "inherit",
+                            fontWeight: "inherit",
+                            p: 0,
+                            minWidth: 0,
+                            verticalAlign: "baseline",
+                            textTransform: "lowercase",
+                        }}
+                    >
+                        {t("testCases.results.run", "Run {{name}}", { name: testCaseName })}
+                    </Button>
+                )}
+            </Typography>
+        </Box>
+    );
+};
+
+interface ResultsContentProps {
+    sortedNodeIds: string[];
+    testAssertionResults: TestAssertionResults;
+    scenarioGraphNodes: NodeType[];
+}
+
+const ResultsContent = ({ sortedNodeIds, testAssertionResults, scenarioGraphNodes }: ResultsContentProps) => (
+    <>
+        {sortedNodeIds.map((nodeId) => {
+            const node = scenarioGraphNodes.find((node) => node.id === nodeId);
+
+            return (
+                <Expandable
+                    key={nodeId}
+                    expandableTitle={
+                        <AssertionResultsForNodeTitle
+                            title={node.name}
+                            assertionResults={testAssertionResults[nodeId]}
+                            action={node ? <OpenNodeTestingDetails node={node} /> : undefined}
+                            node={node}
+                        />
+                    }
+                    componentId={nodeId}
+                    detailsSx={{ pl: 2, pr: 1, py: 0 }}
+                    summarySx={{ px: 0.5, minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px", overflow: "hidden" } }}
+                >
+                    <AssertionResultsForNode nodeId={nodeId} />
+                </Expandable>
+            );
+        })}
+    </>
+);
