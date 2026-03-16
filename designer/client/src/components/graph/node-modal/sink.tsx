@@ -4,6 +4,7 @@ import type { UIParameter } from "../../../types/definition";
 import type { NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import { DisableField } from "./DisableField";
+import { NamedParamsDataMapper } from "./NamedParamsDataMapper";
 import { SourceSinkCommon } from "./SourceSinkCommon";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
@@ -26,6 +27,11 @@ export function Sink({
     showSwitch,
     showValidation,
 }: SinkProps): React.JSX.Element {
+    const isKafkaDynamicMode =
+        isEditMode &&
+        (node as unknown as { ref?: { typ?: string } }).ref?.typ?.endsWith("kafka") &&
+        !parameterDefinitions.find((p) => p.name === "Value");
+
     return (
         <SourceSinkCommon
             isEditMode={isEditMode}
@@ -36,6 +42,14 @@ export function Sink({
             errors={errors}
             setProperty={setProperty}
         >
+            {isKafkaDynamicMode && (
+                <NamedParamsDataMapper
+                    node={node}
+                    parameterDefinitions={parameterDefinitions}
+                    setProperty={setProperty}
+                    parametersBasePath="ref.parameters"
+                />
+            )}
             <div>
                 <DisableField
                     isEditMode={isEditMode}

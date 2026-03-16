@@ -21,9 +21,15 @@ interface Props {
     node: NodeType;
     parameterDefinitions: UIParameter[];
     setProperty: SetProperty;
+    parametersBasePath?: string;
 }
 
-export function NamedParamsDataMapper({ node, parameterDefinitions, setProperty }: Props): React.JSX.Element | null {
+export function NamedParamsDataMapper({
+    node,
+    parameterDefinitions,
+    setProperty,
+    parametersBasePath = "service.parameters",
+}: Props): React.JSX.Element | null {
     const mappableParams = useMemo(
         () =>
             parameterDefinitions.filter(
@@ -51,14 +57,14 @@ export function NamedParamsDataMapper({ node, parameterDefinitions, setProperty 
             for (const field of parsed) {
                 const paramIndex = currentParams.findIndex((p) => p.name === field.name);
                 if (paramIndex >= 0 && field.expression) {
-                    setProperty(`service.parameters[${paramIndex}].expression`, {
+                    setProperty(`${parametersBasePath}[${paramIndex}].expression`, {
                         expression: field.expression,
                         language: ExpressionLang.SpEL,
                     });
                 }
             }
         },
-        [node, setProperty],
+        [node, parametersBasePath, setProperty],
     );
 
     if (mappableParams.length === 0) return null;
