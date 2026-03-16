@@ -55,7 +55,7 @@ export function DataMapperComponent({
     return (
         <>
             {open && (
-                <Dialog open onClose={handleClose} maxWidth="xl" fullWidth>
+                <Dialog open onClose={handleClose} maxWidth="xl" fullWidth PaperProps={{ sx: { height: "calc(100% - 64px)" } }}>
                     <DataMapperDialogTitle node={node} onClose={handleClose} />
                     <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
                         <DataMapper
