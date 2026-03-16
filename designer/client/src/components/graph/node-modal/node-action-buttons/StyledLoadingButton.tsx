@@ -3,9 +3,6 @@ import { Box, IconButton, styled, Tooltip } from "@mui/material";
 import React from "react";
 
 import { LoadingButton } from "../../../../windowManager/LoadingButton";
-import { useHelpText } from "../editors/expression/helpText";
-import { ExpressionLang } from "../editors/expression/types";
-import StyledInfoMarkdown from "../editors/InfoTooltip/StyledInfoMarkdown";
 
 export const StyledLoadingButton = styled(LoadingButton)(({ theme }) => ({
     fontSize: "12px",
@@ -18,14 +15,11 @@ export const StyledLoadingButton = styled(LoadingButton)(({ theme }) => ({
 }));
 
 export function BuilderIconButton({ onClick, label = "Builder" }: { onClick: () => void; label?: string }): React.JSX.Element {
-    const helpText = useHelpText(ExpressionLang.SpEL);
-    const title = helpText ? (
+    const title = (
         <Box>
-            <Box sx={{ fontWeight: "bold", mb: 0.5 }}>{label}</Box>
-            <StyledInfoMarkdown>{helpText}</StyledInfoMarkdown>
+            <Box sx={{ fontWeight: "bold", mb: 0.5 }}>Open {label}</Box>
+            <Box>Build a SpEL expression visually or write it manually. Use # to access variables and helpers.</Box>
         </Box>
-    ) : (
-        label
     );
     return (
         <Tooltip title={title}>
