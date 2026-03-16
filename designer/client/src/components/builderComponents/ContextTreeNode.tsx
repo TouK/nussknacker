@@ -31,6 +31,8 @@ export interface ContextTreeNodeProps {
     useTypedPaths?: boolean;
     /** When false and useTypedPaths is true, typed objects use `.key` instead of `?.key`. Defaults to true. */
     nullSafe?: boolean;
+    /** When true, insertion requires double-click instead of single-click (prevents accidental inserts on tree expand). */
+    doubleClickToInsert?: boolean;
 }
 
 function hasKnownFields(typing: TypingResult | undefined): boolean {
@@ -60,6 +62,7 @@ export function ContextTreeNode({
     selectExpandable,
     useTypedPaths,
     nullSafe = true,
+    doubleClickToInsert,
 }: ContextTreeNodeProps): React.JSX.Element {
     const theme = useTheme();
     const filter = filterText?.toLowerCase() ?? "";
@@ -84,10 +87,12 @@ export function ContextTreeNode({
     const handleClick = () => {
         if (isExpandable) {
             setOpen((o) => !o);
-        } else {
+        } else if (!doubleClickToInsert) {
             onSelect(path);
         }
     };
+
+    const handleDoubleClick = doubleClickToInsert ? () => onSelect(path) : undefined;
 
     const dragData = nullSafeDrag ? toNullSafe(`#${path}`) : path;
 
@@ -95,6 +100,7 @@ export function ContextTreeNode({
         <Box>
             <Box
                 onClick={handleClick}
+                onDoubleClick={handleDoubleClick}
                 draggable
                 onDragStart={(e) => {
                     e.dataTransfer.setData("text/plain", dragData);
@@ -105,7 +111,7 @@ export function ContextTreeNode({
                     px: 1,
                     py: isTopLevel ? "4px" : "3px",
                     pl: `${8 + depth * 16}px`,
-                    cursor: isExpandable ? "pointer" : "grab",
+                    cursor: isExpandable ? "pointer" : doubleClickToInsert ? "default" : "grab",
                     borderRadius: 1,
                     mb: "1px",
                     mt: isTopLevel ? "2px" : 0,
@@ -203,6 +209,7 @@ export function ContextTreeNode({
                                 selectExpandable={selectExpandable}
                                 useTypedPaths={useTypedPaths}
                                 nullSafe={nullSafe}
+                                doubleClickToInsert={doubleClickToInsert}
                             />
                         );
                     })}

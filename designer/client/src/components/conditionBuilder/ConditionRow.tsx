@@ -24,6 +24,8 @@ interface ConditionRowProps {
     leftErrors: FieldError[];
     rightErrors: FieldError[];
     onValidate: (side: "left" | "right", expression: string) => void;
+    isActive?: boolean;
+    onActivate: (id: number) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -39,6 +41,8 @@ export function ConditionRow({
     leftErrors,
     rightErrors,
     onValidate,
+    isActive,
+    onActivate,
 }: ConditionRowProps): React.JSX.Element {
     const theme = useTheme();
     const leftContainerRef = useRef<HTMLElement>(null);
@@ -67,9 +71,10 @@ export function ConditionRow({
                 alignItems: "center",
                 gap: 1,
                 p: 1,
-                border: `1px solid ${theme.palette.divider}`,
+                border: `1px solid ${isActive ? theme.palette.primary.main : theme.palette.divider}`,
                 borderRadius: 1,
-                backgroundColor: alpha(theme.palette.background.paper, 0.4),
+                backgroundColor: isActive ? alpha(theme.palette.primary.main, 0.04) : alpha(theme.palette.background.paper, 0.4),
+                transition: "border-color 0.15s, background-color 0.15s",
             }}
         >
             {/* Row index */}
@@ -84,9 +89,7 @@ export function ConditionRow({
                     sx={{ flex: 1 }}
                     onFocus={() => {
                         focusedEditorContainerRef.current = leftContainerRef.current;
-                    }}
-                    onBlur={() => {
-                        if (focusedEditorContainerRef.current === leftContainerRef.current) focusedEditorContainerRef.current = null;
+                        onActivate(condition.id);
                     }}
                 >
                     <ExpressionSuggest
@@ -136,9 +139,7 @@ export function ConditionRow({
                         sx={{ flex: 1 }}
                         onFocus={() => {
                             focusedEditorContainerRef.current = rightContainerRef.current;
-                        }}
-                        onBlur={() => {
-                            if (focusedEditorContainerRef.current === rightContainerRef.current) focusedEditorContainerRef.current = null;
+                            onActivate(condition.id);
                         }}
                     >
                         <ExpressionSuggest
