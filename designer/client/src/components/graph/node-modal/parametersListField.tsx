@@ -2,6 +2,8 @@ import React, { useMemo } from "react";
 
 import { useUserSettings } from "../../../common/useUserSettings";
 import type { NodeType } from "../../../types/node";
+import { typingResultToSample } from "../../builderComponents/typeUtils";
+import { fieldsFromSample } from "../../dataMapper/dataMapperUtils";
 import { SpelExpressionPickerComponent } from "../../spelExpressionPicker/SpelExpressionPickerComponent";
 import { DataMapperComponent } from "./DataMapperComponent";
 import { DataSampleFieldWrapper } from "./dataSampleFieldWrapper";
@@ -69,10 +71,18 @@ export const ParametersListField = ({ getListFieldPath, paramWithIndex, ...props
         if (
             (paramKey === OverrideKeys.SinkKafkaValue || paramKey === OverrideKeys.HttpBody || paramKey === OverrideKeys.WebhookBody) &&
             showDataMapper
-        )
+        ) {
+            const paramDef = props.parameterDefinitions?.find((p) => p.name === param.name);
+            const initialFields = paramDef?.typ ? fieldsFromSample(typingResultToSample(paramDef.typ)) : undefined;
             return (
-                <DataMapperComponent node={node} onInsert={onInsertExpression} initialExpression={getParamExpression(node, param.name)} />
+                <DataMapperComponent
+                    node={node}
+                    onInsert={onInsertExpression}
+                    initialExpression={getParamExpression(node, param.name)}
+                    initialFields={initialFields?.length ? initialFields : undefined}
+                />
             );
+        }
     }, [param.name, paramKey, isEditMode, node, onInsertExpression, props.parameterDefinitions, showDataMapper]);
 
     const fieldErrors = useMemo(() => getValidationErrorsForField(props.errors, param.name), [props.errors, param.name]);

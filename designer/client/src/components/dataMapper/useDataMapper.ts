@@ -69,6 +69,20 @@ function findInTree(fields: FieldDef[], id: number): FieldDef | undefined {
     return undefined;
 }
 
+function mergeTypesFromSchema(parsed: FieldDef[], schema: FieldDef[]): FieldDef[] {
+    return parsed.map((f) => {
+        const schemaField = schema.find((s) => s.name === f.name);
+        if (!schemaField) return f;
+        if (f.isRecord && schemaField.children.length > 0) {
+            return { ...f, type: schemaField.type, children: mergeTypesFromSchema(f.children, schemaField.children) };
+        }
+        if (f.type === "Any" && schemaField.type !== "Any") {
+            return { ...f, type: schemaField.type };
+        }
+        return f;
+    });
+}
+
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function useDataMapper({
     initialContext,
@@ -84,11 +98,16 @@ export function useDataMapper({
 
     const [context, setContext] = useState<ContextData>(() => initialContext ?? (variableTypes ? {} : SAMPLE_CONTEXT));
     const [fields, setFields] = useState<FieldDef[]>(() => {
-        if (initialFieldsProp && initialFieldsProp.length > 0) return initialFieldsProp;
         if (initialExpression) {
             const parsed = parseSpelToFields(initialExpression);
-            if (parsed) return parsed;
+            if (parsed) {
+                if (initialFieldsProp?.length) {
+                    return mergeTypesFromSchema(parsed, initialFieldsProp);
+                }
+                return parsed;
+            }
         }
+        if (initialFieldsProp && initialFieldsProp.length > 0) return initialFieldsProp;
         return isEmbedded ? [] : INITIAL_FIELDS.map((f) => ({ ...f, id: nextId() }));
     });
     const [selField, setSelField] = useState<number | null>(null);
@@ -353,7 +372,34 @@ export function useDataMapper({
                             processProperties,
                         });
                         if (!data) return null;
+
+                        // Standard Kafka sink params that are not Avro value fields
+                        const KAFKA_SYSTEM_PARAMS = new Set([
+                            "Topic",
+                            "Schema version",
+                            "Key",
+                            "Raw editor",
+                            "Content type",
+                            "Value validation mode",
+                        ]);
+
+                        // Case 1: single "Value" param (raw editor mode) — use its typing result
                         const valueParam = data.parameters?.find((p) => p.name === "Value");
+                        if (valueParam?.typ) {
+                            const sample = typingResultToSample(valueParam.typ);
+                            if (typeof sample === "object" && sample !== null && !Array.isArray(sample) && Object.keys(sample).length > 0) {
+                                return { topic: label, schema: sample as Record<string, unknown>, sourceLabel };
+                            }
+                        }
+
+                        // Case 2: individual Avro field params (dynamic mode) — build schema from them
+                        const fieldParams = (data.parameters ?? []).filter((p) => !KAFKA_SYSTEM_PARAMS.has(p.name));
+                        if (fieldParams.length > 0) {
+                            const schema = Object.fromEntries(fieldParams.map((p) => [p.name, typingResultToSample(p.typ)]));
+                            return { topic: label, schema, sourceLabel };
+                        }
+
+                        // Case 3: fallback — parse defaultValue as JSON
                         const defaultExpr = valueParam?.defaultValue?.expression;
                         if (!defaultExpr) return null;
                         try {
