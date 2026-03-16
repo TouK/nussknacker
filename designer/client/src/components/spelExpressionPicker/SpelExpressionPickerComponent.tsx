@@ -7,7 +7,6 @@ import type { NodeType } from "../../types/node";
 import type { ContextData } from "../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../dataMapper/DataMapperDialogTitle";
 import { useInputOutputContext } from "../graph/node-modal/io/InputOutputContext";
-import { BuilderIconButton } from "../graph/node-modal/node-action-buttons/StyledLoadingButton";
 import { getFindAvailableVariables } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { SpelExpressionPicker } from "./SpelExpressionPicker";
 
@@ -19,6 +18,9 @@ interface Props {
     initialExpression?: string;
     paramName?: string;
     targetTypeDisplay?: string;
+    /** Controlled mode: open state managed externally. */
+    open?: boolean;
+    onClose?: () => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -29,9 +31,13 @@ export function SpelExpressionPickerComponent({
     initialExpression,
     paramName,
     targetTypeDisplay,
+    open: openProp,
+    onClose,
 }: Props): React.JSX.Element | null {
-    const [showDataMapper] = useUserSettings("node.showDataMapper");
-    const [open, setOpen] = useState(false);
+    const [showDataMapper] = useUserSettings("node.showFieldExpressionBuilder");
+    const [openInternal, setOpenInternal] = useState(false);
+    const isControlled = openProp !== undefined;
+    const open = isControlled ? openProp : openInternal;
 
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     const variableTypes = useMemo(() => findAvailableVariables(node.id), [findAvailableVariables, node.id]);
@@ -57,17 +63,18 @@ export function SpelExpressionPickerComponent({
 
     if (!showDataMapper) return null;
 
+    const handleClose = () => (isControlled ? onClose?.() : setOpenInternal(false));
+
     return (
         <>
-            <BuilderIconButton onClick={() => setOpen(true)} />
             {open && (
-                <Dialog open onClose={() => setOpen(false)} maxWidth="xl" fullWidth>
-                    <DataMapperDialogTitle node={node} onClose={() => setOpen(false)} title="expression picker" />
+                <Dialog open onClose={handleClose} maxWidth="xl" fullWidth>
+                    <DataMapperDialogTitle node={node} onClose={handleClose} title="expression picker" />
                     <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
                         <SpelExpressionPicker
                             onInsert={(spel) => {
                                 onInsert(spel);
-                                setOpen(false);
+                                handleClose();
                             }}
                             variableTypes={variableTypes}
                             contextData={contextData}

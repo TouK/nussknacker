@@ -28,6 +28,7 @@ export type ExpressionFieldProps = {
     variableTypes: VariableTypes;
     fieldErrors: FieldError[];
     endAdornment?: ReactNode;
+    inputAdornmentEnd?: ReactNode;
 };
 
 function ExpressionField(props: ExpressionFieldProps): React.JSX.Element {
@@ -45,6 +46,7 @@ function ExpressionField(props: ExpressionFieldProps): React.JSX.Element {
         variableTypes,
         fieldErrors,
         endAdornment,
+        inputAdornmentEnd,
     } = props;
     const [isMarked] = useDiffMark();
     const readOnly = !isEditMode;
@@ -65,6 +67,7 @@ function ExpressionField(props: ExpressionFieldProps): React.JSX.Element {
                 defaultValue={parameterDefinition?.defaultValue}
                 editors={editors}
                 endAdornment={endAdornment}
+                inputAdornmentEnd={inputAdornmentEnd}
                 expressionObj={expressionObj}
                 fieldErrors={fieldErrors}
                 fieldLabel={fieldLabel}
@@ -80,6 +83,7 @@ function ExpressionField(props: ExpressionFieldProps): React.JSX.Element {
         [
             editors,
             endAdornment,
+            inputAdornmentEnd,
             exprTextPath,
             expressionObj,
             fieldErrors,

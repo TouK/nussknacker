@@ -1,4 +1,4 @@
-import { Box, Dialog, DialogContent } from "@mui/material";
+import { Dialog, DialogContent } from "@mui/material";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
 import ProcessUtils from "../../../common/ProcessUtils";
@@ -20,7 +20,6 @@ import { EditorType, ExpressionLang } from "./editors/expression/types";
 import LabeledInput from "./editors/field/LabeledInput";
 import { FieldLabelConsumer } from "./editors/RenderFieldLabel";
 import { getValidationErrorsForField } from "./editors/Validators";
-import { FieldAddons } from "./fieldAddons";
 import { IdField } from "./IdField";
 import { useInputOutputContext } from "./io/InputOutputContext";
 import { BuilderIconButton } from "./node-action-buttons/StyledLoadingButton";
@@ -79,7 +78,7 @@ export default function Variable({ node, setProperty, isEditMode, showValidation
     });
     const readOnly = !isEditMode;
     const processingType = useAppSelector(getProcessingType);
-    const [showDataMapper] = useUserSettings("node.showDataMapper");
+    const [showDataMapper] = useUserSettings("node.showFieldExpressionBuilder");
     const [dataMapperContext, setDataMapperContext] = useState<ContextData>({});
     const contextFetched = useRef(false);
 
@@ -155,14 +154,10 @@ export default function Variable({ node, setProperty, isEditMode, showValidation
                 fieldErrors={getValidationErrorsForField(errors, "$expression")}
                 variableTypes={variableTypes}
                 validationLabelInfo={inferredVariableType}
+                inputAdornmentEnd={
+                    isEditMode && showDataMapper ? <BuilderIconButton onClick={handleOpenMapper} label="Data Mapper" /> : undefined
+                }
             />
-            {isEditMode && showDataMapper && (
-                <FieldAddons hasError={showValidation && getValidationErrorsForField(errors, "$expression").length > 0}>
-                    <Box display="flex" flexDirection="column" alignItems="flex-end" width="100%">
-                        <BuilderIconButton onClick={handleOpenMapper} />
-                    </Box>
-                </FieldAddons>
-            )}
             <DescriptionField
                 isEditMode={!readOnly}
                 showValidation={showValidation}

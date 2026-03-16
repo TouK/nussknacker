@@ -244,7 +244,7 @@ export function genSpel(conditions: Condition[], combinator: Combinator): string
         if (c.operator === "not matches") return `!(${c.left} matches '${c.right}')`;
         return `${c.left} ${c.operator} ${c.right}`;
     });
-    return parts.join(` ${combinator} `);
+    return parts.length === 1 ? parts[0] : parts.join(`\n${combinator} `);
 }
 
 export function makeCondition(partial: Partial<Omit<Condition, "id">> = {}): Condition {

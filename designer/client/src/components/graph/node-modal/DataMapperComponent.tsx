@@ -1,4 +1,4 @@
-import { Box, Dialog, DialogContent } from "@mui/material";
+import { Dialog, DialogContent } from "@mui/material";
 import React, { useMemo, useState } from "react";
 
 import { useUserSettings } from "../../../common/useUserSettings";
@@ -9,7 +9,6 @@ import { DataMapper } from "../../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../../dataMapper/DataMapperDialogTitle";
 import type { FieldDef } from "../../dataMapper/dataMapperUtils";
 import { useInputOutputContext } from "./io/InputOutputContext";
-import { BuilderIconButton } from "./node-action-buttons/StyledLoadingButton";
 import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 
 interface Props {
@@ -18,6 +17,9 @@ interface Props {
     initialExpression?: string;
     initialFields?: FieldDef[];
     hideFieldControls?: boolean;
+    /** Controlled mode: open state managed externally. */
+    open?: boolean;
+    onClose?: () => void;
 }
 
 export function DataMapperComponent({
@@ -26,9 +28,13 @@ export function DataMapperComponent({
     initialExpression,
     initialFields,
     hideFieldControls,
+    open: openProp,
+    onClose,
 }: Props): React.JSX.Element | null {
-    const [showDataMapper] = useUserSettings("node.showDataMapper");
-    const [open, setOpen] = useState(false);
+    const [showDataMapper] = useUserSettings("node.showFieldExpressionBuilder");
+    const [openInternal, setOpenInternal] = useState(false);
+    const isControlled = openProp !== undefined;
+    const open = isControlled ? openProp : openInternal;
 
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     const variableTypes = useMemo(() => findAvailableVariables(node.id), [findAvailableVariables, node.id]);
@@ -44,19 +50,18 @@ export function DataMapperComponent({
 
     if (!showDataMapper) return null;
 
+    const handleClose = () => (isControlled ? onClose?.() : setOpenInternal(false));
+
     return (
         <>
-            <Box display="flex" flexDirection="column" alignItems="flex-end" width="100%">
-                <BuilderIconButton onClick={() => setOpen(true)} />
-            </Box>
             {open && (
-                <Dialog open onClose={() => setOpen(false)} maxWidth="xl" fullWidth>
-                    <DataMapperDialogTitle node={node} onClose={() => setOpen(false)} />
+                <Dialog open onClose={handleClose} maxWidth="xl" fullWidth>
+                    <DataMapperDialogTitle node={node} onClose={handleClose} />
                     <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
                         <DataMapper
                             onInsert={(spel) => {
                                 onInsert(spel);
-                                setOpen(false);
+                                handleClose();
                             }}
                             variableTypes={variableTypes}
                             initialContext={initialContext}

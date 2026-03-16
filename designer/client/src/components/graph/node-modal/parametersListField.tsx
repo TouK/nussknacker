@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 
 import { useUserSettings } from "../../../common/useUserSettings";
 import type { NodeType } from "../../../types/node";
@@ -9,9 +9,8 @@ import { DataMapperComponent } from "./DataMapperComponent";
 import { DataSampleFieldWrapper } from "./dataSampleFieldWrapper";
 import { ExpressionLang } from "./editors/expression/types";
 import { useParamKey } from "./editors/ParamKeyProvider";
-import { getValidationErrorsForField } from "./editors/Validators";
 import { CopyEndpoint, EndpointFieldWrapper } from "./endpointFieldWrapper";
-import { FieldAddons } from "./fieldAddons";
+import { BuilderIconButton } from "./node-action-buttons/StyledLoadingButton";
 import { ParameterExpressionField } from "./ParameterExpressionField";
 import { OverrideKeys } from "./parameterHelpers";
 import type { ParametersListProps, ParameterWithIndex } from "./parametersList";
@@ -34,7 +33,8 @@ export type ParametersListFieldProps = ParametersListProps & {
 export const ParametersListField = ({ getListFieldPath, paramWithIndex, ...props }: ParametersListFieldProps) => {
     const paramKey = useParamKey();
     const { index, param } = paramWithIndex;
-    const [showDataMapper] = useUserSettings("node.showDataMapper");
+    const [showDataMapper] = useUserSettings("node.showFieldExpressionBuilder");
+    const [builderOpen, setBuilderOpen] = useState(false);
 
     const listFieldPath = useMemo(() => getListFieldPath(index), [getListFieldPath, index]);
 
@@ -54,41 +54,32 @@ export const ParametersListField = ({ getListFieldPath, paramWithIndex, ...props
         () => (spel: string) => setProperty(`${listFieldPath}.expression`, { expression: spel, language: ExpressionLang.SpEL }),
         [listFieldPath, setProperty],
     );
-    const dataMapperAddon = useMemo(() => {
-        if (!isEditMode) return undefined;
-        if (paramKey === OverrideKeys.ForEachElements) {
-            const paramDef = props.parameterDefinitions?.find((p) => p.name === param.name);
-            return (
-                <SpelExpressionPickerComponent
-                    node={node}
-                    onInsert={onInsertExpression}
-                    initialExpression={getParamExpression(node, param.name)}
-                    paramName={param.name}
-                    targetTypeDisplay={paramDef?.typ?.display}
-                />
-            );
-        }
+
+    const hasBuilder = useMemo(() => {
+        if (!isEditMode) return false;
+        if (paramKey === OverrideKeys.ForEachElements && showDataMapper) return true;
         if (
             (paramKey === OverrideKeys.SinkKafkaValue ||
                 paramKey === OverrideKeys.HttpBody ||
                 paramKey === OverrideKeys.WebhookBody ||
                 paramKey === OverrideKeys.SourceEventGeneratorValue) &&
             showDataMapper
-        ) {
-            const paramDef = props.parameterDefinitions?.find((p) => p.name === param.name);
-            const initialFields = paramDef?.typ ? fieldsFromSample(typingResultToSample(paramDef.typ)) : undefined;
-            return (
-                <DataMapperComponent
-                    node={node}
-                    onInsert={onInsertExpression}
-                    initialExpression={getParamExpression(node, param.name)}
-                    initialFields={initialFields?.length ? initialFields : undefined}
-                />
-            );
-        }
-    }, [param.name, paramKey, isEditMode, node, onInsertExpression, props.parameterDefinitions, showDataMapper]);
+        )
+            return true;
+        return false;
+    }, [isEditMode, paramKey, showDataMapper]);
 
-    const fieldErrors = useMemo(() => getValidationErrorsForField(props.errors, param.name), [props.errors, param.name]);
+    const builderLabel = paramKey === OverrideKeys.ForEachElements ? "Expression Picker" : "Data Mapper";
+
+    const inputAdornmentEnd = useMemo(
+        () => (hasBuilder ? <BuilderIconButton onClick={() => setBuilderOpen(true)} label={builderLabel} /> : undefined),
+        [hasBuilder, builderLabel],
+    );
+
+    const paramDef = useMemo(
+        () => props.parameterDefinitions?.find((p) => p.name === param.name),
+        [param.name, props.parameterDefinitions],
+    );
 
     return (
         <>
@@ -98,8 +89,36 @@ export const ParametersListField = ({ getListFieldPath, paramWithIndex, ...props
                 FieldWrapper={FieldWrapper}
                 {...props}
                 endAdornment={endAdornment}
+                inputAdornmentEnd={inputAdornmentEnd}
             />
-            {dataMapperAddon && <FieldAddons hasError={props.showValidation && fieldErrors.length > 0}>{dataMapperAddon}</FieldAddons>}
+            {paramKey === OverrideKeys.ForEachElements && isEditMode && (
+                <SpelExpressionPickerComponent
+                    node={node}
+                    onInsert={onInsertExpression}
+                    initialExpression={getParamExpression(node, param.name)}
+                    paramName={param.name}
+                    targetTypeDisplay={paramDef?.typ?.display}
+                    open={builderOpen}
+                    onClose={() => setBuilderOpen(false)}
+                />
+            )}
+            {(paramKey === OverrideKeys.SinkKafkaValue ||
+                paramKey === OverrideKeys.HttpBody ||
+                paramKey === OverrideKeys.WebhookBody ||
+                paramKey === OverrideKeys.SourceEventGeneratorValue) &&
+                isEditMode && (
+                    <DataMapperComponent
+                        node={node}
+                        onInsert={onInsertExpression}
+                        initialExpression={getParamExpression(node, param.name)}
+                        initialFields={(() => {
+                            const fields = paramDef?.typ ? fieldsFromSample(typingResultToSample(paramDef.typ)) : undefined;
+                            return fields?.length ? fields : undefined;
+                        })()}
+                        open={builderOpen}
+                        onClose={() => setBuilderOpen(false)}
+                    />
+                )}
         </>
     );
 };

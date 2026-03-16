@@ -268,7 +268,7 @@ describe("genSpel", () => {
                 ],
                 "&&",
             ),
-        ).toBe("#a > 0 && #b == null");
+        ).toBe("#a > 0\n&& #b == null");
     });
 
     it("two conditions joined with ||", () => {
@@ -280,7 +280,7 @@ describe("genSpel", () => {
                 ],
                 "||",
             ),
-        ).toBe("#a || !#b");
+        ).toBe("#a\n|| !#b");
     });
 
     it("empty conditions array returns empty string", () => {

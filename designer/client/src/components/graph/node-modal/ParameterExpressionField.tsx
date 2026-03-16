@@ -32,6 +32,7 @@ export type ParameterExpressionFieldProps = {
     showSwitch?: boolean;
     showValidation?: boolean;
     endAdornment?: ReactNode;
+    inputAdornmentEnd?: ReactNode;
 };
 
 //this is for "dynamic" parameters in sources, sinks, services etc.
@@ -49,6 +50,7 @@ export function ParameterExpressionField({ FieldWrapper, ...props }: ParameterEx
         showSwitch,
         showValidation,
         endAdornment,
+        inputAdornmentEnd,
     } = props;
 
     const expressionProperty = "expression";
@@ -85,10 +87,12 @@ export function ParameterExpressionField({ FieldWrapper, ...props }: ParameterEx
                 variableTypes={variableTypes}
                 fieldErrors={fieldErrors}
                 endAdornment={endAdornment}
+                inputAdornmentEnd={inputAdornmentEnd}
             />
         );
     }, [
         endAdornment,
+        inputAdornmentEnd,
         fieldErrors,
         isEditMode,
         listFieldPath,

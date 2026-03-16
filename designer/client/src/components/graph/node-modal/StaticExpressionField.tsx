@@ -23,6 +23,7 @@ export function StaticExpressionField({
     showSwitch,
     showValidation,
     endAdornment,
+    inputAdornmentEnd,
 }: {
     errors: NodeValidationError[];
     fieldLabel: string;
@@ -35,6 +36,7 @@ export function StaticExpressionField({
     showSwitch?: boolean;
     showValidation?: boolean;
     endAdornment?: ReactNode;
+    inputAdornmentEnd?: ReactNode;
 }): React.JSX.Element {
     const fieldName = "expression";
     const expressionProperty = "expression";
@@ -54,6 +56,7 @@ export function StaticExpressionField({
             variableTypes={variableTypes}
             fieldErrors={getValidationErrorsForField(errors, `$${fieldName}`)}
             endAdornment={endAdornment}
+            inputAdornmentEnd={inputAdornmentEnd}
         />
     );
 }
