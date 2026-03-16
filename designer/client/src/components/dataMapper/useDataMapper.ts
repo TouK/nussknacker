@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import HttpService from "../../http/HttpService/instance";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
@@ -27,6 +27,7 @@ interface UseDataMapperOptions {
     initialContext?: ContextData;
     initialExpression?: string;
     initialFields?: FieldDef[];
+    initialFocusFieldName?: string;
     variableTypes?: VariableTypes;
     isEmbedded: boolean;
     fetchTopicDefinitionsOverride?: () => Promise<TopicEntry[]>;
@@ -88,6 +89,7 @@ export function useDataMapper({
     initialContext,
     initialExpression,
     initialFields: initialFieldsProp,
+    initialFocusFieldName,
     variableTypes,
     isEmbedded,
     fetchTopicDefinitionsOverride,
@@ -111,6 +113,15 @@ export function useDataMapper({
         return isEmbedded ? [] : INITIAL_FIELDS.map((f) => ({ ...f, id: nextId() }));
     });
     const [selField, setSelField] = useState<number | null>(null);
+
+    const initialFocusFieldsRef = useRef(fields);
+    useEffect(() => {
+        if (!initialFocusFieldName) return;
+        const match = initialFocusFieldsRef.current.find((f) => f.name === initialFocusFieldName);
+        if (match) setSelField(match.id);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const [selPath, setSelPath] = useState<string | null>(null);
     const [dragOverId, setDragOverId] = useState<number | null>(null);
     const [showTargetSample, setShowTargetSample] = useState(false);

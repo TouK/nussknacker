@@ -9,6 +9,7 @@ import { DataMapper } from "../../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../../dataMapper/DataMapperDialogTitle";
 import type { FieldDef } from "../../dataMapper/dataMapperUtils";
 import { useInputOutputContext } from "./io/InputOutputContext";
+import { BuilderIconButton } from "./node-action-buttons/StyledLoadingButton";
 import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 
 interface Props {
@@ -16,6 +17,7 @@ interface Props {
     onInsert: (spel: string) => void;
     initialExpression?: string;
     initialFields?: FieldDef[];
+    initialFocusFieldName?: string;
     hideFieldControls?: boolean;
     /** Controlled mode: open state managed externally. */
     open?: boolean;
@@ -27,6 +29,7 @@ export function DataMapperComponent({
     onInsert,
     initialExpression,
     initialFields,
+    initialFocusFieldName,
     hideFieldControls,
     open: openProp,
     onClose,
@@ -54,6 +57,7 @@ export function DataMapperComponent({
 
     return (
         <>
+            {!isControlled && <BuilderIconButton onClick={() => setOpenInternal(true)} label="Data Mapper" />}
             {open && (
                 <Dialog open onClose={handleClose} maxWidth="xl" fullWidth PaperProps={{ sx: { height: "calc(100% - 64px)" } }}>
                     <DataMapperDialogTitle node={node} onClose={handleClose} />
@@ -67,6 +71,7 @@ export function DataMapperComponent({
                             initialContext={initialContext}
                             initialExpression={initialExpression}
                             initialFields={initialFields}
+                            initialFocusFieldName={initialFocusFieldName}
                             hideFieldControls={hideFieldControls}
                         />
                     </DialogContent>

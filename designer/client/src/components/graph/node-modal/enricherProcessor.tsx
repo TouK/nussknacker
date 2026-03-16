@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -23,6 +23,7 @@ import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { useInputOutputContext } from "./io/InputOutputContext";
 import { NamedParamsDataMapper } from "./NamedParamsDataMapper";
+import { NamedParamsMapperContext } from "./NamedParamsMapperContext";
 import { findParameters } from "./NodeDetailsContent/helpers";
 import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 import { NodeField } from "./NodeField";
@@ -70,6 +71,14 @@ export function EnricherProcessor({
     const { t } = useTranslation();
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     const kind = getComponentKind(determineComponentId(node));
+    const isDataMapper = node.type === "Enricher" && isEditMode && kind && DATA_MAPPER_OPENAPI_ENRICHER_KINDS.has(kind);
+
+    const [mapperOpen, setMapperOpen] = useState(false);
+    const [mapperFocusField, setMapperFocusField] = useState<string | undefined>();
+    const openMapper = useCallback((fieldName: string) => {
+        setMapperFocusField(fieldName);
+        setMapperOpen(true);
+    }, []);
 
     const variableTypes = useMemo(() => findAvailableVariables(node.id), [findAvailableVariables, node.id]);
     const ioContext = useInputOutputContext();
@@ -137,7 +146,7 @@ export function EnricherProcessor({
     );
 
     return (
-        <>
+        <NamedParamsMapperContext.Provider value={isDataMapper ? openMapper : null}>
             <IdField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
             <ParametersListWithOverrides
                 parameters={findParameters(node)}
@@ -151,8 +160,15 @@ export function EnricherProcessor({
                 setProperty={setProperty}
                 getListFieldPath={(index: number) => `service.parameters[${index}]`}
             >
-                {node.type === "Enricher" && isEditMode && kind && DATA_MAPPER_OPENAPI_ENRICHER_KINDS.has(kind) && (
-                    <NamedParamsDataMapper node={node} parameterDefinitions={parameterDefinitions} setProperty={setProperty} />
+                {isDataMapper && (
+                    <NamedParamsDataMapper
+                        node={node}
+                        parameterDefinitions={parameterDefinitions}
+                        setProperty={setProperty}
+                        open={mapperOpen}
+                        focusFieldName={mapperFocusField}
+                        onClose={() => setMapperOpen(false)}
+                    />
                 )}
                 {node.type === "Enricher" && isEditMode && kind && CONDITION_BUILDER_ENRICHER_KINDS.has(kind) && booleanParam && (
                     <Box display="flex" flexDirection="column" alignItems="flex-end" width="100%">
@@ -197,6 +213,6 @@ export function EnricherProcessor({
                     errors={errors}
                 />
             </ParametersListWithOverrides>
-        </>
+        </NamedParamsMapperContext.Provider>
     );
 }

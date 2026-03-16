@@ -55,6 +55,7 @@ interface DataMapperProps {
     initialContext?: ContextData;
     initialExpression?: string;
     initialFields?: FieldDef[];
+    initialFocusFieldName?: string;
     variableTypes?: VariableTypes;
     /** Override the default topic fetching (which uses a generic kafka sink probe). */
     fetchTopicDefinitions?: () => Promise<TopicEntry[]>;
@@ -69,6 +70,7 @@ export function DataMapper({
     initialContext,
     initialExpression,
     initialFields,
+    initialFocusFieldName,
     variableTypes,
     fetchTopicDefinitions: fetchTopicDefinitionsOverride,
     hideFieldControls,
@@ -77,6 +79,7 @@ export function DataMapper({
         initialContext,
         initialExpression,
         initialFields,
+        initialFocusFieldName,
         variableTypes,
         isEmbedded: !!onInsert,
         fetchTopicDefinitionsOverride,
