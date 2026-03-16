@@ -468,6 +468,44 @@ class ValidationResourcesSpec
     }
   }
 
+  it should "find error for duplicate test case names" in {
+    val scenarioGraph = ScenarioBuilder
+      .streaming("testCaseValidationScenario")
+      .additionalFields(properties = Map("requiredStringProperty" -> "some value"))
+      .source("source", ProcessTestData.existingSourceFactory)
+      .emptySink("sink", ProcessTestData.existingSinkFactory)
+      .toScenarioGraph
+      .copy(
+        testCases = Some(
+          TestCases(
+            NonEmptyList.of(
+              TestCase(
+                id = UUID.randomUUID(),
+                name = "duplicate",
+                inputs = "{}",
+                mocks = Map.empty,
+                assertions = Map.empty
+              ),
+              TestCase(
+                id = UUID.randomUUID(),
+                name = "duplicate",
+                inputs = "{}",
+                mocks = Map.empty,
+                assertions = Map.empty
+              ),
+            )
+          )
+        )
+      )
+
+    createAndValidateScenario(scenarioGraph, ProcessName("testCaseValidation")) {
+      status shouldBe StatusCodes.OK
+      val validation = responseAs[ValidationResult]
+      validation.errors.globalErrors should have size 1
+      validation.errors.globalErrors.head.error.message shouldBe "Duplicate test case names: duplicate"
+    }
+  }
+
   private def newScenarioGraph(nodes: List[NodeData], edges: List[Edge]): ScenarioGraph = {
     ScenarioGraph(
       properties = ProcessProperties(StreamMetaData(Some(2), Some(false))),
