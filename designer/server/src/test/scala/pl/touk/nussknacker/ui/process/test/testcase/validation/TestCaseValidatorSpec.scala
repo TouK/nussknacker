@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
 import pl.touk.nussknacker.engine.test.testcase.Assertion.PredicateAssertion
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType
 import pl.touk.nussknacker.restmodel.validation.testcase.{
   AssertionValidationError,
   EnricherMockValidationError,
@@ -398,8 +399,9 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       testCases
     )
 
-    result.keySet should contain only (enricher.id, filter.id)
-    result(enricher.id) shouldBe Map(
+    val testCasesErrors = result.errors.testCasesValidationErrors.get
+    testCasesErrors.keySet should contain only (enricher.id, filter.id)
+    testCasesErrors(enricher.id) shouldBe Map(
       "invalidMockTest" -> NodeTestCaseValidationErrors(
         enricherMockErrors = Some(
           NonEmptyList.one(
@@ -439,7 +441,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
         )
       )
     )
-    result(filter.id) shouldBe Map(
+    testCasesErrors(filter.id) shouldBe Map(
       "invalidMockTest" -> NodeTestCaseValidationErrors(
         enricherMockErrors = Some(
           NonEmptyList.one(
@@ -470,6 +472,54 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
         )
       )
     )
+  }
+
+  test("should return a single error for one duplicated test case name") {
+    val testCases = List(
+      TestCase(
+        id = UUID.randomUUID(),
+        name = "duplicateName",
+        inputs = "{}",
+        mocks = Map.empty,
+        assertions = Map.empty
+      ),
+      TestCase(id = UUID.randomUUID(), name = "uniqueName", inputs = "{}", mocks = Map.empty, assertions = Map.empty),
+      TestCase(
+        id = UUID.randomUUID(),
+        name = "duplicateName",
+        inputs = "{}",
+        mocks = Map.empty,
+        assertions = Map.empty
+      ),
+    )
+
+    val result = testCaseValidator.validateScenarioTestCases(List(enricher), Map.empty, testCases)
+
+    result.errors.globalErrors should have size 1
+    val error = result.errors.globalErrors.head.error
+    error.typ shouldBe "DuplicateTestCaseNames"
+    error.message shouldBe "Duplicate test case names: duplicateName"
+    error.errorType shouldBe NodeValidationErrorType.SaveAllowed
+    result.errors.testCasesValidationErrors shouldBe None
+  }
+
+  test("should return a single error listing all duplicated test case names") {
+    val testCases = List(
+      TestCase(id = UUID.randomUUID(), name = "duplicateA", inputs = "{}", mocks = Map.empty, assertions = Map.empty),
+      TestCase(id = UUID.randomUUID(), name = "duplicateB", inputs = "{}", mocks = Map.empty, assertions = Map.empty),
+      TestCase(id = UUID.randomUUID(), name = "uniqueName", inputs = "{}", mocks = Map.empty, assertions = Map.empty),
+      TestCase(id = UUID.randomUUID(), name = "duplicateA", inputs = "{}", mocks = Map.empty, assertions = Map.empty),
+      TestCase(id = UUID.randomUUID(), name = "duplicateB", inputs = "{}", mocks = Map.empty, assertions = Map.empty),
+    )
+
+    val result = testCaseValidator.validateScenarioTestCases(List(enricher), Map.empty, testCases)
+
+    result.errors.globalErrors should have size 1
+    val error = result.errors.globalErrors.head.error
+    error.typ shouldBe "DuplicateTestCaseNames"
+    error.message shouldBe "Duplicate test case names: duplicateA, duplicateB"
+    error.errorType shouldBe NodeValidationErrorType.SaveAllowed
+    result.errors.testCasesValidationErrors shouldBe None
   }
 
 }
