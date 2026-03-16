@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateR
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{requirementForName, scenarioVersionLabel}
 import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, VeryPatientScalaFutures}
 import skuber.{k8sInit, ConfigMap, LabelSelector, ListResource, Pod, Resource, Secret, Service}
 import skuber.LabelSelector.dsl._
@@ -28,6 +29,7 @@ import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
+import scala.language.reflectiveCalls
 import scala.util.control.NonFatal
 
 class BaseK8sDeploymentManagerTest
@@ -116,6 +118,35 @@ class BaseK8sDeploymentManagerTest
     backend.close()
   }
 
+  def waitForRunning(
+      manager: K8sDeploymentManager,
+      version: ProcessVersion,
+      waitForOldPodsTerminated: Boolean = false
+  ): Unit = {
+    eventually {
+      val state = manager.getScenarioDeploymentsStatuses(version.processName).map(_.value).futureValue
+      state.length shouldBe 1
+      state.map(_.status).headOption should matchPattern {
+        case Some(s: SimpleStateStatus.Running) if s.version == version.versionId =>
+      }
+    }
+
+    if (waitForOldPodsTerminated) {
+      // DM tells k8s to shut down old pods, but doesn't wait for this to happen
+      eventually {
+        k8s
+          .listSelected[ListResource[Pod]](
+            LabelSelector(
+              requirementForName(version.processName),
+              scenarioVersionLabel isNot version.versionId.value.toString
+            )
+          )
+          .futureValue
+          .items shouldBe empty
+      }
+    }
+  }
+
   class K8sDeploymentManagerTestFixture(
       val manager: K8sDeploymentManager,
       val scenario: CanonicalProcess,
@@ -142,7 +173,7 @@ class BaseK8sDeploymentManagerTest
         )
         .futureValue
       try {
-        waitForRunning(version)
+        waitForRunning(manager, version)
         action
       } catch {
         case NonFatal(ex) =>
@@ -152,17 +183,6 @@ class BaseK8sDeploymentManagerTest
         manager.processCommand(DMCancelScenarioCommand(version.processName, DeploymentData.systemUser)).futureValue
         eventually {
           manager.getScenarioDeploymentsStatuses(version.processName).futureValue.value shouldBe List.empty
-        }
-      }
-    }
-
-    def waitForRunning(version: ProcessVersion): Assertion = {
-      eventually {
-        val state = manager.getScenarioDeploymentsStatuses(version.processName).map(_.value).futureValue
-        logger.debug(s"Current process state: $state")
-        state.length shouldBe 1
-        state.map(_.status).headOption should matchPattern {
-          case Some(s: SimpleStateStatus.Running) if s.version == version.versionId =>
         }
       }
     }
