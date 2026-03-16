@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.test.testcase.TestCase
+import pl.touk.nussknacker.engine.test.testcase.{TestCase, TestCaseName}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
@@ -46,17 +46,7 @@ class TestCaseValidator(
       testCases.groupBy(_.name).collect { case (name, occurrences) if occurrences.size > 1 => name }.toList
     Option
       .when(duplicateNames.nonEmpty) {
-        UIGlobalError(
-          error = NodeValidationError(
-            typ = "DuplicateTestCaseNames",
-            message = s"Duplicate test case names: ${duplicateNames.sorted.mkString(", ")}",
-            description = "Test case names must be unique",
-            fieldName = None,
-            errorType = NodeValidationErrorType.SaveAllowed,
-            details = None,
-          ),
-          nodeIds = List.empty,
-        )
+        errors.duplicateTestCaseNames(duplicateNames)
       }
       .toList
   }
@@ -152,6 +142,24 @@ object TestCaseValidator {
         new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
       )
     )
+  }
+
+  private object errors {
+
+    def duplicateTestCaseNames(duplicateNames: List[TestCaseName]) = {
+      UIGlobalError(
+        error = NodeValidationError(
+          typ = "DuplicateTestCaseNames",
+          message = s"Duplicate test case names: ${duplicateNames.sorted.mkString(", ")}",
+          description = "Test case names must be unique",
+          fieldName = None,
+          errorType = NodeValidationErrorType.SaveAllowed,
+          details = None,
+        ),
+        nodeIds = List.empty,
+      )
+    }
+
   }
 
 }
