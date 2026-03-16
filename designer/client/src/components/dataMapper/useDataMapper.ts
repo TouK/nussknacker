@@ -433,6 +433,32 @@ export function useDataMapper({
 
     const fetchTopicDefinitions = fetchTopicDefinitionsOverride ?? defaultFetchTopicDefinitions;
 
+    const fetchTopicDefinitionsRef = useRef(fetchTopicDefinitions);
+    fetchTopicDefinitionsRef.current = fetchTopicDefinitions;
+
+    useEffect(() => {
+        if (!initialExpression || initialFieldsProp?.length) return;
+        fetchTopicDefinitionsRef.current().then((entries) => {
+            if (!entries.length) return;
+            setTopicEntries(entries);
+            const fieldNames = new Set(initialFocusFieldsRef.current.map((f) => f.name));
+            let bestEntry: TopicEntry | null = null;
+            let bestScore = 0;
+            for (const entry of entries) {
+                const score = fieldsFromSample(entry.schema).filter((f) => fieldNames.has(f.name)).length;
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestEntry = entry;
+                }
+            }
+            if (bestEntry && bestScore > 0) {
+                const schemaFields = fieldsFromSample(bestEntry.schema);
+                setFields((prev) => mergeTypesFromSchema(prev, schemaFields));
+            }
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const handleOpenTopicPicker = useCallback(async () => {
         setShowTopicPicker(true);
         setShowTargetSample(false);
