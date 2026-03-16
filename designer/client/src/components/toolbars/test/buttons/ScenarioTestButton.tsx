@@ -1,21 +1,19 @@
 import { alpha, styled } from "@mui/material";
-import React, { useCallback, useContext, useState } from "react";
+import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { testScenarioWithTestCase } from "../../../../actions/nk/testingActions";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
-import { useUserSettings } from "../../../../common/useUserSettings";
-import type { TestCase } from "../../../../reducers/graph/testCase";
 import { getTestCase } from "../../../../reducers/selectors/testCases";
 import { getTestResultsLoading } from "../../../../reducers/selectors/testing";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
-import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { useTestingScenarioEnabled } from "../../../modals/TestingDataRecords/useTestingScenarioEnabled";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import { ButtonsVariant, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons/ToolbarButtons";
 import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer";
 import type { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
 import type { PropsOfButton } from "../../../toolbarSettings/buttons/types";
+import { useRunTestScenario } from "../useRunTestScenario";
 import { TestingIconWithAssertionStatus } from "./scenarioTestButtonContent/TestingIconWithAssertionStatus";
 import { useAssertionResultsSummary } from "./scenarioTestButtonContent/useAssertionResultsSummary";
 import { RUN_ALL, useScenarioTestPresets } from "./scenarioTestButtonContent/useScenarioTestPresets";
@@ -43,12 +41,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
 
     const [selectedPreset, setSelectedPreset] = useState(testCasePresets[0] || runAllPreset);
 
-    const [showMockFieldOnEnrichers] = useUserSettings("node.showMockFieldOnEnrichers");
-    const dispatch = useAppDispatch();
-    const handleRunTest = useCallback(
-        (testCase: TestCase) => dispatch(testScenarioWithTestCase(testCase, showMockFieldOnEnrichers)),
-        [dispatch, showMockFieldOnEnrichers],
-    );
+    const { runTest } = useRunTestScenario();
 
     const icon =
         selectedPreset.value === RUN_ALL ? (
@@ -59,7 +52,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
 
     return (
         <StyledScenarioTestButton
-            onClick={() => handleRunTest(testCase)}
+            onClick={() => runTest(testCase)}
             name={selectedPreset.label}
             title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
             icon={icon}
@@ -77,7 +70,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                     return;
                 }
                 //TODO: Handle multiple test selection when backend ready
-                handleRunTest(testCase);
+                runTest(testCase);
             }}
         />
     );
