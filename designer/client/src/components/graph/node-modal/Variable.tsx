@@ -23,7 +23,7 @@ import { getValidationErrorsForField } from "./editors/Validators";
 import { FieldAddons } from "./fieldAddons";
 import { IdField } from "./IdField";
 import { useInputOutputContext } from "./io/InputOutputContext";
-import { StyledLoadingButton } from "./node-action-buttons/StyledLoadingButton";
+import { BuilderIconButton } from "./node-action-buttons/StyledLoadingButton";
 import { getExpressionType, getNodeTypingInfo } from "./NodeDetailsContent/selectors";
 import { useDiffMark } from "./PathsToMark";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
@@ -159,7 +159,7 @@ export default function Variable({ node, setProperty, isEditMode, showValidation
             {isEditMode && showDataMapper && (
                 <FieldAddons hasError={showValidation && getValidationErrorsForField(errors, "$expression").length > 0}>
                     <Box display="flex" flexDirection="column" alignItems="flex-end" width="100%">
-                        <StyledLoadingButton title="Builder" action={handleOpenMapper} />
+                        <BuilderIconButton onClick={handleOpenMapper} />
                     </Box>
                 </FieldAddons>
             )}

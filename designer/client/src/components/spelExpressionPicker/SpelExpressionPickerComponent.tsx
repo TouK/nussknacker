@@ -7,7 +7,7 @@ import type { NodeType } from "../../types/node";
 import type { ContextData } from "../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../dataMapper/DataMapperDialogTitle";
 import { useInputOutputContext } from "../graph/node-modal/io/InputOutputContext";
-import { StyledLoadingButton } from "../graph/node-modal/node-action-buttons/StyledLoadingButton";
+import { BuilderIconButton } from "../graph/node-modal/node-action-buttons/StyledLoadingButton";
 import { getFindAvailableVariables } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { SpelExpressionPicker } from "./SpelExpressionPicker";
 
@@ -59,7 +59,7 @@ export function SpelExpressionPickerComponent({
 
     return (
         <>
-            <StyledLoadingButton title="Builder" action={() => setOpen(true)} />
+            <BuilderIconButton onClick={() => setOpen(true)} />
             {open && (
                 <Dialog open onClose={() => setOpen(false)} maxWidth="xl" fullWidth>
                     <DataMapperDialogTitle node={node} onClose={() => setOpen(false)} title="expression picker" />

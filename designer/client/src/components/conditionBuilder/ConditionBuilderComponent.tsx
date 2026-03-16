@@ -7,7 +7,7 @@ import type { VariableTypes } from "../../types/validation";
 import type { ContextData } from "../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../dataMapper/DataMapperDialogTitle";
 import { useInputOutputContext } from "../graph/node-modal/io/InputOutputContext";
-import { StyledLoadingButton } from "../graph/node-modal/node-action-buttons/StyledLoadingButton";
+import { BuilderIconButton } from "../graph/node-modal/node-action-buttons/StyledLoadingButton";
 import { ConditionBuilder } from "./ConditionBuilder";
 
 interface Props {
@@ -49,7 +49,7 @@ export function ConditionBuilderComponent({
 
     return (
         <>
-            {renderTrigger ? renderTrigger(() => setOpen(true)) : <StyledLoadingButton title="Builder" action={() => setOpen(true)} />}
+            {renderTrigger ? renderTrigger(() => setOpen(true)) : <BuilderIconButton onClick={() => setOpen(true)} />}
             {open && (
                 <Dialog open onClose={() => setOpen(false)} maxWidth="xl" fullWidth>
                     <DataMapperDialogTitle node={node} onClose={() => setOpen(false)} title="condition builder" />
