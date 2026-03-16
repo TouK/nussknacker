@@ -53,6 +53,7 @@ export function ConditionBuilder({
 }: ConditionBuilderProps): React.JSX.Element {
     const theme = useTheme();
     const focusedEditorContainerRef = useRef<HTMLElement | null>(null);
+    const [activeConditionId, setActiveConditionId] = useState<number | null>(null);
     const processName = useAppSelector(getProcessName);
     const processProperties = useAppSelector(getProcessProperties);
 
@@ -151,8 +152,10 @@ export function ConditionBuilder({
             };
         } | null;
         if (aceEl?.env?.editor) {
-            aceEl.env.editor.session.insert(aceEl.env.editor.getCursorPosition(), text);
-            aceEl.env.editor.focus();
+            const editor = aceEl.env.editor;
+            // ACE preserves cursor position when blurred; focus first to restore it visually, then insert
+            editor.focus();
+            editor.session.insert(editor.getCursorPosition(), text);
         }
     }, []);
 
@@ -165,7 +168,7 @@ export function ConditionBuilder({
                         <PanelHeader>
                             <Box>
                                 <Typography sx={{ fontSize: 13, fontWeight: 600 }}>Context Variables</Typography>
-                                <Typography sx={{ fontSize: 11, color: "text.secondary" }}>Click or drag to insert</Typography>
+                                <Typography sx={{ fontSize: 11, color: "text.secondary" }}>Double-click or drag to insert</Typography>
                             </Box>
                         </PanelHeader>
                         <Box sx={{ px: 1, pt: 1, pb: 0.5 }}>
@@ -200,6 +203,7 @@ export function ConditionBuilder({
                                         depth={0}
                                         onSelect={handleTreeInsert}
                                         highlight={highlightKeys?.has(name.replace(/^#/, ""))}
+                                        doubleClickToInsert
                                     />
                                 ))
                             )}
@@ -255,6 +259,8 @@ export function ConditionBuilder({
                                         leftErrors={conditionErrors[cond.id]?.left ?? []}
                                         rightErrors={conditionErrors[cond.id]?.right ?? []}
                                         onValidate={(side, expr) => validateExpression(cond.id, side, expr)}
+                                        isActive={activeConditionId === cond.id}
+                                        onActivate={setActiveConditionId}
                                     />
                                 ))}
 
@@ -297,7 +303,7 @@ export function ConditionBuilder({
                 }}
             >
                 <Typography sx={{ fontSize: 11, color: "text.secondary" }}>
-                    Click a variable to insert at cursor, or drag it into a field
+                    Double-click a variable to insert at cursor, or drag it into a field
                 </Typography>
                 {onInsert && (
                     <Button
