@@ -1,5 +1,5 @@
 import AddIcon from "@mui/icons-material/Add";
-import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import SearchIcon from "@mui/icons-material/Search";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
@@ -201,7 +201,7 @@ export function DataMapper({
                                     </Tooltip>
                                     <Tooltip title="Auto-fill unmapped fields by matching field names to context variables">
                                         <Button
-                                            startIcon={<AutoFixHighIcon />}
+                                            startIcon={<AutoAwesomeIcon />}
                                             size="small"
                                             variant="outlined"
                                             onClick={dm.handleAutoMap}
