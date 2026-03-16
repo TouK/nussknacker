@@ -9,7 +9,6 @@ import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
-// TODO: When adding multiple test cases variant, remember to validate ID and name uniqueness.
 final case class TestCases(list: NonEmptyList[TestCase])
 
 object TestCases {

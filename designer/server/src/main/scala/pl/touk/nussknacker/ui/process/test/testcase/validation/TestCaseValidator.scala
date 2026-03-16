@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.test.testcase.TestCase
+import pl.touk.nussknacker.engine.test.testcase.{TestCase, TestCaseName}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.testcase.{
   NodeTestCasesValidationErrors,
@@ -21,6 +21,9 @@ class TestCaseValidator(
 ) {
 
   import TestCaseValidator._
+
+  def duplicateTestCaseNames(testCases: List[TestCase]): List[TestCaseName] =
+    testCases.groupBy(_.name).collect { case (name, occurrences) if occurrences.size > 1 => name }.toList
 
   def validateScenarioTestCases(
       nodes: List[NodeData],
