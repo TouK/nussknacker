@@ -268,6 +268,16 @@ export function splitTopLevel(inner: string): string[] {
     return parts.filter(Boolean);
 }
 
+function parseNullDefault(value: string): { expression: string; defaultValue: string } | null {
+    const marker = " != null ? ";
+    const idx = value.indexOf(marker);
+    if (idx < 0) return null;
+    const expr = value.slice(0, idx);
+    const rest = value.slice(idx + marker.length);
+    if (!rest.startsWith(expr + " : ")) return null;
+    return { expression: expr, defaultValue: rest.slice(expr.length + 3) };
+}
+
 /** Parse a SpEL record expression `{ key: expr, ... }` back into FieldDef[] (recursive). */
 export function parseSpelToFields(expression: string): FieldDef[] | null {
     const trimmed = expression.trim();
@@ -300,9 +310,15 @@ export function parseSpelToFields(expression: string): FieldDef[] | null {
             continue;
         }
 
-        // Any SpEL expression
+        // Any SpEL expression — check for null-default ternary pattern
         const field = makeField(name, "Any");
-        field.expression = val;
+        const nullDefault = parseNullDefault(val);
+        if (nullDefault) {
+            field.expression = nullDefault.expression;
+            field.defaultValue = nullDefault.defaultValue;
+        } else {
+            field.expression = val;
+        }
         fields.push(field);
     }
     return fields;
