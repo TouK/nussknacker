@@ -57,13 +57,13 @@ class TestCaseValidator(
       testCases: List[TestCase]
   )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): ScenarioTestCasesValidationErrors = {
     val nodesById = nodes.map(n => n.id -> n).toMap
-    val testCasesValidationErrors = nodesById.flatMap { case (nodeId, node) =>
+    val testCasesErrorsByNode = nodesById.flatMap { case (nodeId, node) =>
       val nodeTestCases = prepareNodeTestCases(testCases, nodeId)
       val nodeTyping    = nodesTyping.getOrElse(nodeId.value, NodeTyping.empty)
       val errors        = validateNodeTestCases(node, nodeTestCases, nodeTyping)
       if (errors.isEmpty) None else Some(nodeId -> errors)
     }
-    testCasesValidationErrors
+    testCasesErrorsByNode
   }
 
   private def prepareNodeTestCases(

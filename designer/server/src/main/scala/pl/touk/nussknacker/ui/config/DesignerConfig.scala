@@ -69,8 +69,8 @@ final class DesignerConfig private (
     val http: HttpConfig,
     val attachments: AttachmentsConfig,
     val assistantSettings: AssistantSettings,
+    val globalLimitsConfig: GlobalLimitsConfig,
     val testCasesSettings: TestCasesSettings,
-    val globalLimitsConfig: GlobalLimitsConfig
 ) {
 
   // TODO: We should parse configuration options to fields instead of accessing rawConfig. Thank to that:
@@ -214,8 +214,8 @@ object DesignerConfig {
       http = http,
       attachments = attachments,
       assistantSettings = assistantSettings,
+      globalLimitsConfig = limitsConfig,
       testCasesSettings = testCasesSettings,
-      globalLimitsConfig = limitsConfig
     )
   }
 
