@@ -1,9 +1,9 @@
-import { Button } from "@mui/material";
 import { produce } from "immer";
 import { isEqual, uniq } from "lodash";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useUserSettings } from "../../../common/useUserSettings";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useAppSelector } from "../../../store/storeHelpers";
@@ -22,6 +22,7 @@ import type { FieldError } from "./editors/Validators";
 import { FieldsRow } from "./fragment-input-definition/FieldsRow";
 import type { Option } from "./fragment-input-definition/TypeSelect";
 import { TypeSelect } from "./fragment-input-definition/TypeSelect";
+import { BuilderIconButton } from "./node-action-buttons/StyledLoadingButton";
 
 interface Props {
     edgeId: string;
@@ -116,8 +117,10 @@ export function EdgeFields(props: Props): React.JSX.Element {
 
     const sourceNode = useMemo(() => scenarioGraph.nodes.find((n) => n.id === edge.from), [scenarioGraph.nodes, edge.from]);
 
+    const [showBuilder] = useUserSettings("node.showFieldExpressionBuilder");
+
     const conditionBuilderAdornment = useMemo(() => {
-        if (readOnly || edge.edgeType?.type !== EdgeKind.switchNext || !sourceNode) return undefined;
+        if (!showBuilder || readOnly || edge.edgeType?.type !== EdgeKind.switchNext || !sourceNode) return undefined;
         return (
             <ConditionBuilderComponent
                 node={sourceNode}
@@ -128,28 +131,10 @@ export function EdgeFields(props: Props): React.JSX.Element {
                         : undefined
                 }
                 variableTypes={variableTypes}
-                renderTrigger={(onClick) => (
-                    <Button
-                        size="small"
-                        variant="contained"
-                        color="primary"
-                        onClick={onClick}
-                        sx={{
-                            minWidth: "unset",
-                            padding: "1px 6px",
-                            fontSize: 10,
-                            lineHeight: 1.4,
-                            textTransform: "none",
-                            position: "relative",
-                            zIndex: 1,
-                        }}
-                    >
-                        Builder
-                    </Button>
-                )}
+                renderTrigger={(onClick) => <BuilderIconButton onClick={onClick} label="Condition Builder" />}
             />
         );
-    }, [readOnly, edge.edgeType, onValueChange, variableTypes, sourceNode]);
+    }, [showBuilder, readOnly, edge.edgeType, onValueChange, variableTypes, sourceNode]);
 
     const showType = useMemo(() => types.length > 1 || uniq(edges.map((e) => e.edgeType?.type)).length > 1, [edges, types.length]);
     return (

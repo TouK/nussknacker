@@ -31,7 +31,7 @@ export function ConditionBuilderComponent({
     contextData: contextDataProp,
     renderTrigger,
 }: Props): React.JSX.Element | null {
-    const [showConditionBuilder] = useUserSettings("node.showConditionBuilder");
+    const [showConditionBuilder] = useUserSettings("node.showFieldExpressionBuilder");
     const [open, setOpen] = useState(false);
 
     const ioContext = useInputOutputContext();
