@@ -9,7 +9,7 @@ import { DataMapper } from "../../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../../dataMapper/DataMapperDialogTitle";
 import type { FieldDef } from "../../dataMapper/dataMapperUtils";
 import { useInputOutputContext } from "./io/InputOutputContext";
-import { StyledLoadingButton } from "./node-action-buttons/StyledLoadingButton";
+import { BuilderIconButton } from "./node-action-buttons/StyledLoadingButton";
 import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 
 interface Props {
@@ -47,7 +47,7 @@ export function DataMapperComponent({
     return (
         <>
             <Box display="flex" flexDirection="column" alignItems="flex-end" width="100%">
-                <StyledLoadingButton title="Builder" action={() => setOpen(true)} />
+                <BuilderIconButton onClick={() => setOpen(true)} />
             </Box>
             {open && (
                 <Dialog open onClose={() => setOpen(false)} maxWidth="xl" fullWidth>
