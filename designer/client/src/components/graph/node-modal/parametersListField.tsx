@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useContext, useMemo, useState } from "react";
 
 import { useUserSettings } from "../../../common/useUserSettings";
 import type { NodeType } from "../../../types/node";
@@ -7,9 +7,10 @@ import { fieldsFromSample } from "../../dataMapper/dataMapperUtils";
 import { SpelExpressionPickerComponent } from "../../spelExpressionPicker/SpelExpressionPickerComponent";
 import { DataMapperComponent } from "./DataMapperComponent";
 import { DataSampleFieldWrapper } from "./dataSampleFieldWrapper";
-import { ExpressionLang } from "./editors/expression/types";
+import { EditorType, ExpressionLang } from "./editors/expression/types";
 import { useParamKey } from "./editors/ParamKeyProvider";
 import { CopyEndpoint, EndpointFieldWrapper } from "./endpointFieldWrapper";
+import { NamedParamsMapperContext } from "./NamedParamsMapperContext";
 import { BuilderIconButton } from "./node-action-buttons/StyledLoadingButton";
 import { ParameterExpressionField } from "./ParameterExpressionField";
 import { OverrideKeys } from "./parameterHelpers";
@@ -71,14 +72,29 @@ export const ParametersListField = ({ getListFieldPath, paramWithIndex, ...props
 
     const builderLabel = paramKey === OverrideKeys.ForEachElements ? "Expression Picker" : "Data Mapper";
 
-    const inputAdornmentEnd = useMemo(
-        () => (hasBuilder ? <BuilderIconButton onClick={() => setBuilderOpen(true)} label={builderLabel} /> : undefined),
-        [hasBuilder, builderLabel],
-    );
-
     const paramDef = useMemo(
         () => props.parameterDefinitions?.find((p) => p.name === param.name),
         [param.name, props.parameterDefinitions],
+    );
+
+    const namedParamsMapperContext = useContext(NamedParamsMapperContext);
+    const isNamedParamsMappable = useMemo(
+        () =>
+            !!namedParamsMapperContext &&
+            !!paramDef &&
+            !paramDef.changesCanReloadParameters &&
+            paramDef.editors?.some((e) => e.type === EditorType.SPEL_PARAMETER_EDITOR),
+        [namedParamsMapperContext, paramDef],
+    );
+
+    const inputAdornmentEnd = useMemo(
+        () =>
+            hasBuilder ? (
+                <BuilderIconButton onClick={() => setBuilderOpen(true)} label={builderLabel} />
+            ) : isNamedParamsMappable ? (
+                <BuilderIconButton onClick={() => namedParamsMapperContext!(param.name)} label="Data Mapper" />
+            ) : undefined,
+        [hasBuilder, builderLabel, isNamedParamsMappable, namedParamsMapperContext, param.name],
     );
 
     return (
@@ -113,7 +129,24 @@ export const ParametersListField = ({ getListFieldPath, paramWithIndex, ...props
                         initialExpression={getParamExpression(node, param.name)}
                         initialFields={(() => {
                             const fields = paramDef?.typ ? fieldsFromSample(typingResultToSample(paramDef.typ)) : undefined;
-                            return fields?.length ? fields : undefined;
+                            if (fields?.length) return fields;
+                            // Fallback: derive from individual field params (avro/json schema dynamic mode)
+                            const KAFKA_SYSTEM_PARAMS = new Set([
+                                "Topic",
+                                "Schema version",
+                                "Key",
+                                "Raw editor",
+                                "Content type",
+                                "Value validation mode",
+                                param.name,
+                            ]);
+                            const fieldParams = props.parameterDefinitions?.filter((p) => !KAFKA_SYSTEM_PARAMS.has(p.name));
+                            if (fieldParams?.length) {
+                                const schema = Object.fromEntries(fieldParams.map((p) => [p.name, typingResultToSample(p.typ)]));
+                                const derived = fieldsFromSample(schema);
+                                return derived.length ? derived : undefined;
+                            }
+                            return undefined;
                         })()}
                         open={builderOpen}
                         onClose={() => setBuilderOpen(false)}

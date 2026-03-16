@@ -22,6 +22,9 @@ interface Props {
     parameterDefinitions: UIParameter[];
     setProperty: SetProperty;
     parametersBasePath?: string;
+    open: boolean;
+    focusFieldName?: string;
+    onClose: () => void;
 }
 
 export function NamedParamsDataMapper({
@@ -29,6 +32,9 @@ export function NamedParamsDataMapper({
     parameterDefinitions,
     setProperty,
     parametersBasePath = "service.parameters",
+    open,
+    focusFieldName,
+    onClose,
 }: Props): React.JSX.Element | null {
     const mappableParams = useMemo(
         () =>
@@ -69,5 +75,15 @@ export function NamedParamsDataMapper({
 
     if (mappableParams.length === 0) return null;
 
-    return <DataMapperComponent node={node} onInsert={handleInsert} initialFields={initialFields} hideFieldControls />;
+    return (
+        <DataMapperComponent
+            node={node}
+            onInsert={handleInsert}
+            initialFields={initialFields}
+            initialFocusFieldName={focusFieldName}
+            hideFieldControls
+            open={open}
+            onClose={onClose}
+        />
+    );
 }
