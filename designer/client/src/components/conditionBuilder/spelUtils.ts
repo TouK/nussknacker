@@ -234,7 +234,7 @@ export function parseSpel(expression: string): ParsedResult | null {
     return { combinator, conditions };
 }
 
-export function genSpel(conditions: Condition[], combinator: Combinator): string {
+export function genSpel(conditions: Omit<Condition, "id">[], combinator: Combinator): string {
     if (conditions.length === 0) return "";
     const parts = conditions.map((c) => {
         if (c.operator === "is true") return c.left;
