@@ -161,15 +161,17 @@ describe("context variables tree", () => {
     });
 
     it("renders tree nodes from variableTypes", () => {
-        renderConditionBuilder({ variableTypes: { input: { refClazzName: "java.lang.String" } } });
+        renderConditionBuilder({
+            variableTypes: { input: { refClazzName: "java.lang.String", type: "TypedClass", display: "String", params: [] } },
+        });
         expect(screen.getByTestId("tree-#input")).toBeInTheDocument();
     });
 
     it("context filter hides non-matching nodes", () => {
         renderConditionBuilder({
             variableTypes: {
-                input: { refClazzName: "java.lang.String" },
-                output: { refClazzName: "java.lang.String" },
+                input: { refClazzName: "java.lang.String", type: "TypedClass", display: "String", params: [] },
+                output: { refClazzName: "java.lang.String", type: "TypedClass", display: "String", params: [] },
             },
         });
         const searchInput = screen.getByPlaceholderText(/search/i);
