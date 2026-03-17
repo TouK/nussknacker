@@ -23,7 +23,7 @@ export function RenderResults() {
     const { results, rootActionId } = useMatches();
 
     const items = useMemo(() => {
-        if (search.length && !results.includes(aiAssistant)) {
+        if (search.length && aiAssistant && !results.includes(aiAssistant)) {
             return [...results, aiAssistant];
         }
         return results;
