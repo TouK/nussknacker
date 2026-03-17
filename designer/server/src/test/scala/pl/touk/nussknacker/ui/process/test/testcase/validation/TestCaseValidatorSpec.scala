@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.test.testcase.validation
 
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
-import org.scalatest.Inside
+import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
@@ -32,7 +32,7 @@ import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator
 import java.util.UUID
 import scala.concurrent.Future
 
-class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
+class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with OptionValues {
 
   object TestEnricher extends Service {
     @MethodToInvoke
@@ -399,7 +399,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside {
       testCases
     )
 
-    val testCasesErrors = result.errors.testCasesValidationErrors.get
+    val testCasesErrors = result.errors.testCasesValidationErrors.value
     testCasesErrors.keySet should contain only (enricher.id, filter.id)
     testCasesErrors(enricher.id) shouldBe Map(
       "invalidMockTest" -> NodeTestCaseValidationErrors(
