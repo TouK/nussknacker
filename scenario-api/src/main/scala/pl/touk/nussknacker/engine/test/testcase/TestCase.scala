@@ -22,12 +22,12 @@ object TestCases {
   }
 
   implicit val decoder: Decoder[TestCases] = Decoder.instance { cursor =>
-    val listCursor = cursor.downField("list")
-    if (listCursor.succeeded) {
-      listCursor.as[NonEmptyList[TestCase]].map(TestCases(_))
+    val valueCursor = cursor.downField("value")
+    // For backward compatibility, if "value" field is present, try to decode a single test case from "value" field
+    if (valueCursor.succeeded) {
+      valueCursor.as[TestCase].map(testCase => TestCases(NonEmptyList.one(testCase)))
     } else {
-      // For backward compatibility, if "list" field is not present, try to decode a single test case from "value" field
-      cursor.downField("value").as[TestCase].map(testCase => TestCases(NonEmptyList.one(testCase)))
+      cursor.downField("list").as[NonEmptyList[TestCase]].map(TestCases(_))
     }
   }
 

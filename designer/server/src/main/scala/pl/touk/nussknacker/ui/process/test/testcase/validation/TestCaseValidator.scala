@@ -146,7 +146,7 @@ object TestCaseValidator {
 
   private object errors {
 
-    def duplicateTestCaseNames(duplicateNames: List[TestCaseName]) = {
+    def duplicateTestCaseNames(duplicateNames: List[TestCaseName]): UIGlobalError = {
       UIGlobalError(
         error = NodeValidationError(
           typ = "DuplicateTestCaseNames",
