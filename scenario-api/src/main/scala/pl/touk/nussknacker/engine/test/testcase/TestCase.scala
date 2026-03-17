@@ -13,6 +13,8 @@ final case class TestCases(list: NonEmptyList[TestCase])
 
 object TestCases {
 
+  // TODO: remove encoder and switch decoder to use "list" and fallback to "value" when FE is updated to use "list" field
+
   implicit val encoder: Encoder[TestCases] = Encoder.instance { testCases =>
     Json.obj(
       "list" -> testCases.list.asJson,

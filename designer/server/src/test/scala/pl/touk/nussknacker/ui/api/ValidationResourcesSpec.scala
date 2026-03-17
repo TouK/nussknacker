@@ -468,7 +468,8 @@ class ValidationResourcesSpec
     }
   }
 
-  it should "find error for duplicate test case names" in {
+  // TODO NU-2470: unignore when FE is updated to use "list" field
+  ignore should "find error for duplicate test case names" in {
     val scenarioGraph = ScenarioBuilder
       .streaming("testCaseValidationScenario")
       .additionalFields(properties = Map("requiredStringProperty" -> "some value"))
