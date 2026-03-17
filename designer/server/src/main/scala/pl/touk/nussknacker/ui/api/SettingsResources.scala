@@ -46,6 +46,7 @@ class SettingsResources(
                   UsageStatisticsReportsSettings(usageStatisticsReportsConfig, fingerprint.toOption),
                 stickyNotesSettings = config.stickyNotesSettings,
                 assistant = config.assistantSettings,
+                testCases = config.testCasesSettings,
               )
               val authenticationSettings = AuthenticationSettings(
                 authenticationMethod
@@ -161,6 +162,7 @@ object TopTabType extends Enumeration {
     redirectAfterArchive: Boolean,
     usageStatisticsReports: UsageStatisticsReportsSettings,
     assistant: AssistantSettings,
+    testCases: TestCasesSettings,
 )
 
 @JsonCodec final case class AuthenticationSettings(provider: String)
@@ -196,4 +198,12 @@ object UsageStatisticsReportsSettings {
 
 object AssistantSettings {
   def disabled: AssistantSettings = AssistantSettings(enabled = false)
+}
+
+@JsonCodec final case class TestCasesSettings(
+    multipleEnabled: Boolean,
+)
+
+object TestCasesSettings {
+  def default: TestCasesSettings = TestCasesSettings(multipleEnabled = false)
 }
