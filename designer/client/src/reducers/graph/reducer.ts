@@ -27,6 +27,7 @@ import type { NestedKeyOf } from "./lodashWrappers";
 import { omit, pick } from "./lodashWrappers";
 import { selectionState } from "./selectionState";
 import { initialTestCasesState, testCaseReducer } from "./testCase";
+import type { TestingState } from "./testing";
 import { initialTestingState, testingReducer } from "./testing";
 import type { GraphState } from "./types";
 import { VisibleDataType } from "./types";
@@ -136,8 +137,8 @@ const adjustScenarioData = flow(
     }),
 );
 
-const getDefaultActiveTestCaseId = (actionGraph: ScenarioGraph, stateGraph: ScenarioGraph): string | null => {
-    return actionGraph?.testCases?.list[0]?.id || stateGraph?.testCases?.list[0]?.id;
+const getDefaultActiveTestCaseId = (actionGraph: ScenarioGraph, stateGraph: ScenarioGraph, testing: TestingState): string | null => {
+    return testing.activeTestCaseId || actionGraph?.testCases?.list[0]?.id || stateGraph.testCases.list[0]?.id;
 };
 
 const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): GraphState => {
@@ -157,7 +158,11 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
             const newNodeids = sortBy(adjustedScenario.scenarioGraph.nodes.map((n) => n.id));
             const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null;
 
-            const activeTestCaseId = getDefaultActiveTestCaseId(adjustedScenario.scenarioGraph, state.scenario.scenarioGraph);
+            const activeTestCaseId = getDefaultActiveTestCaseId(
+                adjustedScenario.scenarioGraph,
+                state.scenario.scenarioGraph,
+                state.testing,
+            );
 
             return {
                 ...state,
@@ -183,7 +188,11 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
         }
         case "DISPLAY_PROCESS": {
             const adjustedScenario = adjustScenarioData(action.scenario);
-            const activeTestCaseId = getDefaultActiveTestCaseId(adjustedScenario.scenarioGraph, state.scenario.scenarioGraph);
+            const activeTestCaseId = getDefaultActiveTestCaseId(
+                adjustedScenario.scenarioGraph,
+                state.scenario.scenarioGraph,
+                state.testing,
+            );
 
             return {
                 ...state,

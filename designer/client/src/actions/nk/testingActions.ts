@@ -9,7 +9,7 @@ import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph
 import type { ScenarioGraph } from "../../types/scenarioGraph";
 import type { Action, ThunkAction } from "../reduxTypes";
 import { checkPendingChanges } from "./checkPendingChanges";
-import { displayProcessCounts } from "./displayProcessCounts";
+import { clearProcessCounts, displayProcessCounts } from "./displayProcessCounts";
 
 export function testProcessFromFile(testDataFile: File): ThunkAction {
     return wrapWithTestAction((processName, scenarioGraph) =>
@@ -116,10 +116,14 @@ export function displayTestAssertionsResults(assertionsResults: TestAssertionRes
     };
 }
 
-export function changeActiveTestCase(testCaseId: string): Action {
-    return {
-        type: "CHANGE_ACTIVE_TEST_CASE",
-        testCaseId,
+export function changeActiveTestCase(testCaseId: string): ThunkAction {
+    return async (dispatch) => {
+        dispatch(clearTestAssertionsResults());
+        dispatch(clearProcessCounts());
+        dispatch({
+            type: "CHANGE_ACTIVE_TEST_CASE",
+            testCaseId,
+        });
     };
 }
 
@@ -129,4 +133,8 @@ function testingActions({ counts, results, assertionsResults }: ResultsWithCount
         dispatch(displayTestResultsDetails(results, testData));
         dispatch(displayTestAssertionsResults(assertionsResults));
     };
+}
+
+export function clearTestAssertionsResults(): Action {
+    return { type: "CLEAR_TEST_ASSERTIONS_RESULTS" };
 }

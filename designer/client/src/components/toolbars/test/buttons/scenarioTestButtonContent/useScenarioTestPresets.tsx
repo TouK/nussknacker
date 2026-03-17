@@ -28,11 +28,14 @@ export const useScenarioTestPresets = () => {
     const testCasePresets: Preset[] = useMemo(() => {
         if (testCases.length === 0) return [];
         return testCases.map((testCase) => ({
-            icon: hasResult ? <AssertionStatusIcon isSuccess={assertionsIsSuccess} variant={"light"} /> : null,
+            icon:
+                hasResult && activeTestCaseId === testCase.id ? (
+                    <AssertionStatusIcon isSuccess={assertionsIsSuccess} variant={"light"} />
+                ) : null,
             label: testCase.name,
             value: testCase.id,
         }));
-    }, [testCases, hasResult, assertionsIsSuccess]);
+    }, [testCases, hasResult, activeTestCaseId, assertionsIsSuccess]);
 
     const activeTestCasePreset = testCasePresets.find((testCasePreset) => testCasePreset.value === activeTestCaseId) || null;
 
