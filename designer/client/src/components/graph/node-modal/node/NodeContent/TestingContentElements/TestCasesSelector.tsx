@@ -16,7 +16,7 @@ const StyledTestCasesSelect = styled(TypeSelect)(() => ({
     maxWidth: "400px",
 }));
 
-export const TestCases = () => {
+export const TestCasesSelector = () => {
     const { t } = useTranslation();
 
     const testCaseOptions = useAppSelector(getTestCaseOptions);
@@ -29,12 +29,21 @@ export const TestCases = () => {
         open({ kind: WindowKind.enterpriseFeatureInfo, layoutData: { width: 500 } });
     }, [open]);
 
+    const openSaveAsDialog = useCallback(() => {
+        open({ kind: WindowKind.saveAsTestCase, title: "Save as", layoutData: { width: 500 } });
+    }, [open]);
+
     const changeActiveTestCaseOption = useCallback(
         (testCaseId: string) => {
             dispatch(changeActiveTestCase(testCaseId));
         },
         [dispatch],
     );
+
+    const handleSaveAsClick = useCallback(() => {
+        // onDisplayEnterpriseInfo();
+        openSaveAsDialog();
+    }, [openSaveAsDialog]);
 
     return (
         <Box ml={4} pt={1.25} display={"flex"} gap={1}>
@@ -45,7 +54,7 @@ export const TestCases = () => {
             {/*    </StyledActionButton>*/}
             {/*</InfoTooltip>*/}
             <InfoTooltip title={"Save as"} variant={"hover"} enterDelay={500}>
-                <StyledButton title={t("node.row.add.title", "Add field")} onClick={onDisplayEnterpriseInfo}>
+                <StyledButton title={t("node.row.add.title", "Add field")} onClick={handleSaveAsClick}>
                     {t("node.row.add.text", "+")}
                 </StyledButton>
             </InfoTooltip>
