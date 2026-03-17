@@ -17,7 +17,7 @@ import type { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttons
 import type { PropsOfButton } from "../../../toolbarSettings/buttons/types";
 import { TestingIconWithAssertionStatus } from "./scenarioTestButtonContent/TestingIconWithAssertionStatus";
 import { useAssertionResultsSummary } from "./scenarioTestButtonContent/useAssertionResultsSummary";
-import type { Preset} from "./scenarioTestButtonContent/useScenarioTestPresets";
+import type { Preset } from "./scenarioTestButtonContent/useScenarioTestPresets";
 import { RUN_ALL, useScenarioTestPresets } from "./scenarioTestButtonContent/useScenarioTestPresets";
 import { useScenarioTestTooltip } from "./scenarioTestButtonContent/useScenarioTestTooltip";
 
@@ -63,13 +63,6 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
         [activeTestCasePreset?.value, assertionsIsSuccess, hasResult],
     );
 
-    const changeActiveTestCaseOption = useCallback(
-        (testCaseId: string) => {
-            dispatch(changeActiveTestCase(testCaseId));
-        },
-        [dispatch],
-    );
-
     const handleRunActiveTest = useCallback(() => handleRunTest(testCase?.id), [handleRunTest, testCase]);
 
     const handlePresetChange = useCallback(
@@ -78,16 +71,16 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                 //TODO: Implement me when backend ready
                 return;
             }
-            changeActiveTestCaseOption(preset.value);
+            dispatch(changeActiveTestCase(preset.value));
             handleRunTest(preset.value);
         },
-        [changeActiveTestCaseOption, handleRunTest],
+        [dispatch, handleRunTest],
     );
 
     return (
         <StyledScenarioTestButton
             onClick={handleRunActiveTest}
-            name={activeTestCasePreset.label}
+            name={activeTestCasePreset?.label}
             title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
             icon={icon}
             side={side}

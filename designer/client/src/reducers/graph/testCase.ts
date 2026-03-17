@@ -2,7 +2,10 @@ import { produce } from "immer";
 
 import type { Assertions, Mocks } from "../../actions/nk/testCasesActions";
 import type { Reducer } from "../../actions/reduxTypes";
+import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
+import { safeParseExpression } from "../../components/modals/TestingDataRecords/utils";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
+import { omit } from "./lodashWrappers";
 
 export interface TestCase {
     id: string;
@@ -45,12 +48,12 @@ export const testCaseReducer: Reducer<ScenarioGraph["testCases"]> = produce((dra
         case "DELETE_NODES":
             return {
                 ...draft,
-                value: cleanTestCaseState(draft, action.ids),
+                list: cleanTestCaseState(draft, action.ids),
             };
         case "ADD_NODE_REPLACE":
             return {
                 ...draft,
-                value: cleanTestCaseState(draft, [action.old.id]),
+                list: cleanTestCaseState(draft, [action.old.id]),
             };
         default:
             return draft;
@@ -58,12 +61,12 @@ export const testCaseReducer: Reducer<ScenarioGraph["testCases"]> = produce((dra
 });
 
 const cleanTestCaseState = (state: ScenarioGraph["testCases"], ids: string[]) => {
-    return {
-        ...state.list,
-        // assertions: omit(state.value.assertions, ids),
-        // mocks: omit(state.value.mocks, ids),
-        // inputs: JSON.stringify(
-        //     safeParseExpression<TestingDataRecords[]>(state.value.inputs)?.filter((input) => !ids.includes(input.sourceId)),
-        // ),
-    };
+    return state.list.map((testCase) => ({
+        ...testCase,
+        assertions: omit(testCase.assertions, ids),
+        mocks: omit(testCase.mocks, ids),
+        inputs: JSON.stringify(
+            safeParseExpression<TestingDataRecords[]>(testCase.inputs)?.filter((input) => !ids.includes(input.sourceId)),
+        ),
+    }));
 };

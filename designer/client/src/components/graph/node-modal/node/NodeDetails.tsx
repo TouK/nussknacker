@@ -34,8 +34,7 @@ import { useGetNodeErrors } from "../useNodeTypeDetailsContentLogic";
 import { EditStateFeedback } from "./EditStateFeedback";
 import { GeneralContent } from "./NodeContent/GeneralContent";
 import type { TabDef } from "./NodeContent/TabsWrapper";
-import { NodeDetailsTab } from "./NodeContent/TabsWrapper";
-import { TabsWrapper } from "./NodeContent/TabsWrapper";
+import { NodeDetailsTab, TabsWrapper } from "./NodeContent/TabsWrapper";
 import { TestingContent } from "./NodeContent/TestingContent";
 import { TestCases } from "./NodeContent/TestingContentElements/TestCases";
 import { getReadOnly } from "./selectors";
@@ -94,7 +93,7 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     const [generalErrors] = useGetNodeErrors(node);
     const testCase = useAppSelector(getActiveTestCase);
     const hasNodeTestCasesErrors = useAppSelector((state) =>
-        hasValidationTestCasesErrors(state, { nodeId: node.id, testCaseId: testCase.name }),
+        hasValidationTestCasesErrors(state, { nodeId: node.id, testCaseId: testCase?.name }),
     );
 
     const { cancel, apply } = useNodeDetailsButtons({ editedNode, outputEdges, performNodeEdit, close, readOnly });

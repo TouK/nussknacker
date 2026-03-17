@@ -137,7 +137,7 @@ const adjustScenarioData = flow(
     }),
 );
 
-const getDefaultActiveTestCaseId = (actionGraph: ScenarioGraph, stateGraph: ScenarioGraph, testing: TestingState): string | null => {
+const getDefaultActiveTestCaseId = (actionGraph: ScenarioGraph, stateGraph: ScenarioGraph, testing: TestingState): string | undefined => {
     return testing.activeTestCaseId || actionGraph?.testCases?.list[0]?.id || stateGraph.testCases.list[0]?.id;
 };
 
