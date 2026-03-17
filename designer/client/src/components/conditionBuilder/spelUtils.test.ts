@@ -244,27 +244,27 @@ describe("parseConditionPart", () => {
 
 describe("genSpel", () => {
     it("single condition — is true", () => {
-        expect(genSpel([{ id: 1, left: "#x.active", operator: "is true", right: "" }], "&&")).toBe("#x.active");
+        expect(genSpel([{ left: "#x.active", operator: "is true", right: "" }], "&&")).toBe("#x.active");
     });
 
     it("single condition — is false", () => {
-        expect(genSpel([{ id: 1, left: "#x.active", operator: "is false", right: "" }], "&&")).toBe("!#x.active");
+        expect(genSpel([{ left: "#x.active", operator: "is false", right: "" }], "&&")).toBe("!#x.active");
     });
 
     it("single condition — == null", () => {
-        expect(genSpel([{ id: 1, left: "#x", operator: "== null", right: "" }], "&&")).toBe("#x == null");
+        expect(genSpel([{ left: "#x", operator: "== null", right: "" }], "&&")).toBe("#x == null");
     });
 
     it("single condition — != null", () => {
-        expect(genSpel([{ id: 1, left: "#x", operator: "!= null", right: "" }], "&&")).toBe("#x != null");
+        expect(genSpel([{ left: "#x", operator: "!= null", right: "" }], "&&")).toBe("#x != null");
     });
 
     it("two conditions joined with &&", () => {
         expect(
             genSpel(
                 [
-                    { id: 1, left: "#a", operator: ">", right: "0" },
-                    { id: 2, left: "#b", operator: "== null", right: "" },
+                    { left: "#a", operator: ">", right: "0" },
+                    { left: "#b", operator: "== null", right: "" },
                 ],
                 "&&",
             ),
@@ -275,8 +275,8 @@ describe("genSpel", () => {
         expect(
             genSpel(
                 [
-                    { id: 1, left: "#a", operator: "is true", right: "" },
-                    { id: 2, left: "#b", operator: "is false", right: "" },
+                    { left: "#a", operator: "is true", right: "" },
+                    { left: "#b", operator: "is false", right: "" },
                 ],
                 "||",
             ),
@@ -288,15 +288,11 @@ describe("genSpel", () => {
     });
 
     it("matches generates left matches 'pattern'", () => {
-        expect(genSpel([{ id: 1, left: "#input.name", operator: "matches", right: "[A-Z]{3}.*" }], "&&")).toBe(
-            "#input.name matches '[A-Z]{3}.*'",
-        );
+        expect(genSpel([{ left: "#input.name", operator: "matches", right: "[A-Z]{3}.*" }], "&&")).toBe("#input.name matches '[A-Z]{3}.*'");
     });
 
     it("not matches generates !(left matches 'pattern')", () => {
-        expect(genSpel([{ id: 1, left: "#input.code", operator: "not matches", right: "\\d+" }], "&&")).toBe(
-            "!(#input.code matches '\\d+')",
-        );
+        expect(genSpel([{ left: "#input.code", operator: "not matches", right: "\\d+" }], "&&")).toBe("!(#input.code matches '\\d+')");
     });
 });
 
