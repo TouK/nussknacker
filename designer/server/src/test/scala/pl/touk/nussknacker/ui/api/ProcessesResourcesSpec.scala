@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import cats.data.OptionT
+import cats.data.{NonEmptyList, OptionT}
 import cats.instances.all._
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.config.{Config, ConfigValueFactory}
@@ -1523,13 +1523,19 @@ class ProcessesResourcesSpec
         )
       )
     )
-    val sampleScenarioWithTestCase = ProcessTestData.sampleScenario.copy(testCases = Some(TestCases.Single(testCase)))
+    val sampleScenarioWithTestCase =
+      ProcessTestData.sampleScenario.copy(testCases = Some(TestCases(NonEmptyList.one(testCase))))
 
     saveCanonicalProcessAndAssertSuccess(sampleScenarioWithTestCase, Category1)
 
     getProcess(processName) ~> check {
       val scenarioDetails = responseAs[ScenarioWithDetails]
-      scenarioDetails.scenarioGraph.flatMap(_.testCases) shouldBe Some(TestCases.Single(testCase))
+      scenarioDetails.scenarioGraph.flatMap(_.testCases) shouldBe Some(TestCases(NonEmptyList.one(testCase)))
+
+      val json            = responseAs[Json]
+      val testCasesCursor = json.hcursor.downField("scenarioGraph").downField("testCases")
+      testCasesCursor.downField("value").as[TestCase].value shouldBe testCase
+      testCasesCursor.downField("list").as[List[TestCase]].value shouldBe List(testCase)
     }
   }
 

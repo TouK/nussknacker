@@ -2,15 +2,18 @@ package pl.touk.nussknacker.k8s.manager
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.Done
+import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.k8s.manager.KafkaK8sSupport.{kafkaServiceName, srServiceName}
+import pl.touk.nussknacker.engine.kafka.{KafkaClient, RichKafkaConsumer}
 import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
-import skuber.{Container, EnvVar, HTTPGetAction, ObjectMeta, Pod, Probe, Service}
+import skuber.{Container, EnvVar, HTTPGetAction, ObjectMeta, Pod, Probe, Protocol, Service, TCPSocketAction}
 import skuber.api.client.KubernetesClient
 import skuber.json.format._
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.Using
+import scala.util.control.NonFatal
 
 object KafkaK8sSupport {
 
@@ -19,30 +22,51 @@ object KafkaK8sSupport {
 
 }
 
-//TODO: would it be faster if we run e.g. kcat as k8s job instead of exec into kafka pod?
-class KafkaK8sSupport(k8s: KubernetesClient) extends ExtremelyPatientScalaFutures with LazyLogging with Matchers {
+class KafkaK8sSupport(k8s: KubernetesClient)(private implicit val system: ActorSystem)
+    extends ExtremelyPatientScalaFutures
+    with LazyLogging
+    with Matchers {
+
+  import pl.touk.nussknacker.k8s.manager.KafkaK8sSupport._
 
   private val k8sUtils = new K8sTestUtils(k8s)
 
-  // set to false in development to reuse existing kafka pod
-  private val cleanupKafka = true
+  private val kafkaPodName        = "kafka-k8s-test"
+  private val kafkaPodExposedPort = 30092
+  private val srPodName           = "sr-k8s-test"
 
-  private val kafkaPodName = "kafka-k8s-test"
-  private val srPodName    = "sr-k8s-test"
+  private var kafkaPortForwarder: K8sPortForwarder = _
+
+  private val kafkaClient = new KafkaClient(s"localhost:$kafkaPodExposedPort", getClass.getSimpleName)
 
   def start()(implicit ec: ExecutionContext): Unit = if (k8s.getOption[Pod](kafkaPodName).futureValue.isEmpty) {
     val kafkaContainer = Container(
       name = kafkaPodName,
-      // we use debezium image as it makes it easy to use kraft (KIP-500)
-      // versions are not directly connected with Kafka versions
-      image = "debezium/kafka:1.8",
+      image = "apache/kafka-native:4.1.1",
+      ports = List(
+        Container.Port(9092, Protocol.TCP, "kafka-internal"),
+        Container.Port(kafkaPodExposedPort, Protocol.TCP, "kafka-localhost"),
+      ),
       env = List(
-        EnvVar("CLUSTER_ID", "5Yr1SIgYQz-b-dgRabWx4g"),
-        EnvVar("BROKER_ID", "1"),
-        EnvVar("KAFKA_LISTENERS", "PLAINTEXT://0.0.0.0:9092,CONTROLLER://localhost:9093"),
+        EnvVar("KAFKA_NODE_ID", "1"),
+        EnvVar("KAFKA_PROCESS_ROLES", "broker,controller"),
+        EnvVar("KAFKA_LISTENERS", s"BROKER://:9092,CONTROLLER://localhost:9093,LOCALHOST://:$kafkaPodExposedPort"),
+        EnvVar(
+          "KAFKA_ADVERTISED_LISTENERS",
+          s"BROKER://$kafkaServiceName:9092,CONTROLLER://localhost:9093,LOCALHOST://localhost:$kafkaPodExposedPort"
+        ),
+        EnvVar("KAFKA_CONTROLLER_LISTENER_NAMES", "CONTROLLER"),
+        EnvVar("KAFKA_INTER_BROKER_LISTENER_NAME", "BROKER"),
+        EnvVar("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "BROKER:PLAINTEXT,CONTROLLER:PLAINTEXT,LOCALHOST:PLAINTEXT"),
         EnvVar("KAFKA_CONTROLLER_QUORUM_VOTERS", "1@localhost:9093"),
-        EnvVar("ADVERTISED_KAFKA_LISTENERS", "PLAINTEXT://kafkaservice:9092")
-      )
+        EnvVar("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1"),
+        EnvVar("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "1"),
+        EnvVar("KAFKA_TRANSACTION_STATE_LOG_MIN_ISR", "1"),
+        EnvVar("KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS", "0"),
+      ),
+      readinessProbe = Some(
+        Probe(TCPSocketAction(Left(9092)))
+      ),
     )
     val kafkaPod = Pod(
       metadata = ObjectMeta(name = kafkaPodName, labels = Map("run" -> kafkaPodName)),
@@ -52,7 +76,11 @@ class KafkaK8sSupport(k8s: KubernetesClient) extends ExtremelyPatientScalaFuture
       metadata = ObjectMeta(name = kafkaServiceName),
       spec = Some(
         Service.Spec(
-          ports = List(Service.Port(port = 9092)),
+          _type = Service.Type.NodePort,
+          ports = List(
+            Service.Port(port = 9092, name = "internal"), // will get an auto-assigned nodePort
+            Service.Port(port = kafkaPodExposedPort, name = "localhost", nodePort = kafkaPodExposedPort)
+          ),
           selector = Map("run" -> kafkaPodName)
         )
       )
@@ -60,17 +88,8 @@ class KafkaK8sSupport(k8s: KubernetesClient) extends ExtremelyPatientScalaFuture
 
     val srContainer = Container(
       name = srPodName,
-      // we use debezium image as it makes it easy to use kraft (KIP-500)
-      // versions are not directly connected with Kafka versions
-      image = "confluentinc/cp-schema-registry:7.2.1",
-      env = List(
-        EnvVar("SCHEMA_REGISTRY_HOST_NAME", "schemaregistry"),
-        EnvVar("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", s"${KafkaK8sSupport.kafkaServiceName}:9092")
-      ),
-      readinessProbe = Some(
-        Probe(new HTTPGetAction(Left(8081), path = "/subjects"), periodSeconds = Some(1), failureThreshold = Some(60))
-      ),
-      livenessProbe = Some(Probe(new HTTPGetAction(Left(8081), path = "/subjects")))
+      image = "ghcr.io/axonops/axonops-schema-registry:0.2.1",
+      readinessProbe = Some(Probe(new HTTPGetAction(Left(8081), path = "/health/ready"))),
     )
     val srPod = Pod(
       metadata = ObjectMeta(name = srPodName, labels = Map("run" -> srPodName)),
@@ -90,15 +109,32 @@ class KafkaK8sSupport(k8s: KubernetesClient) extends ExtremelyPatientScalaFuture
       .sequence(List(k8s.create(kafkaPod), k8s.create(kafkaService), k8s.create(srPod), k8s.create(srService)))
       .futureValue
 
-    def isContainerReady(podName: String) =
-      k8s.get[Pod](podName).futureValue.status.get.containerStatuses.headOption.get.ready
-    eventually {
-      isContainerReady(kafkaPodName) shouldBe true
-      isContainerReady(srPodName) shouldBe true
+    def isContainerDone(podName: String, allowFailed: Boolean = true) = {
+      val status = k8s.get[Pod](podName).futureValue.status.get.containerStatuses.headOption.get
+      status.ready || (allowFailed && status.restartCount > 0)
     }
+
+    try {
+      eventually {
+        isContainerDone(kafkaPodName) shouldBe true
+        isContainerDone(srPodName) shouldBe true
+      }
+      isContainerDone(kafkaPodName, allowFailed = false) shouldBe true
+      isContainerDone(srPodName, allowFailed = false) shouldBe true
+    } catch {
+      case NonFatal(e) =>
+        k8sUtils.printResourcesDetails()
+        throw e
+    }
+
+    kafkaPortForwarder = new K8sPortForwarder(kafkaPod, kafkaPodExposedPort, kafkaPodExposedPort).start()
   }
 
-  def stop()(implicit ec: ExecutionContext): Unit = if (cleanupKafka) {
+  def stop()(implicit ec: ExecutionContext): Unit = {
+    kafkaClient.shutdown()
+    if (kafkaPortForwarder != null) {
+      kafkaPortForwarder.close()
+    }
     Future
       .sequence(
         List(
@@ -117,19 +153,24 @@ class KafkaK8sSupport(k8s: KubernetesClient) extends ExtremelyPatientScalaFuture
     }
   }
 
-  def readFromTopic(name: String, count: Int): List[String] = {
-    val command =
-      s"/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic $name --max-messages $count --from-beginning"
-    val messages = k8sUtils.execPodWithLogs(kafkaPodName, command, _.lines.toArray.length == count, None)
-    messages.split("\n").take(count).toList
+  def readFromTopic(name: String, count: Int, secondsToWait: Int = 5): List[String] = {
+    Using.resource(kafkaClient.createConsumer()) { consumer =>
+      new RichKafkaConsumer(consumer)
+        .consumeWithConsumerRecord(name, secondsToWait)
+        .map { record =>
+          logger.info(
+            s"Read Kafka message: ${record.topic()}:${record.partition()}:${record.offset()} = ${new String(record.value())}"
+          )
+          new String(record.value())
+        }
+        .take(count)
+        .toList
+    }
   }
-
-  private def runInKafka(command: String, end: String => Boolean, input: Option[String] = None): String =
-    runInPod(kafkaPodName, command, end, input)
 
   private def runInPod(
       podName: String,
-      command: String,
+      command: Seq[String],
       end: String => Boolean,
       input: Option[String] = None
   ): String = {
@@ -146,7 +187,7 @@ class KafkaK8sSupport(k8s: KubernetesClient) extends ExtremelyPatientScalaFuture
     k8s
       .exec(
         podName,
-        command.split(" ").toIndexedSeq,
+        command,
         maybeStdout = Some(sink),
         maybeStdin = inputSource,
         maybeClose = Some(close)
@@ -156,19 +197,25 @@ class KafkaK8sSupport(k8s: KubernetesClient) extends ExtremelyPatientScalaFuture
   }
 
   def sendToTopic(name: String, value: String): Unit = {
-    val command = s"/kafka/bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic $name"
-    k8sUtils.execPodWithLogs(kafkaPodName, command, _ => true, Some(value))
+    kafkaClient.sendMessage(name, value).futureValue
   }
 
   def createTopic(name: String): Unit = {
-    val command =
-      s"/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic $name --partitions 1 --replication-factor 1"
-    k8sUtils.execPodWithLogs(kafkaPodName, command, _.contains(s"Created topic $name"))
+    kafkaClient.createTopic(name, 1)
   }
 
   def createSchema(name: String, schema: String, schemaType: String = "JSON"): Unit = {
-    val req     = s"""{"schemaType":"$schemaType","schema":"${schema.replace(""""""", """\"""")}"}"""
-    val command = s"curl -v -H Content-Type:application/json localhost:8081/subjects/$name/versions -d $req"
+    val req = s"""{"schemaType":"$schemaType","schema":"${schema.replace(""""""", """\"""")}"}"""
+    val command = Seq(
+      "wget",
+      "--header",
+      "Content-Type: application/json",
+      "--post-data",
+      req,
+      "-O",
+      "-",
+      s"localhost:8081/subjects/$name/versions"
+    )
     runInPod(srPodName, command, _.contains(""""id":"""))
   }
 

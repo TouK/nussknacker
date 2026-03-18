@@ -22,8 +22,9 @@ trait BaseNuRuntimeBinTestMixin extends VeryPatientScalaFutures with Matchers { 
       executeBeforeProcessStatusCheck: => Unit,
       executeAfterProcessStatusCheck: => Unit
   ): Unit = {
+    val name                  = shellScriptArgs(0).split("[\\\\/]").last
     val process               = Runtime.getRuntime.exec(shellScriptArgs, shellScriptEnvs)
-    val processExitCodeFuture = ProcessUtils.attachLoggingAndReturnWaitingFuture(process)
+    val processExitCodeFuture = ProcessUtils.attachLoggingAndReturnWaitingFuture(name, process)
     ProcessUtils.destroyProcessEventually(process) {
       executeBeforeProcessStatusCheck
       ProcessUtils.checkIfFailedInstantly(processExitCodeFuture)

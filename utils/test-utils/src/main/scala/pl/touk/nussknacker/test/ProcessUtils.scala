@@ -1,19 +1,20 @@
 package pl.touk.nussknacker.test
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.commons.io.IOUtils
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 
+import java.io.{BufferedReader, InputStream, InputStreamReader}
 import scala.concurrent.{blocking, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.control.NonFatal
 
 object ProcessUtils extends LazyLogging with Matchers with VeryPatientScalaFutures {
 
-  val successExitCodes: Set[Int] = Set(0, 143) // destroy causes SIGTERM which ends up process with 143 exit code
+  // Some applications, e.g. Java, exit with 128+cause, so SIGTERM (15) results in 128+15=143
+  private val successExitCodes: Set[Int] = Set(0, 143)
 
-  def attachLoggingAndReturnWaitingFuture(process: Process): Future[Int] = {
+  def attachLoggingAndReturnWaitingFuture(name: String, process: Process): Future[Int] = {
     logger.info(s"Started process: ${process.info()} with pid: ${process.pid()}")
     process.onExit().thenApply[Unit] { p =>
       if (successExitCodes.contains(p.exitValue())) {
@@ -22,16 +23,9 @@ object ProcessUtils extends LazyLogging with Matchers with VeryPatientScalaFutur
         logger.warn(s"Process exited with failure ${process.exitValue()} exit code")
       }
     }
-    Future {
-      blocking {
-        IOUtils.copy(process.getInputStream, System.out)
-      }
-    }
-    Future {
-      blocking {
-        IOUtils.copy(process.getErrorStream, System.err)
-      }
-    }
+    val logPrefix = s"[$name:${process.pid()}] "
+    streamLines(process.getInputStream, { line => System.out.println(logPrefix + line) })
+    streamLines(process.getErrorStream, { line => System.err.println(logPrefix + line) })
     val future = Future {
       blocking {
         process.waitFor()
@@ -74,5 +68,20 @@ object ProcessUtils extends LazyLogging with Matchers with VeryPatientScalaFutur
       }
     }
   }
+
+  private def streamLines(inputStream: InputStream, printFn: String => Unit): Future[Unit] =
+    Future {
+      blocking {
+        val reader = new BufferedReader(new InputStreamReader(inputStream))
+        try {
+          Iterator
+            .continually(reader.readLine())
+            .takeWhile(_ != null)
+            .foreach(line => printFn(line))
+        } finally {
+          reader.close()
+        }
+      }
+    }
 
 }

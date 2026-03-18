@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.api.deployment.{
   DMValidateScenarioCommand
 }
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -101,16 +100,6 @@ class K8sDeploymentManagerKafkaTest
       pversion
     }
 
-    def waitForRunning(version: ProcessVersion) = {
-      eventually {
-        val state = manager.getScenarioDeploymentsStatuses(version.processName).map(_.value).futureValue
-        state.length shouldBe 1
-        state.map(_.status).head should matchPattern {
-          case s: SimpleStateStatus.Running if s.version == version.versionId =>
-        }
-      }
-    }
-
     val message = """{"message":"Nussknacker!"}"""
 
     def messageForVersion(version: Int) = s"""{"original":$message,"version":$version}"""
@@ -122,16 +111,16 @@ class K8sDeploymentManagerKafkaTest
     )
 
     val version1 = deployScenario(1)
-    waitForRunning(version1)
+    waitForRunning(manager, version1)
 
     kafka.sendToTopic(input, message)
     kafka.readFromTopic(output, 1) shouldBe List(messageForVersion(1))
 
     val version2 = deployScenario(2)
-    waitForRunning(version2)
+    waitForRunning(manager, version2, waitForOldPodsTerminated = true)
 
     kafka.sendToTopic(input, message)
-    kafka.readFromTopic(output, 2) shouldBe List(messageForVersion(1), messageForVersion(2))
+    kafka.readFromTopic(output, 2, secondsToWait = 15) shouldBe List(messageForVersion(1), messageForVersion(2))
 
     cancelAndAssertCleanup(manager, version2)
   }
@@ -386,9 +375,9 @@ class K8sDeploymentManagerKafkaTest
     kafka.start()
   }
 
-  override protected def cleanup(): Unit = {
-    super.cleanup()
+  override protected def afterAll(): Unit = {
     kafka.stop()
+    super.afterAll()
   }
 
   private def cancelAndAssertCleanup(manager: K8sDeploymentManager, version: ProcessVersion) = {

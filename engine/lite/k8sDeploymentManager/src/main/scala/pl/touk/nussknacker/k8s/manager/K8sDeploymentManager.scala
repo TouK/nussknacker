@@ -317,6 +317,7 @@ class K8sDeploymentManager(
   override def getScenarioDeploymentsStatuses(
       scenarioName: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
+    // note: a deleted Deployment's Pods may still linger for a few seconds, Pod removal is asynchronous
     for {
       deployments <- scenarioStateK8sClient
         .listSelected[ListResource[Deployment]](requirementForName(scenarioName))

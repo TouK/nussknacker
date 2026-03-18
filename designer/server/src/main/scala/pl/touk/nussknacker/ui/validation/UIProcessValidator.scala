@@ -445,20 +445,14 @@ class UIProcessValidator(
     scenario.testCases match {
       case None =>
         ValidationResult.success
-      case Some(TestCases.Single(testCase)) =>
+      case Some(TestCases(testCases)) =>
         val testCasesNodeTyping = nodesTyping.mapValuesNow { typingInfo =>
           TestCaseValidator.NodeTyping(
             inputVariables = typingInfo.inputValidationContext.localVariables,
             outputVariables = typingInfo.outputValidationContext.map(_.localVariables).getOrElse(Map.empty),
           )
         }
-        val testCasesValidationErrors =
-          testCaseValidator.validateScenarioTestCases(scenario.collectAllNodes, testCasesNodeTyping, List(testCase))
-        if (testCasesValidationErrors.isEmpty) {
-          ValidationResult.success
-        } else {
-          ValidationResult.errors(testCasesValidationErrors = Some(testCasesValidationErrors))
-        }
+        testCaseValidator.validateScenarioTestCases(scenario.collectAllNodes, testCasesNodeTyping, testCases.toList)
     }
   }
 

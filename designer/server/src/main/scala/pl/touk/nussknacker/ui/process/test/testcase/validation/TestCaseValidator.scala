@@ -5,8 +5,14 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.test.testcase.TestCase
+import pl.touk.nussknacker.engine.test.testcase.{TestCase, TestCaseName}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  NodeValidationError,
+  NodeValidationErrorType,
+  UIGlobalError,
+  ValidationResult
+}
 import pl.touk.nussknacker.restmodel.validation.testcase.{
   NodeTestCasesValidationErrors,
   NodeTestCaseValidationErrors,
@@ -26,6 +32,29 @@ class TestCaseValidator(
       nodes: List[NodeData],
       nodesTyping: Map[String, TestCaseValidator.NodeTyping],
       testCases: List[TestCase],
+  )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): ValidationResult = {
+    val globalErrors              = validateNameUniqueness(testCases)
+    val testCasesValidationErrors = validateScenarioTestCasesByNode(nodes, nodesTyping, testCases)
+    ValidationResult.errors(
+      globalErrors = globalErrors,
+      testCasesValidationErrors = Option.when(testCasesValidationErrors.nonEmpty)(testCasesValidationErrors),
+    )
+  }
+
+  private def validateNameUniqueness(testCases: List[TestCase]): List[UIGlobalError] = {
+    val duplicateNames =
+      testCases.groupBy(_.name).collect { case (name, occurrences) if occurrences.size > 1 => name }.toList
+    Option
+      .when(duplicateNames.nonEmpty) {
+        errors.duplicateTestCaseNames(duplicateNames)
+      }
+      .toList
+  }
+
+  private def validateScenarioTestCasesByNode(
+      nodes: List[NodeData],
+      nodesTyping: Map[String, TestCaseValidator.NodeTyping],
+      testCases: List[TestCase]
   )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): ScenarioTestCasesValidationErrors = {
     val nodesById = nodes.map(n => n.id -> n).toMap
     val testCasesErrorsByNode = nodesById.flatMap { case (nodeId, node) =>
@@ -34,7 +63,6 @@ class TestCaseValidator(
       val errors        = validateNodeTestCases(node, nodeTestCases, nodeTyping)
       if (errors.isEmpty) None else Some(nodeId -> errors)
     }
-
     testCasesErrorsByNode
   }
 
@@ -114,6 +142,24 @@ object TestCaseValidator {
         new AssertionsCompiler(expressionCompiler, globalVariablesPreparer)
       )
     )
+  }
+
+  private object errors {
+
+    def duplicateTestCaseNames(duplicateNames: List[TestCaseName]): UIGlobalError = {
+      UIGlobalError(
+        error = NodeValidationError(
+          typ = "DuplicateTestCaseNames",
+          message = s"Duplicate test case names: ${duplicateNames.sorted.mkString(", ")}",
+          description = "Test case names must be unique",
+          fieldName = None,
+          errorType = NodeValidationErrorType.SaveAllowed,
+          details = None,
+        ),
+        nodeIds = List.empty,
+      )
+    }
+
   }
 
 }
