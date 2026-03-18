@@ -30,13 +30,13 @@ export const getTestCaseMockForNode = createSelector(
     getNodeId,
     (mocks, nodeId) => mocks[nodeId] || { expression: MockExpressionParameter.defaultValue },
 );
-export const getInputDataRecords = createSelector(getTestCase, ({ inputs }) => safeParseExpression<TestingDataRecords[]>(inputs) || []);
+export const getTestData = createSelector(getTestCase, ({ inputs }) => safeParseExpression<TestingDataRecords[]>(inputs) || []);
 
 const getSourceId = (_: unknown, sourceId: string) => sourceId;
-export const getInputDataRecordsForSingleSource = createSelector([getInputDataRecords, getSourceId], (testCaseInputs, sourceId: string) =>
+export const getInputDataRecordsForSingleSource = createSelector([getTestData, getSourceId], (testCaseInputs, sourceId: string) =>
     testCaseInputs.filter((r) => r.sourceId === sourceId),
 );
-export const hasInputDataRecordsDefined = createSelector(getInputDataRecords, (inputDataRecords) => inputDataRecords.length > 0);
+export const hasTestDataDefined = createSelector(getTestData, (inputDataRecords) => inputDataRecords.length > 0);
 
 export const getTestCaseNodeValidationData = createSelector(getScenarioGraph, getNodeId, ({ testCases }, nodeId) => {
     const testCase = testCases?.value ?? ({} as TestCase);
