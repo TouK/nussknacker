@@ -55,8 +55,6 @@ function MockExpressionField(props: Props): React.JSX.Element {
 
     const editMock: OnValueChange = useCallback(
         (expression) => {
-            if (expression.expression === "") return;
-
             dispatch(setTestCaseMock(editedNode.id, expression));
         },
         [dispatch, editedNode.id],

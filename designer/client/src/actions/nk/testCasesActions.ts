@@ -42,14 +42,15 @@ export function setTestCaseInputs(updater: (prev: TestingDataRecords[]) => Testi
     };
 }
 
-export function setTestCaseMock(nodeId: string, expression: ExpressionObj): ThunkAction {
+export function setTestCaseMock(nodeId: string, expression: ExpressionObj | undefined): ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
 
-        const mocks = getTestCaseMocks(state);
-        dispatch({
-            type: "SET_TEST_CASE_MOCKS",
-            mocks: { ...mocks, [nodeId]: { expression } },
-        });
+        const { [nodeId]: _, ...remainingMocks } = getTestCaseMocks(state);
+        if (!expression?.expression) {
+            dispatch({ type: "SET_TEST_CASE_MOCKS", mocks: remainingMocks });
+        } else {
+            dispatch({ type: "SET_TEST_CASE_MOCKS", mocks: { ...remainingMocks, [nodeId]: { expression } } });
+        }
     };
 }
