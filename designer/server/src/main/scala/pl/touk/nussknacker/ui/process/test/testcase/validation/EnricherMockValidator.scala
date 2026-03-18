@@ -32,7 +32,7 @@ private class EnricherMockValidator(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): Option[NonEmptyList[EnricherMockValidationError]] = {
     enricherMock match {
-      case Some(mock) =>
+      case Some(mock) if !mock.expression.expression.isBlank =>
         nodeData match {
           case enricher: Enricher =>
             validateEnricherMockType(enricher, mock.expression, nodeTyping) match {
@@ -42,7 +42,7 @@ private class EnricherMockValidator(
           case _ =>
             Some(NonEmptyList.one(errors.enricherMockForNonEnricherNode(nodeData)))
         }
-      case None => None
+      case _ => None
     }
   }
 
