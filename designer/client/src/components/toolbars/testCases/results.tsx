@@ -1,17 +1,16 @@
 import { Box, Button, Typography } from "@mui/material";
-import React, { useCallback, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { testScenarioWithTestCase } from "../../../actions/nk/testingActions";
-import { useUserSettings } from "../../../common/useUserSettings";
 import type { TestAssertionResults } from "../../../http/resultsWithCountsDto";
 import { getActiveTestCase } from "../../../reducers/selectors/testCases";
 import { getTestResultsLoading } from "../../../reducers/selectors/testing";
-import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";
 import { Expandable } from "../../common/Expandable";
 import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
 import { useTestingScenarioEnabled } from "../../modals/TestingDataRecords/useTestingScenarioEnabled";
+import { useRunTestScenario } from "../test/useRunTestScenario";
 import { OpenNodeTestingDetails } from "./assertionResultsForNode/assertionResult/openNodeTestingDetails";
 import { AssertionResultsForNode } from "./assertionResultsForNode/assertionResultsForNode";
 import { AssertionResultsForNodeTitle } from "./assertionResultsForNode/assertionResultsForNodeTitle";
@@ -23,15 +22,11 @@ interface Props {
 
 export const Results = ({ testAssertionResults }: Props) => {
     const testCase = useAppSelector(getActiveTestCase);
-    const dispatch = useAppDispatch();
-    const [showMockFieldOnEnrichers] = useUserSettings("node.showMockFieldOnEnrichers");
     const isLoading = useAppSelector(getTestResultsLoading);
 
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled: false });
 
-    const handleRun = useCallback(() => {
-        dispatch(testScenarioWithTestCase(testCase, showMockFieldOnEnrichers));
-    }, [dispatch, testCase, showMockFieldOnEnrichers]);
+    const { runTest } = useRunTestScenario();
 
     const { nodes, sortByScenarioOrder } = useScenarioNodeOrder();
 
@@ -43,7 +38,7 @@ export const Results = ({ testAssertionResults }: Props) => {
     if (sortedNodeIds.length === 0) {
         return (
             <NoResults
-                onRun={handleRun}
+                onRun={() => runTest(testCase)}
                 testCaseName={testCase.name}
                 isRunTestButtonDisabled={isLoading}
                 isRunTestButtonVisible={testingScenarioEnabled}

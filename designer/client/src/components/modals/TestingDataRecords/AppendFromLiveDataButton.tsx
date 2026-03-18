@@ -2,7 +2,7 @@ import { Box } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { getInputDataRecords } from "../../../reducers/selectors/testCases";
+import { getTestData } from "../../../reducers/selectors/testCases";
 import { useAppSelector } from "../../../store/storeHelpers";
 import { NumericInput } from "../../graph/node-modal/editors/expression/NumericInput";
 import { FormLabel } from "../../graph/node-modal/editors/FormControl";
@@ -22,7 +22,7 @@ const TOOLTIP_APPEND_LIVE_DATA = "The table will be appended with live data from
 export const AppendFromLiveDataButton = ({ handleGenerateTestData, maxTestingRecords, recordsToAddLimitExceeded }: Props) => {
     const { t } = useTranslation();
     const [recordsToAppend, setRecordsToAppend] = useState<number>(DEFAULT_APPEND_COUNT);
-    const allTestingDataRecords = useAppSelector(getInputDataRecords);
+    const allTestingDataRecords = useAppSelector(getTestData);
     const currentRecordsNumber = allTestingDataRecords.length;
     const maxLiveDataToAppend = maxTestingRecords - currentRecordsNumber;
 

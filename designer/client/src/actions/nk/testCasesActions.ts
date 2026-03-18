@@ -2,12 +2,7 @@ import type { WithUuid } from "../../components/graph/node-modal/appendUuid";
 import type { ExpressionObj } from "../../components/graph/node-modal/editors/expression/types";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import type { TestCase } from "../../reducers/graph/testCase";
-import {
-    getTestCaseAssertions,
-    getTestCaseAssertionsForNode,
-    getInputDataRecords,
-    getTestCaseMocks,
-} from "../../reducers/selectors/testCases";
+import { getTestCaseAssertions, getTestCaseAssertionsForNode, getTestData, getTestCaseMocks } from "../../reducers/selectors/testCases";
 import { getActiveTestCaseId } from "../../reducers/selectors/testing";
 import type { ThunkAction } from "../reduxTypes";
 
@@ -41,7 +36,7 @@ export function setTestCaseAssertions(nodeId: string, updater: (prev: WithUuid<A
 export function setTestCaseInputs(updater: (prev: TestingDataRecords[]) => TestingDataRecords[]): ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
-        const prev = getInputDataRecords(state);
+        const prev = getTestData(state);
         const next = updater(prev);
         const activeTestCaseId = getActiveTestCaseId(state);
 
