@@ -4,21 +4,19 @@ import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { resetSelection } from "../../../actions/nk/selection";
-import { replaceSearchQuery } from "../../../containers/hooks/useSearchQuery";
-import { getScenario, getSelectionState } from "../../../reducers/selectors/graph";
-import { getInputDataRecords, getTestCaseAssertions, getTestCaseMocks } from "../../../reducers/selectors/testCases";
+import { getSelectionState } from "../../../reducers/selectors/graph";
+import { getTestData, getTestCaseAssertions, getTestCaseMocks } from "../../../reducers/selectors/testCases";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";
-import { useWindows } from "../../../windowManager/useWindows";
 import { useGraph } from "../../graph/GraphContext";
 import { nodeFound, nodeFoundHover } from "../../graph/graphStyledWrapper";
-import { ACTIVE_TAB_QUERY_KEY, NodeDetailsTab } from "../../graph/node-modal/node/NodeContent/TabsWrapper";
+import { useOpenNodeTestingTab } from "../test/useOpenNodeTestingTab";
 import { NodeIcon } from "./NodeIcon";
 import { useScenarioNodeOrder } from "./useScenarioNodeOrder";
 
 export const Definitions = () => {
     const { t } = useTranslation();
-    const inputDataRecords = useAppSelector(getInputDataRecords);
+    const inputDataRecords = useAppSelector(getTestData);
     const mocks = useAppSelector(getTestCaseMocks);
     const assertions = useAppSelector(getTestCaseAssertions);
 
@@ -179,24 +177,22 @@ function useNodeHover(nodeId: string | undefined) {
 
 function useNodeSelectOrOpen(node: NodeType | undefined) {
     const graphGetter = useGraph();
-    const { openNodeWindow } = useWindows();
-    const scenario = useAppSelector(getScenario);
     const dispatch = useAppDispatch();
     const selectionState = useAppSelector(getSelectionState);
+    const openNodeTestingTab = useOpenNodeTestingTab();
 
     const isNodeSelected = useCallback((node: NodeType) => selectionState.includes(node.id), [selectionState]);
 
     return useCallback(() => {
         if (!node) return;
         if (isNodeSelected(node)) {
-            replaceSearchQuery((current) => ({ ...current, [ACTIVE_TAB_QUERY_KEY]: [NodeDetailsTab.testing] }));
-            openNodeWindow(node, scenario);
+            openNodeTestingTab(node);
         } else {
             const graph = graphGetter();
             graph.fitToNode(node.id);
             dispatch(resetSelection(node.id));
         }
-    }, [dispatch, graphGetter, isNodeSelected, node, openNodeWindow, scenario]);
+    }, [dispatch, graphGetter, isNodeSelected, node, openNodeTestingTab]);
 }
 
 function useNodeGroupHover(nodeIds: string[]) {
