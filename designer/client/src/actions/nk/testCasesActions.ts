@@ -21,14 +21,9 @@ export function setTestCaseAssertions(nodeId: string, updater: (prev: WithUuid<A
         const next = updater(prev);
 
         const testingAssertions = getTestCaseAssertions(state);
-        const activeTestCaseId = getActiveTestCaseId(state);
-
         dispatch({
-            type: "UPDATE_TEST_CASE",
-            testCaseId: activeTestCaseId,
-            updates: {
-                assertions: { ...testingAssertions, [nodeId]: next },
-            },
+            type: "SET_TEST_CASE_ASSERTIONS",
+            assertions: { ...testingAssertions, [nodeId]: next },
         });
     };
 }
@@ -50,19 +45,18 @@ export function setTestCaseInputs(updater: (prev: TestingDataRecords[]) => Testi
     };
 }
 
-export function setTestCaseMock(nodeId: string, expression: ExpressionObj): ThunkAction {
+export function setTestCaseMock(nodeId: string, expression: ExpressionObj | undefined): ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
 
-        const mocks = getTestCaseMocks(state);
         const activeTestCaseId = getActiveTestCaseId(state);
 
-        dispatch({
-            type: "UPDATE_TEST_CASE",
-            testCaseId: activeTestCaseId,
-            updates: {
-                mocks: { ...mocks, [nodeId]: { expression } },
-            },
-        });
+        const { [nodeId]: _, ...remainingMocks } = getTestCaseMocks(state);
+
+        if (!expression?.expression) {
+            dispatch({ type: "UPDATE_TEST_CASE", testCaseId: activeTestCaseId, updates: remainingMocks });
+        } else {
+            dispatch({ type: "UPDATE_TEST_CASE", testCaseId: activeTestCaseId, updates: { ...remainingMocks, [nodeId]: { expression } } });
+        }
     };
 }
