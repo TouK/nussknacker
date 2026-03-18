@@ -3,14 +3,13 @@ import SvgIcon from "@mui/material/SvgIcon/SvgIcon";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { testScenarioWithTestCase } from "../../../actions/nk/testingActions";
 import TestingIcon from "../../../assets/img/toolbarButtons/test.svg";
-import { useUserSettings } from "../../../common/useUserSettings";
 import type { TestCase } from "../../../reducers/graph/testCase";
 import { getTestAssertionResults, getTestResultsLoading } from "../../../reducers/selectors/testing";
-import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
+import { useAppSelector } from "../../../store/storeHelpers";
 import { Expandable } from "../../common/Expandable";
 import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
+import { useRunTestScenario } from "../test/useRunTestScenario";
 import { AssertionResultsBadge } from "./assertionResultsForNode/AssertionResultsBadge";
 import { Definitions } from "./definitions";
 import { Footer } from "./footer";
@@ -54,15 +53,15 @@ const TestCaseTitle = ({ testCase }: TestCaseTitleProps) => {
     const testAssertionResults = useAppSelector(getTestAssertionResults);
     const allResults = Object.values(testAssertionResults).flat();
     const isLoading = useAppSelector(getTestResultsLoading);
-    const [showMockFieldOnEnrichers] = useUserSettings("node.showMockFieldOnEnrichers");
-    const dispatch = useAppDispatch();
+
+    const { runTest } = useRunTestScenario();
 
     const handleRun = useCallback(
         (e: React.MouseEvent) => {
             e.stopPropagation();
-            dispatch(testScenarioWithTestCase(testCase, showMockFieldOnEnrichers));
+            runTest(testCase);
         },
-        [dispatch, testCase, showMockFieldOnEnrichers],
+        [runTest, testCase],
     );
 
     return (
