@@ -327,6 +327,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#9012](https://github.com/TouK/nussknacker/pull/9012) Migrate test endpoints to Tapir:
   * `/processManagement/testCase/{scenarioName}` endpoint to `/scenarioTesting/{scenarioName)/performTestCase`
   * `/processManagement/test/{scenarioName}` to multipart variant of `/scenarioTesting/{scenarioName}/performTest`
+* [#8943](https://github.com/TouK/nussknacker/pull/8943) Replaced `spring-jcl` library with contemporary version of `commons-logging` 
 * [#9037](https://github.com/TouK/nussknacker/pull/9037) Improvments to Table Source and Table Sink components:
   * Optimized table discovery through configurable caching (especially important for catalogs for systems with slow connections)
   * More precise validation and error messages during scenario authoring

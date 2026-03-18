@@ -13,6 +13,7 @@ describe("Test cases", () => {
         cy.visitNewProcess(seed, "testCases", "Category2");
         cy.toggleUserFlag("node.showTestingTab", true);
         cy.toggleUserFlag("node.showMockFieldOnEnrichers", true);
+        cy.toggleUserFlag("scenario.showTestCasesPanel", true);
         cy.layoutScenario();
 
         cy.openNodeWindow("Event Generator");
@@ -51,6 +52,7 @@ describe("Test cases", () => {
         cy.visitNewProcess(seed, "testCasesWithError", "Category2");
         cy.toggleUserFlag("node.showTestingTab", true);
         cy.toggleUserFlag("node.showMockFieldOnEnrichers", true);
+        cy.toggleUserFlag("scenario.showTestCasesPanel", true);
         cy.layoutScenario();
 
         cy.openNodeWindow("Enricher");
@@ -69,6 +71,7 @@ describe("Test cases", () => {
         cy.visitNewProcess(seed, "testCases", "Category2");
         cy.toggleUserFlag("node.showTestingTab", true);
         cy.toggleUserFlag("node.showMockFieldOnEnrichers", true);
+        cy.toggleUserFlag("scenario.showTestCasesPanel", true);
         cy.layoutScenario();
 
         cy.openNodeWindow("Event Generator");
@@ -93,6 +96,7 @@ describe("Test cases", () => {
     it("should set generated value to enricher mock field", () => {
         cy.visitNewProcess(seed, "testCasesWithEnricherMock", "Category2");
         cy.toggleUserFlag("node.showTestingTab", true);
+        cy.toggleUserFlag("scenario.showTestCasesPanel", true);
         cy.toggleUserFlag("node.showMockFieldOnEnrichers", true);
         cy.toggleUserFlag("editor.showResetToDefaultButton", true);
         cy.layoutScenario();
@@ -109,12 +113,14 @@ describe("Test cases", () => {
     it("should display assertions panel", () => {
         cy.visitNewProcess(seed, "testCasesWithAssertions.json", "Category2");
         cy.toggleUserFlag("node.showTestingTab", true);
+        cy.toggleUserFlag("scenario.showTestCasesPanel", true);
         cy.layoutScenario();
 
         cy.runCurrentTestCase();
 
         expandAssertionItem("Log");
 
+        cy.viewport(1920, 1080);
         cy.get('[data-testid="test-cases-panel"]').matchImage();
 
         showAssertionDetails(0);
@@ -193,7 +199,7 @@ const verifyMockData = (mockValue: string) => {
 };
 
 const expandAssertionItem = (nodeId: string) => {
-    cy.get(`[id="${nodeId}-header"]`).click();
+    cy.get(`[id="${nodeId}-header"]`).find('[data-testid="ExpandMoreIcon"]').click();
 };
 
 const openTestingDetails = (nodeId: string) => {

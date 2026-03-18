@@ -66,6 +66,7 @@ export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean
         createFlag("scenario.showBreadcrumbs"),
         createFlag("toolbar.autoSaveDuringDeployRedeploy"),
         createFlag(SNOW_SNOW_FLAG, false),
+        createFlag("scenario.showTestCasesPanel"),
     ];
     return Object.fromEntries(entries) as Readonly<Prettify<Record<KeysOfEntries<typeof entries>, boolean>>>;
 };

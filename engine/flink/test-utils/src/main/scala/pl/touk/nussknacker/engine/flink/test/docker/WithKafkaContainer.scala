@@ -12,7 +12,9 @@ trait WithKafkaContainer { self: Suite with WithDockerContainers =>
   protected val kafkaNetworkAlias = "kafka"
 
   protected val kafkaContainer: KafkaContainer =
-    KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.4.0")).configure { self =>
+    KafkaContainer(DockerImageName.parse("apache/kafka-native:4.1.1")).configure { self =>
+      // can segfault on startup, we need retries - https://issues.apache.org/jira/browse/KAFKA-20314
+      self.withStartupAttempts(3)
       self.setNetwork(network)
       self.setNetworkAliases(asList(kafkaNetworkAlias))
     }
@@ -21,6 +23,6 @@ trait WithKafkaContainer { self: Suite with WithDockerContainers =>
   protected def hostKafkaAddress: String = kafkaContainer.bootstrapServers
 
   // on flink we have to access kafka via network alias
-  protected def dockerKafkaAddress = s"$kafkaNetworkAlias:9092"
+  protected def dockerKafkaAddress = s"$kafkaNetworkAlias:9093"
 
 }

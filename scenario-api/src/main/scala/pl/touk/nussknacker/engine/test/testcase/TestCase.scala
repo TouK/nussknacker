@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.test.testcase
 
+import cats.data.NonEmptyList
 import enumeratum.{CirceEnum, Enum, EnumEntry}
 import enumeratum.EnumEntry.LowerCamelcase
 import io.circe.{Decoder, Encoder, Json}
@@ -8,18 +9,28 @@ import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
-// TODO: When adding multiple test cases variant, remember to validate ID and name uniqueness.
-sealed trait TestCases
+final case class TestCases(list: NonEmptyList[TestCase])
 
 object TestCases {
-  case class Single(value: TestCase) extends TestCases
 
-  implicit val encoder: Encoder[TestCases] = Encoder.instance { case Single(value) =>
-    Json.obj("value" -> value.asJson)
+  // TODO: remove encoder and switch decoder to use "list" and fallback to "value" when FE is updated to use "list" field
+
+  implicit val encoder: Encoder[TestCases] = Encoder.instance { testCases =>
+    Json.obj(
+      "list" -> testCases.list.asJson,
+      // Return "value" for backward compatibility
+      "value" -> testCases.list.head.asJson
+    )
   }
 
   implicit val decoder: Decoder[TestCases] = Decoder.instance { cursor =>
-    cursor.downField("value").as[TestCase].map(Single(_))
+    val valueCursor = cursor.downField("value")
+    // For backward compatibility, if "value" field is present, try to decode a single test case from "value" field
+    if (valueCursor.succeeded) {
+      valueCursor.as[TestCase].map(testCase => TestCases(NonEmptyList.one(testCase)))
+    } else {
+      cursor.downField("list").as[NonEmptyList[TestCase]].map(TestCases(_))
+    }
   }
 
 }

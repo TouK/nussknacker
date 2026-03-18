@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.api.context
 
-import cats.Applicative
-import cats.data.{NonEmptyList, ValidatedNel}
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
@@ -30,11 +28,6 @@ sealed trait ParameterValidationError extends PartSubGraphCompilationError with 
 
 object ProcessCompilationError {
 
-  type ValidatedNelCompilationError[T] = ValidatedNel[ProcessCompilationError, T]
-
-  val ValidatedNelApplicative: Applicative[ValidatedNelCompilationError] =
-    Applicative[ValidatedNelCompilationError]
-
   sealed trait InASingleNode {
     self: ProcessCompilationError =>
 
@@ -62,7 +55,7 @@ object ProcessCompilationError {
   final case class InvalidRootNode(nodeIds: Set[NodeId]) extends ProcessUncanonizationError with ScenarioGraphLevelError
 
   object EmptyProcess extends ProcessUncanonizationError with ScenarioGraphLevelError {
-    override def nodeIds = Set()
+    override def nodeIds: Set[NodeId] = Set()
   }
 
   final case class InvalidTailOfBranch(nodeIds: Set[NodeId])
@@ -192,8 +185,6 @@ object ProcessCompilationError {
   case class DuplicatedParameters(params: Set[ParameterName], nodeId: NodeId)
       extends PartSubGraphCompilationError
       with InASingleNode
-
-  final case class UnresolvedFragment(nodeId: NodeId) extends PartSubGraphCompilationError with InASingleNode
 
   object MissingParameters {
     def apply(params: Set[ParameterName])(implicit nodeId: NodeId): PartSubGraphCompilationError =

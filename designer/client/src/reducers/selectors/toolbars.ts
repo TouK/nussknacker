@@ -17,8 +17,8 @@ const appendSurveyToolbar = produce((draft: WithId<ToolbarsConfig>) => {
 });
 
 const appendTestCasesPanel = produce((draft: WithId<ToolbarsConfig>) => {
-    draft.topLeft ||= [];
-    draft.topLeft.unshift({ id: "test-cases-panel" });
+    draft.bottomRight ||= [];
+    draft.bottomRight.unshift({ id: "test-cases-panel" });
 });
 
 const appendAlignToolbar = produce((draft: WithId<ToolbarsConfig>) => {
