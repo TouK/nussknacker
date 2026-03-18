@@ -741,14 +741,19 @@ lazy val flinkExecutor = (project in flink("executor"))
       .value,
     libraryDependencies ++= {
       Seq(
+        // Must be loaded before flink-java or custom serializers won't be loaded
+        ("pl.touk"        %% "flink-scala"                % flinkScalaV % Provided)
+          .excludeAll(
+            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
+          ),
         // Dependencies below are provided by flink-dist jar in production flink or by flink DM for scenario testing/state verification purpose
-        "org.apache.flink" % "flink-streaming-java"       % flinkV % Provided,
-        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % Provided,
+        "org.apache.flink" % "flink-streaming-java"       % flinkV      % Provided,
+        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV      % Provided,
         // This dependency must be provided, because some cloud providers, such as Ververica, already have it on their classpath, which may cause a conflict
-        "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV % Provided,
+        "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV      % Provided,
         // This is needed when flink minicluster is used for deployment
-        "org.apache.flink" % "flink-metrics-influxdb"     % flinkV % Provided,
-        "org.apache.flink" % "flink-metrics-prometheus"   % flinkV % Provided,
+        "org.apache.flink" % "flink-metrics-influxdb"     % flinkV      % Provided,
+        "org.apache.flink" % "flink-metrics-prometheus"   % flinkV      % Provided,
       )
     },
     prepareItLibs               := {
@@ -836,12 +841,9 @@ lazy val benchmarks = (project in file("benchmarks"))
     name                                 := "nussknacker-benchmarks",
     libraryDependencies ++= {
       Seq(
+        "pl.touk"         %% "flink-scala"                    % flinkScalaV exclude ("com.esotericsoftware", "kryo-shaded"),
         "org.apache.flink" % "flink-streaming-java"           % flinkV exclude ("com.esotericsoftware", "kryo-shaded"),
         "org.apache.flink" % "flink-runtime"                  % flinkV,
-        ("pl.touk"        %% "flink-scala"                    % flinkScalaV)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
-          ),
         "com.dimafeng"    %% "testcontainers-scala-scalatest" % testContainersScalaV % Test,
       )
     },
@@ -1194,13 +1196,13 @@ lazy val flinkScalaUtils = (project in flink("scala-utils"))
     name := "nussknacker-flink-scala-utils",
     libraryDependencies ++= {
       Seq(
-        "org.scala-lang"          % "scala-reflect"           % scalaVersion.value,
-        "org.apache.flink"        % "flink-streaming-java"    % flinkV      % Provided,
-        "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         ("pl.touk"               %% "flink-scala"             % flinkScalaV % Provided)
           .excludeAll(
             ExclusionRule("com.esotericsoftware", "kryo-shaded"),
           ),
+        "org.scala-lang"          % "scala-reflect"           % scalaVersion.value,
+        "org.apache.flink"        % "flink-streaming-java"    % flinkV      % Provided,
+        "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "org.scalatest"          %% "scalatest"               % scalaTestV  % Test,
       )
     }
@@ -1213,6 +1215,10 @@ lazy val flinkMiniCluster = (project in flink("minicluster"))
     name := "nussknacker-flink-minicluster",
     libraryDependencies ++= {
       Seq(
+        ("pl.touk"                   %% "flink-scala"                 % flinkScalaV)
+          .excludeAll(
+            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
+          ),
         ("org.apache.flink"           % "flink-streaming-java"        % flinkV)
           .excludeAll(
             ExclusionRule("log4j", "log4j"),
@@ -1236,10 +1242,6 @@ lazy val flinkMiniCluster = (project in flink("minicluster"))
         ("org.apache.flink"           % "flink-table-planner-loader"  % flinkV)
           .excludeAll(
             ExclusionRule("com.esotericsoftware", "kryo-shaded")
-          ),
-        ("pl.touk"                   %% "flink-scala"                 % flinkScalaV)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
           ),
         // end of list
         "org.scala-lang.modules"     %% "scala-collection-compat"     % scalaCollectionsCompatV % Provided,
