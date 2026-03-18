@@ -1,5 +1,5 @@
 import { alpha, styled } from "@mui/material";
-import React, { useContext, useState } from "react";
+import React, { useCallback, useContext, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
@@ -43,16 +43,21 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
 
     const { runTest } = useRunTestScenario();
 
-    const icon =
-        selectedPreset.value === RUN_ALL ? (
+    const icon = useMemo(() => {
+        return selectedPreset.value === RUN_ALL ? (
             <TestingIcon />
         ) : (
             <TestingIconWithAssertionStatus hasResult={hasResult} assertionsIsSuccess={assertionsIsSuccess} />
         );
+    }, [assertionsIsSuccess, hasResult, selectedPreset.value]);
+
+    const handleRunCurrentTestCase = useCallback(() => {
+        runTest(testCase);
+    }, [runTest, testCase]);
 
     return (
         <StyledScenarioTestButton
-            onClick={() => runTest(testCase)}
+            onClick={handleRunCurrentTestCase}
             name={selectedPreset.label}
             title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
             icon={icon}
