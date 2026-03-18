@@ -90,6 +90,23 @@ const baseProcessState: Scenario = {
         ] as Edge[],
         stickyNotes: [],
         properties: null,
+        testCases: {
+            value: {
+                id: "testCase1",
+                name: "Test case 1",
+                inputs: "{}",
+                mocks: {},
+                assertions: {
+                    "Enricher ID": [
+                        {
+                            expected: { expression: "10", language: "spel" },
+                            operator: "equals",
+                            actual: { expression: "#input.value", language: "spel" },
+                        },
+                    ],
+                },
+            },
+        },
     },
     history: [],
     labels: [],

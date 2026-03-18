@@ -11,6 +11,7 @@ export type TestingState = {
     assertionsResults: TestAssertionResults;
     testResultsLoading?: boolean;
     testData?: TestData;
+    activeTestCaseId?: string;
 };
 
 export const initialTestingState: GraphState["testing"] = {

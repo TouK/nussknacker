@@ -22,3 +22,5 @@ export const getIsTestingMode = createSelector(
     getProcessCounts,
     (results, counts) => !isEmpty(results) || !isEmpty(counts),
 );
+
+export const getActiveTestCaseId = createSelector(getTesting, (g) => g.activeTestCaseId);

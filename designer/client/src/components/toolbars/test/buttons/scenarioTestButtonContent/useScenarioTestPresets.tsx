@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { getTestCase } from "../../../../../reducers/selectors/testCases";
+import { getActiveTestCaseId } from "../../../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { OptionHeader } from "../../../../graph/node-modal/fragment-input-definition/TypeSelect";
 import { AssertionStatusIcon } from "../../../testCases/assertionResultsForNode/assertionResult/AssertionStatusIcon";
@@ -34,6 +35,10 @@ export const useScenarioTestPresets = () => {
         ];
     }, [testCase, hasResult, assertionsIsSuccess]);
 
+    const activeTestCaseId = useAppSelector(getActiveTestCaseId);
+
+    const activeTestCasePreset = testCasePresets.find((testCasePreset) => testCasePreset.value === activeTestCaseId);
+
     const runAllPreset: Preset = useMemo(
         () => ({
             icon: <PlayArrow sx={{ fontSize: "20px" }} />,
@@ -50,5 +55,5 @@ export const useScenarioTestPresets = () => {
         [runAllPreset, testCasePresets, testCasesHeader],
     );
 
-    return { presets, testCasePresets, runAllPreset };
+    return { presets, testCasePresets, runAllPreset, activeTestCasePreset };
 };

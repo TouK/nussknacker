@@ -1,5 +1,5 @@
 import { alpha, styled } from "@mui/material";
-import React, { useCallback, useContext, useMemo, useState } from "react";
+import React, { useCallback, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
@@ -35,21 +35,19 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { variant } = useContext(ToolbarButtonsContext);
     const side = useContext(ToolbarSideContext);
 
-    const { presets, runAllPreset, testCasePresets } = useScenarioTestPresets();
+    const { presets, activeTestCasePreset } = useScenarioTestPresets();
     const { hasResult, assertionsIsSuccess } = useAssertionResultsSummary();
     const tooltip = useScenarioTestTooltip({ disabled, title, titleOverride });
-
-    const [selectedPreset, setSelectedPreset] = useState(testCasePresets[0] || runAllPreset);
 
     const { runTest } = useRunTestScenario();
 
     const icon = useMemo(() => {
-        return selectedPreset.value === RUN_ALL ? (
+        return activeTestCasePreset.value === RUN_ALL ? (
             <TestingIcon />
         ) : (
             <TestingIconWithAssertionStatus hasResult={hasResult} assertionsIsSuccess={assertionsIsSuccess} />
         );
-    }, [assertionsIsSuccess, hasResult, selectedPreset.value]);
+    }, [assertionsIsSuccess, hasResult, activeTestCasePreset.value]);
 
     const handleRunCurrentTestCase = useCallback(() => {
         runTest(testCase);
@@ -58,7 +56,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     return (
         <StyledScenarioTestButton
             onClick={handleRunCurrentTestCase}
-            name={selectedPreset.label}
+            name={activeTestCasePreset.label}
             title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
             icon={icon}
             side={side}
@@ -67,9 +65,9 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
             disabled={!testingScenarioEnabled || isLoading}
             type={type}
             presets={presets}
-            selected={selectedPreset}
+            selected={activeTestCasePreset}
             onPresetChange={(preset) => {
-                setSelectedPreset(preset);
+                // setSelectedPreset(preset);
                 if (preset.value === RUN_ALL) {
                     //TODO: Implement me when backend ready
                     return;
