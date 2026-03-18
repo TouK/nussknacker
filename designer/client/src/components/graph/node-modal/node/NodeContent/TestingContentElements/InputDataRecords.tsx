@@ -14,7 +14,6 @@ import { AppendFromLiveDataButton } from "../../../../../modals/TestingDataRecor
 import { LimitExceededWarning } from "../../../../../modals/TestingDataRecords/LimitExceededWarning";
 import { Table } from "../../../../../modals/TestingDataRecords/Table";
 import { useDataRecordsActions } from "../../../../../modals/TestingDataRecords/useDataRecordsActions";
-import { mapProcessWithNewNode } from "../../../../utils/graphUtils";
 import { getProcessProperties } from "../../../NodeDetailsContent/selectors";
 import { ContentSize } from "../../ContentSize";
 import { StyledStack } from "./components/Styled";
@@ -45,8 +44,8 @@ export const InputDataRecords = ({ node, sourceId }: Props) => {
     const [scenarioGraph] = useDebouncedValue(_scenarioGraph, 500);
 
     useEffect(() => {
-        const savedNode = scenarioGraph.nodes.find((n) => n.id === node.id);
-        dispatch(displayTestCapabilities(scenarioName, mapProcessWithNewNode(scenarioGraph, savedNode, node)));
+        const scenarioGraphWithCurrentNode = { ...scenarioGraph, nodes: scenarioGraph.nodes.map((n) => (n.id === node.id ? node : n)) };
+        dispatch(displayTestCapabilities(scenarioName, scenarioGraphWithCurrentNode));
     }, [dispatch, scenarioName, scenarioGraph, node]);
 
     const testCapabilities = useAppSelector(getTestCapabilities);
