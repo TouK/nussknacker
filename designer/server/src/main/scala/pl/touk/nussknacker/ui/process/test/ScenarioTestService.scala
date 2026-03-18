@@ -348,9 +348,11 @@ class ScenarioTestService(
   private def substituteMocks(scenarioGraph: ScenarioGraph, mocks: Map[NodeId, EnricherMock]) = {
     val nodesWithSubstitutions = scenarioGraph.nodes.map {
       case nodeData @ (enricher: node.Enricher) =>
-        val enricherMockOpt = mocks.get(nodeData.id).map(_.expression)
+        val enricherMockOpt = mocks.get(nodeData.id).map(_.expression).filter(expr => !expr.expression.isBlank)
         // we use provided mock or the one specified in original scenario
-        enricher.copy(mockExpression = enricherMockOpt.orElse(enricher.mockExpression))
+        enricher.copy(mockExpression =
+          enricherMockOpt.orElse(enricher.mockExpression.filter(expr => !expr.expression.isBlank))
+        )
       case data => data
     }
     scenarioGraph.copy(nodes = nodesWithSubstitutions)

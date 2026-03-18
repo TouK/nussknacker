@@ -227,6 +227,26 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     )
   }
 
+  test("should ignore enricher mock with empty expression") {
+    val nodeTestCases: NodeTestCases = Map(
+      "test1" -> NodeTestCase(
+        enricherMock = Some(EnricherMock(Expression.spel("  "))),
+        assertions = List.empty
+      )
+    )
+
+    val result = testCaseValidator.validateNodeTestCases(
+      enricher,
+      nodeTestCases,
+      NodeTyping(
+        inputVariables = inputVariableTypes,
+        outputVariables = inputVariableTypes + (enricher.output -> Typed[String])
+      )
+    )
+
+    result shouldBe Map.empty
+  }
+
   test("should validate multiple test cases") {
     val nodeTestCases: NodeTestCases = Map(
       "validTest" -> NodeTestCase(
