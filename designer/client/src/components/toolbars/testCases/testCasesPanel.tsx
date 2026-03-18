@@ -1,26 +1,19 @@
-import { Box } from "@mui/material";
-import React, { useState } from "react";
+import { Box, Divider } from "@mui/material";
+import React, { useEffect } from "react";
 
-import { getTestAssertionResults } from "../../../reducers/selectors/testing";
+import { getTestCase } from "../../../reducers/selectors/testCases";
 import { useAppSelector } from "../../../store/storeHelpers";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import { Definitions } from "./definitions";
-import { Results } from "./results";
-import { TestCaseHeader } from "./testCaseHeader";
-import type { TestCaseMode } from "./TestCaseSwitchMode";
-import { TestCaseSwitchMode } from "./TestCaseSwitchMode";
+import { Footer } from "./footer";
+import { TestCaseExpandable } from "./testCase";
 
 const TestCasesPanel = () => {
-    const testAssertionResults = useAppSelector(getTestAssertionResults);
-    const [mode, setMode] = useState<TestCaseMode>("results");
+    const testCase = useAppSelector(getTestCase);
 
     return (
         <ToolbarWrapper id={"test-cases-panel"} title={"Test cases"}>
-            <Box py={1}>
-                <TestCaseHeader />
-                <TestCaseSwitchMode value={mode} onChange={setMode} />
-                {mode === "results" && <Results testAssertionResults={testAssertionResults} />}
-                {mode === "definitions" && <Definitions />}
+            <Box mt={1} mb={0.5}>
+                <TestCaseExpandable testCase={testCase} />
             </Box>
         </ToolbarWrapper>
     );

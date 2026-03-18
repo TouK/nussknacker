@@ -120,6 +120,7 @@ describe("Test cases", () => {
 
         expandAssertionItem("Log");
 
+        cy.viewport(1920, 1080);
         cy.get('[data-testid="test-cases-panel"]').matchImage();
 
         showAssertionDetails(0);
@@ -198,7 +199,7 @@ const verifyMockData = (mockValue: string) => {
 };
 
 const expandAssertionItem = (nodeId: string) => {
-    cy.get(`[id="${nodeId}-header"]`).click();
+    cy.get(`[id="${nodeId}-header"]`).find('[data-testid="ExpandMoreIcon"]').click();
 };
 
 const openTestingDetails = (nodeId: string) => {
