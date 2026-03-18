@@ -46,7 +46,7 @@ export const Definitions = () => {
                         <NodeRow
                             key={sourceId}
                             node={findNode(sourceId)}
-                            badge={t("testCases.definitions.testAssertions", {
+                            badge={t("testCases.definitions.testEvents", {
                                 count: inputDataRecords.length,
                                 defaultValue_one: "{{count}} event",
                                 defaultValue_other: "{{count}} events",
