@@ -39,10 +39,6 @@ export const useScenarioTestPresets = () => {
 
     const activeTestCasePreset = testCasePresets.find((testCasePreset) => testCasePreset.value === activeTestCaseId) || null;
 
-    const activeTestCaseId = useAppSelector(getActiveTestCaseId);
-
-    const activeTestCasePreset = testCasePresets.find((testCasePreset) => testCasePreset.value === activeTestCaseId);
-
     const runAllPreset: Preset = useMemo(
         () => ({
             icon: <PlayArrow sx={{ fontSize: "20px" }} />,

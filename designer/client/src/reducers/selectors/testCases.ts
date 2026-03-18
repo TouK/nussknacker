@@ -23,11 +23,6 @@ export const getActiveTestCaseOption = createSelector(
     getActiveTestCaseId,
     (testCaseOptions, activeTestCaseId) => testCaseOptions.find((option) => option.value === activeTestCaseId) || null,
 );
-export const getActiveTestCaseOption = createSelector(
-    getTestCaseOptions,
-    getActiveTestCaseId,
-    (testCaseOptions, activeTestCaseId) => testCaseOptions.find((option) => option.value === activeTestCaseId) || null,
-);
 export const getTestCaseAssertions = createSelector(getActiveTestCase, (testCase) => testCase?.assertions ?? ({} as Assertions));
 export const getTestCaseAssertionsForNode = createSelector(
     getTestCaseAssertions,
