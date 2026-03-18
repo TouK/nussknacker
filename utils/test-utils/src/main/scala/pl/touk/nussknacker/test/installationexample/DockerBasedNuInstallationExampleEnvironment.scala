@@ -8,7 +8,6 @@ import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.model.Container
 import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.Logger
-import org.slf4j.MarkerFactory.getIMarkerFactory
 import org.testcontainers.DockerClientFactory
 import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.DockerHealthcheckWaitStrategy
@@ -56,6 +55,8 @@ class DockerBasedInstallationExampleNuEnvironment(
       tailChildContainers = false
     ) {
 
+  useLocalCompose()
+
   slf4jLogger.info(s"Initializing ${getClass.getName}")
 
   Try(start()) match {
@@ -78,11 +79,11 @@ class DockerBasedInstallationExampleNuEnvironment(
     super.stop()
   }
 
-  private def captureAllContainerLogs() = {
+  private def captureAllContainerLogs(): Unit = {
     val dockerClient = DockerClientFactory.lazyClient()
     getNuDockerComposeContainers(dockerClient).foreach { container =>
       val logs = LogUtils.getOutput(dockerClient, container.getId)
-      slf4jLogger.info(getIMarkerFactory.getMarker(container.getNames.mkString(",")), logs)
+      slf4jLogger.info("{} {}", container.getNames()(0), logs)
     }
   }
 
@@ -101,6 +102,15 @@ class DockerBasedInstallationExampleNuEnvironment(
         }
       }
       .toList
+  }
+
+  /**
+   * work around https://github.com/testcontainers/testcontainers-scala/issues/543
+   */
+  private def useLocalCompose(): Unit = {
+    val localComposeField = container.getClass.getDeclaredField("localCompose")
+    localComposeField.setAccessible(true)
+    localComposeField.setBoolean(container, true)
   }
 
 }

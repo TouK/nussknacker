@@ -3,7 +3,7 @@ name: nussknacker
 services:
 
   nginx:
-    image: nginx:1.26.0-alpine
+    image: nginx:1.28-alpine
     restart: unless-stopped
     ports:
       - 8080:8080
@@ -70,7 +70,7 @@ services:
           memory: 1024M
 
   postgres:
-    image: postgres:18
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_DB: "nu-db"
