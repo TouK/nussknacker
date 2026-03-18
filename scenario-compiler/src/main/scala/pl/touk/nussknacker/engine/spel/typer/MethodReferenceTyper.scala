@@ -126,6 +126,9 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
         xs.map(_._2.asInstanceOf[ArgumentTypeError]).toList.reduce(combineArgumentTypeErrors)
       case NonEmptyList(head, Nil) =>
         head._2
+      case xs @ NonEmptyList(_, _) if xs.toList.exists(!_._2.isInstanceOf[ArgumentTypeError]) =>
+        // In an overloaded generic method, if one of the method signatures is matched, the error may be more detailed than OverloadedFunctionError
+        xs.filterNot(_._2.isInstanceOf[ArgumentTypeError]).head._2
       case _ =>
         OverloadedFunctionError
     }

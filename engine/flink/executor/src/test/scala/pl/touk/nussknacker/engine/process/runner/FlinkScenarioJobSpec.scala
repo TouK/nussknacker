@@ -28,8 +28,8 @@ class FlinkScenarioJobSpec extends AnyFlatSpec with Matchers with Inside with Be
         ScenarioBuilder
           .streaming("proc1")
           .source("id", "input")
-          .filter("filter1", "#sum(#input.![value1]) > 24".spel)
-          .processor("proc2", "logService", "all" -> "#distinct(#input.![value2])".spel)
+          .filter("filter1", "#input.value1 > 24".spel)
+          .processor("proc2", "logService", "all" -> "#input.value2".spel)
           .emptySink("out", "monitor")
 
       val modelData = LocalModelData(ConfigFactory.empty(), List.empty, configCreator = new SimpleProcessConfigCreator)
