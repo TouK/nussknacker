@@ -249,7 +249,14 @@ lazy val commonSettings =
         "io.dropwizard.metrics5"           % "metrics-json"                   % dropWizardV,
         "org.slf4j"                        % "slf4j-api"                      % slf4jV,
         "commons-logging"                  % "commons-logging"                % commonsLoggingV,
-      )
+      ),
+      excludeDependencies ++= Seq(
+        // from flink-scala, should be excluded
+        ExclusionRule("com.esotericsoftware", "kryo-shaded"),
+        // conflicting logging libraries
+        ExclusionRule("log4j", "log4j"),
+        ExclusionRule("org.slf4j", "slf4j-log4j12"),
+      ),
     )
 
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
@@ -741,14 +748,16 @@ lazy val flinkExecutor = (project in flink("executor"))
       .value,
     libraryDependencies ++= {
       Seq(
+        // Must be loaded before flink-java or custom serializers won't be loaded
+        "pl.touk"         %% "flink-scala"                % flinkScalaV % Provided,
         // Dependencies below are provided by flink-dist jar in production flink or by flink DM for scenario testing/state verification purpose
-        "org.apache.flink" % "flink-streaming-java"       % flinkV % Provided,
-        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % Provided,
+        "org.apache.flink" % "flink-streaming-java"       % flinkV      % Provided,
+        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV      % Provided,
         // This dependency must be provided, because some cloud providers, such as Ververica, already have it on their classpath, which may cause a conflict
-        "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV % Provided,
+        "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV      % Provided,
         // This is needed when flink minicluster is used for deployment
-        "org.apache.flink" % "flink-metrics-influxdb"     % flinkV % Provided,
-        "org.apache.flink" % "flink-metrics-prometheus"   % flinkV % Provided,
+        "org.apache.flink" % "flink-metrics-influxdb"     % flinkV      % Provided,
+        "org.apache.flink" % "flink-metrics-prometheus"   % flinkV      % Provided,
       )
     },
     prepareItLibs               := {
@@ -836,12 +845,9 @@ lazy val benchmarks = (project in file("benchmarks"))
     name                                 := "nussknacker-benchmarks",
     libraryDependencies ++= {
       Seq(
+        "pl.touk"         %% "flink-scala"                    % flinkScalaV exclude ("com.esotericsoftware", "kryo-shaded"),
         "org.apache.flink" % "flink-streaming-java"           % flinkV exclude ("com.esotericsoftware", "kryo-shaded"),
         "org.apache.flink" % "flink-runtime"                  % flinkV,
-        ("pl.touk"        %% "flink-scala"                    % flinkScalaV)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
-          ),
         "com.dimafeng"    %% "testcontainers-scala-scalatest" % testContainersScalaV % Test,
       )
     },
@@ -915,14 +921,8 @@ lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-componen
     name := "nussknacker-schemed-kafka-components-utils",
     libraryDependencies ++= {
       Seq(
-        "io.confluent"                  % "kafka-json-schema-provider"      % confluentV excludeAll (
-          ExclusionRule("log4j", "log4j"),
-          ExclusionRule("org.slf4j", "slf4j-log4j12"),
-        ),
-        "io.confluent"                  % "kafka-avro-serializer"           % confluentV excludeAll (
-          ExclusionRule("log4j", "log4j"),
-          ExclusionRule("org.slf4j", "slf4j-log4j12")
-        ),
+        "io.confluent"                  % "kafka-json-schema-provider"      % confluentV,
+        "io.confluent"                  % "kafka-avro-serializer"           % confluentV,
         "com.microsoft.azure"           % "azure-schemaregistry-kafka-avro" % azureKafkaSchemaRegistryV excludeAll (
           ExclusionRule("com.azure", "azure-core-http-netty")
         ),
@@ -935,11 +935,6 @@ lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-componen
         // we use azure-core-http-okhttp instead of azure-core-http-netty to avoid netty version collisions
         // TODO: switch to jdk implementation after releasing it: https://github.com/Azure/azure-sdk-for-java/issues/27065
         "com.azure"                     % "azure-core-http-okhttp"          % "1.11.9",
-        // it is workaround for missing VerifiableProperties class - see https://github.com/confluentinc/schema-registry/issues/553
-        "org.apache.kafka"             %% "kafka"                           % kafkaV     % Provided excludeAll (
-          ExclusionRule("log4j", "log4j"),
-          ExclusionRule("org.slf4j", "slf4j-log4j12")
-        ),
         "tech.allegro.schema.json2avro" % "converter"                       % "0.2.15",
         "org.scala-lang.modules"       %% "scala-collection-compat"         % scalaCollectionsCompatV,
         "org.scalatest"                %% "scalatest"                       % scalaTestV % Test
@@ -1010,10 +1005,7 @@ lazy val kafkaTestUtils = (project in utils("kafka-test-utils"))
     name := "nussknacker-kafka-test-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.kafka"       %% "kafka"            % kafkaV excludeAll (
-          ExclusionRule("log4j", "log4j"),
-          ExclusionRule("org.slf4j", "slf4j-log4j12")
-        ),
+        "org.apache.kafka"       %% "kafka"            % kafkaV,
         "org.slf4j"               % "log4j-over-slf4j" % slf4jV,
         "com.softwaremill.retry" %% "retry"            % retryV
       )
@@ -1194,13 +1186,10 @@ lazy val flinkScalaUtils = (project in flink("scala-utils"))
     name := "nussknacker-flink-scala-utils",
     libraryDependencies ++= {
       Seq(
+        "pl.touk"                %% "flink-scala"             % flinkScalaV % Provided,
         "org.scala-lang"          % "scala-reflect"           % scalaVersion.value,
         "org.apache.flink"        % "flink-streaming-java"    % flinkV      % Provided,
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
-        ("pl.touk"               %% "flink-scala"             % flinkScalaV % Provided)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
-          ),
         "org.scalatest"          %% "scalatest"               % scalaTestV  % Test,
       )
     }
@@ -1213,34 +1202,18 @@ lazy val flinkMiniCluster = (project in flink("minicluster"))
     name := "nussknacker-flink-minicluster",
     libraryDependencies ++= {
       Seq(
-        ("org.apache.flink"           % "flink-streaming-java"        % flinkV)
-          .excludeAll(
-            ExclusionRule("log4j", "log4j"),
-            ExclusionRule("org.slf4j", "slf4j-log4j12"),
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
-          ),
+        // Must be loaded before flink-java or custom serializers won't be loaded
+        "pl.touk"                    %% "flink-scala"                 % flinkScalaV,
+        "org.apache.flink"            % "flink-streaming-java"        % flinkV,
         "org.apache.flink"            % "flink-statebackend-rocksdb"  % flinkV,
         // Below is a list of libs that are available in flink distribution
         // We want to make flink minicluster as featured as standard flink distribution
         "org.apache.flink"            % "flink-connector-files"       % flinkV,
         "org.apache.flink"            % "flink-csv"                   % flinkV,
         "org.apache.flink"            % "flink-json"                  % flinkV,
-        ("org.apache.flink"           % "flink-table-api-java-bridge" % flinkV)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded")
-          ),
-        ("org.apache.flink"           % "flink-table-runtime"         % flinkV)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded")
-          ),
-        ("org.apache.flink"           % "flink-table-planner-loader"  % flinkV)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded")
-          ),
-        ("pl.touk"                   %% "flink-scala"                 % flinkScalaV)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
-          ),
+        "org.apache.flink"            % "flink-table-api-java-bridge" % flinkV,
+        "org.apache.flink"            % "flink-table-runtime"         % flinkV,
+        "org.apache.flink"            % "flink-table-planner-loader"  % flinkV,
         // end of list
         "org.scala-lang.modules"     %% "scala-collection-compat"     % scalaCollectionsCompatV % Provided,
         "com.typesafe.scala-logging" %% "scala-logging"               % scalaLoggingV           % Provided,
