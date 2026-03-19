@@ -148,7 +148,10 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
     val inputTopicConfig  = createAndRegisterAvroTopicConfig(inTopic, RecordSchemaV1)
     val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1)
 
-    val existingSavepointLocation = Files.list(savepointDir).iterator().asScala.toList.head
+    val existingSavepoints = Files.list(savepointDir).iterator().asScala.toSeq
+    existingSavepoints.size shouldBe 1
+
+    val existingSavepointLocation = existingSavepoints.head
     val process1                  = stateCompatibilityProcess(inputTopicConfig.input, outputTopicConfig.output)
 
     // Send one artificial message to mimic offsets saved in savepoint from the above test because kafka commit cannot be performed.
