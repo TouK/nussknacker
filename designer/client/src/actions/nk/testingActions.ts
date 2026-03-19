@@ -3,7 +3,7 @@ import type { ProcessName } from "src/components/Process/types";
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import HttpService from "../../http/HttpService/instance";
 import type { SourceWithParametersTest } from "../../http/HttpService/types";
-import type { ResultsWithCountsDto, TestAssertionResults, TestResultsDto } from "../../http/resultsWithCountsDto";
+import type { NodeAssertionResults, ResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
 import type { TestCase } from "../../reducers/graph/testCase";
 import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
 import type { ScenarioGraph } from "../../types/scenarioGraph";
@@ -47,6 +47,7 @@ export function testScenarioWithTestCase(testCase: TestCase, isMockEnabled: bool
     return wrapWithTestAction((scenarioName, scenarioGraph) =>
         HttpService.testScenarioWithTestCase(scenarioName, scenarioGraph, testData).then(({ data }) => ({
             testResults: data,
+            testCaseId: testCase.id,
         })),
     );
 }
@@ -65,8 +66,13 @@ export type TestsActions =
           testingDataRecords?: TestingDataRecords[];
       }
     | {
+          type: "SET_TEST_CASE_ASSERTION_RESULTS_LOADING";
+          testCaseId: string;
+      }
+    | {
           type: "DISPLAY_TEST_ASSERTIONS_RESULTS";
-          assertionsResults: TestAssertionResults;
+          testCaseId: string;
+          assertionsResults: NodeAssertionResults;
       }
     | {
           type: "CLEAR_TEST_ASSERTIONS_RESULTS";
@@ -78,13 +84,12 @@ function wrapWithTestAction(
         processName: ProcessName,
         scenarioGraph: ScenarioGraph,
     ) => Promise<{
-        assertionsResults?: TestAssertionResults;
         testResults: ResultsWithCountsDto;
         testData?: SourceWithParametersTest;
+        testCaseId?: string;
     }>,
 ): ThunkAction {
     return async (dispatch, getState) => {
-        dispatch({ type: "CLEAR_TEST_ASSERTIONS_RESULTS" });
         dispatch({ type: "TEST_RESULTS_LOADING" });
         try {
             await dispatch(checkPendingChanges());
@@ -92,9 +97,8 @@ function wrapWithTestAction(
             const state = getState();
             const scenarioGraph = getScenarioGraph(state);
             const processName = getProcessName(state);
-
-            const { testResults, testData } = await fn(processName, scenarioGraph);
-            dispatch(testingActions(testResults, testData));
+            const { testResults, testData, testCaseId } = await fn(processName, scenarioGraph);
+            dispatch(testingActions(testResults, testData, testCaseId));
         } catch {
             dispatch({ type: "TEST_RESULTS_FAILED" });
         }
@@ -109,16 +113,23 @@ export function displayTestResultsDetails(testResults: TestResultsDto, testData?
     };
 }
 
-export function displayTestAssertionsResults(assertionsResults: TestAssertionResults): Action {
+export function setTestCaseAssertionResultsLoading(testCaseId: string): Action {
+    return {
+        type: "SET_TEST_CASE_ASSERTION_RESULTS_LOADING",
+        testCaseId,
+    };
+}
+
+export function displayTestAssertionsResults(testCaseId: string, assertionsResults: NodeAssertionResults): Action {
     return {
         type: "DISPLAY_TEST_ASSERTIONS_RESULTS",
+        testCaseId,
         assertionsResults,
     };
 }
 
 export function changeActiveTestCase(testCaseId: string): ThunkAction {
     return async (dispatch) => {
-        dispatch(clearTestAssertionsResults());
         dispatch(clearProcessCounts());
         dispatch({
             type: "CHANGE_ACTIVE_TEST_CASE",
@@ -127,11 +138,17 @@ export function changeActiveTestCase(testCaseId: string): ThunkAction {
     };
 }
 
-function testingActions({ counts, results, assertionsResults }: ResultsWithCountsDto, testData?: SourceWithParametersTest): ThunkAction {
+function testingActions(
+    { counts, results, assertionsResults }: ResultsWithCountsDto,
+    testData?: SourceWithParametersTest,
+    testCaseId?: string,
+): ThunkAction {
     return (dispatch) => {
         dispatch(displayProcessCounts(counts));
         dispatch(displayTestResultsDetails(results, testData));
-        dispatch(displayTestAssertionsResults(assertionsResults));
+        if (testCaseId !== undefined) {
+            dispatch(displayTestAssertionsResults(testCaseId, assertionsResults));
+        }
     };
 }
 

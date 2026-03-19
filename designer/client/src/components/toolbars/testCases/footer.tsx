@@ -4,23 +4,32 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePreviousDifferent } from "rooks";
 
+import type { TestCaseAssertionResult } from "../../../http/resultsWithCountsDto";
 import { VisibleDataType } from "../../../reducers/graph/types";
 import { getVisibleDataType } from "../../../reducers/selectors/getLiveData";
-import { getTestResultsLoading } from "../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../store/storeHelpers";
 
-export const Footer = () => {
+interface Props {
+    testCaseAssertionResult: TestCaseAssertionResult | null;
+}
+
+export const Footer = ({ testCaseAssertionResult }: Props) => {
+    const isLoading = testCaseAssertionResult?.status === "loading";
+
     return (
         <Box px={1} sx={{ opacity: 0.7 }}>
-            <LastRun />
+            <LastRun isLoading={isLoading} />
         </Box>
     );
 };
 
-const LastRun = () => {
+interface LastRunProps {
+    isLoading: boolean;
+}
+
+const LastRun = ({ isLoading }: LastRunProps) => {
     const { t } = useTranslation();
     const visibleDataType = useAppSelector(getVisibleDataType);
-    const isLoading = useAppSelector(getTestResultsLoading);
 
     const [lastRun, setLastRun] = useState<number | null>(null);
     const [lastRunDisplayValue, setLastRunDisplayValue] = useState("-");

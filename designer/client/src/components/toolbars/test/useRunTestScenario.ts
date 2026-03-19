@@ -1,4 +1,4 @@
-import { testScenarioWithTestCase } from "../../../actions/nk/testingActions";
+import { setTestCaseAssertionResultsLoading, testScenarioWithTestCase } from "../../../actions/nk/testingActions";
 import { useUserSettings } from "../../../common/useUserSettings";
 import type { TestCase } from "../../../reducers/graph/testCase";
 import { getSourceNodes } from "../../../reducers/selectors/graph";
@@ -23,6 +23,7 @@ export function useRunTestScenario() {
             return;
         }
 
+        dispatch(setTestCaseAssertionResultsLoading(testCase.id));
         dispatch(testScenarioWithTestCase(testCase, showMockFieldOnEnrichers));
     };
 

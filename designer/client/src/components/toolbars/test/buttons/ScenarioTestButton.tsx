@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { changeActiveTestCase } from "../../../../actions/nk/testingActions";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { getActiveTestCase, getTestCases } from "../../../../reducers/selectors/testCases";
-import { getTestResultsLoading } from "../../../../reducers/selectors/testing";
+import { getActiveTestCaseAssertionResult, isGetActiveTestCaseAssertionResultLoading } from "../../../../reducers/selectors/testing";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useTestingScenarioEnabled } from "../../../modals/TestingDataRecords/useTestingScenarioEnabled";
@@ -15,8 +15,8 @@ import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer
 import type { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
 import type { PropsOfButton } from "../../../toolbarSettings/buttons/types";
 import { useRunTestScenario } from "../useRunTestScenario";
+import { getAssertionResultsSummary } from "./scenarioTestButtonContent/getAssertionResultsSummary";
 import { TestingIconWithAssertionStatus } from "./scenarioTestButtonContent/TestingIconWithAssertionStatus";
-import { useAssertionResultsSummary } from "./scenarioTestButtonContent/useAssertionResultsSummary";
 import type { Preset } from "./scenarioTestButtonContent/useScenarioTestPresets";
 import { RUN_ALL, useScenarioTestPresets } from "./scenarioTestButtonContent/useScenarioTestPresets";
 import { useScenarioTestTooltip } from "./scenarioTestButtonContent/useScenarioTestTooltip";
@@ -32,14 +32,16 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { t } = useTranslation();
     const testCase = useAppSelector(getActiveTestCase);
     const testCases = useAppSelector(getTestCases);
-    const isLoading = useAppSelector(getTestResultsLoading);
+    const isLoading = useAppSelector(isGetActiveTestCaseAssertionResultLoading);
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled });
 
     const { variant } = useContext(ToolbarButtonsContext);
     const side = useContext(ToolbarSideContext);
 
     const { presets, activeTestCasePreset } = useScenarioTestPresets();
-    const { hasResult, assertionsIsSuccess } = useAssertionResultsSummary();
+
+    const testCaseAssertionResult = useAppSelector(getActiveTestCaseAssertionResult);
+    const { hasResult, assertionsIsSuccess } = getAssertionResultsSummary(testCaseAssertionResult);
     const tooltip = useScenarioTestTooltip({ disabled, title, titleOverride });
 
     const dispatch = useAppDispatch();
