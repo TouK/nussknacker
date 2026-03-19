@@ -35,7 +35,7 @@ case class HttpClientConfig(
       .setIoThreadsCount(effectiveConfig.maxPoolSize)
       .setUseNativeTransport(effectiveConfig.useNative)
       .setFollowRedirect(effectiveConfig.followRedirect)
-      .setThreadPoolName(processName.map(_.value + s"-http-pool").getOrElse(s"http-pool"))
+      .setThreadPoolName(processName.map(_.value + s"-nu-http-pool").getOrElse(s"nu-http-pool"))
       .setForbiddenCidrRequestFilter(effectiveConfig.resolvedCidrs)
       .setForbiddenHostResponseFilter(effectiveConfig.followRedirect, effectiveConfig.resolvedCidrs)
   }

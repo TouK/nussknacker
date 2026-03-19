@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.openapi.enrichers
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.{EagerService, NodeId, Params, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.{EagerService, NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.AllProcessingModesComponent
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
@@ -34,7 +34,6 @@ import pl.touk.nussknacker.openapi.enrichers.OpenAPIEnricherFactory.Transformati
   SelectedServiceState
 }
 import pl.touk.nussknacker.openapi.extractor.ParametersExtractor
-import pl.touk.nussknacker.openapi.http.backend.HttpClientProvider
 
 class OpenAPIEnricherFactory(
     config: OpenAPIServicesConfig,
@@ -152,23 +151,14 @@ class OpenAPIEnricherFactory(
   }
 
   override def close(): Unit = {
-    super.close()
     httpBeProvider.close()
+    super.close()
   }
 
 }
 
 object OpenAPIEnricherFactory {
   final val ServiceParamName = ParameterName("Service")
-
-  def apply(
-      config: OpenAPIServicesConfig,
-      openApiDefinitionDiscovery: OpenApiDefinitionDiscovery,
-  ) = new OpenAPIEnricherFactory(
-    config,
-    HttpClientProvider.getBackendProvider(config.httpClientConfig),
-    openApiDefinitionDiscovery,
-  )
 
   sealed trait TransformationState
 

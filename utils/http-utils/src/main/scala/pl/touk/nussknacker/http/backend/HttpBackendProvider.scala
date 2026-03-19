@@ -18,4 +18,6 @@ class FixedAsyncHttpClientBackendProvider(httpClient: AsyncHttpClient) extends H
   override def httpBackendForEc(implicit ec: ExecutionContext): SttpBackend[Future, Any] =
     AsyncHttpClientFutureBackend.usingClient(httpClient)
 
+  override def close(): Unit = httpClient.close()
+
 }
