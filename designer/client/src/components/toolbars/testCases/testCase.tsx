@@ -36,7 +36,7 @@ export const TestCaseExpandable = ({ testCase }: TestCaseExpandableProps) => {
             detailsSx={{ p: 0 }}
         >
             <TestCaseSwitchMode value={mode} onChange={setMode} />
-            {mode === "results" && <Results testAssertionResults={testAssertionResults} />}
+            {mode === "results" && <Results testAssertionResults={testAssertionResults} testCase={testCase} />}
             {mode === "definitions" && <Definitions />}
             <Divider sx={{ mt: 1.5 }} />
             <Footer />

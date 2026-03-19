@@ -3,7 +3,7 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { TestAssertionResults } from "../../../http/resultsWithCountsDto";
-import { getActiveTestCase } from "../../../reducers/selectors/testCases";
+import type { TestCase } from "../../../reducers/graph/testCase";
 import { getTestResultsLoading } from "../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types/node";
@@ -17,11 +17,11 @@ import { AssertionResultsForNodeTitle } from "./assertionResultsForNode/assertio
 import { useScenarioNodeOrder } from "./useScenarioNodeOrder";
 
 interface Props {
+    testCase: TestCase;
     testAssertionResults: TestAssertionResults;
 }
 
-export const Results = ({ testAssertionResults }: Props) => {
-    const testCase = useAppSelector(getActiveTestCase);
+export const Results = ({ testAssertionResults, testCase }: Props) => {
     const isLoading = useAppSelector(getTestResultsLoading);
 
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled: false });
