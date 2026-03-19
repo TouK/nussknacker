@@ -332,6 +332,7 @@ description: Stay informed with detailed changelogs covering new features, impro
   * Optimized table discovery through configurable caching (especially important for catalogs for systems with slow connections)
   * More precise validation and error messages during scenario authoring
   * Fixed bug for non-deterministic validation multiple validations were performent at the same time
+* [#9095](https://github.com/TouK/nussknacker/pull/9095) Always close `SttpBackend` instances in OpenAPI services
 
 ## 1.18
 
