@@ -304,7 +304,7 @@ describe("Fragment", () => {
 
             // Expression should be clear after switch
             cy.get("@anyValueWithSuggestionField").should("have.value", "");
-            cy.get("@anyValueWithSuggestionField").find("#ace-editor").type("#RGB()");
+            cy.get("@anyValueWithSuggestionField").find("#ace-editor").type("#RGB.Black");
 
             cy.intercept("POST", "/api/nodes/*/validation").as("validation");
             cy.wait("@validation");
@@ -356,7 +356,7 @@ describe("Fragment", () => {
 
             // Verify if Frontend received correct data after save
             cy.openNodeWindow("@fragmentName");
-            cy.get('[title="any_value_with_suggestions_preset"]').siblings().eq(0).find("#ace-editor").contains("#RGB()");
+            cy.get('[title="any_value_with_suggestions_preset"]').siblings().eq(0).find("#ace-editor").contains("#RGB.Black");
             cy.get("@window").get("[title='test5']").should("not.exist");
 
             cy.applyNodeChanges();

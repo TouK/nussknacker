@@ -567,14 +567,13 @@ private[spel] class SpelTyper(
         val functionName = e.toStringAST.stripPrefix("#").takeWhile(_ != '(')
         validationContext
           .get(functionName)
-          .flatMap {
+          .map {
             case TypedClass(clazz, List()) if classOf[java.lang.reflect.Method].isAssignableFrom(clazz) =>
-              Some(Unknown.validNodeResult)
-            case _ =>
-              None
+              Unknown.validNodeResult
+            case other =>
+              IllegalInvocationError(other).invalidNodeResult
           }
-          .toRight(UnresolvedReferenceError(functionName).invalidNodeResult)
-          .merge
+          .getOrElse(UnresolvedReferenceError(functionName).invalidNodeResult)
 
       // TODO: what should be here?
       case e: Identifier => Unknown.validNodeResult

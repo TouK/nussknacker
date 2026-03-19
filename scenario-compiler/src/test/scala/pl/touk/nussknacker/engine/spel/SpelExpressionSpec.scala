@@ -320,10 +320,18 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
-  test("function reference with unknown reference should be forbidden") {
-    val errors = parse[Any]("#get()").invalidValue
-    errors should matchPattern {
-      case NonEmptyList(SpelExpressionTypingParseError(UnresolvedReferenceError("get"), _), _) =>
+  test("function reference with unknown reference should return an error") {
+    inside(parse[Any]("#get()")) {
+      case Invalid(NonEmptyList(SpelExpressionTypingParseError(UnresolvedReferenceError("get"), _), _)) =>
+    }
+  }
+
+  test(
+    "function reference with known reference should return an error when it is not used with the java.lang.reflect.Method instance"
+  ) {
+    inside(parse[Any]("#mapValue()")) {
+      case Invalid(NonEmptyList(SpelExpressionTypingParseError(e: IllegalInvocationError, _), _)) =>
+        e.message shouldBe "Method invocation on Record{foo: String(bar)} is not allowed"
     }
   }
 
