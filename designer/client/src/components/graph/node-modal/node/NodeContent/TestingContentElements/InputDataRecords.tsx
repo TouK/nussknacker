@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useDebouncedValue } from "rooks";
 
 import { displayTestCapabilities } from "../../../../../../actions/nk/process";
 import type { TestFormParameters } from "../../../../../../common/TestResultUtils";
 import { TestCapabilityStatus } from "../../../../../../common/TestResultUtils";
-import { getProcessName, getScenarioGraph, getTestCapabilities } from "../../../../../../reducers/selectors/graph";
+import { getProcessName, getTestCapabilities } from "../../../../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../../../../reducers/selectors/settings";
 import { getInputDataRecordsForSingleSource } from "../../../../../../reducers/selectors/testCases";
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
 import type { NodeType } from "../../../../../../types/node";
+import type { ScenarioGraph } from "../../../../../../types/scenarioGraph";
 import { Expandable } from "../../../../../common/Expandable";
 import { AppendFromLiveDataButton } from "../../../../../modals/TestingDataRecords/AppendFromLiveDataButton";
 import { LimitExceededWarning } from "../../../../../modals/TestingDataRecords/LimitExceededWarning";
@@ -21,9 +21,10 @@ import { StyledStack } from "./components/Styled";
 interface Props {
     node: NodeType;
     sourceId: string;
+    scenarioGraph: ScenarioGraph;
 }
 
-export const InputDataRecords = ({ node, sourceId }: Props) => {
+export const InputDataRecords = ({ node, sourceId, scenarioGraph }: Props) => {
     const [isExpanded, setIsExpanded] = useState(true);
     const maxTestingRecords = useAppSelector(getMaxTestingRecords);
     const testingDataRecordsForSource = useAppSelector((state) => getInputDataRecordsForSingleSource(state, sourceId));
@@ -40,17 +41,10 @@ export const InputDataRecords = ({ node, sourceId }: Props) => {
 
     const dispatch = useAppDispatch();
     const scenarioName = useAppSelector(getProcessName);
-    const _scenarioGraph = useAppSelector(getScenarioGraph);
-    const [scenarioGraph] = useDebouncedValue(_scenarioGraph, 500);
 
     useEffect(() => {
-        const nodeInScenario = scenarioGraph.nodes.find((n) => n.id === node.id);
-        const effectiveGraph =
-            nodeInScenario === node
-                ? scenarioGraph
-                : { ...scenarioGraph, nodes: scenarioGraph.nodes.map((n) => (n.id === node.id ? node : n)) };
-        dispatch(displayTestCapabilities(scenarioName, effectiveGraph));
-    }, [dispatch, scenarioName, scenarioGraph, node]);
+        dispatch(displayTestCapabilities(scenarioName, scenarioGraph));
+    }, [dispatch, scenarioName, scenarioGraph]);
 
     const testCapabilities = useAppSelector(getTestCapabilities);
     const scenarioProperties = useAppSelector(getProcessProperties);

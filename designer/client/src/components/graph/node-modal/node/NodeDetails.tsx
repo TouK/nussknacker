@@ -4,6 +4,7 @@ import type { DefaultContentProps } from "@touk/window-manager/cjs/components/wi
 import { uniq } from "lodash";
 import React, { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useDebouncedValue } from "rooks";
 import urljoin from "url-join";
 
 import { ToolId } from "../../../../actions/nk/toolWindow";
@@ -12,16 +13,16 @@ import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
 import type { RootState } from "../../../../reducers";
 import { getCreatorType } from "../../../../reducers/selectors/getCreator";
+import { getScenarioGraph } from "../../../../reducers/selectors/graph";
 import { getTestCase } from "../../../../reducers/selectors/testCases";
 import { useAppSelector } from "../../../../store/storeHelpers";
 import type { Edge } from "../../../../types/edge";
 import type { NodeType } from "../../../../types/node";
+import type { ScenarioGraph } from "../../../../types/scenarioGraph";
 import { WindowContent } from "../../../../windowManager/WindowContent";
 import type { WindowKind } from "../../../../windowManager/WindowKind";
 import { useOnToolWindow } from "../../../modals/useOnToolWindow";
 import type { Scenario } from "../../../Process/types";
-import { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
-import { useGetButtonFromToolbar } from "../../../toolbarSettings/useToolbarConfig";
 import NodeUtils from "../../NodeUtils";
 import { InputOutputContent } from "../io/InputOutputContent";
 import { InputOutputContextProvider } from "../io/InputOutputContext";
@@ -88,9 +89,18 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     const { t } = useTranslation();
     const { close, data } = props;
     const readOnly = useAppSelector((s: RootState) => getReadOnly(s, props.readOnly));
-    const buttonFromToolbar = useGetButtonFromToolbar(CustomButtonTypes.scenarioTest);
 
     const { node, editedNode, onChange, outputEdges, performNodeEdit, editState } = useNodeState(data.meta);
+
+    const _savedScenarioGraph = useAppSelector(getScenarioGraph);
+    const _scenarioGraphWithEditedNode = useMemo<ScenarioGraph>(() => {
+        const nodeInGraph = _savedScenarioGraph.nodes.find((n) => n.id === editedNode.id);
+        return nodeInGraph === editedNode
+            ? _savedScenarioGraph
+            : { ..._savedScenarioGraph, nodes: _savedScenarioGraph.nodes.map((n) => (n.id === editedNode.id ? editedNode : n)) };
+    }, [_savedScenarioGraph, editedNode]);
+    const [scenarioGraphWithEditedNode] = useDebouncedValue(_scenarioGraphWithEditedNode, 500);
+
     const [generalErrors] = useGetNodeErrors(node);
     const testCase = useAppSelector(getTestCase);
     const hasNodeTestCasesErrors = useAppSelector((state) =>
@@ -157,10 +167,15 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     const testingContent = useMemo(
         () => (
             <TestResultsWrapper nodeId={editedNode.id}>
-                <TestingContent node={editedNode} edges={outputEdges} onChange={readOnly ? undefined : onChange} />
+                <TestingContent
+                    node={editedNode}
+                    edges={outputEdges}
+                    onChange={readOnly ? undefined : onChange}
+                    scenarioGraph={scenarioGraphWithEditedNode}
+                />
             </TestResultsWrapper>
         ),
-        [editedNode, onChange, outputEdges, readOnly],
+        [editedNode, onChange, outputEdges, readOnly, scenarioGraphWithEditedNode],
     );
 
     const tabs = useMemo<TabDef[]>(
