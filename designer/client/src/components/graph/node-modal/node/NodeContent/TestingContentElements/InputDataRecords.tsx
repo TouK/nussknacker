@@ -44,8 +44,12 @@ export const InputDataRecords = ({ node, sourceId }: Props) => {
     const [scenarioGraph] = useDebouncedValue(_scenarioGraph, 500);
 
     useEffect(() => {
-        const scenarioGraphWithCurrentNode = { ...scenarioGraph, nodes: scenarioGraph.nodes.map((n) => (n.id === node.id ? node : n)) };
-        dispatch(displayTestCapabilities(scenarioName, scenarioGraphWithCurrentNode));
+        const nodeInScenario = scenarioGraph.nodes.find((n) => n.id === node.id);
+        const effectiveGraph =
+            nodeInScenario === node
+                ? scenarioGraph
+                : { ...scenarioGraph, nodes: scenarioGraph.nodes.map((n) => (n.id === node.id ? node : n)) };
+        dispatch(displayTestCapabilities(scenarioName, effectiveGraph));
     }, [dispatch, scenarioName, scenarioGraph, node]);
 
     const testCapabilities = useAppSelector(getTestCapabilities);
