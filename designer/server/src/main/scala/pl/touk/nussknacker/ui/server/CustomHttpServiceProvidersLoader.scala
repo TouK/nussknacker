@@ -10,6 +10,7 @@ import pl.touk.nussknacker.ui.customhttpservice.{
   CustomHttpServiceProviderFactory,
   PekkoCustomHttpServiceProvider,
   ProcessServiceBasedScenarioServiceAdapter,
+  ScenarioTestingServiceAdapter,
   TapirCustomHttpServiceProvider
 }
 import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
@@ -62,6 +63,11 @@ object CustomHttpServiceProvidersLoader {
   )(implicit executionContext: ExecutionContext): Resource[IO, CustomHttpServiceProviders] = {
     lazy val nussknackerServices = new NussknackerServicesForCustomHttpService(
       new ProcessServiceBasedScenarioServiceAdapter(domainServices.processService),
+      new ScenarioTestingServiceAdapter(
+        domainServices.processService,
+        domainServices.processingTypeServicesProvider.mapValues(_.scenarioTestService),
+        domainServices.processAuthorizer,
+      ),
       infrastructureServices.dbRef
     )
     customHttpServiceProviderFactories
