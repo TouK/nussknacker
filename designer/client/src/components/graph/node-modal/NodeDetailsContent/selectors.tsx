@@ -37,14 +37,14 @@ const getValidationPerformed = createDeepEqualSelector(getNodesDetails, (nodeDet
     return Object.fromEntries(Object.entries(nodeDetails).map(([k, { validationPerformed }]) => [k, validationPerformed]));
 });
 
-type TestCaseParams = { nodeId: string; testCaseId: string };
+type TestCaseParams = { nodeId: string; testCaseName: string };
 const getTestParams = (_: unknown, testCaseParams: TestCaseParams) => testCaseParams;
 
 export const getValidationTestCasesErrors = createDeepEqualSelector(
     getNodesDetails,
     getTestParams,
-    (nodeDetails, { nodeId, testCaseId }): TestCaseValidationError => {
-        const testCasesValidationErrors = nodeDetails[nodeId]?.testCasesValidationErrors?.[testCaseId];
+    (nodeDetails, { nodeId, testCaseName }): TestCaseValidationError => {
+        const testCasesValidationErrors = nodeDetails[nodeId]?.testCasesValidationErrors?.[testCaseName];
 
         return {
             assertionsErrors: testCasesValidationErrors?.assertionsErrors ?? {},

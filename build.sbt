@@ -247,8 +247,16 @@ lazy val commonSettings =
         "com.fasterxml.jackson.module"    %% "jackson-module-scala"           % jacksonV,
         "io.dropwizard.metrics5"           % "metrics-core"                   % dropWizardV,
         "io.dropwizard.metrics5"           % "metrics-json"                   % dropWizardV,
-        "org.slf4j"                        % "slf4j-api"                      % slf4jV
-      )
+        "org.slf4j"                        % "slf4j-api"                      % slf4jV,
+        "commons-logging"                  % "commons-logging"                % commonsLoggingV,
+      ),
+      excludeDependencies ++= Seq(
+        // from flink-scala, should be excluded
+        ExclusionRule("com.esotericsoftware", "kryo-shaded"),
+        // conflicting logging libraries
+        ExclusionRule("log4j", "log4j"),
+        ExclusionRule("org.slf4j", "slf4j-log4j12"),
+      ),
     )
 
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
@@ -291,6 +299,8 @@ val everitSchemaV           = "1.14.5"
 val jsonSchemaValidatorV    = "1.5.8"
 val fastParseV              = "3.1.1"
 val slf4jV                  = "1.7.36"
+// commons-logging should be used instead of spring-jcl
+val commonsLoggingV         = "1.3.5"
 val scalaXmlV               = "2.4.0"
 val scalaLoggingV           = "3.9.5"
 val scalaCompatV            = "1.0.2"
@@ -301,8 +311,8 @@ val configV                 = "1.4.4"
 // rc16+ depend on slf4j 2.x
 val dropWizardV             = "5.0.0-rc15"
 val scalaCollectionsCompatV = "2.13.0"
-val testContainersScalaV    = "0.43.0"
-val testContainersJavaV     = "1.21.4"
+val testContainersScalaV    = "0.44.1"
+val testContainersJavaV     = "2.0.3"
 val nettyV                  = "4.1.123.Final"
 val nettyReactiveStreamsV   = "2.0.12"
 
@@ -738,14 +748,16 @@ lazy val flinkExecutor = (project in flink("executor"))
       .value,
     libraryDependencies ++= {
       Seq(
+        // Must be loaded before flink-java or custom serializers won't be loaded
+        "pl.touk"         %% "flink-scala"                % flinkScalaV % Provided,
         // Dependencies below are provided by flink-dist jar in production flink or by flink DM for scenario testing/state verification purpose
-        "org.apache.flink" % "flink-streaming-java"       % flinkV % Provided,
-        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % Provided,
+        "org.apache.flink" % "flink-streaming-java"       % flinkV      % Provided,
+        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV      % Provided,
         // This dependency must be provided, because some cloud providers, such as Ververica, already have it on their classpath, which may cause a conflict
-        "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV % Provided,
+        "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV      % Provided,
         // This is needed when flink minicluster is used for deployment
-        "org.apache.flink" % "flink-metrics-influxdb"     % flinkV % Provided,
-        "org.apache.flink" % "flink-metrics-prometheus"   % flinkV % Provided,
+        "org.apache.flink" % "flink-metrics-influxdb"     % flinkV      % Provided,
+        "org.apache.flink" % "flink-metrics-prometheus"   % flinkV      % Provided,
       )
     },
     prepareItLibs               := {
@@ -833,12 +845,9 @@ lazy val benchmarks = (project in file("benchmarks"))
     name                                 := "nussknacker-benchmarks",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java"           % flinkV exclude ("com.esotericsoftware", "kryo-shaded"),
+        "pl.touk"         %% "flink-scala"                    % flinkScalaV,
+        "org.apache.flink" % "flink-streaming-java"           % flinkV,
         "org.apache.flink" % "flink-runtime"                  % flinkV,
-        ("pl.touk"        %% "flink-scala"                    % flinkScalaV)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
-          ),
         "com.dimafeng"    %% "testcontainers-scala-scalatest" % testContainersScalaV % Test,
       )
     },
@@ -912,16 +921,8 @@ lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-componen
     name := "nussknacker-schemed-kafka-components-utils",
     libraryDependencies ++= {
       Seq(
-        "io.confluent"                  % "kafka-json-schema-provider"      % confluentV excludeAll (
-          ExclusionRule("commons-logging", "commons-logging"),
-          ExclusionRule("log4j", "log4j"),
-          ExclusionRule("org.slf4j", "slf4j-log4j12"),
-        ),
-        "io.confluent"                  % "kafka-avro-serializer"           % confluentV excludeAll (
-          ExclusionRule("commons-logging", "commons-logging"),
-          ExclusionRule("log4j", "log4j"),
-          ExclusionRule("org.slf4j", "slf4j-log4j12")
-        ),
+        "io.confluent"                  % "kafka-json-schema-provider"      % confluentV,
+        "io.confluent"                  % "kafka-avro-serializer"           % confluentV,
         "com.microsoft.azure"           % "azure-schemaregistry-kafka-avro" % azureKafkaSchemaRegistryV excludeAll (
           ExclusionRule("com.azure", "azure-core-http-netty")
         ),
@@ -934,11 +935,6 @@ lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-componen
         // we use azure-core-http-okhttp instead of azure-core-http-netty to avoid netty version collisions
         // TODO: switch to jdk implementation after releasing it: https://github.com/Azure/azure-sdk-for-java/issues/27065
         "com.azure"                     % "azure-core-http-okhttp"          % "1.11.9",
-        // it is workaround for missing VerifiableProperties class - see https://github.com/confluentinc/schema-registry/issues/553
-        "org.apache.kafka"             %% "kafka"                           % kafkaV     % Provided excludeAll (
-          ExclusionRule("log4j", "log4j"),
-          ExclusionRule("org.slf4j", "slf4j-log4j12")
-        ),
         "tech.allegro.schema.json2avro" % "converter"                       % "0.2.15",
         "org.scala-lang.modules"       %% "scala-collection-compat"         % scalaCollectionsCompatV,
         "org.scalatest"                %% "scalatest"                       % scalaTestV % Test
@@ -1009,10 +1005,7 @@ lazy val kafkaTestUtils = (project in utils("kafka-test-utils"))
     name := "nussknacker-kafka-test-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.kafka"       %% "kafka"            % kafkaV excludeAll (
-          ExclusionRule("log4j", "log4j"),
-          ExclusionRule("org.slf4j", "slf4j-log4j12")
-        ),
+        "org.apache.kafka"       %% "kafka"            % kafkaV,
         "org.slf4j"               % "log4j-over-slf4j" % slf4jV,
         "com.softwaremill.retry" %% "retry"            % retryV
       )
@@ -1104,7 +1097,8 @@ lazy val mathUtils = (project in utils("math-utils"))
   .settings(
     name := "nussknacker-math-utils",
     libraryDependencies ++= Seq(
-      "org.springframework" % "spring-expression" % springV,
+      "commons-logging"     % "commons-logging"   % commonsLoggingV,
+      "org.springframework" % "spring-expression" % springV exclude ("org.springframework", "spring-jcl"),
     )
   )
   .dependsOn(commonUtils, componentsApi, testUtils % Test)
@@ -1133,7 +1127,6 @@ lazy val testUtils = (project in utils("test-utils"))
         "com.typesafe"                   % "config"                    % configV,
         "org.typelevel"                 %% "cats-core"                 % catsV,
         "ch.qos.logback"                 % "logback-classic"           % logbackV,
-        "org.springframework"            % "spring-jcl"                % springV,
         "commons-io"                     % "commons-io"                % flinkCommonsIOV,
         "org.scala-lang.modules"        %% "scala-collection-compat"   % scalaCollectionsCompatV,
         "com.softwaremill.sttp.client3" %% "slf4j-backend"             % sttpV,
@@ -1157,13 +1150,12 @@ lazy val jsonUtils = (project in utils("json-utils"))
     name := "nussknacker-json-utils",
     libraryDependencies ++= Seq(
       "io.swagger.parser.v3" % "swagger-parser"     % swaggerParserV excludeAll (
-        ExclusionRule(organization = "commons-logging"),
         ExclusionRule(organization = "javax.mail"),
         ExclusionRule(organization = "javax.validation"),
         ExclusionRule(organization = "jakarta.activation"),
         ExclusionRule(organization = "jakarta.validation"),
       ),
-      "com.github.erosb"     % "everit-json-schema" % everitSchemaV exclude ("commons-logging", "commons-logging"),
+      "com.github.erosb"     % "everit-json-schema" % everitSchemaV,
     )
   )
   .dependsOn(componentsUtils % Provided, testUtils % Test)
@@ -1194,13 +1186,10 @@ lazy val flinkScalaUtils = (project in flink("scala-utils"))
     name := "nussknacker-flink-scala-utils",
     libraryDependencies ++= {
       Seq(
+        "pl.touk"                %% "flink-scala"             % flinkScalaV % Provided,
         "org.scala-lang"          % "scala-reflect"           % scalaVersion.value,
         "org.apache.flink"        % "flink-streaming-java"    % flinkV      % Provided,
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
-        ("pl.touk"               %% "flink-scala"             % flinkScalaV % Provided)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
-          ),
         "org.scalatest"          %% "scalatest"               % scalaTestV  % Test,
       )
     }
@@ -1213,34 +1202,18 @@ lazy val flinkMiniCluster = (project in flink("minicluster"))
     name := "nussknacker-flink-minicluster",
     libraryDependencies ++= {
       Seq(
-        ("org.apache.flink"           % "flink-streaming-java"        % flinkV)
-          .excludeAll(
-            ExclusionRule("log4j", "log4j"),
-            ExclusionRule("org.slf4j", "slf4j-log4j12"),
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
-          ),
+        // Must be loaded before flink-java or custom serializers won't be loaded
+        "pl.touk"                    %% "flink-scala"                 % flinkScalaV,
+        "org.apache.flink"            % "flink-streaming-java"        % flinkV,
         "org.apache.flink"            % "flink-statebackend-rocksdb"  % flinkV,
         // Below is a list of libs that are available in flink distribution
         // We want to make flink minicluster as featured as standard flink distribution
         "org.apache.flink"            % "flink-connector-files"       % flinkV,
         "org.apache.flink"            % "flink-csv"                   % flinkV,
         "org.apache.flink"            % "flink-json"                  % flinkV,
-        ("org.apache.flink"           % "flink-table-api-java-bridge" % flinkV)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded")
-          ),
-        ("org.apache.flink"           % "flink-table-runtime"         % flinkV)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded")
-          ),
-        ("org.apache.flink"           % "flink-table-planner-loader"  % flinkV)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded")
-          ),
-        ("pl.touk"                   %% "flink-scala"                 % flinkScalaV)
-          .excludeAll(
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
-          ),
+        "org.apache.flink"            % "flink-table-api-java-bridge" % flinkV,
+        "org.apache.flink"            % "flink-table-runtime"         % flinkV,
+        "org.apache.flink"            % "flink-table-planner-loader"  % flinkV,
         // end of list
         "org.scala-lang.modules"     %% "scala-collection-compat"     % scalaCollectionsCompatV % Provided,
         "com.typesafe.scala-logging" %% "scala-logging"               % scalaLoggingV           % Provided,
@@ -1539,7 +1512,7 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager"))
     name                            := "nussknacker-lite-k8s-deploymentManager",
     libraryDependencies ++= {
       Seq(
-        "io.github.hagay3"              %% "skuber"                           % "4.0.4" exclude ("commons-logging", "commons-logging"),
+        "io.github.hagay3"              %% "skuber"                           % "4.0.11",
         "com.github.julien-truffaut"    %% "monocle-core"                     % monocleV,
         "com.github.julien-truffaut"    %% "monocle-macro"                    % monocleV,
         "org.apache.pekko"              %% "pekko-slf4j"                      % pekkoV    % Test,
@@ -1558,7 +1531,12 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager"))
       )
       .value
   )
-  .dependsOn(liteDeploymentManager, deploymentManagerApi % Provided, testUtils % Test)
+  .dependsOn(
+    liteDeploymentManager,
+    deploymentManagerApi % Provided,
+    testUtils            % Test,
+    kafkaTestUtils       % Test
+  )
 
 lazy val liteDeploymentManager = (project in lite("deploymentManager"))
   .enablePlugins()
@@ -1578,6 +1556,7 @@ lazy val componentsApi = (project in file("components-api"))
     name := "nussknacker-components-api",
     libraryDependencies ++= {
       Seq(
+        "commons-logging"                % "commons-logging"               % commonsLoggingV,
         "org.apache.commons"             % "commons-text"                  % flinkCommonsTextV,
         "org.typelevel"                 %% "cats-core"                     % catsV,
         "com.beachape"                  %% "enumeratum"                    % enumeratumV,
@@ -1587,8 +1566,8 @@ lazy val componentsApi = (project in file("components-api"))
         "javax.validation"               % "validation-api"                % javaxValidationApiV,
         "org.scala-lang.modules"        %% "scala-collection-compat"       % scalaCollectionsCompatV,
         "com.iheart"                    %% "ficus"                         % ficusV,
-        "org.springframework"            % "spring-core"                   % springV,
-        "org.springframework"            % "spring-expression"             % springV        % Test,
+        "org.springframework"            % "spring-core"                   % springV exclude ("org.springframework", "spring-jcl"),
+        "org.springframework"            % "spring-expression"             % springV        % Test exclude ("org.springframework", "spring-jcl"),
         "com.google.code.findbugs"       % "jsr305"                        % findBugsV,
         "com.softwaremill.sttp.client3" %% "core"                          % sttpV,
         "org.scalatestplus"             %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test,
@@ -1605,7 +1584,8 @@ lazy val extensionsApi = (project in file("extensions-api"))
   .settings(
     name := "nussknacker-extensions-api",
     libraryDependencies ++= Seq(
-      "org.springframework" % "spring-expression" % springV,
+      "commons-logging"     % "commons-logging"   % commonsLoggingV,
+      "org.springframework" % "spring-expression" % springV exclude ("org.springframework", "spring-jcl"),
     )
   )
   .dependsOn(testUtils % Test, componentsApi, scenarioApi)
@@ -1670,11 +1650,7 @@ lazy val security = (project in file("security"))
       "com.softwaremill.sttp.tapir" %% "tapir-core"                     % tapirV,
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe"               % tapirV,
       "com.dimafeng"                %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
-      "com.github.dasniko"           % "testcontainers-keycloak"        % "3.8.0"              % "it,test" excludeAll (
-        ExclusionRule("commons-logging", "commons-logging"),
-        // we're using testcontainers-scala which requires a proper junit4 dependency
-        ExclusionRule("io.quarkus", "quarkus-junit4-mock")
-      )
+      "com.github.dasniko"           % "testcontainers-keycloak"        % "4.1.1"              % "it,test"
     )
   )
   .dependsOn(utilsInternal, httpUtils, testUtils % "it,test")
@@ -2092,6 +2068,7 @@ lazy val designer = (project in file("designer/server"))
         "ch.qos.logback"                 % "logback-core"                   % logbackV,
         "ch.qos.logback"                 % "logback-classic"                % logbackV,
         "org.slf4j"                      % "log4j-over-slf4j"               % slf4jV,
+        "commons-logging"                % "commons-logging"                % commonsLoggingV,
         "com.carrotsearch"               % "java-sizeof"                    % "0.0.5",
         "org.typelevel"                 %% "case-insensitive"               % "1.4.0",
 
@@ -2104,7 +2081,7 @@ lazy val designer = (project in file("designer/server"))
         "org.hsqldb"                     % "hsqldb"                           % hsqldbV,
         "org.postgresql"                 % "postgresql"                       % postgresV,
         "org.flywaydb"                   % "flyway-core"                      % flywayV,
-        "org.apache.xmlgraphics"         % "fop"                              % "2.9" exclude ("commons-logging", "commons-logging"),
+        "org.apache.xmlgraphics"         % "fop"                              % "2.9",
         "com.beachape"                  %% "enumeratum-circe"                 % enumeratumV,
         "tf.tofu"                       %% "derevo-circe"                     % "0.13.0",
         "com.softwaremill.retry"        %% "retry"                            % retryV,
@@ -2126,7 +2103,7 @@ lazy val designer = (project in file("designer/server"))
         "io.dropwizard.metrics5"         % "metrics-jmx"                      % dropWizardV,
         "fr.davit"                      %% "pekko-http-metrics-dropwizard-v5" % "1.0.1",
         "org.scalacheck"                %% "scalacheck"                       % scalaCheckV          % Test,
-        "com.github.erosb"               % "everit-json-schema"               % everitSchemaV exclude ("commons-logging", "commons-logging"),
+        "com.github.erosb"               % "everit-json-schema"               % everitSchemaV,
         "org.apache.flink"               % "flink-metrics-dropwizard"         % flinkV               % Test,
         "org.wiremock"                   % "wiremock"                         % wireMockV            % Test,
         "io.circe"                      %% "circe-yaml"                       % circeYamlV           % Test,

@@ -138,7 +138,10 @@ const adjustScenarioData = flow(
 );
 
 const getDefaultActiveTestCaseId = (actionGraph: ScenarioGraph, stateGraph: ScenarioGraph, testing: TestingState): string | undefined => {
-    return testing.activeTestCaseId || actionGraph?.testCases?.list[0]?.id || stateGraph.testCases.list[0]?.id;
+    const list = actionGraph?.testCases?.list ?? stateGraph?.testCases?.list ?? [];
+    const existsInList = (id: string | undefined) => list.some((tc) => tc.id === id);
+
+    return existsInList(testing.activeTestCaseId) ? testing.activeTestCaseId : list[0]?.id;
 };
 
 const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): GraphState => {

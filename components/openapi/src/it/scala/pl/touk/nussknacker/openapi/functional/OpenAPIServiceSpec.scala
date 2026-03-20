@@ -41,7 +41,7 @@ class OpenAPIServiceSpec
   def withFixture(test: OneArgTest): Outcome = {
     val definition = ResourceLoader.load("/customer-swagger.json")
 
-    val client = new DefaultAsyncHttpClient()
+    val clientProvider = new FixedAsyncHttpClientBackendProvider(new DefaultAsyncHttpClient())
     try {
       new StubService().withCustomerService { port =>
         val secretBySchemeName = Map(SecuritySchemeName("apikey") -> ApiKeySecret("TODO"))
@@ -57,7 +57,7 @@ class OpenAPIServiceSpec
         val enricher = OpenAPIEnricher(
           service = services.head,
           config = config,
-          clientProvider = new FixedAsyncHttpClientBackendProvider(client),
+          clientProvider = clientProvider,
           params = Params.fromRawValuesMap(Map(ParameterName("customer_id") -> "10")),
           getTimeMeasurement =
             () => new AsyncExecutionTimeMeasurement(TestEngineRuntimeContext(jobData), "openAPI", Map.empty)
@@ -66,12 +66,11 @@ class OpenAPIServiceSpec
         withFixture(test.toNoArgTest(enricher))
       }
     } finally {
-      client.close()
+      clientProvider.close()
     }
   }
 
   test("service returns customers") { service =>
-    implicit val contextId: ContextId = ContextId.dummy
     val valueWithChosenFields =
       service
         .invoke(context)

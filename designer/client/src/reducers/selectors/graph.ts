@@ -29,6 +29,8 @@ export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scena
 
 export const getNodes = createSelector(getScenarioGraph, (g) => g.nodes);
 
+export const getSourceNodes = createSelector(getNodes, (nodes) => nodes.filter((node) => node.type === "Source"));
+
 export const getScenarioLabels = createSelector(getGraph, (g) => g.scenario.labels || []);
 
 export const getProcessName = createSelector(getScenario, (d) => d?.name);

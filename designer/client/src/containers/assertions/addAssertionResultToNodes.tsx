@@ -6,13 +6,13 @@ import { getStringWidth } from "../../components/graph/EspNode/element";
 import { RECT_HEIGHT, RECT_WIDTH } from "../../components/graph/EspNode/esp";
 import { useGraph } from "../../components/graph/GraphContext";
 import { isModelElement } from "../../components/graph/GraphPartialsInTS/cellUtils";
-import { getTestAssertionResults } from "../../reducers/selectors/testing";
+import { getActiveTestCaseAssertionResult } from "../../reducers/selectors/testing";
 import { useAppSelector } from "../../store/storeHelpers";
 import { calculateAssertionResultsSummary } from "./assertionResultsUtils";
 
 export const AddAssertionResultToNodes = () => {
     const graphGetter = useGraph();
-    const testAssertionResults = useAppSelector(getTestAssertionResults);
+    const testCaseAssertionResult = useAppSelector(getActiveTestCaseAssertionResult);
     const theme = useTheme();
 
     useEffect(() => {
@@ -23,9 +23,8 @@ export const AddAssertionResultToNodes = () => {
 
         const nodes = model.getElements().filter(isModelElement);
         nodes.forEach((element) => {
-            const { hasResult, failedCount, passedCount, total } = calculateAssertionResultsSummary(
-                testAssertionResults?.[element.id] ?? [],
-            );
+            const nodeResults = testCaseAssertionResult?.status === "loaded" ? testCaseAssertionResult.results[element.id] : undefined;
+            const { hasResult, failedCount, passedCount, total } = calculateAssertionResultsSummary(nodeResults ?? []);
 
             const text = hasResult ? `${passedCount}/${total}` : "";
             const assertionResultWidth = getStringWidth(text);
@@ -66,7 +65,7 @@ export const AddAssertionResultToNodes = () => {
         });
     }, [
         graphGetter,
-        testAssertionResults,
+        testCaseAssertionResult,
         theme.palette.error.main,
         theme.palette.error.dark,
         theme.palette.success.main,

@@ -170,7 +170,7 @@ export function useGetNodeTestCasesErrors(node: NodeType): {
 } {
     const testCase = useAppSelector(getActiveTestCase);
     const currentTestCasesErrors = useAppSelector((state: RootState) =>
-        getValidationTestCasesErrors(state, { nodeId: node.id, testCaseId: testCase.name }),
+        getValidationTestCasesErrors(state, { nodeId: node.id, testCaseName: testCase?.name }),
     );
 
     return currentTestCasesErrors ?? { enricherMockErrors: [], assertionsErrors: {} };

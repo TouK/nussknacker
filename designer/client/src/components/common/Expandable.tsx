@@ -43,6 +43,7 @@ export function Expandable({
                 expandIcon={<ExpandMoreIcon sx={expandIconSx} />}
                 aria-controls={`${componentId}-content`}
                 id={`${componentId}-header`}
+                data-testid={`expandable-header`}
                 sx={{
                     flexDirection: "row-reverse",
                     border: 0,

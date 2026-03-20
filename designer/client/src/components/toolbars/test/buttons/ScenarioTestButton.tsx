@@ -2,11 +2,10 @@ import { alpha, styled } from "@mui/material";
 import React, { useCallback, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { changeActiveTestCase, testScenarioWithTestCase } from "../../../../actions/nk/testingActions";
+import { changeActiveTestCase } from "../../../../actions/nk/testingActions";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
-import { useUserSettings } from "../../../../common/useUserSettings";
 import { getActiveTestCase, getTestCases } from "../../../../reducers/selectors/testCases";
-import { getTestResultsLoading } from "../../../../reducers/selectors/testing";
+import { getActiveTestCaseAssertionResult, getActiveTestCaseAssertionResultLoading } from "../../../../reducers/selectors/testing";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useTestingScenarioEnabled } from "../../../modals/TestingDataRecords/useTestingScenarioEnabled";
@@ -15,8 +14,9 @@ import { ButtonsVariant, ToolbarButtonsContext } from "../../../toolbarComponent
 import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer";
 import type { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
 import type { PropsOfButton } from "../../../toolbarSettings/buttons/types";
+import { useRunTestScenario } from "../useRunTestScenario";
+import { getAssertionResultsSummary } from "./scenarioTestButtonContent/getAssertionResultsSummary";
 import { TestingIconWithAssertionStatus } from "./scenarioTestButtonContent/TestingIconWithAssertionStatus";
-import { useAssertionResultsSummary } from "./scenarioTestButtonContent/useAssertionResultsSummary";
 import type { Preset } from "./scenarioTestButtonContent/useScenarioTestPresets";
 import { RUN_ALL, useScenarioTestPresets } from "./scenarioTestButtonContent/useScenarioTestPresets";
 import { useScenarioTestTooltip } from "./scenarioTestButtonContent/useScenarioTestTooltip";
@@ -32,26 +32,21 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { t } = useTranslation();
     const testCase = useAppSelector(getActiveTestCase);
     const testCases = useAppSelector(getTestCases);
-    const isLoading = useAppSelector(getTestResultsLoading);
+    const isLoading = useAppSelector(getActiveTestCaseAssertionResultLoading);
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled });
 
     const { variant } = useContext(ToolbarButtonsContext);
     const side = useContext(ToolbarSideContext);
 
     const { presets, activeTestCasePreset } = useScenarioTestPresets();
-    const { hasResult, assertionsIsSuccess } = useAssertionResultsSummary();
+
+    const testCaseAssertionResult = useAppSelector(getActiveTestCaseAssertionResult);
+    const { hasResult, assertionsIsSuccess } = getAssertionResultsSummary(testCaseAssertionResult);
     const tooltip = useScenarioTestTooltip({ disabled, title, titleOverride });
 
-    const [showMockFieldOnEnrichers] = useUserSettings("node.showMockFieldOnEnrichers");
     const dispatch = useAppDispatch();
-    const handleRunTest = useCallback(
-        (testCaseId: string) => {
-            const testCaseToRun = testCases.find((tc) => tc.id === testCaseId) || testCase;
 
-            dispatch(testScenarioWithTestCase(testCaseToRun, showMockFieldOnEnrichers));
-        },
-        [dispatch, showMockFieldOnEnrichers, testCase, testCases],
-    );
+    const { runTest } = useRunTestScenario();
 
     const icon = useMemo(
         () =>
@@ -63,7 +58,17 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
         [activeTestCasePreset?.value, assertionsIsSuccess, hasResult],
     );
 
-    const handleRunActiveTest = useCallback(() => handleRunTest(testCase?.id), [handleRunTest, testCase]);
+    const handleRunActiveTest = useCallback(() => runTest(testCase), [runTest, testCase]);
+
+    const handleRunTestCaseById = useCallback(
+        (testCaseId: string) => {
+            const testCaseToRun = testCases.find((tc) => tc.id === testCaseId);
+            if (!testCaseToRun) return;
+
+            runTest(testCaseToRun);
+        },
+        [runTest, testCases],
+    );
 
     const handlePresetChange = useCallback(
         (preset: Preset) => {
@@ -72,9 +77,9 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                 return;
             }
             dispatch(changeActiveTestCase(preset.value));
-            handleRunTest(preset.value);
+            handleRunTestCaseById(preset.value);
         },
-        [dispatch, handleRunTest],
+        [dispatch, handleRunTestCaseById],
     );
 
     return (

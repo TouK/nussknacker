@@ -1,48 +1,43 @@
 import { Box, Button, Typography } from "@mui/material";
-import React, { useCallback, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { testScenarioWithTestCase } from "../../../actions/nk/testingActions";
-import { useUserSettings } from "../../../common/useUserSettings";
-import type { TestAssertionResults } from "../../../http/resultsWithCountsDto";
-import { getActiveTestCase } from "../../../reducers/selectors/testCases";
-import { getTestResultsLoading } from "../../../reducers/selectors/testing";
-import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
+import type { NodeAssertionResults, TestCaseAssertionResult } from "../../../http/resultsWithCountsDto";
+import type { TestCase } from "../../../reducers/graph/testCase";
 import type { NodeType } from "../../../types/node";
 import { Expandable } from "../../common/Expandable";
+import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
 import { useTestingScenarioEnabled } from "../../modals/TestingDataRecords/useTestingScenarioEnabled";
+import { useRunTestScenario } from "../test/useRunTestScenario";
 import { OpenNodeTestingDetails } from "./assertionResultsForNode/assertionResult/openNodeTestingDetails";
 import { AssertionResultsForNode } from "./assertionResultsForNode/assertionResultsForNode";
 import { AssertionResultsForNodeTitle } from "./assertionResultsForNode/assertionResultsForNodeTitle";
 import { useScenarioNodeOrder } from "./useScenarioNodeOrder";
 
 interface Props {
-    testAssertionResults: TestAssertionResults;
+    testCase: TestCase;
+    testCaseAssertionResult: TestCaseAssertionResult | undefined;
 }
 
-export const Results = ({ testAssertionResults }: Props) => {
-    const testCase = useAppSelector(getActiveTestCase);
-    const dispatch = useAppDispatch();
-    const [showMockFieldOnEnrichers] = useUserSettings("node.showMockFieldOnEnrichers");
-    const isLoading = useAppSelector(getTestResultsLoading);
-
+export const Results = ({ testCaseAssertionResult, testCase }: Props) => {
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled: false });
 
-    const handleRun = useCallback(() => {
-        dispatch(testScenarioWithTestCase(testCase, showMockFieldOnEnrichers));
-    }, [dispatch, testCase, showMockFieldOnEnrichers]);
+    const { runTest } = useRunTestScenario();
 
     const { nodes, sortByScenarioOrder } = useScenarioNodeOrder();
 
+    const isLoading = testCaseAssertionResult?.status === "loading";
+    const nodeAssertionResults = testCaseAssertionResult?.status === "loaded" ? testCaseAssertionResult.results : null;
+
     const sortedNodeIds = useMemo(
-        () => sortByScenarioOrder(Object.keys(testAssertionResults)),
-        [testAssertionResults, sortByScenarioOrder],
+        () => sortByScenarioOrder(Object.keys(nodeAssertionResults ?? {})),
+        [nodeAssertionResults, sortByScenarioOrder],
     );
 
-    if (sortedNodeIds.length === 0) {
+    if (!nodeAssertionResults || sortedNodeIds.length === 0) {
         return (
             <NoResults
-                onRun={handleRun}
+                onRun={() => runTest(testCase)}
                 testCaseName={testCase.name}
                 isRunTestButtonDisabled={isLoading}
                 isRunTestButtonVisible={testingScenarioEnabled}
@@ -50,7 +45,7 @@ export const Results = ({ testAssertionResults }: Props) => {
         );
     }
 
-    return <ResultsContent sortedNodeIds={sortedNodeIds} testAssertionResults={testAssertionResults} scenarioGraphNodes={nodes} />;
+    return <ResultsContent sortedNodeIds={sortedNodeIds} nodeAssertionResults={nodeAssertionResults} scenarioGraphNodes={nodes} />;
 };
 
 const NoResults = ({
@@ -95,33 +90,47 @@ const NoResults = ({
 
 interface ResultsContentProps {
     sortedNodeIds: string[];
-    testAssertionResults: TestAssertionResults;
+    nodeAssertionResults: NodeAssertionResults;
     scenarioGraphNodes: NodeType[];
 }
 
-const ResultsContent = ({ sortedNodeIds, testAssertionResults, scenarioGraphNodes }: ResultsContentProps) => (
-    <>
-        {sortedNodeIds.map((nodeId) => {
-            const node = scenarioGraphNodes.find((node) => node.id === nodeId);
+const ResultsContent = ({ sortedNodeIds, nodeAssertionResults, scenarioGraphNodes }: ResultsContentProps) => {
+    const { t } = useTranslation();
 
-            return (
-                <Expandable
-                    key={nodeId}
-                    expandableTitle={
-                        <AssertionResultsForNodeTitle
-                            title={node.name}
-                            assertionResults={testAssertionResults[nodeId]}
-                            action={node ? <OpenNodeTestingDetails node={node} /> : undefined}
-                            node={node}
-                        />
-                    }
-                    componentId={nodeId}
-                    detailsSx={{ pl: 2, pr: 1, py: 0 }}
-                    summarySx={{ px: 0.5, minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px", overflow: "hidden" } }}
-                >
-                    <AssertionResultsForNode nodeId={nodeId} />
-                </Expandable>
-            );
-        })}
-    </>
-);
+    return (
+        <>
+            {sortedNodeIds.map((nodeId) => {
+                const node = scenarioGraphNodes.find((node) => node.id === nodeId);
+
+                return (
+                    <Expandable
+                        key={nodeId}
+                        expandableTitle={
+                            <AssertionResultsForNodeTitle
+                                title={node.name}
+                                assertionResults={nodeAssertionResults[nodeId]}
+                                action={
+                                    node ? (
+                                        <InfoTooltip
+                                            variant={"hover"}
+                                            title={t("testCases.run", "Open node testing details")}
+                                            enterDelay={500}
+                                        >
+                                            <OpenNodeTestingDetails node={node} />
+                                        </InfoTooltip>
+                                    ) : undefined
+                                }
+                                node={node}
+                            />
+                        }
+                        componentId={nodeId}
+                        detailsSx={{ pl: 2, pr: 1, py: 0 }}
+                        summarySx={{ px: 1.25, minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px", overflow: "hidden" } }}
+                    >
+                        <AssertionResultsForNode nodeId={nodeId} />
+                    </Expandable>
+                );
+            })}
+        </>
+    );
+};

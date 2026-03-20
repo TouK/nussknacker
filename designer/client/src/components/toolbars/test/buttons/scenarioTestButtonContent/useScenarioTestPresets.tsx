@@ -4,11 +4,11 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { getTestCases } from "../../../../../reducers/selectors/testCases";
-import { getActiveTestCaseId } from "../../../../../reducers/selectors/testing";
+import { getActiveTestCaseId, getTestAssertionResults } from "../../../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { OptionHeader } from "../../../../graph/node-modal/fragment-input-definition/TypeSelect";
 import { AssertionStatusIcon } from "../../../testCases/assertionResultsForNode/assertionResult/AssertionStatusIcon";
-import { useAssertionResultsSummary } from "./useAssertionResultsSummary";
+import { getAssertionResultsSummary } from "./getAssertionResultsSummary";
 
 export const RUN_ALL = "runAll";
 
@@ -22,21 +22,22 @@ export type Preset = {
 export const useScenarioTestPresets = () => {
     const { t } = useTranslation();
     const testCases = useAppSelector(getTestCases);
-    const activeTestCaseId = useAppSelector(getActiveTestCaseId);
-    const { hasResult, assertionsIsSuccess } = useAssertionResultsSummary();
+    const testAssertionResults = useAppSelector(getTestAssertionResults);
 
     const testCasePresets: Preset[] = useMemo(() => {
         if (testCases.length === 0) return [];
-        return testCases.map((testCase) => ({
-            icon:
-                hasResult && activeTestCaseId === testCase.id ? (
-                    <AssertionStatusIcon isSuccess={assertionsIsSuccess} variant={"light"} />
-                ) : null,
-            label: testCase.name,
-            value: testCase.id,
-        }));
-    }, [testCases, hasResult, activeTestCaseId, assertionsIsSuccess]);
+        return testCases.map((testCase) => {
+            const { hasResult, assertionsIsSuccess } = getAssertionResultsSummary(testAssertionResults[testCase.id]);
 
+            return {
+                icon: hasResult ? <AssertionStatusIcon isSuccess={assertionsIsSuccess} variant={"light"} /> : null,
+                label: testCase.name,
+                value: testCase.id,
+            };
+        });
+    }, [testCases, testAssertionResults]);
+
+    const activeTestCaseId = useAppSelector(getActiveTestCaseId);
     const activeTestCasePreset = testCasePresets.find((testCasePreset) => testCasePreset.value === activeTestCaseId) || null;
 
     const runAllPreset: Preset = useMemo(

@@ -69,7 +69,8 @@ final class DesignerConfig private (
     val http: HttpConfig,
     val attachments: AttachmentsConfig,
     val assistantSettings: AssistantSettings,
-    val globalLimitsConfig: GlobalLimitsConfig
+    val globalLimitsConfig: GlobalLimitsConfig,
+    val testCasesSettings: TestCasesSettings,
 ) {
 
   // TODO: We should parse configuration options to fields instead of accessing rawConfig. Thank to that:
@@ -161,6 +162,8 @@ object DesignerConfig {
     val attachments                   = AttachmentsConfig.parse(resolvedConfig)
     val assistantSettings =
       resolvedConfig.getAs[AssistantSettings]("assistantSettings").getOrElse(AssistantSettings.disabled)
+    val testCasesSettings =
+      resolvedConfig.getAs[TestCasesSettings]("testCasesSettings").getOrElse(TestCasesSettings.default)
 
     val limitsConfig = if (resolvedConfig.hasPath("globalLimits")) {
       Try(resolvedConfig.getConfig("globalLimits").getInt("maxActiveScenariosCount")) match {
@@ -211,7 +214,8 @@ object DesignerConfig {
       http = http,
       attachments = attachments,
       assistantSettings = assistantSettings,
-      globalLimitsConfig = limitsConfig
+      globalLimitsConfig = limitsConfig,
+      testCasesSettings = testCasesSettings,
     )
   }
 

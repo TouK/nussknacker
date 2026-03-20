@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
 import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, PredicateAssertion}
@@ -169,6 +170,36 @@ class ScenarioTestingApiHttpServiceSpec
         assertions = Map(
           NodeId("endsuffix") -> List(
             PredicateAssertion(AssertionOperator.Equals, "'b'".spel, "#records[0].out1".spel),
+          )
+        )
+      )
+
+      given()
+        .applicationState {
+          createSavedScenario(testCaseEnricherScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(PerformTestCaseRequest(testCaseEnricherScenario.toScenarioGraph, testCase).asJson.spaces2)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${testCaseEnricherScenario.name}/performTestCase")
+        .Then()
+        .statusCode(200)
+        .body("assertionsResults.endsuffix[0].type", org.hamcrest.Matchers.equalTo("SuccessfulAssertion"))
+    }
+
+    "ignore enricher mock with empty expression and use the actual service result" in {
+      val testDataContent =
+        """[
+          |  {"sourceId":"startProcess","variables":{"input":["ala"]}}
+          |]""".stripMargin
+      val testCase = TestCase(
+        id = UUID.randomUUID(),
+        name = "dummy",
+        inputs = testDataContent,
+        mocks = Map(NodeId("someEnricher") -> EnricherMock(Expression.spel(""))),
+        assertions = Map(
+          NodeId("endsuffix") -> List(
+            PredicateAssertion(AssertionOperator.Equals, "'a'".spel, "#records[0].out1".spel),
           )
         )
       )

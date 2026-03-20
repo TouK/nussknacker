@@ -33,10 +33,22 @@ export const testingReducer: Reducer<GraphState["testing"]> = (state = initialTe
                 testResults: action.testResults,
             };
         }
+        case "SET_TEST_CASE_ASSERTION_RESULTS_LOADING": {
+            return {
+                ...state,
+                assertionsResults: {
+                    ...state.assertionsResults,
+                    [action.testCaseId]: { status: "loading" },
+                },
+            };
+        }
         case "DISPLAY_TEST_ASSERTIONS_RESULTS": {
             return {
                 ...state,
-                assertionsResults: action.assertionsResults,
+                assertionsResults: {
+                    ...state.assertionsResults,
+                    [action.testCaseId]: { status: "loaded", results: action.assertionsResults },
+                },
             };
         }
         case "CLEAR_TEST_ASSERTIONS_RESULTS": {
@@ -55,6 +67,13 @@ export const testingReducer: Reducer<GraphState["testing"]> = (state = initialTe
             return {
                 ...state,
                 testResultsLoading: false,
+            };
+        }
+        case "TEST_CASE_ASSERTION_RESULTS_FAILED": {
+            const { [action.testCaseId]: _, ...remainingAssertionResults } = state.assertionsResults;
+            return {
+                ...state,
+                assertionsResults: remainingAssertionResults,
             };
         }
         case "DISPLAY_PROCESS_COUNTS": {

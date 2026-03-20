@@ -283,33 +283,35 @@ class ValidationResourcesSpec
       .toScenarioGraph
       .copy(
         testCases = Some(
-          TestCases.Single(
-            TestCase(
-              id = UUID.randomUUID(),
-              name = "test-case-1",
-              inputs = "{}",
-              mocks = Map(
-                NodeId("enricher") -> EnricherMock("'mocked value'".spel),
-              ),
-              assertions = Map(
-                NodeId("enricher") -> List(
-                  PredicateAssertion(
-                    operator = AssertionOperator.Equals,
-                    actual = "#records.size".spel,
-                    expected = "3".spel,
-                  ),
-                  PredicateAssertion(
-                    operator = AssertionOperator.Equals,
-                    actual = "#records[0].input".spel,
-                    expected = "'abc'".spel,
-                  ),
+          TestCases(
+            NonEmptyList.one(
+              TestCase(
+                id = UUID.randomUUID(),
+                name = "test-case-1",
+                inputs = "{}",
+                mocks = Map(
+                  NodeId("enricher") -> EnricherMock("'mocked value'".spel),
                 ),
-                NodeId("sink") -> List(
-                  PredicateAssertion(
-                    operator = AssertionOperator.Equals,
-                    actual = "#records[0].output".spel,
-                    expected = "'def'".spel,
+                assertions = Map(
+                  NodeId("enricher") -> List(
+                    PredicateAssertion(
+                      operator = AssertionOperator.Equals,
+                      actual = "#records.size".spel,
+                      expected = "3".spel,
+                    ),
+                    PredicateAssertion(
+                      operator = AssertionOperator.Equals,
+                      actual = "#records[0].input".spel,
+                      expected = "'abc'".spel,
+                    ),
                   ),
+                  NodeId("sink") -> List(
+                    PredicateAssertion(
+                      operator = AssertionOperator.Equals,
+                      actual = "#records[0].output".spel,
+                      expected = "'def'".spel,
+                    ),
+                  )
                 )
               )
             )
@@ -338,49 +340,51 @@ class ValidationResourcesSpec
       .toScenarioGraph
       .copy(
         testCases = Some(
-          TestCases.Single(
-            TestCase(
-              id = UUID.randomUUID(),
-              name = "test-case-1",
-              inputs = "{}",
-              mocks = Map(
-                NodeId("enricher") -> EnricherMock("42".spel),
-                NodeId("sink")     -> EnricherMock("'some mock'".spel) // mock for non-enricher node
-              ),
-              assertions = Map(
-                NodeId("enricher") -> List(
-                  PredicateAssertion(
-                    operator = AssertionOperator.Equals,
-                    actual = "#records.size".spel,
-                    expected = "3".spel,
-                  ),
-                  PredicateAssertion(
-                    operator = AssertionOperator.Equals,
-                    actual = "#records[0].doesNotExist".spel,
-                    expected = "'abc'".spel,
-                  ),
-                  PredicateAssertion(
-                    operator = AssertionOperator.Equals,
-                    actual = "#records[0].input".spel,
-                    expected = "'abc'".spel,
-                  ),
+          TestCases(
+            NonEmptyList.one(
+              TestCase(
+                id = UUID.randomUUID(),
+                name = "test-case-1",
+                inputs = "{}",
+                mocks = Map(
+                  NodeId("enricher") -> EnricherMock("42".spel),
+                  NodeId("sink")     -> EnricherMock("'some mock'".spel) // mock for non-enricher node
                 ),
-                NodeId("sink") -> List(
-                  PredicateAssertion(
-                    operator = AssertionOperator.Equals,
-                    actual = "#records[0].doesNotExist2".spel,
-                    expected = "'def'".spel,
+                assertions = Map(
+                  NodeId("enricher") -> List(
+                    PredicateAssertion(
+                      operator = AssertionOperator.Equals,
+                      actual = "#records.size".spel,
+                      expected = "3".spel,
+                    ),
+                    PredicateAssertion(
+                      operator = AssertionOperator.Equals,
+                      actual = "#records[0].doesNotExist".spel,
+                      expected = "'abc'".spel,
+                    ),
+                    PredicateAssertion(
+                      operator = AssertionOperator.Equals,
+                      actual = "#records[0].input".spel,
+                      expected = "'abc'".spel,
+                    ),
                   ),
-                  PredicateAssertion(
-                    operator = AssertionOperator.Equals,
-                    actual = "#records[0].output".spel,
-                    expected = "'def'".spel,
-                  ),
-                  PredicateAssertion(
-                    operator = AssertionOperator.Equals,
-                    actual = "#records[0].doesNotExist3".spel,
-                    expected = "'ghi'".spel,
-                  ),
+                  NodeId("sink") -> List(
+                    PredicateAssertion(
+                      operator = AssertionOperator.Equals,
+                      actual = "#records[0].doesNotExist2".spel,
+                      expected = "'def'".spel,
+                    ),
+                    PredicateAssertion(
+                      operator = AssertionOperator.Equals,
+                      actual = "#records[0].output".spel,
+                      expected = "'def'".spel,
+                    ),
+                    PredicateAssertion(
+                      operator = AssertionOperator.Equals,
+                      actual = "#records[0].doesNotExist3".spel,
+                      expected = "'ghi'".spel,
+                    ),
+                  )
                 )
               )
             )
@@ -461,6 +465,44 @@ class ValidationResourcesSpec
           )
         )
       )
+    }
+  }
+
+  it should "find error for duplicate test case names" in {
+    val scenarioGraph = ScenarioBuilder
+      .streaming("testCaseValidationScenario")
+      .additionalFields(properties = Map("requiredStringProperty" -> "some value"))
+      .source("source", ProcessTestData.existingSourceFactory)
+      .emptySink("sink", ProcessTestData.existingSinkFactory)
+      .toScenarioGraph
+      .copy(
+        testCases = Some(
+          TestCases(
+            NonEmptyList.of(
+              TestCase(
+                id = UUID.randomUUID(),
+                name = "duplicate",
+                inputs = "{}",
+                mocks = Map.empty,
+                assertions = Map.empty
+              ),
+              TestCase(
+                id = UUID.randomUUID(),
+                name = "duplicate",
+                inputs = "{}",
+                mocks = Map.empty,
+                assertions = Map.empty
+              ),
+            )
+          )
+        )
+      )
+
+    createAndValidateScenario(scenarioGraph, ProcessName("testCaseValidation")) {
+      status shouldBe StatusCodes.OK
+      val validation = responseAs[ValidationResult]
+      validation.errors.globalErrors should have size 1
+      validation.errors.globalErrors.head.error.message shouldBe "Duplicate test case names: duplicate"
     }
   }
 
