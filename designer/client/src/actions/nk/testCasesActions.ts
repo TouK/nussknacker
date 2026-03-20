@@ -12,7 +12,7 @@ export type Assertions = Record<string, Assertion[]>;
 export type Mock = { expression: ExpressionObj };
 export type Mocks = Record<string, Mock>;
 
-export type TestCasesActions = { type: "UPDATE_TEST_CASE"; testCaseId: string; updates: Partial<TestCase> };
+export type TestCasesActions = { type: "UPDATE_TEST_CASE"; testCaseId: string; updates: Omit<Partial<TestCase>, "id"> };
 
 export function setTestCaseAssertions(nodeId: string, updater: (prev: WithUuid<Assertion>[]) => WithUuid<Assertion>[]): ThunkAction {
     return (dispatch, getState) => {
