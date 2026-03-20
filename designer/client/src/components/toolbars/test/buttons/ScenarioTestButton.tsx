@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { changeActiveTestCase } from "../../../../actions/nk/testingActions";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { getActiveTestCase, getTestCases } from "../../../../reducers/selectors/testCases";
-import { getActiveTestCaseAssertionResult, isGetActiveTestCaseAssertionResultLoading } from "../../../../reducers/selectors/testing";
+import { getActiveTestCaseAssertionResult, getActiveTestCaseAssertionResultLoading } from "../../../../reducers/selectors/testing";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useTestingScenarioEnabled } from "../../../modals/TestingDataRecords/useTestingScenarioEnabled";
@@ -32,7 +32,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { t } = useTranslation();
     const testCase = useAppSelector(getActiveTestCase);
     const testCases = useAppSelector(getTestCases);
-    const isLoading = useAppSelector(isGetActiveTestCaseAssertionResultLoading);
+    const isLoading = useAppSelector(getActiveTestCaseAssertionResultLoading);
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled });
 
     const { variant } = useContext(ToolbarButtonsContext);

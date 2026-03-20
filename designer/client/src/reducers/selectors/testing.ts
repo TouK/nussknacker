@@ -28,7 +28,7 @@ export const getTestAssertionResultsForNode = createSelector(getActiveTestCaseAs
     testCaseResult?.status === "loaded" ? testCaseResult.results[nodeId] : undefined,
 );
 
-export const isGetActiveTestCaseAssertionResultLoading = createSelector(
+export const getActiveTestCaseAssertionResultLoading = createSelector(
     getActiveTestCaseAssertionResult,
     (testCaseResult) => testCaseResult?.status === "loading",
 );
