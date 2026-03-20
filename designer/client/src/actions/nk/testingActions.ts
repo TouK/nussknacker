@@ -150,7 +150,7 @@ export function displayTestAssertionsResults(testCaseId: string, assertionsResul
 }
 
 export function changeActiveTestCase(testCaseId: string): ThunkAction {
-    return async (dispatch) => {
+    return (dispatch) => {
         dispatch(clearProcessCounts());
         dispatch({
             type: "CHANGE_ACTIVE_TEST_CASE",
