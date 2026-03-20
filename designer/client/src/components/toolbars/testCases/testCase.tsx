@@ -1,11 +1,14 @@
 import { Box, CircularProgress, Divider, Typography } from "@mui/material";
 import SvgIcon from "@mui/material/SvgIcon/SvgIcon";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { changeActiveTestCase } from "../../../actions/nk/testingActions";
 import TestingIcon from "../../../assets/img/toolbarButtons/test.svg";
 import type { TestCaseAssertionResult } from "../../../http/resultsWithCountsDto";
 import type { TestCase } from "../../../reducers/graph/testCase";
+import { getActiveTestCaseId } from "../../../reducers/selectors/testing";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { Expandable } from "../../common/Expandable";
 import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
 import { useRunTestScenario } from "../test/useRunTestScenario";
@@ -23,14 +26,38 @@ interface TestCaseExpandableProps {
 
 export const TestCaseExpandable = ({ testCase, testCaseAssertionResult }: TestCaseExpandableProps) => {
     const [mode, setMode] = useState<TestCaseMode>("results");
-    const [expanded, setExpanded] = useState(true);
+
+    const activeTestCaseId = useAppSelector(getActiveTestCaseId);
+    const dispatch = useAppDispatch();
+
+    const isActive = activeTestCaseId === testCase.id;
+    const [isCollapsed, setIsCollapsed] = useState(false);
+
+    /**
+     * Only one test case can be expanded at a time, but user still can click on the active test case to collapse it.
+     */
+    useEffect(() => {
+        if (isActive) {
+            setIsCollapsed(false);
+        }
+    }, [isActive]);
+
+    const isExpanded = isActive && !isCollapsed;
+
+    const onExpandedChange = useCallback(() => {
+        if (isActive) {
+            setIsCollapsed((prev) => !prev);
+        } else {
+            dispatch(changeActiveTestCase(testCase.id));
+        }
+    }, [dispatch, isActive, testCase.id]);
 
     return (
         <Expandable
             componentId={`test-case-${testCase.id}`}
             expandableTitle={<TestCaseTitle testCase={testCase} testCaseAssertionResult={testCaseAssertionResult} />}
-            expanded={expanded}
-            onChange={setExpanded}
+            expanded={isExpanded}
+            onChange={onExpandedChange}
             summarySx={{ px: 0.5, minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px", overflow: "hidden" } }}
             detailsSx={{ p: 0 }}
         >
