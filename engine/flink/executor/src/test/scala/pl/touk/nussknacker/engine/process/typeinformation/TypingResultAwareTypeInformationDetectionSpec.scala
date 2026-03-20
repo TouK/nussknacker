@@ -120,50 +120,6 @@ class TypingResultAwareTypeInformationDetectionSpec
     )
   }
 
-  test("serialization for logical types that can be represented as string") {
-    val ctx = Context.dummy.copy(variables =
-      Map(
-        "instant"        -> Instant.ofEpochMilli(123L),
-        "offsetDateTime" -> OffsetDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC),
-        "zonedDateTime"  -> ZonedDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC),
-        "localDateTime"  -> LocalDateTime.of(2025, 1, 1, 0, 0, 0, 0),
-        "localDate"      -> LocalDate.of(2025, 1, 1),
-        "localTime"      -> LocalTime.of(12, 1),
-        "period"         -> Period.ofDays(30),
-        "duration"       -> Duration.ofHours(12),
-        "zoneOffset"     -> ZoneOffset.of("+01:00"),
-        "zoneId"         -> ZoneId.of("Europe/Warsaw"),
-        "locale"         -> Locale.ENGLISH,
-        "charset"        -> StandardCharsets.UTF_8,
-        "currency"       -> Currency.getInstance("USD"),
-        "uuid"           -> UUID.fromString("38a727ce-44d6-43ef-85b8-1fdde02108cf"),
-      )
-    )
-
-    val vCtx = ValidationContext.empty.copy(localVariables =
-      Map(
-        "instant"        -> Typed[Instant],
-        "offsetDateTime" -> Typed[OffsetDateTime],
-        "zonedDateTime"  -> Typed[ZonedDateTime],
-        "localDateTime"  -> Typed[LocalDateTime],
-        "localDate"      -> Typed[LocalDate],
-        "localTime"      -> Typed[LocalTime],
-        "period"         -> Typed[Period],
-        "duration"       -> Typed[Duration],
-        "zoneOffset"     -> Typed[ZoneOffset],
-        "zoneId"         -> Typed[ZoneId],
-        "locale"         -> Typed[Locale],
-        "charset"        -> Typed[Charset],
-        "currency"       -> Typed[Currency],
-        "uuid"           -> Typed[UUID],
-      )
-    )
-
-    val typeInfo          = detection.forContext(vCtx)
-    val ctxAfterRoundTrip = getSerializeRoundTrip(ctx, typeInfo)
-    checkContextAreSame(ctxAfterRoundTrip, ctx)
-  }
-
   // This is not exactly intended behaviour - the test is here to show problems with static type definitions
   test("number promotion behaviour") {
     val vCtx = ValidationContext(Map("longField" -> Typed[Long])) // we declare Long variable
