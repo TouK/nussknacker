@@ -2,6 +2,7 @@ import type { PropsWithChildren } from "react";
 import React, { useCallback, useMemo, useState } from "react";
 
 import { useAppSelector } from "../../../store/storeHelpers";
+import type { UIParameter } from "../../../types/definition";
 import type { VariableTypes } from "../../../types/validation";
 import { typingResultToSample } from "../../builderComponents/typeUtils";
 import { ConditionBuilderComponent } from "../../conditionBuilder/ConditionBuilderComponent";
@@ -38,7 +39,18 @@ function firstRowToContext(tableData: TableData): Record<string, unknown> | unde
     );
 }
 
-export const ConditionBuilderParametersList = ({ children, ...props }: ConditionBuilderParametersListProps) => {
+function getConditionParameter(parameterDefinitions: UIParameter[]): UIParameter | null {
+    return (
+        parameterDefinitions.find(
+            (p) =>
+                !p.changesCanReloadParameters &&
+                p.editors?.some((e) => e.type === EditorType.SPEL_PARAMETER_EDITOR) &&
+                p.typ?.refClazzName === "java.lang.Boolean",
+        ) || null
+    );
+}
+
+export const ConditionBuilderParametersList = (props: ConditionBuilderParametersListProps) => {
     const { node, parameterDefinitions, setProperty } = props;
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
 
@@ -48,16 +60,7 @@ export const ConditionBuilderParametersList = ({ children, ...props }: Condition
     const variableTypes = useMemo(() => findAvailableVariables(node.id), [findAvailableVariables, node.id]);
     const ioContext = useInputOutputContext();
 
-    const booleanParam = useMemo(
-        () =>
-            parameterDefinitions.find(
-                (p) =>
-                    !p.changesCanReloadParameters &&
-                    p.editors?.some((e) => e.type === EditorType.SPEL_PARAMETER_EDITOR) &&
-                    p.typ?.refClazzName === "java.lang.Boolean",
-            ),
-        [parameterDefinitions],
-    );
+    const booleanParam = useMemo(() => getConditionParameter(parameterDefinitions), [parameterDefinitions]);
 
     const mergedVariableTypes = useMemo<VariableTypes>(() => {
         if (!booleanParam?.additionalVariables) return variableTypes ?? {};
@@ -110,24 +113,24 @@ export const ConditionBuilderParametersList = ({ children, ...props }: Condition
         [booleanParam, currentParams, setProperty],
     );
 
+    if (!booleanParam) {
+        return <ParametersListAdvanced {...props} />;
+    }
+
     return (
-        <ConditionBuilderContext.Provider value={booleanParam ? openCondBuilder : null}>
+        <ConditionBuilderContext.Provider value={openCondBuilder}>
             <ParametersListAdvanced {...props}>
-                {booleanParam && (
-                    <ConditionBuilderComponent
-                        node={node}
-                        onInsert={handleConditionInsert}
-                        variableTypes={mergedVariableTypes}
-                        contextData={conditionBuilderContextData}
-                        initialExpression={initialExpression}
-                        highlightKeys={
-                            booleanParam.additionalVariables ? new Set(Object.keys(booleanParam.additionalVariables)) : undefined
-                        }
-                        open={condBuilderOpen}
-                        onClose={() => setCondBuilderOpen(false)}
-                    />
-                )}
-                {children}
+                <ConditionBuilderComponent
+                    node={node}
+                    onInsert={handleConditionInsert}
+                    variableTypes={mergedVariableTypes}
+                    contextData={conditionBuilderContextData}
+                    initialExpression={initialExpression}
+                    highlightKeys={booleanParam.additionalVariables ? new Set(Object.keys(booleanParam.additionalVariables)) : undefined}
+                    open={condBuilderOpen}
+                    onClose={() => setCondBuilderOpen(false)}
+                />
+                {props.children}
             </ParametersListAdvanced>
         </ConditionBuilderContext.Provider>
     );

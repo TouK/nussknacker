@@ -51,25 +51,24 @@ export function BaseBuilderFieldWrapper({
         [listFieldPath, setProperty],
     );
 
-    const inputAdornmentEnd = isEditMode ? <BuilderIconButton onClick={() => setBuilderOpen(true)} label={buttonLabel} /> : undefined;
-
-    if (!showDataMapper) {
-        return children;
+    if (!showDataMapper || !isEditMode) {
+        return <>{children}</>;
     }
 
     return (
         <>
-            {React.cloneElement(children as ReactElement, { inputAdornmentEnd })}
-            {isEditMode &&
-                renderBuilder({
-                    node,
-                    onInsert: onInsertExpression,
-                    initialExpression: getParamExpression(node, parameter.name),
-                    paramName: parameter.name,
-                    paramDef,
-                    open: builderOpen,
-                    onClose: () => setBuilderOpen(false),
-                })}
+            {React.cloneElement(children as ReactElement, {
+                inputAdornmentEnd: <BuilderIconButton onClick={() => setBuilderOpen(true)} label={buttonLabel} />,
+            })}
+            {renderBuilder({
+                node,
+                onInsert: onInsertExpression,
+                initialExpression: getParamExpression(node, parameter.name),
+                paramName: parameter.name,
+                paramDef,
+                open: builderOpen,
+                onClose: () => setBuilderOpen(false),
+            })}
         </>
     );
 }
