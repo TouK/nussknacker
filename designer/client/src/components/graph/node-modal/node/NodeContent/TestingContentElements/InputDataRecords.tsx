@@ -49,10 +49,10 @@ export const InputDataRecords = ({ node, sourceId, scenarioGraph }: Props) => {
     const testCapabilities = useAppSelector(getTestCapabilities);
     const scenarioProperties = useAppSelector(getProcessProperties);
 
-    const testCapabilitiesParameters = testCapabilities.testWithParameters;
+    const testCapabilitiesParameters = testCapabilities?.testWithParameters;
 
     const defaultParameter: TestFormParameters | undefined =
-        testCapabilitiesParameters.status === TestCapabilityStatus.AVAILABLE
+        testCapabilitiesParameters?.status === TestCapabilityStatus.AVAILABLE
             ? testCapabilitiesParameters.sourceParameters.find((sourceParameter) => sourceParameter.sourceId === sourceId)
             : undefined;
 
@@ -94,7 +94,7 @@ export const InputDataRecords = ({ node, sourceId, scenarioGraph }: Props) => {
                         data={testingDataRecordsForSource}
                         sourceOptions={[sourceId]}
                         sourceParameters={
-                            testCapabilitiesParameters.status === TestCapabilityStatus.AVAILABLE
+                            testCapabilitiesParameters?.status === TestCapabilityStatus.AVAILABLE
                                 ? testCapabilitiesParameters.sourceParameters
                                 : []
                         }
