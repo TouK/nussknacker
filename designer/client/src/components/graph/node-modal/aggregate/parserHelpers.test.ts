@@ -1,6 +1,43 @@
-import { parseToList, parseToObject } from "./pareserHelpers";
+import { getAst, parseToList, parseToObject, printFragment } from "./pareserHelpers";
 
-describe("parseHelpers", () => {
+describe("parserHelpers", () => {
+    describe("getAst", () => {
+        it("should parse valid SpEL expression", () => {
+            const ast = getAst("{1, 2, 3}");
+            expect(ast).not.toBeNull();
+            expect(ast?.type).toBe("InlineList");
+        });
+
+        it("should return null for invalid expression", () => {
+            const ast = getAst("((((");
+            expect(ast).toBeNull();
+        });
+
+        it("should handle graceful mode", () => {
+            const ast = getAst("#x.", true);
+            expect(ast).not.toBeNull();
+        });
+    });
+
+    describe("printFragment", () => {
+        it("should extract substring by range", () => {
+            const text = "hello world";
+            const result = printFragment(text, { start: 0, end: 5 });
+            expect(result).toBe("hello");
+        });
+
+        it("should trim whitespace", () => {
+            const text = "  hello  ";
+            const result = printFragment(text, { start: 0, end: 9 });
+            expect(result).toBe("hello");
+        });
+
+        it("should return empty string for empty text", () => {
+            const result = printFragment("", { start: 0, end: 0 });
+            expect(result).toBe("");
+        });
+    });
+
     describe("parseToList", () => {
         it.each([
             [`aaa`, null],

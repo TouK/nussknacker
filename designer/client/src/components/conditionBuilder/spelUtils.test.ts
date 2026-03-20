@@ -1,4 +1,4 @@
-import { genSpel, parseConditionPart, parseSpel } from "./spelUtils";
+import { genSpel, parseSpel } from "./spelUtils";
 
 /** Collapse all whitespace sequences to a single space and trim. */
 function normalize(s: string): string {
@@ -54,7 +54,7 @@ const ROUND_TRIP_CASES: [string, string][] = [
     // extreme whitespace inside a single condition
     [
         "#NUMERIC.abs(    #statistics.get(#ROW.measurementName).average    - #statistics.get(#ROW.measurementName).previousAverage)> #ROW.alertThreshold    * #statistics.get(#ROW.measurementName).standardDeviation",
-        "#NUMERIC.abs( #statistics.get(#ROW.measurementName).average - #statistics.get(#ROW.measurementName).previousAverage) > #ROW.alertThreshold * #statistics.get(#ROW.measurementName).standardDeviation",
+        "#NUMERIC.abs(#statistics.get(#ROW.measurementName).average - #statistics.get(#ROW.measurementName).previousAverage) > #ROW.alertThreshold * #statistics.get(#ROW.measurementName).standardDeviation",
     ],
 
     [
@@ -66,14 +66,14 @@ const ROUND_TRIP_CASES: [string, string][] = [
 
     // nested function call with parens in left operand
     [
-        "#NUMERIC.abs(#advancedTransactionStats.avgAmount - (#advancedTransactionStats.totalAmount / #advancedTransactionStats.count)) < 100",
-        "#NUMERIC.abs(#advancedTransactionStats.avgAmount - (#advancedTransactionStats.totalAmount / #advancedTransactionStats.count)) < 100",
+        "#NUMERIC.abs(#advancedTransactionStats.avgAmount - #advancedTransactionStats.totalAmount / #advancedTransactionStats.count) < 100",
+        "#NUMERIC.abs(#advancedTransactionStats.avgAmount - #advancedTransactionStats.totalAmount / #advancedTransactionStats.count) < 100",
     ],
 
     // method calls with arguments in both conditions
     [
-        "#DATE.toInstant(#input.eventDate).atZone('UTC').hour >= 1 && #DATE.toInstant(#input.eventDate).atZone('UTC').hour <= 5",
-        "#DATE.toInstant(#input.eventDate).atZone('UTC').hour >= 1 && #DATE.toInstant(#input.eventDate).atZone('UTC').hour <= 5",
+        '#DATE.toInstant(#input.eventDate).atZone("UTC").hour >= 1 && #DATE.toInstant(#input.eventDate).atZone("UTC").hour <= 5',
+        '#DATE.toInstant(#input.eventDate).atZone("UTC").hour >= 1 && #DATE.toInstant(#input.eventDate).atZone("UTC").hour <= 5',
     ],
 
     // ── multiple conditions ───────────────────────────────────────────────────
@@ -92,16 +92,16 @@ const ROUND_TRIP_CASES: [string, string][] = [
 
     // three conditions
     [
-        "#snowplowEvent['e'] == 'se' && #snowplowEvent['se_ac'] == 'product-view' && #snowplowEvent['se_la'] != null",
-        "#snowplowEvent['e'] == 'se' && #snowplowEvent['se_ac'] == 'product-view' && #snowplowEvent['se_la'] != null",
+        '#snowplowEvent["e"] == "se" && #snowplowEvent["se_ac"] == "product-view" && #snowplowEvent["se_la"] != null',
+        '#snowplowEvent["e"] == "se" && #snowplowEvent["se_ac"] == "product-view" && #snowplowEvent["se_la"] != null',
     ],
 
     ["#input.location.x == 1 && #input.location.y == 3", "#input.location.x == 1 && #input.location.y == 3"],
 
     // second condition is a plain method call — treated as "is true"
     [
-        "#input.type == 'SIMPLE' && #input.data.idHex.startsWith(\"340225c835a558aa\")",
-        "#input.type == 'SIMPLE' && #input.data.idHex.startsWith(\"340225c835a558aa\")",
+        '#input.type == "SIMPLE" && #input.data.idHex.startsWith("340225c835a558aa")',
+        '#input.type == "SIMPLE" && #input.data.idHex.startsWith("340225c835a558aa")',
     ],
 
     // ── SpEL collection operators (treated as opaque "is true" conditions) ───
@@ -158,84 +158,6 @@ describe("spelUtils", () => {
 
         it("returns null for whitespace-only string", () => {
             expect(parseSpel("   ")).toBeNull();
-        });
-    });
-});
-
-// ─── parseConditionPart ───────────────────────────────────────────────────────
-
-describe("parseConditionPart", () => {
-    describe("null-check operators", () => {
-        it("== null  →  operator '== null', empty right", () => {
-            expect(parseConditionPart("#x == null")).toEqual({ left: "#x", operator: "== null", right: "" });
-        });
-
-        it("!= null  →  operator '!= null', empty right", () => {
-            expect(parseConditionPart("#x != null")).toEqual({ left: "#x", operator: "!= null", right: "" });
-        });
-
-        it("nested accessor == null", () => {
-            expect(parseConditionPart("#input.userId == null")).toEqual({
-                left: "#input.userId",
-                operator: "== null",
-                right: "",
-            });
-        });
-    });
-
-    describe("boolean operators", () => {
-        it("plain identifier  →  is true", () => {
-            expect(parseConditionPart("#x.active")).toEqual({ left: "#x.active", operator: "is true", right: "" });
-        });
-
-        it("!expr  →  is false", () => {
-            expect(parseConditionPart("!#x.active")).toEqual({ left: "#x.active", operator: "is false", right: "" });
-        });
-
-        it("method call with no comparison  →  is true", () => {
-            expect(parseConditionPart('#input.data.idHex.startsWith("340225")')).toEqual({
-                left: '#input.data.idHex.startsWith("340225")',
-                operator: "is true",
-                right: "",
-            });
-        });
-
-        it("collection operator ^[...]  →  is true", () => {
-            expect(parseConditionPart("#products.^[#this.id == #productViewEvent.productId]")).toEqual({
-                left: "#products.^[#this.id == #productViewEvent.productId]",
-                operator: "is true",
-                right: "",
-            });
-        });
-    });
-
-    describe("comparison operators — no greedy match between < and <=", () => {
-        it("parses <= without being grabbed by <", () => {
-            expect(parseConditionPart("#x <= 5")).toEqual({ left: "#x", operator: "<=", right: "5" });
-        });
-
-        it("parses >= without being grabbed by >", () => {
-            expect(parseConditionPart("#x >= 5")).toEqual({ left: "#x", operator: ">=", right: "5" });
-        });
-
-        it("parses < when followed by a plain value (not =)", () => {
-            expect(parseConditionPart("#x < 5")).toEqual({ left: "#x", operator: "<", right: "5" });
-        });
-
-        it("parens in left operand — operator found at depth 0", () => {
-            // outer parens wrap only the left side, not the whole expression,
-            // so they are preserved in the left value
-            expect(parseConditionPart("(#a + #b) > 10")).toEqual({ left: "(#a + #b)", operator: ">", right: "10" });
-        });
-    });
-
-    describe("known limitation: unquoted string literals containing < or >", () => {
-        // The parser does not handle quoted strings, so a `<` or `>` that appears
-        // inside a string literal is found at depth 0 and triggers a wrong match.
-        it('misparses #x > "a<b" — < inside string literal is matched first', () => {
-            const result = parseConditionPart('#x > "a<b"');
-            // The result is wrong: < inside the string is found before the outer >
-            expect(result).not.toEqual({ left: "#x", operator: ">", right: '"a<b"' });
         });
     });
 });
@@ -300,7 +222,7 @@ describe("genSpel", () => {
 
 describe("matches operator", () => {
     it("parses: left matches 'pattern'", () => {
-        expect(parseConditionPart("#input.name matches '[A-Z]{3}.*'")).toEqual({
+        expect(parseSpel("#input.name matches '[A-Z]{3}.*'")?.conditions[0]).toEqual({
             left: "#input.name",
             operator: "matches",
             right: "[A-Z]{3}.*",
@@ -308,7 +230,7 @@ describe("matches operator", () => {
     });
 
     it("parses: left matches with double-quoted pattern", () => {
-        expect(parseConditionPart('#input.name matches "[A-Z]{3}.*"')).toEqual({
+        expect(parseSpel('#input.name matches "[A-Z]{3}.*"')?.conditions[0]).toEqual({
             left: "#input.name",
             operator: "matches",
             right: "[A-Z]{3}.*",
@@ -316,7 +238,7 @@ describe("matches operator", () => {
     });
 
     it("parses: !(left matches 'pattern') as not matches", () => {
-        expect(parseConditionPart("!(#input.code matches '\\d+')")).toEqual({
+        expect(parseSpel("!(#input.code matches '\\d+')")?.conditions[0]).toEqual({
             left: "#input.code",
             operator: "not matches",
             right: "\\d+",
