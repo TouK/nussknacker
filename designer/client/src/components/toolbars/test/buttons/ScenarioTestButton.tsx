@@ -62,11 +62,12 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
 
     const handleRunNextTestCase = useCallback(
         (testCaseId: string) => {
-            const testCaseToRun = testCases.find((tc) => tc.id === testCaseId) || testCase;
+            const testCaseToRun = testCases.find((tc) => tc.id === testCaseId);
+            if (!testCaseToRun) return;
 
             runTest(testCaseToRun);
         },
-        [runTest, testCase, testCases],
+        [runTest, testCases],
     );
 
     const handlePresetChange = useCallback(
