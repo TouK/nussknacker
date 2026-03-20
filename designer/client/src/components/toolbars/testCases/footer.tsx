@@ -10,7 +10,7 @@ import { getVisibleDataType } from "../../../reducers/selectors/getLiveData";
 import { useAppSelector } from "../../../store/storeHelpers";
 
 interface Props {
-    testCaseAssertionResult: TestCaseAssertionResult | null;
+    testCaseAssertionResult: TestCaseAssertionResult | undefined;
 }
 
 export const Footer = ({ testCaseAssertionResult }: Props) => {
