@@ -1,17 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 
-import { displayTestCapabilities } from "../../../../../../actions/nk/process";
-import type { TestFormParameters } from "../../../../../../common/TestResultUtils";
 import { TestCapabilityStatus } from "../../../../../../common/TestResultUtils";
-import { getProcessName, getTestCapabilities } from "../../../../../../reducers/selectors/graph";
+import HttpService from "../../../../../../http/HttpService/instance";
+import { getProcessName, getTestCapabilities as getTestCapabilitiesState } from "../../../../../../reducers/selectors/graph";
 import { getMaxTestingRecords } from "../../../../../../reducers/selectors/settings";
 import { getInputDataRecordsForSingleSource } from "../../../../../../reducers/selectors/testCases";
-import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
+import { useAppSelector } from "../../../../../../store/storeHelpers";
 import type { NodeType } from "../../../../../../types/node";
 import type { ScenarioGraph } from "../../../../../../types/scenarioGraph";
 import { Expandable } from "../../../../../common/Expandable";
 import { AppendFromLiveDataButton } from "../../../../../modals/TestingDataRecords/AppendFromLiveDataButton";
 import { LimitExceededWarning } from "../../../../../modals/TestingDataRecords/LimitExceededWarning";
+import type { TestingDataRecords } from "../../../../../modals/TestingDataRecords/Table";
 import { Table } from "../../../../../modals/TestingDataRecords/Table";
 import { useDataRecordsActions } from "../../../../../modals/TestingDataRecords/useDataRecordsActions";
 import { getProcessProperties } from "../../../NodeDetailsContent/selectors";
@@ -39,34 +39,23 @@ export const InputDataRecords = ({ node, sourceId, scenarioGraph }: Props) => {
         generateTestDataForSingleSource,
     } = useDataRecordsActions(scenarioGraph);
 
-    const dispatch = useAppDispatch();
     const scenarioName = useAppSelector(getProcessName);
-
-    useEffect(() => {
-        dispatch(displayTestCapabilities(scenarioName, scenarioGraph));
-    }, [dispatch, scenarioName, scenarioGraph]);
-
-    const testCapabilities = useAppSelector(getTestCapabilities);
     const scenarioProperties = useAppSelector(getProcessProperties);
 
+    const testCapabilities = useAppSelector(getTestCapabilitiesState);
     const testCapabilitiesParameters = testCapabilities?.testWithParameters;
 
-    const defaultParameter: TestFormParameters | undefined =
-        testCapabilitiesParameters?.status === TestCapabilityStatus.AVAILABLE
-            ? testCapabilitiesParameters.sourceParameters.find((sourceParameter) => sourceParameter.sourceId === sourceId)
-            : undefined;
-
-    const defaultDataRecord = useMemo(
-        () =>
-            defaultParameter
-                ? {
-                      sourceId: defaultParameter.sourceId,
-                      timestamp: undefined,
-                      variables: defaultParameter.parameters?.[0]?.defaultValue?.expression ?? "",
-                  }
-                : { sourceId: undefined, timestamp: undefined, variables: undefined },
-        [defaultParameter],
-    );
+    const getDefaultRecord = useCallback(async (): Promise<TestingDataRecords> => {
+        const { data: capabilities } = await HttpService.getTestCapabilities(scenarioName, scenarioGraph);
+        const sourceParam =
+            capabilities.testWithParameters.status === TestCapabilityStatus.AVAILABLE
+                ? capabilities.testWithParameters.sourceParameters.find((p) => p.sourceId === sourceId)
+                : undefined;
+        return {
+            sourceId,
+            variables: sourceParam?.parameters?.[0]?.defaultValue?.expression ?? "",
+        };
+    }, [scenarioName, scenarioGraph, sourceId]);
 
     const recordsToAddLimitExceeded = useMemo(
         () => recordsErrors.some((recordsErrors) => recordsErrors.type === "TEST_DATA_LIMIT_EXCEEDED"),
@@ -86,7 +75,7 @@ export const InputDataRecords = ({ node, sourceId, scenarioGraph }: Props) => {
                 <ContentSize sx={{ padding: 0, maxHeight: "45cqh", mb: 2 }}>
                     <Table
                         cellErrors={cellErrors}
-                        defaultDataRecord={defaultDataRecord}
+                        getDefaultRecord={getDefaultRecord}
                         onRowAdded={handleRowAdded}
                         onRowMoved={handleRowMoved}
                         onRowsDeleted={handleRowsDeleted}
@@ -94,6 +83,7 @@ export const InputDataRecords = ({ node, sourceId, scenarioGraph }: Props) => {
                         data={testingDataRecordsForSource}
                         sourceOptions={[sourceId]}
                         sourceParameters={
+                        // TODO: testCapabilitiesParameters used
                             testCapabilitiesParameters?.status === TestCapabilityStatus.AVAILABLE
                                 ? testCapabilitiesParameters.sourceParameters
                                 : []

@@ -39,18 +39,13 @@ export interface TestingDataRecords {
     variables: string;
 }
 
-export interface TestingDataRecordsRequestData {
-    sourceId: string;
-    variables: unknown;
-}
-
 interface TableProps {
     data?: TestingDataRecords[];
     onRowUpdated: (rowIndex: number, row: TestingDataRecords) => void;
     onRowAdded: (rowIndex: number, row: TestingDataRecords) => void;
     onRowsDeleted: (deletedRows: number[]) => void;
     onRowMoved: (fromIndex: number, toIndex: number) => void;
-    defaultDataRecord: TestingDataRecords;
+    getDefaultRecord: () => Promise<TestingDataRecords>;
     sourceOptions: string[];
     className?: string;
     sourceParameters: TestFormParameters[];
@@ -84,7 +79,7 @@ export const Table: React.FC<TableProps> = ({
     onRowMoved,
     sourceOptions,
     className,
-    defaultDataRecord,
+    getDefaultRecord,
     sourceParameters,
     cellErrors,
     recordsToAddLimitExceeded,
@@ -170,10 +165,9 @@ export const Table: React.FC<TableProps> = ({
     );
 
     const onCellAdded = useCallback((): void => {
-        const newRow: TestingDataRecords = { ...defaultDataRecord };
         const rowIndex = data.length;
-        onRowAdded(rowIndex, newRow);
-    }, [data.length, defaultDataRecord, onRowAdded]);
+        getDefaultRecord().then((newRow) => onRowAdded(rowIndex, newRow));
+    }, [data.length, getDefaultRecord, onRowAdded]);
 
     const onCellDeleted = useCallback(
         (rows: number[]): number[] => {
