@@ -46,17 +46,11 @@ export const testCaseReducer: Reducer<ScenarioGraph["testCases"]> = produce((dra
         }
 
         case "DELETE_NODES":
-            return {
-                ...draft,
-                list: cleanTestCaseState(draft, action.ids),
-            };
+            draft.list = cleanTestCaseState(draft, action.ids);
+            break;
         case "ADD_NODE_REPLACE":
-            return {
-                ...draft,
-                list: cleanTestCaseState(draft, [action.old.id]),
-            };
-        default:
-            return draft;
+            draft.list = cleanTestCaseState(draft, [action.old.id]);
+            break;
     }
 });
 
