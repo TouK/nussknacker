@@ -157,6 +157,7 @@ object TableJoinComponent
       val env      = mainStream.getExecutionEnvironment
       val tableEnv = StreamTableEnvironment.create(env)
 
+      // Table with two fields: 'mainKey' and 'context'
       val mainTable = tableEnv.fromDataStream(
         mainStream.flatMap(
           new MainBranchToRowFunction(
@@ -176,6 +177,7 @@ object TableJoinComponent
       val outputTypeInfo =
         flinkNodeContext.valueWithContextInfo.forBranch[AnyRef](mainBranchId, outputLazyParam.returnType)
 
+      // Table with two fields: 'joinedKey' and 'output'
       val joinedTable = tableEnv.fromDataStream(
         joinedStream.flatMap(
           new JoinedBranchToRowFunction(
@@ -191,6 +193,7 @@ object TableJoinComponent
         )
       )
 
+      // Join on mainKey = joinedKey
       val joinPredicate = $(joinedKeyInternalColumnName).isEqual($(mainKeyInternalColumnName))
       val resultTable = joinType match {
         case JoinType.INNER => mainTable.join(joinedTable, joinPredicate)

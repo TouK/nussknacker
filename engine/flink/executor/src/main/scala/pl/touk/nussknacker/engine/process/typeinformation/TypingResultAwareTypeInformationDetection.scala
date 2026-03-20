@@ -14,18 +14,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.flink.api.TypedMultiset
-import pl.touk.nussknacker.engine.flink.api.typeinformation.{
-  CharsetTypeInformation,
-  CurrencyTypeInformation,
-  DurationTypeInformation,
-  LocaleTypeInformation,
-  OffsetDateTimeTypeInformation,
-  PeriodTypeInformation,
-  TypeInformationDetection,
-  UUIDTypeInformation,
-  ZonedDateTimeTypeInformation,
-  ZoneIdTypeInformation
-}
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
 import pl.touk.nussknacker.engine.process.typeinformation.internal.ContextTypeHelpers
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{
@@ -33,8 +22,6 @@ import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{
   TypedScalaMapTypeInformation
 }
 import pl.touk.nussknacker.engine.util.Implicits._
-
-import java.time.ZoneId
 
 // TODO: handle avro types - see FlinkConfluentUtils
 /*
@@ -66,16 +53,7 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
       case TypedClass(`ListClass`, elementType :: Nil) =>
         // List is the only type that doesn't support null values and requires a specialized Nullable variant
         new NullableListTypeInfo[AnyRef](forType[AnyRef](elementType))
-      case TypedClass(`ZonedDateTimeClass`, Nil)                             => ZonedDateTimeTypeInformation
-      case TypedClass(`OffsetDateTimeClass`, Nil)                            => OffsetDateTimeTypeInformation
-      case TypedClass(klass, Nil) if classOf[ZoneId].isAssignableFrom(klass) => ZoneIdTypeInformation
-      case TypedClass(`DurationClass`, Nil)                                  => DurationTypeInformation
-      case TypedClass(`PeriodClass`, Nil)                                    => PeriodTypeInformation
-      case TypedClass(`CharsetClass`, Nil)                                   => CharsetTypeInformation
-      case TypedClass(`CurrencyClass`, Nil)                                  => CurrencyTypeInformation
-      case TypedClass(`LocaleClass`, Nil)                                    => LocaleTypeInformation
-      case TypedClass(`UUIDClass`, Nil)                                      => UUIDTypeInformation
-      case TypedClass(`ArrayClass`, elementType :: Nil)                      =>
+      case TypedClass(`ArrayClass`, elementType :: Nil) =>
         // We have to use OBJECT_ARRAY even for numeric types, because ARRAY<INT> is represented as Integer[] which can't be handled by IntPrimitiveArraySerializer
         Types.OBJECT_ARRAY(forType[AnyRef](elementType))
       case TypedClass(`MapClass`, keyType :: valueType :: Nil) =>
