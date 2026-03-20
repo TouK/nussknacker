@@ -79,6 +79,7 @@ const TestCaseTitle = ({ testCase, testCaseAssertionResult }: TestCaseTitleProps
     const { t } = useTranslation();
     const allResults = testCaseAssertionResult?.status === "loaded" ? Object.values(testCaseAssertionResult.results).flat() : [];
     const isLoading = testCaseAssertionResult?.status === "loading";
+    const dispatch = useAppDispatch();
 
     const { runTest } = useRunTestScenario();
 
@@ -86,8 +87,9 @@ const TestCaseTitle = ({ testCase, testCaseAssertionResult }: TestCaseTitleProps
         (e: React.MouseEvent) => {
             e.stopPropagation();
             runTest(testCase);
+            dispatch(changeActiveTestCase(testCase.id));
         },
-        [runTest, testCase],
+        [dispatch, runTest, testCase],
     );
 
     return (
