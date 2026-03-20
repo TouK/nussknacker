@@ -24,13 +24,6 @@ export const initialTestCasesState: ScenarioGraph["testCases"] = {
             mocks: {},
             assertions: {},
         },
-        {
-            id: "f8757b06-6610-4900-90cc-fd3963356e11",
-            name: "Test case 2",
-            inputs: "[]",
-            mocks: {},
-            assertions: {},
-        },
     ],
 };
 
