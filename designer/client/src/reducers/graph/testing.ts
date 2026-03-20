@@ -69,6 +69,13 @@ export const testingReducer: Reducer<GraphState["testing"]> = (state = initialTe
                 testResultsLoading: false,
             };
         }
+        case "TEST_CASE_ASSERTION_RESULTS_FAILED": {
+            const { [action.testCaseId]: _, ...remainingAssertionResults } = state.assertionsResults;
+            return {
+                ...state,
+                assertionsResults: remainingAssertionResults,
+            };
+        }
         case "DISPLAY_PROCESS_COUNTS": {
             return {
                 ...state,

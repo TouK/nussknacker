@@ -44,10 +44,9 @@ export function testScenarioWithGeneratedData(testSampleSize: string): ThunkActi
 
 export function testScenarioWithTestCase(testCase: TestCase, isMockEnabled: boolean): ThunkAction {
     const testData = isMockEnabled ? testCase : { ...testCase, mocks: {} };
-    return wrapWithTestAction((scenarioName, scenarioGraph) =>
+    return wrapWithTestCaseAction(testCase.id, (scenarioName, scenarioGraph) =>
         HttpService.testScenarioWithTestCase(scenarioName, scenarioGraph, testData).then(({ data }) => ({
             testResults: data,
-            testCaseId: testCase.id,
         })),
     );
 }
@@ -58,6 +57,10 @@ export type TestsActions =
       }
     | {
           type: "TEST_RESULTS_FAILED";
+      }
+    | {
+          type: "TEST_CASE_ASSERTION_RESULTS_FAILED";
+          testCaseId: string;
       }
     | {
           type: "DISPLAY_TEST_RESULTS_DETAILS";
@@ -79,16 +82,15 @@ export type TestsActions =
       }
     | { type: "CHANGE_ACTIVE_TEST_CASE"; testCaseId: string };
 
-function wrapWithTestAction(
-    fn: (
-        processName: ProcessName,
-        scenarioGraph: ScenarioGraph,
-    ) => Promise<{
-        testResults: ResultsWithCountsDto;
-        testData?: SourceWithParametersTest;
-        testCaseId?: string;
-    }>,
-): ThunkAction {
+type TestFn = (
+    processName: ProcessName,
+    scenarioGraph: ScenarioGraph,
+) => Promise<{
+    testResults: ResultsWithCountsDto;
+    testData?: SourceWithParametersTest;
+}>;
+
+function wrapWithTestAction(fn: TestFn): ThunkAction {
     return async (dispatch, getState) => {
         dispatch({ type: "TEST_RESULTS_LOADING" });
         try {
@@ -97,10 +99,29 @@ function wrapWithTestAction(
             const state = getState();
             const scenarioGraph = getScenarioGraph(state);
             const processName = getProcessName(state);
-            const { testResults, testData, testCaseId } = await fn(processName, scenarioGraph);
-            dispatch(testingActions(testResults, testData, testCaseId));
+            const { testResults, testData } = await fn(processName, scenarioGraph);
+            dispatch(testingActions(testResults, testData));
         } catch {
             dispatch({ type: "TEST_RESULTS_FAILED" });
+        }
+    };
+}
+
+function wrapWithTestCaseAction(testCaseId: string, fn: TestFn): ThunkAction {
+    return async (dispatch, getState) => {
+        dispatch({ type: "TEST_RESULTS_LOADING" });
+        try {
+            await dispatch(checkPendingChanges());
+
+            const state = getState();
+            const scenarioGraph = getScenarioGraph(state);
+            const processName = getProcessName(state);
+            const { testResults, testData } = await fn(processName, scenarioGraph);
+            dispatch(testingActions(testResults, testData));
+            dispatch(displayTestAssertionsResults(testCaseId, testResults.assertionsResults));
+        } catch {
+            dispatch({ type: "TEST_RESULTS_FAILED" });
+            dispatch({ type: "TEST_CASE_ASSERTION_RESULTS_FAILED", testCaseId });
         }
     };
 }
@@ -138,17 +159,10 @@ export function changeActiveTestCase(testCaseId: string): ThunkAction {
     };
 }
 
-function testingActions(
-    { counts, results, assertionsResults }: ResultsWithCountsDto,
-    testData?: SourceWithParametersTest,
-    testCaseId?: string,
-): ThunkAction {
+function testingActions({ counts, results }: ResultsWithCountsDto, testData?: SourceWithParametersTest): ThunkAction {
     return (dispatch) => {
         dispatch(displayProcessCounts(counts));
         dispatch(displayTestResultsDetails(results, testData));
-        if (testCaseId !== undefined) {
-            dispatch(displayTestAssertionsResults(testCaseId, assertionsResults));
-        }
     };
 }
 
