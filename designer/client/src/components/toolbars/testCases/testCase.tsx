@@ -86,8 +86,8 @@ const TestCaseTitle = ({ testCase, testCaseAssertionResult }: TestCaseTitleProps
     const handleRun = useCallback(
         (e: React.MouseEvent) => {
             e.stopPropagation();
-            runTest(testCase);
             dispatch(changeActiveTestCase(testCase.id));
+            runTest(testCase);
         },
         [dispatch, runTest, testCase],
     );
