@@ -507,14 +507,10 @@ object typing {
     }
 
     private def isEmptyRecordLiteral(typingResult: SingleTypingResult): Boolean = {
-      typingResult match {
-        case TypedObjectTypingResult(fields, TypedClass(clazz, List(TypedClass(`StringClass`, Nil), Unknown(_))), _)
-            if fields.isEmpty && MapClass.isAssignableFrom(clazz) =>
-          true
-        case _ =>
-          false
-      }
+      typingResult == emptyRecord
     }
+
+    private val emptyRecord: TypedObjectTypingResult = record(List.empty)
 
     def record(fields: Iterable[(String, TypingResult)]): TypedObjectTypingResult =
       TypedObjectTypingResult(ListMap(fields.toSeq: _*), mapBasedRecordUnderlyingType[java.util.Map[_, _]](fields))
