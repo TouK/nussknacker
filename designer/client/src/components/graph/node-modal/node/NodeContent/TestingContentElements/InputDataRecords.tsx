@@ -37,7 +37,7 @@ export const InputDataRecords = ({ node, sourceId, scenarioGraph }: Props) => {
         handleRowsDeleted,
         handleRowUpdated,
         generateTestDataForSingleSource,
-    } = useDataRecordsActions();
+    } = useDataRecordsActions(scenarioGraph);
 
     const dispatch = useAppDispatch();
     const scenarioName = useAppSelector(getProcessName);

@@ -5,15 +5,15 @@ import HttpService from "../../../http/HttpService/instance";
 import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType, PropertiesType } from "../../../types/node";
+import type { ScenarioGraph } from "../../../types/scenarioGraph";
 import type { CellError } from "../../graph/node-modal/editors/expression/Table/errorHighlights";
 import type { TestingDataRecords } from "./Table";
 import { useDataRecordsValidation } from "./useDataRecordsValidation";
 import { mapGeneratedTestingDataToTableFormat } from "./utils";
 
-export const useDataRecordsActions = () => {
+export const useDataRecordsActions = (scenarioGraph: ScenarioGraph) => {
     const [cellErrors, setCellErrors] = useState<CellError[]>([]);
     const scenarioName = useAppSelector(getProcessName);
-    const scenarioGraph = useAppSelector(getScenarioGraph);
     const dispatch = useAppDispatch();
     const { recordsErrors, validateForCount } = useDataRecordsValidation();
 
