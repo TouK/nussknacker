@@ -5,14 +5,12 @@ import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.Strict
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 import java.time.{LocalDate, LocalDateTime}
 import java.util
 import java.util.{Collections, Currency}
-import scala.jdk.CollectionConverters.IterableHasAsJava
 
 // TODO: clean-up, split tests for Intersection (equals operator), Default (ternary), number promotion, can be subclass etc.
 class TypingResultSpec

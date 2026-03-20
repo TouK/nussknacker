@@ -189,10 +189,8 @@ private[engine] object AssignabilityDeterminer {
             ) if MapClass.isAssignableFrom(targetClass) =>
           // Map's key generic param is invariant. We can't just check givenKeyParam == targetKeyParam because of Unknown type which is a kind of wildcard
           condNel(
-            isAssignable(givenKeyParam, targetKeyParam).isValid && (isAssignable(
-              targetKeyParam,
-              givenKeyParam
-            ).isValid || targetKeyParam.isUnknown),
+            isAssignable(givenKeyParam, targetKeyParam).isValid &&
+              isAssignable(targetKeyParam, givenKeyParam).isValid,
             (),
             s"Key types of Maps ${givenKeyParam.display} and ${targetKeyParam.display} are not equals"
           ) andThen { _ =>

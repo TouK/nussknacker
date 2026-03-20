@@ -233,11 +233,7 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
   }
 
   private def isEmptyRecordLiteral(typedObjectTypingResult: TypedObjectTypingResult) = {
-    val expectedRecordRuntimeType = Typed.genericTypeClass(
-      MapClass,
-      List(Typed.typedClass[String], Unknown)
-    )
-    typedObjectTypingResult.fields.isEmpty && typedObjectTypingResult.runtimeObjType == expectedRecordRuntimeType
+    typedObjectTypingResult == emptyRecord
   }
 
   private def asListClass(typingResult: SingleTypingResult) = {
@@ -262,6 +258,8 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
       case _                           => None
     }
   }
+
+  private val emptyRecord: SingleTypingResult = Typed.record(List.empty)
 
 }
 

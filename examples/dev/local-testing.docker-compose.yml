@@ -37,7 +37,7 @@ services:
       interval: 10s
       retries: 10
     volumes:
-      - nussknacker_designer_data:/var/lib/postgresql/data
+      - nussknacker_designer_data:/var/lib/postgresql
     deploy:
       resources:
         limits:
