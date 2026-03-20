@@ -34,7 +34,7 @@ export const Results = ({ testCaseAssertionResult, testCase }: Props) => {
         [nodeAssertionResults, sortByScenarioOrder],
     );
 
-    if (sortedNodeIds.length === 0) {
+    if (!nodeAssertionResults || sortedNodeIds.length === 0) {
         return (
             <NoResults
                 onRun={() => runTest(testCase)}
