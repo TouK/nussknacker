@@ -8,9 +8,10 @@ import pl.touk.nussknacker.engine.api.component.{
   ComponentProvider,
   NussknackerVersion
 }
-import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
+import pl.touk.nussknacker.http.backend.HttpBackendProvider
 import pl.touk.nussknacker.openapi.discovery.{CachingOpenApiDefinitionDiscovery, SwaggerOpenApiDefinitionDiscovery}
 import pl.touk.nussknacker.openapi.enrichers.OpenAPIEnricherFactory
+import pl.touk.nussknacker.openapi.http.backend.HttpClientProvider
 
 class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
 
@@ -23,11 +24,15 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
       componentDependencies: ComponentDependencies
   ): List[ComponentDefinition] = {
     val openAPIsConfig = OpenAPIServicesConfig.parse(componentProviderConfig)
-    val openApiDefinitionDiscovery =
-      new CachingOpenApiDefinitionDiscovery(SwaggerOpenApiDefinitionDiscovery, openAPIsConfig)
+    implicit val backendProvider: HttpBackendProvider =
+      HttpClientProvider.getBackendProvider(openAPIsConfig.httpClientConfig)
+    val openApiDefinitionDiscovery = new CachingOpenApiDefinitionDiscovery(
+      new SwaggerOpenApiDefinitionDiscovery(),
+      openAPIsConfig.openApiServicesDiscoveryCacheTtl
+    )
     ComponentDefinition(
       name = "openAPI",
-      component = OpenAPIEnricherFactory(openAPIsConfig, openApiDefinitionDiscovery),
+      component = new OpenAPIEnricherFactory(openAPIsConfig, backendProvider, openApiDefinitionDiscovery),
       label = Some(s"${openAPIsConfig.componentPrefix.getOrElse("")}OpenAPI")
     ) :: Nil
   }

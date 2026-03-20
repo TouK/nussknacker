@@ -61,7 +61,7 @@ class InfluxDbHttpSender(conf: InfluxSenderConfig) extends InfluxDbSender with L
 
   override def isConnected: Boolean = true
 
-  override def close(): Unit = {}
+  override def close(): Unit = backend.close()
 }
 
 case class InfluxSenderConfig(

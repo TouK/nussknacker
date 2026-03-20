@@ -3,19 +3,18 @@ package pl.touk.nussknacker.openapi.discovery
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
-import org.asynchttpclient.DefaultAsyncHttpClient
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.cache.SingleValueCache
-import pl.touk.nussknacker.http.backend.HttpClientConfig
+import pl.touk.nussknacker.http.backend.HttpBackendProvider
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
 import pl.touk.nussknacker.openapi.parser.{ServiceParseError, SwaggerParser}
-import sttp.client3.{SttpBackend, basicRequest}
-import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
+import sttp.client3.basicRequest
 import sttp.model.Uri
 
 import java.io.File
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.util.control.NonFatal
 
 trait OpenApiDefinitionDiscovery extends LazyLogging {
   def getServices(openAPIsConfig: OpenAPIServicesConfig): List[Validated[ServiceParseError, SwaggerService]]
@@ -34,28 +33,12 @@ trait OpenApiDefinitionDiscovery extends LazyLogging {
       logger.warn(s"Failed to parse following services: ${errors.mkString(", ")}")
     }
   }
+
 }
 
-object SwaggerOpenApiDefinitionDiscovery
-    extends SwaggerOpenApiDefinitionDiscovery()(
-      AsyncHttpClientFutureBackend.usingClient(
-        new DefaultAsyncHttpClient(
-          HttpClientConfig(
-            timeout = Some(5 seconds),
-            connectTimeout = Some(10 seconds),
-            maxPoolSize = Some(1),
-            None,
-            None,
-            None,
-            None,
-            None,
-          ).toAsyncHttpClientConfig(None).build()
-        )
-      )
-    )
-
-class SwaggerOpenApiDefinitionDiscovery(implicit val httpBackend: SttpBackend[Future, Any]) extends LazyLogging
-  with OpenApiDefinitionDiscovery {
+class SwaggerOpenApiDefinitionDiscovery()(implicit httpBeProvider: HttpBackendProvider)
+    extends LazyLogging
+    with OpenApiDefinitionDiscovery {
 
   override def getServices(
       openAPIsConfig: OpenAPIServicesConfig
@@ -64,22 +47,34 @@ class SwaggerOpenApiDefinitionDiscovery(implicit val httpBackend: SttpBackend[Fu
     val definition = if (discoveryUrl.getProtocol == "file") {
       ResourceLoader.load(new File(discoveryUrl.getPath))
     } else {
-      Await
-        .result(basicRequest.get(Uri(discoveryUrl.toURI)).send(httpBackend), 20 seconds)
-        .body
-        .fold(left => throw new IllegalStateException(s"Invalid response from discovery API: $left"), identity)
+      val httpBackend = httpBeProvider.httpBackendForEc(ExecutionContext.global)
+      try {
+        Await
+          .result(basicRequest.get(Uri(discoveryUrl.toURI)).send(httpBackend), 20 seconds)
+          .body
+          .fold(left => throw new IllegalStateException(s"Invalid response from discovery API: $left"), identity)
+      } finally {
+        try {
+          Await.result(httpBackend.close(), 5 seconds)
+        } catch {
+          case NonFatal(ex) =>
+            logger.warn(s"Could not close HTTP backend, this may result in leaked resources: ${ex.getMessage}", ex)
+        }
+      }
     }
     SwaggerParser.parse(definition, openAPIsConfig)
   }
+
 }
 
 class CachingOpenApiDefinitionDiscovery(
     discovery: OpenApiDefinitionDiscovery,
-    openAPIsConfig: OpenAPIServicesConfig,
+    cacheTtl: FiniteDuration,
 ) extends OpenApiDefinitionDiscovery {
+
   @transient private lazy val servicesCache = new SingleValueCache[List[Validated[ServiceParseError, SwaggerService]]](
     expireAfterAccess = None,
-    expireAfterWrite = Some(openAPIsConfig.openApiServicesDiscoveryCacheTtl)
+    expireAfterWrite = Some(cacheTtl)
   )
 
   override def getServices(
@@ -87,4 +82,5 @@ class CachingOpenApiDefinitionDiscovery(
   ): List[Validated[ServiceParseError, SwaggerService]] = servicesCache.getOrCreate {
     discovery.getServices(openAPIsConfig)
   }
+
 }
