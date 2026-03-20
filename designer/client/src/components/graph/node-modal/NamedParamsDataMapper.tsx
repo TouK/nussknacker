@@ -21,7 +21,6 @@ interface Props {
     node: NodeType;
     parameterDefinitions: UIParameter[];
     setProperty: SetProperty;
-    parametersBasePath?: string;
     open: boolean;
     focusFieldName?: string;
     onClose: () => void;
@@ -31,11 +30,11 @@ export function NamedParamsDataMapper({
     node,
     parameterDefinitions,
     setProperty,
-    parametersBasePath = "service.parameters",
     open,
     focusFieldName,
     onClose,
 }: Props): React.JSX.Element | null {
+    const parametersBasePath = node.type === "Sink" ? "ref.parameters" : "service.parameters";
     const mappableParams = useMemo(
         () =>
             parameterDefinitions.filter(

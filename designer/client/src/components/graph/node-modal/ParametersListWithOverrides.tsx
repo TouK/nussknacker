@@ -1,17 +1,22 @@
 import type { ComponentProps } from "react";
 import React, { useMemo } from "react";
 
+import { isAggregate, isConditionBuilder, isDataMapper } from "../../../common/componentUtils";
 import { AggregateParametersList } from "./aggregateParametersList";
-import { isAggregate } from "./isAggregate";
+import { ConditionBuilderParametersList } from "./conditionBuilderParametersList";
+import { NamedParamsParametersList } from "./namedParamsParametersList";
 import { ParametersListAdvanced } from "./parametersListAdvanced";
 
 type Props = Omit<ComponentProps<typeof ParametersListAdvanced>, "FieldWrapper">;
 
 export const ParametersListWithOverrides = (props: Props) => {
+    const { node, parameterDefinitions } = props;
     const ParametersComponent = useMemo(() => {
-        if (isAggregate(props.node)) return AggregateParametersList;
+        if (isAggregate(node)) return AggregateParametersList;
+        if (isConditionBuilder(node)) return ConditionBuilderParametersList;
+        if (isDataMapper(node, parameterDefinitions)) return NamedParamsParametersList;
         return ParametersListAdvanced;
-    }, [props.node]);
+    }, [node, parameterDefinitions]);
 
     return <ParametersComponent {...props} />;
 };

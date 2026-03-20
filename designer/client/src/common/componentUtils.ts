@@ -1,4 +1,5 @@
 // It should be synchronized with ComponentInfoExtractor.fromScenarioNode
+import type { UIParameter } from "../types/definition";
 import type { NodeType } from "../types/node";
 
 function determineComponentType(node: NodeType) {
@@ -79,27 +80,35 @@ export function determineComponentId(node: NodeType) {
     return componentType && componentName ? `${componentType}-${componentName}` : null;
 }
 
-// Multi-word kinds that can't be extracted by simple last-segment split
-const MULTI_WORD_KINDS = ["decision-table", "flink-sql-query"];
+function checkSuffix(string: string, suffixes: string[] = [], separator = "-") {
+    return suffixes.some((suffix) => string === suffix || string.endsWith(`${separator}${suffix}`));
+}
 
-/** Enricher kinds that get the node-level OpenAPI-style DataMapper (named params, no schema loading) */
-export const DATA_MAPPER_OPENAPI_ENRICHER_KINDS = new Set(["openAPI", "lookup"]);
-
-/** Enricher kinds that get the node-level ConditionBuilder */
-export const CONDITION_BUILDER_ENRICHER_KINDS = new Set(["decision-table"]);
-
-/** Extracts the component kind from a componentId, e.g.:
- *  sink-kafka            → "kafka"
- *  service-petstore-openAPI → "openAPI"
- *  service-aiven-postgres-lookup → "lookup"
- *  service-decision-table → "decision-table"  (multi-word exception)
- *  custom-flink-sql-query → "flink-sql-query" (multi-word exception)
- */
-export function getComponentKind(componentId: string | null): string | null {
-    if (!componentId) return null;
-    for (const kind of MULTI_WORD_KINDS) {
-        if (componentId.endsWith(`-${kind}`)) return kind;
+/** Check if enricher node should use DataMapper (OpenAPI or lookup enrichers) */
+export function isDataMapper(node: NodeType, parameterDefinitions: UIParameter[]): boolean {
+    switch (node.type) {
+        case "Sink":
+            return !parameterDefinitions.find((p) => p.typ.type === "Unknown");
+        case "Enricher": {
+            const kind = determineComponentName(node);
+            return kind ? checkSuffix(kind, ["openAPI", "lookup"]) : false;
+        }
     }
-    const lastDash = componentId.lastIndexOf("-");
-    return lastDash >= 0 ? componentId.slice(lastDash + 1) : componentId;
+    return false;
+}
+
+/** Check if enricher node should use ConditionBuilder (decision-table enricher) */
+export function isConditionBuilder(node: NodeType): boolean {
+    switch (node.type) {
+        case "Enricher": {
+            const kind = determineComponentName(node);
+            return kind ? checkSuffix(kind, ["decision-table"]) : false;
+        }
+    }
+    return false;
+}
+
+/** Check if custom node is an aggregate (session, sliding, or tumbling) */
+export function isAggregate(node: NodeType): boolean {
+    return ["custom-aggregate-session", "custom-aggregate-sliding", "custom-aggregate-tumbling"].includes(determineComponentId(node));
 }

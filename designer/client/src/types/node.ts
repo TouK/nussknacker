@@ -3,7 +3,7 @@ import type { StickyNoteType } from "../components/graph/utils/stickyNotesUtils"
 import type { ProcessAdditionalFields, ReturnedType } from "./scenarioGraph";
 import type { NodeValidationError } from "./validation";
 
-type Type = "FragmentInput" | typeof StickyNoteType | "Source" | string;
+type Type = "FragmentInput" | typeof StickyNoteType | "Source" | "Sink" | "Enricher" | string;
 
 export type LayoutData = { x: number; y: number };
 

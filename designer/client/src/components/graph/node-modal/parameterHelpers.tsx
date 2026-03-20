@@ -28,6 +28,7 @@ export const OverrideKeys = {
     WebhookBody: "sink-webhook/Body",
     WebSocketUrl: "source-websocket/URL",
     SinkKafkaValue: "sink-kafka/Value",
+    SinkKafkaValue2: "sink-sendSms/Value",
     SourceEventGeneratorValue: "source-event-generator/value",
     ForEachElements: "custom-for-each/Elements",
 } as const;

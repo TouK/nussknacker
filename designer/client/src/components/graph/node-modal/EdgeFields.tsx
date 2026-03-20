@@ -120,7 +120,7 @@ export function EdgeFields(props: Props): React.JSX.Element {
     const [showBuilder] = useUserSettings("node.showFieldExpressionBuilder");
 
     const conditionBuilderAdornment = useMemo(() => {
-        if (!showBuilder || readOnly || edge.edgeType?.type !== EdgeKind.switchNext || !sourceNode) return undefined;
+        if (!showBuilder || readOnly || !sourceNode) return undefined;
         return (
             <ConditionBuilderComponent
                 node={sourceNode}
@@ -147,10 +147,10 @@ export function EdgeFields(props: Props): React.JSX.Element {
                         display: "grid",
                         gridTemplateColumns: "1fr 2fr auto",
                     },
-                    "&&&&:has(.edge-value)": {
-                        gridTemplateColumns: "2fr 1fr auto",
-                    },
                     ".fieldRemove": { gridArea: "1 / 3" },
+                    "& :has(>.edge-value)": { gridColumn: "span 2" },
+                    "& :has(>.edge-value) + .edge-target": { gridColumn: "span 2" },
+                    "& .edge-type + :has(>.edge-value)": { gridColumn: "span 1" },
                 }}
             >
                 {showType ? (

@@ -1,6 +1,7 @@
 import { Box, styled, Tab, Tabs } from "@mui/material";
 import type { ReactNode } from "react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useUserSettings } from "../../../../../common/useUserSettings";
@@ -118,13 +119,13 @@ export const FieldSwitch = ({ availableEditors: editors, onValueChange, expressi
     // When the expression language changes externally (e.g. applied from Data Mapper),
     // sync the selected editor to match the new language.
     useEffect(() => {
-        const matchingEditor = availableEditors.find((editor) => {
-            const editorParameters = editorsParameters[editor.type];
-            return editorParameters?.language === expressionObj.language && allowsSwitch(editor);
+        setSelectedEditorType((current) => {
+            const matchingEditor = availableEditors.find((editor) => {
+                const editorParameters = editorsParameters[editor.type];
+                return editorParameters?.language === expressionObj.language && (allowsSwitch(editor) || current === editor.type);
+            });
+            return matchingEditor ? matchingEditor.type : current;
         });
-        if (matchingEditor) {
-            setSelectedEditorType(matchingEditor.type);
-        }
     }, [availableEditors, allowsSwitch, expressionObj.language]);
 
     const { type, config } = useMemo(() => {
