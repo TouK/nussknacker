@@ -60,7 +60,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
 
     const handleRunActiveTest = useCallback(() => runTest(testCase), [runTest, testCase]);
 
-    const handleRunNextTestCase = useCallback(
+    const handleRunTestCaseById = useCallback(
         (testCaseId: string) => {
             const testCaseToRun = testCases.find((tc) => tc.id === testCaseId);
             if (!testCaseToRun) return;
@@ -77,9 +77,9 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                 return;
             }
             dispatch(changeActiveTestCase(preset.value));
-            handleRunNextTestCase(preset.value);
+            handleRunTestCaseById(preset.value);
         },
-        [dispatch, handleRunNextTestCase],
+        [dispatch, handleRunTestCaseById],
     );
 
     return (
