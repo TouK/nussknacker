@@ -11,7 +11,7 @@ import { EditorMode, EditorType, ExpressionLang, type ExpressionObj } from "./ty
 
 export const JsonTemplateEditor = prepareEditor<SpelEditorProps>(
     (props) => {
-        const { expressionObj, rows = 5, ...passProps } = props;
+        const { expressionObj, rows = 5, inputAdornmentEnd, ...passProps } = props;
 
         const language = editorsParameters[EditorType.JSON_TEMPLATE_PARAMETER_EDITOR].language;
 
@@ -28,11 +28,13 @@ export const JsonTemplateEditor = prepareEditor<SpelEditorProps>(
                 inputAdornmentEnd={
                     <InputAdornmentEndColumn>
                         <Info editorConfig={props.editorConfig} />
-                        <ResetToDefault
-                            value={expressionObj?.expression}
-                            defaultValue={props.defaultValue}
-                            handleChange={props.onValueChange}
-                        />
+                        {inputAdornmentEnd || (
+                            <ResetToDefault
+                                value={expressionObj?.expression}
+                                defaultValue={props.defaultValue}
+                                handleChange={props.onValueChange}
+                            />
+                        )}
                     </InputAdornmentEndColumn>
                 }
                 {...passProps}

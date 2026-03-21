@@ -49,6 +49,7 @@ export const getDefaultUserSettings = (initialUserFlags?: Record<string, boolean
         createFlag("node.autoApply"),
         createFlag("node.inputsAndOutputs.showBlinkAnimations", true),
         createFlag("node.shortCounts"),
+        createFlag("node.showFieldExpressionBuilder"),
         createFlag("node.showAggregateSwitcher"),
         createFlag("node.showFragmentCreator"),
         createFlag("node.showGenerateEndpointButton"),

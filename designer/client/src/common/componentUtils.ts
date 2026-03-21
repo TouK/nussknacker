@@ -1,4 +1,5 @@
 // It should be synchronized with ComponentInfoExtractor.fromScenarioNode
+import type { UIParameter } from "../types/definition";
 import type { NodeType } from "../types/node";
 
 function determineComponentType(node: NodeType) {
@@ -77,4 +78,37 @@ export function determineComponentId(node: NodeType) {
     const componentType = determineComponentType(node);
     const componentName = determineComponentName(node);
     return componentType && componentName ? `${componentType}-${componentName}` : null;
+}
+
+function checkSuffix(string: string, suffixes: string[] = [], separator = "-") {
+    return suffixes.some((suffix) => string === suffix || string.endsWith(`${separator}${suffix}`));
+}
+
+/** Check if enricher node should use DataMapper (OpenAPI or lookup enrichers) */
+export function isDataMapper(node: NodeType, parameterDefinitions: UIParameter[]): boolean {
+    switch (node.type) {
+        case "Sink":
+            return !parameterDefinitions.find((p) => p.typ.type === "Unknown");
+        case "Enricher": {
+            const kind = determineComponentName(node);
+            return kind ? checkSuffix(kind, ["openAPI", "lookup"]) : false;
+        }
+    }
+    return false;
+}
+
+/** Check if enricher node should use ConditionBuilder (decision-table enricher) */
+export function isConditionBuilder(node: NodeType): boolean {
+    switch (node.type) {
+        case "Enricher": {
+            const kind = determineComponentName(node);
+            return kind ? checkSuffix(kind, ["decision-table"]) : false;
+        }
+    }
+    return false;
+}
+
+/** Check if custom node is an aggregate (session, sliding, or tumbling) */
+export function isAggregate(node: NodeType): boolean {
+    return ["custom-aggregate-session", "custom-aggregate-sliding", "custom-aggregate-tumbling"].includes(determineComponentId(node));
 }
