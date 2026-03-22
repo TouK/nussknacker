@@ -20,7 +20,7 @@ object ForEachTransformer extends CustomStreamTransformer with Serializable {
 
   @MethodToInvoke(returnType = classOf[Object])
   def invoke(
-      @ParamName("Elements") elements: LazyParameter[util.Collection[AnyRef]],
+      @ParamName("Elements") @DefaultValue("{\"item1\", \"item2\"}") elements: LazyParameter[util.Collection[AnyRef]],
       @OutputVariableName outputVariable: String
   ): FlinkCustomStreamTransformation with ReturningType = {
     FlinkCustomStreamTransformation(
