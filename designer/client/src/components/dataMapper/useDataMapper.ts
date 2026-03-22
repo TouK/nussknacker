@@ -392,6 +392,7 @@ export function useDataMapper({
                             "Raw editor",
                             "Content type",
                             "Value validation mode",
+                            "Value",
                         ]);
 
                         // Case 1: single "Value" param (raw editor mode) — use its typing result
