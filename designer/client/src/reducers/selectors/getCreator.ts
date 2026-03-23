@@ -1,4 +1,4 @@
-import { isAggregate } from "../../components/graph/node-modal/isAggregate";
+import { isAggregate } from "../../common/componentUtils";
 import type { NodeType } from "../../types/node";
 
 const prefix = `㊙️㊙️`;

@@ -16,7 +16,7 @@ import NodeErrors from "./NodeErrors";
 import { NodeSwitcher } from "./NodeSwitcher";
 import { NodeTypeDetailsContent } from "./NodeTypeDetailsContent";
 import { TestResultsWrapper } from "./TestResultsWrapper";
-import { useGetNodeErrors } from "./useNodeTypeDetailsContentLogic";
+import { useGetNodeErrors, useParameterDefinitions } from "./useNodeTypeDetailsContentLogic";
 
 export const NodeDetailsContent = ({
     node,

@@ -1,14 +1,18 @@
 import React, { useMemo } from "react";
 
+import { useUserSettings } from "../../../common/useUserSettings";
 import type { UIParameter } from "../../../types/definition";
 import type { Edge } from "../../../types/edge";
 import { EdgeKind } from "../../../types/edge";
 import type { NodeType } from "../../../types/node";
 import type { NodeValidationError, VariableTypes } from "../../../types/validation";
+import { ConditionBuilderComponent } from "../../conditionBuilder/ConditionBuilderComponent";
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
 import { EdgesDndComponent } from "./EdgesDndComponent";
+import { ExpressionLang } from "./editors/expression/types";
 import { IdField } from "./IdField";
+import { BuilderIconButton } from "./node-action-buttons/StyledLoadingButton";
 import { useDiffMark } from "./PathsToMark";
 import { StaticExpressionField } from "./StaticExpressionField";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
@@ -37,6 +41,7 @@ export function Filter({
     showValidation?: boolean;
 }): React.JSX.Element {
     const [, isCompareView] = useDiffMark();
+    const [showBuilder] = useUserSettings("node.showFieldExpressionBuilder");
     const edgeTypes = useMemo(
         () => [
             { value: EdgeKind.filterTrue, onlyOne: true },
@@ -57,6 +62,17 @@ export function Filter({
                 errors={errors}
                 isEditMode={isEditMode}
                 node={node}
+                inputAdornmentEnd={
+                    isEditMode && showBuilder ? (
+                        <ConditionBuilderComponent
+                            node={node}
+                            variableTypes={variableTypes}
+                            onInsert={(spel) => setProperty("expression", { expression: spel, language: ExpressionLang.SpEL })}
+                            initialExpression={node.expression?.language === ExpressionLang.SpEL ? node.expression.expression : undefined}
+                            renderTrigger={(onClick) => <BuilderIconButton onClick={onClick} label="Condition Builder" />}
+                        />
+                    ) : undefined
+                }
             />
             <DisableField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
             {!isCompareView ? (
