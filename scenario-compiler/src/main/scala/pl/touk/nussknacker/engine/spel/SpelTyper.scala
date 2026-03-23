@@ -221,8 +221,8 @@ private[spel] class SpelTyper(
     }
 
     def getRecordValueType(record: TypedObjectTypingResult) = {
-      val fieldValues = record.withoutValue.fields.values
-      CommonSupertypeFinder.Default.superTypeOfTypes(fieldValues)
+      val fieldTypes = record.withoutValue.fields.values
+      CommonSupertypeFinder.Default.superTypeOfTypes(fieldTypes)
     }
 
     def catchUnexpectedErrors(block: => NodeTypingResult): NodeTypingResult = Try(block) match {

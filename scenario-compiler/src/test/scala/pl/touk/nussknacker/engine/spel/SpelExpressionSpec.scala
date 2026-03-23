@@ -284,7 +284,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     ) shouldBe 100
   }
 
-  test("should type toString on unknown") {
+  test("should type conversion methods on unknown") {
     parse[String](
       "#unknownString.value.toString",
       methodExecutionForUnknownAllowed = true
@@ -399,7 +399,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Typed[String]))
   }
 
-  test("should allow access element type on array4") {
+  test("should allow access element type on array") {
     parse[java.lang.Integer](
       "#intArray[0]",
     ).validExpression.returnType shouldBe Typed[java.lang.Integer]
