@@ -328,11 +328,17 @@ description: Stay informed with detailed changelogs covering new features, impro
   * `/processManagement/testCase/{scenarioName}` endpoint to `/scenarioTesting/{scenarioName)/performTestCase`
   * `/processManagement/test/{scenarioName}` to multipart variant of `/scenarioTesting/{scenarioName}/performTest`
 * [#8943](https://github.com/TouK/nussknacker/pull/8943) Replaced `spring-jcl` library with contemporary version of `commons-logging` 
-* [#9037](https://github.com/TouK/nussknacker/pull/9037) Improvments to Table Source and Table Sink components:
+* [#9037](https://github.com/TouK/nussknacker/pull/9037) Improvements to Table Source and Table Sink components:
   * Optimized table discovery through configurable caching (especially important for catalogs for systems with slow connections)
   * More precise validation and error messages during scenario authoring
   * Fixed bug for non-deterministic validation multiple validations were performent at the same time
 * [#9095](https://github.com/TouK/nussknacker/pull/9095) Always close `SttpBackend` instances in OpenAPI services
+* [#9096](https://github.com/TouK/nussknacker/pull/9096) Improvements to SpEL expressions typing:
+  * Ternary and Elvis operators (`?:`) now preserve list and map/record types
+  * Empty collections (`{}`, `{:}`) are universal and assignable to any list/map/record
+  * Dynamic record indexing returns value type instead of `Unknown`
+  * Limited support for function references in SpEL
+  * Improved typing for properties derived from `Unknown` values
 
 ## 1.18
 
