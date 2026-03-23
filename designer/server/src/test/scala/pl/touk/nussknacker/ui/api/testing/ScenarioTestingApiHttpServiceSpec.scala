@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.api.testing
 
+import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.parser
 import io.circe.syntax._
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
@@ -32,8 +34,12 @@ import pl.touk.nussknacker.test.config.{
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformTestCaseRequest
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
+  PerformMultipleTestCasesRequest,
+  PerformTestCaseRequest
+}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
+import sttp.model.sse.ServerSentEvent
 
 import java.util.UUID
 
@@ -529,6 +535,69 @@ class ScenarioTestingApiHttpServiceSpec
         .Then()
         .statusCode(400)
         .equalsPlainBody("Problem in sample 2 detected: source with id 'unknown' doesn't exist in the scenario")
+    }
+  }
+
+  "The endpoint for performing multiple test cases should" - {
+    "stream results for each test case" in {
+      val testDataContent =
+        """[
+          |  {"sourceId":"startProcess","variables":{"input":["ala"]}}
+          |]""".stripMargin
+      val testCase1 = TestCase(
+        id = UUID.randomUUID(),
+        name = "case 1",
+        inputs = testDataContent,
+        mocks = Map.empty,
+        assertions = Map.empty
+      )
+      val testCase2 = TestCase(
+        id = UUID.randomUUID(),
+        name = "case 2",
+        inputs = testDataContent,
+        mocks = Map.empty,
+        assertions = Map.empty
+      )
+
+      val responseBody = given()
+        .applicationState {
+          createSavedScenario(testCaseScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(
+          PerformMultipleTestCasesRequest(
+            testCaseScenario.toScenarioGraph,
+            NonEmptyList.of(testCase1, testCase2)
+          ).asJson.spaces2
+        )
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${testCaseScenario.name}/performTestCases")
+        .Then()
+        .statusCode(200)
+        .extract()
+        .asString()
+
+      val events = responseBody
+        .split("\n\n")
+        .map(block => ServerSentEvent.parse(block.split("\n").toList))
+        .filter(_.data.isDefined)
+        .toList
+
+      events should have size 2
+      events.foreach(_.eventType shouldEqual Some("testCaseResult"))
+
+      val parsedEvents = events.map { event =>
+        val data = event.data.getOrElse(fail("Missing data in SSE event"))
+        parser.parse(data).getOrElse(fail(s"Failed to parse JSON: $data"))
+      }
+
+      parsedEvents.foreach { json =>
+        json.hcursor.downField("status").as[String].getOrElse(fail(s"Missing status in: $json")) shouldEqual "success"
+      }
+
+      parsedEvents
+        .map(_.hcursor.downField("testCaseId").as[UUID].getOrElse(fail("Missing testCaseId")))
+        .toSet shouldEqual Set(testCase1.id, testCase2.id)
     }
   }
 
