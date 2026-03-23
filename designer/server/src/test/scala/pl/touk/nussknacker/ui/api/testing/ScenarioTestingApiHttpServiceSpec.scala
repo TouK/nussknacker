@@ -546,14 +546,14 @@ class ScenarioTestingApiHttpServiceSpec
           |]""".stripMargin
       val testCase1 = TestCase(
         id = UUID.randomUUID(),
-        name = "case 1",
+        name = "test case 1",
         inputs = testDataContent,
         mocks = Map.empty,
         assertions = Map.empty
       )
       val testCase2 = TestCase(
         id = UUID.randomUUID(),
-        name = "case 2",
+        name = "test case 2",
         inputs = testDataContent,
         mocks = Map.empty,
         assertions = Map.empty

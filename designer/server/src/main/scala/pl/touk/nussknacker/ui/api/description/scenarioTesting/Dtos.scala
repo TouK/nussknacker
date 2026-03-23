@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCa
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
-import pl.touk.nussknacker.restmodel.validation.testcase.{AssertionIndex, AssertionValidationError}
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TestingApiErrorMessages
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos._
@@ -29,6 +28,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
 import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
 import sttp.tapir.derevo.schema
+import sttp.tapir.integ.cats.codec._
 
 import scala.collection.compat._
 import scala.collection.immutable
@@ -156,15 +156,11 @@ object Dtos {
         testCase: TestCase,
     )
 
+    @derive(schema, encoder, decoder)
     final case class PerformMultipleTestCasesRequest(
         scenarioGraph: ScenarioGraph,
         testCases: NonEmptyList[TestCase],
     )
-
-    object PerformMultipleTestCasesRequest {
-      implicit val codec: circe.Codec[PerformMultipleTestCasesRequest] = deriveCodec
-      implicit val schema: Schema[PerformMultipleTestCasesRequest]     = Schema.anyObject
-    }
 
     sealed trait TestCaseResultEvent {
       def testCaseId: TestCaseId
