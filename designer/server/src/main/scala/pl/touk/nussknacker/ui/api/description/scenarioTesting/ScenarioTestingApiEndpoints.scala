@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api.description.scenarioTesting
 
+import org.apache.pekko.stream.scaladsl.Source
 import pl.touk.nussknacker.engine.api.{NodeId, StreamMetaData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter, SpelParameterEditor}
@@ -30,6 +31,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.LiveDataFetching.FetchSourcesLiveDataRequest
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
+  PerformMultipleTestCasesRequest,
   PerformTestCaseRequest,
   PerformTestRequest,
   PerformTestRequestJsonBody,
@@ -54,10 +56,13 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.definition.DefinitionsService
+import sttp.capabilities.pekko.PekkoStreams
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
+import sttp.model.sse.ServerSentEvent
 import sttp.tapir._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.json.circe.jsonBody
+import sttp.tapir.server.pekkohttp.serverSentEventsBody
 
 class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
@@ -244,6 +249,22 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .in(skipResultsPerNodeQueryParam)
       .in(skipResultsPerTransitionQueryParam)
       .out(statusCode(Ok).and(jsonBody[ResultsWithCountsDto]))
+      .errorOut(testingErrorOutput)
+      .withSecurity(auth)
+
+  def scenarioPerformTestCasesEndpoint: SecuredEndpoint[
+    (ProcessName, PerformMultipleTestCasesRequest),
+    TestingError,
+    Source[ServerSentEvent, Any],
+    Any with PekkoStreams
+  ] =
+    baseNuApiEndpoint
+      .summary("Perform multiple test cases with streaming results")
+      .tag("Testing")
+      .post
+      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "performTestCases")
+      .in(jsonBody[PerformMultipleTestCasesRequest])
+      .out(serverSentEventsBody)
       .errorOut(testingErrorOutput)
       .withSecurity(auth)
 

@@ -2,10 +2,14 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.{EitherT, NonEmptyList}
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
+import io.circe.syntax._
+import org.apache.pekko.stream.scaladsl.Source
 import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.test.testcase.TestCase
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
@@ -14,7 +18,11 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.ParametersValidationResultDto
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.{ResultsWithCountsDto, ScenarioTestingApiEndpoints}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.{
+  ResultsWithCountsDto,
+  ResultsWithCountsDtoCodecs,
+  ScenarioTestingApiEndpoints
+}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.{ScenarioTestData, TestingError}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.{
   CapabilityStatus,
@@ -23,6 +31,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
+  PerformMultipleTestCasesRequest,
   PerformTestCaseRequest,
   PerformTestRequest,
   PerformTestRequestJsonBody,
@@ -47,6 +56,7 @@ import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ScenarioNodeValidationErrors
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.validation.ParametersValidator
+import sttp.model.sse.ServerSentEvent
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -381,6 +391,70 @@ class ScenarioTestingApiHttpService(
             )
           }
         }
+      }
+  }
+
+  expose {
+    scenarioTestingApiEndpoints.scenarioPerformTestCasesEndpoint
+      .serverSecurityLogic(authorizeKnownUser[TestingError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (scenarioName, request) =>
+          for {
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            processId <- EitherT
+              .fromOption[Future](scenarioWithDetails.processId, noScenarioError(scenarioName): TestingError)
+            _ <- isAuthorized(processId, Permission.Deploy)
+            scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
+              scenarioWithDetails.processingType
+            )
+          } yield buildTestCasesStream(
+            request.scenarioGraph,
+            scenarioWithDetails,
+            scenarioTestService,
+            request.testCases
+          )(loggedUser)
+        }
+      }
+  }
+
+  private def buildTestCasesStream(
+      scenarioGraph: ScenarioGraph,
+      scenarioWithDetails: ScenarioWithDetails,
+      scenarioTestService: ScenarioTestService,
+      testCases: NonEmptyList[TestCase],
+  )(implicit loggedUser: LoggedUser): Source[ServerSentEvent, Any] = {
+    import ResultsWithCountsDtoCodecs._
+    Source(testCases.toList)
+      .mapAsync(parallelism = testCases.size) { testCase =>
+        scenarioTestService
+          .performTestCase(
+            scenarioGraph,
+            scenarioWithDetails.processVersionUnsafe,
+            scenarioWithDetails.isFragment,
+            testCase
+          )
+          .map[(TestCase, Either[ScenarioTestService.PerformTestError, ResultsWithCounts])](result =>
+            testCase -> result
+          )
+      }
+      .map { case (testCase, result) =>
+        val data = result match {
+          case Right(resultsWithCounts) =>
+            val dto =
+              ResultsWithCountsDto.from(resultsWithCounts, SkipResultsPerNode(false), SkipResultsPerTransition(false))
+            Json.obj(
+              "testCaseId" -> testCase.id.toString.asJson,
+              "status"     -> "success".asJson,
+              "result"     -> dto.asJson,
+            )
+          case Left(error) =>
+            Json.obj(
+              "testCaseId" -> testCase.id.toString.asJson,
+              "status"     -> "error".asJson,
+              "error"      -> TestingApiErrorMessages.from(error).asJson,
+            )
+        }
+        ServerSentEvent(data = Some(data.noSpaces), eventType = Some("testCaseResult"))
       }
   }
 

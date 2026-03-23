@@ -156,6 +156,16 @@ object Dtos {
         testCase: TestCase,
     )
 
+    final case class PerformMultipleTestCasesRequest(
+        scenarioGraph: ScenarioGraph,
+        testCases: NonEmptyList[TestCase],
+    )
+
+    object PerformMultipleTestCasesRequest {
+      implicit val codec: circe.Codec[PerformMultipleTestCasesRequest] = deriveCodec
+      implicit val schema: Schema[PerformMultipleTestCasesRequest]     = Schema.anyObject
+    }
+
     final case class SkipResultsPerNode(value: Boolean)
 
     final case class SkipResultsPerTransition(value: Boolean)
