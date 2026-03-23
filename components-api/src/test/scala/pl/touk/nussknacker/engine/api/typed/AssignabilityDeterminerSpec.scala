@@ -94,4 +94,81 @@ class AssignabilityDeterminerSpec extends AnyFunSuite with Matchers {
     }
   }
 
+  private val unknownCases = Table(
+    ("sourceType", "targetType", "expectedWhenUnknownAllowed", "expectedWhenUnknownForbidden"),
+    (
+      Typed[Any],
+      Typed[Int],
+      Valid(NoConvertionIsNeeded),
+      Invalid(NonEmptyList.of("Unknown cannot be assigned to Integer"))
+    ),
+    (
+      Typed.fromDetailedType[java.util.List[Any]],
+      Typed.fromDetailedType[java.util.List[Int]],
+      Valid(NoConvertionIsNeeded),
+      Invalid(NonEmptyList.of("Unknown cannot be assigned to Integer"))
+    ),
+    (
+      Typed.fromDetailedType[java.util.Set[Any]],
+      Typed.fromDetailedType[java.util.Set[String]],
+      Valid(NoConvertionIsNeeded),
+      Invalid(NonEmptyList.of("Unknown cannot be assigned to String"))
+    ),
+    (
+      Typed.fromDetailedType[java.util.Set[Any]],
+      Typed.fromDetailedType[java.util.Collection[String]],
+      Valid(NoConvertionIsNeeded),
+      Invalid(NonEmptyList.of("Unknown cannot be assigned to String"))
+    ),
+    (
+      Typed.fromDetailedType[java.util.Collection[Any]],
+      Typed.fromDetailedType[java.util.Collection[String]],
+      Valid(NoConvertionIsNeeded),
+      Invalid(NonEmptyList.of("Unknown cannot be assigned to String"))
+    ),
+    (
+      Typed.fromDetailedType[java.util.Map[String, Any]],
+      Typed.fromDetailedType[java.util.Map[String, Int]],
+      Valid(NoConvertionIsNeeded),
+      Invalid(NonEmptyList.of("Unknown cannot be assigned to Integer"))
+    ),
+    (
+      Typed.fromDetailedType[java.util.Map[Any, String]],
+      Typed.fromDetailedType[java.util.Map[String, String]],
+      Valid(NoConvertionIsNeeded),
+      Invalid(NonEmptyList.of("Key types of Maps Unknown and String are not equals"))
+    ),
+    (
+      Typed.fromDetailedType[java.util.Map[String, String]],
+      Typed.fromDetailedType[java.util.Map[Any, String]],
+      Valid(NoConvertionIsNeeded),
+      Valid(NoConvertionIsNeeded)
+    )
+  )
+
+  test("isAssignable respects allowUnknownToAnyAssignment = true") {
+    val assignabilityDeterminer = createDeterminer(allowUnknownToAnyAssignment = true)
+
+    forAll(unknownCases) { (sourceType, targetType, expectedWhenUnknownAllowed, _) =>
+      assignabilityDeterminer.isAssignable(sourceType, targetType)(Strict) shouldBe expectedWhenUnknownAllowed
+      assignabilityDeterminer.isAssignable(sourceType, targetType)(Loose) shouldBe expectedWhenUnknownAllowed
+    }
+  }
+
+  test("isAssignable respects allowUnknownToAnyAssignment = false") {
+    val assignabilityDeterminer = createDeterminer(allowUnknownToAnyAssignment = false)
+
+    forAll(unknownCases) { (sourceType, targetType, _, expectedWhenUnknownForbidden) =>
+      assignabilityDeterminer.isAssignable(sourceType, targetType)(Strict) shouldBe expectedWhenUnknownForbidden
+      assignabilityDeterminer.isAssignable(sourceType, targetType)(Loose) shouldBe expectedWhenUnknownForbidden
+    }
+  }
+
+  private def createDeterminer(allowUnknownToAnyAssignment: Boolean) = new AssignabilityDeterminer(
+    new TypingConfigurationProvider {
+      override def config: TypingConfiguration =
+        TypingConfiguration(allowUnknownToAnyAssignment = allowUnknownToAnyAssignment)
+    }
+  )
+
 }

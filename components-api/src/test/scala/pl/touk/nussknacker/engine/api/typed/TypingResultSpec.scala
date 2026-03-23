@@ -5,6 +5,7 @@ import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.Strict
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
 
@@ -82,7 +83,7 @@ class TypingResultSpec
     Typed(Typed[String], Typed[Int]).canBeLooselyAssignedTo(Typed(Typed[Long], Typed[Int])) shouldBe true
   }
 
-  test("determine if can be assigned for unknown") {
+  test("Unknown can be assigned to and from any type") {
     Unknown.canBeLooselyAssignedTo(Typed[Int]) shouldBe true
     Typed[Int].canBeLooselyAssignedTo(Unknown) shouldBe true
 
@@ -93,22 +94,85 @@ class TypingResultSpec
     typeMap("field1" -> Typed[String]).canBeLooselyAssignedTo(Unknown) shouldBe true
   }
 
-  test("determine if empty collections can be assigned to collection of any type") {
-    val stringList  = Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.fromDetailedType[String]))
-    val unknownList = Typed.genericTypeClass(classOf[java.util.List[_]], List(Unknown))
-    val emptyList   = Typed.fromInstance(Collections.emptyList())
+  test("Unknown is not assignable to concrete types when strict unknown is enabled") {
+    isAssignableWithStrictUnknown(Unknown, Typed[Int]) shouldBe false
+    isAssignableWithStrictUnknown(Typed[Int], Unknown) shouldBe true
+
+    isAssignableWithStrictUnknown(Unknown, Typed(Typed[String], Typed[Int])) shouldBe false
+    isAssignableWithStrictUnknown(Typed(Typed[String], Typed[Int]), Unknown) shouldBe true
+
+    isAssignableWithStrictUnknown(Unknown, typeMap("field1" -> Typed[String])) shouldBe false
+    isAssignableWithStrictUnknown(typeMap("field1" -> Typed[String]), Unknown) shouldBe true
+  }
+
+  test("empty list is assignable to any list type") {
+    val stringList      = Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.fromDetailedType[String]))
+    val listWithUnknown = Typed.genericTypeClass(classOf[java.util.List[_]], List(Unknown))
+    val emptyList       = Typed.fromInstance(Collections.emptyList())
 
     emptyList.canBeLooselyAssignedTo(stringList) shouldBe true
-    emptyList.canBeLooselyAssignedTo(unknownList) shouldBe true
-    unknownList.canBeLooselyAssignedTo(stringList) shouldBe true
+    emptyList.canBeLooselyAssignedTo(listWithUnknown) shouldBe true
+  }
 
-    val emptyMap   = Typed.fromInstance(Collections.EMPTY_MAP)
-    val stringMap  = Typed.fromDetailedType[java.util.Map[String, String]]
-    val unknownMap = Typed.fromDetailedType[java.util.Map[String, Any]]
+  test("list with Unknown element type is not assignable to typed list in strict mode") {
+    val stringList      = Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.fromDetailedType[String]))
+    val listWithUnknown = Typed.genericTypeClass(classOf[java.util.List[_]], List(Unknown))
 
-    emptyMap.canBeLooselyAssignedTo(stringMap) shouldBe true
-    emptyMap.canBeLooselyAssignedTo(unknownMap) shouldBe true
-    unknownMap.canBeLooselyAssignedTo(stringMap) shouldBe true
+    isAssignableWithStrictUnknown(listWithUnknown, stringList) shouldBe false
+    isAssignableWithStrictUnknown(stringList, listWithUnknown) shouldBe true
+  }
+
+  test("records are assignable to maps regardless of value types") {
+    val stringMap                   = Typed.fromDetailedType[java.util.Map[String, String]]
+    val mapWithUnknownValues        = Typed.fromDetailedType[java.util.Map[String, Any]]
+    val mapWithUnknownKeysAndValues = Typed.fromDetailedType[java.util.Map[Any, Any]]
+    val recordWithStringValues      = typeMap("a" -> Typed[String])
+    val recordWithMixedValues       = typeMap("a" -> Typed[String], "b" -> Typed[Integer])
+
+    val records = List(recordWithStringValues, recordWithMixedValues)
+    val maps    = List(stringMap, mapWithUnknownValues, mapWithUnknownKeysAndValues)
+
+    for {
+      from <- records
+      to   <- maps
+    } {
+      withClue(s"$from -> $to") {
+        from.canBeLooselyAssignedTo(to) shouldBe true
+      }
+    }
+  }
+
+  test("record assignability to maps in strict mode depends on whether all field values satisfy the map value type") {
+    val stringMap                   = Typed.fromDetailedType[java.util.Map[String, String]]
+    val mapWithUnknownValues        = Typed.fromDetailedType[java.util.Map[String, Any]]
+    val mapWithUnknownKeysAndValues = Typed.fromDetailedType[java.util.Map[Any, Any]]
+    val recordWithStringValues      = typeMap("a" -> Typed[String])
+    val recordWithMixedValues       = typeMap("a" -> Typed[String], "b" -> Typed[Integer])
+
+    isAssignableWithStrictUnknown(recordWithStringValues, stringMap) shouldBe true
+    isAssignableWithStrictUnknown(recordWithStringValues, mapWithUnknownValues) shouldBe true
+    isAssignableWithStrictUnknown(recordWithStringValues, mapWithUnknownKeysAndValues) shouldBe true
+    isAssignableWithStrictUnknown(recordWithMixedValues, stringMap) shouldBe false
+    isAssignableWithStrictUnknown(recordWithMixedValues, mapWithUnknownValues) shouldBe true
+    isAssignableWithStrictUnknown(recordWithMixedValues, mapWithUnknownKeysAndValues) shouldBe true
+  }
+
+  test("map with Unknown key or value types is not assignable to typed map in strict mode") {
+    val stringMap                   = Typed.fromDetailedType[java.util.Map[String, String]]
+    val mapWithUnknownValues        = Typed.fromDetailedType[java.util.Map[String, Any]]
+    val mapWithUnknownKeysAndValues = Typed.fromDetailedType[java.util.Map[Any, Any]]
+
+    // concrete map is assignable to map with Unknown type parameters
+    isAssignableWithStrictUnknown(stringMap, mapWithUnknownValues) shouldBe true
+    isAssignableWithStrictUnknown(stringMap, mapWithUnknownKeysAndValues) shouldBe true
+
+    // map with Unknown type parameters is not assignable to concrete map
+    isAssignableWithStrictUnknown(mapWithUnknownValues, stringMap) shouldBe false
+    isAssignableWithStrictUnknown(mapWithUnknownKeysAndValues, stringMap) shouldBe false
+
+    // unknown keys make it incompatible with map that has typed keys
+    isAssignableWithStrictUnknown(mapWithUnknownKeysAndValues, mapWithUnknownValues) shouldBe false
+    isAssignableWithStrictUnknown(mapWithUnknownValues, mapWithUnknownKeysAndValues) shouldBe true
   }
 
   test("determine if can be assigned for class") {
@@ -564,6 +628,16 @@ class TypingResultSpec
       }
     }
   }
+
+  private def isAssignableWithStrictUnknown(from: TypingResult, to: TypingResult): Boolean = {
+    assignabilityDeterminerWithStrictUnknown.isAssignable(from, to)(Strict).isValid
+  }
+
+  private lazy val assignabilityDeterminerWithStrictUnknown = new AssignabilityDeterminer(
+    new TypingConfigurationProvider {
+      override def config: TypingConfiguration = TypingConfiguration(allowUnknownToAnyAssignment = false)
+    }
+  )
 
   type StringKeyMap[V] = java.util.Map[String, V]
 

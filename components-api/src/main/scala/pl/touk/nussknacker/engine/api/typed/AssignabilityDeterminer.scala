@@ -22,7 +22,10 @@ import pl.touk.nussknacker.engine.api.typed.typing._
  * 2. Strict conversion checks whether we can convert to a wider type. Eg only widening numerical types
  * are allowed ( Int -> Long). For other types it should work the same as a loose conversion.
  */
-private[engine] object AssignabilityDeterminer {
+private[engine] object AssignabilityDeterminer
+    extends AssignabilityDeterminer(TypingConfigurationProvider.load(Thread.currentThread().getContextClassLoader))
+
+private[engine] class AssignabilityDeterminer(typingConfigurationProvider: TypingConfigurationProvider) {
 
   def typeAfterPotentialConversion(givenType: TypingResult, targetType: TypingResult)(
       implicit conversionStrategy: NonEmptyConversionStrategy
@@ -43,8 +46,13 @@ private[engine] object AssignabilityDeterminer {
       implicit conversionStrategy: ConversionStrategy
   ): ValidatedNel[String, ConversionNecessaryForTypeAssignment] = {
     (from, to) match {
-      case (_, Unknown(_))    => NoConvertionIsNeeded.validNel
-      case (Unknown(_), _)    => NoConvertionIsNeeded.validNel
+      case (_, Unknown(_)) => NoConvertionIsNeeded.validNel
+      case (Unknown(_), _) =>
+        Validated.condNel(
+          typingConfigurationProvider.config.allowUnknownToAnyAssignment,
+          NoConvertionIsNeeded,
+          s"${from.display} cannot be assigned to ${to.display}"
+        )
       case (TypedNull, other) => isNullAssignableTo(other)
       case (_, TypedNull)     => s"${from.display} cannot be assigned to ${TypedNull.display}".invalidNel
       case (given: SingleTypingResult, target: TypedUnion) =>
@@ -183,14 +191,21 @@ private[engine] object AssignabilityDeterminer {
           isAssignable(givenElementParam, targetParam).handleErrorWith { errors =>
             isEmptyListOrArrayLiteral(givenElementParam).toValid(errors)
           }
+        case (TypedClass(givenClass, givenElementParam :: Nil), TypedClass(targetClass, targetParam :: Nil))
+            if CollectionClass == targetClass && CollectionClass.isAssignableFrom(
+              givenClass
+            ) || givenClass == targetClass && CollectionClass.isAssignableFrom(targetClass) =>
+          isAssignable(givenElementParam, targetParam)
         case (
               TypedClass(_, givenKeyParam :: givenValueParam :: Nil),
               TypedClass(targetClass, targetKeyParam :: targetValueParam :: Nil),
             ) if MapClass.isAssignableFrom(targetClass) =>
           // Map's key generic param is invariant. We can't just check givenKeyParam == targetKeyParam because of Unknown type which is a kind of wildcard
           condNel(
-            isAssignable(givenKeyParam, targetKeyParam).isValid &&
-              isAssignable(targetKeyParam, givenKeyParam).isValid,
+            isAssignable(givenKeyParam, targetKeyParam).isValid && (isAssignable(
+              targetKeyParam,
+              givenKeyParam
+            ).isValid || targetKeyParam.isUnknown),
             (),
             s"Key types of Maps ${givenKeyParam.display} and ${targetKeyParam.display} are not equals"
           ) andThen { _ =>
