@@ -719,7 +719,73 @@ class DetectLargeTransactionSpec
              |        }
              |      ]
              |    },
-             |    "externalServiceInvocationResults": {},
+             |    "externalServiceInvocationResults": {
+             |      "send for audit": [
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-3",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 3,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "send for audit",
+             |          "value": {
+             |            "pretty": {
+             |              "key": null,
+             |              "value": {
+             |                "clientId": "100",
+             |                "amount": 100,
+             |                "isLast": false
+             |              }
+             |            }
+             |          }
+             |        },
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-4",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 4,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "send for audit",
+             |          "value": {
+             |            "pretty": {
+             |              "key": null,
+             |              "value": {
+             |                "clientId": "100",
+             |                "amount": 1000,
+             |                "isLast": false
+             |              }
+             |            }
+             |          }
+             |        },
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-5",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 5,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "send for audit",
+             |          "value": {
+             |            "pretty": {
+             |              "key": null,
+             |              "value": {
+             |                "clientId": "100",
+             |                "amount": 10000,
+             |                "isLast": false
+             |              }
+             |            }
+             |          }
+             |        }
+             |      ]
+             |    },
              |    "exceptions": [],
              |    "exceptionsByNodeId": {}
              |  },

@@ -2,7 +2,7 @@ import type { PropsWithChildren } from "react";
 import React, { createContext, memo, useCallback, useContext, useMemo, useReducer } from "react";
 
 import TestResultUtils from "../../../../common/TestResultUtils";
-import type { NodeTransitionResult } from "../../../../http/resultsWithCountsDto";
+import type { ExternalServiceInvocationResultJson, NodeTransitionResult, ResultContextJson } from "../../../../http/resultsWithCountsDto";
 import { getScenarioGraph } from "../../../../reducers/selectors/graph";
 import { getTestResults } from "../../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../../store/storeHelpers";
@@ -65,6 +65,35 @@ const reducer = (state: InputOutputState, action: Action) => {
     }
 };
 
+const createOutputResultsFromExternalInvocations = (
+    externalInvocationResults: ExternalServiceInvocationResultJson[],
+    inputResultsByContextId: Map<string, ResultContextJson>,
+): ResultContextJson[] => {
+    const byContextId = new Map<string, ExternalServiceInvocationResultJson[]>();
+    externalInvocationResults.forEach((result) => {
+        const existing = byContextId.get(result.contextId) || [];
+        existing.push(result);
+        byContextId.set(result.contextId, existing);
+    });
+
+    return [...byContextId.entries()].map(([contextId, invocations]) => {
+        const [firstInvocation] = invocations;
+        const inputResult = inputResultsByContextId.get(contextId);
+        const variables = invocations.reduce<ResultContextJson["variables"]>((acc, invocation, index) => {
+            const fallbackName = `Service invocation ${index + 1}`;
+            acc[invocation.name || fallbackName] = invocation.value || { pretty: null };
+            return acc;
+        }, {});
+
+        return {
+            id: contextId,
+            cid: firstInvocation?.cid || inputResult?.cid,
+            timestamp: firstInvocation?.timestamp || inputResult?.timestamp || new Date(0).toISOString(),
+            variables,
+        };
+    });
+};
+
 export const InputOutputContextProvider = memo(function InputOutputContextProvider({
     nodeId,
     children,
@@ -100,7 +129,35 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
         const connectedNodes: (string | null)[] = nodeId.flatMap((nodeId) =>
             NodeUtils.getNodesConnectedToOutput(nodeId, scenario).map((n) => n.id),
         );
-        const transitionResults = nodeId.flatMap((nodeId) => nodeTransitionResults.filter((r) => r.sourceNodeId === nodeId));
+        const transitionResultsFromGraph = nodeId.flatMap((nodeId) => nodeTransitionResults.filter((r) => r.sourceNodeId === nodeId));
+        const transitionResultsFromSinkInvocations: NodeTransitionResult[] = nodeId.flatMap((currentNodeId) => {
+            if (transitionResultsFromGraph.some((result) => result.sourceNodeId === currentNodeId)) {
+                return [];
+            }
+            const externalInvocationResults = testResults?.externalServiceInvocationResults?.[currentNodeId] || [];
+            if (!externalInvocationResults.length) {
+                return [];
+            }
+
+            const inputResultsByContextId = new Map(
+                nodeTransitionResults
+                    .filter((result) => result.destinationNodeId === currentNodeId)
+                    .flatMap((result) => result.results)
+                    .map((result) => [result.id, result]),
+            );
+
+            const outputResults = createOutputResultsFromExternalInvocations(externalInvocationResults, inputResultsByContextId);
+            return [
+                {
+                    sourceNodeId: currentNodeId,
+                    destinationNodeId: null,
+                    results: outputResults,
+                    totalCount: outputResults.length,
+                    currentThroughput: null,
+                },
+            ];
+        });
+        const transitionResults = [...transitionResultsFromGraph, ...transitionResultsFromSinkInvocations];
 
         if (transitionResults?.length) {
             connectedNodes.push(null); // connection to "void"
@@ -110,7 +167,7 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
             id,
             ...transitionResults?.find((r) => r.destinationNodeId == id),
         }));
-    }, [nodeId, nodeTransitionResults, scenario]);
+    }, [nodeId, nodeTransitionResults, scenario, testResults?.externalServiceInvocationResults]);
 
     const isContextDisabled = useCallback(
         (id: string, direction: "input" | "output" = "input") => {
