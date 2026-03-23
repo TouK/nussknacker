@@ -2,8 +2,6 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.{EitherT, NonEmptyList}
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Json
-import io.circe.syntax._
 import org.apache.pekko.stream.scaladsl.Source
 import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -37,7 +35,8 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
   PerformTestRequestJsonBody,
   PerformTestRequestMultiParts,
   SkipResultsPerNode,
-  SkipResultsPerTransition
+  SkipResultsPerTransition,
+  TestCaseResultEvent
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.BadRequestTestingError._
@@ -424,6 +423,8 @@ class ScenarioTestingApiHttpService(
       testCases: NonEmptyList[TestCase],
   )(implicit loggedUser: LoggedUser): Source[ServerSentEvent, Any] = {
     import ResultsWithCountsDtoCodecs._
+    import TestCaseResultEvent._
+    import io.circe.syntax._
     Source(testCases.toList)
       .mapAsync(parallelism = testCases.size) { testCase =>
         scenarioTestService
@@ -438,23 +439,16 @@ class ScenarioTestingApiHttpService(
           )
       }
       .map { case (testCase, result) =>
-        val data = result match {
+        val event: TestCaseResultEvent = result match {
           case Right(resultsWithCounts) =>
-            val dto =
+            TestCaseResultSuccess(
+              testCase.id,
               ResultsWithCountsDto.from(resultsWithCounts, SkipResultsPerNode(false), SkipResultsPerTransition(false))
-            Json.obj(
-              "testCaseId" -> testCase.id.toString.asJson,
-              "status"     -> "success".asJson,
-              "result"     -> dto.asJson,
             )
           case Left(error) =>
-            Json.obj(
-              "testCaseId" -> testCase.id.toString.asJson,
-              "status"     -> "error".asJson,
-              "error"      -> TestingApiErrorMessages.from(error).asJson,
-            )
+            TestCaseResultError(testCase.id, TestingApiErrorMessages.from(error))
         }
-        ServerSentEvent(data = Some(data.noSpaces), eventType = Some("testCaseResult"))
+        ServerSentEvent(data = Some(event.asJson.noSpaces), eventType = Some("testCaseResult"))
       }
   }
 

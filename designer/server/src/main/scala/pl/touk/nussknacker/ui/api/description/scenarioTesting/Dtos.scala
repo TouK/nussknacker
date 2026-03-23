@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
+import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase, TestCaseId}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
@@ -164,6 +164,36 @@ object Dtos {
     object PerformMultipleTestCasesRequest {
       implicit val codec: circe.Codec[PerformMultipleTestCasesRequest] = deriveCodec
       implicit val schema: Schema[PerformMultipleTestCasesRequest]     = Schema.anyObject
+    }
+
+    sealed trait TestCaseResultEvent {
+      def testCaseId: TestCaseId
+    }
+
+    object TestCaseResultEvent {
+      import ResultsWithCountsDtoCodecs._
+
+      final case class TestCaseResultSuccess(testCaseId: TestCaseId, result: ResultsWithCountsDto)
+          extends TestCaseResultEvent
+      final case class TestCaseResultError(testCaseId: TestCaseId, error: String) extends TestCaseResultEvent
+
+      implicit val successCodec: circe.Codec[TestCaseResultSuccess] = deriveCodec
+      implicit val errorCodec: circe.Codec[TestCaseResultError]     = deriveCodec
+
+      implicit val codec: circe.Codec[TestCaseResultEvent] = circe.Codec.from(
+        Decoder.instance(c =>
+          c.downField("status").as[String].flatMap {
+            case "success" => c.as[TestCaseResultSuccess]
+            case "error"   => c.as[TestCaseResultError]
+            case other     => Left(DecodingFailure(s"Unknown status: $other", c.history))
+          }
+        ),
+        Encoder.instance {
+          case s: TestCaseResultSuccess => successCodec(s).deepMerge(Json.obj("status" -> "success".asJson))
+          case e: TestCaseResultError   => errorCodec(e).deepMerge(Json.obj("status" -> "error".asJson))
+        }
+      )
+
     }
 
     final case class SkipResultsPerNode(value: Boolean)
