@@ -179,14 +179,12 @@ object Dtos {
       object TestCaseResultEvent {
         import ResultsWithCountsDtoCodecs._
 
+        @derive(encoder, decoder)
         final case class TestCaseResultSuccess(testCaseId: TestCaseId, result: ResultsWithCountsDto)
             extends TestCaseResultEvent
 
+        @derive(encoder, decoder)
         final case class TestCaseResultError(testCaseId: TestCaseId, error: String) extends TestCaseResultEvent
-
-        // TODO: use annotation
-        implicit val successCodec: circe.Codec[TestCaseResultSuccess] = deriveCodec
-        implicit val errorCodec: circe.Codec[TestCaseResultError]     = deriveCodec
 
         implicit val codec: circe.Codec[TestCaseResultEvent] = circe.Codec.from(
           Decoder.instance(c =>
@@ -197,88 +195,10 @@ object Dtos {
             }
           ),
           Encoder.instance {
-            case s: TestCaseResultSuccess => successCodec(s).deepMerge(Json.obj("status" -> "success".asJson))
-            case e: TestCaseResultError   => errorCodec(e).deepMerge(Json.obj("status" -> "error".asJson))
+            case s: TestCaseResultSuccess => s.asJson.mapObject(_.add("status", "success".asJson))
+            case e: TestCaseResultError   => e.asJson.mapObject(_.add("status", "error".asJson))
           }
         )
-
-        // This schema only mimics SSE as JSON to describe events.
-        // It's not used for validation, see: https://tapir.softwaremill.com/en/latest/endpoint/streaming.html
-        object Schemas {
-          import sttp.tapir.{FieldName, SchemaType}
-          import sttp.tapir.SchemaType.{SchemaWithValue, SProductField}
-
-          private object EventTypeHelper {
-            sealed trait EventType
-            object EventType { case object testCaseResult extends EventType }
-            implicit lazy val schema: Schema[EventType] = Schema.derivedEnumeration[EventType].defaultStringBased
-          }
-
-          private object SuccessStatusHelper {
-            sealed trait Status
-            object Status { case object success extends Status }
-            implicit lazy val schema: Schema[Status] = Schema.derivedEnumeration[Status].defaultStringBased
-          }
-
-          private object ErrorStatusHelper {
-            sealed trait Status
-            object Status { case object error extends Status }
-            implicit lazy val schema: Schema[Status] = Schema.derivedEnumeration[Status].defaultStringBased
-          }
-
-          private val successDataSchema: Schema[TestCaseResultSuccess] = Schema(
-            SchemaType.SProduct(
-              List(
-                SProductField(FieldName("testCaseId"), Schema.schemaForUUID, e => Some(e.testCaseId)),
-                SProductField(
-                  FieldName("status"),
-                  SuccessStatusHelper.schema,
-                  _ => Some(SuccessStatusHelper.Status.success)
-                ),
-                SProductField(FieldName("result"), implicitly[Schema[ResultsWithCountsDto]], e => Some(e.result)),
-              )
-            )
-          )
-
-          private val errorDataSchema: Schema[TestCaseResultError] = Schema(
-            SchemaType.SProduct(
-              List(
-                SProductField(FieldName("testCaseId"), Schema.schemaForUUID, e => Some(e.testCaseId)),
-                SProductField(FieldName("status"), ErrorStatusHelper.schema, _ => Some(ErrorStatusHelper.Status.error)),
-                SProductField(FieldName("error"), Schema.schemaForString, e => Some(e.error)),
-              )
-            )
-          )
-
-          private def createEventSchema[T <: TestCaseResultEvent](dataSchema: Schema[T]): Schema[T] =
-            Schema(
-              SchemaType.SProduct(
-                List(
-                  SProductField(FieldName("data"), dataSchema, Some(_)),
-                  SProductField(
-                    FieldName("eventType"),
-                    EventTypeHelper.schema,
-                    _ => Some(EventTypeHelper.EventType.testCaseResult)
-                  )
-                )
-              )
-            )
-
-          private val successSchema: Schema[TestCaseResultSuccess] = createEventSchema(successDataSchema)
-          private val errorSchema: Schema[TestCaseResultError]     = createEventSchema(errorDataSchema)
-
-          implicit val schema: Schema[TestCaseResultEvent] =
-            Schema(
-              SchemaType.SCoproduct(
-                List(successSchema, errorSchema),
-                discriminator = None
-              ) {
-                case s: TestCaseResultSuccess => Some(SchemaWithValue(successSchema, s))
-                case e: TestCaseResultError   => Some(SchemaWithValue(errorSchema, e))
-              }
-            )
-
-        }
 
       }
 

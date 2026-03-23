@@ -273,7 +273,6 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
               new RuntimeException("Server sent event should be never received")
             )
           )(source => source.map(_.toServerSentEvent))
-          .schema(TestCaseResultEvent.Schemas.schema.as[Source[TestCaseResultEvent, Any]])
       )
       .errorOut(testingErrorOutput)
       .withSecurity(auth)
