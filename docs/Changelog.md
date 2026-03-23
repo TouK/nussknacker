@@ -302,6 +302,12 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8606](https://github.com/TouK/nussknacker/pull/8606) `Testkit`: Added `TestNodeCompiler`
 * [#8733](https://github.com/TouK/nussknacker/pull/8733) Added support for Basic Authentication in OpenAPI Enricher
 * [#8781](https://github.com/TouK/nussknacker/pull/8781) Removed `WithExceptionHandler` trait, it made it easy to unintentionally hide original `close` method
+* [#9096](https://github.com/TouK/nussknacker/pull/9096) Improvements to SpEL expressions typing:
+    * Ternary and Elvis operators (`?:`) now preserve list and map/record types
+    * Empty collections (`{}`, `{:}`) are universal and assignable to any list/map/record
+    * Dynamic record indexing returns value type instead of `Unknown`
+    * Limited support for function references in SpEL
+    * Improved typing for properties derived from `Unknown` values
 
 ## 1.18
 

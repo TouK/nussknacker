@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.typed.supertype
 
 import cats.data.NonEmptyList
 import cats.implicits.toTraverseOps
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.{
   looseFinder,
   SupertypeClassResolutionStrategy
@@ -66,22 +67,29 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
       case (l, r) if l == r => Some(l)
       // TODO We can't do at the beginning if (l.canBeSubclassOf(r) => Some(l) and the same in opposite direction
       //      because canBeSubclassOf handles conversions and many more - see comment next to it
-      case (l: TypedClass, r: TypedClass)                           => classCommonSupertype(l, r)
+      case (l: TypedClass, r: TypedClass) => classCommonSupertype(l, r)
       case (l: TypedObjectTypingResult, r: TypedObjectTypingResult) =>
-        // In most cases we compare java.util.Map or GenericRecord, the only difference can be on generic params, but
-        // still we'll got a class here, so this getOrElse should occur in the rare situations
-        looseFinder
-          .classCommonSupertypeReturningTypedClass(l.runtimeObjType, r.runtimeObjType)
-          .map { commonSupertype =>
-            val fields = prepareFields(l, r)
-            // We don't return None in case when fields are empty, because we can't be sure the intention of the user
-            // e.g. someone can pass json object with missing field declared as optional in schema
-            // and want to compare it with literal record that doesn't have this field
-            Typed.record(fields, commonSupertype)
+        handleEmptyRecords(l, r)
+          .orElse {
+            // In most cases we compare java.util.Map or GenericRecord, the only difference can be on generic params, but
+            // still we'll got a class here, so this getOrElse should occur in the rare situations
+            looseFinder
+              .classCommonSupertypeReturningTypedClass(l.runtimeObjType, r.runtimeObjType)
+              .map { commonSupertype =>
+                val fields = prepareFields(l, r)
+                // We don't return None in case when fields are empty, because we can't be sure the intention of the user
+                // e.g. someone can pass json object with missing field declared as optional in schema
+                // and want to compare it with literal record that doesn't have this field
+                Typed.record(fields, commonSupertype)
+              }
           }
           .orElse(fallback)
-      case (l: TypedObjectTypingResult, r) => singleCommonSupertype(l.runtimeObjType, r)
-      case (l, r: TypedObjectTypingResult) => singleCommonSupertype(l, r.runtimeObjType)
+      case (l: TypedObjectTypingResult, r) =>
+        handleEmptyRecord(l, r)
+          .orElse(singleCommonSupertype(l.runtimeObjType, r))
+      case (l, r: TypedObjectTypingResult) =>
+        handleEmptyRecord(r, l)
+          .orElse(singleCommonSupertype(l, r.runtimeObjType))
       case (TypedTaggedValue(leftType, leftTag), TypedTaggedValue(rightType, rightTag)) if leftTag == rightTag =>
         singleCommonSupertype(leftType, rightType).map {
           case single: SingleTypingResult => TypedTaggedValue(single, leftTag)
@@ -95,10 +103,14 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
           case typedClass: TypedClass => TypedObjectWithValue(typedClass, leftValue)
           case other                  => other
         }
-      case (l: TypedObjectWithValue, r) => singleCommonSupertype(l.underlying, r)
-      case (l, r: TypedObjectWithValue) => singleCommonSupertype(l, r.underlying)
-      case (_: TypedDict, _)            => fallback
-      case (_, _: TypedDict)            => fallback
+      case (l: TypedObjectWithValue, r) =>
+        handleEmptyList(l, r)
+          .orElse(singleCommonSupertype(l.underlying, r))
+      case (l, r: TypedObjectWithValue) =>
+        handleEmptyList(r, l)
+          .orElse(singleCommonSupertype(r.underlying, l))
+      case (_: TypedDict, _) => fallback
+      case (_, _: TypedDict) => fallback
     }
   }
 
@@ -184,6 +196,70 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
       case SupertypeClassResolutionStrategy.LooseWithFallbackToObjectType => result.orElse(Some(Unknown))
     }
   }
+
+  private def handleEmptyRecords(
+      left: TypedObjectTypingResult,
+      right: TypedObjectTypingResult
+  ) = {
+    Option
+      .when(isEmptyRecordLiteral(left))(right)
+      .orElse(Option.when(isEmptyRecordLiteral(right))(left))
+  }
+
+  private def handleEmptyList(
+      typedObjectWithValue: TypedObjectWithValue,
+      other: SingleTypingResult
+  ): Option[TypedClass] = {
+    asListClass(other).filter(_ => isEmptyListLiteral(typedObjectWithValue))
+  }
+
+  private def handleEmptyRecord(
+      typedObjectWithValue: TypedObjectTypingResult,
+      other: SingleTypingResult
+  ): Option[TypedClass] = {
+    asMapClass(other).filter(_ => isEmptyRecordLiteral(typedObjectWithValue))
+  }
+
+  private def isEmptyListLiteral(typedObjectWithValue: TypedObjectWithValue): Boolean = {
+    (for {
+      _ <- asListClass(typedObjectWithValue).filter { typedClass =>
+        typedClass.params.forall(_.isUnknown)
+      }
+      isEmptyList <- Option(typedObjectWithValue.value).map {
+        case list: java.util.List[_] => list.isEmpty
+        case _                       => false
+      }
+    } yield isEmptyList).contains(true)
+  }
+
+  private def isEmptyRecordLiteral(typedObjectTypingResult: TypedObjectTypingResult) = {
+    typedObjectTypingResult == emptyRecord
+  }
+
+  private def asListClass(typingResult: SingleTypingResult) = {
+    extractTypedClass(typingResult)
+      .collect {
+        case tc @ TypedClass(clazz, List(_)) if ListClass.isAssignableFrom(clazz) => tc
+      }
+  }
+
+  private def asMapClass(typingResult: SingleTypingResult) = {
+    extractTypedClass(typingResult)
+      .collect {
+        case tc @ TypedClass(clazz, List(_, _)) if MapClass.isAssignableFrom(clazz) => tc
+      }
+  }
+
+  private def extractTypedClass(t: SingleTypingResult): Option[TypedClass] = {
+    t match {
+      case tc: TypedClass              => Some(tc)
+      case tc: TypedObjectWithValue    => Some(tc.underlying)
+      case tc: TypedObjectTypingResult => Some(tc.runtimeObjType)
+      case _                           => None
+    }
+  }
+
+  private val emptyRecord: SingleTypingResult = Typed.record(List.empty)
 
 }
 

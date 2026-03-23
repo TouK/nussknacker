@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.ConversionNecessaryForTypeAssignment
   NoConvertionIsNeeded
 }
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.NoConversion
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 /**
@@ -22,10 +23,6 @@ import pl.touk.nussknacker.engine.api.typed.typing._
  * are allowed ( Int -> Long). For other types it should work the same as a loose conversion.
  */
 private[engine] object AssignabilityDeterminer {
-
-  private val javaMapClass       = classOf[java.util.Map[_, _]]
-  private val javaListClass      = classOf[java.util.List[_]]
-  private val arrayOfAnyRefClass = classOf[Array[AnyRef]]
 
   def typeAfterPotentialConversion(givenType: TypingResult, targetType: TypingResult)(
       implicit conversionStrategy: NonEmptyConversionStrategy
@@ -146,7 +143,7 @@ private[engine] object AssignabilityDeterminer {
   private def isSingleTypeMatchesTargetObjType(from: SingleTypingResult, to: TypedClass)(
       implicit conversionStrategy: ConversionStrategy
   ): ValidatedNel[String, ConversionNecessaryForTypeAssignment] = {
-    def typeParametersMatches(givenClass: TypedClass, targetCandidate: TypedClass) = {
+    def typeParametersMatches(givenClass: TypedClass, targetCandidate: TypedClass, maybeValue: Option[Any]) = {
       def canBeAssignedToOrAssignedFrom(givenClassParam: TypingResult, targetParam: TypingResult) =
         condNel(
           isAssignable(givenClassParam, targetParam).isValid ||
@@ -155,25 +152,55 @@ private[engine] object AssignabilityDeterminer {
           f"None of ${givenClassParam.display} and ${targetParam.display} can be assigned to another"
         )
 
-      (givenClass, targetCandidate, conversionStrategy) match {
-        case (TypedClass(_, givenElementParam :: Nil), TypedClass(targetClass, targetParam :: Nil), _)
-            if javaListClass.isAssignableFrom(targetClass) || arrayOfAnyRefClass.isAssignableFrom(targetClass) =>
-          isAssignable(givenElementParam, targetParam)
+      def isEmptyListOrArrayLiteral(givenClassParam: TypingResult): Option[NoConvertionIsNeeded.type] = {
+        givenClassParam match {
+          // after splitting Unknown to Any and Nothing, here should be Nothing
+          case Unknown(_) =>
+            maybeValue match {
+              case Some(list: java.util.List[_]) => Option.when(list.isEmpty)(NoConvertionIsNeeded)
+              case Some(array: Array[_])         => Option.when(array.isEmpty)(NoConvertionIsNeeded)
+              case None | Some(_)                => None
+            }
+          case _ => None
+        }
+      }
+
+      def isEmptyMapLiteral(givenClassParam: TypingResult): Option[NoConvertionIsNeeded.type] = {
+        givenClassParam match {
+          // after splitting Unknown to Any and Nothing, here should be Nothing
+          case Unknown(_) =>
+            maybeValue match {
+              case Some(map: java.util.Map[_, _]) => Option.when(map.isEmpty)(NoConvertionIsNeeded)
+              case None | Some(_)                 => None
+            }
+          case _ => None
+        }
+      }
+
+      (givenClass, targetCandidate) match {
+        case (TypedClass(_, givenElementParam :: Nil), TypedClass(targetClass, targetParam :: Nil))
+            if ListClass.isAssignableFrom(targetClass) || ArrayClass.isAssignableFrom(targetClass) =>
+          isAssignable(givenElementParam, targetParam).handleErrorWith { errors =>
+            isEmptyListOrArrayLiteral(givenElementParam).toValid(errors)
+          }
         case (
               TypedClass(_, givenKeyParam :: givenValueParam :: Nil),
               TypedClass(targetClass, targetKeyParam :: targetValueParam :: Nil),
-              _
-            ) if javaMapClass.isAssignableFrom(targetClass) =>
+            ) if MapClass.isAssignableFrom(targetClass) =>
           // Map's key generic param is invariant. We can't just check givenKeyParam == targetKeyParam because of Unknown type which is a kind of wildcard
           condNel(
             isAssignable(givenKeyParam, targetKeyParam).isValid &&
               isAssignable(targetKeyParam, givenKeyParam).isValid,
             (),
             s"Key types of Maps ${givenKeyParam.display} and ${targetKeyParam.display} are not equals"
-          ) andThen (_ => isAssignable(givenValueParam, targetValueParam))
+          ) andThen { _ =>
+            isAssignable(givenValueParam, targetValueParam).handleErrorWith { errors =>
+              isEmptyMapLiteral(givenValueParam).toValid(errors)
+            }
+          }
         case _ =>
           // for unknown types we are lax - the generic type may be co- contra- or in-variant - and we don't want to
-          // return validation errors in this case. It's better to accept to much than too little
+          // return validation errors in this case. It's better to accept too much than too little
           condNel(
             targetCandidate.params.zip(givenClass.params).forall { case (targetParam, givenClassParam) =>
               canBeAssignedToOrAssignedFrom(givenClassParam, targetParam).isValid
@@ -195,7 +222,7 @@ private[engine] object AssignabilityDeterminer {
         isAssignable(givenClass.klass, to.klass)
 
     val canAssignAndParametersMatches = equalClassesOrCanAssign andThen
-      (_ => typeParametersMatches(givenClass, to)) map (_ => NoConvertionIsNeeded)
+      (_ => typeParametersMatches(givenClass, to, from.valueOpt)) map (_ => NoConvertionIsNeeded)
     conversionStrategy match {
       case NoConversion => canAssignAndParametersMatches
       case nonEmptyStrategy: NonEmptyConversionStrategy =>
