@@ -87,6 +87,7 @@ export default forwardRef(function AceWithSettings(props: AceWithSettingsProps, 
                             fontStyle: "normal",
                             opacity: 1,
                             borderBottom: "2px dashed",
+                            pointerEvents: "none",
                         },
                     })}
                 />
