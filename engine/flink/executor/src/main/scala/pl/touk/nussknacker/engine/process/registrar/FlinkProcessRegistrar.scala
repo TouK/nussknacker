@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.FlinkScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.flink.api.{FlinkEngineContext, NkGlobalParameters, RuntimeCtx}
 import pl.touk.nussknacker.engine.flink.api.FlinkEngineContextOps._
-import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.graph.node.{BranchEndDefinition, NodeData}
@@ -255,7 +254,7 @@ class FlinkProcessRegistrar(
     ): Map[BranchEndDefinition, BranchEndData] =
       processPart match {
         case part @ SinkPart(sink: FlinkSink, _, contextBefore, _) =>
-          registerSinkPark(start, part, sink, contextBefore)
+          registerSinkPart(start, part, sink, contextBefore)
         case part: SinkPart =>
           // TODO: fixme "part.obj" is not stringified well
           //      (eg. Scenario can only use flink sinks, instead given: pl.touk.nussknacker.engine.management.sample.sink.LiteDeadEndSink$@21220fd7)
@@ -264,7 +263,7 @@ class FlinkProcessRegistrar(
           registerCustomNodePart(start, part)
       }
 
-    def registerSinkPark(
+    def registerSinkPart(
         start: SingleOutputStreamOperator[Context],
         part: SinkPart,
         sink: FlinkSink,
@@ -284,8 +283,7 @@ class FlinkProcessRegistrar(
       // TODO: maybe this logic should be moved to compiler instead?
       val withSinkAdded = resultCollector match {
         case testResultCollector: TestServiceInvocationCollector =>
-          val typ                 = part.node.data.ref.typ
-          val collectingSink      = testResultCollector.createSinkInvocationCollector(part.id, typ)
+          val collectingSink = testResultCollector.createSinkInvocationCollector(part.id, part.node.data.name.value)
           val prepareTestValueFun = sink.prepareTestValueFunction
           withValuePrepared
             .map(
@@ -295,6 +293,7 @@ class FlinkProcessRegistrar(
             .sinkTo(
               new CollectingSink[AnyRef](compilerDataForProcessPart(None), collectingSink, part.id, part.node.data.name)
             )
+            .uid(part.id.value)
         case _ =>
           sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfo, Left(contextBefore)))
       }
@@ -369,7 +368,7 @@ class FlinkProcessRegistrar(
             TimeUnit.MILLISECONDS,
             asyncExecutionContextPreparer.bufferSize
           )
-          .setUidAndName(node.id + "-$async", node.data.name.value + "-async")
+          .uid(node.id.value + "-$async")
       } else {
         val ti = InterpretationResultTypeInformation.create(outputContexts)
         stream.flatMap(
