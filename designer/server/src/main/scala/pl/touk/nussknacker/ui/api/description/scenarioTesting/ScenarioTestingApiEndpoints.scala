@@ -39,6 +39,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
   SkipResultsPerNode,
   SkipResultsPerTransition
 }
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformMultipleTestCasesResponse.TestCaseResultEvent
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformTestCaseRequest._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.{
   BadRequestTestingError,
@@ -255,7 +256,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
   def scenarioPerformTestCasesEndpoint: SecuredEndpoint[
     (ProcessName, PerformMultipleTestCasesRequest),
     TestingError,
-    Source[ServerSentEvent, Any],
+    Source[TestCaseResultEvent, Any],
     Any with PekkoStreams
   ] =
     baseNuApiEndpoint
@@ -264,7 +265,16 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .post
       .in("scenarioTesting" / path[ProcessName]("scenarioName") / "performTestCases")
       .in(jsonBody[PerformMultipleTestCasesRequest])
-      .out(serverSentEventsBody)
+      .out(
+        serverSentEventsBody
+          .mapDecode[Source[TestCaseResultEvent, Any]](_ =>
+            DecodeResult.Error(
+              "Server sent event should be never received",
+              new RuntimeException("Server sent event should be never received")
+            )
+          )(source => source.map(_.toServerSentEvent))
+          .schema(TestCaseResultEvent.Schemas.schema.as[Source[TestCaseResultEvent, Any]])
+      )
       .errorOut(testingErrorOutput)
       .withSecurity(auth)
 

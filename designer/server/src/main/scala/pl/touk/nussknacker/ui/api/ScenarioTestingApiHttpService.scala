@@ -29,15 +29,12 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
-  PerformMultipleTestCasesRequest,
-  PerformTestCaseRequest,
-  PerformTestRequest,
   PerformTestRequestJsonBody,
   PerformTestRequestMultiParts,
   SkipResultsPerNode,
-  SkipResultsPerTransition,
-  TestCaseResultEvent
+  SkipResultsPerTransition
 }
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformMultipleTestCasesResponse.TestCaseResultEvent
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.BadRequestTestingError._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.NotFoundTestingError._
@@ -421,10 +418,9 @@ class ScenarioTestingApiHttpService(
       scenarioWithDetails: ScenarioWithDetails,
       scenarioTestService: ScenarioTestService,
       testCases: NonEmptyList[TestCase],
-  )(implicit loggedUser: LoggedUser): Source[ServerSentEvent, Any] = {
+  )(implicit loggedUser: LoggedUser): Source[TestCaseResultEvent, Any] = {
     import ResultsWithCountsDtoCodecs._
     import TestCaseResultEvent._
-    import io.circe.syntax._
     Source(testCases.toList)
       .mapAsync(parallelism = testCases.size) { testCase =>
         scenarioTestService
@@ -439,7 +435,7 @@ class ScenarioTestingApiHttpService(
           )
       }
       .map { case (testCase, result) =>
-        val event: TestCaseResultEvent = result match {
+        result match {
           case Right(resultsWithCounts) =>
             TestCaseResultSuccess(
               testCase.id,
@@ -448,7 +444,6 @@ class ScenarioTestingApiHttpService(
           case Left(error) =>
             TestCaseResultError(testCase.id, TestingApiErrorMessages.from(error))
         }
-        ServerSentEvent(data = Some(event.asJson.noSpaces), eventType = Some("testCaseResult"))
       }
   }
 

@@ -26,6 +26,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
   TestWithParametersDetails
 }
 import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
+import sttp.model.sse.ServerSentEvent
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
 import sttp.tapir.derevo.schema
 import sttp.tapir.integ.cats.codec._
@@ -162,33 +163,124 @@ object Dtos {
         testCases: NonEmptyList[TestCase],
     )
 
-    sealed trait TestCaseResultEvent {
-      def testCaseId: TestCaseId
-    }
+    object PerformMultipleTestCasesResponse {
 
-    object TestCaseResultEvent {
-      import ResultsWithCountsDtoCodecs._
+      sealed trait TestCaseResultEvent {
+        def testCaseId: TestCaseId
 
-      final case class TestCaseResultSuccess(testCaseId: TestCaseId, result: ResultsWithCountsDto)
-          extends TestCaseResultEvent
-      final case class TestCaseResultError(testCaseId: TestCaseId, error: String) extends TestCaseResultEvent
+        def toServerSentEvent: ServerSentEvent =
+          ServerSentEvent(
+            data = Some(TestCaseResultEvent.codec(this).noSpaces),
+            eventType = Some("testCaseResult")
+          )
 
-      implicit val successCodec: circe.Codec[TestCaseResultSuccess] = deriveCodec
-      implicit val errorCodec: circe.Codec[TestCaseResultError]     = deriveCodec
+      }
 
-      implicit val codec: circe.Codec[TestCaseResultEvent] = circe.Codec.from(
-        Decoder.instance(c =>
-          c.downField("status").as[String].flatMap {
-            case "success" => c.as[TestCaseResultSuccess]
-            case "error"   => c.as[TestCaseResultError]
-            case other     => Left(DecodingFailure(s"Unknown status: $other", c.history))
+      object TestCaseResultEvent {
+        import ResultsWithCountsDtoCodecs._
+
+        final case class TestCaseResultSuccess(testCaseId: TestCaseId, result: ResultsWithCountsDto)
+            extends TestCaseResultEvent
+
+        final case class TestCaseResultError(testCaseId: TestCaseId, error: String) extends TestCaseResultEvent
+
+        // TODO: use annotation
+        implicit val successCodec: circe.Codec[TestCaseResultSuccess] = deriveCodec
+        implicit val errorCodec: circe.Codec[TestCaseResultError]     = deriveCodec
+
+        implicit val codec: circe.Codec[TestCaseResultEvent] = circe.Codec.from(
+          Decoder.instance(c =>
+            c.downField("status").as[String].flatMap {
+              case "success" => c.as[TestCaseResultSuccess]
+              case "error"   => c.as[TestCaseResultError]
+              case other     => Left(DecodingFailure(s"Unknown status: $other", c.history))
+            }
+          ),
+          Encoder.instance {
+            case s: TestCaseResultSuccess => successCodec(s).deepMerge(Json.obj("status" -> "success".asJson))
+            case e: TestCaseResultError   => errorCodec(e).deepMerge(Json.obj("status" -> "error".asJson))
           }
-        ),
-        Encoder.instance {
-          case s: TestCaseResultSuccess => successCodec(s).deepMerge(Json.obj("status" -> "success".asJson))
-          case e: TestCaseResultError   => errorCodec(e).deepMerge(Json.obj("status" -> "error".asJson))
+        )
+
+        // This schema only mimics SSE as JSON to describe events.
+        // It's not used for validation, see: https://tapir.softwaremill.com/en/latest/endpoint/streaming.html
+        object Schemas {
+          import sttp.tapir.{FieldName, SchemaType}
+          import sttp.tapir.SchemaType.{SchemaWithValue, SProductField}
+
+          private object EventTypeHelper {
+            sealed trait EventType
+            object EventType { case object testCaseResult extends EventType }
+            implicit lazy val schema: Schema[EventType] = Schema.derivedEnumeration[EventType].defaultStringBased
+          }
+
+          private object SuccessStatusHelper {
+            sealed trait Status
+            object Status { case object success extends Status }
+            implicit lazy val schema: Schema[Status] = Schema.derivedEnumeration[Status].defaultStringBased
+          }
+
+          private object ErrorStatusHelper {
+            sealed trait Status
+            object Status { case object error extends Status }
+            implicit lazy val schema: Schema[Status] = Schema.derivedEnumeration[Status].defaultStringBased
+          }
+
+          private val successDataSchema: Schema[TestCaseResultSuccess] = Schema(
+            SchemaType.SProduct(
+              List(
+                SProductField(FieldName("testCaseId"), Schema.schemaForUUID, e => Some(e.testCaseId)),
+                SProductField(
+                  FieldName("status"),
+                  SuccessStatusHelper.schema,
+                  _ => Some(SuccessStatusHelper.Status.success)
+                ),
+                SProductField(FieldName("result"), implicitly[Schema[ResultsWithCountsDto]], e => Some(e.result)),
+              )
+            )
+          )
+
+          private val errorDataSchema: Schema[TestCaseResultError] = Schema(
+            SchemaType.SProduct(
+              List(
+                SProductField(FieldName("testCaseId"), Schema.schemaForUUID, e => Some(e.testCaseId)),
+                SProductField(FieldName("status"), ErrorStatusHelper.schema, _ => Some(ErrorStatusHelper.Status.error)),
+                SProductField(FieldName("error"), Schema.schemaForString, e => Some(e.error)),
+              )
+            )
+          )
+
+          private def createEventSchema[T <: TestCaseResultEvent](dataSchema: Schema[T]): Schema[T] =
+            Schema(
+              SchemaType.SProduct(
+                List(
+                  SProductField(FieldName("data"), dataSchema, Some(_)),
+                  SProductField(
+                    FieldName("eventType"),
+                    EventTypeHelper.schema,
+                    _ => Some(EventTypeHelper.EventType.testCaseResult)
+                  )
+                )
+              )
+            )
+
+          private val successSchema: Schema[TestCaseResultSuccess] = createEventSchema(successDataSchema)
+          private val errorSchema: Schema[TestCaseResultError]     = createEventSchema(errorDataSchema)
+
+          implicit val schema: Schema[TestCaseResultEvent] =
+            Schema(
+              SchemaType.SCoproduct(
+                List(successSchema, errorSchema),
+                discriminator = None
+              ) {
+                case s: TestCaseResultSuccess => Some(SchemaWithValue(successSchema, s))
+                case e: TestCaseResultError   => Some(SchemaWithValue(errorSchema, e))
+              }
+            )
+
         }
-      )
+
+      }
 
     }
 
