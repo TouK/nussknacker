@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.{IndexBasedTextRange, NullExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.{
   ArgumentTypeError,
-  PartTypeError,
+  InvalidPartsTypeError,
   SpelExpressionTypingError,
   SpelExpressionTypingErrorWithTextRange
 }
@@ -196,15 +196,16 @@ private[spel] class SpelTyper(
 
     val withTypedChildren = typeChildren(validationContext, node, current) _
 
-    def withChildrenOfType[Parts: universe.TypeTag](result: TypingResult) = {
-      val w = result.validTypingResult
+    def withChildrenOfType[Parts: universe.TypeTag](result: TypingResult, operatorName: String) = {
+      val w            = result.validTypingResult
+      val expectedType = Typed.fromDetailedType[Parts]
       withTypedChildren {
-        case list if list.forall(_.canBeLooselyAssignedTo(Typed.fromDetailedType[Parts])) => w
-        case _ => w.tell(List(PartTypeError.withTextRange))
+        case list if list.forall(_.canBeLooselyAssignedTo(expectedType)) => w
+        case list => w.tell(List(InvalidPartsTypeError(operatorName, expectedType, list).withTextRange))
       }
     }
 
-    def withTwoChildrenOfType[A: universe.TypeTag, R: universe.TypeTag](op: (A, A) => R) = {
+    def withTwoChildrenOfType[A: universe.TypeTag, R: universe.TypeTag](op: (A, A) => R, operatorName: String) = {
       val castExpectedType = CastTypedValue[A]()
       val resultType       = Typed.fromDetailedType[R]
       withTypedChildren {
@@ -215,8 +216,9 @@ private[spel] class SpelTyper(
             res = op(leftValue, rightValue)
           } yield Typed.fromInstance(res)
           typeFromOp.getOrElse(resultType).validTypingResult
-        case _ =>
-          PartTypeError.invalidTypingResult(fallbackType = resultType)
+        case other =>
+          val expectedType = Typed.fromDetailedType[A]
+          InvalidPartsTypeError(operatorName, expectedType, other).invalidTypingResult(fallbackType = resultType)
       }
     }
 
@@ -623,12 +625,12 @@ private[spel] class SpelTyper(
       case e: OpEQ => checkEqualityLikeOperation(e, isEquality = true)
       case e: OpNE => checkEqualityLikeOperation(e, isEquality = false)
 
-      case e: OpAnd => withTwoChildrenOfType[Boolean, Boolean](_ && _)
-      case e: OpOr  => withTwoChildrenOfType[Boolean, Boolean](_ || _)
-      case e: OpGE  => withTwoChildrenOfType(MathUtils.greaterOrEqual)
-      case e: OpGT  => withTwoChildrenOfType(MathUtils.greater)
-      case e: OpLE  => withTwoChildrenOfType(MathUtils.lesserOrEqual)
-      case e: OpLT  => withTwoChildrenOfType(MathUtils.lesser)
+      case e: OpAnd => withTwoChildrenOfType[Boolean, Boolean](_ && _, e.getOperatorName)
+      case e: OpOr  => withTwoChildrenOfType[Boolean, Boolean](_ || _, e.getOperatorName)
+      case e: OpGE  => withTwoChildrenOfType(MathUtils.greaterOrEqual, e.getOperatorName)
+      case e: OpGT  => withTwoChildrenOfType(MathUtils.greater, e.getOperatorName)
+      case e: OpLE  => withTwoChildrenOfType(MathUtils.lesserOrEqual, e.getOperatorName)
+      case e: OpLT  => withTwoChildrenOfType(MathUtils.lesser, e.getOperatorName)
 
       case e: OpDec => checkSingleOperandArithmeticOperation(e)(MathUtils.minus(_, 1))
       case e: OpInc => checkSingleOperandArithmeticOperation(e)(MathUtils.plus(_, 1))
@@ -706,9 +708,8 @@ private[spel] class SpelTyper(
         }
       case e: OperatorBetween    => Typed[Boolean].validNodeResult
       case e: OperatorInstanceof => Typed[Boolean].validNodeResult
-      case e: OperatorMatches    => withChildrenOfType[String](Typed[Boolean])
-      case e: OperatorNot        => withChildrenOfType[Boolean](Typed[Boolean])
-
+      case e: OperatorMatches    => withChildrenOfType[String](Typed[Boolean], e.getOperatorName)
+      case e: OperatorNot        => withChildrenOfType[Boolean](Typed[Boolean], "not")
       case e: Projection =>
         for {
           iterateType <- current.stackHead
