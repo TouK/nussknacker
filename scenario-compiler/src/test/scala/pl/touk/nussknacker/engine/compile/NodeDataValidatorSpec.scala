@@ -188,7 +188,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   test("should validate filter") {
     inside(validate(Filter("filter", "#a > 3".spel), Map("a" -> Typed[String]))) {
       case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, _) =>
-        error.message shouldBe "Wrong part types"
+        error.message shouldBe "Invalid argument types for operator '>': all arguments must be: Number, got String, Integer(3)"
     }
   }
 
@@ -1408,7 +1408,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       case ValidationPerformed(
             List(
               InvalidValidationExpression(
-                "Wrong part types",
+                "Invalid argument types for operator '>': all arguments must be: Number, got String, Integer(0)",
                 "in",
                 ParameterName("param1"),
                 expr

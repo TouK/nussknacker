@@ -126,7 +126,7 @@ trait DecisionTableSpec
           errors should be(
             NonEmptyList.one(
               ExpressionParserCompilationError(
-                message = "Wrong part types",
+                message = "Invalid argument types for operator '>': all arguments must be: Number, got String, Integer",
                 nodeId = "decision-table",
                 paramName = Some(ParameterName("Match condition")),
                 originalExpr = "#ROW['name'] > #input.minAge",

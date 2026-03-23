@@ -1159,17 +1159,17 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .source("id1", "typed-source")
       .buildVariable("valr", "var1", "a" -> "''".spel, "b" -> "11".spel)
       .buildSimpleVariable("working", "var2", "#var1.b > 10".spel)
-      .buildSimpleVariable("notWorking", "var3", "#var1.a > 10".spel)
+      .buildSimpleVariable("notWorking", "var3", "#var1.a && true".spel)
       .emptySink("id2", "sink")
 
     validate(process, definitionWithTypedSource).result should matchPattern {
       case Invalid(
             NonEmptyList(
               ExpressionParserCompilationError(
-                "Wrong part types",
+                "Invalid argument types for operator 'and': all arguments must be: Boolean, got String(), Boolean(true)",
                 "notWorking",
                 Some(DefaultExpressionIdParamName),
-                "#var1.a > 10",
+                "#var1.a && true",
                 _
               ),
               _

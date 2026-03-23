@@ -985,7 +985,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             ),
             NodeValidationError(
               "InvalidValidationExpression",
-              "Invalid validation expression: Wrong part types",
+              "Invalid validation expression: Invalid argument types for operator '<': all arguments must be: Number, got String, Integer(7)",
               "There is a problem with validation expression: #value < 7",
               Some("$param.subParam2.$validationExpression"),
               NodeValidationErrorType.SaveAllowed,
