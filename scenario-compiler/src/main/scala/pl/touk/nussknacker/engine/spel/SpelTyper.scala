@@ -220,6 +220,11 @@ private[spel] class SpelTyper(
       }
     }
 
+    def getRecordValueType(record: TypedObjectTypingResult) = {
+      val fieldTypes = record.withoutValue.fields.values
+      CommonSupertypeFinder.Default.superTypeOfTypes(fieldTypes)
+    }
+
     def catchUnexpectedErrors(block: => NodeTypingResult): NodeTypingResult = Try(block) match {
       case Success(value) =>
         value
@@ -241,10 +246,13 @@ private[spel] class SpelTyper(
         record: TypedObjectTypingResult
     ): TypingR[TypingResult] = {
       val fieldIndexedByLiteralStringOpt = record.fields.find(_._1 == indexString)
-      fieldIndexedByLiteralStringOpt.map(f => f._2.validTypingResult).getOrElse {
-        if (dynamicPropertyAccessAllowed) Unknown.validTypingResult
-        else NoPropertyError(record, indexString).invalidTypingResult()
-      }
+      fieldIndexedByLiteralStringOpt
+        .map(f => f._2.validTypingResult)
+        .getOrElse {
+          if (dynamicPropertyAccessAllowed) {
+            getRecordValueType(record).validTypingResult
+          } else NoPropertyError(record, indexString).invalidTypingResult()
+        }
     }
 
     def typeIndexerOnRecord(indexer: Indexer, record: TypedObjectTypingResult) = {
@@ -256,7 +264,7 @@ private[spel] class SpelTyper(
             case _                                      => typeFieldNameReferenceOnRecord(indexString, record)
           }
         case indexKey :: Nil if indexKey.canBeLooselyAssignedTo(Typed[String]) =>
-          if (dynamicPropertyAccessAllowed) Unknown.validTypingResult
+          if (dynamicPropertyAccessAllowed) getRecordValueType(record).validTypingResult
           else
             record.runtimeObjType.params match {
               case _ :: value :: Nil if record.runtimeObjType.klass == MapClass =>
@@ -391,7 +399,9 @@ private[spel] class SpelTyper(
       case u: Unknown =>
         val w = Writer.value[List[SpelExpressionTypingErrorWithTextRange], TypingResult](u)
         if (anyMethodExecutionForUnknownAllowed) {
-          w
+          unknownPropertyTypeBasedOnMethod(e, u)
+            .map(_.validTypingResult)
+            .getOrElse(w)
         } else {
           // we allow some methods to be used on unknown
           unknownPropertyTypeBasedOnMethod(e, u)
@@ -552,8 +562,18 @@ private[spel] class SpelTyper(
               s"Illegal construction of elvis. Found ${other.size} children, but 2 children expected"
             )
         }
-      // TODO: what should be here?
-      case e: FunctionReference => Unknown.validNodeResult
+      // The only valid case in NU seems to be a call to a method defined in global variables
+      case e: FunctionReference =>
+        val functionName = e.toStringAST.stripPrefix("#").takeWhile(_ != '(')
+        validationContext
+          .get(functionName)
+          .map {
+            case TypedClass(clazz, List()) if classOf[java.lang.reflect.Method].isAssignableFrom(clazz) =>
+              Unknown.validNodeResult
+            case other =>
+              IllegalInvocationError(other).invalidNodeResult
+          }
+          .getOrElse(UnresolvedReferenceError(functionName).invalidNodeResult)
 
       // TODO: what should be here?
       case e: Identifier => Unknown.validNodeResult
