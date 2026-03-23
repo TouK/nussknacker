@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
 
 import { addTestCase } from "../../actions/nk/testCasesActions";
-import { getActiveTestCase } from "../../reducers/selectors/testCases";
+import { getActiveTestCase, getTestCases } from "../../reducers/selectors/testCases";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { WindowContent } from "../../windowManager/WindowContent";
@@ -19,6 +19,7 @@ const SaveAsTestCaseDialog = (props: WindowContentProps) => {
 
     const [testCaseName, setTestCaseName] = useState(`Copy: ${activeTestCase?.name || "Test Case"}`);
     const dispatch = useAppDispatch();
+    const { nameErrors, isValid } = useSaveAsTestCaseValidation(testCaseName);
 
     const cancelButton = useMemo<WindowButtonProps | false>(() => {
         return {
@@ -35,9 +36,9 @@ const SaveAsTestCaseDialog = (props: WindowContentProps) => {
                 dispatch(addTestCase({ ...activeTestCase, id: uuidv4(), name: testCaseName }));
                 props.close();
             },
-            disabled: false,
+            disabled: !isValid,
         };
-    }, [t, dispatch, activeTestCase, testCaseName, props]);
+    }, [t, dispatch, activeTestCase, testCaseName, isValid, props]);
     const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setTestCaseName(e.target.value);
     }, []);
@@ -47,12 +48,27 @@ const SaveAsTestCaseDialog = (props: WindowContentProps) => {
             <NodeTable>
                 <NodeRow label={"Name"}>
                     <NodeValue>
-                        <Input value={testCaseName} onChange={handleNameChange} />
+                        <Input value={testCaseName} onChange={handleNameChange} fieldErrors={nameErrors} showValidation />
                     </NodeValue>
                 </NodeRow>
             </NodeTable>
         </WindowContent>
     );
+};
+
+const useSaveAsTestCaseValidation = (testCaseName: string) => {
+    const { t } = useTranslation();
+    const testCases = useAppSelector(getTestCases);
+
+    const nameErrors = [
+        testCaseName.trim().length === 0 && t("saveAsTestCaseDialog.error.nameEmpty", "Name cannot be empty"),
+        testCases.some((tc) => tc.name === testCaseName) &&
+            t("saveAsTestCaseDialog.error.nameExists", "Test case with this name already exists"),
+    ]
+        .filter(Boolean)
+        .map((message) => ({ message, description: "" }));
+
+    return { nameErrors, isValid: nameErrors.length === 0 };
 };
 
 export default SaveAsTestCaseDialog;
