@@ -20,8 +20,6 @@ import { WindowContent } from "../../../../windowManager/WindowContent";
 import type { WindowKind } from "../../../../windowManager/WindowKind";
 import { useOnToolWindow } from "../../../modals/useOnToolWindow";
 import type { Scenario } from "../../../Process/types";
-import { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
-import { useGetButtonFromToolbar } from "../../../toolbarSettings/useToolbarConfig";
 import NodeUtils from "../../NodeUtils";
 import { InputOutputContent } from "../io/InputOutputContent";
 import { InputOutputContextProvider } from "../io/InputOutputContext";
@@ -87,13 +85,12 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     const { t } = useTranslation();
     const { close, data } = props;
     const readOnly = useAppSelector((s: RootState) => getReadOnly(s, props.readOnly));
-    const buttonFromToolbar = useGetButtonFromToolbar(CustomButtonTypes.scenarioTest);
 
     const { node, editedNode, onChange, outputEdges, performNodeEdit, editState } = useNodeState(data.meta);
     const [generalErrors] = useGetNodeErrors(node);
     const testCase = useAppSelector(getActiveTestCase);
     const hasNodeTestCasesErrors = useAppSelector((state) =>
-        hasValidationTestCasesErrors(state, { nodeId: node.id, testCaseId: testCase?.name }),
+        hasValidationTestCasesErrors(state, { nodeId: node.id, testCaseName: testCase?.name }),
     );
 
     const { cancel, apply } = useNodeDetailsButtons({ editedNode, outputEdges, performNodeEdit, close, readOnly });
