@@ -38,6 +38,10 @@ export interface ExceptionResultJson {
 
 export interface ExternalServiceInvocationResultJson {
     contextId: ResultContextJson["id"];
+    cid?: ContextIdJson;
+    timestamp?: string;
+    name?: string;
+    value?: Variable | null;
 }
 
 export type NodeTransitionResult = {

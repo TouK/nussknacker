@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.{NodeId, NodeName, ValueWithContext}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.flink.api.WriterInitCtx
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
-import pl.touk.nussknacker.engine.testmode.SinkInvocationCollector
+import pl.touk.nussknacker.engine.resultcollector.SinkInvocationCollector
 
 import scala.annotation.nowarn
 
