@@ -217,7 +217,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
             index = 1
           ),
           mockedTimestamp,
-          "valueMonitor",
+          "out",
           variable(11)
         )
       )
@@ -294,7 +294,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
               index = 0
             ),
             mockedTimestamp,
-            "valueMonitor",
+            "out",
             variable(11)
           )
         )
@@ -427,7 +427,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
               index = 0
             ),
             mockedTimestamp,
-            "valueMonitor",
+            "out",
             variable("1 0")
           ),
           ExternalServiceInvocationResult(
@@ -438,7 +438,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
               index = 1
             ),
             mockedTimestamp,
-            "valueMonitor",
+            "out",
             variable("11 1")
           )
         )
@@ -614,7 +614,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
               index = 0
             ),
             mockedTimestamp,
-            "valueMonitor",
+            "out",
             variable(SimpleJsonRecord("1", "11"))
           ),
           ExternalServiceInvocationResult(
@@ -625,7 +625,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
               index = 1
             ),
             mockedTimestamp,
-            "valueMonitor",
+            "out",
             variable(SimpleJsonRecord("2", "22"))
           ),
           ExternalServiceInvocationResult(
@@ -636,7 +636,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
               index = 2
             ),
             mockedTimestamp,
-            "valueMonitor",
+            "out",
             variable(SimpleJsonRecord("3", "33"))
           )
         )
@@ -664,7 +664,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
               index = 0
             ),
             mockedTimestamp,
-            "valueMonitor",
+            "out",
             variable("transformed:abc|3")
           )
         )
