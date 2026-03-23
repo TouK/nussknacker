@@ -31,6 +31,10 @@ trait ResultCollector extends Serializable {
       names: TransmissionNames
   ): F[A]
 
+  def createSinkInvocationCollector(nodeId: NodeId, ref: String): Option[SinkInvocationCollector] = None
+
+  def shouldRegisterSinkInAdditionToCollector: Boolean = false
+
 }
 
 //just invoke the action and ignore raw output from CollectableAction

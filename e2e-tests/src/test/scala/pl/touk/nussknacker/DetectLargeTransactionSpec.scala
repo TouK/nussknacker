@@ -719,7 +719,52 @@ class DetectLargeTransactionSpec
              |        }
              |      ]
              |    },
-             |    "externalServiceInvocationResults": {},
+             |    "externalServiceInvocationResults": {
+             |      "send for audit": [
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-3",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 3,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "send for audit",
+             |          "value": {
+             |            "pretty": "^KeyedValue[(]null,[{]amount=100, clientId=100, isLast=false[}][)]$$"
+             |          }
+             |        },
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-4",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 4,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "send for audit",
+             |          "value": {
+             |            "pretty": "^KeyedValue[(]null,[{]amount=1000, clientId=100, isLast=false[}][)]$$"
+             |          }
+             |        },
+             |        {
+             |          "contextId": "DetectLargeTransactions-transactions-0-5",
+             |          "cid": {
+             |            "nid": "transactions",
+             |            "tid": 0,
+             |            "idx": 5,
+             |            "path": []
+             |          },
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "send for audit",
+             |          "value": {
+             |            "pretty": "^KeyedValue[(]null,[{]amount=10000, clientId=100, isLast=false[}][)]$$"
+             |          }
+             |        }
+             |      ]
+             |    },
              |    "exceptions": [],
              |    "exceptionsByNodeId": {}
              |  },

@@ -28,10 +28,13 @@ import pl.touk.nussknacker.engine.process.compiler.{
   FlinkProcessCompilerDataFactory,
   UsedNodes
 }
-import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
+import pl.touk.nussknacker.engine.resultcollector.{
+  ProductionServiceInvocationCollector,
+  ResultCollector,
+  SinkInvocationCollector
+}
 import pl.touk.nussknacker.engine.splittedgraph.{splittednode, SplittedNodesCollector}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
-import pl.touk.nussknacker.engine.testmode.TestServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -271,7 +274,12 @@ class FlinkProcessRegistrar(
     ): Map[BranchEndDefinition, BranchEndData] = {
       val typeInformationForIR  = InterpretationResultTypeInformation.create(contextBefore)
       val typeInformationForCtx = TypeInformationDetection.instance.forContext(contextBefore)
-      val nodeComponentInfo     = nodeComponentInfoFrom(part)
+      val typeInformationForPreparedTestValue =
+        TypeInformationDetection.instance.forValueWithContext[AnyRef](
+          contextBefore,
+          TypeInformationDetection.instance.forClass[AnyRef]
+        )
+      val nodeComponentInfo = nodeComponentInfoFrom(part)
       // TODO: for sinks there are no further nodes to interpret but the function is registered to invoke listeners (e.g. to measure end metrics).
       val afterInterpretation = sideOutput(
         registerInterpretationPart(start, part, SinkInterpretationName, nodeComponentInfo),
@@ -280,21 +288,27 @@ class FlinkProcessRegistrar(
         .map((value: InterpretationResult) => value.finalContext, typeInformationForCtx)
       val customNodeContext = nodeContext(nodeComponentInfo, Left(contextBefore))
       val withValuePrepared = sink.prepareValue(afterInterpretation, customNodeContext)
+      def registerCollectingSink(collectingSink: SinkInvocationCollector, uid: String) = {
+        val prepareTestValueFun = sink.prepareTestValueFunction
+        withValuePrepared
+          .map(
+            (ds: ValueWithContext[sink.Value]) => ds.map(prepareTestValueFun),
+            typeInformationForPreparedTestValue
+          )
+          .sinkTo(
+            new CollectingSink[AnyRef](compilerDataForProcessPart(None), collectingSink, part.id, part.node.data.name)
+          )
+          .uid(uid)
+      }
       // TODO: maybe this logic should be moved to compiler instead?
-      val withSinkAdded = resultCollector match {
-        case testResultCollector: TestServiceInvocationCollector =>
-          val collectingSink = testResultCollector.createSinkInvocationCollector(part.id, part.node.data.name.value)
-          val prepareTestValueFun = sink.prepareTestValueFunction
-          withValuePrepared
-            .map(
-              (ds: ValueWithContext[sink.Value]) => ds.map(prepareTestValueFun),
-              customNodeContext.valueWithContextInfo.forUnknown
-            )
-            .sinkTo(
-              new CollectingSink[AnyRef](compilerDataForProcessPart(None), collectingSink, part.id, part.node.data.name)
-            )
-            .uid(part.id.value)
-        case _ =>
+      val withSinkAdded = resultCollector.createSinkInvocationCollector(part.id, part.node.data.name.value) match {
+        case Some(collectingSink) if resultCollector.shouldRegisterSinkInAdditionToCollector =>
+          registerCollectingSink(collectingSink, s"${part.id.value}-$$collecting")
+            .name(operatorName(compilerData.jobData, part.node, "sinkCollecting"))
+          sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfo, Left(contextBefore)))
+        case Some(collectingSink) =>
+          registerCollectingSink(collectingSink, part.id.value)
+        case None =>
           sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfo, Left(contextBefore)))
       }
 
