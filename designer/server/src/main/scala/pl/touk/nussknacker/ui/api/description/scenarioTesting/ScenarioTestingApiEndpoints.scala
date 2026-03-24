@@ -253,8 +253,8 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .errorOut(testingErrorOutput)
       .withSecurity(auth)
 
-  def scenarioPerformTestCasesEndpoint: SecuredEndpoint[
-    (ProcessName, PerformMultipleTestCasesRequest),
+  def scenarioMultipleTestCasesEndpoint: SecuredEndpoint[
+    (ProcessName, PerformMultipleTestCasesRequest, SkipResultsPerNode, SkipResultsPerTransition),
     TestingError,
     Source[TestCaseResultEvent, Any],
     Any with PekkoStreams
@@ -265,6 +265,8 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .post
       .in("scenarioTesting" / path[ProcessName]("scenarioName") / "performTestCases")
       .in(jsonBody[PerformMultipleTestCasesRequest])
+      .in(skipResultsPerNodeQueryParam)
+      .in(skipResultsPerTransitionQueryParam)
       .out(
         serverSentEventsBody
           .mapDecode[Source[TestCaseResultEvent, Any]](_ =>

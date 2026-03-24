@@ -391,10 +391,10 @@ class ScenarioTestingApiHttpService(
   }
 
   expose {
-    scenarioTestingApiEndpoints.scenarioPerformTestCasesEndpoint
+    scenarioTestingApiEndpoints.scenarioMultipleTestCasesEndpoint
       .serverSecurityLogic(authorizeKnownUser[TestingError])
       .serverLogicEitherT { implicit loggedUser =>
-        { case (scenarioName, request) =>
+        { case (scenarioName, request, skipResultsPerNode, skipResultsPerTransition) =>
           for {
             scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
             processId <- EitherT
@@ -407,7 +407,9 @@ class ScenarioTestingApiHttpService(
             request.scenarioGraph,
             scenarioWithDetails,
             scenarioTestService,
-            request.testCases
+            request.testCases,
+            skipResultsPerNode,
+            skipResultsPerTransition
           )(loggedUser)
         }
       }
@@ -418,6 +420,8 @@ class ScenarioTestingApiHttpService(
       scenarioWithDetails: ScenarioWithDetails,
       scenarioTestService: ScenarioTestService,
       testCases: NonEmptyList[TestCase],
+      skipResultsPerNode: SkipResultsPerNode,
+      skipResultsPerTransition: SkipResultsPerTransition,
   )(implicit loggedUser: LoggedUser): Source[TestCaseResultEvent, Any] = {
     import ResultsWithCountsDtoCodecs._
     import TestCaseResultEvent._
@@ -439,7 +443,7 @@ class ScenarioTestingApiHttpService(
           case Right(resultsWithCounts) =>
             TestCaseResultSuccess(
               testCase.id,
-              ResultsWithCountsDto.from(resultsWithCounts, SkipResultsPerNode(false), SkipResultsPerTransition(false))
+              ResultsWithCountsDto.from(resultsWithCounts, skipResultsPerNode, skipResultsPerTransition)
             )
           case Left(error) =>
             TestCaseResultError(testCase.id, TestingApiErrorMessages.from(error))
