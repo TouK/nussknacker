@@ -8,7 +8,7 @@ import enumeratum.EnumEntry.UpperSnakecase
 import io.circe
 import io.circe._
 import io.circe.derivation.deriveCodec
-import io.circe.generic.extras.Configuration
+import io.circe.generic.extras.{Configuration => CirceConfiguration}
 import io.circe.generic.extras.semiauto._
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
@@ -31,6 +31,7 @@ import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
 import sttp.model.sse.ServerSentEvent
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
 import sttp.tapir.derevo.schema
+import sttp.tapir.generic.{Configuration => TapirConfiguration}
 import sttp.tapir.integ.cats.codec._
 
 import scala.collection.compat._
@@ -178,19 +179,23 @@ object Dtos {
       object TestCaseResultEvent {
         import ResultsWithCountsDtoCodecs._
 
-        implicit val configuration: Configuration = Configuration.default.withDiscriminator("type")
+        implicit val configuration: CirceConfiguration = CirceConfiguration.default.withDiscriminator("type")
 
-        @derive(encoder, decoder)
+        implicit val tapirConfiguration: TapirConfiguration = TapirConfiguration.default.withDiscriminator("type")
+
+        @derive(encoder, decoder, schema)
         final case class Success(testCaseId: TestCaseId, testCaseName: TestCaseName, result: ResultsWithCountsDto)
             extends TestCaseResultEvent
 
-        @derive(encoder, decoder)
+        @derive(encoder, decoder, schema)
         final case class Error(testCaseId: TestCaseId, testCaseName: TestCaseName, error: String)
             extends TestCaseResultEvent
 
         implicit val testCaseResultEventDecoder: Decoder[TestCaseResultEvent] = deriveConfiguredDecoder
 
         implicit val testCaseResultEventEncoder: Encoder[TestCaseResultEvent] = deriveConfiguredEncoder
+
+        implicit val testCaseResultEventSchema: Schema[TestCaseResultEvent] = Schema.derived
 
       }
 
