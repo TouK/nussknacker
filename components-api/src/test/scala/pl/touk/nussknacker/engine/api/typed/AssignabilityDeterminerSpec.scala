@@ -166,7 +166,7 @@ class AssignabilityDeterminerSpec extends AnyFunSuite with Matchers {
 
   private def createDeterminer(allowUnknownToAnyAssignment: Boolean) = new AssignabilityDeterminer(
     new TypingConfigurationProvider {
-      override def config: TypingConfiguration =
+      override val config: TypingConfiguration =
         TypingConfiguration(allowUnknownToAnyAssignment = allowUnknownToAnyAssignment)
     }
   )

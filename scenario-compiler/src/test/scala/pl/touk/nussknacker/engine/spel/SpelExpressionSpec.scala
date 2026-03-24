@@ -7,7 +7,7 @@ import org.apache.avro.{Schema, SchemaBuilder}
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.flink.types.Row
 import org.scalacheck.Gen
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -102,11 +102,10 @@ trait SpelExpressionSpec
     with Matchers
     with ValidatedValuesDetailedMessage
     with OptionValues
-    with BeforeAndAfterEach
     with BeforeAndAfterAll {
 
-  override def beforeEach(): Unit = {
-    super.beforeEach()
+  override def beforeAll(): Unit = {
+    super.beforeAll()
     MutableTypingConfigurationProvider.set(
       TypingConfiguration(allowUnknownToAnyAssignment = allowUnknownToAnyAssignment)
     )
@@ -114,9 +113,10 @@ trait SpelExpressionSpec
 
   override def afterAll(): Unit = {
     MutableTypingConfigurationProvider.reset()
+    super.afterAll()
   }
 
-  protected def allowUnknownToAnyAssignment: Boolean
+  protected val allowUnknownToAnyAssignment: Boolean
 
   private def expectDependingOnMode(lenient: => Unit, strict: => Unit): Unit =
     if (allowUnknownToAnyAssignment) lenient else strict
@@ -618,24 +618,22 @@ trait SpelExpressionSpec
   }
 
   test("blocking excluded reflect in runtime, without previous static validation") {
-    val parsedExpression = parse[Any](
-      "T(java.lang.reflect.Modifier).classModifiers()",
-      staticMethodInvocationsChecking = false,
-      methodExecutionForUnknownAllowed = true
-    )
     a[SpelExpressionEvaluationException] should be thrownBy {
-      parsedExpression.validExpression.evaluateSync[Any](ctx)
+      parse[Any](
+        "T(java.lang.reflect.Modifier).classModifiers()",
+        staticMethodInvocationsChecking = false,
+        methodExecutionForUnknownAllowed = true
+      ).validExpression.evaluateSync[Any](ctx)
     }
   }
 
   test("blocking excluded System in runtime, without previous static validation") {
-    val parsedExpression = parse[Any](
-      "T(System).exit()",
-      staticMethodInvocationsChecking = false,
-      methodExecutionForUnknownAllowed = true
-    )
     a[SpelExpressionEvaluationException] should be thrownBy {
-      parsedExpression.validExpression.evaluateSync[Any](ctx)
+      parse[Any](
+        "T(System).exit()",
+        staticMethodInvocationsChecking = false,
+        methodExecutionForUnknownAllowed = true
+      ).validExpression.evaluateSync[Any](ctx)
     }
   }
 
@@ -2140,16 +2138,11 @@ trait SpelExpressionSpec
   }
 
   test("should not allow cast to disallowed classes") {
-    val parsedExpression = parse[Any](
+    parse[Any](
       "#hashMap.value.to('java.util.HashMap').remove('testKey')",
       ctx.withVariable("hashMap", ContainerOfUnknown(new java.util.HashMap[String, Int](Map("testKey" -> 2).asJava)))
-    )
-
-    parsedExpression.invalidValue.toList should matchPattern {
-      case SpelExpressionTypingParseError(
-            GenericFunctionError("Cannot cast or convert to: 'java.util.HashMap'"),
-            _
-          ) ::
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionTypingParseError(GenericFunctionError("Cannot cast or convert to: 'java.util.HashMap'"), _) ::
           SpelExpressionTypingParseError(IllegalInvocationError(Unknown), _) :: Nil =>
     }
   }

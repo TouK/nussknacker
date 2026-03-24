@@ -635,7 +635,7 @@ class TypingResultSpec
 
   private lazy val assignabilityDeterminerWithStrictUnknown = new AssignabilityDeterminer(
     new TypingConfigurationProvider {
-      override def config: TypingConfiguration = TypingConfiguration(allowUnknownToAnyAssignment = false)
+      override val config: TypingConfiguration = TypingConfiguration(allowUnknownToAnyAssignment = false)
     }
   )
 
