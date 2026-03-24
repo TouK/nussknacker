@@ -430,12 +430,13 @@ class ScenarioTestingApiHttpService(
       .map { case (testCase, result) =>
         result match {
           case Right(resultsWithCounts) =>
-            TestCaseResultSuccess(
+            TestCaseResultEvent.Success(
               testCase.id,
+              testCase.name,
               ResultsWithCountsDto.from(resultsWithCounts, skipResultsPerNode, skipResultsPerTransition)
             )
           case Left(error) =>
-            TestCaseResultError(testCase.id, TestingApiErrorMessages.from(error))
+            TestCaseResultEvent.Error(testCase.id, testCase.name, TestingApiErrorMessages.from(error))
         }
       }
   }

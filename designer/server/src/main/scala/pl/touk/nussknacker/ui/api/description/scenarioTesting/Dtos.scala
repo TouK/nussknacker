@@ -8,13 +8,15 @@ import enumeratum.EnumEntry.UpperSnakecase
 import io.circe
 import io.circe._
 import io.circe.derivation.deriveCodec
+import io.circe.generic.extras.Configuration
+import io.circe.generic.extras.semiauto._
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase, TestCaseId}
+import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase, TestCaseId, TestCaseName}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
@@ -176,25 +178,19 @@ object Dtos {
       object TestCaseResultEvent {
         import ResultsWithCountsDtoCodecs._
 
+        implicit val configuration: Configuration = Configuration.default.withDiscriminator("type")
+
         @derive(encoder, decoder)
-        final case class TestCaseResultSuccess(testCaseId: TestCaseId, result: ResultsWithCountsDto)
+        final case class Success(testCaseId: TestCaseId, testCaseName: TestCaseName, result: ResultsWithCountsDto)
             extends TestCaseResultEvent
 
         @derive(encoder, decoder)
-        final case class TestCaseResultError(testCaseId: TestCaseId, error: String) extends TestCaseResultEvent
+        final case class Error(testCaseId: TestCaseId, testCaseName: TestCaseName, error: String)
+            extends TestCaseResultEvent
 
-        implicit val testCaseResultEventDecoder: Decoder[TestCaseResultEvent] = Decoder.instance { c =>
-          c.downField("type").as[String].flatMap {
-            case "success" => c.as[TestCaseResultSuccess]
-            case "error"   => c.as[TestCaseResultError]
-            case other     => Left(DecodingFailure(s"Unknown type: $other", c.history))
-          }
-        }
+        implicit val testCaseResultEventDecoder: Decoder[TestCaseResultEvent] = deriveConfiguredDecoder
 
-        implicit val testCaseResultEventEncoder: Encoder[TestCaseResultEvent] = Encoder.instance {
-          case s: TestCaseResultSuccess => s.asJson.mapObject(_.add("type", "success".asJson))
-          case e: TestCaseResultError   => e.asJson.mapObject(_.add("type", "error".asJson))
-        }
+        implicit val testCaseResultEventEncoder: Encoder[TestCaseResultEvent] = deriveConfiguredEncoder
 
       }
 

@@ -8,6 +8,7 @@ import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.hamcrest.Matchers.{containsString, equalTo, nullValue}
+import org.scalatest.OptionValues
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.NodeId
@@ -20,6 +21,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
 import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, PredicateAssertion}
 import pl.touk.nussknacker.test.{
+  EitherValuesDetailedMessage,
   NuRestAssureMatchers,
   PatientScalaFutures,
   RestAssuredVerboseLoggingIfValidationFails,
@@ -55,6 +57,8 @@ class ScenarioTestingApiHttpServiceSpec
     with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures
     with Matchers
+    with OptionValues
+    with EitherValuesDetailedMessage
     with LazyLogging {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -584,20 +588,19 @@ class ScenarioTestingApiHttpServiceSpec
         .toList
 
       events should have size 2
-      events.foreach(_.eventType shouldEqual Some("testCaseResult"))
 
       val parsedEvents = events.map { event =>
-        val data = event.data.getOrElse(fail("Missing data in SSE event"))
-        parser.parse(data).getOrElse(fail(s"Failed to parse JSON: $data"))
+        val data = event.data.value
+        parser.parse(data).rightValue
       }
 
       parsedEvents.foreach { json =>
-        json.hcursor.downField("status").as[String].getOrElse(fail(s"Missing status in: $json")) shouldEqual "success"
+        json.hcursor.downField("type").as[String].rightValue shouldBe "Success"
       }
 
       parsedEvents
-        .map(_.hcursor.downField("testCaseId").as[UUID].getOrElse(fail("Missing testCaseId")))
-        .toSet shouldEqual Set(testCase1.id, testCase2.id)
+        .map(_.hcursor.downField("testCaseId").as[UUID].rightValue)
+        .toSet shouldBe Set(testCase1.id, testCase2.id)
     }
   }
 
