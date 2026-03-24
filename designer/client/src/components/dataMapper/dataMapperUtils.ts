@@ -187,7 +187,16 @@ export const TYPE_CONVERSIONS: Partial<Record<NuType, Partial<Record<NuType, (ex
 export function applyTypeConversion(expr: string, sourceType: NuType | undefined, targetType: NuType): string {
     if (!sourceType || sourceType === targetType || targetType === "Any" || sourceType === "Any") return expr;
     const conversion = TYPE_CONVERSIONS[sourceType]?.[targetType];
-    return conversion ? conversion(expr) : expr;
+    if (conversion) return conversion(expr);
+    // No specific conversion — fall back to Any-style extension methods if available
+    // (e.g. String → Float/Boolean using toDoubleOrNull/toBooleanOrNull)
+    const anyConv = ANY_CONVERSIONS[targetType];
+    if (anyConv) {
+        const fallback = defaultValue ?? anyConv.fallback;
+        const converted = `${expr}?.${anyConv.method}`;
+        return fallback ? `${converted} ?: ${fallback}` : converted;
+    }
+    return expr;
 }
 
 /** Get the NuType of a value at a dotted path within variableTypes (strips leading # and ? from path). */
