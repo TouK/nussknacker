@@ -339,6 +339,10 @@ description: Stay informed with detailed changelogs covering new features, impro
   * Dynamic record indexing returns value type instead of `Unknown`
   * Limited support for function references in SpEL
   * Improved typing for properties derived from `Unknown` values
+* [#9083](https://github.com/TouK/nussknacker/pull/9083) Added configuration option to restrict assignments from Unknown type.
+  When enabled, expressions with Unknown type cannot be assigned to fields with a concrete type, reducing runtime type errors for partially typed data.
+  Can be configured by implementing TypingConfigurationProvider and registering it as SPI.
+  By default, the existing permissive behavior is preserved.
 
 ## 1.18
 
