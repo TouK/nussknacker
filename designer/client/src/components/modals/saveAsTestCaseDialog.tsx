@@ -20,19 +20,20 @@ const SaveAsTestCaseDialog = (props: WindowContentProps) => {
     const [testCaseName, setTestCaseName] = useState(`Copy: ${activeTestCase?.name || "Test Case"}`);
     const dispatch = useAppDispatch();
     const { nameErrors, isValid } = useSaveAsTestCaseValidation(testCaseName);
-
+    const { close } = props;
     const cancelButton = useMemo<WindowButtonProps | false>(() => {
         return {
             title: t("dialog.button.cancel", "cancel"),
-            action: () => props.close(),
+            action: () => close(),
             className: LoadingButtonTypes.secondaryButton,
         };
-    }, [props, t]);
+    }, [close, t]);
 
     const saveAsButton = useMemo<WindowButtonProps | false>(() => {
         return {
             title: t("dialog.button.saveAs", "Save as"),
             action: () => {
+                if (!activeTestCase) return;
                 dispatch(addTestCase({ ...activeTestCase, id: uuidv4(), name: testCaseName }));
                 props.close();
             },
