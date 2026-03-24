@@ -400,13 +400,9 @@ class ScenarioTestingApiHttpService(
             processId <- EitherT
               .fromOption[Future](scenarioWithDetails.processId, noScenarioError(scenarioName): TestingError)
             _ <- isAuthorized(processId, Permission.Deploy)
-            scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
-              scenarioWithDetails.processingType
-            )
           } yield buildTestCasesStream(
             request.scenarioGraph,
             scenarioWithDetails,
-            scenarioTestService,
             request.testCases,
             skipResultsPerNode,
             skipResultsPerTransition
@@ -418,25 +414,19 @@ class ScenarioTestingApiHttpService(
   private def buildTestCasesStream(
       scenarioGraph: ScenarioGraph,
       scenarioWithDetails: ScenarioWithDetails,
-      scenarioTestService: ScenarioTestService,
       testCases: NonEmptyList[TestCase],
       skipResultsPerNode: SkipResultsPerNode,
       skipResultsPerTransition: SkipResultsPerTransition,
   )(implicit loggedUser: LoggedUser): Source[TestCaseResultEvent, Any] = {
     import TestCaseResultEvent._
-    Source(testCases.toList)
-      .mapAsync(parallelism = testCases.size) { testCase =>
-        scenarioTestService
-          .performTestCase(
-            scenarioGraph,
-            scenarioWithDetails.processVersionUnsafe,
-            scenarioWithDetails.isFragment,
-            testCase
-          )
-          .map[(TestCase, Either[ScenarioTestService.PerformTestError, ResultsWithCounts])](result =>
-            testCase -> result
-          )
-      }
+    processingTypeToScenarioTestServices
+      .forProcessingTypeUnsafe(scenarioWithDetails.processingType)
+      .performMultipleTestCases(
+        scenarioGraph,
+        scenarioWithDetails.processVersionUnsafe,
+        scenarioWithDetails.isFragment,
+        testCases
+      )
       .map { case (testCase, result) =>
         result match {
           case Right(resultsWithCounts) =>
