@@ -256,6 +256,21 @@ describe("genSpelFromFields", () => {
         f.expression = "#input.meta";
         expect(genSpelFromFields([f])).toBe("{\n  meta: #input.meta\n}");
     });
+
+    it("field with defaultValue uses Elvis format", () => {
+        const f = makeField("active", "Boolean");
+        f.expression = "#input.flag";
+        f.defaultValue = "false";
+        expect(genSpelFromFields([f])).toBe("{\n  active: #input.flag ?: false\n}");
+    });
+
+    it("field with type-converted expression and defaultValue uses Elvis", () => {
+        const f = makeField("active", "Boolean");
+        // After splitElvisIntoField, expression has no Elvis — defaultValue holds the fallback
+        f.expression = "#outputVar[8]?.toBooleanOrNull";
+        f.defaultValue = "true";
+        expect(genSpelFromFields([f])).toBe("{\n  active: #outputVar[8]?.toBooleanOrNull ?: true\n}");
+    });
 });
 
 // ─── fieldsFromSample ─────────────────────────────────────────────────────────

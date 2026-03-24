@@ -22,8 +22,8 @@ export function typingResultToSample(t: any): unknown {
     }
     if (name === "java.lang.String") return "";
     if (name === "java.lang.Boolean") return false;
-    if (name.includes("Integer") || name.includes("Long") || name.includes("Short") || name.includes("Double") || name.includes("Float"))
-        return 0;
+    if (name.includes("Integer") || name.includes("Long") || name.includes("Short")) return 0;
+    if (name.includes("Double") || name.includes("Float")) return 0.5;
     if (name.includes("Map")) return {};
     return null;
 }

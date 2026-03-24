@@ -185,17 +185,26 @@ export const TYPE_CONVERSIONS: Partial<Record<NuType, Partial<Record<NuType, (ex
 
 /** Extension-method fallbacks for when no specific TYPE_CONVERSIONS entry exists. */
 const ANY_CONVERSIONS: Partial<Record<NuType, { method: string; fallback: string }>> = {
-    Boolean: { method: "toBooleanOrNull", fallback: "false" },
-    Integer: { method: "toIntegerOrNull", fallback: "0" },
+    String: { method: "toString()", fallback: "''" },
     Long: { method: "toLongOrNull", fallback: "0" },
+    Integer: { method: "toIntegerOrNull", fallback: "0" },
+    // Nu has no toFloatOrNull — Float fields use toDoubleOrNull (SpEL treats both as double)
     Float: { method: "toDoubleOrNull", fallback: "0.0" },
     Double: { method: "toDoubleOrNull", fallback: "0.0" },
     BigDecimal: { method: "toBigDecimalOrNull", fallback: "0" },
+    Boolean: { method: "toBooleanOrNull", fallback: "false" },
 };
 
 /** Apply a type conversion from sourceType to targetType, or return expr unchanged if no conversion available. */
-export function applyTypeConversion(expr: string, sourceType: NuType | undefined, targetType: NuType): string {
-    if (!sourceType || sourceType === targetType || targetType === "Any" || sourceType === "Any") return expr;
+export function applyTypeConversion(expr: string, sourceType: NuType | undefined, targetType: NuType, defaultValue?: string): string {
+    if (!sourceType || sourceType === targetType || targetType === "Any") return expr;
+    if (sourceType === "Any") {
+        const conv = ANY_CONVERSIONS[targetType];
+        if (!conv) return expr;
+        const fallback = defaultValue ?? conv.fallback;
+        const converted = `${expr}?.${conv.method}`;
+        return fallback ? `${converted} ?: ${fallback}` : converted;
+    }
     const conversion = TYPE_CONVERSIONS[sourceType]?.[targetType];
     if (conversion) return conversion(expr);
     // No specific conversion — fall back to Any-style extension methods if available
@@ -210,14 +219,25 @@ export function applyTypeConversion(expr: string, sourceType: NuType | undefined
 
 /** Get the NuType of a value at a dotted path within variableTypes (strips leading # and ? from path). */
 export function getNuTypeAtPath(variableTypes: Record<string, TypingResult>, path: string): NuType | undefined {
-    const parts = path.replace(/^#/, "").replace(/\?/g, "").split(".").filter(Boolean);
-    if (parts.length === 0) return undefined;
-    let current: TypingResult | undefined = variableTypes[parts[0]];
+    // Tokenize: split by "." and also extract "[N]" / "['key']" index segments
+    const segments =
+        path
+            .replace(/^#/, "")
+            .replace(/\?/g, "")
+            .match(/[^.[]+|\[\d+\]|\['[^']+'\]/g) ?? [];
+    if (segments.length === 0) return undefined;
+    let current: TypingResult | undefined = variableTypes[segments[0]];
     if (!current) return undefined;
-    for (let i = 1; i < parts.length; i++) {
-        const fields = (current as { fields?: Record<string, TypingResult> }).fields;
-        if (!fields) return undefined;
-        current = fields[parts[i]];
+    for (let i = 1; i < segments.length; i++) {
+        const seg = segments[i];
+        if (seg.startsWith("[")) {
+            const params = (current as { params?: TypingResult[] }).params;
+            // Empty params = untyped list — treat element as Any
+            if (!params?.length) return "Any";
+            current = params[0];
+        } else {
+            current = (current as { fields?: Record<string, TypingResult> }).fields?.[seg];
+        }
         if (!current) return undefined;
     }
     return refClazzToNuType(current.refClazzName);
@@ -287,13 +307,18 @@ export function splitTopLevel(inner: string): string[] {
 }
 
 function parseNullDefault(value: string): { expression: string; defaultValue: string } | null {
+    // Parse: expr != null ? expr : defaultValue  (null-ternary format, backward compat)
     const marker = " != null ? ";
     const idx = value.indexOf(marker);
-    if (idx < 0) return null;
-    const expr = value.slice(0, idx);
-    const rest = value.slice(idx + marker.length);
-    if (!rest.startsWith(expr + " : ")) return null;
-    return { expression: expr, defaultValue: rest.slice(expr.length + 3) };
+    if (idx >= 0) {
+        const expr = value.slice(0, idx);
+        const rest = value.slice(idx + marker.length);
+        if (rest.startsWith(expr + " : ")) return { expression: expr, defaultValue: rest.slice(expr.length + 3) };
+    }
+    // Parse: expr ?: defaultValue  (Elvis format)
+    const elvisIdx = value.lastIndexOf(" ?: ");
+    if (elvisIdx >= 0) return { expression: value.slice(0, elvisIdx), defaultValue: value.slice(elvisIdx + 4) };
+    return null;
 }
 
 /** Parse a SpEL record expression `{ key: expr, ... }` back into FieldDef[] (recursive). */
@@ -405,7 +430,7 @@ export function genSpelFromFields(fields: FieldDef[], depth = 0): string {
             return `${innerIndent}${f.name}: ${genSpelFromFields(f.children, depth + 1)}`;
         }
         const expr = f.expression || "null";
-        const value = f.expression && f.defaultValue !== undefined ? `${f.expression} != null ? ${f.expression} : ${f.defaultValue}` : expr;
+        const value = f.expression && f.defaultValue !== undefined ? `${f.expression} ?: ${f.defaultValue}` : expr;
         return `${innerIndent}${f.name}: ${value}`;
     });
     return `{\n${lines.join(",\n")}\n${outerIndent}}`;
