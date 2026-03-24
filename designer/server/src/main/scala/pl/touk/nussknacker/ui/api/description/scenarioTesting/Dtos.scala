@@ -8,7 +8,7 @@ import enumeratum.EnumEntry.UpperSnakecase
 import io.circe
 import io.circe._
 import io.circe.derivation.deriveCodec
-import io.circe.syntax.EncoderOps
+import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.{NodeId, NodeName}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -169,10 +169,7 @@ object Dtos {
         def testCaseId: TestCaseId
 
         def toServerSentEvent: ServerSentEvent =
-          ServerSentEvent(
-            data = Some(TestCaseResultEvent.codec(this).noSpaces),
-            eventType = Some("testCaseResult")
-          )
+          ServerSentEvent(data = Some((this: TestCaseResultEvent).asJson.noSpaces))
 
       }
 
@@ -186,19 +183,18 @@ object Dtos {
         @derive(encoder, decoder)
         final case class TestCaseResultError(testCaseId: TestCaseId, error: String) extends TestCaseResultEvent
 
-        implicit val codec: circe.Codec[TestCaseResultEvent] = circe.Codec.from(
-          Decoder.instance(c =>
-            c.downField("status").as[String].flatMap {
-              case "success" => c.as[TestCaseResultSuccess]
-              case "error"   => c.as[TestCaseResultError]
-              case other     => Left(DecodingFailure(s"Unknown status: $other", c.history))
-            }
-          ),
-          Encoder.instance {
-            case s: TestCaseResultSuccess => s.asJson.mapObject(_.add("status", "success".asJson))
-            case e: TestCaseResultError   => e.asJson.mapObject(_.add("status", "error".asJson))
+        implicit val testCaseResultEventDecoder: Decoder[TestCaseResultEvent] = Decoder.instance { c =>
+          c.downField("type").as[String].flatMap {
+            case "success" => c.as[TestCaseResultSuccess]
+            case "error"   => c.as[TestCaseResultError]
+            case other     => Left(DecodingFailure(s"Unknown type: $other", c.history))
           }
-        )
+        }
+
+        implicit val testCaseResultEventEncoder: Encoder[TestCaseResultEvent] = Encoder.instance {
+          case s: TestCaseResultSuccess => s.asJson.mapObject(_.add("type", "success".asJson))
+          case e: TestCaseResultError   => e.asJson.mapObject(_.add("type", "error".asJson))
+        }
 
       }
 
