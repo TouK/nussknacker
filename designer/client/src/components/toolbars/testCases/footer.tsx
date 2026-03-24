@@ -40,8 +40,6 @@ const LastRun = ({ isLoading }: LastRunProps) => {
         function setLastRunValue() {
             if (previousLoading && !isLoading && visibleDataType === VisibleDataType.test) {
                 setLastRun(Date.now());
-            } else {
-                setLastRun(null);
             }
         },
         [isLoading, previousLoading, visibleDataType],
