@@ -54,7 +54,7 @@ export const TestCasesSelector = () => {
             {/*    </StyledActionButton>*/}
             {/*</InfoTooltip>*/}
             <InfoTooltip title={"Save as"} variant={"hover"} enterDelay={500}>
-                <StyledButton title={t("node.row.add.title", "Add field")} onClick={handleSaveAsClick}>
+                <StyledButton data-testid="save-as-test-case" title={t("node.row.add.title", "Add field")} onClick={handleSaveAsClick}>
                     {t("node.row.add.text", "+")}
                 </StyledButton>
             </InfoTooltip>
