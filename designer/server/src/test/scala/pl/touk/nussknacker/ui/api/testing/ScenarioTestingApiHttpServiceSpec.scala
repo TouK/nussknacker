@@ -575,7 +575,7 @@ class ScenarioTestingApiHttpServiceSpec
             NonEmptyList.of(testCase1, testCase2)
           ).asJson.spaces2
         )
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${testCaseScenario.name}/performTestCases")
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${testCaseScenario.name}/performMultipleTestCases")
         .Then()
         .statusCode(200)
         .extract()

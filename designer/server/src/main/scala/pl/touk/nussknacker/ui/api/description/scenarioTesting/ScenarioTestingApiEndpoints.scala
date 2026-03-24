@@ -263,7 +263,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .summary("Perform multiple test cases with streaming results")
       .tag("Testing")
       .post
-      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "performTestCases")
+      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "performMultipleTestCases")
       .in(jsonBody[PerformMultipleTestCasesRequest])
       .in(skipResultsPerNodeQueryParam)
       .in(skipResultsPerTransitionQueryParam)
