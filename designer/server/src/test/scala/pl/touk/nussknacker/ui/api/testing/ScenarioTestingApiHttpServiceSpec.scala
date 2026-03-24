@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
-import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase}
+import pl.touk.nussknacker.engine.test.testcase.{Assertion, EnricherMock, TestCase, TestCaseId}
 import pl.touk.nussknacker.engine.test.testcase.Assertion.{AssertionOperator, PredicateAssertion}
 import pl.touk.nussknacker.test.{
   EitherValuesDetailedMessage,
@@ -552,9 +552,9 @@ class ScenarioTestingApiHttpServiceSpec
         """[
           |  {"sourceId":"unknownSource","variables":{"input":["ala"]}}
           |]""".stripMargin
-      val successfulTestCase = TestCase(
+      val successfulTestCase1 = TestCase(
         id = UUID.randomUUID(),
-        name = "successful test case",
+        name = "successful test case 1",
         inputs = validInputs,
         mocks = Map.empty,
         assertions = Map.empty
@@ -563,6 +563,13 @@ class ScenarioTestingApiHttpServiceSpec
         id = UUID.randomUUID(),
         name = "failing test case",
         inputs = invalidInputs,
+        mocks = Map.empty,
+        assertions = Map.empty
+      )
+      val successfulTestCase2 = TestCase(
+        id = UUID.randomUUID(),
+        name = "successful test case 2",
+        inputs = validInputs,
         mocks = Map.empty,
         assertions = Map.empty
       )
@@ -576,7 +583,7 @@ class ScenarioTestingApiHttpServiceSpec
         .jsonBody(
           PerformMultipleTestCasesRequest(
             testCaseScenario.toScenarioGraph,
-            NonEmptyList.of(successfulTestCase, failingTestCase)
+            NonEmptyList.of(successfulTestCase1, failingTestCase, successfulTestCase2)
           ).asJson.spaces2
         )
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${testCaseScenario.name}/performMultipleTestCases")
@@ -592,13 +599,14 @@ class ScenarioTestingApiHttpServiceSpec
         .map(event => parser.parse(event.data.value).rightValue)
         .toList
 
-      parsedEvents should have size 2
+      parsedEvents should have size 3
 
       val eventById = parsedEvents
-        .map(json => json.hcursor.downField("testCaseId").as[UUID].rightValue -> json)
+        .map(json => json.hcursor.downField("testCaseId").as[TestCaseId].rightValue -> json)
         .toMap
 
-      eventById(successfulTestCase.id).hcursor.downField("type").as[String].rightValue shouldBe "Success"
+      eventById(successfulTestCase1.id).hcursor.downField("type").as[String].rightValue shouldBe "Success"
+      eventById(successfulTestCase2.id).hcursor.downField("type").as[String].rightValue shouldBe "Success"
 
       val errorEvent = eventById(failingTestCase.id)
       errorEvent.hcursor.downField("type").as[String].rightValue shouldBe "Error"
