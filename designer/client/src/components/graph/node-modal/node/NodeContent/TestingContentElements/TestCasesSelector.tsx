@@ -3,6 +3,7 @@ import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 import { changeActiveTestCase } from "../../../../../../actions/nk/testingActions";
+import { getSettings } from "../../../../../../reducers/selectors/settings";
 import { getActiveTestCaseOption, getTestCaseOptions } from "../../../../../../reducers/selectors/testCases";
 import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
 import { useWindows } from "../../../../../../windowManager/useWindows";
@@ -18,6 +19,7 @@ const StyledTestCasesSelect = styled(TypeSelect)(() => ({
 
 export const TestCasesSelector = () => {
     const { t } = useTranslation();
+    const settings = useAppSelector(getSettings);
 
     const testCaseOptions = useAppSelector(getTestCaseOptions);
     const activeTestCaseOption = useAppSelector(getActiveTestCaseOption);
@@ -41,9 +43,12 @@ export const TestCasesSelector = () => {
     );
 
     const handleSaveAsClick = useCallback(() => {
-        // onDisplayEnterpriseInfo();
-        openSaveAsDialog();
-    }, [openSaveAsDialog]);
+        if (settings.featuresSettings.testCases.multipleEnabled) {
+            openSaveAsDialog();
+        } else {
+            onDisplayEnterpriseInfo();
+        }
+    }, [onDisplayEnterpriseInfo, openSaveAsDialog, settings.featuresSettings.testCases.multipleEnabled]);
 
     return (
         <Box ml={4} pt={1.25} display={"flex"} gap={1}>

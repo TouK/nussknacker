@@ -6,11 +6,15 @@ import { MockExpressionParameter } from "../../components/graph/node-modal/edito
 import type { TestingDataRecords } from "../../components/modals/TestingDataRecords/Table";
 import { safeParseExpression } from "../../components/modals/TestingDataRecords/utils";
 import { getScenarioGraph } from "./graph";
+import { getSettings } from "./settings";
 import { getActiveTestCaseId } from "./testing";
 
 const getNodeId = (_: unknown, nodeId: string) => nodeId;
 
-export const getTestCases = createSelector(getScenarioGraph, ({ testCases }) => testCases?.list ?? []);
+export const getTestCases = createSelector(getScenarioGraph, getSettings, ({ testCases }, settings) => {
+    const list = testCases?.list ?? [];
+    return settings.featuresSettings.testCases.multipleEnabled ? list : list.slice(0, 1);
+});
 export const getActiveTestCase = createSelector(getTestCases, getActiveTestCaseId, (testCases, activeTestCaseId) =>
     testCases.find((testCase) => testCase.id === activeTestCaseId),
 );

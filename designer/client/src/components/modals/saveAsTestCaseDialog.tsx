@@ -34,7 +34,7 @@ const SaveAsTestCaseDialog = (props: WindowContentProps) => {
             title: t("dialog.button.saveAs", "Save as"),
             action: () => {
                 if (!activeTestCase) return;
-                dispatch(addTestCase({ ...activeTestCase, id: uuidv4(), name: testCaseName }));
+                dispatch(addTestCase({ ...activeTestCase, id: uuidv4(), name: testCaseName.trim() }));
                 props.close();
             },
             disabled: !isValid,
@@ -47,7 +47,7 @@ const SaveAsTestCaseDialog = (props: WindowContentProps) => {
     return (
         <WindowContent {...props} buttons={[cancelButton, saveAsButton]}>
             <NodeTable>
-                <NodeRow label={"Name"}>
+                <NodeRow label={t("saveAsTestCaseDialog.label.name", "Name")}>
                     <NodeValue>
                         <Input value={testCaseName} onChange={handleNameChange} fieldErrors={nameErrors} showValidation />
                     </NodeValue>
@@ -63,10 +63,10 @@ const useSaveAsTestCaseValidation = (testCaseName: string) => {
 
     const nameErrors = [
         testCaseName.trim().length === 0 && t("saveAsTestCaseDialog.error.nameEmpty", "Name cannot be empty"),
-        testCases.some((tc) => tc.name === testCaseName) &&
+        testCases.some((tc) => tc.name === testCaseName.trim()) &&
             t("saveAsTestCaseDialog.error.nameExists", "Test case with this name already exists"),
     ]
-        .filter(Boolean)
+        .filter((e): e is string => Boolean(e))
         .map((message) => ({ message, description: "" }));
 
     return { nameErrors, isValid: nameErrors.length === 0 };

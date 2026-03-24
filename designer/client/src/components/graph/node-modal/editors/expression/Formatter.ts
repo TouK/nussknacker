@@ -1,8 +1,9 @@
-import moment from "moment";
-import { prettyPrint } from "ts-spel";
-import type { Ast } from "ts-spel/lib/lib/Ast";
+// Type-specific formatters for SpEL expressions.
+// Handles encoding/decoding of Java types (String, Duration, Period, Cron, LocalTime, LocalDate, LocalDateTime).
 
-import { getAst } from "../../aggregate/pareserHelpers";
+import moment from "moment";
+
+import { astToSpelString, createStringLiteral, isStringLiteral, parseSpelToAst } from "../../../../../common/spelHelpers";
 import type { CronExpression } from "./Cron/CronEditor";
 import type { Duration } from "./Duration/DurationEditor";
 import type { Period } from "./Duration/PeriodEditor";
@@ -26,12 +27,12 @@ export enum FormatterType {
 
 export const stringSpelFormatter: Formatter = {
     encode: (value: string): string => {
-        const ast: Ast = { type: "StringLiteral", value };
-        return prettyPrint(ast);
+        const ast = createStringLiteral(value);
+        return astToSpelString(ast);
     },
     decode: (value: string): string => {
-        const ast = getAst(value);
-        return ast?.type === "StringLiteral" ? ast.value : "";
+        const ast = parseSpelToAst(value);
+        return isStringLiteral(ast) ? ast.value : "";
     },
 };
 

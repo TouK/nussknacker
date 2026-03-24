@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import React from "react";
 
 import type { UIParameter } from "../../../types/definition";
@@ -21,6 +22,8 @@ export function StaticExpressionField({
     setProperty,
     showSwitch,
     showValidation,
+    endAdornment,
+    inputAdornmentEnd,
 }: {
     errors: NodeValidationError[];
     fieldLabel: string;
@@ -32,6 +35,8 @@ export function StaticExpressionField({
     setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
+    endAdornment?: ReactNode;
+    inputAdornmentEnd?: ReactNode;
 }): React.JSX.Element {
     const fieldName = "expression";
     const expressionProperty = "expression";
@@ -50,6 +55,8 @@ export function StaticExpressionField({
             testResultsToShow={testResultsState.testResultsToShow}
             variableTypes={variableTypes}
             fieldErrors={getValidationErrorsForField(errors, `$${fieldName}`)}
+            endAdornment={endAdornment}
+            inputAdornmentEnd={inputAdornmentEnd}
         />
     );
 }
