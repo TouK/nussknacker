@@ -40,6 +40,7 @@ export const useScenarioTestPresets = () => {
     const activeTestCaseId = useAppSelector(getActiveTestCaseId);
     const activeTestCasePreset = testCasePresets.find((testCasePreset) => testCasePreset.value === activeTestCaseId) || null;
 
+    //TODO: Add it  when BE ready
     const runAllPreset: Preset = useMemo(
         () => ({
             icon: <PlayArrow sx={{ fontSize: "20px" }} />,
@@ -52,8 +53,8 @@ export const useScenarioTestPresets = () => {
     const testCasesHeader = useMemo(() => ({ header: t("testingForm.test.menu.testCasesHeader", "Test cases") }), [t]);
 
     const presets: Array<Preset | OptionHeader> = useMemo(
-        () => (testCasePresets.length > 1 ? [runAllPreset, testCasesHeader, ...testCasePresets] : [testCasesHeader, ...testCasePresets]),
-        [runAllPreset, testCasePresets, testCasesHeader],
+        () => (testCasePresets.length > 1 ? [testCasesHeader, ...testCasePresets] : [testCasesHeader, ...testCasePresets]),
+        [testCasePresets, testCasesHeader],
     );
 
     return { presets, testCasePresets, runAllPreset, activeTestCasePreset };
