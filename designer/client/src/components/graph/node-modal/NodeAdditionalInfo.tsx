@@ -8,6 +8,7 @@ import type { NodeType } from "../../../types/node";
 import { usePropertiesState } from "../../modals/usePropertiesState";
 import AdditionalInfoBox from "./AdditionalInfoBox";
 import { MarkdownStyled } from "./MarkdownStyled";
+import { nodeMatchesOverrideKey, OverrideKeys } from "./parameterHelpers";
 import { isRequestSource } from "./requestSourceAddons";
 
 export const PropertiesAdditionalInfo = () => {
@@ -39,7 +40,7 @@ function ForEachAdditionalInfo() {
 }
 
 export function NodeAdditionalInfo({ node }: { node: NodeType }) {
-    if (node.type === "CustomNode" && node.nodeType === "for-each") {
+    if (nodeMatchesOverrideKey(node, OverrideKeys.ForEachElements)) {
         return <ForEachAdditionalInfo />;
     }
     return isRequestSource(node) ? (
