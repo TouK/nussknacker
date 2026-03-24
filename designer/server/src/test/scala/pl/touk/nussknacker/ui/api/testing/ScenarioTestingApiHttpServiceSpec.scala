@@ -544,21 +544,25 @@ class ScenarioTestingApiHttpServiceSpec
 
   "The endpoint for performing multiple test cases should" - {
     "stream results for each test case" in {
-      val testDataContent =
+      val validInputs =
         """[
           |  {"sourceId":"startProcess","variables":{"input":["ala"]}}
           |]""".stripMargin
-      val testCase1 = TestCase(
+      val invalidInputs =
+        """[
+          |  {"sourceId":"unknownSource","variables":{"input":["ala"]}}
+          |]""".stripMargin
+      val successfulTestCase = TestCase(
         id = UUID.randomUUID(),
-        name = "test case 1",
-        inputs = testDataContent,
+        name = "successful test case",
+        inputs = validInputs,
         mocks = Map.empty,
         assertions = Map.empty
       )
-      val testCase2 = TestCase(
+      val failingTestCase = TestCase(
         id = UUID.randomUUID(),
-        name = "test case 2",
-        inputs = testDataContent,
+        name = "failing test case",
+        inputs = invalidInputs,
         mocks = Map.empty,
         assertions = Map.empty
       )
@@ -572,7 +576,7 @@ class ScenarioTestingApiHttpServiceSpec
         .jsonBody(
           PerformMultipleTestCasesRequest(
             testCaseScenario.toScenarioGraph,
-            NonEmptyList.of(testCase1, testCase2)
+            NonEmptyList.of(successfulTestCase, failingTestCase)
           ).asJson.spaces2
         )
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${testCaseScenario.name}/performMultipleTestCases")
@@ -581,26 +585,24 @@ class ScenarioTestingApiHttpServiceSpec
         .extract()
         .asString()
 
-      val events = responseBody
+      val parsedEvents = responseBody
         .split("\n\n")
         .map(block => ServerSentEvent.parse(block.split("\n").toList))
         .filter(_.data.isDefined)
+        .map(event => parser.parse(event.data.value).rightValue)
         .toList
 
-      events should have size 2
+      parsedEvents should have size 2
 
-      val parsedEvents = events.map { event =>
-        val data = event.data.value
-        parser.parse(data).rightValue
-      }
+      val eventById = parsedEvents
+        .map(json => json.hcursor.downField("testCaseId").as[UUID].rightValue -> json)
+        .toMap
 
-      parsedEvents.foreach { json =>
-        json.hcursor.downField("type").as[String].rightValue shouldBe "Success"
-      }
+      eventById(successfulTestCase.id).hcursor.downField("type").as[String].rightValue shouldBe "Success"
 
-      parsedEvents
-        .map(_.hcursor.downField("testCaseId").as[UUID].rightValue)
-        .toSet shouldBe Set(testCase1.id, testCase2.id)
+      val errorEvent = eventById(failingTestCase.id)
+      errorEvent.hcursor.downField("type").as[String].rightValue shouldBe "Error"
+      errorEvent.hcursor.downField("error").as[String].rightValue should include("unknownSource")
     }
   }
 
