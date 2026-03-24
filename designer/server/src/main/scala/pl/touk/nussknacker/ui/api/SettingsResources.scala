@@ -7,7 +7,7 @@ import io.circe.generic.JsonCodec
 import org.apache.pekko.http.scaladsl.server.{Directives, Route}
 import pl.touk.nussknacker.engine.api.CirceUtil.codecs._
 import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
-import pl.touk.nussknacker.ui.config.{DesignerConfig, UsageStatisticsReportsConfig}
+import pl.touk.nussknacker.ui.config.{DesignerConfig, TestCasesSettings, UsageStatisticsReportsConfig}
 import pl.touk.nussknacker.ui.statistics.{Fingerprint, FingerprintService}
 
 import java.net.URL
@@ -46,7 +46,7 @@ class SettingsResources(
                   UsageStatisticsReportsSettings(usageStatisticsReportsConfig, fingerprint.toOption),
                 stickyNotesSettings = config.stickyNotesSettings,
                 assistant = config.assistantSettings,
-                testCases = config.testCasesSettings,
+                testCases = TestCasesSettingsDto.fromConfig(config.testCasesSettings),
               )
               val authenticationSettings = AuthenticationSettings(
                 authenticationMethod
@@ -162,7 +162,7 @@ object TopTabType extends Enumeration {
     redirectAfterArchive: Boolean,
     usageStatisticsReports: UsageStatisticsReportsSettings,
     assistant: AssistantSettings,
-    testCases: TestCasesSettings,
+    testCases: TestCasesSettingsDto,
 )
 
 @JsonCodec final case class AuthenticationSettings(provider: String)
@@ -200,10 +200,15 @@ object AssistantSettings {
   def disabled: AssistantSettings = AssistantSettings(enabled = false)
 }
 
-@JsonCodec final case class TestCasesSettings(
+@JsonCodec final case class TestCasesSettingsDto(
     multipleEnabled: Boolean,
 )
 
-object TestCasesSettings {
-  def default: TestCasesSettings = TestCasesSettings(multipleEnabled = false)
+object TestCasesSettingsDto {
+
+  def fromConfig(testCasesSettings: TestCasesSettings): TestCasesSettingsDto =
+    TestCasesSettingsDto(
+      multipleEnabled = testCasesSettings.multipleEnabled
+    )
+
 }

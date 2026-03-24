@@ -44,6 +44,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 }
 import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
+import pl.touk.nussknacker.ui.config.TestCasesSettings
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.{
@@ -63,6 +64,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioTestService(
     testDataSettings: TestDataSettings,
+    testCasesSettings: TestCasesSettings,
     modelData: ModelData,
     engineScenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies],
     processResolver: UIProcessResolver,
@@ -398,7 +400,7 @@ class ScenarioTestService(
       user: LoggedUser
   ): PekkoSource[(TestCase, Either[PerformTestError, ResultsWithCounts]), NotUsed] = {
     PekkoSource(testCases.toList)
-      .mapAsync(parallelism = testCases.size) { testCase =>
+      .mapAsync(parallelism = testCasesSettings.multipleParallelismExecution) { testCase =>
         performTestCase(
           scenarioGraph,
           processVersion,
