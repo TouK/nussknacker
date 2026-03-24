@@ -423,7 +423,6 @@ class ScenarioTestingApiHttpService(
       skipResultsPerNode: SkipResultsPerNode,
       skipResultsPerTransition: SkipResultsPerTransition,
   )(implicit loggedUser: LoggedUser): Source[TestCaseResultEvent, Any] = {
-    import ResultsWithCountsDtoCodecs._
     import TestCaseResultEvent._
     Source(testCases.toList)
       .mapAsync(parallelism = testCases.size) { testCase =>
