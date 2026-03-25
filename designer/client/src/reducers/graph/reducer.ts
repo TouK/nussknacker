@@ -137,6 +137,29 @@ const adjustScenarioData = flow(
     }),
 );
 
+type NodeTransition = NonNullable<NonNullable<GraphState["testing"]["testResults"]>["nodeTransitionResults"]>[number];
+
+function withSyntheticTransitions(
+    state: GraphState,
+    newState: GraphState,
+    buildSynthetic: (existing: NodeTransition[]) => NodeTransition[],
+): GraphState {
+    const existing = state.testing.testResults?.nodeTransitionResults;
+    if (!existing?.length) return newState;
+    const synthetic = buildSynthetic(existing);
+    if (!synthetic.length) return newState;
+    return {
+        ...newState,
+        testing: {
+            ...newState.testing,
+            testResults: {
+                ...newState.testing.testResults,
+                nodeTransitionResults: [...existing, ...synthetic],
+            },
+        },
+    };
+}
+
 const getDefaultActiveTestCaseId = (actionGraph: ScenarioGraph, stateGraph: ScenarioGraph, testing: TestingState): string | undefined => {
     const list = actionGraph?.testCases?.list ?? stateGraph?.testCases?.list ?? [];
     const existsInList = (id: string | undefined) => list.some((tc) => tc.id === id);
@@ -297,7 +320,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
                   )
                 : concat(currentEdges, newEdge);
 
-            return {
+            const newState = {
                 ...state,
                 scenario: {
                     ...state.scenario,
@@ -310,6 +333,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
                     },
                 },
             };
+
+            return withSyntheticTransitions(state, newState, (existing) =>
+                existing.filter((t) => t.sourceNodeId === action.fromNode.id).map((t) => ({ ...t, destinationNodeId: action.toNode.id })),
+            );
         }
         case "NODES_DISCONNECTED": {
             const nodesToSet = adjustBranchParametersAfterDisconnect(currentNodes, [action]);
@@ -379,11 +406,17 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action): Gra
         }
         case "NODES_WITH_EDGES_ADDED": {
             const { nodes, layout, idMapping, processDefinitionData, edges } = action;
-            return addNodesWithLayout(state, {
-                nodes,
-                layout,
-                edges: adjustEdges(nodes, edges, currentNodes, currentEdges, processDefinitionData, idMapping),
-            });
+            const adjustedEdges = adjustEdges(nodes, edges, currentNodes, currentEdges, processDefinitionData, idMapping);
+            const newState = addNodesWithLayout(state, { nodes, layout, edges: adjustedEdges });
+
+            const newNodeIds = new Set(nodes.map((n) => n.id));
+            return withSyntheticTransitions(state, newState, (existing) =>
+                adjustedEdges
+                    .filter((e) => newNodeIds.has(e.to) && !newNodeIds.has(e.from))
+                    .flatMap((edge) =>
+                        existing.filter((t) => t.sourceNodeId === edge.from).map((t) => ({ ...t, destinationNodeId: edge.to })),
+                    ),
+            );
         }
         case "VALIDATION_RESULT": {
             return {

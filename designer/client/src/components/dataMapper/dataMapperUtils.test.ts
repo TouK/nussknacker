@@ -1,4 +1,12 @@
-import { fieldsFromSample, genSpelFromFields, inferNuType, makeField, parseSpelToFields, splitTopLevel } from "./dataMapperUtils";
+import {
+    applyTypeConversion,
+    fieldsFromSample,
+    genSpelFromFields,
+    inferNuType,
+    makeField,
+    parseSpelToFields,
+    splitTopLevel,
+} from "./dataMapperUtils";
 
 // ─── inferNuType ──────────────────────────────────────────────────────────────
 
@@ -25,6 +33,54 @@ describe("inferNuType", () => {
         [{ a: 1 }, "Map"],
     ] as [unknown, string][])("inferNuType(%p) → %s", (input, expected) => {
         expect(inferNuType(input)).toBe(expected);
+    });
+});
+
+// ─── applyTypeConversion ─────────────────────────────────────────────────────
+
+describe("applyTypeConversion", () => {
+    it("returns expr unchanged when sourceType equals targetType", () => {
+        expect(applyTypeConversion("#x", "Boolean", "Boolean")).toBe("#x");
+    });
+
+    it("returns expr unchanged when targetType is Any", () => {
+        expect(applyTypeConversion("#x", "String", "Any")).toBe("#x");
+    });
+
+    it("returns expr unchanged when sourceType is undefined", () => {
+        expect(applyTypeConversion("#x", undefined, "Boolean")).toBe("#x");
+    });
+
+    it("Any source returns expr unchanged (no conversion for Any → Boolean)", () => {
+        expect(applyTypeConversion("#x", "Any", "Boolean")).toBe("#x");
+    });
+
+    it("String → Boolean falls back to Any-style conversion", () => {
+        expect(applyTypeConversion("#x", "String", "Boolean")).toBe("#x?.toBooleanOrNull ?: false");
+    });
+
+    it("String → Float falls back to Any-style toDoubleOrNull", () => {
+        expect(applyTypeConversion("#x", "String", "Float")).toBe("#x?.toDoubleOrNull ?: 0.0");
+    });
+
+    it("String → Double falls back to Any-style toDoubleOrNull", () => {
+        expect(applyTypeConversion("#x", "String", "Double")).toBe("#x?.toDoubleOrNull ?: 0.0");
+    });
+
+    it("String → Integer falls back to Any-style toIntegerOrNull", () => {
+        expect(applyTypeConversion("#x", "String", "Integer")).toBe("#x?.toIntegerOrNull ?: 0");
+    });
+
+    it("String → ZonedDateTime uses TYPE_CONVERSIONS (takes priority over Any fallback)", () => {
+        expect(applyTypeConversion("#x", "String", "ZonedDateTime")).toBe('#DATE_FORMAT.parseZonedDateTime(#x, "yyyyMMdd-HH:mm:ss.SSS")');
+    });
+
+    it("ZonedDateTime → Long uses TYPE_CONVERSIONS", () => {
+        expect(applyTypeConversion("#x", "ZonedDateTime", "Long")).toBe("#DATE.toEpochMilli(#x)");
+    });
+
+    it("unknown source type also falls back to Any-style conversion if target has one", () => {
+        expect(applyTypeConversion("#x", "List", "Boolean")).toBe("#x?.toBooleanOrNull ?: false");
     });
 });
 

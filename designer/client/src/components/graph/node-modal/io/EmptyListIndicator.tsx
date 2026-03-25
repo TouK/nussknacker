@@ -1,4 +1,4 @@
-import { CloudOff } from "@mui/icons-material";
+import { Insights } from "@mui/icons-material";
 import { alpha, Box, Stack, Typography } from "@mui/material";
 import React, { forwardRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -32,9 +32,9 @@ export const EmptyListIndicator = forwardRef(function EmptyListIndicator(props, 
                     opacity: 0.25,
                 }}
             >
-                <CloudOff sx={{ fontSize: "4em" }} />
+                <Insights sx={{ fontSize: "4em" }} />
                 <Typography variant="subtitle2" noWrap>
-                    {t("variableContext.noData", "data not available yet")}
+                    {t("variableContext.noData", "Run tests or deploy to see live data")}
                 </Typography>
             </Stack>
         </Box>

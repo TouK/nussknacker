@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 
 import java.time.{LocalDate, LocalDateTime}
 import java.util
-import java.util.Currency
+import java.util.{Collections, Currency}
 
 // TODO: clean-up, split tests for Intersection (equals operator), Default (ternary), number promotion, can be subclass etc.
 class TypingResultSpec
@@ -91,6 +91,24 @@ class TypingResultSpec
 
     Unknown.canBeLooselyAssignedTo(typeMap("field1" -> Typed[String])) shouldBe true
     typeMap("field1" -> Typed[String]).canBeLooselyAssignedTo(Unknown) shouldBe true
+  }
+
+  test("determine if empty collections can be assigned to collection of any type") {
+    val stringList  = Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.fromDetailedType[String]))
+    val unknownList = Typed.genericTypeClass(classOf[java.util.List[_]], List(Unknown))
+    val emptyList   = Typed.fromInstance(Collections.emptyList())
+
+    emptyList.canBeLooselyAssignedTo(stringList) shouldBe true
+    emptyList.canBeLooselyAssignedTo(unknownList) shouldBe true
+    unknownList.canBeLooselyAssignedTo(stringList) shouldBe true
+
+    val emptyMap   = Typed.fromInstance(Collections.EMPTY_MAP)
+    val stringMap  = Typed.fromDetailedType[java.util.Map[String, String]]
+    val unknownMap = Typed.fromDetailedType[java.util.Map[String, Any]]
+
+    emptyMap.canBeLooselyAssignedTo(stringMap) shouldBe true
+    emptyMap.canBeLooselyAssignedTo(unknownMap) shouldBe true
+    unknownMap.canBeLooselyAssignedTo(stringMap) shouldBe true
   }
 
   test("determine if can be assigned for class") {
@@ -272,20 +290,72 @@ class TypingResultSpec
         Typed.fromDetailedType[util.List[String]],
         Typed.fromDetailedType[util.Collection[Integer]]
       ) shouldEqual Typed.genericTypeClass[util.Collection[_]](List(Unknown))
+
+    CommonSupertypeFinder.Default
+      .commonSupertype(
+        Typed.fromDetailedType[util.List[String]],
+        Typed.typedListWithElementValues(Unknown, Collections.EMPTY_LIST)
+      ) shouldEqual Typed.genericTypeClass[util.List[_]](List(Typed[String]))
+
+    CommonSupertypeFinder.Default
+      .commonSupertype(
+        Typed.fromDetailedType[util.List[String]],
+        Typed.typedListWithElementValues(Typed[String], Collections.emptyList[String])
+      ) shouldEqual Typed.genericTypeClass[util.List[_]](List(Typed[String]))
+
     val tupleIterable = Typed.fromDetailedType[Iterable[(String, Integer)]]
-    val map           = Typed.fromDetailedType[Map[String, Integer]]
+    val scalaMap      = Typed.fromDetailedType[Map[String, Integer]]
+    val javaMap       = Typed.fromDetailedType[java.util.Map[String, Integer]]
+    val record        = Typed.record(List("a" -> Typed[String]))
+    val emptyRecord   = Typed.record(List.empty)
+
     intersectionSuperTypeFinder
       .commonSupertypeOpt(
-        map,
+        scalaMap,
         tupleIterable
       )
       .value shouldEqual tupleIterable
     intersectionSuperTypeFinder
       .commonSupertypeOpt(
         tupleIterable,
-        map,
+        scalaMap,
       )
       .value shouldEqual tupleIterable
+    intersectionSuperTypeFinder
+      .commonSupertypeOpt(
+        tupleIterable,
+        javaMap,
+      ) shouldEqual None
+
+    CommonSupertypeFinder.Default
+      .commonSupertype(
+        record,
+        emptyRecord
+      ) shouldEqual record
+
+    CommonSupertypeFinder.Default
+      .commonSupertype(
+        emptyRecord,
+        record
+      ) shouldEqual record
+
+    CommonSupertypeFinder.Default
+      .commonSupertype(
+        javaMap,
+        emptyRecord
+      ) shouldEqual javaMap
+
+    CommonSupertypeFinder.Default
+      .commonSupertype(
+        emptyRecord,
+        javaMap,
+      ) shouldEqual javaMap
+
+    CommonSupertypeFinder.Default
+      .commonSupertype(
+        javaMap,
+        record
+      ) shouldEqual Typed.fromDetailedType[java.util.Map[String, Any]]
   }
 
   test("common supertype for not matching classes") {
@@ -405,6 +475,7 @@ class TypingResultSpec
 
   test("should correctly handle standard java collections") {
     Typed(classOf[java.util.List[_]]) shouldEqual Typed.fromDetailedType[java.util.List[Any]]
+    Typed(classOf[java.util.Set[_]]) shouldEqual Typed.fromDetailedType[java.util.Set[Any]]
     Typed(classOf[java.util.Map[_, _]]) shouldEqual Typed.fromDetailedType[java.util.Map[Any, Any]]
     an[IllegalArgumentException] shouldBe thrownBy {
       Typed.genericTypeClass(classOf[java.util.List[_]], List.empty)
