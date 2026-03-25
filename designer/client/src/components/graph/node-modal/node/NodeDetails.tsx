@@ -20,22 +20,18 @@ import { WindowContent } from "../../../../windowManager/WindowContent";
 import type { WindowKind } from "../../../../windowManager/WindowKind";
 import { useOnToolWindow } from "../../../modals/useOnToolWindow";
 import type { Scenario } from "../../../Process/types";
-import { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
-import { useGetButtonFromToolbar } from "../../../toolbarSettings/useToolbarConfig";
 import NodeUtils from "../../NodeUtils";
 import { InputOutputContent } from "../io/InputOutputContent";
 import { InputOutputContextProvider } from "../io/InputOutputContext";
 import { usePortal } from "../io/usePortal";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
 import { hasValidationTestCasesErrors } from "../NodeDetailsContent/selectors";
-import type { EditedNode } from "../nodeIdFieldHelpers";
 import { TestResultsWrapper } from "../TestResultsWrapper";
 import { useGetNodeErrors } from "../useNodeTypeDetailsContentLogic";
 import { EditStateFeedback } from "./EditStateFeedback";
 import { GeneralContent } from "./NodeContent/GeneralContent";
 import type { TabDef } from "./NodeContent/TabsWrapper";
-import { NodeDetailsTab } from "./NodeContent/TabsWrapper";
-import { TabsWrapper } from "./NodeContent/TabsWrapper";
+import { NodeDetailsTab, TabsWrapper } from "./NodeContent/TabsWrapper";
 import { TestingContent } from "./NodeContent/TestingContent";
 import { TestCases } from "./NodeContent/TestingContentElements/TestCases";
 import { getReadOnly } from "./selectors";
@@ -58,9 +54,9 @@ export function useNodeDetailsButtons({
     close,
     readOnly,
 }: {
-    editedNode: EditedNode;
+    editedNode: NodeType;
     outputEdges: Edge[];
-    performNodeEdit: (editedNode: EditedNode, outputEdges: Edge[]) => Promise<void>;
+    performNodeEdit: (editedNode: NodeType, outputEdges: Edge[]) => Promise<void>;
     close: () => void;
     readOnly?: boolean;
 }) {
@@ -88,7 +84,6 @@ function NodeDetails(props: NodeDetailsProps): React.JSX.Element {
     const { t } = useTranslation();
     const { close, data } = props;
     const readOnly = useAppSelector((s: RootState) => getReadOnly(s, props.readOnly));
-    const buttonFromToolbar = useGetButtonFromToolbar(CustomButtonTypes.scenarioTest);
 
     const { node, editedNode, onChange, outputEdges, performNodeEdit, editState } = useNodeState(data.meta);
     const [generalErrors] = useGetNodeErrors(node);

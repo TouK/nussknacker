@@ -9,7 +9,7 @@ import type { NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
 import { FieldType } from "./editors/field/Field";
-import { IdField } from "./IdField";
+import { NameField } from "./NameField";
 import { findParameters } from "./NodeDetailsContent/helpers";
 import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 import { NodeField } from "./NodeField";
@@ -45,7 +45,7 @@ export function CustomNode({
 
     return (
         <>
-            <IdField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
+            <NameField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
             {hasOutputVar && (
                 <NodeField
                     node={node}
