@@ -70,6 +70,15 @@ function findInTree(fields: FieldDef[], id: number): FieldDef | undefined {
     return undefined;
 }
 
+/** When expr contains an Elvis fallback (e.g. from applyTypeConversion), split it into expression + defaultValue. */
+function splitElvisIntoField(field: FieldDef, expr: string): FieldDef {
+    const elvisIdx = expr.lastIndexOf(" ?: ");
+    if (elvisIdx >= 0) {
+        return { ...field, expression: expr.slice(0, elvisIdx), defaultValue: expr.slice(elvisIdx + 4) };
+    }
+    return { ...field, expression: expr };
+}
+
 function mergeTypesFromSchema(parsed: FieldDef[], schema: FieldDef[]): FieldDef[] {
     return parsed.map((f) => {
         const schemaField = schema.find((s) => s.name === f.name);
@@ -109,7 +118,15 @@ export function useDataMapper({
                 return parsed;
             }
         }
-        if (initialFieldsProp && initialFieldsProp.length > 0) return initialFieldsProp;
+        if (initialFieldsProp && initialFieldsProp.length > 0) {
+            return initialFieldsProp.map((f) => {
+                const elvisIdx = f.expression.lastIndexOf(" ?: ");
+                if (elvisIdx >= 0) {
+                    return { ...f, expression: f.expression.slice(0, elvisIdx), defaultValue: f.expression.slice(elvisIdx + 4) };
+                }
+                return f;
+            });
+        }
         return isEmbedded ? [] : INITIAL_FIELDS.map((f) => ({ ...f, id: nextId() }));
     });
     const [selField, setSelField] = useState<number | null>(null);
@@ -283,8 +300,8 @@ export function useDataMapper({
                 const sourceType = variableTypes ? getNuTypeAtPath(variableTypes, path) : undefined;
                 setFields((f) => {
                     const targetField = findInTree(f, selField);
-                    const expr = applyTypeConversion(baseExpr, sourceType, targetField?.type ?? "Any");
-                    return updateInTree(f, selField, (x) => ({ ...x, expression: expr }));
+                    const expr = applyTypeConversion(baseExpr, sourceType, targetField?.type ?? "Any", targetField?.defaultValue);
+                    return updateInTree(f, selField, (x) => splitElvisIntoField(x, expr));
                 });
             }
         },
@@ -300,10 +317,10 @@ export function useDataMapper({
             const sourceType = variableTypes ? getNuTypeAtPath(variableTypes, rawPath) : undefined;
             setFields((prev) => {
                 const targetField = findInTree(prev, fieldId);
-                const expr = applyTypeConversion(baseExpr, sourceType, targetField?.type ?? "Any");
+                const expr = applyTypeConversion(baseExpr, sourceType, targetField?.type ?? "Any", targetField?.defaultValue);
                 return updateInTree(prev, fieldId, (x) => {
                     const nameUpdate = !x.name?.trim() && lastSegment ? { name: lastSegment } : {};
-                    return { ...x, expression: expr, ...nameUpdate };
+                    return { ...splitElvisIntoField(x, expr), ...nameUpdate };
                 });
             });
             setDragOverId(null);
