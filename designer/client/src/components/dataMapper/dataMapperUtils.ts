@@ -183,11 +183,29 @@ export const TYPE_CONVERSIONS: Partial<Record<NuType, Partial<Record<NuType, (ex
     },
 };
 
+/** Extension-method fallbacks for when no specific TYPE_CONVERSIONS entry exists. */
+const ANY_CONVERSIONS: Partial<Record<NuType, { method: string; fallback: string }>> = {
+    Boolean: { method: "toBooleanOrNull", fallback: "false" },
+    Integer: { method: "toIntegerOrNull", fallback: "0" },
+    Long: { method: "toLongOrNull", fallback: "0" },
+    Float: { method: "toDoubleOrNull", fallback: "0.0" },
+    Double: { method: "toDoubleOrNull", fallback: "0.0" },
+    BigDecimal: { method: "toBigDecimalOrNull", fallback: "0" },
+};
+
 /** Apply a type conversion from sourceType to targetType, or return expr unchanged if no conversion available. */
 export function applyTypeConversion(expr: string, sourceType: NuType | undefined, targetType: NuType): string {
     if (!sourceType || sourceType === targetType || targetType === "Any" || sourceType === "Any") return expr;
     const conversion = TYPE_CONVERSIONS[sourceType]?.[targetType];
-    return conversion ? conversion(expr) : expr;
+    if (conversion) return conversion(expr);
+    // No specific conversion — fall back to Any-style extension methods if available
+    // (e.g. String → Float/Boolean using toDoubleOrNull/toBooleanOrNull)
+    const anyConv = ANY_CONVERSIONS[targetType];
+    if (anyConv) {
+        const converted = `${expr}?.${anyConv.method}`;
+        return `${converted} ?: ${anyConv.fallback}`;
+    }
+    return expr;
 }
 
 /** Get the NuType of a value at a dotted path within variableTypes (strips leading # and ? from path). */
