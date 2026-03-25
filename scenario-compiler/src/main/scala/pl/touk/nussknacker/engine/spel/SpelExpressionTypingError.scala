@@ -274,8 +274,10 @@ object SpelExpressionTypingError {
     override def message: String = messageInner
   }
 
-  case object PartTypeError extends SpelExpressionTypingError {
-    override def message: String = "Wrong part types"
+  case class InvalidPartsTypeError(operatorName: String, expected: TypingResult, actual: List[TypingResult])
+      extends SpelExpressionTypingError {
+    override def message: String =
+      s"Invalid argument types for operator '$operatorName': all arguments must be: ${expected.display}, got ${actual.map(_.display).mkString(", ")}"
   }
 
 }
