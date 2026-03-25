@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.resultcollector
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.SinkTestValueDisplayable
+import pl.touk.nussknacker.engine.api.process.SinkDisplayableValue
 
 class SinkInvocationCollectorSpec extends AnyFunSuite with Matchers {
 
@@ -16,7 +16,7 @@ class SinkInvocationCollectorSpec extends AnyFunSuite with Matchers {
     SinkInvocationCollector.normalizeCollectedResult(nonDisplayable) shouldBe nonDisplayable
   }
 
-  private case class TestDisplayableValue(field: String, v: Int) extends SinkTestValueDisplayable {
+  private case class TestDisplayableValue(field: String, v: Int) extends SinkDisplayableValue {
     override def asDisplayableValue: Any = Map("value" -> Map(field -> v))
   }
 

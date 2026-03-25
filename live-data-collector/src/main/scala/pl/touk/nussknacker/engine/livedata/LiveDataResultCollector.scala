@@ -4,10 +4,10 @@ import cats.Monad
 import cats.implicits._
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId}
+import pl.touk.nussknacker.engine.api.json.encoders.ResultsVariableEncoder
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ToCollect, TransmissionNames}
 import pl.touk.nussknacker.engine.resultcollector.{ResultCollector, SinkInvocationCollector}
-import pl.touk.nussknacker.engine.testmode.TestInterpreterRunner
 
 import java.time.Instant
 import scala.concurrent.duration.Duration
@@ -20,7 +20,7 @@ class LiveDataResultCollector(
     throughputTimeWindow: Duration,
 ) extends ResultCollector {
 
-  private val variableEncoder: Any => Json = TestInterpreterRunner.testResultsVariableEncoder
+  private val variableEncoder: Any => Json = ResultsVariableEncoder.createEncoderForCurrentClassLoader
 
   override def collectWithResponse[A, F[_]: Monad](
       contextId: ContextId,

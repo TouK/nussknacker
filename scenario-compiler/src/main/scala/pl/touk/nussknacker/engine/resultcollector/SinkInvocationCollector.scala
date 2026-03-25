@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.resultcollector
 
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.api.process.SinkTestValueDisplayable
+import pl.touk.nussknacker.engine.api.process.SinkDisplayableValue
 
 trait SinkInvocationCollector extends Serializable {
 
@@ -12,7 +12,7 @@ trait SinkInvocationCollector extends Serializable {
 object SinkInvocationCollector {
 
   def normalizeCollectedResult(result: Any): Any = result match {
-    case displayable: SinkTestValueDisplayable =>
+    case displayable: SinkDisplayableValue =>
       displayable.asDisplayableValue
     case other =>
       other

@@ -1978,7 +1978,6 @@ lazy val liveDataCollector = (project in file("live-data-collector"))
     ),
   )
   .dependsOn(
-    // For testResultsVariableEncoder purpose
     scenarioCompiler % Provided,
   )
 

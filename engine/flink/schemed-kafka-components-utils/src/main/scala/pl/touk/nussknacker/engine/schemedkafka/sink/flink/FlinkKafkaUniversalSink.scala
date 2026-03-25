@@ -10,7 +10,7 @@ import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.SinkTestValueDisplayable
+import pl.touk.nussknacker.engine.api.process.SinkDisplayableValue
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.flink.api.FlinkEngineContextOps._
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
@@ -131,7 +131,7 @@ class FlinkKafkaUniversalSink(
 
 object FlinkKafkaUniversalSink {
 
-  private[flink] final case class KafkaSinkPreviewValue(key: AnyRef, value: AnyRef) extends SinkTestValueDisplayable {
+  private[flink] final case class KafkaSinkPreviewValue(key: AnyRef, value: AnyRef) extends SinkDisplayableValue {
     override def asDisplayableValue: Any = Map("key" -> key, "value" -> value)
   }
 

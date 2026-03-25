@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.process
 
-trait SinkTestValueDisplayable extends Serializable {
+trait SinkDisplayableValue extends Serializable {
 
   def asDisplayableValue: Any
 
