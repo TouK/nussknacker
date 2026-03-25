@@ -400,7 +400,7 @@ class ScenarioTestService(
       user: LoggedUser
   ): PekkoSource[(TestCase, Either[PerformTestError, ResultsWithCounts]), NotUsed] = {
     PekkoSource(testCases.toList)
-      .mapAsync(parallelism = testCasesSettings.multipleParallelismExecution) { testCase =>
+      .mapAsyncUnordered(parallelism = testCasesSettings.multipleParallelismExecution) { testCase =>
         performTestCase(
           scenarioGraph,
           processVersion,
