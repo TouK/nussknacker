@@ -6103,6 +6103,25 @@ components:
         createDate:
           type: string
           format: date-time
+    Completed:
+      title: Completed
+      type: object
+      required:
+      - testCaseId
+      - testCaseName
+      - result
+      - type
+      properties:
+        testCaseId:
+          type: string
+          format: uuid
+        testCaseName:
+          type: string
+        result:
+          $ref: '#/components/schemas/ResultsWithCountsDto'
+        type:
+          type: string
+          const: Completed
     ComponentLink:
       title: ComponentLink
       type: object
@@ -8536,25 +8555,6 @@ components:
       type: string
       enum:
       - ERROR
-    Success:
-      title: Success
-      type: object
-      required:
-      - testCaseId
-      - testCaseName
-      - result
-      - type
-      properties:
-        testCaseId:
-          type: string
-          format: uuid
-        testCaseName:
-          type: string
-        result:
-          $ref: '#/components/schemas/ResultsWithCountsDto'
-        type:
-          type: string
-          const: Success
     SuccessfulAssertion:
       title: SuccessfulAssertion
       type: object
@@ -8616,13 +8616,13 @@ components:
     TestCaseResultEvent:
       title: TestCaseResultEvent
       oneOf:
+      - $ref: '#/components/schemas/Completed'
       - $ref: '#/components/schemas/Error'
-      - $ref: '#/components/schemas/Success'
       discriminator:
         propertyName: type
         mapping:
+          Completed: '#/components/schemas/Completed'
           Error: '#/components/schemas/Error'
-          Success: '#/components/schemas/Success'
     TestResultsDto:
       title: TestResultsDto
       type: object
