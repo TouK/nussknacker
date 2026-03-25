@@ -191,7 +191,10 @@ export function DataMapper({
                                         onSelect={dm.onTreeSelect}
                                         selectedPath={dm.selPath}
                                         filterText={dm.contextFilter}
+                                        useTypedPaths
+                                        nullSafe
                                         nullSafeDrag
+                                        typing={variableTypes?.[key]}
                                     />
                                 ))}
                         </ScrollArea>
