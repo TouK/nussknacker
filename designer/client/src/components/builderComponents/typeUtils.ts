@@ -31,7 +31,7 @@ export function typingResultToSample(t: any): unknown {
 /** Convert a dragged path expression to null-safe SpEL: #a.b.c → #a?.b?.c */
 export function toNullSafe(spelExpr: string): string {
     if (!spelExpr.startsWith("#")) return spelExpr;
-    return "#" + spelExpr.slice(1).replace(/\./g, "?.");
+    return "#" + spelExpr.slice(1).replace(/(?<!\?)\./g, "?.");
 }
 
 export function treeNodeMatchesFilter(name: string, value: unknown, filterText: string): boolean {

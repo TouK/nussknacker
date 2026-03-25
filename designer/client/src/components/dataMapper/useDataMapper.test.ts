@@ -592,7 +592,7 @@ describe("nested record: handleAutoMap", () => {
         const childId = result.current.fields[0].children[0].id;
         act(() => result.current.updateField(childId, "name", "city"));
         act(() => result.current.handleAutoMap());
-        expect(result.current.fields[0].children[0].expression).toBe("#user.city");
+        expect(result.current.fields[0].children[0].expression).toBe("#user['city']");
     });
 
     it("does not overwrite already-mapped nested fields", () => {
