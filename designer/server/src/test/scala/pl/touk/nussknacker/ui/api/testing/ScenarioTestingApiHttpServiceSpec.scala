@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api.testing
 
 import cats.data.NonEmptyList
+import com.typesafe.config.{Config, ConfigValueFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser
 import io.circe.syntax._
@@ -62,6 +63,9 @@ class ScenarioTestingApiHttpServiceSpec
     with LazyLogging {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  override def designerRawConfig: Config = super.designerRawConfig
+    .withValue("testCasesSettings.multipleEnabled", ConfigValueFactory.fromAnyRef(true))
 
   "The endpoint for adhoc validate should" - {
     "return OK even if non-existing source component was used" in {
