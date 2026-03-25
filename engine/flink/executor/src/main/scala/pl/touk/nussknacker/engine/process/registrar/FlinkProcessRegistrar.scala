@@ -286,8 +286,8 @@ class FlinkProcessRegistrar(
         new OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId, typeInformationForIR)
       )
         .map((value: InterpretationResult) => value.finalContext, typeInformationForCtx)
-      val customNodeContext = nodeContext(nodeComponentInfo, Left(contextBefore))
-      val withValuePrepared = sink.prepareValue(afterInterpretation, customNodeContext)
+      val valuePreparingNodeContext = nodeContext(nodeComponentInfo, Left(contextBefore))
+      val withValuePrepared         = sink.prepareValue(afterInterpretation, valuePreparingNodeContext)
       def registerCollectingSink(collectingSink: SinkInvocationCollector, uid: String, nameSuffix: String) = {
         val prepareTestValueFun = sink.prepareTestValueFunction
         withValuePrepared
@@ -301,21 +301,20 @@ class FlinkProcessRegistrar(
           .uid(uid)
           .name(operatorName(compilerData.jobData, part.node, nameSuffix))
       }
+      def registerSink() =
+        sink
+          .registerSink(withValuePrepared, nodeContext(nodeComponentInfo, Left(contextBefore)))
+          .uid(part.id.value)
+          .name(operatorName(compilerData.jobData, part.node, "sink"))
       // TODO: maybe this logic should be moved to compiler instead?
       resultCollector.createSinkInvocationCollector(part.id, part.node.data.name.value) match {
         case Some(collectingSink) if resultCollector.shouldRegisterSinkInAdditionToCollector =>
           registerCollectingSink(collectingSink, s"${part.id.value}-$$collecting", "sinkCollecting")
-          sink
-            .registerSink(withValuePrepared, customNodeContext)
-            .uid(part.id.value)
-            .name(operatorName(compilerData.jobData, part.node, "sink"))
+          registerSink()
         case Some(collectingSink) =>
           registerCollectingSink(collectingSink, part.id.value, "sink")
         case None =>
-          sink
-            .registerSink(withValuePrepared, customNodeContext)
-            .uid(part.id.value)
-            .name(operatorName(compilerData.jobData, part.node, "sink"))
+          registerSink()
       }
       Map()
     }
