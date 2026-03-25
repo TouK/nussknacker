@@ -73,7 +73,8 @@ class ScenarioTestingApiHttpService(
     scenarioAuthorizer: AuthorizeProcess,
     processingTypeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
     processingTypeToScenarioTestServices: ProcessingTypeDataProvider[ScenarioTestService, _],
-    protected override val scenarioService: ProcessService
+    protected override val scenarioService: ProcessService,
+    multipleTestCasesEnabled: Boolean,
 )(override protected implicit val executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
     with ScenarioHttpServiceExtensions
@@ -390,7 +391,7 @@ class ScenarioTestingApiHttpService(
       }
   }
 
-  expose {
+  expose(when = multipleTestCasesEnabled) {
     scenarioTestingApiEndpoints.scenarioMultipleTestCasesEndpoint
       .serverSecurityLogic(authorizeKnownUser[TestingError])
       .serverLogicEitherT { implicit loggedUser =>
@@ -418,7 +419,6 @@ class ScenarioTestingApiHttpService(
       skipResultsPerNode: SkipResultsPerNode,
       skipResultsPerTransition: SkipResultsPerTransition,
   )(implicit loggedUser: LoggedUser): Source[TestCaseResultEvent, Any] = {
-    import TestCaseResultEvent._
     processingTypeToScenarioTestServices
       .forProcessingTypeUnsafe(scenarioWithDetails.processingType)
       .performMultipleTestCases(
