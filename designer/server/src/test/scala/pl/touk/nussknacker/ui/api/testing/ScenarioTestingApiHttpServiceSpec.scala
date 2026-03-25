@@ -561,7 +561,11 @@ class ScenarioTestingApiHttpServiceSpec
         name = "test case 1",
         inputs = validInputs,
         mocks = Map.empty,
-        assertions = Map.empty
+        assertions = Map(
+          NodeId("endsuffix") -> List(
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "'ala'".spel, "#records[0].input[0]".spel)
+          )
+        )
       )
       val failingTestCase = TestCase(
         id = UUID.randomUUID(),
@@ -575,7 +579,11 @@ class ScenarioTestingApiHttpServiceSpec
         name = "test case 2",
         inputs = validInputs,
         mocks = Map.empty,
-        assertions = Map.empty
+        assertions = Map(
+          NodeId("endsuffix") -> List(
+            PredicateAssertion(Assertion.AssertionOperator.Equals, "'notAla'".spel, "#records[0].input[0]".spel)
+          )
+        )
       )
 
       val responseBody = given()
@@ -609,8 +617,27 @@ class ScenarioTestingApiHttpServiceSpec
         .map(json => json.hcursor.downField("testCaseId").as[TestCaseId].rightValue -> json)
         .toMap
 
-      eventById(completedTestCase1.id).hcursor.downField("type").as[String].rightValue shouldBe "Completed"
-      eventById(completedTestCase2.id).hcursor.downField("type").as[String].rightValue shouldBe "Completed"
+      val testCase1Event = eventById(completedTestCase1.id)
+      testCase1Event.hcursor.downField("type").as[String].rightValue shouldBe "Completed"
+      testCase1Event.hcursor
+        .downField("result")
+        .downField("assertionsResults")
+        .downField("endsuffix")
+        .downArray
+        .downField("type")
+        .as[String]
+        .rightValue shouldBe "SuccessfulAssertion"
+
+      val testCase2Event = eventById(completedTestCase2.id)
+      testCase2Event.hcursor.downField("type").as[String].rightValue shouldBe "Completed"
+      testCase2Event.hcursor
+        .downField("result")
+        .downField("assertionsResults")
+        .downField("endsuffix")
+        .downArray
+        .downField("type")
+        .as[String]
+        .rightValue shouldBe "FailedAssertion"
 
       val errorEvent = eventById(failingTestCase.id)
       errorEvent.hcursor.downField("type").as[String].rightValue shouldBe "Error"
