@@ -556,23 +556,23 @@ class ScenarioTestingApiHttpServiceSpec
         """[
           |  {"sourceId":"unknownSource","variables":{"input":["ala"]}}
           |]""".stripMargin
-      val successfulTestCase1 = TestCase(
+      val completedTestCase1 = TestCase(
         id = UUID.randomUUID(),
-        name = "successful test case 1",
+        name = "test case 1",
         inputs = validInputs,
         mocks = Map.empty,
         assertions = Map.empty
       )
       val failingTestCase = TestCase(
         id = UUID.randomUUID(),
-        name = "failing test case",
+        name = "invalid test case",
         inputs = invalidInputs,
         mocks = Map.empty,
         assertions = Map.empty
       )
-      val successfulTestCase2 = TestCase(
+      val completedTestCase2 = TestCase(
         id = UUID.randomUUID(),
-        name = "successful test case 2",
+        name = "test case 2",
         inputs = validInputs,
         mocks = Map.empty,
         assertions = Map.empty
@@ -587,7 +587,7 @@ class ScenarioTestingApiHttpServiceSpec
         .jsonBody(
           PerformMultipleTestCasesRequest(
             testCaseScenario.toScenarioGraph,
-            NonEmptyList.of(successfulTestCase1, failingTestCase, successfulTestCase2)
+            NonEmptyList.of(completedTestCase1, failingTestCase, completedTestCase2)
           ).asJson.spaces2
         )
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${testCaseScenario.name}/performMultipleTestCases")
@@ -609,8 +609,8 @@ class ScenarioTestingApiHttpServiceSpec
         .map(json => json.hcursor.downField("testCaseId").as[TestCaseId].rightValue -> json)
         .toMap
 
-      eventById(successfulTestCase1.id).hcursor.downField("type").as[String].rightValue shouldBe "Success"
-      eventById(successfulTestCase2.id).hcursor.downField("type").as[String].rightValue shouldBe "Success"
+      eventById(completedTestCase1.id).hcursor.downField("type").as[String].rightValue shouldBe "Completed"
+      eventById(completedTestCase2.id).hcursor.downField("type").as[String].rightValue shouldBe "Completed"
 
       val errorEvent = eventById(failingTestCase.id)
       errorEvent.hcursor.downField("type").as[String].rightValue shouldBe "Error"

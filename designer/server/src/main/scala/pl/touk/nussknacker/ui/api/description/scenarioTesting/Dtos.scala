@@ -185,7 +185,7 @@ object Dtos {
 
         @derive(encoder, decoder, schema)
         // TODO NU-2470: Maybe drop results from result(ResultsWithCountsDto) to not send excessive data.
-        final case class Success(testCaseId: TestCaseId, testCaseName: TestCaseName, result: ResultsWithCountsDto)
+        final case class Completed(testCaseId: TestCaseId, testCaseName: TestCaseName, result: ResultsWithCountsDto)
             extends TestCaseResultEvent
 
         @derive(encoder, decoder, schema)
