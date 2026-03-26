@@ -24,6 +24,12 @@ object AssertionResult {
     FailedAssertion(s"Expected size: [$expectedStr] but found: [$actualSize]")
   }
 
+  def produceFailedContainsAssertion(expected: Any, actual: Any): FailedAssertion = {
+    val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expected)
+    val actualStr   = SpelValuePrettyPrinter.prettyPrintValue(actual)
+    FailedAssertion(s"Expected [$actualStr] to contain [$expectedStr]")
+  }
+
   def produceFailedComparisonAssertion(operator: String, expected: Any, actual: Any): FailedAssertion = {
     val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expected)
     val actualStr   = SpelValuePrettyPrinter.prettyPrintValue(actual)
