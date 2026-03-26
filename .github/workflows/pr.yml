@@ -457,21 +457,40 @@ jobs:
           commit-message: Updated snapshots
           body: Updated snapshots in ${{ github.event_name == 'pull_request' && env.HASH || env.BRANCH}}
           labels: cypress
-      - name: Comment PR
-        if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-number }}
+      - name: Comment PR - snapshots created
+        if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-operation == 'created' }}
         uses: thollander/actions-comment-pull-request@v2
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           message: |
-            ${{ steps.update_snapshots.outputs.pull-request-operation }}: #${{ steps.update_snapshots.outputs.pull-request-number }}
+            :red_circle: Cypress snapshot PR created: #${{ steps.update_snapshots.outputs.pull-request-number }}
+            Merge it into your branch to update snapshots.
             :warning: Be careful! Snapshot changes are not necessarily the cause of the error. Check the logs.
+          comment_tag: snapshots_pr
+      - name: Comment PR - snapshots updated
+        if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-operation == 'updated' }}
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          message: |
+            :yellow_circle: Cypress snapshot PR updated: #${{ steps.update_snapshots.outputs.pull-request-number }}
+            Snapshots changed again. Merge the PR into your branch to update them.
+            :warning: Be careful! Snapshot changes are not necessarily the cause of the error. Check the logs.
+          comment_tag: snapshots_pr
+      - name: Comment PR - snapshots ok
+        if: ${{ always() && github.event_name == 'pull_request' && !steps.update_snapshots.outputs.pull-request-number }}
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          message: |
+            :green_circle: Cypress snapshots are up to date. No changes needed.
           comment_tag: snapshots_pr
       - name: Force fail if update PR created
         if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-number }}
         uses: actions/github-script@v8
         with:
           script: |
-            core.setFailed('Snapshots updated, chceck comments!')
+            core.setFailed('Snapshots updated, check comments!')
 
   publish-after-tests:
     name: Publish With Tests
