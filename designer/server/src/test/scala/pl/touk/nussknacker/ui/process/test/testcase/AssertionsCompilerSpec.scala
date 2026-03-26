@@ -81,27 +81,36 @@ class AssertionsCompilerSpec
     val test = prepareTestCase(
       Map(
         NodeId("sink1") -> List(
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel, description = None)
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "true".spel, "#records.size > 0".spel),
         )
       )
     )
 
     val compiledAssertions = compileScenarioWithAssertions(scenario, test).validValue
 
-    compiledAssertions.assertions.size shouldBe 1
-    compiledAssertions.assertions(NodeId("sink1")).size shouldBe 1
-    val compiledAssertion =
-      compiledAssertions.assertions(NodeId("sink1")).head.asInstanceOf[CompiledPredicateAssertion]
-    compiledAssertion.operator shouldBe Assertion.AssertionOperator.Equals
-    compiledAssertion.expectedExpression.original shouldBe "1"
-    compiledAssertion.actualExpression.original shouldBe "#records.size"
+    compiledAssertions.assertions should have size 1
+    val compiledAssertionsForNode = compiledAssertions.assertions(NodeId("sink1")) collect {
+      case assertion: CompiledPredicateAssertion => assertion
+    }
+    compiledAssertionsForNode should have size 2
+
+    compiledAssertionsForNode(0).operator shouldBe Assertion.AssertionOperator.Equals
+    compiledAssertionsForNode(0).expectedExpression.original shouldBe "1"
+    compiledAssertionsForNode(0).actualExpression.original shouldBe "#records.size"
+    compiledAssertionsForNode(0).comparisonExpression.original shouldBe "(1) == (#records.size)"
+
+    compiledAssertionsForNode(1).operator shouldBe Assertion.AssertionOperator.Equals
+    compiledAssertionsForNode(1).expectedExpression.original shouldBe "true"
+    compiledAssertionsForNode(1).actualExpression.original shouldBe "#records.size > 0"
+    compiledAssertionsForNode(1).comparisonExpression.original shouldBe "(true) == (#records.size > 0)"
   }
 
   test("should produce errors for assertions on missing nodes") {
     val test = prepareTestCase(
       Map(
         NodeId("notExistingSink") -> List(
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel, description = None)
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "1".spel, "#records.size".spel)
         )
       )
     )
@@ -118,9 +127,9 @@ class AssertionsCompilerSpec
   test("should produce errors for multiple assertions") {
     val nodeId = NodeId("sink1")
     val assertionWithSyntaxErrorsInBothExpressions =
-      PredicateAssertion(Assertion.AssertionOperator.Equals, "'123".spel, "#records.size,".spel, description = None)
+      PredicateAssertion(Assertion.AssertionOperator.Equals, "'123".spel, "#records.size,".spel)
     val assertionComparingUnrelatedTypes =
-      PredicateAssertion(Assertion.AssertionOperator.Equals, "'string'".spel, "123".spel, description = None)
+      PredicateAssertion(Assertion.AssertionOperator.Equals, "'string'".spel, "123".spel)
     val test = prepareTestCase(
       Map(
         nodeId -> List(
@@ -205,7 +214,7 @@ class AssertionsCompilerSpec
         message shouldBe "Operator '==' used with not comparable types: String and Integer"
         parameterName shouldBe PredicateAssertionCompilationError.Field.Actual.entryName
         field shouldBe PredicateAssertionCompilationError.Field.Actual
-        originalExpr shouldBe "'string' == 123"
+        originalExpr shouldBe "('string') == (123)"
         details shouldBe None
         assertion shouldBe assertionComparingUnrelatedTypes
     }
@@ -224,12 +233,11 @@ class AssertionsCompilerSpec
             Assertion.AssertionOperator.Equals,
             "'abc'".spel,
             "#CONV.toAny(123)".spel,
-            description = None
           ),
           Validated.unit,
         ),
         (
-          PredicateAssertion(Assertion.AssertionOperator.Equals, "'abc'".spel, "123".spel, description = None),
+          PredicateAssertion(Assertion.AssertionOperator.Equals, "'abc'".spel, "123".spel),
           Validated.invalidNel("Operator '==' used with not comparable types: String and Integer")
         ),
         (

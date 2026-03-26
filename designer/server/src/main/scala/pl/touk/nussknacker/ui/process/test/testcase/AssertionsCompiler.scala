@@ -205,7 +205,7 @@ class AssertionsCompiler(
       .compile(
         // Compiling the below expression can result in errors like: Operator '==' used with not comparable types: String and Integer
         // If we need to report more user-friendly error (without: Operator '=='), we can use CommonSupertypeFinder here to check if types are comparable before compiling.
-        s"${assertion.expected.expression} ${toComparisonOperator(assertion.operator)} ${assertion.actual.expression}".spel,
+        s"(${assertion.expected.expression}) ${toComparisonOperator(assertion.operator)} (${assertion.actual.expression})".spel,
         // See comment below - we report errors on actual field.
         paramName = Some(ParameterName(PredicateAssertionCompilationError.Field.Actual.entryName)),
         context,
