@@ -75,7 +75,7 @@ describe("Auto Screenshot Change Docs -", () => {
     it("basic components - foreach", () => {
         cy.visitNewProcess(seed, "docsBasicComponentsForEach#0");
         cy.layoutScenario();
-        cy.openNodeWindow("for-each");
+        cy.openNodeWindow("for-each", { waitForAdditionalInfo: false });
         takeWindowScreenshot();
     });
 

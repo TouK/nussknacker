@@ -337,16 +337,23 @@ function toggleUserFlag(flag: Setting, value?: boolean | undefined) {
         });
 }
 
-function openNodeWindow(nameOrAlias: string) {
-    // in Request (rr) "properties" data is used
-    cy.intercept("POST", "/api/*/*/additionalInfo").as("additionalInfo");
+function openNodeWindow(nameOrAlias: string, options?: { waitForAdditionalInfo?: boolean }) {
+    const { waitForAdditionalInfo = true } = options || {};
+    if (waitForAdditionalInfo) {
+        // in Request (rr) "properties" data is used
+        cy.intercept("POST", "/api/*/*/additionalInfo").as("additionalInfo");
+    }
     cy.intercept("POST", "/api/nodes/*/validation").as("nodeValidation");
 
     cy.getNode(nameOrAlias).should("be.visible").dblclick();
 
-    cy.wait(["@additionalInfo", "@nodeValidation"], { timeout: 10000 }).each((res) => {
-        cy.wrap(res).its("response.statusCode").should("eq", 200);
-    });
+    if (waitForAdditionalInfo) {
+        cy.wait(["@additionalInfo", "@nodeValidation"], { timeout: 10000 }).each((res) => {
+            cy.wrap(res).its("response.statusCode").should("eq", 200);
+        });
+    } else {
+        cy.wait("@nodeValidation", { timeout: 10000 }).its("response.statusCode").should("eq", 200);
+    }
 
     cy.get("[data-testid=window]").should("be.visible").as("nodeWindow");
     cy.get("[data-testid=window]").find('button[name="close"]').should("be.visible");

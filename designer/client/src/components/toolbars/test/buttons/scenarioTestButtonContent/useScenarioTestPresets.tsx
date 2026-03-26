@@ -3,12 +3,12 @@ import type { ReactNode } from "react";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { getTestCase } from "../../../../../reducers/selectors/testCases";
-import { getActiveTestCaseId } from "../../../../../reducers/selectors/testing";
+import { getTestCases } from "../../../../../reducers/selectors/testCases";
+import { getActiveTestCaseId, getTestAssertionResults } from "../../../../../reducers/selectors/testing";
 import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { OptionHeader } from "../../../../graph/node-modal/fragment-input-definition/TypeSelect";
 import { AssertionStatusIcon } from "../../../testCases/assertionResultsForNode/assertionResult/AssertionStatusIcon";
-import { useAssertionResultsSummary } from "./useAssertionResultsSummary";
+import { getAssertionResultsSummary } from "./getAssertionResultsSummary";
 
 export const RUN_ALL = "runAll";
 
@@ -21,24 +21,26 @@ export type Preset = {
 
 export const useScenarioTestPresets = () => {
     const { t } = useTranslation();
-    const testCase = useAppSelector(getTestCase);
-    const { hasResult, assertionsIsSuccess } = useAssertionResultsSummary();
+    const testCases = useAppSelector(getTestCases);
+    const testAssertionResults = useAppSelector(getTestAssertionResults);
 
     const testCasePresets: Preset[] = useMemo(() => {
-        if (Object.keys(testCase).length === 0) return [];
-        return [
-            {
+        if (testCases.length === 0) return [];
+        return testCases.map((testCase) => {
+            const { hasResult, assertionsIsSuccess } = getAssertionResultsSummary(testAssertionResults[testCase.id]);
+
+            return {
                 icon: hasResult ? <AssertionStatusIcon isSuccess={assertionsIsSuccess} variant={"light"} /> : null,
                 label: testCase.name,
                 value: testCase.id,
-            },
-        ];
-    }, [testCase, hasResult, assertionsIsSuccess]);
+            };
+        });
+    }, [testCases, testAssertionResults]);
 
     const activeTestCaseId = useAppSelector(getActiveTestCaseId);
+    const activeTestCasePreset = testCasePresets.find((testCasePreset) => testCasePreset.value === activeTestCaseId) || null;
 
-    const activeTestCasePreset = testCasePresets.find((testCasePreset) => testCasePreset.value === activeTestCaseId);
-
+    //TODO: Add it  when BE ready
     const runAllPreset: Preset = useMemo(
         () => ({
             icon: <PlayArrow sx={{ fontSize: "20px" }} />,
@@ -51,8 +53,8 @@ export const useScenarioTestPresets = () => {
     const testCasesHeader = useMemo(() => ({ header: t("testingForm.test.menu.testCasesHeader", "Test cases") }), [t]);
 
     const presets: Array<Preset | OptionHeader> = useMemo(
-        () => (testCasePresets.length > 1 ? [runAllPreset, testCasesHeader, ...testCasePresets] : [testCasesHeader, ...testCasePresets]),
-        [runAllPreset, testCasePresets, testCasesHeader],
+        () => (testCasePresets.length > 1 ? [testCasesHeader, ...testCasePresets] : [testCasesHeader, ...testCasePresets]),
+        [testCasePresets, testCasesHeader],
     );
 
     return { presets, testCasePresets, runAllPreset, activeTestCasePreset };

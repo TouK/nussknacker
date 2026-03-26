@@ -650,7 +650,7 @@ export class HttpService {
 
     getPropertiesAdditionalInfo(
         processName: string,
-        processProperties: NodeType,
+        processProperties: PropertiesType,
         controller?: AbortController,
     ): Promise<AdditionalInfo | null> {
         return api

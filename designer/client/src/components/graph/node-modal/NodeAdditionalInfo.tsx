@@ -1,9 +1,11 @@
 import React from "react";
 
 import HttpService from "../../../http/HttpService/instance";
-import type { NodeType } from "../../../types/node";
+import type { NodeType, PropertiesType } from "../../../types/node";
 import { usePropertiesState } from "../../modals/usePropertiesState";
 import AdditionalInfoBox from "./AdditionalInfoBox";
+import { ForEachAdditionalInfo } from "./ForEachAdditionalInfo";
+import { nodeMatchesOverrideKey, OverrideKeys } from "./parameterHelpers";
 import { isRequestSource } from "./requestSourceAddons";
 
 export const PropertiesAdditionalInfo = () => {
@@ -12,9 +14,13 @@ export const PropertiesAdditionalInfo = () => {
 };
 
 export function NodeAdditionalInfo({ node }: { node: NodeType }) {
-    return isRequestSource(node) ? (
-        <PropertiesAdditionalInfo />
-    ) : (
-        <AdditionalInfoBox node={node} handleGetAdditionalInfo={HttpService.getNodeAdditionalInfo} />
-    );
+    if (isRequestSource(node)) {
+        return <PropertiesAdditionalInfo />;
+    }
+
+    if (nodeMatchesOverrideKey(node, OverrideKeys.ForEachElements)) {
+        return <ForEachAdditionalInfo />;
+    }
+
+    return <AdditionalInfoBox node={node} handleGetAdditionalInfo={HttpService.getNodeAdditionalInfo} />;
 }

@@ -13,7 +13,7 @@ export function SpelExpressionBuilderFieldWrapper(props: FieldWrapperProps) {
                 <SpelExpressionBuilderComponent
                     node={node}
                     onInsert={onInsert}
-                    initialExpression={initialExpression}
+                    initialExpression={initialExpression === paramDef?.defaultValue?.expression ? undefined : initialExpression}
                     paramName={paramName}
                     targetTypeDisplay={paramDef?.typ?.display}
                     open={open}

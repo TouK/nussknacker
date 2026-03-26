@@ -43,6 +43,7 @@ export type FeaturesSettings = {
     usageStatisticsReports: UsageStatisticsReports;
     surveySettings: SurveySettings;
     stickyNotesSettings: StickyNotesSettings;
+    testCases: { multipleEnabled: boolean };
 };
 
 export type StickyNotesSettings = {

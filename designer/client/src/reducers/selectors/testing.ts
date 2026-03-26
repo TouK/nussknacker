@@ -8,13 +8,6 @@ export const getTesting = createSelector(getGraph, (g) => g.testing || ({} as Te
 
 export const getTestResults = createSelector(getTesting, (g) => g.testResults);
 export const getTestAssertionResults = createSelector(getTesting, (g) => g.assertionsResults || {});
-
-const getNodeId = (_: unknown, nodeId: string) => nodeId;
-export const getTestAssertionResultsForNode = createSelector(
-    getTestAssertionResults,
-    getNodeId,
-    (assertionsResults, nodeId) => assertionsResults[nodeId],
-);
 export const getTestResultsLoading = createSelector(getTesting, (g) => g.testResultsLoading);
 export const getTestData = createSelector(getTesting, (g) => g.testData || ({} as TestData));
 export const getIsTestingMode = createSelector(
@@ -22,5 +15,20 @@ export const getIsTestingMode = createSelector(
     getProcessCounts,
     (results, counts) => !isEmpty(results) || !isEmpty(counts),
 );
-
 export const getActiveTestCaseId = createSelector(getTesting, (g) => g.activeTestCaseId);
+
+export const getActiveTestCaseAssertionResult = createSelector(
+    getTestAssertionResults,
+    getActiveTestCaseId,
+    (assertionsResults, testCaseId) => (testCaseId ? assertionsResults[testCaseId] : undefined),
+);
+
+const getNodeId = (_: unknown, nodeId: string) => nodeId;
+export const getTestAssertionResultsForNode = createSelector(getActiveTestCaseAssertionResult, getNodeId, (testCaseResult, nodeId) =>
+    testCaseResult?.status === "loaded" ? testCaseResult.results[nodeId] : undefined,
+);
+
+export const getActiveTestCaseAssertionResultLoading = createSelector(
+    getActiveTestCaseAssertionResult,
+    (testCaseResult) => testCaseResult?.status === "loading",
+);

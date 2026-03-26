@@ -11,7 +11,6 @@ import type { Edge } from "../../../../types/edge";
 import type { NodeType } from "../../../../types/node";
 import type { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
-import type { EditedNode } from "../nodeIdFieldHelpers";
 import type { NodeDetailsMeta } from "./NodeDetails";
 import { useCallbackRef } from "./useCallbackRef";
 import { useEditState } from "./useEditState";
@@ -20,10 +19,10 @@ import { useStream } from "./useStream";
 export type EditState = "idle" | "processing" | "pending" | "error";
 export type NodeState = {
     node: NodeType;
-    editedNode: EditedNode;
+    editedNode: NodeType;
     outputEdges: Edge[];
-    onChange: (node: React.SetStateAction<EditedNode>, edges?: React.SetStateAction<Edge[]>) => void;
-    performNodeEdit: (editedNode: EditedNode, outputEdges: Edge[]) => Promise<void>;
+    onChange: (node: React.SetStateAction<NodeType>, edges?: React.SetStateAction<Edge[]>) => void;
+    performNodeEdit: (editedNode: NodeType, outputEdges: Edge[]) => Promise<void>;
     editState: EditState;
 };
 
@@ -59,7 +58,7 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
     const [edges$, emitEdges, outputEdges] = useStream(edges, true);
 
     const [performNodeEditRef, performNodeEdit] = useCallbackRef(
-        async (editedNode: EditedNode, outputEdges: Edge[]) => {
+        async (editedNode: NodeType, outputEdges: Edge[]) => {
             setStatus("processing");
             try {
                 const after = await dispatch(editNode(scenario, node, editedNode, outputEdges));
@@ -83,7 +82,7 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
     );
 
     const onChange = useCallback(
-        (nodeChange: SetStateAction<EditedNode>, edgesChange: SetStateAction<Edge[]> = identity) => {
+        (nodeChange: SetStateAction<NodeType>, edgesChange: SetStateAction<Edge[]> = identity) => {
             emitNode(nodeChange);
             emitEdges(edgesChange);
         },
