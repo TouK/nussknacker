@@ -127,8 +127,12 @@ Use autocompletion to explore available options. To read more see [Documentation
 
 export function usePlaceholder(language: ExpressionLang) {
     const { t } = useTranslation();
+    const paramKey = useParamKey();
     switch (language) {
         case ExpressionLang.SpEL:
+            if (paramKey === OverrideKeys.ForEachElements) {
+                return t("editors.spelEditor.placeholder.forEachElements", "e.g. #input.items");
+            }
             return t("editors.spelEditor.placeholder", "e.g. #input.someField");
         case ExpressionLang.SpELTemplate:
             return t("editors.spelTemplateEditor.placeholder", "e.g. Hello #{ #input.someField }");

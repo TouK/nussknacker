@@ -1,7 +1,5 @@
-import type { PropsOf } from "@emotion/react";
 import loadable from "@loadable/component";
-import type { Component } from "hast-util-to-jsx-runtime/lib/types";
-import type { ComponentProps, JSXElementConstructor } from "react";
+import type { ComponentProps, ComponentType } from "react";
 import React from "react";
 import Markdown from "react-markdown";
 import rehypeExternalLinks from "rehype-external-links";
@@ -17,8 +15,20 @@ const PasswordMask = loadable(() => import("./PasswordMask"));
 const RouterLink = loadable(() => import("./RouterLink"));
 const CodeBlock = loadable(() => import("../../../common/CodeBlock"));
 
-type MarkdownWithPluginsProps = PropsOf<typeof Markdown> & { linkTarget?: string };
-type ForceComponent<T extends JSXElementConstructor<unknown>> = Component<ComponentProps<T>>;
+type DeferedString<T> = T | (string & NonNullable<unknown>);
+type MarkdownProps = ComponentProps<typeof Markdown>;
+type Components = MarkdownProps["components"];
+const MarkdownWithCustomComponents = Markdown as ComponentType<
+    Omit<MarkdownProps, "components"> & {
+        components?: {
+            [key in DeferedString<keyof Components>]?: key extends keyof Components
+                ? ComponentType<ComponentProps<Components[key]>>
+                : ComponentType;
+        };
+    }
+>;
+
+type MarkdownWithPluginsProps = ComponentProps<typeof MarkdownWithCustomComponents> & { linkTarget?: string };
 
 export const MarkdownWithPlugins = ({
     remarkPlugins = [],
@@ -28,11 +38,11 @@ export const MarkdownWithPlugins = ({
     ...props
 }: MarkdownWithPluginsProps) => {
     return (
-        <Markdown
+        <MarkdownWithCustomComponents
             components={{
-                [SANITIZED_PASSWORD_TAG_NAME]: PasswordMask as ForceComponent<typeof PasswordMask>,
-                [ROUTER_LINK_TAG_NAME]: RouterLink as ForceComponent<typeof RouterLink>,
-                code: CodeBlock as ForceComponent<typeof CodeBlock>,
+                [SANITIZED_PASSWORD_TAG_NAME]: PasswordMask,
+                [ROUTER_LINK_TAG_NAME]: RouterLink,
+                code: CodeBlock,
                 ...components,
             }}
             remarkPlugins={[remarkDirective, remarkGfm, remarkDirectiveRehype, remarkHtml, ...remarkPlugins]}
@@ -40,6 +50,6 @@ export const MarkdownWithPlugins = ({
             {...props}
         >
             {children}
-        </Markdown>
+        </MarkdownWithCustomComponents>
     );
 };
