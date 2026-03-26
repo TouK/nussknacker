@@ -34,7 +34,7 @@ export type ScenarioActions =
       }
     | {
           type: "UPDATE_IMPORTED_PROCESS";
-          scenario: Scenario;
+          importedScenarioData: Pick<Scenario, "scenarioGraph" | "validationResult">;
       }
     | { type: "CLEAR_PROCESS" }
     | { type: "HIDE_RUN_PROCESS_DETAILS" }
