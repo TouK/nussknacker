@@ -259,6 +259,79 @@ class DetectLargeTransactionSpec
              |        "currentThroughput": "${regexes.decimalRegex}"
              |      },
              |      {
+             |        "sourceNodeId": "send for audit",
+             |        "destinationNodeId": null,
+             |        "results": [
+             |          {
+             |            "id": "DetectLargeTransactions-transactions-0-3",
+             |            "cid": {
+             |              "nid": "transactions",
+             |              "tid": 0,
+             |              "idx": 3,
+             |              "path": []
+             |            },
+             |            "timestamp": "${regexes.zuluDateRegex}",
+             |            "variables": {
+             |              "send for audit": {
+             |                "pretty": {
+             |                  "key": null,
+             |                  "value": {
+             |                    "amount": 100,
+             |                    "clientId": "100",
+             |                    "isLast": false
+             |                  }
+             |                }
+             |              }
+             |            }
+             |          },
+             |          {
+             |            "id": "DetectLargeTransactions-transactions-0-4",
+             |            "cid": {
+             |              "nid": "transactions",
+             |              "tid": 0,
+             |              "idx": 4,
+             |              "path": []
+             |            },
+             |            "timestamp": "${regexes.zuluDateRegex}",
+             |            "variables": {
+             |              "send for audit": {
+             |                "pretty": {
+             |                  "key": null,
+             |                  "value": {
+             |                    "amount": 1000,
+             |                    "clientId": "100",
+             |                    "isLast": false
+             |                  }
+             |                }
+             |              }
+             |            }
+             |          },
+             |          {
+             |            "id": "DetectLargeTransactions-transactions-0-5",
+             |            "cid": {
+             |              "nid": "transactions",
+             |              "tid": 0,
+             |              "idx": 5,
+             |              "path": []
+             |            },
+             |            "timestamp": "${regexes.zuluDateRegex}",
+             |            "variables": {
+             |              "send for audit": {
+             |                "pretty": {
+             |                  "key": null,
+             |                  "value": {
+             |                    "amount": 10000,
+             |                    "clientId": "100",
+             |                    "isLast": false
+             |                  }
+             |                }
+             |              }
+             |            }
+             |          }
+             |        ],
+             |        "totalCount": 3
+             |      },
+             |      {
              |        "sourceNodeId": "transactions",
              |        "destinationNodeId": "only large ones",
              |        "results": [
