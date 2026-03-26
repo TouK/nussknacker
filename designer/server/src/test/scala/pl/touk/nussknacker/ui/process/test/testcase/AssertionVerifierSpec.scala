@@ -236,6 +236,40 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     }
   }
 
+  test("should verify contains operator for collections") {
+    forAll(
+      Table(
+        ("expectedExpr", "actualCollection", "expectedResult"),
+        ("'b'", java.util.List.of("a", "b", "c"), SuccessfulAssertion),
+        ("'d'", java.util.List.of("a", "b", "c"), FailedAssertion("Expected [{'a', 'b', 'c'}] to contain ['d']")),
+      )
+    ) { (expectedExpr, actualCollection, expectedResult) =>
+      val testCase = prepareTestCase(
+        List(PredicateAssertion(AssertionOperator.Contains, expectedExpr.spel, "#records[0].someCollection".spel))
+      )
+      val nodesResultsAfterTestRun = prepareNodeResults(List(Map("someCollection" -> actualCollection)))
+      val results                  = verifyForTestCase(testCase, nodesResultsAfterTestRun)
+      results shouldBe List(expectedResult)
+    }
+  }
+
+  test("should verify contains operator for strings") {
+    forAll(
+      Table(
+        ("expectedExpr", "actualString", "expectedResult"),
+        ("'ello'", "hello world", SuccessfulAssertion),
+        ("'xyz'", "hello world", FailedAssertion("Expected ['hello world'] to contain ['xyz']")),
+      )
+    ) { (expectedExpr, actualString, expectedResult) =>
+      val testCase = prepareTestCase(
+        List(PredicateAssertion(AssertionOperator.Contains, expectedExpr.spel, "#records[0].someVariable".spel))
+      )
+      val nodesResultsAfterTestRun = prepareNodeResults(List(Map("someVariable" -> actualString)))
+      val results                  = verifyForTestCase(testCase, nodesResultsAfterTestRun)
+      results shouldBe List(expectedResult)
+    }
+  }
+
   test("should not evaluate empty assertions") {
     forAll(
       Table(
