@@ -38,9 +38,11 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { variant } = useContext(ToolbarButtonsContext);
     const side = useContext(ToolbarSideContext);
 
-    const { presets, activeTestCasePreset } = useScenarioTestPresets();
+    const { presets, testCasePresets, activeTestCasePreset } = useScenarioTestPresets();
 
     const testCaseAssertionResult = useAppSelector(getActiveTestCaseAssertionResult);
+    const isSingleTestCase = testCasePresets.length <= 1;
+
     const { hasResult, assertionsIsSuccess } = getAssertionResultsSummary(testCaseAssertionResult);
     const tooltip = useScenarioTestTooltip({ disabled, title, titleOverride });
 
@@ -58,7 +60,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
         [activeTestCasePreset?.value, assertionsIsSuccess, hasResult],
     );
 
-    const handleRunActiveTest = useCallback(() => runTest(testCase), [runTest, testCase]);
+    const handleRunCurrentTestCase = useCallback(() => runTest(testCase), [runTest, testCase]);
 
     const handleRunTestCaseById = useCallback(
         (testCaseId: string) => {
@@ -82,17 +84,25 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
         [dispatch, handleRunTestCaseById],
     );
 
+    const commonProps = {
+        onClick: handleRunCurrentTestCase,
+        title: tooltip || t("panels.actions.scenarioTest.button.title", "run test"),
+        icon,
+        side,
+        variant,
+        isLoading,
+        disabled: !testingScenarioEnabled || isLoading,
+        type,
+    };
+
+    if (isSingleTestCase) {
+        return <StyledScenarioTestButton {...commonProps} name={activeTestCasePreset.label} />;
+    }
+
     return (
         <StyledScenarioTestButton
-            onClick={handleRunActiveTest}
+            {...commonProps}
             name={activeTestCasePreset?.label}
-            title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
-            icon={icon}
-            side={side}
-            variant={variant}
-            isLoading={isLoading}
-            disabled={!testingScenarioEnabled || isLoading}
-            type={type}
             presets={presets}
             selected={activeTestCasePreset}
             onPresetChange={handlePresetChange}
@@ -130,6 +140,7 @@ const StyledScenarioTestButton = styled(ToolbarButton, {
             ? {
                   fontSize: "1em",
                   minWidth: "5em",
+                  marginRight: theme.spacing(0.5),
                   display: "inline",
                   textTransform: "initial",
               }

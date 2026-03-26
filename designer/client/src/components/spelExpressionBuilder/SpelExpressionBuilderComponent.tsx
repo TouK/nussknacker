@@ -8,7 +8,7 @@ import type { ContextData } from "../dataMapper/DataMapper";
 import { DataMapperDialogTitle } from "../dataMapper/DataMapperDialogTitle";
 import { useInputOutputContext } from "../graph/node-modal/io/InputOutputContext";
 import { getFindAvailableVariables } from "../graph/node-modal/NodeDetailsContent/selectors";
-import { SpelExpressionPicker } from "./SpelExpressionPicker";
+import { SpelExpressionBuilder } from "./SpelExpressionBuilder";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -25,7 +25,7 @@ interface Props {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function SpelExpressionPickerComponent({
+export function SpelExpressionBuilderComponent({
     node,
     onInsert,
     initialExpression,
@@ -69,9 +69,9 @@ export function SpelExpressionPickerComponent({
         <>
             {open && (
                 <Dialog open onClose={handleClose} maxWidth="xl" fullWidth>
-                    <DataMapperDialogTitle node={node} onClose={handleClose} title="expression picker" />
+                    <DataMapperDialogTitle node={node} onClose={handleClose} title="expression builder" />
                     <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                        <SpelExpressionPicker
+                        <SpelExpressionBuilder
                             onInsert={(spel) => {
                                 onInsert(spel);
                                 handleClose();

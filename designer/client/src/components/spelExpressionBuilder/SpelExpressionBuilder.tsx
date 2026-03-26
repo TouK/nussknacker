@@ -31,7 +31,7 @@ import { getProcessName, getProcessProperties } from "../graph/node-modal/NodeDe
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
-export interface SpelExpressionPickerProps {
+export interface SpelExpressionBuilderProps {
     onInsert?: (spel: string) => void;
     initialExpression?: string;
     variableTypes?: VariableTypes;
@@ -80,14 +80,14 @@ function resolveSpelPath(expression: string, contextData: ContextData): unknown 
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function SpelExpressionPicker({
+export function SpelExpressionBuilder({
     onInsert,
     initialExpression,
     variableTypes,
     contextData,
     buildProbeNode,
     targetTypeDisplay,
-}: SpelExpressionPickerProps): React.JSX.Element {
+}: SpelExpressionBuilderProps): React.JSX.Element {
     const theme = useTheme();
     const processName = useAppSelector(getProcessName);
     const processProperties = useAppSelector(getProcessProperties);

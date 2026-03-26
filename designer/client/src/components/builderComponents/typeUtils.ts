@@ -22,8 +22,8 @@ export function typingResultToSample(t: any): unknown {
     }
     if (name === "java.lang.String") return "";
     if (name === "java.lang.Boolean") return false;
-    if (name.includes("Integer") || name.includes("Long") || name.includes("Short") || name.includes("Double") || name.includes("Float"))
-        return 0;
+    if (name.includes("Integer") || name.includes("Long") || name.includes("Short")) return 0;
+    if (name.includes("Double") || name.includes("Float")) return 0.5;
     if (name.includes("Map")) return {};
     return null;
 }
@@ -31,7 +31,7 @@ export function typingResultToSample(t: any): unknown {
 /** Convert a dragged path expression to null-safe SpEL: #a.b.c → #a?.b?.c */
 export function toNullSafe(spelExpr: string): string {
     if (!spelExpr.startsWith("#")) return spelExpr;
-    return "#" + spelExpr.slice(1).replace(/\./g, "?.");
+    return "#" + spelExpr.slice(1).replace(/(?<!\?)\./g, "?.");
 }
 
 export function treeNodeMatchesFilter(name: string, value: unknown, filterText: string): boolean {

@@ -127,6 +127,7 @@ export function FieldRow({
     return (
         // Outer box: only border + drag handlers. NO background — prevents stacking through nesting.
         <Box
+            data-field-id={field.id}
             onDragOver={(e) => {
                 e.preventDefault();
                 e.stopPropagation();

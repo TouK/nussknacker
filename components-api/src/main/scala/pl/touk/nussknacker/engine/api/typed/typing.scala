@@ -7,11 +7,12 @@ import io.circe.{Decoder, Encoder}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.json.encoders.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.{Loose, Strict}
-import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses.{ArrayClass, ListClass}
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.Default.superTypeOfTypes
 import pl.touk.nussknacker.engine.api.typed.typing.DisplayStrategy.{DefaultDisplayStrategy, JsonDisplayStrategy}
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 
+import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 import scala.language.implicitConversions
@@ -424,10 +425,92 @@ object typing {
         case Some(Nil)                                             =>
           // It shouldn't happen because only TypedNull can be translated into Set.empty
           throw new IllegalStateException(s"Typed(${possibleTypes.toList.mkString(", ")}) flatten to empty list")
-        case Some(single :: Nil)           => single
-        case Some(first :: second :: rest) => new TypedUnion(first, second, rest)
+        case Some(single :: Nil) => single
+        case Some(atLeastTwoTypes) =>
+          reduceTypes(NonEmptyList.fromListUnsafe(atLeastTwoTypes)) match {
+            case NonEmptyList(single, Nil) =>
+              single
+            case NonEmptyList(first, second :: rest) =>
+              new TypedUnion(first, second, rest)
+          }
       }
     }
+
+    @tailrec
+    private def reduceTypes(types: NonEmptyList[SingleTypingResult]): NonEmptyList[SingleTypingResult] = {
+      def tryReduce(
+          isEmptyCollectionLiteral: SingleTypingResult => Boolean,
+          findMatchingType: SingleTypingResult => Option[SingleTypingResult]
+      ): Option[NonEmptyList[SingleTypingResult]] = {
+        val indexedTypes                = types.toList.zipWithIndex
+        val (emptyTypes, nonEmptyTypes) = indexedTypes.partition { case (t, _) => isEmptyCollectionLiteral(t) }
+        for {
+          (_, emptyIdx)             <- emptyTypes.headOption
+          (candidate, candidateIdx) <- nonEmptyTypes.find { case (t, _) => findMatchingType(t).isDefined }
+        } yield {
+          val updated = types.toList.updated(candidateIdx, candidate.withoutValue)
+          val result  = updated.patch(emptyIdx, Nil, 1)
+          NonEmptyList.fromListUnsafe(result)
+        }
+      }
+
+      tryReduce(isEmptyListLiteral, findListOrNonEmptyListLiteral)
+        .orElse(tryReduce(isEmptyRecordLiteral, findNonEmptyRecord))
+        .orElse(tryReduce(isEmptyRecordLiteral, findMap)) match {
+        case Some(reducedTypes) => reduceTypes(reducedTypes)
+        case None               => types
+      }
+    }
+
+    private def isEmptyListLiteral(typingResult: SingleTypingResult): Boolean = {
+      typingResult match {
+        case TypedObjectWithValue(TypedClass(clazz, List(componentType)), value: java.util.List[_])
+            if ListClass.isAssignableFrom(clazz) && value.isEmpty && componentType.isUnknown =>
+          true
+        case _ =>
+          false
+      }
+    }
+
+    private def findListOrNonEmptyListLiteral(typingResult: SingleTypingResult): Option[SingleTypingResult] = {
+      typingResult match {
+        case tr @ TypedObjectWithValue(TypedClass(clazz, List(_)), value: java.util.List[_])
+            if ListClass.isAssignableFrom(clazz) && !value.isEmpty =>
+          Some(tr)
+        case tr @ TypedClass(clazz, List(_)) if ListClass.isAssignableFrom(clazz) =>
+          Some(tr)
+        case _ =>
+          None
+      }
+    }
+
+    private def findNonEmptyRecord(typingResult: SingleTypingResult): Option[SingleTypingResult] = {
+      typingResult match {
+        case tr @ TypedObjectTypingResult(
+              fields,
+              TypedClass(clazz, List(TypedClass(`StringClass`, Nil), _)),
+              _
+            ) if fields.nonEmpty && MapClass.isAssignableFrom(clazz) =>
+          Some(tr)
+        case _ =>
+          None
+      }
+    }
+
+    private def findMap(typingResult: SingleTypingResult): Option[SingleTypingResult] = {
+      typingResult match {
+        case tr @ TypedClass(clazz, List(_, _)) if MapClass.isAssignableFrom(clazz) =>
+          Some(tr)
+        case _ =>
+          None
+      }
+    }
+
+    private def isEmptyRecordLiteral(typingResult: SingleTypingResult): Boolean = {
+      typingResult == emptyRecord
+    }
+
+    private val emptyRecord: TypedObjectTypingResult = record(List.empty)
 
     def record(fields: Iterable[(String, TypingResult)]): TypedObjectTypingResult =
       TypedObjectTypingResult(ListMap(fields.toSeq: _*), mapBasedRecordUnderlyingType[java.util.Map[_, _]](fields))
@@ -466,6 +549,17 @@ object typing {
 
   trait TypedFromInstance {
     def typingResult: TypingResult
+  }
+
+  private[engine] implicit class TypingResultOps(val typingResult: TypingResult) extends AnyVal {
+
+    def isUnknown: Boolean = {
+      typingResult match {
+        case Unknown(_) => true
+        case _          => false
+      }
+    }
+
   }
 
   case class CastTypedValue[T: TypeTag]() {
