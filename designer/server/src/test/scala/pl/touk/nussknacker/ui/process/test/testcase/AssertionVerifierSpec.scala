@@ -63,6 +63,7 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
         "someArray"      -> Typed.fromInstance(new Array[String](1)),
         "someBigDecimal" -> Typed[java.math.BigDecimal],
         "someNumber"     -> Typed[java.lang.Integer],
+        "someCollection" -> Typed.fromInstance(new util.ArrayList[String]()),
       ),
       parameters = None,
       typingInfo = Map.empty
@@ -210,6 +211,26 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
         )
       )
       val nodesResultsAfterTestRun = prepareNodeResults(List(Map("someNumber" -> actualValue)))
+      val results                  = verifyForTestCase(testCase, nodesResultsAfterTestRun)
+      results shouldBe List(expectedResult)
+    }
+  }
+
+  test("should verify hasSize operator") {
+    forAll(
+      Table(
+        ("expectedSizeExpr", "actualList", "expectedResult"),
+        ("3", java.util.List.of("a", "b", "c"), SuccessfulAssertion),
+        ("2", java.util.List.of("a", "b", "c"), FailedAssertion("Expected size: [2] but found: [3]")),
+        ("0", new java.util.ArrayList[String](), SuccessfulAssertion),
+        ("2", java.util.Map.of("k1", "v1", "k2", "v2"), SuccessfulAssertion),
+        ("1", java.util.Map.of("k1", "v1", "k2", "v2"), FailedAssertion("Expected size: [1] but found: [2]")),
+      )
+    ) { (expectedSizeExpr, actualList, expectedResult) =>
+      val testCase = prepareTestCase(
+        List(PredicateAssertion(AssertionOperator.HasSize, expectedSizeExpr.spel, "#records[0].someCollection".spel))
+      )
+      val nodesResultsAfterTestRun = prepareNodeResults(List(Map("someCollection" -> actualList)))
       val results                  = verifyForTestCase(testCase, nodesResultsAfterTestRun)
       results shouldBe List(expectedResult)
     }
