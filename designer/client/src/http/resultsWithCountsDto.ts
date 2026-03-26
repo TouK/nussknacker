@@ -76,12 +76,16 @@ export interface TestAssertionResultError {
 
 export type TestAssertionResult = TestAssertionResultSuccess | TestAssertionResultError;
 
-export type TestAssertionResults = Record<string, TestAssertionResult[]>;
+export type NodeAssertionResults = Record<string, TestAssertionResult[]>;
+
+export type TestCaseAssertionResult = { status: "loading" } | { status: "loaded"; results: NodeAssertionResults };
+
+export type TestAssertionResults = Record<string, TestCaseAssertionResult>;
 
 export type ProcessCounts = Record<string, NodeCounts>;
 
 export interface ResultsWithCountsDto {
-    assertionsResults: TestAssertionResults;
+    assertionsResults: NodeAssertionResults;
     results: TestResultsDto;
     counts: ProcessCounts;
     timestamp: string; // ISO

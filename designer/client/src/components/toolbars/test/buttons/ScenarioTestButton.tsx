@@ -2,11 +2,12 @@ import { alpha, styled } from "@mui/material";
 import React, { useCallback, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
+import { changeActiveTestCase } from "../../../../actions/nk/testingActions";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
-import { getTestCase } from "../../../../reducers/selectors/testCases";
-import { getTestResultsLoading } from "../../../../reducers/selectors/testing";
+import { getActiveTestCase, getTestCases } from "../../../../reducers/selectors/testCases";
+import { getActiveTestCaseAssertionResult, getActiveTestCaseAssertionResultLoading } from "../../../../reducers/selectors/testing";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
-import { useAppSelector } from "../../../../store/storeHelpers";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useTestingScenarioEnabled } from "../../../modals/TestingDataRecords/useTestingScenarioEnabled";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/ToolbarButton";
 import { ButtonsVariant, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons/ToolbarButtons";
@@ -14,8 +15,9 @@ import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer
 import type { CustomButtonTypes } from "../../../toolbarSettings/buttons/buttonsMap";
 import type { PropsOfButton } from "../../../toolbarSettings/buttons/types";
 import { useRunTestScenario } from "../useRunTestScenario";
+import { getAssertionResultsSummary } from "./scenarioTestButtonContent/getAssertionResultsSummary";
 import { TestingIconWithAssertionStatus } from "./scenarioTestButtonContent/TestingIconWithAssertionStatus";
-import { useAssertionResultsSummary } from "./scenarioTestButtonContent/useAssertionResultsSummary";
+import type { Preset } from "./scenarioTestButtonContent/useScenarioTestPresets";
 import { RUN_ALL, useScenarioTestPresets } from "./scenarioTestButtonContent/useScenarioTestPresets";
 import { useScenarioTestTooltip } from "./scenarioTestButtonContent/useScenarioTestTooltip";
 
@@ -28,8 +30,9 @@ export type ScenarioTestButtonProps = {
 function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>) {
     const { disabled, title, titleOverride, type } = props;
     const { t } = useTranslation();
-    const testCase = useAppSelector(getTestCase);
-    const isLoading = useAppSelector(getTestResultsLoading);
+    const testCase = useAppSelector(getActiveTestCase);
+    const testCases = useAppSelector(getTestCases);
+    const isLoading = useAppSelector(getActiveTestCaseAssertionResultLoading);
     const testingScenarioEnabled = useTestingScenarioEnabled({ disabled });
 
     const { variant } = useContext(ToolbarButtonsContext);
@@ -37,22 +40,48 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
 
     const { presets, testCasePresets, activeTestCasePreset } = useScenarioTestPresets();
     const isSingleTestCase = testCasePresets.length <= 1;
-    const { hasResult, assertionsIsSuccess } = useAssertionResultsSummary();
+
+    const testCaseAssertionResult = useAppSelector(getActiveTestCaseAssertionResult);
+    const { hasResult, assertionsIsSuccess } = getAssertionResultsSummary(testCaseAssertionResult);
     const tooltip = useScenarioTestTooltip({ disabled, title, titleOverride });
+
+    const dispatch = useAppDispatch();
 
     const { runTest } = useRunTestScenario();
 
-    const icon = useMemo(() => {
-        return activeTestCasePreset?.value === RUN_ALL ? (
-            <TestingIcon />
-        ) : (
-            <TestingIconWithAssertionStatus hasResult={hasResult} assertionsIsSuccess={assertionsIsSuccess} />
-        );
-    }, [assertionsIsSuccess, hasResult, activeTestCasePreset?.value]);
+    const icon = useMemo(
+        () =>
+            activeTestCasePreset?.value === RUN_ALL ? (
+                <TestingIcon />
+            ) : (
+                <TestingIconWithAssertionStatus hasResult={hasResult} assertionsIsSuccess={assertionsIsSuccess} />
+            ),
+        [activeTestCasePreset?.value, assertionsIsSuccess, hasResult],
+    );
 
-    const handleRunCurrentTestCase = useCallback(() => {
-        runTest(testCase);
-    }, [runTest, testCase]);
+    const handleRunCurrentTestCase = useCallback(() => runTest(testCase), [runTest, testCase]);
+
+    const handleRunTestCaseById = useCallback(
+        (testCaseId: string) => {
+            const testCaseToRun = testCases.find((tc) => tc.id === testCaseId);
+            if (!testCaseToRun) return;
+
+            runTest(testCaseToRun);
+        },
+        [runTest, testCases],
+    );
+
+    const handlePresetChange = useCallback(
+        (preset: Preset) => {
+            if (preset.value === RUN_ALL) {
+                //TODO: Implement me when backend ready
+                return;
+            }
+            dispatch(changeActiveTestCase(preset.value));
+            handleRunTestCaseById(preset.value);
+        },
+        [dispatch, handleRunTestCaseById],
+    );
 
     const commonProps = {
         onClick: handleRunCurrentTestCase,
@@ -72,18 +101,10 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     return (
         <StyledScenarioTestButton
             {...commonProps}
-            name={activeTestCasePreset.label}
+            name={activeTestCasePreset?.label}
             presets={presets}
             selected={activeTestCasePreset}
-            onPresetChange={(preset) => {
-                // setSelectedPreset(preset);
-                if (preset.value === RUN_ALL) {
-                    //TODO: Implement me when backend ready
-                    return;
-                }
-                //TODO: Handle multiple test selection when backend ready
-                runTest(testCase);
-            }}
+            onPresetChange={handlePresetChange}
         />
     );
 }

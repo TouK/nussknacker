@@ -2,9 +2,10 @@ import { Box, styled, Typography } from "@mui/material";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
+import { changeActiveTestCase } from "../../../../../../actions/nk/testingActions";
 import { getBorderColor } from "../../../../../../containers/theme/helpers";
 import { getActiveTestCaseOption, getTestCaseOptions } from "../../../../../../reducers/selectors/testCases";
-import { useAppSelector } from "../../../../../../store/storeHelpers";
+import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
 import { useWindows } from "../../../../../../windowManager/useWindows";
 import { WindowKind } from "../../../../../../windowManager/WindowKind";
 import { StyledButton } from "../../../../styledButton";
@@ -61,8 +62,17 @@ type TestCaseFieldProps = {
 };
 
 const TestCaseField = ({ options, activeOption }: TestCaseFieldProps) => {
+    const dispatch = useAppDispatch();
+
+    const changeActiveTestCaseOption = useCallback(
+        (testCaseId: string) => {
+            dispatch(changeActiveTestCase(testCaseId));
+        },
+        [dispatch],
+    );
+
     if (options.length > 1) {
-        return <StyledTestCasesSelect options={options} onChange={() => "noop"} value={activeOption} />;
+        return <StyledTestCasesSelect options={options} onChange={changeActiveTestCaseOption} value={activeOption} />;
     }
     return (
         <StyledTestCaseLabel>

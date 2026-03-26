@@ -1,16 +1,17 @@
 import { Box, CircularProgress, Divider, Typography } from "@mui/material";
 import SvgIcon from "@mui/material/SvgIcon/SvgIcon";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { testScenarioWithTestCase } from "../../../actions/nk/testingActions";
+import { changeActiveTestCase } from "../../../actions/nk/testingActions";
 import TestingIcon from "../../../assets/img/toolbarButtons/test.svg";
-import { useUserSettings } from "../../../common/useUserSettings";
+import type { TestCaseAssertionResult } from "../../../http/resultsWithCountsDto";
 import type { TestCase } from "../../../reducers/graph/testCase";
-import { getTestAssertionResults, getTestResultsLoading } from "../../../reducers/selectors/testing";
+import { getActiveTestCaseId } from "../../../reducers/selectors/testing";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { Expandable } from "../../common/Expandable";
 import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip/InfoTooltip";
+import { useRunTestScenario } from "../test/useRunTestScenario";
 import { AssertionResultsBadge } from "./assertionResultsForNode/AssertionResultsBadge";
 import { Definitions } from "./definitions";
 import { Footer } from "./footer";
@@ -20,49 +21,75 @@ import { TestCaseSwitchMode } from "./TestCaseSwitchMode";
 
 interface TestCaseExpandableProps {
     testCase: TestCase;
+    testCaseAssertionResult: TestCaseAssertionResult | undefined;
 }
 
-export const TestCaseExpandable = ({ testCase }: TestCaseExpandableProps) => {
-    const testAssertionResults = useAppSelector(getTestAssertionResults);
+export const TestCaseExpandable = ({ testCase, testCaseAssertionResult }: TestCaseExpandableProps) => {
     const [mode, setMode] = useState<TestCaseMode>("results");
-    const [expanded, setExpanded] = useState(true);
+
+    const activeTestCaseId = useAppSelector(getActiveTestCaseId);
+    const dispatch = useAppDispatch();
+
+    const isActive = activeTestCaseId === testCase.id;
+    const [isCollapsed, setIsCollapsed] = useState(false);
+
+    /**
+     * Only one test case can be expanded at a time, but user still can click on the active test case to collapse it.
+     */
+    useEffect(() => {
+        if (isActive) {
+            setIsCollapsed(false);
+        }
+    }, [isActive]);
+
+    const isExpanded = isActive && !isCollapsed;
+
+    const onExpandedChange = useCallback(() => {
+        if (isActive) {
+            setIsCollapsed((prev) => !prev);
+        } else {
+            dispatch(changeActiveTestCase(testCase.id));
+        }
+    }, [dispatch, isActive, testCase.id]);
 
     return (
         <Expandable
             componentId={`test-case-${testCase.id}`}
-            expandableTitle={<TestCaseTitle testCase={testCase} />}
-            expanded={expanded}
-            onChange={setExpanded}
+            expandableTitle={<TestCaseTitle testCase={testCase} testCaseAssertionResult={testCaseAssertionResult} />}
+            expanded={isExpanded}
+            onChange={onExpandedChange}
             summarySx={{ px: 0.5, minHeight: "20px", "& .MuiAccordionSummary-content": { margin: "4px", overflow: "hidden" } }}
             detailsSx={{ p: 0 }}
         >
             <TestCaseSwitchMode value={mode} onChange={setMode} />
-            {mode === "results" && <Results testAssertionResults={testAssertionResults} />}
+            {mode === "results" && <Results testCaseAssertionResult={testCaseAssertionResult} testCase={testCase} />}
             {mode === "definitions" && <Definitions />}
             <Divider sx={{ mt: 1.5 }} />
-            <Footer />
+            <Footer testCaseAssertionResult={testCaseAssertionResult} />
         </Expandable>
     );
 };
 
 interface TestCaseTitleProps {
     testCase: TestCase;
+    testCaseAssertionResult: TestCaseAssertionResult | undefined;
 }
 
-const TestCaseTitle = ({ testCase }: TestCaseTitleProps) => {
+const TestCaseTitle = ({ testCase, testCaseAssertionResult }: TestCaseTitleProps) => {
     const { t } = useTranslation();
-    const testAssertionResults = useAppSelector(getTestAssertionResults);
-    const allResults = Object.values(testAssertionResults).flat();
-    const isLoading = useAppSelector(getTestResultsLoading);
-    const [showMockFieldOnEnrichers] = useUserSettings("node.showMockFieldOnEnrichers");
+    const allResults = testCaseAssertionResult?.status === "loaded" ? Object.values(testCaseAssertionResult.results).flat() : [];
+    const isLoading = testCaseAssertionResult?.status === "loading";
     const dispatch = useAppDispatch();
+
+    const { runTest } = useRunTestScenario();
 
     const handleRun = useCallback(
         (e: React.MouseEvent) => {
             e.stopPropagation();
-            dispatch(testScenarioWithTestCase(testCase, showMockFieldOnEnrichers));
+            dispatch(changeActiveTestCase(testCase.id));
+            runTest(testCase);
         },
-        [dispatch, testCase, showMockFieldOnEnrichers],
+        [dispatch, runTest, testCase],
     );
 
     return (
