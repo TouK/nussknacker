@@ -12,7 +12,7 @@ import { DescriptionField } from "./DescriptionField";
 import { EdgesDndComponent } from "./EdgesDndComponent";
 import { FieldType } from "./editors/field/Field";
 import { getValidationErrorsForField } from "./editors/Validators";
-import { IdField } from "./IdField";
+import { NameField } from "./NameField";
 import { getNodeExpressionType } from "./NodeDetailsContent/selectors";
 import { NodeField } from "./NodeField";
 import { useDiffMark } from "./PathsToMark";
@@ -89,7 +89,7 @@ export function Switch({
     );
     return (
         <>
-            <IdField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
+            <NameField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
             {showExpression ? (
                 <StaticExpressionField
                     isEditMode={isEditMode}

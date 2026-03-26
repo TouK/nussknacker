@@ -2,8 +2,6 @@ import type { g } from "jointjs";
 import { min } from "lodash";
 
 import { getEdgesForNode } from "../../components/graph/node-modal/node/useNodeState";
-import type { EditedNode } from "../../components/graph/node-modal/nodeIdFieldHelpers";
-import { applyIdFromFakeName } from "../../components/graph/node-modal/nodeIdFieldHelpers";
 import { replaceNodeData } from "../../components/graph/node-modal/NodeSwitcherUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import type { Scenario } from "../../components/Process/types";
@@ -81,24 +79,23 @@ export type NodeAddActions =
 export function editNode(
     scenarioBefore: Scenario,
     before: NodeType,
-    editedNode: EditedNode,
+    editedNode: NodeType,
     outputEdges?: Edge[],
     controller?: AbortController,
 ): ThunkAction<Promise<NodeType>> {
     return async (dispatch) => {
-        const after = applyIdFromFakeName(editedNode);
-        const scenarioGraph = await dispatch(calculateProcessAfterChange(scenarioBefore, before, after, outputEdges));
+        const scenarioGraph = await dispatch(calculateProcessAfterChange(scenarioBefore, before, editedNode, outputEdges));
         const response = await dispatch(preApplyValidation(scenarioBefore, scenarioGraph, controller));
 
         dispatch({
             type: "EDIT_NODE",
             before,
-            after,
+            after: editedNode,
             validationResult: response?.data,
             scenarioGraphAfterChange: scenarioGraph,
         });
 
-        return after;
+        return editedNode;
     };
 }
 

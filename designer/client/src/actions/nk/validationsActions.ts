@@ -1,5 +1,4 @@
 import { getProcessName, getProcessProperties } from "../../components/graph/node-modal/NodeDetailsContent/selectors";
-import { applyIdFromFakeName } from "../../components/graph/node-modal/nodeIdFieldHelpers";
 import { appendNodeDataToProperties, cleanProperties, isRequestSource } from "../../components/graph/node-modal/requestSourceAddons";
 import HttpService from "../../http/HttpService/instance";
 import type { NodeType, PropertiesType } from "../../types/node";
@@ -42,7 +41,7 @@ export function validateNode({
 
         const data = await HttpService.validateNode(scenarioName, {
             ...validationRequestData,
-            nodeData: applyIdFromFakeName(nodeData),
+            nodeData,
             processProperties,
         });
 

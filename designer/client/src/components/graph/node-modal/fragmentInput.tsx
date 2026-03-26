@@ -7,7 +7,7 @@ import type { NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
-import { IdField } from "./IdField";
+import { NameField } from "./NameField";
 import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 import OutputParametersList from "./OutputParametersList";
 import { ParametersListWithOverrides } from "./ParametersListWithOverrides";
@@ -36,7 +36,7 @@ export function FragmentInput(props: FragmentInput): React.JSX.Element {
 
     return (
         <>
-            <IdField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
+            <NameField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
             <DisableField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
             <ParametersListWithOverrides
                 parameters={parameters}

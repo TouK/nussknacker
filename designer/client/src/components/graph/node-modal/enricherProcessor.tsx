@@ -8,7 +8,7 @@ import type { NodeValidationError } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
 import { FieldType } from "./editors/field/Field";
-import { IdField } from "./IdField";
+import { NameField } from "./NameField";
 import { findParameters } from "./NodeDetailsContent/helpers";
 import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 import { NodeField } from "./NodeField";
@@ -37,7 +37,7 @@ export function EnricherProcessor({
 
     return (
         <>
-            <IdField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
+            <NameField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
             <ParametersListWithOverrides
                 parameters={findParameters(node)}
                 isEditMode={isEditMode}
