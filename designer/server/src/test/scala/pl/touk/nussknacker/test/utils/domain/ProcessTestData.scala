@@ -34,6 +34,7 @@ import pl.touk.nussknacker.test.mock.{
   TestAdditionalUIConfigProvider
 }
 import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
+import pl.touk.nussknacker.ui.config.TestCasesSettings
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
@@ -160,7 +161,8 @@ object ProcessTestData {
     val stickyNotesSettings: StickyNotesSettings = StickyNotesSettings(5000, None, enabled = false)
     val processValidator: ProcessValidator =
       ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition()))
-    val testCaseValidator = TestCaseValidator(new StubModelDataWithModelDefinition(modelDefinition()))
+    val testCaseValidator =
+      TestCaseValidator(new StubModelDataWithModelDefinition(modelDefinition()), TestCasesSettings())
     val scenarioProperties: Map[String, ScenarioPropertyConfig] = Map.empty
     val scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer =
       new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType)
@@ -190,7 +192,7 @@ object ProcessTestData {
     scenarioLabelsValidator = scenarioLabelsValidator,
     additionalValidators = additionalValidators,
     fragmentResolver = fragmentResolver,
-    stickyNotesSettings = stickyNotesSettings
+    stickyNotesSettings = stickyNotesSettings,
   )
 
   def processValidator: UIProcessValidator = testProcessValidator()

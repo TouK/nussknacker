@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.Outg
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.testcase.NodeTestCasesValidationErrors
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeValidationRequest, NodeValidationResult}
+import pl.touk.nussknacker.ui.config.TestCasesSettings
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator
@@ -24,10 +25,11 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 class NodeValidator(
     modelData: ModelData,
     engineScenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies],
-    fragmentRepository: FragmentRepository
+    fragmentRepository: FragmentRepository,
+    testCasesSettings: TestCasesSettings,
 ) {
 
-  private val testCasesValidator = TestCaseValidator(modelData)
+  private val testCasesValidator = TestCaseValidator(modelData, testCasesSettings)
 
   def validate(processVersion: ProcessVersion, validationRequest: NodeValidationRequest)(
       implicit loggedUser: LoggedUser

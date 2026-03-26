@@ -27,6 +27,7 @@ import pl.touk.nussknacker.restmodel.validation.testcase.{
   NodeTestCaseValidationErrors
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeTestCase, NodeTestCases}
+import pl.touk.nussknacker.ui.config.TestCasesSettings
 import pl.touk.nussknacker.ui.process.test.testcase.validation.TestCaseValidator.NodeTyping
 
 import java.util.UUID
@@ -46,7 +47,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     )
   )
 
-  private val testCaseValidator = TestCaseValidator(modelData)
+  private val testCaseValidator = TestCaseValidator(modelData, TestCasesSettings())
 
   private val jobData = JobData(MetaData("someScenario", StreamMetaData()), ProcessVersion.empty)
 
