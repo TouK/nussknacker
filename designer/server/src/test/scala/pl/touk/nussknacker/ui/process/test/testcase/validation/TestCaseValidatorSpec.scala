@@ -47,7 +47,8 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     )
   )
 
-  private val testCaseValidator = TestCaseValidator(modelData, TestCasesSettings())
+  private val testCaseValidator                = TestCaseValidator(modelData, TestCasesSettings())
+  private val testCaseValidatorMultipleEnabled = TestCaseValidator(modelData, TestCasesSettings(multipleEnabled = true))
 
   private val jobData = JobData(MetaData("someScenario", StreamMetaData()), ProcessVersion.empty)
 
@@ -414,11 +415,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
       ),
     )
 
-    val result = testCaseValidator.validateScenarioTestCases(
-      nodes,
-      nodesTyping,
-      testCases
-    )
+    val result = testCaseValidatorMultipleEnabled.validateScenarioTestCases(nodes, nodesTyping, testCases)
 
     val testCasesErrors = result.errors.testCasesValidationErrors.value
     testCasesErrors.keySet should contain only (enricher.id, filter.id)
@@ -495,6 +492,22 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     )
   }
 
+  test("should return an error when multiple test cases are not enabled") {
+    val testCases = List(
+      TestCase(id = UUID.randomUUID(), name = "test1", inputs = "{}", mocks = Map.empty, assertions = Map.empty),
+      TestCase(id = UUID.randomUUID(), name = "test2", inputs = "{}", mocks = Map.empty, assertions = Map.empty),
+    )
+
+    val result = testCaseValidator.validateTestCaseBeforeResolving(testCases)
+
+    result.errors.globalErrors should have size 1
+    val error = result.errors.globalErrors.head.error
+    error.typ shouldBe "MultipleTestCasesDisabled"
+    error.message shouldBe "Saving scenario with multiple test cases is disabled"
+    error.errorType shouldBe NodeValidationErrorType.SaveNotAllowed
+    result.errors.testCasesValidationErrors shouldBe None
+  }
+
   test("should return a single error listing all duplicated test case names") {
     val testCases = List(
       TestCase(id = UUID.randomUUID(), name = "duplicateA", inputs = "{}", mocks = Map.empty, assertions = Map.empty),
@@ -504,7 +517,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
       TestCase(id = UUID.randomUUID(), name = "duplicateB", inputs = "{}", mocks = Map.empty, assertions = Map.empty),
     )
 
-    val result = testCaseValidator.validateScenarioTestCases(List(enricher), Map.empty, testCases)
+    val result = testCaseValidatorMultipleEnabled.validateTestCaseBeforeResolving(testCases)
 
     result.errors.globalErrors should have size 1
     val error = result.errors.globalErrors.head.error

@@ -53,7 +53,7 @@ class TestCaseValidator(
     val duplicateNames =
       testCases.groupBy(_.name).collect { case (name, occurrences) if occurrences.size > 1 => name }.toList
     Either.cond(
-      duplicateNames.nonEmpty,
+      duplicateNames.isEmpty,
       (),
       errors.duplicateTestCaseNames(duplicateNames)
     )
@@ -184,8 +184,8 @@ object TestCaseValidator {
       UIGlobalError(
         error = NodeValidationError(
           typ = "MultipleTestCasesDisabled",
-          message = "Saving scenario with multiple test cases is disabled",
-          description = "Multiple test cases feature is disabled in the designer configuration.",
+          message = "Multiple test cases are not available",
+          description = "Multiple test cases feature is disabled.",
           fieldName = None,
           errorType = NodeValidationErrorType.SaveNotAllowed,
           details = None,
