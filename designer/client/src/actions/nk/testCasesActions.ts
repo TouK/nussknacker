@@ -6,7 +6,8 @@ import { getTestCaseAssertions, getTestCaseAssertionsForNode, getTestData, getTe
 import { getActiveTestCaseId } from "../../reducers/selectors/testing";
 import type { ThunkAction } from "../reduxTypes";
 
-export type Assertion = { description?: string; expected: ExpressionObj; operator: "equals" | "notEquals"; actual: ExpressionObj };
+export type AssertionOperator = "equals" | "notEquals" | "greaterThan" | "lessThan" | "greaterThanOrEqual" | "lessThanOrEqual";
+export type Assertion = { description?: string; expected: ExpressionObj; operator: AssertionOperator; actual: ExpressionObj };
 export type Assertions = Record<string, Assertion[]>;
 
 export type Mock = { expression: ExpressionObj };

@@ -98,6 +98,14 @@ class AssertionVerifier(globalVariablesPreparer: GlobalVariablesPreparer) {
       operator match {
         case AssertionOperator.Equals    => AssertionResult.produceFailedEqualsAssertion(expectedValue, actualValue)
         case AssertionOperator.NotEquals => AssertionResult.produceFailedNotEqualsAssertion(expectedValue)
+        case AssertionOperator.GreaterThan =>
+          AssertionResult.produceFailedComparisonAssertion(">", expectedValue, actualValue)
+        case AssertionOperator.LessThan =>
+          AssertionResult.produceFailedComparisonAssertion("<", expectedValue, actualValue)
+        case AssertionOperator.GreaterThanOrEqual =>
+          AssertionResult.produceFailedComparisonAssertion(">=", expectedValue, actualValue)
+        case AssertionOperator.LessThanOrEqual =>
+          AssertionResult.produceFailedComparisonAssertion("<=", expectedValue, actualValue)
       }
     }
   }

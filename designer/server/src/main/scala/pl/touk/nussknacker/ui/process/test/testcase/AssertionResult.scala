@@ -19,4 +19,10 @@ object AssertionResult {
     FailedAssertion(s"Expected value different from: [$expectedStr]")
   }
 
+  def produceFailedComparisonAssertion(operator: String, expected: Any, actual: Any): FailedAssertion = {
+    val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expected)
+    val actualStr   = SpelValuePrettyPrinter.prettyPrintValue(actual)
+    FailedAssertion(s"Expected: [$actualStr] $operator [$expectedStr]")
+  }
+
 }
