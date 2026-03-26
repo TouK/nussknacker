@@ -32,21 +32,13 @@ class TestCaseValidator(
 
   def validateTestCaseBeforeResolving(testCases: List[TestCase]): ValidationResult = {
     (for {
-      _ <- validateMultipleTestCasesAvailable(testCases)
       _ <- validateNameUniqueness(testCases)
+      _ <- validateMultipleTestCasesAvailable(testCases)
     } yield ())
       .fold(
         globalError => ValidationResult.errors(globalErrors = List(globalError)),
         _ => ValidationResult.success
       )
-  }
-
-  private def validateMultipleTestCasesAvailable(testCases: List[TestCase]): Either[UIGlobalError, Unit] = {
-    Either.cond(
-      testCasesSettings.multipleEnabled || testCases.size <= 1,
-      (),
-      errors.multipleTestCasesNotAvailable
-    )
   }
 
   private def validateNameUniqueness(testCases: List[TestCase]): Either[UIGlobalError, Unit] = {
@@ -56,6 +48,14 @@ class TestCaseValidator(
       duplicateNames.isEmpty,
       (),
       errors.duplicateTestCaseNames(duplicateNames)
+    )
+  }
+
+  private def validateMultipleTestCasesAvailable(testCases: List[TestCase]): Either[UIGlobalError, Unit] = {
+    Either.cond(
+      testCasesSettings.multipleEnabled || testCases.size <= 1,
+      (),
+      errors.multipleTestCasesNotAvailable
     )
   }
 

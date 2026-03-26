@@ -192,7 +192,7 @@ object ProcessTestData {
     scenarioLabelsValidator = scenarioLabelsValidator,
     additionalValidators = additionalValidators,
     fragmentResolver = fragmentResolver,
-    stickyNotesSettings = stickyNotesSettings,
+    stickyNotesSettings = stickyNotesSettings
   )
 
   def processValidator: UIProcessValidator = testProcessValidator()

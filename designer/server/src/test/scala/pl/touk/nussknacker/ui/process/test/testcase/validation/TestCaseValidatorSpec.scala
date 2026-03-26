@@ -503,7 +503,7 @@ class TestCaseValidatorSpec extends AnyFunSuite with Matchers with Inside with O
     result.errors.globalErrors should have size 1
     val error = result.errors.globalErrors.head.error
     error.typ shouldBe "MultipleTestCasesDisabled"
-    error.message shouldBe "Saving scenario with multiple test cases is disabled"
+    error.message shouldBe "Multiple test cases are not available"
     error.errorType shouldBe NodeValidationErrorType.SaveNotAllowed
     result.errors.testCasesValidationErrors shouldBe None
   }
