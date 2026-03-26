@@ -22,7 +22,7 @@ object AssertionResult {
   def produceFailedComparisonAssertion(operator: String, expected: Any, actual: Any): FailedAssertion = {
     val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expected)
     val actualStr   = SpelValuePrettyPrinter.prettyPrintValue(actual)
-    FailedAssertion(s"Expected: [$actualStr] $operator [$expectedStr]")
+    FailedAssertion(s"Expected: [$expectedStr] $operator [$actualStr]")
   }
 
 }
