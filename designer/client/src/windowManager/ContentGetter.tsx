@@ -79,6 +79,10 @@ const EnterpriseFeatureInfo = loadable(
     },
 );
 
+const SaveAsTestCaseDialog = loadable(() => import("../components/modals/saveAsTestCaseDialog"), {
+    fallback: <LoaderSpinner show />,
+});
+
 const contentGetter = (props: WindowContentProps<WindowKind>) => {
     switch (props.data.kind) {
         case WindowKind.addFragment:
@@ -133,6 +137,8 @@ const contentGetter = (props: WindowContentProps<WindowKind>) => {
             return <AiAssistantModal {...props} />;
         case WindowKind.enterpriseFeatureInfo:
             return <EnterpriseFeatureInfo {...props} />;
+        case WindowKind.saveAsTestCase:
+            return <SaveAsTestCaseDialog {...props} />;
         default:
             return (
                 <WindowContent {...props}>

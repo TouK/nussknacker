@@ -203,6 +203,9 @@ export function ConditionBuilder({
                                         depth={0}
                                         onSelect={handleTreeInsert}
                                         highlight={highlightKeys?.has(name.replace(/^#/, ""))}
+                                        useTypedPaths
+                                        nullSafe
+                                        typing={variableTypes?.[name.replace(/^#/, "")]}
                                         doubleClickToInsert
                                     />
                                 ))

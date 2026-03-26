@@ -24,7 +24,7 @@ export enum WindowKind {
     editProperties,
     remote,
     withChildren,
-    scenarioTest,
     aiAssistant,
     enterpriseFeatureInfo,
+    saveAsTestCase,
 }

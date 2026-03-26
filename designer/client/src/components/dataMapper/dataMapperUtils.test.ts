@@ -51,8 +51,28 @@ describe("applyTypeConversion", () => {
         expect(applyTypeConversion("#x", undefined, "Boolean")).toBe("#x");
     });
 
-    it("Any source returns expr unchanged (no conversion for Any → Boolean)", () => {
-        expect(applyTypeConversion("#x", "Any", "Boolean")).toBe("#x");
+    it.each([
+        ["Boolean", "#x?.toBooleanOrNull ?: false"],
+        ["Integer", "#x?.toIntegerOrNull ?: 0"],
+        ["Long", "#x?.toLongOrNull ?: 0"],
+        ["Double", "#x?.toDoubleOrNull ?: 0.0"],
+        ["Float", "#x?.toDoubleOrNull ?: 0.0"],
+        ["String", "#x?.toString() ?: ''"],
+        ["BigDecimal", "#x?.toBigDecimalOrNull ?: 0"],
+    ] as [string, string][])("Any → %s applies extension method with default fallback", (target, expected) => {
+        expect(applyTypeConversion("#x", "Any", target as never)).toBe(expected);
+    });
+
+    it("Any → Boolean uses custom defaultValue when provided", () => {
+        expect(applyTypeConversion("#x", "Any", "Boolean", "true")).toBe("#x?.toBooleanOrNull ?: true");
+    });
+
+    it("Any → Double uses custom defaultValue when provided", () => {
+        expect(applyTypeConversion("#x", "Any", "Double", "99.9")).toBe("#x?.toDoubleOrNull ?: 99.9");
+    });
+
+    it("ZonedDateTime → Long uses DATE conversion (not Any fallback)", () => {
+        expect(applyTypeConversion("#x", "ZonedDateTime", "Long")).toBe("#DATE.toEpochMilli(#x)");
     });
 
     it("String → Boolean falls back to Any-style conversion", () => {
@@ -63,20 +83,8 @@ describe("applyTypeConversion", () => {
         expect(applyTypeConversion("#x", "String", "Float")).toBe("#x?.toDoubleOrNull ?: 0.0");
     });
 
-    it("String → Double falls back to Any-style toDoubleOrNull", () => {
-        expect(applyTypeConversion("#x", "String", "Double")).toBe("#x?.toDoubleOrNull ?: 0.0");
-    });
-
-    it("String → Integer falls back to Any-style toIntegerOrNull", () => {
-        expect(applyTypeConversion("#x", "String", "Integer")).toBe("#x?.toIntegerOrNull ?: 0");
-    });
-
     it("String → ZonedDateTime uses TYPE_CONVERSIONS (takes priority over Any fallback)", () => {
         expect(applyTypeConversion("#x", "String", "ZonedDateTime")).toBe('#DATE_FORMAT.parseZonedDateTime(#x, "yyyyMMdd-HH:mm:ss.SSS")');
-    });
-
-    it("ZonedDateTime → Long uses TYPE_CONVERSIONS", () => {
-        expect(applyTypeConversion("#x", "ZonedDateTime", "Long")).toBe("#DATE.toEpochMilli(#x)");
     });
 
     it("unknown source type also falls back to Any-style conversion if target has one", () => {
@@ -185,6 +193,24 @@ describe("parseSpelToFields", () => {
         expect(result![0]).toMatchObject({ name: "valid" });
     });
 
+    it("Elvis expression splits into expression + defaultValue", () => {
+        const result = parseSpelToFields("{ on_ground: #x?.toBooleanOrNull ?: false }");
+        expect(result).toHaveLength(1);
+        expect(result![0]).toMatchObject({ name: "on_ground", expression: "#x?.toBooleanOrNull", defaultValue: "false" });
+    });
+
+    it("Elvis with float fallback splits correctly", () => {
+        const result = parseSpelToFields("{ altitude: #x?.toDoubleOrNull ?: 0.0 }");
+        expect(result).toHaveLength(1);
+        expect(result![0]).toMatchObject({ name: "altitude", expression: "#x?.toDoubleOrNull", defaultValue: "0.0" });
+    });
+
+    it("null-ternary format (backward compat) splits into expression + defaultValue", () => {
+        const result = parseSpelToFields("{ name: #input.name != null ? #input.name : 'unknown' }");
+        expect(result).toHaveLength(1);
+        expect(result![0]).toMatchObject({ name: "name", expression: "#input.name", defaultValue: "'unknown'" });
+    });
+
     it("all fields receive unique numeric ids", () => {
         const result = parseSpelToFields("{ a: #x, b: #y }");
         expect(result).toHaveLength(2);
@@ -255,6 +281,21 @@ describe("genSpelFromFields", () => {
         f.isRecord = false;
         f.expression = "#input.meta";
         expect(genSpelFromFields([f])).toBe("{\n  meta: #input.meta\n}");
+    });
+
+    it("field with defaultValue uses Elvis format", () => {
+        const f = makeField("active", "Boolean");
+        f.expression = "#input.flag";
+        f.defaultValue = "false";
+        expect(genSpelFromFields([f])).toBe("{\n  active: #input.flag ?: false\n}");
+    });
+
+    it("field with type-converted expression and defaultValue uses Elvis", () => {
+        const f = makeField("active", "Boolean");
+        // After splitElvisIntoField, expression has no Elvis — defaultValue holds the fallback
+        f.expression = "#outputVar[8]?.toBooleanOrNull";
+        f.defaultValue = "true";
+        expect(genSpelFromFields([f])).toBe("{\n  active: #outputVar[8]?.toBooleanOrNull ?: true\n}");
     });
 });
 

@@ -3,7 +3,7 @@ import React from "react";
 import type { NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
-import { IdField } from "./IdField";
+import { NameField } from "./NameField";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 export function Split({
@@ -23,7 +23,7 @@ export function Split({
 }): React.JSX.Element {
     return (
         <>
-            <IdField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
+            <NameField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
             <DescriptionField
                 isEditMode={isEditMode}
                 showValidation={showValidation}

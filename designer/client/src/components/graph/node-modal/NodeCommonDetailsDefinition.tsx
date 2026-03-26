@@ -7,7 +7,7 @@ import { DescriptionField } from "./DescriptionField";
 import LabeledInput from "./editors/field/LabeledInput";
 import { FieldLabelConsumer } from "./editors/RenderFieldLabel";
 import { getValidationErrorsForField } from "./editors/Validators";
-import { IdField } from "./IdField";
+import { NameField } from "./NameField";
 import { useDiffMark } from "./PathsToMark";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
@@ -42,7 +42,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({
 
     return (
         <>
-            <IdField node={node} isEditMode={!readOnly} showValidation={showValidation} setProperty={setProperty} errors={errors} />
+            <NameField node={node} isEditMode={!readOnly} showValidation={showValidation} setProperty={setProperty} errors={errors} />
             {outputField && outputName && (
                 <LabeledInput
                     value={node[outputField]}

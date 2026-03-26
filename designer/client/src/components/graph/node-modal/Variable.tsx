@@ -20,8 +20,8 @@ import { EditorType, ExpressionLang } from "./editors/expression/types";
 import LabeledInput from "./editors/field/LabeledInput";
 import { FieldLabelConsumer } from "./editors/RenderFieldLabel";
 import { getValidationErrorsForField } from "./editors/Validators";
-import { IdField } from "./IdField";
 import { useInputOutputContext } from "./io/InputOutputContext";
+import { NameField } from "./NameField";
 import { BuilderIconButton } from "./node-action-buttons/StyledLoadingButton";
 import { getExpressionType, getNodeTypingInfo } from "./NodeDetailsContent/selectors";
 import { useDiffMark } from "./PathsToMark";
@@ -129,7 +129,7 @@ export default function Variable({ node, setProperty, isEditMode, showValidation
 
     return (
         <>
-            <IdField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
+            <NameField node={node} isEditMode={isEditMode} showValidation={showValidation} setProperty={setProperty} errors={errors} />
             <LabeledInput
                 value={node.varName}
                 onChange={(event) => setProperty("varName", event.target.value)}
