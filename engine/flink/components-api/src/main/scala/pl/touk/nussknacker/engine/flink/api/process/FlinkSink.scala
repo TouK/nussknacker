@@ -17,7 +17,8 @@ trait FlinkSink extends Sink with Serializable {
 
   type Value <: AnyRef
 
-  // It has to be function in order to avoid serialization of whole FlinkSink for testing mechanism
+  // It has to be a function in order to avoid serialization of whole FlinkSink for testing mechanism
+  // You can return [[pl.touk.nussknacker.engine.api.process.SinkDisplayableValue]] to define custom preview shape.
   def prepareTestValueFunction: Value => AnyRef = identity
 
   def prepareValue(
