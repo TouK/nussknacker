@@ -7,7 +7,7 @@ import type { UIParameter } from "../../../types/definition";
 import type { NodeType } from "../../../types/node";
 import type { NodeValidationError } from "../../../types/validation";
 import { DescriptionField } from "./DescriptionField";
-import { IdField } from "./IdField";
+import { NameField } from "./NameField";
 import { findParameters } from "./NodeDetailsContent/helpers";
 import { getFindAvailableVariables } from "./NodeDetailsContent/selectors";
 import { ParametersListWithOverrides } from "./ParametersListWithOverrides";
@@ -38,7 +38,7 @@ export const SourceSinkCommon = ({
     const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     return (
         <>
-            <IdField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
+            <NameField isEditMode={isEditMode} showValidation={showValidation} node={node} setProperty={setProperty} errors={errors} />
             <ParametersListWithOverrides
                 parameters={findParameters(node)}
                 isEditMode={isEditMode}

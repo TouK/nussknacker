@@ -26,7 +26,6 @@ import { InputOutputContextProvider } from "../io/InputOutputContext";
 import { usePortal } from "../io/usePortal";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
 import { hasValidationTestCasesErrors } from "../NodeDetailsContent/selectors";
-import type { EditedNode } from "../nodeIdFieldHelpers";
 import { TestResultsWrapper } from "../TestResultsWrapper";
 import { useGetNodeErrors } from "../useNodeTypeDetailsContentLogic";
 import { EditStateFeedback } from "./EditStateFeedback";
@@ -55,9 +54,9 @@ export function useNodeDetailsButtons({
     close,
     readOnly,
 }: {
-    editedNode: EditedNode;
+    editedNode: NodeType;
     outputEdges: Edge[];
-    performNodeEdit: (editedNode: EditedNode, outputEdges: Edge[]) => Promise<void>;
+    performNodeEdit: (editedNode: NodeType, outputEdges: Edge[]) => Promise<void>;
     close: () => void;
     readOnly?: boolean;
 }) {
