@@ -228,8 +228,12 @@ class AssertionsCompiler(
 
   private def toComparisonOperator(operator: Assertion.AssertionOperator): String = {
     operator match {
-      case AssertionOperator.Equals    => "=="
-      case AssertionOperator.NotEquals => "!="
+      case AssertionOperator.Equals             => "=="
+      case AssertionOperator.NotEquals          => "!="
+      case AssertionOperator.GreaterThan        => ">"
+      case AssertionOperator.LessThan           => "<"
+      case AssertionOperator.GreaterThanOrEqual => ">="
+      case AssertionOperator.LessThanOrEqual    => "<="
     }
   }
 

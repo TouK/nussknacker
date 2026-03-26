@@ -5879,6 +5879,10 @@ components:
       type: string
       enum:
       - equals
+      - greaterThan
+      - greaterThanOrEqual
+      - lessThan
+      - lessThanOrEqual
       - notEquals
     AssertionResult:
       title: AssertionResult
