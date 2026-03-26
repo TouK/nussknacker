@@ -19,6 +19,11 @@ object AssertionResult {
     FailedAssertion(s"Expected value different from: [$expectedStr]")
   }
 
+  def produceFailedHasSizeAssertion(expectedSize: Any, actualSize: Int): FailedAssertion = {
+    val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expectedSize)
+    FailedAssertion(s"Expected size: [$expectedStr] but found: [$actualSize]")
+  }
+
   def produceFailedComparisonAssertion(operator: String, expected: Any, actual: Any): FailedAssertion = {
     val expectedStr = SpelValuePrettyPrinter.prettyPrintValue(expected)
     val actualStr   = SpelValuePrettyPrinter.prettyPrintValue(actual)

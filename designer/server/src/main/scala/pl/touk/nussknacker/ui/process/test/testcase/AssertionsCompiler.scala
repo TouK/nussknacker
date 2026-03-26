@@ -205,7 +205,7 @@ class AssertionsCompiler(
       .compile(
         // Compiling the below expression can result in errors like: Operator '==' used with not comparable types: String and Integer
         // If we need to report more user-friendly error (without: Operator '=='), we can use CommonSupertypeFinder here to check if types are comparable before compiling.
-        s"(${assertion.expected.expression}) ${toComparisonOperator(assertion.operator)} (${assertion.actual.expression})".spel,
+        buildComparisonExpression(assertion.operator, assertion.expected.expression, assertion.actual.expression).spel,
         // See comment below - we report errors on actual field.
         paramName = Some(ParameterName(PredicateAssertionCompilationError.Field.Actual.entryName)),
         context,
@@ -226,14 +226,19 @@ class AssertionsCompiler(
       .toValidatedNel
   }
 
-  private def toComparisonOperator(operator: Assertion.AssertionOperator): String = {
+  private def buildComparisonExpression(
+      operator: Assertion.AssertionOperator,
+      expected: String,
+      actual: String
+  ): String = {
     operator match {
-      case AssertionOperator.Equals             => "=="
-      case AssertionOperator.NotEquals          => "!="
-      case AssertionOperator.GreaterThan        => ">"
-      case AssertionOperator.LessThan           => "<"
-      case AssertionOperator.GreaterThanOrEqual => ">="
-      case AssertionOperator.LessThanOrEqual    => "<="
+      case AssertionOperator.Equals             => s"($expected) == ($actual)"
+      case AssertionOperator.NotEquals          => s"($expected) != ($actual)"
+      case AssertionOperator.GreaterThan        => s"($expected) > ($actual)"
+      case AssertionOperator.LessThan           => s"($expected) < ($actual)"
+      case AssertionOperator.GreaterThanOrEqual => s"($expected) >= ($actual)"
+      case AssertionOperator.LessThanOrEqual    => s"($expected) <= ($actual)"
+      case AssertionOperator.HasSize            => s"($actual).size() == ($expected)"
     }
   }
 

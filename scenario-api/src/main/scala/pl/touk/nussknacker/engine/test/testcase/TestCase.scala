@@ -76,6 +76,7 @@ object Assertion {
     case object LessThan           extends AssertionOperator
     case object GreaterThanOrEqual extends AssertionOperator
     case object LessThanOrEqual    extends AssertionOperator
+    case object HasSize            extends AssertionOperator
 
     override def values: IndexedSeq[AssertionOperator] = findValues
   }
