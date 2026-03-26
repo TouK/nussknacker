@@ -2092,6 +2092,7 @@ lazy val designer = (project in file("designer/server"))
         "com.softwaremill.sttp.tapir"   %% "tapir-enumeratum"                 % tapirV,
         "com.softwaremill.sttp.tapir"   %% "tapir-json-circe"                 % tapirV,
         "com.softwaremill.sttp.tapir"   %% "tapir-swagger-ui-bundle"          % tapirV,
+        "com.softwaremill.sttp.tapir"   %% "tapir-cats"                       % tapirV,
         "io.circe"                      %% "circe-generic-extras"             % circeGenericExtrasV,
         "org.reflections"                % "reflections"                      % "0.10.2"             % Test,
         "com.github.pathikrit"          %% "better-files"                     % betterFilesV,

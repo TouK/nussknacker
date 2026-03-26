@@ -5,10 +5,13 @@ import cats.effect.SyncIO
 import cats.effect.kernel.Resource
 import cats.implicits.toTraverseOps
 import cats.syntax.either._
+import cats.syntax.functor._
 import cats.syntax.list._
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.{DecodingFailure, Json}
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.{Source => PekkoSource}
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, NodeName, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ScenarioCompilationErrors}
@@ -41,6 +44,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 }
 import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
+import pl.touk.nussknacker.ui.config.TestCasesSettings
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.{
@@ -60,6 +64,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioTestService(
     testDataSettings: TestDataSettings,
+    testCasesSettings: TestCasesSettings,
     modelData: ModelData,
     engineScenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies],
     processResolver: UIProcessResolver,
@@ -383,6 +388,26 @@ class ScenarioTestService(
         errors => Left(AssertionErrors(errors)),
         Right(_)
       )
+  }
+
+  def performMultipleTestCases(
+      scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
+      isFragment: Boolean,
+      testCases: NonEmptyList[TestCase],
+  )(
+      implicit ec: ExecutionContext,
+      user: LoggedUser
+  ): PekkoSource[(TestCase, Either[PerformTestError, ResultsWithCounts]), NotUsed] = {
+    PekkoSource(testCases.toList)
+      .mapAsyncUnordered(parallelism = testCasesSettings.multipleParallelismExecution) { testCase =>
+        performTestCase(
+          scenarioGraph,
+          processVersion,
+          isFragment,
+          testCase
+        ).tupleLeft(testCase)
+      }
   }
 
   def performTest(

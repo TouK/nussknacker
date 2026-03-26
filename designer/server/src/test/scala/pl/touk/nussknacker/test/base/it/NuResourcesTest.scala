@@ -293,6 +293,7 @@ trait NuResourcesTest
   ): ScenarioTestService =
     new ScenarioTestService(
       designerConfig.testDataSettings,
+      designerConfig.testCasesSettings,
       modelData,
       Resource.pure(EngineScenarioCompilationDependencies.empty),
       new UIProcessResolver(
