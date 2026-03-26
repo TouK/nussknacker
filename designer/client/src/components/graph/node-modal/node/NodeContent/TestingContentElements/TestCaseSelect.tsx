@@ -1,0 +1,177 @@
+import { EditOutlined } from "@mui/icons-material";
+import { Box, css, IconButton, InputBase, styled, Typography } from "@mui/material";
+import React, { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { setTestCaseName } from "../../../../../../actions/nk/testCasesActions";
+import { changeActiveTestCase } from "../../../../../../actions/nk/testingActions";
+import { getBorderColor } from "../../../../../../containers/theme/helpers";
+import { getActiveTestCaseOption, getTestCaseOptions } from "../../../../../../reducers/selectors/testCases";
+import { useAppDispatch, useAppSelector } from "../../../../../../store/storeHelpers";
+import { useWindows } from "../../../../../../windowManager/useWindows";
+import { WindowKind } from "../../../../../../windowManager/WindowKind";
+import { StyledButton } from "../../../../styledButton";
+import { InfoTooltip } from "../../../editors/InfoTooltip/InfoTooltip";
+import { TypeSelect } from "../../../fragment-input-definition/TypeSelect";
+
+export const TestCaseSelect = () => {
+    const { t } = useTranslation();
+    const dispatch = useAppDispatch();
+
+    const testCaseOptions = useAppSelector(getTestCaseOptions);
+    const activeTestCaseOption = useAppSelector(getActiveTestCaseOption);
+
+    const [isEditing, setIsEditing] = useState(false);
+    const [editValue, setEditValue] = useState("");
+
+    const startEditing = useCallback(() => {
+        setEditValue(activeTestCaseOption?.label ?? "");
+        setIsEditing(true);
+    }, [activeTestCaseOption?.label]);
+
+    const confirmEdit = useCallback(() => {
+        const trimmed = editValue.trim();
+        if (trimmed && trimmed !== activeTestCaseOption?.label) {
+            dispatch(setTestCaseName(trimmed));
+        }
+        setIsEditing(false);
+    }, [dispatch, editValue, activeTestCaseOption?.label]);
+
+    const cancelEdit = useCallback(() => {
+        setIsEditing(false);
+    }, []);
+
+    const handleKeyDown = useCallback(
+        (e: React.KeyboardEvent) => {
+            if (e.key === "Enter") {
+                confirmEdit();
+            } else if (e.key === "Escape") {
+                e.stopPropagation();
+                cancelEdit();
+            }
+        },
+        [confirmEdit, cancelEdit],
+    );
+
+    const { open } = useWindows();
+    const onDisplayEnterpriseInfo = useCallback(() => {
+        open({ kind: WindowKind.enterpriseFeatureInfo, layoutData: { width: 500 } });
+    }, [open]);
+
+    return (
+        <Box ml={4} pt={1.25} display={"flex"} gap={1} alignItems={"center"}>
+            <TestCaseField
+                options={testCaseOptions}
+                activeOption={activeTestCaseOption}
+                isEditing={isEditing}
+                editValue={editValue}
+                onEditValueChange={setEditValue}
+                onEditConfirm={confirmEdit}
+                onEditKeyDown={handleKeyDown}
+            />
+            <InfoTooltip title={"Edit name"} variant={"hover"} enterDelay={500}>
+                <StyledActionButton onClick={startEditing} disabled={isEditing} size="small">
+                    <EditOutlined fontSize="small" />
+                </StyledActionButton>
+            </InfoTooltip>
+            <InfoTooltip title={"Save as"} variant={"hover"} enterDelay={500}>
+                <StyledButton title={t("node.row.add.title", "Add field")} onClick={onDisplayEnterpriseInfo}>
+                    {t("node.row.add.text", "+")}
+                </StyledButton>
+            </InfoTooltip>
+        </Box>
+    );
+};
+
+const StyledTestCasesSelect = styled(TypeSelect)(() => ({
+    width: "40cqw",
+    maxWidth: "400px",
+}));
+
+const StyledTestCaseLabel = styled(Box)(({ theme }) => ({
+    display: "flex",
+    alignItems: "center",
+    height: "100%",
+    width: "40cqw",
+    maxWidth: "400px",
+    paddingLeft: theme.spacing(1.5),
+    paddingRight: theme.spacing(1.5),
+    border: `1px solid ${getBorderColor(theme)}`,
+}));
+
+const StyledTestCaseInput = styled(InputBase)(({ theme }) => ({
+    width: "40cqw",
+    maxWidth: "400px",
+    height: "100%",
+    border: `1px solid ${theme.palette.primary.main}`,
+    paddingLeft: theme.spacing(1.5),
+    paddingRight: theme.spacing(1.5),
+    fontSize: theme.typography.body2.fontSize,
+}));
+
+const StyledActionButton = styled(IconButton)(({ theme }) =>
+    css({
+        borderRadius: 0,
+        backgroundColor: theme.palette.background.paper,
+        transition: "background-color 0.2s",
+        "&:not(:disabled):hover": {
+            backgroundColor: theme.palette.action.hover,
+        },
+        "&:disabled": {
+            opacity: 0.3,
+        },
+    }),
+);
+
+type TestCaseFieldProps = {
+    options: { label: string; value: string }[];
+    activeOption: { label: string; value: string } | null;
+    isEditing: boolean;
+    editValue: string;
+    onEditValueChange: (value: string) => void;
+    onEditConfirm: () => void;
+    onEditKeyDown: (e: React.KeyboardEvent) => void;
+};
+
+const TestCaseField = ({
+    options,
+    activeOption,
+    isEditing,
+    editValue,
+    onEditValueChange,
+    onEditConfirm,
+    onEditKeyDown,
+}: TestCaseFieldProps) => {
+    const dispatch = useAppDispatch();
+
+    const changeActiveTestCaseOption = useCallback(
+        (testCaseId: string) => {
+            dispatch(changeActiveTestCase(testCaseId));
+        },
+        [dispatch],
+    );
+
+    if (isEditing) {
+        return (
+            <StyledTestCaseInput
+                autoFocus
+                value={editValue}
+                onChange={(e) => onEditValueChange(e.target.value)}
+                onBlur={onEditConfirm}
+                onKeyDown={onEditKeyDown}
+                inputProps={{ "aria-label": "edit test case name" }}
+            />
+        );
+    }
+
+    if (options.length > 1) {
+        return <StyledTestCasesSelect options={options} onChange={changeActiveTestCaseOption} value={activeOption} />;
+    }
+    return (
+        <StyledTestCaseLabel>
+            <Typography variant="body2" noWrap>
+                {activeOption?.label}
+            </Typography>
+        </StyledTestCaseLabel>
+    );
+};

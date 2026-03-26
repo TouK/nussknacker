@@ -48,6 +48,17 @@ export function setTestCaseInputs(updater: (prev: TestingDataRecords[]) => Testi
     };
 }
 
+export function setTestCaseName(name: string): ThunkAction {
+    return (dispatch, getState) => {
+        const activeTestCaseId = getActiveTestCaseId(getState());
+        dispatch({
+            type: "UPDATE_TEST_CASE",
+            testCaseId: activeTestCaseId,
+            updates: { name },
+        });
+    };
+}
+
 export function setTestCaseMock(nodeId: string, expression: ExpressionObj | undefined): ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
