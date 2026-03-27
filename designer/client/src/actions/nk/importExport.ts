@@ -7,8 +7,8 @@ export function importFiles(processName: ProcessName, files: File[]): ThunkActio
         files.forEach(async (file: File) => {
             try {
                 dispatch({ type: "PROCESS_LOADING" });
-                const process = await HttpService.importProcess(processName, file);
-                dispatch({ type: "UPDATE_IMPORTED_PROCESS", scenario: process.data });
+                const importedScenario = await HttpService.importScenario(processName, file);
+                dispatch({ type: "UPDATE_IMPORTED_PROCESS", importedScenarioData: importedScenario.data });
             } catch (error) {
                 dispatch({ type: "LOADING_FAILED" });
             }
