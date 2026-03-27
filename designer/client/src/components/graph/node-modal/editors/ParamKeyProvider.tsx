@@ -8,10 +8,15 @@ import { determineParameterKey } from "../parameterHelpers";
 
 const ParamKey = React.createContext<ParamKeys>(null);
 
-export const ParamKeyProvider = ({ node, param, children }: PropsWithChildren<{ node?: NodeType; param?: Parameter }>) => {
+export const ParamKeyProvider = ({
+    node,
+    param,
+    value: valueProp,
+    children,
+}: PropsWithChildren<{ node?: NodeType; param?: Parameter; value?: ParamKeys }>) => {
     const value = useMemo(() => {
-        return determineParameterKey(node, param);
-    }, [node, param]);
+        return valueProp ?? determineParameterKey(node, param);
+    }, [valueProp, node, param]);
 
     return (
         <ParamKey.Provider value={value}>
