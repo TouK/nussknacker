@@ -15,7 +15,8 @@ export type AssertionOperator =
     | "greaterThanOrEqual"
     | "lessThanOrEqual"
     | "hasSize"
-    | "contains";
+    | "contains"
+    | "matches";
 export type Assertion = { description?: string; expected: ExpressionObj; operator: AssertionOperator; actual: ExpressionObj };
 export type Assertions = Record<string, Assertion[]>;
 

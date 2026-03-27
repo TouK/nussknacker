@@ -270,6 +270,25 @@ class AssertionVerifierSpec extends AnyFunSuite with Matchers {
     }
   }
 
+  test("should verify matches operator") {
+    forAll(
+      Table(
+        ("patternExpr", "actualString", "expectedResult"),
+        ("'[A-Z]{3}-\\d+'", "ABC-123", SuccessfulAssertion),
+        ("'[A-Z]{3}-\\d+'", "abc-123", FailedAssertion("Expected ['abc-123'] to match ['[A-Z]{3}-\\d+']")),
+        ("'.*world.*'", "hello world", SuccessfulAssertion),
+        ("'.*world.*'", "hello universe", FailedAssertion("Expected ['hello universe'] to match ['.*world.*']")),
+      )
+    ) { (patternExpr, actualString, expectedResult) =>
+      val testCase = prepareTestCase(
+        List(PredicateAssertion(AssertionOperator.Matches, patternExpr.spel, "#records[0].someVariable".spel))
+      )
+      val nodesResultsAfterTestRun = prepareNodeResults(List(Map("someVariable" -> actualString)))
+      val results                  = verifyForTestCase(testCase, nodesResultsAfterTestRun)
+      results shouldBe List(expectedResult)
+    }
+  }
+
   test("should not evaluate empty assertions") {
     forAll(
       Table(

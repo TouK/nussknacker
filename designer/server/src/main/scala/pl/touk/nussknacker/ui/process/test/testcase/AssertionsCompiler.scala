@@ -239,7 +239,8 @@ class AssertionsCompiler(
       case AssertionOperator.GreaterThanOrEqual => s"($expected) >= ($actual)"
       case AssertionOperator.LessThanOrEqual    => s"($expected) <= ($actual)"
       case AssertionOperator.HasSize            => s"($actual).size() == ($expected)"
-      case AssertionOperator.Contains           => s"($actual).contains($expected)"
+      case AssertionOperator.Contains           => s"($actual).contains(($expected))"
+      case AssertionOperator.Matches            => s"($actual).matches(($expected))"
     }
   }
 
