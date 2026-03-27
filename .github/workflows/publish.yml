@@ -25,9 +25,6 @@ on:
         required: true
       dockerhub_token:
         required: true
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   publish:
